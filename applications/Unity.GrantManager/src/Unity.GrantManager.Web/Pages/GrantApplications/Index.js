@@ -588,7 +588,7 @@ $(function () {
                 if (type === 'display') {
                     const safeApplicantName = $.fn.dataTable.render.text().display(applicantName);
                     const applicantId = row?.applicant?.id;
-                    const isGuid = row.applicant.id && guidPattern.test(row.applicant.id);
+                    const isGuid = applicantId && guidPattern.test(applicantId);
 
                     if (isGuid) {
                         return `<a href="/GrantApplicants/Details?ApplicantId=${encodeURIComponent(applicantId)}">${safeApplicantName}</a>`;
