@@ -24,6 +24,7 @@ $(document).ready(function () {
 
     // Handle resizable divider
     initializeResizableDivider();
+    initCommentsWidget();
 });
 
 function initializeApplicantDetailsPage() {
@@ -167,6 +168,33 @@ function initializeResizableDivider() {
     window.addEventListener('resize', applyTabHeightOffset);
 }
 
+function initCommentsWidget() {
+    const currentUserId = decodeURIComponent($('#CurrentUserId').val());
+    let applicantCommentsWidgetManager = new abp.WidgetManager({
+        wrapper: '#applicantCommentsWidget',
+        filterCallback: function () {
+            return {
+                ownerId: $('#DetailsViewApplicantId').val(),
+                commentType: 2, // Unity.GrantManager.Comments.CommentType.ApplicantComment
+                currentUserId: currentUserId,
+            };
+        },
+    });
 
+    PubSub.subscribe('ApplicantComment_refresh', () => {
+        applicantCommentsWidgetManager.refresh();
+        updateCommentsCounters();
+    });
 
+    updateCommentsCounters();
+}
 
+function updateCommentsCounters() {
+    setTimeout(() => {
+        $('.comments-container')
+            .map(function () {
+                $('#' + $(this).data('counttag')).html($(this).data('count'));
+            })
+            .get();
+    }, 100);
+}

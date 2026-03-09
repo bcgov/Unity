@@ -2,7 +2,8 @@
 {
     public enum CommentType
     {
-        ApplicationComment,
-        AssessmentComment
+        ApplicationComment = 0,
+        AssessmentComment = 1,
+        ApplicantComment = 2,
     }
 }

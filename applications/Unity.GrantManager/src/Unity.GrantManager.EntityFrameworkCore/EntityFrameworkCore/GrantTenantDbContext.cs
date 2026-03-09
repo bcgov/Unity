@@ -38,6 +38,7 @@ namespace Unity.GrantManager.EntityFrameworkCore
         public DbSet<ApplicantAddress> ApplicantAddresses { get; set; }
         public DbSet<ApplicationTags> ApplicationTags { get; set; }
         public DbSet<ApplicantAgent> ApplicantAgents { get; set; }
+        public DbSet<ApplicantComment> ApplicantComments { get; set; }
         public DbSet<ApplicationAttachment> ApplicationAttachments { get; set; }
         public DbSet<ApplicationFormSubmission> ApplicationFormSubmissions { get; set; }
         public DbSet<AssessmentAttachment> AssessmentAttachments { get; set; }
@@ -178,6 +179,19 @@ namespace Unity.GrantManager.EntityFrameworkCore
 
                 b.ConfigureByConvention(); //auto configure for the base class props
                 b.HasOne<Applicant>().WithMany().HasForeignKey(x => x.ApplicantId).IsRequired();
+            });
+
+            modelBuilder.Entity<ApplicantComment>(b =>
+            {
+                b.ToTable(GrantManagerConsts.TenantTablePrefix + "ApplicantComments", GrantManagerConsts.DbSchema);
+
+                b.ConfigureByConvention();
+                b.HasOne<Applicant>().WithMany().HasForeignKey(x => x.ApplicantId).IsRequired();
+
+                b.HasOne<Person>()
+                   .WithMany()
+                   .HasPrincipalKey(x => x.Id)
+                   .HasForeignKey(x => x.CommenterId);
             });
 
             modelBuilder.Entity<ApplicationFormSubmission>(b =>

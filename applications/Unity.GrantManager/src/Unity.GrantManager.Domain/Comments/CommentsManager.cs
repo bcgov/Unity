@@ -13,16 +13,21 @@ namespace Unity.GrantManager.Comments
     {
         private readonly ICommentsRepository<ApplicationComment> _applicationCommentsRepository;
         private readonly ICommentsRepository<AssessmentComment> _assessmentCommentsRepository;
+        private readonly ICommentsRepository<ApplicantComment> _applicantCommentsRepository;
+
         private readonly ICurrentUser _currentUser;
         private readonly IPersonRepository _personRepository;
 
         public CommentsManager(ICommentsRepository<ApplicationComment> applicationCommentsRepository,
             ICommentsRepository<AssessmentComment> assessmentCommentsRepository,
+            ICommentsRepository<ApplicantComment> applicantCommentsRepository,
             ICurrentUser currentUser,
             IPersonRepository personRepository)
         {
             _applicationCommentsRepository = applicationCommentsRepository;
             _assessmentCommentsRepository = assessmentCommentsRepository;
+            _applicantCommentsRepository = applicantCommentsRepository;
+
             _currentUser = currentUser;
             _personRepository = personRepository;
         }
@@ -39,6 +44,9 @@ namespace Unity.GrantManager.Comments
                 CommentType.AssessmentComment => await _assessmentCommentsRepository
                     .InsertAsync(new AssessmentComment()
                     { Comment = comment, AssessmentId = ownerId, CommenterId = commenterId }, autoSave: true),
+                CommentType.ApplicantComment => await _applicantCommentsRepository
+                    .InsertAsync(new ApplicantComment()
+                    { Comment = comment, ApplicantId = ownerId, CommenterId = commenterId }, autoSave: true),
                 _ => throw new NotImplementedException(),
             };
         }
@@ -53,6 +61,9 @@ namespace Unity.GrantManager.Comments
                 case CommentType.AssessmentComment:
                     var assessmentCommentsQry = await _assessmentCommentsRepository.GetQueryableAsync();
                     return assessmentCommentsQry.Where(c => c.AssessmentId.Equals(ownerId)).OrderByDescending(s => s.CreationTime).ToList();
+                case CommentType.ApplicantComment:
+                    var applicantCommentsQry = await _applicantCommentsRepository.GetQueryableAsync();
+                    return applicantCommentsQry.Where(c => c.ApplicantId.Equals(ownerId)).OrderByDescending(s => s.CreationTime).ToList();
                 default:
                     throw new NotImplementedException();
             }
@@ -70,6 +81,10 @@ namespace Unity.GrantManager.Comments
                     var assessmentComment = await GetCommentAsync(ownerId, commentId, type) ?? throw new EntityNotFoundException();
                     assessmentComment.Comment = comment;
                     return await _assessmentCommentsRepository.UpdateAsync((AssessmentComment)assessmentComment!, autoSave: true);
+                case CommentType.ApplicantComment:
+                    var applicantComment = await GetCommentAsync(ownerId, commentId, type) ?? throw new EntityNotFoundException();
+                    applicantComment.Comment = comment;
+                    return await _applicantCommentsRepository.UpdateAsync((ApplicantComment)applicantComment!, autoSave: true);
                 default:
                     throw new NotImplementedException();
             }
@@ -85,6 +100,9 @@ namespace Unity.GrantManager.Comments
                 case CommentType.AssessmentComment:
                     var assessmentCommentsQry = await _assessmentCommentsRepository.GetQueryableAsync();
                     return assessmentCommentsQry.FirstOrDefault(s => s.AssessmentId == ownerId && s.Id == commentId);
+                case CommentType.ApplicantComment:
+                    var applicantCommentsQry = await _applicantCommentsRepository.GetQueryableAsync();
+                    return applicantCommentsQry.FirstOrDefault(s => s.ApplicantId == ownerId && s.Id == commentId);
                 default:
                     throw new NotImplementedException();
             }
@@ -134,6 +152,26 @@ namespace Unity.GrantManager.Comments
                                                     PinDateTime = assessmentComment.PinDateTime,
                                                 };
                     return assessmentCommentsQry.ToList();
+                case CommentType.ApplicantComment:
+                    var applicantCommentsQry = from applicantComment in await _applicantCommentsRepository.GetQueryableAsync()
+                                               join user in await _personRepository.GetQueryableAsync() on applicantComment.CommenterId equals user.Id
+                                               where applicantComment.ApplicantId == ownerId
+                                               orderby applicantComment.PinDateTime.HasValue descending,
+                                                       applicantComment.PinDateTime ascending,
+                                                        applicantComment.CreationTime descending
+                                                select new CommentListItem
+                                                {
+                                                    Comment = applicantComment.Comment,
+                                                    CommenterId = applicantComment.CommenterId,
+                                                    CommenterDisplayName = user.OidcDisplayName,
+                                                    CommenterBadge = user.Badge,
+                                                    CreationTime = applicantComment.CreationTime,
+                                                    OwnerId = ownerId,
+                                                    Id = applicantComment.Id,
+                                                    LastModificationTime = applicantComment.LastModificationTime,
+                                                    PinDateTime = applicantComment.PinDateTime,
+                                                };
+                    return applicantCommentsQry.ToList();
                 default:
                     throw new NotImplementedException();
             }
@@ -172,6 +210,9 @@ namespace Unity.GrantManager.Comments
                     break;
                 case CommentType.AssessmentComment:
                     await _assessmentCommentsRepository.UpdateAsync((AssessmentComment)comment, autoSave: true);
+                    break;
+                case CommentType.ApplicantComment:
+                    await _applicantCommentsRepository.UpdateAsync((ApplicantComment)comment, autoSave: true);
                     break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(type));
