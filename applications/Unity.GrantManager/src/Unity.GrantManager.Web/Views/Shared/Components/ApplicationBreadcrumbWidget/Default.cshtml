@@ -1,9 +1,14 @@
-﻿@using Unity.GrantManager.Web.Views.Shared.Components.ApplicationBreadcrumbWidget;
+﻿@using Unity.GrantManager.Permissions
+@using Unity.GrantManager.Web.Views.Shared.Components.ApplicationBreadcrumbWidget;
+@using Volo.Abp.Authorization.Permissions
+
+@inject IPermissionChecker PermissionChecker
 
 @model ApplicationBreadcrumbWidgetViewModel
 
 @{
     var renderedApplicantName = string.IsNullOrWhiteSpace(Model.ApplicantName) ? "Unknown Applicant" : Model.ApplicantName;
+    var hasViewPermission = await PermissionChecker.IsGrantedAsync(GrantApplicationPermissions.Applicants.ViewList);
 }
 
 <div class="breadcrumb-container">
@@ -11,7 +16,7 @@
     <div class="application-details-breadcrumb">
         <div class="reference-no">@Model.ReferenceNo</div>
         <div class="applicant-name">
-            @if (Model.ApplicantId != Guid.Empty)
+            @if (hasViewPermission && Model.ApplicantId != Guid.Empty)
             {
                 <a href="~/GrantApplicants/Details?ApplicantId=@Model.ApplicantId" 
                    class="applicant-name-link link-underline link-offset-1 link-underline-opacity-0 link-underline-opacity-100-hover">
