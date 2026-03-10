@@ -1,10 +1,10 @@
 ﻿@page "{@Model.ApplicationFormSubmissionId?}"
 @* #pragma warning disable S1128 *@
 @using Microsoft.Extensions.Localization
+@using Unity.AI.Permissions
 @using Unity.Flex.Web.Views.Shared.Components.WorksheetInstanceWidget
 @using Unity.GrantManager.Flex
 @using Unity.GrantManager.Localization
-@using Unity.GrantManager.Permissions
 @using Unity.GrantManager.Web.Pages.GrantApplications
 @using Unity.GrantManager.Web.Views.Shared.Components.CustomTabWidget
 @using Unity.GrantManager.Web.Views.Shared.Components.DetailsActionBar
@@ -31,7 +31,7 @@
     var notificationsFeatureEnabled = await FeatureChecker.IsEnabledAsync("Unity.Notifications");
     var readEmailGranted = await PermissionChecker.IsGrantedAsync("Notifications.Email");
     var aiApplicationAnalysisEnabled = await FeatureChecker.IsEnabledAsync("Unity.AI.ApplicationAnalysis")
-        && await PermissionChecker.IsGrantedAsync(GrantApplicationPermissions.AI.ApplicationAnalysis.Default);
+        && await PermissionChecker.IsGrantedAsync(AIPermissions.ApplicationAnalysis.ApplicationAnalysisDefault);
     var flexFeatureEnabled = await FeatureChecker.IsEnabledAsync("Unity.Flex");
 }
 @section styles
