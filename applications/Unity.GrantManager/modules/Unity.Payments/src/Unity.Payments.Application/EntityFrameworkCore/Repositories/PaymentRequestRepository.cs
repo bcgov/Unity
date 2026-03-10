@@ -134,7 +134,8 @@ namespace Unity.Payments.Repositories
                             || (p.Status == PaymentRequestStatus.Submitted
                                 && string.IsNullOrEmpty(p.PaymentStatus)
                                 && (string.IsNullOrEmpty(p.InvoiceStatus)
-                                    || !p.InvoiceStatus.Contains(CasPaymentRequestStatus.ErrorFromCas))))
+                                    || (!p.InvoiceStatus.Contains(CasPaymentRequestStatus.ErrorFromCas)
+                                        && !p.InvoiceStatus.Contains(CasPaymentRequestStatus.NotFound)))))
                         .Sum(p => p.Amount)
                 })
                 .ToListAsync();
