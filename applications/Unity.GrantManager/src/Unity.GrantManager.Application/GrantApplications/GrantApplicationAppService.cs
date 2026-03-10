@@ -13,6 +13,7 @@ using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Threading.Tasks;
+using Unity.AI.Permissions;
 using Unity.Flex.WorksheetInstances;
 using Unity.Flex.Worksheets;
 using Unity.GrantManager.Applicants;
@@ -1066,7 +1067,7 @@ public class GrantApplicationAppService(
         return await UpdateAIIssueDismissStateAsync(applicationId, issueId, isDismiss: false);
     }
 
-    [Authorize(GrantApplicationPermissions.AI.ScoringAssistant.Default)]
+    [Authorize(AIPermissions.ScoringAssistant.ScoringAssistantDefault)]
     public async Task<string> GenerateAIScoresheetAnswersAsync(Guid applicationId)
     {
         try

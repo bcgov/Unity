@@ -280,7 +280,7 @@ namespace Unity.GrantManager.Intakes.Handlers
                         application.Id);
                 }
 
-                var analysisData = BuildAnalysisDataPayload(application, formSubmission);
+                var analysisData = BuildPromptDataPayload(application, formSubmission);
                 _logger.LogInformation("Generating analysis for application {ApplicationId}", application.Id);
 
                 _logger.LogDebug("Generating AI analysis for application {ApplicationId} with {AttachmentCount} attachment summaries",
@@ -324,17 +324,6 @@ namespace Unity.GrantManager.Intakes.Handlers
                     Summary = a.AISummary!.Trim()
                 })
                 .ToList();
-        }
-
-        private JsonElement BuildAnalysisDataPayload(Application application, ApplicationFormSubmission? formSubmission)
-        {
-            var fallbackPayload = BuildFallbackPromptDataPayload(application);
-            if (TryBuildPromptDataValues(application.Id, formSubmission, out var values))
-            {
-                return JsonSerializer.SerializeToElement(values);
-            }
-
-            return JsonSerializer.SerializeToElement(fallbackPayload);
         }
 
         private static object BuildFallbackPromptDataPayload(Application application)
@@ -404,7 +393,7 @@ namespace Unity.GrantManager.Intakes.Handlers
                 var allSectionResults = new Dictionary<string, object>();
                 var scoresheetAttachments = BuildScoresheetAttachments(attachments);
                 var formSubmission = await _applicationFormSubmissionRepository.GetByApplicationAsync(application.Id);
-                var scoresheetData = BuildScoresheetDataPayload(application, formSubmission);
+                var scoresheetData = BuildPromptDataPayload(application, formSubmission);
                 LogFormSubmissionPreview(formSubmission?.RenderedHTML);
 
                 foreach (var section in scoresheet.Sections.OrderBy(s => s.Order))
@@ -447,7 +436,7 @@ namespace Unity.GrantManager.Intakes.Handlers
                 .ToList();
         }
 
-        private JsonElement BuildScoresheetDataPayload(Application application, ApplicationFormSubmission? formSubmission)
+        private JsonElement BuildPromptDataPayload(Application application, ApplicationFormSubmission? formSubmission)
         {
             var fallbackPayload = BuildFallbackPromptDataPayload(application);
             if (TryBuildPromptDataValues(application.Id, formSubmission, out var values))

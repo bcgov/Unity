@@ -48,7 +48,11 @@ namespace Unity.GrantManager.AI
             var attachments = await applicationChefsFileAttachmentRepository.GetListAsync(a => a.ApplicationId == applicationId);
             var attachmentSummaries = attachments
                 .Where(a => !string.IsNullOrEmpty(a.AISummary))
-                .Select(a => $"{a.FileName}: {a.AISummary}")
+                .Select(a => new AIAttachmentItem
+                {
+                    Name = string.IsNullOrWhiteSpace(a.FileName) ? "attachment" : a.FileName.Trim(),
+                    Summary = a.AISummary!.Trim()
+                })
                 .ToList();
 
             var formSubmission = await applicationFormSubmissionRepository.GetByApplicationAsync(applicationId);
@@ -89,17 +93,19 @@ FULL APPLICATION FORM SUBMISSION:
                         });
                     }
 
-                    var sectionJson = JsonSerializer.Serialize(sectionQuestionsData, _jsonOptions);
-                    var sectionAnswers = await aiService.GenerateScoresheetSectionAnswersAsync(
-                        applicationContent,
-                        attachmentSummaries,
-                        sectionJson,
-                        section.Name);
-
-                    if (!string.IsNullOrWhiteSpace(sectionAnswers))
+                    var sectionRequest = new ScoresheetSectionRequest
                     {
-                        var cleanedJson = CleanJsonResponse(sectionAnswers);
-                        using var sectionDoc = JsonDocument.Parse(cleanedJson);
+                        Data = JsonSerializer.SerializeToElement(new { submission_content = applicationContent }),
+                        Attachments = attachmentSummaries,
+                        SectionName = section.Name,
+                        SectionSchema = JsonSerializer.SerializeToElement(sectionQuestionsData, _jsonOptions)
+                    };
+                    var sectionAnswers = await aiService.GenerateScoresheetSectionAsync(sectionRequest);
+
+                    if (sectionAnswers.Answers.Count > 0)
+                    {
+                        var sectionJson = JsonSerializer.Serialize(sectionAnswers.Answers, _jsonOptions);
+                        using var sectionDoc = JsonDocument.Parse(sectionJson);
                         foreach (var property in sectionDoc.RootElement.EnumerateObject())
                         {
                             allSectionResults[property.Name] = property.Value.Clone();
@@ -136,34 +142,6 @@ FULL APPLICATION FORM SUBMISSION:
             }
 
             return "{}";
-        }
-
-        private static string CleanJsonResponse(string response)
-        {
-            if (string.IsNullOrWhiteSpace(response))
-                return response;
-
-            var cleaned = response.Trim();
-
-            if (cleaned.StartsWith("```json", StringComparison.OrdinalIgnoreCase) || cleaned.StartsWith("```"))
-            {
-                var startIndex = cleaned.IndexOf('\n');
-                if (startIndex >= 0)
-                {
-                    cleaned = cleaned.Substring(startIndex + 1);
-                }
-            }
-
-            if (cleaned.EndsWith("```"))
-            {
-                var lastIndex = cleaned.LastIndexOf("```", StringComparison.Ordinal);
-                if (lastIndex > 0)
-                {
-                    cleaned = cleaned.Substring(0, lastIndex);
-                }
-            }
-
-            return cleaned.Trim();
         }
 
         private static (int number, string value, long numericValue)[]? ExtractSelectListOptions(Question field)
