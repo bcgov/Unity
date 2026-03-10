@@ -248,7 +248,7 @@ public class GrantsPortalCommandConsumerService(
     {
         try
         {
-            _connection?.ConnectionShutdown -= OnConnectionShutdown;
+            if (_connection != null) _connection.ConnectionShutdown -= OnConnectionShutdown;
             _channel?.Close();
             _channel?.Dispose();
             _connection?.Close();
