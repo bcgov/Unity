@@ -47,7 +47,7 @@ namespace Unity.GrantManager.AI
 
         private static readonly JsonSerializerOptions JsonLogOptions = new() { WriteIndented = true };
 
-        private static readonly IReadOnlyDictionary<string, string> PromptProfiles =
+        private static readonly Dictionary<string, string> PromptProfiles =
             new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             {
                 [PromptVersionV0] = PromptVersionV0,
@@ -351,7 +351,7 @@ namespace Unity.GrantManager.AI
                     questions = sectionQuestionsPayload
                 };
                 var section = JsonSerializer.Serialize(sectionPayload, JsonLogOptions);
-                var response = BuildScoresheetSectionResponseTemplate(SelectedPromptVersion, section);
+                var response = BuildScoresheetSectionResponseTemplate(section);
 
                 var analysisContent = BuildScoresheetSectionUserPrompt(
                     SelectedPromptVersion,
@@ -520,7 +520,7 @@ namespace Unity.GrantManager.AI
             return Math.Clamp(rounded, 0, 100);
         }
 
-        private static string BuildScoresheetSectionResponseTemplate(string version, string sectionPayloadJson)
+        private static string BuildScoresheetSectionResponseTemplate(string sectionPayloadJson)
         {
             try
             {
@@ -737,7 +737,6 @@ namespace Unity.GrantManager.AI
             string data,
             string attachments)
         {
-            var userTemplate = GetRequiredPromptTemplate(version, AnalysisUserTemplateName);
             var replacements = new Dictionary<string, string>
             {
                 ["SCHEMA"] = schema,
@@ -892,12 +891,10 @@ namespace Unity.GrantManager.AI
                 return baseScopedCandidate;
             }
 
-            if (TryResolveCommonTemplateName(placeholderName, out var commonTemplateName))
+            if (TryResolveCommonTemplateName(placeholderName, out var commonTemplateName) &&
+                TryGetPromptTemplate(version, commonTemplateName, out _))
             {
-                if (TryGetPromptTemplate(version, commonTemplateName, out _))
-                {
-                    return commonTemplateName;
-                }
+                return commonTemplateName;
             }
 
             return null;
@@ -928,7 +925,7 @@ namespace Unity.GrantManager.AI
             return templateName.Substring(0, separatorIndex);
         }
 
-        private static ISet<string> GetTemplatePlaceholders(string template)
+        private static HashSet<string> GetTemplatePlaceholders(string template)
         {
             var placeholders = new HashSet<string>(StringComparer.Ordinal);
             var searchIndex = 0;

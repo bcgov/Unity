@@ -35,7 +35,7 @@ namespace Unity.GrantManager.AI
                 [".json"] = (_, content) => ExtractTextFromTextFile(content),
                 [".xml"] = (_, content) => ExtractTextFromTextFile(content),
                 [".pdf"] = ExtractTextFromPdfFile,
-                [".docx"] = (name, content) => ExtractTextFromWordDocx(name, content),
+                [".docx"] = ExtractTextFromWordDocx,
                 [".xls"] = ExtractTextFromExcelFile,
                 [".xlsx"] = ExtractTextFromExcelFile
             };
