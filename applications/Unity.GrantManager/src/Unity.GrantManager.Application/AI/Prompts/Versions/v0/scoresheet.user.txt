@@ -1,0 +1,52 @@
+APPLICATION CONTENT:
+{{DATA}}
+
+ATTACHMENT SUMMARIES:
+{{ATTACHMENTS}}
+
+SCORESHEET SECTION:
+{{SECTION}}
+
+RESPONSE TEMPLATE:
+{{RESPONSE}}
+
+Please analyze this grant application and provide answers for each question in the specified section only.
+
+For each question, provide:
+1. The answer based on the application evidence
+2. A brief rationale (1-2 complete sentences) citing concrete supporting evidence
+3. A confidence score from 0-100 (integer) indicating certainty in the selected answer
+
+OUTPUT
+{
+  "<question_id>": {
+    "answer": "<string | number>",
+    "rationale": "<evidence-based rationale>",
+    "confidence": <integer 0-100 step 5>
+  }
+}
+
+RULES
+- Use only APPLICATION CONTENT and ATTACHMENT SUMMARIES as evidence.
+- Do not invent missing application details.
+- Return exactly one answer object per question ID in the section.
+- Do not omit any question IDs.
+- Do not add keys that are not question IDs from the section.
+- Use RESPONSE TEMPLATE as the contract and fill every placeholder value.
+- Every question must include "answer", "rationale", and "confidence".
+- "answer" type must match question type: Number => numeric; YesNo/SelectList/Text/TextArea => string.
+- For yes/no questions, answer must be exactly "Yes" or "No".
+- For numeric questions, answer must be within the allowed range and never blank.
+- For select list questions, return only the selected options.number as a string, never label text.
+- Never return 0 for select list answers unless 0 exists as an explicit option number.
+- For text and text area questions, answer must be concise, evidence-based, and non-empty.
+- "rationale" must be 1-2 complete sentences grounded in concrete evidence.
+- "rationale" must justify both the selected answer and confidence level.
+- If evidence is insufficient, choose the most conservative valid answer and state uncertainty in rationale.
+- "confidence" must be an integer from 0 to 100 in increments of 5.
+- Confidence reflects certainty in the selected answer based on evidence strength.
+- Final check: every question ID has non-empty answer+rationale and confidence.
+- Return values exactly as specified in OUTPUT.
+- Do not return keys outside OUTPUT.
+- Return valid JSON only.
+- Return plain JSON only (no markdown).

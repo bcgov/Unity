@@ -1,0 +1,22 @@
+{
+  "rating": "<HIGH|MEDIUM|LOW>",
+  "errors": [
+    {
+      "title": "<string>",
+      "detail": "<string>"
+    }
+  ],
+  "warnings": [
+    {
+      "title": "<string>",
+      "detail": "<string>"
+    }
+  ],
+  "summaries": [
+    {
+      "title": "<string>",
+      "detail": "<string>"
+    }
+  ],
+  "dismissed": []
+}

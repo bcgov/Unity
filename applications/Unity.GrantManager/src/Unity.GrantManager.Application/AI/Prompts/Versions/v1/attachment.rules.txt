@@ -1,0 +1,7 @@
+- Use only ATTACHMENT as evidence.
+- If ATTACHMENT.text is present, summarize actual content.
+- If ATTACHMENT.text is null or empty, provide a conservative file-level summary.
+- Do not invent missing details.
+- Write 1-2 complete sentences.
+- Summary must be grounded in concrete ATTACHMENT evidence.
+- Return exactly one object with only the key: summary.

@@ -1,0 +1,101 @@
+APPLICATION CONTENT:
+{{DATA}}
+
+ATTACHMENT SUMMARIES:
+{{ATTACHMENTS}}
+
+FORM FIELD CONFIGURATION:
+{{SCHEMA}}
+
+MANDATORY FIELDS:
+- Determine mandatory fields from FORM FIELD CONFIGURATION.
+- Report missing mandatory fields as findings when they materially affect review quality.
+
+OPTIONAL FIELDS (may be left blank):
+- Determine optional fields from FORM FIELD CONFIGURATION.
+- Do not flag optional fields when blank unless they materially weaken rubric evidence.
+
+EVALUATION RUBRIC:
+BC GOVERNMENT GRANT EVALUATION RUBRIC:
+
+1. ELIGIBILITY REQUIREMENTS:
+   - Project must align with program objectives
+   - Applicant must be eligible entity type
+   - Budget must be reasonable and well-justified
+   - Project timeline must be realistic
+
+2. COMPLETENESS CHECKS:
+   - All required fields completed
+   - Necessary supporting documents provided
+   - Budget breakdown detailed and accurate
+   - Project description clear and comprehensive
+
+3. FINANCIAL REVIEW:
+   - Requested amount is within program limits
+   - Budget is reasonable for scope of work
+   - Matching funds or in-kind contributions identified
+   - Cost per outcome/beneficiary is reasonable
+
+4. RISK ASSESSMENT:
+   - Applicant capacity to deliver project
+   - Technical feasibility of proposed work
+   - Environmental or regulatory compliance
+   - Potential for cost overruns or delays
+
+5. QUALITY INDICATORS:
+   - Clear project objectives and outcomes
+   - Well-defined target audience/beneficiaries
+   - Appropriate project methodology
+   - Sustainability plan for long-term impact
+
+EVALUATION CRITERIA:
+- HIGH: Meets all requirements, well-prepared application, low risk
+- MEDIUM: Meets most requirements, minor issues or missing elements
+- LOW: Missing key requirements, significant concerns, high risk
+
+Analyze this grant application comprehensively across all five rubric categories (Eligibility, Completeness, Financial Review, Risk Assessment, and Quality Indicators). Identify issues, concerns, and areas for improvement.
+
+OUTPUT
+{
+  "rating": "<HIGH|MEDIUM|LOW>",
+  "warnings": [
+    {
+      "title": "<string>",
+      "detail": "<string>"
+    }
+  ],
+  "errors": [
+    {
+      "title": "<string>",
+      "detail": "<string>"
+    }
+  ],
+  "summaries": [
+    {
+      "title": "<string>",
+      "detail": "<string>"
+    }
+  ],
+  "dismissed": []
+}
+
+RULES
+- Use only APPLICATION CONTENT, ATTACHMENT SUMMARIES, FORM FIELD CONFIGURATION, and EVALUATION RUBRIC as evidence.
+- Do not invent fields, documents, requirements, or facts.
+- Treat missing or empty values as findings only when they weaken rubric evidence.
+- Prefer material issues; avoid nitpicking.
+- Each error/warning/recommendation must describe one concrete issue or consideration and why it matters.
+- Use 3-6 words for title.
+- Each detail must be 1-2 complete sentences.
+- Each detail must be grounded in concrete evidence from provided inputs.
+- If attachment evidence is used, cite the attachment by name in detail.
+- Do not provide applicant-facing advice.
+- Do not mention rubric section names in findings.
+- If no findings exist, return empty arrays.
+- rating must be HIGH, MEDIUM, or LOW.
+- Use "title" and "detail" keys for all finding objects.
+- Do not use legacy "category" or "message" keys.
+- Return values exactly as specified in OUTPUT.
+- Do not return keys outside OUTPUT.
+- Return valid JSON only.
+- Return plain JSON only (no markdown).

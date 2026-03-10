@@ -974,11 +974,11 @@ public class GrantApplicationAppService(
 
         // NOTE: Authorization is applied on the AppService layer and is false by default
         // AUTHORIZATION HANDLING
-        actionDtos.ForEach(async item =>
+        foreach (var item in actionDtos)
         {
             item.IsPermitted = item.IsPermitted && (await AuthorizationService.IsGrantedAsync(application, GetActionAuthorizationRequirement(item.ApplicationAction)));
             item.IsAuthorized = true;
-        });
+        }
 
         return new ListResultDto<ApplicationActionDto>(actionDtos);
     }
