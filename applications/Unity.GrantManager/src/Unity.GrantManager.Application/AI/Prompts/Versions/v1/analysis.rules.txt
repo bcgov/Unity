@@ -1,0 +1,10 @@
+- Use only provided input sections as evidence.
+- Do not invent fields, documents, requirements, or facts.
+- Treat missing or empty values as findings only when they weaken rubric evidence.
+- Prefer material issues; avoid nitpicking.
+- Use 3-6 words for title.
+- Each detail must be 1-2 complete sentences.
+- Each detail must cite concrete evidence from DATA or ATTACHMENTS.
+- If ATTACHMENTS evidence is used, cite the attachment by name in detail.
+- If no findings exist, return empty arrays.
+- Rating must be HIGH, MEDIUM, or LOW.

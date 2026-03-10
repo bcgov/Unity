@@ -291,7 +291,7 @@ namespace Unity.GrantManager.Intakes.Handlers
                     Schema = formFieldSchema,
                     Data = analysisData,
                     Attachments = analysisAttachments,
-                    Rubric = AnalysisPrompts.DefaultRubric
+                    Rubric = null
                 };
 
                 var analysis = await _aiService.GenerateApplicationAnalysisAsync(analysisRequest);

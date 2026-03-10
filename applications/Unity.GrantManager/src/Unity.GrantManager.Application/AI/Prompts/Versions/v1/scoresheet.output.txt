@@ -1,0 +1,7 @@
+{
+  "<question_id>": {
+    "answer": "<string | number>",
+    "rationale": "<evidence-based rationale>",
+    "confidence": <integer 0-100 step 5>
+  }
+}

@@ -17,6 +17,5 @@ namespace Unity.GrantManager.AI
         // Legacy compatibility methods retained until flow orchestration refactor.
         Task<string> GenerateSummaryAsync(string content, string? prompt = null, int maxTokens = 150);
         Task<string> AnalyzeApplicationAsync(string applicationContent, List<string> attachmentSummaries, string rubric, string? formFieldConfiguration = null);
-        Task<string> GenerateScoresheetAnswersAsync(string applicationContent, List<string> attachmentSummaries, string scoresheetQuestions);
     }
 }
