@@ -26,19 +26,10 @@ namespace Unity.GrantManager.AI
         private const string PromptTemplatesFolder = "AI\\Prompts\\Versions";
         private const string AnalysisSystemTemplateName = "analysis.system";
         private const string AnalysisUserTemplateName = "analysis.user";
-        private const string AnalysisRubricTemplateName = "analysis.rubric";
         private const string AttachmentSystemTemplateName = "attachment.system";
         private const string AttachmentUserTemplateName = "attachment.user";
         private const string ScoresheetSystemTemplateName = "scoresheet.system";
         private const string ScoresheetUserTemplateName = "scoresheet.user";
-        private const string ScoresheetOutputTemplateName = "scoresheet.output";
-        private const string DefaultScoresheetOutputTemplate = @"{
-  ""<question_id>"": {
-    ""answer"": ""<string | number>"",
-    ""rationale"": ""<evidence-based rationale>"",
-    ""confidence"": <integer 0-100 step 5>
-  }
-}";
         private const string NoSummaryGeneratedMessage = "No summary generated.";
         private const string ServiceNotConfiguredMessage = "AI analysis not available - service not configured.";
         private const string ServiceTemporarilyUnavailableMessage = "AI analysis failed - service temporarily unavailable.";
@@ -93,8 +84,9 @@ namespace Unity.GrantManager.AI
         {
             var content = await GenerateSummaryAsync(
                 request?.UserPrompt ?? string.Empty,
-                request?.SystemPrompt,
-                request?.MaxTokens ?? 150);
+                null,
+                request?.MaxTokens ?? 150,
+                request?.Temperature);
             return new AICompletionResponse { Content = content };
         }
 
@@ -117,15 +109,18 @@ namespace Unity.GrantManager.AI
                 SelectedPromptVersion,
                 schema,
                 data,
-                attachments,
-                request.Rubric);
+                attachments);
             await LogPromptInputAsync(ApplicationAnalysisPromptType, systemPrompt, analysisContent);
             var raw = await GenerateSummaryAsync(analysisContent, systemPrompt, 1000);
             await LogPromptOutputAsync(ApplicationAnalysisPromptType, raw);
             return ParseApplicationAnalysisResponse(AddIdsToAnalysisItems(raw));
         }
 
-        public async Task<string> GenerateSummaryAsync(string content, string? prompt = null, int maxTokens = 150)
+        private async Task<string> GenerateSummaryAsync(
+            string content,
+            string? systemPrompt,
+            int maxTokens = 150,
+            double? temperature = null)
         {
             if (string.IsNullOrEmpty(ApiKey))
             {
@@ -137,18 +132,20 @@ namespace Unity.GrantManager.AI
 
             try
             {
-                var systemPrompt = prompt ?? "You are a professional grant analyst for the BC Government.";
+                var resolvedSystemPrompt = string.IsNullOrWhiteSpace(systemPrompt)
+                    ? "You are a professional grant analyst for the BC Government."
+                    : systemPrompt;
                 var userPrompt = content ?? string.Empty;
 
                 var requestBody = new
                 {
                     messages = new[]
                     {
-                       new { role = "system", content = systemPrompt },
+                       new { role = "system", content = resolvedSystemPrompt },
                        new { role = "user", content = userPrompt }
                    },
                     max_tokens = maxTokens,
-                    temperature = 0.3
+                    temperature = temperature ?? 0.3
                 };
 
                 var json = JsonSerializer.Serialize(requestBody);
@@ -193,12 +190,15 @@ namespace Unity.GrantManager.AI
             }
         }
 
-        public async Task<string> GenerateAttachmentSummaryAsync(string fileName, byte[] fileContent, string contentType)
+        public async Task<AttachmentSummaryResponse> GenerateAttachmentSummaryAsync(AttachmentSummaryRequest request)
         {
+            var fileName = request?.FileName ?? string.Empty;
+            var fileContent = request?.FileContent ?? Array.Empty<byte>();
+            var contentType = request?.ContentType ?? "application/octet-stream";
+
             try
             {
                 var extractedText = await _textExtractionService.ExtractTextAsync(fileName, fileContent, contentType);
-
                 var prompt = BuildAttachmentSystemPrompt(SelectedPromptVersion);
 
                 var attachmentText = string.IsNullOrWhiteSpace(extractedText) ? null : extractedText;
@@ -224,85 +224,19 @@ namespace Unity.GrantManager.AI
                 await LogPromptInputAsync(AttachmentSummaryPromptType, prompt, contentToAnalyze);
                 var modelOutput = await GenerateSummaryAsync(contentToAnalyze, prompt, 150);
                 await LogPromptOutputAsync(AttachmentSummaryPromptType, modelOutput);
-                return ExtractSummaryFromJson(modelOutput);
+
+                return new AttachmentSummaryResponse
+                {
+                    Summary = ExtractSummaryFromJson(modelOutput)
+                };
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error generating attachment summary for {FileName}", fileName);
-                return $"AI analysis not available for this attachment ({fileName}).";
-            }
-        }
-
-        public async Task<AttachmentSummaryResponse> GenerateAttachmentSummaryAsync(AttachmentSummaryRequest request)
-        {
-            var summary = await GenerateAttachmentSummaryAsync(
-                request?.FileName ?? string.Empty,
-                request?.FileContent ?? Array.Empty<byte>(),
-                request?.ContentType ?? "application/octet-stream");
-            return new AttachmentSummaryResponse { Summary = summary };
-        }
-
-        public async Task<string> AnalyzeApplicationAsync(string applicationContent, List<string> attachmentSummaries, string rubric, string? formFieldConfiguration = null)
-        {
-            if (string.IsNullOrEmpty(ApiKey))
-            {
-                _logger.LogWarning("{Message}", MissingApiKeyMessage);
-                return ServiceNotConfiguredMessage;
-            }
-
-            try
-            {
-                object schemaPayload = new { };
-                if (!string.IsNullOrWhiteSpace(formFieldConfiguration))
+                return new AttachmentSummaryResponse
                 {
-                    try
-                    {
-                        using var schemaDoc = JsonDocument.Parse(formFieldConfiguration);
-                        schemaPayload = schemaDoc.RootElement.Clone();
-                    }
-                    catch (JsonException ex)
-                    {
-                        _logger.LogWarning(ex, "Invalid form field configuration JSON. Using empty schema payload.");
-                    }
-                }
-
-                var dataPayload = new
-                {
-                    applicationContent
+                    Summary = $"AI analysis not available for this attachment ({fileName})."
                 };
-
-                var attachmentsPayload = attachmentSummaries?.Count > 0
-                    ? attachmentSummaries
-                        .Select((summary, index) => new
-                        {
-                            name = $"Attachment {index + 1}",
-                            summary = summary
-                        })
-                        .Cast<object>()
-                    : Enumerable.Empty<object>();
-
-                var schema = JsonSerializer.Serialize(schemaPayload, JsonLogOptions);
-                var data = JsonSerializer.Serialize(dataPayload, JsonLogOptions);
-                var attachments = JsonSerializer.Serialize(attachmentsPayload, JsonLogOptions);
-                var analysisContent = BuildAnalysisUserPrompt(
-                    SelectedPromptVersion,
-                    schema,
-                    data,
-                    attachments,
-                    rubric);
-                var systemPrompt = BuildAnalysisSystemPrompt(SelectedPromptVersion);
-
-                await LogPromptInputAsync(ApplicationAnalysisPromptType, systemPrompt, analysisContent);
-                var rawAnalysis = await GenerateSummaryAsync(analysisContent, systemPrompt, 1000);
-                await LogPromptOutputAsync(ApplicationAnalysisPromptType, rawAnalysis);
-
-                // Post-process the AI response to add unique IDs to errors and warnings
-                return AddIdsToAnalysisItems(rawAnalysis);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error analyzing application");
-                return SummaryFailedRetryMessage;
             }
         }
 
@@ -376,18 +310,25 @@ namespace Unity.GrantManager.AI
             }
         }
 
-        public async Task<string> GenerateScoresheetSectionAnswersAsync(string applicationContent, List<string> attachmentSummaries, string sectionJson, string sectionName)
+        public async Task<ScoresheetSectionResponse> GenerateScoresheetSectionAsync(ScoresheetSectionRequest request)
         {
+            var dataJson = JsonSerializer.Serialize(request.Data, JsonLogOptions);
+            var sectionJson = JsonSerializer.Serialize(request.SectionSchema, JsonLogOptions);
+
+            var attachmentSummaries = request.Attachments
+                .Select(a => $"{a.Name}: {a.Summary}")
+                .ToList();
+
             if (string.IsNullOrEmpty(ApiKey))
             {
                 _logger.LogWarning("{Message}", MissingApiKeyMessage);
-                return "{}";
+                return new ScoresheetSectionResponse();
             }
 
             try
             {
-                var attachments = attachmentSummaries?.Count > 0
-                    ? string.Join("\n- ", attachmentSummaries.Select((s, i) => $"Attachment {i + 1}: {s}"))
+                var attachments = attachmentSummaries.Count > 0
+                    ? string.Join("\n- ", attachmentSummaries.Select((summary, index) => $"Attachment {index + 1}: {summary}"))
                     : "No attachments provided.";
 
                 object sectionQuestionsPayload = sectionJson;
@@ -406,7 +347,7 @@ namespace Unity.GrantManager.AI
 
                 var sectionPayload = new
                 {
-                    name = sectionName,
+                    name = request.SectionName,
                     questions = sectionQuestionsPayload
                 };
                 var section = JsonSerializer.Serialize(sectionPayload, JsonLogOptions);
@@ -414,40 +355,23 @@ namespace Unity.GrantManager.AI
 
                 var analysisContent = BuildScoresheetSectionUserPrompt(
                     SelectedPromptVersion,
-                    applicationContent,
+                    dataJson,
                     attachments,
                     section,
                     response);
-
                 var systemPrompt = BuildScoresheetSectionSystemPrompt(SelectedPromptVersion);
 
                 await LogPromptInputAsync(ScoresheetSectionPromptType, systemPrompt, analysisContent);
                 var modelOutput = await GenerateSummaryAsync(analysisContent, systemPrompt, 2000);
                 await LogPromptOutputAsync(ScoresheetSectionPromptType, modelOutput);
-                return modelOutput;
+
+                return ParseScoresheetSectionResponse(modelOutput);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error generating scoresheet section answers for section {SectionName}", sectionName);
-                return "{}";
+                _logger.LogError(ex, "Error generating scoresheet section answers for section {SectionName}", request.SectionName);
+                return new ScoresheetSectionResponse();
             }
-        }
-
-        public async Task<ScoresheetSectionResponse> GenerateScoresheetSectionAnswersAsync(ScoresheetSectionRequest request)
-        {
-            var dataJson = JsonSerializer.Serialize(request.Data, JsonLogOptions);
-            var sectionJson = JsonSerializer.Serialize(request.SectionSchema, JsonLogOptions);
-
-            var attachmentSummaries = request.Attachments
-                .Select(a => $"{a.Name}: {a.Summary}")
-                .ToList();
-
-            var raw = await GenerateScoresheetSectionAnswersAsync(
-                dataJson,
-                attachmentSummaries,
-                sectionJson,
-                request.SectionName);
-            return ParseScoresheetSectionResponse(raw);
         }
 
         private static ApplicationAnalysisResponse ParseApplicationAnalysisResponse(string raw)
@@ -603,7 +527,7 @@ namespace Unity.GrantManager.AI
                 using var doc = JsonDocument.Parse(sectionPayloadJson);
                 if (!doc.RootElement.TryGetProperty("questions", out var questions) || questions.ValueKind != JsonValueKind.Array)
                 {
-                    return BuildScoresheetSectionOutputTemplate(version);
+                    return "{}";
                 }
 
                 var template = new Dictionary<string, object>();
@@ -630,31 +554,15 @@ namespace Unity.GrantManager.AI
 
                 if (template.Count == 0)
                 {
-                    return BuildScoresheetSectionOutputTemplate(version);
+                    return "{}";
                 }
 
                 return JsonSerializer.Serialize(template, JsonLogOptions);
             }
             catch (JsonException)
             {
-                return BuildScoresheetSectionOutputTemplate(version);
+                return "{}";
             }
-        }
-
-        private static string BuildScoresheetSectionOutputTemplate(string version)
-        {
-            if (TryGetPromptTemplate(version, ScoresheetOutputTemplateName, out var template))
-            {
-                return template;
-            }
-
-            if (string.Equals(version, PromptVersionV0, StringComparison.OrdinalIgnoreCase))
-            {
-                return DefaultScoresheetOutputTemplate;
-            }
-
-            throw new InvalidOperationException(
-                $"Missing required prompt template '{ScoresheetOutputTemplateName}.txt' for prompt version '{version}'.");
         }
 
         private async Task LogPromptInputAsync(string promptType, string? systemPrompt, string userPrompt)
@@ -827,28 +735,17 @@ namespace Unity.GrantManager.AI
             string version,
             string schema,
             string data,
-            string attachments,
-            string? rubric)
+            string attachments)
         {
+            var userTemplate = GetRequiredPromptTemplate(version, AnalysisUserTemplateName);
             var replacements = new Dictionary<string, string>
             {
                 ["SCHEMA"] = schema,
                 ["DATA"] = data,
-                ["ATTACHMENTS"] = attachments,
-                ["RUBRIC"] = ResolveAnalysisRubric(rubric, version)
+                ["ATTACHMENTS"] = attachments
             };
 
             return RenderPromptTemplate(version, AnalysisUserTemplateName, replacements);
-        }
-
-        private static string ResolveAnalysisRubric(string? providedRubric, string version)
-        {
-            if (!string.IsNullOrWhiteSpace(providedRubric))
-            {
-                return providedRubric;
-            }
-
-            return GetRequiredPromptTemplate(version, AnalysisRubricTemplateName);
         }
 
         private static string BuildAttachmentSystemPrompt(string version)

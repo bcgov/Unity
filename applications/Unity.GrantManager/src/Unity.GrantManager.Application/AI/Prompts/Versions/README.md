@@ -20,7 +20,7 @@ Current templates:
 - `attachment.rules.txt` (optional, when `{{RULES}}` is used)
 - `scoresheet.system.txt`
 - `scoresheet.user.txt`
-- `scoresheet.output.txt`
+- `scoresheet.output.txt` (optional, when `{{OUTPUT}}` is used)
 - `scoresheet.rules.txt` (optional, when `{{RULES}}` is used)
 
 Placeholders:
