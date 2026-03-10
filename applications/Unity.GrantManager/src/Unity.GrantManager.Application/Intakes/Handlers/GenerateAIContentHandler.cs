@@ -328,8 +328,8 @@ namespace Unity.GrantManager.Intakes.Handlers
 
         private JsonElement BuildAnalysisDataPayload(Application application, ApplicationFormSubmission? formSubmission)
         {
-            var fallbackPayload = BuildFallbackPromptDataPayload(application, null);
-            if (TryBuildPromptDataValues(formSubmission, out var values))
+            var fallbackPayload = BuildFallbackPromptDataPayload(application);
+            if (TryBuildPromptDataValues(application.Id, formSubmission, out var values))
             {
                 return JsonSerializer.SerializeToElement(values);
             }
@@ -337,7 +337,7 @@ namespace Unity.GrantManager.Intakes.Handlers
             return JsonSerializer.SerializeToElement(fallbackPayload);
         }
 
-        private static object BuildFallbackPromptDataPayload(Application application, string? renderedFormHtml)
+        private static object BuildFallbackPromptDataPayload(Application application)
         {
             var notSpecified = "Not specified";
             return new
@@ -352,10 +352,7 @@ namespace Unity.GrantManager.Intakes.Handlers
                 community = application.Community ?? notSpecified,
                 project_start_date = application.ProjectStartDate,
                 project_end_date = application.ProjectEndDate,
-                submission_date = application.SubmissionDate,
-                form_submission_content = string.IsNullOrWhiteSpace(renderedFormHtml)
-                    ? "Form submission content not available"
-                    : renderedFormHtml
+                submission_date = application.SubmissionDate
             };
         }
 
@@ -452,8 +449,8 @@ namespace Unity.GrantManager.Intakes.Handlers
 
         private JsonElement BuildScoresheetDataPayload(Application application, ApplicationFormSubmission? formSubmission)
         {
-            var fallbackPayload = BuildFallbackPromptDataPayload(application, formSubmission?.RenderedHTML);
-            if (TryBuildPromptDataValues(formSubmission, out var values))
+            var fallbackPayload = BuildFallbackPromptDataPayload(application);
+            if (TryBuildPromptDataValues(application.Id, formSubmission, out var values))
             {
                 return JsonSerializer.SerializeToElement(values);
             }
@@ -461,7 +458,7 @@ namespace Unity.GrantManager.Intakes.Handlers
             return JsonSerializer.SerializeToElement(fallbackPayload);
         }
 
-        private bool TryBuildPromptDataValues(ApplicationFormSubmission? formSubmission, out Dictionary<string, JsonElement> values)
+        private bool TryBuildPromptDataValues(Guid applicationId, ApplicationFormSubmission? formSubmission, out Dictionary<string, JsonElement> values)
         {
             values = new Dictionary<string, JsonElement>(StringComparer.OrdinalIgnoreCase);
             if (string.IsNullOrWhiteSpace(formSubmission?.Submission))
@@ -482,7 +479,9 @@ namespace Unity.GrantManager.Intakes.Handlers
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Failed to parse form submission JSON for prompt payload generation.");
+                _logger.LogWarning(ex,
+                    "Failed to parse form submission JSON for prompt payload generation for application {ApplicationId}.",
+                    applicationId);
                 return false;
             }
         }

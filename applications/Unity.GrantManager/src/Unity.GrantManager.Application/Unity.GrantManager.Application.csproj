@@ -50,6 +50,7 @@
   <ItemGroup>
     <Content Include="AI\Prompts\Versions\**\*.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
     </Content>
   </ItemGroup>
 

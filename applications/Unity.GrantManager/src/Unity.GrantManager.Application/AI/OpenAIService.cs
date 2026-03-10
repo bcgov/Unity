@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -23,7 +24,7 @@ namespace Unity.GrantManager.AI
         private const string ScoresheetSectionPromptType = "ScoresheetSection";
         private const string PromptVersionV0 = "v0";
         private const string PromptVersionV1 = "v1";
-        private const string PromptTemplatesFolder = "AI\\Prompts\\Versions";
+        private static readonly string PromptTemplatesFolder = Path.Combine("AI", "Prompts", "Versions");
         private const string AnalysisSystemTemplateName = "analysis.system";
         private const string AnalysisUserTemplateName = "analysis.user";
         private const string AttachmentSystemTemplateName = "attachment.system";
@@ -53,7 +54,7 @@ namespace Unity.GrantManager.AI
                 [PromptVersionV0] = PromptVersionV0,
                 [PromptVersionV1] = PromptVersionV1
             };
-        private static readonly Dictionary<string, string> PromptTemplateCache = new(StringComparer.OrdinalIgnoreCase);
+        private static readonly ConcurrentDictionary<string, string> PromptTemplateCache = new(StringComparer.OrdinalIgnoreCase);
 
         private string SelectedPromptVersion => ResolvePromptVersion(_configuration["Azure:OpenAI:PromptVersion"]);
 
@@ -352,6 +353,13 @@ namespace Unity.GrantManager.AI
                 };
                 var section = JsonSerializer.Serialize(sectionPayload, JsonLogOptions);
                 var response = BuildScoresheetSectionResponseTemplate(section);
+                if (response == "{}")
+                {
+                    _logger.LogWarning(
+                        "Skipping AI scoresheet generation for section {SectionName} because response template could not be built from section schema.",
+                        request.SectionName);
+                    return new ScoresheetSectionResponse();
+                }
 
                 var analysisContent = BuildScoresheetSectionUserPrompt(
                     SelectedPromptVersion,
@@ -797,14 +805,13 @@ namespace Unity.GrantManager.AI
                 return false;
             }
 
-            var loaded = File.ReadAllText(path);
+            var loaded = PromptTemplateCache.GetOrAdd(cacheKey, _ => File.ReadAllText(path));
             if (string.IsNullOrWhiteSpace(loaded))
             {
                 return false;
             }
 
             template = loaded;
-            PromptTemplateCache[cacheKey] = loaded;
             return true;
         }
 
