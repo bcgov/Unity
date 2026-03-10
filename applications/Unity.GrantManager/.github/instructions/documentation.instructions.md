@@ -41,3 +41,5 @@ Apply the repository-wide guidance from `../copilot-instructions.md` to all docu
 - All user-facing strings must use localization keys
 - Add new keys to `Localization/GrantManager/en.json`
 - Use descriptive, hierarchical key names (e.g., `Menu:Applications`, `Permissions:Edit`)
+- Map `BusinessException` error codes to localization keys for user-friendly error messages
+- Keep localization files organized and free of unused keys

@@ -1,5 +1,6 @@
 ---
 description: "Debugging specialist diagnosing and resolving issues in ABP Framework applications."
+tools: ['codebase', 'problems', 'usages', 'findTestFiles', 'runTests', 'terminalLastCommand']
 ---
 
 # Debugger

@@ -1,5 +1,6 @@
 ---
 description: "Expert .NET/ABP software engineer implementing features with clean, tested, production-ready code."
+tools: ['codebase', 'problems', 'usages', 'findTestFiles', 'runTests', 'githubRepo']
 ---
 
 # Software Engineer

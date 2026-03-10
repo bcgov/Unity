@@ -33,6 +33,17 @@ This project follows **ABP Framework 9.1.3** architecture and conventions. Alway
 - API Controllers: Inherit from `AbpController`
 - Repositories: Use `IRepository<TEntity, TKey>` or define custom interface when needed
 
+**ABP Base Class Injected Properties (available in ApplicationService, DomainService, AbpController):**
+- `GuidGenerator` — Use to create new entity IDs; never use `Guid.NewGuid()`
+- `Clock` — Use `Clock.Now` instead of `DateTime.Now` or `DateTime.UtcNow`
+- `CurrentUser` — Access authenticated user info (Id, Name, Email, Roles)
+- `CurrentTenant` — Access current tenant context (Id, Name)
+- `L` or `L["Key"]` — Localization shortcut
+- `ObjectMapper` — AutoMapper-based DTO/entity mapping
+- `Logger` — Structured logging via `ILogger<T>`
+- `AuthorizationService` — Programmatic authorization checks
+- `UnitOfWorkManager` — Manual unit-of-work control when needed
+
 **Naming:**
 - Domain Services: `*Manager` suffix (e.g., `AssessmentManager`, `PaymentManager`)
 - Application Services: `*AppService` suffix (e.g., `ApplicationAppService`)
@@ -43,6 +54,8 @@ This project follows **ABP Framework 9.1.3** architecture and conventions. Alway
 - All public methods MUST be `virtual` to allow overriding and extensibility
 - Async methods MUST have `Async` suffix
 - Use `protected virtual` instead of `private` for helper methods
+- Application service methods: Use simple names (`GetAsync`, `GetListAsync`, `CreateAsync`, `UpdateAsync`, `DeleteAsync`) — do NOT embed entity name (e.g., use `GetAsync` not `GetApplicationAsync`)
+- For `UpdateAsync`, pass `id` as separate parameter — do NOT include it inside the DTO
 
 **Authorization:**
 - Apply `[Authorize(PermissionName)]` attributes on application service methods
@@ -52,6 +65,33 @@ This project follows **ABP Framework 9.1.3** architecture and conventions. Alway
 - Application services MUST accept and return DTOs only, never entities
 - Use `ObjectMapper` (AutoMapper) to map between entities and DTOs
 - Define mapping profiles in `*AutoMapperProfile` class in Application project
+
+### Dependency Injection Conventions
+
+ABP auto-registers services using marker interfaces — do NOT use `services.AddScoped<>()` or `services.AddTransient<>()` manually for ABP services.
+
+- `ITransientDependency` — Registered as transient (new instance per injection)
+- `ISingletonDependency` — Registered as singleton
+- `IScopedDependency` — Registered as scoped (per-request)
+- ABP application services, domain services, and repositories are auto-registered — no manual registration needed
+
+### Entity Constructor Conventions
+
+- Always include a `protected` parameterless constructor for EF Core/ORM deserialization
+- Public constructor should accept `Guid id` from `IGuidGenerator` (never call `Guid.NewGuid()` yourself)
+- Use ABP's `Check.NotNullOrWhiteSpace()` and `Check.NotNull()` for constructor parameter validation
+- Set required properties in the constructor; use internal/private setters to protect invariants
+
+### Time Handling
+
+- ALWAYS use `Clock.Now` (from ABP base classes) or inject `IClock` — never use `DateTime.Now` or `DateTime.UtcNow`
+- This ensures consistent time handling and testability across the application
+
+### BusinessException Patterns
+
+- Use namespaced error codes: `"GrantManager:ApplicationAlreadyExists"`
+- Map error codes to localization keys in `Localization/GrantManager/en.json` for user-friendly messages
+- Use `.WithData("key", value)` to pass interpolation parameters to localized error messages
 
 ### Multi-Tenancy Patterns
 
@@ -80,6 +120,12 @@ private readonly IRepository<GrantApplication, Guid> _applicationRepository;
 - Interface goes in Domain project
 - Implementation goes in EntityFrameworkCore project
 - Inherit from `EfCoreRepository<TDbContext, TEntity, TKey>`
+
+**Repository method conventions:**
+- Always pass `CancellationToken` as the last parameter
+- Use `includeDetails: true` when you need navigation properties (default is `false`)
+- Prefer `GetAsync(id)` over `FindAsync(id)` when entity must exist (throws `EntityNotFoundException`)
+- Use `GetListAsync()` / `GetCountAsync()` for pagination; prefer `IQueryable` via `GetQueryableAsync()` for complex queries
 
 ### Domain Events
 
@@ -213,19 +259,29 @@ public class ApplicationApprovedHandler : IDistributedEventHandler<ApplicationAp
 
 ## Common Mistakes to Avoid
 
-❌ **Don't expose entities from application services** - Always return DTOs
-❌ **Don't put business logic in application services** - Use domain services (`*Manager`)
-❌ **Don't use non-virtual methods** - All public methods must be virtual
-❌ **Don't manually filter by TenantId** - ABP does this automatically
-❌ **Don't create custom repositories unnecessarily** - Use `IRepository<TEntity, TKey>` first
-❌ **Don't mix host and tenant data in same DbContext** - Separate contexts for isolation
-❌ **Don't forget [Authorize] attributes** - Always check permissions
-❌ **Don't ignore nullable warnings** - Fix them properly
-❌ **Don't use manual AJAX** - Use ABP's dynamic JavaScript proxies
-❌ **Don't create global JavaScript variables** - Wrap in IIFE pattern
-❌ **Don't hardcode strings in JavaScript** - Use `abp.localization`
-❌ **Don't bypass ABP modal manager** - Use `abp.ModalManager` for modals
-❌ **Don't forget DataTable reload** - Call `dataTable.ajax.reload()` after CRUD
+### Backend Anti-Patterns
+❌ **Don't expose entities from application services** — Always return DTOs
+❌ **Don't put business logic in application services** — Use domain services (`*Manager`)
+❌ **Don't use non-virtual methods** — All public methods must be virtual
+❌ **Don't manually filter by TenantId** — ABP does this automatically
+❌ **Don't create custom repositories unnecessarily** — Use `IRepository<TEntity, TKey>` first
+❌ **Don't mix host and tenant data in same DbContext** — Separate contexts for isolation
+❌ **Don't forget [Authorize] attributes** — Always check permissions
+❌ **Don't ignore nullable warnings** — Fix them properly
+❌ **Don't use `DateTime.Now` or `DateTime.UtcNow`** — Use `Clock.Now` or inject `IClock`
+❌ **Don't use `Guid.NewGuid()`** — Use `GuidGenerator.Create()` from ABP base classes
+❌ **Don't use `services.AddScoped<>()` for ABP services** — Use `ITransientDependency` / `IScopedDependency` marker interfaces
+❌ **Don't call application services from other services in the same module** — Extract shared logic to a domain service
+❌ **Don't inject `DbContext` directly** — Use repositories for all data access
+❌ **Don't embed entity name in application service methods** — Use `GetAsync`, not `GetApplicationAsync`
+❌ **Don't put `Id` inside update DTOs** — Pass `id` as a separate parameter to `UpdateAsync`
+
+### Frontend Anti-Patterns
+❌ **Don't use manual AJAX** — Use ABP's dynamic JavaScript proxies
+❌ **Don't create global JavaScript variables** — Wrap in IIFE pattern
+❌ **Don't hardcode strings in JavaScript** — Use `abp.localization`
+❌ **Don't bypass ABP modal manager** — Use `abp.ModalManager` for modals
+❌ **Don't forget DataTable reload** — Call `dataTable.ajax.reload()` after CRUD
 
 ## Front-End Development Patterns
 

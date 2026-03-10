@@ -1,5 +1,6 @@
 ---
 description: 'Expert TDD developer generating high-quality, fully tested, maintainable code for Unity Grant Manager following ABP Framework conventions.'
+tools: ['codebase', 'problems', 'usages', 'findTestFiles', 'runTests', 'githubRepo']
 ---
 
 # TDD Implementation Agent

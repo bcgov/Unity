@@ -14,6 +14,11 @@ Apply the repository-wide guidance from `../copilot-instructions.md` when review
 - Confirm application services return DTOs, never entities
 - Check domain services use `Manager` suffix and contain business logic
 - Verify `[Authorize]` attributes are applied with correct permission names
+- Confirm `Clock.Now` used instead of `DateTime.Now` / `DateTime.UtcNow`
+- Verify `GuidGenerator.Create()` used instead of `Guid.NewGuid()`
+- Check DI uses marker interfaces (`ITransientDependency`), not manual `services.AddScoped<>()`
+- Confirm entity constructors include `protected` parameterless constructor for EF Core
+- Verify application services don't call other application services in the same module
 
 ## Architecture & Layer Boundaries
 
@@ -33,8 +38,9 @@ Apply the repository-wide guidance from `../copilot-instructions.md` when review
 
 - Nullable reference types handled correctly — no suppression without justification
 - Async/await used consistently with `Async` suffix on method names
-- Error handling uses `BusinessException` with meaningful error codes
+- Error handling uses `BusinessException` with namespaced error codes
 - No hardcoded strings — use localization and constants
+- Repository methods pass `CancellationToken` as last parameter
 
 ## Testing
 
@@ -57,3 +63,10 @@ Apply the repository-wide guidance from `../copilot-instructions.md` when review
 - ABP dynamic proxies used instead of manual AJAX
 - DataTable reload called after CRUD operations
 - Modal Manager used for dialog management
+
+## Review Severity Levels
+
+Organize findings by severity:
+- 🔴 **Critical**: Security vulnerabilities, data leaks, architectural violations, cross-tenant data exposure
+- 🟡 **Important**: Missing tests, convention violations, performance issues, missing authorization
+- 🟢 **Suggestion**: Style improvements, refactoring opportunities, documentation gaps

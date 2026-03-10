@@ -1,5 +1,6 @@
 ---
 description: "Code reviewer ensuring ABP Framework compliance, security, and quality standards."
+tools: ['codebase', 'problems', 'usages', 'findTestFiles', 'runTests']
 ---
 
 # Reviewer

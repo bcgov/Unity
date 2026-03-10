@@ -1,5 +1,6 @@
 ---
 description: "Solution architect analyzing codebase structure, designing features, and ensuring architectural integrity."
+tools: ['codebase', 'problems', 'usages', 'fetch', 'githubRepo']
 ---
 
 # Architect

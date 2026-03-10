@@ -23,6 +23,37 @@ Apply the repository-wide guidance from `../copilot-instructions.md` to all C# c
 - API Controllers: Inherit `AbpController`
 - Repositories: Use `IRepository<TEntity, TKey>` by default; custom only when needed
 
+### Injected Properties Available in Base Classes
+
+These properties are pre-injected in `ApplicationService`, `DomainService`, and `AbpController`:
+
+| Property | Purpose |
+|---|---|
+| `GuidGenerator` | Create new entity IDs — never use `Guid.NewGuid()` |
+| `Clock` | Use `Clock.Now` — never use `DateTime.Now` or `DateTime.UtcNow` |
+| `CurrentUser` | Access authenticated user (Id, Name, Email, Roles) |
+| `CurrentTenant` | Access current tenant context (Id, Name) |
+| `L` / `L["Key"]` | Localization shortcut |
+| `ObjectMapper` | AutoMapper-based mapping |
+| `Logger` | Structured logging via `ILogger<T>` |
+| `AuthorizationService` | Programmatic authorization checks |
+| `UnitOfWorkManager` | Manual unit-of-work control |
+
+## Dependency Injection
+
+- ABP auto-registers services using marker interfaces — do NOT manually call `services.AddScoped<>()`
+- `ITransientDependency` — new instance per injection
+- `ISingletonDependency` — single shared instance
+- `IScopedDependency` — one per request
+- Application services, domain services, and repositories are auto-registered by ABP
+
+## Entity Constructors
+
+- Always include a `protected` parameterless constructor for EF Core deserialization
+- Public constructor accepts `Guid id` from `IGuidGenerator` — never call `Guid.NewGuid()`
+- Use `Check.NotNullOrWhiteSpace()` and `Check.NotNull()` for constructor validation
+- Use internal/private setters to protect domain invariants
+
 ## Naming Conventions
 
 - Follow PascalCase for public members, types, and methods
@@ -67,7 +98,9 @@ Apply the repository-wide guidance from `../copilot-instructions.md` to all C# c
 
 ## Error Handling
 
-- Use `BusinessException` for domain-level errors with error codes
+- Use `BusinessException` for domain-level errors with namespaced error codes (e.g., `"GrantManager:ApplicationNotFound"`)
+- Map error codes to localization keys for user-friendly messages
+- Use `.WithData("key", value)` for localized message interpolation
 - Catch specific exception types, not generic `Exception`
 - Ensure XML doc comments are created for public APIs
 
@@ -78,3 +111,8 @@ Apply the repository-wide guidance from `../copilot-instructions.md` to all C# c
 - Don't create custom repositories unnecessarily — use generic `IRepository<T, TKey>` first
 - Don't mix host and tenant data in same DbContext
 - Don't ignore nullable warnings — fix them properly
+- Don't use `DateTime.Now` — use `Clock.Now` or inject `IClock`
+- Don't use `Guid.NewGuid()` — use `GuidGenerator.Create()`
+- Don't use `services.AddScoped<>()` for ABP services — use marker interfaces
+- Don't call application services from within the same module — extract shared logic to a domain service
+- Don't embed entity name in app service methods — use `GetAsync`, not `GetApplicationAsync`
