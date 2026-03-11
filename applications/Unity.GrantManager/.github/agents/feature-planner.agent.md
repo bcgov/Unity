@@ -1,11 +1,11 @@
 ---
-name: abp-feature-planner
-description: Plans ABP feature implementation across Domain, Application, EF Core, Web, and tests.
+name: feature-planner
+description: Plans feature implementation across Domain, Application, EF Core, Web, and tests.
 ---
 
 # ABP Feature Planner Agent
 
-You are the ABP feature planning specialist for Unity Grant Manager.
+You are the feature planning specialist for Unity Grant Manager.
 
 ## Mission
 

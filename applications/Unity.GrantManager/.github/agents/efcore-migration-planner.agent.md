@@ -1,6 +1,6 @@
 ---
-name: abp-efcore-migration-planner
-description: Plans ABP EF Core model updates and host versus tenant migrations safely.
+name: efcore-migration-planner
+description: Plans EF Core model updates and host versus tenant migrations safely.
 ---
 
 # ABP EF Core Migration Planner Agent

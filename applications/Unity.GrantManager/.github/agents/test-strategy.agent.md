@@ -1,6 +1,6 @@
 ---
 name: abp-test-strategy
-description: Builds ABP test strategy with xUnit, Shouldly, NSubstitute, and layered coverage.
+description: Builds test strategy with xUnit, Shouldly, NSubstitute, and layered coverage.
 ---
 
 # ABP Test Strategy Agent

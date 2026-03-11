@@ -1,6 +1,6 @@
 ---
-name: abp-application-service-designer
-description: Designs ABP application contracts, DTOs, authorization, and AutoMapper mapping plans.
+name: application-service-designer
+description: Designs application contracts, DTOs, authorization, and AutoMapper mapping plans.
 ---
 
 # ABP Application Service Designer Agent

@@ -1,6 +1,6 @@
 ---
-name: unity-abp-ddd
-description: ABP DDD patterns for Unity - Entities, Aggregate Roots, Repositories, Domain Services, Domain Events. Use when creating or modifying entities, repositories, or domain services in Domain or Domain.Shared projects.
+name: unity-domain-driven-design
+description: DDD patterns for Unity - Entities, Aggregate Roots, Repositories, Domain Services, Domain Events. Use when creating or modifying entities, repositories, or domain services in Domain or Domain.Shared projects.
 ---
 
 # Unity ABP DDD Patterns

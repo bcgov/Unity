@@ -1,6 +1,6 @@
 ---
-name: abp-test-triage
-description: Diagnoses failing ABP tests, isolates root cause, and proposes minimal-risk fixes.
+name: test-triage
+description: Diagnoses failing tests, isolates root cause, and proposes minimal-risk fixes.
 ---
 
 # ABP Test Triage Agent

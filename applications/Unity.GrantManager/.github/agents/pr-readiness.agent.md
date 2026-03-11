@@ -1,6 +1,6 @@
 ---
-name: abp-pr-readiness
-description: Performs ABP-specific pre-PR quality gate checks for build, tests, layering, and policy compliance.
+name: pr-readiness
+description: Performs pre-PR quality gate checks for build, tests, layering, and policy compliance.
 ---
 
 # ABP PR Readiness Agent

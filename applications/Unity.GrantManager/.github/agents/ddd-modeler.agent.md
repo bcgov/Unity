@@ -1,5 +1,5 @@
 ---
-name: abp-ddd-modeler
+name: ddd-modeler
 description: Designs and reviews ABP DDD models, aggregates, repositories, and domain managers.
 ---
 
