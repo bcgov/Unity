@@ -202,13 +202,14 @@ class SQLGenerator:
             f"### Question:{newline}"
             f"The current date is {dt.datetime.now().strftime('%Y-%m-%d')}. "
             f"{past_context}"
-            f"Please generate sql and metadata for the following question, "
-            f"with reasoning but no explanation. "
-            f"Please enable map option only for questions involving regional districts. "
-            f"When using columns from the \"Reporting\" schema that have type/Text but contain numeric values (e.g. currency amounts), "
-            f"always cast them using ::numeric before applying any aggregation (e.g. SUM(\"m2Cost\"::numeric)). "
-            f"Similarly, cast type/Text date columns using ::date when filtering or ordering by date: "
-            f"{question}{newline}"
+            f"Please generate SQL and metadata for the following question, with reasoning but no explanation.{newline}"
+            f"Rules:{newline}"
+            f"- Enable the map visualization option only for questions involving regional districts.{newline}"
+            f"- When using columns from the \"Reporting\" schema that have type/Text but contain numeric values (e.g. currency amounts), "
+            f"always cast them using ::numeric before applying any aggregation (e.g. SUM(\"m2Cost\"::numeric)).{newline}"
+            f"- When using type/Text date columns from the \"Reporting\" schema, cast them using ::date when filtering or ordering by date.{newline}"
+            f"{newline}"
+            f"Question: {question}{newline}"
             f"### Reasoning:"
         )
         
@@ -317,7 +318,7 @@ class SQLGenerator:
         # Generate multiple completions in parallel
         async with aiohttp.ClientSession() as session:
             parsed_schema = await self.fetch_completion(f'''Please parse this schema to return only tables and columns relevant to the users question. Never add to the schema, only remove as necessary.
-Pay special attention to tables in the "Reporting" schema — if the question mentions any column name that appears in a Reporting schema table, always keep that table.
+Pay special attention to tables in the "Reporting" schema — if the question could plausibly be answered using data from a Reporting schema table, always keep that table.
                                   <question>{question}</question>
                                   <schema>{schemas}</schema>
                                   In the case that the question is NSFW or completely unrelated please return NSFW''', session, 0)
