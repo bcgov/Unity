@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using Microsoft.AspNetCore.Authorization;
 using System;
 using System.Threading.Tasks;
