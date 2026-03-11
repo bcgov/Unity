@@ -1,5 +1,11 @@
+/// <reference types="cypress" />
+
 import { BasePage } from "./BasePage";
 
+/**
+ * ApplicationDetailsPage - Page Object for the Application Details page
+ * Handles tabs, status actions, and field verification
+ */
 export class ApplicationDetailsPage extends BasePage {
   // Tab selectors
   private readonly tabs = {

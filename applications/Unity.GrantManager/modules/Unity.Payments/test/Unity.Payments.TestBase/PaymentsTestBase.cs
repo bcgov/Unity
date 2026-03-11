@@ -1,19 +1,20 @@
-﻿using System;
-using System.Threading.Tasks;
-using Microsoft.Extensions.DependencyInjection;
-using Volo.Abp;
-using Volo.Abp.Modularity;
-using Volo.Abp.Uow;
-using Volo.Abp.Testing;
+﻿using Microsoft.Extensions.DependencyInjection;
 using NSubstitute;
-using Volo.Abp.Features;
-using Volo.Abp.Users;
+using System;
+using System.Threading.Tasks;
+using Unity.GrantManager.Applications;
+using Unity.GrantManager.GrantApplications;
+using Unity.Notifications.EmailGroups;
 using Unity.Payments.Security;
+using Volo.Abp;
+using Volo.Abp.Features;
+using Volo.Abp.Identity;
+using Volo.Abp.Modularity;
 using Volo.Abp.SettingManagement;
 using Volo.Abp.TenantManagement;
-using Unity.GrantManager.Applications;
-using Volo.Abp.Identity;
-using Unity.Notifications.EmailGroups;
+using Volo.Abp.Testing;
+using Volo.Abp.Uow;
+using Volo.Abp.Users;
 
 namespace Unity.Payments;
 
@@ -72,9 +73,10 @@ public abstract class PaymentsTestBase<TStartupModule> : AbpIntegratedTest<TStar
         featureMock.IsEnabledAsync(Arg.Any<string>()).Returns(true);
         services.AddSingleton(featureMock);
 
-        // Mock the repositories to avoid database access
+        // Mock the repositories and services to avoid database access
         services.AddSingleton(Substitute.For<IApplicationRepository>());
         services.AddSingleton(Substitute.For<IApplicationFormRepository>());
+        services.AddSingleton(Substitute.For<IApplicationLinksService>());
 
         var externalUserLookupMock = Substitute.For<FakeExternalUserLookupServiceProvider>();
         services.AddSingleton<IExternalUserLookupServiceProvider>(externalUserLookupMock);
@@ -82,8 +84,8 @@ public abstract class PaymentsTestBase<TStartupModule> : AbpIntegratedTest<TStar
         var currentUser = Substitute.For<ICurrentUser>();
         currentUser.Id.Returns(ci => CurrentUserId);
         services.AddSingleton(currentUser);
-        
-                // We add a mock of this service to satisfy the IOC without having to spin up a whole settings table
+
+        // We add a mock of this service to satisfy the IOC without having to spin up a whole settings table
         var settingManagerMock = Substitute.For<ISettingManager>();
         // Mock required calls
         services.AddSingleton(settingManagerMock);

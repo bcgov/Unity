@@ -17,6 +17,7 @@ using Unity.GrantManager.Integrations.Orgbook;
 using Unity.Modules.Shared;
 using Unity.Modules.Shared.Utils;
 using Unity.Payments.Domain.Suppliers;
+using Unity.GrantManager.Permissions;
 using Unity.Payments.Integrations.Cas;
 using Unity.Payments.Suppliers;
 using Volo.Abp.DependencyInjection;
@@ -195,7 +196,8 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToList() ?? [];
 
-        if (modifiedSummaryFields.Contains(nameof(UpdateApplicantSummaryDto.RedStop), StringComparer.OrdinalIgnoreCase))
+        if (modifiedSummaryFields.Contains(nameof(UpdateApplicantSummaryDto.RedStop), StringComparer.OrdinalIgnoreCase)
+            && await AuthorizationService.IsGrantedAsync(GrantApplicationPermissions.Applicants.EditRedStop))
         {
             applicant.RedStop = input.Data.RedStop;
         }

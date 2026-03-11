@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using Volo.Abp.AspNetCore.Mvc.UI.Bundling;
 using System;
 using System.Threading.Tasks;
+using System.Globalization;
 using Unity.GrantManager.Assessments;
 using Unity.Flex.Domain.ScoresheetInstances;
 using Unity.Flex.Domain.Scoresheets;
@@ -13,6 +14,7 @@ using System.Linq;
 using Unity.Flex.Worksheets;
 using Unity.Flex;
 using Unity.Flex.Scoresheets.Enums;
+using Unity.GrantManager.AI;
 using Unity.GrantManager.Applications;
 using System.Text.Json;
 
@@ -73,8 +75,12 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentScoresWidget
                     // First, populate human answers
                     ResolveAnswers(scoresheetInstance, scoresheetDto, humanAnsweredQuestions);
 
-                    // Then, populate AI answers for questions without human answers
-                    ResolveAiAnswers(aiAnswers, scoresheetDto, humanAnsweredQuestions);
+                    // Only show AI suggestions on the dedicated AI assessment row.
+                    // Human assessments (including clones) show only their own saved answers.
+                    if (assessment.IsAiAssessment)
+                    {
+                        ResolveAiAnswers(aiAnswers, scoresheetDto, humanAnsweredQuestions);
+                    }
                 }
             }
             AssessmentScoresWidgetViewModel model = new()
@@ -113,11 +119,11 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentScoresWidget
             {
                 question.IsHumanConfirmed = false; // Mark as AI generated
 
-                // Handle enhanced AI response format with answer, citation, and confidence
+                // Handle AI response format with answer, rationale, and confidence.
                 if (aiAnswerValue.ValueKind == JsonValueKind.Object)
                 {
-                    // New format with citations and confidence scores
-                    if (aiAnswerValue.TryGetProperty("answer", out var answerProp))
+                    // New format with rationale and confidence
+                    if (aiAnswerValue.TryGetProperty(AIJsonKeys.Answer, out var answerProp))
                     {
                         var rawAnswer = answerProp.ToString();
 
@@ -131,14 +137,13 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentScoresWidget
                             question.Answer = rawAnswer;
                         }
                     }
-                    if (aiAnswerValue.TryGetProperty("citation", out var citationProp))
+                    if (aiAnswerValue.TryGetProperty(AIJsonKeys.Rationale, out var rationaleProp))
                     {
-                        question.AICitation = citationProp.ToString();
+                        question.AICitation = rationaleProp.ToString();
                     }
-                    if (aiAnswerValue.TryGetProperty("confidence", out var confidenceProp) &&
-                        confidenceProp.TryGetInt32(out var confidenceScore))
+                    if (aiAnswerValue.TryGetProperty(AIJsonKeys.Confidence, out var confidenceProp))
                     {
-                        question.AIConfidence = confidenceScore;
+                        question.AIConfidence = ParseAiConfidence(confidenceProp);
                     }
                 }
                 else
@@ -236,6 +241,35 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentScoresWidget
             }
 
             return numericAnswer;
+        }
+
+        private static int ParseAiConfidence(JsonElement confidenceProp)
+        {
+            int confidence = 0;
+
+            if (confidenceProp.ValueKind == JsonValueKind.Number)
+            {
+                if (confidenceProp.TryGetInt32(out var intValue))
+                {
+                    confidence = intValue;
+                }
+                else if (confidenceProp.TryGetDouble(out var doubleValue))
+                {
+                    confidence = (int)Math.Round(doubleValue, MidpointRounding.AwayFromZero);
+                }
+            }
+            else if (confidenceProp.ValueKind == JsonValueKind.String)
+            {
+                var raw = confidenceProp.GetString();
+                if (!int.TryParse(raw, out confidence) &&
+                    double.TryParse(raw, NumberStyles.Float, CultureInfo.InvariantCulture, out var parsedDouble))
+                {
+                    confidence = (int)Math.Round(parsedDouble, MidpointRounding.AwayFromZero);
+                }
+            }
+
+            var rounded = (int)Math.Round(confidence / 5.0, MidpointRounding.AwayFromZero) * 5;
+            return Math.Clamp(rounded, 0, 100);
         }
 
     }

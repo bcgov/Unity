@@ -1,6 +1,7 @@
 ﻿using System.Threading.Tasks;
 using Unity.Payments.Domain.PaymentRequests;
 using System;
+using System.Linq;
 using Volo.Abp.Application.Services;
 using System.Collections.Generic;
 using Volo.Abp.TenantManagement;
@@ -8,7 +9,7 @@ using Volo.Abp.MultiTenancy;
 using Volo.Abp.Uow;
 using Microsoft.Extensions.Logging;
 using Unity.Payments.Integrations.Cas;
-using System.Linq;
+using Unity.Payments.Codes;
 using Unity.Payments.RabbitMQ.QueueMessages;
 using Unity.Notifications.Integrations.RabbitMQ;
 
@@ -138,6 +139,11 @@ namespace Unity.Payments.PaymentRequests
                         paymentReqeust = await _paymentRequestsRepository.GetAsync(PaymentRequestId);
                         if (paymentReqeust != null)
                         {
+                            if(paymentReqeust.InvoiceStatus == CasPaymentRequestStatus.NotFound && result.InvoiceStatus == CasPaymentRequestStatus.NotFound)
+                            {
+                                result.InvoiceStatus = CasPaymentRequestStatus.NotFound+"2";
+                            }
+
                             paymentReqeust.SetInvoiceStatus(result.InvoiceStatus ?? "");
                             paymentReqeust.SetPaymentStatus(result.PaymentStatus ?? "");
                             paymentReqeust.SetPaymentDate(result.PaymentDate ?? "");

@@ -269,6 +269,24 @@ describe("Send an email", () => {
   });
 
   it("Open Emails tab", () => {
+    // Dismiss any swal2 modal that may be covering the tab
+    cy.get("body").then(($body) => {
+      if ($body.find(".swal2-container").length > 0) {
+        cy.get(".swal2-container").then(($swal) => {
+          if ($swal.find(".swal2-close").length > 0) {
+            cy.get(".swal2-close").click({ force: true });
+          } else if ($swal.find(".swal2-confirm").length > 0) {
+            cy.get(".swal2-confirm").click({ force: true });
+          } else {
+            cy.get("body").type("{esc}", { force: true });
+          }
+        });
+        cy.get(".swal2-container", { timeout: STANDARD_TIMEOUT }).should(
+          "not.exist",
+        );
+      }
+    });
+
     cy.get("#emails-tab", { timeout: STANDARD_TIMEOUT })
       .should("exist")
       .should("be.visible")

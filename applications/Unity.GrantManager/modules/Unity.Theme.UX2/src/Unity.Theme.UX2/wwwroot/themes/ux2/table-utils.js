@@ -185,6 +185,10 @@ if ($.fn.dataTable !== undefined && $.fn.dataTable.Api) {
  * @param {string} [options.externalSearchId='search'] - ID of external search input element
  * @param {boolean} [options.disableColumnSelect=false] - Disable column visibility toggle
  * @param {Array<Object>} [options.listColumnDefs] - Additional columnDefs configurations
+ * @param {Function} [options.onStateSaveParams] - Hook for additional state save parameters
+ * @param {Function} [options.onStateLoadParams] - Hook for additional state load parameters
+ * @param {Function} [options.onStateLoaded] - Hook called after state is loaded
+ * @param {boolean} [options.fixedHeaders=false] - Enable fixed header with dynamically sized scrollable body
  * @returns {DataTable} Initialized DataTable API instance
  *
  * @example
@@ -216,6 +220,11 @@ function initializeDataTable(options) {
         externalSearchId = 'search',
         disableColumnSelect = false,
         listColumnDefs,
+        onStateSaveParams, //External hooks for save/load/loaded
+        onStateLoadParams,
+        onStateLoaded,
+        fixedHeaders = false,
+        lengthMenu = [25, 50, 75, 100, -1]
     } = options;
 
     // Process columns and visibility
@@ -232,8 +241,8 @@ function initializeDataTable(options) {
     // Add loading class initially
     dt.closest('.dt-container, .dataTables_wrapper').addClass('dt-loading');
 
-    // Create the DataTable
-    let iDt = new DataTable(dt, {
+    // Create the DataTable Configuration object
+    let configuration = {
         serverSide: serverSideEnabled,
         paging: pagingEnabled,
         order: defaultSortOrder,
@@ -261,16 +270,23 @@ function initializeDataTable(options) {
         language: {
             ...languageSetValues,
             lengthMenu: 'Show _MENU_ _ENTRIES_',
+            lengthLabels: {
+                '-1': 'All'
+            }
         },
+        lengthMenu: lengthMenu,
         layout: {
             topStart: { search: { placeholder: 'Search' } },
             topEnd: { buttons: updatedActionButtons },
             bottomStart: null,
             bottomEnd: null,
             bottom1: {
-                info: { text: '_START_-_END_ of _TOTAL_' },
-                paging: { buttons: 3, boundaryNumbers: true, firstLast: false },
-                pageLength: { menu: [10, 25, 50, 100] },
+                className: 'dt-unity-footer d-md-flex col-md',
+                features: [{
+                    info: { text: '_START_-_END_ of _TOTAL_' },
+                    paging: { buttons: 3, boundaryNumbers: true, firstLast: true },
+                    pageLength: {},
+                }]
             },
         },
         initComplete: function () {
@@ -314,14 +330,40 @@ function initializeDataTable(options) {
         processing: true,
         stateSave: true,
         stateDuration: 0,
+        externalSearchInputId: `#${externalSearchId}`,
+        onStateSaveParams,
+        onStateLoadParams,
+        onStateLoaded,
         stateSaveParams: function (settings, data) {
             let externalSearch = $(settings.oInit.externalSearchInputId);
             if (externalSearch.length) data.externalSearch = externalSearch.val();
+            
+            // Call custom stateSave hook if provided
+            if (typeof settings.oInit.onStateSaveParams === 'function') {
+                settings.oInit.onStateSaveParams(settings, data);
+            }
         },
         stateLoadParams: function (settings, data) {
-            if (data.externalSearch) {
+            if (data?.externalSearch) {
                 let externalSearch = $(settings.oInit.externalSearchInputId);
                 if (externalSearch.length) externalSearch.val(data.externalSearch);
+            }
+
+            // Validate length value to prevent invalid state issues after updates to lengthMenu options
+            const availableLengths = Array.isArray(settings?.aLengthMenu)
+                ? settings.aLengthMenu
+                : [];
+
+            if (data && availableLengths.length > 0) {
+                const currentLength = data.length;
+                if (currentLength === undefined || !availableLengths.includes(currentLength)) {
+                    data.length = availableLengths[0];
+                }
+            }
+
+            // Call custom stateLoad hook if provided
+            if (typeof settings.oInit.onStateLoadParams === 'function') {
+                settings.oInit.onStateLoadParams(settings, data);
             }
         },
         stateLoaded: function (settings, data) {
@@ -340,6 +382,10 @@ function initializeDataTable(options) {
                         if (typeof settings._filterRow._updateButtonState === 'function') {
                             settings._filterRow._updateButtonState();
                         }
+                        // Trigger a redraw so the stored filters are reflected. Without this the
+                        // filter values are restored by default via index, but possibly in the wrong
+                        // column indexes, which leads to incorrectly filtered data (AB#31364)
+                        dtApi.draw();
                     }
                 }, 100);
             }
@@ -360,8 +406,19 @@ function initializeDataTable(options) {
                     }
                 }
             }
+
+            // Call custom loaded hook if provided
+            if (typeof settings.oInit.onStateLoaded === 'function') {
+                settings.oInit.onStateLoaded(dtApi, data);
+            }
         },
-    });
+    };
+
+    if (fixedHeaders) {
+        configuration.scrollY = 'calc(100vh - 325px)'; // Initial value – ScrollResize plugin will recalculate dynamically
+    }
+
+    let iDt = new DataTable(dt, configuration);
 
     // Initialize FilterRow plugin
     initializeFilterRowPlugin(iDt);
@@ -379,6 +436,11 @@ function initializeDataTable(options) {
     iDt.on('user-select', function (e, dt, type, cell, originalEvent) {
         if (originalEvent.target.nodeName.toLowerCase() === 'a') e.preventDefault();
     });
+
+    // Initialize ScrollResize plugin for dynamic scroll body sizing
+    if (fixedHeaders && DataTable.ScrollResize) {
+        iDt.settings()[0]._scrollResize = new DataTable.ScrollResize(iDt);
+    }
 
     return iDt;
 }
@@ -473,14 +535,22 @@ function restoreColumnFilterState(columnHeader, displayIdx, settings, data, dtAp
     let savedCol = data.columns[originalIdx];
     let searchValue = savedCol?.search?.search || '';
 
-    let $filterCell = $filterCells.eq(displayIdx);
-    let $input = $filterCell.find('input.custom-filter-input');
+    // When filtering, cells only exist for visible columns. The displayIdx could map
+    // incorrectly when the column is then hidden or reordered. Look up directly by
+    // the data-column-name rather than the index provided.
+    let $input = $filterCells
+        .find('input.custom-filter-input')
+        .filter(function () {
+            return $(this).attr('data-column-name') === colName;
+        });
 
     if ($input.length && searchValue) {
         $input.val(searchValue);
-        let currentColIdx = dtApi.column(displayIdx + ':visible').index();
-        if (currentColIdx !== undefined && currentColIdx !== -1) {
-            dtApi.column(currentColIdx).search(searchValue);
+
+        // Resolve the column by name rather than index to avoid reordering issues.
+        let col = dtApi.column(`${colName}:name`);
+        if (col.length) {
+            col.search(searchValue);
         }
     }
 }
@@ -594,37 +664,6 @@ function moveButtonsToContainer(iDt, updatedActionButtons, dynamicButtonContaine
     }
 }
 
-// ============================================================================
-// ======= RESIZE SCROLL BODY =================================================
-/**
- * Dynamically adjusts the DataTable scroll body height based on container size.
- * Leaves room for headers, filters, and paging.
- * @param {DataTable.Api} iDt
- */
-function resizeDataTableScrollBody(iDt) {
-    if (!iDt?.table?.()?.node) return;
-
-    const $wrapper = $(iDt.table().container());
-    const $scrollBody = $wrapper.find('.dt-scroll-body');
-    if (!$scrollBody.length) return;
-
-    let reservedHeight = 0;
-    reservedHeight += $wrapper.find('.dt-scroll-head').outerHeight(true) || 0;
-    reservedHeight += $wrapper.find('.dt-top, .dataTables_length, .dataTables_filter').outerHeight(true) || 0;
-    reservedHeight += $wrapper.find('.dt-bottom, .dataTables_paginate, .dataTables_info').outerHeight(true) || 0;
-    reservedHeight += 8; // buffer
-
-    const $container = $wrapper.closest('.dt-container, .dataTables_wrapper');
-    if (!$container.length) return;
-    const containerHeight = $container.innerHeight();
-    if (!containerHeight) return;
-
-    const newHeight = Math.max(containerHeight - reservedHeight, 150);
-    $scrollBody.css({ height: newHeight + 'px', maxHeight: newHeight + 'px' });
-
-    try { iDt.columns.adjust(); } catch (e) { console.warn('resizeDataTableScrollBody: columns.adjust failed', e); }
-}
-
 
 // ============================================================================
 // Other previously existing functions (init, getSelectColumn, assignColumnIndices, etc.) remain unchanged
@@ -647,7 +686,7 @@ function createNumberFormatter() {
  */
 function addDataTableFixCSS() {
     if (!$('#dt-column-fix-css').length) {
-        $('<style id="dt-column-fix-css"> dataTable { width: 100%; } .dt-loading { visibility: hidden; } .dt-scroll-body { min-height: 200px; max-height: 90%; } </style>').appendTo('head');
+        $('<style id="dt-column-fix-css"> table.dataTable { width: 100%; } .dt-loading { visibility: hidden; } .dt-scroll-body { min-height: 200px; } </style>').appendTo('head');
     }
 }
 

@@ -48,6 +48,12 @@ namespace Unity.GrantManager.Permissions.GrantApplications
             applicatPermissions.AddChild(GrantApplicationPermissions.Applicants.ViewList, L("Permission:GrantApplicationManagement.Applicants.ViewList"));
             applicatPermissions.AddChild(GrantApplicationPermissions.Applicants.Edit, L("Permission:GrantApplicationManagement.Applicants.Edit"));
             applicatPermissions.AddChild(GrantApplicationPermissions.Applicants.AssignApplicant, L("Permission:GrantApplicationManagement.Applicants.AssignApplicant"));
+            var applicantInfoPermissions = applicatPermissions.AddChild(
+                GrantApplicationPermissions.Applicants.ApplicantInfoDefault,
+                L("Permission:GrantApplicationManagement.Applicants.ApplicantInfo"));
+            applicantInfoPermissions.AddChild(
+                GrantApplicationPermissions.Applicants.EditRedStop,
+                L("Permission:GrantApplicationManagement.Applicants.ApplicantInfo.EditRedStop"));
 
             // Assignment
             var assignmentPermissions = grantApplicationPermissionsGroup.AddPermission(GrantApplicationPermissions.Assignments.Default, L("Permission:GrantApplicationManagement.Assignments.Default"));
@@ -130,6 +136,11 @@ namespace Unity.GrantManager.Permissions.GrantApplications
                 GrantApplicationPermissions.AI.AttachmentSummary.Default,
                 L("Permission:AI.AttachmentSummary"))
                 .RequireFeatures("Unity.AI.AttachmentSummaries");
+
+            aiPermissionsGroup.AddPermission(
+                GrantApplicationPermissions.AI.ScoringAssistant.Default,
+                L("Permission:AI.ScoringAssistant"))
+                .RequireFeatures("Unity.AI.Scoring");
         }
 
         private static LocalizableString L(string name)

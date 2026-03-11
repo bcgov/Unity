@@ -102,6 +102,17 @@
                 </small>
             </div>
 
+            <div id="div-dynamic-columns-warning"
+                 class="dynamic-columns-warning report-config-btn-height-fix d-flex align-items-center dynamic-columns-div-hidden"
+                 data-bs-toggle="tooltip"
+                 data-bs-placement="top"
+                 data-bs-original-title="A DataGrid has dynamic columns but no matching field mapping was found in the form submission schema. Map the worksheet DataGrid to a CHEFS form field to resolve the individual columns.">
+                <i class="fa fa-info-circle text-info me-2" style="font-size: 1.2em;"></i>
+                <small class="text-info">
+                    <strong>Unmapped DataGrid</strong>
+                </small>
+            </div>
+
             @if (await PermissionChecker.IsGrantedAsync(ReportingPermissions.Configuration.Delete))
             {
                 <abp-button id="btn-delete-report-configuration"

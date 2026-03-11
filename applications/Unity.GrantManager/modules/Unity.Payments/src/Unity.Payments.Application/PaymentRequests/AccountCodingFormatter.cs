@@ -43,5 +43,24 @@ namespace Unity.Payments.PaymentRequests
 
             return string.Empty;
         }
+
+        public static string FormatWithDescription(AccountCoding? accountCoding)
+        {
+            if (accountCoding == null)
+            {
+                return string.Empty;
+            }
+
+            if (accountCoding.Responsibility != null
+                && accountCoding.ServiceLine != null
+                && accountCoding.Stob != null
+                && accountCoding.MinistryClient != null
+                && accountCoding.ProjectNumber != null)
+            {
+                return $"{accountCoding.MinistryClient}.{accountCoding.Responsibility}.{accountCoding.ServiceLine}.{accountCoding.Stob}.{accountCoding.ProjectNumber}.{AccountDistributionPostfix} {accountCoding.Description}";
+            }
+
+            return string.Empty;
+        }
     }
 }

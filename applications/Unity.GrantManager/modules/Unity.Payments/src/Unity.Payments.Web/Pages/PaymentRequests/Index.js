@@ -164,7 +164,8 @@ $(function () {
         languageSetValues: {},
         dataTableName: 'PaymentRequestListTable',
         dynamicButtonContainerId: 'dynamicButtonContainerId',
-        useNullPlaceholder: true
+        useNullPlaceholder: true,
+        fixedHeaders: true
     });
 
     // Attach the draw event to add custom row coloring logic
@@ -186,10 +187,16 @@ $(function () {
 
     payment_approve_buttons.disable();
     payment_check_status_buttons.disable();
+    history_button.disable();
     dataTable.on('search.dt', () => handleSearch());
 
-    function checkAllRowsHaveState(state) {
-        return dataTable.rows('.selected').data().toArray().every(row => row.status === state);
+    function checkAllRowsHaveState(states) {
+        const allowedStates = Array.isArray(states) ? states : [states];
+        return dataTable
+            .rows('.selected')
+            .data()
+            .toArray()
+            .every(row => allowedStates.includes(row.status));
     }
 
     $('#PaymentRequestListTable').on('click', 'tr td', function (e) {
@@ -256,13 +263,13 @@ $(function () {
     }
 
     function checkActionButtons() {
-        let isOnlySubmittedToCas = checkAllRowsHaveState('Submitted');
-        if (isOnlySubmittedToCas) {
+        let isInSentState = checkAllRowsHaveState(['Submitted', 'FSB']);
+        if (isInSentState) {
             payment_check_status_buttons.enable();
         } else {
             payment_check_status_buttons.disable();
         }
-        if (dataTable.rows({ selected: true }).indexes().length > 0 && !isOnlySubmittedToCas) {
+        if (dataTable.rows({ selected: true }).indexes().length > 0 && !isInSentState) {
             if (abp.auth.isGranted('PaymentsPermissions.Payments.L1ApproveOrDecline')
                 || abp.auth.isGranted('PaymentsPermissions.Payments.L2ApproveOrDecline')
                 || abp.auth.isGranted('PaymentsPermissions.Payments.L3ApproveOrDecline')) {
@@ -272,15 +279,11 @@ $(function () {
                 payment_approve_buttons.disable();
             }
 
-            if (dataTable.rows({ selected: true }).indexes().length == 1) {
-                history_button.enable();
-            } else {
-                history_button.disable();
-            }
+            checkEnableHistoryButton(dataTable, history_button);
         }
         else {
             payment_approve_buttons.disable();
-            history_button.enable();
+            checkEnableHistoryButton(dataTable, history_button);
         }
     }
 
@@ -486,9 +489,11 @@ $(function () {
             title: l('ApplicationPaymentListTable:RequestedOn'),
             name: 'requestedOn',
             data: 'creationTime',
-            className: 'data-table-header',
+            className: 'data-table-header text-nowrap',
             index: columnIndex,
-            render: DataTable.render.date('YYYY-MM-DD', abp.localization.currentCulture.name)
+            render: function (data, type) {
+                return DateUtils.formatUtcDateToLocal(data, type);
+            }
         };
     }
     function getUpdatedOnColumn(columnIndex) {
@@ -496,9 +501,11 @@ $(function () {
             title: l('ApplicationPaymentListTable:UpdatedOn'),
             name: 'updatedOn',
             data: 'lastModificationTime',
-            className: 'data-table-header',
+            className: 'data-table-header text-nowrap',
             index: columnIndex,
-            render: DataTable.render.date('YYYY-MM-DD', abp.localization.currentCulture.name)
+            render: function(data, type) {
+                return DateUtils.formatUtcDateToLocal(data, type);
+            }
         };
     }
     function getPaidOnColumn(columnIndex) {
@@ -506,7 +513,7 @@ $(function () {
             title: l('ApplicationPaymentListTable:PaidOn'),
             name: 'paidOn',
             data: 'paymentDate',
-            className: 'data-table-header',
+            className: 'data-table-header text-nowrap',
             index: columnIndex,
             render: function (data) {
                 if (!data) return null;
@@ -575,11 +582,12 @@ $(function () {
             title: l(`ApplicationPaymentListTable:L${level}ApprovalDate`),
             name: `l${level}ApprovalDate`,
             data: 'expenseApprovals',
-            className: 'data-table-header',
+            className: 'data-table-header text-nowrap',
             index: columnIndex,
-            render: function (data) {
+            render: function (data, type) {
                 let approval = getExpenseApprovalsDetails(data, level);
-                return formatDate(approval?.decisionDate);
+                const approvalDate = approval?.decisionDate;
+                return DateUtils.formatUtcDateToLocal(approvalDate, type);
             }
         };
     }
@@ -711,12 +719,6 @@ $(function () {
         return expenseApprovals.find(x => x.type == type);
     }
 
-    function formatDate(data) {
-        return data != null ? luxon.DateTime.fromISO(data, {
-            locale: abp.localization.currentCulture.name,
-        }).toUTC().toLocaleString() : null;
-    }
-
     $('#search').on('input', function () {
         let table = $('#PaymentRequestListTable').DataTable();
         table.search($(this).val()).draw();
@@ -792,6 +794,14 @@ $(function () {
 let casPaymentResponseModal = new abp.ModalManager({
     viewUrl: '../PaymentRequests/CasPaymentRequestResponse'
 });
+
+function checkEnableHistoryButton(dataTable, history_button) {
+    if (dataTable.rows({ selected: true }).indexes().length == 1) {
+        history_button.enable();
+    } else {
+        history_button.disable();
+    }
+}
 
 function openCasResponseModal(casResponse) {
     casPaymentResponseModal.open({

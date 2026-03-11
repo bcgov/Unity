@@ -267,6 +267,7 @@
                 // Toggle filter row visibility
                 $popover.find('#showFilter').on('click', function () {
                     that.dom.filterRow.toggle();
+                    that.s.dt.trigger('filterRow-visibility', [that.dom.filterRow.is(':visible')]);
                 });
 
                 // Clear all filters
@@ -389,6 +390,9 @@
                 $(externalSearchId).val('');
             }
 
+            // Clear the search input field
+            $('#search').val('');
+
             // Clear custom filter inputs
             $('.custom-filter-input').val('');
 
@@ -398,8 +402,9 @@
             // Clear order
             dt.order(initialSortOrder);
 
-            // Reload data
-            dt.ajax.reload();
+            // If we want to reset quick date range dropdown to default (last 6 months) and trigger change
+            // The change event handler will reload the table, so would need to remove ajax.reload() here
+            $('#quickDateRange').val($('#quickDateRange option[selected]').val()).trigger('change');
 
             // Update button state
             this._updateButtonState();
@@ -414,6 +419,7 @@
          */
         show: function () {
             this.dom.filterRow.show();
+            this.s.dt.trigger('filterRow-visibility', [true]);
             return this;
         },
 
@@ -423,6 +429,7 @@
          */
         hide: function () {
             this.dom.filterRow.hide();
+            this.s.dt.trigger('filterRow-visibility', [false]);
             return this;
         },
 
@@ -432,6 +439,7 @@
          */
         toggle: function () {
             this.dom.filterRow.toggle();
+            this.s.dt.trigger('filterRow-visibility', [this.dom.filterRow.is(':visible')]);
             return this;
         },
 

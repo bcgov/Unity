@@ -11,19 +11,20 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Threading.Tasks;
 using Unity.Flex.WorksheetInstances;
 using Unity.Flex.Worksheets;
 using Unity.GrantManager.Applicants;
 using Unity.GrantManager.ApplicationForms;
 using Unity.GrantManager.Applications;
+using Unity.GrantManager.AI;
 using Unity.GrantManager.Events;
 using Unity.GrantManager.Flex;
 using Unity.GrantManager.Identity;
 using Unity.GrantManager.Payments;
 using Unity.Modules.Shared;
 using Unity.Modules.Shared.Correlation;
-using Unity.Payments.Enums;
 using Unity.Payments.PaymentRequests;
 using Volo.Abp;
 using Volo.Abp.Application.Dtos;
@@ -40,19 +41,29 @@ namespace Unity.GrantManager.GrantApplications;
 public class GrantApplicationAppService(
     IApplicationManager applicationManager,
     IApplicationRepository applicationRepository,
-    IApplicationStatusRepository applicationStatusRepository,    
+    IApplicationStatusRepository applicationStatusRepository,
     IApplicationFormSubmissionRepository applicationFormSubmissionRepository,
     IApplicantRepository applicantRepository,
-    IApplicationFormRepository applicationFormRepository,    
+    IApplicationFormRepository applicationFormRepository,
     IApplicantAgentRepository applicantAgentRepository,
     IApplicantAddressRepository applicantAddressRepository,
     IApplicantSupplierAppService applicantSupplierService,
     IPaymentRequestAppService paymentRequestService)
     : GrantManagerAppService, IGrantApplicationAppService
 {
+    private static readonly JsonSerializerOptions AiAnalysisReadOptions = new()
+    {
+        PropertyNameCaseInsensitive = true
+    };
+
+    private static readonly JsonSerializerOptions AiAnalysisWriteOptions = new()
+    {
+        WriteIndented = true
+    };
+
     public async Task<PagedResultDto<GrantApplicationDto>> GetListAsync(GrantApplicationListInputDto input)
     {
-        // 1️⃣ Fetch applications with filters + paging in DB
+        // 1️ Fetch applications with filters + paging in DB
         var applications = await applicationRepository.WithFullDetailsAsync(
             input.SkipCount,
             input.MaxResultCount,
@@ -63,22 +74,17 @@ public class GrantApplicationAppService(
 
         var applicationIds = applications.Select(a => a.Id).ToList();
 
+        // 2️ Fetch payment rollup batch if feature enabled
         bool paymentsFeatureEnabled = await FeatureChecker.IsEnabledAsync(PaymentConsts.UnityPaymentsFeature);
 
-        List<PaymentDetailsDto> paymentRequests = [];
+        Dictionary<Guid, ApplicationPaymentRollupDto> paymentRollupBatch = [];
 
         if (paymentsFeatureEnabled && applicationIds.Count > 0)
         {
-            paymentRequests = await paymentRequestService.GetListByApplicationIdsAsync(applicationIds);
+            paymentRollupBatch = await paymentRequestService.GetApplicationPaymentRollupBatchAsync(applicationIds);
         }
 
-        // 2️⃣ Pre-aggregate payment amounts for O(1) lookup
-        var paymentRequestsByApplication = paymentRequests
-            .Where(pr => pr.Status == PaymentRequestStatus.Submitted)
-            .GroupBy(pr => pr.CorrelationId)
-            .ToDictionary(g => g.Key, g => g.Sum(pr => pr.Amount));
-
-        // 3️⃣ Map applications to DTOs
+        // 3️ Map applications to DTOs
         var appDtos = applications.Select(app =>
         {
             var appDto = ObjectMapper.Map<Application, GrantApplicationDto>(app);
@@ -101,19 +107,20 @@ public class GrantApplicationAppService(
             appDto.ContactCellPhone = app.ApplicantAgent?.Phone2;
             appDto.ApplicationLinks = ObjectMapper.Map<List<ApplicationLink>, List<ApplicationLinksDto>>(app.ApplicationLinks?.ToList() ?? []);
 
-            if (paymentsFeatureEnabled && paymentRequestsByApplication.Count > 0)
+            if (paymentsFeatureEnabled && paymentRollupBatch.Count > 0)
             {
+                paymentRollupBatch.TryGetValue(app.Id, out var rollup);
                 appDto.PaymentInfo = new PaymentInfoDto
                 {
                     ApprovedAmount = app.ApprovedAmount,
-                    TotalPaid = paymentRequestsByApplication.GetValueOrDefault(app.Id)
+                    TotalPaid = rollup?.TotalPaid ?? 0
                 };
             }
             return appDto;
 
         }).ToList();
 
-        // 4️⃣ Get total count using same filters
+        // 4️ Get total count using same filters
         var totalCount = await applicationRepository.GetCountAsync(
             input.SubmittedFromDate,
             input.SubmittedToDate
@@ -209,13 +216,15 @@ public class GrantApplicationAppService(
             appDto.SectorSubSectorIndustryDesc = application.Applicant.SectorSubSectorIndustryDesc;
         }
 
+        appDto.AIAnalysisData = ParseAiAnalysisData(appDto.AIAnalysis);
+
         return appDto;
     }
 
     public async Task<ApplicationForm?> GetApplicationFormAsync(Guid applicationFormId)
     {
         return await (await applicationFormRepository.GetQueryableAsync()).FirstOrDefaultAsync(s => s.Id == applicationFormId);
-    }  
+    }
 
     [Authorize(UnitySelector.Review.AssessmentResults.Update.Default)]
     public async Task<GrantApplicationDto> UpdateAssessmentResultsAsync(Guid id, CreateUpdateAssessmentResultsDto input)
@@ -671,7 +680,7 @@ public class GrantApplicationAppService(
         }
 
         return await applicantAgentRepository.UpdateAsync(applicantAgent);
-    }    
+    }
 
     [Authorize(UnitySelector.Applicant.UpdatePolicy)]
     public async Task UpdateMergedApplicantAsync(Guid applicationId, CreateUpdateApplicantInfoDto input)
@@ -816,7 +825,7 @@ public class GrantApplicationAppService(
                 Debug.WriteLine(ex.ToString());
             }
         }
-    }   
+    }
 
     public async Task<List<GrantApplicationDto>> GetApplicationListAsync(List<Guid> applicationIds)
     {
@@ -1047,29 +1056,21 @@ public class GrantApplicationAppService(
 
     public async Task<string> DismissAIIssueAsync(Guid applicationId, string issueId)
     {
-        var application = await applicationRepository.GetAsync(applicationId);
-
-        if (string.IsNullOrEmpty(application.AIAnalysis))
-        {
-            throw new UserFriendlyException("No AI analysis available for this application.");
-        }
-
-        try
-        {
-            var updatedAnalysis = ModifyDismissedItems(application.AIAnalysis, issueId, isDismiss: true);
-            application.AIAnalysis = updatedAnalysis;
-            await applicationRepository.UpdateAsync(application);
-            return updatedAnalysis;
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "Error dismissing AI issue {IssueId} for application {ApplicationId}", issueId, applicationId);
-            throw new UserFriendlyException("Failed to dismiss the AI issue. Please try again.");
-        }
+        return await UpdateAIIssueDismissStateAsync(applicationId, issueId, isDismiss: true);
     }
 
     public async Task<string> RestoreAIIssueAsync(Guid applicationId, string issueId)
     {
+        return await UpdateAIIssueDismissStateAsync(applicationId, issueId, isDismiss: false);
+    }
+
+    private async Task<string> UpdateAIIssueDismissStateAsync(Guid applicationId, string issueId, bool isDismiss)
+    {
+        if (string.IsNullOrWhiteSpace(issueId))
+        {
+            throw new UserFriendlyException("AI issue id is required.");
+        }
+
         var application = await applicationRepository.GetAsync(applicationId);
 
         if (string.IsNullOrEmpty(application.AIAnalysis))
@@ -1079,70 +1080,92 @@ public class GrantApplicationAppService(
 
         try
         {
-            var updatedAnalysis = ModifyDismissedItems(application.AIAnalysis, issueId, isDismiss: false);
+            var updatedAnalysis = ModifyDismissedItems(application.AIAnalysis, issueId, isDismiss);
             application.AIAnalysis = updatedAnalysis;
             await applicationRepository.UpdateAsync(application);
             return updatedAnalysis;
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Error restoring AI issue {IssueId} for application {ApplicationId}", issueId, applicationId);
-            throw new UserFriendlyException("Failed to restore the AI issue. Please try again.");
+            var action = isDismiss ? "dismissing" : "restoring";
+            var userMessage = isDismiss
+                ? "Failed to dismiss the AI issue. Please try again."
+                : "Failed to restore the AI issue. Please try again.";
+
+            Logger.LogError(ex, "Error {Action} AI issue {IssueId} for application {ApplicationId}", action, issueId, applicationId);
+            throw new UserFriendlyException(userMessage);
         }
     }
 
     private static string ModifyDismissedItems(string analysisJson, string issueId, bool isDismiss)
     {
-        using var jsonDoc = JsonDocument.Parse(analysisJson);
-        using var memoryStream = new System.IO.MemoryStream();
-        using (var writer = new Utf8JsonWriter(memoryStream, new JsonWriterOptions { Indented = true }))
+        if (string.IsNullOrWhiteSpace(analysisJson))
         {
-            writer.WriteStartObject();
+            return analysisJson;
+        }
 
-            var dismissedItems = new HashSet<string>();
-            if (jsonDoc.RootElement.TryGetProperty("dismissed_items", out var dismissedArray))
+        JsonObject? root;
+        try
+        {
+            root = JsonNode.Parse(analysisJson) as JsonObject;
+        }
+        catch (System.Text.Json.JsonException)
+        {
+            return analysisJson;
+        }
+
+        if (root == null)
+        {
+            return analysisJson;
+        }
+
+        var dismissedItems = new List<string>();
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+
+        if (root[AIJsonKeys.Dismissed] is JsonArray dismissedArray)
+        {
+            foreach (var item in dismissedArray)
             {
-                foreach (var item in dismissedArray.EnumerateArray())
+                var id = item?.GetValue<string>();
+                if (string.IsNullOrWhiteSpace(id) || !seen.Add(id))
                 {
-                    var itemValue = item.GetString();
-                    if (!string.IsNullOrWhiteSpace(itemValue))
-                    {
-                        dismissedItems.Add(itemValue);
-                    }
+                    continue;
                 }
-            }
 
-            // Modify the dismissed items set
-            if (isDismiss && !string.IsNullOrWhiteSpace(issueId))
+                dismissedItems.Add(id);
+            }
+        }
+
+        if (isDismiss)
+        {
+            if (seen.Add(issueId))
             {
                 dismissedItems.Add(issueId);
             }
-            else if (!isDismiss)
-            {
-                dismissedItems.Remove(issueId);
-            }
-
-            // Write all properties
-            foreach (var property in jsonDoc.RootElement.EnumerateObject())
-            {
-                if (property.Name != "dismissed_items")
-                {
-                    property.WriteTo(writer);
-                }
-            }
-
-            // Write updated dismissed_items array
-            writer.WritePropertyName("dismissed_items");
-            writer.WriteStartArray();
-            foreach (var id in dismissedItems)
-            {
-                writer.WriteStringValue(id);
-            }
-            writer.WriteEndArray();
-
-            writer.WriteEndObject();
+        }
+        else
+        {
+            dismissedItems.RemoveAll(id => string.Equals(id, issueId, StringComparison.Ordinal));
         }
 
-        return System.Text.Encoding.UTF8.GetString(memoryStream.ToArray());
+        root[AIJsonKeys.Dismissed] = new JsonArray(dismissedItems.Select(id => JsonValue.Create(id)).ToArray());
+        return root.ToJsonString(AiAnalysisWriteOptions);
+    }
+
+    private static ApplicationAnalysisResponse? ParseAiAnalysisData(string? analysisJson)
+    {
+        if (string.IsNullOrWhiteSpace(analysisJson))
+        {
+            return null;
+        }
+
+        try
+        {
+            return System.Text.Json.JsonSerializer.Deserialize<ApplicationAnalysisResponse>(analysisJson, AiAnalysisReadOptions);
+        }
+        catch (System.Text.Json.JsonException)
+        {
+            return null;
+        }
     }
 }
