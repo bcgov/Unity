@@ -592,7 +592,7 @@ function regenerateAIScoresheetAnswers() {
         )
         .prop('disabled', true);
 
-    unity.grantManager.grantApplications.grantApplication
+    unity.grantManager.grantApplications.applicationAIScoring
         .generateAIScoresheetAnswers(applicationId)
         .done(function () {
             abp.notify.success('AI scoring refreshed successfully.');
