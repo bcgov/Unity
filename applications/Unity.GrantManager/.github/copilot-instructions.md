@@ -100,18 +100,25 @@ Always ensure `dotnet build` and `dotnet test` pass before submitting changes.
 
 ## Architecture Rules
 
-### ABP Module Layering (Dependency Direction)
+### ABP Layering (Current Wiring + Preferred Usage)
+
+Current solution references are broader than a strict textbook layer graph:
 
 ```
-Web → HttpApi → Application.Contracts
+Web → Application + HttpApi + HttpApi.Client + EntityFrameworkCore
+HttpApi → Application.Contracts + Domain
 Application → Domain + Application.Contracts
 Domain → Domain.Shared
-EntityFrameworkCore → Domain only
+EntityFrameworkCore → Domain
 ```
 
-- Do **not** leak web concerns into Application/Domain layers.
-- Do **not** call other application services within the same module. Push shared logic to Domain services or extract helpers.
-- Controllers must depend on `Application.Contracts`, never on `Application` directly.
+Preferred code-usage boundaries (guidance for new code):
+
+- Prefer keeping web/UI concerns out of Application and Domain.
+- Prefer keeping business rules in Domain entities/managers, not in controllers or pages.
+- Prefer controllers/endpoints to use Application.Contracts surfaces for use-case orchestration.
+- Avoid introducing new cross-layer dependencies unless there is a clear ABP/module-composition reason.
+- Do not call other application services within the same module; move shared logic to Domain services/helpers.
 
 ### Entity & Domain Conventions
 
