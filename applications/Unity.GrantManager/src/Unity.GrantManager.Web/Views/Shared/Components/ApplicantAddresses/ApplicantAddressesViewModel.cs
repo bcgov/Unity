@@ -61,6 +61,8 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantAddresses
         public string Title { get; set; } = string.Empty;
         public string Type { get; set; } = string.Empty;
         public DateTime CreationTime { get; set; }
+        public string ReferenceNo { get; set; } = string.Empty;
+        public Guid? ApplicationId { get; set; }
     }
 
     public class ApplicantAddressItemDto
@@ -68,6 +70,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantAddresses
         public Guid Id { get; set; }
         public string AddressType { get; set; } = string.Empty;
         public string ReferenceNo { get; set; } = string.Empty;
+        public Guid? ApplicationId { get; set; }
         public string Street { get; set; } = string.Empty;
         public string Street2 { get; set; } = string.Empty;
         public string Unit { get; set; } = string.Empty;

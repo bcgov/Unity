@@ -29,25 +29,25 @@ $(function () {
                     {
                         title: 'Name',
                         data: 'name',
-                        width: '20%',
+                        width: '18%',
                         render: (data) => data || nullPlaceholder
                     },
                     {
                         title: 'Email',
                         data: 'email',
-                        width: '25%',
+                        width: '22%',
                         render: (data) => data || nullPlaceholder
                     },
                     {
                         title: 'Phone',
                         data: 'phone',
-                        width: '15%',
+                        width: '13%',
                         render: (data) => data || nullPlaceholder
                     },
                     {
                         title: 'Title',
                         data: 'title',
-                        width: '20%',
+                        width: '17%',
                         render: (data) => data || nullPlaceholder
                     },
                     {
@@ -55,6 +55,15 @@ $(function () {
                         data: 'type',
                         width: '10%',
                         render: (data) => data || nullPlaceholder
+                    },
+                    {
+                        title: 'Submission #',
+                        data: 'referenceNo',
+                        width: '15%',
+                        render: (data, type, row) => {
+                            if (!data || !row.applicationId) return nullPlaceholder;
+                            return `<a href="/GrantApplications/Details?ApplicationId=${row.applicationId}">${data}</a>`;
+                        }
                     }
                 ]
             })
@@ -80,31 +89,31 @@ $(function () {
                     {
                         title: 'Address Type',
                         data: 'addressType',
-                        width: '15%',
+                        width: '13%',
                         render: (data) => data || nullPlaceholder
                     },
                     {
                         title: 'Address',
                         data: 'street',
-                        width: '25%',
+                        width: '22%',
                         render: (data) => data || nullPlaceholder
                     },
                     {
                         title: 'Unit',
                         data: 'unit',
-                        width: '10%',
+                        width: '8%',
                         render: (data) => data || nullPlaceholder
                     },
                     {
                         title: 'City',
                         data: 'city',
-                        width: '15%',
+                        width: '14%',
                         render: (data) => data || nullPlaceholder
                     },
                     {
                         title: 'Province',
                         data: 'province',
-                        width: '15%',
+                        width: '14%',
                         render: (data) => data || nullPlaceholder
                     },
                     {
@@ -112,11 +121,26 @@ $(function () {
                         data: 'postal',
                         width: '10%',
                         render: (data) => data || nullPlaceholder
+                    },
+                    {
+                        title: 'Submission #',
+                        data: 'referenceNo',
+                        width: '13%',
+                        render: (data, type, row) => {
+                            if (!data || !row.applicationId) return nullPlaceholder;
+                            return `<a href="/GrantApplications/Details?ApplicationId=${row.applicationId}">${data}</a>`;
+                        }
                     }
                 ]
             })
         );
     }
+
+    $('#contactsAddressesSubTabs button').on('shown.bs.tab', function (e) {
+        const target = $(e.target).data('bsTarget');
+        if (target === '#contactsSubTabPane' && contactsTable) contactsTable.columns.adjust().draw(false);
+        if (target === '#addressesSubTabPane' && addressesTable) addressesTable.columns.adjust().draw(false);
+    });
 
     const form = $('#ApplicantAddressesForm');
     const saveButton = $('#saveApplicantAddressesBtn');
