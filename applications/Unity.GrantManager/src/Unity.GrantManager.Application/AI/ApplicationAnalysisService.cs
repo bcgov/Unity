@@ -3,7 +3,7 @@ using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
 using Volo.Abp.DependencyInjection;
@@ -18,6 +18,11 @@ namespace Unity.GrantManager.AI
         IAIService aiService,
         ILogger<ApplicationAnalysisService> logger) : IApplicationAnalysisService, ITransientDependency
     {
+        private readonly JsonSerializerOptions _jsonOptionsIndented = new()
+        {
+            WriteIndented = true
+        };
+
         private const string ComponentsKey = "components";
 
         public async Task<string> RegenerateAndSaveAsync(Guid applicationId)
@@ -28,7 +33,11 @@ namespace Unity.GrantManager.AI
 
             var attachmentSummaries = attachments
                 .Where(a => !string.IsNullOrWhiteSpace(a.AISummary))
-                .Select(a => $"{a.FileName}: {a.AISummary}")
+                .Select(a => new AIAttachmentItem
+                {
+                    Name = string.IsNullOrWhiteSpace(a.FileName) ? "attachment" : a.FileName.Trim(),
+                    Summary = a.AISummary!.Trim()
+                })
                 .ToList();
 
             var notSpecified = "Not specified";
@@ -49,141 +58,56 @@ FULL APPLICATION FORM SUBMISSION:
 {formSubmission?.RenderedHTML ?? "Form submission content not available"}
 ";
 
-            string formFieldConfiguration = "Form configuration not available.";
+            object formFieldConfiguration = new { message = "Form configuration not available." };
             if (formSubmission?.ApplicationFormVersionId != null)
             {
                 formFieldConfiguration = await ExtractFormFieldConfigurationAsync(formSubmission.ApplicationFormVersionId.Value);
             }
 
-            var analysis = await aiService.AnalyzeApplicationAsync(
-                applicationContent,
-                attachmentSummaries,
-                GetAnalysisRubric(),
-                formFieldConfiguration);
+            var analysis = await aiService.GenerateApplicationAnalysisAsync(new ApplicationAnalysisRequest
+            {
+                Schema = JsonSerializer.SerializeToElement(formFieldConfiguration),
+                Data = JsonSerializer.SerializeToElement(new { submission_content = applicationContent }),
+                Attachments = attachmentSummaries
+            });
 
-            var cleanedAnalysis = CleanJsonResponse(analysis);
-            application.AIAnalysis = cleanedAnalysis;
+            var analysisJson = JsonSerializer.Serialize(analysis, _jsonOptionsIndented);
+            application.AIAnalysis = analysisJson;
             await applicationRepository.UpdateAsync(application);
-            return cleanedAnalysis;
+            return analysisJson;
         }
 
-        private static string CleanJsonResponse(string response)
-        {
-            if (string.IsNullOrWhiteSpace(response))
-                return response;
-
-            var cleaned = response.Trim();
-
-            if (cleaned.StartsWith("```json", StringComparison.OrdinalIgnoreCase) || cleaned.StartsWith("```"))
-            {
-                var startIndex = cleaned.IndexOf('\n');
-                if (startIndex >= 0)
-                {
-                    cleaned = cleaned.Substring(startIndex + 1);
-                }
-            }
-
-            if (cleaned.EndsWith("```"))
-            {
-                var lastIndex = cleaned.LastIndexOf("```", StringComparison.Ordinal);
-                if (lastIndex > 0)
-                {
-                    cleaned = cleaned.Substring(0, lastIndex);
-                }
-            }
-
-            return cleaned.Trim();
-        }
-
-        private static string GetAnalysisRubric() => @"
-BC GOVERNMENT GRANT EVALUATION RUBRIC:
-
-1. ELIGIBILITY REQUIREMENTS:
-   - Project must align with program objectives
-   - Applicant must be eligible entity type
-   - Budget must be reasonable and well-justified
-   - Project timeline must be realistic
-
-2. COMPLETENESS CHECKS:
-   - All required fields completed
-   - Necessary supporting documents provided
-   - Budget breakdown detailed and accurate
-   - Project description clear and comprehensive
-
-3. FINANCIAL REVIEW:
-   - Requested amount is within program limits
-   - Budget is reasonable for scope of work
-   - Matching funds or in-kind contributions identified
-   - Cost per outcome/beneficiary is reasonable
-
-4. RISK ASSESSMENT:
-   - Applicant capacity to deliver project
-   - Technical feasibility of proposed work
-   - Environmental or regulatory compliance
-   - Potential for cost overruns or delays
-
-5. QUALITY INDICATORS:
-   - Clear project objectives and outcomes
-   - Well-defined target audience/beneficiaries
-   - Appropriate project methodology
-   - Sustainability plan for long-term impact
-
-EVALUATION CRITERIA:
-- HIGH: Meets all requirements, well-prepared application, low risk
-- MEDIUM: Meets most requirements, minor issues or missing elements
-- LOW: Missing key requirements, significant concerns, high risk
-";
-
-        private async Task<string> ExtractFormFieldConfigurationAsync(Guid formVersionId)
+        private async Task<object> ExtractFormFieldConfigurationAsync(Guid formVersionId)
         {
             try
             {
                 var formVersion = await applicationFormVersionRepository.GetAsync(formVersionId);
                 if (formVersion == null || string.IsNullOrEmpty(formVersion.FormSchema))
                 {
-                    return "Form configuration not available.";
+                    return new { message = "Form configuration not available." };
                 }
 
                 var schema = JObject.Parse(formVersion.FormSchema);
                 var components = schema[ComponentsKey] as JArray;
                 if (components == null || components.Count == 0)
                 {
-                    return "No form fields configured.";
+                    return new { message = "No form fields configured." };
                 }
 
                 var requiredFields = new List<string>();
                 var optionalFields = new List<string>();
                 ExtractFieldRequirements(components, requiredFields, optionalFields, string.Empty);
 
-                var configurationText = new StringBuilder();
-                configurationText.AppendLine("FORM FIELD CONFIGURATION:");
-                configurationText.AppendLine();
-
-                if (requiredFields.Count > 0)
+                return new
                 {
-                    configurationText.AppendLine("REQUIRED FIELDS (must be completed):");
-                    foreach (var field in requiredFields)
-                    {
-                        configurationText.AppendLine($"- {field}");
-                    }
-                    configurationText.AppendLine();
-                }
-
-                if (optionalFields.Count > 0)
-                {
-                    configurationText.AppendLine("OPTIONAL FIELDS (may be left blank):");
-                    foreach (var field in optionalFields)
-                    {
-                        configurationText.AppendLine($"- {field}");
-                    }
-                }
-
-                return configurationText.ToString();
+                    required_fields = requiredFields,
+                    optional_fields = optionalFields
+                };
             }
             catch (Exception ex)
             {
                 logger.LogError(ex, "Error extracting form field configuration for form version {FormVersionId}", formVersionId);
-                return "Form configuration could not be extracted.";
+                return new { message = "Form configuration could not be extracted." };
             }
         }
 

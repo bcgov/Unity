@@ -321,7 +321,7 @@ globalThis.regenerateAIAnalysis = function() {
         .html('<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Refreshing Analysis...')
         .prop('disabled', true);
 
-    unity.grantManager.grantApplications.grantApplication
+    unity.grantManager.grantApplications.applicationAIAnalysis
         .generateAIAnalysis(applicationId)
         .then(function() {
             abp.notify.success('AI analysis refreshed successfully.');
