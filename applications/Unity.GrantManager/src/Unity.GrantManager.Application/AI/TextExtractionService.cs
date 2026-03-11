@@ -23,10 +23,22 @@ namespace Unity.GrantManager.AI
         private const int MaxDocxTableRows = 2000;
         private const int MaxDocxTableCellsPerRow = 50;
         private readonly ILogger<TextExtractionService> _logger;
+        private readonly Dictionary<string, Func<string, byte[], string>> _extractorsByExtension;
 
         public TextExtractionService(ILogger<TextExtractionService> logger)
         {
             _logger = logger;
+            _extractorsByExtension = new Dictionary<string, Func<string, byte[], string>>(StringComparer.OrdinalIgnoreCase)
+            {
+                [".txt"] = (_, content) => ExtractTextFromTextFile(content),
+                [".csv"] = (_, content) => ExtractTextFromTextFile(content),
+                [".json"] = (_, content) => ExtractTextFromTextFile(content),
+                [".xml"] = (_, content) => ExtractTextFromTextFile(content),
+                [".pdf"] = ExtractTextFromPdfFile,
+                [".docx"] = ExtractTextFromWordDocx,
+                [".xls"] = ExtractTextFromExcelFile,
+                [".xlsx"] = ExtractTextFromExcelFile
+            };
         }
 
         public Task<string> ExtractTextAsync(string fileName, byte[] fileContent, string contentType)
@@ -42,46 +54,41 @@ namespace Unity.GrantManager.AI
                 var normalizedContentType = contentType?.ToLowerInvariant() ?? string.Empty;
                 var extension = Path.GetExtension(fileName)?.ToLowerInvariant() ?? string.Empty;
 
-                string rawText;
-
-                if (normalizedContentType.Contains("text/") ||
-                    extension == ".txt" ||
-                    extension == ".csv" ||
-                    extension == ".json" ||
-                    extension == ".xml")
+                if (extension == ".doc")
                 {
-                    rawText = ExtractTextFromTextFile(fileContent);
+                    _logger.LogDebug("Legacy .doc extraction is not supported for {FileName}", fileName);
+                    return Task.FromResult(string.Empty);
+                }
+
+                if (_extractorsByExtension.TryGetValue(extension, out var extractor))
+                {
+                    var rawText = extractor(fileName, fileContent);
                     return Task.FromResult(NormalizeAndLimitText(rawText, fileName));
                 }
 
-                if (normalizedContentType.Contains("pdf") || extension == ".pdf")
+                if (normalizedContentType.Contains("text/"))
                 {
-                    rawText = ExtractTextFromPdfFile(fileName, fileContent);
+                    var rawText = ExtractTextFromTextFile(fileContent);
+                    return Task.FromResult(NormalizeAndLimitText(rawText, fileName));
+                }
+
+                if (normalizedContentType.Contains("pdf"))
+                {
+                    var rawText = ExtractTextFromPdfFile(fileName, fileContent);
                     return Task.FromResult(NormalizeAndLimitText(rawText, fileName));
                 }
 
                 if (normalizedContentType.Contains("word") ||
                     normalizedContentType.Contains("msword") ||
-                    normalizedContentType.Contains("officedocument.wordprocessingml") ||
-                    extension == ".doc" ||
-                    extension == ".docx")
+                    normalizedContentType.Contains("officedocument.wordprocessingml"))
                 {
-                    if (extension == ".docx" || normalizedContentType.Contains("officedocument.wordprocessingml"))
-                    {
-                        rawText = ExtractTextFromWordDocx(fileName, fileContent);
-                        return Task.FromResult(NormalizeAndLimitText(rawText, fileName));
-                    }
-
-                    _logger.LogDebug("Legacy .doc extraction is not supported for {FileName}", fileName);
-                    return Task.FromResult(string.Empty);
+                    var rawText = ExtractTextFromWordDocx(fileName, fileContent);
+                    return Task.FromResult(NormalizeAndLimitText(rawText, fileName));
                 }
 
-                if (normalizedContentType.Contains("excel") ||
-                    normalizedContentType.Contains("spreadsheet") ||
-                    extension == ".xls" ||
-                    extension == ".xlsx")
+                if (normalizedContentType.Contains("excel") || normalizedContentType.Contains("spreadsheet"))
                 {
-                    rawText = ExtractTextFromExcelFile(fileName, fileContent);
+                    var rawText = ExtractTextFromExcelFile(fileName, fileContent);
                     return Task.FromResult(NormalizeAndLimitText(rawText, fileName));
                 }
 
@@ -129,27 +136,13 @@ namespace Unity.GrantManager.AI
                 using var stream = new MemoryStream(fileContent, writable: false);
                 using var document = PdfDocument.Open(stream);
                 var builder = new StringBuilder();
+                var pageTexts = document.GetPages()
+                    .Select(page => page.Text)
+                    .Where(pageText => !string.IsNullOrWhiteSpace(pageText));
 
-                foreach (var pageText in document.GetPages().Select(page => page.Text))
-                {
-                    if (builder.Length >= MaxExtractedTextLength)
-                    {
-                        break;
-                    }
+                AppendUntilLimit(builder, pageTexts);
 
-                    if (!string.IsNullOrWhiteSpace(pageText))
-                    {
-                        builder.AppendLine(pageText);
-                    }
-                }
-
-                var text = builder.ToString();
-                if (text.Length > MaxExtractedTextLength)
-                {
-                    text = text.Substring(0, MaxExtractedTextLength);
-                }
-
-                return text;
+                return builder.ToString();
             }
             catch (Exception ex)
             {
@@ -165,43 +158,14 @@ namespace Unity.GrantManager.AI
                 using var stream = new MemoryStream(fileContent, writable: false);
                 using var document = new XWPFDocument(stream);
                 var builder = new StringBuilder();
+                var paragraphTexts = document.Paragraphs
+                    .Take(MaxDocxParagraphs)
+                    .Select(paragraph => paragraph.ParagraphText)
+                    .Where(paragraphText => !string.IsNullOrWhiteSpace(paragraphText));
 
-                foreach (var paragraphText in document.Paragraphs.Take(MaxDocxParagraphs).Select(paragraph => paragraph.ParagraphText))
-                {
-                    var limitReached = AppendWithLimit(builder, paragraphText, MaxExtractedTextLength, Environment.NewLine);
-                    if (limitReached)
-                    {
-                        break;
-                    }
-                }
+                AppendUntilLimit(builder, paragraphTexts);
 
-                if (builder.Length < MaxExtractedTextLength)
-                {
-                    foreach (var table in document.Tables)
-                    {
-                        foreach (var row in table.Rows.Take(MaxDocxTableRows))
-                        {
-                            foreach (var cell in row.GetTableCells().Take(MaxDocxTableCellsPerRow))
-                            {
-                                var limitReached = AppendWithLimit(builder, cell.GetText(), MaxExtractedTextLength, Environment.NewLine);
-                                if (limitReached)
-                                {
-                                    break;
-                                }
-                            }
-
-                            if (builder.Length >= MaxExtractedTextLength)
-                            {
-                                break;
-                            }
-                        }
-
-                        if (builder.Length >= MaxExtractedTextLength)
-                        {
-                            break;
-                        }
-                    }
-                }
+                TryAppendDocxTableText(document, builder);
 
                 return builder.ToString();
             }
@@ -209,6 +173,30 @@ namespace Unity.GrantManager.AI
             {
                 _logger.LogWarning(ex, "Word (.docx) text extraction failed for {FileName}", fileName);
                 return string.Empty;
+            }
+        }
+
+        private static void TryAppendDocxTableText(XWPFDocument document, StringBuilder builder)
+        {
+            if (builder.Length >= MaxExtractedTextLength)
+            {
+                return;
+            }
+
+            foreach (var table in document.Tables)
+            {
+                foreach (var row in table.Rows.Take(MaxDocxTableRows))
+                {
+                    var cellTexts = row.GetTableCells()
+                        .Take(MaxDocxTableCellsPerRow)
+                        .Select(cell => cell.GetText())
+                        .Where(cellText => !string.IsNullOrWhiteSpace(cellText));
+
+                    if (AppendUntilLimit(builder, cellTexts))
+                    {
+                        return;
+                    }
+                }
             }
         }
 
@@ -220,52 +208,19 @@ namespace Unity.GrantManager.AI
                 using var workbook = WorkbookFactory.Create(stream);
                 var builder = new StringBuilder();
                 var sheetCount = Math.Min(workbook.NumberOfSheets, MaxExcelSheets);
-                var limitReached = false;
 
                 for (var sheetIndex = 0; sheetIndex < sheetCount; sheetIndex++)
                 {
-                    if (limitReached || builder.Length >= MaxExtractedTextLength)
+                    if (builder.Length >= MaxExtractedTextLength)
                     {
                         break;
                     }
 
                     var sheet = workbook.GetSheetAt(sheetIndex);
-                    if (sheet == null)
+                    var limitReached = TryAppendExcelSheet(sheet, builder);
+                    if (limitReached)
                     {
-                        continue;
-                    }
-
-                    var processedRows = 0;
-                    foreach (IRow row in sheet)
-                    {
-                        if (processedRows >= MaxExcelRowsPerSheet || builder.Length >= MaxExtractedTextLength)
-                        {
-                            break;
-                        }
-
-                        var rowHasValue = false;
-                        foreach (var cell in row.Cells.Take(MaxExcelCellsPerRow))
-                        {
-                            var value = GetCellText(cell);
-                            if (string.IsNullOrWhiteSpace(value))
-                            {
-                                continue;
-                            }
-
-                            var separator = rowHasValue ? " | " : (builder.Length > 0 ? Environment.NewLine : null);
-                            limitReached = AppendWithLimit(builder, value, MaxExtractedTextLength, separator);
-                            rowHasValue = true;
-                            if (limitReached)
-                            {
-                                break;
-                            }
-                        }
-
-                        processedRows++;
-                        if (limitReached)
-                        {
-                            break;
-                        }
+                        break;
                     }
                 }
 
@@ -275,6 +230,97 @@ namespace Unity.GrantManager.AI
             {
                 _logger.LogWarning(ex, "Excel text extraction failed for {FileName}", fileName);
                 return string.Empty;
+            }
+        }
+
+        private static bool TryAppendExcelSheet(ISheet? sheet, StringBuilder builder)
+        {
+            if (sheet == null)
+            {
+                return false;
+            }
+
+            var processedRows = 0;
+            foreach (IRow row in sheet)
+            {
+                if (processedRows >= MaxExcelRowsPerSheet || builder.Length >= MaxExtractedTextLength)
+                {
+                    break;
+                }
+
+                var limitReached = TryAppendExcelRow(row, builder);
+                processedRows++;
+                if (limitReached)
+                {
+                    return true;
+                }
+            }
+
+            return builder.Length >= MaxExtractedTextLength;
+        }
+
+        private static bool TryAppendExcelRow(IRow row, StringBuilder builder)
+        {
+            var rowHasValue = false;
+            foreach (var cell in row.Cells.Take(MaxExcelCellsPerRow))
+            {
+                var value = GetCellText(cell);
+                if (string.IsNullOrWhiteSpace(value))
+                {
+                    continue;
+                }
+
+                string? separator = null;
+                if (rowHasValue)
+                {
+                    separator = " | ";
+                }
+
+                var limitReached = AppendWithLimit(builder, value, MaxExtractedTextLength, separator);
+                rowHasValue = true;
+                if (limitReached)
+                {
+                    return true;
+                }
+            }
+
+            if (rowHasValue &&
+                builder.Length + Environment.NewLine.Length <= MaxExtractedTextLength)
+            {
+                builder.Append(Environment.NewLine);
+            }
+
+            return builder.Length >= MaxExtractedTextLength;
+        }
+
+        private static bool TryAppendWithTrailingNewline(StringBuilder builder, string? value)
+        {
+            var limitReached = AppendWithLimit(builder, value, MaxExtractedTextLength);
+            if (limitReached)
+            {
+                return true;
+            }
+
+            if (!string.IsNullOrWhiteSpace(value))
+            {
+                AppendTrailingNewlineIfRoom(builder);
+            }
+
+            return builder.Length >= MaxExtractedTextLength;
+        }
+
+        private static bool AppendUntilLimit(StringBuilder builder, IEnumerable<string> texts)
+        {
+            var limitReached = texts.Any(text => TryAppendWithTrailingNewline(builder, text));
+            return limitReached || builder.Length >= MaxExtractedTextLength;
+        }
+
+        private static void AppendTrailingNewlineIfRoom(StringBuilder builder)
+        {
+            if (builder.Length > 0 &&
+                builder.Length + Environment.NewLine.Length <= MaxExtractedTextLength)
+            {
+                builder.Append(Environment.NewLine);
             }
         }
 

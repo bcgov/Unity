@@ -8,6 +8,7 @@ $(function () {
     const formatter = createNumberFormatter();
     const l = abp.localization.getResource('GrantManager');
     const defaultQuickDateRange = 'last6months';
+    const guidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
     let dt = $('#GrantApplicationsTable');
     let dataTable;
@@ -95,18 +96,10 @@ $(function () {
                         dt.order(initialSortOrder);
 
                         // Reset date range filters
-                        UIElements.quickDateRange.val(defaultQuickDateRange);
-                        toggleCustomDateInputs(defaultQuickDateRange === 'custom');
-
                         const range = getDateRange(defaultQuickDateRange);
+                        setDateRangeFilters(defaultQuickDateRange, range);
                         setDateRangeLocalStorage(defaultQuickDateRange, range);
-
-                        if (range) {
-                            UIElements.submittedFromInput.val(range.fromDate);
-                            UIElements.submittedToInput.val(range.toDate);
-                            grantTableFilters.submittedFromDate = range.fromDate;
-                            grantTableFilters.submittedToDate = range.toDate;
-                        }
+                        toggleCustomDateInputs(defaultQuickDateRange === 'custom');
 
                         // Reload table data with updated filters
                         dt.ajax.reload(null, false);
@@ -185,31 +178,27 @@ $(function () {
     }
 
     function initializeSubmittedFilterDates() {
-        const fromDate = localStorage.getItem('GrantApplications_FromDate');
-        const toDate = localStorage.getItem('GrantApplications_ToDate');
-        const savedRange = localStorage.getItem('GrantApplications_QuickRange') || defaultQuickDateRange;
+        let savedQuickRange = localStorage.getItem('GrantApplications_QuickRange') || defaultQuickDateRange;
+        let savedFromDate = localStorage.getItem('GrantApplications_FromDate');
+        let savedToDate = localStorage.getItem('GrantApplications_ToDate');
 
-        // Set the dropdown value
-        UIElements.quickDateRange.val(savedRange);
+        let isCustomRange = savedQuickRange === 'custom';
+        toggleCustomDateInputs(isCustomRange);
 
-        // Show/hide custom date inputs based on saved selection
-        toggleCustomDateInputs(savedRange === 'custom');
+        let range = !isCustomRange
+            ? getDateRange(savedQuickRange)
+            : {
+                fromDate: savedFromDate || '',
+                toDate: savedToDate || ''
+            };
 
-        // If we have saved dates, use them
-        if (fromDate && toDate) {
-            UIElements.submittedFromInput.val(fromDate);
-            UIElements.submittedToInput.val(toDate);
-            grantTableFilters.submittedFromDate = fromDate;
-            grantTableFilters.submittedToDate = toDate;
-        } else {
-            const range = getDateRange(defaultQuickDateRange);
-            if (range?.fromDate && range?.toDate) {
-                UIElements.submittedFromInput.val(range.fromDate);
-                UIElements.submittedToInput.val(range.toDate);
-                grantTableFilters.submittedFromDate = range.fromDate;
-                grantTableFilters.submittedToDate = range.toDate;
-            }
+        if (!isCustomRange && !range) {
+            savedQuickRange = defaultQuickDateRange;
+            range = getDateRange(savedQuickRange);
         }
+
+        setDateRangeFilters(savedQuickRange, range);
+        setDateRangeLocalStorage(savedQuickRange, range);
 
         // Set max date to today for both inputs
         const today = formatDate(new Date());
@@ -255,7 +244,40 @@ $(function () {
         return true;
     }
 
-    // Returns a formated { fromDate, toDate } for the filter fields. 
+    function setDateRangeFilters(quickDateRange, range) {
+        UIElements.quickDateRange.val(quickDateRange);
+
+        if (range) { 
+            const fromDate = range.fromDate ?? '';
+            const toDate = range.toDate ?? '';
+            UIElements.submittedFromInput.val(fromDate);
+            UIElements.submittedToInput.val(toDate);
+            grantTableFilters.submittedFromDate = fromDate;
+            grantTableFilters.submittedToDate = toDate;
+        }
+    }
+
+    function setDateRangeLocalStorage(quickDateRange, fromToRange) {
+        localStorage.setItem('GrantApplications_QuickRange', quickDateRange || defaultQuickDateRange);
+        if (fromToRange) {
+            const fromDate = fromToRange.fromDate;
+            const toDate = fromToRange.toDate;
+            if (fromDate) {
+                localStorage.setItem('GrantApplications_FromDate', fromDate);
+            }
+            else {
+                localStorage.removeItem('GrantApplications_FromDate');
+            }
+            if (toDate) {
+                localStorage.setItem('GrantApplications_ToDate', toDate);
+            }
+            else {
+                localStorage.removeItem('GrantApplications_ToDate');
+            }
+        }
+    }
+
+    // Returns a formatted { fromDate, toDate } for the filter fields. 
     // Null if 'custom' or no input provided (assumes custom is default break)
     function getDateRange(rangeType) {
         let today = new Date();
@@ -279,10 +301,9 @@ $(function () {
                 fromDate = formatDate(new Date(today.setMonth(today.getMonth() - 6)));
                 break;
             case 'alltime':
-                fromDate = null;
                 return { fromDate: null, toDate: null };
             case 'custom':
-            default:
+            default: 
                 return null; // Don't modify dates for custom
         }
 
@@ -328,25 +349,8 @@ $(function () {
 
         dtInstance.ajax.reload(null, true);
     }
-
-    function setDateRangeLocalStorage(quickDateRange, fromToRange) {
-        localStorage.setItem('GrantApplications_QuickRange', quickDateRange || defaultQuickDateRange);
-        if (fromToRange) {
-            if (fromToRange.fromDate && fromToRange.toDate) {
-                localStorage.setItem('GrantApplications_FromDate', fromToRange.fromDate);
-                localStorage.setItem('GrantApplications_ToDate', fromToRange.toDate);
-            } else {
-                // For "All time", clear the date filters
-                localStorage.removeItem('GrantApplications_FromDate');
-                localStorage.removeItem('GrantApplications_ToDate');
-            }
-        }
-    }
-
     function handleQuickDateRangeChange() {
         const selectedRange = $(this).val();
-
-        localStorage.setItem('GrantApplications_QuickRange', selectedRange);
 
         if (selectedRange === 'custom') {
             // Show the custom date inputs and don't modify their values
@@ -359,18 +363,12 @@ $(function () {
 
         // Get the date range for the selected option
         const range = getDateRange(selectedRange);
+        setDateRangeFilters(selectedRange, range);
         setDateRangeLocalStorage(selectedRange, range);
-        if (range) {
-            // Populate the hidden date fields
-            UIElements.submittedFromInput.val(range.fromDate || '');
-            UIElements.submittedToInput.val(range.toDate || '');
-            grantTableFilters.submittedFromDate = range.fromDate;
-            grantTableFilters.submittedToDate = range.toDate;
 
-            // Reload the table with new filters
-            const dtInstance = $('#GrantApplicationsTable').DataTable();
-            dtInstance.ajax.reload(null, true);
-        }
+        // Reload the table with new filters
+        const dtInstance = $('#GrantApplicationsTable').DataTable();
+        dtInstance.ajax.reload(null, true);
     }
 
     function initializeDataTableAndEvents() {
@@ -409,7 +407,7 @@ $(function () {
                 };
             },
             onStateLoadParams: function (settings, data) {
-                if (data?.customFilters) {
+                if (!initialLoad && data?.customFilters) {
                     // If there is any date change, this will refresh post load 
                     // to ensure the correct data is shown based on the saved filters.
                     data.refreshTableWithDates =
@@ -428,7 +426,6 @@ $(function () {
                 initialLoad = false; // Reset flag after use
             }
         });
-        dataTable.on('search.dt', () => handleSearch());
 
         dataTable.on('select', function (e, dt, type, indexes) {
 
@@ -466,21 +463,28 @@ $(function () {
     $('.grp-savedStates').text('Save View');
     $('.grp-savedStates').closest('.btn-group').addClass('cstm-save-view');
 
-    // Helper function to restore custom filters
+    // Helper function to restore custom filters when loading table views.
     function restoreCustomFilters(filters) {
         UIElements.searchField.val(filters.searchValue || '');
 
-        UIElements.quickDateRange.val(filters.quickDateRange || defaultQuickDateRange);
-        toggleCustomDateInputs(filters.quickDateRange === 'custom');
+        let quickRange = filters.quickDateRange || defaultQuickDateRange;
+        let isCustomRange = filters.quickDateRange === 'custom';
+        toggleCustomDateInputs(isCustomRange);
 
-        UIElements.submittedFromInput.val(filters.submittedFromDate || '');
-        UIElements.submittedToInput.val(filters.submittedToDate || '');
+        let range = !isCustomRange
+            ? getDateRange(quickRange)
+            : {
+                fromDate: filters.submittedFromDate || '',
+                toDate: filters.submittedToDate || ''
+            };
 
-        grantTableFilters.submittedFromDate = filters.submittedFromDate || null;
-        grantTableFilters.submittedToDate = filters.submittedToDate || null;
+        if (!isCustomRange && !range) {
+            quickRange = defaultQuickDateRange;
+            range = getDateRange(quickRange);
+        }
 
-        // Update localStorage to stay in sync
-        setDateRangeLocalStorage(filters?.quickDateRange, { fromDate: filters.submittedFromDate, toDate: filters.submittedToDate });
+        setDateRangeFilters(quickRange, range);
+        setDateRangeLocalStorage(quickRange, range);
     }
 
 
@@ -489,10 +493,6 @@ $(function () {
             let data = dataTable.row(indexes).data();
             PubSub.publish(action, data);
         }
-    }
-
-    function handleSearch() {
-        let filter = $('.dt-search input').val();
     }
 
     function getColumns() {
@@ -577,7 +577,28 @@ $(function () {
             data: 'applicant.applicantName',
             name: 'applicantName',
             className: 'data-table-header',
-            index: columnIndex
+            index: columnIndex,
+            render: function(data, type, row) {
+                let applicantName = (typeof data !== 'string' || data.trim() === '') ? '(Unknown Applicant)' : data;
+
+                if (type === 'sort' || type === 'filter') { 
+                    return applicantName;
+                }
+
+                if (type === 'display' && abp.auth.isGranted('GrantApplicationManagement.Applicants.ViewList')) {
+                    const safeApplicantName = $.fn.dataTable.render.text().display(applicantName);
+                    const applicantId = row?.applicant?.id;
+                    const isGuid = applicantId && guidPattern.test(applicantId);
+
+                    if (isGuid) {
+                        return `<a href="/GrantApplicants/Details?ApplicantId=${encodeURIComponent(applicantId)}">${safeApplicantName}</a>`;
+                    }
+
+                    return safeApplicantName;
+                }
+
+                return applicantName;
+            },
         }
     }
 

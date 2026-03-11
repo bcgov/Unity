@@ -117,7 +117,9 @@ namespace Unity.Notifications.EmailNotifications
                 }
 
                 // Send the email using the CHES client service
-                var emailObject = await GetEmailObjectAsync(emailTo, body, subject, emailFrom, emailBodyType, emailTemplateName, emailCC, emailBCC);
+                var emailObject = await GetEmailObjectAsync(
+                    emailTo, body, subject, emailFrom, emailBodyType, emailTemplateName, emailCC, emailBCC, excludeTemplate: true);
+
                 var response = await chesClientService.SendAsync(emailObject);
 
                 // Assuming SendAsync returns a HttpResponseMessage or equivalent:
@@ -222,7 +224,8 @@ namespace Unity.Notifications.EmailNotifications
                 emailLog.BodyType,
                 emailLog.TemplateName,
                 emailLog.CC,
-                emailLog.BCC);
+                emailLog.BCC,
+                excludeTemplate: true);
 
             // Retrieve attachments from S3
             var attachments = await emailAttachmentService.GetAttachmentsAsync(emailLog.Id);
@@ -261,7 +264,8 @@ namespace Unity.Notifications.EmailNotifications
                                                     string? emailBodyType,
                                                     string? emailTemplateName,
                                                     string? emailCC = null,
-                                                    string? emailBCC = null)
+                                                    string? emailBCC = null,
+                                                    bool excludeTemplate = false)
         {
             var toList = emailTo.ParseEmailList() ?? [];
             var ccList = emailCC.ParseEmailList();
@@ -274,28 +278,47 @@ namespace Unity.Notifications.EmailNotifications
 
             emailObjectDictionary["body"] = body;
             emailObjectDictionary["bodyType"] = emailBodyType ?? "text";
-            emailObjectDictionary["cc"] = ccList;
-            emailObjectDictionary["bcc"] = bccList;
             emailObjectDictionary["encoding"] = "utf-8";
             emailObjectDictionary["from"] = emailFrom ?? defaultFromAddress ?? "NoReply@gov.bc.ca";
             emailObjectDictionary["priority"] = "normal";
             emailObjectDictionary["subject"] = subject;
             emailObjectDictionary["tag"] = "tag";
             emailObjectDictionary["to"] = toList;
-            emailObjectDictionary["templateName"] = emailTemplateName;
+
+            // Only include cc/bcc when provided CHES API expects arrays, not null.
+            if (ccList != null)
+            {
+                emailObjectDictionary["cc"] = ccList;
+            }
+            if (bccList != null)
+            {
+                emailObjectDictionary["bcc"] = bccList;
+            }
+
+            // templateName is not part of the CHES MessageObject schema
+            // store it on the EmailLog but don't send it to the API.
+            if (!excludeTemplate)
+            {
+                emailObjectDictionary["templateName"] = emailTemplateName;
+            }
 
             return emailObject;
         }
 
         protected virtual EmailLog UpdateMappedEmailLog(EmailLog emailLog, dynamic emailDynamicObject)
         {
+            var dict = (IDictionary<string, object?>)emailDynamicObject;
             emailLog.Body = emailDynamicObject.body;
             emailLog.Subject = emailDynamicObject.subject;
             emailLog.BodyType = emailDynamicObject.bodyType;
             emailLog.FromAddress = emailDynamicObject.from;
             emailLog.ToAddress = string.Join(",", emailDynamicObject.to);
-            emailLog.CC = emailDynamicObject.cc != null ? string.Join(",", (IEnumerable<string>)emailDynamicObject.cc) : string.Empty;
-            emailLog.BCC = emailDynamicObject.bcc != null ? string.Join(",", (IEnumerable<string>)emailDynamicObject.bcc) : string.Empty;
+            emailLog.CC = dict.TryGetValue("cc", out var cc) && cc is IEnumerable<string> ccList
+                ? string.Join(",", ccList)
+                : string.Empty;
+            emailLog.BCC = dict.TryGetValue("bcc", out var bcc) && bcc is IEnumerable<string> bccList
+                ? string.Join(",", bccList)
+                : string.Empty;
             emailLog.TemplateName = emailDynamicObject.templateName;
             return emailLog;
         }

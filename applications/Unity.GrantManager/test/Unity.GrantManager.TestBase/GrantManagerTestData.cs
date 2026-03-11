@@ -30,6 +30,8 @@ public static class GrantManagerTestData
 
     public static readonly Guid Assessment1_Id = new("260f5b30-7321-22ff-c962-1242ac120002");
 
+    public static readonly Guid AiAssessment1_Id = new("260f5b30-7321-22ff-c962-1242ac120003");
+
     public static readonly Guid AssessmentAttachment1_Id = new("260f5b20-6321-22ff-c962-1242ac120001");
 
     public static readonly Guid AssessmentComment1_Id = new("270a2c20-6321-22ff-c962-1242ac123101");

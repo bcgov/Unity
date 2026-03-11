@@ -2332,6 +2332,9 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<int?>("InclusiveGrowth")
                         .HasColumnType("integer");
 
+                    b.Property<bool>("IsAiAssessment")
+                        .HasColumnType("boolean");
+
                     b.Property<bool>("IsComplete")
                         .HasColumnType("boolean");
 

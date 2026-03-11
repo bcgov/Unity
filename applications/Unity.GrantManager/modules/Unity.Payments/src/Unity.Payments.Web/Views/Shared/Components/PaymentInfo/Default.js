@@ -215,6 +215,7 @@
         dataTableName: 'ApplicationPaymentRequestListTable',
         externalSearchId: 'PaymentListSearch',
         dynamicButtonContainerId: 'dynamicButtonContainerId',
+        lengthMenu: [10, 25, 50, -1]
     });
 
     dataTable.on('search.dt', () => handleSearch());

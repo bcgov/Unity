@@ -7,9 +7,6 @@ namespace Unity.GrantManager.AI
         [JsonPropertyName("userPrompt")]
         public string UserPrompt { get; set; } = string.Empty;
 
-        [JsonPropertyName("systemPrompt")]
-        public string? SystemPrompt { get; set; }
-
         [JsonPropertyName("maxTokens")]
         public int MaxTokens { get; set; } = 150;
 

@@ -12,6 +12,8 @@ public static class GrantManagerDomainErrorCodes
 
     /* ASSESSMENTS */
     public const string AssessmentNotFound = "GrantManager:AssessmentNotFound";
+    public const string CannotModifyAiAssessment = "GrantManager:CannotModifyAiAssessment";
+    public const string CannotCloneNonAiAssessment = "GrantManager:CannotCloneNonAiAssessment";
     public const string AssessmentUserAssignmentAlreadyExists = "GrantManager:AssessmentUserAssignmentAlreadyExists";
     public const string CantCreateAssessmentForClosedApplication = "GrantManager:CantCreateAssessmentForClosedApplication";
     public const string CantUpdateAssessmentForClosedApplication = "GrantManager:CantUpdateAssessmentForClosedApplication";

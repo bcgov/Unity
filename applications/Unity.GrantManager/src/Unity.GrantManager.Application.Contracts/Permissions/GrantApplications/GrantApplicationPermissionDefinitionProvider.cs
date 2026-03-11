@@ -1,7 +1,6 @@
 ﻿using Unity.GrantManager.Localization;
 using Unity.Modules.Shared;
 using Volo.Abp.Authorization.Permissions;
-using Volo.Abp.Features;
 using Volo.Abp.Localization;
 using Volo.Abp.SettingManagement;
 
@@ -115,27 +114,7 @@ namespace Unity.GrantManager.Permissions.GrantApplications
             //-- TAG ASSIGNMENT
             var tagsPermissionsGroup = context.AddGroup("Tags", L("Permission:Tags"));
             tagsPermissionsGroup.AddPermission(UnitySelector.Application.Tags.Create, L(UnitySelector.Application.Tags.Create));
-            tagsPermissionsGroup.AddPermission(UnitySelector.Application.Tags.Delete, L(UnitySelector.Application.Tags.Delete));
-
-            // AI Permission Group
-            var aiPermissionsGroup = context.AddGroup(
-                GrantApplicationPermissions.AI.GroupName,
-                L("Permission:AI"));
-
-            aiPermissionsGroup.AddPermission(
-                GrantApplicationPermissions.AI.Reporting.Default,
-                L("Permission:AI.Reporting"))
-                .RequireFeatures("Unity.AIReporting");
-
-            aiPermissionsGroup.AddPermission(
-                GrantApplicationPermissions.AI.ApplicationAnalysis.Default,
-                L("Permission:AI.ApplicationAnalysis"))
-                .RequireFeatures("Unity.AI.ApplicationAnalysis");
-
-            aiPermissionsGroup.AddPermission(
-                GrantApplicationPermissions.AI.AttachmentSummary.Default,
-                L("Permission:AI.AttachmentSummary"))
-                .RequireFeatures("Unity.AI.AttachmentSummaries");
+            tagsPermissionsGroup.AddPermission(UnitySelector.Application.Tags.Delete, L(UnitySelector.Application.Tags.Delete));           
         }
 
         private static LocalizableString L(string name)
