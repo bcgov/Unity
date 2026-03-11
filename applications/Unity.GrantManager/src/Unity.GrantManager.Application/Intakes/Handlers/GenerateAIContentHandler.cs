@@ -54,13 +54,20 @@ namespace Unity.GrantManager.Intakes.Handlers
             AIJsonKeys.Errors,
             AIJsonKeys.Warnings,
             AIJsonKeys.Summaries,
-            AIJsonKeys.Dismissed
+            AIJsonKeys.NextSteps,
+            AIJsonKeys.Recommendation
         };
         private static readonly string[] AllowedFindingProperties =
         {
             AIJsonKeys.Id,
+            AIJsonKeys.Hidden,
             AIJsonKeys.Title,
             AIJsonKeys.Detail
+        };
+        private static readonly string[] AllowedRecommendationProperties =
+        {
+            AIJsonKeys.Decision,
+            AIJsonKeys.Rationale
         };
         private static readonly string[] AllowedScoresheetAnswerProperties =
         {
@@ -880,7 +887,8 @@ namespace Unity.GrantManager.Intakes.Handlers
                 if (!root.TryGetProperty(AIJsonKeys.Errors, out var errors) ||
                     !root.TryGetProperty(AIJsonKeys.Warnings, out var warnings) ||
                     !root.TryGetProperty(AIJsonKeys.Summaries, out var summaries) ||
-                    !root.TryGetProperty(AIJsonKeys.Dismissed, out var dismissedItems))
+                    !root.TryGetProperty(AIJsonKeys.NextSteps, out var nextSteps) ||
+                    !root.TryGetProperty(AIJsonKeys.Recommendation, out var recommendation))
                 {
                     return false;
                 }
@@ -890,13 +898,11 @@ namespace Unity.GrantManager.Intakes.Handlers
                     return false;
                 }
 
-                if (!IsValidFindingsArray(errors) || !IsValidFindingsArray(warnings) || !IsValidFindingsArray(summaries))
-                {
-                    return false;
-                }
-
-                if (dismissedItems.ValueKind != JsonValueKind.Array ||
-                    dismissedItems.EnumerateArray().Any(id => id.ValueKind != JsonValueKind.String))
+                if (!IsValidFindingsArray(errors) ||
+                    !IsValidFindingsArray(warnings) ||
+                    !IsValidFindingsArray(summaries) ||
+                    !IsValidFindingsArray(nextSteps) ||
+                    !IsValidRecommendation(recommendation))
                 {
                     return false;
                 }
@@ -933,6 +939,12 @@ namespace Unity.GrantManager.Intakes.Handlers
                     return false;
                 }
 
+                if (!finding.TryGetProperty(AIJsonKeys.Hidden, out var hidden) ||
+                    (hidden.ValueKind != JsonValueKind.True && hidden.ValueKind != JsonValueKind.False))
+                {
+                    return false;
+                }
+
                 if (!HasOnlyAllowedProperties(finding, AllowedFindingProperties))
                 {
                     return false;
@@ -940,6 +952,33 @@ namespace Unity.GrantManager.Intakes.Handlers
             }
 
             return true;
+        }
+
+        private static bool IsValidRecommendation(JsonElement element)
+        {
+            if (element.ValueKind != JsonValueKind.Object)
+            {
+                return false;
+            }
+
+            if (!element.TryGetProperty(AIJsonKeys.Decision, out var decision) || decision.ValueKind != JsonValueKind.String)
+            {
+                return false;
+            }
+
+            var decisionValue = decision.GetString();
+            if (!string.Equals(decisionValue, "PROCEED", StringComparison.Ordinal) &&
+                !string.Equals(decisionValue, "HOLD", StringComparison.Ordinal))
+            {
+                return false;
+            }
+
+            if (!element.TryGetProperty(AIJsonKeys.Rationale, out var rationale) || rationale.ValueKind != JsonValueKind.String)
+            {
+                return false;
+            }
+
+            return HasOnlyAllowedProperties(element, AllowedRecommendationProperties);
         }
 
         private static bool IsValidScoresheetAnswersPayload(string scoresheetJson)
