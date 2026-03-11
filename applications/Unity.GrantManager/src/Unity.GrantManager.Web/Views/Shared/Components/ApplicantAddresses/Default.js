@@ -145,6 +145,7 @@ $(function () {
         if (target === '#contactsSubTabPane' && contactsTable) contactsTable.columns.adjust().draw(false);
         if (target === '#addressesSubTabPane' && addressesTable) addressesTable.columns.adjust().draw(false);
         notifyApplicantAddressesLayoutChange();
+        requestAnimationFrame(() => notifyApplicantAddressesLayoutChange());
     });
 
     if (contactsTable) {

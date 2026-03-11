@@ -6,10 +6,12 @@ $(document).ready(function () {
     window.addEventListener('applicant-submissions-layout-changed', function () {
         applyTabHeightOffset();
         debouncedResizeAwareDataTables();
+        scheduleDeferredLayoutPass();
     });
     window.addEventListener('applicant-addresses-layout-changed', function () {
         applyTabHeightOffset();
         debouncedResizeAwareDataTables();
+        scheduleDeferredLayoutPass();
     });
 
     // Handle breadcrumb back button
@@ -21,12 +23,18 @@ $(document).ready(function () {
     $('button[data-bs-toggle="tab"]').on('shown.bs.tab', function (e) {
         let targetTab = $(e.target).attr('data-bs-target');
         $(targetTab).addClass('fade-in-load visible');
+        if ($(e.target).closest('#detailsTab').length) {
+            syncLeftTabScrollPosition(targetTab);
+            scheduleLeftTabScrollReset(targetTab);
+        }
         applyTabHeightOffset();
+        scheduleDeferredLayoutPass();
     });
 
     // Add event listeners for tab clicks to adjust DataTables
     $('#detailsTab li').on('click', function () {
         debouncedAdjustTables('detailsTab');
+        scheduleDeferredLayoutPass();
     });
 
     $('#myTabContent li').on('click', function () {
@@ -125,10 +133,17 @@ function applyTabHeightOffset() {
     const activeLeftPaneId = activeLeftPane?.id;
     const usesInternalScroll = activeLeftPaneId === 'nav-submissions' || activeLeftPaneId === 'nav-addresses';
     tabContent.style.overflowY = usesInternalScroll ? 'hidden' : 'auto';
+    if (usesInternalScroll) {
+        tabContent.scrollTop = 0;
+    }
+    if (activeLeftPaneId === 'nav-addresses' && activeLeftPane) {
+        activeLeftPane.style.height = '100%';
+        activeLeftPane.style.minHeight = '0';
+        activeLeftPane.style.overflow = 'hidden';
+        resizeApplicantAddressesPane(activeLeftPane);
+    }
 
     resizeSubmissionsScrollBody();
-    resizeApplicantAddressesScrollBodies();
-
     const rightTabContent = document.getElementById('myTabContent');
     if (rightTabContent) {
         const availableRightHeight = Math.max(
@@ -140,8 +155,52 @@ function applyTabHeightOffset() {
     }
 }
 
+function syncLeftTabScrollPosition(targetTabSelector) {
+    const leftTabContent = document.querySelector('#detailsTab .tab-content');
+    if (!leftTabContent) {
+        return;
+    }
+
+    leftTabContent.scrollTop = 0;
+
+    const targetPane = targetTabSelector ? document.querySelector(targetTabSelector) : null;
+    if (targetPane) {
+        targetPane.scrollTop = 0;
+    }
+}
+
+function scheduleLeftTabScrollReset(targetTabSelector) {
+    [0, 40, 120, 220].forEach((delay) => {
+        setTimeout(() => {
+            const leftTabContent = document.querySelector('#detailsTab .tab-content');
+            if (leftTabContent) {
+                leftTabContent.scrollTop = 0;
+            }
+
+            const targetPane = targetTabSelector ? document.querySelector(targetTabSelector) : null;
+            if (targetPane) {
+                targetPane.scrollTop = 0;
+                targetPane.querySelectorAll('div, section, form').forEach((element) => {
+                    if (element.scrollTop > 0) {
+                        element.scrollTop = 0;
+                    }
+                });
+            }
+        }, delay);
+    });
+}
+
 function scheduleInitialLayoutPasses() {
     [0, 120, 300, 650, 1100].forEach((delay) => {
+        setTimeout(() => {
+            applyTabHeightOffset();
+            debouncedResizeAwareDataTables();
+        }, delay);
+    });
+}
+
+function scheduleDeferredLayoutPass() {
+    [0, 30, 120, 250].forEach((delay) => {
         setTimeout(() => {
             applyTabHeightOffset();
             debouncedResizeAwareDataTables();
@@ -191,53 +250,38 @@ function resizeSubmissionsScrollBody() {
     submissionsScrollBody.style.overflowX = 'auto';
 }
 
-function resizeApplicantAddressesScrollBodies() {
-    const addressesPane = document.getElementById('nav-addresses');
-    if (!addressesPane) {
+function resizeApplicantAddressesPane(addressesPane) {
+    const addressesWidget = addressesPane.querySelector('.applicant-addresses-widget');
+    const addressesForm = addressesPane.querySelector('.applicant-organization-info');
+    const innerTabContent = addressesPane.querySelector('.applicant-organization-info > .tab-content');
+    const activeSubPane = innerTabContent?.querySelector('.tab-pane.active');
+
+    if (!addressesWidget || !addressesForm || !innerTabContent || !activeSubPane) {
         return;
     }
 
-    resizeScrollBodyWithinContainer('ApplicantContactsTable_wrapper', addressesPane);
-    resizeScrollBodyWithinContainer('ApplicantAddressesTable_wrapper', addressesPane);
-}
+    const availableWidgetHeight = Math.max(
+        220,
+        Math.floor(addressesPane.getBoundingClientRect().height - 8)
+    );
+    addressesWidget.style.height = `${availableWidgetHeight}px`;
+    addressesWidget.style.minHeight = '0';
 
-function resizeScrollBodyWithinContainer(wrapperId, containerElement) {
-    const tableWrapper = document.getElementById(wrapperId);
-    const scrollBody = tableWrapper?.querySelector('.dt-scroll-body');
-    if (!tableWrapper || !scrollBody || !containerElement) {
-        return;
-    }
+    const innerTabContentTop = innerTabContent.getBoundingClientRect().top;
+    const widgetBottom = addressesWidget.getBoundingClientRect().bottom;
+    const availableInnerTabHeight = Math.max(
+        140,
+        Math.floor(widgetBottom - innerTabContentTop - 8)
+    );
 
-    const style = getComputedStyle(tableWrapper);
-    if (style.display === 'none' || style.visibility === 'hidden') {
-        return;
-    }
-
-    const containerRect = containerElement.getBoundingClientRect();
-    const wrapperRect = tableWrapper.getBoundingClientRect();
-    const availableWrapperHeight = Math.floor(containerRect.bottom - wrapperRect.top - 8);
-
-    if (availableWrapperHeight <= 0) {
-        return;
-    }
-
-    let reservedHeight = 0;
-    Array.from(tableWrapper.children).forEach((child) => {
-        const childRect = child.getBoundingClientRect();
-
-        if (child.contains(scrollBody)) {
-            const bodyRect = scrollBody.getBoundingClientRect();
-            reservedHeight += Math.max(0, Math.ceil(childRect.height - bodyRect.height));
-            return;
-        }
-
-        reservedHeight += Math.ceil(childRect.height);
-    });
-
-    const maxBodyHeight = Math.max(120, availableWrapperHeight - reservedHeight - 4);
-    scrollBody.style.maxHeight = `${maxBodyHeight}px`;
-    scrollBody.style.overflowY = 'auto';
-    scrollBody.style.overflowX = 'auto';
+    addressesForm.style.height = `${availableWidgetHeight}px`;
+    addressesForm.style.minHeight = '0';
+    innerTabContent.style.height = `${availableInnerTabHeight}px`;
+    innerTabContent.style.minHeight = '0';
+    activeSubPane.style.height = `${availableInnerTabHeight}px`;
+    activeSubPane.style.minHeight = '0';
+    activeSubPane.style.overflowY = 'auto';
+    activeSubPane.style.overflowX = 'hidden';
 }
 
 function initializeResizableDivider() {

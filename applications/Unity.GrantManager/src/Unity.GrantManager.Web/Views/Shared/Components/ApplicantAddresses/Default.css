@@ -2,6 +2,11 @@
 
 .applicant-addresses-widget {
     position: relative;
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
 }
 
 .applicant-info-container {
@@ -12,7 +17,12 @@
 .applicant-organization-info {
     border-radius: 8px;
     padding: 0 1rem 1rem 1rem;
-    margin-bottom: 1rem;
+    margin-bottom: 0;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
 }
 
 .sub-tab-header {
@@ -61,6 +71,25 @@
     padding-top: 0.5rem;
 }
 
+.applicant-organization-info > .tab-content {
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.applicant-organization-info > .tab-content > .tab-pane {
+    height: 100%;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+#contactsSubTabPane,
+#addressesSubTabPane {
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
 .table-card {
     background-color: #fff;
     border: 1px solid #e0e6ed;
@@ -75,6 +104,7 @@
 
 .table-card__body {
     padding: 1.25rem;
+    overflow: visible;
 }
 
 .addresses-table,
@@ -85,11 +115,16 @@
 #ApplicantAddressesTable_wrapper,
 #ApplicantContactsTable_wrapper {
     width: 100%;
+    overflow: visible !important;
 }
 
+#ApplicantAddressesTable_wrapper .dt-container,
+#ApplicantContactsTable_wrapper .dt-container,
 #ApplicantAddressesTable_wrapper .dt-scroll,
-#ApplicantContactsTable_wrapper .dt-scroll {
-    overflow: visible;
+#ApplicantContactsTable_wrapper .dt-scroll,
+#ApplicantAddressesTable_wrapper .dt-layout-row,
+#ApplicantContactsTable_wrapper .dt-layout-row {
+    overflow: visible !important;
 }
 
 #ApplicantAddressesTable_wrapper .dt-scroll-head .dt-scroll-headInner,
@@ -102,8 +137,8 @@
 #ApplicantAddressesTable_wrapper .dt-scroll-body,
 #ApplicantContactsTable_wrapper .dt-scroll-body {
     overflow-x: auto;
-    overflow-y: auto;
-    max-height: none;
+    overflow-y: visible;
+    max-height: none !important;
 }
 
 #ApplicantAddressesTable_wrapper .dt-scroll-body table,
