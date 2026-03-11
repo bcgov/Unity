@@ -9,6 +9,10 @@ $(function () {
     let addressesTable = null;
     let zoneForm = null;
 
+    function notifyApplicantAddressesLayoutChange() {
+        window.dispatchEvent(new CustomEvent('applicant-addresses-layout-changed'));
+    }
+
     if ($.fn.DataTable && $('#ApplicantContactsTable').length) {
         contactsTable = $('#ApplicantContactsTable').DataTable(
             abp.libs.datatables.normalizeConfiguration({
@@ -140,6 +144,23 @@ $(function () {
         const target = $(e.target).data('bsTarget');
         if (target === '#contactsSubTabPane' && contactsTable) contactsTable.columns.adjust().draw(false);
         if (target === '#addressesSubTabPane' && addressesTable) addressesTable.columns.adjust().draw(false);
+        notifyApplicantAddressesLayoutChange();
+    });
+
+    if (contactsTable) {
+        contactsTable.on('draw', function () {
+            notifyApplicantAddressesLayoutChange();
+        });
+    }
+
+    if (addressesTable) {
+        addressesTable.on('draw', function () {
+            notifyApplicantAddressesLayoutChange();
+        });
+    }
+
+    [0, 120, 300, 700].forEach((delay) => {
+        setTimeout(notifyApplicantAddressesLayoutChange, delay);
     });
 
     const form = $('#ApplicantAddressesForm');

@@ -97,6 +97,18 @@ $(function () {
         dynamicButtonContainerId: 'submissionsDynamicButtonContainerId'
     });
 
+    function notifySubmissionsLayoutChange() {
+        window.dispatchEvent(new CustomEvent('applicant-submissions-layout-changed'));
+    }
+
+    [0, 120, 280, 600].forEach((delay) => {
+        setTimeout(notifySubmissionsLayoutChange, delay);
+    });
+
+    dataTable.on('draw', function () {
+        notifySubmissionsLayoutChange();
+    });
+
     // External search binding
     dataTable.externalSearch('#submissions-search', { delay: 300 });
 
