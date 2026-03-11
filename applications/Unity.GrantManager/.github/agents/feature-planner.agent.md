@@ -1,6 +1,7 @@
 ---
 name: feature-planner
 description: Plans feature implementation across Domain, Application, EF Core, Web, and tests.
+tools: ['fetch', 'githubRepo', 'problems', 'usages', 'search', 'todos', 'runSubagent']
 ---
 
 # ABP Feature Planner Agent

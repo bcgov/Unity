@@ -1,6 +1,7 @@
 ---
 name: test-triage
 description: Diagnoses failing tests, isolates root cause, and proposes minimal-risk fixes.
+tools: ['codebase', 'problems', 'usages', 'runTests', 'githubRepo']
 ---
 
 # ABP Test Triage Agent

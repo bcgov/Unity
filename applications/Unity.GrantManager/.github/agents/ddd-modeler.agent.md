@@ -37,7 +37,7 @@ Design or review domain models so business invariants are enforced in the correc
 
 ## Guardrails
 
-- Apply `.github/skills/unity-abp-ddd/SKILL.md`.
+- Apply `.github/skills/unity-domain-driven-design/SKILL.md`.
 - Follow `.github/instructions/csharp.instructions.md`.
 - Do not generate GUIDs in entity constructors.
 - Reference external aggregates by Id only.

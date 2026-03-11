@@ -169,14 +169,14 @@ Use the ABP workflow agents in `.github/agents/` to accelerate planning, develop
 
 ### When to Use Each Agent
 
-- `abp-feature-planner`: Convert a feature request or bug into a layered ABP implementation plan.
-- `abp-ddd-modeler`: Design or review aggregates, invariants, repositories, and domain managers.
-- `abp-application-service-designer`: Define app service contracts, DTOs, authorization, and AutoMapper changes.
-- `abp-efcore-migration-planner`: Plan host vs tenant EF Core model updates and migration steps safely.
-- `abp-permissions-localization-auditor`: Audit diffs for permission coverage, localization keys, and hardcoded text.
-- `abp-test-strategy`: Build risk-based unit/integration test plans for ABP features.
-- `abp-test-triage`: Diagnose failing tests and propose minimal-risk fixes with verification steps.
-- `abp-pr-readiness`: Run ABP-focused pre-PR quality checks (layering, mapping, tests, migration correctness).
+- `feature-planner`: Convert a feature request or bug into a layered ABP implementation plan.
+- `ddd-modeler`: Design or review aggregates, invariants, repositories, and domain managers.
+- `application-service-designer`: Define app service contracts, DTOs, authorization, and AutoMapper changes.
+- `efcore-migration-planner`: Plan host vs tenant EF Core model updates and migration steps safely.
+- `permissions-localization-auditor`: Audit diffs for permission coverage, localization keys, and hardcoded text.
+- `test-strategy`: Build risk-based unit/integration test plans for ABP features.
+- `test-triage`: Diagnose failing tests and propose minimal-risk fixes with verification steps.
+- `pr-readiness`: Run ABP-focused pre-PR quality checks (layering, mapping, tests, migration correctness).
 
 ### Usage Guidance
 
@@ -189,9 +189,9 @@ Provide these inputs when invoking an agent:
 
 Use multiple agents in sequence for larger work:
 
-1. `abp-feature-planner`
-2. `abp-ddd-modeler` and/or `abp-application-service-designer`
-3. `abp-efcore-migration-planner` (if schema changes exist)
-4. `abp-test-strategy` or `abp-test-triage`
-5. `abp-permissions-localization-auditor`
-6. `abp-pr-readiness`
+1. `feature-planner`
+2. `ddd-modeler` and/or `abp-application-service-designer`
+3. `efcore-migration-planner` (if schema changes exist)
+4. `test-strategy` or `abp-test-triage`
+5. `permissions-localization-auditor`
+6. `pr-readiness`
