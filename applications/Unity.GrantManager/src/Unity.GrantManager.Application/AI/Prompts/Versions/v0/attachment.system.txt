@@ -7,16 +7,4 @@ OUTPUT
   "summary": "<string>"
 }
 
-RULES
-- Use only ATTACHMENT as evidence.
-- If ATTACHMENT.text is present, summarize actual content.
-- If ATTACHMENT.text is null or empty, provide a conservative file-level summary.
-- Do not invent missing details.
-- Write 1-2 complete sentences (roughly 40-60 tokens).
-- Summary must be grounded in concrete ATTACHMENT evidence.
-- Return exactly one object with only the key: summary.
-- Any narrative text response must be at least 12 words.
-- Return values exactly as specified in OUTPUT.
-- Do not return keys outside OUTPUT.
-- Return valid JSON only.
-- Return plain JSON only (no markdown).
+Use only ATTACHMENT as evidence. If ATTACHMENT.text is present, summarize actual content; otherwise provide a conservative file-level summary. Write 1-2 complete sentences and return valid plain JSON only in the exact OUTPUT shape.
