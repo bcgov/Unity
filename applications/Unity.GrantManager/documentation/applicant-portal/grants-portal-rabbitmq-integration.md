@@ -4,7 +4,7 @@
 
 The Unity Grant Manager receives commands from the Applicant Portal (Grants Portal) via RabbitMQ and sends acknowledgment responses back. This provides reliable, decoupled communication for profile data mutations (contacts, addresses, organizations) that the portal user initiates.
 
-The integration is built on the [Transactional Outbox Pattern](./transactional-outbox-pattern.md) with four dedicated `BackgroundService` instances forming a message processing pipeline.
+The integration is built on the [Transactional Outbox Pattern](./transactional-outbox-pattern.md) with a message processing pipeline: the consumer runs as a `BackgroundService` (competing consumer on every pod), while the inbox processor, outbox publisher, and cleanup workers run as Quartz `[DisallowConcurrentExecution]` jobs coordinated via the clustered Quartz scheduler.
 
 **Source name**: `"GrantsPortal"` (used as the discriminator in inbox/outbox tables)
 
@@ -27,11 +27,11 @@ graph TB
     subgraph Unity["Unity Grant Manager"]
         S1["① GrantsPortalCommandConsumerService<br/><i>RabbitMQ → InboxMessages</i>"]
         IT[(InboxMessages)]
-        S2["② GrantsPortalInboxProcessorService<br/><i>InboxMessages → Handler → OutboxMessages</i>"]
+        S2["② GrantsPortalInboxWorker<br/><i>InboxMessages → Handler → OutboxMessages</i>"]
         H["IPortalCommandHandler<br/>implementations"]
         OT[(OutboxMessages)]
-        S3["③ GrantsPortalOutboxProcessorService<br/><i>OutboxMessages → RabbitMQ</i>"]
-        S4["④ GrantsPortalMessageCleanupService<br/><i>Purge old rows</i>"]
+        S3["③ GrantsPortalOutboxWorker<br/><i>OutboxMessages → RabbitMQ</i>"]
+        S4["④ GrantsPortalMessageCleanupWorker<br/><i>Purge old rows</i>"]
     end
 
     PP -->|"Publish command"| EX
@@ -89,6 +89,7 @@ All inbound commands use the `PluginDataEnvelope` wrapper:
     "action": "CONTACT_CREATE_COMMAND",
     "contactId": "a1b2c3d4-...",
     "profileId": "3fa85f64-...",
+    "subject": "testuser@idir",
     "provider": "7c9e6679-...",
     "data": { }
   }
@@ -124,6 +125,7 @@ All inbound commands use the `PluginDataEnvelope` wrapper:
 | `addressId` | `string?` | Target address ID (for address commands) |
 | `organizationId` | `string?` | Target organization/applicant ID |
 | `profileId` | `string?` | Applicant profile ID |
+| `subject` | `string?` | Raw OIDC subject identifier (e.g. `testuser@idir`). Used by `ContactCreateHandler` to match submissions — Unity normalizes by stripping the IDP suffix and uppercasing before comparison. |
 | `provider` | `string?` | **Tenant ID** as a GUID string — used for tenant resolution |
 | `data` | `JObject?` | Inner command-specific data payload |
 
@@ -179,13 +181,17 @@ After processing, Unity publishes an acknowledgment:
 6. Insert `InboxMessage` with `Status = Pending`
 7. **ACK** the delivery tag (only after commit)
 
-**Connection recovery**: On `ConnectionShutdown`, waits 5s then re-runs `ConnectAndConsumeAsync`.
+**Connection recovery**: On `ConnectionShutdown`, waits 5s then re-runs `ConnectAndConsumeAsync`. A `SemaphoreSlim` guard prevents parallel reconnect attempts within the same process when RabbitMQ fires multiple shutdown events in rapid succession (e.g., network flap).
 
-### ② GrantsPortalInboxProcessorService
+**Multi-pod idempotency**: The `InboxMessages.MessageId` column has a **unique index**. The consumer first checks `FindByMessageIdAsync` (fast path), but if two pods race on a redelivered message, the unique constraint prevents duplicate inserts. The consumer catches the PostgreSQL `23505` (unique violation) and treats it as idempotent success — ACKs without requeueing.
+
+### ② GrantsPortalInboxWorker
 
 **Role**: Polls inbox, dispatches to handlers, writes ack to outbox.
 
-**Polling**: Every 5s when messages were found, every 15s when idle. Batch size: 10.
+**Schedule**: Quartz cron (default: `0/5 * * * * ?` — every 5 seconds). Configurable via `InboxProcessorCron`.
+
+**Concurrency**: `[DisallowConcurrentExecution]` — only one instance runs at a time.
 
 **Per message**:
 1. Mark `Status = Processing`, increment `RetryCount`
@@ -203,11 +209,13 @@ After processing, Unity publishes an acknowledgment:
 
 **Tenant context**: Only the handler execution runs under the tenant context. Inbox/outbox operations run against the host database without tenant scoping.
 
-### ③ GrantsPortalOutboxProcessorService
+### ③ GrantsPortalOutboxWorker
 
 **Role**: Polls outbox, publishes acks to RabbitMQ with publisher confirms.
 
-**Polling**: Every 5s when messages were found, every 15s when idle. Batch size: 10.
+**Schedule**: Quartz cron (default: `0/5 * * * * ?` — every 5 seconds). Configurable via `OutboxProcessorCron`.
+
+**Concurrency**: `[DisallowConcurrentExecution]` — only one instance runs at a time.
 
 **Per message**:
 1. Ensure RabbitMQ channel is open (with `ConfirmSelect` enabled)
@@ -216,14 +224,14 @@ After processing, Unity publishes an acknowledgment:
 4. On confirm: mark `Status = Processed`, set `PublishedAt`
 5. On failure: increment `RetryCount`; after 3 attempts mark as `Failed`
 
-### ④ GrantsPortalMessageCleanupService
+### ④ GrantsPortalMessageCleanupWorker
 
 **Role**: Purges old processed/failed messages from both tables.
 
-- **Interval**: Every 1 hour
+- **Schedule**: Quartz cron (default: `0 0 0/1 * * ?` — every hour). Configurable via `MessageCleanupCron`.
 - **Retention**: Configurable via `MessageRetentionDays` (default: 30)
 - **Scope**: Deletes rows where `Status ∈ {Processed, Failed}` and `ReceivedAt`/`CreatedAt` < cutoff
-- **Startup delay**: 1 minute (waits for app to fully start)
+- **Concurrency**: `[DisallowConcurrentExecution]`
 
 ---
 
@@ -245,13 +253,13 @@ The return string becomes the `Details` field in the outbound acknowledgment.
 
 | DataType | Handler | Entity | Description |
 |----------|---------|--------|-------------|
-| `CONTACT_CREATE_COMMAND` | `ContactCreateHandler` | `Contact` + `ContactLink` | Creates a new contact and links it to the profile. Idempotent — skips if contact already exists. |
+| `CONTACT_CREATE_COMMAND` | `ContactCreateHandler` | `Contact` + `ContactLink` | Creates a new contact and links it to the profile. Enriches the contact with applicant agent IDs from matching submissions. Idempotent — skips if contact already exists. |
 | `CONTACT_EDIT_COMMAND` | `ContactEditHandler` | `Contact` | Updates an existing contact's fields. |
 | `CONTACT_SET_PRIMARY_COMMAND` | `ContactSetPrimaryHandler` | `ContactLink` | Sets one contact as primary for a profile; clears primary on all other links. |
 | `CONTACT_DELETE_COMMAND` | `ContactDeleteHandler` | `ContactLink` + `Contact` | Deletes contact links then the contact entity. |
 | `ADDRESS_EDIT_COMMAND` | `AddressEditHandler` | `ApplicantAddress` | Updates address fields (street, city, province, etc.) and address type. |
 | `ADDRESS_SET_PRIMARY_COMMAND` | `AddressSetPrimaryHandler` | `ApplicantAddress` | Sets `isPrimary` extra property on the target address; clears it on sibling addresses that had it set. |
-| `ORGANIZATION_EDIT_COMMAND` | `OrganizationEditHandler` | `Applicant` | Updates organization fields on the applicant entity. |
+| `ORGANIZATION_EDIT_COMMAND` | `OrganizationEditHandler` | `Applicant` | Updates organization fields on the applicant entity. The `organizationId` corresponds to `Applicant.Id` returned by [OrgInfoDataProvider](./applicant-profile-data-providers.md#orginfordataprovider). |
 
 ### Command Data Payloads
 
@@ -272,6 +280,33 @@ Each command that requires inner data deserializes `payload.Data` to a typed cla
   "isPrimary": true
 }
 ```
+
+### Applicant Agent ID Enrichment
+
+When a contact is created via `CONTACT_CREATE_COMMAND`, the handler enriches the `Contact` entity with applicant agent IDs linked to the subject's submissions. This allows downstream systems to associate portal contacts with existing application agents.
+
+**How it works**:
+
+1. The handler reads the raw OIDC subject from `payload.Subject` (e.g. `testuser@idir`).
+2. It normalizes the subject to match the format stored in `ApplicationFormSubmission.OidcSub`:
+   - Strips the IDP suffix (everything after and including `@`)
+   - Converts to uppercase
+   - Example: `testuser@idir` → `TESTUSER`
+3. It queries `ApplicationFormSubmission` records where `OidcSub` matches the normalized value.
+4. From those submissions, it collects distinct `ApplicationId` values.
+5. It queries `ApplicantAgent` records linked to those applications.
+6. The distinct agent IDs are stored on the contact's `ExtraProperties` as `applicantAgentIds`.
+
+> **Note**: The normalization follows the same convention as `IntakeSubmissionHelper.ExtractOidcSub`, which is used when CHEFS submissions are ingested.
+
+**Resulting ExtraProperties** (on the `Contact` entity):
+```json
+{
+  "applicantAgentIds": ["agent-guid-1", "agent-guid-2"]
+}
+```
+
+If `subject` is null/empty, or no matching submissions or agents are found, the `applicantAgentIds` property is not set. This is a best-effort enrichment and does not fail the contact creation.
 
 **AddressEditData**:
 ```json
@@ -338,7 +373,10 @@ The tenant ID is stored on the `InboxMessage.TenantId` field. The inbox processo
       "InboundQueue": "unity.commands",
       "InboundRoutingKeys": [ "commands.unity.plugindata" ],
       "AckRoutingKey": "grants.unity.acknowledgment",
-      "MessageRetentionDays": 30
+      "MessageRetentionDays": 30,
+      "InboxProcessorCron": "0/5 * * * * ?",
+      "OutboxProcessorCron": "0/5 * * * * ?",
+      "MessageCleanupCron": "0 0 0/1 * * ?"
     }
   }
 }
@@ -358,6 +396,9 @@ Unity.GrantManager.Application/GrantsPortal/Configuration/GrantsPortalRabbitMqOp
 | `InboundRoutingKeys` | `["commands.unity.plugindata"]` | Routing keys to bind |
 | `AckRoutingKey` | `"grants.unity.acknowledgment"` | Routing key for outbound acks |
 | `MessageRetentionDays` | `30` | Days to retain processed/failed messages |
+| `InboxProcessorCron` | `"0/5 * * * * ?"` | Quartz cron for inbox polling (every 5s) |
+| `OutboxProcessorCron` | `"0/5 * * * * ?"` | Quartz cron for outbox publishing (every 5s) |
+| `MessageCleanupCron` | `"0 0 0/1 * * ?"` | Quartz cron for message cleanup (every hour) |
 
 **Section path**: `RabbitMQ:GrantsPortal`
 
@@ -384,12 +425,14 @@ context.Services.AddTransient<IPortalCommandHandler, OrganizationEditHandler>();
 // Acknowledgment publisher
 context.Services.AddScoped<GrantsPortalAcknowledgmentPublisher>();
 
-// Background services (pipeline stages)
+// Pipeline services
 context.Services.AddHostedService<GrantsPortalCommandConsumerService>();   // ① RabbitMQ → inbox
-context.Services.AddHostedService<GrantsPortalInboxProcessorService>();    // ② inbox → handler → outbox
-context.Services.AddHostedService<GrantsPortalOutboxProcessorService>();   // ③ outbox → RabbitMQ
-context.Services.AddHostedService<GrantsPortalMessageCleanupService>();    // ④ purge old rows
+// ② GrantsPortalInboxWorker          — Quartz (auto-registered) — inbox → handler → outbox
+// ③ GrantsPortalOutboxWorker          — Quartz (auto-registered) — outbox → RabbitMQ
+// ④ GrantsPortalMessageCleanupWorker  — Quartz (auto-registered) — purge old rows
 ```
+
+> **Note**: Workers ②③④ extend `QuartzBackgroundWorkerBase` with `[DisallowConcurrentExecution]` and are auto-registered by ABP when `BackgroundJobs:Quartz:IsAutoRegisterEnabled` is `true`.
 
 ---
 
@@ -403,10 +446,10 @@ sequenceDiagram
     participant RMQ as RabbitMQ
     participant Consumer as ① Consumer
     participant Inbox as InboxMessages
-    participant Processor as ② Inbox Processor
+    participant Processor as ② Inbox Worker
     participant Handler as ContactEditHandler
     participant Outbox as OutboxMessages
-    participant Publisher as ③ Outbox Processor
+    participant Publisher as ③ Outbox Worker
 
     Portal->>RMQ: Publish CONTACT_EDIT_COMMAND<br/>routing: commands.unity.plugindata
     RMQ->>Consumer: Deliver message
@@ -491,7 +534,7 @@ SELECT * FROM "InboxMessages"
 WHERE "Status" = 'Pending' AND "ReceivedAt" < NOW() - INTERVAL '5 minutes';
 ```
 
-**Resolution**: Verify `GrantsPortalInboxProcessorService` is running in application logs. Restart the application if needed.
+**Resolution**: Verify `GrantsPortalInboxWorker` is running in application logs. Restart the application if needed.
 
 ### Messages stuck in Pending (Outbox)
 

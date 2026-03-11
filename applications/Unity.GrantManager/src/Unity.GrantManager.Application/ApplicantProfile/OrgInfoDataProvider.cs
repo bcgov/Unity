@@ -1,23 +1,84 @@
+using System;
+using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 using Unity.GrantManager.ApplicantProfile.ProfileData;
+using Unity.GrantManager.Applications;
 using Volo.Abp.DependencyInjection;
+using Volo.Abp.Domain.Repositories;
+using Volo.Abp.MultiTenancy;
 
 namespace Unity.GrantManager.ApplicantProfile
 {
     /// <summary>
-    /// Provides organization information for the applicant profile.
-    /// This is a placeholder provider for future implementation.
+    /// Provides organization information for the applicant profile by querying
+    /// applicants linked to the applicant's form submissions via OIDC subject.
     /// </summary>
     [ExposeServices(typeof(IApplicantProfileDataProvider))]
-    public class OrgInfoDataProvider : IApplicantProfileDataProvider, ITransientDependency
+    public class OrgInfoDataProvider(
+        ICurrentTenant currentTenant,
+        IRepository<ApplicationFormSubmission, Guid> applicationFormSubmissionRepository,
+        IRepository<Applicant, Guid> applicantRepository)
+        : IApplicantProfileDataProvider, ITransientDependency
     {
         /// <inheritdoc />
         public string Key => ApplicantProfileKeys.OrgInfo;
 
         /// <inheritdoc />
-        public Task<ApplicantProfileDataDto> GetDataAsync(ApplicantProfileInfoRequest request)
+        public async Task<ApplicantProfileDataDto> GetDataAsync(ApplicantProfileInfoRequest request)
         {
-            return Task.FromResult<ApplicantProfileDataDto>(new ApplicantOrgInfoDto());
+            var dto = new ApplicantOrgInfoDto
+            {
+                Organizations = []
+            };
+
+            var subject = request.Subject ?? string.Empty;
+            var normalizedSubject = subject.Contains('@')
+                    ? subject[..subject.IndexOf('@')].ToUpperInvariant()
+                    : subject.ToUpperInvariant();
+
+            using (currentTenant.Change(request.TenantId))
+            {
+                var submissionsQuery = await applicationFormSubmissionRepository.GetQueryableAsync();
+                var applicantsQuery = await applicantRepository.GetQueryableAsync();
+
+                var results = await (
+                    from submission in submissionsQuery
+                    join applicant in applicantsQuery on submission.ApplicantId equals applicant.Id
+                    where submission.OidcSub == normalizedSubject
+                    select new
+                    {
+                        applicant.Id,
+                        applicant.OrgName,
+                        applicant.OrganizationType,
+                        applicant.OrgNumber,
+                        applicant.OrgStatus,
+                        applicant.NonRegOrgName,
+                        applicant.FiscalMonth,
+                        applicant.FiscalDay,
+                        applicant.OrganizationSize,
+                        applicant.Sector,
+                        applicant.SubSector
+                    })
+                    .ToListAsync();
+
+                dto.Organizations.AddRange(results.Select(r => new OrgInfoItemDto
+                {
+                    Id = r.Id,
+                    OrgName = r.OrgName,
+                    OrganizationType = r.OrganizationType,
+                    OrgNumber = r.OrgNumber,
+                    OrgStatus = r.OrgStatus,
+                    NonRegOrgName = r.NonRegOrgName,
+                    FiscalMonth = r.FiscalMonth,
+                    FiscalDay = r.FiscalDay,
+                    OrganizationSize = r.OrganizationSize,
+                    Sector = r.Sector,
+                    SubSector = r.SubSector
+                }));
+            }
+
+            return dto;
         }
     }
 }

@@ -40,11 +40,11 @@ public class AddressSetPrimaryHandler(
 
                 var trackedSibling = await applicantAddressRepository.GetAsync(sibling.Id);
                 trackedSibling.SetProperty("isPrimary", false);
-                await applicantAddressRepository.UpdateAsync(trackedSibling, autoSave: true);
+                await applicantAddressRepository.UpdateAsync(trackedSibling);
             }
         }
 
-        await applicantAddressRepository.UpdateAsync(address, autoSave: true);
+        await applicantAddressRepository.UpdateAsync(address);
 
         logger.LogInformation("Address {AddressId} set as primary", addressId);
         return "Address set as primary";

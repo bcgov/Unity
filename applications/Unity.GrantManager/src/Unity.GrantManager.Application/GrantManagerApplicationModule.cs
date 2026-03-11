@@ -44,6 +44,7 @@ using Unity.GrantManager.Integrations.Geocoder;
 using Unity.GrantManager.GrantsPortal;
 using Unity.GrantManager.GrantsPortal.Configuration;
 using Unity.GrantManager.GrantsPortal.Handlers;
+using Unity.GrantManager.Messaging;
 
 namespace Unity.GrantManager;
 
@@ -160,11 +161,18 @@ public class GrantManagerApplicationModule : AbpModule
         context.Services.AddTransient<IPortalCommandHandler, AddressEditHandler>();
         context.Services.AddTransient<IPortalCommandHandler, AddressSetPrimaryHandler>();
         context.Services.AddTransient<IPortalCommandHandler, OrganizationEditHandler>();
+
+        // Register generic IInboxMessageHandler adapters for each portal command handler
+        context.Services.AddTransient<IInboxMessageHandler>(sp => new PortalCommandHandlerAdapter(sp.GetRequiredService<ContactCreateHandler>()));
+        context.Services.AddTransient<IInboxMessageHandler>(sp => new PortalCommandHandlerAdapter(sp.GetRequiredService<ContactEditHandler>()));
+        context.Services.AddTransient<IInboxMessageHandler>(sp => new PortalCommandHandlerAdapter(sp.GetRequiredService<ContactSetPrimaryHandler>()));
+        context.Services.AddTransient<IInboxMessageHandler>(sp => new PortalCommandHandlerAdapter(sp.GetRequiredService<ContactDeleteHandler>()));
+        context.Services.AddTransient<IInboxMessageHandler>(sp => new PortalCommandHandlerAdapter(sp.GetRequiredService<AddressEditHandler>()));
+        context.Services.AddTransient<IInboxMessageHandler>(sp => new PortalCommandHandlerAdapter(sp.GetRequiredService<AddressSetPrimaryHandler>()));
+        context.Services.AddTransient<IInboxMessageHandler>(sp => new PortalCommandHandlerAdapter(sp.GetRequiredService<OrganizationEditHandler>()));
+
         context.Services.AddScoped<GrantsPortalAcknowledgmentPublisher>();
         context.Services.AddHostedService<GrantsPortalCommandConsumerService>();  // RabbitMQ → inbox table
-        context.Services.AddHostedService<GrantsPortalInboxProcessorService>();   // inbox table → process → outbox table
-        context.Services.AddHostedService<GrantsPortalOutboxProcessorService>();  // outbox table → RabbitMQ
-        context.Services.AddHostedService<GrantsPortalMessageCleanupService>();   // purge old processed messages
 
         context.Services.AddScoped<IZoneChecker, ZoneChecker>();
 

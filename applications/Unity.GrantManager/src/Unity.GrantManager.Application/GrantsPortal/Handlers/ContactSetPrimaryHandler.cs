@@ -29,7 +29,7 @@ public class ContactSetPrimaryHandler(
         foreach (var link in profileLinks)
         {
             link.IsPrimary = link.ContactId == contactId;
-            await contactLinkRepository.UpdateAsync(link, autoSave: true);
+            await contactLinkRepository.UpdateAsync(link);
         }
 
         logger.LogInformation("Contact {ContactId} set as primary", contactId);

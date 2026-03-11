@@ -36,7 +36,7 @@ public class AddressEditHandler(
         address.Country = innerData.Country;
         address.AddressType = MapAddressType(innerData.AddressType);
 
-        await applicantAddressRepository.UpdateAsync(address, autoSave: true);
+        await applicantAddressRepository.UpdateAsync(address);
 
         logger.LogInformation("Address {AddressId} updated successfully", addressId);
         return "Address updated successfully";

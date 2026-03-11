@@ -23,6 +23,9 @@ public class PluginDataPayload
     [JsonProperty("provider")]
     public string? Provider { get; set; }
 
+    [JsonProperty("subject")]
+    public string? Subject { get; set; }
+
     [JsonProperty("data")]
     public JObject? Data { get; set; }
 }

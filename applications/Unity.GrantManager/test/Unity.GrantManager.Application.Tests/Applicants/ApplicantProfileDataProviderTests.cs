@@ -52,6 +52,17 @@ namespace Unity.GrantManager.Applicants
             return new AddressInfoDataProvider(currentTenant, submissionRepo, addressRepo, applicationRepo);
         }
 
+        private static OrgInfoDataProvider CreateOrgInfoDataProvider()
+        {
+            var currentTenant = Substitute.For<ICurrentTenant>();
+            currentTenant.Change(Arg.Any<Guid?>()).Returns(Substitute.For<IDisposable>());
+            var submissionRepo = Substitute.For<IRepository<ApplicationFormSubmission, Guid>>();
+            submissionRepo.GetQueryableAsync().Returns(Task.FromResult(Enumerable.Empty<ApplicationFormSubmission>().AsAsyncQueryable()));
+            var applicantRepo = Substitute.For<IRepository<Applicant, Guid>>();
+            applicantRepo.GetQueryableAsync().Returns(Task.FromResult(Enumerable.Empty<Applicant>().AsAsyncQueryable()));
+            return new OrgInfoDataProvider(currentTenant, submissionRepo, applicantRepo);
+        }
+
         private static SubmissionInfoDataProvider CreateSubmissionInfoDataProvider()
         {
             var currentTenant = Substitute.For<ICurrentTenant>();
@@ -87,14 +98,14 @@ namespace Unity.GrantManager.Applicants
         [Fact]
         public void OrgInfoDataProvider_Key_ShouldMatchExpected()
         {
-            var provider = new OrgInfoDataProvider();
+            var provider = CreateOrgInfoDataProvider();
             provider.Key.ShouldBe(ApplicantProfileKeys.OrgInfo);
         }
 
         [Fact]
         public async Task OrgInfoDataProvider_GetDataAsync_ShouldReturnOrgInfoDto()
         {
-            var provider = new OrgInfoDataProvider();
+            var provider = CreateOrgInfoDataProvider();
             var result = await provider.GetDataAsync(CreateRequest(ApplicantProfileKeys.OrgInfo));
             result.ShouldNotBeNull();
             result.ShouldBeOfType<ApplicantOrgInfoDto>();
@@ -154,7 +165,7 @@ namespace Unity.GrantManager.Applicants
             IApplicantProfileDataProvider[] providers =
             [
                 CreateContactInfoDataProvider(),
-                new OrgInfoDataProvider(),
+                CreateOrgInfoDataProvider(),
                 CreateAddressInfoDataProvider(),
                 CreateSubmissionInfoDataProvider(),
                 new PaymentInfoDataProvider()

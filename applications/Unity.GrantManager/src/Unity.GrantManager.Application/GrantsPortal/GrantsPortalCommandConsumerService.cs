@@ -18,7 +18,8 @@ namespace Unity.GrantManager.GrantsPortal;
 
 /// <summary>
 /// Pulls messages off the RabbitMQ queue, saves them to the inbox table, and ACKs immediately.
-/// Actual processing is done by <see cref="GrantsPortalInboxProcessorService"/>.
+/// Runs on every pod as a competing consumer — RabbitMQ distributes messages round-robin.
+/// Actual processing is done by <see cref="GrantsPortalInboxWorker"/>.
 /// </summary>
 public class GrantsPortalCommandConsumerService(
     IServiceProvider serviceProvider,
@@ -27,6 +28,15 @@ public class GrantsPortalCommandConsumerService(
     ILogger<GrantsPortalCommandConsumerService> logger) : BackgroundService
 {
     private readonly GrantsPortalRabbitMqOptions _options = options.Value;
+
+    // Guards against concurrent reconnect attempts within this process.
+    // RabbitMQ can fire ConnectionShutdown multiple times in rapid succession
+    // (e.g., network flap, broker restart) on different threadpool threads.
+    // Without this, parallel Task.Run calls would race on the shared
+    // _connection/_channel fields — one disposes while the other connects.
+    // This is NOT for cross-pod coordination (RabbitMQ handles that).
+    private readonly SemaphoreSlim _reconnectLock = new(1, 1);
+
     private IConnection? _connection;
     private IModel? _channel;
 
@@ -46,9 +56,9 @@ public class GrantsPortalCommandConsumerService(
         {
             await Task.Delay(Timeout.Infinite, stoppingToken);
         }
-        catch (OperationCanceledException)
+        catch (OperationCanceledException ex)
         {
-            logger.LogInformation("Grants Portal command consumer stopping...");
+            logger.LogInformation("Grants Portal command consumer stopping... {Ex}", ex.Message);
         }
     }
 
@@ -79,7 +89,7 @@ public class GrantsPortalCommandConsumerService(
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Failed to connect to RabbitMQ after {MaxRetries} attempts", MaxRetries);
+                logger.LogError(ex, "Failed to connect to RabbitMQ after {MaxRetries} attempts : {Ex}", MaxRetries, ex);
                 throw;
             }
         }
@@ -93,15 +103,29 @@ public class GrantsPortalCommandConsumerService(
 
         _ = Task.Run(async () =>
         {
-            await Task.Delay(InitialRetryDelay, _stoppingToken);
+            if (!await _reconnectLock.WaitAsync(0, _stoppingToken))
+            {
+                logger.LogDebug("Reconnect already in progress, skipping duplicate attempt");
+                return;
+            }
+
             try
             {
+                await Task.Delay(InitialRetryDelay, _stoppingToken);
                 CleanupConnection();
                 await ConnectAndConsumeAsync(_stoppingToken);
+            }
+            catch (OperationCanceledException) when (_stoppingToken.IsCancellationRequested)
+            {
+                // Shutting down — expected
             }
             catch (Exception ex)
             {
                 logger.LogError(ex, "Failed to reconnect to RabbitMQ after connection loss");
+            }
+            finally
+            {
+                _reconnectLock.Release();
             }
         }, _stoppingToken);
     }
@@ -120,7 +144,11 @@ public class GrantsPortalCommandConsumerService(
             queue: _options.InboundQueue,
             durable: true,
             exclusive: false,
-            autoDelete: false);
+            autoDelete: false,
+            arguments: new System.Collections.Generic.Dictionary<string, object>
+            {
+                { "x-queue-type", "quorum" }
+            });
 
         foreach (var routingKey in _options.InboundRoutingKeys)
         {
@@ -222,6 +250,12 @@ public class GrantsPortalCommandConsumerService(
 
             logger.LogInformation("Message {MessageId} saved to inbox for processing", messageId);
         }
+        catch (Exception ex) when (IsDuplicateKeyException(ex))
+        {
+            // Another pod inserted the same MessageId between our check and insert (unique index).
+            // This is expected in multi-pod environments on RabbitMQ redelivery — treat as success.
+            logger.LogInformation("Message {MessageId} was concurrently inserted by another pod. Treating as idempotent success.", messageId);
+        }
         catch (Exception ex)
         {
             logger.LogError(ex, "Error saving message {MessageId} to inbox. Message will be requeued.", messageId);
@@ -263,9 +297,32 @@ public class GrantsPortalCommandConsumerService(
         _connection = null;
     }
 
+    /// <summary>
+    /// Detects PostgreSQL unique constraint violation (error code 23505) propagated through EF Core.
+    /// This occurs when two pods concurrently insert the same MessageId on RabbitMQ redelivery.
+    /// Uses reflection to avoid a direct Npgsql dependency in the Application layer.
+    /// </summary>
+    private static bool IsDuplicateKeyException(Exception ex)
+    {
+        var current = ex;
+        while (current != null)
+        {
+            // Npgsql.PostgresException has a SqlState property — check by type name to avoid package reference
+            var type = current.GetType();
+            if (type.Name == "PostgresException")
+            {
+                var sqlState = type.GetProperty("SqlState")?.GetValue(current) as string;
+                if (sqlState == "23505") return true;
+            }
+            current = current.InnerException;
+        }
+        return false;
+    }
+
     public override void Dispose()
     {
         CleanupConnection();
+        _reconnectLock.Dispose();
         base.Dispose();
         GC.SuppressFinalize(this);
     }

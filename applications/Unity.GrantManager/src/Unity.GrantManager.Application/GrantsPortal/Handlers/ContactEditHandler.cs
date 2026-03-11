@@ -34,7 +34,7 @@ public class ContactEditHandler(
         contact.WorkPhoneNumber = innerData.WorkPhoneNumber;
         contact.WorkPhoneExtension = innerData.WorkPhoneExtension;
 
-        await contactRepository.UpdateAsync(contact, autoSave: true);
+        await contactRepository.UpdateAsync(contact);
 
         logger.LogInformation("Contact {ContactId} updated successfully", contactId);
         return "Contact updated successfully";

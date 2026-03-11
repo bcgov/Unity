@@ -202,7 +202,7 @@ public class GrantManagerDbContext :
                 .IsRequired()
                 .HasConversion(new EnumToStringConverter<MessageStatus>());
 
-            b.HasIndex(x => x.MessageId);
+            b.HasIndex(x => x.MessageId).IsUnique();
             b.HasIndex(x => new { x.Source, x.Status });
         });
 

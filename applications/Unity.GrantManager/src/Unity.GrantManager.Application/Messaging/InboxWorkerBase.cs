@@ -1,33 +1,45 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
-using Unity.GrantManager.GrantsPortal.Configuration;
-using Unity.GrantManager.GrantsPortal.Handlers;
-using Unity.GrantManager.GrantsPortal.Messages;
-using Unity.GrantManager.Messaging;
+using Quartz;
+using Volo.Abp.BackgroundWorkers.Quartz;
 using Volo.Abp.MultiTenancy;
 using Volo.Abp.Uow;
 
-namespace Unity.GrantManager.GrantsPortal;
+namespace Unity.GrantManager.Messaging;
 
 /// <summary>
-/// Polls the central inbox table for pending inbound messages and processes them sequentially.
-/// Switches to the correct tenant context only when executing the handler (domain operations).
-/// On completion (success or failure), writes an outbound ack message to the same central table.
+/// Base class for inbox processing workers. Provides the full orchestration loop:
+/// poll pending → mark processing → dispatch to handler → retry on transient errors → mark complete → write outbox ack.
+///
+/// Subclasses only need to provide the source name and configure the Quartz schedule in their constructor.
+/// Handlers are resolved from DI as <see cref="IInboxMessageHandler"/> filtered by <see cref="SourceName"/>.
 /// </summary>
-public class GrantsPortalInboxProcessorService(
-    IServiceProvider serviceProvider,
-    ILogger<GrantsPortalInboxProcessorService> logger) : BackgroundService
+[DisallowConcurrentExecution]
+public abstract class InboxWorkerBase : QuartzBackgroundWorkerBase
 {
-    private static readonly TimeSpan PollingInterval = TimeSpan.FromSeconds(5);
-    private static readonly TimeSpan IdleInterval = TimeSpan.FromSeconds(15);
-    private const int MaxRetryCount = 3;
+    private readonly IServiceProvider _serviceProvider;
+
+    /// <summary>
+    /// The integration source discriminator (e.g. "GrantsPortal").
+    /// Used to filter pending inbox messages and tag outbox acknowledgments.
+    /// </summary>
+    protected abstract string SourceName { get; }
+
+    /// <summary>
+    /// Maximum number of retry attempts for transient errors before marking as failed.
+    /// Override to customize per integration. Default is 3.
+    /// </summary>
+    protected virtual int MaxRetryCount => 3;
+
+    /// <summary>
+    /// Maximum number of pending messages to fetch per polling cycle.
+    /// Override to customize per integration. Default is 10.
+    /// </summary>
+    protected virtual int BatchSize => 10;
 
     private static readonly Dictionary<string, string> s_userFriendlyErrors = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -36,58 +48,44 @@ public class GrantsPortalInboxProcessorService(
         { "AbpDbConcurrencyException", "The record was modified by another process. Please try again." }
     };
 
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    protected InboxWorkerBase(IServiceProvider serviceProvider)
     {
-        logger.LogInformation("Grants Portal inbox processor starting...");
-
-        // Wait for the application to fully start
-        await Task.Delay(TimeSpan.FromSeconds(10), stoppingToken);
-
-        while (!stoppingToken.IsCancellationRequested)
-        {
-            try
-            {
-                var processedAny = await ProcessPendingMessagesAsync(stoppingToken);
-                var delay = processedAny ? PollingInterval : IdleInterval;
-                await Task.Delay(delay, stoppingToken);
-            }
-            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
-            {
-                break;
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "Unexpected error in inbox processor loop");
-                await Task.Delay(IdleInterval, stoppingToken);
-            }
-        }
-
-        logger.LogInformation("Grants Portal inbox processor stopped.");
+        _serviceProvider = serviceProvider;
     }
 
-    private async Task<bool> ProcessPendingMessagesAsync(CancellationToken cancellationToken)
+    public override async Task Execute(IJobExecutionContext context)
     {
-        using var scope = serviceProvider.CreateScope();
+        Logger.LogDebug("{WorkerName} executing...", GetType().Name);
+
+        try
+        {
+            await ProcessPendingMessagesAsync();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Unexpected error in {WorkerName} execution", GetType().Name);
+        }
+    }
+
+    private async Task ProcessPendingMessagesAsync()
+    {
+        using var scope = _serviceProvider.CreateScope();
         var inboxRepo = scope.ServiceProvider.GetRequiredService<IInboxMessageRepository>();
         var unitOfWorkManager = scope.ServiceProvider.GetRequiredService<IUnitOfWorkManager>();
 
         List<InboxMessage> pendingMessages;
         using (var uow = unitOfWorkManager.Begin(requiresNew: true))
         {
-            pendingMessages = await inboxRepo.GetPendingAsync(GrantsPortalRabbitMqOptions.SourceName, 10);
-            await uow.CompleteAsync(cancellationToken);
+            pendingMessages = await inboxRepo.GetPendingAsync(SourceName, BatchSize);
+            await uow.CompleteAsync();
         }
 
-        if (pendingMessages.Count == 0) return false;
+        if (pendingMessages.Count == 0) return;
 
         foreach (var inboxMsg in pendingMessages)
         {
-            if (cancellationToken.IsCancellationRequested) break;
-
             await ProcessSingleMessageAsync(scope, inboxMsg);
         }
-
-        return true;
     }
 
     private async Task ProcessSingleMessageAsync(IServiceScope scope, InboxMessage inboxMsg)
@@ -96,10 +94,10 @@ public class GrantsPortalInboxProcessorService(
         var outboxRepo = scope.ServiceProvider.GetRequiredService<IOutboxMessageRepository>();
         var unitOfWorkManager = scope.ServiceProvider.GetRequiredService<IUnitOfWorkManager>();
         var currentTenant = scope.ServiceProvider.GetRequiredService<ICurrentTenant>();
-        var handlers = scope.ServiceProvider.GetServices<IPortalCommandHandler>();
+        var handlers = scope.ServiceProvider.GetServices<IInboxMessageHandler>();
 
-        logger.LogInformation("Processing inbox message {MessageId} (dataType={DataType}, tenantId={TenantId})",
-            inboxMsg.MessageId, inboxMsg.DataType, inboxMsg.TenantId);
+        Logger.LogInformation("Processing inbox message {MessageId} (source={Source}, dataType={DataType}, tenantId={TenantId})",
+            inboxMsg.MessageId, inboxMsg.Source, inboxMsg.DataType, inboxMsg.TenantId);
 
         string ackStatus;
         string details;
@@ -115,21 +113,16 @@ public class GrantsPortalInboxProcessorService(
                 await uow.CompleteAsync();
             }
 
-            // Deserialize the payload
-            var envelope = JsonConvert.DeserializeObject<PluginDataEnvelope>(inboxMsg.Payload)
-                           ?? throw new JsonException("Failed to deserialize message payload");
-
-            var payload = envelope.Data?.ToObject<PluginDataPayload>()
-                          ?? throw new ArgumentException("Message data payload is missing");
-
             var handler = handlers.FirstOrDefault(h =>
-                string.Equals(h.DataType, inboxMsg.DataType, StringComparison.OrdinalIgnoreCase));
+                string.Equals(h.Source, SourceName, StringComparison.OrdinalIgnoreCase)
+                && string.Equals(h.DataType, inboxMsg.DataType, StringComparison.OrdinalIgnoreCase));
 
             if (handler == null)
             {
                 ackStatus = "FAILED";
                 details = $"Unknown command type: {inboxMsg.DataType}";
-                logger.LogWarning("No handler registered for dataType {DataType}", inboxMsg.DataType);
+                Logger.LogWarning("No handler registered for source {Source}, dataType {DataType}",
+                    SourceName, inboxMsg.DataType);
             }
             else
             {
@@ -137,7 +130,7 @@ public class GrantsPortalInboxProcessorService(
                 using (currentTenant.Change(inboxMsg.TenantId))
                 {
                     using var uow = unitOfWorkManager.Begin(requiresNew: true);
-                    details = await handler.HandleAsync(payload);
+                    details = await handler.HandleAsync(inboxMsg.Payload);
                     await uow.CompleteAsync();
                 }
                 ackStatus = "SUCCESS";
@@ -145,7 +138,7 @@ public class GrantsPortalInboxProcessorService(
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error processing inbox message {MessageId}", inboxMsg.MessageId);
+            Logger.LogError(ex, "Error processing inbox message {MessageId}", inboxMsg.MessageId);
             ackStatus = "FAILED";
             details = ToUserFriendlyMessage(ex);
 
@@ -157,7 +150,7 @@ public class GrantsPortalInboxProcessorService(
                 inboxMsg.Details = details;
                 await inboxRepo.UpdateAsync(inboxMsg, autoSave: true);
                 await uow.CompleteAsync();
-                logger.LogInformation("Message {MessageId} will be retried (attempt {Attempt}/{MaxRetries})",
+                Logger.LogInformation("Message {MessageId} will be retried (attempt {Attempt}/{MaxRetries})",
                     inboxMsg.MessageId, inboxMsg.RetryCount, MaxRetryCount);
                 return;
             }
@@ -173,7 +166,7 @@ public class GrantsPortalInboxProcessorService(
 
             var outboxMsg = new OutboxMessage
             {
-                Source = GrantsPortalRabbitMqOptions.SourceName,
+                Source = SourceName,
                 MessageId = Guid.NewGuid().ToString(),
                 OriginalMessageId = inboxMsg.MessageId,
                 CorrelationId = inboxMsg.CorrelationId,
@@ -189,18 +182,20 @@ public class GrantsPortalInboxProcessorService(
             await uow.CompleteAsync();
         }
 
-        logger.LogInformation("Inbox message {MessageId} processed with status {Status}",
+        Logger.LogInformation("Inbox message {MessageId} processed with status {Status}",
             inboxMsg.MessageId, ackStatus);
     }
 
-    private static string ToUserFriendlyMessage(Exception ex)
+    /// <summary>
+    /// Maps exception types to user-friendly messages. Override to add integration-specific mappings.
+    /// </summary>
+    protected virtual string ToUserFriendlyMessage(Exception ex)
     {
         var exType = ex.GetType().Name;
 
         if (s_userFriendlyErrors.TryGetValue(exType, out var friendly))
             return friendly;
 
-        // Check inner exception type
         if (ex.InnerException != null)
         {
             var innerType = ex.InnerException.GetType().Name;
@@ -208,11 +203,13 @@ public class GrantsPortalInboxProcessorService(
                 return innerFriendly;
         }
 
-        // For unrecognized exceptions, return a generic message — never leak stack traces
         return "An unexpected error occurred while processing your request. Please try again or contact support.";
     }
 
-    private static bool IsTransientError(Exception ex)
+    /// <summary>
+    /// Determines if an error is transient (eligible for retry). Override to add integration-specific checks.
+    /// </summary>
+    protected virtual bool IsTransientError(Exception ex)
     {
         var typeName = ex.GetType().Name;
         return typeName.Contains("Timeout", StringComparison.OrdinalIgnoreCase)

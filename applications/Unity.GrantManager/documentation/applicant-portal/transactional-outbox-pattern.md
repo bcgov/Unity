@@ -23,7 +23,7 @@ Direct RabbitMQ consumption with inline processing has several failure modes:
 
 ## Architecture
 
-The pattern separates the messaging pipeline into four independent stages, each run by a dedicated `BackgroundService`:
+The pattern separates the messaging pipeline into four independent stages:
 
 ```mermaid
 graph LR
@@ -32,10 +32,10 @@ graph LR
     subgraph Unity["Unity Grant Manager — Host Database"]
         S1["① Consumer<br/>BackgroundService"]
         IT[(InboxMessages<br/>Table)]
-        S2["② Inbox Processor<br/>BackgroundService"]
+        S2["② Inbox Worker<br/>Quartz [DisallowConcurrentExecution]"]
         OT[(OutboxMessages<br/>Table)]
-        S3["③ Outbox Processor<br/>BackgroundService"]
-        S4["④ Cleanup<br/>BackgroundService"]
+        S3["③ Outbox Worker<br/>Quartz [DisallowConcurrentExecution]"]
+        S4["④ Cleanup Worker<br/>Quartz [DisallowConcurrentExecution]"]
     end
 
     RMQ -->|"Consume + ACK"| S1
@@ -154,11 +154,11 @@ CREATE TABLE "InboxMessages" (
     "LastModifierId"       UUID
 );
 
-CREATE UNIQUE INDEX "IX_InboxMessages_Source_MessageId"
-    ON "InboxMessages" ("Source", "MessageId");
+CREATE UNIQUE INDEX "IX_InboxMessages_MessageId"
+    ON "InboxMessages" ("MessageId");
 
-CREATE INDEX "IX_InboxMessages_Status_ReceivedAt"
-    ON "InboxMessages" ("Status", "ReceivedAt");
+CREATE INDEX "IX_InboxMessages_Source_Status"
+    ON "InboxMessages" ("Source", "Status");
 ```
 
 ### OutboxMessages
@@ -187,8 +187,8 @@ CREATE TABLE "OutboxMessages" (
     "LastModifierId"       UUID
 );
 
-CREATE INDEX "IX_OutboxMessages_Status_CreatedAt"
-    ON "OutboxMessages" ("Status", "CreatedAt");
+CREATE INDEX "IX_OutboxMessages_Source_Status"
+    ON "OutboxMessages" ("Source", "Status");
 ```
 
 ---
@@ -280,6 +280,8 @@ FindByMessageIdAsync(messageId) → if exists, ACK and skip
 
 This prevents duplicate inbox rows if the broker redelivers a message (e.g. after a network hiccup before the ACK reached the broker).
 
+**Multi-pod safety**: In a multi-pod deployment, two pods could race past the `FindByMessageIdAsync` check on the same redelivered message. The `MessageId` column has a **unique index** (`IX_InboxMessages_MessageId`) as the definitive guard. If the second pod’s insert hits the unique constraint (PostgreSQL error `23505`), the consumer catches it and treats it as idempotent success — ACKs without requeueing.
+
 ---
 
 ## Error Handling
@@ -305,7 +307,7 @@ Errors are considered transient (eligible for retry) if the exception type name 
 
 ## Cleanup / Retention
 
-A dedicated `BackgroundService` runs hourly and deletes `Processed` and `Failed` messages older than the configured retention period. The default retention is **30 days**.
+A dedicated Quartz worker runs hourly and deletes `Processed` and `Failed` messages older than the configured retention period. The default retention is **30 days**.
 
 Both inbox and outbox tables are cleaned in the same pass.
 
@@ -313,14 +315,174 @@ Both inbox and outbox tables are cleaned in the same pass.
 
 ## Adding a New Integration Source
 
-To add a new external system using this pattern:
+The inbox/outbox infrastructure provides base classes that handle all orchestration logic.
+A new integration only needs to provide source-specific configuration, handlers, and a publish implementation.
 
-1. **Choose a source name** (e.g. `"NewSystem"`) — this discriminates your messages in the shared tables.
-2. **Create a Consumer** (`BackgroundService`) that receives from your broker/transport, saves to `InboxMessages` with your source name, and ACKs.
-3. **Create command handlers** implementing your handler interface, registered in DI.
-4. **Create an Inbox Processor** (`BackgroundService`) that polls `GetPendingAsync(yourSource)`, dispatches to handlers, and writes acknowledgments to `OutboxMessages`.
-5. **Create an Outbox Processor** (`BackgroundService`) that polls outbox for your source and publishes responses back.
-6. **Create a Cleanup Service** (or reuse the existing one if the retention policy matches).
-7. **Register** all services in your application module's `ConfigureServices`.
+### What you get for free
 
-The entities, tables, and repositories are already shared — no schema changes needed.
+| Concern | Provided by |
+|---------|------------|
+| Poll pending → mark processing → dispatch → retry → mark complete → write outbox ack | `InboxWorkerBase` (`Unity.GrantManager.Application/Messaging/`) |
+| Poll pending outbox → publish → mark sent/failed with retry | `OutboxWorkerBase` (`Unity.GrantManager.Application/Messaging/`) |
+| Handler dispatch by `Source` + `DataType` | `IInboxMessageHandler` (`Unity.GrantManager.Domain/Messaging/`) |
+| Shared tables, entities, repos, status machine | `InboxMessage`, `OutboxMessage`, `IInboxMessageRepository`, `IOutboxMessageRepository` |
+| Message cleanup | Existing `GrantsPortalMessageCleanupWorker` (deletes all sources — can be reused or cloned) |
+
+### Step-by-step
+
+#### 1. Choose a source name
+
+Pick a unique string (e.g. `"Finance"`) that will be stored in the `Source` column of both tables.
+
+#### 2. Create an options class
+
+```csharp
+// YourIntegration/Configuration/FinanceIntegrationOptions.cs
+public class FinanceIntegrationOptions
+{
+    public const string SectionName = "Integrations:Finance";
+    public const string SourceName = "Finance";
+
+    public string InboxProcessorCron { get; set; } = "0/10 * * * * ?";
+    public string OutboxProcessorCron { get; set; } = "0/10 * * * * ?";
+
+    // Add transport-specific properties (endpoints, queues, API keys, etc.)
+}
+```
+
+#### 3. Create message handlers
+
+Implement `IInboxMessageHandler` for each command type. Each handler receives the raw JSON payload and is responsible for its own deserialization:
+
+```csharp
+// YourIntegration/Handlers/InvoiceCreatedHandler.cs
+public class InvoiceCreatedHandler : IInboxMessageHandler, ITransientDependency
+{
+    public string Source => FinanceIntegrationOptions.SourceName;
+    public string DataType => "INVOICE_CREATED";
+
+    public async Task<string> HandleAsync(string rawPayload)
+    {
+        var data = JsonConvert.DeserializeObject<InvoicePayload>(rawPayload)
+                   ?? throw new JsonException("Invalid payload");
+
+        // Domain logic here...
+
+        return "Invoice processed successfully";
+    }
+}
+```
+
+#### 4. Create an inbox worker
+
+Subclass `InboxWorkerBase` — typically ~15 lines:
+
+```csharp
+// YourIntegration/FinanceInboxWorker.cs
+public class FinanceInboxWorker : InboxWorkerBase
+{
+    protected override string SourceName => FinanceIntegrationOptions.SourceName;
+
+    public FinanceInboxWorker(
+        IServiceProvider serviceProvider,
+        IOptions<FinanceIntegrationOptions> options)
+        : base(serviceProvider)
+    {
+        JobDetail = JobBuilder.Create<FinanceInboxWorker>()
+            .WithIdentity(nameof(FinanceInboxWorker)).Build();
+
+        Trigger = TriggerBuilder.Create()
+            .WithIdentity(nameof(FinanceInboxWorker))
+            .WithSchedule(CronScheduleBuilder.CronSchedule(options.Value.InboxProcessorCron)
+                .WithMisfireHandlingInstructionIgnoreMisfires())
+            .Build();
+    }
+}
+```
+
+The base class handles: polling, status transitions, tenant context switching, handler dispatch by `Source` + `DataType`, transient error retry, user-friendly error mapping, and writing the outbox ack.
+
+Override `ToUserFriendlyMessage()` or `IsTransientError()` if your integration has custom error types.
+
+#### 5. Create an outbox worker
+
+Subclass `OutboxWorkerBase` and implement `PublishMessageAsync`:
+
+```csharp
+// YourIntegration/FinanceOutboxWorker.cs
+public class FinanceOutboxWorker : OutboxWorkerBase
+{
+    protected override string SourceName => FinanceIntegrationOptions.SourceName;
+
+    public FinanceOutboxWorker(
+        IServiceProvider serviceProvider,
+        IOptions<FinanceIntegrationOptions> options)
+        : base(serviceProvider)
+    {
+        JobDetail = JobBuilder.Create<FinanceOutboxWorker>()
+            .WithIdentity(nameof(FinanceOutboxWorker)).Build();
+
+        Trigger = TriggerBuilder.Create()
+            .WithIdentity(nameof(FinanceOutboxWorker))
+            .WithSchedule(CronScheduleBuilder.CronSchedule(options.Value.OutboxProcessorCron)
+                .WithMisfireHandlingInstructionIgnoreMisfires())
+            .Build();
+    }
+
+    protected override async Task PublishMessageAsync(IServiceScope scope, OutboxMessage outboxMsg)
+    {
+        // Your transport-specific publish logic here (HTTP, RabbitMQ, gRPC, etc.)
+        // Throw on failure — the base class handles retry and status updates.
+    }
+
+    // Optional: override OnBeforePublishCycle() to ensure connections are ready
+    // Optional: override OnPublishCycleError() to clean up connections on failure
+}
+```
+
+#### 6. Create a consumer (optional — depends on your transport)
+
+If consuming from a message broker (RabbitMQ, Kafka, etc.), create a `BackgroundService` that:
+- Receives messages from the broker
+- Saves them to `InboxMessages` with your source name inside a Unit of Work
+- ACKs the broker only after the UoW commits
+
+See `GrantsPortalCommandConsumerService` for a RabbitMQ reference implementation.
+
+If your inbound messages arrive via HTTP webhook, save them to the inbox table in the webhook endpoint controller instead.
+
+#### 7. Register in DI
+
+In your module's `ConfigureServices`:
+
+```csharp
+// Options
+context.Services.Configure<FinanceIntegrationOptions>(
+    configuration.GetSection(FinanceIntegrationOptions.SectionName));
+
+// Handlers (auto-registered if using ITransientDependency, otherwise register explicitly)
+context.Services.AddTransient<IInboxMessageHandler, InvoiceCreatedHandler>();
+
+// Consumer (if using a BackgroundService)
+context.Services.AddHostedService<FinanceConsumerService>();
+```
+
+The Quartz inbox/outbox workers auto-register when `BackgroundJobs:Quartz:IsAutoRegisterEnabled` is `true`.
+
+#### 8. Cleanup
+
+The existing `GrantsPortalMessageCleanupWorker` deletes all `Processed`/`Failed` rows regardless of source. If the default 30-day retention works for your integration, no additional cleanup worker is needed.
+
+### What you do NOT need to do
+
+- No schema changes — the shared tables already support multiple sources via the `Source` column
+- No changes to existing integrations — each source's workers and handlers are fully independent
+- No custom orchestration logic — `InboxWorkerBase` and `OutboxWorkerBase` handle the full lifecycle
+
+### Future considerations
+
+| Area | Status | Notes |
+|------|--------|-------|
+| Base options interface | Not yet extracted | Could extract `IIntegrationSourceOptions` with shared cron/retention fields |
+| Base consumer service | Not yet extracted | RabbitMQ connection management could be shared; currently each consumer owns its own |
+| Source-aware cleanup | Not yet needed | Current cleanup worker deletes all sources; could filter by source if retention policies differ |

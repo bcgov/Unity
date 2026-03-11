@@ -23,8 +23,6 @@ public class OrganizationEditHandler(
 
         logger.LogInformation("Editing organization for profile {ProfileId}", payload.ProfileId);
 
-        // TODO: Determine the correct lookup strategy for the Applicant entity.
-        // For now, use organizationId from the payload as a direct Applicant ID.
         var organizationId = Guid.Parse(payload.OrganizationId ?? throw new ArgumentException("organizationId is required"));
         var applicant = await applicantRepository.GetAsync(organizationId);
 
@@ -41,7 +39,7 @@ public class OrganizationEditHandler(
             applicant.FiscalDay = fiscalDay;
         }
 
-        await applicantRepository.UpdateAsync(applicant, autoSave: true);
+        await applicantRepository.UpdateAsync(applicant);
 
         logger.LogInformation("Organization {OrganizationId} updated successfully", organizationId);
         return "Organization updated successfully";

@@ -26,14 +26,14 @@ public class ContactDeleteHandler(
         var links = await contactLinkRepository.GetListAsync(cl => cl.ContactId == contactId);
         if (links.Count > 0)
         {
-            await contactLinkRepository.DeleteManyAsync(links, autoSave: true);
+            await contactLinkRepository.DeleteManyAsync(links);
         }
 
         // Delete the contact
         var contact = await contactRepository.FindAsync(contactId);
         if (contact != null)
         {
-            await contactRepository.DeleteAsync(contact, autoSave: true);
+            await contactRepository.DeleteAsync(contact);
         }
 
         logger.LogInformation("Contact {ContactId} deleted successfully", contactId);

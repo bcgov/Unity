@@ -433,5 +433,60 @@ namespace Unity.GrantManager.Applicants
             var primary = dto.Addresses.Single(a => a.IsPrimary);
             primary.City.ShouldBe("Vancouver");
         }
+
+        [Fact]
+        public async Task GetDataAsync_MultipleApplicantIds_ShouldMakeApplicantPathNotEditable()
+        {
+            // Arrange
+            var request = CreateRequest();
+            var applicationId1 = Guid.NewGuid();
+            var applicationId2 = Guid.NewGuid();
+            var applicantId1 = Guid.NewGuid();
+            var applicantId2 = Guid.NewGuid();
+
+            SetupQueryables(
+                [
+                    CreateSubmission(applicationId1, "TESTUSER", s => s.ApplicantId = applicantId1),
+                    CreateSubmission(applicationId2, "TESTUSER", s => s.ApplicantId = applicantId2)
+                ],
+                [
+                    CreateAddress(a => { a.ApplicantId = applicantId1; a.City = "Victoria"; }),
+                    CreateAddress(a => { a.ApplicantId = applicantId2; a.City = "Vancouver"; })
+                ]);
+
+            // Act
+            var result = await _provider.GetDataAsync(request);
+
+            // Assert — multiple distinct ApplicantIds means applicant-path addresses are NOT editable
+            var dto = result.ShouldBeOfType<ApplicantAddressInfoDto>();
+            dto.Addresses.Count.ShouldBe(2);
+            dto.Addresses.ShouldAllBe(a => !a.IsEditable);
+        }
+
+        [Fact]
+        public async Task GetDataAsync_ShouldNormalizeSubjectWithoutAtSign()
+        {
+            // Arrange
+            var request = new ApplicantProfileInfoRequest
+            {
+                ProfileId = Guid.NewGuid(),
+                Subject = "testuser",
+                TenantId = Guid.NewGuid(),
+                Key = ApplicantProfileKeys.AddressInfo
+            };
+            var applicationId = Guid.NewGuid();
+
+            SetupQueryables(
+                [CreateSubmission(applicationId, "TESTUSER")],
+                [CreateAddress(a => { a.ApplicationId = applicationId; a.City = "Victoria"; })],
+                [CreateApplication(applicationId)]);
+
+            // Act
+            var result = await _provider.GetDataAsync(request);
+
+            // Assert
+            var dto = result.ShouldBeOfType<ApplicantAddressInfoDto>();
+            dto.Addresses.Count.ShouldBe(1);
+        }
     }
 }
