@@ -1,4 +1,5 @@
 $(function () {
+    const LAYOUT_NOTIFICATION_DELAYS = [0, 120, 300, 700];
     const contactsRaw = $('#ApplicantContacts_Data').val();
     const addressesRaw = $('#ApplicantAddresses_Data').val();
     const contactsData = safeParse(contactsRaw);
@@ -13,132 +14,147 @@ $(function () {
         window.dispatchEvent(new CustomEvent('applicant-addresses-layout-changed'));
     }
 
-    if ($.fn.DataTable && $('#ApplicantContactsTable').length) {
-        contactsTable = $('#ApplicantContactsTable').DataTable(
+    function renderTableLink(data, row) {
+        if (!data || !row.applicationId) {
+            return nullPlaceholder;
+        }
+
+        return `<a href="/GrantApplications/Details?ApplicationId=${row.applicationId}">${data}</a>`;
+    }
+
+    function initializeApplicantTable(selector, data, columnDefs, extraConfig = {}) {
+        if (!$.fn.DataTable || !$(selector).length) {
+            return null;
+        }
+
+        return $(selector).DataTable(
             abp.libs.datatables.normalizeConfiguration({
-                data: contactsData,
+                data: data,
                 serverSide: false,
                 order: [[0, 'asc']],
                 searching: true,
                 paging: true,
                 pageLength: 10,
-                lengthMenu: [[10, 25, 50], [10, 25, 50]],
                 select: false,
                 info: true,
                 scrollX: true,
                 drawCallback: function () {
                     this.api().columns.adjust();
                 },
-                columnDefs: [
-                    {
-                        title: 'Name',
-                        data: 'name',
-                        width: '18%',
-                        render: (data) => data || nullPlaceholder
-                    },
-                    {
-                        title: 'Email',
-                        data: 'email',
-                        width: '22%',
-                        render: (data) => data || nullPlaceholder
-                    },
-                    {
-                        title: 'Phone',
-                        data: 'phone',
-                        width: '13%',
-                        render: (data) => data || nullPlaceholder
-                    },
-                    {
-                        title: 'Title',
-                        data: 'title',
-                        width: '17%',
-                        render: (data) => data || nullPlaceholder
-                    },
-                    {
-                        title: 'Type',
-                        data: 'type',
-                        width: '10%',
-                        render: (data) => data || nullPlaceholder
-                    },
-                    {
-                        title: 'Submission #',
-                        data: 'referenceNo',
-                        width: '15%',
-                        render: (data, type, row) => {
-                            if (!data || !row.applicationId) return nullPlaceholder;
-                            return `<a href="/GrantApplications/Details?ApplicationId=${row.applicationId}">${data}</a>`;
-                        }
-                    }
-                ]
+                ...extraConfig,
+                columnDefs: columnDefs
             })
         );
     }
 
-    if ($.fn.DataTable && $('#ApplicantAddressesTable').length) {
-        addressesTable = $('#ApplicantAddressesTable').DataTable(
-            abp.libs.datatables.normalizeConfiguration({
-                data: addressesData,
-                serverSide: false,
-                order: [[0, 'asc']],
-                searching: true,
-                paging: true,
-                pageLength: 10,
-                select: false,
-                info: true,
-                scrollX: true,
-                drawCallback: function () {
-                    this.api().columns.adjust();
-                },
-                columnDefs: [
-                    {
-                        title: 'Address Type',
-                        data: 'addressType',
-                        width: '13%',
-                        render: (data) => data || nullPlaceholder
-                    },
-                    {
-                        title: 'Address',
-                        data: 'street',
-                        width: '22%',
-                        render: (data) => data || nullPlaceholder
-                    },
-                    {
-                        title: 'Unit',
-                        data: 'unit',
-                        width: '8%',
-                        render: (data) => data || nullPlaceholder
-                    },
-                    {
-                        title: 'City',
-                        data: 'city',
-                        width: '14%',
-                        render: (data) => data || nullPlaceholder
-                    },
-                    {
-                        title: 'Province',
-                        data: 'province',
-                        width: '14%',
-                        render: (data) => data || nullPlaceholder
-                    },
-                    {
-                        title: 'Postal Code',
-                        data: 'postal',
-                        width: '10%',
-                        render: (data) => data || nullPlaceholder
-                    },
-                    {
-                        title: 'Submission #',
-                        data: 'referenceNo',
-                        width: '13%',
-                        render: (data, type, row) => {
-                            if (!data || !row.applicationId) return nullPlaceholder;
-                            return `<a href="/GrantApplications/Details?ApplicationId=${row.applicationId}">${data}</a>`;
-                        }
-                    }
-                ]
-            })
-        );
+    function scheduleLayoutNotifications() {
+        LAYOUT_NOTIFICATION_DELAYS.forEach((delay) => {
+            setTimeout(notifyApplicantAddressesLayoutChange, delay);
+        });
     }
+
+    function bindTableLayoutNotifications(table) {
+        if (!table) {
+            return;
+        }
+
+        table.on('draw', notifyApplicantAddressesLayoutChange);
+    }
+	
+    contactsTable = initializeApplicantTable(
+        '#ApplicantContactsTable',
+        contactsData,
+        [
+            {
+                title: 'Name',
+                data: 'name',
+                width: '18%',
+                render: (data) => data || nullPlaceholder
+            },
+            {
+                title: 'Email',
+                data: 'email',
+                width: '22%',
+                render: (data) => data || nullPlaceholder
+            },
+            {
+                title: 'Phone',
+                data: 'phone',
+                width: '13%',
+                render: (data) => data || nullPlaceholder
+            },
+            {
+                title: 'Title',
+                data: 'title',
+                width: '17%',
+                render: (data) => data || nullPlaceholder
+            },
+            {
+                title: 'Type',
+                data: 'type',
+                width: '10%',
+                render: (data) => data || nullPlaceholder
+            },
+            {
+                title: 'Submission #',
+                data: 'referenceNo',
+                width: '15%',
+                render: (data, type, row) => renderTableLink(data, row)
+            }
+        ],
+        {
+            lengthMenu: [[10, 25, 50], [10, 25, 50]]
+        }
+    );
+
+    addressesTable = initializeApplicantTable(
+        '#ApplicantAddressesTable',
+        addressesData,
+        [
+            {
+                title: 'Address Type',
+                data: 'addressType',
+                width: '13%',
+                render: (data) => data || nullPlaceholder
+            },
+            {
+                title: 'Address',
+                data: 'street',
+                width: '22%',
+                render: (data) => data || nullPlaceholder
+            },
+            {
+                title: 'Unit',
+                data: 'unit',
+                width: '8%',
+                render: (data) => data || nullPlaceholder
+            },
+            {
+                title: 'City',
+                data: 'city',
+                width: '14%',
+                render: (data) => data || nullPlaceholder
+            },
+            {
+                title: 'Province',
+                data: 'province',
+                width: '14%',
+                render: (data) => data || nullPlaceholder
+            },
+            {
+                title: 'Postal Code',
+                data: 'postal',
+                width: '10%',
+                render: (data) => data || nullPlaceholder
+            },
+            {
+                title: 'Submission #',
+                data: 'referenceNo',
+                width: '13%',
+                render: (data, type, row) => renderTableLink(data, row)
+            }
+        ]
+    );
 
     $('#contactsAddressesSubTabs button').on('shown.bs.tab', function (e) {
         const target = $(e.target).data('bsTarget');
@@ -148,21 +164,9 @@ $(function () {
         requestAnimationFrame(() => notifyApplicantAddressesLayoutChange());
     });
 
-    if (contactsTable) {
-        contactsTable.on('draw', function () {
-            notifyApplicantAddressesLayoutChange();
-        });
-    }
-
-    if (addressesTable) {
-        addressesTable.on('draw', function () {
-            notifyApplicantAddressesLayoutChange();
-        });
-    }
-
-    [0, 120, 300, 700].forEach((delay) => {
-        setTimeout(notifyApplicantAddressesLayoutChange, delay);
-    });
+    bindTableLayoutNotifications(contactsTable);
+    bindTableLayoutNotifications(addressesTable);
+    scheduleLayoutNotifications();
 
     const form = $('#ApplicantAddressesForm');
     const saveButton = $('#saveApplicantAddressesBtn');
