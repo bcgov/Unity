@@ -1,5 +1,5 @@
 ---
-name: abp-permissions-localization-auditor
+name: permissions-localization-auditor
 description: Audits ABP changes for permission coverage, localization correctness, and policy compliance.
 ---
 

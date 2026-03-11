@@ -5,7 +5,7 @@ applyTo: "**/test/**/*.cs"
 # Testing Conventions for Unity Grant Manager
 
 - Framework: **xUnit 2.9.3** with **Shouldly 4.3.0** assertions and **NSubstitute 5.3.0** mocks.
-- Tests use **SQLite in-memory** databases. No external database setup required.
+- Tests use in-memory database providers (SQLite in-memory for most test projects; `Unity.GrantManager.Web.Tests` uses `Microsoft.EntityFrameworkCore.InMemory`). No external PostgreSQL/database setup is required.
 - Test class naming: `*Tests.cs`.
 - Base class hierarchy: `AbpIntegratedTest<TModule>` → `GrantManagerTestBase<T>` → domain-specific bases.
 - Use `[Fact]` for single tests, `[Theory]` with `[InlineData]` for parameterized.

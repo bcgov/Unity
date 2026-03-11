@@ -6,10 +6,10 @@ applyTo: "**/EntityFrameworkCore/**/*.cs"
 
 - Provider: **Npgsql** (PostgreSQL 17).
 - Two database contexts: `GrantManagerDbContext` (host) and `GrantTenantDbContext` (tenant).
-- Entity configuration uses extension methods on `ModelBuilder` (`ConfigureMyProject()`), not inline in `OnModelCreating`.
-- Always call `b.ConfigureByConvention()` for every entity mapping.
-- Use `options.AddDefaultRepositories()` without `includeAllEntities: true`.
-- Repository implementations inherit `EfCoreRepository<TDbContext, TEntity, TKey>`.
+- Entity configuration is done inline in `OnModelCreating` of `GrantManagerDbContext` and `GrantTenantDbContext`.
+- When configuring entities, follow ABP conventions (e.g., table naming, key configuration) consistently.
+- Use `options.AddDefaultRepositories(includeAllEntities: true)` in `GrantManagerEntityFrameworkCoreModule`.
+- Prefer ABP's generated default repositories; add custom repositories only when additional behavior is required.
 - Tests use **SQLite in-memory** databases, not PostgreSQL.
 
 ## Migrations

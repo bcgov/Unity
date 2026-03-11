@@ -1,5 +1,5 @@
 ---
-name: abp-test-strategy
+name: test-strategy
 description: Builds test strategy with xUnit, Shouldly, NSubstitute, and layered coverage.
 tools: ['codebase', 'problems', 'usages', 'runTests', 'githubRepo']
 ---

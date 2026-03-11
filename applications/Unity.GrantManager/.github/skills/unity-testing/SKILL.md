@@ -12,7 +12,7 @@ description: Testing patterns for Unity - xUnit, Shouldly assertions, NSubstitut
 | Framework | xUnit 2.9.3 |
 | Assertions | Shouldly 4.3.0 |
 | Mocking | NSubstitute 5.3.0 |
-| Database | SQLite in-memory (no PostgreSQL required) |
+| Database | In-memory (SQLite for most projects; EFCore.InMemory for Web tests – no PostgreSQL required) |
 | Base Classes | ABP `AbpIntegratedTest<TModule>` |
 | Target | .NET 9.0 |
 

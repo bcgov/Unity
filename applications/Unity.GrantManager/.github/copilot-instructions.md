@@ -69,7 +69,7 @@ dotnet test Unity.GrantManager.sln --no-build
 ```
 
 - ~470 tests across 15 test projects. All use **xUnit** with **Shouldly** assertions and **NSubstitute** mocks.
-- Tests use **SQLite in-memory** databases (not PostgreSQL). No database setup required.
+- Tests use in-memory database providers (**SQLite** for most projects; **EFCore.InMemory** for `Unity.GrantManager.Web.Tests`) instead of PostgreSQL. No database setup required.
 - Test run takes ~1–2 minutes after build.
 - To run a single test project: `dotnet test test/Unity.GrantManager.Application.Tests/ --no-build`
 
