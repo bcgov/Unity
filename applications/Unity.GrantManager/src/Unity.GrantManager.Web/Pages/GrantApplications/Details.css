@@ -607,13 +607,6 @@ form label.error {
     border-radius: 999px;
 }
 
-.ai-analysis-status-chip:hover,
-.ai-analysis-status-badge:hover {
-    color: inherit;
-    background-color: inherit;
-    border-color: inherit;
-}
-
 #ai-analysis-tab {
     display: inline-flex;
     align-items: center;

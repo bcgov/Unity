@@ -144,7 +144,7 @@ function renderSection(section) {
             .addClass('ai-analysis-status-chip')
             .text(section.headerOnlyText)
             .show();
-        $toggle.css('visibility', 'hidden').prop('disabled', true).show();
+        $toggle.hide();
         return $section;
     }
 
