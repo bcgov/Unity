@@ -227,7 +227,7 @@ function resizeApplicantAddressesPane(addressesPane) {
     addressesForm.style.minHeight = '0';
     innerTabContent.style.height = `${availableInnerTabHeight}px`;
     innerTabContent.style.minHeight = '0';
-    activeSubPane.style.height = `${availableInnerTabHeight}px`;
+    activeSubPane.style.height = `${innerTabContent.clientHeight || availableInnerTabHeight}px`;
     activeSubPane.style.minHeight = '0';
     activeSubPane.style.overflowY = 'auto';
     activeSubPane.style.overflowX = 'hidden';
