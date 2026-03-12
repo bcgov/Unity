@@ -6,15 +6,15 @@ using Volo.Abp.DependencyInjection;
 
 namespace Unity.GrantManager.AI
 {
-    public class AIPromptIoCaptureStore : IAIPromptIoCaptureStore, ISingletonDependency
+    public class AIPromptCaptureStore : IAIPromptCaptureStore, ISingletonDependency
     {
         private const int MaxCapturesPerKey = 50;
-        private readonly ConcurrentDictionary<string, ConcurrentQueue<AIPromptIoCaptureResponse>> _captures = new(StringComparer.OrdinalIgnoreCase);
+        private readonly ConcurrentDictionary<string, ConcurrentQueue<AIPromptCaptureResponse>> _captures = new(StringComparer.OrdinalIgnoreCase);
 
-        public void Save(AIPromptIoCaptureResponse capture)
+        public void Save(AIPromptCaptureResponse capture)
         {
             var key = BuildKey(capture.ContextId, capture.PromptType, capture.PromptVersion);
-            var queue = _captures.GetOrAdd(key, _ => new ConcurrentQueue<AIPromptIoCaptureResponse>());
+            var queue = _captures.GetOrAdd(key, _ => new ConcurrentQueue<AIPromptCaptureResponse>());
             queue.Enqueue(capture);
 
             while (queue.Count > MaxCapturesPerKey)
@@ -23,14 +23,14 @@ namespace Unity.GrantManager.AI
             }
         }
 
-        public IReadOnlyList<AIPromptIoCaptureResponse> GetRecent(string contextId, string promptType, string? promptVersion = null, int maxResults = 20)
+        public IReadOnlyList<AIPromptCaptureResponse> GetRecent(string contextId, string promptType, string? promptVersion = null, int maxResults = 20)
         {
             if (!string.IsNullOrWhiteSpace(promptVersion))
             {
                 var key = BuildKey(contextId, promptType, promptVersion);
                 return _captures.TryGetValue(key, out var captures)
                     ? captures.OrderByDescending(item => item.CapturedAt).Take(maxResults).ToList()
-                    : Array.Empty<AIPromptIoCaptureResponse>();
+                    : Array.Empty<AIPromptCaptureResponse>();
             }
 
             return _captures.Values

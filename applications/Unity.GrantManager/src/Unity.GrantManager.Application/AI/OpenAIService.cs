@@ -19,7 +19,7 @@ namespace Unity.GrantManager.AI
         private readonly IConfiguration _configuration;
         private readonly ILogger<OpenAIService> _logger;
         private readonly ITextExtractionService _textExtractionService;
-        private readonly IAIPromptIoCaptureStore _promptIoCaptureStore;
+        private readonly IAIPromptCaptureStore _promptIoCaptureStore;
         private const string ApplicationAnalysisPromptType = "ApplicationAnalysis";
         private const string AttachmentSummaryPromptType = "AttachmentSummary";
         private const string ScoresheetSectionPromptType = "ScoresheetSection";
@@ -64,7 +64,7 @@ namespace Unity.GrantManager.AI
             IConfiguration configuration,
             ILogger<OpenAIService> logger,
             ITextExtractionService textExtractionService,
-            IAIPromptIoCaptureStore promptIoCaptureStore)
+            IAIPromptCaptureStore promptIoCaptureStore)
         {
             _httpClient = httpClient;
             _configuration = configuration;
@@ -660,7 +660,7 @@ namespace Unity.GrantManager.AI
                 return;
             }
 
-            _promptIoCaptureStore.Save(new AIPromptIoCaptureResponse
+            _promptIoCaptureStore.Save(new AIPromptCaptureResponse
             {
                 ContextId = contextId,
                 PromptType = promptType,

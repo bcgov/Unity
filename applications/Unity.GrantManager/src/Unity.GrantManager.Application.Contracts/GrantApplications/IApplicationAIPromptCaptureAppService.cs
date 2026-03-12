@@ -8,6 +8,6 @@ namespace Unity.GrantManager.GrantApplications
 {
     public interface IApplicationAIPromptCaptureAppService : IApplicationService
     {
-        Task<List<AIPromptIoCaptureResponse>> GetRecentAsync(Guid applicationId, string promptType, string? promptVersion = null);
+        Task<List<AIPromptCaptureResponse>> GetRecentAsync(Guid applicationId, string promptType, string? promptVersion = null);
     }
 }

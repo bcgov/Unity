@@ -8,11 +8,11 @@ using Volo.Abp;
 namespace Unity.GrantManager.GrantApplications
 {
     public class ApplicationAIPromptCaptureAppService(
-        IAIPromptIoCaptureStore promptIoCaptureStore,
+        IAIPromptCaptureStore promptIoCaptureStore,
         IWebHostEnvironment webHostEnvironment)
         : GrantManagerAppService, IApplicationAIPromptCaptureAppService
     {
-        public Task<List<AIPromptIoCaptureResponse>> GetRecentAsync(Guid applicationId, string promptType, string? promptVersion = null)
+        public Task<List<AIPromptCaptureResponse>> GetRecentAsync(Guid applicationId, string promptType, string? promptVersion = null)
         {
             if (!string.Equals(webHostEnvironment.EnvironmentName, "Development", StringComparison.OrdinalIgnoreCase))
             {
@@ -21,11 +21,11 @@ namespace Unity.GrantManager.GrantApplications
 
             if (string.IsNullOrWhiteSpace(promptType))
             {
-                return Task.FromResult(new List<AIPromptIoCaptureResponse>());
+                return Task.FromResult(new List<AIPromptCaptureResponse>());
             }
 
             var captures = promptIoCaptureStore.GetRecent(applicationId.ToString(), promptType, promptVersion);
-            return Task.FromResult(new List<AIPromptIoCaptureResponse>(captures));
+            return Task.FromResult(new List<AIPromptCaptureResponse>(captures));
         }
     }
 }

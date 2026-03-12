@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 
 namespace Unity.GrantManager.AI
 {
-    public class AIPromptIoCaptureResponse
+    public class AIPromptCaptureResponse
     {
         [JsonPropertyName("contextId")]
         public string ContextId { get; set; } = string.Empty;
