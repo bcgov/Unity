@@ -621,11 +621,18 @@ $(function () {
         );
     });
     
-    PubSub.subscribe('update_ai_analysis_count', (msg, data) => {
-        if (data.itemCount || data.itemCount === 0) {
-            tabCounters.ai_analysis = data.itemCount;
+    PubSub.subscribe('update_ai_analysis_status', (msg, data) => {
+        const $indicator = $('#ai_analysis_status');
+        const status = data?.status;
+
+        $indicator.removeClass('proceed hold');
+
+        if (status === 'proceed' || status === 'hold') {
+            $indicator.addClass(status).show();
+            return;
         }
-        $('#ai_analysis_count').html(tabCounters.ai_analysis);
+
+        $indicator.hide();
     });
 
     PubSub.subscribe('update_application_emails_count', (msg, data) => {

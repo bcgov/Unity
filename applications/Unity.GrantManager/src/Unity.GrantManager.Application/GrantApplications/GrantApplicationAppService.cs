@@ -1054,21 +1054,21 @@ public class GrantApplicationAppService(
         return result;
     }
 
-    public async Task<string> DismissAIIssueAsync(Guid applicationId, string issueId)
+    public async Task<string> HideAIAnalysisItemAsync(Guid applicationId, string itemId)
     {
-        return await UpdateAIIssueDismissStateAsync(applicationId, issueId, isDismiss: true);
+        return await UpdateAIAnalysisItemVisibilityStateAsync(applicationId, itemId, isHidden: true);
     }
 
-    public async Task<string> RestoreAIIssueAsync(Guid applicationId, string issueId)
+    public async Task<string> ShowAIAnalysisItemAsync(Guid applicationId, string itemId)
     {
-        return await UpdateAIIssueDismissStateAsync(applicationId, issueId, isDismiss: false);
+        return await UpdateAIAnalysisItemVisibilityStateAsync(applicationId, itemId, isHidden: false);
     }
 
-    private async Task<string> UpdateAIIssueDismissStateAsync(Guid applicationId, string issueId, bool isDismiss)
+    private async Task<string> UpdateAIAnalysisItemVisibilityStateAsync(Guid applicationId, string itemId, bool isHidden)
     {
-        if (string.IsNullOrWhiteSpace(issueId))
+        if (string.IsNullOrWhiteSpace(itemId))
         {
-            throw new UserFriendlyException("AI issue id is required.");
+            throw new UserFriendlyException("AI analysis item id is required.");
         }
 
         var application = await applicationRepository.GetAsync(applicationId);
@@ -1080,76 +1080,63 @@ public class GrantApplicationAppService(
 
         try
         {
-            var updatedAnalysis = ModifyDismissedItems(application.AIAnalysis, issueId, isDismiss);
+            var updatedAnalysis = SetAnalysisItemHiddenState(application.AIAnalysis, itemId, isHidden);
             application.AIAnalysis = updatedAnalysis;
             await applicationRepository.UpdateAsync(application);
             return updatedAnalysis;
         }
         catch (Exception ex)
         {
-            var action = isDismiss ? "dismissing" : "restoring";
-            var userMessage = isDismiss
-                ? "Failed to dismiss the AI issue. Please try again."
-                : "Failed to restore the AI issue. Please try again.";
+            var action = isHidden ? "hiding" : "showing";
+            var userMessage = isHidden
+                ? "Failed to hide the AI item. Please try again."
+                : "Failed to show the AI item. Please try again.";
 
-            Logger.LogError(ex, "Error {Action} AI issue {IssueId} for application {ApplicationId}", action, issueId, applicationId);
+            Logger.LogError(ex, "Error {Action} AI analysis item {ItemId} for application {ApplicationId}", action, itemId, applicationId);
             throw new UserFriendlyException(userMessage);
         }
     }
 
-    private static string ModifyDismissedItems(string analysisJson, string issueId, bool isDismiss)
+    private static string SetAnalysisItemHiddenState(string analysisJson, string itemId, bool isHidden)
     {
         if (string.IsNullOrWhiteSpace(analysisJson))
         {
             return analysisJson;
         }
 
-        JsonObject? root;
         try
         {
-            root = JsonNode.Parse(analysisJson) as JsonObject;
+            var analysis = System.Text.Json.JsonSerializer.Deserialize<ApplicationAnalysisResponse>(analysisJson, AiAnalysisReadOptions);
+            if (analysis == null)
+            {
+                return analysisJson;
+            }
+
+            UpdateFindingHiddenState(analysis.Errors, itemId, isHidden);
+            UpdateFindingHiddenState(analysis.Warnings, itemId, isHidden);
+            UpdateFindingHiddenState(analysis.Summaries, itemId, isHidden);
+            UpdateFindingHiddenState(analysis.NextSteps, itemId, isHidden);
+
+            return System.Text.Json.JsonSerializer.Serialize(analysis, AiAnalysisWriteOptions);
         }
         catch (System.Text.Json.JsonException)
         {
             return analysisJson;
         }
+    }
 
-        if (root == null)
+    private static void UpdateFindingHiddenState(IEnumerable<ApplicationAnalysisFinding> findings, string itemId, bool isHidden)
+    {
+        foreach (var finding in findings)
         {
-            return analysisJson;
-        }
-
-        var dismissedItems = new List<string>();
-        var seen = new HashSet<string>(StringComparer.Ordinal);
-
-        if (root[AIJsonKeys.Dismissed] is JsonArray dismissedArray)
-        {
-            foreach (var item in dismissedArray)
+            if (!string.Equals(finding.Id, itemId, StringComparison.Ordinal))
             {
-                var id = item?.GetValue<string>();
-                if (string.IsNullOrWhiteSpace(id) || !seen.Add(id))
-                {
-                    continue;
-                }
-
-                dismissedItems.Add(id);
+                continue;
             }
-        }
 
-        if (isDismiss)
-        {
-            if (seen.Add(issueId))
-            {
-                dismissedItems.Add(issueId);
-            }
+            finding.Hidden = isHidden;
+            return;
         }
-        else
-        {
-            dismissedItems.RemoveAll(id => string.Equals(id, issueId, StringComparison.Ordinal));
-        }
-
-        root[AIJsonKeys.Dismissed] = new JsonArray(dismissedItems.Select(id => JsonValue.Create(id)).ToArray());
-        return root.ToJsonString(AiAnalysisWriteOptions);
     }
 
     private static ApplicationAnalysisResponse? ParseAiAnalysisData(string? analysisJson)

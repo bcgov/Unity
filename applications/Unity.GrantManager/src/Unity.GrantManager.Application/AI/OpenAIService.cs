@@ -255,7 +255,10 @@ namespace Unity.GrantManager.AI
                     {
                         var outputPropertyName = property.Name;
 
-                        if (outputPropertyName == AIJsonKeys.Errors || outputPropertyName == AIJsonKeys.Warnings)
+                        if (outputPropertyName == AIJsonKeys.Errors ||
+                            outputPropertyName == AIJsonKeys.Warnings ||
+                            outputPropertyName == AIJsonKeys.Summaries ||
+                            outputPropertyName == AIJsonKeys.NextSteps)
                         {
                             writer.WritePropertyName(outputPropertyName);
                             writer.WriteStartArray();
@@ -266,10 +269,16 @@ namespace Unity.GrantManager.AI
 
                                 // Add unique ID first
                                 writer.WriteString("id", Guid.NewGuid().ToString());
+                                writer.WriteBoolean(AIJsonKeys.Hidden, false);
 
                                 // Copy existing properties
                                 foreach (var itemProperty in item.EnumerateObject())
                                 {
+                                    if (itemProperty.NameEquals(AIJsonKeys.Id) || itemProperty.NameEquals(AIJsonKeys.Hidden))
+                                    {
+                                        continue;
+                                    }
+
                                     itemProperty.WriteTo(writer);
                                 }
 
@@ -289,14 +298,6 @@ namespace Unity.GrantManager.AI
 
                             property.WriteTo(writer);
                         }
-                    }
-
-                    // Add dismissed array if not present.
-                    if (!jsonDoc.RootElement.TryGetProperty(AIJsonKeys.Dismissed, out _))
-                    {
-                        writer.WritePropertyName(AIJsonKeys.Dismissed);
-                        writer.WriteStartArray();
-                        writer.WriteEndArray();
                     }
 
                     writer.WriteEndObject();
@@ -411,14 +412,14 @@ namespace Unity.GrantManager.AI
                 response.Summaries = ParseFindings(summaries);
             }
 
-            if (root.TryGetProperty(AIJsonKeys.Dismissed, out var dismissed) && dismissed.ValueKind == JsonValueKind.Array)
+            if (root.TryGetProperty(AIJsonKeys.NextSteps, out var nextSteps) && nextSteps.ValueKind == JsonValueKind.Array)
             {
-                response.Dismissed = dismissed
-                    .EnumerateArray()
-                    .Select(GetStringValueOrNull)
-                    .Where(item => !string.IsNullOrWhiteSpace(item))
-                    .Cast<string>()
-                    .ToList();
+                response.NextSteps = ParseFindings(nextSteps);
+            }
+
+            if (root.TryGetProperty(AIJsonKeys.Recommendation, out var recommendation) && recommendation.ValueKind == JsonValueKind.Object)
+            {
+                response.Recommendation = ParseRecommendation(recommendation);
             }
 
             return response;
@@ -436,16 +437,6 @@ namespace Unity.GrantManager.AI
             return !string.IsNullOrWhiteSpace(value);
         }
 
-        private static string? GetStringValueOrNull(JsonElement element)
-        {
-            if (element.ValueKind == JsonValueKind.String)
-            {
-                return element.GetString();
-            }
-
-            return null;
-        }
-
         private static List<ApplicationAnalysisFinding> ParseFindings(JsonElement array)
         {
             var findings = new List<ApplicationAnalysisFinding>();
@@ -459,6 +450,9 @@ namespace Unity.GrantManager.AI
                 var id = item.TryGetProperty(AIJsonKeys.Id, out var idProp) && idProp.ValueKind == JsonValueKind.String
                     ? idProp.GetString()
                     : null;
+                var hidden = item.TryGetProperty(AIJsonKeys.Hidden, out var hiddenProp) &&
+                    (hiddenProp.ValueKind == JsonValueKind.True || hiddenProp.ValueKind == JsonValueKind.False) &&
+                    hiddenProp.GetBoolean();
                 string? title = null;
                 if (item.TryGetProperty(AIJsonKeys.Title, out var titleProp) && titleProp.ValueKind == JsonValueKind.String)
                 {
@@ -474,12 +468,41 @@ namespace Unity.GrantManager.AI
                 findings.Add(new ApplicationAnalysisFinding
                 {
                     Id = id,
+                    Hidden = hidden,
                     Title = title,
                     Detail = detail
                 });
             }
 
             return findings;
+        }
+
+        private static ApplicationAnalysisRecommendation? ParseRecommendation(JsonElement recommendation)
+        {
+            string? decision = null;
+            if (recommendation.TryGetProperty(AIJsonKeys.Decision, out var decisionProp) &&
+                decisionProp.ValueKind == JsonValueKind.String)
+            {
+                decision = decisionProp.GetString();
+            }
+
+            string? rationale = null;
+            if (recommendation.TryGetProperty(AIJsonKeys.Rationale, out var rationaleProp) &&
+                rationaleProp.ValueKind == JsonValueKind.String)
+            {
+                rationale = rationaleProp.GetString();
+            }
+
+            if (string.IsNullOrWhiteSpace(decision) && string.IsNullOrWhiteSpace(rationale))
+            {
+                return null;
+            }
+
+            return new ApplicationAnalysisRecommendation
+            {
+                Decision = decision,
+                Rationale = rationale
+            };
         }
 
         private static ScoresheetSectionResponse ParseScoresheetSectionResponse(string raw)
