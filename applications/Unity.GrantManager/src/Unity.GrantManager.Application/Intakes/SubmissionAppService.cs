@@ -102,6 +102,11 @@ public class SubmissionAppService(
 
         var contentBytes = response.Content != null ? await response.Content.ReadAsByteArrayAsync() : [];
         var contentType = response.Content?.Headers?.ContentType?.MediaType ?? "application/octet-stream";
+        // Check and decode the file name if it is URL encoded
+        if (!string.IsNullOrEmpty(name) && name.Contains('%'))
+        {
+            name = Uri.UnescapeDataString(name); 
+        }
 
         return new BlobDto { Name = name, Content = contentBytes, ContentType = contentType };
     }

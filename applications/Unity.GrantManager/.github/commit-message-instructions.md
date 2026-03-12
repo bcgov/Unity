@@ -1,0 +1,1 @@
+Format commit message starting with [AB#<ID>] where <ID> is extracted from the branch name (e.g., from 'feature/AB#32037-...' extract '32037' as ID), followed by a short description. Aim for 50 characters after the prefix when possible but prioritize clarity.

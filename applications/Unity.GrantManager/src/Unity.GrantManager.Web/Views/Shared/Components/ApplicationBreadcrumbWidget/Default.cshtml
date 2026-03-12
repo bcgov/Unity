@@ -1,12 +1,33 @@
-﻿@using Unity.GrantManager.Web.Views.Shared.Components.ApplicationBreadcrumbWidget;
+﻿@using Unity.GrantManager.Permissions
+@using Unity.GrantManager.Web.Views.Shared.Components.ApplicationBreadcrumbWidget;
+@using Volo.Abp.Authorization.Permissions
+
+@inject IPermissionChecker PermissionChecker
 
 @model ApplicationBreadcrumbWidgetViewModel
+
+@{
+    var renderedApplicantName = string.IsNullOrWhiteSpace(Model.ApplicantName) ? "Unknown Applicant" : Model.ApplicantName;
+    var hasViewPermission = await PermissionChecker.IsGrantedAsync(GrantApplicationPermissions.Applicants.ViewList);
+}
 
 <div class="breadcrumb-container">
     <abp-button icon="fl fl-arrow-left" icon-type="Other" id="goBack" class="px-2" ></abp-button>
     <div class="application-details-breadcrumb">
         <div class="reference-no">@Model.ReferenceNo</div>
-        <div class="applicant-name">@Model.ApplicantName</div>
+        <div class="applicant-name">
+            @if (hasViewPermission && Model.ApplicantId != Guid.Empty)
+            {
+                <a href="~/GrantApplicants/Details?ApplicantId=@Model.ApplicantId" 
+                   class="applicant-name-link link-underline link-offset-1 link-underline-opacity-0 link-underline-opacity-100-hover">
+                    @renderedApplicantName
+                </a>
+            }
+            else
+            {
+                @renderedApplicantName
+            }
+        </div>
         <div class="form-version pr-1">@Model.SubmissionFormDescription</div>
         <div class="application-status">@Model.ApplicationStatus</div>    
     </div>

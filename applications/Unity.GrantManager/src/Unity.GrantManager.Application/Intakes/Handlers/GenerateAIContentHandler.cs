@@ -54,13 +54,20 @@ namespace Unity.GrantManager.Intakes.Handlers
             AIJsonKeys.Errors,
             AIJsonKeys.Warnings,
             AIJsonKeys.Summaries,
-            AIJsonKeys.Dismissed
+            AIJsonKeys.NextSteps,
+            AIJsonKeys.Recommendation
         };
         private static readonly string[] AllowedFindingProperties =
         {
             AIJsonKeys.Id,
+            AIJsonKeys.Hidden,
             AIJsonKeys.Title,
             AIJsonKeys.Detail
+        };
+        private static readonly string[] AllowedRecommendationProperties =
+        {
+            AIJsonKeys.Decision,
+            AIJsonKeys.Rationale
         };
         private static readonly string[] AllowedScoresheetAnswerProperties =
         {
@@ -280,7 +287,7 @@ namespace Unity.GrantManager.Intakes.Handlers
                         application.Id);
                 }
 
-                var analysisData = BuildAnalysisDataPayload(application, formSubmission);
+                var analysisData = BuildPromptDataPayload(application, formSubmission);
                 _logger.LogInformation("Generating analysis for application {ApplicationId}", application.Id);
 
                 _logger.LogDebug("Generating AI analysis for application {ApplicationId} with {AttachmentCount} attachment summaries",
@@ -290,8 +297,7 @@ namespace Unity.GrantManager.Intakes.Handlers
                 {
                     Schema = formFieldSchema,
                     Data = analysisData,
-                    Attachments = analysisAttachments,
-                    Rubric = AnalysisPrompts.DefaultRubric
+                    Attachments = analysisAttachments
                 };
 
                 var analysis = await _aiService.GenerateApplicationAnalysisAsync(analysisRequest);
@@ -327,55 +333,7 @@ namespace Unity.GrantManager.Intakes.Handlers
                 .ToList();
         }
 
-        private JsonElement BuildAnalysisDataPayload(Application application, ApplicationFormSubmission? formSubmission)
-        {
-            var fallbackPayload = BuildFallbackAnalysisDataPayload(application);
-
-            if (string.IsNullOrWhiteSpace(formSubmission?.Submission))
-            {
-                return JsonSerializer.SerializeToElement(fallbackPayload);
-            }
-
-            try
-            {
-                using var submissionDoc = JsonDocument.Parse(formSubmission.Submission);
-                var root = submissionDoc.RootElement;
-
-                JsonElement submissionData = root;
-                if (root.ValueKind == JsonValueKind.Object &&
-                    root.TryGetProperty("data", out var dataElement) &&
-                    dataElement.ValueKind == JsonValueKind.Object)
-                {
-                    submissionData = dataElement;
-                }
-                else if (root.ValueKind == JsonValueKind.Object &&
-                    root.TryGetProperty("submission", out var submissionElement) &&
-                    submissionElement.ValueKind == JsonValueKind.Object &&
-                    submissionElement.TryGetProperty("data", out var nestedDataElement) &&
-                    nestedDataElement.ValueKind == JsonValueKind.Object)
-                {
-                    submissionData = nestedDataElement;
-                }
-
-                if (submissionData.ValueKind != JsonValueKind.Object)
-                {
-                    return JsonSerializer.SerializeToElement(fallbackPayload);
-                }
-
-                var values = BuildPromptDataValues(submissionData);
-
-                return JsonSerializer.SerializeToElement(values);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex,
-                    "Failed to parse form submission JSON for application {ApplicationId}; falling back to curated analysis data.",
-                    application.Id);
-                return JsonSerializer.SerializeToElement(fallbackPayload);
-            }
-        }
-
-        private static object BuildFallbackAnalysisDataPayload(Application application)
+        private static object BuildFallbackPromptDataPayload(Application application)
         {
             var notSpecified = "Not specified";
             return new
@@ -442,7 +400,7 @@ namespace Unity.GrantManager.Intakes.Handlers
                 var allSectionResults = new Dictionary<string, object>();
                 var scoresheetAttachments = BuildScoresheetAttachments(attachments);
                 var formSubmission = await _applicationFormSubmissionRepository.GetByApplicationAsync(application.Id);
-                var scoresheetData = BuildScoresheetDataPayload(application, formSubmission);
+                var scoresheetData = BuildPromptDataPayload(application, formSubmission);
                 LogFormSubmissionPreview(formSubmission?.RenderedHTML);
 
                 foreach (var section in scoresheet.Sections.OrderBy(s => s.Order))
@@ -485,49 +443,69 @@ namespace Unity.GrantManager.Intakes.Handlers
                 .ToList();
         }
 
-        private JsonElement BuildScoresheetDataPayload(Application application, ApplicationFormSubmission? formSubmission)
+        private JsonElement BuildPromptDataPayload(Application application, ApplicationFormSubmission? formSubmission)
         {
-            var fallbackContent = BuildScoresheetFallbackContent(application, formSubmission?.RenderedHTML);
+            var fallbackPayload = BuildFallbackPromptDataPayload(application);
+            if (TryBuildPromptDataValues(application.Id, formSubmission, out var values))
+            {
+                return JsonSerializer.SerializeToElement(values);
+            }
 
+            return JsonSerializer.SerializeToElement(fallbackPayload);
+        }
+
+        private bool TryBuildPromptDataValues(Guid applicationId, ApplicationFormSubmission? formSubmission, out Dictionary<string, JsonElement> values)
+        {
+            values = new Dictionary<string, JsonElement>(StringComparer.OrdinalIgnoreCase);
             if (string.IsNullOrWhiteSpace(formSubmission?.Submission))
             {
-                return JsonSerializer.SerializeToElement(new { submission_content = fallbackContent });
+                return false;
             }
 
             try
             {
                 using var submissionDoc = JsonDocument.Parse(formSubmission.Submission);
-                var root = submissionDoc.RootElement;
-
-                JsonElement submissionData = root;
-                if (root.ValueKind == JsonValueKind.Object &&
-                    root.TryGetProperty("data", out var dataElement) &&
-                    dataElement.ValueKind == JsonValueKind.Object)
+                if (!TryExtractSubmissionDataObject(submissionDoc.RootElement, out var submissionData))
                 {
-                    submissionData = dataElement;
-                }
-                else if (root.ValueKind == JsonValueKind.Object &&
-                    root.TryGetProperty("submission", out var submissionElement) &&
-                    submissionElement.ValueKind == JsonValueKind.Object &&
-                    submissionElement.TryGetProperty("data", out var nestedDataElement) &&
-                    nestedDataElement.ValueKind == JsonValueKind.Object)
-                {
-                    submissionData = nestedDataElement;
+                    return false;
                 }
 
-                if (submissionData.ValueKind == JsonValueKind.Object)
-                {
-                    return JsonSerializer.SerializeToElement(BuildPromptDataValues(submissionData));
-                }
+                values = BuildPromptDataValues(submissionData);
+                return true;
             }
             catch (Exception ex)
             {
                 _logger.LogWarning(ex,
-                    "Failed to parse scoresheet submission JSON for application {ApplicationId}; falling back to summary content.",
-                    application.Id);
+                    "Failed to parse form submission JSON for prompt payload generation for application {ApplicationId}.",
+                    applicationId);
+                return false;
+            }
+        }
+
+        private static bool TryExtractSubmissionDataObject(JsonElement root, out JsonElement submissionData)
+        {
+            submissionData = root;
+            if (root.ValueKind != JsonValueKind.Object)
+            {
+                return false;
             }
 
-            return JsonSerializer.SerializeToElement(new { submission_content = fallbackContent });
+            if (root.TryGetProperty("data", out var dataElement) && dataElement.ValueKind == JsonValueKind.Object)
+            {
+                submissionData = dataElement;
+                return true;
+            }
+
+            if (root.TryGetProperty("submission", out var submissionElement) &&
+                submissionElement.ValueKind == JsonValueKind.Object &&
+                submissionElement.TryGetProperty("data", out var nestedDataElement) &&
+                nestedDataElement.ValueKind == JsonValueKind.Object)
+            {
+                submissionData = nestedDataElement;
+                return true;
+            }
+
+            return root.ValueKind == JsonValueKind.Object;
         }
 
         private static Dictionary<string, JsonElement> BuildPromptDataValues(JsonElement submissionData)
@@ -542,27 +520,6 @@ namespace Unity.GrantManager.Intakes.Handlers
             }
 
             return values;
-        }
-
-        private static string BuildScoresheetFallbackContent(Application application, string? renderedFormHtml)
-        {
-            var notSpecified = "Not specified";
-            return $@"
-Project Name: {application.ProjectName}
-Reference Number: {application.ReferenceNo}
-Requested Amount: ${application.RequestedAmount:N2}
-Total Project Budget: ${application.TotalProjectBudget:N2}
-Project Summary: {application.ProjectSummary ?? "Not provided"}
-City: {application.City ?? notSpecified}
-Economic Region: {application.EconomicRegion ?? notSpecified}
-Community: {application.Community ?? notSpecified}
-Project Start Date: {application.ProjectStartDate?.ToShortDateString() ?? notSpecified}
-Project End Date: {application.ProjectEndDate?.ToShortDateString() ?? notSpecified}
-Submission Date: {application.SubmissionDate.ToShortDateString()}
-
-FULL APPLICATION FORM SUBMISSION:
-{renderedFormHtml ?? "Form submission content not available"}
-";
         }
 
         private void LogFormSubmissionPreview(string? renderedFormHtml)
@@ -591,7 +548,7 @@ FULL APPLICATION FORM SUBMISSION:
             {
                 _logger.LogDebug("Processing section {SectionName} for application {ApplicationId}",
                     sectionName, applicationId);
-                var sectionAnswers = await _aiService.GenerateScoresheetSectionAnswersAsync(new ScoresheetSectionRequest
+                var sectionAnswers = await _aiService.GenerateScoresheetSectionAsync(new ScoresheetSectionRequest
                 {
                     Data = scoresheetData,
                     Attachments = scoresheetAttachments,
@@ -930,7 +887,8 @@ FULL APPLICATION FORM SUBMISSION:
                 if (!root.TryGetProperty(AIJsonKeys.Errors, out var errors) ||
                     !root.TryGetProperty(AIJsonKeys.Warnings, out var warnings) ||
                     !root.TryGetProperty(AIJsonKeys.Summaries, out var summaries) ||
-                    !root.TryGetProperty(AIJsonKeys.Dismissed, out var dismissedItems))
+                    !root.TryGetProperty(AIJsonKeys.NextSteps, out var nextSteps) ||
+                    !root.TryGetProperty(AIJsonKeys.Recommendation, out var recommendation))
                 {
                     return false;
                 }
@@ -940,13 +898,11 @@ FULL APPLICATION FORM SUBMISSION:
                     return false;
                 }
 
-                if (!IsValidFindingsArray(errors) || !IsValidFindingsArray(warnings) || !IsValidFindingsArray(summaries))
-                {
-                    return false;
-                }
-
-                if (dismissedItems.ValueKind != JsonValueKind.Array ||
-                    dismissedItems.EnumerateArray().Any(id => id.ValueKind != JsonValueKind.String))
+                if (!IsValidFindingsArray(errors) ||
+                    !IsValidFindingsArray(warnings) ||
+                    !IsValidFindingsArray(summaries) ||
+                    !IsValidFindingsArray(nextSteps) ||
+                    !IsValidRecommendation(recommendation))
                 {
                     return false;
                 }
@@ -983,6 +939,12 @@ FULL APPLICATION FORM SUBMISSION:
                     return false;
                 }
 
+                if (!finding.TryGetProperty(AIJsonKeys.Hidden, out var hidden) ||
+                    (hidden.ValueKind != JsonValueKind.True && hidden.ValueKind != JsonValueKind.False))
+                {
+                    return false;
+                }
+
                 if (!HasOnlyAllowedProperties(finding, AllowedFindingProperties))
                 {
                     return false;
@@ -990,6 +952,33 @@ FULL APPLICATION FORM SUBMISSION:
             }
 
             return true;
+        }
+
+        private static bool IsValidRecommendation(JsonElement element)
+        {
+            if (element.ValueKind != JsonValueKind.Object)
+            {
+                return false;
+            }
+
+            if (!element.TryGetProperty(AIJsonKeys.Decision, out var decision) || decision.ValueKind != JsonValueKind.String)
+            {
+                return false;
+            }
+
+            var decisionValue = decision.GetString();
+            if (!string.Equals(decisionValue, "PROCEED", StringComparison.Ordinal) &&
+                !string.Equals(decisionValue, "HOLD", StringComparison.Ordinal))
+            {
+                return false;
+            }
+
+            if (!element.TryGetProperty(AIJsonKeys.Rationale, out var rationale) || rationale.ValueKind != JsonValueKind.String)
+            {
+                return false;
+            }
+
+            return HasOnlyAllowedProperties(element, AllowedRecommendationProperties);
         }
 
         private static bool IsValidScoresheetAnswersPayload(string scoresheetJson)

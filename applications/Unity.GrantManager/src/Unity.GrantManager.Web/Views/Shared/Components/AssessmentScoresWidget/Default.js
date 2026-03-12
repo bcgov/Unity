@@ -576,3 +576,34 @@ function collapseAllAccordions(divId) {
             .classList.add('collapsed');
     });
 }
+
+function regenerateAIScoresheetAnswers() {
+    const applicationId = $('#DetailsViewApplicationId').val();
+    const $button = $('#regenerateAiScoresheetBtn');
+    const existingHtml = $button.html();
+
+    if (!applicationId || $button.prop('disabled')) {
+        return;
+    }
+
+    $button
+        .html(
+            '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>Refreshing Scoring...'
+        )
+        .prop('disabled', true);
+
+    unity.grantManager.grantApplications.applicationAIScoring
+        .generateAIScoresheetAnswers(applicationId)
+        .done(function () {
+            abp.notify.success('AI scoring refreshed successfully.');
+            PubSub.publish('refresh_assessment_scores', null);
+        })
+        .fail(function () {
+            abp.message.error(
+                'Failed to refresh AI scoring. Please try again.'
+            );
+        })
+        .always(function () {
+            $button.html(existingHtml).prop('disabled', false);
+        });
+}

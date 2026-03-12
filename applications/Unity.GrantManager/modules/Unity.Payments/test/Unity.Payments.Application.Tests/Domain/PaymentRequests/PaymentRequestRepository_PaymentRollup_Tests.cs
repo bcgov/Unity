@@ -214,6 +214,31 @@ public class PaymentRequestRepository_PaymentRollup_Tests : PaymentsApplicationT
 
     [Fact]
     [Trait("Category", "Integration")]
+    public async Task Should_Exclude_Submitted_WithNotFound_InvoiceStatus_FromPending()
+    {
+        // Arrange
+        var correlationId = Guid.NewGuid();
+        var siteId = await CreateSupplierAndSiteAsync();
+
+        using var uow = _unitOfWorkManager.Begin();
+        // NotFound invoice status - should NOT be counted as pending
+        await InsertPaymentRequestAsync(siteId, correlationId, 1000m,
+            PaymentRequestStatus.Submitted, paymentStatus: null, invoiceStatus: "NotFound");
+        // Valid pending - SHOULD be counted
+        await InsertPaymentRequestAsync(siteId, correlationId, 200m,
+            PaymentRequestStatus.Submitted, paymentStatus: null, invoiceStatus: "SentToCas");
+
+        // Act
+        var results = await _paymentRequestRepository
+            .GetBatchPaymentRollupsByCorrelationIdsAsync([correlationId]);
+
+        // Assert
+        results.Count.ShouldBe(1);
+        results[0].TotalPending.ShouldBe(200m); // Only the non-NotFound one
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
     public async Task Should_Exclude_Submitted_WithErrorFromCas_FromPending()
     {
         // Arrange
