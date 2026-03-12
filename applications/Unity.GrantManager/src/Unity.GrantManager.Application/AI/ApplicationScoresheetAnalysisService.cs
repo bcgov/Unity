@@ -82,14 +82,15 @@ FULL APPLICATION FORM SUBMISSION:
                     var sectionQuestionsData = new List<object>();
                     foreach (var field in section.Fields.OrderBy(f => f.Order))
                     {
+                        var options = ExtractSelectListOptions(field);
                         sectionQuestionsData.Add(new
                         {
                             id = field.Id.ToString(),
                             question = field.Label,
                             description = field.Description,
                             type = field.Type.ToString(),
-                            definition = field.Definition,
-                            availableOptions = ExtractSelectListOptions(field)
+                            options,
+                            allowed_answers = ExtractSelectListOptionNumbers(options)
                         });
                     }
 
@@ -147,7 +148,7 @@ FULL APPLICATION FORM SUBMISSION:
             return "{}";
         }
 
-        private static (int number, string value, long numericValue)[]? ExtractSelectListOptions(Question field)
+        private static object[]? ExtractSelectListOptions(Question field)
         {
             if (field.Type != Unity.Flex.Scoresheets.Enums.QuestionType.SelectList || string.IsNullOrEmpty(field.Definition))
                 return null;
@@ -158,7 +159,12 @@ FULL APPLICATION FORM SUBMISSION:
                 if (definition?.Options != null && definition.Options.Count > 0)
                 {
                     return definition.Options
-                        .Select((option, index) => (number: index, value: option.Value, numericValue: option.NumericValue))
+                        .Select((option, index) =>
+                            (object)new
+                            {
+                                number = index + 1,
+                                value = option.Value
+                            })
                         .ToArray();
                 }
             }
@@ -168,6 +174,18 @@ FULL APPLICATION FORM SUBMISSION:
             }
 
             return null;
+        }
+
+        private static string[]? ExtractSelectListOptionNumbers(object[]? options)
+        {
+            if (options == null || options.Length == 0)
+            {
+                return null;
+            }
+
+            return options
+                .Select((_, index) => (index + 1).ToString())
+                .ToArray();
         }
     }
 }
