@@ -301,8 +301,6 @@
                             @await Component.InvokeAsync("UserInfoWidget", new { displayName = "", badge = "", title = "" })
                         </div>
 
-                        <h6 class="fw-bold px-3 pt-4 pb-2">Assessment Scores</h6>
-
                         <div id="assessmentScoresWidgetArea">
                             @await Component.InvokeAsync("AssessmentScoresWidget", new { assessmentId = Model.AssessmentId })
                         </div>
@@ -403,7 +401,10 @@
                     <div class="d-flex justify-content-between align-items-center px-3 pt-4 pb-2">
                         <h6 class="fw-bold m-0">AI Application Analysis</h6>
                         <button type="button" class="btn unt-btn-outline-primary btn-outline-primary" id="regenerateAiAnalysis">
-                            <i class="unt-icon-sm fa-solid fa-wand-sparkles"></i>Refresh Analysis
+                            <span class="ai-button-content">
+                                <i class="unt-icon-sm fa-solid fa-wand-sparkles"></i>
+                                <span>Refresh Analysis</span>
+                            </span>
                         </button>
                     </div>
                     @if (Model.IsDevPromptControlsEnabled)
@@ -431,8 +432,11 @@
                         </div>
                         <div class="px-3 pb-2 d-none" id="aiAnalysisPromptCaptureContainer">
                             <div class="alert alert-secondary mb-0">
-                                <div class="fw-bold mb-2">Captured Prompt I/O</div>
-                                <pre class="mb-0 small" id="aiAnalysisPromptCaptureOutput"></pre>
+                                <div class="d-flex justify-content-between align-items-center gap-2 mb-2">
+                                    <div class="fw-bold mb-0">Captured Prompt I/O</div>
+                                    <button type="button" class="btn btn-sm unt-btn-outline-primary btn-outline-primary ai-prompt-capture-copy-btn" data-target="#aiAnalysisPromptCaptureOutput">Copy All</button>
+                                </div>
+                                <textarea class="form-control form-control-sm ai-prompt-capture-output" id="aiAnalysisPromptCaptureOutput" readonly spellcheck="false"></textarea>
                             </div>
                         </div>
                     }

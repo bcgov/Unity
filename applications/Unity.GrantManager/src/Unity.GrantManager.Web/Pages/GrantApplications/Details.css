@@ -66,6 +66,22 @@
     justify-content: center;
 }
 
+.ai-button-content {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.ai-prompt-capture-output {
+    min-height: 18rem;
+    max-height: 32rem;
+    overflow: auto;
+    resize: vertical;
+    white-space: pre;
+    font-family: Consolas, "Courier New", monospace;
+    line-height: 1.35;
+}
+
 .left-card {
     border-right: 1px solid #dddddd;
 }

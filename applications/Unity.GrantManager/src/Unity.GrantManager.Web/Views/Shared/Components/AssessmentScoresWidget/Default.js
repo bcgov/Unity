@@ -602,18 +602,11 @@ function regenerateAIScoresheetAnswers() {
         .generateAIScoresheetAnswers(applicationId, promptVersion, capturePromptIo)
         .done(function () {
             abp.notify.success('AI scoring refreshed successfully.');
-            PubSub.publish('refresh_assessment_scores', null);
-            if (capturePromptIo && globalThis.loadAIPromptCapture) {
-                setTimeout(function () {
-                    globalThis.loadAIPromptCapture(
-                        applicationId,
-                        'ScoresheetSection',
-                        promptVersion,
-                        '#aiScoringPromptCaptureContainer',
-                        '#aiScoringPromptCaptureOutput'
-                    );
-                }, 750);
-            }
+            PubSub.publish('refresh_assessment_scores', {
+                promptVersion: promptVersion,
+                capturePromptIo: capturePromptIo,
+                applicationId: applicationId,
+            });
         })
         .fail(function () {
             abp.message.error(
