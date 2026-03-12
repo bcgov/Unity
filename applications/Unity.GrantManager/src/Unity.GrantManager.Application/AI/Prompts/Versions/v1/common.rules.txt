@@ -1,0 +1,5 @@
+- Any narrative text response must be at least 12 words.
+- Return values exactly as specified in OUTPUT.
+- Do not return keys outside OUTPUT.
+- Return valid JSON only.
+- Return plain JSON only (no markdown).

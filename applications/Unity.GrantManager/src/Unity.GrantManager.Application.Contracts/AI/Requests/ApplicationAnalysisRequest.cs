@@ -14,8 +14,5 @@ namespace Unity.GrantManager.AI
 
         [JsonPropertyName("attachments")]
         public List<AIAttachmentItem> Attachments { get; set; } = new();
-
-        [JsonPropertyName("rubric")]
-        public string? Rubric { get; set; }
     }
 }

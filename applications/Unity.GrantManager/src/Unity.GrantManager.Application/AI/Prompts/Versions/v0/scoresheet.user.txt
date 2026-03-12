@@ -1,0 +1,38 @@
+APPLICATION CONTENT:
+{{DATA}}
+
+ATTACHMENT SUMMARIES:
+{{ATTACHMENTS}}
+
+SCORESHEET SECTION:
+{{SECTION}}
+
+RESPONSE TEMPLATE:
+{{RESPONSE}}
+
+Please analyze this grant application and provide answers for each question in the specified section only.
+
+For each question, provide:
+1. The answer based on the application evidence
+2. A brief rationale (1-2 complete sentences) citing concrete supporting evidence
+3. A confidence score from 0-100 (integer) indicating certainty in the selected answer
+
+OUTPUT
+{
+  "<question_id>": {
+    "answer": "<string | number>",
+    "rationale": "<evidence-based rationale>",
+    "confidence": <integer 0-100 step 5>
+  }
+}
+
+Important:
+- Use only APPLICATION CONTENT and ATTACHMENT SUMMARIES as evidence.
+- Answer only the question IDs in the specified section.
+- Every question must include answer, rationale, and confidence.
+- Use RESPONSE TEMPLATE as the contract and fill every placeholder value.
+- answer type must match the question type.
+- For select list questions, return only the option number as a string, never label text.
+- rationale must be 1-2 complete sentences grounded in evidence.
+- confidence must be an integer from 0 to 100 in increments of 5.
+- Return valid plain JSON only in the exact OUTPUT shape.
