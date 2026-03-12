@@ -13,8 +13,13 @@ namespace Unity.GrantManager.ApplicantProfile
             if (string.IsNullOrWhiteSpace(subject))
                 return null;
 
-            return subject.Contains('@')
-                ? subject[..subject.IndexOf('@')].ToUpperInvariant()
+            var atIndex = subject.IndexOf('@');
+
+            if (atIndex == 0)
+                return null;
+
+            return atIndex > 0
+                ? subject[..atIndex].ToUpperInvariant()
                 : subject.ToUpperInvariant();
         }
     }

@@ -42,6 +42,7 @@ public class GrantsPortalCommandConsumerService(
 
     private const int MaxRetries = 5;
     private static readonly TimeSpan InitialRetryDelay = TimeSpan.FromSeconds(5);
+    private static readonly TimeSpan SlowRetryInterval = TimeSpan.FromSeconds(60);
     private CancellationToken _stoppingToken;
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -89,7 +90,47 @@ public class GrantsPortalCommandConsumerService(
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Failed to connect to RabbitMQ after {MaxRetries} attempts : {Ex}", MaxRetries, ex);
+                logger.LogError(ex, "Failed to connect to RabbitMQ after {MaxRetries} attempts. Entering slow reconnect loop (every {Interval}s).",
+                    MaxRetries, SlowRetryInterval.TotalSeconds);
+                await SlowReconnectLoopAsync(cancellationToken);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Long-lived reconnect loop entered after the fast exponential-backoff retries are exhausted.
+    /// Retries at a fixed interval until the connection succeeds or the service is stopped.
+    /// This avoids leaving the pod alive-but-idle when the broker is down for an extended period.
+    /// </summary>
+    private async Task SlowReconnectLoopAsync(CancellationToken cancellationToken)
+    {
+        while (!cancellationToken.IsCancellationRequested)
+        {
+            await Task.Delay(SlowRetryInterval, cancellationToken);
+
+            try
+            {
+                logger.LogInformation("Slow reconnect: attempting to connect to RabbitMQ...");
+                CleanupConnection();
+
+                _connection = connectionFactory.CreateConnection();
+                _connection.ConnectionShutdown += OnConnectionShutdown;
+                _channel = _connection.CreateModel();
+                _channel.BasicQos(prefetchSize: 0, prefetchCount: 1, global: false);
+
+                DeclareTopology();
+                StartConsuming();
+
+                logger.LogInformation("Slow reconnect: successfully reconnected. Listening on queue {Queue}", _options.InboundQueue);
+                return;
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                // Shutting down — expected
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "Slow reconnect: still unable to connect to RabbitMQ. Will retry in {Interval}s.", SlowRetryInterval.TotalSeconds);
             }
         }
     }

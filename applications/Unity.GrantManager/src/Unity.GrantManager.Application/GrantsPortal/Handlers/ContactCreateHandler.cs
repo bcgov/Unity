@@ -27,6 +27,7 @@ public class ContactCreateHandler(
     public virtual async Task<string> HandleAsync(PluginDataPayload payload)
     {
         var contactId = Guid.Parse(payload.ContactId ?? throw new ArgumentException("contactId is required"));
+        var profileId = Guid.Parse(payload.ProfileId ?? throw new ArgumentException("profileId is required"));
         var innerData = payload.Data?.ToObject<ContactCreateData>()
                         ?? throw new ArgumentException("Contact data is required");
 
@@ -38,7 +39,7 @@ public class ContactCreateHandler(
             return "Contact already exists";
         }
 
-        logger.LogInformation("Creating contact {ContactId} for profile {ProfileId}", contactId, payload.ProfileId);
+        logger.LogInformation("Creating contact {ContactId} for profile {ProfileId}", contactId, profileId);
 
         var contact = new Contact
         {
@@ -68,7 +69,7 @@ public class ContactCreateHandler(
         {
             ContactId = contactId,
             RelatedEntityType = innerData.ContactType ?? "PORTAL",
-            RelatedEntityId = Guid.Parse(payload.ProfileId ?? Guid.Empty.ToString()),
+            RelatedEntityId = profileId,
             Role = innerData.Role,
             IsPrimary = innerData.IsPrimary,
             IsActive = true

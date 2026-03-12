@@ -48,6 +48,21 @@ public abstract class InboxWorkerBase : QuartzBackgroundWorkerBase
         { "AbpDbConcurrencyException", "The record was modified by another process. Please try again." }
     };
 
+    /// <summary>
+    /// Exception types whose <see cref="Exception.Message"/> is safe to surface verbatim
+    /// in outbox acknowledgments. These are input/validation errors thrown by handlers
+    /// (e.g., missing required fields, malformed GUIDs, deserialization failures).
+    /// </summary>
+    private static readonly HashSet<string> s_validationExceptionTypes = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "ArgumentException",
+        "ArgumentNullException",
+        "FormatException",
+        "JsonException",
+        "JsonReaderException",
+        "JsonSerializationException"
+    };
+
     protected InboxWorkerBase(IServiceProvider serviceProvider)
     {
         _serviceProvider = serviceProvider;
@@ -203,7 +218,24 @@ public abstract class InboxWorkerBase : QuartzBackgroundWorkerBase
                 return innerFriendly;
         }
 
+        // Validation / input errors — surface ex.Message so callers get actionable feedback
+        if (IsValidationException(ex))
+            return ex.Message;
+
         return "An unexpected error occurred while processing your request. Please try again or contact support.";
+    }
+
+    /// <summary>
+    /// Returns true when the exception (or its inner exception) is a validation/input error
+    /// whose message is safe to include in outbox acknowledgments.
+    /// </summary>
+    private static bool IsValidationException(Exception ex)
+    {
+        if (s_validationExceptionTypes.Contains(ex.GetType().Name))
+            return true;
+
+        return ex.InnerException != null
+            && s_validationExceptionTypes.Contains(ex.InnerException.GetType().Name);
     }
 
     /// <summary>
