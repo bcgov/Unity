@@ -32,7 +32,7 @@ $(document).ready(function () {
     });
 
     // Add event listeners for tab clicks to adjust DataTables
-    $('#detailsTab li').on('click', function () {
+    $('#detailsTab > .nav-tabs > li').on('click', function () {
         debouncedAdjustTables('detailsTab');
         scheduleDeferredLayoutPass();
     });
@@ -81,7 +81,7 @@ const debouncedResizeAwareDataTables = debounce(() => {
     $('table[data-resize-aware="true"]:visible').each(function () {
         try {
             const table = $(this).DataTable();
-            table.columns.adjust().draw();
+            table.columns.adjust().draw(false);
         }
         catch (error) {
             console.error('Failed to adjust DataTable columns:', error);
@@ -99,7 +99,7 @@ function adjustVisibleTablesInContainer(containerId) {
     tables.each(function () {
         try {
             const table = $(this).DataTable();
-            table.columns.adjust().draw();
+            table.columns.adjust().draw(false);
         }
         catch (error) {
             console.error('Failed to adjust DataTable in tab:', error);
@@ -370,7 +370,6 @@ function initializeResizableDivider() {
     window.addEventListener('resize', restoreDividerPosition);
     window.addEventListener('resize', applyTabHeightOffset);
 }
-
 
 
 

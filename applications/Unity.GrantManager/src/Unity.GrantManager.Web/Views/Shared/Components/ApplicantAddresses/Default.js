@@ -53,14 +53,6 @@ $(function () {
         });
     }
 
-    function bindTableLayoutNotifications(table) {
-        if (!table) {
-            return;
-        }
-
-        table.on('draw', notifyApplicantAddressesLayoutChange);
-    }
-	
     contactsTable = initializeApplicantTable(
         '#ApplicantContactsTable',
         contactsData,
@@ -164,8 +156,6 @@ $(function () {
         requestAnimationFrame(() => notifyApplicantAddressesLayoutChange());
     });
 
-    bindTableLayoutNotifications(contactsTable);
-    bindTableLayoutNotifications(addressesTable);
     scheduleLayoutNotifications();
 
     const form = $('#ApplicantAddressesForm');
