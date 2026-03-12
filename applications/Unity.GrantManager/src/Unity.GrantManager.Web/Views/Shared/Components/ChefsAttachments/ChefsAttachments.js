@@ -200,6 +200,14 @@ $(function () {
     //Generate AI summaries for attachments
     const $generateAISummariesButton = $('#generateAiSummaries');
     if ($generateAISummariesButton.length > 0) {
+        function resetAttachmentSelectionState() {
+            selectedAtttachments = [];
+            $('.select-all-chefs-files').prop('checked', false);
+            $('.chkbox').prop('checked', false);
+            $(downloadAll).prop('disabled', true);
+            $generateAISummariesButton.prop('disabled', true);
+        }
+
         $generateAISummariesButton.on('click', function () {
             const $button = $(this);
             const selectedRows = chefsDataTable.rows({ selected: true }).data();
@@ -247,6 +255,8 @@ $(function () {
                             summaries.length +
                             ' attachment(s).'
                     );
+
+                    resetAttachmentSelectionState();
 
                     // Reload the table to show new summaries
                     chefsDataTable.ajax.reload();

@@ -4,8 +4,12 @@
  */
 
 $(function () {
+    function setPromptCaptureOutput(outputSelector, value) {
+        $(outputSelector).val(value);
+    }
+
     globalThis.hideAIPromptCapture = function(containerSelector, outputSelector) {
-        $(outputSelector).text('');
+        setPromptCaptureOutput(outputSelector, '');
         $(containerSelector).addClass('d-none');
     };
 
@@ -49,7 +53,7 @@ $(function () {
             .map((capture) => formatAIPromptCaptureBlock(capture))
             .join('\n\n----------------------------------------\n\n');
 
-        $(outputSelector).text(formatted);
+        setPromptCaptureOutput(outputSelector, formatted);
         $(containerSelector).removeClass('d-none');
     };
 
@@ -68,6 +72,24 @@ $(function () {
                 globalThis.hideAIPromptCapture(containerSelector, outputSelector);
             });
     };
+
+    $(document).on('click', '.ai-prompt-capture-copy-btn', async function () {
+        const targetSelector = $(this).data('target');
+        const text = $(targetSelector).val();
+
+        if (!targetSelector || !text) {
+            return;
+        }
+
+        try {
+            await navigator.clipboard.writeText(text);
+            abp.notify.success('Copied prompt capture.');
+        } catch {
+            const output = $(targetSelector);
+            output.trigger('focus');
+            output.trigger('select');
+        }
+    });
 
     let selectedReviewDetails = null;
     let renderFormIoToHtml =
@@ -376,9 +398,53 @@ $(function () {
         },
     });
 
+    function restoreScoringPromptControls(promptVersion, capturePromptIo) {
+        if (promptVersion) {
+            $('#aiScoringPromptVersion').val(promptVersion);
+        }
+
+        $('#aiScoringCapturePromptIo').prop('checked', !!capturePromptIo);
+    }
+
+    function finalizeScoringPromptRefresh(data) {
+        restoreScoringPromptControls(data?.promptVersion || null, data?.capturePromptIo || false);
+
+        if (data?.capturePromptIo && globalThis.loadAIPromptCapture) {
+            globalThis.loadAIPromptCapture(
+                data.applicationId,
+                'ScoresheetSection',
+                data.promptVersion || null,
+                '#aiScoringPromptCaptureContainer',
+                '#aiScoringPromptCaptureOutput'
+            );
+            return;
+        }
+
+        globalThis.hideAIPromptCapture?.('#aiScoringPromptCaptureContainer', '#aiScoringPromptCaptureOutput');
+    }
+
+    function waitForScoringPromptControls(callback, retries = 20) {
+        if ($('#aiScoringPromptVersion').length > 0 && $('#aiScoringCapturePromptIo').length > 0) {
+            callback();
+            return;
+        }
+
+        if (retries <= 0) {
+            return;
+        }
+
+        setTimeout(() => waitForScoringPromptControls(callback, retries - 1), 50);
+    }
+
     PubSub.subscribe('refresh_assessment_scores', (msg, data) => {
         assessmentScoresWidgetManager.refresh();
         updateSubtotal();
+
+        if (!data) {
+            return;
+        }
+
+        waitForScoringPromptControls(() => finalizeScoringPromptRefresh(data));
     });
 
     PubSub.subscribe('select_application_review', (msg, data) => {
