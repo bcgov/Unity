@@ -1,7 +1,4 @@
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Configuration;
-using System;
 using System.Threading.Tasks;
 using Volo.Abp.AspNetCore.Mvc.UI.Widgets;
 using Volo.Abp.AspNetCore.Mvc;
@@ -21,31 +18,25 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ChefsAttachments
     {
         private readonly IFeatureChecker _featureChecker;
         private readonly IPermissionChecker _permissionChecker;
-        private readonly IWebHostEnvironment _webHostEnvironment;
-        private readonly IConfiguration _configuration;
 
         public ChefsAttachments(
             IFeatureChecker featureChecker,
-            IPermissionChecker permissionChecker,
-            IWebHostEnvironment webHostEnvironment,
-            IConfiguration configuration)
+            IPermissionChecker permissionChecker)
         {
             _featureChecker = featureChecker;
             _permissionChecker = permissionChecker;
-            _webHostEnvironment = webHostEnvironment;
-            _configuration = configuration;
         }
 
-        public async Task<IViewComponentResult> InvokeAsync()
+        public async Task<IViewComponentResult> InvokeAsync(bool isDevPromptControlsEnabled = false, string? defaultPromptVersion = null)
         {
             var isAIAttachmentSummariesEnabled =
                 await _featureChecker.IsEnabledAsync("Unity.AI.AttachmentSummaries") &&
                 await _permissionChecker.IsGrantedAsync(AIPermissions.AttachmentSummary.AttachmentSummaryDefault);
             ViewBag.IsAIAttachmentSummariesEnabled = isAIAttachmentSummariesEnabled;
-            ViewBag.IsDevPromptControlsEnabled = string.Equals(_webHostEnvironment.EnvironmentName, "Development", StringComparison.OrdinalIgnoreCase);
-            ViewBag.DefaultPromptVersion = string.IsNullOrWhiteSpace(_configuration["Azure:OpenAI:PromptVersion"])
+            ViewBag.IsDevPromptControlsEnabled = isDevPromptControlsEnabled;
+            ViewBag.DefaultPromptVersion = string.IsNullOrWhiteSpace(defaultPromptVersion)
                 ? "v1"
-                : _configuration["Azure:OpenAI:PromptVersion"]!.Trim().ToLowerInvariant();
+                : defaultPromptVersion.Trim().ToLowerInvariant();
             return View();
         }
     }

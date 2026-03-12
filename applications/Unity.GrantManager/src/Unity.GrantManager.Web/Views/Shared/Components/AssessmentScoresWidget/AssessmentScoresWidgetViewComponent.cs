@@ -1,11 +1,9 @@
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Configuration;
 using Volo.Abp.AspNetCore.Mvc.UI.Widgets;
 using Volo.Abp.AspNetCore.Mvc;
+using System;
 using System.Collections.Generic;
 using Volo.Abp.AspNetCore.Mvc.UI.Bundling;
-using System;
 using System.Threading.Tasks;
 using System.Globalization;
 using Unity.GrantManager.Assessments;
@@ -30,11 +28,9 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentScoresWidget
     public class AssessmentScoresWidgetViewComponent(IAssessmentRepository assessmentRepository,
         IScoresheetRepository scoresheetRepository,
         IScoresheetInstanceRepository scoresheetInstanceRepository,
-        IApplicationRepository applicationRepository,
-        IWebHostEnvironment webHostEnvironment,
-        IConfiguration configuration) : AbpViewComponent
+        IApplicationRepository applicationRepository) : AbpViewComponent
     {
-        public async Task<IViewComponentResult> InvokeAsync(Guid assessmentId, Guid currentUserId)
+        public async Task<IViewComponentResult> InvokeAsync(Guid assessmentId, Guid currentUserId, bool isDevPromptControlsEnabled = false, string? defaultPromptVersion = null)
         {
             if (assessmentId == Guid.Empty)
             {
@@ -98,10 +94,8 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentScoresWidget
                 Status = assessment.Status,
                 CurrentUserId = currentUserId,
                 AssessorId = assessment.AssessorId,
-                IsDevPromptControlsEnabled = string.Equals(webHostEnvironment.EnvironmentName, "Development", StringComparison.OrdinalIgnoreCase),
-                DefaultPromptVersion = string.IsNullOrWhiteSpace(configuration["Azure:OpenAI:PromptVersion"])
-                    ? "v1"
-                    : configuration["Azure:OpenAI:PromptVersion"]!.Trim().ToLowerInvariant(),
+                IsDevPromptControlsEnabled = isDevPromptControlsEnabled,
+                DefaultPromptVersion = string.IsNullOrWhiteSpace(defaultPromptVersion) ? "v1" : defaultPromptVersion.Trim().ToLowerInvariant(),
             };
 
             return View(model);

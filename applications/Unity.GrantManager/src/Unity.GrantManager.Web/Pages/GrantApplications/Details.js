@@ -394,6 +394,8 @@ $(function () {
             return {
                 assessmentId: decodeURIComponent($('#AssessmentId').val()),
                 currentUserId: decodeURIComponent(abp.currentUser.id),
+                isDevPromptControlsEnabled: $('#IsDevPromptControlsEnabled').val() === 'True',
+                defaultPromptVersion: $('#DefaultPromptVersion').val() || 'v1',
             };
         },
     });

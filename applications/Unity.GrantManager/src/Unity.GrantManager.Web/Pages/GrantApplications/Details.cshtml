@@ -66,7 +66,9 @@
 <input type="hidden" id="MaxFileSize" value="@Model.MaxFileSize" />
 <input type="hidden" id="RenderFormIoToHtml" value="@Model.RenderFormIoToHtml.ToString()" />
 <input type="hidden" id="ApplicationFormVersionId" value="@Model.ApplicationFormVersionId" />
-                <input type="hidden" id="AIAnalysisFeatureEnabled" value="@aiApplicationAnalysisEnabled" />
+<input type="hidden" id="AIAnalysisFeatureEnabled" value="@aiApplicationAnalysisEnabled" />
+<input type="hidden" id="IsDevPromptControlsEnabled" value="@Model.IsDevPromptControlsEnabled.ToString()" />
+<input type="hidden" id="DefaultPromptVersion" value="@Model.DefaultPromptVersion" />
 
 @functions
 {
@@ -302,7 +304,7 @@
                         </div>
 
                         <div id="assessmentScoresWidgetArea">
-                            @await Component.InvokeAsync("AssessmentScoresWidget", new { assessmentId = Model.AssessmentId })
+                            @await Component.InvokeAsync("AssessmentScoresWidget", new { assessmentId = Model.AssessmentId, currentUserId = Model.CurrentUserId, isDevPromptControlsEnabled = Model.IsDevPromptControlsEnabled, defaultPromptVersion = Model.DefaultPromptVersion })
                         </div>
 
                         <h6 class="fw-bold px-3 pt-4 pb-2">Scoring Attachments</h6>
@@ -374,7 +376,7 @@
                 <div class="tab-pane fade" id="attachments" role="tabpanel" aria-labelledby="attachments-tab">
                     @await Component.InvokeAsync("ApplicationAttachments")
 
-                    @await Component.InvokeAsync("ChefsAttachments")
+                    @await Component.InvokeAsync("ChefsAttachments", new { isDevPromptControlsEnabled = Model.IsDevPromptControlsEnabled, defaultPromptVersion = Model.DefaultPromptVersion })
                 </div>
                 @*-------- Attachments Tab Section END ---------*@
 
