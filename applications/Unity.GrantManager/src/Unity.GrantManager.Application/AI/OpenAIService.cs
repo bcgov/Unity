@@ -96,8 +96,9 @@ namespace Unity.GrantManager.AI
 
         public async Task<ApplicationAnalysisResponse> GenerateApplicationAnalysisAsync(ApplicationAnalysisRequest request)
         {
-            var promptVersion = ResolvePromptVersion(request?.PromptVersion ?? SelectedPromptVersion);
-            var capturePromptIo = request?.CapturePromptIo ?? false;
+            ArgumentNullException.ThrowIfNull(request);
+            var promptVersion = ResolvePromptVersion(request.PromptVersion ?? SelectedPromptVersion);
+            var capturePromptIo = request.CapturePromptIo;
             var data = JsonSerializer.Serialize(request.Data, JsonLogOptions);
             var schema = JsonSerializer.Serialize(request.Schema, JsonLogOptions);
 
@@ -199,11 +200,12 @@ namespace Unity.GrantManager.AI
 
         public async Task<AttachmentSummaryResponse> GenerateAttachmentSummaryAsync(AttachmentSummaryRequest request)
         {
-            var fileName = request?.FileName ?? string.Empty;
-            var fileContent = request?.FileContent ?? Array.Empty<byte>();
-            var contentType = request?.ContentType ?? "application/octet-stream";
-            var promptVersion = ResolvePromptVersion(request?.PromptVersion ?? SelectedPromptVersion);
-            var capturePromptIo = request?.CapturePromptIo ?? false;
+            ArgumentNullException.ThrowIfNull(request);
+            var fileName = request.FileName ?? string.Empty;
+            var fileContent = request.FileContent ?? Array.Empty<byte>();
+            var contentType = request.ContentType ?? "application/octet-stream";
+            var promptVersion = ResolvePromptVersion(request.PromptVersion ?? SelectedPromptVersion);
+            var capturePromptIo = request.CapturePromptIo;
 
             try
             {
@@ -323,8 +325,9 @@ namespace Unity.GrantManager.AI
 
         public async Task<ScoresheetSectionResponse> GenerateScoresheetSectionAsync(ScoresheetSectionRequest request)
         {
-            var promptVersion = ResolvePromptVersion(request?.PromptVersion ?? SelectedPromptVersion);
-            var capturePromptIo = request?.CapturePromptIo ?? false;
+            ArgumentNullException.ThrowIfNull(request);
+            var promptVersion = ResolvePromptVersion(request.PromptVersion ?? SelectedPromptVersion);
+            var capturePromptIo = request.CapturePromptIo;
             var dataJson = JsonSerializer.Serialize(request.Data, JsonLogOptions);
             var sectionJson = JsonSerializer.Serialize(request.SectionSchema, JsonLogOptions);
 
@@ -666,7 +669,7 @@ namespace Unity.GrantManager.AI
                 SystemPrompt = systemPrompt?.Trim() ?? string.Empty,
                 UserPrompt = userPrompt?.Trim() ?? string.Empty,
                 RawOutput = rawOutput?.Trim() ?? string.Empty,
-                FormattedOutput = FormatPromptOutputForLog(rawOutput),
+                FormattedOutput = FormatPromptOutputForLog(rawOutput ?? string.Empty),
                 CapturedAt = DateTime.UtcNow
             });
         }

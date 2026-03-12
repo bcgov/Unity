@@ -47,3 +47,4 @@ namespace Unity.GrantManager.AI
             return $"{contextId.Trim()}::{promptType.Trim()}::{promptVersion.Trim()}";
         }
     }
+}

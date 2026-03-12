@@ -14,7 +14,7 @@ namespace Unity.GrantManager.GrantApplications
     {
         public Task<List<AIPromptIoCaptureResponse>> GetRecentAsync(Guid applicationId, string promptType, string? promptVersion = null)
         {
-            if (!webHostEnvironment.IsDevelopment())
+            if (!string.Equals(webHostEnvironment.EnvironmentName, "Development", StringComparison.OrdinalIgnoreCase))
             {
                 throw new UserFriendlyException("Prompt capture is only available in development.");
             }

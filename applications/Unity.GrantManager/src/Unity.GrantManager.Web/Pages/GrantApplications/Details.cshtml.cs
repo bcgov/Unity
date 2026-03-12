@@ -114,7 +114,7 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
             CurrentUserName = currentUser.SurName + ", " + currentUser.Name;
             Extensions = configuration["S3:DisallowedFileTypes"] ?? "";
             MaxFileSize = configuration["S3:MaxFileSize"] ?? "";
-            IsDevPromptControlsEnabled = webHostEnvironment.IsDevelopment();
+            IsDevPromptControlsEnabled = string.Equals(webHostEnvironment.EnvironmentName, "Development", StringComparison.OrdinalIgnoreCase);
             DefaultPromptVersion = string.IsNullOrWhiteSpace(configuration["Azure:OpenAI:PromptVersion"])
                 ? "v1"
                 : configuration["Azure:OpenAI:PromptVersion"]!.Trim().ToLowerInvariant();

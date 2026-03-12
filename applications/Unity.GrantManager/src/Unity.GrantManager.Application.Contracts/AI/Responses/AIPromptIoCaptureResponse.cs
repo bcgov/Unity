@@ -32,3 +32,4 @@ namespace Unity.GrantManager.AI
         [JsonPropertyName("capturedAt")]
         public DateTime CapturedAt { get; set; }
     }
+}

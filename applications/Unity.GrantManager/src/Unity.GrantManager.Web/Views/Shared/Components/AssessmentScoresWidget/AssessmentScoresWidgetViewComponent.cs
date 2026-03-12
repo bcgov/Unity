@@ -98,7 +98,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentScoresWidget
                 Status = assessment.Status,
                 CurrentUserId = currentUserId,
                 AssessorId = assessment.AssessorId,
-                IsDevPromptControlsEnabled = webHostEnvironment.IsDevelopment(),
+                IsDevPromptControlsEnabled = string.Equals(webHostEnvironment.EnvironmentName, "Development", StringComparison.OrdinalIgnoreCase),
                 DefaultPromptVersion = string.IsNullOrWhiteSpace(configuration["Azure:OpenAI:PromptVersion"])
                     ? "v1"
                     : configuration["Azure:OpenAI:PromptVersion"]!.Trim().ToLowerInvariant(),

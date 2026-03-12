@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
+using System;
 using System.Threading.Tasks;
 using Volo.Abp.AspNetCore.Mvc.UI.Widgets;
 using Volo.Abp.AspNetCore.Mvc;
@@ -41,7 +42,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ChefsAttachments
                 await _featureChecker.IsEnabledAsync("Unity.AI.AttachmentSummaries") &&
                 await _permissionChecker.IsGrantedAsync(AIPermissions.AttachmentSummary.AttachmentSummaryDefault);
             ViewBag.IsAIAttachmentSummariesEnabled = isAIAttachmentSummariesEnabled;
-            ViewBag.IsDevPromptControlsEnabled = _webHostEnvironment.IsDevelopment();
+            ViewBag.IsDevPromptControlsEnabled = string.Equals(_webHostEnvironment.EnvironmentName, "Development", StringComparison.OrdinalIgnoreCase);
             ViewBag.DefaultPromptVersion = string.IsNullOrWhiteSpace(_configuration["Azure:OpenAI:PromptVersion"])
                 ? "v1"
                 : _configuration["Azure:OpenAI:PromptVersion"]!.Trim().ToLowerInvariant();
