@@ -32,9 +32,4 @@
 		  <Value>**/Assessments/Assessment.cs, **/Assessments/AssessmentWithAssessorQueryResultItem.cs</Value>
 	  </SonarQubeSetting>
   </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="GrantsPortal\" />
-  </ItemGroup>
-
 </Project>

@@ -5,7 +5,7 @@ public class GrantsPortalRabbitMqOptions
     public const string SectionName = "RabbitMQ:GrantsPortal";
 
     /// <summary>
-    /// The integration source identifier used in the IntegrationMessages table.
+    /// The integration source identifier used for Grants Portal inbox/outbox messages..
     /// </summary>
     public const string SourceName = "GrantsPortal";
 

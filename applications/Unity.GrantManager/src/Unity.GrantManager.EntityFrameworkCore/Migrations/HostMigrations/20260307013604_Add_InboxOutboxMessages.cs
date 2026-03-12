@@ -71,7 +71,8 @@ namespace Unity.GrantManager.Migrations.HostMigrations
             migrationBuilder.CreateIndex(
                 name: "IX_InboxMessages_MessageId",
                 table: "InboxMessages",
-                column: "MessageId");
+                column: "MessageId",
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_InboxMessages_Source_Status",

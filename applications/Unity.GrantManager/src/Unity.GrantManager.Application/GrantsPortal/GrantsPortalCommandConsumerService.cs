@@ -212,6 +212,14 @@ public class GrantsPortalCommandConsumerService(
             if (string.IsNullOrEmpty(messageId)) messageId = envelope.MessageId;
             if (string.IsNullOrEmpty(correlationId)) correlationId = envelope.CorrelationId;
 
+            // Validate MessageId after applying all fallbacks
+            if (string.IsNullOrWhiteSpace(messageId))
+            {
+                logger.LogError("Received message with missing/blank MessageId. Discarding. CorrelationId={CorrelationId}", correlationId);
+                consumingChannel.BasicAck(ea.DeliveryTag, multiple: false);
+                return;
+            }
+
             // Resolve tenant from the data.provider field (stored for later use by processors)
             var payload = envelope.Data?.ToObject<PluginDataPayload>();
             var tenantId = ResolveTenantId(payload?.Provider);

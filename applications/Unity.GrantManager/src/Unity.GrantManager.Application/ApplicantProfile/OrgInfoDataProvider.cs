@@ -32,10 +32,8 @@ namespace Unity.GrantManager.ApplicantProfile
                 Organizations = []
             };
 
-            var subject = request.Subject ?? string.Empty;
-            var normalizedSubject = subject.Contains('@')
-                    ? subject[..subject.IndexOf('@')].ToUpperInvariant()
-                    : subject.ToUpperInvariant();
+            var normalizedSubject = SubjectNormalizer.Normalize(request.Subject);
+            if (normalizedSubject is null) return dto;
 
             using (currentTenant.Change(request.TenantId))
             {

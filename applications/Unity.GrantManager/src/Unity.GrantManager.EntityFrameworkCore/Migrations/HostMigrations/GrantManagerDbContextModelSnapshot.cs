@@ -1028,7 +1028,8 @@ namespace Unity.GrantManager.Migrations.HostMigrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("MessageId");
+                    b.HasIndex("MessageId")
+                        .IsUnique();
 
                     b.HasIndex("Source", "Status");
 
