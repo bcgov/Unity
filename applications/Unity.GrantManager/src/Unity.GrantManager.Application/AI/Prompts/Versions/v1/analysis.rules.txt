@@ -8,3 +8,7 @@
 - If ATTACHMENTS evidence is used, cite the attachment by name in detail.
 - If no findings exist, return empty arrays.
 - Rating must be HIGH, MEDIUM, or LOW.
+- Use summaries for overall application quality/readiness synthesis.
+- Use nextSteps for reviewer-facing follow-up actions or considerations before scoring or decision-making.
+- recommendation.decision must be PROCEED or HOLD.
+- recommendation.rationale must explain the high-level recommendation in 1-2 complete sentences using provided evidence.

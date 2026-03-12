@@ -26,27 +26,13 @@ OUTPUT
   }
 }
 
-RULES
+Important:
 - Use only APPLICATION CONTENT and ATTACHMENT SUMMARIES as evidence.
-- Do not invent missing application details.
-- Return exactly one answer object per question ID in the section.
-- Do not omit any question IDs.
-- Do not add keys that are not question IDs from the section.
+- Answer only the question IDs in the specified section.
+- Every question must include answer, rationale, and confidence.
 - Use RESPONSE TEMPLATE as the contract and fill every placeholder value.
-- Every question must include "answer", "rationale", and "confidence".
-- "answer" type must match question type: Number => numeric; YesNo/SelectList/Text/TextArea => string.
-- For yes/no questions, answer must be exactly "Yes" or "No".
-- For numeric questions, answer must be within the allowed range and never blank.
-- For select list questions, return only the selected options.number as a string, never label text.
-- Never return 0 for select list answers unless 0 exists as an explicit option number.
-- For text and text area questions, answer must be concise, evidence-based, and non-empty.
-- "rationale" must be 1-2 complete sentences grounded in concrete evidence.
-- "rationale" must justify both the selected answer and confidence level.
-- If evidence is insufficient, choose the most conservative valid answer and state uncertainty in rationale.
-- "confidence" must be an integer from 0 to 100 in increments of 5.
-- Confidence reflects certainty in the selected answer based on evidence strength.
-- Final check: every question ID has non-empty answer+rationale and confidence.
-- Return values exactly as specified in OUTPUT.
-- Do not return keys outside OUTPUT.
-- Return valid JSON only.
-- Return plain JSON only (no markdown).
+- answer type must match the question type.
+- For select list questions, return only the option number as a string, never label text.
+- rationale must be 1-2 complete sentences grounded in evidence.
+- confidence must be an integer from 0 to 100 in increments of 5.
+- Return valid plain JSON only in the exact OUTPUT shape.

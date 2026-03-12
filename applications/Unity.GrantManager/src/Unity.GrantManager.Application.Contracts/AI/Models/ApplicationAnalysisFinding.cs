@@ -7,6 +7,9 @@ namespace Unity.GrantManager.AI
         [JsonPropertyName(AIJsonKeys.Id)]
         public string? Id { get; set; }
 
+        [JsonPropertyName(AIJsonKeys.Hidden)]
+        public bool Hidden { get; set; }
+
         [JsonPropertyName(AIJsonKeys.Title)]
         public string? Title { get; set; }
 

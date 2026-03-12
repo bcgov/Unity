@@ -76,26 +76,23 @@ OUTPUT
       "detail": "<string>"
     }
   ],
-  "dismissed": []
+  "nextSteps": [
+    {
+      "title": "<string>",
+      "detail": "<string>"
+    }
+  ],
+  "recommendation": {
+    "decision": "<PROCEED|HOLD>",
+    "rationale": "<string>"
+  }
 }
 
-RULES
+Important:
 - Use only APPLICATION CONTENT, ATTACHMENT SUMMARIES, FORM FIELD CONFIGURATION, and EVALUATION RUBRIC as evidence.
-- Do not invent fields, documents, requirements, or facts.
-- Treat missing or empty values as findings only when they weaken rubric evidence.
-- Prefer material issues; avoid nitpicking.
-- Each error/warning/recommendation must describe one concrete issue or consideration and why it matters.
-- Use 3-6 words for title.
-- Each detail must be 1-2 complete sentences.
-- Each detail must be grounded in concrete evidence from provided inputs.
-- If attachment evidence is used, cite the attachment by name in detail.
-- Do not provide applicant-facing advice.
-- Do not mention rubric section names in findings.
-- If no findings exist, return empty arrays.
-- rating must be HIGH, MEDIUM, or LOW.
+- Use summaries for overall application quality/readiness synthesis.
+- Use nextSteps for reviewer-facing follow-up actions or considerations before scoring or decision-making.
+- recommendation.decision must be PROCEED or HOLD.
+- recommendation.rationale must explain the high-level recommendation in 1-2 complete sentences using provided evidence.
 - Use "title" and "detail" keys for all finding objects.
-- Do not use legacy "category" or "message" keys.
-- Return values exactly as specified in OUTPUT.
-- Do not return keys outside OUTPUT.
-- Return valid JSON only.
-- Return plain JSON only (no markdown).
+- Return valid plain JSON only in the exact OUTPUT shape.

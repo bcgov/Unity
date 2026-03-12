@@ -65,7 +65,7 @@
 #FundingHistoryTable_wrapper .dt-scroll-body,
 #IssueTrackingTable_wrapper .dt-scroll-body,
 #AuditHistoryTable_wrapper .dt-scroll-body {
-    max-height: 350px !important;
+    max-height: clamp(180px, calc(100vh - 540px), 350px) !important;
     overflow-y: auto !important;
     overflow-x: auto !important;
 }

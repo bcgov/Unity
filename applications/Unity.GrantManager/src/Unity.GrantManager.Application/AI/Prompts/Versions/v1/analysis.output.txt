@@ -18,5 +18,14 @@
       "detail": "<string>"
     }
   ],
-  "dismissed": []
+  "nextSteps": [
+    {
+      "title": "<string>",
+      "detail": "<string>"
+    }
+  ],
+  "recommendation": {
+    "decision": "<PROCEED|HOLD>",
+    "rationale": "<string>"
+  }
 }
