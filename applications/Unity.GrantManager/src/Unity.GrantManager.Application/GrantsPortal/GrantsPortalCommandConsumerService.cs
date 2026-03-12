@@ -58,7 +58,7 @@ public class GrantsPortalCommandConsumerService(
         }
         catch (OperationCanceledException ex)
         {
-            logger.LogInformation("Grants Portal command consumer stopping... {Ex}", ex.Message);
+            logger.LogInformation(ex, "Grants Portal command consumer stopping...");
         }
     }
 
@@ -90,7 +90,6 @@ public class GrantsPortalCommandConsumerService(
             catch (Exception ex)
             {
                 logger.LogError(ex, "Failed to connect to RabbitMQ after {MaxRetries} attempts : {Ex}", MaxRetries, ex);
-                throw;
             }
         }
     }
@@ -254,7 +253,7 @@ public class GrantsPortalCommandConsumerService(
         {
             // Another pod inserted the same MessageId between our check and insert (unique index).
             // This is expected in multi-pod environments on RabbitMQ redelivery — treat as success.
-            logger.LogInformation("Message {MessageId} was concurrently inserted by another pod. Treating as idempotent success.", messageId);
+            logger.LogInformation(ex, "Message {MessageId} was concurrently inserted by another pod. Treating as idempotent success.", messageId);
         }
         catch (Exception ex)
         {
