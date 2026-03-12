@@ -25,8 +25,11 @@
             <input type="hidden" id="ApplicantAddresses_PrimaryMailingAddressId" value="@Model.PrimaryMailingAddress.Id" />
 
             <div class="sub-tab-header">
-                <ul class="nav nav-tabs" id="contactsAddressesSubTabs" role="tablist">
-                    <li class="nav-item" role="presentation">
+                <div class="nav nav-tabs"
+                     id="contactsAddressesSubTabs"
+                     role="tablist"
+                     aria-label="Applicant contacts and addresses tabs">
+                    <div class="nav-item">
                         <button class="nav-link active"
                                 id="contacts-sub-tab"
                                 data-bs-toggle="tab"
@@ -35,8 +38,8 @@
                                 role="tab"
                                 aria-controls="contactsSubTabPane"
                                 aria-selected="true">Contacts</button>
-                    </li>
-                    <li class="nav-item" role="presentation">
+                    </div>
+                    <div class="nav-item">
                         <button class="nav-link"
                                 id="addresses-sub-tab"
                                 data-bs-toggle="tab"
@@ -45,8 +48,8 @@
                                 role="tab"
                                 aria-controls="addressesSubTabPane"
                                 aria-selected="false">Addresses</button>
-                    </li>
-                </ul>
+                    </div>
+                </div>
                 @if (Model.CanSave)
                 {
                     <abp-button text="Save"
