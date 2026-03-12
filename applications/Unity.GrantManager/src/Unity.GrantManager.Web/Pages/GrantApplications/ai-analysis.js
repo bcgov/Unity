@@ -391,9 +391,9 @@ function tryParseRawAnalysis(analysisJson) {
     }
 }
 
-globalThis.regenerateAIAnalysis = function(capturePromptIo = false) {
+globalThis.regenerateAIAnalysis = function(capturePromptIo = false, triggerButton = null) {
     const applicationId = $('#DetailsViewApplicationId').val();
-    const $button = $('#regenerateAiAnalysis');
+    const $button = triggerButton ? $(triggerButton) : $('#regenerateAiAnalysis');
     const existingHtml = $button.html();
     const promptVersion = globalThis.getSelectedPromptVersion?.() || null;
 

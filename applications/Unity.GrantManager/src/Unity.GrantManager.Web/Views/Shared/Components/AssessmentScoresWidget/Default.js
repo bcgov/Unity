@@ -577,9 +577,9 @@ function collapseAllAccordions(divId) {
     });
 }
 
-function regenerateAIScoresheetAnswers(capturePromptIo = false) {
+function regenerateAIScoresheetAnswers(capturePromptIo = false, triggerButton = null) {
     const applicationId = $('#DetailsViewApplicationId').val();
-    const $button = $('#regenerateAiScoresheetBtn');
+    const $button = triggerButton ? $(triggerButton) : $('#regenerateAiScoresheetBtn');
     const existingHtml = $button.html();
     const promptVersion = globalThis.getSelectedPromptVersion?.() || null;
 

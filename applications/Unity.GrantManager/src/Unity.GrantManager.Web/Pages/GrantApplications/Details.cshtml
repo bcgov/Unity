@@ -492,8 +492,26 @@
 
                             <div class="dev-prompt-section">
                                 <div class="dev-prompt-section-header">
-                                    <h6 class="fw-bold m-0">Application Analysis</h6>
-                                    <button type="button" class="btn unt-btn-outline-primary btn-outline-primary btn-sm" onclick="regenerateAIAnalysis(true)">
+                                    <h6 class="fw-bold m-0">Attachment</h6>
+                                    <button type="button" class="btn unt-btn-outline-primary btn-outline-primary btn-sm" onclick="generateAIAttachmentSummaries(true, this)">
+                                        <span class="ai-button-content">
+                                            <i class="unt-icon-sm fa-solid fa-wand-sparkles"></i>
+                                            <span>Generate</span>
+                                        </span>
+                                    </button>
+                                </div>
+                                <div id="attachmentPromptCaptureContainer" class="ai-prompt-capture-container">
+                                    <button type="button" class="btn btn-icon ai-prompt-capture-copy-btn" data-target="#attachmentPromptCaptureOutput" title="Copy" aria-label="Copy">
+                                        <i class="fl fl-copy" aria-hidden="true"></i>
+                                    </button>
+                                    <textarea class="form-control form-control-sm ai-prompt-capture-output" id="attachmentPromptCaptureOutput" readonly spellcheck="false"></textarea>
+                                </div>
+                            </div>
+
+                            <div class="dev-prompt-section">
+                                <div class="dev-prompt-section-header">
+                                    <h6 class="fw-bold m-0">Analysis</h6>
+                                    <button type="button" class="btn unt-btn-outline-primary btn-outline-primary btn-sm" onclick="regenerateAIAnalysis(true, this)">
                                         <span class="ai-button-content">
                                             <i class="unt-icon-sm fa-solid fa-wand-sparkles"></i>
                                             <span>Generate</span>
@@ -510,8 +528,8 @@
 
                             <div class="dev-prompt-section">
                                 <div class="dev-prompt-section-header">
-                                    <h6 class="fw-bold m-0">Assessment Scoring</h6>
-                                    <button type="button" class="btn unt-btn-outline-primary btn-outline-primary btn-sm" onclick="regenerateAIScoresheetAnswers(true)">
+                                    <h6 class="fw-bold m-0">Scoring</h6>
+                                    <button type="button" class="btn unt-btn-outline-primary btn-outline-primary btn-sm" onclick="regenerateAIScoresheetAnswers(true, this)">
                                         <span class="ai-button-content">
                                             <i class="unt-icon-sm fa-solid fa-wand-sparkles"></i>
                                             <span>Generate</span>
@@ -523,24 +541,6 @@
                                         <i class="fl fl-copy" aria-hidden="true"></i>
                                     </button>
                                     <textarea class="form-control form-control-sm ai-prompt-capture-output" id="aiScoringPromptCaptureOutput" readonly spellcheck="false"></textarea>
-                                </div>
-                            </div>
-
-                            <div class="dev-prompt-section">
-                                <div class="dev-prompt-section-header">
-                                    <h6 class="fw-bold m-0">Attachment Summaries</h6>
-                                    <button type="button" class="btn unt-btn-outline-primary btn-outline-primary btn-sm" onclick="generateAIAttachmentSummaries(true)">
-                                        <span class="ai-button-content">
-                                            <i class="unt-icon-sm fa-solid fa-wand-sparkles"></i>
-                                            <span>Generate</span>
-                                        </span>
-                                    </button>
-                                </div>
-                                <div id="attachmentPromptCaptureContainer" class="ai-prompt-capture-container">
-                                    <button type="button" class="btn btn-icon ai-prompt-capture-copy-btn" data-target="#attachmentPromptCaptureOutput" title="Copy" aria-label="Copy">
-                                        <i class="fl fl-copy" aria-hidden="true"></i>
-                                    </button>
-                                    <textarea class="form-control form-control-sm ai-prompt-capture-output" id="attachmentPromptCaptureOutput" readonly spellcheck="false"></textarea>
                                 </div>
                             </div>
                         </div>
