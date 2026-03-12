@@ -1,4 +1,6 @@
 $(function () {
+    const LAYOUT_NOTIFICATION_DELAYS = [0, 120, 280, 600];
+
     // Check if createNumberFormatter exists
     if (typeof createNumberFormatter !== 'function') {
         console.error('createNumberFormatter is not defined. Ensure table-utils.js is loaded before this script');
@@ -26,7 +28,7 @@ $(function () {
     };
 
     // Action buttons configuration
-    let actionButtons = [
+    const actionButtons = [
         {
             text: 'Filter',
             className: 'custom-table-btn flex-none btn btn-secondary',
@@ -46,7 +48,7 @@ $(function () {
     const listColumns = getColumns();
 
     // Response callback - same pattern as Application List
-    let responseCallback = function (result) {
+    const responseCallback = function (result) {
         return {
             recordsTotal: result.totalCount,
             recordsFiltered: result.totalCount,
@@ -54,7 +56,7 @@ $(function () {
         };
     };
 
-    let formatItems = function (items) {
+    const formatItems = function (items) {
         const newData = items.map((item, index) => {
             return {
                 ...item,
@@ -68,7 +70,7 @@ $(function () {
     // Must return a jQuery Deferred object (not native Promise) for ABP compatibility
     const mockDataService = {
         getList: function() {
-            let deferred = $.Deferred();
+            const deferred = $.Deferred();
             deferred.resolve({
                 items: submissionsData,
                 totalCount: submissionsData.length
@@ -96,6 +98,13 @@ $(function () {
         dataTableName: 'ApplicantSubmissionsTable',
         dynamicButtonContainerId: 'submissionsDynamicButtonContainerId'
     });
+
+    function notifySubmissionsLayoutChange() {
+        window.dispatchEvent(new CustomEvent('applicant-submissions-layout-changed'));
+    }
+
+    scheduleLayoutNotifications();
+    bindLayoutNotificationEvents();
 
     // External search binding
     dataTable.externalSearch('#submissions-search', { delay: 300 });
@@ -125,6 +134,16 @@ $(function () {
 
     // Initialize button state
     updateOpenButtonState();
+
+    function scheduleLayoutNotifications() {
+        LAYOUT_NOTIFICATION_DELAYS.forEach((delay) => {
+            setTimeout(notifySubmissionsLayoutChange, delay);
+        });
+    }
+
+    function bindLayoutNotificationEvents() {
+        dataTable.on('draw', notifySubmissionsLayoutChange);
+    }
 
     // Column getter functions (from Application List)
     function getColumns() {
