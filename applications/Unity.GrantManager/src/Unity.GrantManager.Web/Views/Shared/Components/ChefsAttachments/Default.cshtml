@@ -37,39 +37,6 @@
                         button-type="Light" /> *@
     </div>
 </div>
-@if (ViewBag.IsAIAttachmentSummariesEnabled && ViewBag.IsDevPromptControlsEnabled)
-{
-    <div class="px-3 pb-2 d-flex align-items-center gap-3 flex-wrap" id="attachmentPromptControls">
-        <div>
-            <label class="form-label mb-1" for="attachmentPromptVersion">Prompt Version</label>
-            <select id="attachmentPromptVersion" class="form-select form-select-sm">
-                @if (ViewBag.DefaultPromptVersion == "v0")
-                {
-                    <option value="v0" selected>v0</option>
-                    <option value="v1">v1</option>
-                }
-                else
-                {
-                    <option value="v1" selected>v1</option>
-                    <option value="v0">v0</option>
-                }
-            </select>
-        </div>
-        <div class="form-check mt-4">
-            <input class="form-check-input" type="checkbox" id="attachmentCapturePromptIo">
-            <label class="form-check-label" for="attachmentCapturePromptIo">Capture Prompt Input/Output</label>
-        </div>
-    </div>
-    <div class="px-3 pb-2 d-none" id="attachmentPromptCaptureContainer">
-        <div class="alert alert-secondary mb-0">
-            <div class="d-flex justify-content-between align-items-center gap-2 mb-2">
-                <div class="fw-bold mb-0">Captured Prompt Input/Output</div>
-                <button type="button" class="btn btn-sm unt-btn-outline-primary btn-outline-primary ai-prompt-capture-copy-btn" data-target="#attachmentPromptCaptureOutput">Copy All</button>
-            </div>
-            <textarea class="form-control form-control-sm ai-prompt-capture-output" id="attachmentPromptCaptureOutput" readonly spellcheck="false"></textarea>
-        </div>
-    </div>
-}
 <div class="px-3">
     <abp-table id="ChefsAttachmentsTable" hoverable-rows="true" class="attachments-table" data-resize-aware="true"></abp-table>
 </div>

@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -14,6 +13,7 @@ using Unity.GrantManager.ApplicationForms;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Flex;
 using Unity.GrantManager.GrantApplications;
+using Unity.GrantManager.Web.AI;
 using Unity.GrantManager.Zones;
 using Unity.Modules.Shared.Correlation;
 using Volo.Abp.AspNetCore.Mvc.UI.RazorPages;
@@ -101,7 +101,7 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
             IFeatureChecker featureChecker,
             ICurrentUser currentUser,
             IConfiguration configuration,
-            IWebHostEnvironment webHostEnvironment,
+            IAIPromptToolViewOptionsProvider aiPromptToolViewOptionsProvider,
             IZoneManagementAppService zoneManagementAppService)
         {
             _grantApplicationAppService = grantApplicationAppService;
@@ -114,10 +114,8 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
             CurrentUserName = currentUser.SurName + ", " + currentUser.Name;
             Extensions = configuration["S3:DisallowedFileTypes"] ?? "";
             MaxFileSize = configuration["S3:MaxFileSize"] ?? "";
-            IsDevPromptControlsEnabled = string.Equals(webHostEnvironment.EnvironmentName, "Development", StringComparison.OrdinalIgnoreCase);
-            DefaultPromptVersion = string.IsNullOrWhiteSpace(configuration["Azure:OpenAI:PromptVersion"])
-                ? "v1"
-                : configuration["Azure:OpenAI:PromptVersion"]!.Trim().ToLowerInvariant();
+            IsDevPromptControlsEnabled = aiPromptToolViewOptionsProvider.IsDevPromptControlsEnabled;
+            DefaultPromptVersion = aiPromptToolViewOptionsProvider.DefaultPromptVersion;
         }
 
         public async Task OnGetAsync()

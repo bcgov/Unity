@@ -4,13 +4,16 @@
  */
 
 $(function () {
+    globalThis.getSelectedPromptVersion = function() {
+        return $('#devPromptVersion').val() || null;
+    };
+
     function setPromptCaptureOutput(outputSelector, value) {
         $(outputSelector).val(value);
     }
 
     globalThis.hideAIPromptCapture = function(containerSelector, outputSelector) {
         setPromptCaptureOutput(outputSelector, '');
-        $(containerSelector).addClass('d-none');
     };
 
     function formatAIPromptCaptureBlock(capture) {
@@ -54,7 +57,6 @@ $(function () {
             .join('\n\n----------------------------------------\n\n');
 
         setPromptCaptureOutput(outputSelector, formatted);
-        $(containerSelector).removeClass('d-none');
     };
 
     globalThis.loadAIPromptCapture = function(applicationId, promptType, promptVersion, containerSelector, outputSelector) {
@@ -394,24 +396,19 @@ $(function () {
             return {
                 assessmentId: decodeURIComponent($('#AssessmentId').val()),
                 currentUserId: decodeURIComponent(abp.currentUser.id),
-                isDevPromptControlsEnabled: $('#IsDevPromptControlsEnabled').val() === 'True',
-                defaultPromptVersion: $('#DefaultPromptVersion').val() || 'v1',
             };
         },
     });
 
-    function restoreScoringPromptControls(promptVersion, capturePromptIo) {
-        if (promptVersion) {
-            $('#aiScoringPromptVersion').val(promptVersion);
+    PubSub.subscribe('refresh_assessment_scores', (msg, data) => {
+        assessmentScoresWidgetManager.refresh();
+        updateSubtotal();
+
+        if (!data) {
+            return;
         }
 
-        $('#aiScoringCapturePromptIo').prop('checked', !!capturePromptIo);
-    }
-
-    function finalizeScoringPromptRefresh(data) {
-        restoreScoringPromptControls(data?.promptVersion || null, data?.capturePromptIo || false);
-
-        if (data?.capturePromptIo && globalThis.loadAIPromptCapture) {
+        if (data.capturePromptIo && globalThis.loadAIPromptCapture) {
             globalThis.loadAIPromptCapture(
                 data.applicationId,
                 'ScoresheetSection',
@@ -423,30 +420,6 @@ $(function () {
         }
 
         globalThis.hideAIPromptCapture?.('#aiScoringPromptCaptureContainer', '#aiScoringPromptCaptureOutput');
-    }
-
-    function waitForScoringPromptControls(callback, retries = 20) {
-        if ($('#aiScoringPromptVersion').length > 0 && $('#aiScoringCapturePromptIo').length > 0) {
-            callback();
-            return;
-        }
-
-        if (retries <= 0) {
-            return;
-        }
-
-        setTimeout(() => waitForScoringPromptControls(callback, retries - 1), 50);
-    }
-
-    PubSub.subscribe('refresh_assessment_scores', (msg, data) => {
-        assessmentScoresWidgetManager.refresh();
-        updateSubtotal();
-
-        if (!data) {
-            return;
-        }
-
-        waitForScoringPromptControls(() => finalizeScoringPromptRefresh(data));
     });
 
     PubSub.subscribe('select_application_review', (msg, data) => {

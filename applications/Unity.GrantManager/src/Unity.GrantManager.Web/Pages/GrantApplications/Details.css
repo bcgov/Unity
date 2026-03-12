@@ -82,6 +82,73 @@
     line-height: 1.35;
 }
 
+.ai-prompt-capture-container {
+    position: relative;
+}
+
+.ai-prompt-capture-container .ai-prompt-capture-copy-btn {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    z-index: 1;
+    width: 2rem;
+    height: 2rem;
+    padding: 0;
+    color: #5c6b7a;
+}
+
+.dev-prompt-section {
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #e7ebef;
+}
+
+.dev-tools-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.dev-prompt-toolbar-row {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.dev-prompt-toolbar-inline {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.dev-prompt-toolbar-row .form-select {
+    width: auto;
+    min-width: 5rem;
+}
+
+.dev-prompt-section:last-child {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: 0;
+}
+
+.dev-prompt-section-header {
+    margin-bottom: 0.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.dev-prompt-section .ai-prompt-capture-output {
+    min-height: 4.5rem;
+    max-height: 16rem;
+    padding-top: 2.25rem;
+}
+
 .left-card {
     border-right: 1px solid #dddddd;
 }

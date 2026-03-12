@@ -30,7 +30,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentScoresWidget
         IScoresheetInstanceRepository scoresheetInstanceRepository,
         IApplicationRepository applicationRepository) : AbpViewComponent
     {
-        public async Task<IViewComponentResult> InvokeAsync(Guid assessmentId, Guid currentUserId, bool isDevPromptControlsEnabled = false, string? defaultPromptVersion = null)
+        public async Task<IViewComponentResult> InvokeAsync(Guid assessmentId, Guid currentUserId)
         {
             if (assessmentId == Guid.Empty)
             {
@@ -94,8 +94,6 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentScoresWidget
                 Status = assessment.Status,
                 CurrentUserId = currentUserId,
                 AssessorId = assessment.AssessorId,
-                IsDevPromptControlsEnabled = isDevPromptControlsEnabled,
-                DefaultPromptVersion = string.IsNullOrWhiteSpace(defaultPromptVersion) ? "v1" : defaultPromptVersion.Trim().ToLowerInvariant(),
             };
 
             return View(model);

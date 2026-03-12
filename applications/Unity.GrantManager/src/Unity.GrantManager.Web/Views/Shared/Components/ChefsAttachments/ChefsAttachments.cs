@@ -27,16 +27,12 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ChefsAttachments
             _permissionChecker = permissionChecker;
         }
 
-        public async Task<IViewComponentResult> InvokeAsync(bool isDevPromptControlsEnabled = false, string? defaultPromptVersion = null)
+        public async Task<IViewComponentResult> InvokeAsync()
         {
             var isAIAttachmentSummariesEnabled =
                 await _featureChecker.IsEnabledAsync("Unity.AI.AttachmentSummaries") &&
                 await _permissionChecker.IsGrantedAsync(AIPermissions.AttachmentSummary.AttachmentSummaryDefault);
             ViewBag.IsAIAttachmentSummariesEnabled = isAIAttachmentSummariesEnabled;
-            ViewBag.IsDevPromptControlsEnabled = isDevPromptControlsEnabled;
-            ViewBag.DefaultPromptVersion = string.IsNullOrWhiteSpace(defaultPromptVersion)
-                ? "v1"
-                : defaultPromptVersion.Trim().ToLowerInvariant();
             return View();
         }
     }

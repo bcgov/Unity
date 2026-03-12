@@ -391,12 +391,11 @@ function tryParseRawAnalysis(analysisJson) {
     }
 }
 
-globalThis.regenerateAIAnalysis = function() {
+globalThis.regenerateAIAnalysis = function(capturePromptIo = false) {
     const applicationId = $('#DetailsViewApplicationId').val();
     const $button = $('#regenerateAiAnalysis');
     const existingHtml = $button.html();
-    const promptVersion = $('#aiAnalysisPromptVersion').val() || null;
-    const capturePromptIo = $('#aiAnalysisCapturePromptIo').is(':checked');
+    const promptVersion = globalThis.getSelectedPromptVersion?.() || null;
 
     if (!applicationId || $button.prop('disabled')) {
         return;

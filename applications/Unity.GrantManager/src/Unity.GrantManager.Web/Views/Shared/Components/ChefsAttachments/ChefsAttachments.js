@@ -1,5 +1,9 @@
 // Note: File depends on Unity.GrantManager.Web\Views\Shared\Components\_Shared\Attachments.js
 $(function () {
+    globalThis.generateAIAttachmentSummaries = function(capturePromptIo = false) {
+        $('#generateAiSummaries').data('capture-prompt-io', capturePromptIo).trigger('click');
+    };
+
     const downloadAll = $('#downloadAll');
     const dt = $('#ChefsAttachmentsTable');
     let chefsDataTable;
@@ -211,9 +215,11 @@ $(function () {
         $generateAISummariesButton.on('click', function () {
             const $button = $(this);
             const selectedRows = chefsDataTable.rows({ selected: true }).data();
-            const promptVersion = $('#attachmentPromptVersion').val() || null;
-            const capturePromptIo = $('#attachmentCapturePromptIo').is(':checked');
+            const promptVersion = globalThis.getSelectedPromptVersion?.() || null;
+            const capturePromptIo = $button.data('capture-prompt-io') === true;
             const applicationId = $('#DetailsViewApplicationId').val();
+
+            $button.removeData('capture-prompt-io');
 
             if (selectedRows.length === 0) {
                 abp.message.warn(

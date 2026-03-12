@@ -577,12 +577,11 @@ function collapseAllAccordions(divId) {
     });
 }
 
-function regenerateAIScoresheetAnswers() {
+function regenerateAIScoresheetAnswers(capturePromptIo = false) {
     const applicationId = $('#DetailsViewApplicationId').val();
     const $button = $('#regenerateAiScoresheetBtn');
     const existingHtml = $button.html();
-    const promptVersion = $('#aiScoringPromptVersion').val() || null;
-    const capturePromptIo = $('#aiScoringCapturePromptIo').is(':checked');
+    const promptVersion = globalThis.getSelectedPromptVersion?.() || null;
 
     if (!applicationId || $button.prop('disabled')) {
         return;
