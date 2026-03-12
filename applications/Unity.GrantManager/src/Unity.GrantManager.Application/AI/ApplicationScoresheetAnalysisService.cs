@@ -30,7 +30,7 @@ namespace Unity.GrantManager.AI
             WriteIndented = true
         };
 
-        public async Task<string> RegenerateAndSaveAsync(Guid applicationId)
+        public async Task<string> RegenerateAndSaveAsync(Guid applicationId, string? promptVersion = null, bool capturePromptIo = false)
         {
             var application = await applicationRepository.GetAsync(applicationId);
             var applicationForm = await applicationFormRepository.GetAsync(application.ApplicationFormId);
@@ -98,7 +98,10 @@ FULL APPLICATION FORM SUBMISSION:
                         Data = JsonSerializer.SerializeToElement(new { submission_content = applicationContent }),
                         Attachments = attachmentSummaries,
                         SectionName = section.Name,
-                        SectionSchema = JsonSerializer.SerializeToElement(sectionQuestionsData, _jsonOptions)
+                        SectionSchema = JsonSerializer.SerializeToElement(sectionQuestionsData, _jsonOptions),
+                        PromptVersion = promptVersion,
+                        CapturePromptIo = capturePromptIo,
+                        CaptureContextId = applicationId.ToString()
                     };
                     var sectionAnswers = await aiService.GenerateScoresheetSectionAsync(sectionRequest);
 

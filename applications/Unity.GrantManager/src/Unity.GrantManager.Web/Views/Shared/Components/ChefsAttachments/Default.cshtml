@@ -22,6 +22,36 @@
                         button-type="Light" /> *@
     </div>
 </div>
+@if (ViewBag.IsAIAttachmentSummariesEnabled && ViewBag.IsDevPromptControlsEnabled)
+{
+    <div class="px-3 pb-2 d-flex align-items-center gap-3 flex-wrap" id="attachmentPromptControls">
+        <div>
+            <label class="form-label mb-1" for="attachmentPromptVersion">Prompt Version</label>
+            <select id="attachmentPromptVersion" class="form-select form-select-sm">
+                @if (ViewBag.DefaultPromptVersion == "v0")
+                {
+                    <option value="v0" selected>v0</option>
+                    <option value="v1">v1</option>
+                }
+                else
+                {
+                    <option value="v1" selected>v1</option>
+                    <option value="v0">v0</option>
+                }
+            </select>
+        </div>
+        <div class="form-check mt-4">
+            <input class="form-check-input" type="checkbox" id="attachmentCapturePromptIo">
+            <label class="form-check-label" for="attachmentCapturePromptIo">Capture prompt I/O</label>
+        </div>
+    </div>
+    <div class="px-3 pb-2 d-none" id="attachmentPromptCaptureContainer">
+        <div class="alert alert-secondary mb-0">
+            <div class="fw-bold mb-2">Captured Prompt I/O</div>
+            <pre class="mb-0 small" id="attachmentPromptCaptureOutput"></pre>
+        </div>
+    </div>
+}
 <div class="px-3">
     <abp-table id="ChefsAttachmentsTable" hoverable-rows="true" class="attachments-table" data-resize-aware="true"></abp-table>
 </div>

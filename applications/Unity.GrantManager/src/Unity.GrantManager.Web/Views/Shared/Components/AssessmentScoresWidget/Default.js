@@ -581,9 +581,15 @@ function regenerateAIScoresheetAnswers() {
     const applicationId = $('#DetailsViewApplicationId').val();
     const $button = $('#regenerateAiScoresheetBtn');
     const existingHtml = $button.html();
+    const promptVersion = $('#aiScoringPromptVersion').val() || null;
+    const capturePromptIo = $('#aiScoringCapturePromptIo').is(':checked');
 
     if (!applicationId || $button.prop('disabled')) {
         return;
+    }
+
+    if (!capturePromptIo && globalThis.hideAIPromptCapture) {
+        globalThis.hideAIPromptCapture('#aiScoringPromptCaptureContainer', '#aiScoringPromptCaptureOutput');
     }
 
     $button
@@ -593,10 +599,21 @@ function regenerateAIScoresheetAnswers() {
         .prop('disabled', true);
 
     unity.grantManager.grantApplications.applicationAIScoring
-        .generateAIScoresheetAnswers(applicationId)
+        .generateAIScoresheetAnswers(applicationId, promptVersion, capturePromptIo)
         .done(function () {
             abp.notify.success('AI scoring refreshed successfully.');
             PubSub.publish('refresh_assessment_scores', null);
+            if (capturePromptIo && globalThis.loadAIPromptCapture) {
+                setTimeout(function () {
+                    globalThis.loadAIPromptCapture(
+                        applicationId,
+                        'ScoresheetSection',
+                        promptVersion,
+                        '#aiScoringPromptCaptureContainer',
+                        '#aiScoringPromptCaptureOutput'
+                    );
+                }, 750);
+            }
         })
         .fail(function () {
             abp.message.error(

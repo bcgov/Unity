@@ -24,6 +24,36 @@
                 <button type="button" class="btn unt-btn-outline-primary btn-outline-primary me-2" onclick="expandAllAccordions('assessment-scoresheet')"><i class="unt-icon-sm fa-solid fa-angles-down"></i>Expand All</button>
                 <button type="button" class="btn unt-btn-outline-primary btn-outline-primary" onclick="collapseAllAccordions('assessment-scoresheet')"><i class="unt-icon-sm fa-solid fa-angles-up"></i>Collapse All</button>
             </div>
+            @if (Model.IsDevPromptControlsEnabled)
+            {
+                <div class="d-flex align-items-center gap-3 flex-wrap mb-3 scoresheet-top-btn-group" id="aiScoringPromptControls">
+                    <div>
+                        <label class="form-label mb-1" for="aiScoringPromptVersion">Prompt Version</label>
+                        <select id="aiScoringPromptVersion" class="form-select form-select-sm">
+                            @if (Model.DefaultPromptVersion == "v0")
+                            {
+                                <option value="v0" selected>v0</option>
+                                <option value="v1">v1</option>
+                            }
+                            else
+                            {
+                                <option value="v1" selected>v1</option>
+                                <option value="v0">v0</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="form-check mt-4">
+                        <input class="form-check-input" type="checkbox" id="aiScoringCapturePromptIo">
+                        <label class="form-check-label" for="aiScoringCapturePromptIo">Capture prompt I/O</label>
+                    </div>
+                </div>
+                <div class="mb-3 d-none" id="aiScoringPromptCaptureContainer">
+                    <div class="alert alert-secondary mb-0">
+                        <div class="fw-bold mb-2">Captured Prompt I/O</div>
+                        <pre class="mb-0 small" id="aiScoringPromptCaptureOutput"></pre>
+                    </div>
+                </div>
+            }
         }
         <div>
             <div>

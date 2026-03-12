@@ -66,7 +66,7 @@
 <input type="hidden" id="MaxFileSize" value="@Model.MaxFileSize" />
 <input type="hidden" id="RenderFormIoToHtml" value="@Model.RenderFormIoToHtml.ToString()" />
 <input type="hidden" id="ApplicationFormVersionId" value="@Model.ApplicationFormVersionId" />
-<input type="hidden" id="AIAnalysisFeatureEnabled" value="@aiApplicationAnalysisEnabled" />
+                <input type="hidden" id="AIAnalysisFeatureEnabled" value="@aiApplicationAnalysisEnabled" />
 
 @functions
 {
@@ -406,6 +406,36 @@
                             <i class="unt-icon-sm fa-solid fa-wand-sparkles"></i>Refresh Analysis
                         </button>
                     </div>
+                    @if (Model.IsDevPromptControlsEnabled)
+                    {
+                        <div class="px-3 pb-2 d-flex align-items-center gap-3 flex-wrap" id="aiAnalysisPromptControls">
+                            <div>
+                                <label class="form-label mb-1" for="aiAnalysisPromptVersion">Prompt Version</label>
+                                <select id="aiAnalysisPromptVersion" class="form-select form-select-sm">
+                                    @if (Model.DefaultPromptVersion == "v0")
+                                    {
+                                        <option value="v0" selected>v0</option>
+                                        <option value="v1">v1</option>
+                                    }
+                                    else
+                                    {
+                                        <option value="v1" selected>v1</option>
+                                        <option value="v0">v0</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="form-check mt-4">
+                                <input class="form-check-input" type="checkbox" id="aiAnalysisCapturePromptIo">
+                                <label class="form-check-label" for="aiAnalysisCapturePromptIo">Capture prompt I/O</label>
+                            </div>
+                        </div>
+                        <div class="px-3 pb-2 d-none" id="aiAnalysisPromptCaptureContainer">
+                            <div class="alert alert-secondary mb-0">
+                                <div class="fw-bold mb-2">Captured Prompt I/O</div>
+                                <pre class="mb-0 small" id="aiAnalysisPromptCaptureOutput"></pre>
+                            </div>
+                        </div>
+                    }
                     <div class="ai-analysis-container">
                         @* Default message when no analysis data is available *@
                         <div class="ai-analysis-no-data px-3 py-4" id="aiAnalysisNoData">

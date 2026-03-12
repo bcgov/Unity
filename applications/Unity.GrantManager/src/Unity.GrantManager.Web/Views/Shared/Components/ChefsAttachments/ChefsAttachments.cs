@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
 using System.Threading.Tasks;
 using Volo.Abp.AspNetCore.Mvc.UI.Widgets;
 using Volo.Abp.AspNetCore.Mvc;
@@ -18,11 +20,19 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ChefsAttachments
     {
         private readonly IFeatureChecker _featureChecker;
         private readonly IPermissionChecker _permissionChecker;
+        private readonly IWebHostEnvironment _webHostEnvironment;
+        private readonly IConfiguration _configuration;
 
-        public ChefsAttachments(IFeatureChecker featureChecker, IPermissionChecker permissionChecker)
+        public ChefsAttachments(
+            IFeatureChecker featureChecker,
+            IPermissionChecker permissionChecker,
+            IWebHostEnvironment webHostEnvironment,
+            IConfiguration configuration)
         {
             _featureChecker = featureChecker;
             _permissionChecker = permissionChecker;
+            _webHostEnvironment = webHostEnvironment;
+            _configuration = configuration;
         }
 
         public async Task<IViewComponentResult> InvokeAsync()
@@ -31,6 +41,10 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ChefsAttachments
                 await _featureChecker.IsEnabledAsync("Unity.AI.AttachmentSummaries") &&
                 await _permissionChecker.IsGrantedAsync(AIPermissions.AttachmentSummary.AttachmentSummaryDefault);
             ViewBag.IsAIAttachmentSummariesEnabled = isAIAttachmentSummariesEnabled;
+            ViewBag.IsDevPromptControlsEnabled = _webHostEnvironment.IsDevelopment();
+            ViewBag.DefaultPromptVersion = string.IsNullOrWhiteSpace(_configuration["Azure:OpenAI:PromptVersion"])
+                ? "v1"
+                : _configuration["Azure:OpenAI:PromptVersion"]!.Trim().ToLowerInvariant();
             return View();
         }
     }
@@ -55,3 +69,4 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ChefsAttachments
         }
     }
 }
+

@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -87,6 +88,12 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
         [BindProperty]
         public HashSet<string> ZoneStateSet { get; set; } = [];
 
+        [BindProperty(SupportsGet = true)]
+        public bool IsDevPromptControlsEnabled { get; set; }
+
+        [BindProperty(SupportsGet = true)]
+        public string DefaultPromptVersion { get; set; } = "v1";
+
         public DetailsModel(
             GrantApplicationAppService grantApplicationAppService,
             IWorksheetLinkAppService worksheetLinkAppService,
@@ -94,6 +101,7 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
             IFeatureChecker featureChecker,
             ICurrentUser currentUser,
             IConfiguration configuration,
+            IWebHostEnvironment webHostEnvironment,
             IZoneManagementAppService zoneManagementAppService)
         {
             _grantApplicationAppService = grantApplicationAppService;
@@ -106,6 +114,10 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
             CurrentUserName = currentUser.SurName + ", " + currentUser.Name;
             Extensions = configuration["S3:DisallowedFileTypes"] ?? "";
             MaxFileSize = configuration["S3:MaxFileSize"] ?? "";
+            IsDevPromptControlsEnabled = webHostEnvironment.IsDevelopment();
+            DefaultPromptVersion = string.IsNullOrWhiteSpace(configuration["Azure:OpenAI:PromptVersion"])
+                ? "v1"
+                : configuration["Azure:OpenAI:PromptVersion"]!.Trim().ToLowerInvariant();
         }
 
         public async Task OnGetAsync()
@@ -167,3 +179,4 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
         public uint? Order { get; set; } = 0;
     }
 }
+

@@ -395,9 +395,15 @@ globalThis.regenerateAIAnalysis = function() {
     const applicationId = $('#DetailsViewApplicationId').val();
     const $button = $('#regenerateAiAnalysis');
     const existingHtml = $button.html();
+    const promptVersion = $('#aiAnalysisPromptVersion').val() || null;
+    const capturePromptIo = $('#aiAnalysisCapturePromptIo').is(':checked');
 
     if (!applicationId || $button.prop('disabled')) {
         return;
+    }
+
+    if (!capturePromptIo && globalThis.hideAIPromptCapture) {
+        globalThis.hideAIPromptCapture('#aiAnalysisPromptCaptureContainer', '#aiAnalysisPromptCaptureOutput');
     }
 
     $button
@@ -405,10 +411,19 @@ globalThis.regenerateAIAnalysis = function() {
         .prop('disabled', true);
 
     unity.grantManager.grantApplications.applicationAIAnalysis
-        .generateAIAnalysis(applicationId)
+        .generateAIAnalysis(applicationId, promptVersion, capturePromptIo)
         .then(function() {
             abp.notify.success('AI analysis refreshed successfully.');
             loadAIAnalysis();
+            if (capturePromptIo && globalThis.loadAIPromptCapture) {
+                return globalThis.loadAIPromptCapture(
+                    applicationId,
+                    'ApplicationAnalysis',
+                    promptVersion,
+                    '#aiAnalysisPromptCaptureContainer',
+                    '#aiAnalysisPromptCaptureOutput'
+                );
+            }
         })
         .catch(function() {
             abp.message.error('Failed to refresh AI analysis. Please try again.');

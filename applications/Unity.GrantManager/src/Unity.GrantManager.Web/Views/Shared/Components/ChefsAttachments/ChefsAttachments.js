@@ -203,6 +203,9 @@ $(function () {
         $generateAISummariesButton.on('click', function () {
             const $button = $(this);
             const selectedRows = chefsDataTable.rows({ selected: true }).data();
+            const promptVersion = $('#attachmentPromptVersion').val() || null;
+            const capturePromptIo = $('#attachmentCapturePromptIo').is(':checked');
+            const applicationId = $('#DetailsViewApplicationId').val();
 
             if (selectedRows.length === 0) {
                 abp.message.warn(
@@ -216,9 +219,18 @@ $(function () {
 
             const existingHTML = $button.html();
 
+            if (!capturePromptIo && globalThis.hideAIPromptCapture) {
+                globalThis.hideAIPromptCapture('#attachmentPromptCaptureContainer', '#attachmentPromptCaptureOutput');
+            }
+
             // Call the backend API
             $.ajax({
-                url: '/api/app/attachment/generate-aISummaries-attachments',
+                url:
+                    '/api/app/attachment/generate-aISummaries-attachments' +
+                    '?promptVersion=' +
+                    encodeURIComponent(promptVersion || '') +
+                    '&capturePromptIo=' +
+                    encodeURIComponent(String(capturePromptIo)),
                 data: JSON.stringify(attachmentIds),
                 contentType: 'application/json',
                 type: 'POST',
@@ -241,6 +253,16 @@ $(function () {
 
                     // Enable the toggle button now that we have summaries
                     $('#toggleAllAISummaries').prop('disabled', false);
+
+                    if (capturePromptIo && globalThis.loadAIPromptCapture) {
+                        globalThis.loadAIPromptCapture(
+                            applicationId,
+                            'AttachmentSummary',
+                            promptVersion,
+                            '#attachmentPromptCaptureContainer',
+                            '#attachmentPromptCaptureOutput'
+                        );
+                    }
 
                     $button.html(existingHTML).prop('disabled', false);
                 },

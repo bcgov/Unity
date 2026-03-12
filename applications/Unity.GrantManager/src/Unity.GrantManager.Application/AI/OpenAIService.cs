@@ -19,6 +19,7 @@ namespace Unity.GrantManager.AI
         private readonly IConfiguration _configuration;
         private readonly ILogger<OpenAIService> _logger;
         private readonly ITextExtractionService _textExtractionService;
+        private readonly IAIPromptIoCaptureStore _promptIoCaptureStore;
         private const string ApplicationAnalysisPromptType = "ApplicationAnalysis";
         private const string AttachmentSummaryPromptType = "AttachmentSummary";
         private const string ScoresheetSectionPromptType = "ScoresheetSection";
@@ -62,12 +63,14 @@ namespace Unity.GrantManager.AI
             HttpClient httpClient,
             IConfiguration configuration,
             ILogger<OpenAIService> logger,
-            ITextExtractionService textExtractionService)
+            ITextExtractionService textExtractionService,
+            IAIPromptIoCaptureStore promptIoCaptureStore)
         {
             _httpClient = httpClient;
             _configuration = configuration;
             _logger = logger;
             _textExtractionService = textExtractionService;
+            _promptIoCaptureStore = promptIoCaptureStore;
         }
 
         public Task<bool> IsAvailableAsync()
@@ -93,6 +96,8 @@ namespace Unity.GrantManager.AI
 
         public async Task<ApplicationAnalysisResponse> GenerateApplicationAnalysisAsync(ApplicationAnalysisRequest request)
         {
+            var promptVersion = ResolvePromptVersion(request?.PromptVersion ?? SelectedPromptVersion);
+            var capturePromptIo = request?.CapturePromptIo ?? false;
             var data = JsonSerializer.Serialize(request.Data, JsonLogOptions);
             var schema = JsonSerializer.Serialize(request.Schema, JsonLogOptions);
 
@@ -105,15 +110,16 @@ namespace Unity.GrantManager.AI
                 .Cast<object>();
 
             var attachments = JsonSerializer.Serialize(attachmentsPayload, JsonLogOptions);
-            var systemPrompt = BuildAnalysisSystemPrompt(SelectedPromptVersion);
+            var systemPrompt = BuildAnalysisSystemPrompt(promptVersion);
             var analysisContent = BuildAnalysisUserPrompt(
-                SelectedPromptVersion,
+                promptVersion,
                 schema,
                 data,
                 attachments);
-            await LogPromptInputAsync(ApplicationAnalysisPromptType, systemPrompt, analysisContent);
+            await LogPromptInputAsync(ApplicationAnalysisPromptType, promptVersion, systemPrompt, analysisContent);
             var raw = await GenerateSummaryAsync(analysisContent, systemPrompt, 1000);
-            await LogPromptOutputAsync(ApplicationAnalysisPromptType, raw);
+            await LogPromptOutputAsync(ApplicationAnalysisPromptType, promptVersion, raw);
+            SavePromptCapture(capturePromptIo, request.CaptureContextId, ApplicationAnalysisPromptType, promptVersion, "Application Analysis", systemPrompt, analysisContent, raw);
             return ParseApplicationAnalysisResponse(AddIdsToAnalysisItems(raw));
         }
 
@@ -196,11 +202,13 @@ namespace Unity.GrantManager.AI
             var fileName = request?.FileName ?? string.Empty;
             var fileContent = request?.FileContent ?? Array.Empty<byte>();
             var contentType = request?.ContentType ?? "application/octet-stream";
+            var promptVersion = ResolvePromptVersion(request?.PromptVersion ?? SelectedPromptVersion);
+            var capturePromptIo = request?.CapturePromptIo ?? false;
 
             try
             {
                 var extractedText = await _textExtractionService.ExtractTextAsync(fileName, fileContent, contentType);
-                var prompt = BuildAttachmentSystemPrompt(SelectedPromptVersion);
+                var prompt = BuildAttachmentSystemPrompt(promptVersion);
 
                 var attachmentText = string.IsNullOrWhiteSpace(extractedText) ? null : extractedText;
                 if (attachmentText != null)
@@ -220,11 +228,12 @@ namespace Unity.GrantManager.AI
                     text = attachmentText
                 };
                 var attachment = JsonSerializer.Serialize(attachmentPayload, JsonLogOptions);
-                var contentToAnalyze = BuildAttachmentUserPrompt(SelectedPromptVersion, attachment);
+                var contentToAnalyze = BuildAttachmentUserPrompt(promptVersion, attachment);
 
-                await LogPromptInputAsync(AttachmentSummaryPromptType, prompt, contentToAnalyze);
+                await LogPromptInputAsync(AttachmentSummaryPromptType, promptVersion, prompt, contentToAnalyze);
                 var modelOutput = await GenerateSummaryAsync(contentToAnalyze, prompt, 150);
-                await LogPromptOutputAsync(AttachmentSummaryPromptType, modelOutput);
+                await LogPromptOutputAsync(AttachmentSummaryPromptType, promptVersion, modelOutput);
+                SavePromptCapture(capturePromptIo, request.CaptureContextId, AttachmentSummaryPromptType, promptVersion, fileName, prompt, contentToAnalyze, modelOutput);
 
                 return new AttachmentSummaryResponse
                 {
@@ -314,6 +323,8 @@ namespace Unity.GrantManager.AI
 
         public async Task<ScoresheetSectionResponse> GenerateScoresheetSectionAsync(ScoresheetSectionRequest request)
         {
+            var promptVersion = ResolvePromptVersion(request?.PromptVersion ?? SelectedPromptVersion);
+            var capturePromptIo = request?.CapturePromptIo ?? false;
             var dataJson = JsonSerializer.Serialize(request.Data, JsonLogOptions);
             var sectionJson = JsonSerializer.Serialize(request.SectionSchema, JsonLogOptions);
 
@@ -363,16 +374,17 @@ namespace Unity.GrantManager.AI
                 }
 
                 var analysisContent = BuildScoresheetSectionUserPrompt(
-                    SelectedPromptVersion,
+                    promptVersion,
                     dataJson,
                     attachments,
                     section,
                     response);
-                var systemPrompt = BuildScoresheetSectionSystemPrompt(SelectedPromptVersion);
+                var systemPrompt = BuildScoresheetSectionSystemPrompt(promptVersion);
 
-                await LogPromptInputAsync(ScoresheetSectionPromptType, systemPrompt, analysisContent);
+                await LogPromptInputAsync(ScoresheetSectionPromptType, promptVersion, systemPrompt, analysisContent);
                 var modelOutput = await GenerateSummaryAsync(analysisContent, systemPrompt, 2000);
-                await LogPromptOutputAsync(ScoresheetSectionPromptType, modelOutput);
+                await LogPromptOutputAsync(ScoresheetSectionPromptType, promptVersion, modelOutput);
+                SavePromptCapture(capturePromptIo, request.CaptureContextId, ScoresheetSectionPromptType, promptVersion, request.SectionName, systemPrompt, analysisContent, modelOutput);
 
                 return ParseScoresheetSectionResponse(modelOutput);
             }
@@ -596,21 +608,21 @@ namespace Unity.GrantManager.AI
             }
         }
 
-        private async Task LogPromptInputAsync(string promptType, string? systemPrompt, string userPrompt)
+        private async Task LogPromptInputAsync(string promptType, string promptVersion, string? systemPrompt, string userPrompt)
         {
             var formattedInput = FormatPromptInputForLog(systemPrompt, userPrompt);
-            _logger.LogInformation("AI {PromptType} ({PromptVersion}) input payload: {PromptInput}", promptType, SelectedPromptVersion, formattedInput);
-            await WritePromptLogFileAsync(promptType, "INPUT", formattedInput);
+            _logger.LogInformation("AI {PromptType} ({PromptVersion}) input payload: {PromptInput}", promptType, promptVersion, formattedInput);
+            await WritePromptLogFileAsync(promptType, promptVersion, "INPUT", formattedInput);
         }
 
-        private async Task LogPromptOutputAsync(string promptType, string output)
+        private async Task LogPromptOutputAsync(string promptType, string promptVersion, string output)
         {
             var formattedOutput = FormatPromptOutputForLog(output);
-            _logger.LogInformation("AI {PromptType} ({PromptVersion}) model output payload: {ModelOutput}", promptType, SelectedPromptVersion, formattedOutput);
-            await WritePromptLogFileAsync(promptType, "OUTPUT", formattedOutput);
+            _logger.LogInformation("AI {PromptType} ({PromptVersion}) model output payload: {ModelOutput}", promptType, promptVersion, formattedOutput);
+            await WritePromptLogFileAsync(promptType, promptVersion, "OUTPUT", formattedOutput);
         }
 
-        private async Task WritePromptLogFileAsync(string promptType, string payloadType, string payload)
+        private async Task WritePromptLogFileAsync(string promptType, string promptVersion, string payloadType, string payload)
         {
             if (!CanWritePromptFileLog())
             {
@@ -624,7 +636,7 @@ namespace Unity.GrantManager.AI
                 Directory.CreateDirectory(logDirectory);
 
                 var logPath = Path.Combine(logDirectory, PromptLogFileName);
-                var entry = $"{now} [{promptType}] {payloadType}\n{payload}\n\n";
+                var entry = $"{now} [{promptType}] [{promptVersion}] {payloadType}\n{payload}\n\n";
                 await File.AppendAllTextAsync(logPath, entry);
             }
             catch (Exception ex)
@@ -636,6 +648,27 @@ namespace Unity.GrantManager.AI
         private bool CanWritePromptFileLog()
         {
             return IsPromptFileLoggingEnabled;
+        }
+
+        private void SavePromptCapture(bool capturePromptIo, string? contextId, string promptType, string promptVersion, string captureLabel, string? systemPrompt, string userPrompt, string rawOutput)
+        {
+            if (!capturePromptIo || string.IsNullOrWhiteSpace(contextId))
+            {
+                return;
+            }
+
+            _promptIoCaptureStore.Save(new AIPromptIoCaptureResponse
+            {
+                ContextId = contextId,
+                PromptType = promptType,
+                PromptVersion = promptVersion,
+                CaptureLabel = captureLabel?.Trim() ?? string.Empty,
+                SystemPrompt = systemPrompt?.Trim() ?? string.Empty,
+                UserPrompt = userPrompt?.Trim() ?? string.Empty,
+                RawOutput = rawOutput?.Trim() ?? string.Empty,
+                FormattedOutput = FormatPromptOutputForLog(rawOutput),
+                CapturedAt = DateTime.UtcNow
+            });
         }
 
         private static string FormatPromptInputForLog(string? systemPrompt, string userPrompt)

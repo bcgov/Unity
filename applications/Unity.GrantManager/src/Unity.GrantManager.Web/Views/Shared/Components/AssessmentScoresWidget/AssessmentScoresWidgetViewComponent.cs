@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
 using Volo.Abp.AspNetCore.Mvc.UI.Widgets;
 using Volo.Abp.AspNetCore.Mvc;
 using System.Collections.Generic;
@@ -28,7 +30,9 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentScoresWidget
     public class AssessmentScoresWidgetViewComponent(IAssessmentRepository assessmentRepository,
         IScoresheetRepository scoresheetRepository,
         IScoresheetInstanceRepository scoresheetInstanceRepository,
-        IApplicationRepository applicationRepository) : AbpViewComponent
+        IApplicationRepository applicationRepository,
+        IWebHostEnvironment webHostEnvironment,
+        IConfiguration configuration) : AbpViewComponent
     {
         public async Task<IViewComponentResult> InvokeAsync(Guid assessmentId, Guid currentUserId)
         {
@@ -94,6 +98,10 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentScoresWidget
                 Status = assessment.Status,
                 CurrentUserId = currentUserId,
                 AssessorId = assessment.AssessorId,
+                IsDevPromptControlsEnabled = webHostEnvironment.IsDevelopment(),
+                DefaultPromptVersion = string.IsNullOrWhiteSpace(configuration["Azure:OpenAI:PromptVersion"])
+                    ? "v1"
+                    : configuration["Azure:OpenAI:PromptVersion"]!.Trim().ToLowerInvariant(),
             };
 
             return View(model);
@@ -294,3 +302,4 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentScoresWidget
         }
     }
 }
+

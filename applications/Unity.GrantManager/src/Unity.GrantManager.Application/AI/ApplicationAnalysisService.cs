@@ -25,7 +25,7 @@ namespace Unity.GrantManager.AI
 
         private const string ComponentsKey = "components";
 
-        public async Task<string> RegenerateAndSaveAsync(Guid applicationId)
+        public async Task<string> RegenerateAndSaveAsync(Guid applicationId, string? promptVersion = null, bool capturePromptIo = false)
         {
             var application = await applicationRepository.GetAsync(applicationId);
             var formSubmission = await applicationFormSubmissionRepository.GetByApplicationAsync(applicationId);
@@ -68,7 +68,10 @@ FULL APPLICATION FORM SUBMISSION:
             {
                 Schema = JsonSerializer.SerializeToElement(formFieldConfiguration),
                 Data = JsonSerializer.SerializeToElement(new { submission_content = applicationContent }),
-                Attachments = attachmentSummaries
+                Attachments = attachmentSummaries,
+                PromptVersion = promptVersion,
+                CapturePromptIo = capturePromptIo,
+                CaptureContextId = applicationId.ToString()
             });
 
             var analysisJson = JsonSerializer.Serialize(analysis, _jsonOptionsIndented);

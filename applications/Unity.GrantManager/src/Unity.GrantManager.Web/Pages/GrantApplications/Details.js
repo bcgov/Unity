@@ -4,6 +4,71 @@
  */
 
 $(function () {
+    globalThis.hideAIPromptCapture = function(containerSelector, outputSelector) {
+        $(outputSelector).text('');
+        $(containerSelector).addClass('d-none');
+    };
+
+    function formatAIPromptCaptureBlock(capture) {
+        const parts = [];
+
+        parts.push(`PROMPT TYPE: ${capture.promptType || ''}`);
+        parts.push(`PROMPT VERSION: ${capture.promptVersion || ''}`);
+
+        if (capture.captureLabel) {
+            parts.push(`LABEL: ${capture.captureLabel}`);
+        }
+
+        if (capture.capturedAt) {
+            parts.push(`CAPTURED AT: ${capture.capturedAt}`);
+        }
+
+        parts.push('');
+        parts.push('SYSTEM PROMPT');
+        parts.push(capture.systemPrompt || '');
+        parts.push('');
+        parts.push('USER PROMPT');
+        parts.push(capture.userPrompt || '');
+        parts.push('');
+        parts.push('RAW OUTPUT');
+        parts.push(capture.rawOutput || '');
+        parts.push('');
+        parts.push('FORMATTED OUTPUT');
+        parts.push(capture.formattedOutput || '');
+
+        return parts.join('\n');
+    }
+
+    globalThis.renderAIPromptCapture = function(containerSelector, outputSelector, captures) {
+        if (!Array.isArray(captures) || captures.length === 0) {
+            globalThis.hideAIPromptCapture(containerSelector, outputSelector);
+            return;
+        }
+
+        const formatted = captures
+            .map((capture) => formatAIPromptCaptureBlock(capture))
+            .join('\n\n----------------------------------------\n\n');
+
+        $(outputSelector).text(formatted);
+        $(containerSelector).removeClass('d-none');
+    };
+
+    globalThis.loadAIPromptCapture = function(applicationId, promptType, promptVersion, containerSelector, outputSelector) {
+        if (!applicationId || !promptType) {
+            globalThis.hideAIPromptCapture(containerSelector, outputSelector);
+            return Promise.resolve();
+        }
+
+        return unity.grantManager.grantApplications.applicationAIPromptCapture
+            .getRecent(applicationId, promptType, promptVersion || null)
+            .then(function(captures) {
+                globalThis.renderAIPromptCapture(containerSelector, outputSelector, captures || []);
+            })
+            .catch(function() {
+                globalThis.hideAIPromptCapture(containerSelector, outputSelector);
+            });
+    };
+
     let selectedReviewDetails = null;
     let renderFormIoToHtml =
         document.getElementById('RenderFormIoToHtml').value;
