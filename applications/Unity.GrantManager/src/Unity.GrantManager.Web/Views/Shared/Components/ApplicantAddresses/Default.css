@@ -150,3 +150,12 @@
 #ApplicantContactsTable {
     width: 100% !important;
 }
+
+.physical-address-form {
+    border-right: 0.25rem solid var(--bc-colors-white-background);
+    flex: 1;
+}
+
+.mailing-address-form {
+    flex: 1;
+}
