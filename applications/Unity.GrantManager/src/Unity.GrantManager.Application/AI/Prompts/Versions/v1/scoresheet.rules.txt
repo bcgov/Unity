@@ -8,11 +8,10 @@
 - Each answer object must include: "answer", "rationale", and "confidence".
 - Never omit "answer", "rationale", or "confidence" for any question type.
 - The "answer" value type must match question type: Number => numeric; YesNo/SelectList/Text/TextArea => string.
-- The "rationale" field must be 1-2 complete sentences and grounded in concrete DATA/ATTACHMENTS evidence.
-- In "rationale", cite concrete source evidence from the provided input content; do not cite prompt section headers.
+- The "rationale" field must be 1-2 complete sentences grounded in concrete DATA/ATTACHMENTS evidence, and must cite concrete source evidence from the provided input content rather than prompt section headers.
 - For every question, rationale must justify both the selected answer and the selected confidence level based on evidence strength.
 - If explicit evidence is insufficient, choose the most conservative valid answer and state uncertainty in rationale.
-- Do not treat missing or non-contradictory information as evidence.
+- Do not infer unsupported claims from partial, indirect, missing, or non-contradictory evidence.
 - The "confidence" field must be an integer from 0 to 100 in increments of 5 and represents confidence in the selected answer.
 - Set confidence by certainty of the selected answer based on available evidence, regardless of which option is selected.
 - For yes/no questions, the "answer" field must be exactly "Yes" or "No".
@@ -25,7 +24,7 @@
 - Never return 0 for select list answers unless 0 exists as an explicit option number.
 - For text and text area questions, answer must be concise, evidence-based, non-empty, and avoid boilerplate placeholders.
 - For text and text area questions, answer is the reviewer comment, and rationale must explain the evidence basis and certainty for that comment.
-- For comment fields, summarize key evidence-based conclusions from the other questions in SECTION, including uncertainty where applicable.
+- For comment fields, summarize only evidence-based conclusions from the other questions in SECTION, including uncertainty where applicable; keep comment strength aligned with those answers, and avoid adding recommendations or stronger conclusions not explicitly requested by the question.
 - Do not leave rationale empty when answer is populated.
 - Final self-check before responding: every question ID in RESPONSE must have a non-empty "answer", non-empty "rationale", and "confidence".
 - If any answer object is incomplete, regenerate the full JSON response before returning it.

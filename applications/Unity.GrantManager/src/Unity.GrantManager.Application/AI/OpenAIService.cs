@@ -927,7 +927,7 @@ namespace Unity.GrantManager.AI
                         version,
                         fragmentTemplateName,
                         new Dictionary<string, string>(StringComparer.Ordinal),
-                        resolutionStack);
+                        resolutionStack).TrimEnd();
                 }
             }
 

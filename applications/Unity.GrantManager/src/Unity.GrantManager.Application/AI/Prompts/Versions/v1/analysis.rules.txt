@@ -5,10 +5,13 @@
 - Use 3-6 words for title.
 - Each detail must be 1-2 complete sentences.
 - Each detail must cite concrete evidence from DATA or ATTACHMENTS.
+- Prefer direct evidence from DATA over derivative statements in ATTACHMENTS when both address the same point.
 - If ATTACHMENTS evidence is used, cite the attachment by name in detail.
+- Summaries and nextSteps must be concrete, distinct, and reviewer-relevant; avoid generic praise, generic checklist language, and repeated conclusions across lists.
 - If no findings exist, return empty arrays.
 - Rating must be HIGH, MEDIUM, or LOW.
 - Use summaries for overall application quality/readiness synthesis.
 - Use nextSteps for reviewer-facing follow-up actions or considerations before scoring or decision-making.
+- Only include nextSteps when there is a specific evidence gap, inconsistency, or verification need; otherwise return an empty array.
 - recommendation.decision must be PROCEED or HOLD.
 - recommendation.rationale must explain the high-level recommendation in 1-2 complete sentences using provided evidence.
