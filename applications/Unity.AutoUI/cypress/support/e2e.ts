@@ -26,7 +26,6 @@ Cypress.on('uncaught:exception', (err) => {
   if (err.message.includes('Loading chunk') || err.message.includes('ChunkLoadError')) {
     return false
   }
-  // Return false to prevent test failure for other uncaught exceptions
-  // Change to true if you want tests to fail on unexpected errors
-  return false
+  // Return true to fail tests on unexpected uncaught exceptions
+  return true
 })

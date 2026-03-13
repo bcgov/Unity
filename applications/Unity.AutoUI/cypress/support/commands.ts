@@ -227,41 +227,40 @@ interface GrantApplicationResponse {
  *
  * Available status values: 'Submitted', 'Under Assessment', 'Approved', 'Closed', 'Deferred'
  */
+function fetchGrantApplications(): Cypress.Chainable<GrantApplication[]> {
+  const apiUrl = `${Cypress.env("webapp.url")}api/app/grant-application`;
+  return cy.getCookie("XSRF-TOKEN").then((xsrfCookie) => {
+    return cy
+      .request({
+        method: "GET",
+        url: apiUrl,
+        qs: { submittedFromDate: "", submittedToDate: "" },
+        headers: {
+          Accept: "application/json, text/javascript, */*; q=0.01",
+          "Content-Type": "application/json",
+          "X-Requested-With": "XMLHttpRequest",
+          RequestVerificationToken: xsrfCookie?.value || "",
+        },
+        failOnStatusCode: false,
+      })
+      .then((response) => {
+        if (response.status !== 200) {
+          throw new Error(
+            `API request failed with status ${response.status}: ${JSON.stringify(response.body)}`
+          );
+        }
+        const data = response.body as GrantApplicationResponse;
+        Cypress.log({ name: "fetch", message: `📋 Fetched ${data.items?.length || 0} applications` });
+        return data.items || [];
+      });
+  });
+}
+
 Cypress.Commands.add(
   "fetchDynamicSubmission",
   (options: FetchSubmissionOptions = {}) => {
-    const baseUrl = Cypress.env("webapp.url");
-    const apiUrl = `${baseUrl}api/app/grant-application`;
-
-    // Get XSRF token from cookies for the request
-    return cy.getCookie("XSRF-TOKEN").then((xsrfCookie) => {
-      const xsrfToken = xsrfCookie?.value || "";
-
-      return cy
-        .request({
-          method: "GET",
-          url: apiUrl,
-          qs: {
-            submittedFromDate: "",
-            submittedToDate: "",
-          },
-          headers: {
-            Accept: "application/json, text/javascript, */*; q=0.01",
-            "Content-Type": "application/json",
-            "X-Requested-With": "XMLHttpRequest",
-            RequestVerificationToken: xsrfToken,
-          },
-          failOnStatusCode: false,
-        })
-        .then((response) => {
-          if (response.status !== 200) {
-            throw new Error(
-              `API request failed with status ${response.status}: ${JSON.stringify(response.body)}`
-            );
-          }
-
-          const data = response.body as GrantApplicationResponse;
-          let applications = data.items || [];
+    return fetchGrantApplications().then((allApplications) => {
+      let applications = allApplications;
 
           Cypress.log({ name: "fetch", message: `📋 Fetched ${applications.length} applications from API` });
 
@@ -345,7 +344,6 @@ Cypress.Commands.add(
 
           return selectedApp.referenceNo;
         });
-    });
   }
 );
 
@@ -356,38 +354,5 @@ Cypress.Commands.add(
  * @returns Chainable containing array of grant applications
  */
 Cypress.Commands.add("fetchAllSubmissions", () => {
-  const baseUrl = Cypress.env("webapp.url");
-  const apiUrl = `${baseUrl}api/app/grant-application`;
-
-  return cy.getCookie("XSRF-TOKEN").then((xsrfCookie) => {
-    const xsrfToken = xsrfCookie?.value || "";
-
-    return cy
-      .request({
-        method: "GET",
-        url: apiUrl,
-        qs: {
-          submittedFromDate: "",
-          submittedToDate: "",
-        },
-        headers: {
-          Accept: "application/json, text/javascript, */*; q=0.01",
-          "Content-Type": "application/json",
-          "X-Requested-With": "XMLHttpRequest",
-          RequestVerificationToken: xsrfToken,
-        },
-        failOnStatusCode: false,
-      })
-      .then((response) => {
-        if (response.status !== 200) {
-          throw new Error(
-            `API request failed with status ${response.status}: ${JSON.stringify(response.body)}`
-          );
-        }
-
-        const data = response.body as GrantApplicationResponse;
-        Cypress.log({ name: "fetch", message: `📋 Fetched ${data.items?.length || 0} total applications` });
-        return data.items || [];
-      });
-  });
+  return fetchGrantApplications();
 });

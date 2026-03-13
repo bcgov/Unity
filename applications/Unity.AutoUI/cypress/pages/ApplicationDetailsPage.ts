@@ -122,6 +122,7 @@ export class ApplicationDetailsPage extends BasePage {
    * Navigate to Review & Assessment tab
    */
   goToReviewAssessmentTab(): this {
+    this.dismissErrorModalIfPresent();
     this.clickElement(this.tabs.reviewAssessment);
     return this;
   }
@@ -404,19 +405,9 @@ export class ApplicationDetailsPage extends BasePage {
       .contains("button", "SAVE CHANGES")
       .click({ force: true });
     cy.wait(2000); // Wait for save to process
-    // Force close modal via JavaScript if still open
-    cy.window().then((win) => {
-      // Remove all modals and backdrops
-      win.document.querySelectorAll(".modal.show, .modal.fade.show").forEach((el) => {
-        (el as HTMLElement).classList.remove("show");
-        (el as HTMLElement).style.display = "none";
-      });
-      win.document.querySelectorAll(".modal-backdrop").forEach((el) => el.remove());
-      win.document.body.classList.remove("modal-open");
-      win.document.body.style.removeProperty("overflow");
-      win.document.body.style.removeProperty("padding-right");
-    });
-    cy.wait(500);
+    cy.get("body").type("{esc}");
+    cy.get(".modal.show, .modal.fade.show", { timeout: 20000 }).should("not.exist");
+    cy.get(".modal-backdrop", { timeout: 20000 }).should("not.exist");
     return this;
   }
 
