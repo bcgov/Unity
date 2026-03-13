@@ -39,15 +39,6 @@ namespace Unity.GrantManager.Intakes.Handlers
         {
             "button", "simplebuttonadvanced", "html", "htmlelement", "content", "simpleseparator"
         };
-        private static readonly HashSet<string> ExcludedPromptDataKeys = new(StringComparer.OrdinalIgnoreCase)
-        {
-            "simplefile",
-            "applicantAgent",
-            "submit",
-            "lateEntry",
-            "metadata",
-            "full_application_form_submission"
-        };
         private static readonly string[] AllowedAnalysisRootProperties =
         {
             AIJsonKeys.Rating,
