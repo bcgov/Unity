@@ -86,8 +86,13 @@ class SchemaExtractor:
             return True
         if schema_type == "public" and table["schema"] != "public":
             return True
+        if schema_type == "public" and (
+            "scoresheet" in table["name"].lower() or "worksheet" in table["name"].lower()
+        ):
+            return True
         if schema_type == "custom" and (
-            "worksheet" not in table["name"].lower() or table["schema"] != "Reporting"
+            ("worksheet" not in table["name"].lower() and "scoresheet" not in table["name"].lower())
+            or table["schema"] != "Reporting"
         ):
             return True
         return False
@@ -329,9 +334,32 @@ class EmbeddingManager:
         return retrieved
     
     def get_formatted_schemas(self, query: str, db_id: int) -> str:
-        """Get formatted schema text for prompt"""
+        """Get formatted schema text for prompt, grouped by section with headers."""
         schemas = self.search_similar_schemas(query, db_id)
-        return "\n".join(doc.page_content for doc in schemas)
+
+        section_headers = {
+            "public": "=== PUBLIC TABLES ===",
+            "worksheet": "=== WORKSHEET VIEWS ===",
+            "scoresheet": "=== SCORESHEET VIEWS ===",
+        }
+
+        sections: dict[str, list[str]] = {}
+        for doc in schemas:
+            schema_type = doc.metadata.get("schema_type", "public")
+            if schema_type == "custom":
+                first_line = doc.page_content.split('\n')[0].lower()
+                key = "scoresheet" if "scoresheet" in first_line else "worksheet"
+            else:
+                key = schema_type
+            sections.setdefault(key, []).append(doc.page_content)
+
+        parts = []
+        for stype in ("public", "worksheet", "scoresheet"):
+            if stype in sections:
+                parts.append(section_headers[stype])
+                parts.extend(sections[stype])
+
+        return "\n".join(parts)
 
 
 # Global embedding manager instance
