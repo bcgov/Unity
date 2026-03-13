@@ -51,10 +51,10 @@ namespace Unity.GrantManager.ApplicantProfile
 
                 if (applicationLookup.Count == 0) return dto;
 
-                // Payment info is secured via feature flags and permissions, so direct query for this data
+                // Payment info is secured via feature flags and permissions, so direct query for this data instead of using module service
+
                 var paymentsQueryable = await paymentRequestRepository.GetQueryableAsync();
                 var paymentDetails = await paymentsQueryable
-                    .Include(pr => pr.Site)
                     .Where(pr => applicationLookup.Keys.Contains(pr.CorrelationId))
                     .ToListAsync();
 
