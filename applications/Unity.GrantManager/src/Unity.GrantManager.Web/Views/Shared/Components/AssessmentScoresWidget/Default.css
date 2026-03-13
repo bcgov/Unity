@@ -51,7 +51,7 @@ input {
 }
 
 .scoresheet-top-btn-group {
-    margin-top: -45px;
+    margin-top: 0;
 }
 
 /* AI-generated answer styling (blue text) */

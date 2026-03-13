@@ -14,6 +14,7 @@ namespace Unity.GrantManager.AI
         IApplicationRepository applicationRepository,
         IApplicationFormRepository applicationFormRepository,
         IApplicationFormSubmissionRepository applicationFormSubmissionRepository,
+        IApplicationFormVersionRepository applicationFormVersionRepository,
         IApplicationChefsFileAttachmentRepository applicationChefsFileAttachmentRepository,
         IScoresheetRepository scoresheetRepository,
         IAIService aiService,
@@ -30,7 +31,7 @@ namespace Unity.GrantManager.AI
             WriteIndented = true
         };
 
-        public async Task<string> RegenerateAndSaveAsync(Guid applicationId)
+        public async Task<string> RegenerateAndSaveAsync(Guid applicationId, string? promptVersion = null, bool capturePromptIo = false)
         {
             var application = await applicationRepository.GetAsync(applicationId);
             var applicationForm = await applicationFormRepository.GetAsync(application.ApplicationFormId);
@@ -56,23 +57,8 @@ namespace Unity.GrantManager.AI
                 .ToList();
 
             var formSubmission = await applicationFormSubmissionRepository.GetByApplicationAsync(applicationId);
-            var notSpecified = "Not specified";
-            var applicationContent = $@"
-Project Name: {application.ProjectName}
-Reference Number: {application.ReferenceNo}
-Requested Amount: ${application.RequestedAmount:N2}
-Total Project Budget: ${application.TotalProjectBudget:N2}
-Project Summary: {application.ProjectSummary ?? "Not provided"}
-City: {application.City ?? notSpecified}
-Economic Region: {application.EconomicRegion ?? notSpecified}
-Community: {application.Community ?? notSpecified}
-Project Start Date: {application.ProjectStartDate?.ToShortDateString() ?? notSpecified}
-Project End Date: {application.ProjectEndDate?.ToShortDateString() ?? notSpecified}
-Submission Date: {application.SubmissionDate.ToShortDateString()}
-
-FULL APPLICATION FORM SUBMISSION:
-{formSubmission?.RenderedHTML ?? "Form submission content not available"}
-";
+            var formSchema = await GetFormSchemaAsync(formSubmission?.ApplicationFormVersionId);
+            var promptData = PromptDataPayloadBuilder.BuildPromptDataPayload(application, formSubmission, formSchema, logger);
 
             var allSectionResults = new Dictionary<string, object>();
             foreach (var section in scoresheet.Sections.OrderBy(s => s.Order))
@@ -82,23 +68,27 @@ FULL APPLICATION FORM SUBMISSION:
                     var sectionQuestionsData = new List<object>();
                     foreach (var field in section.Fields.OrderBy(f => f.Order))
                     {
+                        var options = ExtractSelectListOptions(field);
                         sectionQuestionsData.Add(new
                         {
                             id = field.Id.ToString(),
                             question = field.Label,
                             description = field.Description,
                             type = field.Type.ToString(),
-                            definition = field.Definition,
-                            availableOptions = ExtractSelectListOptions(field)
+                            options,
+                            allowed_answers = ExtractSelectListOptionNumbers(options)
                         });
                     }
 
                     var sectionRequest = new ScoresheetSectionRequest
                     {
-                        Data = JsonSerializer.SerializeToElement(new { submission_content = applicationContent }),
+                        Data = promptData,
                         Attachments = attachmentSummaries,
                         SectionName = section.Name,
-                        SectionSchema = JsonSerializer.SerializeToElement(sectionQuestionsData, _jsonOptions)
+                        SectionSchema = JsonSerializer.SerializeToElement(sectionQuestionsData, _jsonOptions),
+                        PromptVersion = promptVersion,
+                        CapturePromptIo = capturePromptIo,
+                        CaptureContextId = applicationId.ToString()
                     };
                     var sectionAnswers = await aiService.GenerateScoresheetSectionAsync(sectionRequest);
 
@@ -122,8 +112,26 @@ FULL APPLICATION FORM SUBMISSION:
             var validatedJson = ValidateScoresheetJson(combinedResults);
             application.AIScoresheetAnswers = validatedJson;
             await applicationRepository.UpdateAsync(application);
-
             return validatedJson;
+        }
+
+        private async Task<string?> GetFormSchemaAsync(Guid? formVersionId)
+        {
+            if (formVersionId == null)
+            {
+                return null;
+            }
+
+            try
+            {
+                var formVersion = await applicationFormVersionRepository.GetAsync(formVersionId.Value);
+                return string.IsNullOrWhiteSpace(formVersion?.FormSchema) ? null : formVersion.FormSchema;
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "Unable to load form schema for scoresheet prompt data generation for form version {FormVersionId}.", formVersionId);
+                return null;
+            }
         }
 
         private static string ValidateScoresheetJson(string scoresheetAnswers)
@@ -144,7 +152,7 @@ FULL APPLICATION FORM SUBMISSION:
             return "{}";
         }
 
-        private static (int number, string value, long numericValue)[]? ExtractSelectListOptions(Question field)
+        private static object[]? ExtractSelectListOptions(Question field)
         {
             if (field.Type != Unity.Flex.Scoresheets.Enums.QuestionType.SelectList || string.IsNullOrEmpty(field.Definition))
                 return null;
@@ -155,7 +163,12 @@ FULL APPLICATION FORM SUBMISSION:
                 if (definition?.Options != null && definition.Options.Count > 0)
                 {
                     return definition.Options
-                        .Select((option, index) => (number: index, value: option.Value, numericValue: option.NumericValue))
+                        .Select((option, index) =>
+                            (object)new
+                            {
+                                number = index + 1,
+                                value = option.Value
+                            })
                         .ToArray();
                 }
             }
@@ -165,6 +178,18 @@ FULL APPLICATION FORM SUBMISSION:
             }
 
             return null;
+        }
+
+        private static string[]? ExtractSelectListOptionNumbers(object[]? options)
+        {
+            if (options == null || options.Length == 0)
+            {
+                return null;
+            }
+
+            return options
+                .Select((_, index) => (index + 1).ToString())
+                .ToArray();
         }
     }
 }
