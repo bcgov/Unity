@@ -92,7 +92,7 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
         public bool IsDevPromptControlsEnabled { get; set; }
 
         [BindProperty(SupportsGet = true)]
-        public string DefaultPromptVersion { get; set; } = "v1";
+        public string DefaultPromptVersion { get; set; }
 
         public DetailsModel(
             GrantApplicationAppService grantApplicationAppService,
