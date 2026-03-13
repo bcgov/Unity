@@ -593,7 +593,7 @@ function regenerateAIScoresheetAnswers(capturePromptIo = false, triggerButton = 
 
     $button
         .html(
-            '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Generating...'
+            '<span class="ai-button-content"><span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span><span>Generating...</span></span>'
         )
         .prop('disabled', true);
 

@@ -260,7 +260,7 @@ $(function () {
                 beforeSend: function () {
                     $activeButton
                         .html(
-                            '<span class="spinner-border spinner-border-sm mr-2" role="status" aria-hidden="true"></span> Generating...'
+                            '<span class="ai-button-content"><span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span><span>Generating...</span></span>'
                         )
                         .prop('disabled', true);
                 },
