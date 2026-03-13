@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
 using Volo.Abp.AspNetCore.Mvc.UI.Widgets;
 using Volo.Abp.AspNetCore.Mvc;
@@ -19,9 +19,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ChefsAttachments
         private readonly IFeatureChecker _featureChecker;
         private readonly IPermissionChecker _permissionChecker;
 
-        public ChefsAttachments(
-            IFeatureChecker featureChecker,
-            IPermissionChecker permissionChecker)
+        public ChefsAttachments(IFeatureChecker featureChecker, IPermissionChecker permissionChecker)
         {
             _featureChecker = featureChecker;
             _permissionChecker = permissionChecker;
