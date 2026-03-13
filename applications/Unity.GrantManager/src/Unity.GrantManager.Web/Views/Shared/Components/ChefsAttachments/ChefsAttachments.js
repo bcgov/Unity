@@ -219,7 +219,9 @@ $(function () {
             const $button = $(this);
             const triggerButton = $button.data('trigger-button');
             const $activeButton = triggerButton ? $(triggerButton) : $button;
-            const selectedRows = chefsDataTable.rows({ selected: true }).data();
+            const rowsToProcess = triggerButton
+                ? chefsDataTable.rows().data()
+                : chefsDataTable.rows({ selected: true }).data();
             const promptVersion = globalThis.getSelectedPromptVersion?.() || null;
             const capturePromptIo = $button.data('capture-prompt-io') === true;
             const applicationId = $('#DetailsViewApplicationId').val();
@@ -227,15 +229,16 @@ $(function () {
             $button.removeData('capture-prompt-io');
             $button.removeData('trigger-button');
 
-            if (selectedRows.length === 0) {
+            if (rowsToProcess.length === 0) {
                 abp.message.warn(
-                    'Please select at least one attachment to generate summaries.'
+                    triggerButton
+                        ? 'No attachments were found to generate summaries for.'
+                        : 'Please select at least one attachment to generate summaries.'
                 );
                 return;
             }
 
-            // Get attachment IDs from selected rows
-            const attachmentIds = selectedRows.toArray().map((row) => row.id);
+            const attachmentIds = rowsToProcess.toArray().map((row) => row.id);
 
             const existingHTML = $activeButton.html();
 
