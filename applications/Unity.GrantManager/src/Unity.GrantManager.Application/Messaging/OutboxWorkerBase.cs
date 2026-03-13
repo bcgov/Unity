@@ -45,9 +45,7 @@ public abstract class OutboxWorkerBase : QuartzBackgroundWorkerBase
     }
 
     public override async Task Execute(IJobExecutionContext context)
-    {
-        Logger.LogDebug("{WorkerName} executing...", GetType().Name);
-
+    {        
         try
         {
             OnBeforePublishCycle();
