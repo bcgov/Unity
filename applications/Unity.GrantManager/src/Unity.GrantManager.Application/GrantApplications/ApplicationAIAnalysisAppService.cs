@@ -10,11 +10,11 @@ public class ApplicationAIAnalysisAppService(
     IApplicationAnalysisService applicationAnalysisService)
     : GrantManagerAppService, IApplicationAIAnalysisAppService
 {
-    public async Task<string> GenerateAIAnalysisAsync(Guid applicationId)
+    public async Task<string> GenerateAIAnalysisAsync(Guid applicationId, string? promptVersion = null, bool capturePromptIo = false)
     {
         try
         {
-            return await applicationAnalysisService.RegenerateAndSaveAsync(applicationId);
+            return await applicationAnalysisService.RegenerateAndSaveAsync(applicationId, promptVersion, capturePromptIo);
         }
         catch (Exception ex)
         {

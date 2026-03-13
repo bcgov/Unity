@@ -14,5 +14,14 @@ namespace Unity.GrantManager.AI
 
         [JsonPropertyName("attachments")]
         public List<AIAttachmentItem> Attachments { get; set; } = new();
+
+        [JsonPropertyName("promptVersion")]
+        public string? PromptVersion { get; set; }
+
+        [JsonPropertyName("capturePromptIo")]
+        public bool CapturePromptIo { get; set; }
+
+        [JsonPropertyName("captureContextId")]
+        public string? CaptureContextId { get; set; }
     }
 }

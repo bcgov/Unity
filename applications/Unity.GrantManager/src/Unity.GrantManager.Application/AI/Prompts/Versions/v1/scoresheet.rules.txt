@@ -3,29 +3,51 @@
 - Return exactly one answer object per question ID in SECTION.questions.
 - Do not omit any question IDs from SECTION.questions.
 - Do not add keys that are not question IDs from SECTION.questions.
+- Use the exact question IDs from RESPONSE and SECTION.questions without alteration; never rewrite, normalize, or regenerate a question ID.
 - Use RESPONSE as the output contract and fill every placeholder value.
-- Follow this process in order: (1) copy RESPONSE, (2) iterate SECTION.questions in order, (3) fill answer+rationale+confidence for each matching question ID, (4) run final completeness check.
 - Each answer object must include: "answer", "rationale", and "confidence".
 - Never omit "answer", "rationale", or "confidence" for any question type.
 - The "answer" value type must match question type: Number => numeric; YesNo/SelectList/Text/TextArea => string.
-- The "rationale" field must be 1-2 complete sentences and grounded in concrete DATA/ATTACHMENTS evidence.
-- In "rationale", cite concrete source evidence from the provided input content; do not cite prompt section headers.
+- The "rationale" field must be 1-2 complete sentences grounded in concrete DATA/ATTACHMENTS evidence.
+- In rationale, cite concrete source evidence from the provided input content rather than prompt section headers.
 - For every question, rationale must justify both the selected answer and the selected confidence level based on evidence strength.
-- If explicit evidence is insufficient, choose the most conservative valid answer and state uncertainty in rationale.
-- Do not treat missing or non-contradictory information as evidence.
+- If evidence is insufficient, partial, indirect, missing, or non-specific, choose the most conservative valid answer and explain the uncertainty.
+- Ignore fields or details that are not relevant to the specific question being answered.
+- Prefer, in order: direct evidence of the exact condition asked, closely related supporting evidence, then general context only when necessary.
+- Do not convert general project descriptions into evidence for a specific scored condition unless that condition is directly supported.
+- Treat prefilled labels, ratings, rankings, or statuses in DATA as background context only; do not use them as evidence unless the question explicitly asks you to report that same item.
+- Do not use one field's prior classification, rating, or judgment as evidence for a different question unless the question explicitly asks for that same classification, rating, or judgment.
+- Do not treat related concepts as equivalent; answer the specific question asked, not a nearby concept.
+- Do not infer unsupported claims about requirements, conditions, relationships, compliance elements, mitigations, supports, or outcomes.
 - The "confidence" field must be an integer from 0 to 100 in increments of 5 and represents confidence in the selected answer.
 - Set confidence by certainty of the selected answer based on available evidence, regardless of which option is selected.
+- Do not use maximum or near-maximum confidence when the answer depends on inference rather than an explicit statement of the exact condition.
 - For yes/no questions, the "answer" field must be exactly "Yes" or "No".
 - For numeric questions, answer must be a numeric value within the allowed range.
 - For numeric questions, answer must never be blank.
 - If evidence is insufficient for a numeric question, return the minimum allowed numeric value and explain uncertainty in rationale.
 - If a required value is explicitly missing in DATA/ATTACHMENTS, set confidence high (80-100) when selecting the conservative minimum.
-- For select list questions, return only the selected options.number as a string (the option index shown in options), never label text or points.
-- For select list questions, the "answer" value must be one of question.allowed_answers exactly.
+- For select list questions, use the matching SECTION.questions[].options entries and return only the selected options[].number as a string.
+- For select list questions, the "answer" value must be one of the matching question.allowed_answers values exactly.
+- For select list questions, return only the option number string, never the option label text such as "Yes", "No", or "N/A".
 - Never return 0 for select list answers unless 0 exists as an explicit option number.
+- For select list questions, choose the lowest option fully supported by the evidence; use a higher option only when the specific condition and required strength are directly supported.
+- If evidence supports the existence of a topic but not the required strength, completeness, or specificity, choose the lowest option consistent with that evidence.
+- If evidence is insufficient for a select list question, choose the lowest allowed answer value from question.allowed_answers and explain the uncertainty.
+- Do not treat broad project descriptions, general goals, high-level timelines, budget presence, or a single indirect reference as sufficient evidence for a higher-scored select-list answer.
+- Answer a specific condition positively only when that exact condition is directly evidenced in DATA or ATTACHMENTS.
+- If the evidence shows only involvement, presence, relevance, or association, do not treat that alone as proof that a requirement or condition is satisfied.
+- If a question asks whether something is eligible, complete, appropriate, or satisfied, require direct evidence of that exact condition rather than general relevance or presence.
 - For text and text area questions, answer must be concise, evidence-based, non-empty, and avoid boilerplate placeholders.
 - For text and text area questions, answer is the reviewer comment, and rationale must explain the evidence basis and certainty for that comment.
-- For comment fields, summarize key evidence-based conclusions from the other questions in SECTION, including uncertainty where applicable.
+- If no concerns are identified for a text or text area question, return a short non-empty evidence-based comment rather than leaving answer blank.
+- For comment fields, summarize only the evidence-based conclusions supported by the scored answers, including uncertainty where applicable, and do not introduce stronger claims.
+- For narrative comment fields, keep wording aligned with the scored answers and evidence; do not use stronger certainty or impact language than the evidence supports.
+- For comment fields, describe the evidence and resulting answer without elevating it into an overall assessment unless the question explicitly asks for one.
+- Do not treat the presence of a named person, partner, organization, location, document, or field as proof of a separate requirement, condition, or relationship unless that exact point is explicitly evidenced.
+- Do not add recommendations or stronger conclusions unless the question explicitly asks for them.
+- For comment fields, always provide a concise evidence-based summary even when no concerns are identified.
+- For comment fields, do not leave answer empty even when all other answers are positive.
 - Do not leave rationale empty when answer is populated.
 - Final self-check before responding: every question ID in RESPONSE must have a non-empty "answer", non-empty "rationale", and "confidence".
 - If any answer object is incomplete, regenerate the full JSON response before returning it.
