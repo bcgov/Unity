@@ -1,4 +1,9 @@
-- Use only ATTACHMENT as evidence: summarize actual content when ATTACHMENT.text is present; otherwise provide a conservative file-level summary, and do not invent missing details.
+- Use only ATTACHMENT as evidence.
+- Summarize actual content when ATTACHMENT.text is present; otherwise provide a conservative file-level summary.
+- Ignore attachment details that are not relevant to describing what the file contains or contributes.
+- Describe the attachment itself, including its apparent function or content type when supported by the evidence, rather than summarizing the overall project.
+- If ATTACHMENT.text is primarily structured application, contact, organization, budget, or date fields, summarize it as a metadata-style attachment rather than rewriting it as a generic project summary.
+- Do not invent missing details.
 - Do not calculate or restate totals, sums, or aggregates unless they are explicitly present in ATTACHMENT.text.
 - Write 1-2 complete sentences.
 - Summary must be grounded in concrete ATTACHMENT evidence.

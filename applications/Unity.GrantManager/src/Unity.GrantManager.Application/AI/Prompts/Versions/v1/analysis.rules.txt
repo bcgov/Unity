@@ -2,16 +2,31 @@
 - Do not invent fields, documents, requirements, or facts.
 - Treat missing or empty values as findings only when they weaken rubric evidence.
 - Prefer material issues; avoid nitpicking.
+- Ignore evidence that is not relevant to a reviewer-facing conclusion.
+- Prefer, in order: direct evidence from DATA, specific supporting evidence from ATTACHMENTS, then broader context only when necessary.
+- Do not restate basic application facts as findings unless they support a specific reviewer conclusion about readiness, feasibility, budget credibility, eligibility, or confidence in proceeding.
+- Only include warnings when the evidence shows a specific, concrete risk, inconsistency, or meaningful uncertainty; a stated risk label alone is not enough.
 - Use 3-6 words for title.
+- Summary titles should name the specific substantive reviewer conclusion, strength, or risk, not a generic evaluation label or abstract category.
 - Each detail must be 1-2 complete sentences.
 - Each detail must cite concrete evidence from DATA or ATTACHMENTS.
+- When citing a positive conclusion, explain why that evidence matters for readiness, feasibility, or funding confidence.
+- Prefer neutral evidence descriptions over evaluative adjectives unless the evidence directly supports a strong conclusion.
+- Do not describe capacity, feasibility, or justification as strong, detailed, or well-supported unless the evidence shows more than the existence of basic organizational, budget, or timeline information.
+- Do not infer community support, established partnerships, or delivery capacity from a single partner reference, staff count, or basic organizational status alone.
+- Do not describe a timeline as realistic or feasible based only on start and end dates unless additional evidence supports deliverability.
 - Prefer direct evidence from DATA over derivative statements in ATTACHMENTS when both address the same point.
 - If ATTACHMENTS evidence is used, cite the attachment by name in detail.
-- Summaries and nextSteps must be concrete, distinct, and reviewer-relevant; avoid generic praise, generic checklist language, and repeated conclusions across lists.
+- Summaries and nextSteps must be concrete, distinct, reviewer-relevant, and specific to this application's evidence.
+- Avoid generic praise, generic checklist language, and repeated conclusions across lists.
+- Do not use a summary merely to say that supporting documents were provided; summarize the specific substantive evidence they add, or omit the finding.
+- Do not treat ordinary lack of detailed supporting explanation as a material gap unless the provided evidence creates real uncertainty about feasibility, eligibility, or budget credibility.
 - If no findings exist, return empty arrays.
 - Rating must be HIGH, MEDIUM, or LOW.
 - Use summaries for overall application quality/readiness synthesis.
 - Use nextSteps for reviewer-facing follow-up actions or considerations before scoring or decision-making.
 - Only include nextSteps when there is a specific evidence gap, inconsistency, or verification need; otherwise return an empty array.
 - recommendation.decision must be PROCEED or HOLD.
+- Use HOLD only when provided evidence shows a material eligibility, feasibility, budget, or readiness concern that would reasonably block scoring or decision-making.
 - recommendation.rationale must explain the high-level recommendation in 1-2 complete sentences using provided evidence.
+- recommendation.rationale should name the 1-3 strongest evidence-based reasons for the recommendation.
