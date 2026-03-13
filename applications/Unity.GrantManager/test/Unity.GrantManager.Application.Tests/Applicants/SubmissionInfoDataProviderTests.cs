@@ -315,5 +315,104 @@ namespace Unity.GrantManager.Applicants
             var dto = result.ShouldBeOfType<ApplicantSubmissionInfoDto>();
             dto.Submissions.ShouldBeEmpty();
         }
+
+        [Fact]
+        public async Task GetDataAsync_ShouldReturnMultipleSubmissions()
+        {
+            // Arrange
+            var request = CreateRequest();
+            var applicationId1 = Guid.NewGuid();
+            var applicationId2 = Guid.NewGuid();
+            var statusId = Guid.NewGuid();
+
+            SetupQueryables(
+                [
+                    CreateSubmission(applicationId1, "TESTUSER", s => s.ChefsSubmissionGuid = "sub-1"),
+                    CreateSubmission(applicationId2, "TESTUSER", s => s.ChefsSubmissionGuid = "sub-2")
+                ],
+                [
+                    CreateApplication(applicationId1, statusId, a => a.ReferenceNo = "REF-001"),
+                    CreateApplication(applicationId2, statusId, a => a.ReferenceNo = "REF-002")
+                ],
+                [CreateStatus(statusId, "Submitted")]);
+
+            // Act
+            var result = await _provider.GetDataAsync(request);
+
+            // Assert
+            var dto = result.ShouldBeOfType<ApplicantSubmissionInfoDto>();
+            dto.Submissions.Count.ShouldBe(2);
+            dto.Submissions.ShouldContain(s => s.ReferenceNo == "REF-001");
+            dto.Submissions.ShouldContain(s => s.ReferenceNo == "REF-002");
+        }
+
+        [Fact]
+        public async Task GetDataAsync_ShouldNormalizeSubjectWithoutAtSign()
+        {
+            // Arrange
+            var request = new ApplicantProfileInfoRequest
+            {
+                ProfileId = Guid.NewGuid(),
+                Subject = "testuser",
+                TenantId = Guid.NewGuid(),
+                Key = ApplicantProfileKeys.SubmissionInfo
+            };
+            var applicationId = Guid.NewGuid();
+            var statusId = Guid.NewGuid();
+
+            SetupQueryables(
+                [CreateSubmission(applicationId, "TESTUSER")],
+                [CreateApplication(applicationId, statusId)],
+                [CreateStatus(statusId, "Submitted")]);
+
+            // Act
+            var result = await _provider.GetDataAsync(request);
+
+            // Assert
+            var dto = result.ShouldBeOfType<ApplicantSubmissionInfoDto>();
+            dto.Submissions.Count.ShouldBe(1);
+        }
+
+        [Fact]
+        public async Task GetDataAsync_ShouldResolveLinkSourceWithTrailingSlash()
+        {
+            // Arrange
+            var request = CreateRequest();
+            _endpointManagementAppService.GetChefsApiBaseUrlAsync()
+                .Returns(Task.FromResult("https://chefs-dev.apps.silver.devops.gov.bc.ca/app/api/v1/"));
+
+            // Act
+            var result = await _provider.GetDataAsync(request);
+
+            // Assert
+            var dto = result.ShouldBeOfType<ApplicantSubmissionInfoDto>();
+            dto.LinkSource.ShouldBe("https://chefs-dev.apps.silver.devops.gov.bc.ca/app/user/view?s=");
+        }
+
+        [Fact]
+        public async Task GetDataAsync_ShouldFallBackToCreationTimeWhenSubmissionIsNullOrEmpty()
+        {
+            // Arrange
+            var request = CreateRequest();
+            var applicationId = Guid.NewGuid();
+            var statusId = Guid.NewGuid();
+            var creationTime = new DateTime(2025, 1, 15, 10, 30, 0, DateTimeKind.Utc);
+
+            SetupQueryables(
+                [CreateSubmission(applicationId, "TESTUSER", s =>
+                {
+                    s.CreationTime = creationTime;
+                    s.Submission = null!;
+                })],
+                [CreateApplication(applicationId, statusId)],
+                [CreateStatus(statusId, "Submitted")]);
+
+            // Act
+            var result = await _provider.GetDataAsync(request);
+
+            // Assert
+            var dto = result.ShouldBeOfType<ApplicantSubmissionInfoDto>();
+            dto.Submissions[0].SubmissionTime.ShouldBe(creationTime);
+        }
     }
 }

@@ -192,5 +192,25 @@ namespace Unity.GrantManager.Contacts
             // Assert
             result.DataType.ShouldBe("CONTACTINFO");
         }
+
+        [Fact]
+        public async Task GetDataAsync_ShouldNormalizeSubjectWithoutAtSign()
+        {
+            // Arrange
+            var request = new ApplicantProfileInfoRequest
+            {
+                ProfileId = Guid.NewGuid(),
+                Subject = "testuser",
+                TenantId = Guid.NewGuid(),
+                Key = ApplicantProfileKeys.ContactInfo
+            };
+
+            // Act
+            await _provider.GetDataAsync(request);
+
+            // Assert
+            await _applicantProfileContactService.Received(1).GetApplicationContactsBySubjectAsync("TESTUSER");
+            await _applicantProfileContactService.Received(1).GetApplicantAgentContactsBySubjectAsync("TESTUSER");
+        }
     }
 }
