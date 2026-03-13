@@ -69,9 +69,7 @@ public abstract class InboxWorkerBase : QuartzBackgroundWorkerBase
     }
 
     public override async Task Execute(IJobExecutionContext context)
-    {
-        Logger.LogDebug("{WorkerName} executing...", GetType().Name);
-
+    {        
         try
         {
             await ProcessPendingMessagesAsync();

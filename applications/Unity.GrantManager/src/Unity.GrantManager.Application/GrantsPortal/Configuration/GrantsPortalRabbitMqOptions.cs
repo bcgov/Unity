@@ -18,7 +18,7 @@ public class GrantsPortalRabbitMqOptions
     /// <summary>
     /// Number of days to retain processed/failed messages before cleanup.
     /// </summary>
-    public int MessageRetentionDays { get; set; } = 30;
+    public int MessageRetentionDays { get; set; } = 7;
 
     /// <summary>
     /// Cron expression for the inbox processor worker. Default: every 5 seconds.
@@ -31,7 +31,7 @@ public class GrantsPortalRabbitMqOptions
     public string OutboxProcessorCron { get; set; } = "0/5 * * * * ?";
 
     /// <summary>
-    /// Cron expression for the message cleanup worker. Default: every hour at minute 0.
+    /// Cron expression for the message cleanup worker. Default: once a day at midnight.
     /// </summary>
-    public string MessageCleanupCron { get; set; } = "0 0 0/1 * * ?";
+    public string MessageCleanupCron { get; set; } = "0 0 0 * * ?";
 }

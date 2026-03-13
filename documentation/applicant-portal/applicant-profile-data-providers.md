@@ -30,8 +30,8 @@ All providers are registered via ABP's `[ExposeServices]` attribute and collecte
 | `CONTACTINFO`    | `ContactInfoDataProvider`    | `ApplicantContactInfoDto`     | ✅ Implemented  |
 | `ADDRESSINFO`    | `AddressInfoDataProvider`    | `ApplicantAddressInfoDto`     | ✅ Implemented  |
 | `SUBMISSIONINFO` | `SubmissionInfoDataProvider` | `ApplicantSubmissionInfoDto`  | ✅ Implemented  |
-| `ORGINFO`        | `OrgInfoDataProvider`        | `ApplicantOrgInfoDto`         | ⬜ Placeholder  |
-| `PAYMENTINFO`    | `PaymentInfoDataProvider`    | `ApplicantPaymentInfoDto`     | ⬜ Placeholder  |
+| `ORGINFO`        | `OrgInfoDataProvider`        | `ApplicantOrgInfoDto`         | ✅ Implemented  |
+| `PAYMENTINFO`    | `PaymentInfoDataProvider`    | `ApplicantPaymentInfoDto`     | ✅ Implemented  |
 
 **Response:** `ApplicantProfileDto` with a polymorphic `Data` property (JSON discriminator: `dataType`).
 
@@ -55,11 +55,8 @@ graph TB
     ProviderDict --> ContactProvider["ContactInfoDataProvider<br/><b>CONTACTINFO</b>"]
     ProviderDict --> AddressProvider["AddressInfoDataProvider<br/><b>ADDRESSINFO</b>"]
     ProviderDict --> SubmissionProvider["SubmissionInfoDataProvider<br/><b>SUBMISSIONINFO</b>"]
-    ProviderDict --> OrgProvider["OrgInfoDataProvider<br/><b>ORGINFO</b><br/><i>placeholder</i>"]
-    ProviderDict --> PaymentProvider["PaymentInfoDataProvider<br/><b>PAYMENTINFO</b><br/><i>placeholder</i>"]
-
-    style OrgProvider fill:#f5f5f5,stroke:#bbb,stroke-dasharray:5
-    style PaymentProvider fill:#f5f5f5,stroke:#bbb,stroke-dasharray:5
+    ProviderDict --> OrgProvider["OrgInfoDataProvider<br/><b>ORGINFO</b>"]
+    ProviderDict --> PaymentProvider["PaymentInfoDataProvider<br/><b>PAYMENTINFO</b>"]
 ```
 
 ---
@@ -94,6 +91,20 @@ sequenceDiagram
     Svc-->>Ctrl: ApplicantProfileDto { Data = ... }
     Ctrl-->>C: 200 OK (JSON)
 ```
+
+---
+
+## Provider Interface
+
+```csharp
+public interface IApplicantProfileDataProvider
+{
+    string Key { get; }
+    Task<ApplicantProfileDataDto> GetDataAsync(ApplicantProfileInfoRequest request);
+}
+```
+
+All providers are registered via ABP's `[ExposeServices(typeof(IApplicantProfileDataProvider))]` attribute and resolved as an `IEnumerable<IApplicantProfileDataProvider>` collection. The app service indexes them by `Key` for O(1) dispatch.
 
 ---
 
@@ -333,19 +344,97 @@ flowchart LR
 
 ---
 
-### 4. OrgInfoDataProvider (`ORGINFO`) — Placeholder
+### 4. OrgInfoDataProvider (`ORGINFO`)
 
-**Purpose:** Will provide organization information for the applicant profile.
+**Purpose:** Provides organization information for the applicant profile.
 
-**Current Status:** Returns an empty `ApplicantOrgInfoDto` with no data fields populated. No dependencies or query logic implemented yet.
+**Source**: `Applicant` entity, linked via `ApplicationFormSubmission.ApplicantId`.
+
+**Query**: Joins `ApplicationFormSubmission` → `Applicant` where `OidcSub` matches the normalized subject. Returns all matching applicant records — duplicates are **not** removed, since a single user may have multiple submissions pointing to the same or different applicant records. The UI is responsible for presenting this appropriately.
+
+**Response DTO**: `ApplicantOrgInfoDto`
+
+```json
+{
+  "dataType": "ORGINFO",
+  "organizations": [
+    {
+      "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+      "orgName": "Acme Corp",
+      "organizationType": "Non-Profit",
+      "orgNumber": "BC1234567",
+      "orgStatus": "Active",
+      "nonRegOrgName": null,
+      "fiscalMonth": "April",
+      "fiscalDay": 1,
+      "organizationSize": "51-100",
+      "sector": "Technology",
+      "subSector": "Software"
+    }
+  ]
+}
+```
+
+**Fields** (from `Applicant` entity):
+
+| DTO Field | Entity Field | Type | Description |
+|-----------|-------------|------|-------------|
+| `Id` | `Applicant.Id` | `Guid` | Applicant ID — used as `organizationId` for edit commands |
+| `OrgName` | `Applicant.OrgName` | `string?` | Organization name |
+| `OrganizationType` | `Applicant.OrganizationType` | `string?` | Type of organization |
+| `OrgNumber` | `Applicant.OrgNumber` | `string?` | Organization registration number |
+| `OrgStatus` | `Applicant.OrgStatus` | `string?` | Organization status |
+| `NonRegOrgName` | `Applicant.NonRegOrgName` | `string?` | Non-registered organization name |
+| `FiscalMonth` | `Applicant.FiscalMonth` | `string?` | Fiscal year start month |
+| `FiscalDay` | `Applicant.FiscalDay` | `int?` | Fiscal year start day |
+| `OrganizationSize` | `Applicant.OrganizationSize` | `string?` | Size category |
+| `Sector` | `Applicant.Sector` | `string?` | Industry sector |
+| `SubSector` | `Applicant.SubSector` | `string?` | Industry sub-sector |
+
+**Multiple Applicants**: It is possible for a single OIDC subject to be linked to multiple distinct `Applicant` records (via different `ApplicationFormSubmission` rows). The provider returns all of them. When the same applicant is linked by multiple submissions, each join result is returned — the UI handles presentation and any eventual deduplication is a process-level concern.
+
+**Relationship to OrganizationEditHandler**: The `ORGANIZATION_EDIT_COMMAND` handler (see [RabbitMQ integration](./grants-portal-rabbitmq-integration.md)) updates a single `Applicant` entity by its ID. The `Id` field in the org info response corresponds to the `organizationId` expected by the edit command payload.
 
 ---
 
-### 5. PaymentInfoDataProvider (`PAYMENTINFO`) — Placeholder
+### 5. PaymentInfoDataProvider (`PAYMENTINFO`)
 
-**Purpose:** Will provide payment information for the applicant profile.
+**Purpose:** Provides payment information for the applicant profile.
 
-**Current Status:** Returns an empty `ApplicantPaymentInfoDto` with no data fields populated. No dependencies or query logic implemented yet.
+**Source**: `PaymentRequest` entity (from `Unity.Payments` module), linked via `ApplicationFormSubmission` → `Application` where `PaymentRequest.CorrelationId` matches the application ID.
+
+**Query**: Normalizes the OIDC subject, then joins `ApplicationFormSubmission` → `Application` to build a lookup of `ApplicationId → ReferenceNo`. Payment requests whose `CorrelationId` is in that set are returned with the application's `ReferenceNo` resolved from the lookup.
+
+**Response DTO**: `ApplicantPaymentInfoDto`
+
+```json
+{
+  "dataType": "PAYMENTINFO",
+  "payments": [
+    {
+      "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+      "paymentNumber": "PAY-100",
+      "referenceNo": "REF-001",
+      "amount": 5000.00,
+      "paymentDate": "2025-01-15",
+      "paymentStatus": "Paid"
+    }
+  ]
+}
+```
+
+**Fields** (from `PaymentRequest` entity):
+
+| DTO Field | Source | Type | Description |
+|-----------|--------|------|-------------|
+| `Id` | `PaymentRequest.Id` | `Guid` | Payment request identifier |
+| `PaymentNumber` | `PaymentRequest.PaymentNumber` | `string` | CAS payment number (empty string if null) |
+| `ReferenceNo` | `Application.ReferenceNo` | `string` | Application reference number, resolved via `CorrelationId → Application` lookup |
+| `Amount` | `PaymentRequest.Amount` | `decimal` | Requested payment amount |
+| `PaymentDate` | `PaymentRequest.PaymentDate` | `string?` | Date string populated during CAS reconciliation |
+| `PaymentStatus` | `PaymentRequest.Status` | `string` | Enum converted to string (e.g. `L1Pending`, `Submitted`, `Paid`, `Failed`) |
+
+**Cross-module note**: This provider queries the `PaymentRequest` entity directly from the `Unity.Payments` module via `IRepository<PaymentRequest, Guid>`. The `CorrelationId` on `PaymentRequest` corresponds to the `Application.Id` in the grant manager domain.
 
 ---
 
@@ -545,10 +634,10 @@ src/
 │   └── ProfileData/
 │       ├── ApplicantProfileDataDto.cs          # Polymorphic base (discriminator)
 │       ├── ApplicantContactInfoDto.cs          # CONTACTINFO response
-│       ├── ApplicantOrgInfoDto.cs              # ORGINFO response (placeholder)
+│       ├── ApplicantOrgInfoDto.cs              # ORGINFO response
 │       ├── ApplicantAddressInfoDto.cs          # ADDRESSINFO response
 │       ├── ApplicantSubmissionInfoDto.cs       # SUBMISSIONINFO response
-│       ├── ApplicantPaymentInfoDto.cs          # PAYMENTINFO response (placeholder)
+│       ├── ApplicantPaymentInfoDto.cs          # PAYMENTINFO response
 │       ├── ContactInfoItemDto.cs               # Individual contact item
 │       ├── AddressInfoItemDto.cs               # Individual address item
 │       └── SubmissionInfoItemDto.cs            # Individual submission item
@@ -560,8 +649,8 @@ src/
 │   ├── AddressInfoDataProvider.cs              # ADDRESSINFO provider
 │   ├── ContactInfoDataProvider.cs              # CONTACTINFO provider
 │   ├── SubmissionInfoDataProvider.cs           # SUBMISSIONINFO provider
-│   ├── OrgInfoDataProvider.cs                  # ORGINFO provider (placeholder)
-│   └── PaymentInfoDataProvider.cs              # PAYMENTINFO provider (placeholder)
+│   ├── OrgInfoDataProvider.cs                  # ORGINFO provider
+│   └── PaymentInfoDataProvider.cs              # PAYMENTINFO provider
 │
 ├── Unity.GrantManager.Application/Intakes/
 │   ├── IntakeFormSubmissionManager.cs          # Import orchestrator (calls ExtractOidcSub)
@@ -570,3 +659,25 @@ src/
 └── Unity.GrantManager.HttpApi/Controllers/
     └── ApplicantProfileController.cs           # API controller entry point
 ```
+
+---
+
+## Data Flow: Read vs. Write
+
+| Direction | Mechanism | Example |
+|-----------|-----------|--------|
+| **Read** (Portal → Unity) | HTTP GET via `ApplicantProfileController` → provider | Portal requests org info by key `ORGINFO` |
+| **Write** (Portal → Unity) | RabbitMQ command via [messaging pipeline](./grants-portal-rabbitmq-integration.md) | Portal sends `ORGANIZATION_EDIT_COMMAND` with applicant ID |
+
+The `Id` returned by each provider's read response is used as the entity identifier in the corresponding write command. For organization data, the `OrgInfoItemDto.Id` maps to the `organizationId` field in `PluginDataPayload`.
+
+---
+
+## Adding a New Provider
+
+1. Create a DTO class inheriting from `ApplicantProfileDataDto` in `Application.Contracts/ApplicantProfile/ProfileData/`
+2. Register the DTO as a `[JsonDerivedType]` on `ApplicantProfileDataDto`
+3. Add a key constant to `ApplicantProfileKeys`
+4. Implement `IApplicantProfileDataProvider` in `Application/ApplicantProfile/`
+5. Annotate with `[ExposeServices(typeof(IApplicantProfileDataProvider))]` and `ITransientDependency`
+6. Add unit tests following the patterns in `OrgInfoDataProviderTests` or `AddressInfoDataProviderTests`

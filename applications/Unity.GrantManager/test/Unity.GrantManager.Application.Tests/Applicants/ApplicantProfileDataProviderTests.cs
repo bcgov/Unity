@@ -9,6 +9,7 @@ using Unity.GrantManager.ApplicantProfile.ProfileData;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Integrations;
 using Unity.GrantManager.TestHelpers;
+using Unity.Payments.Domain.PaymentRequests;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.MultiTenancy;
 using Xunit;
@@ -143,17 +144,30 @@ namespace Unity.GrantManager.Applicants
             result.ShouldBeOfType<ApplicantSubmissionInfoDto>();
         }
 
+        private static PaymentInfoDataProvider CreatePaymentInfoDataProvider()
+        {
+            var currentTenant = Substitute.For<ICurrentTenant>();
+            currentTenant.Change(Arg.Any<Guid?>()).Returns(Substitute.For<IDisposable>());
+            var submissionRepo = Substitute.For<IRepository<ApplicationFormSubmission, Guid>>();
+            submissionRepo.GetQueryableAsync().Returns(Task.FromResult(Enumerable.Empty<ApplicationFormSubmission>().AsAsyncQueryable()));
+            var applicationRepo = Substitute.For<IRepository<Application, Guid>>();
+            applicationRepo.GetQueryableAsync().Returns(Task.FromResult(Enumerable.Empty<Application>().AsAsyncQueryable()));
+            var paymentRequestRepo = Substitute.For<IRepository<PaymentRequest, Guid>>();
+            paymentRequestRepo.GetQueryableAsync().Returns(Task.FromResult(Enumerable.Empty<PaymentRequest>().AsAsyncQueryable()));
+            return new PaymentInfoDataProvider(currentTenant, submissionRepo, applicationRepo, paymentRequestRepo);
+        }
+
         [Fact]
         public void PaymentInfoDataProvider_Key_ShouldMatchExpected()
         {
-            var provider = new PaymentInfoDataProvider();
+            var provider = CreatePaymentInfoDataProvider();
             provider.Key.ShouldBe(ApplicantProfileKeys.PaymentInfo);
         }
 
         [Fact]
         public async Task PaymentInfoDataProvider_GetDataAsync_ShouldReturnPaymentInfoDto()
         {
-            var provider = new PaymentInfoDataProvider();
+            var provider = CreatePaymentInfoDataProvider();
             var result = await provider.GetDataAsync(CreateRequest(ApplicantProfileKeys.PaymentInfo));
             result.ShouldNotBeNull();
             result.ShouldBeOfType<ApplicantPaymentInfoDto>();
@@ -168,7 +182,7 @@ namespace Unity.GrantManager.Applicants
                 CreateOrgInfoDataProvider(),
                 CreateAddressInfoDataProvider(),
                 CreateSubmissionInfoDataProvider(),
-                new PaymentInfoDataProvider()
+                CreatePaymentInfoDataProvider()
             ];
 
             var keys = providers.Select(p => p.Key).ToList();
