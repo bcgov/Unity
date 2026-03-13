@@ -34,6 +34,7 @@ namespace Unity.GrantManager.AI
             var application = await applicationRepository.GetAsync(applicationId);
             var formSubmission = await applicationFormSubmissionRepository.GetByApplicationAsync(applicationId);
             var attachments = await applicationChefsFileAttachmentRepository.GetListAsync(a => a.ApplicationId == applicationId);
+            var formSchema = await GetFormSchemaAsync(formSubmission?.ApplicationFormVersionId);
 
             var attachmentSummaries = attachments
                 .Where(a => !string.IsNullOrWhiteSpace(a.AISummary))
@@ -53,7 +54,7 @@ namespace Unity.GrantManager.AI
             var analysis = await aiService.GenerateApplicationAnalysisAsync(new ApplicationAnalysisRequest
             {
                 Schema = JsonSerializer.SerializeToElement(formFieldConfiguration),
-                Data = PromptDataPayloadBuilder.BuildPromptDataPayload(application, formSubmission, logger),
+                Data = PromptDataPayloadBuilder.BuildPromptDataPayload(application, formSubmission, formSchema, logger),
                 Attachments = attachmentSummaries,
                 PromptVersion = promptVersion,
                 CapturePromptIo = capturePromptIo,
@@ -64,6 +65,25 @@ namespace Unity.GrantManager.AI
             application.AIAnalysis = analysisJson;
             await applicationRepository.UpdateAsync(application);
             return analysisJson;
+        }
+
+        private async Task<string?> GetFormSchemaAsync(Guid? formVersionId)
+        {
+            if (formVersionId == null)
+            {
+                return null;
+            }
+
+            try
+            {
+                var formVersion = await applicationFormVersionRepository.GetAsync(formVersionId.Value);
+                return string.IsNullOrWhiteSpace(formVersion?.FormSchema) ? null : formVersion.FormSchema;
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "Unable to load form schema for prompt data generation for form version {FormVersionId}.", formVersionId);
+                return null;
+            }
         }
 
         private async Task<object> ExtractFormFieldConfigurationAsync(Guid formVersionId)

@@ -14,6 +14,7 @@ namespace Unity.GrantManager.AI
         IApplicationRepository applicationRepository,
         IApplicationFormRepository applicationFormRepository,
         IApplicationFormSubmissionRepository applicationFormSubmissionRepository,
+        IApplicationFormVersionRepository applicationFormVersionRepository,
         IApplicationChefsFileAttachmentRepository applicationChefsFileAttachmentRepository,
         IScoresheetRepository scoresheetRepository,
         IAIService aiService,
@@ -56,7 +57,8 @@ namespace Unity.GrantManager.AI
                 .ToList();
 
             var formSubmission = await applicationFormSubmissionRepository.GetByApplicationAsync(applicationId);
-            var promptData = PromptDataPayloadBuilder.BuildPromptDataPayload(application, formSubmission, logger);
+            var formSchema = await GetFormSchemaAsync(formSubmission?.ApplicationFormVersionId);
+            var promptData = PromptDataPayloadBuilder.BuildPromptDataPayload(application, formSubmission, formSchema, logger);
 
             var allSectionResults = new Dictionary<string, object>();
             foreach (var section in scoresheet.Sections.OrderBy(s => s.Order))
@@ -110,8 +112,26 @@ namespace Unity.GrantManager.AI
             var validatedJson = ValidateScoresheetJson(combinedResults);
             application.AIScoresheetAnswers = validatedJson;
             await applicationRepository.UpdateAsync(application);
-
             return validatedJson;
+        }
+
+        private async Task<string?> GetFormSchemaAsync(Guid? formVersionId)
+        {
+            if (formVersionId == null)
+            {
+                return null;
+            }
+
+            try
+            {
+                var formVersion = await applicationFormVersionRepository.GetAsync(formVersionId.Value);
+                return string.IsNullOrWhiteSpace(formVersion?.FormSchema) ? null : formVersion.FormSchema;
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "Unable to load form schema for scoresheet prompt data generation for form version {FormVersionId}.", formVersionId);
+                return null;
+            }
         }
 
         private static string ValidateScoresheetJson(string scoresheetAnswers)

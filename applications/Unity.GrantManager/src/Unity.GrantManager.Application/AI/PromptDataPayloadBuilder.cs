@@ -1,6 +1,8 @@
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text.Json;
 using Unity.GrantManager.Applications;
 
@@ -21,13 +23,24 @@ namespace Unity.GrantManager.AI
             "attachments"
         };
 
+        private static readonly HashSet<string> NonDataComponentTypes = new(StringComparer.OrdinalIgnoreCase)
+        {
+            "button",
+            "simplebuttonadvanced",
+            "html",
+            "htmlelement",
+            "content",
+            "simpleseparator"
+        };
+
         public static JsonElement BuildPromptDataPayload(
             Application application,
             ApplicationFormSubmission? formSubmission,
+            string? formSchema,
             ILogger logger)
         {
             var fallbackPayload = BuildFallbackPromptDataPayload(application);
-            if (TryBuildPromptDataValues(formSubmission?.Submission, out var values, out var exception))
+            if (TryBuildPromptDataValues(formSubmission?.Submission, formSchema, out var values, out var exception))
             {
                 return JsonSerializer.SerializeToElement(values);
             }
@@ -64,6 +77,7 @@ namespace Unity.GrantManager.AI
 
         private static bool TryBuildPromptDataValues(
             string? submissionJson,
+            string? formSchema,
             out Dictionary<string, JsonElement> values,
             out Exception? exception)
         {
@@ -83,7 +97,7 @@ namespace Unity.GrantManager.AI
                     return false;
                 }
 
-                values = BuildPromptDataValues(submissionData);
+                values = BuildPromptDataValues(submissionData, formSchema);
                 return true;
             }
             catch (Exception ex)
@@ -119,18 +133,94 @@ namespace Unity.GrantManager.AI
             return true;
         }
 
-        private static Dictionary<string, JsonElement> BuildPromptDataValues(JsonElement submissionData)
+        private static Dictionary<string, JsonElement> BuildPromptDataValues(JsonElement submissionData, string? formSchema)
         {
             var deserializedValues = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(submissionData.GetRawText()) ??
                                      new Dictionary<string, JsonElement>();
             var values = new Dictionary<string, JsonElement>(deserializedValues, StringComparer.OrdinalIgnoreCase);
+            var allowedSchemaKeys = ExtractAllowedSchemaKeys(formSchema);
 
             foreach (var excludedKey in ExcludedPromptDataKeys)
             {
                 values.Remove(excludedKey);
             }
 
+            if (allowedSchemaKeys.Count > 0)
+            {
+                foreach (var key in values.Keys.ToList())
+                {
+                    if (!allowedSchemaKeys.Contains(key))
+                    {
+                        values.Remove(key);
+                    }
+                }
+            }
+
             return values;
+        }
+
+        private static HashSet<string> ExtractAllowedSchemaKeys(string? formSchema)
+        {
+            if (string.IsNullOrWhiteSpace(formSchema))
+            {
+                return new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            }
+
+            try
+            {
+                var schema = JObject.Parse(formSchema);
+                if (schema["components"] is not JArray components)
+                {
+                    return new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                }
+
+                var keys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                ExtractSchemaKeys(components, keys);
+                return keys;
+            }
+            catch
+            {
+                return new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            }
+        }
+
+        private static void ExtractSchemaKeys(JArray components, HashSet<string> keys)
+        {
+            foreach (var component in components.OfType<JObject>())
+            {
+                var key = component["key"]?.ToString();
+                var type = component["type"]?.ToString();
+                var isInput = component["input"]?.Value<bool>() == true;
+
+                if (!string.IsNullOrWhiteSpace(key) &&
+                    !string.IsNullOrWhiteSpace(type) &&
+                    !NonDataComponentTypes.Contains(type) &&
+                    isInput)
+                {
+                    keys.Add(key);
+                }
+
+                ProcessNestedSchemaComponents(component, keys);
+            }
+        }
+
+        private static void ProcessNestedSchemaComponents(JObject component, HashSet<string> keys)
+        {
+            if (component["components"] is JArray nestedComponents)
+            {
+                ExtractSchemaKeys(nestedComponents, keys);
+            }
+
+            if (component["columns"] is JArray columns)
+            {
+                foreach (var column in columns.OfType<JObject>())
+                {
+                    if (column["components"] is JArray columnComponents)
+                    {
+                        ExtractSchemaKeys(columnComponents, keys);
+                    }
+                }
+            }
         }
     }
 }

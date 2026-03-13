@@ -287,7 +287,8 @@ namespace Unity.GrantManager.Intakes.Handlers
                         application.Id);
                 }
 
-                var analysisData = PromptDataPayloadBuilder.BuildPromptDataPayload(application, formSubmission, _logger);
+                var formSchema = await GetFormSchemaAsync(formSubmission?.ApplicationFormVersionId);
+                var analysisData = PromptDataPayloadBuilder.BuildPromptDataPayload(application, formSubmission, formSchema, _logger);
                 _logger.LogInformation("Generating analysis for application {ApplicationId}", application.Id);
 
                 _logger.LogDebug("Generating AI analysis for application {ApplicationId} with {AttachmentCount} attachment summaries",
@@ -381,7 +382,8 @@ namespace Unity.GrantManager.Intakes.Handlers
                 var allSectionResults = new Dictionary<string, object>();
                 var scoresheetAttachments = BuildScoresheetAttachments(attachments);
                 var formSubmission = await _applicationFormSubmissionRepository.GetByApplicationAsync(application.Id);
-                var scoresheetData = PromptDataPayloadBuilder.BuildPromptDataPayload(application, formSubmission, _logger);
+                var formSchema = await GetFormSchemaAsync(formSubmission?.ApplicationFormVersionId);
+                var scoresheetData = PromptDataPayloadBuilder.BuildPromptDataPayload(application, formSubmission, formSchema, _logger);
                 LogFormSubmissionPreview(formSubmission?.RenderedHTML);
 
                 foreach (var section in scoresheet.Sections.OrderBy(s => s.Order))
@@ -636,6 +638,25 @@ namespace Unity.GrantManager.Intakes.Handlers
             {
                 _logger.LogError(ex, "Error extracting form field schema for form version {FormVersionId}", formVersionId);
                 return BuildEmptyFormFieldSchema();
+            }
+        }
+
+        private async Task<string?> GetFormSchemaAsync(Guid? formVersionId)
+        {
+            if (formVersionId == null)
+            {
+                return null;
+            }
+
+            try
+            {
+                var formVersion = await _applicationFormVersionRepository.GetAsync(formVersionId.Value);
+                return string.IsNullOrWhiteSpace(formVersion?.FormSchema) ? null : formVersion.FormSchema;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Unable to load form schema for prompt data generation for form version {FormVersionId}.", formVersionId);
+                return null;
             }
         }
 
