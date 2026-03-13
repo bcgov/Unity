@@ -24,6 +24,10 @@ namespace Unity.GrantManager.AI
         };
 
         private const string ComponentsKey = "components";
+        private static readonly HashSet<string> ExcludedSchemaKeys = new(StringComparer.OrdinalIgnoreCase)
+        {
+            "applicantAgent"
+        };
 
         public async Task<string> RegenerateAndSaveAsync(Guid applicationId, string? promptVersion = null, bool capturePromptIo = false)
         {
@@ -40,24 +44,6 @@ namespace Unity.GrantManager.AI
                 })
                 .ToList();
 
-            var notSpecified = "Not specified";
-            var applicationContent = $@"
-Project Name: {application.ProjectName}
-Reference Number: {application.ReferenceNo}
-Requested Amount: ${application.RequestedAmount:N2}
-Total Project Budget: ${application.TotalProjectBudget:N2}
-Project Summary: {application.ProjectSummary ?? "Not provided"}
-City: {application.City ?? notSpecified}
-Economic Region: {application.EconomicRegion ?? notSpecified}
-Community: {application.Community ?? notSpecified}
-Project Start Date: {application.ProjectStartDate?.ToShortDateString() ?? notSpecified}
-Project End Date: {application.ProjectEndDate?.ToShortDateString() ?? notSpecified}
-Submission Date: {application.SubmissionDate.ToShortDateString()}
-
-FULL APPLICATION FORM SUBMISSION:
-{formSubmission?.RenderedHTML ?? "Form submission content not available"}
-";
-
             object formFieldConfiguration = new { message = "Form configuration not available." };
             if (formSubmission?.ApplicationFormVersionId != null)
             {
@@ -67,7 +53,7 @@ FULL APPLICATION FORM SUBMISSION:
             var analysis = await aiService.GenerateApplicationAnalysisAsync(new ApplicationAnalysisRequest
             {
                 Schema = JsonSerializer.SerializeToElement(formFieldConfiguration),
-                Data = JsonSerializer.SerializeToElement(new { submission_content = applicationContent }),
+                Data = PromptDataPayloadBuilder.BuildPromptDataPayload(application, formSubmission, logger),
                 Attachments = attachmentSummaries,
                 PromptVersion = promptVersion,
                 CapturePromptIo = capturePromptIo,
@@ -123,7 +109,7 @@ FULL APPLICATION FORM SUBMISSION:
                 var type = component["type"]?.ToString();
                 var skipTypes = new HashSet<string> { "button", "simplebuttonadvanced", "html", "htmlelement", "content", "simpleseparator" };
 
-                if (string.IsNullOrEmpty(key) || string.IsNullOrEmpty(type) || skipTypes.Contains(type))
+                if (string.IsNullOrEmpty(key) || string.IsNullOrEmpty(type) || skipTypes.Contains(type) || ExcludedSchemaKeys.Contains(key))
                 {
                     ProcessNestedFieldRequirements(component, type, requiredFields, optionalFields, currentPath);
                     continue;

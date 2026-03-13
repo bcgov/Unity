@@ -56,23 +56,7 @@ namespace Unity.GrantManager.AI
                 .ToList();
 
             var formSubmission = await applicationFormSubmissionRepository.GetByApplicationAsync(applicationId);
-            var notSpecified = "Not specified";
-            var applicationContent = $@"
-Project Name: {application.ProjectName}
-Reference Number: {application.ReferenceNo}
-Requested Amount: ${application.RequestedAmount:N2}
-Total Project Budget: ${application.TotalProjectBudget:N2}
-Project Summary: {application.ProjectSummary ?? "Not provided"}
-City: {application.City ?? notSpecified}
-Economic Region: {application.EconomicRegion ?? notSpecified}
-Community: {application.Community ?? notSpecified}
-Project Start Date: {application.ProjectStartDate?.ToShortDateString() ?? notSpecified}
-Project End Date: {application.ProjectEndDate?.ToShortDateString() ?? notSpecified}
-Submission Date: {application.SubmissionDate.ToShortDateString()}
-
-FULL APPLICATION FORM SUBMISSION:
-{formSubmission?.RenderedHTML ?? "Form submission content not available"}
-";
+            var promptData = PromptDataPayloadBuilder.BuildPromptDataPayload(application, formSubmission, logger);
 
             var allSectionResults = new Dictionary<string, object>();
             foreach (var section in scoresheet.Sections.OrderBy(s => s.Order))
@@ -96,7 +80,7 @@ FULL APPLICATION FORM SUBMISSION:
 
                     var sectionRequest = new ScoresheetSectionRequest
                     {
-                        Data = JsonSerializer.SerializeToElement(new { submission_content = applicationContent }),
+                        Data = promptData,
                         Attachments = attachmentSummaries,
                         SectionName = section.Name,
                         SectionSchema = JsonSerializer.SerializeToElement(sectionQuestionsData, _jsonOptions),
