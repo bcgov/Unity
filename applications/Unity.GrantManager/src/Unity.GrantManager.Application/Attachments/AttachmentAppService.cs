@@ -189,7 +189,7 @@ public class AttachmentAppService(
         return attachment.CreatorId;
     }
 
-    public async Task<string> GenerateAISummaryAttachmentAsync(Guid attachmentId)
+    public async Task<string> GenerateAISummaryAttachmentAsync(Guid attachmentId, string? promptVersion = null, bool capturePromptIo = false)
     {
         if (!await aiService.IsAvailableAsync())
         {
@@ -205,7 +205,10 @@ public class AttachmentAppService(
         {
             FileName = fileName,
             FileContent = fileContent,
-            ContentType = contentType
+            ContentType = contentType,
+            PromptVersion = promptVersion,
+            CapturePromptIo = capturePromptIo,
+            CaptureContextId = attachment.ApplicationId.ToString()
         });
 
         attachment.AISummary = summaryResponse.Summary;
@@ -214,7 +217,7 @@ public class AttachmentAppService(
         return summaryResponse.Summary;
     }
     
-    public async Task<List<string>> GenerateAISummariesAttachmentsAsync(List<Guid> attachmentIds)
+    public async Task<List<string>> GenerateAISummariesAttachmentsAsync(List<Guid> attachmentIds, string? promptVersion = null, bool capturePromptIo = false)
     {
         if (!await aiService.IsAvailableAsync())
         {
@@ -228,7 +231,7 @@ public class AttachmentAppService(
         {
             try
             {
-                var summary = await GenerateAISummaryAttachmentAsync(attachmentId);
+                var summary = await GenerateAISummaryAttachmentAsync(attachmentId, promptVersion, capturePromptIo);
                 summaries.Add(summary);
             }
             catch (Exception ex)

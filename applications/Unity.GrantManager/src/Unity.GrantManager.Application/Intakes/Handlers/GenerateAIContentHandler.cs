@@ -39,15 +39,6 @@ namespace Unity.GrantManager.Intakes.Handlers
         {
             "button", "simplebuttonadvanced", "html", "htmlelement", "content", "simpleseparator"
         };
-        private static readonly HashSet<string> ExcludedPromptDataKeys = new(StringComparer.OrdinalIgnoreCase)
-        {
-            "simplefile",
-            "applicantAgent",
-            "submit",
-            "lateEntry",
-            "metadata",
-            "full_application_form_submission"
-        };
         private static readonly string[] AllowedAnalysisRootProperties =
         {
             AIJsonKeys.Rating,
@@ -287,7 +278,8 @@ namespace Unity.GrantManager.Intakes.Handlers
                         application.Id);
                 }
 
-                var analysisData = BuildPromptDataPayload(application, formSubmission);
+                var formSchema = await GetFormSchemaAsync(formSubmission?.ApplicationFormVersionId);
+                var analysisData = PromptDataPayloadBuilder.BuildPromptDataPayload(application, formSubmission, formSchema, _logger);
                 _logger.LogInformation("Generating analysis for application {ApplicationId}", application.Id);
 
                 _logger.LogDebug("Generating AI analysis for application {ApplicationId} with {AttachmentCount} attachment summaries",
@@ -331,25 +323,6 @@ namespace Unity.GrantManager.Intakes.Handlers
                     Summary = a.AISummary!.Trim()
                 })
                 .ToList();
-        }
-
-        private static object BuildFallbackPromptDataPayload(Application application)
-        {
-            var notSpecified = "Not specified";
-            return new
-            {
-                project_name = application.ProjectName,
-                reference_number = application.ReferenceNo,
-                requested_amount = application.RequestedAmount,
-                total_project_budget = application.TotalProjectBudget,
-                project_summary = application.ProjectSummary ?? "Not provided",
-                city = application.City ?? notSpecified,
-                economic_region = application.EconomicRegion ?? notSpecified,
-                community = application.Community ?? notSpecified,
-                project_start_date = application.ProjectStartDate,
-                project_end_date = application.ProjectEndDate,
-                submission_date = application.SubmissionDate
-            };
         }
 
         private async Task GenerateScoresheetAnalysisAsync(Application application, List<ApplicationChefsFileAttachment> attachments)
@@ -400,7 +373,8 @@ namespace Unity.GrantManager.Intakes.Handlers
                 var allSectionResults = new Dictionary<string, object>();
                 var scoresheetAttachments = BuildScoresheetAttachments(attachments);
                 var formSubmission = await _applicationFormSubmissionRepository.GetByApplicationAsync(application.Id);
-                var scoresheetData = BuildPromptDataPayload(application, formSubmission);
+                var formSchema = await GetFormSchemaAsync(formSubmission?.ApplicationFormVersionId);
+                var scoresheetData = PromptDataPayloadBuilder.BuildPromptDataPayload(application, formSubmission, formSchema, _logger);
                 LogFormSubmissionPreview(formSubmission?.RenderedHTML);
 
                 foreach (var section in scoresheet.Sections.OrderBy(s => s.Order))
@@ -441,85 +415,6 @@ namespace Unity.GrantManager.Intakes.Handlers
                     Summary = a.AISummary!.Trim()
                 })
                 .ToList();
-        }
-
-        private JsonElement BuildPromptDataPayload(Application application, ApplicationFormSubmission? formSubmission)
-        {
-            var fallbackPayload = BuildFallbackPromptDataPayload(application);
-            if (TryBuildPromptDataValues(application.Id, formSubmission, out var values))
-            {
-                return JsonSerializer.SerializeToElement(values);
-            }
-
-            return JsonSerializer.SerializeToElement(fallbackPayload);
-        }
-
-        private bool TryBuildPromptDataValues(Guid applicationId, ApplicationFormSubmission? formSubmission, out Dictionary<string, JsonElement> values)
-        {
-            values = new Dictionary<string, JsonElement>(StringComparer.OrdinalIgnoreCase);
-            if (string.IsNullOrWhiteSpace(formSubmission?.Submission))
-            {
-                return false;
-            }
-
-            try
-            {
-                using var submissionDoc = JsonDocument.Parse(formSubmission.Submission);
-                if (!TryExtractSubmissionDataObject(submissionDoc.RootElement, out var submissionData))
-                {
-                    return false;
-                }
-
-                values = BuildPromptDataValues(submissionData);
-                return true;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex,
-                    "Failed to parse form submission JSON for prompt payload generation for application {ApplicationId}.",
-                    applicationId);
-                return false;
-            }
-        }
-
-        private static bool TryExtractSubmissionDataObject(JsonElement root, out JsonElement submissionData)
-        {
-            submissionData = root;
-            if (root.ValueKind != JsonValueKind.Object)
-            {
-                return false;
-            }
-
-            if (root.TryGetProperty("data", out var dataElement) && dataElement.ValueKind == JsonValueKind.Object)
-            {
-                submissionData = dataElement;
-                return true;
-            }
-
-            if (root.TryGetProperty("submission", out var submissionElement) &&
-                submissionElement.ValueKind == JsonValueKind.Object &&
-                submissionElement.TryGetProperty("data", out var nestedDataElement) &&
-                nestedDataElement.ValueKind == JsonValueKind.Object)
-            {
-                submissionData = nestedDataElement;
-                return true;
-            }
-
-            return root.ValueKind == JsonValueKind.Object;
-        }
-
-        private static Dictionary<string, JsonElement> BuildPromptDataValues(JsonElement submissionData)
-        {
-            var deserializedValues = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(submissionData.GetRawText()) ??
-                                     new Dictionary<string, JsonElement>();
-            var values = new Dictionary<string, JsonElement>(deserializedValues, StringComparer.OrdinalIgnoreCase);
-
-            foreach (var excludedKey in ExcludedPromptDataKeys)
-            {
-                values.Remove(excludedKey);
-            }
-
-            return values;
         }
 
         private void LogFormSubmissionPreview(string? renderedFormHtml)
@@ -734,6 +629,25 @@ namespace Unity.GrantManager.Intakes.Handlers
             {
                 _logger.LogError(ex, "Error extracting form field schema for form version {FormVersionId}", formVersionId);
                 return BuildEmptyFormFieldSchema();
+            }
+        }
+
+        private async Task<string?> GetFormSchemaAsync(Guid? formVersionId)
+        {
+            if (formVersionId == null)
+            {
+                return null;
+            }
+
+            try
+            {
+                var formVersion = await _applicationFormVersionRepository.GetAsync(formVersionId.Value);
+                return string.IsNullOrWhiteSpace(formVersion?.FormSchema) ? null : formVersion.FormSchema;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Unable to load form schema for prompt data generation for form version {FormVersionId}.", formVersionId);
+                return null;
             }
         }
 

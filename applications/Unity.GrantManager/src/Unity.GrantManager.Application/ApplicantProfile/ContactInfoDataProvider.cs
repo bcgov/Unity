@@ -26,16 +26,15 @@ namespace Unity.GrantManager.ApplicantProfile
                 Contacts = []
             };
 
+            var normalizedSubject = SubjectNormalizer.Normalize(request.Subject);
+            if (normalizedSubject is null) return dto;
+
             var tenantId = request.TenantId;
 
             using (currentTenant.Change(tenantId))
             {
                 var profileContacts = await applicantProfileContactService.GetProfileContactsAsync(request.ProfileId);
                 dto.Contacts.AddRange(profileContacts);
-
-                var normalizedSubject = request.Subject.Contains('@')
-                    ? request.Subject[..request.Subject.IndexOf('@')].ToUpperInvariant()
-                    : request.Subject.ToUpperInvariant();
 
                 var applicationContacts = await applicantProfileContactService.GetApplicationContactsBySubjectAsync(normalizedSubject);
                 dto.Contacts.AddRange(applicationContacts);

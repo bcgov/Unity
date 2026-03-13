@@ -24,12 +24,17 @@ namespace Unity.GrantManager.AI
         };
 
         private const string ComponentsKey = "components";
+        private static readonly HashSet<string> ExcludedSchemaKeys = new(StringComparer.OrdinalIgnoreCase)
+        {
+            "applicantAgent"
+        };
 
-        public async Task<string> RegenerateAndSaveAsync(Guid applicationId)
+        public async Task<string> RegenerateAndSaveAsync(Guid applicationId, string? promptVersion = null, bool capturePromptIo = false)
         {
             var application = await applicationRepository.GetAsync(applicationId);
             var formSubmission = await applicationFormSubmissionRepository.GetByApplicationAsync(applicationId);
             var attachments = await applicationChefsFileAttachmentRepository.GetListAsync(a => a.ApplicationId == applicationId);
+            var formSchema = await GetFormSchemaAsync(formSubmission?.ApplicationFormVersionId);
 
             var attachmentSummaries = attachments
                 .Where(a => !string.IsNullOrWhiteSpace(a.AISummary))
@@ -40,24 +45,6 @@ namespace Unity.GrantManager.AI
                 })
                 .ToList();
 
-            var notSpecified = "Not specified";
-            var applicationContent = $@"
-Project Name: {application.ProjectName}
-Reference Number: {application.ReferenceNo}
-Requested Amount: ${application.RequestedAmount:N2}
-Total Project Budget: ${application.TotalProjectBudget:N2}
-Project Summary: {application.ProjectSummary ?? "Not provided"}
-City: {application.City ?? notSpecified}
-Economic Region: {application.EconomicRegion ?? notSpecified}
-Community: {application.Community ?? notSpecified}
-Project Start Date: {application.ProjectStartDate?.ToShortDateString() ?? notSpecified}
-Project End Date: {application.ProjectEndDate?.ToShortDateString() ?? notSpecified}
-Submission Date: {application.SubmissionDate.ToShortDateString()}
-
-FULL APPLICATION FORM SUBMISSION:
-{formSubmission?.RenderedHTML ?? "Form submission content not available"}
-";
-
             object formFieldConfiguration = new { message = "Form configuration not available." };
             if (formSubmission?.ApplicationFormVersionId != null)
             {
@@ -67,14 +54,36 @@ FULL APPLICATION FORM SUBMISSION:
             var analysis = await aiService.GenerateApplicationAnalysisAsync(new ApplicationAnalysisRequest
             {
                 Schema = JsonSerializer.SerializeToElement(formFieldConfiguration),
-                Data = JsonSerializer.SerializeToElement(new { submission_content = applicationContent }),
-                Attachments = attachmentSummaries
+                Data = PromptDataPayloadBuilder.BuildPromptDataPayload(application, formSubmission, formSchema, logger),
+                Attachments = attachmentSummaries,
+                PromptVersion = promptVersion,
+                CapturePromptIo = capturePromptIo,
+                CaptureContextId = applicationId.ToString()
             });
 
             var analysisJson = JsonSerializer.Serialize(analysis, _jsonOptionsIndented);
             application.AIAnalysis = analysisJson;
             await applicationRepository.UpdateAsync(application);
             return analysisJson;
+        }
+
+        private async Task<string?> GetFormSchemaAsync(Guid? formVersionId)
+        {
+            if (formVersionId == null)
+            {
+                return null;
+            }
+
+            try
+            {
+                var formVersion = await applicationFormVersionRepository.GetAsync(formVersionId.Value);
+                return string.IsNullOrWhiteSpace(formVersion?.FormSchema) ? null : formVersion.FormSchema;
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "Unable to load form schema for prompt data generation for form version {FormVersionId}.", formVersionId);
+                return null;
+            }
         }
 
         private async Task<object> ExtractFormFieldConfigurationAsync(Guid formVersionId)
@@ -120,7 +129,7 @@ FULL APPLICATION FORM SUBMISSION:
                 var type = component["type"]?.ToString();
                 var skipTypes = new HashSet<string> { "button", "simplebuttonadvanced", "html", "htmlelement", "content", "simpleseparator" };
 
-                if (string.IsNullOrEmpty(key) || string.IsNullOrEmpty(type) || skipTypes.Contains(type))
+                if (string.IsNullOrEmpty(key) || string.IsNullOrEmpty(type) || skipTypes.Contains(type) || ExcludedSchemaKeys.Contains(key))
                 {
                     ProcessNestedFieldRequirements(component, type, requiredFields, optionalFields, currentPath);
                     continue;

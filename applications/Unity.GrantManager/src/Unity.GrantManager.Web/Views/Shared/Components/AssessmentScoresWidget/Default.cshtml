@@ -19,10 +19,28 @@
     <div class="container-fluid px-3" id="assessment-scoresheet">
         @if (Model.Scoresheet.Sections.Any())
         {
-            <div class="d-flex justify-content-end mb-3 scoresheet-top-btn-group">
-                <button type="button" class="btn unt-btn-outline-primary btn-outline-primary me-2" id="regenerateAiScoresheetBtn" onclick="regenerateAIScoresheetAnswers()"><i class="unt-icon-sm fa-solid fa-wand-sparkles"></i>Refresh Scoring</button>
-                <button type="button" class="btn unt-btn-outline-primary btn-outline-primary me-2" onclick="expandAllAccordions('assessment-scoresheet')"><i class="unt-icon-sm fa-solid fa-angles-down"></i>Expand All</button>
-                <button type="button" class="btn unt-btn-outline-primary btn-outline-primary" onclick="collapseAllAccordions('assessment-scoresheet')"><i class="unt-icon-sm fa-solid fa-angles-up"></i>Collapse All</button>
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 pt-4 pb-2">
+                <h6 class="fw-bold m-0">Assessment Scores</h6>
+                <div class="d-flex justify-content-end flex-wrap gap-2 scoresheet-top-btn-group">
+                    <button type="button" class="btn unt-btn-outline-primary btn-outline-primary" id="regenerateAiScoresheetBtn" onclick="regenerateAIScoresheetAnswers()">
+                        <span class="ai-button-content">
+                            <i class="unt-icon-sm fa-solid fa-wand-sparkles"></i>
+                            <span>Generate</span>
+                        </span>
+                    </button>
+                    <button type="button" class="btn unt-btn-outline-primary btn-outline-primary" onclick="expandAllAccordions('assessment-scoresheet')">
+                        <span class="ai-button-content">
+                            <i class="unt-icon-sm fa-solid fa-angles-down"></i>
+                            <span>Expand All</span>
+                        </span>
+                    </button>
+                    <button type="button" class="btn unt-btn-outline-primary btn-outline-primary" onclick="collapseAllAccordions('assessment-scoresheet')">
+                        <span class="ai-button-content">
+                            <i class="unt-icon-sm fa-solid fa-angles-up"></i>
+                            <span>Collapse All</span>
+                        </span>
+                    </button>
+                </div>
             </div>
         }
         <div>

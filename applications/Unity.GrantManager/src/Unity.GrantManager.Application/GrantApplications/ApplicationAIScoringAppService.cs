@@ -13,11 +13,11 @@ public class ApplicationAIScoringAppService(
     IApplicationScoresheetAnalysisService applicationScoresheetAnalysisService)
     : GrantManagerAppService, IApplicationAIScoringAppService
 {
-    public async Task<string> GenerateAIScoresheetAnswersAsync(Guid applicationId)
+    public async Task<string> GenerateAIScoresheetAnswersAsync(Guid applicationId, string? promptVersion = null, bool capturePromptIo = false)
     {
         try
         {
-            return await applicationScoresheetAnalysisService.RegenerateAndSaveAsync(applicationId);
+            return await applicationScoresheetAnalysisService.RegenerateAndSaveAsync(applicationId, promptVersion, capturePromptIo);
         }
         catch (Exception ex)
         {
