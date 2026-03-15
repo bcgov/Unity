@@ -402,9 +402,14 @@ def ask():
         # Create Metabase card
         logger.info(f"Creating Metabase card with SQL length: {len(sql)}")
         logger.debug("Calling metabase_client.create_card...")
+        initial_viz_settings = {}
+        if "map" in metadata.get("visualization_options", []):
+            initial_viz_settings["map.region"] = "1c5d50ee-4389-4593-37c1-fa8d4687ff4c"
+
         card_id = metabase_client.create_card(
             sql, db_id, collection_id, metadata['title'],
-            tenant_id=tenant_id
+            tenant_id=tenant_id,
+            visualization_settings=initial_viz_settings
         )
         logger.info(f"Card created successfully with ID: {card_id}")
 
