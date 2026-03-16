@@ -76,15 +76,17 @@ public class EmailNotificationService(
                 var scheme = "https";
                 var request = (httpContextAccessor.HttpContext?.Request) ?? throw new InvalidOperationException("HttpContext or Request is null.");
                 var host = request.Host.ToUriComponent();
-                var pathBase = "/GrantApplications/Details?ApplicationId=";
-                var baseUrl = $"{scheme}://{host}{pathBase}";
-                var commentLink = $"{baseUrl}{input.ApplicationId}";
+                const int ApplicantCommentType = 2;
+                var pathBase = input.CommentType == ApplicantCommentType
+                    ? "/GrantApplicants/Details?applicantId="
+                    : "/GrantApplications/Details?ApplicationId=";
+                var commentLink = $"{scheme}://{host}{pathBase}{input.OwnerId}";
                 var subject = $"Unity-Comment: {input.Subject}";
                 var fromEmail = defaultFromAddress ?? "NoReply@gov.bc.ca";
                 string htmlBody = $@"
                 <html lang='en' xmlns='http://www.w3.org/1999/xhtml' xmlns:v='urn:schemas-microsoft-com:vml' xmlns:o='urn:schemas-microsoft-com:office:office'>
                 <body style='font-family: Arial, sans-serif;'>
-                    <h3 style='color: #0a58ca;'>{input.From} mentioned you in a comment.</h3>
+                    <h3 style='color: #0a58ca;'>{CurrentUser.Name ?? CurrentUser.UserName} mentioned you in a comment.</h3>
                     <table style='width: 100%; background-color: #f9f9f9; border-left: 3px solid #ccc;'>
                         <tr>
                             <td style='padding: 15px;'>

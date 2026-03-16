@@ -140,7 +140,7 @@
                         @await Component.InvokeAsync("CommentsWidget", new {
                             ownerId = Model.ApplicantId,
                             commentType = Unity.GrantManager.Comments.CommentType.ApplicantComment,
-                            currentUserId = CurrentUser.Id })
+                            currentUserId = CurrentUser.GetId() })
                     </div>
                 </div>
                 @*-------- Comments Tab Section END ---------*@
