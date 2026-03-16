@@ -8,14 +8,26 @@ namespace Unity.GrantManager.AI
         InvalidOutput
     }
 
-    internal sealed record AIOperationResult(AIOperationOutcome Outcome, string Content)
+    internal sealed record AIOperationResult(
+        AIOperationOutcome Outcome,
+        AIProviderResponse Response)
     {
-        public static AIOperationResult Success(string content) => new(AIOperationOutcome.Success, content);
+        public string Content => Response.Content;
 
-        public static AIOperationResult TransientFailure(string content = "") => new(AIOperationOutcome.TransientFailure, content);
+        public string CaptureOutput => Response.CaptureOutput;
 
-        public static AIOperationResult PermanentFailure(string content = "") => new(AIOperationOutcome.PermanentFailure, content);
+        public static AIOperationResult Success(AIProviderResponse? response = null) =>
+            new(AIOperationOutcome.Success, response ?? AIProviderResponse.Empty);
 
-        public static AIOperationResult InvalidOutput(string content = "") => new(AIOperationOutcome.InvalidOutput, content);
+        public static AIOperationResult TransientFailure(AIProviderResponse? response = null) =>
+            new(AIOperationOutcome.TransientFailure, response ?? AIProviderResponse.Empty);
+
+        public static AIOperationResult PermanentFailure(AIProviderResponse? response = null) =>
+            new(AIOperationOutcome.PermanentFailure, response ?? AIProviderResponse.Empty);
+
+        public static AIOperationResult InvalidOutput(AIProviderResponse? response = null) =>
+            new(AIOperationOutcome.InvalidOutput, response ?? AIProviderResponse.Empty);
+
+        public AIOperationResult WithOutcome(AIOperationOutcome outcome) => new(outcome, Response);
     }
 }

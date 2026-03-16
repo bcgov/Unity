@@ -13,8 +13,8 @@ namespace Unity.GrantManager.Web.AI
             string.Equals(webHostEnvironment.EnvironmentName, "Development", StringComparison.OrdinalIgnoreCase);
 
         public string DefaultPromptVersion =>
-            string.IsNullOrWhiteSpace(configuration["Azure:OpenAI:PromptVersion"])
+            string.IsNullOrWhiteSpace(configuration["Azure:Operations:Defaults:PromptVersion"])
                 ? "v1"
-                : configuration["Azure:OpenAI:PromptVersion"]!.Trim().ToLowerInvariant();
+                : configuration["Azure:Operations:Defaults:PromptVersion"]!.Trim().ToLowerInvariant();
     }
 }
