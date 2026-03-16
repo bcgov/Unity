@@ -374,7 +374,7 @@ function initializeResizableDivider() {
 
 function initCommentsWidget() {
     const currentUserId = decodeURIComponent($('#CurrentUserId').val());
-    let applicantCommentsWidgetManager = new abp.WidgetManager({
+    const applicantCommentsWidgetManager = new abp.WidgetManager({
         wrapper: '#applicantCommentsWidget',
         filterCallback: function () {
             return {
@@ -389,4 +389,14 @@ function initCommentsWidget() {
         applicantCommentsWidgetManager.refresh();
         updateCommentsCounters();
     });
+}
 
+function updateCommentsCounters() {
+    setTimeout(() => {
+        $('.comments-container')
+            .map(function () {
+                $('#' + $(this).data('counttag')).html($(this).data('count'));
+            })
+            .get();
+    }, 500);
+}
