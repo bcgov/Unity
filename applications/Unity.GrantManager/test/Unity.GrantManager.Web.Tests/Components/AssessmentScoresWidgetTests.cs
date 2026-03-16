@@ -10,6 +10,8 @@ using Unity.Flex.Domain.Scoresheets;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Assessments;
 using Unity.GrantManager.Web.Views.Shared.Components.AssessmentScoresWidget;
+using Volo.Abp.Authorization.Permissions;
+using Volo.Abp.Features;
 using Xunit;
 
 namespace Unity.GrantManager.Components
@@ -25,6 +27,8 @@ namespace Unity.GrantManager.Components
             var scoresheetRepository = Substitute.For<IScoresheetRepository>();
             var instanceRepository = Substitute.For<IScoresheetInstanceRepository>();
             var applicationRepository = Substitute.For<IApplicationRepository>();
+            var featureChecker = Substitute.For<IFeatureChecker>();
+            var permissionChecker = Substitute.For<IPermissionChecker>();
             var expectedFinancialAnalysis = 1;
             var expectedEconomicImpact = 2;
             var expectedInclusiveGrowth = 3;
@@ -48,6 +52,8 @@ namespace Unity.GrantManager.Components
             }));
 
             instanceRepository.GetByCorrelationAsync(assessmentId).Returns(Task.FromResult<ScoresheetInstance?>(null));
+            featureChecker.IsEnabledAsync("Unity.AI.Scoring").Returns(Task.FromResult(true));
+            permissionChecker.IsGrantedAsync(Arg.Any<string>()).Returns(Task.FromResult(true));
 
             var viewContext = new ViewContext
             {
@@ -58,7 +64,13 @@ namespace Unity.GrantManager.Components
                 ViewContext = viewContext
             };
 
-            var viewComponent = new AssessmentScoresWidgetViewComponent(assessmentRepository, scoresheetRepository, instanceRepository, applicationRepository)
+            var viewComponent = new AssessmentScoresWidgetViewComponent(
+                assessmentRepository,
+                scoresheetRepository,
+                instanceRepository,
+                applicationRepository,
+                featureChecker,
+                permissionChecker)
             {
                 ViewComponentContext = viewComponentContext
             };

@@ -8,3 +8,9 @@ table.dataTable > tbody > tr.even.selected > * {
     box-shadow: inset 0 0 0 9999px rgba(230, 239, 247, 0.95) !important;
     color: #003366;
 }
+
+#AdjudicationTeamLeadActionBar .dt-buttons,
+#AdjudicationTeamLeadActionBar .btn {
+    display: inline-flex;
+    align-items: center;
+}
