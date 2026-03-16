@@ -7,6 +7,8 @@
 - Prefer direct evidence from DATA over derivative statements in ATTACHMENTS when both address the same point.
 - If ATTACHMENTS evidence is used, cite the attachment by name in detail.
 - Each detail must cite concrete evidence from DATA or ATTACHMENTS.
+- Write reviewer-facing natural language. Do not refer to prompt section names, internal field keys, or schema labels such as DATA, ATTACHMENTS, ProjectSummary, CustomField1, or OrganizationType.
+- Refer to evidence by its plain-language meaning, quoted text, or attachment name rather than internal key names.
 - Only include warnings when the evidence shows a specific, concrete risk, inconsistency, or meaningful uncertainty; a stated risk label alone is not enough.
 - Do not state that one amount exceeds, matches, or conflicts with another unless the comparison is directly supported by the provided values.
 - Do not treat ordinary lack of detailed supporting explanation as a material gap unless the provided evidence creates real uncertainty about feasibility, eligibility, or budget credibility.
@@ -29,4 +31,3 @@
 - Use HOLD only when provided evidence shows a material eligibility, feasibility, budget, or readiness concern that would reasonably block scoring or decision-making.
 - recommendation.rationale must explain the high-level recommendation in 1-2 complete sentences using provided evidence.
 - recommendation.rationale should name the 1-3 strongest evidence-based reasons for the recommendation.
-

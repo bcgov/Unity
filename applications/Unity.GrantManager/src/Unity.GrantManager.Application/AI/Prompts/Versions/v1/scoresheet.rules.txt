@@ -19,7 +19,9 @@
 - Never omit "answer", "rationale", or "confidence" for any question type.
 - The "answer" value type must match question type: Number => numeric; YesNo/SelectList/Text/TextArea => string.
 - The "rationale" field must be 1-2 complete sentences grounded in concrete DATA/ATTACHMENTS evidence.
-- In rationale, cite concrete source evidence from the provided input content rather than prompt section headers.
+- In rationale, cite concrete source evidence from the provided input content in plain language rather than prompt section headers or internal field names.
+- Write reviewer-facing natural language. Do not refer to prompt section names, internal field keys, or schema labels such as DATA, ATTACHMENTS, ProjectSummary, CustomField1, or OrganizationType.
+- Refer to evidence by its plain-language meaning, quoted text, or attachment name rather than internal key names.
 - For every question, rationale must justify both the selected answer and the selected confidence level based on evidence strength.
 - The "confidence" field must be an integer from 0 to 100 in increments of 5 and represents confidence in the selected answer.
 - Set confidence by certainty of the selected answer based on available evidence, regardless of which option is selected.
