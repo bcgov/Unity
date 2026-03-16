@@ -67,9 +67,8 @@ namespace Unity.GrantManager.ApplicantProfile
         public async Task<List<ApplicantTenantDto>> GetApplicantTenantsAsync(ApplicantProfileRequest request)
         {
             // Extract the username part from the OIDC sub (part before '@')
-            var subUsername = request.Subject.Contains('@')
-                ? request.Subject[..request.Subject.IndexOf('@')].ToUpperInvariant()
-                : request.Subject.ToUpperInvariant();
+            var subUsername = SubjectNormalizer.Normalize(request.Subject);
+            if (subUsername is null) return [];
 
             // Query the ApplicantTenantMaps table in the host database
             using (currentTenant.Change(null))

@@ -13,6 +13,7 @@ using Unity.GrantManager.ApplicationForms;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Flex;
 using Unity.GrantManager.GrantApplications;
+using Unity.GrantManager.Web.AI;
 using Unity.GrantManager.Zones;
 using Unity.Modules.Shared.Correlation;
 using Volo.Abp.AspNetCore.Mvc.UI.RazorPages;
@@ -87,6 +88,12 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
         [BindProperty]
         public HashSet<string> ZoneStateSet { get; set; } = [];
 
+        [BindProperty(SupportsGet = true)]
+        public bool IsDevPromptControlsEnabled { get; set; }
+
+        [BindProperty(SupportsGet = true)]
+        public string DefaultPromptVersion { get; set; }
+
         public DetailsModel(
             GrantApplicationAppService grantApplicationAppService,
             IWorksheetLinkAppService worksheetLinkAppService,
@@ -94,6 +101,7 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
             IFeatureChecker featureChecker,
             ICurrentUser currentUser,
             IConfiguration configuration,
+            IAIPromptToolViewOptionsProvider aiPromptToolViewOptionsProvider,
             IZoneManagementAppService zoneManagementAppService)
         {
             _grantApplicationAppService = grantApplicationAppService;
@@ -106,6 +114,8 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
             CurrentUserName = currentUser.SurName + ", " + currentUser.Name;
             Extensions = configuration["S3:DisallowedFileTypes"] ?? "";
             MaxFileSize = configuration["S3:MaxFileSize"] ?? "";
+            IsDevPromptControlsEnabled = aiPromptToolViewOptionsProvider.IsDevPromptControlsEnabled;
+            DefaultPromptVersion = aiPromptToolViewOptionsProvider.DefaultPromptVersion;
         }
 
         public async Task OnGetAsync()

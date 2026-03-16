@@ -4,6 +4,95 @@
  */
 
 $(function () {
+    globalThis.getSelectedPromptVersion = function() {
+        return $('#devPromptVersion').val() || null;
+    };
+
+    function setPromptCaptureOutput(outputSelector, value) {
+        $(outputSelector).val(value);
+    }
+
+    globalThis.hideAIPromptCapture = function(containerSelector, outputSelector) {
+        setPromptCaptureOutput(outputSelector, '');
+    };
+
+    function formatAIPromptCaptureBlock(capture) {
+        const parts = [];
+
+        parts.push(`PROMPT TYPE: ${capture.promptType || ''}`);
+        parts.push(`PROMPT VERSION: ${capture.promptVersion || ''}`);
+
+        if (capture.captureLabel) {
+            parts.push(`LABEL: ${capture.captureLabel}`);
+        }
+
+        if (capture.capturedAt) {
+            parts.push(`CAPTURED AT: ${capture.capturedAt}`);
+        }
+
+        parts.push('');
+        parts.push('SYSTEM PROMPT');
+        parts.push(capture.systemPrompt || '');
+        parts.push('');
+        parts.push('USER PROMPT');
+        parts.push(capture.userPrompt || '');
+        parts.push('');
+        parts.push('RAW OUTPUT');
+        parts.push(capture.rawOutput || '');
+        parts.push('');
+        parts.push('FORMATTED OUTPUT');
+        parts.push(capture.formattedOutput || '');
+
+        return parts.join('\n');
+    }
+
+    globalThis.renderAIPromptCapture = function(containerSelector, outputSelector, captures) {
+        if (!Array.isArray(captures) || captures.length === 0) {
+            globalThis.hideAIPromptCapture(containerSelector, outputSelector);
+            return;
+        }
+
+        const formatted = captures
+            .map((capture) => formatAIPromptCaptureBlock(capture))
+            .join('\n\n----------------------------------------\n\n');
+
+        setPromptCaptureOutput(outputSelector, formatted);
+    };
+
+    globalThis.loadAIPromptCapture = function(applicationId, promptType, promptVersion, containerSelector, outputSelector) {
+        if (!applicationId || !promptType) {
+            globalThis.hideAIPromptCapture(containerSelector, outputSelector);
+            return Promise.resolve();
+        }
+
+        return unity.grantManager.grantApplications.applicationAIPromptCapture
+            .getRecent(applicationId, promptType, promptVersion || null)
+            .then(function(captures) {
+                globalThis.renderAIPromptCapture(containerSelector, outputSelector, captures || []);
+            })
+            .catch(function() {
+                globalThis.hideAIPromptCapture(containerSelector, outputSelector);
+            });
+    };
+
+    $(document).on('click', '.ai-prompt-capture-copy-btn', async function () {
+        const targetSelector = $(this).data('target');
+        const text = $(targetSelector).val();
+
+        if (!targetSelector || !text) {
+            return;
+        }
+
+        try {
+            await navigator.clipboard.writeText(text);
+            abp.notify.success('Copied prompt capture.');
+        } catch {
+            const output = $(targetSelector);
+            output.trigger('focus');
+            output.trigger('select');
+        }
+    });
+
     let selectedReviewDetails = null;
     let renderFormIoToHtml =
         document.getElementById('RenderFormIoToHtml').value;
@@ -314,6 +403,23 @@ $(function () {
     PubSub.subscribe('refresh_assessment_scores', (msg, data) => {
         assessmentScoresWidgetManager.refresh();
         updateSubtotal();
+
+        if (!data) {
+            return;
+        }
+
+        if (data.capturePromptIo && globalThis.loadAIPromptCapture) {
+            globalThis.loadAIPromptCapture(
+                data.applicationId,
+                'ScoresheetSection',
+                data.promptVersion || null,
+                '#aiScoringPromptCaptureContainer',
+                '#aiScoringPromptCaptureOutput'
+            );
+            return;
+        }
+
+        globalThis.hideAIPromptCapture?.('#aiScoringPromptCaptureContainer', '#aiScoringPromptCaptureOutput');
     });
 
     PubSub.subscribe('select_application_review', (msg, data) => {
@@ -621,11 +727,18 @@ $(function () {
         );
     });
     
-    PubSub.subscribe('update_ai_analysis_count', (msg, data) => {
-        if (data.itemCount || data.itemCount === 0) {
-            tabCounters.ai_analysis = data.itemCount;
+    PubSub.subscribe('update_ai_analysis_status', (msg, data) => {
+        const $indicator = $('#ai_analysis_status');
+        const status = data?.status;
+
+        $indicator.removeClass('proceed hold');
+
+        if (status === 'proceed' || status === 'hold') {
+            $indicator.addClass(status).show();
+            return;
         }
-        $('#ai_analysis_count').html(tabCounters.ai_analysis);
+
+        $indicator.hide();
     });
 
     PubSub.subscribe('update_application_emails_count', (msg, data) => {

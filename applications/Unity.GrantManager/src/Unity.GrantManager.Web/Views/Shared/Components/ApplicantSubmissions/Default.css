@@ -3,10 +3,12 @@
 .applicant-submissions-widget {
     background-color: #fff;
     border-radius: 4px;
-    height: 100%;
+    height: auto;
+    min-height: 0;
     display: flex;
     flex-direction: column;
     padding: 1rem;
+    box-sizing: border-box;
 }
 
 .submissions-action-bar {
@@ -35,6 +37,7 @@
 .submissions-table-container {
     margin-top: 1rem;
     flex: 1;
+    min-height: 0;
     position: relative;
     overflow: visible !important;
 }
@@ -116,6 +119,7 @@
 /* Make Submissions widget fill available space */
 #SubmissionsWidget {
     padding: 0 !important;
+    min-height: 0;
 }
 
 /* DataTable wrapper - allow all content to be visible */
@@ -125,6 +129,7 @@
 
 /* DataTable container - allow all content to be visible */
 .applicant-submissions-widget .dt-container {
+    min-height: 0;
     overflow: visible !important;
 }
 

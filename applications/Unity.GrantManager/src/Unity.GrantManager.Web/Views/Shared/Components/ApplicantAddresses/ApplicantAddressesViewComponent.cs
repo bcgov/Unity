@@ -9,6 +9,7 @@ using Volo.Abp.AspNetCore.Mvc;
 using Volo.Abp.AspNetCore.Mvc.UI.Bundling;
 using Volo.Abp.AspNetCore.Mvc.UI.Widgets;
 using Volo.Abp.Authorization.Permissions;
+using Volo.Abp.Domain.Repositories;
 
 
 namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantAddresses
@@ -23,15 +24,18 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantAddresses
         private readonly IApplicantAddressRepository _applicantAddressRepository;
         private readonly IApplicantAgentRepository _applicantAgentRepository;
         private readonly IPermissionChecker _permissionChecker;
+        private readonly IRepository<Application, Guid> _applicationRepository;
 
         public ApplicantAddressesViewComponent(
             IApplicantAddressRepository applicantAddressRepository,
             IApplicantAgentRepository applicantAgentRepository,
-            IPermissionChecker permissionChecker)
+            IPermissionChecker permissionChecker,
+            IRepository<Application, Guid> applicationRepository)
         {
             _applicantAddressRepository = applicantAddressRepository;
             _applicantAgentRepository = applicantAgentRepository;
             _permissionChecker = permissionChecker;
+            _applicationRepository = applicationRepository;
         }
 
         public async Task<IViewComponentResult> InvokeAsync(Guid applicantId)
@@ -41,10 +45,6 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantAddresses
                 return View(new ApplicantAddressesViewModel { ApplicantId = applicantId });
             }
 
-            
-            // Load addresses using repository method
-            // Note: The repository method returns addresses without Application navigation property loaded
-            // We'll handle null Application gracefully in the mapping
             var addresses = await _applicantAddressRepository.FindByApplicantIdAsync(applicantId);
             var agents = await _applicantAgentRepository.GetListByApplicantIdAsync(applicantId);
 
@@ -56,6 +56,20 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantAddresses
                 .OrderByDescending(a => a.LastModificationTime ?? a.CreationTime)
                 .ToList();
 
+            var appIds = new HashSet<Guid>(
+                orderedAddresses.Where(a => a.ApplicationId.HasValue).Select(a => a.ApplicationId!.Value)
+                    .Concat(orderedAgents.Where(a => a.ApplicationId.HasValue).Select(a => a.ApplicationId!.Value)));
+
+            var appRefMap = new Dictionary<Guid, string>();
+            if (appIds.Count > 0)
+            {
+                var apps = await _applicationRepository.GetListAsync(a => appIds.Contains(a.Id));
+                foreach (var app in apps)
+                {
+                    appRefMap[app.Id] = app.ReferenceNo;
+                }
+            }
+
             var viewModel = new ApplicantAddressesViewModel
             {
                 ApplicantId = applicantId,
@@ -65,7 +79,9 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantAddresses
                     .Select(a => new ApplicantAddressItemDto
                     {
                         Id = a.Id,
-                        AddressType = GetAddressTypeName(a.AddressType),                        
+                        AddressType = GetAddressTypeName(a.AddressType),
+                        ApplicationId = a.ApplicationId,
+                        ReferenceNo = a.ApplicationId.HasValue ? appRefMap.GetValueOrDefault(a.ApplicationId.Value, string.Empty) : string.Empty,
                         Street = a.Street ?? string.Empty,
                         Street2 = a.Street2 ?? string.Empty,
                         Unit = a.Unit ?? string.Empty,
@@ -85,7 +101,9 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantAddresses
                             : agent.Phone2 ?? string.Empty,
                         Title = agent.Title ?? string.Empty,
                         Type = index == 0 ? "Primary" : "",
-                        CreationTime = agent.CreationTime
+                        CreationTime = agent.CreationTime,
+                        ApplicationId = agent.ApplicationId,
+                        ReferenceNo = agent.ApplicationId.HasValue ? appRefMap.GetValueOrDefault(agent.ApplicationId.Value, string.Empty) : string.Empty
                     })
                     .ToList()
             };

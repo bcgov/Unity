@@ -12,5 +12,14 @@ namespace Unity.GrantManager.AI
 
         [JsonPropertyName("contentType")]
         public string ContentType { get; set; } = "application/octet-stream";
+
+        [JsonPropertyName("promptVersion")]
+        public string? PromptVersion { get; set; }
+
+        [JsonPropertyName("capturePromptIo")]
+        public bool CapturePromptIo { get; set; }
+
+        [JsonPropertyName("captureContextId")]
+        public string? CaptureContextId { get; set; }
     }
 }

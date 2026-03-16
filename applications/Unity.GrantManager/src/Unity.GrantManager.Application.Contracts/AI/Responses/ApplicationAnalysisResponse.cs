@@ -17,7 +17,10 @@ namespace Unity.GrantManager.AI
         [JsonPropertyName(AIJsonKeys.Summaries)]
         public List<ApplicationAnalysisFinding> Summaries { get; set; } = new();
 
-        [JsonPropertyName(AIJsonKeys.Dismissed)]
-        public List<string> Dismissed { get; set; } = new();
+        [JsonPropertyName(AIJsonKeys.NextSteps)]
+        public List<ApplicationAnalysisFinding> NextSteps { get; set; } = new();
+
+        [JsonPropertyName(AIJsonKeys.Recommendation)]
+        public ApplicationAnalysisRecommendation? Recommendation { get; set; }
     }
 }
