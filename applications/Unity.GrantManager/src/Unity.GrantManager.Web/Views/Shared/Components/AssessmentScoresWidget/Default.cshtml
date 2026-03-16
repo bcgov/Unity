@@ -22,12 +22,15 @@
             <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 pt-4 pb-2">
                 <h6 class="fw-bold m-0">Assessment Scores</h6>
                 <div class="d-flex justify-content-end flex-wrap gap-2 scoresheet-top-btn-group">
-                    <button type="button" class="btn unt-btn-outline-primary btn-outline-primary" id="regenerateAiScoresheetBtn" onclick="regenerateAIScoresheetAnswers()">
-                        <span class="ai-button-content">
-                            <i class="unt-icon-sm fa-solid fa-wand-sparkles"></i>
-                            <span>Generate</span>
-                        </span>
-                    </button>
+                    @if (Model.IsAIScoringEnabled && Model.IsAiAssessment)
+                    {
+                        <button type="button" class="btn unt-btn-outline-primary btn-outline-primary" id="regenerateAiScoresheetBtn" onclick="regenerateAIScoresheetAnswers()">
+                            <span class="ai-button-content">
+                                <i class="unt-icon-sm fa-solid fa-wand-sparkles"></i>
+                                <span>Generate</span>
+                            </span>
+                        </button>
+                    }
                     <button type="button" class="btn unt-btn-outline-primary btn-outline-primary" onclick="expandAllAccordions('assessment-scoresheet')">
                         <span class="ai-button-content">
                             <i class="unt-icon-sm fa-solid fa-angles-down"></i>

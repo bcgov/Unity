@@ -147,13 +147,8 @@ namespace Unity.GrantManager.AI
 
             if (allowedSchemaKeys.Count > 0)
             {
-                foreach (var key in values.Keys.ToList())
-                {
-                    if (!allowedSchemaKeys.Contains(key))
-                    {
-                        values.Remove(key);
-                    }
-                }
+                values = values.Where(kvp => allowedSchemaKeys.Contains(kvp.Key))
+                               .ToDictionary(kvp => kvp.Key, kvp => kvp.Value, StringComparer.OrdinalIgnoreCase);
             }
 
             return values;
