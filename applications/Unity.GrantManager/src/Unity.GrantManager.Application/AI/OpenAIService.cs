@@ -121,7 +121,7 @@ namespace Unity.GrantManager.AI
             await LogPromptInputAsync(ApplicationAnalysisPromptType, promptVersion, systemPrompt, analysisContent);
             var raw = await GenerateWithRetryAsync(
                 () => GenerateSummaryAsync(analysisContent, systemPrompt, 1000),
-                IsValidApplicationAnalysisJson,
+                AIResponseValidator.IsValidApplicationAnalysisJson,
                 "application analysis");
             await LogPromptOutputAsync(ApplicationAnalysisPromptType, promptVersion, raw);
             SavePromptCapture(capturePromptIo, request.CaptureContextId, ApplicationAnalysisPromptType, promptVersion, "Application Analysis", systemPrompt, analysisContent, raw);
@@ -239,7 +239,7 @@ namespace Unity.GrantManager.AI
                 await LogPromptInputAsync(AttachmentSummaryPromptType, promptVersion, prompt, contentToAnalyze);
                 var modelOutput = await GenerateWithRetryAsync(
                     () => GenerateSummaryAsync(contentToAnalyze, prompt, 150),
-                    IsValidNarrativeText,
+                    AIResponseValidator.IsValidAttachmentSummaryText,
                     "attachment summary");
                 await LogPromptOutputAsync(AttachmentSummaryPromptType, promptVersion, modelOutput);
                 SavePromptCapture(capturePromptIo, request.CaptureContextId, AttachmentSummaryPromptType, promptVersion, fileName, prompt, contentToAnalyze, modelOutput);
@@ -393,7 +393,7 @@ namespace Unity.GrantManager.AI
                 await LogPromptInputAsync(ScoresheetSectionPromptType, promptVersion, systemPrompt, analysisContent);
                 var modelOutput = await GenerateWithRetryAsync(
                     () => GenerateSummaryAsync(analysisContent, systemPrompt, 2000),
-                    content => IsValidScoresheetSectionJson(content, sectionJson),
+                    content => AIResponseValidator.IsValidScoresheetSectionJson(content, sectionJson),
                     $"scoresheet section {request.SectionName}");
                 await LogPromptOutputAsync(ScoresheetSectionPromptType, promptVersion, modelOutput);
                 SavePromptCapture(capturePromptIo, request.CaptureContextId, ScoresheetSectionPromptType, promptVersion, request.SectionName, systemPrompt, analysisContent, modelOutput);
@@ -422,7 +422,7 @@ namespace Unity.GrantManager.AI
                 }
                 catch (Exception ex) when (attempt < MaxAiAttempts)
                 {
-                    _logger.LogWarning(ex, "AI {OperationName} attempt {Attempt}/{MaxAttempts} failed; retrying", operationName, attempt, MaxAiAttempts);
+                    _logger.LogWarning(ex, "AI {OperationName} attempt {Attempt}/{MaxAttempts} request failed; retrying", operationName, attempt, MaxAiAttempts);
                     continue;
                 }
 
@@ -434,7 +434,7 @@ namespace Unity.GrantManager.AI
                 if (attempt < MaxAiAttempts)
                 {
                     _logger.LogWarning(
-                        "AI {OperationName} attempt {Attempt}/{MaxAttempts} returned invalid output shape; retrying",
+                        "AI {OperationName} attempt {Attempt}/{MaxAttempts} returned invalid response shape; retrying",
                         operationName,
                         attempt,
                         MaxAiAttempts);
@@ -445,157 +445,6 @@ namespace Unity.GrantManager.AI
             return lastResponse;
         }
 
-        private static bool IsValidNarrativeText(string response)
-        {
-            return !string.IsNullOrWhiteSpace(response);
-        }
-
-        private static bool IsValidApplicationAnalysisJson(string response)
-        {
-            if (!TryParseRootObject(response, out var root))
-            {
-                return false;
-            }
-
-            return root.TryGetProperty(AIJsonKeys.Rating, out var rating)
-                   && rating.ValueKind == JsonValueKind.String
-                   && root.TryGetProperty(AIJsonKeys.Errors, out var errors)
-                   && errors.ValueKind == JsonValueKind.Array
-                   && root.TryGetProperty(AIJsonKeys.Warnings, out var warnings)
-                   && warnings.ValueKind == JsonValueKind.Array
-                   && root.TryGetProperty(AIJsonKeys.Summaries, out var summaries)
-                   && summaries.ValueKind == JsonValueKind.Array
-                   && root.TryGetProperty(AIJsonKeys.NextSteps, out var nextSteps)
-                   && nextSteps.ValueKind == JsonValueKind.Array;
-        }
-
-        private static bool IsValidScoresheetAnswersJson(string response)
-        {
-            if (!TryParseRootObject(response, out var root))
-            {
-                return false;
-            }
-
-            return root.EnumerateObject()
-                .Select(value => value.Value.ValueKind)
-                .All(kind => kind == JsonValueKind.String || kind == JsonValueKind.Number);
-        }
-
-        private static bool IsValidScoresheetSectionJson(string response, string sectionJson)
-        {
-            if (!TryParseRootObject(response, out var root))
-            {
-                return false;
-            }
-
-            var expectedQuestionIds = ExtractQuestionIds(sectionJson);
-            if (expectedQuestionIds.Count == 0)
-            {
-                return false;
-            }
-
-            foreach (var questionId in expectedQuestionIds)
-            {
-                if (!root.TryGetProperty(questionId, out var answerObject) || answerObject.ValueKind != JsonValueKind.Object)
-                {
-                    return false;
-                }
-
-                if (!answerObject.TryGetProperty(AIJsonKeys.Answer, out var answerValue)
-                    || answerValue.ValueKind == JsonValueKind.Null
-                    || answerValue.ValueKind == JsonValueKind.Object
-                    || answerValue.ValueKind == JsonValueKind.Array)
-                {
-                    return false;
-                }
-
-                if (!answerObject.TryGetProperty(AIJsonKeys.Confidence, out var confidenceValue)
-                    || confidenceValue.ValueKind != JsonValueKind.Number
-                    || !confidenceValue.TryGetInt32(out var confidence)
-                    || confidence < 0
-                    || confidence > 100)
-                {
-                    return false;
-                }
-            }
-
-            return true;
-        }
-
-        private static HashSet<string> ExtractQuestionIds(string sectionJson)
-        {
-            var ids = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-
-            try
-            {
-                using var jsonDoc = JsonDocument.Parse(sectionJson);
-                var root = jsonDoc.RootElement;
-
-                if (root.ValueKind == JsonValueKind.Array)
-                {
-                    AddQuestionIds(root, ids);
-                    return ids;
-                }
-
-                if (root.ValueKind == JsonValueKind.Object &&
-                    root.TryGetProperty("questions", out var questionsElement) &&
-                    questionsElement.ValueKind == JsonValueKind.Array)
-                {
-                    AddQuestionIds(questionsElement, ids);
-                }
-            }
-            catch
-            {
-                return ids;
-            }
-
-            return ids;
-        }
-
-        private static void AddQuestionIds(JsonElement questionsArray, HashSet<string> ids)
-        {
-            foreach (var item in questionsArray.EnumerateArray())
-            {
-                if (item.ValueKind != JsonValueKind.Object ||
-                    !item.TryGetProperty("id", out var idProperty) ||
-                    idProperty.ValueKind != JsonValueKind.String)
-                {
-                    continue;
-                }
-
-                var id = idProperty.GetString();
-                if (!string.IsNullOrWhiteSpace(id))
-                {
-                    ids.Add(id);
-                }
-            }
-        }
-
-        private static bool TryParseRootObject(string response, out JsonElement root)
-        {
-            root = default;
-
-            if (string.IsNullOrWhiteSpace(response))
-            {
-                return false;
-            }
-
-            try
-            {
-                using var jsonDoc = JsonDocument.Parse(CleanJsonResponse(response));
-                if (jsonDoc.RootElement.ValueKind != JsonValueKind.Object)
-                {
-                    return false;
-                }
-
-                root = jsonDoc.RootElement.Clone();
-                return true;
-            }
-            catch
-            {
-                return false;
-            }
-        }
         private static ApplicationAnalysisResponse ParseApplicationAnalysisResponse(string raw)
         {
             var response = new ApplicationAnalysisResponse();
@@ -897,7 +746,7 @@ namespace Unity.GrantManager.AI
         private static bool TryParseJsonObjectFromResponse(string response, out JsonElement objectElement)
         {
             objectElement = default;
-            var cleaned = CleanJsonResponse(response);
+            var cleaned = AIResponseJson.CleanJsonResponse(response);
             if (string.IsNullOrWhiteSpace(cleaned))
             {
                 return false;
@@ -918,66 +767,6 @@ namespace Unity.GrantManager.AI
             {
                 return false;
             }
-        }
-
-        private static string CleanJsonResponse(string response)
-        {
-            if (string.IsNullOrWhiteSpace(response))
-            {
-                return string.Empty;
-            }
-
-            var cleaned = response.Trim();
-
-            if (cleaned.StartsWith("```json", StringComparison.OrdinalIgnoreCase) || cleaned.StartsWith("```"))
-            {
-                var startIndex = cleaned.IndexOf('\n');
-                if (startIndex >= 0)
-                {
-                    // Multi-line fenced code block: remove everything up to and including the first newline.
-                    cleaned = cleaned[(startIndex + 1)..];
-                }
-                else
-                {
-                    // Single-line fenced JSON, e.g. ```json { ... } ``` or ```{ ... } ```.
-                    // Strip everything before the first likely JSON payload token.
-                    var jsonStart = FindFirstJsonTokenIndex(cleaned);
-
-                    if (jsonStart > 0)
-                    {
-                        cleaned = cleaned[jsonStart..];
-                    }
-                }
-            }
-
-            if (cleaned.EndsWith("```", StringComparison.Ordinal))
-            {
-                var lastIndex = cleaned.LastIndexOf("```", StringComparison.Ordinal);
-                if (lastIndex > 0)
-                {
-                    cleaned = cleaned[..lastIndex];
-                }
-            }
-
-            return cleaned.Trim();
-        }
-
-        private static int FindFirstJsonTokenIndex(string value)
-        {
-            var objectStart = value.IndexOf('{');
-            var arrayStart = value.IndexOf('[');
-
-            if (objectStart >= 0 && arrayStart >= 0)
-            {
-                return Math.Min(objectStart, arrayStart);
-            }
-
-            if (objectStart >= 0)
-            {
-                return objectStart;
-            }
-
-            return arrayStart;
         }
 
         private static string ResolvePromptVersion(string? version)
