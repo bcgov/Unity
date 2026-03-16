@@ -16,35 +16,6 @@ $(function () {
         setPromptCaptureOutput(outputSelector, '');
     };
 
-    function formatAIPromptCaptureBlock(capture) {
-        const parts = [];
-
-        parts.push(`PROMPT TYPE: ${capture.promptType || ''}`);
-        parts.push(`PROMPT VERSION: ${capture.promptVersion || ''}`);
-
-        if (capture.captureLabel) {
-            parts.push(`LABEL: ${capture.captureLabel}`);
-        }
-
-        if (capture.capturedAt) {
-            parts.push(`CAPTURED AT: ${capture.capturedAt}`);
-        }
-
-        parts.push('');
-        parts.push('SYSTEM PROMPT');
-        parts.push(capture.systemPrompt || '');
-        parts.push('');
-        parts.push('USER PROMPT');
-        parts.push(capture.userPrompt || '');
-        parts.push('');
-        parts.push('RAW OUTPUT');
-        parts.push(capture.rawOutput || '');
-        parts.push('');
-        parts.push('FORMATTED OUTPUT');
-        parts.push(capture.formattedOutput || '');
-
-        return parts.join('\n');
-    }
 
     globalThis.renderAIPromptCapture = function(containerSelector, outputSelector, captures) {
         if (!Array.isArray(captures) || captures.length === 0) {
@@ -912,6 +883,38 @@ $(function () {
 
     globalThis.addEventListener('resize', windowResize);
 });
+
+function formatAIPromptCaptureBlock(capture) {
+    const parts = [
+        `PROMPT TYPE: ${capture.promptType || ''}`,
+        `PROMPT VERSION: ${capture.promptVersion || ''}`
+    ];
+
+    if (capture.captureLabel) {
+        parts.push(`LABEL: ${capture.captureLabel}`);
+    }
+
+    if (capture.capturedAt) {
+        parts.push(`CAPTURED AT: ${capture.capturedAt}`);
+    }
+
+    parts.push(
+        '',
+        'SYSTEM PROMPT',
+        capture.systemPrompt || '',
+        '',
+        'USER PROMPT',
+        capture.userPrompt || '',
+        '',
+        'RAW OUTPUT',
+        capture.rawOutput || '',
+        '',
+        'FORMATTED OUTPUT',
+        capture.formattedOutput || ''
+    );
+
+    return parts.join('\n');
+}
 
 
 // Handle the card header click event

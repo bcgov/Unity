@@ -10,9 +10,6 @@ $(function () {
     let addressesTable = null;
     let zoneForm = null;
 
-    function notifyApplicantAddressesLayoutChange() {
-        window.dispatchEvent(new CustomEvent('applicant-addresses-layout-changed'));
-    }
 
     function renderTableLink(data, row) {
         if (!data || !row.applicationId) {
@@ -199,14 +196,6 @@ $(function () {
         });
     }
 
-    function safeParse(value) {
-        try {
-            return JSON.parse(value || '[]');
-        } catch (error) {
-            console.warn('Unable to parse ApplicantAddresses data.', error);
-            return [];
-        }
-    }
 
     function buildSavePayload(zoneFormInstance, $form) {
         const modifiedFields = Array.from(zoneFormInstance.modifiedFields ?? []);
@@ -252,58 +241,73 @@ $(function () {
         return payload;
     }
 
-    function isGuidEmpty(value) {
-        return !value || value === '00000000-0000-0000-0000-000000000000';
+    
+});
+
+function safeParse(value) {
+    try {
+        return JSON.parse(value || '[]');
+    } catch (error) {
+        console.warn('Unable to parse ApplicantAddresses data.', error);
+        return [];
+    }
+}
+
+function notifyApplicantAddressesLayoutChange() {
+    globalThis.dispatchEvent(new CustomEvent('applicant-addresses-layout-changed'));
+}
+
+function isGuidEmpty(value) {
+    return !value || value === '00000000-0000-0000-0000-000000000000';
+}
+
+function buildAddressPayload(addressId, prefix, $form) {
+    return {
+        id: addressId,
+        street: $form.find(`[name="${prefix}.Street"]`).val(),
+        street2: $form.find(`[name="${prefix}.Street2"]`).val(),
+        unit: $form.find(`[name="${prefix}.Unit"]`).val(),
+        city: $form.find(`[name="${prefix}.City"]`).val(),
+        province: $form.find(`[name="${prefix}.Province"]`).val(),
+        postalCode: $form.find(`[name="${prefix}.PostalCode"]`).val()
+    };
+}
+
+function updateTablesAfterSave(payload, contactsDt, addressesDt) {
+    if (contactsDt && payload.primaryContact) {
+        contactsDt.rows().every(function () {
+            const rowData = this.data();
+            if (rowData.id === payload.primaryContact.id) {
+                rowData.name = payload.primaryContact.fullName || '';
+                rowData.email = payload.primaryContact.email || '';
+                rowData.phone = payload.primaryContact.businessPhone || payload.primaryContact.cellPhone || '';
+                rowData.title = payload.primaryContact.title || '';
+                this.data(rowData);
+            }
+        });
+        contactsDt.rows().invalidate().draw(false);
     }
 
-    function buildAddressPayload(addressId, prefix, $form) {
-        return {
-            id: addressId,
-            street: $form.find(`[name="${prefix}.Street"]`).val(),
-            street2: $form.find(`[name="${prefix}.Street2"]`).val(),
-            unit: $form.find(`[name="${prefix}.Unit"]`).val(),
-            city: $form.find(`[name="${prefix}.City"]`).val(),
-            province: $form.find(`[name="${prefix}.Province"]`).val(),
-            postalCode: $form.find(`[name="${prefix}.PostalCode"]`).val()
-        };
-    }
-
-    function updateTablesAfterSave(payload, contactsDt, addressesDt) {
-        if (contactsDt && payload.primaryContact) {
-            contactsDt.rows().every(function () {
+    if (addressesDt) {
+        ['primaryPhysicalAddress', 'primaryMailingAddress'].forEach((key) => {
+            const addressPayload = payload[key];
+            if (!addressPayload) {
+                return;
+            }
+            addressesDt.rows().every(function () {
                 const rowData = this.data();
-                if (rowData.id === payload.primaryContact.id) {
-                    rowData.name = payload.primaryContact.fullName || '';
-                    rowData.email = payload.primaryContact.email || '';
-                    rowData.phone = payload.primaryContact.businessPhone || payload.primaryContact.cellPhone || '';
-                    rowData.title = payload.primaryContact.title || '';
+                if (rowData.id === addressPayload.id) {
+                    rowData.street = addressPayload.street || '';
+                    rowData.street2 = addressPayload.street2 || '';
+                    rowData.unit = addressPayload.unit || '';
+                    rowData.city = addressPayload.city || '';
+                    rowData.province = addressPayload.province || '';
+                    rowData.postal = addressPayload.postalCode || '';
                     this.data(rowData);
                 }
             });
-            contactsDt.rows().invalidate().draw(false);
-        }
+        });
 
-        if (addressesDt) {
-            ['primaryPhysicalAddress', 'primaryMailingAddress'].forEach((key) => {
-                const addressPayload = payload[key];
-                if (!addressPayload) {
-                    return;
-                }
-                addressesDt.rows().every(function () {
-                    const rowData = this.data();
-                    if (rowData.id === addressPayload.id) {
-                        rowData.street = addressPayload.street || '';
-                        rowData.street2 = addressPayload.street2 || '';
-                        rowData.unit = addressPayload.unit || '';
-                        rowData.city = addressPayload.city || '';
-                        rowData.province = addressPayload.province || '';
-                        rowData.postal = addressPayload.postalCode || '';
-                        this.data(rowData);
-                    }
-                });
-            });
-
-            addressesDt.rows().invalidate().draw(false);
-        }
+        addressesDt.rows().invalidate().draw(false);
     }
-});
+}
