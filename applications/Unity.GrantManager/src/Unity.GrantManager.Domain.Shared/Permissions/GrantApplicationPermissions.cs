@@ -34,31 +34,14 @@ namespace Unity.GrantManager.Permissions
 
         public static class Applicants
         {
-            public const string Default = GroupName + ".Applicants";
-            public const string ViewList = Default + ".ViewList";
-            public const string Edit = Default + Operation.Update;
-            public const string AssignApplicant = Default + ".AssignApplicant";
+            public const string Default              = GroupName + ".Applicants";
+            public const string ViewList             = Default + ".ViewList";
+            public const string Edit                 = Default + Operation.Update;
+            public const string AssignApplicant      = Default + ".AssignApplicant";
+            public const string ApplicantInfoDefault = Default + ".ApplicantInfo";
+            public const string EditRedStop          = ApplicantInfoDefault + ".EditRedStop";
         }
-
-        public static class AI
-        {
-            public const string GroupName = "AI";
-
-            public static class Reporting
-            {
-                public const string Default = GroupName + ".Reporting";
-            }
-
-            public static class ApplicationAnalysis
-            {
-                public const string Default = GroupName + ".ApplicationAnalysis";
-            }
-
-            public static class AttachmentSummary
-            {
-                public const string Default = GroupName + ".AttachmentSummary";
-            }
-        }
+        
 
         public static class Assignments
         {

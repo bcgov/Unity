@@ -15,6 +15,12 @@ namespace Unity.GrantManager.History
         {
             List<HistoryDto> historyList = [];
             CancellationToken cancellationToken = default;
+            
+            if (entityId == null || entityId == Guid.Empty)
+            {
+                return historyList;
+            }
+            
             var entityChanges = await extendedAuditLogRepository.GetEntityChangeByTypeWithUsernameAsync(
                 entityId,
                 HistoryConsts.PaymentEntityTypeFullNames,
@@ -23,18 +29,30 @@ namespace Unity.GrantManager.History
 
             foreach (var entityChange in entityChanges)
             {
+                // Add explicit filter to ensure only matching entityId records
+                if (entityChange.EntityChange.EntityId != entityId.ToString())
+                {
+                    continue;
+                }
+                
                 foreach (var propertyChange in entityChange.EntityChange.PropertyChanges)
                 {
-                    string origninalValue = CleanValue(propertyChange.OriginalValue);
+                    string originalValue = CleanValue(propertyChange.OriginalValue);
                     string newValue = CleanValue(propertyChange.NewValue);
                     string displayNewValue = MapFsbToDisplayText(newValue);
+
+                    // Don't display history if both original and new values are empty, as it doesn't provide useful information and may clutter the history with irrelevant entries.    
+                    if (string.IsNullOrEmpty(originalValue) && string.IsNullOrEmpty(newValue))
+                    {
+                        continue;
+                    }
                     int changeType = (int)entityChange.EntityChange.ChangeType; 
                     DateTime utcDateTime = DateTime.SpecifyKind(entityChange.EntityChange.ChangeTime, DateTimeKind.Utc);
                     HistoryDto historyDto = new()
                     {
                         EntityName = GetShortEntityName(entityChange.EntityChange.EntityTypeFullName),
-                        PropertyName = propertyChange.PropertyName, // The name of the property on the entity class.
-                        OriginalValue = origninalValue,
+                        PropertyName = propertyChange.PropertyName,
+                        OriginalValue = originalValue,
                         NewValue = displayNewValue,
                         ChangeTime = utcDateTime.ToLocalTime(),
                         UserName = entityChange.UserName,

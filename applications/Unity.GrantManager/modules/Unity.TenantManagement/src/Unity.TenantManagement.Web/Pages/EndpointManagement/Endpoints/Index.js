@@ -88,7 +88,8 @@
         dataTableName: 'EndpointsTable',
         dynamicButtonContainerId: 'dynamicButtonContainerId',
         useNullPlaceholder: true,
-        externalSearchId: 'search-endpoints'
+        externalSearchId: 'search-endpoints',
+        fixedHeaders: true
     });
 
     createModal.onResult(function () {

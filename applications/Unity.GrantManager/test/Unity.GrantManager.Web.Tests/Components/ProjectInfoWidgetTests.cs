@@ -11,31 +11,20 @@ using Unity.GrantManager.Locality;
 using Volo.Abp.DependencyInjection;
 using Xunit;
 using Microsoft.AspNetCore.Authorization;
-
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 
 namespace Unity.GrantManager.Components
 {
-    public class ProjectInfoWidgetTests : GrantManagerWebTestBase
+    [Collection(WebTestCollection.Name)]
+    public class ProjectInfoWidgetTests
     {
         private readonly IAbpLazyServiceProvider lazyServiceProvider;
+        private readonly IAuthorizationService authorizationService;
 
-        public ProjectInfoWidgetTests()
+        public ProjectInfoWidgetTests(WebTestFixture fixture)
         {
-            // Remove EventLog logger provider to prevent ObjectDisposedException during tests
-            var loggerFactory = GetRequiredService<ILoggerFactory>();
-            foreach (var provider in loggerFactory
-                .GetType()
-                .GetField("_providers", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
-                ?.GetValue(loggerFactory) as System.Collections.Generic.List<ILoggerProvider> ?? new System.Collections.Generic.List<ILoggerProvider>())
-            {
-                if (provider.GetType().Name.Contains("EventLog"))
-                {
-                    provider.Dispose();
-                }
-            }
-            lazyServiceProvider = GetRequiredService<IAbpLazyServiceProvider>();                
+            lazyServiceProvider = fixture.Services.GetRequiredService<IAbpLazyServiceProvider>();
+            authorizationService = fixture.Services.GetRequiredService<IAuthorizationService>();
         }
 
         [Fact]
@@ -56,9 +45,6 @@ namespace Unity.GrantManager.Components
             var electoralDistrictService = Substitute.For<IElectoralDistrictService>();
             var regionalDistrictService = Substitute.For<IRegionalDistrictService>();
             var communitiesService = Substitute.For<ICommunityService>();
-            var authorizationService = GetRequiredService<IAuthorizationService>();
-            
-
             var viewContext = new ViewContext
             {
                 HttpContext = new DefaultHttpContext()
@@ -68,7 +54,7 @@ namespace Unity.GrantManager.Components
                 ViewContext = viewContext
             };
 
-            var viewComponent = new ProjectInfoViewComponent(appService, economicRegionService, electoralDistrictService, regionalDistrictService, communitiesService, authorizationService)
+            var viewComponent = new ProjectInfoViewComponent(appService, economicRegionService, electoralDistrictService, regionalDistrictService, communitiesService, this.authorizationService)
             {
                 ViewComponentContext = viewComponentContext,
                 LazyServiceProvider = lazyServiceProvider

@@ -576,3 +576,43 @@ function collapseAllAccordions(divId) {
             .classList.add('collapsed');
     });
 }
+
+function regenerateAIScoresheetAnswers(capturePromptIo = false, triggerButton = null) {
+    const applicationId = $('#DetailsViewApplicationId').val();
+    const $button = triggerButton ? $(triggerButton) : $('#regenerateAiScoresheetBtn');
+    const existingHtml = $button.html();
+    const promptVersion = globalThis.getSelectedPromptVersion?.() || null;
+
+    if (!applicationId || $button.prop('disabled')) {
+        return;
+    }
+
+    if (!capturePromptIo && globalThis.hideAIPromptCapture) {
+        globalThis.hideAIPromptCapture('#aiScoringPromptCaptureContainer', '#aiScoringPromptCaptureOutput');
+    }
+
+    $button
+        .html(
+            '<span class="ai-button-content"><span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span><span>Generating...</span></span>'
+        )
+        .prop('disabled', true);
+
+    unity.grantManager.grantApplications.applicationAIScoring
+        .generateAIScoresheetAnswers(applicationId, promptVersion, capturePromptIo)
+        .done(function () {
+            abp.notify.success('AI scoring refreshed successfully.');
+            PubSub.publish('refresh_assessment_scores', {
+                promptVersion: promptVersion,
+                capturePromptIo: capturePromptIo,
+                applicationId: applicationId,
+            });
+        })
+        .fail(function () {
+            abp.message.error(
+                'Failed to refresh AI scoring. Please try again.'
+            );
+        })
+        .always(function () {
+            $button.html(existingHtml).prop('disabled', false);
+        });
+}

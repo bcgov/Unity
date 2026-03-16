@@ -30,8 +30,8 @@ All providers are registered via ABP's `[ExposeServices]` attribute and collecte
 | `CONTACTINFO`    | `ContactInfoDataProvider`    | `ApplicantContactInfoDto`     | ✅ Implemented  |
 | `ADDRESSINFO`    | `AddressInfoDataProvider`    | `ApplicantAddressInfoDto`     | ✅ Implemented  |
 | `SUBMISSIONINFO` | `SubmissionInfoDataProvider` | `ApplicantSubmissionInfoDto`  | ✅ Implemented  |
-| `ORGINFO`        | `OrgInfoDataProvider`        | `ApplicantOrgInfoDto`         | ⬜ Placeholder  |
-| `PAYMENTINFO`    | `PaymentInfoDataProvider`    | `ApplicantPaymentInfoDto`     | ⬜ Placeholder  |
+| `ORGINFO`        | `OrgInfoDataProvider`        | `ApplicantOrgInfoDto`         | ✅ Implemented  |
+| `PAYMENTINFO`    | `PaymentInfoDataProvider`    | `ApplicantPaymentInfoDto`     | ✅ Implemented  |
 
 **Response:** `ApplicantProfileDto` with a polymorphic `Data` property (JSON discriminator: `dataType`).
 
@@ -55,11 +55,8 @@ graph TB
     ProviderDict --> ContactProvider["ContactInfoDataProvider<br/><b>CONTACTINFO</b>"]
     ProviderDict --> AddressProvider["AddressInfoDataProvider<br/><b>ADDRESSINFO</b>"]
     ProviderDict --> SubmissionProvider["SubmissionInfoDataProvider<br/><b>SUBMISSIONINFO</b>"]
-    ProviderDict --> OrgProvider["OrgInfoDataProvider<br/><b>ORGINFO</b><br/><i>placeholder</i>"]
-    ProviderDict --> PaymentProvider["PaymentInfoDataProvider<br/><b>PAYMENTINFO</b><br/><i>placeholder</i>"]
-
-    style OrgProvider fill:#f5f5f5,stroke:#bbb,stroke-dasharray:5
-    style PaymentProvider fill:#f5f5f5,stroke:#bbb,stroke-dasharray:5
+    ProviderDict --> OrgProvider["OrgInfoDataProvider<br/><b>ORGINFO</b>"]
+    ProviderDict --> PaymentProvider["PaymentInfoDataProvider<br/><b>PAYMENTINFO</b>"]
 ```
 
 ---
@@ -97,11 +94,25 @@ sequenceDiagram
 
 ---
 
+## Provider Interface
+
+```csharp
+public interface IApplicantProfileDataProvider
+{
+    string Key { get; }
+    Task<ApplicantProfileDataDto> GetDataAsync(ApplicantProfileInfoRequest request);
+}
+```
+
+All providers are registered via ABP's `[ExposeServices(typeof(IApplicantProfileDataProvider))]` attribute and resolved as an `IEnumerable<IApplicantProfileDataProvider>` collection. The app service indexes them by `Key` for O(1) dispatch.
+
+---
+
 ## Provider Details
 
 ### 1. ContactInfoDataProvider (`CONTACTINFO`)
 
-**Purpose:** Aggregates contact information from two sources — profile-linked contacts and application-level contacts.
+**Purpose:** Aggregates contact information from three sources — profile-linked contacts, application-level contacts, and applicant agent contacts derived from the submission login token.
 
 **Dependencies:**
 - `ICurrentTenant` — for multi-tenant scoping
@@ -112,7 +123,8 @@ sequenceDiagram
 1. Switches to the requested tenant context.
 2. Retrieves **profile contacts** — contacts linked to the applicant profile via `ContactLink` records where `RelatedEntityType == "ApplicantProfile"` and `RelatedEntityId == profileId`. These are **editable** (`IsEditable = true`).
 3. Retrieves **application contacts** — contacts on applications whose form submissions match the normalized OIDC subject. These are **read-only** (`IsEditable = false`).
-4. Merges both lists into a single `ApplicantContactInfoDto.Contacts` collection.
+4. Retrieves **applicant agent contacts** — contact information derived from `ApplicantAgent` records on applications whose form submissions match the normalized OIDC subject. The join path is `Submission → Application → ApplicantAgent`. These are **read-only** (`IsEditable = false`).
+5. Merges all three lists into a single `ApplicantContactInfoDto.Contacts` collection.
 
 **Subject Normalization:** The OIDC subject (e.g. `user@idir`) is normalized by stripping everything after `@` and converting to uppercase.
 
@@ -132,15 +144,27 @@ flowchart TD
         AC1["Normalize Subject<br/>strip domain, uppercase"]
         AC2["Query ApplicationFormSubmission<br/>WHERE OidcSub = normalizedSubject"]
         AC3["JOIN ApplicationContact<br/>ON ApplicationId"]
+        AC3b["JOIN Application<br/>ON ApplicationId<br/>for ReferenceNo"]
         AC4["Map to ContactInfoItemDto<br/>IsEditable = false"]
-        AC1 --> AC2 --> AC3 --> AC4
+        AC1 --> AC2 --> AC3 --> AC3b --> AC4
+    end
+
+    subgraph AgentContacts["Applicant Agent Contacts - Read-Only"]
+        AG1["Normalize Subject<br/>strip domain, uppercase"]
+        AG2["Query ApplicationFormSubmission<br/>WHERE OidcSub = normalizedSubject"]
+        AG3["JOIN ApplicantAgent<br/>ON ApplicationId"]
+        AG3b["JOIN Application<br/>ON ApplicationId<br/>for ReferenceNo"]
+        AG4["Map to ContactInfoItemDto<br/>ContactType = 'ApplicantAgent'<br/>IsEditable = false"]
+        AG1 --> AG2 --> AG3 --> AG3b --> AG4
     end
 
     Start --> Tenant
     Tenant --> PC1
     Tenant --> AC1
+    Tenant --> AG1
     PC3 --> Merge["Merge into Contacts list"]
     AC4 --> Merge
+    AG4 --> Merge
     Merge --> Return([Return ApplicantContactInfoDto])
 ```
 
@@ -149,7 +173,26 @@ flowchart TD
 | Source | Entity | Join Path | Editable |
 |--------|--------|-----------|----------|
 | Profile Contacts | `ContactLink` → `Contact` | `ContactLink.RelatedEntityId = profileId` | ✅ Yes |
-| Application Contacts | `ApplicationFormSubmission` → `ApplicationContact` | `Submission.OidcSub = normalizedSubject` | ❌ No |
+| Application Contacts | `ApplicationFormSubmission` → `ApplicationContact` → `Application` | `Submission.OidcSub = normalizedSubject`, `Application.Id` for `ReferenceNo` | ❌ No |
+| Applicant Agent Contacts | `ApplicationFormSubmission` → `ApplicantAgent` → `Application` | `Submission.ApplicationId = Agent.ApplicationId`, `Application.Id` for `ReferenceNo` | ❌ No |
+
+**Applicant Agent Field Mapping:**
+
+The `ApplicantAgent` entity is populated from the CHEFS submission login token during intake import. Its fields are mapped to `ContactInfoItemDto` as follows:
+
+| ApplicantAgent Field | ContactInfoItemDto Field |
+|---------------------|-------------------------|
+| `Id` | `ContactId` |
+| `Name` | `Name` |
+| `Title` | `Title` |
+| `Email` | `Email` |
+| `Phone` | `WorkPhoneNumber` |
+| `PhoneExtension` | `WorkPhoneExtension` |
+| `Phone2` | `MobilePhoneNumber` |
+| `RoleForApplicant` | `Role` |
+| `ApplicationId` | `ApplicationId` |
+| `Application.ReferenceNo` | `ReferenceNo` |
+| _(literal)_ `"ApplicantAgent"` | `ContactType` |
 
 ---
 
@@ -301,19 +344,97 @@ flowchart LR
 
 ---
 
-### 4. OrgInfoDataProvider (`ORGINFO`) — Placeholder
+### 4. OrgInfoDataProvider (`ORGINFO`)
 
-**Purpose:** Will provide organization information for the applicant profile.
+**Purpose:** Provides organization information for the applicant profile.
 
-**Current Status:** Returns an empty `ApplicantOrgInfoDto` with no data fields populated. No dependencies or query logic implemented yet.
+**Source**: `Applicant` entity, linked via `ApplicationFormSubmission.ApplicantId`.
+
+**Query**: Joins `ApplicationFormSubmission` → `Applicant` where `OidcSub` matches the normalized subject. Returns all matching applicant records — duplicates are **not** removed, since a single user may have multiple submissions pointing to the same or different applicant records. The UI is responsible for presenting this appropriately.
+
+**Response DTO**: `ApplicantOrgInfoDto`
+
+```json
+{
+  "dataType": "ORGINFO",
+  "organizations": [
+    {
+      "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+      "orgName": "Acme Corp",
+      "organizationType": "Non-Profit",
+      "orgNumber": "BC1234567",
+      "orgStatus": "Active",
+      "nonRegOrgName": null,
+      "fiscalMonth": "April",
+      "fiscalDay": 1,
+      "organizationSize": "51-100",
+      "sector": "Technology",
+      "subSector": "Software"
+    }
+  ]
+}
+```
+
+**Fields** (from `Applicant` entity):
+
+| DTO Field | Entity Field | Type | Description |
+|-----------|-------------|------|-------------|
+| `Id` | `Applicant.Id` | `Guid` | Applicant ID — used as `organizationId` for edit commands |
+| `OrgName` | `Applicant.OrgName` | `string?` | Organization name |
+| `OrganizationType` | `Applicant.OrganizationType` | `string?` | Type of organization |
+| `OrgNumber` | `Applicant.OrgNumber` | `string?` | Organization registration number |
+| `OrgStatus` | `Applicant.OrgStatus` | `string?` | Organization status |
+| `NonRegOrgName` | `Applicant.NonRegOrgName` | `string?` | Non-registered organization name |
+| `FiscalMonth` | `Applicant.FiscalMonth` | `string?` | Fiscal year start month |
+| `FiscalDay` | `Applicant.FiscalDay` | `int?` | Fiscal year start day |
+| `OrganizationSize` | `Applicant.OrganizationSize` | `string?` | Size category |
+| `Sector` | `Applicant.Sector` | `string?` | Industry sector |
+| `SubSector` | `Applicant.SubSector` | `string?` | Industry sub-sector |
+
+**Multiple Applicants**: It is possible for a single OIDC subject to be linked to multiple distinct `Applicant` records (via different `ApplicationFormSubmission` rows). The provider returns all of them. When the same applicant is linked by multiple submissions, each join result is returned — the UI handles presentation and any eventual deduplication is a process-level concern.
+
+**Relationship to OrganizationEditHandler**: The `ORGANIZATION_EDIT_COMMAND` handler (see [RabbitMQ integration](./grants-portal-rabbitmq-integration.md)) updates a single `Applicant` entity by its ID. The `Id` field in the org info response corresponds to the `organizationId` expected by the edit command payload.
 
 ---
 
-### 5. PaymentInfoDataProvider (`PAYMENTINFO`) — Placeholder
+### 5. PaymentInfoDataProvider (`PAYMENTINFO`)
 
-**Purpose:** Will provide payment information for the applicant profile.
+**Purpose:** Provides payment information for the applicant profile.
 
-**Current Status:** Returns an empty `ApplicantPaymentInfoDto` with no data fields populated. No dependencies or query logic implemented yet.
+**Source**: `PaymentRequest` entity (from `Unity.Payments` module), linked via `ApplicationFormSubmission` → `Application` where `PaymentRequest.CorrelationId` matches the application ID.
+
+**Query**: Normalizes the OIDC subject, then joins `ApplicationFormSubmission` → `Application` to build a lookup of `ApplicationId → ReferenceNo`. Payment requests whose `CorrelationId` is in that set are returned with the application's `ReferenceNo` resolved from the lookup.
+
+**Response DTO**: `ApplicantPaymentInfoDto`
+
+```json
+{
+  "dataType": "PAYMENTINFO",
+  "payments": [
+    {
+      "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+      "paymentNumber": "PAY-100",
+      "referenceNo": "REF-001",
+      "amount": 5000.00,
+      "paymentDate": "2025-01-15",
+      "paymentStatus": "Paid"
+    }
+  ]
+}
+```
+
+**Fields** (from `PaymentRequest` entity):
+
+| DTO Field | Source | Type | Description |
+|-----------|--------|------|-------------|
+| `Id` | `PaymentRequest.Id` | `Guid` | Payment request identifier |
+| `PaymentNumber` | `PaymentRequest.PaymentNumber` | `string` | CAS payment number (empty string if null) |
+| `ReferenceNo` | `Application.ReferenceNo` | `string` | Application reference number, resolved via `CorrelationId → Application` lookup |
+| `Amount` | `PaymentRequest.Amount` | `decimal` | Requested payment amount |
+| `PaymentDate` | `PaymentRequest.PaymentDate` | `string?` | Date string populated during CAS reconciliation |
+| `PaymentStatus` | `PaymentRequest.Status` | `string` | Enum converted to string (e.g. `L1Pending`, `Submitted`, `Paid`, `Failed`) |
+
+**Cross-module note**: This provider queries the `PaymentRequest` entity directly from the `Unity.Payments` module via `IRepository<PaymentRequest, Guid>`. The `CorrelationId` on `PaymentRequest` corresponds to the `Application.Id` in the grant manager domain.
 
 ---
 
@@ -356,7 +477,7 @@ Providers distinguish between **editable** and **read-only** data:
 
 | Provider | Editable Source | Read-Only Source |
 |----------|----------------|-----------------|
-| ContactInfo | Profile-linked contacts | Application-level contacts |
+| ContactInfo | Profile-linked contacts | Application-level contacts, Applicant agent contacts |
 | AddressInfo | Addresses linked via ApplicantId | Addresses linked via ApplicationId |
 
 ---
@@ -513,10 +634,10 @@ src/
 │   └── ProfileData/
 │       ├── ApplicantProfileDataDto.cs          # Polymorphic base (discriminator)
 │       ├── ApplicantContactInfoDto.cs          # CONTACTINFO response
-│       ├── ApplicantOrgInfoDto.cs              # ORGINFO response (placeholder)
+│       ├── ApplicantOrgInfoDto.cs              # ORGINFO response
 │       ├── ApplicantAddressInfoDto.cs          # ADDRESSINFO response
 │       ├── ApplicantSubmissionInfoDto.cs       # SUBMISSIONINFO response
-│       ├── ApplicantPaymentInfoDto.cs          # PAYMENTINFO response (placeholder)
+│       ├── ApplicantPaymentInfoDto.cs          # PAYMENTINFO response
 │       ├── ContactInfoItemDto.cs               # Individual contact item
 │       ├── AddressInfoItemDto.cs               # Individual address item
 │       └── SubmissionInfoItemDto.cs            # Individual submission item
@@ -528,8 +649,8 @@ src/
 │   ├── AddressInfoDataProvider.cs              # ADDRESSINFO provider
 │   ├── ContactInfoDataProvider.cs              # CONTACTINFO provider
 │   ├── SubmissionInfoDataProvider.cs           # SUBMISSIONINFO provider
-│   ├── OrgInfoDataProvider.cs                  # ORGINFO provider (placeholder)
-│   └── PaymentInfoDataProvider.cs              # PAYMENTINFO provider (placeholder)
+│   ├── OrgInfoDataProvider.cs                  # ORGINFO provider
+│   └── PaymentInfoDataProvider.cs              # PAYMENTINFO provider
 │
 ├── Unity.GrantManager.Application/Intakes/
 │   ├── IntakeFormSubmissionManager.cs          # Import orchestrator (calls ExtractOidcSub)
@@ -538,3 +659,25 @@ src/
 └── Unity.GrantManager.HttpApi/Controllers/
     └── ApplicantProfileController.cs           # API controller entry point
 ```
+
+---
+
+## Data Flow: Read vs. Write
+
+| Direction | Mechanism | Example |
+|-----------|-----------|--------|
+| **Read** (Portal → Unity) | HTTP GET via `ApplicantProfileController` → provider | Portal requests org info by key `ORGINFO` |
+| **Write** (Portal → Unity) | RabbitMQ command via [messaging pipeline](./grants-portal-rabbitmq-integration.md) | Portal sends `ORGANIZATION_EDIT_COMMAND` with applicant ID |
+
+The `Id` returned by each provider's read response is used as the entity identifier in the corresponding write command. For organization data, the `OrgInfoItemDto.Id` maps to the `organizationId` field in `PluginDataPayload`.
+
+---
+
+## Adding a New Provider
+
+1. Create a DTO class inheriting from `ApplicantProfileDataDto` in `Application.Contracts/ApplicantProfile/ProfileData/`
+2. Register the DTO as a `[JsonDerivedType]` on `ApplicantProfileDataDto`
+3. Add a key constant to `ApplicantProfileKeys`
+4. Implement `IApplicantProfileDataProvider` in `Application/ApplicantProfile/`
+5. Annotate with `[ExposeServices(typeof(IApplicantProfileDataProvider))]` and `ITransientDependency`
+6. Add unit tests following the patterns in `OrgInfoDataProviderTests` or `AddressInfoDataProviderTests`

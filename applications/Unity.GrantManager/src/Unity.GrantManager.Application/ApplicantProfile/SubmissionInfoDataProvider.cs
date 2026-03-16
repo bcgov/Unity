@@ -40,10 +40,8 @@ namespace Unity.GrantManager.ApplicantProfile
                 Submissions = []
             };
 
-            var subject = request.Subject ?? string.Empty;
-            var normalizedSubject = subject.Contains('@')
-                    ? subject[..subject.IndexOf('@')].ToUpperInvariant()
-                    : subject.ToUpperInvariant();
+            var normalizedSubject = SubjectNormalizer.Normalize(request.Subject);
+            if (normalizedSubject is null) return dto;
 
             dto.LinkSource = await ResolveFormViewUrlAsync();
 
@@ -87,7 +85,7 @@ namespace Unity.GrantManager.ApplicantProfile
         /// <summary>
         /// Derives the CHEFS form view URL from the INTAKE_API_BASE dynamic URL setting.
         /// e.g. https://chefs-dev.apps.silver.devops.gov.bc.ca/app/api/v1
-        ///   -> https://chefs-dev.apps.silver.devops.gov.bc.ca/app/form/view?s=
+        ///   -> https://chefs-dev.apps.silver.devops.gov.bc.ca/app/user/view?s=
         /// </summary>
         private async Task<string> ResolveFormViewUrlAsync()
         {
@@ -100,7 +98,7 @@ namespace Unity.GrantManager.ApplicantProfile
                 {
                     trimmed = trimmed[..^apiSegment.Length];
                 }
-                return $"{trimmed}/form/view?s=";
+                return $"{trimmed}/user/view?s=";
             }
             catch (Exception ex)
             {

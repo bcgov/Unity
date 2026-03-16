@@ -1,5 +1,12 @@
 // Note: File depends on Unity.GrantManager.Web\Views\Shared\Components\_Shared\Attachments.js
 $(function () {
+    globalThis.generateAIAttachmentSummaries = function(capturePromptIo = false, triggerButton = null) {
+        $('#generateAiSummaries')
+            .data('capture-prompt-io', capturePromptIo)
+            .data('trigger-button', triggerButton || null)
+            .trigger('click');
+    };
+
     const downloadAll = $('#downloadAll');
     const dt = $('#ChefsAttachmentsTable');
     let chefsDataTable;
@@ -176,7 +183,7 @@ $(function () {
                         .append(
                             $(
                                 '<td colspan="4" style="font-size: 1em; color: #6c757d; font-style: italic;">'
-                            ).html(data.aiSummary)
+                            ).text(data.aiSummary)
                         );
                     $(row).after(summaryRow);
                 }
@@ -200,32 +207,60 @@ $(function () {
     //Generate AI summaries for attachments
     const $generateAISummariesButton = $('#generateAiSummaries');
     if ($generateAISummariesButton.length > 0) {
+        function resetAttachmentSelectionState() {
+            selectedAtttachments = [];
+            $('.select-all-chefs-files').prop('checked', false);
+            $('.chkbox').prop('checked', false);
+            $(downloadAll).prop('disabled', true);
+            $generateAISummariesButton.prop('disabled', true);
+        }
+
         $generateAISummariesButton.on('click', function () {
             const $button = $(this);
-            const selectedRows = chefsDataTable.rows({ selected: true }).data();
+            const triggerButton = $button.data('trigger-button');
+            const $activeButton = triggerButton ? $(triggerButton) : $button;
+            const rowsToProcess = triggerButton
+                ? chefsDataTable.rows().data()
+                : chefsDataTable.rows({ selected: true }).data();
+            const promptVersion = globalThis.getSelectedPromptVersion?.() || null;
+            const capturePromptIo = $button.data('capture-prompt-io') === true;
+            const applicationId = $('#DetailsViewApplicationId').val();
 
-            if (selectedRows.length === 0) {
+            $button.removeData('capture-prompt-io');
+            $button.removeData('trigger-button');
+
+            if (rowsToProcess.length === 0) {
                 abp.message.warn(
-                    'Please select at least one attachment to generate summaries.'
+                    triggerButton
+                        ? 'No attachments were found to generate summaries for.'
+                        : 'Please select at least one attachment to generate summaries.'
                 );
                 return;
             }
 
-            // Get attachment IDs from selected rows
-            const attachmentIds = selectedRows.toArray().map((row) => row.id);
+            const attachmentIds = rowsToProcess.toArray().map((row) => row.id);
 
-            const existingHTML = $button.html();
+            const existingHTML = $activeButton.html();
+
+            if (!capturePromptIo && globalThis.hideAIPromptCapture) {
+                globalThis.hideAIPromptCapture('#attachmentPromptCaptureContainer', '#attachmentPromptCaptureOutput');
+            }
 
             // Call the backend API
             $.ajax({
-                url: '/api/app/attachment/generate-aISummaries-attachments',
+                url:
+                    '/api/app/attachment/generate-aISummaries-attachments' +
+                    '?promptVersion=' +
+                    encodeURIComponent(promptVersion || '') +
+                    '&capturePromptIo=' +
+                    encodeURIComponent(String(capturePromptIo)),
                 data: JSON.stringify(attachmentIds),
                 contentType: 'application/json',
                 type: 'POST',
                 beforeSend: function () {
-                    $button
+                    $activeButton
                         .html(
-                            '<span class="spinner-border spinner-border-sm mr-2" role="status" aria-hidden="true"></span> Generating...'
+                            '<span class="ai-button-content"><span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span><span>Generating...</span></span>'
                         )
                         .prop('disabled', true);
                 },
@@ -236,20 +271,32 @@ $(function () {
                             ' attachment(s).'
                     );
 
+                    resetAttachmentSelectionState();
+
                     // Reload the table to show new summaries
                     chefsDataTable.ajax.reload();
 
                     // Enable the toggle button now that we have summaries
                     $('#toggleAllAISummaries').prop('disabled', false);
 
-                    $button.html(existingHTML).prop('disabled', false);
+                    if (capturePromptIo && globalThis.loadAIPromptCapture) {
+                        globalThis.loadAIPromptCapture(
+                            applicationId,
+                            'AttachmentSummary',
+                            promptVersion,
+                            '#attachmentPromptCaptureContainer',
+                            '#attachmentPromptCaptureOutput'
+                        );
+                    }
+
+                    $activeButton.html(existingHTML).prop('disabled', false);
                 },
                 error: function (error) {
                     console.error('Error generating AI summaries:', error);
                     abp.notify.error(
                         'An error occurred while generating AI summaries. Please try again.'
                     );
-                    $button.html(existingHTML).prop('disabled', false);
+                    $activeButton.html(existingHTML).prop('disabled', false);
                 },
             });
         });
@@ -335,7 +382,7 @@ $(function () {
             const $text = $button.contents().filter(function () {
                 return this.nodeType === 3;
             });
-            $icon.removeClass('fl-chevron-up').addClass('fa-wand-sparkles');
+            $icon.removeClass('fa-chevron-up').addClass('fa-chevron-down');
             $text.replaceWith('Show Summaries');
             $button.attr('title', 'Show AI Summaries');
             allAISummariesExpanded = false;
@@ -343,12 +390,13 @@ $(function () {
     });
 
     function formatAISummary(data) {
+        const safeSummary = escapeHtml(data.aiSummary || 'No summary available');
         return (
             '<div class="ai-summary-row">' +
             '<div class="ai-summary-content">' +
             '<strong><i class="unt-icon-sm fa-solid fa-wand-sparkles"></i> Summary:</strong> ' +
             '<p class="mt-2">' +
-            (data.aiSummary || 'No summary available') +
+            safeSummary +
             '</p>' +
             '</div>' +
             '</div>'
@@ -513,6 +561,12 @@ $(function () {
     });
 });
 
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
 function downloadChefsFile(event) {
     const button = event.currentTarget;
     const chefsFileId = button.getAttribute('chefs-data');
@@ -586,3 +640,4 @@ function showChefsAPIAccessError() {
         },
     });
 }
+

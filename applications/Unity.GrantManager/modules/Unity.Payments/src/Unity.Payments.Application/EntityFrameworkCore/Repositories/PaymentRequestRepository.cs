@@ -22,6 +22,8 @@ namespace Unity.Payments.Repositories
         {
             ReCheckStatusList.Add(CasPaymentRequestStatus.ServiceUnavailable);
             ReCheckStatusList.Add(CasPaymentRequestStatus.SentToCas);
+            ReCheckStatusList.Add(CasPaymentRequestStatus.NotFound);
+            ReCheckStatusList.Add(CasPaymentRequestStatus.SentToAccountsPayable);
             ReCheckStatusList.Add(CasPaymentRequestStatus.NeverValidated);
 
             FailedStatusList.Add(CasPaymentRequestStatus.ServiceUnavailable);
@@ -75,10 +77,12 @@ namespace Unity.Payments.Repositories
 
         public async Task<List<PaymentRequest>> GetPaymentRequestsByFailedsStatusAsync()
         {
+            // LastModificationTime is stored as UTC by ABP; use UtcNow for consistent 24-hour window
+            var cutoff = DateTime.UtcNow.AddDays(-1);
             var dbSet = await GetDbSetAsync();
             return await dbSet.Where(p => p.InvoiceStatus != null
                                 && FailedStatusList.Contains(p.InvoiceStatus)
-                                && p.LastModificationTime >= DateTime.Now.AddDays(-2)).IncludeDetails().ToListAsync();
+                                && p.LastModificationTime >= cutoff).IncludeDetails().ToListAsync();
         }
 
         public override async Task<IQueryable<PaymentRequest>> WithDetailsAsync()
@@ -130,7 +134,8 @@ namespace Unity.Payments.Repositories
                             || (p.Status == PaymentRequestStatus.Submitted
                                 && string.IsNullOrEmpty(p.PaymentStatus)
                                 && (string.IsNullOrEmpty(p.InvoiceStatus)
-                                    || !p.InvoiceStatus.Contains(CasPaymentRequestStatus.ErrorFromCas))))
+                                    || (!p.InvoiceStatus.Contains(CasPaymentRequestStatus.ErrorFromCas)
+                                        && !p.InvoiceStatus.Contains(CasPaymentRequestStatus.NotFound)))))
                         .Sum(p => p.Amount)
                 })
                 .ToListAsync();

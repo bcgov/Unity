@@ -17,6 +17,7 @@ using Unity.Flex.Worksheets;
 using Unity.GrantManager.Applicants;
 using Unity.GrantManager.ApplicationForms;
 using Unity.GrantManager.Applications;
+using Unity.GrantManager.AI;
 using Unity.GrantManager.Events;
 using Unity.GrantManager.Flex;
 using Unity.GrantManager.Identity;
@@ -49,6 +50,16 @@ public class GrantApplicationAppService(
     IPaymentRequestAppService paymentRequestService)
     : GrantManagerAppService, IGrantApplicationAppService
 {
+    private static readonly JsonSerializerOptions AiAnalysisReadOptions = new()
+    {
+        PropertyNameCaseInsensitive = true
+    };
+
+    private static readonly JsonSerializerOptions AiAnalysisWriteOptions = new()
+    {
+        WriteIndented = true
+    };
+
     public async Task<PagedResultDto<GrantApplicationDto>> GetListAsync(GrantApplicationListInputDto input)
     {
         // 1️ Fetch applications with filters + paging in DB
@@ -203,6 +214,8 @@ public class GrantApplicationAppService(
             appDto.SubSector = application.Applicant.SubSector;
             appDto.SectorSubSectorIndustryDesc = application.Applicant.SectorSubSectorIndustryDesc;
         }
+
+        appDto.AIAnalysisData = ParseAiAnalysisData(appDto.AIAnalysis);
 
         return appDto;
     }
@@ -960,11 +973,11 @@ public class GrantApplicationAppService(
 
         // NOTE: Authorization is applied on the AppService layer and is false by default
         // AUTHORIZATION HANDLING
-        actionDtos.ForEach(async item =>
+        foreach (var item in actionDtos)
         {
             item.IsPermitted = item.IsPermitted && (await AuthorizationService.IsGrantedAsync(application, GetActionAuthorizationRequirement(item.ApplicationAction)));
             item.IsAuthorized = true;
-        });
+        }
 
         return new ListResultDto<ApplicationActionDto>(actionDtos);
     }
@@ -1040,8 +1053,23 @@ public class GrantApplicationAppService(
         return result;
     }
 
-    public async Task<string> DismissAIIssueAsync(Guid applicationId, string issueId)
+    public async Task<string> HideAIAnalysisItemAsync(Guid applicationId, string itemId)
     {
+        return await UpdateAIAnalysisItemVisibilityStateAsync(applicationId, itemId, isHidden: true);
+    }
+
+    public async Task<string> ShowAIAnalysisItemAsync(Guid applicationId, string itemId)
+    {
+        return await UpdateAIAnalysisItemVisibilityStateAsync(applicationId, itemId, isHidden: false);
+    }
+
+    private async Task<string> UpdateAIAnalysisItemVisibilityStateAsync(Guid applicationId, string itemId, bool isHidden)
+    {
+        if (string.IsNullOrWhiteSpace(itemId))
+        {
+            throw new UserFriendlyException("AI analysis item id is required.");
+        }
+
         var application = await applicationRepository.GetAsync(applicationId);
 
         if (string.IsNullOrEmpty(application.AIAnalysis))
@@ -1051,93 +1079,79 @@ public class GrantApplicationAppService(
 
         try
         {
-            var updatedAnalysis = ModifyDismissedItems(application.AIAnalysis, issueId, isDismiss: true);
+            var updatedAnalysis = SetAnalysisItemHiddenState(application.AIAnalysis, itemId, isHidden);
             application.AIAnalysis = updatedAnalysis;
             await applicationRepository.UpdateAsync(application);
             return updatedAnalysis;
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Error dismissing AI issue {IssueId} for application {ApplicationId}", issueId, applicationId);
-            throw new UserFriendlyException("Failed to dismiss the AI issue. Please try again.");
+            var action = isHidden ? "hiding" : "showing";
+            var userMessage = isHidden
+                ? "Failed to hide the AI item. Please try again."
+                : "Failed to show the AI item. Please try again.";
+
+            Logger.LogError(ex, "Error {Action} AI analysis item {ItemId} for application {ApplicationId}", action, itemId, applicationId);
+            throw new UserFriendlyException(userMessage);
         }
     }
 
-    public async Task<string> RestoreAIIssueAsync(Guid applicationId, string issueId)
+    private static string SetAnalysisItemHiddenState(string analysisJson, string itemId, bool isHidden)
     {
-        var application = await applicationRepository.GetAsync(applicationId);
-
-        if (string.IsNullOrEmpty(application.AIAnalysis))
+        if (string.IsNullOrWhiteSpace(analysisJson))
         {
-            throw new UserFriendlyException("No AI analysis available for this application.");
+            return analysisJson;
         }
 
         try
         {
-            var updatedAnalysis = ModifyDismissedItems(application.AIAnalysis, issueId, isDismiss: false);
-            application.AIAnalysis = updatedAnalysis;
-            await applicationRepository.UpdateAsync(application);
-            return updatedAnalysis;
+            var analysis = System.Text.Json.JsonSerializer.Deserialize<ApplicationAnalysisResponse>(analysisJson, AiAnalysisReadOptions);
+            if (analysis == null)
+            {
+                return analysisJson;
+            }
+
+            UpdateFindingHiddenState(analysis.Errors, itemId, isHidden);
+            UpdateFindingHiddenState(analysis.Warnings, itemId, isHidden);
+            UpdateFindingHiddenState(analysis.Summaries, itemId, isHidden);
+            UpdateFindingHiddenState(analysis.NextSteps, itemId, isHidden);
+
+            return System.Text.Json.JsonSerializer.Serialize(analysis, AiAnalysisWriteOptions);
         }
-        catch (Exception ex)
+        catch (System.Text.Json.JsonException)
         {
-            Logger.LogError(ex, "Error restoring AI issue {IssueId} for application {ApplicationId}", issueId, applicationId);
-            throw new UserFriendlyException("Failed to restore the AI issue. Please try again.");
+            return analysisJson;
         }
     }
 
-    private static string ModifyDismissedItems(string analysisJson, string issueId, bool isDismiss)
+    private static void UpdateFindingHiddenState(IEnumerable<ApplicationAnalysisFinding> findings, string itemId, bool isHidden)
     {
-        using var jsonDoc = JsonDocument.Parse(analysisJson);
-        using var memoryStream = new System.IO.MemoryStream();
-        using (var writer = new Utf8JsonWriter(memoryStream, new JsonWriterOptions { Indented = true }))
+        foreach (var finding in findings)
         {
-            writer.WriteStartObject();
-
-            var dismissedItems = new HashSet<string>();
-            if (jsonDoc.RootElement.TryGetProperty("dismissed_items", out var dismissedArray))
+            if (!string.Equals(finding.Id, itemId, StringComparison.Ordinal))
             {
-                foreach (var item in dismissedArray.EnumerateArray())
-                {
-                    var itemValue = item.GetString();
-                    if (!string.IsNullOrWhiteSpace(itemValue))
-                    {
-                        dismissedItems.Add(itemValue);
-                    }
-                }
+                continue;
             }
 
-            // Modify the dismissed items set
-            if (isDismiss && !string.IsNullOrWhiteSpace(issueId))
-            {
-                dismissedItems.Add(issueId);
-            }
-            else if (!isDismiss)
-            {
-                dismissedItems.Remove(issueId);
-            }
+            finding.Hidden = isHidden;
+            return;
+        }
+    }
 
-            // Write all properties
-            foreach (var property in jsonDoc.RootElement.EnumerateObject())
-            {
-                if (property.Name != "dismissed_items")
-                {
-                    property.WriteTo(writer);
-                }
-            }
-
-            // Write updated dismissed_items array
-            writer.WritePropertyName("dismissed_items");
-            writer.WriteStartArray();
-            foreach (var id in dismissedItems)
-            {
-                writer.WriteStringValue(id);
-            }
-            writer.WriteEndArray();
-
-            writer.WriteEndObject();
+    private static ApplicationAnalysisResponse? ParseAiAnalysisData(string? analysisJson)
+    {
+        if (string.IsNullOrWhiteSpace(analysisJson))
+        {
+            return null;
         }
 
-        return System.Text.Encoding.UTF8.GetString(memoryStream.ToArray());
+        try
+        {
+            return System.Text.Json.JsonSerializer.Deserialize<ApplicationAnalysisResponse>(analysisJson, AiAnalysisReadOptions);
+        }
+        catch (System.Text.Json.JsonException)
+        {
+            return null;
+        }
     }
 }

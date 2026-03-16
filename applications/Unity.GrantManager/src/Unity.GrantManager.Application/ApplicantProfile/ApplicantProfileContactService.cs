@@ -13,15 +13,18 @@ using Volo.Abp.Domain.Repositories;
 namespace Unity.GrantManager.ApplicantProfile;
 
 /// <summary>
-/// Applicant-profile-specific contact service. Retrieves contacts linked to applicant profiles
-/// and application-level contacts matched by OIDC subject. This service operates independently
-/// from the generic <see cref="Contacts.ContactAppService"/> and queries repositories directly.
+/// Applicant-profile-specific contact service. Retrieves contacts linked to applicant profiles,
+/// application-level contacts matched by OIDC subject, and applicant agent contacts derived from
+/// the submission login token. This service operates independently from the generic
+/// <see cref="Contacts.ContactAppService"/> and queries repositories directly.
 /// </summary>
 public class ApplicantProfileContactService(
     IContactRepository contactRepository,
     IContactLinkRepository contactLinkRepository,
     IRepository<ApplicationFormSubmission, Guid> applicationFormSubmissionRepository,
-    IRepository<ApplicationContact, Guid> applicationContactRepository)
+    IRepository<ApplicationContact, Guid> applicationContactRepository,
+    IRepository<ApplicantAgent, Guid> applicantAgentRepository,
+    IRepository<Application, Guid> applicationRepository)
     : IApplicantProfileContactService, ITransientDependency
 {
     private const string ApplicantProfileEntityType = "ApplicantProfile";
@@ -52,24 +55,23 @@ public class ApplicantProfileContactService(
                 Role = link.Role,
                 IsPrimary = link.IsPrimary,
                 IsEditable = true,
-                ApplicationId = null
+                ApplicationId = null,
+                ReferenceNo = null
             }).ToListAsync();
     }
 
     /// <inheritdoc />
     public async Task<List<ContactInfoItemDto>> GetApplicationContactsBySubjectAsync(string subject)
     {
-        var normalizedSubject = subject.Contains('@')
-            ? subject[..subject.IndexOf('@')].ToUpperInvariant()
-            : subject.ToUpperInvariant();
-
         var submissionsQuery = await applicationFormSubmissionRepository.GetQueryableAsync();
         var applicationContactsQuery = await applicationContactRepository.GetQueryableAsync();
+        var applicationsQuery = await applicationRepository.GetQueryableAsync();
 
         var applicationContacts = await (
             from submission in submissionsQuery
             join appContact in applicationContactsQuery on submission.ApplicationId equals appContact.ApplicationId
-            where submission.OidcSub == normalizedSubject
+            join application in applicationsQuery on submission.ApplicationId equals application.Id
+            where submission.OidcSub == subject
             select new ContactInfoItemDto
             {
                 ContactId = appContact.Id,
@@ -82,10 +84,43 @@ public class ApplicantProfileContactService(
                 ContactType = "Application",
                 IsPrimary = false,
                 IsEditable = false,
-                ApplicationId = appContact.ApplicationId
+                ApplicationId = appContact.ApplicationId,
+                ReferenceNo = application.ReferenceNo
             }).ToListAsync();
 
         return applicationContacts;
+    }
+
+    /// <inheritdoc />
+    public async Task<List<ContactInfoItemDto>> GetApplicantAgentContactsBySubjectAsync(string subject)
+    {
+        var submissionsQuery = await applicationFormSubmissionRepository.GetQueryableAsync();
+        var agentsQuery = await applicantAgentRepository.GetQueryableAsync();
+        var applicationsQuery = await applicationRepository.GetQueryableAsync();
+
+        var agentContacts = await (
+            from submission in submissionsQuery
+            join agent in agentsQuery on submission.ApplicationId equals agent.ApplicationId
+            join application in applicationsQuery on submission.ApplicationId equals application.Id
+            where submission.OidcSub == subject
+            select new ContactInfoItemDto
+            {
+                ContactId = agent.Id,
+                Name = agent.Name,
+                Title = agent.Title,
+                Email = agent.Email,
+                WorkPhoneNumber = agent.Phone,
+                WorkPhoneExtension = agent.PhoneExtension,
+                MobilePhoneNumber = agent.Phone2,
+                Role = agent.RoleForApplicant,
+                ContactType = "ApplicantAgent",
+                IsPrimary = false,
+                IsEditable = false,
+                ApplicationId = agent.ApplicationId,
+                ReferenceNo = application.ReferenceNo
+            }).ToListAsync();
+
+        return agentContacts;
     }
 
     private static string GetMatchingRole(string contactType)

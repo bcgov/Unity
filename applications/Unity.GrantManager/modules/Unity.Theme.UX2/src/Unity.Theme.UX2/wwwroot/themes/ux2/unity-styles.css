@@ -265,6 +265,7 @@ table.dataTable {
         margin-top: 32px;
         margin-left: 12px;
         color: var(--bc-colors-grey-text-300);
+        font-size: var(--bc-font-size);
     }
 
     .unity-input-group input {

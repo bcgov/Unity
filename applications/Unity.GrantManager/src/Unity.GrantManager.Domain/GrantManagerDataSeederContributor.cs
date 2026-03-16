@@ -1,7 +1,9 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
+using Unity.GrantManager.Assessments;
 using Unity.GrantManager.GrantApplications;
+using Unity.GrantManager.Identity;
 using Volo.Abp.Data;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Repositories;
@@ -9,7 +11,8 @@ using Volo.Abp.Domain.Repositories;
 namespace Unity.GrantManager;
 
 public class GrantManagerDataSeederContributor(
-    IApplicationStatusRepository applicationStatusRepository) : IDataSeedContributor, ITransientDependency
+    IApplicationStatusRepository applicationStatusRepository,
+    IPersonRepository personRepository) : IDataSeedContributor, ITransientDependency
 {
     public static class GrantApplicationStates
     {
@@ -37,6 +40,7 @@ public class GrantManagerDataSeederContributor(
         }   
 
         await SeedApplicationStatusAsync();
+        await SeedAiScoringPersonAsync(context.TenantId);
     }
 
     
@@ -65,6 +69,23 @@ public class GrantManagerDataSeederContributor(
             {
                 await applicationStatusRepository.InsertAsync(status);
             }
+        }
+    }
+
+    private async Task SeedAiScoringPersonAsync(System.Guid? tenantId)
+    {
+        var existing = await personRepository.FirstOrDefaultAsync(p => p.Id == AIScoringConstants.AiPersonId);
+        if (existing == null)
+        {
+            await personRepository.InsertAsync(new Person
+            {
+                Id = AIScoringConstants.AiPersonId,
+                OidcSub = AIScoringConstants.AiOidcSub,
+                OidcDisplayName = AIScoringConstants.AiDisplayName,
+                FullName = AIScoringConstants.AiDisplayName,
+                Badge = AIScoringConstants.AiBadge,
+                TenantId = tenantId
+            });
         }
     }
 }

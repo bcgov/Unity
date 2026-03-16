@@ -168,7 +168,8 @@ $(function () {
         dataTableName: 'IdentityRolesTable',
         dynamicButtonContainerId: 'dynamicButtonContainerId',
         useNullPlaceholder: true,
-        externalSearchId: 'search-roles'
+        externalSearchId: 'search-roles',
+        fixedHeaders: true
     });
 
     _createModal.onResult(function () {

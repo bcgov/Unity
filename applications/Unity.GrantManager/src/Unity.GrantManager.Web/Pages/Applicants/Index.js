@@ -376,7 +376,7 @@ $(function () {
 
     function getCreationTimeColumn(columnIndex) {
         return {
-            title: 'Creation Date',
+            title: 'Created Date',
             data: 'creationTime',
             name: 'creationTime',
             className: 'data-table-header',
@@ -528,6 +528,7 @@ $(function () {
         pagingEnabled: true,
         reorderEnabled: true,
         languageSetValues,
+        fixedHeaders: true,
         dataTableName: 'ApplicantsTable',
         dynamicButtonContainerId: 'dynamicButtonContainerId',
         // Add state handling to validate and clear corrupted states

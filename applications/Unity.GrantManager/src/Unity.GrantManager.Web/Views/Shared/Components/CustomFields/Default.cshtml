@@ -5,7 +5,26 @@
     Layout = null;
 }
 
-<h4>Selected Form Version: @Model.Version</h4>
+<div class="row">
+    <div class="col-6 p-3">
+        <label for="applicationFormVersionRo" class="form-label">Version:</label>
+        <div class="select-icon-wrapper">
+            <select class="form-select form-control" id="applicationFormVersionRo" name="Version" disabled>
+                <option value="@Model.ChefsFormVersionId">@Model.Version - @Model.ChefsFormVersionId</option>
+            </select>
+            @if (Model?.ChefsFormPublished == true)
+            {
+                <i class="fl fl-tick published-tick" data-toggle="tooltip" title="This form is published"></i>
+            }
+        </div>
+    </div>
+    <div class="col-6 p-3">
+        <input type="hidden" id="originalScoresheetId" value="@Model!.ScoresheetId" />
+        <abp-select asp-for="@Model.ScoresheetId" asp-items="@Model.ScoresheetOptionsList" id="scoresheet" label="Scoresheets:">
+            <option value="">Please choose...</option>
+        </abp-select>
+    </div>
+</div>
 <div id="custom-fields-div" class="custom-fields-container" >
     <form method="post" asp-controller="CustomFields" asp-action="UpdateCustomFields" id="worksheet-config-form">
         <abp-input type="hidden" id="ChefsFormVersionId" asp-for="@Model.ChefsFormVersionId" />
@@ -28,15 +47,6 @@
                             </span>
                         </div>
                     }
-                </div>
-
-                <div class="scoresheets row">
-                    <div class="col-4">
-                        <input type="hidden" id="originalScoresheetId" value="@Model.ScoresheetId" />
-                        <abp-select asp-for="@Model.ScoresheetId" asp-items="@Model.ScoresheetOptionsList" id="scoresheet" label="Scoresheets:">
-                            <option value="">Please choose...</option>
-                        </abp-select>
-                    </div>
                 </div>
                 <div class="button-row row">
                     <div class="col-12">

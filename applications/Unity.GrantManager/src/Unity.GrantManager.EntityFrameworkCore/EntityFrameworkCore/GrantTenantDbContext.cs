@@ -14,6 +14,7 @@ using Unity.Payments.EntityFrameworkCore;
 using Unity.Flex.EntityFrameworkCore;
 using Unity.Notifications.EntityFrameworkCore;
 using Unity.Reporting.EntityFrameworkCore;
+using Unity.AI.EntityFrameworkCore;
 using Unity.GrantManager.GlobalTag;
 using Unity.GrantManager.Contacts;
 
@@ -46,6 +47,9 @@ namespace Unity.GrantManager.EntityFrameworkCore
         public DbSet<Tag> Tags { get; set; }
         public DbSet<Contact> Contacts { get; set; }
         public DbSet<ContactLink> ContactLinks { get; set; }
+        public DbSet<FundingHistory> FundingHistories { get; set; }
+        public DbSet<IssueTracking> IssueTrackings { get; set; }
+        public DbSet<AuditHistory> AuditHistories { get; set; }
         #endregion
 
         public GrantTenantDbContext(DbContextOptions<GrantTenantDbContext> options) : base(options)
@@ -337,11 +341,32 @@ namespace Unity.GrantManager.EntityFrameworkCore
 
                 b.HasOne<Contact>().WithMany().HasForeignKey(x => x.ContactId).IsRequired();
 
-                b.Property(x => x.RelatedEntityType).IsRequired().HasMaxLength(100);                
+                b.Property(x => x.RelatedEntityType).IsRequired().HasMaxLength(100);
                 b.Property(x => x.Role).HasMaxLength(100);
 
                 b.HasIndex(x => new { x.ContactId, x.RelatedEntityType, x.RelatedEntityId });
                 b.HasIndex(x => new { x.RelatedEntityType, x.RelatedEntityId });
+            });
+
+            modelBuilder.Entity<FundingHistory>(b =>
+            {
+                b.ToTable(GrantManagerConsts.TenantTablePrefix + "FundingHistories", GrantManagerConsts.DbSchema);
+                b.ConfigureByConvention();
+                b.HasOne<Applicant>().WithMany().HasForeignKey(x => x.ApplicantId).IsRequired(false);
+            });
+
+            modelBuilder.Entity<IssueTracking>(b =>
+            {
+                b.ToTable(GrantManagerConsts.TenantTablePrefix + "IssueTrackings", GrantManagerConsts.DbSchema);
+                b.ConfigureByConvention();
+                b.HasOne<Applicant>().WithMany().HasForeignKey(x => x.ApplicantId).IsRequired(false);
+            });
+
+            modelBuilder.Entity<AuditHistory>(b =>
+            {
+                b.ToTable(GrantManagerConsts.TenantTablePrefix + "AuditHistories", GrantManagerConsts.DbSchema);
+                b.ConfigureByConvention();
+                b.HasOne<Applicant>().WithMany().HasForeignKey(x => x.ApplicantId).IsRequired(false);
             });
 
             var allEntityTypes = modelBuilder.Model.GetEntityTypes();
@@ -355,6 +380,7 @@ namespace Unity.GrantManager.EntityFrameworkCore
             modelBuilder.ConfigureFlex();
             modelBuilder.ConfigureNotifications();
             modelBuilder.ConfigureReporting();
+            modelBuilder.ConfigureAI();
         }
     }
 }

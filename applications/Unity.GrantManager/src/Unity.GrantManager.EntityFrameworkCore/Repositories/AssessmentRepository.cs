@@ -62,6 +62,7 @@ public class AssessmentRepository : EfCoreRepository<GrantTenantDbContext, Asses
                     Status = assessment.Status,
                     IsComplete = assessment.IsComplete,
                     ApprovalRecommended = assessment.ApprovalRecommended,
+                    IsAiAssessment = assessment.IsAiAssessment,
                     FinancialAnalysis = assessment.FinancialAnalysis,
                     EconomicImpact = assessment.EconomicImpact,
                     InclusiveGrowth = assessment.InclusiveGrowth,

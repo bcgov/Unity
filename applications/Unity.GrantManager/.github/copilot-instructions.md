@@ -1,0 +1,204 @@
+# Unity Grant Manager – Copilot Instructions
+
+> **Trust these instructions first.** Only search the codebase when information here is incomplete or incorrect.
+> This is NOT the Unity game engine. Do not suggest UnityEngine APIs.
+
+## Project Overview
+
+Unity Grant Manager is a **grant management portal** for the Province of British Columbia, built on **ABP Framework 9.1.3** with **.NET 9.0**, targeting **PostgreSQL 17**. The UI uses **Razor Pages** with a custom ABP theme (Unity.Theme.UX2). The architecture follows ABP's **Domain-Driven Design (DDD)** layered module pattern.
+
+**Key stack:** .NET 9 · ABP 9.1.3 · EF Core 9.0 · PostgreSQL 17 · Redis · RabbitMQ · xUnit · Shouldly · NSubstitute · AutoMapper · Cypress (E2E)
+
+## Repository Layout
+
+```
+Unity.GrantManager.sln                    ← Solution file (63 projects)
+common.props                              ← Shared MSBuild properties
+Directory.Build.props                     ← Global build props (suppresses NU1701, MSB3277)
+NuGet.Config                              ← NuGet package sources
+.env.example                              ← Environment variable template
+docker-compose.yml                        ← Docker dev environment
+src/
+  Unity.GrantManager.Web/                 ← Razor Pages web app (entry point)
+  Unity.GrantManager.Application/         ← App services, AutoMapper profiles
+  Unity.GrantManager.Application.Contracts/ ← DTOs, interfaces
+  Unity.GrantManager.Domain/              ← Entities, repositories, domain services
+  Unity.GrantManager.Domain.Shared/       ← Enums, constants, localization (en.json)
+  Unity.GrantManager.EntityFrameworkCore/  ← DbContext, migrations, EF config
+  Unity.GrantManager.HttpApi/             ← REST controllers
+  Unity.GrantManager.HttpApi.Client/      ← Remote service client proxies
+  Unity.GrantManager.DbMigrator/          ← Database migration console app
+test/
+  Unity.GrantManager.TestBase/            ← Shared test fixtures
+  Unity.GrantManager.Application.Tests/   ← App service tests
+  Unity.GrantManager.Domain.Tests/        ← Domain logic tests
+  Unity.GrantManager.EntityFrameworkCore.Tests/
+  Unity.GrantManager.Web.Tests/
+modules/                                  ← ABP modules (each with src/ and test/)
+  Unity.Flex/                             ← Dynamic forms/worksheets
+  Unity.Notifications/                    ← Email/messaging (full-stack module)
+  Unity.Payments/                         ← Financial transactions
+  Unity.Reporting/                        ← Analytics & reports
+  Unity.AI/                               ← AI-powered analysis (OpenAI)
+  Unity.TenantManagement/                 ← Multi-tenant admin
+  Unity.Identity.Web/                     ← OIDC authentication
+  Unity.Theme.UX2/                        ← Custom Razor Pages theme
+  Unity.SharedKernel/                     ← Cross-cutting utilities
+```
+
+## Build & Test Commands
+
+All commands run from this directory (`applications/Unity.GrantManager/`).
+
+### Restore & Build
+
+```bash
+dotnet restore Unity.GrantManager.sln
+dotnet build Unity.GrantManager.sln --no-restore
+```
+
+- Build takes ~3 minutes. The solution has 63 projects.
+- There is **1 expected warning** in `Unity.GrantManager.Web/Pages/Dashboard/Index.cshtml.cs` (CS8604 null reference). Do not try to fix it unless explicitly asked.
+- `Directory.Build.props` suppresses NU1701 and MSB3277 warnings globally; do not re-add these suppressions in individual projects.
+- `common.props` sets `<LangVersion>latest</LangVersion>` and suppresses CS1591.
+
+### Run All Tests
+
+```bash
+dotnet test Unity.GrantManager.sln --no-build
+```
+
+- ~470 tests across 15 test projects. All use **xUnit** with **Shouldly** assertions and **NSubstitute** mocks.
+- Tests use in-memory database providers (**SQLite** for most projects; **EFCore.InMemory** for `Unity.GrantManager.Web.Tests`) instead of PostgreSQL. No database setup required.
+- Test run takes ~1–2 minutes after build.
+- To run a single test project: `dotnet test test/Unity.GrantManager.Application.Tests/ --no-build`
+
+### EF Core Migrations
+
+The solution has **two database contexts** — always specify which context:
+
+```bash
+cd src/Unity.GrantManager.EntityFrameworkCore
+
+# Host migrations (shared/system tables)
+dotnet ef migrations add <Name> --context GrantManagerDbContext --output-dir Migrations/HostMigrations
+
+# Tenant migrations (per-tenant isolated data)
+dotnet ef migrations add <Name> --context GrantTenantDbContext --output-dir Migrations/TenantMigrations
+```
+
+## CI Pipeline (PR Checks)
+
+Every PR triggers branch-specific GitHub Actions workflows (in the repo root `.github/workflows/`) that:
+
+1. **Validate source branch** — PRs to `dev` must come from `feature/*`, `hotfix/*`, `bugfix/*`, `test`, or `main`. PRs to `main` must come from `test` or `hotfix/*` only.
+2. **Discover test projects** — Finds all `*Tests.csproj` files automatically.
+3. **Run tests in parallel matrix** — Each test project runs independently with `dotnet test` using .NET 9.0.x.
+4. **Aggregate results** — Posts pass/fail badge as PR comment.
+
+Always ensure `dotnet build` and `dotnet test` pass before submitting changes.
+
+## Architecture Rules
+
+### ABP Layering (Current Wiring + Preferred Usage)
+
+Current solution references are broader than a strict textbook layer graph:
+
+```
+Web → Application + HttpApi + HttpApi.Client + EntityFrameworkCore
+HttpApi → Application.Contracts + Domain
+Application → Domain + Application.Contracts
+Domain → Domain.Shared
+EntityFrameworkCore → Domain
+```
+
+Preferred code-usage boundaries (guidance for new code):
+
+- Prefer keeping web/UI concerns out of Application and Domain.
+- Prefer keeping business rules in Domain entities/managers, not in controllers or pages.
+- Prefer controllers/endpoints to use Application.Contracts surfaces for use-case orchestration.
+- Avoid introducing new cross-layer dependencies unless there is a clear ABP/module-composition reason.
+- Do not call other application services within the same module; move shared logic to Domain services/helpers.
+
+### Entity & Domain Conventions
+
+- Entities use **rich domain model**: private/protected setters, behavior via methods.
+- Include `protected` parameterless constructor for EF Core.
+- Do **not** generate `Guid` keys inside constructors; accept `id` from `IGuidGenerator`.
+- Reference other aggregate roots **by Id only**, not navigation properties.
+- Domain services use `*Manager` suffix.
+- Throw `BusinessException` with namespaced error codes for rule violations.
+
+### Application Layer
+
+- Interface naming: `I*AppService` inheriting `IApplicationService`.
+- All methods `async`, end with `Async`.
+- Accept/return **DTOs only**, never entities. Define DTOs in `*.Application.Contracts`.
+- Make all public methods `virtual` for extensibility.
+- This project uses **AutoMapper** (not Mapperly). Mapping profiles are `*AutoMapperProfile.cs` inheriting `Profile`.
+- `ObjectMapper.Map<>()` is used for DTO mapping, not Mapperly partials.
+
+### EF Core
+
+- Entity configuration uses extension methods (`ConfigureMyProject()` on `ModelBuilder`), not inline in `OnModelCreating`.
+- Always call `b.ConfigureByConvention()` for every entity mapping.
+- Use `options.AddDefaultRepositories()` without `includeAllEntities: true`.
+- Repository implementations inherit `EfCoreRepository<TDbContext, TEntity, TKey>`.
+
+### Testing Conventions
+
+- Test class naming: `*Tests.cs`
+- Base class hierarchy: `AbpIntegratedTest<TModule>` → `GrantManagerTestBase<T>` → domain-specific bases.
+- Use `[Fact]` for single tests, `[Theory]` with `[InlineData]` for parameterized.
+- Assertions: `Shouldly` (`result.ShouldBe(expected)`, `result.ShouldNotBeNull()`).
+- Mocking: `NSubstitute` (`Substitute.For<IService>()`).
+- JSON test fixtures loaded from `AppDomain.CurrentDomain.BaseDirectory`.
+
+### Code Style
+
+- **Prettier** for JS/CSS: single quotes, 4-space tabs, no tabs.
+- **C#**: Latest language version, nullable enabled in most projects.
+- Localization: English strings in `*/Localization/*/en.json`. All user-facing text must use localization; no hardcoded English in code.
+- Permissions defined in `*PermissionDefinitionProvider` in Application.Contracts.
+
+### Branching
+
+- `dev` → `test` → `main` promotion flow.
+- Feature work: `feature/*`, bug fixes: `bugfix/*`, urgent fixes: `hotfix/*`.
+
+## Skills
+
+For detailed ABP patterns (DDD, application services, EF Core, testing, module architecture), refer to `.github/skills/` for domain-specific guidance.
+
+## Agents
+
+Use the ABP workflow agents in `.github/agents/` to accelerate planning, development, and testing.
+
+### When to Use Each Agent
+
+- `feature-planner`: Convert a feature request or bug into a layered ABP implementation plan.
+- `ddd-modeler`: Design or review aggregates, invariants, repositories, and domain managers.
+- `application-service-designer`: Define app service contracts, DTOs, authorization, and AutoMapper changes.
+- `efcore-migration-planner`: Plan host vs tenant EF Core model updates and migration steps safely.
+- `permissions-localization-auditor`: Audit diffs for permission coverage, localization keys, and hardcoded text.
+- `test-strategy`: Build risk-based unit/integration test plans for ABP features.
+- `test-triage`: Diagnose failing tests and propose minimal-risk fixes with verification steps.
+- `pr-readiness`: Run ABP-focused pre-PR quality checks (layering, mapping, tests, migration correctness).
+
+### Usage Guidance
+
+Provide these inputs when invoking an agent:
+
+1. Feature or bug context.
+2. Target module(s) and affected layers.
+3. Tenant scope (host, tenant, or both).
+4. Constraints (security, timeline, performance, backward compatibility).
+
+Use multiple agents in sequence for larger work:
+
+1. `feature-planner`
+2. `ddd-modeler` and/or `abp-application-service-designer`
+3. `efcore-migration-planner` (if schema changes exist)
+4. `test-strategy` or `abp-test-triage`
+5. `permissions-localization-auditor`
+6. `pr-readiness`
