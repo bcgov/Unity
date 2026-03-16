@@ -93,17 +93,17 @@ $(function () {
 
     let assessmentGenerateButtonGroup = {
         name: 'assessmentGenerateButtonsGroup',
-        buttons: Array(renderUnityWorkflowButton('Generate'))
+        buttons: new Array(renderUnityWorkflowButton('Generate'))
     };
 
     let assessmentCreateButtonGroup = {
         name: 'assessmentCreateButtonsGroup',
-        buttons: Array(renderUnityWorkflowButton('Create'))
+        buttons: new Array(renderUnityWorkflowButton('Create'))
     };
 
     let assessmentCloneButtonGroup = {
         name: 'assessmentCloneButtonsGroup',
-        buttons: Array(renderUnityWorkflowButton('Clone'))
+        buttons: new Array(renderUnityWorkflowButton('Clone'))
     };
 
     const reviewListDiv = "ReviewListTable";
