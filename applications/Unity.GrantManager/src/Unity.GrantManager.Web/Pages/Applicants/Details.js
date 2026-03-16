@@ -385,6 +385,7 @@ function initCommentsWidget() {
         },
     });
 
+    updateCommentsCounters();
     PubSub.subscribe('ApplicantComment_refresh', () => {
         applicantCommentsWidgetManager.refresh();
         updateCommentsCounters();
