@@ -119,7 +119,8 @@ class MetabaseClient:
         return r.json()
 
     def create_card(self, sql: str, db_id: int, collection_id: int,
-                    name: str, tenant_id: Optional[str] = None) -> int:
+                    name: str, tenant_id: Optional[str] = None,
+                    visualization_settings: Optional[Dict[str, Any]] = None) -> int:
         """
         Create a new Metabase card (saved question).
 
@@ -137,7 +138,7 @@ class MetabaseClient:
         url = f"{self.config.url}/api/card"
         payload = {
             "name": name,
-            "visualization_settings": {},
+            "visualization_settings": visualization_settings or {},
             "collection_id": collection_id,
             "enable_embedding": True,
             "dataset_query": {
