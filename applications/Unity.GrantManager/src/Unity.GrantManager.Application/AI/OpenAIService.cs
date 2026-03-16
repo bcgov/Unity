@@ -20,9 +20,9 @@ namespace Unity.GrantManager.AI
         private readonly ILogger<OpenAIService> _logger;
         private readonly ITextExtractionService _textExtractionService;
         private readonly IAIPromptCaptureStore _promptIoCaptureStore;
-        private const string ApplicationAnalysisPromptType = "ApplicationAnalysis";
-        private const string AttachmentSummaryPromptType = "AttachmentSummary";
-        private const string ScoresheetSectionPromptType = "ScoresheetSection";
+        private const string ApplicationAnalysisPromptType = AIPromptTypes.ApplicationAnalysis;
+        private const string AttachmentSummaryPromptType = AIPromptTypes.AttachmentSummary;
+        private const string ScoresheetSectionPromptType = AIPromptTypes.ScoresheetSection;
         private const string PromptVersionV0 = "v0";
         private const string PromptVersionV1 = "v1";
         private static readonly string PromptTemplatesFolder = Path.Combine("AI", "Prompts", "Versions");
