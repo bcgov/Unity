@@ -6,6 +6,7 @@ using Unity.AI.Permissions;
 using Unity.GrantManager.AI;
 using Volo.Abp;
 using Volo.Abp.Authorization;
+using Volo.Abp.Authorization.Permissions;
 using Volo.Abp.Features;
 
 namespace Unity.GrantManager.GrantApplications
@@ -13,7 +14,8 @@ namespace Unity.GrantManager.GrantApplications
     public class ApplicationAIPromptCaptureAppService(
         IAIPromptCaptureStore promptIoCaptureStore,
         IWebHostEnvironment webHostEnvironment,
-        IFeatureChecker featureChecker)
+        IFeatureChecker featureChecker,
+        IPermissionChecker permissionChecker)
         : GrantManagerAppService, IApplicationAIPromptCaptureAppService
     {
         public async Task<List<AIPromptCaptureResponse>> GetRecentAsync(Guid applicationId, string promptType, string? promptVersion = null)
@@ -49,7 +51,7 @@ namespace Unity.GrantManager.GrantApplications
                 throw new UserFriendlyException("Unknown prompt type.");
             }
 
-            if (!await AuthorizationService.IsGrantedAsync(permissionName))
+            if (!await permissionChecker.IsGrantedAsync(permissionName))
             {
                 throw new AbpAuthorizationException("The user doesn't have permission to view prompt capture for this prompt type.");
             }
