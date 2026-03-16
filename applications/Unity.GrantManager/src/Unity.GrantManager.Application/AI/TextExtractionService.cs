@@ -526,7 +526,7 @@ namespace Unity.GrantManager.AI
                 XNamespace officeDocumentRelationshipsNamespace = "http://schemas.openxmlformats.org/officeDocument/2006/relationships";
                 XNamespace packageRelationshipsNamespace = "http://schemas.openxmlformats.org/package/2006/relationships";
 
-                var slideTargetsByRelationshipId = relationshipsDocument
+                var slideTargetsByRelationshipId = (relationshipsDocument
                     .Root?
                     .Elements(packageRelationshipsNamespace + "Relationship")
                     .Where(element => string.Equals(
@@ -539,7 +539,8 @@ namespace Unity.GrantManager.AI
                         Target = NormalizePowerPointSlideTarget(element.Attribute("Target")?.Value)
                     })
                     .Where(item => !string.IsNullOrWhiteSpace(item.Id) && !string.IsNullOrWhiteSpace(item.Target))
-                    .ToDictionary(item => item.Id!, item => item.Target!, StringComparer.OrdinalIgnoreCase);
+                    .ToDictionary(item => item.Id!, item => item.Target!, StringComparer.OrdinalIgnoreCase))
+                    ?? new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
                 return presentationDocument
                     .Descendants(presentationNamespace + "sldId")
