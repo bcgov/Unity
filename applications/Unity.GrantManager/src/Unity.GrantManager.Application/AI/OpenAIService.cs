@@ -37,9 +37,12 @@ namespace Unity.GrantManager.AI
         private const string ServiceTemporarilyUnavailableMessage = "AI analysis failed - service temporarily unavailable.";
         private const string SummaryFailedRetryMessage = "AI analysis failed - please try again later.";
         private const int MaxAiAttempts = 3;
+        private const string DefaultMaxTokensParameterName = "max_completion_tokens";
+        private const string LegacyMaxTokensParameterName = "max_tokens";
 
         private string? ApiKey => _configuration["Azure:OpenAI:ApiKey"];
         private string? ApiUrl => _configuration["Azure:OpenAI:ApiUrl"] ?? "https://api.openai.com/v1/chat/completions";
+        private string MaxTokensParameterName => ResolveMaxTokensParameterName(_configuration["Azure:OpenAI:MaxTokensParameter"]);
         private readonly string MissingApiKeyMessage = "OpenAI API key is not configured";
 
         // Optional local debugging sink for prompt payload logs to a local file.
@@ -164,12 +167,17 @@ namespace Unity.GrantManager.AI
                     {
                        new { role = "system", content = resolvedSystemPrompt },
                        new { role = "user", content = userPrompt }
-                   },
-                    max_tokens = maxTokens,
-                    temperature = temperature ?? 0.3
+                   }
                 };
 
-                var json = JsonSerializer.Serialize(requestBody);
+                var requestPayload = new Dictionary<string, object?>
+                {
+                    ["messages"] = requestBody.messages,
+                    [MaxTokensParameterName] = maxTokens,
+                    ["temperature"] = temperature ?? 0.3
+                };
+
+                var json = JsonSerializer.Serialize(requestPayload);
                 var httpContent = new StringContent(json, Encoding.UTF8, "application/json");
 
                 _httpClient.DefaultRequestHeaders.Clear();
@@ -518,6 +526,16 @@ namespace Unity.GrantManager.AI
             }
 
             return AIOperationResult.PermanentFailure(content);
+        }
+
+        private static string ResolveMaxTokensParameterName(string? configuredParameterName)
+        {
+            if (string.Equals(configuredParameterName, LegacyMaxTokensParameterName, StringComparison.Ordinal))
+            {
+                return LegacyMaxTokensParameterName;
+            }
+
+            return DefaultMaxTokensParameterName;
         }
 
         private static ApplicationAnalysisResponse ParseApplicationAnalysisResponse(string raw)
