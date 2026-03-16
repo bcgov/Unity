@@ -34,8 +34,7 @@
         && await PermissionChecker.IsGrantedAsync(AIPermissions.AttachmentSummary.AttachmentSummaryDefault);
     var aiApplicationAnalysisEnabled = await FeatureChecker.IsEnabledAsync("Unity.AI.ApplicationAnalysis")
         && await PermissionChecker.IsGrantedAsync(AIPermissions.ApplicationAnalysis.ApplicationAnalysisDefault);
-    var aiScoringFeatureEnabled = await FeatureChecker.IsEnabledAsync("Unity.AI.Scoring");
-    var aiScoringEnabled = aiScoringFeatureEnabled
+    var aiScoringEnabled = await FeatureChecker.IsEnabledAsync("Unity.AI.Scoring")
         && await PermissionChecker.IsGrantedAsync(AIPermissions.ScoringAssistant.ScoringAssistantDefault);
     var flexFeatureEnabled = await FeatureChecker.IsEnabledAsync("Unity.Flex");
 }
@@ -72,7 +71,6 @@
 <input type="hidden" id="RenderFormIoToHtml" value="@Model.RenderFormIoToHtml.ToString()" />
 <input type="hidden" id="ApplicationFormVersionId" value="@Model.ApplicationFormVersionId" />
 <input type="hidden" id="AIAnalysisFeatureEnabled" value="@aiApplicationAnalysisEnabled" />
-<input type="hidden" id="AIScoringFeatureFlagEnabled" value="@aiScoringFeatureEnabled.ToString()" />
 <input type="hidden" id="AIScoringFeatureEnabled" value="@aiScoringEnabled.ToString()" />
 
 @functions
