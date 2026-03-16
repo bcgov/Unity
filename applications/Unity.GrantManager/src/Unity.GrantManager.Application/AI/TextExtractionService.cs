@@ -2,12 +2,14 @@ using Microsoft.Extensions.Logging;
 using NPOI.SS.UserModel;
 using NPOI.XWPF.UserModel;
 using System;
-using System.Collections.Generic;
 using System.IO;
+using System.IO.Compression;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 using UglyToad.PdfPig;
 using Volo.Abp.DependencyInjection;
 
@@ -22,6 +24,7 @@ namespace Unity.GrantManager.AI
         private const int MaxDocxParagraphs = 2000;
         private const int MaxDocxTableRows = 2000;
         private const int MaxDocxTableCellsPerRow = 50;
+        private const int MaxPowerPointSlides = 200;
         private readonly ILogger<TextExtractionService> _logger;
         private readonly Dictionary<string, Func<string, byte[], string>> _extractorsByExtension;
 
@@ -37,7 +40,8 @@ namespace Unity.GrantManager.AI
                 [".pdf"] = ExtractTextFromPdfFile,
                 [".docx"] = ExtractTextFromWordDocx,
                 [".xls"] = ExtractTextFromExcelFile,
-                [".xlsx"] = ExtractTextFromExcelFile
+                [".xlsx"] = ExtractTextFromExcelFile,
+                [".pptx"] = ExtractTextFromPowerPointFile
             };
         }
 
@@ -92,6 +96,13 @@ namespace Unity.GrantManager.AI
                     return Task.FromResult(NormalizeAndLimitText(rawText, fileName));
                 }
 
+                if (normalizedContentType.Contains("presentation") ||
+                    normalizedContentType.Contains("powerpoint"))
+                {
+                    var rawText = ExtractTextFromPowerPointFile(fileName, fileContent);
+                    return Task.FromResult(NormalizeAndLimitText(rawText, fileName));
+                }
+
                 _logger.LogDebug("No text extraction available for content type {ContentType} with extension {Extension}",
                     contentType, extension);
                 return Task.FromResult(string.Empty);
@@ -120,6 +131,7 @@ namespace Unity.GrantManager.AI
                     _logger.LogDebug("Truncated text content to {MaxLength} characters", MaxExtractedTextLength);
                 }
 
+                _logger.LogDebug("Extracted {CharacterCount} characters from text-based content.", text.Length);
                 return text;
             }
             catch (Exception ex)
@@ -136,12 +148,28 @@ namespace Unity.GrantManager.AI
                 using var stream = new MemoryStream(fileContent, writable: false);
                 using var document = PdfDocument.Open(stream);
                 var builder = new StringBuilder();
-                var pageTexts = document.GetPages()
-                    .Select(page => page.Text)
-                    .Where(pageText => !string.IsNullOrWhiteSpace(pageText));
+                var processedPageCount = 0;
 
-                AppendUntilLimit(builder, pageTexts);
+                foreach (var page in document.GetPages())
+                {
+                    if (builder.Length >= MaxExtractedTextLength)
+                    {
+                        break;
+                    }
 
+                    if (string.IsNullOrWhiteSpace(page.Text))
+                    {
+                        continue;
+                    }
+
+                    processedPageCount++;
+                    if (TryAppendWithTrailingNewline(builder, page.Text))
+                    {
+                        break;
+                    }
+                }
+
+                _logger.LogDebug("Extracted PDF text from {ProcessedPageCount} pages for {FileName}", processedPageCount, fileName);
                 return builder.ToString();
             }
             catch (Exception ex)
@@ -158,15 +186,14 @@ namespace Unity.GrantManager.AI
                 using var stream = new MemoryStream(fileContent, writable: false);
                 using var document = new XWPFDocument(stream);
                 var builder = new StringBuilder();
-                var paragraphTexts = document.Paragraphs
-                    .Take(MaxDocxParagraphs)
-                    .Select(paragraph => paragraph.ParagraphText)
-                    .Where(paragraphText => !string.IsNullOrWhiteSpace(paragraphText));
+                var processedParagraphCount = AppendDocxParagraphText(document, builder);
+                var processedTableRowCount = AppendDocxTableText(document, builder);
 
-                AppendUntilLimit(builder, paragraphTexts);
-
-                TryAppendDocxTableText(document, builder);
-
+                _logger.LogDebug(
+                    "Extracted Word text from {ProcessedParagraphCount} paragraphs and {ProcessedTableRowCount} table rows for {FileName}",
+                    processedParagraphCount,
+                    processedTableRowCount,
+                    fileName);
                 return builder.ToString();
             }
             catch (Exception ex)
@@ -176,28 +203,72 @@ namespace Unity.GrantManager.AI
             }
         }
 
-        private static void TryAppendDocxTableText(XWPFDocument document, StringBuilder builder)
+        private static int AppendDocxParagraphText(XWPFDocument document, StringBuilder builder)
+        {
+            var processedParagraphCount = 0;
+
+            foreach (var paragraph in document.Paragraphs.Take(MaxDocxParagraphs))
+            {
+                if (builder.Length >= MaxExtractedTextLength)
+                {
+                    break;
+                }
+
+                if (string.IsNullOrWhiteSpace(paragraph.ParagraphText))
+                {
+                    continue;
+                }
+
+                processedParagraphCount++;
+                if (TryAppendWithTrailingNewline(builder, paragraph.ParagraphText))
+                {
+                    break;
+                }
+            }
+
+            return processedParagraphCount;
+        }
+
+        private static int AppendDocxTableText(XWPFDocument document, StringBuilder builder)
         {
             if (builder.Length >= MaxExtractedTextLength)
             {
-                return;
+                return 0;
             }
 
+            var processedTableRowCount = 0;
             foreach (var table in document.Tables)
             {
                 foreach (var row in table.Rows.Take(MaxDocxTableRows))
                 {
+                    if (builder.Length >= MaxExtractedTextLength)
+                    {
+                        return processedTableRowCount;
+                    }
+
                     var cellTexts = row.GetTableCells()
                         .Take(MaxDocxTableCellsPerRow)
                         .Select(cell => cell.GetText())
                         .Where(cellText => !string.IsNullOrWhiteSpace(cellText));
 
-                    if (AppendUntilLimit(builder, cellTexts))
+                    var rowHadValue = false;
+                    foreach (var cellText in cellTexts)
                     {
-                        return;
+                        rowHadValue = true;
+                        if (TryAppendWithTrailingNewline(builder, cellText))
+                        {
+                            return processedTableRowCount + 1;
+                        }
+                    }
+
+                    if (rowHadValue)
+                    {
+                        processedTableRowCount++;
                     }
                 }
             }
+
+            return processedTableRowCount;
         }
 
         private string ExtractTextFromExcelFile(string fileName, byte[] fileContent)
@@ -208,6 +279,8 @@ namespace Unity.GrantManager.AI
                 using var workbook = WorkbookFactory.Create(stream);
                 var builder = new StringBuilder();
                 var sheetCount = Math.Min(workbook.NumberOfSheets, MaxExcelSheets);
+                var processedSheetCount = 0;
+                var processedRowCount = 0;
 
                 for (var sheetIndex = 0; sheetIndex < sheetCount; sheetIndex++)
                 {
@@ -217,13 +290,24 @@ namespace Unity.GrantManager.AI
                     }
 
                     var sheet = workbook.GetSheetAt(sheetIndex);
-                    var limitReached = TryAppendExcelSheet(sheet, builder);
+                    var (rowsProcessed, limitReached) = TryAppendExcelSheet(sheet, builder);
+                    if (rowsProcessed > 0)
+                    {
+                        processedSheetCount++;
+                        processedRowCount += rowsProcessed;
+                    }
+
                     if (limitReached)
                     {
                         break;
                     }
                 }
 
+                _logger.LogDebug(
+                    "Extracted Excel text from {ProcessedSheetCount} sheets and {ProcessedRowCount} rows for {FileName}",
+                    processedSheetCount,
+                    processedRowCount,
+                    fileName);
                 return builder.ToString();
             }
             catch (Exception ex)
@@ -233,11 +317,94 @@ namespace Unity.GrantManager.AI
             }
         }
 
-        private static bool TryAppendExcelSheet(ISheet? sheet, StringBuilder builder)
+        private string ExtractTextFromPowerPointFile(string fileName, byte[] fileContent)
+        {
+            try
+            {
+                using var stream = new MemoryStream(fileContent, writable: false);
+                using var archive = new ZipArchive(stream, ZipArchiveMode.Read, leaveOpen: false);
+                var builder = new StringBuilder();
+                var slideEntries = GetOrderedPowerPointSlideEntries(archive)
+                    .Take(MaxPowerPointSlides);
+                var processedSlideCount = 0;
+
+                foreach (var slideEntry in slideEntries)
+                {
+                    if (builder.Length >= MaxExtractedTextLength)
+                    {
+                        break;
+                    }
+
+                    using var slideStream = slideEntry.Open();
+                    var slideText = ExtractPowerPointSlideText(slideStream);
+                    if (string.IsNullOrWhiteSpace(slideText))
+                    {
+                        continue;
+                    }
+
+                    processedSlideCount++;
+                    if (TryAppendWithTrailingNewline(builder, slideText))
+                    {
+                        break;
+                    }
+                }
+
+                _logger.LogDebug("Extracted PowerPoint text from {ProcessedSlideCount} slides for {FileName}", processedSlideCount, fileName);
+                return builder.ToString();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "PowerPoint (.pptx) text extraction failed for {FileName}", fileName);
+                return string.Empty;
+            }
+        }
+
+        private IEnumerable<ZipArchiveEntry> GetOrderedPowerPointSlideEntries(ZipArchive archive)
+        {
+            var slideEntriesByName = archive.Entries
+                .Where(entry => entry.FullName.StartsWith("ppt/slides/slide", StringComparison.OrdinalIgnoreCase) &&
+                                entry.FullName.EndsWith(".xml", StringComparison.OrdinalIgnoreCase))
+                .ToDictionary(entry => entry.FullName, StringComparer.OrdinalIgnoreCase);
+
+            if (slideEntriesByName.Count == 0)
+            {
+                _logger.LogDebug("No slide entries found in PowerPoint archive.");
+                return Enumerable.Empty<ZipArchiveEntry>();
+            }
+
+            var orderedSlideNames = TryGetPowerPointSlideOrder(archive);
+            if (orderedSlideNames.Count == 0)
+            {
+                _logger.LogDebug("Using PowerPoint part-name order fallback for {SlideCount} slides.", slideEntriesByName.Count);
+                return slideEntriesByName.Values
+                    .OrderBy(entry => GetPowerPointSlideNumber(entry.FullName))
+                    .ToList();
+            }
+
+            var orderedEntries = new List<ZipArchiveEntry>(slideEntriesByName.Count);
+            foreach (var slideName in orderedSlideNames)
+            {
+                if (slideEntriesByName.TryGetValue(slideName, out var slideEntry))
+                {
+                    orderedEntries.Add(slideEntry);
+                    slideEntriesByName.Remove(slideName);
+                }
+            }
+
+            if (slideEntriesByName.Count > 0)
+            {
+                orderedEntries.AddRange(slideEntriesByName.Values.OrderBy(entry => GetPowerPointSlideNumber(entry.FullName)));
+            }
+
+            _logger.LogDebug("Resolved PowerPoint presentation order for {SlideCount} slides.", orderedEntries.Count);
+            return orderedEntries;
+        }
+
+        private static (int RowsProcessed, bool LimitReached) TryAppendExcelSheet(ISheet? sheet, StringBuilder builder)
         {
             if (sheet == null)
             {
-                return false;
+                return (0, false);
             }
 
             var processedRows = 0;
@@ -248,18 +415,22 @@ namespace Unity.GrantManager.AI
                     break;
                 }
 
-                var limitReached = TryAppendExcelRow(row, builder);
-                processedRows++;
+                var (rowHadValue, limitReached) = TryAppendExcelRow(row, builder);
+                if (rowHadValue)
+                {
+                    processedRows++;
+                }
+
                 if (limitReached)
                 {
-                    return true;
+                    return (processedRows, true);
                 }
             }
 
-            return builder.Length >= MaxExtractedTextLength;
+            return (processedRows, builder.Length >= MaxExtractedTextLength);
         }
 
-        private static bool TryAppendExcelRow(IRow row, StringBuilder builder)
+        private static (bool RowHadValue, bool LimitReached) TryAppendExcelRow(IRow row, StringBuilder builder)
         {
             var rowHasValue = false;
             foreach (var cell in row.Cells.Take(MaxExcelCellsPerRow))
@@ -280,7 +451,7 @@ namespace Unity.GrantManager.AI
                 rowHasValue = true;
                 if (limitReached)
                 {
-                    return true;
+                    return (true, true);
                 }
             }
 
@@ -290,7 +461,7 @@ namespace Unity.GrantManager.AI
                 builder.Append(Environment.NewLine);
             }
 
-            return builder.Length >= MaxExtractedTextLength;
+            return (rowHasValue, builder.Length >= MaxExtractedTextLength);
         }
 
         private static bool TryAppendWithTrailingNewline(StringBuilder builder, string? value)
@@ -309,10 +480,107 @@ namespace Unity.GrantManager.AI
             return builder.Length >= MaxExtractedTextLength;
         }
 
-        private static bool AppendUntilLimit(StringBuilder builder, IEnumerable<string> texts)
+        private static string ExtractPowerPointSlideText(Stream slideStream)
         {
-            var limitReached = texts.Any(text => TryAppendWithTrailingNewline(builder, text));
-            return limitReached || builder.Length >= MaxExtractedTextLength;
+            var document = XDocument.Load(slideStream);
+            XNamespace drawingNamespace = "http://schemas.openxmlformats.org/drawingml/2006/main";
+            var textRuns = document
+                .Descendants(drawingNamespace + "t")
+                .Select(node => node.Value?.Trim())
+                .Where(value => !string.IsNullOrWhiteSpace(value));
+
+            return string.Join(Environment.NewLine, textRuns);
+        }
+
+        private static int GetPowerPointSlideNumber(string entryName)
+        {
+            var fileName = Path.GetFileNameWithoutExtension(entryName);
+            if (string.IsNullOrWhiteSpace(fileName))
+            {
+                return int.MaxValue;
+            }
+
+            var slideNumberText = fileName.Substring("slide".Length);
+            return int.TryParse(slideNumberText, out var slideNumber)
+                ? slideNumber
+                : int.MaxValue;
+        }
+
+        private List<string> TryGetPowerPointSlideOrder(ZipArchive archive)
+        {
+            try
+            {
+                var presentationEntry = archive.GetEntry("ppt/presentation.xml");
+                var relationshipsEntry = archive.GetEntry("ppt/_rels/presentation.xml.rels");
+                if (presentationEntry == null || relationshipsEntry == null)
+                {
+                    return new List<string>();
+                }
+
+                using var presentationStream = presentationEntry.Open();
+                using var relationshipsStream = relationshipsEntry.Open();
+                var presentationDocument = XDocument.Load(presentationStream);
+                var relationshipsDocument = XDocument.Load(relationshipsStream);
+
+                XNamespace presentationNamespace = "http://schemas.openxmlformats.org/presentationml/2006/main";
+                XNamespace officeDocumentRelationshipsNamespace = "http://schemas.openxmlformats.org/officeDocument/2006/relationships";
+                XNamespace packageRelationshipsNamespace = "http://schemas.openxmlformats.org/package/2006/relationships";
+
+                var slideTargetsByRelationshipId = relationshipsDocument
+                    .Root?
+                    .Elements(packageRelationshipsNamespace + "Relationship")
+                    .Where(element => string.Equals(
+                        element.Attribute("Type")?.Value,
+                        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide",
+                        StringComparison.OrdinalIgnoreCase))
+                    .Select(element => new
+                    {
+                        Id = element.Attribute("Id")?.Value,
+                        Target = NormalizePowerPointSlideTarget(element.Attribute("Target")?.Value)
+                    })
+                    .Where(item => !string.IsNullOrWhiteSpace(item.Id) && !string.IsNullOrWhiteSpace(item.Target))
+                    .ToDictionary(item => item.Id!, item => item.Target!, StringComparer.OrdinalIgnoreCase);
+
+                return presentationDocument
+                    .Descendants(presentationNamespace + "sldId")
+                    .Select(element => element.Attribute(officeDocumentRelationshipsNamespace + "id")?.Value)
+                    .Where(relationshipId => !string.IsNullOrWhiteSpace(relationshipId))
+                    .Select(relationshipId => slideTargetsByRelationshipId.GetValueOrDefault(relationshipId!))
+                    .Where(target => !string.IsNullOrWhiteSpace(target))
+                    .Cast<string>()
+                    .ToList();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogDebug(ex, "Falling back to part-name slide order for PowerPoint extraction.");
+                return new List<string>();
+            }
+        }
+
+        private static string? NormalizePowerPointSlideTarget(string? target)
+        {
+            if (string.IsNullOrWhiteSpace(target))
+            {
+                return null;
+            }
+
+            var normalizedTarget = target.Replace('\\', '/').TrimStart('/');
+            if (normalizedTarget.StartsWith("ppt/", StringComparison.OrdinalIgnoreCase))
+            {
+                return normalizedTarget;
+            }
+
+            if (normalizedTarget.StartsWith("slides/", StringComparison.OrdinalIgnoreCase))
+            {
+                return $"ppt/{normalizedTarget}";
+            }
+
+            if (normalizedTarget.StartsWith("../", StringComparison.OrdinalIgnoreCase))
+            {
+                normalizedTarget = normalizedTarget.Substring(3);
+            }
+
+            return $"ppt/{normalizedTarget}";
         }
 
         private static void AppendTrailingNewlineIfRoom(StringBuilder builder)
