@@ -23,6 +23,7 @@ namespace Unity.GrantManager.Intakes.Handlers
         private const string ObjectFieldType = "object";
         private const string AttachmentSummariesFeatureName = "Unity.AI.AttachmentSummaries";
         private const string ApplicationAnalysisFeatureName = "Unity.AI.ApplicationAnalysis";
+        private const string ScoringFeatureName = "Unity.AI.Scoring";
         private readonly IAIService _aiService;
         private readonly ISubmissionAppService _submissionAppService;
         private readonly IApplicationChefsFileAttachmentRepository _attachmentRepository;
@@ -112,8 +113,9 @@ namespace Unity.GrantManager.Intakes.Handlers
             // Check if either AI feature is enabled
             var attachmentSummariesEnabled = await _featureChecker.IsEnabledAsync(AttachmentSummariesFeatureName);
             var applicationAnalysisEnabled = await _featureChecker.IsEnabledAsync(ApplicationAnalysisFeatureName);
+            var scoringEnabled = await _featureChecker.IsEnabledAsync(ScoringFeatureName);
 
-            if (!attachmentSummariesEnabled && !applicationAnalysisEnabled)
+            if (!attachmentSummariesEnabled && !applicationAnalysisEnabled && !scoringEnabled)
             {
                 _logger.LogDebug("All AI features are disabled, skipping AI generation for application {ApplicationId}.", eventData.Application.Id);
                 return;
@@ -142,13 +144,15 @@ namespace Unity.GrantManager.Intakes.Handlers
                     }
                 }
 
-                // Generate application analysis and scoresheet if feature is enabled
+                // Generate application analysis if feature is enabled
                 if (applicationAnalysisEnabled)
                 {
-                    // After processing all attachments, perform application analysis
                     await GenerateApplicationAnalysisAsync(eventData.Application, attachments);
+                }
 
-                    // Generate AI scoresheet answers
+                // Generate AI scoresheet answers if feature is enabled
+                if (scoringEnabled)
+                {
                     await GenerateScoresheetAnalysisAsync(eventData.Application, attachments);
                 }
             }

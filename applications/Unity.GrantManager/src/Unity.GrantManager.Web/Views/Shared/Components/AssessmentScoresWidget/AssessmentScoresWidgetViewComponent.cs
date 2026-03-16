@@ -17,6 +17,9 @@ using Unity.Flex.Scoresheets.Enums;
 using Unity.GrantManager.AI;
 using Unity.GrantManager.Applications;
 using System.Text.Json;
+using Unity.AI.Permissions;
+using Volo.Abp.Authorization.Permissions;
+using Volo.Abp.Features;
 
 namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentScoresWidget
 {
@@ -28,7 +31,9 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentScoresWidget
     public class AssessmentScoresWidgetViewComponent(IAssessmentRepository assessmentRepository,
         IScoresheetRepository scoresheetRepository,
         IScoresheetInstanceRepository scoresheetInstanceRepository,
-        IApplicationRepository applicationRepository) : AbpViewComponent
+        IApplicationRepository applicationRepository,
+        IFeatureChecker featureChecker,
+        IPermissionChecker permissionChecker) : AbpViewComponent
     {
         public async Task<IViewComponentResult> InvokeAsync(Guid assessmentId, Guid currentUserId)
         {
@@ -94,6 +99,9 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentScoresWidget
                 Status = assessment.Status,
                 CurrentUserId = currentUserId,
                 AssessorId = assessment.AssessorId,
+                IsAIScoringEnabled = await featureChecker.IsEnabledAsync("Unity.AI.Scoring") &&
+                    await permissionChecker.IsGrantedAsync(AIPermissions.ScoringAssistant.ScoringAssistantDefault),
+                IsAiAssessment = assessment.IsAiAssessment,
             };
 
             return View(model);
