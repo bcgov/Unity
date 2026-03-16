@@ -149,21 +149,19 @@ namespace Unity.GrantManager.AI
                 using var document = PdfDocument.Open(stream);
                 var builder = new StringBuilder();
                 var processedPageCount = 0;
+                var pageTexts = document.GetPages()
+                    .Select(page => page.Text)
+                    .Where(pageText => !string.IsNullOrWhiteSpace(pageText));
 
-                foreach (var page in document.GetPages())
+                foreach (var pageText in pageTexts)
                 {
                     if (builder.Length >= MaxExtractedTextLength)
                     {
                         break;
                     }
 
-                    if (string.IsNullOrWhiteSpace(page.Text))
-                    {
-                        continue;
-                    }
-
                     processedPageCount++;
-                    if (TryAppendWithTrailingNewline(builder, page.Text))
+                    if (TryAppendWithTrailingNewline(builder, pageText))
                     {
                         break;
                     }
@@ -206,21 +204,20 @@ namespace Unity.GrantManager.AI
         private static int AppendDocxParagraphText(XWPFDocument document, StringBuilder builder)
         {
             var processedParagraphCount = 0;
+            var paragraphTexts = document.Paragraphs
+                .Take(MaxDocxParagraphs)
+                .Select(paragraph => paragraph.ParagraphText)
+                .Where(paragraphText => !string.IsNullOrWhiteSpace(paragraphText));
 
-            foreach (var paragraph in document.Paragraphs.Take(MaxDocxParagraphs))
+            foreach (var paragraphText in paragraphTexts)
             {
                 if (builder.Length >= MaxExtractedTextLength)
                 {
                     break;
                 }
 
-                if (string.IsNullOrWhiteSpace(paragraph.ParagraphText))
-                {
-                    continue;
-                }
-
                 processedParagraphCount++;
-                if (TryAppendWithTrailingNewline(builder, paragraph.ParagraphText))
+                if (TryAppendWithTrailingNewline(builder, paragraphText))
                 {
                     break;
                 }
