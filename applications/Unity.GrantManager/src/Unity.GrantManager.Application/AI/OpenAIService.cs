@@ -5,6 +5,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Text;
 using System.Text.Json;
@@ -32,7 +33,6 @@ namespace Unity.GrantManager.AI
         private const string AttachmentUserTemplateName = "attachment.user";
         private const string ScoresheetSystemTemplateName = "scoresheet.system";
         private const string ScoresheetUserTemplateName = "scoresheet.user";
-        private const string NoSummaryGeneratedMessage = "No summary generated.";
         private const string ServiceNotConfiguredMessage = "AI analysis not available - service not configured.";
         private const string ServiceTemporarilyUnavailableMessage = "AI analysis failed - service temporarily unavailable.";
         private const string SummaryFailedRetryMessage = "AI analysis failed - please try again later.";
@@ -87,12 +87,15 @@ namespace Unity.GrantManager.AI
 
         public async Task<AICompletionResponse> GenerateCompletionAsync(AICompletionRequest request)
         {
-            var content = await GenerateSummaryAsync(
+            var result = await GenerateWithRetryAsync(
+                () => GenerateSummaryAsync(
                 request?.UserPrompt ?? string.Empty,
                 null,
                 request?.MaxTokens ?? 150,
-                request?.Temperature);
-            return new AICompletionResponse { Content = content };
+                request?.Temperature),
+                AIResponseValidator.IsValidAttachmentSummaryText,
+                "completion");
+            return new AICompletionResponse { Content = ResolveNarrativeContent(result) };
         }
 
         public async Task<ApplicationAnalysisResponse> GenerateApplicationAnalysisAsync(ApplicationAnalysisRequest request)
@@ -119,16 +122,22 @@ namespace Unity.GrantManager.AI
                 data,
                 attachments);
             await LogPromptInputAsync(ApplicationAnalysisPromptType, promptVersion, systemPrompt, analysisContent);
-            var raw = await GenerateWithRetryAsync(
+            var result = await GenerateWithRetryAsync(
                 () => GenerateSummaryAsync(analysisContent, systemPrompt, 1000),
                 AIResponseValidator.IsValidApplicationAnalysisJson,
                 "application analysis");
-            await LogPromptOutputAsync(ApplicationAnalysisPromptType, promptVersion, raw);
-            SavePromptCapture(capturePromptIo, request.CaptureContextId, ApplicationAnalysisPromptType, promptVersion, "Application Analysis", systemPrompt, analysisContent, raw);
-            return ParseApplicationAnalysisResponse(AddIdsToAnalysisItems(raw));
+            await LogPromptOutputAsync(ApplicationAnalysisPromptType, promptVersion, result.Content);
+            SavePromptCapture(capturePromptIo, request.CaptureContextId, ApplicationAnalysisPromptType, promptVersion, "Application Analysis", systemPrompt, analysisContent, result.Content);
+
+            if (result.Outcome != AIOperationOutcome.Success)
+            {
+                return new ApplicationAnalysisResponse();
+            }
+
+            return ParseApplicationAnalysisResponse(AddIdsToAnalysisItems(result.Content));
         }
 
-        private async Task<string> GenerateSummaryAsync(
+        private async Task<AIOperationResult> GenerateSummaryAsync(
             string content,
             string? systemPrompt,
             int maxTokens = 150,
@@ -137,7 +146,7 @@ namespace Unity.GrantManager.AI
             if (string.IsNullOrEmpty(ApiKey))
             {
                 _logger.LogWarning("Error: {Message}", MissingApiKeyMessage);
-                return ServiceNotConfiguredMessage;
+                return AIOperationResult.PermanentFailure(MissingApiKeyMessage);
             }
 
             _logger.LogDebug("Calling OpenAI chat completions. PromptLength: {PromptLength}, MaxTokens: {MaxTokens}", content?.Length ?? 0, maxTokens);
@@ -177,28 +186,39 @@ namespace Unity.GrantManager.AI
                 if (!response.IsSuccessStatusCode)
                 {
                     _logger.LogError("OpenAI API request failed: {StatusCode} - {Content}", response.StatusCode, responseContent);
-                    return ServiceTemporarilyUnavailableMessage;
+                    return MapFailureOutcome(response.StatusCode, responseContent);
                 }
 
                 if (string.IsNullOrWhiteSpace(responseContent))
                 {
-                    return NoSummaryGeneratedMessage;
+                    return AIOperationResult.InvalidOutput();
                 }
 
-                using var jsonDoc = JsonDocument.Parse(responseContent);
-                var choices = jsonDoc.RootElement.GetProperty("choices");
-                if (choices.GetArrayLength() > 0)
+                try
                 {
-                    var message = choices[0].GetProperty("message");
-                    return message.GetProperty("content").GetString() ?? NoSummaryGeneratedMessage;
-                }
+                    using var jsonDoc = JsonDocument.Parse(responseContent);
+                    var choices = jsonDoc.RootElement.GetProperty("choices");
+                    if (choices.GetArrayLength() > 0)
+                    {
+                        var message = choices[0].GetProperty("message");
+                        var modelOutput = message.GetProperty("content").GetString();
+                        return string.IsNullOrWhiteSpace(modelOutput)
+                            ? AIOperationResult.InvalidOutput(responseContent)
+                            : AIOperationResult.Success(modelOutput);
+                    }
 
-                return NoSummaryGeneratedMessage;
+                    return AIOperationResult.InvalidOutput(responseContent);
+                }
+                catch (Exception ex) when (ex is JsonException || ex is KeyNotFoundException || ex is InvalidOperationException)
+                {
+                    _logger.LogWarning(ex, "AI response payload had an invalid output shape");
+                    return AIOperationResult.InvalidOutput(responseContent);
+                }
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error generating AI summary");
-                return SummaryFailedRetryMessage;
+                return AIOperationResult.TransientFailure(ex.Message);
             }
         }
 
@@ -237,16 +257,24 @@ namespace Unity.GrantManager.AI
                 var contentToAnalyze = BuildAttachmentUserPrompt(promptVersion, attachment);
 
                 await LogPromptInputAsync(AttachmentSummaryPromptType, promptVersion, prompt, contentToAnalyze);
-                var modelOutput = await GenerateWithRetryAsync(
+                var result = await GenerateWithRetryAsync(
                     () => GenerateSummaryAsync(contentToAnalyze, prompt, 150),
                     AIResponseValidator.IsValidAttachmentSummaryText,
                     "attachment summary");
-                await LogPromptOutputAsync(AttachmentSummaryPromptType, promptVersion, modelOutput);
-                SavePromptCapture(capturePromptIo, request.CaptureContextId, AttachmentSummaryPromptType, promptVersion, fileName, prompt, contentToAnalyze, modelOutput);
+                await LogPromptOutputAsync(AttachmentSummaryPromptType, promptVersion, result.Content);
+                SavePromptCapture(capturePromptIo, request.CaptureContextId, AttachmentSummaryPromptType, promptVersion, fileName, prompt, contentToAnalyze, result.Content);
+
+                if (result.Outcome != AIOperationOutcome.Success)
+                {
+                    return new AttachmentSummaryResponse
+                    {
+                        Summary = $"AI analysis not available for this attachment ({fileName})."
+                    };
+                }
 
                 return new AttachmentSummaryResponse
                 {
-                    Summary = ExtractSummaryFromJson(modelOutput)
+                    Summary = ExtractSummaryFromJson(result.Content)
                 };
             }
             catch (Exception ex)
@@ -391,14 +419,19 @@ namespace Unity.GrantManager.AI
                 var systemPrompt = BuildScoresheetSectionSystemPrompt(promptVersion);
 
                 await LogPromptInputAsync(ScoresheetSectionPromptType, promptVersion, systemPrompt, analysisContent);
-                var modelOutput = await GenerateWithRetryAsync(
+                var result = await GenerateWithRetryAsync(
                     () => GenerateSummaryAsync(analysisContent, systemPrompt, 2000),
                     content => AIResponseValidator.IsValidScoresheetSectionJson(content, sectionJson),
                     $"scoresheet section {request.SectionName}");
-                await LogPromptOutputAsync(ScoresheetSectionPromptType, promptVersion, modelOutput);
-                SavePromptCapture(capturePromptIo, request.CaptureContextId, ScoresheetSectionPromptType, promptVersion, request.SectionName, systemPrompt, analysisContent, modelOutput);
+                await LogPromptOutputAsync(ScoresheetSectionPromptType, promptVersion, result.Content);
+                SavePromptCapture(capturePromptIo, request.CaptureContextId, ScoresheetSectionPromptType, promptVersion, request.SectionName, systemPrompt, analysisContent, result.Content);
 
-                return ParseScoresheetSectionResponse(modelOutput);
+                if (result.Outcome != AIOperationOutcome.Success)
+                {
+                    return new ScoresheetSectionResponse();
+                }
+
+                return ParseScoresheetSectionResponse(result.Content);
             }
             catch (Exception ex)
             {
@@ -407,42 +440,84 @@ namespace Unity.GrantManager.AI
             }
         }
 
-        private async Task<string> GenerateWithRetryAsync(
-            Func<Task<string>> operation,
+        private async Task<AIOperationResult> GenerateWithRetryAsync(
+            Func<Task<AIOperationResult>> operation,
             Func<string, bool> validator,
             string operationName)
         {
-            var lastResponse = string.Empty;
+            var lastResult = AIOperationResult.InvalidOutput();
 
             for (var attempt = 1; attempt <= MaxAiAttempts; attempt++)
             {
-                try
+                lastResult = await operation();
+
+                if (lastResult.Outcome == AIOperationOutcome.Success && validator(lastResult.Content))
                 {
-                    lastResponse = await operation();
-                }
-                catch (Exception ex) when (attempt < MaxAiAttempts)
-                {
-                    _logger.LogWarning(ex, "AI {OperationName} attempt {Attempt}/{MaxAttempts} request failed; retrying", operationName, attempt, MaxAiAttempts);
-                    continue;
+                    return lastResult;
                 }
 
-                if (validator(lastResponse))
+                if (lastResult.Outcome == AIOperationOutcome.Success)
                 {
-                    return lastResponse;
+                    lastResult = AIOperationResult.InvalidOutput(lastResult.Content);
+                }
+
+                if (lastResult.Outcome == AIOperationOutcome.PermanentFailure)
+                {
+                    return lastResult;
                 }
 
                 if (attempt < MaxAiAttempts)
                 {
-                    _logger.LogWarning(
-                        "AI {OperationName} attempt {Attempt}/{MaxAttempts} returned invalid response shape; retrying",
-                        operationName,
-                        attempt,
-                        MaxAiAttempts);
+                    if (lastResult.Outcome == AIOperationOutcome.TransientFailure)
+                    {
+                        _logger.LogWarning(
+                            "AI {OperationName} attempt {Attempt}/{MaxAttempts} failed transiently; retrying",
+                            operationName,
+                            attempt,
+                            MaxAiAttempts);
+                    }
+                    else if (lastResult.Outcome == AIOperationOutcome.InvalidOutput)
+                    {
+                        _logger.LogWarning(
+                            "AI {OperationName} attempt {Attempt}/{MaxAttempts} returned invalid response shape; retrying",
+                            operationName,
+                            attempt,
+                            MaxAiAttempts);
+                    }
                 }
             }
 
-            _logger.LogWarning("AI {OperationName} exhausted retries; returning last response", operationName);
-            return lastResponse;
+            _logger.LogWarning(
+                "AI {OperationName} exhausted retries with outcome {Outcome}; returning last result",
+                operationName,
+                lastResult.Outcome);
+            return lastResult;
+        }
+
+        private static string ResolveNarrativeContent(AIOperationResult result)
+        {
+            return result.Outcome switch
+            {
+                AIOperationOutcome.Success => result.Content,
+                AIOperationOutcome.PermanentFailure => ServiceNotConfiguredMessage,
+                AIOperationOutcome.TransientFailure => ServiceTemporarilyUnavailableMessage,
+                _ => SummaryFailedRetryMessage
+            };
+        }
+
+        private static AIOperationResult MapFailureOutcome(HttpStatusCode statusCode, string? responseContent)
+        {
+            var content = responseContent ?? string.Empty;
+            var statusCodeValue = (int)statusCode;
+
+            if (statusCode == HttpStatusCode.RequestTimeout
+                || statusCode == (HttpStatusCode)429
+                || statusCodeValue >= 500)
+            {
+                return AIOperationResult.TransientFailure(content);
+            }
+
+            return AIOperationResult.PermanentFailure(content);
         }
 
         private static ApplicationAnalysisResponse ParseApplicationAnalysisResponse(string raw)
