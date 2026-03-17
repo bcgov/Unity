@@ -309,6 +309,18 @@ function populateMergeModal(existing, newData) {
     $('#mergeExistingDuplicateFlag').toggleClass('d-none', !existing.IsDuplicated);
     $('#mergeNewDuplicateFlag').toggleClass('d-none', !newData.IsDuplicated);
 
+    // Name match summary badge
+    var score = compareStrings(existing.ApplicantName || '', newData.ApplicantName || '');
+    var $badge = $('#mergeNameMatchBadge');
+    $badge.removeClass('unity-badge-warning');
+    if (score >= 100) {
+        $badge.text('100% Matched - Possible Duplicate');
+    } else if (score >= 50) {
+        $badge.text('Partially Matched');
+    } else {
+        $badge.text('Not Matched').addClass('unity-badge-warning');
+    }
+
     for (const key in existing) {
         $(`#existing_${key}`).text(existing[key]);
         $(`#new_${key}`).text(newData[key]);

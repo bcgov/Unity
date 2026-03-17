@@ -34,6 +34,18 @@
         $('#listMergeDuplicateFlagA').toggleClass('d-none', !a.isDuplicated);
         $('#listMergeDuplicateFlagB').toggleClass('d-none', !b.isDuplicated);
 
+        // Name match summary badge
+        var score = compareStrings(a.applicantName || '', b.applicantName || '');
+        var $badge = $('#listMergeNameMatchBadgeText');
+        $badge.removeClass('unity-badge-warning');
+        if (score >= 100) {
+            $badge.text('100% Matched - Possible Duplicate');
+        } else if (score >= 50) {
+            $badge.text('Partially Matched');
+        } else {
+            $badge.text('Not Matched').addClass('unity-badge-warning');
+        }
+
         // Build dynamic field rows
         const $tbody = $('#listMergeTableBody').empty();
         MERGE_FIELDS.forEach(f => {
@@ -150,10 +162,10 @@
                 $('#applicantListMergeModal').modal('hide');
                 PubSub.publish('deselect_applicant', 'reset_data');
                 $('#ApplicantsTable').DataTable().ajax.reload();
-                abp.notify.success(abp.localization.localize('ApplicantMergeSuccess', 'GrantManager') ?? 'Applicants merged successfully.');
+                abp.notify.success('Applicants merged successfully.');
             }).catch(err => {
                 console.warn('Merge failed:', err);
-                abp.notify.error(abp.localization.localize('ApplicantMergeError', 'GrantManager') ?? 'Merge failed. Please try again.');
+                abp.notify.error('Merge failed. Please try again.');
             }).always(() => {
                 $('#listMergeSpinner').addClass('d-none');
                 $('#listMergeMergeBtn').prop('disabled', false);
