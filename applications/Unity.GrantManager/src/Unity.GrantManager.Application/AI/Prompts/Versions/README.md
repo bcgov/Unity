@@ -40,7 +40,8 @@ Placeholders:
 
 Version selection:
 
-- `Azure:Operations:Defaults:PromptVersion = v0|v1, with optional overrides under Azure:Operations:<Operation>:PromptVersion`
+- Preferred: `Azure:Operations:Defaults:PromptVersion = v0|v1`, with optional overrides under `Azure:Operations:<Operation>:PromptVersion`
+- Legacy fallback: `Azure:OpenAI:PromptVersion = v0|v1`
 - Unknown or missing version defaults to `v1`.
 
 Template loading is strict:

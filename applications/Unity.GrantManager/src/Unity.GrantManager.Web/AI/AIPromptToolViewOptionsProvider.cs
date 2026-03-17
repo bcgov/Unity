@@ -12,9 +12,20 @@ namespace Unity.GrantManager.Web.AI
         public bool IsDevPromptControlsEnabled =>
             string.Equals(webHostEnvironment.EnvironmentName, "Development", StringComparison.OrdinalIgnoreCase);
 
-        public string DefaultPromptVersion =>
-            string.IsNullOrWhiteSpace(configuration["Azure:Operations:Defaults:PromptVersion"])
-                ? "v1"
-                : configuration["Azure:Operations:Defaults:PromptVersion"]!.Trim().ToLowerInvariant();
+        public string DefaultPromptVersion
+        {
+            get
+            {
+                var configuredPromptVersion = configuration["Azure:Operations:Defaults:PromptVersion"];
+                if (string.IsNullOrWhiteSpace(configuredPromptVersion))
+                {
+                    configuredPromptVersion = configuration["Azure:OpenAI:PromptVersion"];
+                }
+
+                return string.IsNullOrWhiteSpace(configuredPromptVersion)
+                    ? "v1"
+                    : configuredPromptVersion.Trim().ToLowerInvariant();
+            }
+        }
     }
 }

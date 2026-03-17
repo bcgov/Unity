@@ -686,7 +686,13 @@ namespace Unity.GrantManager.AI
                 return operationPromptVersion;
             }
 
-            return _configuration["Azure:Operations:Defaults:PromptVersion"];
+            var defaultPromptVersion = _configuration["Azure:Operations:Defaults:PromptVersion"];
+            if (!string.IsNullOrWhiteSpace(defaultPromptVersion))
+            {
+                return defaultPromptVersion;
+            }
+
+            return _configuration["Azure:OpenAI:PromptVersion"];
         }
 
         private string ResolveProviderName(string? operationName = null)
@@ -1047,8 +1053,7 @@ namespace Unity.GrantManager.AI
                 CaptureLabel = captureLabel?.Trim() ?? string.Empty,
                 SystemPrompt = systemPrompt?.Trim() ?? string.Empty,
                 UserPrompt = userPrompt?.Trim() ?? string.Empty,
-                RawOutput = rawOutput?.Trim() ?? string.Empty,
-                FormattedOutput = FormatPromptOutputForLog(rawOutput ?? string.Empty),
+                Output = FormatPromptOutputForLog(rawOutput ?? string.Empty),
                 CapturedAt = DateTime.UtcNow
             });
         }
@@ -1067,12 +1072,112 @@ namespace Unity.GrantManager.AI
                 return string.Empty;
             }
 
+            if (TryFormatProviderOutput(output, out var formattedProviderOutput))
+            {
+                return formattedProviderOutput;
+            }
+
             if (TryParseJsonObjectFromResponse(output, out var jsonObject))
             {
                 return JsonSerializer.Serialize(jsonObject, JsonLogOptions);
             }
 
             return output.Trim();
+        }
+
+        private static bool TryFormatProviderOutput(string output, out string formattedOutput)
+        {
+            formattedOutput = string.Empty;
+
+            try
+            {
+                using var doc = JsonDocument.Parse(output);
+                var root = doc.RootElement;
+                if (root.ValueKind != JsonValueKind.Object
+                    || !root.TryGetProperty("choices", out var choices)
+                    || choices.ValueKind != JsonValueKind.Array
+                    || choices.GetArrayLength() == 0)
+                {
+                    return false;
+                }
+
+                var firstChoice = choices[0];
+                var content = TryGetChoiceContent(firstChoice);
+                if (string.IsNullOrWhiteSpace(content))
+                {
+                    return false;
+                }
+
+                var lines = new List<string>();
+
+                if (root.TryGetProperty("usage", out var usage) && usage.ValueKind == JsonValueKind.Object)
+                {
+                    var promptTokens = TryGetInt32(usage, "prompt_tokens");
+                    var completionTokens = TryGetInt32(usage, "completion_tokens");
+                    int? reasoningTokens = null;
+
+                    if (usage.TryGetProperty("completion_tokens_details", out var completionTokenDetails)
+                        && completionTokenDetails.ValueKind == JsonValueKind.Object)
+                    {
+                        reasoningTokens = TryGetInt32(completionTokenDetails, "reasoning_tokens");
+                    }
+
+                    if (promptTokens.HasValue)
+                    {
+                        lines.Add($"PROMPT TOKENS: {promptTokens.Value}");
+                    }
+
+                    if (completionTokens.HasValue)
+                    {
+                        lines.Add($"COMPLETION TOKENS: {completionTokens.Value}");
+                    }
+
+                    if (reasoningTokens.HasValue)
+                    {
+                        lines.Add($"REASONING TOKENS: {reasoningTokens.Value}");
+                    }
+                }
+
+                var normalizedContent = FormatPromptOutputContent(content);
+                if (lines.Count > 0)
+                {
+                    lines.Add(string.Empty);
+                }
+
+                lines.Add("CONTENT");
+                lines.Add(normalizedContent);
+                formattedOutput = string.Join(Environment.NewLine, lines);
+                return true;
+            }
+            catch (JsonException)
+            {
+                return false;
+            }
+        }
+
+        private static string? TryGetChoiceContent(JsonElement firstChoice)
+        {
+            if (!firstChoice.TryGetProperty("message", out var message) || message.ValueKind != JsonValueKind.Object)
+            {
+                return null;
+            }
+
+            if (!message.TryGetProperty("content", out var contentProp) || contentProp.ValueKind != JsonValueKind.String)
+            {
+                return null;
+            }
+
+            return contentProp.GetString();
+        }
+
+        private static string FormatPromptOutputContent(string content)
+        {
+            if (TryParseJsonObjectFromResponse(content, out var contentObject))
+            {
+                return JsonSerializer.Serialize(contentObject, JsonLogOptions);
+            }
+
+            return content.Trim();
         }
 
         private static bool TryParseJsonObjectFromResponse(string response, out JsonElement objectElement)
@@ -1358,3 +1463,5 @@ namespace Unity.GrantManager.AI
         }
     }
 }
+
+
