@@ -28,7 +28,8 @@ public class EmailNotificationService(
         IExternalUserLookupServiceProvider externalUserLookupServiceProvider,
         ISettingManager settingManager,
         IHttpContextAccessor httpContextAccessor,
-        IFeatureChecker featureChecker) : ApplicationService, IEmailNotificationService
+        IFeatureChecker featureChecker,
+        System.Text.Encodings.Web.UrlEncoder urlEncoder) : ApplicationService, IEmailNotificationService
 {
 
     public async Task DeleteEmail(Guid id)
@@ -76,17 +77,38 @@ public class EmailNotificationService(
                 var scheme = "https";
                 var request = (httpContextAccessor.HttpContext?.Request) ?? throw new InvalidOperationException("HttpContext or Request is null.");
                 var host = request.Host.ToUriComponent();
+                var baseUrl = await SettingProvider.GetOrNullAsync("App:BaseUrl") 
+                    ?? throw new BusinessException("App:BaseUrlNotConfigured");
+
                 const int ApplicantCommentType = 2;
                 var pathBase = input.CommentType == ApplicantCommentType
-                    ? "/GrantApplicants/Details?applicantId="
-                    : "/GrantApplications/Details?ApplicationId=";
-                var commentLink = $"{scheme}://{host}{pathBase}{input.OwnerId}";
+                    ? "/GrantApplicants/Details"
+                    : "/GrantApplications/Details";
+
+                var queryParamName = input.CommentType == ApplicantCommentType 
+                    ? "ApplicantId" 
+                    : "ApplicationId";
+
+                // Use the injected urlEncoder
+                var encodedOwnerId = urlEncoder.Encode(input.OwnerId.ToString());
+                var commentLink = $"{baseUrl}{pathBase}?{queryParamName}={encodedOwnerId}";
+
                 var subject = $"Unity-Comment: {input.Subject}";
                 var fromEmail = defaultFromAddress ?? "NoReply@gov.bc.ca";
+
+                var hasSurname = !string.IsNullOrWhiteSpace(CurrentUser.SurName);
+                var hasName = !string.IsNullOrWhiteSpace(CurrentUser.Name);
+
+                var currentUserText = (hasSurname, hasName) switch
+                {
+                    (true, true) => $"{CurrentUser.SurName}, {CurrentUser.Name}",
+                    _ => CurrentUser.UserName ?? "Unknown User"
+                };
+
                 string htmlBody = $@"
                 <html lang='en' xmlns='http://www.w3.org/1999/xhtml' xmlns:v='urn:schemas-microsoft-com:vml' xmlns:o='urn:schemas-microsoft-com:office:office'>
                 <body style='font-family: Arial, sans-serif;'>
-                    <h3 style='color: #0a58ca;'>{CurrentUser.Name ?? CurrentUser.UserName} mentioned you in a comment.</h3>
+                    <h3 style='color: #0a58ca;'>{currentUserText} mentioned you in a comment.</h3>
                     <table style='width: 100%; background-color: #f9f9f9; border-left: 3px solid #ccc;'>
                         <tr>
                             <td style='padding: 15px;'>
