@@ -204,13 +204,18 @@
             ? (UIElements.defaultPaymentGroup.val() || '1')
             : null;
 
+        const rawThreshold = UIElements.paymentApprovalThreshold.val();
+        const unMaskedPaymentApprovalThreshold = rawThreshold === ''
+            ? null
+            : (UIElements.paymentApprovalThreshold.maskMoney('unmasked')[0] ?? null);
+
         unity.grantManager.applicationForms.applicationForm.savePaymentConfiguration(
             {
                 accountCodingId: UIElements.accountCode.val(),
                 applicationFormId: UIElements.appFormId.val(),
                 preventPayment: UIElements.preventPayment.is(':checked'),
                 payable: UIElements.payable.is(':checked'),
-                paymentApprovalThreshold: UIElements.paymentApprovalThreshold.val() === '' ? null : UIElements.paymentApprovalThreshold.val(),
+                paymentApprovalThreshold: unMaskedPaymentApprovalThreshold,
                 formHierarchy: Number.isNaN(formHierarchy) ? null : formHierarchy,
                 parentFormId: parentFormId || null,
                 defaultPaymentGroup: defaultPaymentGroupValue
@@ -261,4 +266,6 @@
         }
     }
 
+    $('.unity-currency-input') //Required for initial masking
+        .maskMoney({thousands: ',',decimal: '.',}).maskMoney('mask');
 });
