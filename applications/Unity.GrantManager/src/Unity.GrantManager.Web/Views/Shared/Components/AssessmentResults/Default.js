@@ -154,7 +154,7 @@
     );
     $('#PaymentApprovalThreshold').rules('add', {
         normalizer: function (value) {
-            return value.replace(/,/g, '');
+            return value.replaceAll(',', '');
         }
     });
     $('.unity-currency-input').maskMoney();
