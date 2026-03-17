@@ -30,6 +30,10 @@
         $('#listMergeColA').text(a.applicantName ?? a.id);
         $('#listMergeColB').text(b.applicantName ?? b.id);
 
+        // Show "Flagged as Duplicated" badge if the applicant has IsDuplicated=true
+        $('#listMergeDuplicateFlagA').toggleClass('d-none', !a.isDuplicated);
+        $('#listMergeDuplicateFlagB').toggleClass('d-none', !b.isDuplicated);
+
         // Build dynamic field rows
         const $tbody = $('#listMergeTableBody').empty();
         MERGE_FIELDS.forEach(f => {
