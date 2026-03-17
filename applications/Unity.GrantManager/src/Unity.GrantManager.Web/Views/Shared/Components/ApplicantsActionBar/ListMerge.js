@@ -133,7 +133,7 @@
                 sector:                      merged['sector'] ?? null,
                 subSector:                   merged['subSector'] ?? null,
                 sectorSubSectorIndustryDesc: merged['sectorSubSectorIndustryDesc'] ?? null,
-                fiscalDay:                   merged['fiscalDay'] != null ? String(merged['fiscalDay']) : null,
+                fiscalDay:                   merged['fiscalDay'] === null ? null : String(merged['fiscalDay']),
                 fiscalMonth:                 merged['fiscalMonth'] ?? null,
             };
 
