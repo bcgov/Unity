@@ -719,7 +719,7 @@ namespace Unity.GrantManager.AI
         private string ResolveMaxTokensParameterNameForOperation(string? operationName = null)
         {
             var providerName = ResolveProviderName(operationName);
-            var profileName = ResolveProfileName(operationName, providerName);
+            var profileName = ResolveProfileName(operationName);
             var profileParameterName = ResolveProfileSetting(providerName, profileName, "MaxTokensParameter");
             return ResolveMaxTokensParameterName(profileParameterName);
         }
@@ -727,7 +727,7 @@ namespace Unity.GrantManager.AI
         private double? ResolveConfiguredTemperature(string? operationName = null)
         {
             var providerName = ResolveProviderName(operationName);
-            var profileName = ResolveProfileName(operationName, providerName);
+            var profileName = ResolveProfileName(operationName);
             var profileTemperature = ResolveProfileSetting(providerName, profileName, "Temperature");
             if (profileTemperature != null
                 && double.TryParse(profileTemperature, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var parsedTemperature))
@@ -740,24 +740,25 @@ namespace Unity.GrantManager.AI
 
         private string ResolveApiUrl(string? operationName)
         {
-            if (!string.IsNullOrWhiteSpace(operationName))
+            var providerName = ResolveProviderName(operationName);
+            var profileName = ResolveProfileName(operationName);
+            var profileApiUrl = ResolveProfileSetting(providerName, profileName, "ApiUrl");
+            var legacyOpenAiApiUrl = _configuration["Azure:OpenAI:ApiUrl"];
+
+            if (!string.IsNullOrWhiteSpace(profileApiUrl))
             {
-                var operationApiUrl = _configuration[$"Azure:Operations:{operationName}:ApiUrl"];
-                if (!string.IsNullOrWhiteSpace(operationApiUrl))
-                {
-                    return operationApiUrl;
-                }
+                return profileApiUrl;
             }
 
-            var providerName = ResolveProviderName(operationName);
-            var profileName = ResolveProfileName(operationName, providerName);
-            var profileApiUrl = ResolveProfileSetting(providerName, profileName, "ApiUrl");
-            return profileApiUrl
-                ?? _configuration[$"Azure:{providerName}:ApiUrl"]
-                ?? "https://api.openai.com/v1/chat/completions";
+            if (!string.IsNullOrWhiteSpace(legacyOpenAiApiUrl))
+            {
+                return legacyOpenAiApiUrl;
+            }
+
+            throw new InvalidOperationException($"AI API URL is not configured for provider '{providerName}'.");
         }
 
-        private string? ResolveProfileName(string? operationName, string providerName)
+        private string? ResolveProfileName(string? operationName)
         {
             if (!string.IsNullOrWhiteSpace(operationName))
             {
