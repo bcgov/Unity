@@ -310,8 +310,8 @@ function populateMergeModal(existing, newData) {
     $('#mergeNewDuplicateFlag').toggleClass('d-none', !newData.IsDuplicated);
 
     // Name match summary badge
-    var score = compareStrings(existing.ApplicantName || '', newData.ApplicantName || '');
-    var $badge = $('#mergeNameMatchBadge');
+    let score = compareStrings(existing.ApplicantName || '', newData.ApplicantName || '');
+    let $badge = $('#mergeNameMatchBadge');
     $badge.removeClass('unity-badge-warning');
     if (score >= 100) {
         $badge.text('100% Matched - Possible Duplicate');

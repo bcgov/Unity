@@ -35,8 +35,8 @@
         $('#listMergeDuplicateFlagB').toggleClass('d-none', !b.isDuplicated);
 
         // Name match summary badge
-        var score = compareStrings(a.applicantName || '', b.applicantName || '');
-        var $badge = $('#listMergeNameMatchBadgeText');
+        let score = compareStrings(a.applicantName || '', b.applicantName || '');
+        let $badge = $('#listMergeNameMatchBadgeText');
         $badge.removeClass('unity-badge-warning');
         if (score >= 100) {
             $badge.text('100% Matched - Possible Duplicate');

@@ -32,5 +32,5 @@ function compareStrings(str1, str2) {
     }
     let union = pairs1.length + Object.keys(set2).length;
     if (union === 0) return 0;
-    return Math.round(Math.min(2.0 * intersection * 100 / union, 100) * 100) / 100;
+    return Math.round(Math.min(2 * intersection * 100 / union, 100) * 100) / 100;
 }
