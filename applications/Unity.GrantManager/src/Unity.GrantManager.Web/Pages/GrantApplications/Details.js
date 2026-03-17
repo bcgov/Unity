@@ -885,6 +885,7 @@ $(function () {
 });
 
 function formatAIPromptCaptureBlock(capture) {
+    const output = capture.output || '';
     const parts = [
         `PROMPT TYPE: ${capture.promptType || ''}`,
         `PROMPT VERSION: ${capture.promptVersion || ''}`
@@ -906,11 +907,8 @@ function formatAIPromptCaptureBlock(capture) {
         'USER PROMPT',
         capture.userPrompt || '',
         '',
-        'RAW OUTPUT',
-        capture.rawOutput || '',
-        '',
-        'FORMATTED OUTPUT',
-        capture.formattedOutput || ''
+        'OUTPUT',
+        output
     );
 
     return parts.join('\n');
@@ -1378,3 +1376,4 @@ function clearCurrencyError(input) {
     document.getElementById(errorSpan).textContent = '';
     input.attr('aria-invalid', 'false');
 }
+
