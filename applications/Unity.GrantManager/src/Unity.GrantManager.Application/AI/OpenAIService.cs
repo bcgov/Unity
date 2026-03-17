@@ -1139,12 +1139,7 @@ namespace Unity.GrantManager.AI
                 }
 
                 var normalizedContent = FormatPromptOutputContent(content);
-                if (lines.Count > 0)
-                {
-                    lines.Add(string.Empty);
-                }
-
-                lines.Add("CONTENT");
+                lines.Add("CONTENT:");
                 lines.Add(normalizedContent);
                 formattedOutput = string.Join(Environment.NewLine, lines);
                 return true;
