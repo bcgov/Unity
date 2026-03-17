@@ -5,6 +5,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Text;
 using System.Text.Json;
@@ -32,13 +33,21 @@ namespace Unity.GrantManager.AI
         private const string AttachmentUserTemplateName = "attachment.user";
         private const string ScoresheetSystemTemplateName = "scoresheet.system";
         private const string ScoresheetUserTemplateName = "scoresheet.user";
-        private const string NoSummaryGeneratedMessage = "No summary generated.";
         private const string ServiceNotConfiguredMessage = "AI analysis not available - service not configured.";
         private const string ServiceTemporarilyUnavailableMessage = "AI analysis failed - service temporarily unavailable.";
         private const string SummaryFailedRetryMessage = "AI analysis failed - please try again later.";
+        private const int MaxAiAttempts = 3;
+        private const string DefaultMaxTokensParameterName = "max_completion_tokens";
+        private const string LegacyMaxTokensParameterName = "max_tokens";
+        private const string DefaultProviderName = "OpenAI";
+        private const int DefaultCompletionTokens = 150;
+        private const int DefaultAttachmentSummaryCompletionTokens = 500;
+        private const int DefaultApplicationAnalysisCompletionTokens = 2500;
+        private const int DefaultScoresheetSectionCompletionTokens = 5000;
 
-        private string? ApiKey => _configuration["Azure:OpenAI:ApiKey"];
-        private string? ApiUrl => _configuration["Azure:OpenAI:ApiUrl"] ?? "https://api.openai.com/v1/chat/completions";
+        private int AttachmentSummaryCompletionTokens => ResolveCompletionTokens("AttachmentSummary", DefaultAttachmentSummaryCompletionTokens);
+        private int ApplicationAnalysisCompletionTokens => ResolveCompletionTokens("ApplicationAnalysis", DefaultApplicationAnalysisCompletionTokens);
+        private int ScoresheetSectionCompletionTokens => ResolveCompletionTokens("ScoresheetSection", DefaultScoresheetSectionCompletionTokens);
         private readonly string MissingApiKeyMessage = "OpenAI API key is not configured";
 
         // Optional local debugging sink for prompt payload logs to a local file.
@@ -57,8 +66,6 @@ namespace Unity.GrantManager.AI
             };
         private static readonly ConcurrentDictionary<string, string> PromptTemplateCache = new(StringComparer.OrdinalIgnoreCase);
 
-        private string SelectedPromptVersion => ResolvePromptVersion(_configuration["Azure:OpenAI:PromptVersion"]);
-
         public OpenAIService(
             HttpClient httpClient,
             IConfiguration configuration,
@@ -75,7 +82,7 @@ namespace Unity.GrantManager.AI
 
         public Task<bool> IsAvailableAsync()
         {
-            if (string.IsNullOrEmpty(ApiKey))
+            if (string.IsNullOrEmpty(ResolveApiKey()))
             {
                 _logger.LogWarning("Error: {Message}", MissingApiKeyMessage);
                 return Task.FromResult(false);
@@ -86,18 +93,21 @@ namespace Unity.GrantManager.AI
 
         public async Task<AICompletionResponse> GenerateCompletionAsync(AICompletionRequest request)
         {
-            var content = await GenerateSummaryAsync(
+            var result = await GenerateWithRetryAsync(
+                () => GenerateSummaryAsync(
                 request?.UserPrompt ?? string.Empty,
                 null,
-                request?.MaxTokens ?? 150,
-                request?.Temperature);
-            return new AICompletionResponse { Content = content };
+                request?.MaxTokens ?? DefaultCompletionTokens,
+                request?.Temperature),
+                AIResponseValidator.IsValidAttachmentSummaryText,
+                "completion");
+            return new AICompletionResponse { Content = ResolveNarrativeContent(result) };
         }
 
         public async Task<ApplicationAnalysisResponse> GenerateApplicationAnalysisAsync(ApplicationAnalysisRequest request)
         {
             ArgumentNullException.ThrowIfNull(request);
-            var promptVersion = ResolvePromptVersion(request.PromptVersion ?? SelectedPromptVersion);
+            var promptVersion = ResolvePromptVersion(request.PromptVersion ?? ResolvePromptVersionSetting(ApplicationAnalysisPromptType));
             var capturePromptIo = request.CapturePromptIo;
             var data = JsonSerializer.Serialize(request.Data, JsonLogOptions);
             var schema = JsonSerializer.Serialize(request.Schema, JsonLogOptions);
@@ -118,22 +128,44 @@ namespace Unity.GrantManager.AI
                 data,
                 attachments);
             await LogPromptInputAsync(ApplicationAnalysisPromptType, promptVersion, systemPrompt, analysisContent);
-            var raw = await GenerateSummaryAsync(analysisContent, systemPrompt, 1000);
-            await LogPromptOutputAsync(ApplicationAnalysisPromptType, promptVersion, raw);
-            SavePromptCapture(capturePromptIo, request.CaptureContextId, ApplicationAnalysisPromptType, promptVersion, "Application Analysis", systemPrompt, analysisContent, raw);
-            return ParseApplicationAnalysisResponse(AddIdsToAnalysisItems(raw));
+            var result = await GenerateWithRetryAsync(
+                () => GenerateSummaryAsync(
+                    analysisContent,
+                    systemPrompt,
+                    ApplicationAnalysisCompletionTokens,
+                    operationName: ApplicationAnalysisPromptType),
+                AIResponseValidator.IsValidApplicationAnalysisJson,
+                "application analysis");
+            await LogPromptOutputAsync(ApplicationAnalysisPromptType, promptVersion, result.CaptureOutput);
+            SavePromptCapture(capturePromptIo, request.CaptureContextId, ApplicationAnalysisPromptType, promptVersion, "Application Analysis", systemPrompt, analysisContent, result.CaptureOutput);
+
+            if (result.Outcome != AIOperationOutcome.Success)
+            {
+                return new ApplicationAnalysisResponse();
+            }
+
+            return ParseApplicationAnalysisResponse(AddIdsToAnalysisItems(result.Content));
         }
 
-        private async Task<string> GenerateSummaryAsync(
+        private async Task<AIOperationResult> GenerateSummaryAsync(
             string content,
             string? systemPrompt,
             int maxTokens = 150,
-            double? temperature = null)
+            double? temperature = null,
+            string? operationName = null)
         {
-            if (string.IsNullOrEmpty(ApiKey))
+            var providerName = ResolveProviderName(operationName);
+            if (!string.Equals(providerName, DefaultProviderName, StringComparison.Ordinal))
+            {
+                _logger.LogWarning("Provider {ProviderName} is not supported by OpenAIService.", providerName);
+                return AIOperationResult.PermanentFailure(new AIProviderResponse($"Unsupported provider: {providerName}"));
+            }
+
+            var apiKey = ResolveApiKey(operationName);
+            if (string.IsNullOrEmpty(apiKey))
             {
                 _logger.LogWarning("Error: {Message}", MissingApiKeyMessage);
-                return ServiceNotConfiguredMessage;
+                return AIOperationResult.PermanentFailure(new AIProviderResponse(MissingApiKeyMessage));
             }
 
             _logger.LogDebug("Calling OpenAI chat completions. PromptLength: {PromptLength}, MaxTokens: {MaxTokens}", content?.Length ?? 0, maxTokens);
@@ -151,50 +183,74 @@ namespace Unity.GrantManager.AI
                     {
                        new { role = "system", content = resolvedSystemPrompt },
                        new { role = "user", content = userPrompt }
-                   },
-                    max_tokens = maxTokens,
-                    temperature = temperature ?? 0.3
+                   }
                 };
 
-                var json = JsonSerializer.Serialize(requestBody);
+                var requestPayload = new Dictionary<string, object?>
+                {
+                    ["messages"] = requestBody.messages,
+                    [ResolveMaxTokensParameterNameForOperation(operationName)] = maxTokens
+                };
+
+                var resolvedTemperature = temperature ?? ResolveConfiguredTemperature(operationName);
+                if (resolvedTemperature.HasValue)
+                {
+                    requestPayload["temperature"] = resolvedTemperature.Value;
+                }
+
+                var json = JsonSerializer.Serialize(requestPayload);
                 var httpContent = new StringContent(json, Encoding.UTF8, "application/json");
 
                 _httpClient.DefaultRequestHeaders.Clear();
-                _httpClient.DefaultRequestHeaders.Add("Authorization", ApiKey);
+                _httpClient.DefaultRequestHeaders.Add("Authorization", apiKey);
 
-                var response = await _httpClient.PostAsync(ApiUrl, httpContent);
+                var response = await _httpClient.PostAsync(ResolveApiUrl(operationName), httpContent);
                 var responseContent = await response.Content.ReadAsStringAsync();
+                var metadata = TryExtractProviderMetadata(responseContent);
+                var providerResponse = BuildProviderResponseFromMetadata(string.Empty, responseContent, metadata);
 
                 _logger.LogDebug(
                     "OpenAI chat completions response received. StatusCode: {StatusCode}, ResponseLength: {ResponseLength}",
                     response.StatusCode,
                     responseContent?.Length ?? 0);
+                LogProviderMetadata(operationName, providerResponse);
 
                 if (!response.IsSuccessStatusCode)
                 {
                     _logger.LogError("OpenAI API request failed: {StatusCode} - {Content}", response.StatusCode, responseContent);
-                    return ServiceTemporarilyUnavailableMessage;
+                    return MapFailureOutcome(response.StatusCode, providerResponse);
                 }
 
                 if (string.IsNullOrWhiteSpace(responseContent))
                 {
-                    return NoSummaryGeneratedMessage;
+                    return AIOperationResult.InvalidOutput(providerResponse);
                 }
 
-                using var jsonDoc = JsonDocument.Parse(responseContent);
-                var choices = jsonDoc.RootElement.GetProperty("choices");
-                if (choices.GetArrayLength() > 0)
+                try
                 {
-                    var message = choices[0].GetProperty("message");
-                    return message.GetProperty("content").GetString() ?? NoSummaryGeneratedMessage;
-                }
+                    using var jsonDoc = JsonDocument.Parse(responseContent);
+                    var choices = jsonDoc.RootElement.GetProperty("choices");
+                    if (choices.GetArrayLength() > 0)
+                    {
+                        var message = choices[0].GetProperty("message");
+                        var modelOutput = message.GetProperty("content").GetString();
+                        return string.IsNullOrWhiteSpace(modelOutput)
+                            ? AIOperationResult.InvalidOutput(providerResponse)
+                            : AIOperationResult.Success(BuildProviderResponseFromMetadata(modelOutput, responseContent, metadata));
+                    }
 
-                return NoSummaryGeneratedMessage;
+                    return AIOperationResult.InvalidOutput(providerResponse);
+                }
+                catch (Exception ex) when (ex is JsonException || ex is KeyNotFoundException || ex is InvalidOperationException)
+                {
+                    _logger.LogWarning(ex, "AI response payload had an invalid output shape");
+                    return AIOperationResult.InvalidOutput(providerResponse);
+                }
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error generating AI summary");
-                return SummaryFailedRetryMessage;
+                return AIOperationResult.TransientFailure(new AIProviderResponse(ex.Message));
             }
         }
 
@@ -204,7 +260,7 @@ namespace Unity.GrantManager.AI
             var fileName = request.FileName ?? string.Empty;
             var fileContent = request.FileContent ?? Array.Empty<byte>();
             var contentType = request.ContentType ?? "application/octet-stream";
-            var promptVersion = ResolvePromptVersion(request.PromptVersion ?? SelectedPromptVersion);
+            var promptVersion = ResolvePromptVersion(request.PromptVersion ?? ResolvePromptVersionSetting(AttachmentSummaryPromptType));
             var capturePromptIo = request.CapturePromptIo;
 
             try
@@ -233,13 +289,28 @@ namespace Unity.GrantManager.AI
                 var contentToAnalyze = BuildAttachmentUserPrompt(promptVersion, attachment);
 
                 await LogPromptInputAsync(AttachmentSummaryPromptType, promptVersion, prompt, contentToAnalyze);
-                var modelOutput = await GenerateSummaryAsync(contentToAnalyze, prompt, 150);
-                await LogPromptOutputAsync(AttachmentSummaryPromptType, promptVersion, modelOutput);
-                SavePromptCapture(capturePromptIo, request.CaptureContextId, AttachmentSummaryPromptType, promptVersion, fileName, prompt, contentToAnalyze, modelOutput);
+                var result = await GenerateWithRetryAsync(
+                    () => GenerateSummaryAsync(
+                        contentToAnalyze,
+                        prompt,
+                        AttachmentSummaryCompletionTokens,
+                        operationName: AttachmentSummaryPromptType),
+                    AIResponseValidator.IsValidAttachmentSummaryText,
+                    "attachment summary");
+                await LogPromptOutputAsync(AttachmentSummaryPromptType, promptVersion, result.CaptureOutput);
+                SavePromptCapture(capturePromptIo, request.CaptureContextId, AttachmentSummaryPromptType, promptVersion, fileName, prompt, contentToAnalyze, result.CaptureOutput);
+
+                if (result.Outcome != AIOperationOutcome.Success)
+                {
+                    return new AttachmentSummaryResponse
+                    {
+                        Summary = $"AI analysis not available for this attachment ({fileName})."
+                    };
+                }
 
                 return new AttachmentSummaryResponse
                 {
-                    Summary = ExtractSummaryFromJson(modelOutput)
+                    Summary = ExtractSummaryFromJson(result.Content)
                 };
             }
             catch (Exception ex)
@@ -326,7 +397,7 @@ namespace Unity.GrantManager.AI
         public async Task<ScoresheetSectionResponse> GenerateScoresheetSectionAsync(ScoresheetSectionRequest request)
         {
             ArgumentNullException.ThrowIfNull(request);
-            var promptVersion = ResolvePromptVersion(request.PromptVersion ?? SelectedPromptVersion);
+            var promptVersion = ResolvePromptVersion(request.PromptVersion ?? ResolvePromptVersionSetting(ScoresheetSectionPromptType));
             var capturePromptIo = request.CapturePromptIo;
             var dataJson = JsonSerializer.Serialize(request.Data, JsonLogOptions);
             var sectionJson = JsonSerializer.Serialize(request.SectionSchema, JsonLogOptions);
@@ -334,8 +405,7 @@ namespace Unity.GrantManager.AI
             var attachmentSummaries = request.Attachments
                 .Select(a => $"{a.Name}: {a.Summary}")
                 .ToList();
-
-            if (string.IsNullOrEmpty(ApiKey))
+            if (string.IsNullOrEmpty(ResolveApiKey(ScoresheetSectionPromptType)))
             {
                 _logger.LogWarning("{Message}", MissingApiKeyMessage);
                 return new ScoresheetSectionResponse();
@@ -385,17 +455,333 @@ namespace Unity.GrantManager.AI
                 var systemPrompt = BuildScoresheetSectionSystemPrompt(promptVersion);
 
                 await LogPromptInputAsync(ScoresheetSectionPromptType, promptVersion, systemPrompt, analysisContent);
-                var modelOutput = await GenerateSummaryAsync(analysisContent, systemPrompt, 2000);
-                await LogPromptOutputAsync(ScoresheetSectionPromptType, promptVersion, modelOutput);
-                SavePromptCapture(capturePromptIo, request.CaptureContextId, ScoresheetSectionPromptType, promptVersion, request.SectionName, systemPrompt, analysisContent, modelOutput);
+                var result = await GenerateWithRetryAsync(
+                    () => GenerateSummaryAsync(
+                        analysisContent,
+                        systemPrompt,
+                        ScoresheetSectionCompletionTokens,
+                        operationName: ScoresheetSectionPromptType),
+                    content => AIResponseValidator.IsValidScoresheetSectionJson(content, sectionJson),
+                    $"scoresheet section {request.SectionName}");
+                await LogPromptOutputAsync(ScoresheetSectionPromptType, promptVersion, result.CaptureOutput);
+                SavePromptCapture(capturePromptIo, request.CaptureContextId, ScoresheetSectionPromptType, promptVersion, request.SectionName, systemPrompt, analysisContent, result.CaptureOutput);
 
-                return ParseScoresheetSectionResponse(modelOutput);
+                if (result.Outcome != AIOperationOutcome.Success)
+                {
+                    return new ScoresheetSectionResponse();
+                }
+
+                return ParseScoresheetSectionResponse(result.Content);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error generating scoresheet section answers for section {SectionName}", request.SectionName);
                 return new ScoresheetSectionResponse();
             }
+        }
+
+        private async Task<AIOperationResult> GenerateWithRetryAsync(
+            Func<Task<AIOperationResult>> operation,
+            Func<string, bool> validator,
+            string operationName)
+        {
+            var lastResult = AIOperationResult.InvalidOutput();
+
+            for (var attempt = 1; attempt <= MaxAiAttempts; attempt++)
+            {
+                lastResult = await operation();
+
+                if (lastResult.Outcome == AIOperationOutcome.Success && validator(lastResult.Content))
+                {
+                    return lastResult;
+                }
+
+                if (lastResult.Outcome == AIOperationOutcome.Success)
+                {
+                    lastResult = lastResult.WithOutcome(AIOperationOutcome.InvalidOutput);
+                }
+
+                if (lastResult.Outcome == AIOperationOutcome.PermanentFailure)
+                {
+                    return lastResult;
+                }
+
+                if (attempt < MaxAiAttempts)
+                {
+                    if (lastResult.Outcome == AIOperationOutcome.TransientFailure)
+                    {
+                        _logger.LogWarning(
+                            "AI {OperationName} attempt {Attempt}/{MaxAttempts} failed transiently; retrying",
+                            operationName,
+                            attempt,
+                            MaxAiAttempts);
+                    }
+                    else if (lastResult.Outcome == AIOperationOutcome.InvalidOutput)
+                    {
+                        _logger.LogWarning(
+                            "AI {OperationName} attempt {Attempt}/{MaxAttempts} returned invalid response shape; retrying",
+                            operationName,
+                            attempt,
+                            MaxAiAttempts);
+                    }
+                }
+            }
+
+            _logger.LogWarning(
+                "AI {OperationName} exhausted retries with outcome {Outcome}; returning last result",
+                operationName,
+                lastResult.Outcome);
+            return lastResult;
+        }
+
+        private static string ResolveNarrativeContent(AIOperationResult result)
+        {
+            return result.Outcome switch
+            {
+                AIOperationOutcome.Success => result.Content,
+                AIOperationOutcome.PermanentFailure => ServiceNotConfiguredMessage,
+                AIOperationOutcome.TransientFailure => ServiceTemporarilyUnavailableMessage,
+                _ => SummaryFailedRetryMessage
+            };
+        }
+
+        private static AIOperationResult MapFailureOutcome(HttpStatusCode statusCode, AIProviderResponse response)
+        {
+            var statusCodeValue = (int)statusCode;
+
+            if (statusCode == HttpStatusCode.RequestTimeout
+                || statusCode == (HttpStatusCode)429
+                || statusCodeValue >= 500)
+            {
+                return AIOperationResult.TransientFailure(response);
+            }
+
+            return AIOperationResult.PermanentFailure(response);
+        }
+
+        private static AIProviderResponse BuildProviderResponseFromMetadata(string content, string? rawResponse, AIProviderResponseMetadata? metadata)
+        {
+            return new AIProviderResponse(
+                content,
+                rawResponse ?? string.Empty,
+                metadata?.Model,
+                metadata?.FinishReason,
+                metadata?.PromptTokens,
+                metadata?.CompletionTokens,
+                metadata?.TotalTokens,
+                metadata?.ReasoningTokens);
+        }
+
+        private static AIProviderResponseMetadata? TryExtractProviderMetadata(string? responseContent)
+        {
+            if (string.IsNullOrWhiteSpace(responseContent))
+            {
+                return null;
+            }
+
+            try
+            {
+                using var jsonDoc = JsonDocument.Parse(responseContent);
+                var root = jsonDoc.RootElement;
+                var model = root.TryGetProperty("model", out var modelProp) && modelProp.ValueKind == JsonValueKind.String
+                    ? modelProp.GetString()
+                    : null;
+
+                string? finishReason = null;
+                if (root.TryGetProperty("choices", out var choices)
+                    && choices.ValueKind == JsonValueKind.Array
+                    && choices.GetArrayLength() > 0)
+                {
+                    var firstChoice = choices[0];
+                    if (firstChoice.TryGetProperty("finish_reason", out var finishReasonProp) && finishReasonProp.ValueKind == JsonValueKind.String)
+                    {
+                        finishReason = finishReasonProp.GetString();
+                    }
+                }
+
+                int? promptTokens = null;
+                int? completionTokens = null;
+                int? totalTokens = null;
+                int? reasoningTokens = null;
+                if (root.TryGetProperty("usage", out var usage) && usage.ValueKind == JsonValueKind.Object)
+                {
+                    promptTokens = TryGetInt32(usage, "prompt_tokens");
+                    completionTokens = TryGetInt32(usage, "completion_tokens");
+                    totalTokens = TryGetInt32(usage, "total_tokens");
+
+                    if (usage.TryGetProperty("completion_tokens_details", out var completionTokenDetails)
+                        && completionTokenDetails.ValueKind == JsonValueKind.Object)
+                    {
+                        reasoningTokens = TryGetInt32(completionTokenDetails, "reasoning_tokens");
+                    }
+                }
+
+                return new AIProviderResponseMetadata(model, finishReason, promptTokens, completionTokens, totalTokens, reasoningTokens);
+            }
+            catch (JsonException)
+            {
+                return null;
+            }
+        }
+
+        private void LogProviderMetadata(string? operationName, AIProviderResponse response)
+        {
+            if (string.IsNullOrWhiteSpace(response.Model)
+                && string.IsNullOrWhiteSpace(response.FinishReason)
+                && response.PromptTokens == null
+                && response.CompletionTokens == null
+                && response.TotalTokens == null
+                && response.ReasoningTokens == null)
+            {
+                return;
+            }
+
+            _logger.LogDebug(
+                "AI provider response metadata for {OperationName}: Model={Model}, FinishReason={FinishReason}, PromptTokens={PromptTokens}, CompletionTokens={CompletionTokens}, TotalTokens={TotalTokens}, ReasoningTokens={ReasoningTokens}",
+                operationName ?? "completion",
+                response.Model,
+                response.FinishReason,
+                response.PromptTokens,
+                response.CompletionTokens,
+                response.TotalTokens,
+                response.ReasoningTokens);
+        }
+
+        private static int? TryGetInt32(JsonElement element, string propertyName)
+        {
+            return element.TryGetProperty(propertyName, out var property)
+                && property.ValueKind == JsonValueKind.Number
+                && property.TryGetInt32(out var value)
+                ? value
+                : null;
+        }
+
+        private static string ResolveMaxTokensParameterName(string? configuredParameterName)
+        {
+            if (string.Equals(configuredParameterName, LegacyMaxTokensParameterName, StringComparison.Ordinal))
+            {
+                return LegacyMaxTokensParameterName;
+            }
+
+            return DefaultMaxTokensParameterName;
+        }
+
+        private int ResolveCompletionTokens(string operationName, int defaultValue)
+        {
+            var configuredValue = _configuration.GetValue<int?>($"Azure:Operations:{operationName}:MaxCompletionTokens");
+            if (configuredValue is > 0)
+            {
+                return configuredValue.Value;
+            }
+
+            var defaultConfiguredValue = _configuration.GetValue<int?>("Azure:Operations:Defaults:MaxCompletionTokens");
+            return defaultConfiguredValue is > 0 ? defaultConfiguredValue.Value : defaultValue;
+        }
+
+        private string? ResolvePromptVersionSetting(string operationName)
+        {
+            var operationPromptVersion = _configuration[$"Azure:Operations:{operationName}:PromptVersion"];
+            if (!string.IsNullOrWhiteSpace(operationPromptVersion))
+            {
+                return operationPromptVersion;
+            }
+
+            var defaultPromptVersion = _configuration["Azure:Operations:Defaults:PromptVersion"];
+            if (!string.IsNullOrWhiteSpace(defaultPromptVersion))
+            {
+                return defaultPromptVersion;
+            }
+
+            return _configuration["Azure:OpenAI:PromptVersion"];
+        }
+
+        private string ResolveProviderName(string? operationName = null)
+        {
+            if (!string.IsNullOrWhiteSpace(operationName))
+            {
+                var configuredProvider = _configuration[$"Azure:Operations:{operationName}:Provider"];
+                if (!string.IsNullOrWhiteSpace(configuredProvider))
+                {
+                    return configuredProvider.Trim();
+                }
+            }
+
+            var defaultProvider = _configuration["Azure:Operations:Defaults:Provider"];
+            return string.IsNullOrWhiteSpace(defaultProvider) ? DefaultProviderName : defaultProvider.Trim();
+        }
+
+        private string? ResolveApiKey(string? operationName = null)
+        {
+            var providerName = ResolveProviderName(operationName);
+            return _configuration[$"Azure:{providerName}:ApiKey"];
+        }
+
+        private string ResolveMaxTokensParameterNameForOperation(string? operationName = null)
+        {
+            var providerName = ResolveProviderName(operationName);
+            var profileName = ResolveProfileName(operationName);
+            var profileParameterName = ResolveProfileSetting(providerName, profileName, "MaxTokensParameter");
+            return ResolveMaxTokensParameterName(profileParameterName);
+        }
+
+        private double? ResolveConfiguredTemperature(string? operationName = null)
+        {
+            var providerName = ResolveProviderName(operationName);
+            var profileName = ResolveProfileName(operationName);
+            var profileTemperature = ResolveProfileSetting(providerName, profileName, "Temperature");
+            if (profileTemperature != null
+                && double.TryParse(profileTemperature, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var parsedTemperature))
+            {
+                return parsedTemperature;
+            }
+
+            return null;
+        }
+
+        private string ResolveApiUrl(string? operationName)
+        {
+            var providerName = ResolveProviderName(operationName);
+            var profileName = ResolveProfileName(operationName);
+            var profileApiUrl = ResolveProfileSetting(providerName, profileName, "ApiUrl");
+            var legacyOpenAiApiUrl = _configuration["Azure:OpenAI:ApiUrl"];
+
+            if (!string.IsNullOrWhiteSpace(profileApiUrl))
+            {
+                return profileApiUrl;
+            }
+
+            if (!string.IsNullOrWhiteSpace(legacyOpenAiApiUrl))
+            {
+                return legacyOpenAiApiUrl;
+            }
+
+            throw new InvalidOperationException($"AI API URL is not configured for provider '{providerName}'.");
+        }
+
+        private string? ResolveProfileName(string? operationName)
+        {
+            if (!string.IsNullOrWhiteSpace(operationName))
+            {
+                var operationProfile = _configuration[$"Azure:Operations:{operationName}:Profile"];
+                if (!string.IsNullOrWhiteSpace(operationProfile))
+                {
+                    return operationProfile.Trim();
+                }
+            }
+
+            var defaultProfile = _configuration["Azure:Operations:Defaults:Profile"];
+            return string.IsNullOrWhiteSpace(defaultProfile) ? null : defaultProfile.Trim();
+        }
+
+        private string? ResolveProfileSetting(string providerName, string? profileName, string settingName)
+        {
+            if (string.IsNullOrWhiteSpace(profileName))
+            {
+                return null;
+            }
+
+            var profileSetting = _configuration[$"Azure:{providerName}:Profiles:{profileName}:{settingName}"];
+            return string.IsNullOrWhiteSpace(profileSetting) ? null : profileSetting;
         }
 
         private static ApplicationAnalysisResponse ParseApplicationAnalysisResponse(string raw)
@@ -668,8 +1054,7 @@ namespace Unity.GrantManager.AI
                 CaptureLabel = captureLabel?.Trim() ?? string.Empty,
                 SystemPrompt = systemPrompt?.Trim() ?? string.Empty,
                 UserPrompt = userPrompt?.Trim() ?? string.Empty,
-                RawOutput = rawOutput?.Trim() ?? string.Empty,
-                FormattedOutput = FormatPromptOutputForLog(rawOutput ?? string.Empty),
+                Output = FormatPromptOutputForLog(rawOutput ?? string.Empty),
                 CapturedAt = DateTime.UtcNow
             });
         }
@@ -688,6 +1073,11 @@ namespace Unity.GrantManager.AI
                 return string.Empty;
             }
 
+            if (TryFormatProviderOutput(output, out var formattedProviderOutput))
+            {
+                return formattedProviderOutput;
+            }
+
             if (TryParseJsonObjectFromResponse(output, out var jsonObject))
             {
                 return JsonSerializer.Serialize(jsonObject, JsonLogOptions);
@@ -696,10 +1086,100 @@ namespace Unity.GrantManager.AI
             return output.Trim();
         }
 
+        private static bool TryFormatProviderOutput(string output, out string formattedOutput)
+        {
+            formattedOutput = string.Empty;
+
+            try
+            {
+                using var doc = JsonDocument.Parse(output);
+                var root = doc.RootElement;
+                if (root.ValueKind != JsonValueKind.Object
+                    || !root.TryGetProperty("choices", out var choices)
+                    || choices.ValueKind != JsonValueKind.Array
+                    || choices.GetArrayLength() == 0)
+                {
+                    return false;
+                }
+
+                var firstChoice = choices[0];
+                var content = TryGetChoiceContent(firstChoice);
+                if (string.IsNullOrWhiteSpace(content))
+                {
+                    return false;
+                }
+
+                var lines = new List<string>();
+
+                if (root.TryGetProperty("usage", out var usage) && usage.ValueKind == JsonValueKind.Object)
+                {
+                    var promptTokens = TryGetInt32(usage, "prompt_tokens");
+                    var completionTokens = TryGetInt32(usage, "completion_tokens");
+                    int? reasoningTokens = null;
+
+                    if (usage.TryGetProperty("completion_tokens_details", out var completionTokenDetails)
+                        && completionTokenDetails.ValueKind == JsonValueKind.Object)
+                    {
+                        reasoningTokens = TryGetInt32(completionTokenDetails, "reasoning_tokens");
+                    }
+
+                    if (promptTokens.HasValue)
+                    {
+                        lines.Add($"PROMPT TOKENS: {promptTokens.Value}");
+                    }
+
+                    if (completionTokens.HasValue)
+                    {
+                        lines.Add($"COMPLETION TOKENS: {completionTokens.Value}");
+                    }
+
+                    if (reasoningTokens.HasValue)
+                    {
+                        lines.Add($"REASONING TOKENS: {reasoningTokens.Value}");
+                    }
+                }
+
+                var normalizedContent = FormatPromptOutputContent(content);
+                lines.Add("CONTENT:");
+                lines.Add(normalizedContent);
+                formattedOutput = string.Join(Environment.NewLine, lines);
+                return true;
+            }
+            catch (JsonException)
+            {
+                return false;
+            }
+        }
+
+        private static string? TryGetChoiceContent(JsonElement firstChoice)
+        {
+            if (!firstChoice.TryGetProperty("message", out var message) || message.ValueKind != JsonValueKind.Object)
+            {
+                return null;
+            }
+
+            if (!message.TryGetProperty("content", out var contentProp) || contentProp.ValueKind != JsonValueKind.String)
+            {
+                return null;
+            }
+
+            return contentProp.GetString();
+        }
+
+        private static string FormatPromptOutputContent(string content)
+        {
+            if (TryParseJsonObjectFromResponse(content, out var contentObject))
+            {
+                return JsonSerializer.Serialize(contentObject, JsonLogOptions);
+            }
+
+            return content.Trim();
+        }
+
         private static bool TryParseJsonObjectFromResponse(string response, out JsonElement objectElement)
         {
             objectElement = default;
-            var cleaned = CleanJsonResponse(response);
+            var cleaned = AIResponseJson.CleanJsonResponse(response);
             if (string.IsNullOrWhiteSpace(cleaned))
             {
                 return false;
@@ -720,66 +1200,6 @@ namespace Unity.GrantManager.AI
             {
                 return false;
             }
-        }
-
-        private static string CleanJsonResponse(string response)
-        {
-            if (string.IsNullOrWhiteSpace(response))
-            {
-                return string.Empty;
-            }
-
-            var cleaned = response.Trim();
-
-            if (cleaned.StartsWith("```json", StringComparison.OrdinalIgnoreCase) || cleaned.StartsWith("```"))
-            {
-                var startIndex = cleaned.IndexOf('\n');
-                if (startIndex >= 0)
-                {
-                    // Multi-line fenced code block: remove everything up to and including the first newline.
-                    cleaned = cleaned[(startIndex + 1)..];
-                }
-                else
-                {
-                    // Single-line fenced JSON, e.g. ```json { ... } ``` or ```{ ... } ```.
-                    // Strip everything before the first likely JSON payload token.
-                    var jsonStart = FindFirstJsonTokenIndex(cleaned);
-
-                    if (jsonStart > 0)
-                    {
-                        cleaned = cleaned[jsonStart..];
-                    }
-                }
-            }
-
-            if (cleaned.EndsWith("```", StringComparison.Ordinal))
-            {
-                var lastIndex = cleaned.LastIndexOf("```", StringComparison.Ordinal);
-                if (lastIndex > 0)
-                {
-                    cleaned = cleaned[..lastIndex];
-                }
-            }
-
-            return cleaned.Trim();
-        }
-
-        private static int FindFirstJsonTokenIndex(string value)
-        {
-            var objectStart = value.IndexOf('{');
-            var arrayStart = value.IndexOf('[');
-
-            if (objectStart >= 0 && arrayStart >= 0)
-            {
-                return Math.Min(objectStart, arrayStart);
-            }
-
-            if (objectStart >= 0)
-            {
-                return objectStart;
-            }
-
-            return arrayStart;
         }
 
         private static string ResolvePromptVersion(string? version)
@@ -1039,3 +1459,5 @@ namespace Unity.GrantManager.AI
         }
     }
 }
+
+

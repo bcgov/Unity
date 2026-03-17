@@ -23,11 +23,8 @@ namespace Unity.GrantManager.AI
         [JsonPropertyName("userPrompt")]
         public string UserPrompt { get; set; } = string.Empty;
 
-        [JsonPropertyName("rawOutput")]
-        public string RawOutput { get; set; } = string.Empty;
-
-        [JsonPropertyName("formattedOutput")]
-        public string FormattedOutput { get; set; } = string.Empty;
+        [JsonPropertyName("output")]
+        public string Output { get; set; } = string.Empty;
 
         [JsonPropertyName("capturedAt")]
         public DateTime CapturedAt { get; set; }
