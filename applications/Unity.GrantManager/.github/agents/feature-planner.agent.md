@@ -3,7 +3,6 @@ name: feature-planner
 description: Plans feature implementation across Domain, Application, EF Core, Web, and tests.
 argument-hint: Outline the goal or problem to research
 target: vscode
-disable-model-invocation: true
 tools: ['search', 'read', 'web', 'vscode/memory', 'github/issue_read', 'github.vscode-pull-request-github/issue_fetch', 'github.vscode-pull-request-github/activePullRequest', 'execute/getTerminalOutput', 'execute/testFailure', 'agent', 'vscode/askQuestions']
 agents: ['Explore']
 handoffs:
