@@ -25,8 +25,10 @@
 - If no findings exist, return empty arrays.
 - Rating must be HIGH, MEDIUM, or LOW.
 - Use summaries for overall application quality/readiness synthesis.
-- Use nextSteps for reviewer-facing follow-up actions or considerations before scoring or decision-making.
-- Only include nextSteps when there is a specific evidence gap, inconsistency, or verification need; otherwise return an empty array.
+- Use nextSteps for concrete reviewer-facing next actions based on the provided evidence.
+- nextSteps may include proceeding with the normal review process when the application appears ready for that step.
+- When evidence shows a meaningful gap, inconsistency, or uncertainty, use nextSteps for specific follow-up or verification actions.
+- Return an empty array only when no concrete next action would help the reviewer.
 - recommendation.decision must be PROCEED or HOLD.
 - Use HOLD only when provided evidence shows a material eligibility, feasibility, budget, or readiness concern that would reasonably block scoring or decision-making.
 - recommendation.rationale must explain the high-level recommendation in 1-2 complete sentences using provided evidence.
