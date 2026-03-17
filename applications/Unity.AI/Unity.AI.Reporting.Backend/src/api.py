@@ -13,6 +13,7 @@ from chat import chat_manager
 from sql_generator import sql_generator
 from auth import require_auth, get_user_from_token
 from static_routes import add_static_routes
+import os
 import re
 
 # Define constants
@@ -404,7 +405,7 @@ def ask():
         logger.debug("Calling metabase_client.create_card...")
         initial_viz_settings = {}
         if "map" in metadata.get("visualization_options", []):
-            initial_viz_settings["map.region"] = "1c5d50ee-4389-4593-37c1-fa8d4687ff4c"
+            initial_viz_settings["map.region"] = os.getenv("MB_MAP_REGION_UUID", "1c5d50ee-4389-4593-37c1-fa8d4687ff4c")
 
         card_id = metabase_client.create_card(
             sql, db_id, collection_id, metadata['title'],
