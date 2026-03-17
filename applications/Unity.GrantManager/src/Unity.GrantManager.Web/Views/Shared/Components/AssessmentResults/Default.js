@@ -152,7 +152,11 @@
             enableAssessmentResultsSaveBtn();
         }
     );
-
+    $('#PaymentApprovalThreshold').rules('add', {
+        normalizer: function (value) {
+            return value.replace(/,/g, '');
+        }
+    });
     $('.unity-currency-input').maskMoney();
 });
 
