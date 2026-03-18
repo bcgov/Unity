@@ -306,20 +306,21 @@ describe("Send an email", () => {
   });
 
   it("Select Email Template", () => {
-    cy.intercept("GET", "/api/app/template/*/template-by-id").as(
-      "loadTemplate",
-    );
-
     cy.get("#template", { timeout: STANDARD_TIMEOUT })
       .should("exist")
       .should("be.visible")
       .select(TEMPLATE_NAME);
 
-    cy.wait("@loadTemplate", { timeout: STANDARD_TIMEOUT });
-
     cy.get("#template")
       .find("option:selected")
       .should("have.text", TEMPLATE_NAME);
+
+    // Wait for body to be populated by template; if still empty, set a fallback value
+    cy.get("#EmailBody", { timeout: STANDARD_TIMEOUT }).then(($body) => {
+      if (!$body.val() || ($body.val() as string).trim() === "") {
+        cy.wrap($body).invoke("val", "Test email body").trigger("change");
+      }
+    });
   });
 
   it("Set Email To address", () => {

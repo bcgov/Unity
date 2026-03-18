@@ -62,9 +62,9 @@ Cypress.Commands.add("getSubmissionDetail", (key: string) => {
   return cy
     .fixture<{ submissionDetails: SubmissionDetail[] }>("submissions.json")
     .then(({ submissionDetails }) => {
-      const environment = Cypress.env("environment");
+      const environment = Cypress.env("environment")?.toUpperCase();
       const submissionDetail = submissionDetails.find(
-        (detail) => detail.unityEnv === environment,
+        (detail) => detail.unityEnv.toUpperCase() === environment,
       );
 
       if (submissionDetail && submissionDetail.hasOwnProperty(key)) {
@@ -86,9 +86,9 @@ Cypress.Commands.add("getMetabaseDetail", (key: string) => {
   return cy
     .fixture<{ metabaseDetails: MetabaseDetail[] }>("metabase.json")
     .then(({ metabaseDetails }) => {
-      const environment = Cypress.env("environment");
+      const environment = Cypress.env("environment")?.toUpperCase();
       const submissionDetail = metabaseDetails.find(
-        (detail) => detail.unityEnv === environment,
+        (detail) => detail.unityEnv.toUpperCase() === environment,
       );
 
       if (submissionDetail && submissionDetail.hasOwnProperty(key)) {
@@ -125,9 +125,9 @@ Cypress.Commands.add("getChefsDetail", (key: string) => {
   return cy
     .fixture<{ chefsDetails: chefsDetail[] }>("chefs.json")
     .then(({ chefsDetails }) => {
-      const environment = Cypress.env("environment");
+      const environment = Cypress.env("environment")?.toUpperCase();
       const submissionDetail = chefsDetails.find(
-        (detail) => detail.unityEnv === environment,
+        (detail) => detail.unityEnv.toUpperCase() === environment,
       );
 
       if (submissionDetail && submissionDetail.hasOwnProperty(key)) {

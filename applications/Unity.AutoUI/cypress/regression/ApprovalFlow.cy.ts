@@ -43,7 +43,7 @@ const TEST_CONFIG = {
     maxAge: 30,
     // Which submission to use after sorting (0 = latest, 1 = second-latest, etc.)
     // Use index > 0 to avoid picking the same submission as other concurrent tests
-    index: 2,
+    index: 0,
   },
 };
 

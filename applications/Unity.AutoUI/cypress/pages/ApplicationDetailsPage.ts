@@ -427,8 +427,15 @@ export class ApplicationDetailsPage extends BasePage {
    * Open the Status Actions dropdown
    */
   openStatusActionsDropdown(): void {
-    this.clickElement(this.statusActions.dropdownToggle);
-    cy.get(this.statusActions.dropdownMenu).should("be.visible");
+    cy.get(this.statusActions.dropdownMenu).then(($menu) => {
+      if (!$menu.is(":visible")) {
+        cy.get(this.statusActions.dropdownToggle, { timeout: 20000 })
+          .should("exist")
+          .scrollIntoView()
+          .click({ force: true });
+      }
+    });
+    cy.get(this.statusActions.dropdownMenu, { timeout: 10000 }).should("be.visible");
   }
 
   /**
@@ -476,13 +483,18 @@ export class ApplicationDetailsPage extends BasePage {
         cy.get(this.confirmModal.modal, { timeout: 10000 }).then(($modal) => {
           if ($modal.is(":visible")) {
             cy.wrap($modal).find(this.confirmModal.confirmButton).click({ force: true });
-            cy.wait(1000);
           }
         });
-        this.openStatusActionsDropdown();
+        // Wait for page to stabilize after status transition
+        cy.get(this.statusActions.dropdownToggle, { timeout: 20000 }).should("be.visible");
+        cy.wait(2000);
       }
     });
-    this.clickElement(this.statusActions.approve);
+    // Always reopen dropdown fresh before clicking Approve (dropdown may have closed)
+    this.openStatusActionsDropdown();
+    cy.get(this.statusActions.approve, { timeout: 10000 })
+      .should("exist")
+      .click({ force: true });
     return this;
   }
 
