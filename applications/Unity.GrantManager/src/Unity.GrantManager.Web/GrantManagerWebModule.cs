@@ -171,6 +171,9 @@ public class GrantManagerWebModule : AbpModule
                 )
             );
 
+            options.IsEnabledForAnonymousUsers = true;
+            options.IsEnabledForIntegrationServices = true; // Enable auditing for background jobs and message consumers
+
             options.EntityHistorySelectors.Add(
                 new NamedTypeSelector(
                  "ExplictEntityAudit",
@@ -179,7 +182,8 @@ public class GrantManagerWebModule : AbpModule
 
                      if (type.Name.Contains("Role", StringComparison.OrdinalIgnoreCase)
                         || type.Name.Contains("User", StringComparison.OrdinalIgnoreCase)
-                        || type.Name.Contains("Permission", StringComparison.OrdinalIgnoreCase))
+                        || type.Name.Contains("Permission", StringComparison.OrdinalIgnoreCase)
+                        || type.Name.Contains("Payment", StringComparison.OrdinalIgnoreCase))
                      {
                          return true;
                      }

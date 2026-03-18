@@ -273,7 +273,8 @@ function getExistingApplicantData() {
         SubSector: getVal('ApplicantSummary_SubSector'),
         SectorSubSectorIndustryDesc: getVal('ApplicantSummary_SectorSubSectorIndustryDesc'),
         FiscalDay: getVal('ApplicantSummary_FiscalDay'),
-        FiscalMonth: getVal('ApplicantSummary_FiscalMonth')
+        FiscalMonth: getVal('ApplicantSummary_FiscalMonth'),
+        IsDuplicated: $activeWidget.find('#ApplicantSummary_IsDuplicated').val() === 'True'
     };
 }
 
@@ -295,7 +296,8 @@ function createNewApplicantDataObject(selectedData) {
         SubSector: selectedData.SubSector || '',
         SectorSubSectorIndustryDesc: selectedData.SectorSubSectorIndustryDesc || '',
         FiscalDay: selectedData.FiscalDay || '',
-        FiscalMonth: selectedData.FiscalMonth || ''
+        FiscalMonth: selectedData.FiscalMonth || '',
+        IsDuplicated: selectedData.IsDuplicated ?? false
     };
 }
 
@@ -303,6 +305,21 @@ function createNewApplicantDataObject(selectedData) {
 function populateMergeModal(existing, newData) {
     $('#existing_ApplicantNameHeader').text(existing.ApplicantName);
     $('#new_ApplicantNameHeader').text(newData.ApplicantName);
+
+    $('#mergeExistingDuplicateFlag').toggleClass('d-none', !existing.IsDuplicated);
+    $('#mergeNewDuplicateFlag').toggleClass('d-none', !newData.IsDuplicated);
+
+    // Name match summary badge
+    let score = compareStrings(existing.ApplicantName || '', newData.ApplicantName || '');
+    let $badge = $('#mergeNameMatchBadge');
+    $badge.removeClass('unity-badge-warning');
+    if (score >= 100) {
+        $badge.text('100% Matched - Possible Duplicate');
+    } else if (score >= 50) {
+        $badge.text('Partially Matched');
+    } else {
+        $badge.text('Not Matched').addClass('unity-badge-warning');
+    }
 
     for (const key in existing) {
         $(`#existing_${key}`).text(existing[key]);
@@ -452,7 +469,8 @@ function initializeApplicantLookup() {
                         SectorSubSectorIndustryDesc: item.SectorSubSectorIndustryDesc,
                         FiscalDay: item.FiscalDay,
                         FiscalMonth: item.FiscalMonth,
-                        UnityApplicantId: item.UnityApplicantId
+                        UnityApplicantId: item.UnityApplicantId,
+                        IsDuplicated: item.IsDuplicated ?? false
                     };
                 });
                 return {

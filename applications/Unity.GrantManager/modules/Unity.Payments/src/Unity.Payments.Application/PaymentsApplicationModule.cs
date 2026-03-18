@@ -15,10 +15,12 @@ using Unity.Payments.Integrations.RabbitMQ;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.AspNetCore.ExceptionHandling;
 using Unity.Payments.PaymentRequests.Notifications;
+using Unity.Modules.Shared.Auditing;
 
 namespace Unity.Payments;
 
 [DependsOn(
+    typeof(UnityAuditingOverrideModule),
     typeof(AbpVirtualFileSystemModule),
     typeof(AbpDddApplicationModule),
     typeof(AbpAutoMapperModule),
