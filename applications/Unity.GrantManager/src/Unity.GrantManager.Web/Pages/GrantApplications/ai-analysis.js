@@ -406,13 +406,13 @@ globalThis.regenerateAIAnalysis = function(capturePromptIo = false, triggerButto
     }
 
     $button
-        .html('<span class="ai-button-content"><span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span><span>Generating...</span></span>')
+        .html('<span class="ai-button-content"><span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span><span>Queueing...</span></span>')
         .prop('disabled', true);
 
     unity.grantManager.grantApplications.applicationAIAnalysis
         .generateAIAnalysis(applicationId, promptVersion, capturePromptIo)
         .then(function() {
-            abp.notify.success('AI analysis queued successfully. Refresh after processing completes.');
+            abp.notify.success('AI analysis queued. Check back shortly for results.');
         })
         .catch(function() {
             abp.message.error('Failed to queue AI analysis. Please try again.');

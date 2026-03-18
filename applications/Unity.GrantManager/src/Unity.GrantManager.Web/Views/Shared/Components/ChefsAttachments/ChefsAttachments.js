@@ -11,7 +11,7 @@ $(function () {
     const dt = $('#ChefsAttachmentsTable');
     let chefsDataTable;
     let selectedAtttachments = [];
-    const nullPlaceholder = '—';
+    const nullPlaceholder = '-';
 
     let inputAction = function (requestData, dataTableSettings) {
         const urlParams = new URL(window.location.toLocaleString())
@@ -260,15 +260,15 @@ $(function () {
                 beforeSend: function () {
                     $activeButton
                         .html(
-                            '<span class="ai-button-content"><span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span><span>Generating...</span></span>'
+                            '<span class="ai-button-content"><span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span><span>Queueing...</span></span>'
                         )
                         .prop('disabled', true);
                 },
                 success: function (summaries) {
                     abp.notify.success(
-                        'AI summaries queued successfully for ' +
+                        'AI summaries queued for ' +
                             summaries.length +
-                            ' attachment(s).'
+                            ' attachment(s). Check back shortly for results.'
                     );
 
                     resetAttachmentSelectionState();

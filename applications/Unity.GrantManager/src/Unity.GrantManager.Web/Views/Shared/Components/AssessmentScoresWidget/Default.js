@@ -593,14 +593,14 @@ function regenerateAIScoresheetAnswers(capturePromptIo = false, triggerButton = 
 
     $button
         .html(
-            '<span class="ai-button-content"><span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span><span>Generating...</span></span>'
+            '<span class="ai-button-content"><span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span><span>Queueing...</span></span>'
         )
         .prop('disabled', true);
 
     unity.grantManager.grantApplications.applicationAIScoring
         .generateAIScoresheetAnswers(applicationId, promptVersion, capturePromptIo)
         .done(function () {
-            abp.notify.success('AI scoring queued successfully. Refresh after processing completes.');
+            abp.notify.success('AI scoring queued. Check back shortly for results.');
         })
         .fail(function () {
             abp.message.error(

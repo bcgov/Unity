@@ -466,12 +466,12 @@ function generateAiButtonAction(e, dt, button, config) {
 
     if (triggerButton?.length) {
         triggerButton.prop('disabled', true);
-        triggerButton.html('<span class="ai-button-content"><i class="unt-icon-sm fa-solid fa-wand-sparkles"></i><span>Generating...</span></span>');
+        triggerButton.html('<span class="ai-button-content"><i class="unt-icon-sm fa-solid fa-wand-sparkles"></i><span>Queueing...</span></span>');
     }
 
     unity.grantManager.grantApplications.applicationAIScoring.generateAIScoresheetAnswers(pageApplicationId, promptVersion, false)
         .done(function () {
-            abp.notify.success('AI scoring queued successfully. Refresh after processing completes.');
+            abp.notify.success('AI scoring queued. Check back shortly for results.');
         })
         .fail(function () {
             abp.message.error('Failed to queue AI scoring. Please try again.');
