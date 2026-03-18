@@ -507,6 +507,10 @@
                                             </span>
                                         </button>
                                     }
+                                    else
+                                    {
+                                        <span class="text-muted small">Unavailable: feature or permission not enabled</span>
+                                    }
                                 </div>
                                 <div id="attachmentPromptCaptureContainer" class="ai-prompt-capture-container">
                                     <div class="ai-prompt-capture-actions">
@@ -521,12 +525,19 @@
                             <div class="dev-prompt-section">
                                 <div class="dev-prompt-section-header">
                                     <h6 class="fw-bold m-0">Analysis</h6>
-                                    <button type="button" class="btn unt-btn-outline-primary btn-outline-primary btn-sm" onclick="regenerateAIAnalysis(true, this)">
-                                        <span class="ai-button-content">
-                                            <i class="unt-icon-sm fa-solid fa-wand-sparkles"></i>
-                                            <span>Generate</span>
-                                        </span>
-                                    </button>
+                                    @if (aiApplicationAnalysisEnabled)
+                                    {
+                                        <button type="button" class="btn unt-btn-outline-primary btn-outline-primary btn-sm" onclick="regenerateAIAnalysis(true, this)">
+                                            <span class="ai-button-content">
+                                                <i class="unt-icon-sm fa-solid fa-wand-sparkles"></i>
+                                                <span>Generate</span>
+                                            </span>
+                                        </button>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted small">Unavailable: feature or permission not enabled</span>
+                                    }
                                 </div>
                                 <div id="aiAnalysisPromptCaptureContainer" class="ai-prompt-capture-container">
                                     <div class="ai-prompt-capture-actions">
@@ -549,6 +560,10 @@
                                                 <span>Generate</span>
                                             </span>
                                         </button>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted small">Unavailable: feature or permission not enabled</span>
                                     }
                                 </div>
                                 <div id="aiScoringPromptCaptureContainer" class="ai-prompt-capture-container">

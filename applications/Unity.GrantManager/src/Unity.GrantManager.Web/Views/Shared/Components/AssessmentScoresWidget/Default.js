@@ -600,16 +600,11 @@ function regenerateAIScoresheetAnswers(capturePromptIo = false, triggerButton = 
     unity.grantManager.grantApplications.applicationAIScoring
         .generateAIScoresheetAnswers(applicationId, promptVersion, capturePromptIo)
         .done(function () {
-            abp.notify.success('AI scoring refreshed successfully.');
-            PubSub.publish('refresh_assessment_scores', {
-                promptVersion: promptVersion,
-                capturePromptIo: capturePromptIo,
-                applicationId: applicationId,
-            });
+            abp.notify.success('AI scoring queued successfully. Refresh after processing completes.');
         })
         .fail(function () {
             abp.message.error(
-                'Failed to refresh AI scoring. Please try again.'
+                'Failed to queue AI scoring. Please try again.'
             );
         })
         .always(function () {

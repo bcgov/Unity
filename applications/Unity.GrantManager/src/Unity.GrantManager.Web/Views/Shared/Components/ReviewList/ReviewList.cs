@@ -1,6 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
+using Unity.AI.Permissions;
+using Volo.Abp.Authorization.Permissions;
 using Volo.Abp.AspNetCore.Mvc;
 using Volo.Abp.AspNetCore.Mvc.UI.Widgets;
+using Volo.Abp.Features;
 
 namespace Unity.GrantManager.Web.Views.Shared.Components.ReviewList
 {
@@ -13,10 +16,16 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ReviewList
         {
             "/Views/Shared/Components/ReviewList/ReviewList.css"
         })]
-    public class ReviewList : AbpViewComponent
+    public class ReviewList(
+        IFeatureChecker featureChecker,
+        IPermissionChecker permissionChecker) : AbpViewComponent
     {
-        public IViewComponentResult Invoke()
+        public async Task<IViewComponentResult> InvokeAsync()
         {
+            ViewBag.IsAIScoringEnabled =
+                await featureChecker.IsEnabledAsync("Unity.AI.Scoring") &&
+                await permissionChecker.IsGrantedAsync(AIPermissions.ScoringAssistant.ScoringAssistantDefault);
+
             return View();
         }
     }

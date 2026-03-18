@@ -266,35 +266,19 @@ $(function () {
                 },
                 success: function (summaries) {
                     abp.notify.success(
-                        'AI summaries generated successfully for ' +
+                        'AI summaries queued successfully for ' +
                             summaries.length +
                             ' attachment(s).'
                     );
 
                     resetAttachmentSelectionState();
 
-                    // Reload the table to show new summaries
-                    chefsDataTable.ajax.reload();
-
-                    // Enable the toggle button now that we have summaries
-                    $('#toggleAllAISummaries').prop('disabled', false);
-
-                    if (capturePromptIo && globalThis.loadAIPromptCapture) {
-                        globalThis.loadAIPromptCapture(
-                            applicationId,
-                            'AttachmentSummary',
-                            promptVersion,
-                            '#attachmentPromptCaptureContainer',
-                            '#attachmentPromptCaptureOutput'
-                        );
-                    }
-
                     $activeButton.html(existingHTML).prop('disabled', false);
                 },
                 error: function (error) {
                     console.error('Error generating AI summaries:', error);
                     abp.notify.error(
-                        'An error occurred while generating AI summaries. Please try again.'
+                        'An error occurred while queueing AI summaries. Please try again.'
                     );
                     $activeButton.html(existingHTML).prop('disabled', false);
                 },
@@ -310,7 +294,9 @@ $(function () {
         $toggleAllAISummariesButton.on('click', function () {
             const $button = $(this);
             const $icon = $button.find('i');
-            const $text = $button.find('.toggle-ai-summaries-label');
+            const $text = $button.contents().filter(function () {
+                return this.nodeType === 3;
+            });
 
             // Don't do anything if button is disabled
             if ($button.prop('disabled')) {
@@ -337,7 +323,7 @@ $(function () {
                     }
                 });
                 $icon.removeClass('fa-chevron-up').addClass('fa-chevron-down');
-                $text.text('Show Summaries');
+                $text.replaceWith('Show Summaries');
                 $button.attr('title', 'Show AI Summaries');
                 allAISummariesExpanded = false;
             } else {
@@ -365,7 +351,7 @@ $(function () {
                     }
                 });
                 $icon.removeClass('fa-chevron-down').addClass('fa-chevron-up');
-                $text.text('Hide Summaries');
+                $text.replaceWith('Hide Summaries');
                 $button.attr('title', 'Hide AI Summaries');
                 allAISummariesExpanded = true;
             }
@@ -377,9 +363,11 @@ $(function () {
         if (allAISummariesExpanded) {
             const $button = $('#toggleAllAISummaries');
             const $icon = $button.find('i');
-            const $text = $button.find('.toggle-ai-summaries-label');
+            const $text = $button.contents().filter(function () {
+                return this.nodeType === 3;
+            });
             $icon.removeClass('fa-chevron-up').addClass('fa-chevron-down');
-            $text.text('Show Summaries');
+            $text.replaceWith('Show Summaries');
             $button.attr('title', 'Show AI Summaries');
             allAISummariesExpanded = false;
         }

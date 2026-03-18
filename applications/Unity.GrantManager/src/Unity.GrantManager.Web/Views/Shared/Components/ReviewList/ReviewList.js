@@ -1,6 +1,8 @@
 const l = abp.localization.getResource('GrantManager');
 const pageApplicationId = decodeURIComponent(document.querySelector("#DetailsViewApplicationId").value);
-const isAiScoringEnabled = document.querySelector("#AIScoringFeatureEnabled")?.value === 'True';
+const isAiScoringEnabled =
+    document.querySelector("#ReviewListAIScoringEnabled")?.value === 'True'
+    || document.querySelector("#AIScoringFeatureEnabled")?.value === 'True';
 const canUseAiScoring = isAiScoringEnabled;
 
 const actionButtonConfigMap = {
@@ -460,19 +462,19 @@ function unityWorkflowButtonAction(e, dt, button, config) {
 
 function generateAiButtonAction(e, dt, button, config) {
     const triggerButton = button?.node ? $(button.node) : null;
+    const promptVersion = globalThis.getSelectedPromptVersion?.() || null;
 
     if (triggerButton?.length) {
         triggerButton.prop('disabled', true);
         triggerButton.html('<span class="ai-button-content"><i class="unt-icon-sm fa-solid fa-wand-sparkles"></i><span>Generating...</span></span>');
     }
 
-    unity.grantManager.grantApplications.applicationAIScoring.generateAIScoresheetAnswers(pageApplicationId)
+    unity.grantManager.grantApplications.applicationAIScoring.generateAIScoresheetAnswers(pageApplicationId, promptVersion, false)
         .done(function () {
-            refreshReviewListSelectingAiAssessment(dt);
-            abp.notify.success('AI scoring generated successfully.');
+            abp.notify.success('AI scoring queued successfully. Refresh after processing completes.');
         })
         .fail(function () {
-            abp.message.error('Failed to generate AI scoring. Please try again.');
+            abp.message.error('Failed to queue AI scoring. Please try again.');
         })
         .always(function () {
             if (triggerButton?.length) {
@@ -480,19 +482,6 @@ function generateAiButtonAction(e, dt, button, config) {
                 triggerButton.html(generateAiButtonText(null, null, null));
             }
         });
-}
-
-function refreshReviewListSelectingAiAssessment(reviewListTable) {
-    reviewListTable.ajax.reload(function () {
-        const aiRowIndexes = reviewListTable.rows().eq(0).filter(function (rowIdx) {
-            const rowData = reviewListTable.row(rowIdx).data();
-            return rowData?.isAiAssessment === true;
-        });
-
-        if (aiRowIndexes.length > 0) {
-            reviewListTable.row(aiRowIndexes[0]).selectWithParams({ refreshSidePanel: true });
-        }
-    });
 }
 
 function executeAssessmentAction(assessmentId, triggerAction) {

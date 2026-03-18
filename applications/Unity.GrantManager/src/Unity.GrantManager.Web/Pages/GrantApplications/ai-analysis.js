@@ -79,7 +79,7 @@ function normalizeFindings(items, fallbackType) {
     };
 
     return (items || [])
-        .filter(Boolean)
+        .filter(item => item)
         .map((item, index) => ({
             ...item,
             id: item.id || `${fallbackType}-${index}`,
@@ -412,20 +412,10 @@ globalThis.regenerateAIAnalysis = function(capturePromptIo = false, triggerButto
     unity.grantManager.grantApplications.applicationAIAnalysis
         .generateAIAnalysis(applicationId, promptVersion, capturePromptIo)
         .then(function() {
-            abp.notify.success('AI analysis refreshed successfully.');
-            loadAIAnalysis();
-            if (capturePromptIo && globalThis.loadAIPromptCapture) {
-                return globalThis.loadAIPromptCapture(
-                    applicationId,
-                    'ApplicationAnalysis',
-                    promptVersion,
-                    '#aiAnalysisPromptCaptureContainer',
-                    '#aiAnalysisPromptCaptureOutput'
-                );
-            }
+            abp.notify.success('AI analysis queued successfully. Refresh after processing completes.');
         })
         .catch(function() {
-            abp.message.error('Failed to refresh AI analysis. Please try again.');
+            abp.message.error('Failed to queue AI analysis. Please try again.');
         })
         .always(function() {
             $button.html(existingHtml).prop('disabled', false);
