@@ -101,7 +101,7 @@
             'AssessmentResultsView.RequestedAmount',
             'AssessmentResultsView.TotalProjectBudget',
             'AssessmentResultsView.RecommendedAmount',
-            'AssessmentResultsView.ApprovedAmount'];
+            'ApprovalView.ApprovedAmount'];
         return currencyFields.includes(input.name);
     }
 
