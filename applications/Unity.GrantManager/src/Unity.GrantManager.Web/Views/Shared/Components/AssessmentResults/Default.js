@@ -150,6 +150,11 @@
         }
     );
 
+    $('#PaymentApprovalThreshold').rules('add', {
+        normalizer: function (value) {
+            return value.replaceAll(',', '');
+        }
+    });
     $('.unity-currency-input').maskMoney({ allowZero: true });
 });
 

@@ -22,8 +22,17 @@
                         class="custom-table-btn flex-none btn btn-secondary action-bar-btn-unavailable"
                         button-type="Secondary" />
         }
+        @if (await PermissionChecker.IsGrantedAsync(GrantApplicationPermissions.Applicants.Edit))
+        {
+            <abp-button id="mergeApplicants"
+                        text="Merge"
+                        class="custom-table-btn flex-none btn btn-secondary d-none"
+                        button-type="Secondary" />
+        }
     </div>
 
     @* Spacer to align buttons properly *@
     <span id="dynamicButtonContainerId"></span>
 </div>
+
+@await Html.PartialAsync("~/Views/Shared/Components/ApplicantsActionBar/ListMerge.cshtml")

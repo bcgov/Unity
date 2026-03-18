@@ -1,0 +1,84 @@
+<div class="modal fade" id="applicantListMergeModal" tabindex="-1" aria-labelledby="applicantListMergeModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header justify-content-center">
+                <h5 class="modal-title text-center w-100" id="applicantListMergeModalLabel">Merge Duplicate Applicants</h5>
+                <button type="button" class="btn-close position-absolute end-0 me-3" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+
+                <!-- STEP 1: Comparison table -->
+                <div id="listMergeStep1">
+                    <div class="text-center mb-3">
+                        <h6 class="fw-bold">Compare Accounts</h6>
+                        <p>Choose one account record as the principal, and choose the field values that you want to keep.</p>
+                        <div id="listMergeNameMatchBadge" class="mb-1">
+                            <span id="listMergeNameMatchBadgeText" class="unity-match-badge"></span>
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table align-middle">
+                            <tr>
+                                <th></th>
+                                <th>
+                                    <span class="fw-bold" id="listMergeColA"></span>
+                                    <div id="listMergeDuplicateFlagA" class="d-none" style="color:red;font-size:0.85em;">Flagged as Duplicated</div>
+                                    <button type="button" class="btn btn-link unt-btn-link" id="listMergeSelectAllExisting">Select All</button>
+                                </th>
+                                <th>
+                                    <span class="fw-bold" id="listMergeColB"></span>
+                                    <div id="listMergeDuplicateFlagB" class="d-none" style="color:red;font-size:0.85em;">Flagged as Duplicated</div>
+                                    <button type="button" class="btn btn-link unt-btn-link" id="listMergeSelectAllNew">Select All</button>
+                                </th>
+                            </tr>
+                            <tr>
+                                <td class="fw-bold">Principal Record</td>
+                                <td>
+                                    <label class="d-flex align-items-center w-100 mb-0">
+                                        <input type="radio" name="merge_ApplicantId" value="a" checked class="me-2" />
+                                        <span class="fw-bold">Use as a Principal</span>
+                                    </label>
+                                </td>
+                                <td>
+                                    <label class="d-flex align-items-center w-100 mb-0">
+                                        <input type="radio" name="merge_ApplicantId" value="b" class="me-2" />
+                                        <span class="fw-bold">Use as a Principal</span>
+                                    </label>
+                                </td>
+                            </tr>
+                            <!-- Dynamic field rows injected by JS -->
+                            <tbody id="listMergeTableBody"></tbody>
+                        </table>
+                    </div>
+                    <div class="d-flex justify-content-end m-3">
+                        <button type="button" id="listMergeNextBtn" class="btn btn-primary">Next</button>
+                    </div>
+                </div>
+
+                <!-- STEP 2: Confirmation -->
+                <div id="listMergeStep2" class="d-none">
+                    <div class="text-center mb-3">
+                        <h6 class="fw-bold">Compare Action</h6>
+                        <p>You are about to merge these applicants. This action cannot be undone.<br />
+                            The principal record will be updated with your chosen values.<br />
+                            The other record will not be deleted; instead, it will be flagged as a duplicate and can be removed from the Applicant list in a separate process.
+                        </p>
+                        <p style="color: rgb(13,110,253);">Note: The address and contact information for any affected applications will be preserved and remain untouched.</p>
+                        <p class="fw-bold">Are you sure?</p>
+                        <div id="listMergeSpinner" class="text-center my-3 d-none">
+                            <div class="spinner-border">
+                                <span class="visually-hidden">Merging...</span>
+                            </div>
+                            <div class="mt-2">Merging, please wait...</div>
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-between m-3">
+                        <button type="button" id="listMergeBackBtn" class="btn unt_btn btn-secondary">Back</button>
+                        <button type="button" id="listMergeMergeBtn" class="btn unt_btn btn-primary">Merge and Assign</button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
