@@ -10,7 +10,7 @@ using Volo.Abp.DependencyInjection;
 
 namespace Unity.GrantManager.AI
 {
-    public class ApplicationScoresheetAnalysisService(
+    public class ApplicationAIScoringService(
         IApplicationRepository applicationRepository,
         IApplicationFormRepository applicationFormRepository,
         IApplicationFormSubmissionRepository applicationFormSubmissionRepository,
@@ -18,7 +18,7 @@ namespace Unity.GrantManager.AI
         IApplicationChefsFileAttachmentRepository applicationChefsFileAttachmentRepository,
         IScoresheetRepository scoresheetRepository,
         IAIService aiService,
-        ILogger<ApplicationScoresheetAnalysisService> logger) : IApplicationScoresheetAnalysisService, ITransientDependency
+        ILogger<ApplicationAIScoringService> logger) : IApplicationAIScoringService, ITransientDependency
     {
         private readonly JsonSerializerOptions _jsonOptions = new()
         {

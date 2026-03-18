@@ -14,7 +14,7 @@ namespace Unity.GrantManager.GrantApplications;
 
 [Authorize(AIPermissions.ScoringAssistant.ScoringAssistantDefault)]
 public class ApplicationAIScoringAppService(
-    IApplicationScoresheetAnalysisService applicationScoresheetAnalysisService,
+    IApplicationAIScoringService applicationScoresheetAnalysisService,
     IApplicationRepository applicationRepository,
     ILocalEventBus localEventBus,
     IFeatureChecker featureChecker)

@@ -18,14 +18,13 @@ namespace Unity.GrantManager.Intakes.Handlers
 {
     public class GenerateAIContentHandler : ILocalEventHandler<ApplicationProcessEvent>, ITransientDependency
     {
-        private const string DefaultContentType = "application/octet-stream";
         private const string ArrayFieldType = "array";
         private const string ObjectFieldType = "object";
         private const string AttachmentSummariesFeatureName = "Unity.AI.AttachmentSummaries";
         private const string ApplicationAnalysisFeatureName = "Unity.AI.ApplicationAnalysis";
         private const string ScoringFeatureName = "Unity.AI.Scoring";
         private readonly IAIService _aiService;
-        private readonly ISubmissionAppService _submissionAppService;
+        private readonly IAttachmentAISummaryService _attachmentAISummaryService;
         private readonly IApplicationChefsFileAttachmentRepository _attachmentRepository;
         private readonly IApplicationRepository _applicationRepository;
         private readonly IApplicationFormSubmissionRepository _applicationFormSubmissionRepository;
@@ -75,7 +74,7 @@ namespace Unity.GrantManager.Intakes.Handlers
 
         public GenerateAIContentHandler(
             IAIService aiService,
-            ISubmissionAppService submissionAppService,
+            IAttachmentAISummaryService attachmentAISummaryService,
             IApplicationChefsFileAttachmentRepository attachmentRepository,
             IApplicationRepository applicationRepository,
             IApplicationFormSubmissionRepository applicationFormSubmissionRepository,
@@ -86,7 +85,7 @@ namespace Unity.GrantManager.Intakes.Handlers
             IFeatureChecker featureChecker)
         {
             _aiService = aiService;
-            _submissionAppService = submissionAppService;
+            _attachmentAISummaryService = attachmentAISummaryService;
             _attachmentRepository = attachmentRepository;
             _applicationRepository = applicationRepository;
             _applicationFormSubmissionRepository = applicationFormSubmissionRepository;
@@ -173,17 +172,8 @@ namespace Unity.GrantManager.Intakes.Handlers
                     return;
                 }
 
-                var fileName = string.IsNullOrWhiteSpace(attachment.FileName) ? "unknown" : attachment.FileName;
-                _logger.LogDebug("Generating AI summary for attachment {FileName}", fileName);
-
-                var (fileContent, contentType) = await GetAttachmentContentForSummaryAsync(attachment, fileName);
-                var summary = await _aiService.GenerateAttachmentSummaryAsync(new AttachmentSummaryRequest
-                {
-                    FileName = fileName,
-                    FileContent = fileContent,
-                    ContentType = contentType
-                });
-                await SaveAttachmentSummaryAsync(attachment, fileName, summary.Summary, fileContent.Length == 0);
+                _logger.LogDebug("Generating AI summary for attachment {FileName}", attachment.FileName);
+                await _attachmentAISummaryService.GenerateAndSaveAsync(attachment);
             }
             catch (Exception ex)
             {
@@ -191,59 +181,6 @@ namespace Unity.GrantManager.Intakes.Handlers
                     attachment.FileName, applicationId);
                 // Continue processing other attachments even if one fails
             }
-        }
-
-        private async Task<(byte[] Content, string ContentType)> GetAttachmentContentForSummaryAsync(ApplicationChefsFileAttachment attachment, string fileName)
-        {
-            if (!Guid.TryParse(attachment.ChefsSubmissionId, out var submissionId) ||
-                !Guid.TryParse(attachment.ChefsFileId, out var fileId))
-            {
-                _logger.LogWarning("Attachment {FileName} has invalid CHEFS IDs. Falling back to metadata-only summary.", fileName);
-                return (Array.Empty<byte>(), DefaultContentType);
-            }
-
-            try
-            {
-                var fileDto = await _submissionAppService.GetChefsFileAttachment(submissionId, fileId, fileName);
-                if (fileDto?.Content == null)
-                {
-                    _logger.LogWarning("Could not retrieve content for attachment {FileName}. Falling back to metadata-only summary.", fileName);
-                    return (Array.Empty<byte>(), DefaultContentType);
-                }
-
-                _logger.LogDebug(
-                    "Processing {FileName} ({ContentType}, {Size} bytes) for AI summary generation",
-                    fileName,
-                    fileDto.ContentType,
-                    fileDto.Content.Length);
-
-                var resolvedContentType = string.IsNullOrWhiteSpace(fileDto.ContentType)
-                    ? DefaultContentType
-                    : fileDto.ContentType;
-                return (fileDto.Content, resolvedContentType);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "Could not access CHEFS file {FileName}. Falling back to metadata-only summary.", fileName);
-                return (Array.Empty<byte>(), DefaultContentType);
-            }
-        }
-
-        private async Task SaveAttachmentSummaryAsync(ApplicationChefsFileAttachment attachment, string fileName, string summary, bool usedMetadataFallback)
-        {
-            attachment.AISummary = summary;
-            await _attachmentRepository.UpdateAsync(attachment);
-
-            if (usedMetadataFallback)
-            {
-                _logger.LogDebug("Generated fallback AI summary for attachment {FileName} from metadata only", fileName);
-                return;
-            }
-
-            var preview = summary is { Length: > 0 } s
-                ? string.Concat(s.AsSpan(0, Math.Min(100, s.Length)), "...")
-                : "...";
-            _logger.LogDebug("Successfully generated AI summary for attachment {FileName}: {SummaryPreview}", fileName, preview);
         }
 
         private async Task GenerateApplicationAnalysisAsync(Application application, List<ApplicationChefsFileAttachment> attachments)

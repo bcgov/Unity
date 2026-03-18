@@ -11,7 +11,7 @@ namespace Unity.GrantManager.GrantApplications;
 
 [Authorize(AIPermissions.ApplicationAnalysis.ApplicationAnalysisDefault)]
 public class ApplicationAIAnalysisAppService(
-    IApplicationAnalysisService applicationAnalysisService,
+    IApplicationAIAnalysisService applicationAnalysisService,
     IFeatureChecker featureChecker)
     : GrantManagerAppService, IApplicationAIAnalysisAppService
 {

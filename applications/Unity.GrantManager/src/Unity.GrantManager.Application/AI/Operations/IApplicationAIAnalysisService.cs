@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 
 namespace Unity.GrantManager.AI
 {
-    public interface IApplicationAnalysisService
+    public interface IApplicationAIAnalysisService
     {
         Task<string> RegenerateAndSaveAsync(Guid applicationId, string? promptVersion = null, bool capturePromptIo = false);
     }

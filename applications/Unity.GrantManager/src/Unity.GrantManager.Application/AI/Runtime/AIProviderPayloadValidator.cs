@@ -4,7 +4,7 @@ using System.Text.Json;
 
 namespace Unity.GrantManager.AI
 {
-    internal static class AIResponseValidator
+    internal static class AIProviderPayloadValidator
     {
         public static bool IsValidAttachmentSummaryText(string response)
         {

@@ -14,11 +14,12 @@ using Volo.Abp.DependencyInjection;
 
 namespace Unity.GrantManager.AI
 {
-    public class OpenAIService : IAIService, ITransientDependency
+    [ExposeServices(typeof(IAIService))]
+    public class OpenAIRuntimeService : IAIService, ITransientDependency
     {
         private readonly HttpClient _httpClient;
         private readonly IConfiguration _configuration;
-        private readonly ILogger<OpenAIService> _logger;
+        private readonly ILogger<OpenAIRuntimeService> _logger;
         private readonly ITextExtractionService _textExtractionService;
         private readonly IAIPromptCaptureStore _promptIoCaptureStore;
         private const string ApplicationAnalysisPromptType = AIPromptTypes.ApplicationAnalysis;
@@ -66,10 +67,10 @@ namespace Unity.GrantManager.AI
             };
         private static readonly ConcurrentDictionary<string, string> PromptTemplateCache = new(StringComparer.OrdinalIgnoreCase);
 
-        public OpenAIService(
+        public OpenAIRuntimeService(
             HttpClient httpClient,
             IConfiguration configuration,
-            ILogger<OpenAIService> logger,
+            ILogger<OpenAIRuntimeService> logger,
             ITextExtractionService textExtractionService,
             IAIPromptCaptureStore promptIoCaptureStore)
         {
@@ -99,7 +100,7 @@ namespace Unity.GrantManager.AI
                 null,
                 request?.MaxTokens ?? DefaultCompletionTokens,
                 request?.Temperature),
-                AIResponseValidator.IsValidAttachmentSummaryText,
+                AIProviderPayloadValidator.IsValidAttachmentSummaryText,
                 "completion");
             return new AICompletionResponse { Content = ResolveNarrativeContent(result) };
         }
@@ -134,7 +135,7 @@ namespace Unity.GrantManager.AI
                     systemPrompt,
                     ApplicationAnalysisCompletionTokens,
                     operationName: ApplicationAnalysisPromptType),
-                AIResponseValidator.IsValidApplicationAnalysisJson,
+                AIProviderPayloadValidator.IsValidApplicationAnalysisJson,
                 "application analysis");
             await LogPromptOutputAsync(ApplicationAnalysisPromptType, promptVersion, result.CaptureOutput);
             SavePromptCapture(capturePromptIo, request.CaptureContextId, ApplicationAnalysisPromptType, promptVersion, "Application Analysis", systemPrompt, analysisContent, result.CaptureOutput);
@@ -157,15 +158,15 @@ namespace Unity.GrantManager.AI
             var providerName = ResolveProviderName(operationName);
             if (!string.Equals(providerName, DefaultProviderName, StringComparison.Ordinal))
             {
-                _logger.LogWarning("Provider {ProviderName} is not supported by OpenAIService.", providerName);
-                return AIOperationResult.PermanentFailure(new AIProviderResponse($"Unsupported provider: {providerName}"));
+                _logger.LogWarning("Provider {ProviderName} is not supported by OpenAIRuntimeService.", providerName);
+                return AIOperationResult.PermanentFailure(new AIProviderResult($"Unsupported provider: {providerName}"));
             }
 
             var apiKey = ResolveApiKey(operationName);
             if (string.IsNullOrEmpty(apiKey))
             {
                 _logger.LogWarning("Error: {Message}", MissingApiKeyMessage);
-                return AIOperationResult.PermanentFailure(new AIProviderResponse(MissingApiKeyMessage));
+                return AIOperationResult.PermanentFailure(new AIProviderResult(MissingApiKeyMessage));
             }
 
             _logger.LogDebug("Calling OpenAI chat completions. PromptLength: {PromptLength}, MaxTokens: {MaxTokens}", content?.Length ?? 0, maxTokens);
@@ -250,7 +251,7 @@ namespace Unity.GrantManager.AI
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error generating AI summary");
-                return AIOperationResult.TransientFailure(new AIProviderResponse(ex.Message));
+                return AIOperationResult.TransientFailure(new AIProviderResult(ex.Message));
             }
         }
 
@@ -295,7 +296,7 @@ namespace Unity.GrantManager.AI
                         prompt,
                         AttachmentSummaryCompletionTokens,
                         operationName: AttachmentSummaryPromptType),
-                    AIResponseValidator.IsValidAttachmentSummaryText,
+                    AIProviderPayloadValidator.IsValidAttachmentSummaryText,
                     "attachment summary");
                 await LogPromptOutputAsync(AttachmentSummaryPromptType, promptVersion, result.CaptureOutput);
                 SavePromptCapture(capturePromptIo, request.CaptureContextId, AttachmentSummaryPromptType, promptVersion, fileName, prompt, contentToAnalyze, result.CaptureOutput);
@@ -461,7 +462,7 @@ namespace Unity.GrantManager.AI
                         systemPrompt,
                         ScoresheetSectionCompletionTokens,
                         operationName: ScoresheetSectionPromptType),
-                    content => AIResponseValidator.IsValidScoresheetSectionJson(content, sectionJson),
+                    content => AIProviderPayloadValidator.IsValidScoresheetSectionJson(content, sectionJson),
                     $"scoresheet section {request.SectionName}");
                 await LogPromptOutputAsync(ScoresheetSectionPromptType, promptVersion, result.CaptureOutput);
                 SavePromptCapture(capturePromptIo, request.CaptureContextId, ScoresheetSectionPromptType, promptVersion, request.SectionName, systemPrompt, analysisContent, result.CaptureOutput);
@@ -545,7 +546,7 @@ namespace Unity.GrantManager.AI
             };
         }
 
-        private static AIOperationResult MapFailureOutcome(HttpStatusCode statusCode, AIProviderResponse response)
+        private static AIOperationResult MapFailureOutcome(HttpStatusCode statusCode, AIProviderResult response)
         {
             var statusCodeValue = (int)statusCode;
 
@@ -559,9 +560,9 @@ namespace Unity.GrantManager.AI
             return AIOperationResult.PermanentFailure(response);
         }
 
-        private static AIProviderResponse BuildProviderResponseFromMetadata(string content, string? rawResponse, AIProviderResponseMetadata? metadata)
+        private static AIProviderResult BuildProviderResponseFromMetadata(string content, string? rawResponse, AIProviderResponseMetadata? metadata)
         {
-            return new AIProviderResponse(
+            return new AIProviderResult(
                 content,
                 rawResponse ?? string.Empty,
                 metadata?.Model,
@@ -624,7 +625,7 @@ namespace Unity.GrantManager.AI
             }
         }
 
-        private void LogProviderMetadata(string? operationName, AIProviderResponse response)
+        private void LogProviderMetadata(string? operationName, AIProviderResult response)
         {
             if (string.IsNullOrWhiteSpace(response.Model)
                 && string.IsNullOrWhiteSpace(response.FinishReason)

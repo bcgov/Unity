@@ -1,6 +1,6 @@
 namespace Unity.GrantManager.AI
 {
-    internal sealed record AIProviderResponse(
+    internal sealed record AIProviderResult(
         string Content,
         string RawResponse = "",
         string? Model = null,
@@ -10,7 +10,7 @@ namespace Unity.GrantManager.AI
         int? TotalTokens = null,
         int? ReasoningTokens = null)
     {
-        public static AIProviderResponse Empty { get; } = new(string.Empty);
+        public static AIProviderResult Empty { get; } = new(string.Empty);
 
         public string CaptureOutput => string.IsNullOrWhiteSpace(RawResponse) ? Content : RawResponse;
     }

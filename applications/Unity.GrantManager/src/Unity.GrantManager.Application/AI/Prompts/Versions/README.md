@@ -1,7 +1,7 @@
 # Runtime Prompt Templates
 
 These files are the source of truth for runtime prompts.
-`OpenAIService` resolves templates from:
+`OpenAIRuntimeService` resolves templates from:
 
 - `AI/Prompts/Versions/<version>/<template>.txt`
 
