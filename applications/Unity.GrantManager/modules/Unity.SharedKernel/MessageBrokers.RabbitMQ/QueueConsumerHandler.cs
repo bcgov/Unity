@@ -90,14 +90,20 @@ namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ
 
                 _logger.LogInformation("Processing MessageId {MessageId}", message.MessageId);
 
-                if (message is ITenantedQueueMessage tenantedMessage)
-                {
-                    await ConsumeWithAuditingAsync(consumerScope, tenantedMessage, message);
-                }
-                else
+                if (message is not ITenantedQueueMessage tenantedMessage)
                 {
                     var consumerInstance = consumerScope.ServiceProvider.GetRequiredService<TMessageConsumer>();
                     await consumerInstance.ConsumeAsync(message);
+                }
+                else if (tenantedMessage.TenantId == Guid.Empty)
+                {
+                    _logger.LogError("Message {MessageId} on {Queue} has an empty TenantId and cannot be processed", message.MessageId, _queueName);
+                    consumingChannel.BasicReject(ea.DeliveryTag, requeue: false);
+                    return;
+                }
+                else
+                {
+                    await ConsumeWithAuditingAsync(consumerScope, tenantedMessage, message);
                 }
 
                 consumingChannel.BasicAck(ea.DeliveryTag, multiple: false);

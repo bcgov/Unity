@@ -20,7 +20,7 @@ using Volo.Abp.TenantManagement;
 namespace Unity.GrantManager;
 
 [DependsOn(
-    typeof(UnityAuditingOverideModule),
+    typeof(UnityAuditingOverrideModule),
     typeof(GrantManagerDomainSharedModule),
     typeof(AbpAuditLoggingDomainModule),
     typeof(AbpBackgroundJobsDomainModule),

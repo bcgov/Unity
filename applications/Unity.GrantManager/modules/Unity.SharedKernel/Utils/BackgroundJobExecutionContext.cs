@@ -23,8 +23,9 @@ public static class BackgroundJobExecutionContext
     /// <returns>IDisposable to clear the background job context</returns>
     public static IDisposable Use()
     {
+        bool previous = _isActive.Value;
         _isActive.Value = true;
-        return new DisposeAction(() => _isActive.Value = false);
+        return new DisposeAction(() => _isActive.Value = previous);
     }
 
     private sealed class DisposeAction : IDisposable

@@ -38,7 +38,7 @@ public static class BackgroundJobContext
             new Claim(ClaimTypes.NameIdentifier, effectiveUserId.ToString()), // Standard claim for user ID
             new Claim(AbpClaimTypes.UserName, BackgroundJobConstants.BackgroundJobUserName),
             new Claim(AbpClaimTypes.Email, BackgroundJobConstants.BackgroundJobEmail),
-            new Claim(AbpClaimTypes.TenantId, tenantId?.ToString() ?? string.Empty),
+            new Claim(AbpClaimTypes.TenantId, tenantId?.ToString() ?? Guid.Empty.ToString()),
             new Claim(AbpClaimTypes.Name, BackgroundJobConstants.BackgroundJobName)
         };
         
@@ -62,7 +62,7 @@ public static class BackgroundJobContext
             auditingManager.Current.Log.TenantId = tenantId;
         }
 
-        // Return a composite disposable that cleans up in LIFO order:
+        // Dispose in LIFO order: last registered is disposed first.
         // audit scope closes first (while tenant/user context is still valid),
         // then principal, then tenant.
         return new CompositeDisposable(auditingDisposable, principalDisposable, tenantDisposable);
@@ -85,9 +85,9 @@ public static class BackgroundJobContext
         {
             if (!_disposed)
             {
-                foreach (var disposable in _disposables)
+                for (int i = _disposables.Length - 1; i >= 0; i--)
                 {
-                    disposable?.Dispose();
+                    _disposables[i]?.Dispose();
                 }
                 _disposed = true;
             }

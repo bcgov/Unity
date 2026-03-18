@@ -12,7 +12,7 @@ namespace Unity.Modules.Shared.Auditing;
 [DependsOn(
     typeof(AbpAuditingModule)
 )]
-public class UnityAuditingOverideModule : AbpModule
+public class UnityAuditingOverrideModule : AbpModule
 {
     public override void ConfigureServices(ServiceConfigurationContext context)
     {

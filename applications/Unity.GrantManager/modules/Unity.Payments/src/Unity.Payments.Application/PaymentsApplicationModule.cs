@@ -20,7 +20,7 @@ using Unity.Modules.Shared.Auditing;
 namespace Unity.Payments;
 
 [DependsOn(
-    typeof(UnityAuditingOverideModule),
+    typeof(UnityAuditingOverrideModule),
     typeof(AbpVirtualFileSystemModule),
     typeof(AbpDddApplicationModule),
     typeof(AbpAutoMapperModule),
