@@ -5,6 +5,6 @@ namespace Unity.GrantManager.AI
 {
     public interface IApplicationScoresheetAnalysisService
     {
-        Task<string> RegenerateAndSaveAsync(Guid applicationId);
+        Task<string> RegenerateAndSaveAsync(Guid applicationId, string? promptVersion = null, bool capturePromptIo = false);
     }
 }

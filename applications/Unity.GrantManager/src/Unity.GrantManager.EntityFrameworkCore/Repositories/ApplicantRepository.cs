@@ -104,7 +104,8 @@ namespace Unity.GrantManager.Repositories
                     a.SectorSubSectorIndustryDesc,
                     a.FiscalDay,
                     a.FiscalMonth,
-                    a.UnityApplicantId
+                    a.UnityApplicantId,
+                    a.IsDuplicated
                 })
                 .Take(10)
                 .ToList();

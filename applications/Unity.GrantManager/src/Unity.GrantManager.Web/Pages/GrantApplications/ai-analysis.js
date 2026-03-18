@@ -79,7 +79,7 @@ function normalizeFindings(items, fallbackType) {
     };
 
     return (items || [])
-        .filter(item => item)
+        .filter(Boolean)
         .map((item, index) => ({
             ...item,
             id: item.id || `${fallbackType}-${index}`,
@@ -391,24 +391,38 @@ function tryParseRawAnalysis(analysisJson) {
     }
 }
 
-globalThis.regenerateAIAnalysis = function() {
+globalThis.regenerateAIAnalysis = function(capturePromptIo = false, triggerButton = null) {
     const applicationId = $('#DetailsViewApplicationId').val();
-    const $button = $('#regenerateAiAnalysis');
+    const $button = triggerButton ? $(triggerButton) : $('#regenerateAiAnalysis');
     const existingHtml = $button.html();
+    const promptVersion = globalThis.getSelectedPromptVersion?.() || null;
 
     if (!applicationId || $button.prop('disabled')) {
         return;
     }
 
+    if (!capturePromptIo && globalThis.hideAIPromptCapture) {
+        globalThis.hideAIPromptCapture('#aiAnalysisPromptCaptureContainer', '#aiAnalysisPromptCaptureOutput');
+    }
+
     $button
-        .html('<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Refreshing Analysis...')
+        .html('<span class="ai-button-content"><span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span><span>Generating...</span></span>')
         .prop('disabled', true);
 
     unity.grantManager.grantApplications.applicationAIAnalysis
-        .generateAIAnalysis(applicationId)
+        .generateAIAnalysis(applicationId, promptVersion, capturePromptIo)
         .then(function() {
             abp.notify.success('AI analysis refreshed successfully.');
             loadAIAnalysis();
+            if (capturePromptIo && globalThis.loadAIPromptCapture) {
+                return globalThis.loadAIPromptCapture(
+                    applicationId,
+                    'ApplicationAnalysis',
+                    promptVersion,
+                    '#aiAnalysisPromptCaptureContainer',
+                    '#aiAnalysisPromptCaptureOutput'
+                );
+            }
         })
         .catch(function() {
             abp.message.error('Failed to refresh AI analysis. Please try again.');

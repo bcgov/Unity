@@ -17,5 +17,14 @@ namespace Unity.GrantManager.AI
 
         [JsonPropertyName("sectionSchema")]
         public JsonElement SectionSchema { get; set; }
+
+        [JsonPropertyName("promptVersion")]
+        public string? PromptVersion { get; set; }
+
+        [JsonPropertyName("capturePromptIo")]
+        public bool CapturePromptIo { get; set; }
+
+        [JsonPropertyName("captureContextId")]
+        public string? CaptureContextId { get; set; }
     }
 }

@@ -4,6 +4,66 @@
  */
 
 $(function () {
+    globalThis.getSelectedPromptVersion = function() {
+        return $('#devPromptVersion').val() || null;
+    };
+
+    function setPromptCaptureOutput(outputSelector, value) {
+        $(outputSelector).val(value);
+    }
+
+    globalThis.hideAIPromptCapture = function(containerSelector, outputSelector) {
+        setPromptCaptureOutput(outputSelector, '');
+    };
+
+
+    globalThis.renderAIPromptCapture = function(containerSelector, outputSelector, captures) {
+        if (!Array.isArray(captures) || captures.length === 0) {
+            globalThis.hideAIPromptCapture(containerSelector, outputSelector);
+            return;
+        }
+
+        const formatted = captures
+            .map((capture) => formatAIPromptCaptureBlock(capture))
+            .join('\n\n----------------------------------------\n\n');
+
+        setPromptCaptureOutput(outputSelector, formatted);
+    };
+
+    globalThis.loadAIPromptCapture = function(applicationId, promptType, promptVersion, containerSelector, outputSelector) {
+        if (!applicationId || !promptType) {
+            globalThis.hideAIPromptCapture(containerSelector, outputSelector);
+            return Promise.resolve();
+        }
+
+        return unity.grantManager.grantApplications.applicationAIPromptCapture
+            .getRecent(applicationId, promptType, promptVersion || null)
+            .then(function(captures) {
+                globalThis.renderAIPromptCapture(containerSelector, outputSelector, captures || []);
+            })
+            .catch(function() {
+                globalThis.hideAIPromptCapture(containerSelector, outputSelector);
+            });
+    };
+
+    $(document).on('click', '.ai-prompt-capture-copy-btn', async function () {
+        const targetSelector = $(this).data('target');
+        const text = $(targetSelector).val();
+
+        if (!targetSelector || !text) {
+            return;
+        }
+
+        try {
+            await navigator.clipboard.writeText(text);
+            abp.notify.success('Copied prompt capture.');
+        } catch {
+            const output = $(targetSelector);
+            output.trigger('focus');
+            output.trigger('select');
+        }
+    });
+
     let selectedReviewDetails = null;
     let renderFormIoToHtml =
         document.getElementById('RenderFormIoToHtml').value;
@@ -314,6 +374,23 @@ $(function () {
     PubSub.subscribe('refresh_assessment_scores', (msg, data) => {
         assessmentScoresWidgetManager.refresh();
         updateSubtotal();
+
+        if (!data) {
+            return;
+        }
+
+        if (data.capturePromptIo && globalThis.loadAIPromptCapture) {
+            globalThis.loadAIPromptCapture(
+                data.applicationId,
+                'ScoresheetSection',
+                data.promptVersion || null,
+                '#aiScoringPromptCaptureContainer',
+                '#aiScoringPromptCaptureOutput'
+            );
+            return;
+        }
+
+        globalThis.hideAIPromptCapture?.('#aiScoringPromptCaptureContainer', '#aiScoringPromptCaptureOutput');
     });
 
     PubSub.subscribe('select_application_review', (msg, data) => {
@@ -807,6 +884,36 @@ $(function () {
     globalThis.addEventListener('resize', windowResize);
 });
 
+function formatAIPromptCaptureBlock(capture) {
+    const output = capture.output || '';
+    const parts = [
+        `PROMPT TYPE: ${capture.promptType || ''}`,
+        `PROMPT VERSION: ${capture.promptVersion || ''}`
+    ];
+
+    if (capture.captureLabel) {
+        parts.push(`LABEL: ${capture.captureLabel}`);
+    }
+
+    if (capture.capturedAt) {
+        parts.push(`CAPTURED AT: ${capture.capturedAt}`);
+    }
+
+    parts.push(
+        '',
+        'SYSTEM PROMPT',
+        capture.systemPrompt || '',
+        '',
+        'USER PROMPT',
+        capture.userPrompt || '',
+        '',
+        'OUTPUT',
+        output
+    );
+
+    return parts.join('\n');
+}
+
 
 // Handle the card header click event
 function onCardHeaderClick(clickedHeader, cardHeaders) {
@@ -1269,3 +1376,4 @@ function clearCurrencyError(input) {
     document.getElementById(errorSpan).textContent = '';
     input.attr('aria-invalid', 'false');
 }
+

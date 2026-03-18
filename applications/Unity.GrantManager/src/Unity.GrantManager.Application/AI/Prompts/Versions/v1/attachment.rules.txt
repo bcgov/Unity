@@ -1,7 +1,13 @@
 - Use only ATTACHMENT as evidence.
-- If ATTACHMENT.text is present, summarize actual content.
-- If ATTACHMENT.text is null or empty, provide a conservative file-level summary.
+- Summarize actual content when ATTACHMENT.text is present; otherwise provide a conservative file-level summary.
+- Describe the attachment itself rather than summarizing the overall project.
+- Ensure the summary describes the attachment itself, not the overall project.
+- If ATTACHMENT.text is primarily structured application, contact, organization, budget, or date fields, summarize it as a metadata-style attachment rather than rewriting it as a generic project summary.
+- Begin with what the attachment contains or provides, not the file name or file type, unless that metadata is necessary to describe the evidence.
 - Do not invent missing details.
+- Do not calculate or restate totals, sums, or aggregates unless they are explicitly present in ATTACHMENT.text.
+- Write reviewer-facing natural language. Do not refer to prompt section names, internal field keys, or schema labels such as ATTACHMENT or ATTACHMENT.text.
+- Refer to evidence by its plain-language meaning, quoted text, or file name rather than internal key names.
 - Write 1-2 complete sentences.
 - Summary must be grounded in concrete ATTACHMENT evidence.
 - Return exactly one object with only the key: summary.

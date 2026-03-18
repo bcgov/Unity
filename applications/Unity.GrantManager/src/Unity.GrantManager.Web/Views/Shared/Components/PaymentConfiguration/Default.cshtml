@@ -31,15 +31,15 @@
                         <label class="form-label text-nowrap" for="PaymentApprovalThreshold">Approval Payment Threshold</label>
                         <div class="input-group flex-nowrap">
                             <span class="input-group-text">$</span>
-                            <input type="number"
-                                    maxlength="32"
-                                    pattern="^\d*\.?\d*$"
-                                    data-val="true"
-                                    data-val-range="The field Payment Threshold Amount must be 0 or greater."
-                                    data-val-range-max="1.7976931348623157E+308"
-                                    data-val-range-min="0"
-                                    id="PaymentApprovalThreshold" name="PaymentApprovalThreshold"
-                                    value="@Model.PaymentApprovalThreshold" class="form-control-currency text-end rounded-end">
+                                    <input type="text" inputmode="decimal"
+                                           maxlength="24"
+                                           data-val="true"
+                                           data-val-range="The field Payment Threshold Amount must be 0 or greater."
+                                           data-allow-zero="true"
+                                           data-val-range-min="0"
+                                           id="PaymentApprovalThreshold" name="PaymentApprovalThreshold"
+                                           value="@Model.PaymentApprovalThreshold"
+                                           class="unity-currency-input form-control-currency text-end rounded-end">
                         </div>
                     </abp-column>
                 </abp-row>
@@ -131,3 +131,11 @@
     </div>
     
 </form>
+<script defer>
+    (function () {
+        //Required to re-apply masking on changes and overlay field styling
+        if (window.jQuery) {
+            $('.unity-currency-input').maskMoney({thousands: ',',decimal: '.',}).maskMoney('mask');
+        }
+    })();
+</script>

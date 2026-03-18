@@ -32,5 +32,4 @@
 		  <Value>**/Assessments/Assessment.cs, **/Assessments/AssessmentWithAssessorQueryResultItem.cs</Value>
 	  </SonarQubeSetting>
   </ItemGroup>
-
 </Project>
