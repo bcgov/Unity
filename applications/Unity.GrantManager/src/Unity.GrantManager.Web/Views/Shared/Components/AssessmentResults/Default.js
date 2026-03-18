@@ -5,10 +5,10 @@
         let assessmentResultsCustomForm = $("#assessmentResultsCustomForm").length ? $("#assessmentResultsCustomForm").serializeArray() : [];
         let combinedData = formData.concat(assessmentResultsCustomForm);
         let assessmentResultObj = {};
-        let formVersionId = $("#ApplicationFormVersionId").val();     
+        let formVersionId = $("#ApplicationFormVersionId").val();
         // Check for worksheet scenario - multiple vs single
         let multipleWorksheetsIds = $("#AssessmentInfo_WorksheetIds").val();
-        let singleWorksheetId = $("#AssessmentInfo_WorksheetId").val();       
+        let singleWorksheetId = $("#AssessmentInfo_WorksheetId").val();
 
         $.each(combinedData, function (_, input) {
             if (typeof Flex === 'function' && Flex?.isCustomField(input)) {
@@ -50,7 +50,7 @@
 
         try {
             assessmentResultObj['correlationId'] = formVersionId;
-            
+
             // Set correct payload property based on worksheet scenario
             if (multipleWorksheetsIds) {
                 // Multiple worksheets scenario - send as WorksheetIds array
@@ -59,10 +59,7 @@
                 // Single worksheet scenario - send as WorksheetId
                 assessmentResultObj['worksheetId'] = singleWorksheetId.trim();
             }
-            
-            if(assessmentResultObj['ApprovedAmount'] == '') {
-                assessmentResultObj['ApprovedAmount'] = null;
-            }
+
             unity.grantManager.grantApplications.grantApplication
                 .updateAssessmentResults(applicationId, assessmentResultObj)
                 .done(function () {
@@ -134,7 +131,7 @@
     );
 
     PubSub.subscribe('project_info_saved',
-        (msg, data) => { 
+        (msg, data) => {
             if (data.RequestedAmount) {
                 $('#RequestedAmountInputAR')?.prop("value", data?.RequestedAmount);
                 $('#RequestedAmountInputAR').maskMoney('mask');
@@ -142,7 +139,7 @@
             if (data.TotalProjectBudget) {
                 $('#TotalBudgetInputAR')?.prop("value", data?.TotalProjectBudget);
                 $('#TotalBudgetInputAR').maskMoney('mask');
-            } 
+            }
         }
     );
 
@@ -153,7 +150,7 @@
         }
     );
 
-    $('.unity-currency-input').maskMoney();
+    $('.unity-currency-input').maskMoney({ allowZero: true });
 });
 
 let dueDateHasChanged = false;
