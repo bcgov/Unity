@@ -2,16 +2,17 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Threading.Tasks;
+using Unity.GrantManager.AI.BackgroundJobs;
 using Unity.AI.Permissions;
-using Unity.GrantManager.AI;
 using Volo.Abp;
+using Volo.Abp.BackgroundJobs;
 using Volo.Abp.Features;
 
 namespace Unity.GrantManager.GrantApplications;
 
 [Authorize(AIPermissions.ApplicationAnalysis.ApplicationAnalysisDefault)]
 public class ApplicationAIAnalysisAppService(
-    IApplicationAIAnalysisService applicationAnalysisService,
+    IBackgroundJobManager backgroundJobManager,
     IFeatureChecker featureChecker)
     : GrantManagerAppService, IApplicationAIAnalysisAppService
 {
@@ -24,12 +25,20 @@ public class ApplicationAIAnalysisAppService(
                 throw new UserFriendlyException("AI application analysis is not enabled.");
             }
 
-            return await applicationAnalysisService.RegenerateAndSaveAsync(applicationId, promptVersion, capturePromptIo);
+            await backgroundJobManager.EnqueueAsync(new GenerateApplicationAIAnalysisBackgroundJobArgs
+            {
+                ApplicationId = applicationId,
+                PromptVersion = promptVersion,
+                CapturePromptIo = capturePromptIo,
+                TenantId = CurrentTenant.Id
+            });
+
+            return "{}";
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Error regenerating AI analysis for application {ApplicationId}", applicationId);
-            throw new UserFriendlyException("Failed to regenerate AI analysis. Please try again.");
+            Logger.LogError(ex, "Error queueing AI analysis for application {ApplicationId}", applicationId);
+            throw new UserFriendlyException("Failed to queue AI analysis. Please try again.");
         }
     }
 }

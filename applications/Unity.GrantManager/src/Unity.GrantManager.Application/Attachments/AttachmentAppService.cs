@@ -1,17 +1,17 @@
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
-using System.Linq.Expressions;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Threading.Tasks;
-using Unity.AI.Permissions;
 using Unity.GrantManager.AI;
+using Unity.GrantManager.AI.BackgroundJobs;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Identity;
 using Unity.GrantManager.Intakes;
 using Volo.Abp;
 using Volo.Abp.Application.Services;
+using Volo.Abp.BackgroundJobs;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Entities;
 using Volo.Abp.Domain.Repositories;
@@ -27,21 +27,23 @@ public class AttachmentAppService(
     IApplicationChefsFileAttachmentRepository applicationChefsFileAttachmentRepository,
     IAssessmentAttachmentRepository assessmentAttachmentRepository,
     IIntakeFormSubmissionManager intakeFormSubmissionManager,
-    IPersonRepository personUserRepository, 
-    IAttachmentAISummaryService attachmentAISummaryService,
+    IPersonRepository personUserRepository,
+    IBackgroundJobManager backgroundJobManager,
     IFeatureChecker featureChecker) : ApplicationService, IAttachmentAppService
 {
+    private const string SummaryGenerationQueuedMessage = "AI summary generation queued.";
+
     public async Task<IList<ApplicationAttachmentDto>> GetApplicationAsync(Guid applicationId)
     {
         return (await GetAttachmentsAsync(new AttachmentParametersDto(AttachmentType.APPLICATION, applicationId)))
             .Select(attachment => new ApplicationAttachmentDto
             {
-                AttachedBy  = attachment.AttachedBy,
-                Id          = attachment.Id,
-                FileName    = attachment.FileName,
+                AttachedBy = attachment.AttachedBy,
+                Id = attachment.Id,
+                FileName = attachment.FileName,
                 S3ObjectKey = attachment.S3ObjectKey,
-                Time        = attachment.Time,
-                CreatorId   = attachment.CreatorId,
+                Time = attachment.Time,
+                CreatorId = attachment.CreatorId,
                 DisplayName = attachment.DisplayName
             }).ToList();
     }
@@ -51,12 +53,12 @@ public class AttachmentAppService(
         return (await GetAttachmentsAsync(new AttachmentParametersDto(AttachmentType.ASSESSMENT, assessmentId)))
             .Select(attachment => new AssessmentAttachmentDto
             {
-                AttachedBy  = attachment.AttachedBy,
-                Id          = attachment.Id,
-                FileName    = attachment.FileName,
+                AttachedBy = attachment.AttachedBy,
+                Id = attachment.Id,
+                FileName = attachment.FileName,
                 S3ObjectKey = attachment.S3ObjectKey,
-                Time        = attachment.Time,
-                CreatorId   = attachment.CreatorId,
+                Time = attachment.Time,
+                CreatorId = attachment.CreatorId,
                 DisplayName = attachment.DisplayName
             }).ToList();
     }
@@ -101,14 +103,14 @@ public class AttachmentAppService(
                     join person in people on attachment.UserId equals person.Id
                     select new UnityAttachmentDto()
                     {
-                        Id             = attachment.Id,
-                        FileName       = attachment.FileName,
-                        DisplayName    = attachment.DisplayName,
-                        S3ObjectKey    = attachment.S3ObjectKey,
-                        Time           = attachment.Time,
+                        Id = attachment.Id,
+                        FileName = attachment.FileName,
+                        DisplayName = attachment.DisplayName,
+                        S3ObjectKey = attachment.S3ObjectKey,
+                        Time = attachment.Time,
                         AttachmentType = attachment.AttachmentType,
-                        AttachedBy     = person.FullName,
-                        CreatorId      = person.Id
+                        AttachedBy = person.FullName,
+                        CreatorId = person.Id
                     };
 
         return query.ToList();
@@ -135,10 +137,10 @@ public class AttachmentAppService(
         var attachment = await repository.GetAsync(attachmentId) ?? throw new EntityNotFoundException();
         return new AttachmentMetadataDto
         {
-            Id             = attachment.Id,
-            FileName       = attachment.FileName,
-            DisplayName    = attachment.DisplayName,
-            CreatorId      = GetCreatorId(attachment),
+            Id = attachment.Id,
+            FileName = attachment.FileName,
+            DisplayName = attachment.DisplayName,
+            CreatorId = GetCreatorId(attachment),
             AttachmentType = attachment.AttachmentType
         };
     }
@@ -170,16 +172,15 @@ public class AttachmentAppService(
     {
         var attachment = await repository.GetAsync(updateAttachment.Id) ?? throw new EntityNotFoundException();
 
-        // Properties to be updated
         attachment.DisplayName = updateAttachment.DisplayName;
 
         var updatedAttachment = await repository.UpdateAsync(attachment, autoSave: true) ?? throw new EntityNotFoundException();
         return new AttachmentMetadataDto
         {
-            Id             = updatedAttachment.Id,
-            FileName       = updatedAttachment.FileName,
-            DisplayName    = updatedAttachment.DisplayName,
-            CreatorId      = GetCreatorId(updatedAttachment),
+            Id = updatedAttachment.Id,
+            FileName = updatedAttachment.FileName,
+            DisplayName = updatedAttachment.DisplayName,
+            CreatorId = GetCreatorId(updatedAttachment),
             AttachmentType = attachmentType
         };
     }
@@ -189,26 +190,40 @@ public class AttachmentAppService(
         return attachment.CreatorId;
     }
 
-    [Authorize(AIPermissions.AttachmentSummary.AttachmentSummaryDefault)]
-    public async Task<string> GenerateAISummaryAttachmentAsync(Guid attachmentId, string? promptVersion = null, bool capturePromptIo = false)
+    public async Task<string> GenerateAISummaryAttachmentAsync(Guid attachmentId)
     {
         if (!await featureChecker.IsEnabledAsync("Unity.AI.AttachmentSummaries"))
         {
             throw new UserFriendlyException("AI attachment summaries are not enabled.");
         }
 
-        return await attachmentAISummaryService.GenerateAndSaveAsync(attachmentId, promptVersion, capturePromptIo);
+        await backgroundJobManager.EnqueueAsync(new GenerateAttachmentSummariesBackgroundJobArgs
+        {
+            AttachmentIds = [attachmentId],
+            TenantId = CurrentTenant.Id
+        });
+
+        return SummaryGenerationQueuedMessage;
     }
-    
-    [Authorize(AIPermissions.AttachmentSummary.AttachmentSummaryDefault)]
-    public async Task<List<string>> GenerateAISummariesAttachmentsAsync(List<Guid> attachmentIds, string? promptVersion = null, bool capturePromptIo = false)
+
+    public async Task<List<string>> GenerateAISummariesAttachmentsAsync(List<Guid> attachmentIds)
     {
         if (!await featureChecker.IsEnabledAsync("Unity.AI.AttachmentSummaries"))
         {
             throw new UserFriendlyException("AI attachment summaries are not enabled.");
         }
 
-        return await attachmentAISummaryService.GenerateAndSaveManyAsync(attachmentIds, promptVersion, capturePromptIo);
-    }
+        if (attachmentIds.Count == 0)
+        {
+            return [];
+        }
 
+        await backgroundJobManager.EnqueueAsync(new GenerateAttachmentSummariesBackgroundJobArgs
+        {
+            AttachmentIds = attachmentIds,
+            TenantId = CurrentTenant.Id
+        });
+
+        return attachmentIds.Select(_ => SummaryGenerationQueuedMessage).ToList();
+    }
 }

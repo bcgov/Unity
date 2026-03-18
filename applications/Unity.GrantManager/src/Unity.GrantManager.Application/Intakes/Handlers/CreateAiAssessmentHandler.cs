@@ -2,6 +2,7 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Threading.Tasks;
 using Unity.GrantManager.Assessments;
+using Unity.GrantManager.Applications;
 using Unity.GrantManager.Intakes.Events;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.EventBus;
@@ -11,14 +12,15 @@ namespace Unity.GrantManager.Intakes.Handlers;
 
 public class CreateAiAssessmentHandler(
     AssessmentManager assessmentManager,
+    IApplicationRepository applicationRepository,
     IFeatureChecker featureChecker,
     ILogger<CreateAiAssessmentHandler> logger) : ILocalEventHandler<AiScoresheetAnswersGeneratedEvent>, ITransientDependency
 {
     public async Task HandleEventAsync(AiScoresheetAnswersGeneratedEvent eventData)
     {
-        if (eventData?.Application == null)
+        if (eventData == null || eventData.ApplicationId == Guid.Empty)
         {
-            logger.LogWarning("Event data or application is null in CreateAiAssessmentHandler.");
+            logger.LogWarning("Event data or application ID is null in CreateAiAssessmentHandler.");
             return;
         }
 
@@ -29,12 +31,13 @@ public class CreateAiAssessmentHandler(
 
         try
         {
-            await assessmentManager.CreateAiAssessmentAsync(eventData.Application);
-            logger.LogInformation("Created AI assessment for application {ApplicationId}.", eventData.Application.Id);
+            var application = await applicationRepository.GetAsync(eventData.ApplicationId);
+            await assessmentManager.CreateAiAssessmentAsync(application);
+            logger.LogInformation("Created AI assessment for application {ApplicationId}.", eventData.ApplicationId);
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error creating AI assessment for application {ApplicationId}.", eventData.Application.Id);
+            logger.LogError(ex, "Error creating AI assessment for application {ApplicationId}.", eventData.ApplicationId);
         }
     }
 }

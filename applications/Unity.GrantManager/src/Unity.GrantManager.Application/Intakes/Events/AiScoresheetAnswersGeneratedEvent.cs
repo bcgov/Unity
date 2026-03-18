@@ -1,8 +1,8 @@
-using Unity.GrantManager.Applications;
+using System;
 
 namespace Unity.GrantManager.Intakes.Events;
 
 public class AiScoresheetAnswersGeneratedEvent
 {
-    public Application? Application { get; set; }
+    public Guid ApplicationId { get; set; }
 }
