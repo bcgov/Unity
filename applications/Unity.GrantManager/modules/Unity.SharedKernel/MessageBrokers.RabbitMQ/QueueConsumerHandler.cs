@@ -8,6 +8,10 @@ using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 using Unity.Modules.Shared.MessageBrokers.RabbitMQ.Exceptions;
 using Unity.Modules.Shared.MessageBrokers.RabbitMQ.Interfaces;
+using Unity.Modules.Shared.Utils;
+using Volo.Abp.Auditing;
+using Volo.Abp.MultiTenancy;
+using Volo.Abp.Security.Claims;
 
 namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ
 {
@@ -86,8 +90,15 @@ namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ
 
                 _logger.LogInformation("Processing MessageId {MessageId}", message.MessageId);
 
-                var consumerInstance = consumerScope.ServiceProvider.GetRequiredService<TMessageConsumer>();
-                await consumerInstance.ConsumeAsync(message);
+                if (message is ITenantedQueueMessage tenantedMessage)
+                {
+                    await ConsumeWithAuditingAsync(consumerScope, tenantedMessage, message);
+                }
+                else
+                {
+                    var consumerInstance = consumerScope.ServiceProvider.GetRequiredService<TMessageConsumer>();
+                    await consumerInstance.ConsumeAsync(message);
+                }
 
                 consumingChannel.BasicAck(ea.DeliveryTag, multiple: false);
 
@@ -103,6 +114,58 @@ namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ
                 _logger.LogError(ex, "Error processing message on {Queue}", _queueName);
                 consumingChannel.BasicReject(ea.DeliveryTag, requeue: false);
             }
+        }
+
+        /// <summary>
+        /// Wraps consumer execution in a background-job auditing scope, mirroring the way
+        /// ASP.NET Core middleware wraps controller actions. Tenant context, identity, and
+        /// audit persistence are handled here so individual consumers stay free of
+        /// infrastructure concerns.
+        /// </summary>
+        private async Task ConsumeWithAuditingAsync(IServiceScope consumerScope, ITenantedQueueMessage tenantedMessage, TQueueMessage message)
+        {
+            var auditingManager = consumerScope.ServiceProvider.GetRequiredService<IAuditingManager>();
+            var principalAccessor = consumerScope.ServiceProvider.GetRequiredService<ICurrentPrincipalAccessor>();
+            var currentTenant = consumerScope.ServiceProvider.GetRequiredService<ICurrentTenant>();
+            var auditingStore = consumerScope.ServiceProvider.GetRequiredService<IAuditingStore>();
+
+            using (BackgroundJobExecutionContext.Use())
+            using (BackgroundJobContext.Set(auditingManager, principalAccessor, currentTenant, tenantedMessage.TenantId))
+            {
+                AddConsumerAuditAction(auditingManager, message);
+
+                var consumerInstance = consumerScope.ServiceProvider.GetRequiredService<TMessageConsumer>();
+                await consumerInstance.ConsumeAsync(message);
+
+                // Persist audit log if the consumer produced any entity changes.
+                // Entity changes are collected by AbpDbContext.SaveChangesAsync() during UOW commit,
+                // so this call happens after the consumer's unit of work completes.
+                if (auditingManager.Current?.Log is { EntityChanges.Count: > 0 } log)
+                {
+                    await auditingStore.SaveAsync(log);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Adds a single <see cref="AuditLogActionInfo"/> to the current audit scope using
+        /// reflection on the generic consumer type. ABP requires at least one recorded action
+        /// before it will persist an audit log with entity changes.
+        /// </summary>
+        private static void AddConsumerAuditAction(IAuditingManager auditingManager, TQueueMessage message)
+        {
+            if (auditingManager.Current?.Log == null)
+            {
+                return;
+            }
+
+            auditingManager.Current.Log.Actions.Add(new AuditLogActionInfo
+            {
+                ServiceName = typeof(TMessageConsumer).FullName ?? typeof(TMessageConsumer).Name,
+                MethodName = nameof(IQueueConsumer<TQueueMessage>.ConsumeAsync),
+                Parameters = System.Text.Json.JsonSerializer.Serialize(message),
+                ExecutionTime = DateTime.UtcNow
+            });
         }
 
         private static TQueueMessage? DeserializeMessage(byte[] body)

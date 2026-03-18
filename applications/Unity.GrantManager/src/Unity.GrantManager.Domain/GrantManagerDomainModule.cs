@@ -1,5 +1,6 @@
 using Unity.GrantManager.MultiTenancy;
 using Unity.GrantManager.Settings;
+using Unity.Modules.Shared.Auditing;
 using Unity.Notifications;
 using Volo.Abp.AuditLogging;
 using Volo.Abp.BackgroundJobs;
@@ -19,6 +20,7 @@ using Volo.Abp.TenantManagement;
 namespace Unity.GrantManager;
 
 [DependsOn(
+    typeof(UnityAuditingOverideModule),
     typeof(GrantManagerDomainSharedModule),
     typeof(AbpAuditLoggingDomainModule),
     typeof(AbpBackgroundJobsDomainModule),
