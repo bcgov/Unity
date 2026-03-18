@@ -128,7 +128,7 @@ namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ
         /// audit persistence are handled here so individual consumers stay free of
         /// infrastructure concerns.
         /// </summary>
-        private async Task ConsumeWithAuditingAsync(IServiceScope consumerScope, ITenantedQueueMessage tenantedMessage, TQueueMessage message)
+        private static async Task ConsumeWithAuditingAsync(IServiceScope consumerScope, ITenantedQueueMessage tenantedMessage, TQueueMessage message)
         {
             var auditingManager = consumerScope.ServiceProvider.GetRequiredService<IAuditingManager>();
             var principalAccessor = consumerScope.ServiceProvider.GetRequiredService<ICurrentPrincipalAccessor>();
