@@ -9,7 +9,7 @@
  * - Review and assessment process
  * - Payment info configuration
  * - Adding comments and attachments
- * - Approval action (cancelled for test purposes)
+ * - Approval action (confirmed via dialog)
  *
  * The submission ID is fetched dynamically from the API after login,
  * ensuring tests always run against valid, available data.

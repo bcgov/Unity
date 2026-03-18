@@ -315,10 +315,12 @@ describe("Send an email", () => {
       .find("option:selected")
       .should("have.text", TEMPLATE_NAME);
 
-    // Wait for body to be populated by template; if still empty, set a fallback value
-    cy.get("#EmailBody", { timeout: STANDARD_TIMEOUT }).then(($body) => {
-      if (!$body.val() || ($body.val() as string).trim() === "") {
-        cy.wrap($body).invoke("val", "Test email body").trigger("change");
+    // #EmailBody is a hidden textarea backing the rich-text editor.
+    // Template selection populates the visible RTE but does not auto-sync
+    // the backing field — trigger the change manually if still empty.
+    cy.get("#EmailBody", { timeout: STANDARD_TIMEOUT }).then(($el) => {
+      if (($el.val() as string).trim() === "") {
+        cy.wrap($el).invoke("val", "Test email body").trigger("change");
       }
     });
   });

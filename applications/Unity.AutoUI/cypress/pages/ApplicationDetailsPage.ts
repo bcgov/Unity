@@ -480,9 +480,11 @@ export class ApplicationDetailsPage extends BasePage {
     cy.get(this.statusActions.completeAssessment).then(($btn) => {
       if (!$btn.is(":disabled")) {
         cy.wrap($btn).click({ force: true });
-        cy.get(this.confirmModal.modal, { timeout: 10000 }).then(($modal) => {
-          if ($modal.is(":visible")) {
-            cy.wrap($modal).find(this.confirmModal.confirmButton).click({ force: true });
+        cy.get("body").then(($body) => {
+          if ($body.find(this.confirmModal.modal).filter(":visible").length > 0) {
+            cy.get(this.confirmModal.modal)
+              .find(this.confirmModal.confirmButton)
+              .click({ force: true });
           }
         });
         // Wait for page to stabilize after status transition
@@ -576,11 +578,10 @@ export class ApplicationDetailsPage extends BasePage {
    */
   dismissErrorModalIfPresent(): this {
     cy.get("body").then(($body) => {
-      // Check if SweetAlert2 modal with error icon exists
-      if ($body.find(".swal2-container").length > 0) {
-        // Click OK/Confirm button to dismiss
+      // Only dismiss if it is specifically an error modal (swal2-error icon)
+      if ($body.find(".swal2-container .swal2-icon.swal2-error").length > 0) {
         cy.get(".swal2-container")
-          .find(".swal2-confirm, button:contains('Ok'), button:contains('OK')")
+          .find(".swal2-confirm")
           .first()
           .click({ force: true });
         cy.wait(500);

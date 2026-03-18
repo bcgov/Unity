@@ -37,6 +37,7 @@ describe("CHEFS Form Submission API", () => {
   let submissionPayload: ChefsSubmissionPayload;
   let environment: ChefsEnvironment;
   let authToken: string;
+  let createdSubmissionId: string;
 
   before(() => {
     // Load configuration from scripts directory
@@ -101,7 +102,7 @@ describe("CHEFS Form Submission API", () => {
         expect(capturedToken, "Waiting for authenticated CHEFS API call").to.not.equal("");
       }).then(() => {
         authToken = capturedToken;
-        cy.log(`✅ Auth token captured from CHEFS login (${authToken.substring(0, 20)}...)`);
+        cy.log("✅ Auth token captured from CHEFS login");
       });
     });
   });
@@ -138,7 +139,7 @@ describe("CHEFS Form Submission API", () => {
           "📖 See cypress/scripts/README.md for token refresh instructions"
         );
         throw new Error(
-          "Authentication failed. Please refresh CHEFS_AUTH_TOKEN in cypress.env.json. See cypress/scripts/README.md for instructions."
+          "Authentication failed (401). Check that test1username/test1password credentials in cypress.env.json are valid and that the CHEFS UI login succeeded during test setup."
         );
       }
 
@@ -146,9 +147,9 @@ describe("CHEFS Form Submission API", () => {
       expect(response.status).to.be.oneOf([200, 201]); // Success status codes
       expect(response.body).to.have.property("id"); // CHEFS returns submission ID
 
-      // Store submission ID for potential cleanup or verification
+      // Store submission ID for use in the "retrieve submission by ID" test
       if (response.body.id) {
-        cy.wrap(response.body.id).as("submissionId");
+        createdSubmissionId = response.body.id;
         cy.log(`✅ Submission created with ID: ${response.body.id}`);
       }
 
@@ -204,7 +205,7 @@ describe("CHEFS Form Submission API", () => {
           "📖 See cypress/scripts/README.md for token refresh instructions"
         );
         throw new Error(
-          "Authentication failed. Please refresh CHEFS_AUTH_TOKEN in cypress.env.json. See cypress/scripts/README.md for instructions."
+          "Authentication failed (401). Check that test1username/test1password credentials in cypress.env.json are valid and that the CHEFS UI login succeeded during test setup."
         );
       }
 
@@ -247,7 +248,7 @@ describe("CHEFS Form Submission API", () => {
           "📖 See cypress/scripts/README.md for token refresh instructions"
         );
         throw new Error(
-          "Authentication failed. Please refresh CHEFS_AUTH_TOKEN in cypress.env.json. See cypress/scripts/README.md for instructions."
+          "Authentication failed (401). Check that test1username/test1password credentials in cypress.env.json are valid and that the CHEFS UI login succeeded during test setup."
         );
       }
 
@@ -261,10 +262,10 @@ describe("CHEFS Form Submission API", () => {
     });
   });
 
-  it("should retrieve submission by ID", function () {
+  it("should retrieve submission by ID", () => {
     // This test depends on the first test creating a submission
-    if (this.submissionId) {
-      const retrieveUrl = `${environment.baseURL}/app/api/v1/submissions/${this.submissionId}`;
+    if (createdSubmissionId) {
+      const retrieveUrl = `${environment.baseURL}/app/api/v1/submissions/${createdSubmissionId}`;
 
       cy.request({
         method: "GET",
@@ -277,12 +278,9 @@ describe("CHEFS Form Submission API", () => {
       }).then((response) => {
         // Handle 401 Unauthorized
         if (response.status === 401) {
-          cy.log("❌ 401 Unauthorized - Token is expired or invalid");
-          cy.log(
-            "📖 See cypress/scripts/README.md for token refresh instructions"
-          );
+          cy.log("❌ 401 Unauthorized - CHEFS login credentials may be invalid");
           throw new Error(
-            "Authentication failed. Please refresh CHEFS_AUTH_TOKEN in cypress.env.json. See cypress/scripts/README.md for instructions."
+            "Authentication failed (401). Check that test1username/test1password credentials in cypress.env.json are valid and that the CHEFS UI login succeeded during test setup."
           );
         }
 
@@ -293,13 +291,13 @@ describe("CHEFS Form Submission API", () => {
         if (response.body.submission) {
           expect(response.body.submission).to.have.property(
             "id",
-            this.submissionId
+            createdSubmissionId
           );
-          cy.log(`✅ Retrieved submission: ${this.submissionId}`);
+          cy.log(`✅ Retrieved submission: ${createdSubmissionId}`);
         } else if (response.body.id) {
           // Some CHEFS versions return id at root level
-          expect(response.body.id).to.eq(this.submissionId);
-          cy.log(`✅ Retrieved submission: ${this.submissionId}`);
+          expect(response.body.id).to.eq(createdSubmissionId);
+          cy.log(`✅ Retrieved submission: ${createdSubmissionId}`);
         } else {
           cy.log("⚠️ Unexpected response structure - logging for debugging");
           cy.log(JSON.stringify(response.body, null, 2));
@@ -341,7 +339,7 @@ describe("CHEFS Form Submission API", () => {
       }).then((response) => {
         if (response.status === 401) {
           throw new Error(
-            "Authentication failed. Please refresh CHEFS_AUTH_TOKEN in cypress.env.json. See cypress/scripts/README.md for instructions."
+            "Authentication failed (401). Check that test1username/test1password credentials in cypress.env.json are valid and that the CHEFS UI login succeeded during test setup."
           );
         }
         expect(response.status).to.be.oneOf([200, 201]);
