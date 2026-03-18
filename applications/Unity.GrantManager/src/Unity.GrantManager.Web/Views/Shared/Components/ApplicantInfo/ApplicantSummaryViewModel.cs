@@ -63,5 +63,8 @@ public class ApplicantSummaryViewModel
 
     [Display(Name = "ApplicantInfoView:ApplicantInfo.ApplicantName")]
     public string? ApplicantName { get; set; }
+
+    [HiddenInput]
+    public bool? IsDuplicated { get; set; }
 }
 
