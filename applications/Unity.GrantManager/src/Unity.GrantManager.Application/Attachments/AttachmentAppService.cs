@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
+using Unity.AI.Permissions;
 using Unity.GrantManager.AI;
 using Unity.GrantManager.AI.BackgroundJobs;
 using Unity.GrantManager.Applications;
@@ -190,7 +191,8 @@ public class AttachmentAppService(
         return attachment.CreatorId;
     }
 
-    public async Task<string> GenerateAISummaryAttachmentAsync(Guid attachmentId)
+    [Authorize(AIPermissions.AttachmentSummary.AttachmentSummaryDefault)]
+    public async Task<string> GenerateAISummaryAttachmentAsync(Guid attachmentId, string? promptVersion = null, bool capturePromptIo = false)
     {
         if (!await featureChecker.IsEnabledAsync("Unity.AI.AttachmentSummaries"))
         {
@@ -200,13 +202,16 @@ public class AttachmentAppService(
         await backgroundJobManager.EnqueueAsync(new GenerateAttachmentSummariesBackgroundJobArgs
         {
             AttachmentIds = [attachmentId],
+            PromptVersion = promptVersion,
+            CapturePromptIo = capturePromptIo,
             TenantId = CurrentTenant.Id
         });
 
         return SummaryGenerationQueuedMessage;
     }
 
-    public async Task<List<string>> GenerateAISummariesAttachmentsAsync(List<Guid> attachmentIds)
+    [Authorize(AIPermissions.AttachmentSummary.AttachmentSummaryDefault)]
+    public async Task<List<string>> GenerateAISummariesAttachmentsAsync(List<Guid> attachmentIds, string? promptVersion = null, bool capturePromptIo = false)
     {
         if (!await featureChecker.IsEnabledAsync("Unity.AI.AttachmentSummaries"))
         {
@@ -221,6 +226,8 @@ public class AttachmentAppService(
         await backgroundJobManager.EnqueueAsync(new GenerateAttachmentSummariesBackgroundJobArgs
         {
             AttachmentIds = attachmentIds,
+            PromptVersion = promptVersion,
+            CapturePromptIo = capturePromptIo,
             TenantId = CurrentTenant.Id
         });
 

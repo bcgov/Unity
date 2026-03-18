@@ -30,7 +30,7 @@ const finalApplicationStates = [
 ];
 
 $(function () {
-    const nullPlaceholder = '—';
+    const nullPlaceholder = '-';
 
     let inputAction = function (requestData, dataTableSettings) {
         const applicationId = pageApplicationId
