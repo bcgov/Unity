@@ -1,6 +1,6 @@
 // Note: File depends on Unity.GrantManager.Web\Views\Shared\Components\_Shared\Attachments.js
 $(function () {
-    globalThis.generateAIAttachmentSummaries = function(triggerButton = null) {
+    globalThis.queueAttachmentSummary = function(triggerButton = null) {
         $('#generateAiSummaries')
             .data('trigger-button', triggerButton || null)
             .trigger('click');
@@ -242,7 +242,7 @@ $(function () {
             // Call the backend API
             $.ajax({
                 url:
-                    '/api/app/attachment/generate-aISummaries-attachments' +
+                    '/api/app/attachment/generate-attachment-summaries' +
                     '?promptVersion=' +
                     encodeURIComponent(promptVersion || ''),
                 data: JSON.stringify(attachmentIds),

@@ -391,9 +391,9 @@ function tryParseRawAnalysis(analysisJson) {
     }
 }
 
-globalThis.regenerateAIAnalysis = function(triggerButton = null) {
+globalThis.queueApplicationAnalysis = function(triggerButton = null) {
     const applicationId = $('#DetailsViewApplicationId').val();
-    const $button = triggerButton ? $(triggerButton) : $('#regenerateAiAnalysis');
+    const $button = triggerButton ? $(triggerButton) : $('#regenerateApplicationAnalysis');
     const existingHtml = $button.html();
     const promptVersion = globalThis.getSelectedPromptVersion?.() || null;
 
@@ -405,8 +405,8 @@ globalThis.regenerateAIAnalysis = function(triggerButton = null) {
         .html('<span class="ai-button-content"><span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span><span>Queueing...</span></span>')
         .prop('disabled', true);
 
-    unity.grantManager.grantApplications.applicationAIAnalysis
-        .generateAIAnalysis(applicationId, promptVersion)
+    unity.grantManager.grantApplications.applicationAnalysis
+        .generateApplicationAnalysis(applicationId, promptVersion)
         .then(function() {
             abp.notify.success('AI analysis queued. Refresh later to see updated results.');
         })
@@ -451,10 +451,10 @@ function loadAIAnalysis() {
 }
 
 $(function() {
-    const $regenerateButton = $('#regenerateAiAnalysis');
+    const $regenerateButton = $('#regenerateApplicationAnalysis');
     if ($regenerateButton.length > 0) {
         $regenerateButton.on('click', function() {
-            regenerateAIAnalysis();
+            queueApplicationAnalysis();
         });
     }
 });

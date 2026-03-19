@@ -469,7 +469,7 @@ function generateAiButtonAction(e, dt, button, config) {
         triggerButton.html('<span class="ai-button-content"><i class="unt-icon-sm fa-solid fa-wand-sparkles"></i><span>Queueing...</span></span>');
     }
 
-    unity.grantManager.grantApplications.applicationAIScoring.generateAIScoresheetAnswers(pageApplicationId, promptVersion, false)
+    unity.grantManager.grantApplications.applicationScoring.generateApplicationScoring(pageApplicationId, promptVersion)
         .done(function () {
             abp.notify.success('AI scoring queued. Refresh later to see updated results.');
         })

@@ -577,7 +577,7 @@ function collapseAllAccordions(divId) {
     });
 }
 
-function regenerateAIScoresheetAnswers(triggerButton = null) {
+function queueApplicationScoring(triggerButton = null) {
     const applicationId = $('#DetailsViewApplicationId').val();
     const $button = triggerButton ? $(triggerButton) : $('#regenerateAiScoresheetBtn');
     const existingHtml = $button.html();
@@ -593,8 +593,8 @@ function regenerateAIScoresheetAnswers(triggerButton = null) {
         )
         .prop('disabled', true);
 
-    unity.grantManager.grantApplications.applicationAIScoring
-        .generateAIScoresheetAnswers(applicationId, promptVersion)
+    unity.grantManager.grantApplications.applicationScoring
+        .generateApplicationScoring(applicationId, promptVersion)
         .done(function () {
             abp.notify.success('AI scoring queued. Refresh later to see updated results.');
         })
