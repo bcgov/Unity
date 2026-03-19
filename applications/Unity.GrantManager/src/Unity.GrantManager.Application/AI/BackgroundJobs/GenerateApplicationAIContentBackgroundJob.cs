@@ -46,17 +46,17 @@ public class GenerateApplicationAIContentBackgroundJob(
 
                 if (attachmentSummariesEnabled)
                 {
-                    await attachmentAISummaryService.GenerateMissingForApplicationAsync(args.ApplicationId);
+                    await attachmentAISummaryService.GenerateMissingForApplicationAsync(args.ApplicationId, args.PromptVersion);
                 }
 
                 if (applicationAnalysisEnabled)
                 {
-                    await applicationAnalysisService.RegenerateAndSaveAsync(args.ApplicationId);
+                    await applicationAnalysisService.RegenerateAndSaveAsync(args.ApplicationId, args.PromptVersion);
                 }
 
                 if (scoringEnabled)
                 {
-                    var result = await applicationScoresheetAnalysisService.RegenerateAndSaveAsync(args.ApplicationId);
+                    var result = await applicationScoresheetAnalysisService.RegenerateAndSaveAsync(args.ApplicationId, args.PromptVersion);
                     if (!string.Equals(result, "{}", StringComparison.Ordinal))
                     {
                         await localEventBus.PublishAsync(new AiScoresheetAnswersGeneratedEvent
@@ -73,3 +73,6 @@ public class GenerateApplicationAIContentBackgroundJob(
         }
     }
 }
+
+
+
