@@ -1,4 +1,4 @@
-﻿@page "{@Model.ApplicationFormSubmissionId?}"
+@page "{@Model.ApplicationFormSubmissionId?}"
 @* #pragma warning disable S1128 *@
 @using Microsoft.Extensions.Localization
 @using Unity.AI.Permissions
@@ -62,6 +62,7 @@
 <input type="hidden" id="ChefsSubmissionId" value="@Model.ChefsSubmissionId" />
 <input type="hidden" id="ApplicationFormSubmissionData" value="@Model.ApplicationFormSubmissionData" />
 <input type="hidden" id="ApplicationFormSchema" value="@Model.ApplicationFormSchema" />
+<input type="hidden" id="ApplicationScoresheetSchemaJson" value="@Model.ApplicationScoresheetSchemaJson" />
 <input type="hidden" id="ApplicationFormId" value="@Model.ApplicationFormId" />
 <input type="hidden" id="HasRenderedHTML" value="@Model.HasRenderedHTML.ToString()" />
 <input type="hidden" id="CurrentUserId" value="@Model.CurrentUserId" />
@@ -490,6 +491,15 @@
                                             <option value="v0">v0</option>
                                         }
                                     </select>
+                                    @if (aiAttachmentSummariesEnabled && aiApplicationAnalysisEnabled && aiScoringEnabled)
+                                    {
+                                        <button type="button" class="btn unt-btn-outline-primary btn-outline-primary btn-sm" id="generateAllAiDevToolsBtn">
+                                            <span class="ai-button-content">
+                                                <i class="unt-icon-sm fa-solid fa-wand-sparkles"></i>
+                                                <span>Generate All</span>
+                                            </span>
+                                        </button>
+                                    }
                                 </div>
                             </div>
                         </div>
@@ -497,10 +507,10 @@
 
                             <div class="dev-prompt-section">
                                 <div class="dev-prompt-section-header">
-                                    <h6 class="fw-bold m-0">Attachment</h6>
+                                    <h6 class="fw-bold m-0">ATTACHMENT <span class="ai-dev-output-timestamp" id="attachmentAiOutputTimestamp"></span></h6>
                                     @if (aiAttachmentSummariesEnabled)
                                     {
-                                        <button type="button" class="btn unt-btn-outline-primary btn-outline-primary btn-sm" onclick="generateAIAttachmentSummaries(true, this)">
+                                        <button type="button" class="btn unt-btn-outline-primary btn-outline-primary btn-sm" onclick="generateAIAttachmentSummaries(false, this)">
                                             <span class="ai-button-content">
                                                 <i class="unt-icon-sm fa-solid fa-wand-sparkles"></i>
                                                 <span>Generate</span>
@@ -512,22 +522,22 @@
                                         <span class="text-muted small">Unavailable: feature or permission not enabled</span>
                                     }
                                 </div>
-                                <div id="attachmentPromptCaptureContainer" class="ai-prompt-capture-container">
-                                    <div class="ai-prompt-capture-actions">
-                                        <button type="button" class="btn btn-icon ai-prompt-capture-copy-btn" data-target="#attachmentPromptCaptureOutput" title="Copy" aria-label="Copy">
+                                <div class="ai-dev-output-container">
+                                    <div class="ai-dev-output-actions">
+                                        <button type="button" class="btn btn-icon ai-dev-output-copy-btn" data-target="#attachmentAiOutput" title="Copy" aria-label="Copy">
                                             <i class="fl fl-copy" aria-hidden="true"></i>
                                         </button>
                                     </div>
-                                    <textarea class="form-control form-control-sm ai-prompt-capture-output" id="attachmentPromptCaptureOutput" readonly spellcheck="false"></textarea>
+                                    <textarea class="form-control form-control-sm ai-dev-output" id="attachmentAiOutput" readonly spellcheck="false"></textarea>
                                 </div>
                             </div>
 
                             <div class="dev-prompt-section">
                                 <div class="dev-prompt-section-header">
-                                    <h6 class="fw-bold m-0">Analysis</h6>
+                                    <h6 class="fw-bold m-0">ANALYSIS <span class="ai-dev-output-timestamp" id="analysisAiOutputTimestamp"></span></h6>
                                     @if (aiApplicationAnalysisEnabled)
                                     {
-                                        <button type="button" class="btn unt-btn-outline-primary btn-outline-primary btn-sm" onclick="regenerateAIAnalysis(true, this)">
+                                        <button type="button" class="btn unt-btn-outline-primary btn-outline-primary btn-sm" onclick="regenerateAIAnalysis(false, this)">
                                             <span class="ai-button-content">
                                                 <i class="unt-icon-sm fa-solid fa-wand-sparkles"></i>
                                                 <span>Generate</span>
@@ -539,22 +549,22 @@
                                         <span class="text-muted small">Unavailable: feature or permission not enabled</span>
                                     }
                                 </div>
-                                <div id="aiAnalysisPromptCaptureContainer" class="ai-prompt-capture-container">
-                                    <div class="ai-prompt-capture-actions">
-                                        <button type="button" class="btn btn-icon ai-prompt-capture-copy-btn" data-target="#aiAnalysisPromptCaptureOutput" title="Copy" aria-label="Copy">
+                                <div class="ai-dev-output-container">
+                                    <div class="ai-dev-output-actions">
+                                        <button type="button" class="btn btn-icon ai-dev-output-copy-btn" data-target="#analysisAiOutput" title="Copy" aria-label="Copy">
                                             <i class="fl fl-copy" aria-hidden="true"></i>
                                         </button>
                                     </div>
-                                    <textarea class="form-control form-control-sm ai-prompt-capture-output" id="aiAnalysisPromptCaptureOutput" readonly spellcheck="false"></textarea>
+                                    <textarea class="form-control form-control-sm ai-dev-output" id="analysisAiOutput" readonly spellcheck="false"></textarea>
                                 </div>
                             </div>
 
                             <div class="dev-prompt-section">
                                 <div class="dev-prompt-section-header">
-                                    <h6 class="fw-bold m-0">Scoring</h6>
+                                    <h6 class="fw-bold m-0">SCORING <span class="ai-dev-output-timestamp" id="scoringAiOutputTimestamp"></span></h6>
                                     @if (aiScoringEnabled)
                                     {
-                                        <button type="button" class="btn unt-btn-outline-primary btn-outline-primary btn-sm" onclick="regenerateAIScoresheetAnswers(true, this)">
+                                        <button type="button" class="btn unt-btn-outline-primary btn-outline-primary btn-sm" onclick="regenerateAIScoresheetAnswers(false, this)">
                                             <span class="ai-button-content">
                                                 <i class="unt-icon-sm fa-solid fa-wand-sparkles"></i>
                                                 <span>Generate</span>
@@ -566,13 +576,13 @@
                                         <span class="text-muted small">Unavailable: feature or permission not enabled</span>
                                     }
                                 </div>
-                                <div id="aiScoringPromptCaptureContainer" class="ai-prompt-capture-container">
-                                    <div class="ai-prompt-capture-actions">
-                                        <button type="button" class="btn btn-icon ai-prompt-capture-copy-btn" data-target="#aiScoringPromptCaptureOutput" title="Copy" aria-label="Copy">
+                                <div class="ai-dev-output-container">
+                                    <div class="ai-dev-output-actions">
+                                        <button type="button" class="btn btn-icon ai-dev-output-copy-btn" data-target="#scoringAiOutput" title="Copy" aria-label="Copy">
                                             <i class="fl fl-copy" aria-hidden="true"></i>
                                         </button>
                                     </div>
-                                    <textarea class="form-control form-control-sm ai-prompt-capture-output" id="aiScoringPromptCaptureOutput" readonly spellcheck="false"></textarea>
+                                    <textarea class="form-control form-control-sm ai-dev-output" id="scoringAiOutput" readonly spellcheck="false"></textarea>
                                 </div>
                             </div>
                         </div>
@@ -583,3 +593,4 @@
         </abp-card>
     </div>
 </div>
+

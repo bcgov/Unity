@@ -4,49 +4,356 @@
  */
 
 $(function () {
+    const excludedPromptDataKeys = new Set([
+        'simplefile',
+        'applicantAgent',
+        'submit',
+        'lateEntry',
+        'metadata',
+        'full_application_form_submission',
+        'files',
+        'file',
+        'attachments'
+    ]);
+
+    const nonDataComponentTypes = new Set([
+        'button',
+        'simplebuttonadvanced',
+        'html',
+        'htmlelement',
+        'content',
+        'simpleseparator'
+    ]);
+
     globalThis.getSelectedPromptVersion = function() {
         return $('#devPromptVersion').val() || null;
     };
 
-    function setPromptCaptureOutput(outputSelector, value) {
-        $(outputSelector).val(value);
+    function setDevAiOutput(selector, value) {
+        $(selector).val(value || '');
     }
 
-    globalThis.hideAIPromptCapture = function(containerSelector, outputSelector) {
-        setPromptCaptureOutput(outputSelector, '');
-    };
+    function setDevAiOutputTimestamp(selector, value) {
+        $(selector).text(value ? `(${value})` : '');
+    }
 
+    function formatJsonOrRaw(value) {
+        if (!value) {
+            return '';
+        }
 
-    globalThis.renderAIPromptCapture = function(containerSelector, outputSelector, captures) {
-        if (!Array.isArray(captures) || captures.length === 0) {
-            globalThis.hideAIPromptCapture(containerSelector, outputSelector);
+        if (typeof value !== 'string') {
+            return JSON.stringify(value, null, 2);
+        }
+
+        try {
+            return JSON.stringify(JSON.parse(value), null, 2);
+        } catch {
+            return value;
+        }
+    }
+
+    function formatSectionBody(title, value) {
+        if (!value) {
+            return '';
+        }
+
+        return `${title}:\n${value}`;
+    }
+
+    function formatOutputBody(title, sections) {
+        const content = sections.filter((section) => section).join('\n\n');
+        if (!content) {
+            return '';
+        }
+
+        const promptVersion = globalThis.getSelectedPromptVersion?.();
+        const header = promptVersion ? `${title} - ${promptVersion}` : title;
+        return `${header}\n\n${content}`;
+    }
+
+    function getScoresheetSchemaJson() {
+        return $('#ApplicationScoresheetSchemaJson').val() ||
+            $('#AssessmentScoresheetSchemaJson').val() ||
+            '';
+    }
+
+    function getPromptDataPayload() {
+        const submissionJson = $('#ApplicationFormSubmissionData').val();
+        if (!submissionJson) {
+            return '';
+        }
+
+        try {
+            const root = JSON.parse(submissionJson);
+            const submissionData = extractSubmissionDataObject(root);
+            if (!submissionData || typeof submissionData !== 'object' || Array.isArray(submissionData)) {
+                return '';
+            }
+
+            const filteredValues = { ...submissionData };
+            for (const key of excludedPromptDataKeys) {
+                delete filteredValues[key];
+            }
+
+            const allowedSchemaKeys = extractAllowedSchemaKeys($('#ApplicationFormSchema').val());
+            const payload = allowedSchemaKeys.size > 0
+                ? Object.fromEntries(
+                    Object.entries(filteredValues).filter(([key]) => allowedSchemaKeys.has(key))
+                )
+                : filteredValues;
+
+            return JSON.stringify(payload, null, 2);
+        } catch {
+            return '';
+        }
+    }
+
+    function extractSubmissionDataObject(root) {
+        if (!root || typeof root !== 'object' || Array.isArray(root)) {
+            return null;
+        }
+
+        if (root.data && typeof root.data === 'object' && !Array.isArray(root.data)) {
+            return root.data;
+        }
+
+        if (
+            root.submission &&
+            typeof root.submission === 'object' &&
+            !Array.isArray(root.submission) &&
+            root.submission.data &&
+            typeof root.submission.data === 'object' &&
+            !Array.isArray(root.submission.data)
+        ) {
+            return root.submission.data;
+        }
+
+        return root;
+    }
+
+    function extractAllowedSchemaKeys(formSchema) {
+        if (!formSchema) {
+            return new Set();
+        }
+
+        try {
+            const schema = JSON.parse(formSchema);
+            const keys = new Set();
+            extractSchemaKeys(schema.components, keys);
+            return keys;
+        } catch {
+            return new Set();
+        }
+    }
+
+    function extractSchemaKeys(components, keys) {
+        if (!Array.isArray(components)) {
             return;
         }
 
-        const formatted = captures
-            .map((capture) => formatAIPromptCaptureBlock(capture))
-            .join('\n\n----------------------------------------\n\n');
+        for (const component of components) {
+            if (!component || typeof component !== 'object') {
+                continue;
+            }
 
-        setPromptCaptureOutput(outputSelector, formatted);
-    };
+            const key = component.key;
+            const type = component.type;
+            const isInput = component.input === true;
 
-    globalThis.loadAIPromptCapture = function(applicationId, promptType, promptVersion, containerSelector, outputSelector) {
-        if (!applicationId || !promptType) {
-            globalThis.hideAIPromptCapture(containerSelector, outputSelector);
-            return Promise.resolve();
+            if (
+                typeof key === 'string' &&
+                typeof type === 'string' &&
+                !nonDataComponentTypes.has(type.toLowerCase()) &&
+                isInput
+            ) {
+                keys.add(key);
+            }
+
+            if (Array.isArray(component.components)) {
+                extractSchemaKeys(component.components, keys);
+            }
+
+            if (Array.isArray(component.columns)) {
+                for (const column of component.columns) {
+                    if (column && Array.isArray(column.components)) {
+                        extractSchemaKeys(column.components, keys);
+                    }
+                }
+            }
+        }
+    }
+
+    function formatTimestamp(value) {
+        if (!value) {
+            return '';
         }
 
-        return unity.grantManager.grantApplications.applicationAIPromptCapture
-            .getRecent(applicationId, promptType, promptVersion || null)
-            .then(function(captures) {
-                globalThis.renderAIPromptCapture(containerSelector, outputSelector, captures || []);
+        const timestamp = new Date(value);
+        if (Number.isNaN(timestamp.getTime())) {
+            return '';
+        }
+
+        return timestamp.toLocaleString();
+    }
+
+    function formatAttachmentAiOutput(attachments) {
+        const attachmentBody = formatAttachmentSummaryBody(attachments);
+        if (!attachmentBody) {
+            setDevAiOutputTimestamp('#attachmentAiOutputTimestamp', '');
+            return '';
+        }
+
+        const summarizedAttachments = attachments.filter(
+            (attachment) => attachment.aiSummary && attachment.aiSummary.trim() !== ''
+        );
+
+        const latestTimestamp = summarizedAttachments
+            .map((attachment) => attachment.lastModificationTime || attachment.creationTime || null)
+            .filter((timestamp) => !!timestamp)
+            .sort()
+            .at(-1);
+
+        setDevAiOutputTimestamp('#attachmentAiOutputTimestamp', formatTimestamp(latestTimestamp));
+        return attachmentBody;
+    }
+
+    function formatAttachmentSummaryBody(attachments) {
+        if (!Array.isArray(attachments) || attachments.length === 0) {
+            return '';
+        }
+
+        const summarizedAttachments = attachments.filter(
+            (attachment) => attachment.aiSummary && attachment.aiSummary.trim() !== ''
+        );
+
+        if (summarizedAttachments.length === 0) {
+            return '';
+        }
+
+        return summarizedAttachments.map(function(attachment) {
+            return [
+                `NAME: ${attachment.fileName || ''}`,
+                'SUMMARY:',
+                attachment.aiSummary || ''
+            ].join('\n');
+        }).join('\n\n----------------------------------------\n\n');
+    }
+
+    function loadAttachmentAiOutput(applicationId) {
+        if (!applicationId) {
+            setDevAiOutput('#attachmentAiOutput', '');
+            setDevAiOutputTimestamp('#attachmentAiOutputTimestamp', '');
+            return;
+        }
+
+        unity.grantManager.attachments.attachment
+            .getApplicationChefsFileAttachments(applicationId)
+            .done(function(attachments) {
+                setDevAiOutput('#attachmentAiOutput', formatAttachmentAiOutput(attachments));
             })
-            .catch(function() {
-                globalThis.hideAIPromptCapture(containerSelector, outputSelector);
+            .fail(function() {
+                setDevAiOutput('#attachmentAiOutput', '');
+            });
+    }
+
+    function loadApplicationAiOutputs() {
+        const applicationId = $('#DetailsViewApplicationId').val();
+
+        if (!applicationId) {
+            setDevAiOutput('#analysisAiOutput', '');
+            setDevAiOutput('#scoringAiOutput', '');
+            setDevAiOutput('#attachmentAiOutput', '');
+            setDevAiOutputTimestamp('#analysisAiOutputTimestamp', '');
+            setDevAiOutputTimestamp('#scoringAiOutputTimestamp', '');
+            setDevAiOutputTimestamp('#attachmentAiOutputTimestamp', '');
+            return;
+        }
+
+        $.when(
+            unity.grantManager.grantApplications.grantApplication.get(applicationId),
+            unity.grantManager.attachments.attachment.getApplicationChefsFileAttachments(applicationId)
+        )
+            .done(function(applicationResponse, attachmentsResponse) {
+                const application = Array.isArray(applicationResponse) ? applicationResponse[0] : applicationResponse;
+                const attachments = Array.isArray(attachmentsResponse) ? attachmentsResponse[0] : attachmentsResponse;
+                const updatedAt = application?.lastModificationTime || application?.creationTime || null;
+                const formattedUpdatedAt = formatTimestamp(updatedAt);
+                const attachmentSection = formatSectionBody('ATTACHMENTS', formatAttachmentSummaryBody(attachments));
+                setDevAiOutputTimestamp('#analysisAiOutputTimestamp', formattedUpdatedAt);
+                setDevAiOutputTimestamp('#scoringAiOutputTimestamp', formattedUpdatedAt);
+                setDevAiOutput(
+                    '#analysisAiOutput',
+                    formatOutputBody('ANALYSIS', [
+                        formatSectionBody('DATA', getPromptDataPayload()),
+                        attachmentSection,
+                        formatSectionBody(
+                            'OUTPUT',
+                            formatJsonOrRaw(application?.aiAnalysisData ?? application?.aiAnalysis ?? '')
+                        )
+                    ])
+                );
+                setDevAiOutput(
+                    '#scoringAiOutput',
+                    formatOutputBody('SCORING', [
+                        formatSectionBody('SCORESHEET', formatJsonOrRaw(getScoresheetSchemaJson())),
+                        formatSectionBody('DATA', getPromptDataPayload()),
+                        attachmentSection,
+                        formatSectionBody(
+                            'OUTPUT',
+                            formatJsonOrRaw(application?.aiScoresheetAnswers ?? application?.aIScoresheetAnswers ?? '')
+                        )
+                    ])
+                );
+                setDevAiOutput(
+                    '#attachmentAiOutput',
+                    formatOutputBody('ATTACHMENT', [formatAttachmentAiOutput(attachments)])
+                );
+            })
+            .fail(function() {
+                setDevAiOutput('#analysisAiOutput', '');
+                setDevAiOutput('#scoringAiOutput', '');
+                setDevAiOutput('#attachmentAiOutput', '');
+                setDevAiOutputTimestamp('#analysisAiOutputTimestamp', '');
+                setDevAiOutputTimestamp('#scoringAiOutputTimestamp', '');
+                setDevAiOutputTimestamp('#attachmentAiOutputTimestamp', '');
+            });
+    }
+
+    globalThis.refreshDevAiOutputs = loadApplicationAiOutputs;
+
+    globalThis.generateAllAIDevOutputs = function(triggerButton = null) {
+        const $button = triggerButton ? $(triggerButton) : $('#generateAllAiDevToolsBtn');
+        const existingHtml = $button.html();
+        const applicationId = $('#DetailsViewApplicationId').val();
+        const promptVersion = globalThis.getSelectedPromptVersion?.() || null;
+
+        if (!applicationId || $button.prop('disabled')) {
+            return;
+        }
+
+        $button
+            .html('<span class="ai-button-content"><span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span><span>Queueing...</span></span>')
+            .prop('disabled', true);
+
+        unity.grantManager.grantApplications.applicationAIContent
+            .generateAIContent(applicationId, promptVersion)
+            .done(function() {
+                abp.notify.success('AI generate all queued. Refresh later to see updated results.');
+            })
+            .fail(function() {
+                abp.message.error('Failed to queue AI generate all. Please try again.');
+            })
+            .always(function() {
+                $button.html(existingHtml).prop('disabled', false);
             });
     };
 
-    $(document).on('click', '.ai-prompt-capture-copy-btn', async function () {
+    $('#generateAllAiDevToolsBtn').on('click', function() {
+        globalThis.generateAllAIDevOutputs(this);
+    });
+
+    $(document).on('click', '.ai-dev-output-copy-btn', async function () {
         const targetSelector = $(this).data('target');
         const text = $(targetSelector).val();
 
@@ -56,7 +363,7 @@ $(function () {
 
         try {
             await navigator.clipboard.writeText(text);
-            abp.notify.success('Copied prompt capture.');
+            abp.notify.success('Copied AI output.');
         } catch {
             const output = $(targetSelector);
             output.trigger('focus');
@@ -92,6 +399,7 @@ $(function () {
         updateLinksCounters();
         renderSubmission();
         loadAIAnalysis();
+        loadApplicationAiOutputs();
         applyTabHeightOffset();
     }
 
@@ -374,23 +682,11 @@ $(function () {
     PubSub.subscribe('refresh_assessment_scores', (msg, data) => {
         assessmentScoresWidgetManager.refresh();
         updateSubtotal();
+        loadApplicationAiOutputs();
+    });
 
-        if (!data) {
-            return;
-        }
-
-        if (data.capturePromptIo && globalThis.loadAIPromptCapture) {
-            globalThis.loadAIPromptCapture(
-                data.applicationId,
-                'ScoresheetSection',
-                data.promptVersion || null,
-                '#aiScoringPromptCaptureContainer',
-                '#aiScoringPromptCaptureOutput'
-            );
-            return;
-        }
-
-        globalThis.hideAIPromptCapture?.('#aiScoringPromptCaptureContainer', '#aiScoringPromptCaptureOutput');
+    PubSub.subscribe('refresh_chefs_attachment_list', () => {
+        loadAttachmentAiOutput($('#DetailsViewApplicationId').val());
     });
 
     PubSub.subscribe('select_application_review', (msg, data) => {
@@ -884,36 +1180,6 @@ $(function () {
     globalThis.addEventListener('resize', windowResize);
 });
 
-function formatAIPromptCaptureBlock(capture) {
-    const output = capture.output || '';
-    const parts = [
-        `PROMPT TYPE: ${capture.promptType || ''}`,
-        `PROMPT VERSION: ${capture.promptVersion || ''}`
-    ];
-
-    if (capture.captureLabel) {
-        parts.push(`LABEL: ${capture.captureLabel}`);
-    }
-
-    if (capture.capturedAt) {
-        parts.push(`CAPTURED AT: ${capture.capturedAt}`);
-    }
-
-    parts.push(
-        '',
-        'SYSTEM PROMPT',
-        capture.systemPrompt || '',
-        '',
-        'USER PROMPT',
-        capture.userPrompt || '',
-        '',
-        'OUTPUT',
-        output
-    );
-
-    return parts.join('\n');
-}
-
 
 // Handle the card header click event
 function onCardHeaderClick(clickedHeader, cardHeaders) {
@@ -1376,4 +1642,5 @@ function clearCurrencyError(input) {
     document.getElementById(errorSpan).textContent = '';
     input.attr('aria-invalid', 'false');
 }
+
 

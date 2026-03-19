@@ -6,7 +6,10 @@ using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
 using System.Threading.Tasks;
+using Unity.Flex.Domain.Scoresheets;
+using Unity.Flex.Scoresheets;
 using Unity.Flex.WorksheetLinks;
 using Unity.Flex.Worksheets;
 using Unity.GrantManager.ApplicationForms;
@@ -28,6 +31,7 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
         private readonly GrantApplicationAppService _grantApplicationAppService;
         private readonly IWorksheetLinkAppService _worksheetLinkAppService;
         private readonly IApplicationFormVersionAppService _applicationFormVersionAppService;
+        private readonly IScoresheetRepository _scoresheetRepository;
         private readonly IFeatureChecker _featureChecker;
         protected readonly IZoneManagementAppService _zoneManagementAppService;
 
@@ -94,10 +98,14 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
         [BindProperty(SupportsGet = true)]
         public string DefaultPromptVersion { get; set; }
 
+        [BindProperty(SupportsGet = true)]
+        public string? ApplicationScoresheetSchemaJson { get; set; }
+
         public DetailsModel(
             GrantApplicationAppService grantApplicationAppService,
             IWorksheetLinkAppService worksheetLinkAppService,
             IApplicationFormVersionAppService applicationFormVersionAppService,
+            IScoresheetRepository scoresheetRepository,
             IFeatureChecker featureChecker,
             ICurrentUser currentUser,
             IConfiguration configuration,
@@ -108,6 +116,7 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
             _worksheetLinkAppService = worksheetLinkAppService;
             _featureChecker = featureChecker;
             _applicationFormVersionAppService = applicationFormVersionAppService;
+            _scoresheetRepository = scoresheetRepository;
             _zoneManagementAppService = zoneManagementAppService;
 
             CurrentUserId = currentUser.Id;
@@ -151,6 +160,7 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
             HasRenderedHTML = !string.IsNullOrEmpty(applicationFormSubmission.RenderedHTML);
             ApplicationForm? applicationForm = await _grantApplicationAppService.GetApplicationFormAsync(ApplicationFormId);
             ArgumentNullException.ThrowIfNull(applicationForm);
+            ApplicationScoresheetSchemaJson = await GetApplicationScoresheetSchemaJsonAsync(applicationForm);
             RenderFormIoToHtml = applicationForm.RenderFormIoToHtml;
             if (!string.IsNullOrEmpty(applicationFormSubmission.RenderedHTML) && RenderFormIoToHtml)
             {
@@ -166,7 +176,24 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
         {
             await Task.CompletedTask;
             return Page();
-        }        
+        }
+
+        private async Task<string?> GetApplicationScoresheetSchemaJsonAsync(ApplicationForm applicationForm)
+        {
+            if (applicationForm.ScoresheetId == null || !await _featureChecker.IsEnabledAsync("Unity.Flex"))
+            {
+                return null;
+            }
+
+            var scoresheet = await _scoresheetRepository.GetWithChildrenAsync(applicationForm.ScoresheetId.Value);
+            if (scoresheet == null)
+            {
+                return null;
+            }
+
+            var scoresheetDto = ObjectMapper.Map<Unity.Flex.Domain.Scoresheets.Scoresheet, ScoresheetDto?>(scoresheet);
+            return scoresheetDto == null ? null : JsonSerializer.Serialize(scoresheetDto);
+        }
         
     }
 

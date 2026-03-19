@@ -471,7 +471,7 @@ function generateAiButtonAction(e, dt, button, config) {
 
     unity.grantManager.grantApplications.applicationAIScoring.generateAIScoresheetAnswers(pageApplicationId, promptVersion, false)
         .done(function () {
-            abp.notify.success('AI scoring queued. Check back shortly for results.');
+            abp.notify.success('AI scoring queued. Refresh later to see updated results.');
         })
         .fail(function () {
             abp.message.error('Failed to queue AI scoring. Please try again.');

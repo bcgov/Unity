@@ -1,8 +1,7 @@
 // Note: File depends on Unity.GrantManager.Web\Views\Shared\Components\_Shared\Attachments.js
 $(function () {
-    globalThis.generateAIAttachmentSummaries = function(capturePromptIo = false, triggerButton = null) {
+    globalThis.generateAIAttachmentSummaries = function(triggerButton = null) {
         $('#generateAiSummaries')
-            .data('capture-prompt-io', capturePromptIo)
             .data('trigger-button', triggerButton || null)
             .trigger('click');
     };
@@ -223,10 +222,8 @@ $(function () {
                 ? chefsDataTable.rows().data()
                 : chefsDataTable.rows({ selected: true }).data();
             const promptVersion = globalThis.getSelectedPromptVersion?.() || null;
-            const capturePromptIo = $button.data('capture-prompt-io') === true;
             const applicationId = $('#DetailsViewApplicationId').val();
 
-            $button.removeData('capture-prompt-io');
             $button.removeData('trigger-button');
 
             if (rowsToProcess.length === 0) {
@@ -242,18 +239,12 @@ $(function () {
 
             const existingHTML = $activeButton.html();
 
-            if (!capturePromptIo && globalThis.hideAIPromptCapture) {
-                globalThis.hideAIPromptCapture('#attachmentPromptCaptureContainer', '#attachmentPromptCaptureOutput');
-            }
-
             // Call the backend API
             $.ajax({
                 url:
                     '/api/app/attachment/generate-aISummaries-attachments' +
                     '?promptVersion=' +
-                    encodeURIComponent(promptVersion || '') +
-                    '&capturePromptIo=' +
-                    encodeURIComponent(String(capturePromptIo)),
+                    encodeURIComponent(promptVersion || ''),
                 data: JSON.stringify(attachmentIds),
                 contentType: 'application/json',
                 type: 'POST',
@@ -268,7 +259,7 @@ $(function () {
                     abp.notify.success(
                         'AI summaries queued for ' +
                             summaries.length +
-                            ' attachment(s). Check back shortly for results.'
+                            ' attachment(s). Refresh later to see updated results.'
                     );
 
                     resetAttachmentSelectionState();
@@ -624,4 +615,6 @@ function showChefsAPIAccessError() {
         },
     });
 }
+
+
 

@@ -391,7 +391,7 @@ function tryParseRawAnalysis(analysisJson) {
     }
 }
 
-globalThis.regenerateAIAnalysis = function(capturePromptIo = false, triggerButton = null) {
+globalThis.regenerateAIAnalysis = function(triggerButton = null) {
     const applicationId = $('#DetailsViewApplicationId').val();
     const $button = triggerButton ? $(triggerButton) : $('#regenerateAiAnalysis');
     const existingHtml = $button.html();
@@ -401,18 +401,14 @@ globalThis.regenerateAIAnalysis = function(capturePromptIo = false, triggerButto
         return;
     }
 
-    if (!capturePromptIo && globalThis.hideAIPromptCapture) {
-        globalThis.hideAIPromptCapture('#aiAnalysisPromptCaptureContainer', '#aiAnalysisPromptCaptureOutput');
-    }
-
     $button
         .html('<span class="ai-button-content"><span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span><span>Queueing...</span></span>')
         .prop('disabled', true);
 
     unity.grantManager.grantApplications.applicationAIAnalysis
-        .generateAIAnalysis(applicationId, promptVersion, capturePromptIo)
+        .generateAIAnalysis(applicationId, promptVersion)
         .then(function() {
-            abp.notify.success('AI analysis queued. Check back shortly for results.');
+            abp.notify.success('AI analysis queued. Refresh later to see updated results.');
         })
         .catch(function() {
             abp.message.error('Failed to queue AI analysis. Please try again.');
@@ -462,3 +458,5 @@ $(function() {
         });
     }
 });
+
+

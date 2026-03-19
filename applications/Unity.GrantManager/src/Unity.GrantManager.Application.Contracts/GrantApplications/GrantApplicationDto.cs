@@ -85,4 +85,5 @@ public class GrantApplicationDto : AuditedEntityDto<Guid>
     public string? ApplicantElectoralDistrict { get; set; }
     public string? AIAnalysis { get; set; }
     public ApplicationAnalysisResponse? AIAnalysisData { get; set; }
+    public string? AIScoresheetAnswers { get; set; }
 }

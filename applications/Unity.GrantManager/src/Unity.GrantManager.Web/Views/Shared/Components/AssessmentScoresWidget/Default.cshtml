@@ -7,6 +7,7 @@
 @using Unity.Flex.Scoresheets;
 @using Unity.Flex;
 @using Unity.Flex.Scoresheets.Enums;
+@using System.Text.Json;
 
 @model AssessmentScoresWidgetViewModel
 @{
@@ -16,6 +17,7 @@
 @if (Model.Scoresheet != null)
 {
     <abp-input type="hidden" id="AssessmentId" asp-for="@Model.AssessmentId" />
+    <input type="hidden" id="AssessmentScoresheetSchemaJson" value='@JsonSerializer.Serialize(Model.Scoresheet)' />
     <div class="container-fluid px-3" id="assessment-scoresheet">
         @if (Model.Scoresheet.Sections.Any())
         {
