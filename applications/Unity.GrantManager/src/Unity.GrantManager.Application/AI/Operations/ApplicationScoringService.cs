@@ -10,7 +10,7 @@ using Volo.Abp.DependencyInjection;
 
 namespace Unity.GrantManager.AI
 {
-    public class ApplicationAIScoringService(
+    public class ApplicationScoringService(
         IApplicationRepository applicationRepository,
         IApplicationFormRepository applicationFormRepository,
         IApplicationFormSubmissionRepository applicationFormSubmissionRepository,
@@ -18,7 +18,7 @@ namespace Unity.GrantManager.AI
         IApplicationChefsFileAttachmentRepository applicationChefsFileAttachmentRepository,
         IScoresheetRepository scoresheetRepository,
         IAIService aiService,
-        ILogger<ApplicationAIScoringService> logger) : IApplicationAIScoringService, ITransientDependency
+        ILogger<ApplicationScoringService> logger) : IApplicationScoringService, ITransientDependency
     {
         private readonly JsonSerializerOptions _jsonOptions = new()
         {
@@ -80,7 +80,7 @@ namespace Unity.GrantManager.AI
                         });
                     }
 
-                    var sectionRequest = new ScoresheetSectionRequest
+                    var applicationScoringRequest = new ApplicationScoringRequest
                     {
                         Data = promptData,
                         Attachments = attachmentSummaries,
@@ -88,11 +88,11 @@ namespace Unity.GrantManager.AI
                         SectionSchema = JsonSerializer.SerializeToElement(sectionQuestionsData, _jsonOptions),
                         PromptVersion = promptVersion,
                     };
-                    var sectionAnswers = await aiService.GenerateScoresheetSectionAsync(sectionRequest);
+                    var applicationScoringResponse = await aiService.GenerateApplicationScoringAsync(applicationScoringRequest);
 
-                    if (sectionAnswers.Answers.Count > 0)
+                    if (applicationScoringResponse.Answers.Count > 0)
                     {
-                        var sectionJson = JsonSerializer.Serialize(sectionAnswers.Answers, _jsonOptions);
+                        var sectionJson = JsonSerializer.Serialize(applicationScoringResponse.Answers, _jsonOptions);
                         using var sectionDoc = JsonDocument.Parse(sectionJson);
                         foreach (var property in sectionDoc.RootElement.EnumerateObject())
                         {
@@ -102,12 +102,12 @@ namespace Unity.GrantManager.AI
                 }
                 catch (Exception ex)
                 {
-                    logger.LogError(ex, "Error processing AI scoresheet section {SectionName} for application {ApplicationId}", section.Name, applicationId);
+                    logger.LogError(ex, "Error processing AI application scoring section {SectionName} for application {ApplicationId}", section.Name, applicationId);
                 }
             }
 
             var combinedResults = JsonSerializer.Serialize(allSectionResults, _jsonOptionsIndented);
-            var validatedJson = ValidateScoresheetJson(combinedResults);
+            var validatedJson = ValidateApplicationScoringJson(combinedResults);
             application.AIScoresheetAnswers = validatedJson;
             await applicationRepository.UpdateAsync(application);
             return validatedJson;
@@ -127,12 +127,12 @@ namespace Unity.GrantManager.AI
             }
             catch (Exception ex)
             {
-                logger.LogWarning(ex, "Unable to load form schema for scoresheet prompt data generation for form version {FormVersionId}.", formVersionId);
+                logger.LogWarning(ex, "Unable to load form schema for application scoring prompt data generation for form version {FormVersionId}.", formVersionId);
                 return null;
             }
         }
 
-        private static string ValidateScoresheetJson(string scoresheetAnswers)
+        private static string ValidateApplicationScoringJson(string scoresheetAnswers)
         {
             try
             {
@@ -191,5 +191,6 @@ namespace Unity.GrantManager.AI
         }
     }
 }
+
 
 

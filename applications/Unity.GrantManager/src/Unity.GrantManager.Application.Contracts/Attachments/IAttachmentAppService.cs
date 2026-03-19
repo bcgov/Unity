@@ -13,7 +13,7 @@ public interface IAttachmentAppService : IApplicationService
     Task<IList<UnityAttachmentDto>> GetAttachmentsAsync(AttachmentParametersDto attachmentParametersDto);
     Task<AttachmentMetadataDto> GetAttachmentMetadataAsync(AttachmentType attachmentType, Guid attachmentId);
     Task<AttachmentMetadataDto> UpdateAttachmentMetadataAsync(UpdateAttachmentMetadataDto updateAttachment);
-    Task<string> GenerateAISummaryAttachmentAsync(Guid attachmentId, string? promptVersion = null);
-    Task<List<string>> GenerateAISummariesAttachmentsAsync(List<Guid> attachmentIds, string? promptVersion = null);
+    Task<string> GenerateAttachmentSummaryAsync(Guid attachmentId, string? promptVersion = null);
+    Task<List<string>> GenerateAttachmentSummariesAsync(List<Guid> attachmentIds, string? promptVersion = null);
 }
 

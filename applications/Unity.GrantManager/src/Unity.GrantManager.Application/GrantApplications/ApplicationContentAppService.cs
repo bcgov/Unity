@@ -13,12 +13,12 @@ namespace Unity.GrantManager.GrantApplications;
 [Authorize(AIPermissions.AttachmentSummary.AttachmentSummaryDefault)]
 [Authorize(AIPermissions.ApplicationAnalysis.ApplicationAnalysisDefault)]
 [Authorize(AIPermissions.ScoringAssistant.ScoringAssistantDefault)]
-public class ApplicationAIContentAppService(
+public class ApplicationContentAppService(
     IBackgroundJobManager backgroundJobManager,
     IFeatureChecker featureChecker)
-    : GrantManagerAppService, IApplicationAIContentAppService
+    : GrantManagerAppService, IApplicationContentAppService
 {
-    public async Task<string> GenerateAIContentAsync(Guid applicationId, string? promptVersion = null)
+    public async Task<string> GenerateContentAsync(Guid applicationId, string? promptVersion = null)
     {
         try
         {
@@ -31,7 +31,7 @@ public class ApplicationAIContentAppService(
                 throw new UserFriendlyException("AI generate all is not enabled.");
             }
 
-            await backgroundJobManager.EnqueueAsync(new GenerateApplicationAIContentBackgroundJobArgs
+            await backgroundJobManager.EnqueueAsync(new GenerateContentBackgroundJobArgs
             {
                 ApplicationId = applicationId,
                 PromptVersion = promptVersion,
@@ -47,4 +47,3 @@ public class ApplicationAIContentAppService(
         }
     }
 }
-

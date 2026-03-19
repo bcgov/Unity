@@ -2,7 +2,7 @@ using System;
 
 namespace Unity.GrantManager.AI.BackgroundJobs;
 
-public class GenerateApplicationAIScoresheetBackgroundJobArgs
+public class GenerateApplicationScoringBackgroundJobArgs
 {
     public Guid ApplicationId { get; set; }
     public string? PromptVersion { get; set; }

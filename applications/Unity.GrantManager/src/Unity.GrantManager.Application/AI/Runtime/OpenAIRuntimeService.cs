@@ -23,19 +23,19 @@ namespace Unity.GrantManager.AI
         private readonly ITextExtractionService _textExtractionService;
         private const string ApplicationAnalysisPromptType = AIPromptTypes.ApplicationAnalysis;
         private const string AttachmentSummaryPromptType = AIPromptTypes.AttachmentSummary;
-        private const string ScoresheetSectionPromptType = AIPromptTypes.ScoresheetSection;
+        private const string ApplicationScoringPromptType = AIPromptTypes.ApplicationScoring;
         private const string PromptVersionV0 = "v0";
         private const string PromptVersionV1 = "v1";
         private static readonly string PromptTemplatesFolder = Path.Combine("AI", "Prompts", "Versions");
-        private const string AnalysisSystemTemplateName = "analysis.system";
-        private const string AnalysisUserTemplateName = "analysis.user";
-        private const string AttachmentSystemTemplateName = "attachment.system";
-        private const string AttachmentUserTemplateName = "attachment.user";
-        private const string ScoresheetSystemTemplateName = "scoresheet.system";
-        private const string ScoresheetUserTemplateName = "scoresheet.user";
-        private const string ServiceNotConfiguredMessage = "AI analysis not available - service not configured.";
-        private const string ServiceTemporarilyUnavailableMessage = "AI analysis failed - service temporarily unavailable.";
-        private const string SummaryFailedRetryMessage = "AI analysis failed - please try again later.";
+        private const string ApplicationAnalysisSystemTemplateName = "application-analysis.system";
+        private const string ApplicationAnalysisUserTemplateName = "application-analysis.user";
+        private const string AttachmentSummarySystemTemplateName = "attachment-summary.system";
+        private const string AttachmentSummaryUserTemplateName = "attachment-summary.user";
+        private const string ApplicationScoringSystemTemplateName = "application-scoring.system";
+        private const string ApplicationScoringUserTemplateName = "application-scoring.user";
+        private const string AIServiceNotConfiguredMessage = "AI service not available - service not configured.";
+        private const string AIServiceTemporarilyUnavailableMessage = "AI request failed - service temporarily unavailable.";
+        private const string AIRequestFailedRetryMessage = "AI request failed - please try again later.";
         private const int MaxAiAttempts = 3;
         private const string DefaultMaxTokensParameterName = "max_completion_tokens";
         private const string LegacyMaxTokensParameterName = "max_tokens";
@@ -43,11 +43,11 @@ namespace Unity.GrantManager.AI
         private const int DefaultCompletionTokens = 150;
         private const int DefaultAttachmentSummaryCompletionTokens = 500;
         private const int DefaultApplicationAnalysisCompletionTokens = 2500;
-        private const int DefaultScoresheetSectionCompletionTokens = 5000;
+        private const int DefaultApplicationScoringCompletionTokens = 5000;
 
-        private int AttachmentSummaryCompletionTokens => ResolveCompletionTokens("AttachmentSummary", DefaultAttachmentSummaryCompletionTokens);
-        private int ApplicationAnalysisCompletionTokens => ResolveCompletionTokens("ApplicationAnalysis", DefaultApplicationAnalysisCompletionTokens);
-        private int ScoresheetSectionCompletionTokens => ResolveCompletionTokens("ScoresheetSection", DefaultScoresheetSectionCompletionTokens);
+        private int AttachmentSummaryCompletionTokens => ResolveCompletionTokens(AttachmentSummaryPromptType, DefaultAttachmentSummaryCompletionTokens);
+        private int ApplicationAnalysisCompletionTokens => ResolveCompletionTokens(ApplicationAnalysisPromptType, DefaultApplicationAnalysisCompletionTokens);
+        private int ApplicationScoringCompletionTokens => ResolveCompletionTokens(ApplicationScoringPromptType, DefaultApplicationScoringCompletionTokens);
         private readonly string MissingApiKeyMessage = "OpenAI API key is not configured";
 
         // Optional local debugging sink for prompt payload logs to a local file.
@@ -118,16 +118,16 @@ namespace Unity.GrantManager.AI
                 .Cast<object>();
 
             var attachments = JsonSerializer.Serialize(attachmentsPayload, JsonLogOptions);
-            var systemPrompt = BuildAnalysisSystemPrompt(promptVersion);
-            var analysisContent = BuildAnalysisUserPrompt(
+            var systemPrompt = BuildApplicationAnalysisSystemPrompt(promptVersion);
+            var applicationAnalysisContent = BuildApplicationAnalysisUserPrompt(
                 promptVersion,
                 schema,
                 data,
                 attachments);
-            await LogPromptInputAsync(ApplicationAnalysisPromptType, promptVersion, systemPrompt, analysisContent);
+            await LogPromptInputAsync(ApplicationAnalysisPromptType, promptVersion, systemPrompt, applicationAnalysisContent);
             var result = await GenerateWithRetryAsync(
                 () => GenerateSummaryAsync(
-                    analysisContent,
+                    applicationAnalysisContent,
                     systemPrompt,
                     ApplicationAnalysisCompletionTokens,
                     operationName: ApplicationAnalysisPromptType),
@@ -261,7 +261,7 @@ namespace Unity.GrantManager.AI
             try
             {
                 var extractedText = await _textExtractionService.ExtractTextAsync(fileName, fileContent, contentType);
-                var prompt = BuildAttachmentSystemPrompt(promptVersion);
+                var prompt = BuildAttachmentSummarySystemPrompt(promptVersion);
 
                 var attachmentText = string.IsNullOrWhiteSpace(extractedText) ? null : extractedText;
                 if (attachmentText != null)
@@ -281,7 +281,7 @@ namespace Unity.GrantManager.AI
                     text = attachmentText
                 };
                 var attachment = JsonSerializer.Serialize(attachmentPayload, JsonLogOptions);
-                var contentToAnalyze = BuildAttachmentUserPrompt(promptVersion, attachment);
+                var contentToAnalyze = BuildAttachmentSummaryUserPrompt(promptVersion, attachment);
 
                 await LogPromptInputAsync(AttachmentSummaryPromptType, promptVersion, prompt, contentToAnalyze);
                 var result = await GenerateWithRetryAsync(
@@ -388,20 +388,20 @@ namespace Unity.GrantManager.AI
             }
         }
 
-        public async Task<ScoresheetSectionResponse> GenerateScoresheetSectionAsync(ScoresheetSectionRequest request)
+        public async Task<ApplicationScoringResponse> GenerateApplicationScoringAsync(ApplicationScoringRequest request)
         {
             ArgumentNullException.ThrowIfNull(request);
-            var promptVersion = ResolvePromptVersion(request.PromptVersion ?? ResolvePromptVersionSetting(ScoresheetSectionPromptType));
+            var promptVersion = ResolvePromptVersion(request.PromptVersion ?? ResolvePromptVersionSetting(ApplicationScoringPromptType));
             var dataJson = JsonSerializer.Serialize(request.Data, JsonLogOptions);
             var sectionJson = JsonSerializer.Serialize(request.SectionSchema, JsonLogOptions);
 
             var attachmentSummaries = request.Attachments
                 .Select(a => $"{a.Name}: {a.Summary}")
                 .ToList();
-            if (string.IsNullOrEmpty(ResolveApiKey(ScoresheetSectionPromptType)))
+            if (string.IsNullOrEmpty(ResolveApiKey(ApplicationScoringPromptType)))
             {
                 _logger.LogWarning("{Message}", MissingApiKeyMessage);
-                return new ScoresheetSectionResponse();
+                return new ApplicationScoringResponse();
             }
 
             try
@@ -430,45 +430,45 @@ namespace Unity.GrantManager.AI
                     questions = sectionQuestionsPayload
                 };
                 var section = JsonSerializer.Serialize(sectionPayload, JsonLogOptions);
-                var response = BuildScoresheetSectionResponseTemplate(section);
+                var response = BuildApplicationScoringResponseTemplate(section);
                 if (response == "{}")
                 {
                     _logger.LogWarning(
-                        "Skipping AI scoresheet generation for section {SectionName} because response template could not be built from section schema.",
+                        "Skipping AI application scoring for section {SectionName} because response template could not be built from section schema.",
                         request.SectionName);
-                    return new ScoresheetSectionResponse();
+                    return new ApplicationScoringResponse();
                 }
 
-                var analysisContent = BuildScoresheetSectionUserPrompt(
+                var applicationScoringContent = BuildApplicationScoringUserPrompt(
                     promptVersion,
                     dataJson,
                     attachments,
                     section,
                     response);
-                var systemPrompt = BuildScoresheetSectionSystemPrompt(promptVersion);
+                var systemPrompt = BuildApplicationScoringSystemPrompt(promptVersion);
 
-                await LogPromptInputAsync(ScoresheetSectionPromptType, promptVersion, systemPrompt, analysisContent);
+                await LogPromptInputAsync(ApplicationScoringPromptType, promptVersion, systemPrompt, applicationScoringContent);
                 var result = await GenerateWithRetryAsync(
                     () => GenerateSummaryAsync(
-                        analysisContent,
+                        applicationScoringContent,
                         systemPrompt,
-                        ScoresheetSectionCompletionTokens,
-                        operationName: ScoresheetSectionPromptType),
-                    content => AIProviderPayloadValidator.IsValidScoresheetSectionJson(content, sectionJson),
-                    $"scoresheet section {request.SectionName}");
-                await LogPromptOutputAsync(ScoresheetSectionPromptType, promptVersion, result.CaptureOutput);
+                        ApplicationScoringCompletionTokens,
+                        operationName: ApplicationScoringPromptType),
+                    content => AIProviderPayloadValidator.IsValidApplicationScoringJson(content, sectionJson),
+                    $"application scoring section {request.SectionName}");
+                await LogPromptOutputAsync(ApplicationScoringPromptType, promptVersion, result.CaptureOutput);
 
                 if (result.Outcome != AIOperationOutcome.Success)
                 {
-                    return new ScoresheetSectionResponse();
+                    return new ApplicationScoringResponse();
                 }
 
-                return ParseScoresheetSectionResponse(result.Content);
+                return ParseApplicationScoringResponse(result.Content);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error generating scoresheet section answers for section {SectionName}", request.SectionName);
-                return new ScoresheetSectionResponse();
+                _logger.LogError(ex, "Error generating application scoring answers for section {SectionName}", request.SectionName);
+                return new ApplicationScoringResponse();
             }
         }
 
@@ -531,9 +531,9 @@ namespace Unity.GrantManager.AI
             return result.Outcome switch
             {
                 AIOperationOutcome.Success => result.Content,
-                AIOperationOutcome.PermanentFailure => ServiceNotConfiguredMessage,
-                AIOperationOutcome.TransientFailure => ServiceTemporarilyUnavailableMessage,
-                _ => SummaryFailedRetryMessage
+                AIOperationOutcome.PermanentFailure => AIServiceNotConfiguredMessage,
+                AIOperationOutcome.TransientFailure => AIServiceTemporarilyUnavailableMessage,
+                _ => AIRequestFailedRetryMessage
             };
         }
 
@@ -898,9 +898,9 @@ namespace Unity.GrantManager.AI
             };
         }
 
-        private static ScoresheetSectionResponse ParseScoresheetSectionResponse(string raw)
+        private static ApplicationScoringResponse ParseApplicationScoringResponse(string raw)
         {
-            var response = new ScoresheetSectionResponse();
+            var response = new ApplicationScoringResponse();
             if (!TryParseJsonObjectFromResponse(raw, out var root))
             {
                 return response;
@@ -926,7 +926,7 @@ namespace Unity.GrantManager.AI
                     ? NormalizeConfidence(parsedConfidence)
                     : 0;
 
-                response.Answers[property.Name] = new ScoresheetSectionAnswer
+                response.Answers[property.Name] = new ApplicationScoringAnswer
                 {
                     Answer = answer,
                     Rationale = rationale,
@@ -944,7 +944,7 @@ namespace Unity.GrantManager.AI
             return Math.Clamp(rounded, 0, 100);
         }
 
-        private static string BuildScoresheetSectionResponseTemplate(string sectionPayloadJson)
+        private static string BuildApplicationScoringResponseTemplate(string sectionPayloadJson)
         {
             try
             {
@@ -1184,12 +1184,12 @@ namespace Unity.GrantManager.AI
             return PromptVersionV1;
         }
 
-        private static string BuildAnalysisSystemPrompt(string version)
+        private static string BuildApplicationAnalysisSystemPrompt(string version)
         {
-            return GetRequiredPromptTemplate(version, AnalysisSystemTemplateName);
+            return GetRequiredPromptTemplate(version, ApplicationAnalysisSystemTemplateName);
         }
 
-        private static string BuildAnalysisUserPrompt(
+        private static string BuildApplicationAnalysisUserPrompt(
             string version,
             string schema,
             string data,
@@ -1202,35 +1202,35 @@ namespace Unity.GrantManager.AI
                 ["ATTACHMENTS"] = attachments
             };
 
-            return RenderPromptTemplate(version, AnalysisUserTemplateName, replacements);
+            return RenderPromptTemplate(version, ApplicationAnalysisUserTemplateName, replacements);
         }
 
-        private static string BuildAttachmentSystemPrompt(string version)
+        private static string BuildAttachmentSummarySystemPrompt(string version)
         {
-            return GetRequiredPromptTemplate(version, AttachmentSystemTemplateName);
+            return GetRequiredPromptTemplate(version, AttachmentSummarySystemTemplateName);
         }
 
-        private static string BuildAttachmentUserPrompt(string version, string attachment)
+        private static string BuildAttachmentSummaryUserPrompt(string version, string attachment)
         {
-            return RenderPromptTemplate(version, AttachmentUserTemplateName, new Dictionary<string, string>
+            return RenderPromptTemplate(version, AttachmentSummaryUserTemplateName, new Dictionary<string, string>
             {
                 ["ATTACHMENT"] = attachment
             });
         }
 
-        private static string BuildScoresheetSectionSystemPrompt(string version)
+        private static string BuildApplicationScoringSystemPrompt(string version)
         {
-            return GetRequiredPromptTemplate(version, ScoresheetSystemTemplateName);
+            return GetRequiredPromptTemplate(version, ApplicationScoringSystemTemplateName);
         }
 
-        private static string BuildScoresheetSectionUserPrompt(
+        private static string BuildApplicationScoringUserPrompt(
             string version,
             string data,
             string attachments,
             string section,
             string response)
         {
-            return RenderPromptTemplate(version, ScoresheetUserTemplateName, new Dictionary<string, string>
+            return RenderPromptTemplate(version, ApplicationScoringUserTemplateName, new Dictionary<string, string>
             {
                 ["DATA"] = data,
                 ["ATTACHMENTS"] = attachments,
@@ -1430,6 +1430,7 @@ namespace Unity.GrantManager.AI
         }
     }
 }
+
 
 
 

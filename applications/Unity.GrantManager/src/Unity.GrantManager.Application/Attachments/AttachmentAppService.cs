@@ -192,14 +192,14 @@ public class AttachmentAppService(
     }
 
     [Authorize(AIPermissions.AttachmentSummary.AttachmentSummaryDefault)]
-    public async Task<string> GenerateAISummaryAttachmentAsync(Guid attachmentId, string? promptVersion = null)
+    public async Task<string> GenerateAttachmentSummaryAsync(Guid attachmentId, string? promptVersion = null)
     {
         if (!await featureChecker.IsEnabledAsync("Unity.AI.AttachmentSummaries"))
         {
             throw new UserFriendlyException("AI attachment summaries are not enabled.");
         }
 
-        await backgroundJobManager.EnqueueAsync(new GenerateAttachmentSummariesBackgroundJobArgs
+        await backgroundJobManager.EnqueueAsync(new GenerateAttachmentSummaryBackgroundJobArgs
         {
             AttachmentIds = [attachmentId],
             PromptVersion = promptVersion,
@@ -210,7 +210,7 @@ public class AttachmentAppService(
     }
 
     [Authorize(AIPermissions.AttachmentSummary.AttachmentSummaryDefault)]
-    public async Task<List<string>> GenerateAISummariesAttachmentsAsync(List<Guid> attachmentIds, string? promptVersion = null)
+    public async Task<List<string>> GenerateAttachmentSummariesAsync(List<Guid> attachmentIds, string? promptVersion = null)
     {
         if (!await featureChecker.IsEnabledAsync("Unity.AI.AttachmentSummaries"))
         {
@@ -222,7 +222,7 @@ public class AttachmentAppService(
             return [];
         }
 
-        await backgroundJobManager.EnqueueAsync(new GenerateAttachmentSummariesBackgroundJobArgs
+        await backgroundJobManager.EnqueueAsync(new GenerateAttachmentSummaryBackgroundJobArgs
         {
             AttachmentIds = attachmentIds,
             PromptVersion = promptVersion,

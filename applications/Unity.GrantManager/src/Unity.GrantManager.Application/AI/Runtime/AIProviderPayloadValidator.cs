@@ -30,7 +30,7 @@ namespace Unity.GrantManager.AI
                    && nextSteps.ValueKind == JsonValueKind.Array;
         }
 
-        public static bool IsValidScoresheetSectionJson(string response, string sectionJson)
+        public static bool IsValidApplicationScoringJson(string response, string sectionJson)
         {
             if (!TryParseRootObject(response, out var root))
             {
@@ -148,3 +148,4 @@ namespace Unity.GrantManager.AI
 
     }
 }
+

@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 
 namespace Unity.GrantManager.AI
 {
-    public class ScoresheetSectionAnswer
+    public class ApplicationScoringAnswer
     {
         [JsonPropertyName(AIJsonKeys.Answer)]
         public JsonElement Answer { get; set; }
@@ -15,3 +15,4 @@ namespace Unity.GrantManager.AI
         public int Confidence { get; set; }
     }
 }
+

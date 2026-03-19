@@ -9,11 +9,11 @@ using Volo.Abp.DependencyInjection;
 
 namespace Unity.GrantManager.AI;
 
-public class AttachmentAISummaryService(
+public class AttachmentSummaryService(
     IApplicationChefsFileAttachmentRepository applicationChefsFileAttachmentRepository,
     ISubmissionAppService submissionAppService,
     IAIService aiService,
-    ILogger<AttachmentAISummaryService> logger) : IAttachmentAISummaryService, ITransientDependency
+    ILogger<AttachmentSummaryService> logger) : IAttachmentSummaryService, ITransientDependency
 {
     private const string DefaultContentType = "application/octet-stream";
     private const string SummaryGenerationFailedMessage = "AI summary generation failed.";

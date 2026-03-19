@@ -9,24 +9,24 @@ using Volo.Abp.MultiTenancy;
 
 namespace Unity.GrantManager.AI.BackgroundJobs;
 
-public class GenerateApplicationAIScoresheetBackgroundJob(
-    IApplicationAIScoringService applicationScoresheetAnalysisService,
+public class GenerateApplicationScoringBackgroundJob(
+    IApplicationScoringService applicationScoringService,
     ILocalEventBus localEventBus,
     ICurrentTenant currentTenant,
-    ILogger<GenerateApplicationAIScoresheetBackgroundJob> logger) : AsyncBackgroundJob<GenerateApplicationAIScoresheetBackgroundJobArgs>, ITransientDependency
+    ILogger<GenerateApplicationScoringBackgroundJob> logger) : AsyncBackgroundJob<GenerateApplicationScoringBackgroundJobArgs>, ITransientDependency
 {
-    public override async Task ExecuteAsync(GenerateApplicationAIScoresheetBackgroundJobArgs args)
+    public override async Task ExecuteAsync(GenerateApplicationScoringBackgroundJobArgs args)
     {
         using (currentTenant.Change(args.TenantId))
         {
             try
             {
-                logger.LogInformation("Executing AI scoresheet background job for application {ApplicationId}.", args.ApplicationId);
+                logger.LogInformation("Executing AI application scoring background job for application {ApplicationId}.", args.ApplicationId);
 
-                var result = await applicationScoresheetAnalysisService.RegenerateAndSaveAsync(args.ApplicationId, args.PromptVersion);
+                var result = await applicationScoringService.RegenerateAndSaveAsync(args.ApplicationId, args.PromptVersion);
                 if (!string.Equals(result, "{}", StringComparison.Ordinal))
                 {
-                    await localEventBus.PublishAsync(new AiScoresheetAnswersGeneratedEvent
+                    await localEventBus.PublishAsync(new AIApplicationScoringGeneratedEvent
                     {
                         ApplicationId = args.ApplicationId
                     });
@@ -34,10 +34,8 @@ public class GenerateApplicationAIScoresheetBackgroundJob(
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Error executing AI scoresheet background job for application {ApplicationId}.", args.ApplicationId);
+                logger.LogError(ex, "Error executing AI application scoring background job for application {ApplicationId}.", args.ApplicationId);
             }
         }
     }
 }
-
-

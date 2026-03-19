@@ -10,17 +10,17 @@ using Volo.Abp.MultiTenancy;
 
 namespace Unity.GrantManager.AI.BackgroundJobs;
 
-public class GenerateApplicationAIContentBackgroundJob(
-    IAttachmentAISummaryService attachmentAISummaryService,
-    IApplicationAIAnalysisService applicationAnalysisService,
-    IApplicationAIScoringService applicationScoresheetAnalysisService,
+public class GenerateContentBackgroundJob(
+    IAttachmentSummaryService attachmentSummaryService,
+    IApplicationAnalysisService applicationAnalysisService,
+    IApplicationScoringService applicationScoringService,
     IAIService aiService,
     IFeatureChecker featureChecker,
     ILocalEventBus localEventBus,
     ICurrentTenant currentTenant,
-    ILogger<GenerateApplicationAIContentBackgroundJob> logger) : AsyncBackgroundJob<GenerateApplicationAIContentBackgroundJobArgs>, ITransientDependency
+    ILogger<GenerateContentBackgroundJob> logger) : AsyncBackgroundJob<GenerateContentBackgroundJobArgs>, ITransientDependency
 {
-    public override async Task ExecuteAsync(GenerateApplicationAIContentBackgroundJobArgs args)
+    public override async Task ExecuteAsync(GenerateContentBackgroundJobArgs args)
     {
         using (currentTenant.Change(args.TenantId))
         {
@@ -46,7 +46,7 @@ public class GenerateApplicationAIContentBackgroundJob(
 
                 if (attachmentSummariesEnabled)
                 {
-                    await attachmentAISummaryService.GenerateMissingForApplicationAsync(args.ApplicationId, args.PromptVersion);
+                    await attachmentSummaryService.GenerateMissingForApplicationAsync(args.ApplicationId, args.PromptVersion);
                 }
 
                 if (applicationAnalysisEnabled)
@@ -56,10 +56,10 @@ public class GenerateApplicationAIContentBackgroundJob(
 
                 if (scoringEnabled)
                 {
-                    var result = await applicationScoresheetAnalysisService.RegenerateAndSaveAsync(args.ApplicationId, args.PromptVersion);
+                    var result = await applicationScoringService.RegenerateAndSaveAsync(args.ApplicationId, args.PromptVersion);
                     if (!string.Equals(result, "{}", StringComparison.Ordinal))
                     {
-                        await localEventBus.PublishAsync(new AiScoresheetAnswersGeneratedEvent
+                        await localEventBus.PublishAsync(new AIApplicationScoringGeneratedEvent
                         {
                             ApplicationId = args.ApplicationId
                         });
@@ -73,6 +73,3 @@ public class GenerateApplicationAIContentBackgroundJob(
         }
     }
 }
-
-
-

@@ -11,12 +11,12 @@ using Volo.Abp.Features;
 namespace Unity.GrantManager.GrantApplications;
 
 [Authorize(AIPermissions.ApplicationAnalysis.ApplicationAnalysisDefault)]
-public class ApplicationAIAnalysisAppService(
+public class ApplicationAnalysisAppService(
     IBackgroundJobManager backgroundJobManager,
     IFeatureChecker featureChecker)
-    : GrantManagerAppService, IApplicationAIAnalysisAppService
+    : GrantManagerAppService, IApplicationAnalysisAppService
 {
-    public async Task<string> GenerateAIAnalysisAsync(Guid applicationId, string? promptVersion = null)
+    public async Task<string> GenerateApplicationAnalysisAsync(Guid applicationId, string? promptVersion = null)
     {
         try
         {
@@ -25,7 +25,7 @@ public class ApplicationAIAnalysisAppService(
                 throw new UserFriendlyException("AI application analysis is not enabled.");
             }
 
-            await backgroundJobManager.EnqueueAsync(new GenerateApplicationAIAnalysisBackgroundJobArgs
+            await backgroundJobManager.EnqueueAsync(new GenerateApplicationAnalysisBackgroundJobArgs
             {
                 ApplicationId = applicationId,
                 PromptVersion = promptVersion,

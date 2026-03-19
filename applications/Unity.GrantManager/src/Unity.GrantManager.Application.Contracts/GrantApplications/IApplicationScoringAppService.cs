@@ -4,9 +4,9 @@ using Volo.Abp.Application.Services;
 
 namespace Unity.GrantManager.GrantApplications
 {
-    public interface IApplicationAIScoringAppService : IApplicationService
+    public interface IApplicationScoringAppService : IApplicationService
     {
-        Task<string> GenerateAIScoresheetAnswersAsync(Guid applicationId, string? promptVersion = null);
+        Task<string> GenerateApplicationScoringAsync(Guid applicationId, string? promptVersion = null);
     }
 }
 

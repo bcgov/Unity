@@ -7,12 +7,12 @@ using Volo.Abp.MultiTenancy;
 
 namespace Unity.GrantManager.AI.BackgroundJobs;
 
-public class GenerateAttachmentSummariesBackgroundJob(
-    IAttachmentAISummaryService attachmentAISummaryService,
+public class GenerateAttachmentSummaryBackgroundJob(
+    IAttachmentSummaryService attachmentSummaryService,
     ICurrentTenant currentTenant,
-    ILogger<GenerateAttachmentSummariesBackgroundJob> logger) : AsyncBackgroundJob<GenerateAttachmentSummariesBackgroundJobArgs>, ITransientDependency
+    ILogger<GenerateAttachmentSummaryBackgroundJob> logger) : AsyncBackgroundJob<GenerateAttachmentSummaryBackgroundJobArgs>, ITransientDependency
 {
-    public override async Task ExecuteAsync(GenerateAttachmentSummariesBackgroundJobArgs args)
+    public override async Task ExecuteAsync(GenerateAttachmentSummaryBackgroundJobArgs args)
     {
         using (currentTenant.Change(args.TenantId))
         {
@@ -22,7 +22,7 @@ public class GenerateAttachmentSummariesBackgroundJob(
                     "Executing AI attachment summary background job for {AttachmentCount} attachment(s).",
                     args.AttachmentIds.Count);
 
-                await attachmentAISummaryService.GenerateAndSaveAsync(args.AttachmentIds, args.PromptVersion);
+                await attachmentSummaryService.GenerateAndSaveAsync(args.AttachmentIds, args.PromptVersion);
             }
             catch (Exception ex)
             {
@@ -31,5 +31,3 @@ public class GenerateAttachmentSummariesBackgroundJob(
         }
     }
 }
-
-

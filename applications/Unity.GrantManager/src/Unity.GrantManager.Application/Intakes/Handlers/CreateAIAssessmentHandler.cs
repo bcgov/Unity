@@ -10,17 +10,17 @@ using Volo.Abp.Features;
 
 namespace Unity.GrantManager.Intakes.Handlers;
 
-public class CreateAiAssessmentHandler(
+public class CreateAIAssessmentHandler(
     AssessmentManager assessmentManager,
     IApplicationRepository applicationRepository,
     IFeatureChecker featureChecker,
-    ILogger<CreateAiAssessmentHandler> logger) : ILocalEventHandler<AiScoresheetAnswersGeneratedEvent>, ITransientDependency
+    ILogger<CreateAIAssessmentHandler> logger) : ILocalEventHandler<AIApplicationScoringGeneratedEvent>, ITransientDependency
 {
-    public async Task HandleEventAsync(AiScoresheetAnswersGeneratedEvent eventData)
+    public async Task HandleEventAsync(AIApplicationScoringGeneratedEvent eventData)
     {
         if (eventData == null || eventData.ApplicationId == Guid.Empty)
         {
-            logger.LogWarning("Event data or application ID is null in CreateAiAssessmentHandler.");
+            logger.LogWarning("Event data or application ID is null in CreateAIAssessmentHandler.");
             return;
         }
 

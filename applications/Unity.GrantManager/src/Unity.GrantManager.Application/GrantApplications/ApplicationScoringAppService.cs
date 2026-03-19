@@ -11,12 +11,12 @@ using Volo.Abp.Features;
 namespace Unity.GrantManager.GrantApplications;
 
 [Authorize(AIPermissions.ScoringAssistant.ScoringAssistantDefault)]
-public class ApplicationAIScoringAppService(
+public class ApplicationScoringAppService(
     IBackgroundJobManager backgroundJobManager,
     IFeatureChecker featureChecker)
-    : GrantManagerAppService, IApplicationAIScoringAppService
+    : GrantManagerAppService, IApplicationScoringAppService
 {
-    public async Task<string> GenerateAIScoresheetAnswersAsync(Guid applicationId, string? promptVersion = null)
+    public async Task<string> GenerateApplicationScoringAsync(Guid applicationId, string? promptVersion = null)
     {
         try
         {
@@ -25,7 +25,7 @@ public class ApplicationAIScoringAppService(
                 throw new UserFriendlyException("AI scoring is not enabled.");
             }
 
-            await backgroundJobManager.EnqueueAsync(new GenerateApplicationAIScoresheetBackgroundJobArgs
+            await backgroundJobManager.EnqueueAsync(new GenerateApplicationScoringBackgroundJobArgs
             {
                 ApplicationId = applicationId,
                 PromptVersion = promptVersion,
@@ -36,8 +36,8 @@ public class ApplicationAIScoringAppService(
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Error queueing AI scoresheet generation for application {ApplicationId}", applicationId);
-            throw new UserFriendlyException("Failed to queue AI scoresheet generation. Please try again.");
+            Logger.LogError(ex, "Error queueing AI application scoring generation for application {ApplicationId}", applicationId);
+            throw new UserFriendlyException("Failed to queue AI application scoring generation. Please try again.");
         }
     }
 }

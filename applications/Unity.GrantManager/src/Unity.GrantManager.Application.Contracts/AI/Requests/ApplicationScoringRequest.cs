@@ -4,7 +4,7 @@ using System.Text.Json.Serialization;
 
 namespace Unity.GrantManager.AI
 {
-    public class ScoresheetSectionRequest
+    public class ApplicationScoringRequest
     {
         [JsonPropertyName("data")]
         public JsonElement Data { get; set; }
@@ -22,5 +22,6 @@ namespace Unity.GrantManager.AI
         public string? PromptVersion { get; set; }
     }
 }
+
 
 

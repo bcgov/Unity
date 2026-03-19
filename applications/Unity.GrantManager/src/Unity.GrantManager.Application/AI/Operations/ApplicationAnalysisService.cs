@@ -10,13 +10,13 @@ using Volo.Abp.DependencyInjection;
 
 namespace Unity.GrantManager.AI
 {
-    public class ApplicationAIAnalysisService(
+    public class ApplicationAnalysisService(
         IApplicationRepository applicationRepository,
         IApplicationFormSubmissionRepository applicationFormSubmissionRepository,
         IApplicationFormVersionRepository applicationFormVersionRepository,
         IApplicationChefsFileAttachmentRepository applicationChefsFileAttachmentRepository,
         IAIService aiService,
-        ILogger<ApplicationAIAnalysisService> logger) : IApplicationAIAnalysisService, ITransientDependency
+        ILogger<ApplicationAnalysisService> logger) : IApplicationAnalysisService, ITransientDependency
     {
         private readonly JsonSerializerOptions _jsonOptionsIndented = new()
         {

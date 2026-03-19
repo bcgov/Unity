@@ -7,12 +7,12 @@ using Volo.Abp.MultiTenancy;
 
 namespace Unity.GrantManager.AI.BackgroundJobs;
 
-public class GenerateApplicationAIAnalysisBackgroundJob(
-    IApplicationAIAnalysisService applicationAnalysisService,
+public class GenerateApplicationAnalysisBackgroundJob(
+    IApplicationAnalysisService applicationAnalysisService,
     ICurrentTenant currentTenant,
-    ILogger<GenerateApplicationAIAnalysisBackgroundJob> logger) : AsyncBackgroundJob<GenerateApplicationAIAnalysisBackgroundJobArgs>, ITransientDependency
+    ILogger<GenerateApplicationAnalysisBackgroundJob> logger) : AsyncBackgroundJob<GenerateApplicationAnalysisBackgroundJobArgs>, ITransientDependency
 {
-    public override async Task ExecuteAsync(GenerateApplicationAIAnalysisBackgroundJobArgs args)
+    public override async Task ExecuteAsync(GenerateApplicationAnalysisBackgroundJobArgs args)
     {
         using (currentTenant.Change(args.TenantId))
         {
@@ -28,5 +28,3 @@ public class GenerateApplicationAIAnalysisBackgroundJob(
         }
     }
 }
-
-

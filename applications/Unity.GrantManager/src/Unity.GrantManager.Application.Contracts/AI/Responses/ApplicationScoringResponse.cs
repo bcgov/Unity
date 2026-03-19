@@ -3,9 +3,10 @@ using System.Text.Json.Serialization;
 
 namespace Unity.GrantManager.AI
 {
-    public class ScoresheetSectionResponse
+    public class ApplicationScoringResponse
     {
         [JsonPropertyName("answers")]
-        public Dictionary<string, ScoresheetSectionAnswer> Answers { get; set; } = new();
+        public Dictionary<string, ApplicationScoringAnswer> Answers { get; set; } = new();
     }
 }
+

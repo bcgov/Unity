@@ -25,7 +25,7 @@ public class GenerateAIContentHandler(
 
         try
         {
-            await backgroundJobManager.EnqueueAsync(new GenerateApplicationAIContentBackgroundJobArgs
+            await backgroundJobManager.EnqueueAsync(new GenerateContentBackgroundJobArgs
             {
                 ApplicationId = eventData.Application.Id,
                 TenantId = currentTenant.Id
