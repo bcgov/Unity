@@ -583,7 +583,7 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
     {
         // Set principal as not duplicated
         var principal = await applicantRepository.GetAsync(dto.PrincipalApplicantId);
-        if (principal != null && principal.IsDuplicated != false)
+        if (principal != null && principal.IsDuplicated)
         {
             principal.IsDuplicated = false;
             await applicantRepository.UpdateAsync(principal);
@@ -591,7 +591,7 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
 
         // Set non-principal as duplicated
         var nonPrincipal = await applicantRepository.GetAsync(dto.NonPrincipalApplicantId);
-        if (nonPrincipal != null && nonPrincipal.IsDuplicated != true)
+        if (nonPrincipal != null && !nonPrincipal.IsDuplicated)
         {
             nonPrincipal.IsDuplicated = true;
             await applicantRepository.UpdateAsync(nonPrincipal);

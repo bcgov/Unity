@@ -65,6 +65,6 @@ public class ApplicantSummaryViewModel
     public string? ApplicantName { get; set; }
 
     [HiddenInput]
-    public bool? IsDuplicated { get; set; }
+    public bool IsDuplicated { get; set; }
 }
 
