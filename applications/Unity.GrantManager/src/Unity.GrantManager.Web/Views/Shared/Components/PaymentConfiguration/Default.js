@@ -271,7 +271,7 @@
         const $field = $(this);
         let value = $field.val();
         if (value && value.trim() !== '') {
-            value = parseFloat(value).toFixed(2);
+            value = Number.parseFloat(value).toFixed(2);
             $field.val(value);
             $field.maskMoney({ allowZero: true }).maskMoney('mask');
         }
