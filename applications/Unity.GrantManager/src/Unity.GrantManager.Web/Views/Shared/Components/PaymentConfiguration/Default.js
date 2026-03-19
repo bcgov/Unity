@@ -266,15 +266,14 @@
         }
     }
 
-    // Initialize maskMoney settings
-    $('.unity-currency-input').maskMoney({ allowZero: true });
-
     // On load: Apply mask only if field has a value
     $('.unity-currency-input').each(function() {
         const $field = $(this);
         let value = $field.val();
-        if (value && value.trim() !== '' && value !== 0) {
-            $field.maskMoney('mask', value);
+        if (value && value.trim() !== '') {
+            value = parseFloat(value).toFixed(2);
+            $field.val(value);
+            $field.maskMoney({ allowZero: true }).maskMoney('mask');
         }
     });
 
@@ -286,13 +285,11 @@
     // On leave: Apply mask only if there's a value
     $('.unity-currency-input').on('blur', function() {
         const $field = $(this);
-        let rawValue = $field.val();
+        let value = $field.val();
         
-        if (rawValue && rawValue !== '') {
-            if (!rawValue.includes('.')) {
-                rawValue += '.00';
-                $field.val(rawValue);
-            }
+        if (value && value !== '') {
+            value = (Math.round(value * 100) / 100).toFixed(2);
+            $field.val(value);
             // Call twice, one to re-initalize on a destroyed field, second to mask
             $field.maskMoney({ allowZero: true }).maskMoney('mask');
         }
