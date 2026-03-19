@@ -23,7 +23,7 @@ public class GenerateApplicationAIScoresheetBackgroundJob(
             {
                 logger.LogInformation("Executing AI scoresheet background job for application {ApplicationId}.", args.ApplicationId);
 
-                var result = await applicationScoresheetAnalysisService.RegenerateAndSaveAsync(args.ApplicationId, args.PromptVersion, args.CapturePromptIo);
+                var result = await applicationScoresheetAnalysisService.RegenerateAndSaveAsync(args.ApplicationId, args.PromptVersion);
                 if (!string.Equals(result, "{}", StringComparison.Ordinal))
                 {
                     await localEventBus.PublishAsync(new AiScoresheetAnswersGeneratedEvent
@@ -39,3 +39,5 @@ public class GenerateApplicationAIScoresheetBackgroundJob(
         }
     }
 }
+
+

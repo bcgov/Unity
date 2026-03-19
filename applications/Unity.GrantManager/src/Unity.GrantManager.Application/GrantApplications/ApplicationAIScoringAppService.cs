@@ -16,7 +16,7 @@ public class ApplicationAIScoringAppService(
     IFeatureChecker featureChecker)
     : GrantManagerAppService, IApplicationAIScoringAppService
 {
-    public async Task<string> GenerateAIScoresheetAnswersAsync(Guid applicationId, string? promptVersion = null, bool capturePromptIo = false)
+    public async Task<string> GenerateAIScoresheetAnswersAsync(Guid applicationId, string? promptVersion = null)
     {
         try
         {
@@ -29,7 +29,6 @@ public class ApplicationAIScoringAppService(
             {
                 ApplicationId = applicationId,
                 PromptVersion = promptVersion,
-                CapturePromptIo = capturePromptIo,
                 TenantId = CurrentTenant.Id
             });
 
@@ -42,3 +41,4 @@ public class ApplicationAIScoringAppService(
         }
     }
 }
+

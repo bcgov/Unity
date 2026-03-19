@@ -22,7 +22,7 @@ public class GenerateAttachmentSummariesBackgroundJob(
                     "Executing AI attachment summary background job for {AttachmentCount} attachment(s).",
                     args.AttachmentIds.Count);
 
-                await attachmentAISummaryService.GenerateAndSaveAsync(args.AttachmentIds, args.PromptVersion, args.CapturePromptIo);
+                await attachmentAISummaryService.GenerateAndSaveAsync(args.AttachmentIds, args.PromptVersion);
             }
             catch (Exception ex)
             {
@@ -31,3 +31,5 @@ public class GenerateAttachmentSummariesBackgroundJob(
         }
     }
 }
+
+

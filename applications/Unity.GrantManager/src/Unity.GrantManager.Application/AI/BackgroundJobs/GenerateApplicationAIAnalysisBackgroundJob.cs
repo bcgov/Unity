@@ -19,7 +19,7 @@ public class GenerateApplicationAIAnalysisBackgroundJob(
             try
             {
                 logger.LogInformation("Executing AI application analysis background job for application {ApplicationId}.", args.ApplicationId);
-                await applicationAnalysisService.RegenerateAndSaveAsync(args.ApplicationId, args.PromptVersion, args.CapturePromptIo);
+                await applicationAnalysisService.RegenerateAndSaveAsync(args.ApplicationId, args.PromptVersion);
             }
             catch (Exception ex)
             {
@@ -28,3 +28,5 @@ public class GenerateApplicationAIAnalysisBackgroundJob(
         }
     }
 }
+
+

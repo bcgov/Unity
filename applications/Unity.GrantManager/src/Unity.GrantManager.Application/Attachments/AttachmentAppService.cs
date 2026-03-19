@@ -192,7 +192,7 @@ public class AttachmentAppService(
     }
 
     [Authorize(AIPermissions.AttachmentSummary.AttachmentSummaryDefault)]
-    public async Task<string> GenerateAISummaryAttachmentAsync(Guid attachmentId, string? promptVersion = null, bool capturePromptIo = false)
+    public async Task<string> GenerateAISummaryAttachmentAsync(Guid attachmentId, string? promptVersion = null)
     {
         if (!await featureChecker.IsEnabledAsync("Unity.AI.AttachmentSummaries"))
         {
@@ -203,7 +203,6 @@ public class AttachmentAppService(
         {
             AttachmentIds = [attachmentId],
             PromptVersion = promptVersion,
-            CapturePromptIo = capturePromptIo,
             TenantId = CurrentTenant.Id
         });
 
@@ -211,7 +210,7 @@ public class AttachmentAppService(
     }
 
     [Authorize(AIPermissions.AttachmentSummary.AttachmentSummaryDefault)]
-    public async Task<List<string>> GenerateAISummariesAttachmentsAsync(List<Guid> attachmentIds, string? promptVersion = null, bool capturePromptIo = false)
+    public async Task<List<string>> GenerateAISummariesAttachmentsAsync(List<Guid> attachmentIds, string? promptVersion = null)
     {
         if (!await featureChecker.IsEnabledAsync("Unity.AI.AttachmentSummaries"))
         {
@@ -227,10 +226,10 @@ public class AttachmentAppService(
         {
             AttachmentIds = attachmentIds,
             PromptVersion = promptVersion,
-            CapturePromptIo = capturePromptIo,
             TenantId = CurrentTenant.Id
         });
 
         return attachmentIds.Select(_ => SummaryGenerationQueuedMessage).ToList();
     }
 }
+

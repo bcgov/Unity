@@ -21,7 +21,6 @@ namespace Unity.GrantManager.AI
         private readonly IConfiguration _configuration;
         private readonly ILogger<OpenAIRuntimeService> _logger;
         private readonly ITextExtractionService _textExtractionService;
-        private readonly IAIPromptCaptureStore _promptIoCaptureStore;
         private const string ApplicationAnalysisPromptType = AIPromptTypes.ApplicationAnalysis;
         private const string AttachmentSummaryPromptType = AIPromptTypes.AttachmentSummary;
         private const string ScoresheetSectionPromptType = AIPromptTypes.ScoresheetSection;
@@ -71,14 +70,12 @@ namespace Unity.GrantManager.AI
             HttpClient httpClient,
             IConfiguration configuration,
             ILogger<OpenAIRuntimeService> logger,
-            ITextExtractionService textExtractionService,
-            IAIPromptCaptureStore promptIoCaptureStore)
+            ITextExtractionService textExtractionService)
         {
             _httpClient = httpClient;
             _configuration = configuration;
             _logger = logger;
             _textExtractionService = textExtractionService;
-            _promptIoCaptureStore = promptIoCaptureStore;
         }
 
         public Task<bool> IsAvailableAsync()
@@ -109,7 +106,6 @@ namespace Unity.GrantManager.AI
         {
             ArgumentNullException.ThrowIfNull(request);
             var promptVersion = ResolvePromptVersion(request.PromptVersion ?? ResolvePromptVersionSetting(ApplicationAnalysisPromptType));
-            var capturePromptIo = request.CapturePromptIo;
             var data = JsonSerializer.Serialize(request.Data, JsonLogOptions);
             var schema = JsonSerializer.Serialize(request.Schema, JsonLogOptions);
 
@@ -138,7 +134,6 @@ namespace Unity.GrantManager.AI
                 AIProviderPayloadValidator.IsValidApplicationAnalysisJson,
                 "application analysis");
             await LogPromptOutputAsync(ApplicationAnalysisPromptType, promptVersion, result.CaptureOutput);
-            SavePromptCapture(capturePromptIo, request.CaptureContextId, ApplicationAnalysisPromptType, promptVersion, "Application Analysis", systemPrompt, analysisContent, result.CaptureOutput);
 
             if (result.Outcome != AIOperationOutcome.Success)
             {
@@ -262,7 +257,6 @@ namespace Unity.GrantManager.AI
             var fileContent = request.FileContent ?? Array.Empty<byte>();
             var contentType = request.ContentType ?? "application/octet-stream";
             var promptVersion = ResolvePromptVersion(request.PromptVersion ?? ResolvePromptVersionSetting(AttachmentSummaryPromptType));
-            var capturePromptIo = request.CapturePromptIo;
 
             try
             {
@@ -299,7 +293,6 @@ namespace Unity.GrantManager.AI
                     AIProviderPayloadValidator.IsValidAttachmentSummaryText,
                     "attachment summary");
                 await LogPromptOutputAsync(AttachmentSummaryPromptType, promptVersion, result.CaptureOutput);
-                SavePromptCapture(capturePromptIo, request.CaptureContextId, AttachmentSummaryPromptType, promptVersion, fileName, prompt, contentToAnalyze, result.CaptureOutput);
 
                 if (result.Outcome != AIOperationOutcome.Success)
                 {
@@ -399,7 +392,6 @@ namespace Unity.GrantManager.AI
         {
             ArgumentNullException.ThrowIfNull(request);
             var promptVersion = ResolvePromptVersion(request.PromptVersion ?? ResolvePromptVersionSetting(ScoresheetSectionPromptType));
-            var capturePromptIo = request.CapturePromptIo;
             var dataJson = JsonSerializer.Serialize(request.Data, JsonLogOptions);
             var sectionJson = JsonSerializer.Serialize(request.SectionSchema, JsonLogOptions);
 
@@ -465,7 +457,6 @@ namespace Unity.GrantManager.AI
                     content => AIProviderPayloadValidator.IsValidScoresheetSectionJson(content, sectionJson),
                     $"scoresheet section {request.SectionName}");
                 await LogPromptOutputAsync(ScoresheetSectionPromptType, promptVersion, result.CaptureOutput);
-                SavePromptCapture(capturePromptIo, request.CaptureContextId, ScoresheetSectionPromptType, promptVersion, request.SectionName, systemPrompt, analysisContent, result.CaptureOutput);
 
                 if (result.Outcome != AIOperationOutcome.Success)
                 {
@@ -1039,27 +1030,6 @@ namespace Unity.GrantManager.AI
         {
             return IsPromptFileLoggingEnabled;
         }
-
-        private void SavePromptCapture(bool capturePromptIo, string? contextId, string promptType, string promptVersion, string captureLabel, string? systemPrompt, string userPrompt, string rawOutput)
-        {
-            if (!capturePromptIo || string.IsNullOrWhiteSpace(contextId))
-            {
-                return;
-            }
-
-            _promptIoCaptureStore.Save(new AIPromptCaptureResponse
-            {
-                ContextId = contextId,
-                PromptType = promptType,
-                PromptVersion = promptVersion,
-                CaptureLabel = captureLabel?.Trim() ?? string.Empty,
-                SystemPrompt = systemPrompt?.Trim() ?? string.Empty,
-                UserPrompt = userPrompt?.Trim() ?? string.Empty,
-                Output = FormatPromptOutputForLog(rawOutput ?? string.Empty),
-                CapturedAt = DateTime.UtcNow
-            });
-        }
-
         private static string FormatPromptInputForLog(string? systemPrompt, string userPrompt)
         {
             var normalizedSystemPrompt = string.IsNullOrWhiteSpace(systemPrompt) ? string.Empty : systemPrompt.Trim();
@@ -1460,5 +1430,7 @@ namespace Unity.GrantManager.AI
         }
     }
 }
+
+
 
 

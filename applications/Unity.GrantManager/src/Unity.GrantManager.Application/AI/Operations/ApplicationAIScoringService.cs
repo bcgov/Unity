@@ -31,7 +31,7 @@ namespace Unity.GrantManager.AI
             WriteIndented = true
         };
 
-        public async Task<string> RegenerateAndSaveAsync(Guid applicationId, string? promptVersion = null, bool capturePromptIo = false)
+        public async Task<string> RegenerateAndSaveAsync(Guid applicationId, string? promptVersion = null)
         {
             var application = await applicationRepository.GetAsync(applicationId);
             var applicationForm = await applicationFormRepository.GetAsync(application.ApplicationFormId);
@@ -87,8 +87,6 @@ namespace Unity.GrantManager.AI
                         SectionName = section.Name,
                         SectionSchema = JsonSerializer.SerializeToElement(sectionQuestionsData, _jsonOptions),
                         PromptVersion = promptVersion,
-                        CapturePromptIo = capturePromptIo,
-                        CaptureContextId = applicationId.ToString()
                     };
                     var sectionAnswers = await aiService.GenerateScoresheetSectionAsync(sectionRequest);
 
@@ -193,3 +191,5 @@ namespace Unity.GrantManager.AI
         }
     }
 }
+
+

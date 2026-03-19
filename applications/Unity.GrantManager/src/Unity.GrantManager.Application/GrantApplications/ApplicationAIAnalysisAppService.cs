@@ -16,7 +16,7 @@ public class ApplicationAIAnalysisAppService(
     IFeatureChecker featureChecker)
     : GrantManagerAppService, IApplicationAIAnalysisAppService
 {
-    public async Task<string> GenerateAIAnalysisAsync(Guid applicationId, string? promptVersion = null, bool capturePromptIo = false)
+    public async Task<string> GenerateAIAnalysisAsync(Guid applicationId, string? promptVersion = null)
     {
         try
         {
@@ -29,7 +29,6 @@ public class ApplicationAIAnalysisAppService(
             {
                 ApplicationId = applicationId,
                 PromptVersion = promptVersion,
-                CapturePromptIo = capturePromptIo,
                 TenantId = CurrentTenant.Id
             });
 
@@ -42,3 +41,4 @@ public class ApplicationAIAnalysisAppService(
         }
     }
 }
+

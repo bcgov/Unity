@@ -29,7 +29,7 @@ namespace Unity.GrantManager.AI
             "applicantAgent"
         };
 
-        public async Task<string> RegenerateAndSaveAsync(Guid applicationId, string? promptVersion = null, bool capturePromptIo = false)
+        public async Task<string> RegenerateAndSaveAsync(Guid applicationId, string? promptVersion = null)
         {
             var application = await applicationRepository.GetAsync(applicationId);
             var formSubmission = await applicationFormSubmissionRepository.GetByApplicationAsync(applicationId);
@@ -57,8 +57,6 @@ namespace Unity.GrantManager.AI
                 Data = PromptDataPayloadBuilder.BuildPromptDataPayload(application, formSubmission, formSchema, logger),
                 Attachments = attachmentSummaries,
                 PromptVersion = promptVersion,
-                CapturePromptIo = capturePromptIo,
-                CaptureContextId = applicationId.ToString()
             });
 
             var analysisJson = JsonSerializer.Serialize(analysis, _jsonOptionsIndented);
@@ -198,3 +196,5 @@ namespace Unity.GrantManager.AI
         }
     }
 }
+
+

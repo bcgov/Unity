@@ -18,7 +18,7 @@ public class AttachmentAISummaryService(
     private const string DefaultContentType = "application/octet-stream";
     private const string SummaryGenerationFailedMessage = "AI summary generation failed.";
 
-    public async Task<string> GenerateAndSaveAsync(Guid attachmentId, string? promptVersion = null, bool capturePromptIo = false)
+    public async Task<string> GenerateAndSaveAsync(Guid attachmentId, string? promptVersion = null)
     {
         var attachment = await applicationChefsFileAttachmentRepository.GetAsync(attachmentId);
         var fileName = string.IsNullOrWhiteSpace(attachment.FileName) ? "unknown" : attachment.FileName;
@@ -30,8 +30,6 @@ public class AttachmentAISummaryService(
             FileContent = fileContent,
             ContentType = contentType,
             PromptVersion = promptVersion,
-            CapturePromptIo = capturePromptIo,
-            CaptureContextId = attachment.ApplicationId.ToString()
         });
 
         attachment.AISummary = summaryResponse.Summary;
@@ -40,7 +38,7 @@ public class AttachmentAISummaryService(
         return summaryResponse.Summary;
     }
 
-    public async Task<List<string>> GenerateAndSaveAsync(IEnumerable<Guid> attachmentIds, string? promptVersion = null, bool capturePromptIo = false)
+    public async Task<List<string>> GenerateAndSaveAsync(IEnumerable<Guid> attachmentIds, string? promptVersion = null)
     {
         var summaries = new List<string>();
 
@@ -48,7 +46,7 @@ public class AttachmentAISummaryService(
         {
             try
             {
-                summaries.Add(await GenerateAndSaveAsync(attachmentId, promptVersion, capturePromptIo));
+                summaries.Add(await GenerateAndSaveAsync(attachmentId, promptVersion));
             }
             catch (Exception ex)
             {
@@ -60,14 +58,14 @@ public class AttachmentAISummaryService(
         return summaries;
     }
 
-    public async Task<List<string>> GenerateMissingForApplicationAsync(Guid applicationId, string? promptVersion = null, bool capturePromptIo = false)
+    public async Task<List<string>> GenerateMissingForApplicationAsync(Guid applicationId, string? promptVersion = null)
     {
         var attachmentIds = (await applicationChefsFileAttachmentRepository.GetListAsync(a =>
                 a.ApplicationId == applicationId && string.IsNullOrWhiteSpace(a.AISummary)))
             .Select(a => a.Id)
             .ToList();
 
-        return await GenerateAndSaveAsync(attachmentIds, promptVersion, capturePromptIo);
+        return await GenerateAndSaveAsync(attachmentIds, promptVersion);
     }
 
     private async Task<(byte[] Content, string ContentType)> GetAttachmentContentForSummaryAsync(ApplicationChefsFileAttachment attachment, string fileName)
@@ -104,3 +102,6 @@ public class AttachmentAISummaryService(
         }
     }
 }
+
+
+
