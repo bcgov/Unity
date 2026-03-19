@@ -32,7 +32,9 @@ interface ChefsSubmissionPayload {
   };
 }
 
-describe("CHEFS Form Submission API", () => {
+const isProd = (Cypress.env("CHEFS_ENV") || Cypress.env("environment") || "").toLowerCase() === "prod";
+
+(isProd ? describe.skip : describe)("CHEFS Form Submission API", () => {
   let apiConfig: ChefsApiConfig;
   let submissionPayload: ChefsSubmissionPayload;
   let environment: ChefsEnvironment;

@@ -21,6 +21,8 @@ import { ReviewAssessmentPage } from "../pages/ReviewAssessmentPage";
 import { ApplicationDetailsRightTabPage } from "../pages/ApplicationDetailsRightTabPage";
 import { loginIfNeeded } from "../support/auth";
 
+const isProd = (Cypress.env("CHEFS_ENV") || Cypress.env("environment") || "").toLowerCase() === "prod";
+
 // ============ Test Configuration ============
 // Set submissionId to null for dynamic fetch, or provide a value to override
 const TEST_CONFIG = {
@@ -47,7 +49,7 @@ const TEST_CONFIG = {
   },
 };
 
-describe("Approval Flow Regression Test", () => {
+(isProd ? describe.skip : describe)("Approval Flow Regression Test", () => {
   // Page object instances (reused across all tests)
   const listPage = new ApplicationsListPage();
   const detailsPage = new ApplicationDetailsPage();
