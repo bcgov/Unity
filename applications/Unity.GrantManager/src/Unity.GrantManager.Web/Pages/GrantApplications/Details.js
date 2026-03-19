@@ -72,6 +72,18 @@ $(function () {
         return `${header}\n\n${content}`;
     }
 
+    function unwrapWhenResult(result) {
+        if (
+            Array.isArray(result) &&
+            result.length === 3 &&
+            typeof result[1] === 'string'
+        ) {
+            return result[0];
+        }
+
+        return result;
+    }
+
     function getScoresheetSchemaJson() {
         return $('#ApplicationScoresheetSchemaJson').val() ||
             $('#AssessmentScoresheetSchemaJson').val() ||
@@ -197,6 +209,10 @@ $(function () {
         return timestamp.toLocaleString();
     }
 
+    function getAttachmentSummaryValue(attachment) {
+        return attachment?.aiSummary ?? attachment?.aISummary ?? '';
+    }
+
     function formatAttachmentAiOutput(attachments) {
         const attachmentBody = formatAttachmentSummaryBody(attachments);
         if (!attachmentBody) {
@@ -205,7 +221,10 @@ $(function () {
         }
 
         const summarizedAttachments = attachments.filter(
-            (attachment) => attachment.aiSummary && attachment.aiSummary.trim() !== ''
+            (attachment) => {
+                const summary = getAttachmentSummaryValue(attachment);
+                return summary && summary.trim() !== '';
+            }
         );
 
         const latestTimestamp = summarizedAttachments
@@ -224,7 +243,10 @@ $(function () {
         }
 
         const summarizedAttachments = attachments.filter(
-            (attachment) => attachment.aiSummary && attachment.aiSummary.trim() !== ''
+            (attachment) => {
+                const summary = getAttachmentSummaryValue(attachment);
+                return summary && summary.trim() !== '';
+            }
         );
 
         if (summarizedAttachments.length === 0) {
@@ -232,29 +254,41 @@ $(function () {
         }
 
         return summarizedAttachments.map(function(attachment) {
+            const summary = getAttachmentSummaryValue(attachment);
             return [
-                `NAME: ${attachment.fileName || ''}`,
+                'NAME:',
+                attachment.fileName || '',
+                '',
                 'SUMMARY:',
-                attachment.aiSummary || ''
+                summary
             ].join('\n');
         }).join('\n\n----------------------------------------\n\n');
     }
 
-    function loadAttachmentAiOutput(applicationId) {
-        if (!applicationId) {
-            setDevAiOutput('#attachmentAiOutput', '');
-            setDevAiOutputTimestamp('#attachmentAiOutputTimestamp', '');
-            return;
+    function formatAttachmentSummaryJson(attachments) {
+        if (!Array.isArray(attachments) || attachments.length === 0) {
+            return '';
         }
 
-        unity.grantManager.attachments.attachment
-            .getApplicationChefsFileAttachments(applicationId)
-            .done(function(attachments) {
-                setDevAiOutput('#attachmentAiOutput', formatAttachmentAiOutput(attachments));
+        const summarizedAttachments = attachments
+            .map((attachment) => {
+                const summary = getAttachmentSummaryValue(attachment);
+                if (!summary || summary.trim() === '') {
+                    return null;
+                }
+
+                return {
+                    name: attachment.fileName || '',
+                    summary
+                };
             })
-            .fail(function() {
-                setDevAiOutput('#attachmentAiOutput', '');
-            });
+            .filter((attachment) => attachment !== null);
+
+        if (summarizedAttachments.length === 0) {
+            return '';
+        }
+
+        return JSON.stringify(summarizedAttachments, null, 2);
     }
 
     function loadApplicationAiOutputs() {
@@ -275,16 +309,16 @@ $(function () {
             unity.grantManager.attachments.attachment.getApplicationChefsFileAttachments(applicationId)
         )
             .done(function(applicationResponse, attachmentsResponse) {
-                const application = Array.isArray(applicationResponse) ? applicationResponse[0] : applicationResponse;
-                const attachments = Array.isArray(attachmentsResponse) ? attachmentsResponse[0] : attachmentsResponse;
+                const application = unwrapWhenResult(applicationResponse);
+                const attachments = unwrapWhenResult(attachmentsResponse);
                 const updatedAt = application?.lastModificationTime || application?.creationTime || null;
                 const formattedUpdatedAt = formatTimestamp(updatedAt);
-                const attachmentSection = formatSectionBody('ATTACHMENTS', formatAttachmentSummaryBody(attachments));
+                const attachmentSection = formatSectionBody('ATTACHMENTS', formatAttachmentSummaryJson(attachments));
                 setDevAiOutputTimestamp('#analysisAiOutputTimestamp', formattedUpdatedAt);
                 setDevAiOutputTimestamp('#scoringAiOutputTimestamp', formattedUpdatedAt);
                 setDevAiOutput(
                     '#analysisAiOutput',
-                    formatOutputBody('ANALYSIS', [
+                    formatOutputBody('APPLICATION ANALYSIS', [
                         formatSectionBody('DATA', getPromptDataPayload()),
                         attachmentSection,
                         formatSectionBody(
@@ -295,7 +329,7 @@ $(function () {
                 );
                 setDevAiOutput(
                     '#scoringAiOutput',
-                    formatOutputBody('SCORING', [
+                    formatOutputBody('APPLICATION SCORING', [
                         formatSectionBody('SCORESHEET', formatJsonOrRaw(getScoresheetSchemaJson())),
                         formatSectionBody('DATA', getPromptDataPayload()),
                         attachmentSection,
@@ -307,7 +341,7 @@ $(function () {
                 );
                 setDevAiOutput(
                     '#attachmentAiOutput',
-                    formatOutputBody('ATTACHMENT', [formatAttachmentAiOutput(attachments)])
+                    formatOutputBody('ATTACHMENT SUMMARY', [formatAttachmentAiOutput(attachments)])
                 );
             })
             .fail(function() {
@@ -336,8 +370,8 @@ $(function () {
             .html('<span class="ai-button-content"><span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span><span>Queueing...</span></span>')
             .prop('disabled', true);
 
-        unity.grantManager.grantApplications.applicationAIContent
-            .generateAIContent(applicationId, promptVersion)
+        unity.grantManager.grantApplications.applicationContent
+            .generateContent(applicationId, promptVersion)
             .done(function() {
                 abp.notify.success('AI generate all queued. Refresh later to see updated results.');
             })
@@ -686,7 +720,7 @@ $(function () {
     });
 
     PubSub.subscribe('refresh_chefs_attachment_list', () => {
-        loadAttachmentAiOutput($('#DetailsViewApplicationId').val());
+        loadApplicationAiOutputs();
     });
 
     PubSub.subscribe('select_application_review', (msg, data) => {

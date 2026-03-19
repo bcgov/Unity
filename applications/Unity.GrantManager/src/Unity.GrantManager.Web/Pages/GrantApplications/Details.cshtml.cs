@@ -162,13 +162,10 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
             ArgumentNullException.ThrowIfNull(applicationForm);
             ApplicationScoresheetSchemaJson = await GetApplicationScoresheetSchemaJsonAsync(applicationForm);
             RenderFormIoToHtml = applicationForm.RenderFormIoToHtml;
+            ApplicationFormSubmissionData = applicationFormSubmission.Submission;
             if (!string.IsNullOrEmpty(applicationFormSubmission.RenderedHTML) && RenderFormIoToHtml)
             {
                 ApplicationFormSubmissionHtml = applicationFormSubmission.RenderedHTML;
-            }
-            else
-            {
-                ApplicationFormSubmissionData = applicationFormSubmission.Submission;
             }
         }
 
