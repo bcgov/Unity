@@ -41,6 +41,7 @@ public class GrantManagerDataSeederContributor(
 
         if (context.TenantId == null) // only seed into a tenant database
         {
+           await SeedMainBackgroundJobUserAsync(null);
            return;
         }   
 
@@ -92,6 +93,30 @@ public class GrantManagerDataSeederContributor(
                 Badge = AIScoringConstants.AiBadge,
                 TenantId = tenantId
             });
+        }
+    }
+
+
+    private async Task SeedMainBackgroundJobUserAsync(System.Guid? tenantId)
+    {
+        using (currentTenant.Change(tenantId)) // Null For Main Unity Grant Manager Context
+        {
+            // Check if the IdentityUser already exists
+            var existingUser = await userRepository.FindAsync(BackgroundJobConstants.BackgroundJobPersonId);
+            if (existingUser == null)
+            {
+                // Create the IdentityUser in the tenant context
+                await userRepository.InsertAsync(
+                    new IdentityUser(
+                        BackgroundJobConstants.BackgroundJobPersonId,
+                        BackgroundJobConstants.BackgroundJobUserName,
+                        BackgroundJobConstants.BackgroundJobEmail,
+                        null)
+                    {
+                        Name = BackgroundJobConstants.BackgroundJobName
+                    },
+                    autoSave: true);
+            }
         }
     }
 
