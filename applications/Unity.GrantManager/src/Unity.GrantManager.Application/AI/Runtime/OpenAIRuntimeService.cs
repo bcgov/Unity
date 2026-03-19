@@ -1096,22 +1096,22 @@ namespace Unity.GrantManager.AI
 
                     if (promptTokens.HasValue)
                     {
-                        lines.Add($"PROMPT TOKENS: {promptTokens.Value}");
+                        lines.Add($"PromptTokens: {promptTokens.Value}");
                     }
 
                     if (completionTokens.HasValue)
                     {
-                        lines.Add($"COMPLETION TOKENS: {completionTokens.Value}");
+                        lines.Add($"CompletionTokens: {completionTokens.Value}");
                     }
 
                     if (reasoningTokens.HasValue)
                     {
-                        lines.Add($"REASONING TOKENS: {reasoningTokens.Value}");
+                        lines.Add($"ReasoningTokens: {reasoningTokens.Value}");
                     }
                 }
 
                 var normalizedContent = FormatPromptOutputContent(content);
-                lines.Add("CONTENT:");
+                lines.Add("Output:");
                 lines.Add(normalizedContent);
                 formattedOutput = string.Join(Environment.NewLine, lines);
                 return true;

@@ -46,7 +46,7 @@ public class GenerateContentBackgroundJob(
 
                 if (attachmentSummariesEnabled)
                 {
-                    await attachmentSummaryService.GenerateMissingForApplicationAsync(args.ApplicationId, args.PromptVersion);
+                    await attachmentSummaryService.GenerateForApplicationAsync(args.ApplicationId, args.PromptVersion);
                 }
 
                 if (applicationAnalysisEnabled)

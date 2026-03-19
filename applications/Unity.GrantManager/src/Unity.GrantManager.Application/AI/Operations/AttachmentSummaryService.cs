@@ -58,10 +58,9 @@ public class AttachmentSummaryService(
         return summaries;
     }
 
-    public async Task<List<string>> GenerateMissingForApplicationAsync(Guid applicationId, string? promptVersion = null)
+    public async Task<List<string>> GenerateForApplicationAsync(Guid applicationId, string? promptVersion = null)
     {
-        var attachmentIds = (await applicationChefsFileAttachmentRepository.GetListAsync(a =>
-                a.ApplicationId == applicationId && string.IsNullOrWhiteSpace(a.AISummary)))
+        var attachmentIds = (await applicationChefsFileAttachmentRepository.GetListAsync(a => a.ApplicationId == applicationId))
             .Select(a => a.Id)
             .ToList();
 

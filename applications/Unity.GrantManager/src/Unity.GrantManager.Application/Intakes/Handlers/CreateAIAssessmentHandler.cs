@@ -7,6 +7,7 @@ using Unity.GrantManager.Intakes.Events;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.EventBus;
 using Volo.Abp.Features;
+using Volo.Abp.Uow;
 
 namespace Unity.GrantManager.Intakes.Handlers;
 
@@ -14,6 +15,7 @@ public class CreateAIAssessmentHandler(
     AssessmentManager assessmentManager,
     IApplicationRepository applicationRepository,
     IFeatureChecker featureChecker,
+    IUnitOfWorkManager unitOfWorkManager,
     ILogger<CreateAIAssessmentHandler> logger) : ILocalEventHandler<AIApplicationScoringGeneratedEvent>, ITransientDependency
 {
     public async Task HandleEventAsync(AIApplicationScoringGeneratedEvent eventData)
@@ -31,8 +33,10 @@ public class CreateAIAssessmentHandler(
 
         try
         {
+            using var uow = unitOfWorkManager.Begin(requiresNew: true);
             var application = await applicationRepository.GetAsync(eventData.ApplicationId);
             await assessmentManager.CreateAiAssessmentAsync(application);
+            await uow.CompleteAsync();
             logger.LogInformation("Created AI assessment for application {ApplicationId}.", eventData.ApplicationId);
         }
         catch (Exception ex)
