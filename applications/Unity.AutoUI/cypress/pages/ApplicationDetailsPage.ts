@@ -34,6 +34,13 @@ export class ApplicationDetailsPage extends BasePage {
     onHold: "#Application_OnHoldButton",
   };
 
+  // Confirm action modal selectors (SweetAlert2)
+  private readonly confirmModal = {
+    modal: ".swal2-popup",
+    confirmButton: "button.swal2-confirm",
+    cancelButton: "button.swal2-cancel",
+  };
+
   // Field selectors for Summary/Info Panel
   private readonly summaryFields = {
     category: "Category",
@@ -106,55 +113,63 @@ export class ApplicationDetailsPage extends BasePage {
   /**
    * Navigate to Submission tab
    */
-  goToSubmissionTab(): void {
+  goToSubmissionTab(): this {
     this.clickElement(this.tabs.submission);
+    return this;
   }
 
   /**
    * Navigate to Review & Assessment tab
    */
-  goToReviewAssessmentTab(): void {
+  goToReviewAssessmentTab(): this {
+    this.dismissErrorModalIfPresent();
     this.clickElement(this.tabs.reviewAssessment);
+    return this;
   }
 
   /**
    * Navigate to Project Info tab
    */
-  goToProjectInfoTab(): void {
+  goToProjectInfoTab(): this {
     this.clickElement(this.tabs.projectInfo);
+    return this;
   }
 
   /**
    * Navigate to Applicant Info tab
    */
-  goToApplicantInfoTab(): void {
+  goToApplicantInfoTab(): this {
     this.clickElement(this.tabs.applicantInfo);
+    return this;
   }
 
   /**
    * Navigate to Funding Agreement tab
    */
-  goToFundingAgreementTab(): void {
+  goToFundingAgreementTab(): this {
     this.clickElement(this.tabs.fundingAgreement);
+    return this;
   }
 
   /**
    * Navigate to Payment Info tab
    */
-  goToPaymentInfoTab(): void {
+  goToPaymentInfoTab(): this {
     this.clickElement(this.tabs.paymentInfo);
+    return this;
   }
 
   /**
    * Verify all tabs are visible
    */
-  verifyAllTabsVisible(): void {
+  verifyAllTabsVisible(): this {
     cy.get(this.tabs.submission).should("be.visible");
     cy.get(this.tabs.reviewAssessment).should("be.visible");
     cy.get(this.tabs.projectInfo).should("be.visible");
     cy.get(this.tabs.applicantInfo).should("be.visible");
     cy.get(this.tabs.fundingAgreement).should("be.visible");
     cy.get(this.tabs.paymentInfo).should("be.visible");
+    return this;
   }
 
   /**
@@ -168,7 +183,7 @@ export class ApplicationDetailsPage extends BasePage {
       | "applicantInfo"
       | "fundingAgreement"
       | "paymentInfo"
-  ): void {
+  ): this {
     const tabSelectors: Record<string, string> = {
       submission: this.tabs.submission,
       reviewAssessment: this.tabs.reviewAssessment,
@@ -178,6 +193,7 @@ export class ApplicationDetailsPage extends BasePage {
       paymentInfo: this.tabs.paymentInfo,
     };
     cy.get(tabSelectors[tabName]).should("have.class", "active");
+    return this;
   }
 
   /**
@@ -294,14 +310,132 @@ export class ApplicationDetailsPage extends BasePage {
     this.verifyInputValue("#TotalBudgetInputAR", budget);
   }
 
+  // ============ Payment Info Methods ============
+
+  /**
+   * Enter Supplier Number
+   */
+  enterSupplierNumber(supplierNumber: string): this {
+    cy.get("#SupplierNumber", { timeout: 20000 })
+      .clear({ force: true })
+      .type(supplierNumber, { force: true })
+      .trigger("change")
+      .blur();
+    return this;
+  }
+
+  /**
+   * Click elsewhere to trigger save button enable
+   */
+  clickElsewhere(): this {
+    cy.get("body").click(0, 0);
+    return this;
+  }
+
+  /**
+   * Click Payment Info Save button
+   */
+  clickPaymentInfoSave(): this {
+    cy.get("#nav-payment-info", { timeout: 20000 })
+      .contains("button", "Save")
+      .click({ force: true });
+    // Wait briefly for save to process
+    cy.wait(1000);
+    return this;
+  }
+
+  /**
+   * Verify Site Info table is populated
+   */
+  verifySiteInfoTablePopulated(): this {
+    cy.get("#SiteInfoTable tbody tr", { timeout: 20000 })
+      .should("have.length.at.least", 1);
+    return this;
+  }
+
+  /**
+   * Verify Site Info table has data in specific columns
+   */
+  verifySiteInfoTableHasData(): this {
+    cy.get("#SiteInfoTable tbody tr", { timeout: 20000 }).first().within(() => {
+      cy.get("td").eq(0).should("not.be.empty"); // Site #
+      cy.get("td").eq(1).should("not.be.empty"); // Pay Group
+      cy.get("td").eq(2).should("not.be.empty"); // Mailing Address
+    });
+    return this;
+  }
+
+  /**
+   * Click Edit button in Site Info table
+   */
+  clickSiteInfoEdit(): this {
+    cy.get("#SiteInfoTable tbody tr", { timeout: 20000 })
+      .first()
+      .find("button, a")
+      .filter(':contains("Edit"), [title="Edit"], .edit-btn, .btn-edit')
+      .first()
+      .click({ force: true });
+    return this;
+  }
+
+  /**
+   * Wait for Edit Site modal to appear
+   */
+  waitForEditSiteModal(): this {
+    cy.get(".modal-content", { timeout: 20000 })
+      .contains(".modal-title", "Edit Site")
+      .should("be.visible");
+    return this;
+  }
+
+  /**
+   * Select Payment Group in Edit Site modal
+   */
+  selectPaymentGroup(paymentGroup: "EFT" | "Cheque"): this {
+    cy.get("#Site_PaymentGroup", { timeout: 20000 })
+      .select(paymentGroup, { force: true });
+    return this;
+  }
+
+  /**
+   * Click Save Changes in Edit Site modal
+   */
+  clickSaveChanges(): this {
+    cy.get(".modal-footer", { timeout: 20000 })
+      .contains("button", "SAVE CHANGES")
+      .click({ force: true });
+    cy.wait(2000); // Wait for save to process
+    cy.get("body").type("{esc}");
+    cy.get(".modal.show, .modal.fade.show", { timeout: 20000 }).should("not.exist");
+    cy.get(".modal-backdrop", { timeout: 20000 }).should("not.exist");
+    return this;
+  }
+
+  /**
+   * Click Cancel in Edit Site modal
+   */
+  clickModalCancel(): this {
+    cy.get(".modal-footer", { timeout: 20000 })
+      .contains("button", "CANCEL")
+      .click({ force: true });
+    return this;
+  }
+
   // ============ Status Actions Dropdown Methods ============
 
   /**
    * Open the Status Actions dropdown
    */
   openStatusActionsDropdown(): void {
-    this.clickElement(this.statusActions.dropdownToggle);
-    cy.get(this.statusActions.dropdownMenu).should("be.visible");
+    cy.get(this.statusActions.dropdownMenu).then(($menu) => {
+      if (!$menu.is(":visible")) {
+        cy.get(this.statusActions.dropdownToggle, { timeout: 20000 })
+          .should("exist")
+          .scrollIntoView()
+          .click({ force: true });
+      }
+    });
+    cy.get(this.statusActions.dropdownMenu, { timeout: 10000 }).should("be.visible");
   }
 
   /**
@@ -337,11 +471,33 @@ export class ApplicationDetailsPage extends BasePage {
   }
 
   /**
-   * Click Approve action
+   * Click Approve action.
+   * If "Complete Assessment" is enabled in the dropdown, click it first,
+   * then reopen the dropdown before clicking Approve.
    */
-  clickApprove(): void {
+  clickApprove(): this {
     this.openStatusActionsDropdown();
-    this.clickElement(this.statusActions.approve);
+    cy.get(this.statusActions.completeAssessment).then(($btn) => {
+      if (!$btn.is(":disabled")) {
+        cy.wrap($btn).click({ force: true });
+        cy.get("body").then(($body) => {
+          if ($body.find(this.confirmModal.modal).filter(":visible").length > 0) {
+            cy.get(this.confirmModal.modal)
+              .find(this.confirmModal.confirmButton)
+              .click({ force: true });
+          }
+        });
+        // Wait for page to stabilize after status transition
+        cy.get(this.statusActions.dropdownToggle, { timeout: 20000 }).should("be.visible");
+        cy.wait(2000);
+      }
+    });
+    // Always reopen dropdown fresh before clicking Approve (dropdown may have closed)
+    this.openStatusActionsDropdown();
+    cy.get(this.statusActions.approve, { timeout: 10000 })
+      .should("exist")
+      .click({ force: true });
+    return this;
   }
 
   /**
@@ -382,6 +538,56 @@ export class ApplicationDetailsPage extends BasePage {
   clickOnHold(): void {
     this.openStatusActionsDropdown();
     this.clickElement(this.statusActions.onHold);
+  }
+
+  // ============ Confirm Modal Methods ============
+
+  /**
+   * Wait for confirm action modal to appear (SweetAlert2)
+   */
+  waitForConfirmModal(): this {
+    cy.get(this.confirmModal.modal, { timeout: 20000 }).should("be.visible");
+    return this;
+  }
+
+  /**
+   * Click Confirm button in the modal (SweetAlert2)
+   */
+  clickConfirm(): this {
+    cy.get(this.confirmModal.modal, { timeout: 20000 })
+      .find(this.confirmModal.confirmButton)
+      .should("be.visible")
+      .click({ force: true });
+    return this;
+  }
+
+  /**
+   * Click Cancel button in the modal (SweetAlert2)
+   */
+  clickCancel(): this {
+    cy.get(this.confirmModal.modal, { timeout: 20000 })
+      .find(this.confirmModal.cancelButton)
+      .should("be.visible")
+      .click({ force: true });
+    return this;
+  }
+
+  /**
+   * Dismiss any error modal if present (SweetAlert2)
+   * Uses failOnStatusCode: false to not fail if no modal exists
+   */
+  dismissErrorModalIfPresent(): this {
+    cy.get("body").then(($body) => {
+      // Only dismiss if it is specifically an error modal (swal2-error icon)
+      if ($body.find(".swal2-container .swal2-icon.swal2-error").length > 0) {
+        cy.get(".swal2-container")
+          .find(".swal2-confirm")
+          .first()
+          .click({ force: true });
+        cy.wait(500);
+      }
+    });
+    return this;
   }
 
   /**
