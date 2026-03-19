@@ -1,5 +1,7 @@
 /// <reference types="cypress" />
 
+export {};
+
 /**
  * CHEFS Form Submission API Test
  *
@@ -32,7 +34,177 @@ interface ChefsSubmissionPayload {
   };
 }
 
-const isProd = (Cypress.env("CHEFS_ENV") || Cypress.env("environment") || "").toLowerCase() === "prod";
+const TOKEN_PROPERTY_KEYS = [
+  "access_token",
+  "accessToken",
+  "token",
+  "id_token",
+  "idToken",
+];
+
+function isJwtLike(value: string): boolean {
+  return /^[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+$/.test(value);
+}
+
+function extractTokenFromString(value: string): string {
+  const trimmed = value.trim();
+
+  if (trimmed.toLowerCase().startsWith("bearer ")) {
+    const bearerToken = trimmed.replace(/^Bearer\s+/i, "").trim();
+    if (isJwtLike(bearerToken)) {
+      return bearerToken;
+    }
+  }
+
+  if (isJwtLike(trimmed)) {
+    return trimmed;
+  }
+
+  try {
+    return extractTokenFromValue(JSON.parse(trimmed));
+  } catch {
+    return "";
+  }
+}
+
+function extractTokenFromArray(values: unknown[]): string {
+  for (const value of values) {
+    const token = extractTokenFromValue(value);
+    if (token) {
+      return token;
+    }
+  }
+
+  return "";
+}
+
+function extractTokenFromObject(value: Record<string, unknown>): string {
+  for (const key of TOKEN_PROPERTY_KEYS) {
+    const token = extractTokenFromValue(value[key]);
+    if (token) {
+      return token;
+    }
+  }
+
+  return extractTokenFromArray(Object.values(value));
+}
+
+function extractTokenFromValue(value: unknown): string {
+  if (typeof value === "string") {
+    return extractTokenFromString(value);
+  }
+
+  if (Array.isArray(value)) {
+    return extractTokenFromArray(value);
+  }
+
+  if (value && typeof value === "object") {
+    return extractTokenFromObject(value as Record<string, unknown>);
+  }
+
+  return "";
+}
+
+function extractTokenFromStorage(win: Window): string {
+  const storages = [win.localStorage, win.sessionStorage];
+
+  for (const storage of storages) {
+    for (let index = 0; index < storage.length; index += 1) {
+      const key = storage.key(index);
+      if (!key) {
+        continue;
+      }
+
+      const value = storage.getItem(key);
+      if (!value) {
+        continue;
+      }
+
+      const token = extractTokenFromValue(value);
+      if (token) {
+        return token;
+      }
+    }
+  }
+
+  return "";
+}
+
+function getChefsHostname(baseURL: string): string {
+  return new URL(baseURL).hostname;
+}
+
+function waitForIdentityRedirectOrAuthenticatedChefsPage(
+  baseURL: string,
+  timeout: number,
+): void {
+  const chefsHostname = getChefsHostname(baseURL);
+
+  cy.location("hostname", { timeout }).should((hostname) => {
+    const onChefs = hostname === chefsHostname;
+    const onBcGovIdentity = hostname.endsWith("gov.bc.ca");
+
+    expect(
+      onChefs || onBcGovIdentity,
+      `Expected CHEFS or BC Gov identity host, got '${hostname}'`,
+    ).to.eq(true);
+  });
+}
+
+function completeChefsLogin(environment: ChefsEnvironment, timeout: number): void {
+  const chefsHostname = getChefsHostname(environment.baseURL);
+
+  cy.visit(`${environment.baseURL}/app`);
+
+  cy.get("#app > div > main > header > header > div > div.d-print-none", {
+    timeout,
+  })
+    .should("exist")
+    .click();
+
+  cy.get(
+    "#app > div > main > div.v-container.v-locale--is-ltr.text-center.main > div > div:nth-child(2) > div > button",
+    { timeout },
+  )
+    .should("exist")
+    .click();
+
+  waitForIdentityRedirectOrAuthenticatedChefsPage(environment.baseURL, timeout);
+
+  cy.location("hostname", { timeout }).then((hostname) => {
+    if (hostname === chefsHostname) {
+      cy.log("Already logged in to CHEFS");
+      return;
+    }
+
+    cy.get("#user", { timeout })
+      .should("be.visible")
+      .clear()
+      .type(Cypress.env("test1username"), { log: false });
+
+    cy.get("#password", { timeout })
+      .should("be.visible")
+      .clear()
+      .type(Cypress.env("test1password"), { log: false });
+
+    cy.contains("Continue", { timeout }).should("be.visible").click();
+
+    cy.location("hostname", { timeout }).should("eq", chefsHostname);
+  });
+}
+
+function visitChefsForm(environment: ChefsEnvironment, timeout: number): void {
+  cy.visit(`${environment.baseURL}/app/form/submit?f=${environment.formId}`);
+  cy.location("hostname", { timeout }).should(
+    "eq",
+    getChefsHostname(environment.baseURL),
+  );
+  cy.location("pathname", { timeout }).should("include", "/app");
+}
+
+const isProd =
+  (Cypress.env("CHEFS_ENV") || Cypress.env("environment") || "").toLowerCase() ===
+  "prod";
 
 (isProd ? describe.skip : describe)("CHEFS Form Submission API", () => {
   let apiConfig: ChefsApiConfig;
@@ -42,80 +214,82 @@ const isProd = (Cypress.env("CHEFS_ENV") || Cypress.env("environment") || "").to
   let createdSubmissionId: string;
 
   before(() => {
-    // Load configuration from scripts directory
+    const authTimeout = 60000;
+
     cy.readFile("cypress/scripts/chefs-api-config.json").then((config) => {
       apiConfig = config;
 
-      // Get environment from Cypress env or default to 'test'
-      const envKey = (Cypress.env("CHEFS_ENV") || Cypress.env("environment") || "test").toLowerCase();
+      const envKey = (
+        Cypress.env("CHEFS_ENV") ||
+        Cypress.env("environment") ||
+        "test"
+      ).toLowerCase();
+
       environment = config.environments[envKey];
+
+      expect(
+        environment,
+        `Missing CHEFS environment configuration for '${envKey}'`,
+      ).to.exist;
 
       cy.log(`Using environment: ${envKey}`);
       cy.log(`Base URL: ${environment.baseURL}`);
       cy.log(`Form ID: ${environment.formId}`);
       cy.log(`Version ID: ${environment.versionId}`);
 
-      // Load submission payload and set metadata dynamically from environment
       cy.readFile("cypress/scripts/chefs-submission-payload.json").then(
         (payload) => {
           submissionPayload = payload;
           submissionPayload.submission.metadata.origin = environment.baseURL;
           submissionPayload.submission.metadata.referrer = `${environment.baseURL}/app/form/submit?f=${environment.formId}`;
+
           cy.log(
             `Payload loaded with ${
               Object.keys(payload.submission.data).length
-            } data fields`
+            } data fields`,
           );
           cy.log(`Metadata origin set to: ${environment.baseURL}`);
-        }
+        },
       );
 
-      // Capture token from ANY authenticated API call — handler fires for every matching request
       let capturedToken = "";
-      cy.intercept(`${environment.baseURL}/app/api/v1/**`, (req) => {
+
+      cy.intercept("**/app/api/v1/**", (req) => {
         const authHeader = req.headers["authorization"] as string;
         if (authHeader && !capturedToken) {
           capturedToken = authHeader.replace(/^Bearer\s+/i, "");
         }
       }).as("chefsApiCalls");
 
-      // Login to CHEFS via UI using credentials from cypress.env.json
-      cy.visit(`${environment.baseURL}/app`);
-      cy.get("#app > div > main > header > header > div > div.d-print-none")
-        .should("exist")
-        .click();
-      cy.get(
-        "#app > div > main > div.v-container.v-locale--is-ltr.text-center.main > div > div:nth-child(2) > div > button"
-      )
-        .should("exist")
-        .click();
-      cy.get("body").then(($body) => {
-        if ($body.find("#user").length) {
-          cy.get("#user").type(Cypress.env("test1username"), { log: false });
-          cy.get("#password").type(Cypress.env("test1password"), { log: false });
-          cy.contains("Continue").should("exist").click();
-        } else {
-          cy.log("Already logged in to CHEFS");
-        }
-      });
+      completeChefsLogin(environment, authTimeout);
+      visitChefsForm(environment, authTimeout);
 
-      // Poll until an authenticated API call is intercepted (skips pre-auth calls like /rbac/idps)
-      cy.wrap(null, { timeout: 30000 }).should(() => {
-        expect(capturedToken, "Waiting for authenticated CHEFS API call").to.not.equal("");
-      }).then(() => {
-        authToken = capturedToken;
-        cy.log("✅ Auth token captured from CHEFS login");
-      });
+      cy.window({ timeout: authTimeout })
+        .should((win) => {
+          const tokenFromStorage = extractTokenFromStorage(win);
+          const resolvedToken = capturedToken || tokenFromStorage;
+
+          expect(
+            resolvedToken,
+            "Waiting for authenticated CHEFS API token from request or browser storage",
+          ).to.not.equal("");
+
+          if (!capturedToken && tokenFromStorage) {
+            capturedToken = tokenFromStorage;
+          }
+        })
+        .then(() => {
+          authToken = capturedToken;
+          cy.log("✅ Auth token captured from CHEFS login");
+        });
     });
   });
 
   it("should submit form via CHEFS API", () => {
-    // Construct the submission URL
     const submissionUrl = `${environment.baseURL}/app/api/v1/forms/${environment.formId}/versions/${environment.versionId}/submissions`;
 
     cy.log(`Submitting to: ${submissionUrl}`);
 
-    // Make the API request
     cy.request({
       method: "POST",
       url: submissionUrl,
@@ -126,41 +300,31 @@ const isProd = (Cypress.env("CHEFS_ENV") || Cypress.env("environment") || "").to
         Referer: `${environment.baseURL}/app/form/submit?f=${environment.formId}`,
       },
       body: submissionPayload,
-      failOnStatusCode: false, // Don't fail immediately to capture response
+      failOnStatusCode: false,
     }).then((response) => {
-      // Log response details
       cy.log(`Response Status: ${response.status}`);
       cy.log(
-        `Response Body: ${JSON.stringify(response.body).substring(0, 200)}...`
+        `Response Body: ${JSON.stringify(response.body).substring(0, 200)}...`,
       );
 
-      // Handle 401 Unauthorized (expired/invalid token)
       if (response.status === 401) {
         cy.log("❌ 401 Unauthorized - Token is expired or invalid");
-        cy.log(
-          "📖 See cypress/scripts/README.md for token refresh instructions"
-        );
+        cy.log("📖 See cypress/scripts/README.md for token refresh instructions");
         throw new Error(
-          "Authentication failed (401). Check that test1username/test1password credentials in cypress.env.json are valid and that the CHEFS UI login succeeded during test setup."
+          "Authentication failed (401). Check that test1username/test1password credentials in cypress.env.json are valid and that the CHEFS UI login succeeded during test setup.",
         );
       }
 
-      // Assertions
-      expect(response.status).to.be.oneOf([200, 201]); // Success status codes
-      expect(response.body).to.have.property("id"); // CHEFS returns submission ID
+      expect(response.status).to.be.oneOf([200, 201]);
+      expect(response.body).to.have.property("id");
 
-      // Store submission ID for use in the "retrieve submission by ID" test
       if (response.body.id) {
         createdSubmissionId = response.body.id;
         cy.log(`✅ Submission created with ID: ${response.body.id}`);
       }
 
-      // Verify response structure
-      expect(response.body).to.have.property(
-        "formVersionId",
-        environment.versionId
-      );
-      // Note: formId may not be in response, depends on CHEFS version
+      expect(response.body).to.have.property("formVersionId", environment.versionId);
+
       if (response.body.formId) {
         expect(response.body.formId).to.eq(environment.formId);
       } else {
@@ -171,11 +335,8 @@ const isProd = (Cypress.env("CHEFS_ENV") || Cypress.env("environment") || "").to
 
   it("should submit form with custom data overrides", () => {
     const submissionUrl = `${environment.baseURL}/app/api/v1/forms/${environment.formId}/versions/${environment.versionId}/submissions`;
+    const customPayload = JSON.parse(JSON.stringify(submissionPayload));
 
-    // Create a customized payload
-    const customPayload = JSON.parse(JSON.stringify(submissionPayload)); // Deep clone
-
-    // Customize specific fields
     const timestamp = new Date().toISOString();
     customPayload.submission.data._ApplicantName = `AutoTest_${Date.now()}`;
     customPayload.submission.data._projectTitle = `Automated Test Project ${timestamp}`;
@@ -200,14 +361,11 @@ const isProd = (Cypress.env("CHEFS_ENV") || Cypress.env("environment") || "").to
       body: customPayload,
       failOnStatusCode: false,
     }).then((response) => {
-      // Handle 401 Unauthorized
       if (response.status === 401) {
         cy.log("❌ 401 Unauthorized - Token is expired or invalid");
-        cy.log(
-          "📖 See cypress/scripts/README.md for token refresh instructions"
-        );
+        cy.log("📖 See cypress/scripts/README.md for token refresh instructions");
         throw new Error(
-          "Authentication failed (401). Check that test1username/test1password credentials in cypress.env.json are valid and that the CHEFS UI login succeeded during test setup."
+          "Authentication failed (401). Check that test1username/test1password credentials in cypress.env.json are valid and that the CHEFS UI login succeeded during test setup.",
         );
       }
 
@@ -222,11 +380,10 @@ const isProd = (Cypress.env("CHEFS_ENV") || Cypress.env("environment") || "").to
 
   it("should handle draft submission", () => {
     const submissionUrl = `${environment.baseURL}/app/api/v1/forms/${environment.formId}/versions/${environment.versionId}/submissions`;
-
-    // Create draft submission
     const draftPayload = JSON.parse(JSON.stringify(submissionPayload));
-    draftPayload.draft = true; // Mark as draft
-    draftPayload.submission.state = "draft"; // Change state to draft
+
+    draftPayload.draft = true;
+    draftPayload.submission.state = "draft";
     draftPayload.submission.data._ApplicantName = `Draft_${Date.now()}`;
 
     cy.log("Submitting as DRAFT");
@@ -243,14 +400,11 @@ const isProd = (Cypress.env("CHEFS_ENV") || Cypress.env("environment") || "").to
       body: draftPayload,
       failOnStatusCode: false,
     }).then((response) => {
-      // Handle 401 Unauthorized
       if (response.status === 401) {
         cy.log("❌ 401 Unauthorized - Token is expired or invalid");
-        cy.log(
-          "📖 See cypress/scripts/README.md for token refresh instructions"
-        );
+        cy.log("📖 See cypress/scripts/README.md for token refresh instructions");
         throw new Error(
-          "Authentication failed (401). Check that test1username/test1password credentials in cypress.env.json are valid and that the CHEFS UI login succeeded during test setup."
+          "Authentication failed (401). Check that test1username/test1password credentials in cypress.env.json are valid and that the CHEFS UI login succeeded during test setup.",
         );
       }
 
@@ -265,7 +419,6 @@ const isProd = (Cypress.env("CHEFS_ENV") || Cypress.env("environment") || "").to
   });
 
   it("should retrieve submission by ID", () => {
-    // This test depends on the first test creating a submission
     if (createdSubmissionId) {
       const retrieveUrl = `${environment.baseURL}/app/api/v1/submissions/${createdSubmissionId}`;
 
@@ -278,26 +431,19 @@ const isProd = (Cypress.env("CHEFS_ENV") || Cypress.env("environment") || "").to
         },
         failOnStatusCode: false,
       }).then((response) => {
-        // Handle 401 Unauthorized
         if (response.status === 401) {
           cy.log("❌ 401 Unauthorized - CHEFS login credentials may be invalid");
           throw new Error(
-            "Authentication failed (401). Check that test1username/test1password credentials in cypress.env.json are valid and that the CHEFS UI login succeeded during test setup."
+            "Authentication failed (401). Check that test1username/test1password credentials in cypress.env.json are valid and that the CHEFS UI login succeeded during test setup.",
           );
         }
 
         expect(response.status).to.eq(200);
 
-        // CHEFS API returns submission in a nested structure
-        // Response: { submission: {...}, version: {...}, ... }
         if (response.body.submission) {
-          expect(response.body.submission).to.have.property(
-            "id",
-            createdSubmissionId
-          );
+          expect(response.body.submission).to.have.property("id", createdSubmissionId);
           cy.log(`✅ Retrieved submission: ${createdSubmissionId}`);
         } else if (response.body.id) {
-          // Some CHEFS versions return id at root level
           expect(response.body.id).to.eq(createdSubmissionId);
           cy.log(`✅ Retrieved submission: ${createdSubmissionId}`);
         } else {
@@ -313,7 +459,6 @@ const isProd = (Cypress.env("CHEFS_ENV") || Cypress.env("environment") || "").to
   it("should submit form with file attachment", () => {
     const filePath = `${Cypress.config("projectRoot")}/cypress/fixtures/test-attachment.txt`;
 
-    // Step 1: Upload the file to CHEFS
     cy.task("uploadChefsFile", {
       baseURL: environment.baseURL,
       authToken: authToken,
@@ -321,9 +466,10 @@ const isProd = (Cypress.env("CHEFS_ENV") || Cypress.env("environment") || "").to
     }).then((fileRef: any) => {
       cy.log(`✅ File uploaded: ${JSON.stringify(fileRef)}`);
 
-      // Step 2: Submit form with the file reference in simplefile
       const payloadWithFile = JSON.parse(JSON.stringify(submissionPayload));
-      payloadWithFile.submission.data.simplefile = Array.isArray(fileRef) ? fileRef : [fileRef];
+      payloadWithFile.submission.data.simplefile = Array.isArray(fileRef)
+        ? fileRef
+        : [fileRef];
 
       const submissionUrl = `${environment.baseURL}/app/api/v1/forms/${environment.formId}/versions/${environment.versionId}/submissions`;
 
@@ -341,9 +487,10 @@ const isProd = (Cypress.env("CHEFS_ENV") || Cypress.env("environment") || "").to
       }).then((response) => {
         if (response.status === 401) {
           throw new Error(
-            "Authentication failed (401). Check that test1username/test1password credentials in cypress.env.json are valid and that the CHEFS UI login succeeded during test setup."
+            "Authentication failed (401). Check that test1username/test1password credentials in cypress.env.json are valid and that the CHEFS UI login succeeded during test setup.",
           );
         }
+
         expect(response.status).to.be.oneOf([200, 201]);
         expect(response.body).to.have.property("id");
         cy.log(`✅ Submission with attachment created: ${response.body.id}`);
@@ -352,17 +499,14 @@ const isProd = (Cypress.env("CHEFS_ENV") || Cypress.env("environment") || "").to
   });
 
   it("should update submission payload data and save back to file", () => {
-    // Example: Modify payload and save it back
     const updatedPayload = JSON.parse(JSON.stringify(submissionPayload));
 
-    // Update fields
     updatedPayload.submission.data._ApplicantName = "UpdatedApplicant";
     updatedPayload.submission.data._projectTitle = "Updated Project Title";
 
-    // Write updated payload back to file
     cy.writeFile(
       "cypress/scripts/chefs-submission-payload-updated.json",
-      updatedPayload
+      updatedPayload,
     );
 
     cy.log("✅ Updated payload saved to chefs-submission-payload-updated.json");
