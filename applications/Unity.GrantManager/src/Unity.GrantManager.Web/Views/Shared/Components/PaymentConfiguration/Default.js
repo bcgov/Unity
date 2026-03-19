@@ -266,6 +266,34 @@
         }
     }
 
-    $('.unity-currency-input') //Required for initial masking
-        .maskMoney({thousands: ',',decimal: '.',}).maskMoney('mask');
+    // Initialize maskMoney settings
+    $('.unity-currency-input').maskMoney({ allowZero: true });
+
+    // On load: Apply mask only if field has a value
+    $('.unity-currency-input').each(function() {
+        var $field = $(this);
+        var value = $field.val();
+        if (value && value.trim() !== '' && value !== 0) {
+            $field.maskMoney('mask', value);
+        }
+    });
+
+    // On focus: Remove mask to allow empty values
+    $('.unity-currency-input').on('focus', function() {
+        $(this).maskMoney('destroy');
+    });
+
+    // On leave: Apply mask only if there's a value
+    $('.unity-currency-input').on('blur', function() {
+        var $field = $(this);
+        var rawValue = $field.val();
+        
+        if (rawValue && rawValue !== '') {
+            if (!rawValue.includes('.')) {
+                $field.val(rawValue += '.00')
+            }
+            // Call twice, one to re-initalize on a destroyed field, second to mask
+            $field.maskMoney({ allowZero: true }).maskMoney('mask');
+        }
+    });
 });
