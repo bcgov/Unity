@@ -25,6 +25,7 @@ public class GenerateApplicationAnalysisBackgroundJob(
             catch (Exception ex)
             {
                 logger.LogError(ex, "Error executing AI application analysis background job for application {ApplicationId}.", args.ApplicationId);
+                throw;
             }
         }
     }

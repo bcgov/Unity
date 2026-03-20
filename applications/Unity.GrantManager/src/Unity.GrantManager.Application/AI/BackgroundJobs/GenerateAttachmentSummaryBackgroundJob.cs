@@ -28,6 +28,7 @@ public class GenerateAttachmentSummaryBackgroundJob(
             catch (Exception ex)
             {
                 logger.LogError(ex, "Error executing AI attachment summary background job.");
+                throw;
             }
         }
     }

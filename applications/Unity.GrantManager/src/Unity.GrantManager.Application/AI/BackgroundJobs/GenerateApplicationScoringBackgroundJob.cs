@@ -36,6 +36,7 @@ public class GenerateApplicationScoringBackgroundJob(
             catch (Exception ex)
             {
                 logger.LogError(ex, "Error executing AI application scoring background job for application {ApplicationId}.", args.ApplicationId);
+                throw;
             }
         }
     }

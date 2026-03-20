@@ -50,26 +50,56 @@ public class GenerateContentBackgroundJob(
                     await attachmentSummaryService.GenerateForApplicationAsync(args.ApplicationId, args.PromptVersion);
                 }
 
+                Exception? analysisException = null;
+                Exception? scoringException = null;
+
                 if (applicationAnalysisEnabled)
                 {
-                    await applicationAnalysisService.RegenerateAndSaveAsync(args.ApplicationId, args.PromptVersion);
+                    try
+                    {
+                        await applicationAnalysisService.RegenerateAndSaveAsync(args.ApplicationId, args.PromptVersion);
+                    }
+                    catch (Exception ex)
+                    {
+                        analysisException = ex;
+                        logger.LogError(ex, "Error executing AI application analysis stage for application {ApplicationId}.", args.ApplicationId);
+                    }
                 }
 
                 if (scoringEnabled)
                 {
-                    var result = await applicationScoringService.RegenerateAndSaveAsync(args.ApplicationId, args.PromptVersion);
-                    if (!string.Equals(result, "{}", StringComparison.Ordinal))
+                    try
                     {
-                        await localEventBus.PublishAsync(new AIApplicationScoringGeneratedEvent
+                        var result = await applicationScoringService.RegenerateAndSaveAsync(args.ApplicationId, args.PromptVersion);
+                        if (!string.Equals(result, "{}", StringComparison.Ordinal))
                         {
-                            ApplicationId = args.ApplicationId
-                        });
+                            await localEventBus.PublishAsync(new AIApplicationScoringGeneratedEvent
+                            {
+                                ApplicationId = args.ApplicationId
+                            });
+                        }
                     }
+                    catch (Exception ex)
+                    {
+                        scoringException = ex;
+                        logger.LogError(ex, "Error executing AI application scoring stage for application {ApplicationId}.", args.ApplicationId);
+                    }
+                }
+
+                if (scoringException != null)
+                {
+                    throw scoringException;
+                }
+
+                if (analysisException != null)
+                {
+                    throw analysisException;
                 }
             }
             catch (Exception ex)
             {
                 logger.LogError(ex, "Error executing queued AI content pipeline for application {ApplicationId}.", args.ApplicationId);
+                throw;
             }
         }
     }
