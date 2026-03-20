@@ -733,6 +733,8 @@
                 select: false,
                 info: false,
                 scrollX: true,
+                scrollY: '200px',
+                scrollCollapse: true,
                 ajax: abp.libs.datatables.createAjax(
                     unity.notifications.emails.emailLogAttachment.getListByEmailLogId,
                     function () { return emailLogId; },
