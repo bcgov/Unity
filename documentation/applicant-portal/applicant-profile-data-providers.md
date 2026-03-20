@@ -428,7 +428,7 @@ flowchart LR
 | DTO Field | Source | Type | Description |
 |-----------|--------|------|-------------|
 | `Id` | `PaymentRequest.Id` | `Guid` | Payment request identifier |
-| `PaymentNumber` | `PaymentRequest.PaymentNumber` | `string` | CAS payment number (empty string if null) |
+| `PaymentNumber` | `PaymentRequest.InvoiceNumber` | `string` | CAS invoice number (empty string if null) |
 | `ReferenceNo` | `Application.ReferenceNo` | `string` | Application reference number, resolved via `CorrelationId → Application` lookup |
 | `Amount` | `PaymentRequest.Amount` | `decimal` | Requested payment amount |
 | `PaymentDate` | `PaymentRequest.PaymentDate` | `string?` | Date string populated during CAS reconciliation |

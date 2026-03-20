@@ -84,12 +84,12 @@ namespace Unity.GrantManager.Applicants
             return entity;
         }
 
-        private static PaymentRequest CreatePaymentRequest(Guid correlationId, decimal amount = 1000m)
+        private static PaymentRequest CreatePaymentRequest(Guid correlationId, decimal amount = 1000m, string invoiceNumber = "INV-001")
         {
             var siteId = Guid.NewGuid();
             var dto = new CreatePaymentRequestDto
             {
-                InvoiceNumber = "INV-001",
+                InvoiceNumber = invoiceNumber,
                 Amount = amount,
                 PayeeName = "Test Payee",
                 ContractNumber = "C-001",
@@ -169,7 +169,6 @@ namespace Unity.GrantManager.Applicants
             var applicationId = Guid.NewGuid();
 
             var payment = CreatePaymentRequest(applicationId, 5000m);
-            payment.SetPaymentNumber("PAY-100");
             payment.SetPaymentDate("15-Jan-2025");
             payment.SetPaymentRequestStatus(PaymentRequestStatus.Paid);
 
@@ -184,7 +183,7 @@ namespace Unity.GrantManager.Applicants
             dto.Payments.Count.ShouldBe(1);
 
             var item = dto.Payments[0];
-            item.PaymentNumber.ShouldBe("PAY-100");
+            item.PaymentNumber.ShouldBe("INV-001");
             item.ReferenceNo.ShouldBe("REF-001");
             item.Amount.ShouldBe(5000m);
             item.PaymentDate.ShouldBe("2025-01-15");
@@ -277,12 +276,12 @@ namespace Unity.GrantManager.Applicants
         }
 
         [Fact]
-        public async Task GetDataAsync_ShouldHandleNullPaymentNumber()
+        public async Task GetDataAsync_ShouldHandleEmptyInvoiceNumber()
         {
             var request = CreateRequest();
             var applicationId = Guid.NewGuid();
 
-            var payment = CreatePaymentRequest(applicationId);
+            var payment = CreatePaymentRequest(applicationId, invoiceNumber: string.Empty);
 
             SetupQueryables(
                 [CreateSubmission(applicationId, "TESTUSER")],

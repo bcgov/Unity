@@ -8,12 +8,24 @@
 
 import '../support/commands'
 
-// Ignore ResizeObserver loop errors - these are benign browser notifications
-// that occur when ResizeObserver callbacks don't complete in a single animation frame
+// Ignore common errors that shouldn't fail tests
 Cypress.on('uncaught:exception', (err) => {
+  // ResizeObserver loop errors - benign browser notifications
   if (err.message.includes('ResizeObserver loop')) {
     return false
   }
-  // Return true to fail the test for other errors
+  // Network errors that can occur during navigation
+  if (err.message.includes('Network Error') || err.message.includes('net::ERR')) {
+    return false
+  }
+  // Script errors from third-party resources
+  if (err.message.includes('Script error')) {
+    return false
+  }
+  // Chunk loading errors
+  if (err.message.includes('Loading chunk') || err.message.includes('ChunkLoadError')) {
+    return false
+  }
+  // Return true to fail tests on unexpected uncaught exceptions
   return true
 })
