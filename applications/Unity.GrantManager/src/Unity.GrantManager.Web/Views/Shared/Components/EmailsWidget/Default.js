@@ -166,12 +166,9 @@
     }
 
     async function initializeDraft(applicationId) {
-        const emailNotificationService = unity
-            && unity.notifications
-            && unity.notifications.emailNotifications
-            && unity.notifications.emailNotifications.emailNotification;
+        const emailNotificationService = unity?.notifications?.emailNotifications?.emailNotification;
 
-        if (emailNotificationService && emailNotificationService.initializeDraft) {
+        if (emailNotificationService?.initializeDraft) {
             return await emailNotificationService.initializeDraft(applicationId);
         }
 
@@ -683,7 +680,7 @@
         UIElements.inputEmailSubject.val(data.subject);
         UIElements.inputEmailBody.val(data.body);
 
-        const isDraft = data && data.status === 'Draft';
+        const isDraft = data?.status === 'Draft';
         if (isDraft) {
             enableEmail();
             handleDraftChange();
@@ -796,30 +793,30 @@
         }
     }
 
-    function generateEmailAttachmentButtonContent(attachmentId) {
-        return `
-            <div class="dropdown" style="float:right;">
-                <button class="btn btn-light dropbtn" type="button">
-                    <i class="fl fl-attachment-more"></i>
-                </button>
-                <div class="dropdown-content">
-                    <button class="btn fullWidth" style="margin:10px" type="button"
-                            onclick="deleteEmailAttachment('${attachmentId}')">
-                        <i class="fl fl-cancel"></i><span>Delete Attachment</span>
-                    </button>
-                </div>
-            </div>`;
-    }
-
     $('#email_attachment_upload_btn').on('click', function () {
         $('#email_attachment_upload').click();
     });
 });
 
+function generateEmailAttachmentButtonContent(attachmentId) {
+    return `
+        <div class="dropdown" style="float:right;">
+            <button class="btn btn-light dropbtn" type="button">
+                <i class="fl fl-attachment-more"></i>
+            </button>
+            <div class="dropdown-content">
+                <button class="btn fullWidth" style="margin:10px" type="button"
+                        onclick="deleteEmailAttachment('${attachmentId}')">
+                    <i class="fl fl-cancel"></i><span>Delete Attachment</span>
+                </button>
+            </div>
+        </div>`;
+}
+
 function uploadEmailFiles(inputId) {
     const emailLogId = $('#EmailId').val();
     const input = document.getElementById(inputId);
-    if (!input || !input.files || input.files.length === 0) return;
+    if (!input?.files?.length) return;
 
     const disallowedTypes = JSON.parse(decodeURIComponent($('#Extensions').val()));
     const maxFileSize = decodeURIComponent($('#MaxFileSize').val());

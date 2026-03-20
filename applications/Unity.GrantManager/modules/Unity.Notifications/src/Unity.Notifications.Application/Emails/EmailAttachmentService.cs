@@ -14,6 +14,8 @@ namespace Unity.Notifications.EmailNotifications;
 
 public class EmailAttachmentService : ITransientDependency
 {
+    private const string S3BucketConfigKey = "S3:Bucket";
+
     private readonly AmazonS3Client _amazonS3Client;
     private readonly IEmailLogAttachmentRepository _emailLogAttachmentRepository;
     private readonly IConfiguration _configuration;
@@ -55,7 +57,7 @@ public class EmailAttachmentService : ITransientDependency
         string contentType)
     {
         var s3Key = BuildS3Key(tenantId, emailLogId, fileName);
-        var bucket = _configuration["S3:Bucket"];
+        var bucket = _configuration[S3BucketConfigKey];
 
         // Upload to S3
         using var uploadStream = new MemoryStream(fileContent);
@@ -94,7 +96,7 @@ public class EmailAttachmentService : ITransientDependency
 
     public async Task<byte[]?> DownloadFromS3Async(string s3ObjectKey)
     {
-        var bucket = _configuration["S3:Bucket"];
+        var bucket = _configuration[S3BucketConfigKey];
 
         var getObjectRequest = new GetObjectRequest
         {
@@ -120,7 +122,7 @@ public class EmailAttachmentService : ITransientDependency
     {
         var uniqueKey = Guid.NewGuid();
         var s3Key = BuildUserAttachmentS3Key(tenantId, emailLogId, uniqueKey, fileName);
-        var bucket = _configuration["S3:Bucket"];
+        var bucket = _configuration[S3BucketConfigKey];
 
         using var uploadStream = new MemoryStream(fileContent);
         var putRequest = new PutObjectRequest
@@ -157,7 +159,7 @@ public class EmailAttachmentService : ITransientDependency
 
     public async Task DeleteFromS3Async(string s3ObjectKey)
     {
-        var bucket = _configuration["S3:Bucket"];
+        var bucket = _configuration[S3BucketConfigKey];
         var deleteRequest = new DeleteObjectRequest
         {
             BucketName = bucket,

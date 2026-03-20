@@ -105,15 +105,15 @@ namespace Unity.Notifications.EmailNotifications
             }
 
             var attachments = await emailAttachmentService.GetAttachmentsAsync(id);
-            foreach (var attachment in attachments)
+            foreach (var s3Key in attachments.Select(attachment => attachment.S3ObjectKey))
             {
                 try
                 {
-                    await emailAttachmentService.DeleteFromS3Async(attachment.S3ObjectKey);
+                    await emailAttachmentService.DeleteFromS3Async(s3Key);
                 }
                 catch (Exception ex)
                 {
-                    Logger.LogError(ex, "Failed to delete S3 attachment {S3ObjectKey} for EmailLog {EmailLogId}", attachment.S3ObjectKey, id);
+                    Logger.LogError(ex, "Failed to delete S3 attachment {S3ObjectKey} for EmailLog {EmailLogId}", s3Key, id);
                 }
             }
             await emailLogsRepository.DeleteAsync(id);
