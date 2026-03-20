@@ -10,6 +10,7 @@ using System.Net.Http;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
+using Unity.GrantManager.AI.Extraction;
 using Unity.GrantManager.AI.Models;
 using Unity.GrantManager.AI.Prompts;
 using Unity.GrantManager.AI.Requests;

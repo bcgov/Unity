@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using Unity.GrantManager.AI.Models;
 
 namespace Unity.GrantManager.AI.Responses
 {

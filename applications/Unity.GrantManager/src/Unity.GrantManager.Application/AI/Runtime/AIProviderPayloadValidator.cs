@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text.Json;
+using Unity.GrantManager.AI.Models;
 
 namespace Unity.GrantManager.AI.Runtime
 {
