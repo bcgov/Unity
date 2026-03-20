@@ -14,4 +14,3 @@ namespace Unity.GrantManager.AI.Requests
         public double? Temperature { get; set; }
     }
 }
-

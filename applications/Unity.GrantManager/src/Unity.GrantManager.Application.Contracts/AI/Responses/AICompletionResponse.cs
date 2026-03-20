@@ -8,4 +8,3 @@ namespace Unity.GrantManager.AI.Responses
         public string Content { get; set; } = string.Empty;
     }
 }
-

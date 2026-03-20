@@ -1156,5 +1156,3 @@ public class GrantApplicationAppService(
         }
     }
 }
-
-

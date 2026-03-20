@@ -8,5 +8,3 @@ namespace Unity.GrantManager.AI.Operations
         Task<string> RegenerateAndSaveAsync(Guid applicationId, string? promptVersion = null);
     }
 }
-
-

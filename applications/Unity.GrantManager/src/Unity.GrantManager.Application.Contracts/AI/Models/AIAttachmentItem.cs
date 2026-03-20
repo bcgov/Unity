@@ -11,4 +11,3 @@ namespace Unity.GrantManager.AI.Models
         public string Summary { get; set; } = string.Empty;
     }
 }
-

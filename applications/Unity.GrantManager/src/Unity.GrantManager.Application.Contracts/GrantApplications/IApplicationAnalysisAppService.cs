@@ -9,4 +9,3 @@ namespace Unity.GrantManager.GrantApplications
         Task<string> GenerateApplicationAnalysisAsync(Guid applicationId, string? promptVersion = null);
     }
 }
-

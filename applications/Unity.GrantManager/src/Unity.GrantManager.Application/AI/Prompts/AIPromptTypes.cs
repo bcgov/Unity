@@ -6,5 +6,3 @@ public static class AIPromptTypes
     public const string ApplicationAnalysis = "ApplicationAnalysis";
     public const string ApplicationScoring = "ApplicationScoring";
 }
-
-

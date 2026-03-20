@@ -8,4 +8,3 @@ namespace Unity.GrantManager.AI.Runtime
         int? TotalTokens,
         int? ReasoningTokens);
 }
-

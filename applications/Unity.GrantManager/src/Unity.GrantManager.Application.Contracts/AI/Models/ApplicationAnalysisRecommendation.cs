@@ -11,4 +11,3 @@ namespace Unity.GrantManager.AI.Models
         public string? Rationale { get; set; }
     }
 }
-

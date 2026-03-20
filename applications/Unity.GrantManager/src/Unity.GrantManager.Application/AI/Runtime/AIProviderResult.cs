@@ -15,4 +15,3 @@ namespace Unity.GrantManager.AI.Runtime
         public string CaptureOutput => string.IsNullOrWhiteSpace(RawResponse) ? Content : RawResponse;
     }
 }
-

@@ -607,5 +607,3 @@ function queueApplicationScoring(triggerButton = null) {
             $button.html(existingHtml).prop('disabled', false);
         });
 }
-
-

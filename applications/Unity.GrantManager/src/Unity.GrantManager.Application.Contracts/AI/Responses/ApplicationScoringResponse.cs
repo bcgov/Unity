@@ -10,5 +10,3 @@ namespace Unity.GrantManager.AI.Responses
         public Dictionary<string, ApplicationScoringAnswer> Answers { get; set; } = new();
     }
 }
-
-

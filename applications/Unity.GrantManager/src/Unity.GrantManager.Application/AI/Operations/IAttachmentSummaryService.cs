@@ -10,5 +10,3 @@ public interface IAttachmentSummaryService
     Task<List<string>> GenerateAndSaveAsync(IEnumerable<Guid> attachmentIds, string? promptVersion = null);
     Task<List<string>> GenerateForApplicationAsync(Guid applicationId, string? promptVersion = null);
 }
-
-

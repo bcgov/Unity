@@ -615,6 +615,3 @@ function showChefsAPIAccessError() {
         },
     });
 }
-
-
-

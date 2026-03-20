@@ -81,7 +81,7 @@ $(function () {
         }
     });
 
-    $.fn.dataTable.Api.register('row().selectWithParams()', function (params) {        
+    $.fn.dataTable.Api.register('row().selectWithParams()', function (params) {
         this.params = params;
         return this.select();
     });
@@ -260,7 +260,7 @@ $(function () {
     $("#AdjudicationTeamLeadActionBar .dt-buttons").contents().unwrap();
     updateAiActionButtonsVisibility(reviewListTable);
 
-    reviewListTable.on('select', function (e, dt, type, indexes) {        
+    reviewListTable.on('select', function (e, dt, type, indexes) {
         handleRowSelection(e, dt, type, indexes, reviewListTable);
     });
 
@@ -299,7 +299,7 @@ function handleRowSelection(e, dt, type, indexes, reviewListTable) {
     if (type === 'row') {
         let selectedData = reviewListTable.row(indexes).data();
         document.getElementById("AssessmentId").value = selectedData.id;
-        if (refreshSidePanel) {            
+        if (refreshSidePanel) {
             PubSub.publish('select_application_review', selectedData);
             PubSub.publish('refresh_assessment_attachment_list', selectedData.id);
         }
@@ -539,4 +539,3 @@ function createButtonAction(e, dt, button, config) {
         });
     this.disable();
 }
-

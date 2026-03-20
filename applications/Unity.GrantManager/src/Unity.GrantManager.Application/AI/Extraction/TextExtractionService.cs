@@ -747,4 +747,3 @@ namespace Unity.GrantManager.AI.Extraction
         private static partial Regex MultipleNewlinesRegex();
     }
 }
-

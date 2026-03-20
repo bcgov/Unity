@@ -87,4 +87,3 @@ public class GrantApplicationDto : AuditedEntityDto<Guid>
     public ApplicationAnalysisResponse? ApplicationAnalysis { get; set; }
     public string? ApplicationScoringJson { get; set; }
 }
-

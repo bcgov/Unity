@@ -302,4 +302,3 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentScoresWidget
         }
     }
 }
-

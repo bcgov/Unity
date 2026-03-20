@@ -540,7 +540,7 @@ $(function () {
                 submissionData = submissionJson.submission;
             }
 
-            Formio.icons = 'fontawesome';            
+            Formio.icons = 'fontawesome';
 
             // Create container inside shadow DOM
             const container = document.createElement('div');
@@ -636,7 +636,7 @@ $(function () {
         );
     }
 
-   
+
 
     $('#assessment_upload_btn').click(function () {
         $('#assessment_upload').trigger('click');
@@ -869,31 +869,31 @@ $(function () {
     function openScoreSheetDataInNewTab(assessmentScoresheet) {
         const newTab = globalThis.open('', '_blank');
         const doc = newTab.document;
-        
+
         doc.open();
         doc.close();
         doc.title = 'Print';
-        
+
         // Create and append stylesheets
         const stylesheets = [
             { href: '/libs/bootstrap-4/dist/css/bootstrap.min.css' },
             { href: '/Pages/GrantApplications/ScoresheetPrint.css' }
         ];
-        
+
         stylesheets.forEach(({ href }) => {
             const link = doc.createElement('link');
             link.rel = 'stylesheet';
             link.href = href;
             doc.head.appendChild(link);
         });
-        
+
         // Add jQuery script
         const jqueryScript = doc.createElement('script');
         jqueryScript.src = '/libs/jquery/jquery.js';
         doc.head.appendChild(jqueryScript);
-        
+
         doc.body.innerHTML = assessmentScoresheet;
-        
+
         // Load and execute print script
         newTab.onload = function () {
             const script = doc.createElement('script');
@@ -1027,7 +1027,7 @@ $(function () {
             tabCounters.files + tabCounters.chefs
         );
     });
-    
+
     PubSub.subscribe('update_ai_analysis_status', (msg, data) => {
         const $indicator = $('#ai_analysis_status');
         const status = data?.status;
@@ -1676,5 +1676,3 @@ function clearCurrencyError(input) {
     document.getElementById(errorSpan).textContent = '';
     input.attr('aria-invalid', 'false');
 }
-
-

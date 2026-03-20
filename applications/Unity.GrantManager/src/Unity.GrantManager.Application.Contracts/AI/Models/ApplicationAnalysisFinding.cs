@@ -17,4 +17,3 @@ namespace Unity.GrantManager.AI.Models
         public string? Detail { get; set; }
     }
 }
-

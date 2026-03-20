@@ -15,5 +15,3 @@ namespace Unity.GrantManager.AI.Models
         public int Confidence { get; set; }
     }
 }
-
-

@@ -25,4 +25,3 @@ namespace Unity.GrantManager.AI.Responses
         public ApplicationAnalysisRecommendation? Recommendation { get; set; }
     }
 }
-

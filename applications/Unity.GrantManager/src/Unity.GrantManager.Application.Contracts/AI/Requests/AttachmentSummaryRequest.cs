@@ -17,6 +17,3 @@ namespace Unity.GrantManager.AI.Requests
         public string? PromptVersion { get; set; }
     }
 }
-
-
-

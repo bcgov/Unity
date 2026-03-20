@@ -14,5 +14,3 @@ namespace Unity.GrantManager.AI
         Task<ApplicationScoringResponse> GenerateApplicationScoringAsync(ApplicationScoringRequest request);
     }
 }
-
-

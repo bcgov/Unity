@@ -31,4 +31,3 @@ namespace Unity.GrantManager.AI.Runtime
         public AIOperationResult WithOutcome(AIOperationOutcome outcome) => new(outcome, Response);
     }
 }
-
