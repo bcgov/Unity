@@ -111,9 +111,74 @@ public class EmailAttachmentService : ITransientDependency
         return memoryStream.ToArray();
     }
 
+    public async Task<EmailLogAttachment> UploadUserAttachmentAsync(
+        Guid emailLogId,
+        Guid? tenantId,
+        string fileName,
+        byte[] fileContent,
+        string contentType)
+    {
+        var uniqueKey = Guid.NewGuid();
+        var s3Key = BuildUserAttachmentS3Key(tenantId, emailLogId, uniqueKey, fileName);
+        var bucket = _configuration["S3:Bucket"];
+
+        using var uploadStream = new MemoryStream(fileContent);
+        var putRequest = new PutObjectRequest
+        {
+            BucketName = bucket,
+            Key = s3Key,
+            ContentType = contentType,
+            InputStream = uploadStream,
+            UseChunkEncoding = false,
+            DisablePayloadSigning = false
+        };
+
+        await _amazonS3Client.PutObjectAsync(putRequest);
+        _logger.LogInformation(
+            "Uploaded user email attachment to S3: FileName={FileName}, FileSize={FileSize}",
+            fileName, fileContent.Length);
+
+        var attachment = new EmailLogAttachment
+        {
+            EmailLogId = emailLogId,
+            S3ObjectKey = s3Key,
+            FileName = fileName,
+            DisplayName = fileName,
+            ContentType = contentType,
+            FileSize = fileContent.Length,
+            Time = DateTime.UtcNow,
+            UserId = _currentUser.Id ?? Guid.Empty,
+            TenantId = tenantId
+        };
+
+        await _emailLogAttachmentRepository.InsertAsync(attachment);
+        return attachment;
+    }
+
+    public async Task DeleteFromS3Async(string s3ObjectKey)
+    {
+        var bucket = _configuration["S3:Bucket"];
+        var deleteRequest = new DeleteObjectRequest
+        {
+            BucketName = bucket,
+            Key = s3ObjectKey
+        };
+        await _amazonS3Client.DeleteObjectAsync(deleteRequest);
+        _logger.LogInformation("Deleted email attachment from S3: Key={S3ObjectKey}", s3ObjectKey);
+    }
+
     public async Task<List<EmailLogAttachment>> GetAttachmentsAsync(Guid emailLogId)
     {
         return await _emailLogAttachmentRepository.GetByEmailLogIdAsync(emailLogId);
+    }
+
+    private static string BuildUserAttachmentS3Key(Guid? tenantId, Guid emailLogId, Guid attachmentId, string fileName)
+    {
+        var basePath = "Email/Attachments";
+        var tenantPart = tenantId?.ToString() ?? "host";
+        var escapedFileName = Uri.EscapeDataString(fileName);
+
+        return $"{basePath}/{tenantPart}/{emailLogId}/{attachmentId}/{escapedFileName}";
     }
 
     private static string BuildS3Key(Guid? tenantId, Guid emailLogId, string fileName)
@@ -124,6 +189,4 @@ public class EmailAttachmentService : ITransientDependency
 
         return $"{basePath}/{tenantPart}/{emailLogId}/{escapedFileName}";
     }
-
-    
 }

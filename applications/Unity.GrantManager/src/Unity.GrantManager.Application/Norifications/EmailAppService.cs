@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Authorization;
+using System;
 using System.Threading.Tasks;
 using Unity.Modules.Shared.Utils;
+using Unity.Notifications.EmailNotifications;
 using Unity.Notifications.Emails;
 using Unity.Notifications.Events;
 using Volo.Abp.Application.Services;
@@ -12,8 +14,12 @@ namespace Unity.GrantManager.Emails
     [Authorize]
     [Dependency(ReplaceServices = true)]
     [ExposeServices(typeof(EmailAppService), typeof(IEmailAppService))]
-    public class EmailAppService(ILocalEventBus localEventBus) : ApplicationService, IEmailAppService
+    public class EmailAppService(ILocalEventBus localEventBus, IEmailNotificationService emailNotificationService) : ApplicationService, IEmailAppService
     {
+        public async Task<Guid> InitializeDraftAsync(Guid applicationId)
+        {
+            return await emailNotificationService.InitializeDraftAsync(applicationId);
+        }
         public async Task<bool> CreateAsync(CreateEmailDto dto)
         {
             EmailNotificationEvent emailNotificationEvent = GetEmailNotificationEvent(dto);
