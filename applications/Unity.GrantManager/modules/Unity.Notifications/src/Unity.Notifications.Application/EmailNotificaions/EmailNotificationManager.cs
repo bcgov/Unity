@@ -113,7 +113,7 @@ namespace Unity.Notifications.EmailNotifications
                 }
                 catch (Exception ex)
                 {
-                    Logger.LogError(ex, "Failed to delete S3 attachment {S3ObjectKey} for EmailLog {EmailLogId}", s3Key, id);
+                    Logger.LogError(ex, "Failed to delete S3 attachment for EmailLog {EmailLogId}", id);
                 }
             }
             await emailLogsRepository.DeleteAsync(id);
