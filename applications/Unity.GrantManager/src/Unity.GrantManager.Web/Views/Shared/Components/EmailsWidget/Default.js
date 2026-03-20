@@ -127,7 +127,7 @@
         if (isNewEmailDraft && newDraftId) {
             $.ajax({ url: `/api/app/email-notification/${newDraftId}/email`, type: 'DELETE' })
                 .catch(e => console.warn('Failed to delete draft on close:', e));
-            isNewEmailDraft = false; newDraftId = null;
+            isNewEmailDraft = false; 
             newDraftId = null;
         }
         closeEmailFormUI();
@@ -635,7 +635,7 @@
         if (isNewEmailDraft && newDraftId) {
             $.ajax({ url: `/api/app/email-notification/${newDraftId}/email`, type: 'DELETE' })
                 .catch(e => console.warn('Failed to delete abandoned draft on email_selected:', e));
-            isNewEmailDraft = false; newDraftId = null;
+            isNewEmailDraft = false; 
             newDraftId = null;
         }
         resetValidationErrors();
