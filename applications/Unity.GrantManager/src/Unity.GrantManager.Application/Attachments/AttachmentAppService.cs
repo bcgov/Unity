@@ -93,14 +93,14 @@ public class AttachmentAppService(
                     join person in people on attachment.UserId equals person.Id
                     select new UnityAttachmentDto()
                     {
-                        Id          = attachment.Id,
-                        FileName    = attachment.FileName,
-                        DisplayName = attachment.DisplayName,
-                        S3ObjectKey = attachment.S3ObjectKey,
-                        Time        = attachment.Time,
+                        Id             = attachment.Id,
+                        FileName       = attachment.FileName,
+                        DisplayName    = attachment.DisplayName,
+                        S3ObjectKey    = attachment.S3ObjectKey,
+                        Time           = attachment.Time,
                         AttachmentType = attachment.AttachmentType,
-                        AttachedBy  = person.FullName,
-                        CreatorId   = person.Id
+                        AttachedBy     = person.FullName,
+                        CreatorId      = person.Id
                     };
 
         return query.ToList();
@@ -127,10 +127,10 @@ public class AttachmentAppService(
         var attachment = await repository.GetAsync(attachmentId) ?? throw new EntityNotFoundException();
         return new AttachmentMetadataDto
         {
-            Id          = attachment.Id,
-            FileName    = attachment.FileName,
-            DisplayName = attachment.DisplayName,
-            CreatorId   = GetCreatorId(attachment),
+            Id             = attachment.Id,
+            FileName       = attachment.FileName,
+            DisplayName    = attachment.DisplayName,
+            CreatorId      = GetCreatorId(attachment),
             AttachmentType = attachment.AttachmentType
         };
     }
@@ -162,15 +162,16 @@ public class AttachmentAppService(
     {
         var attachment = await repository.GetAsync(updateAttachment.Id) ?? throw new EntityNotFoundException();
 
+        // Properties to be updated
         attachment.DisplayName = updateAttachment.DisplayName;
 
         var updatedAttachment = await repository.UpdateAsync(attachment, autoSave: true) ?? throw new EntityNotFoundException();
         return new AttachmentMetadataDto
         {
-            Id          = updatedAttachment.Id,
-            FileName    = updatedAttachment.FileName,
-            DisplayName = updatedAttachment.DisplayName,
-            CreatorId   = GetCreatorId(updatedAttachment),
+            Id             = updatedAttachment.Id,
+            FileName       = updatedAttachment.FileName,
+            DisplayName    = updatedAttachment.DisplayName,
+            CreatorId      = GetCreatorId(updatedAttachment),
             AttachmentType = attachmentType
         };
     }
