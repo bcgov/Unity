@@ -242,7 +242,7 @@ $(function () {
             // Call the backend API
             $.ajax({
                 url:
-                    '/api/app/attachment/generate-attachment-summaries' +
+                    '/api/app/attachment-summary/generate-attachment-summaries' +
                     '?promptVersion=' +
                     encodeURIComponent(promptVersion || ''),
                 data: JSON.stringify(attachmentIds),

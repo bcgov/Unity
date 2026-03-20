@@ -228,7 +228,7 @@ $(function () {
         );
 
         const latestTimestamp = summarizedAttachments
-            .map((attachment) => attachment.lastModificationTime || attachment.creationTime || null)
+            .map((attachment) => attachment.updatedTime || attachment.createdTime || null)
             .filter((timestamp) => !!timestamp)
             .sort()
             .at(-1);
@@ -257,7 +257,7 @@ $(function () {
             const summary = getAttachmentSummaryValue(attachment);
             return [
                 'NAME:',
-                attachment.fileName || '',
+                attachment.name || '',
                 '',
                 'SUMMARY:',
                 summary
@@ -278,7 +278,7 @@ $(function () {
                 }
 
                 return {
-                    name: attachment.fileName || '',
+                    name: attachment.name || '',
                     summary
                 };
             })
@@ -291,7 +291,7 @@ $(function () {
         return JSON.stringify(summarizedAttachments, null, 2);
     }
 
-    function loadApplicationAiOutputs() {
+    function loadDevAiOutputs() {
         const applicationId = $('#DetailsViewApplicationId').val();
 
         if (!applicationId) {
@@ -323,7 +323,7 @@ $(function () {
                         attachmentSection,
                         formatSectionBody(
                             'OUTPUT',
-                            formatJsonOrRaw(application?.aiAnalysisData ?? application?.aiAnalysis ?? '')
+                            formatJsonOrRaw(application?.applicationAnalysis ?? application?.applicationAnalysisJson ?? '')
                         )
                     ])
                 );
@@ -335,7 +335,7 @@ $(function () {
                         attachmentSection,
                         formatSectionBody(
                             'OUTPUT',
-                            formatJsonOrRaw(application?.aiScoresheetAnswers ?? application?.aIScoresheetAnswers ?? '')
+                            formatJsonOrRaw(application?.applicationScoringJson ?? '')
                         )
                     ])
                 );
@@ -354,7 +354,7 @@ $(function () {
             });
     }
 
-    globalThis.refreshDevAiOutputs = loadApplicationAiOutputs;
+    globalThis.refreshDevAiOutputs = loadDevAiOutputs;
 
     globalThis.generateAllAIDevOutputs = function(triggerButton = null) {
         const $button = triggerButton ? $(triggerButton) : $('#generateAllAiDevToolsBtn');
@@ -433,7 +433,7 @@ $(function () {
         updateLinksCounters();
         renderSubmission();
         loadAIAnalysis();
-        loadApplicationAiOutputs();
+        loadDevAiOutputs();
         applyTabHeightOffset();
     }
 
@@ -716,11 +716,11 @@ $(function () {
     PubSub.subscribe('refresh_assessment_scores', (msg, data) => {
         assessmentScoresWidgetManager.refresh();
         updateSubtotal();
-        loadApplicationAiOutputs();
+        loadDevAiOutputs();
     });
 
     PubSub.subscribe('refresh_chefs_attachment_list', () => {
-        loadApplicationAiOutputs();
+        loadDevAiOutputs();
     });
 
     PubSub.subscribe('select_application_review', (msg, data) => {

@@ -33,7 +33,10 @@ public class GrantManagerApplicationAutoMapperProfile : Profile
         CreateMap<DynamicUrl, DynamicUrlDto>();
         CreateMap<DynamicUrl, CreateUpdateDynamicUrlDto>();
         
-        CreateMap<Application, GrantApplicationDto>();
+        CreateMap<Application, GrantApplicationDto>()
+            .ForMember(dest => dest.ApplicationAnalysisJson, opt => opt.MapFrom(src => src.AIAnalysis))
+            .ForMember(dest => dest.ApplicationScoringJson, opt => opt.MapFrom(src => src.AIScoresheetAnswers))
+            .ForMember(dest => dest.ApplicationAnalysis, opt => opt.Ignore());
         CreateMap<ApplicationAssignment, GrantApplicationAssigneeDto>();
         CreateMap<Person, GrantApplicationAssigneeDto>()
             .ForMember(d => d.AssigneeId, opt => opt.MapFrom(src => src.Id))
@@ -56,7 +59,9 @@ public class GrantManagerApplicationAutoMapperProfile : Profile
                 opts => opts.MapFrom(src => src.CreationTime));
         CreateMap<AssessmentWithAssessorQueryResultItem, AssessmentListItemDto>()
             .ForMember(d => d.SubTotal, opt => opt.Ignore());
-        CreateMap<ApplicationChefsFileAttachment, ApplicationChefsFileAttachmentDto>();
+        CreateMap<ApplicationChefsFileAttachment, ApplicationChefsFileAttachmentDto>()
+            .ForMember(dest => dest.CreatedTime, opt => opt.MapFrom(src => src.CreationTime))
+            .ForMember(dest => dest.UpdatedTime, opt => opt.MapFrom(src => src.LastModificationTime));
         CreateMap<ApplicationAttachment, ApplicationAttachmentDto>();
         CreateMap<Intakes.Intake, IntakeDto>();
         CreateMap<ApplicationForm, ApplicationFormDto>();

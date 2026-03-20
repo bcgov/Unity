@@ -431,7 +431,7 @@ function loadAIAnalysis() {
 
     unity.grantManager.grantApplications.grantApplication.get(applicationId)
         .done(function(application) {
-            const aiAnalysisData = application?.aiAnalysisData ?? tryParseRawAnalysis(application?.aiAnalysis);
+            const aiAnalysisData = application?.applicationAnalysis ?? tryParseRawAnalysis(application?.applicationAnalysisJson);
 
             if (aiAnalysisData) {
                 try {

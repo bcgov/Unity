@@ -83,7 +83,7 @@ public class GrantApplicationDto : AuditedEntityDto<Guid>
     public PaymentInfoDto? PaymentInfo { get; set; }
     public string? UnityApplicationId { get; set; }
     public string? ApplicantElectoralDistrict { get; set; }
-    public string? AIAnalysis { get; set; }
-    public ApplicationAnalysisResponse? AIAnalysisData { get; set; }
-    public string? AIScoresheetAnswers { get; set; }
+    public string? ApplicationAnalysisJson { get; set; }
+    public ApplicationAnalysisResponse? ApplicationAnalysis { get; set; }
+    public string? ApplicationScoringJson { get; set; }
 }
