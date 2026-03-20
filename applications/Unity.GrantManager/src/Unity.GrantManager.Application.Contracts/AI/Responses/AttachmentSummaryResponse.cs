@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace Unity.GrantManager.AI
+namespace Unity.GrantManager.AI.Responses
 {
     public class AttachmentSummaryResponse
     {
@@ -8,3 +8,4 @@ namespace Unity.GrantManager.AI
         public string Summary { get; set; } = string.Empty;
     }
 }
+

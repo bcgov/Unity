@@ -3,11 +3,12 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Unity.GrantManager.AI.Requests;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Intakes;
 using Volo.Abp.DependencyInjection;
 
-namespace Unity.GrantManager.AI;
+namespace Unity.GrantManager.AI.Operations;
 
 public class AttachmentSummaryService(
     IApplicationChefsFileAttachmentRepository applicationChefsFileAttachmentRepository,
@@ -101,6 +102,8 @@ public class AttachmentSummaryService(
         }
     }
 }
+
+
 
 
 

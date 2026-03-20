@@ -1,7 +1,8 @@
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
+using Unity.GrantManager.AI.Models;
 
-namespace Unity.GrantManager.AI
+namespace Unity.GrantManager.AI.Responses
 {
     public class ApplicationScoringResponse
     {
@@ -9,4 +10,5 @@ namespace Unity.GrantManager.AI
         public Dictionary<string, ApplicationScoringAnswer> Answers { get; set; } = new();
     }
 }
+
 

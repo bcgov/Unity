@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Volo.Abp.AspNetCore.Mvc.UI.Widgets;
 using Volo.Abp.AspNetCore.Mvc;
 using System.Collections.Generic;
@@ -14,7 +14,7 @@ using System.Linq;
 using Unity.Flex.Worksheets;
 using Unity.Flex;
 using Unity.Flex.Scoresheets.Enums;
-using Unity.GrantManager.AI;
+using Unity.GrantManager.AI.Responses;
 using Unity.GrantManager.Applications;
 using System.Text.Json;
 using Unity.AI.Permissions;
@@ -302,3 +302,4 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentScoresWidget
         }
     }
 }
+

@@ -1,4 +1,4 @@
-namespace Unity.GrantManager.AI
+namespace Unity.GrantManager.AI.Runtime
 {
     internal sealed record AIProviderResult(
         string Content,
@@ -15,3 +15,4 @@ namespace Unity.GrantManager.AI
         public string CaptureOutput => string.IsNullOrWhiteSpace(RawResponse) ? Content : RawResponse;
     }
 }
+

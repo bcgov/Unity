@@ -1,4 +1,4 @@
-namespace Unity.GrantManager.AI
+namespace Unity.GrantManager.AI.Runtime
 {
     internal sealed record AIProviderResponseMetadata(
         string? Model,
@@ -8,3 +8,4 @@ namespace Unity.GrantManager.AI
         int? TotalTokens,
         int? ReasoningTokens);
 }
+

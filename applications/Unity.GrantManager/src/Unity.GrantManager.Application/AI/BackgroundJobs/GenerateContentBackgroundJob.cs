@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using System;
 using System.Threading.Tasks;
+using Unity.GrantManager.AI.Operations;
 using Unity.GrantManager.Intakes.Events;
 using Volo.Abp.BackgroundJobs;
 using Volo.Abp.DependencyInjection;
@@ -73,3 +74,4 @@ public class GenerateContentBackgroundJob(
         }
     }
 }
+

@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Text.Json;
 
-namespace Unity.GrantManager.AI
+namespace Unity.GrantManager.AI.Runtime
 {
     internal static class AIProviderPayloadValidator
     {
@@ -148,4 +148,5 @@ namespace Unity.GrantManager.AI
 
     }
 }
+
 

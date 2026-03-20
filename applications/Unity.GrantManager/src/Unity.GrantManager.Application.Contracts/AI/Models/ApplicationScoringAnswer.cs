@@ -1,7 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace Unity.GrantManager.AI
+namespace Unity.GrantManager.AI.Models
 {
     public class ApplicationScoringAnswer
     {
@@ -15,4 +15,5 @@ namespace Unity.GrantManager.AI
         public int Confidence { get; set; }
     }
 }
+
 

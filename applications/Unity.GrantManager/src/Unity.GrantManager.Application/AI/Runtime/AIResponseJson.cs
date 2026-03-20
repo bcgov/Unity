@@ -1,6 +1,6 @@
 using System;
 
-namespace Unity.GrantManager.AI
+namespace Unity.GrantManager.AI.Runtime
 {
     internal static class AIResponseJson
     {
@@ -61,3 +61,4 @@ namespace Unity.GrantManager.AI
         }
     }
 }
+

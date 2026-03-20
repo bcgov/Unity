@@ -1,4 +1,6 @@
 using System.Threading.Tasks;
+using Unity.GrantManager.AI.Requests;
+using Unity.GrantManager.AI.Responses;
 
 namespace Unity.GrantManager.AI
 {
@@ -12,4 +14,5 @@ namespace Unity.GrantManager.AI
         Task<ApplicationScoringResponse> GenerateApplicationScoringAsync(ApplicationScoringRequest request);
     }
 }
+
 

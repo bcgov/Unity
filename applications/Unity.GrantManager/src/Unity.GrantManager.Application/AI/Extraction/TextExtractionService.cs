@@ -13,7 +13,7 @@ using System.Xml.Linq;
 using UglyToad.PdfPig;
 using Volo.Abp.DependencyInjection;
 
-namespace Unity.GrantManager.AI
+namespace Unity.GrantManager.AI.Extraction
 {
     public partial class TextExtractionService : ITextExtractionService, ITransientDependency
     {
@@ -747,3 +747,4 @@ namespace Unity.GrantManager.AI
         private static partial Regex MultipleNewlinesRegex();
     }
 }
+

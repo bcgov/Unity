@@ -1,4 +1,4 @@
-namespace Unity.GrantManager.AI
+namespace Unity.GrantManager.AI.Runtime
 {
     internal enum AIOperationOutcome
     {
@@ -31,3 +31,4 @@ namespace Unity.GrantManager.AI
         public AIOperationResult WithOutcome(AIOperationOutcome outcome) => new(outcome, Response);
     }
 }
+

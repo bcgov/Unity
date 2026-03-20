@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace Unity.GrantManager.AI;
+namespace Unity.GrantManager.AI.Operations;
 
 public interface IAttachmentSummaryService
 {
@@ -10,4 +10,5 @@ public interface IAttachmentSummaryService
     Task<List<string>> GenerateAndSaveAsync(IEnumerable<Guid> attachmentIds, string? promptVersion = null);
     Task<List<string>> GenerateForApplicationAsync(Guid applicationId, string? promptVersion = null);
 }
+
 
