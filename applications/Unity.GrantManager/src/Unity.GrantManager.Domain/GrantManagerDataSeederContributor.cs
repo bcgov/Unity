@@ -47,7 +47,6 @@ public class GrantManagerDataSeederContributor(
 
         await SeedApplicationStatusAsync();
         await SeedAiScoringPersonAsync(context.TenantId);
-        await SeedBackgroundJobUserAsync(context.TenantId);
     }
 
     
@@ -116,45 +115,6 @@ public class GrantManagerDataSeederContributor(
                         Name = BackgroundJobConstants.BackgroundJobName
                     },
                     autoSave: true);
-            }
-        }
-    }
-
-    private async Task SeedBackgroundJobUserAsync(System.Guid? tenantId)
-    {
-        // Ensure we're in the correct tenant context
-        using (currentTenant.Change(tenantId))
-        {
-            // Check if the IdentityUser already exists
-            var existingUser = await userRepository.FindAsync(BackgroundJobConstants.BackgroundJobPersonId);
-            if (existingUser == null)
-            {
-                // Create the IdentityUser in the tenant context
-                await userRepository.InsertAsync(
-                    new IdentityUser(
-                        BackgroundJobConstants.BackgroundJobPersonId,
-                        BackgroundJobConstants.BackgroundJobUserName,
-                        BackgroundJobConstants.BackgroundJobEmail,
-                        tenantId)
-                    {
-                        Name = BackgroundJobConstants.BackgroundJobName
-                    },
-                    autoSave: true);
-            }
-
-            // Check if the Person record already exists
-            var existingPerson = await personRepository.FirstOrDefaultAsync(p => p.Id == BackgroundJobConstants.BackgroundJobPersonId);
-            if (existingPerson == null)
-            {
-                await personRepository.InsertAsync(new Person
-                {
-                    Id = BackgroundJobConstants.BackgroundJobPersonId,
-                    OidcSub = BackgroundJobConstants.BackgroundJobOidcSub,
-                    OidcDisplayName = BackgroundJobConstants.BackgroundJobDisplayName,
-                    FullName = BackgroundJobConstants.BackgroundJobDisplayName,
-                    Badge = BackgroundJobConstants.BackgroundJobBadge,
-                    TenantId = tenantId
-                });
             }
         }
     }
