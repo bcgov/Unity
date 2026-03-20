@@ -166,7 +166,7 @@ public class EmailAttachmentService : ITransientDependency
             Key = s3ObjectKey
         };
         await _amazonS3Client.DeleteObjectAsync(deleteRequest);
-        _logger.LogInformation("Deleted email attachment from S3: Key={S3ObjectKey}", s3ObjectKey);
+        _logger.LogInformation("Deleted email attachment from S3.");
     }
 
     public async Task<List<EmailLogAttachment>> GetAttachmentsAsync(Guid emailLogId)
