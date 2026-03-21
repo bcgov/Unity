@@ -33,10 +33,7 @@ public class GrantManagerApplicationAutoMapperProfile : Profile
         CreateMap<DynamicUrl, DynamicUrlDto>();
         CreateMap<DynamicUrl, CreateUpdateDynamicUrlDto>();
         
-        CreateMap<Application, GrantApplicationDto>()
-            .ForMember(dest => dest.ApplicationAnalysisJson, opt => opt.MapFrom(src => src.AIAnalysis))
-            .ForMember(dest => dest.ApplicationScoringJson, opt => opt.MapFrom(src => src.AIScoresheetAnswers))
-            .ForMember(dest => dest.ApplicationAnalysis, opt => opt.Ignore());
+        CreateMap<Application, GrantApplicationDto>();
         CreateMap<ApplicationAssignment, GrantApplicationAssigneeDto>();
         CreateMap<Person, GrantApplicationAssigneeDto>()
             .ForMember(d => d.AssigneeId, opt => opt.MapFrom(src => src.Id))

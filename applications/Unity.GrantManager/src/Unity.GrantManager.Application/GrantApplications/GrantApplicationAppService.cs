@@ -216,7 +216,7 @@ public class GrantApplicationAppService(
             appDto.SectorSubSectorIndustryDesc = application.Applicant.SectorSubSectorIndustryDesc;
         }
 
-        appDto.ApplicationAnalysis = ParseAiAnalysisData(appDto.ApplicationAnalysisJson);
+        appDto.AIAnalysisData = ParseAiAnalysisData(appDto.AIAnalysis);
 
         return appDto;
     }

@@ -228,7 +228,7 @@ $(function () {
         );
 
         const latestTimestamp = summarizedAttachments
-            .map((attachment) => attachment.updatedTime || attachment.createdTime || null)
+            .map((attachment) => attachment.lastModificationTime || attachment.creationTime || null)
             .filter((timestamp) => !!timestamp)
             .sort()
             .at(-1);
@@ -257,7 +257,7 @@ $(function () {
             const summary = getAttachmentSummaryValue(attachment);
             return [
                 'NAME:',
-                attachment.name || '',
+                attachment.fileName || '',
                 '',
                 'SUMMARY:',
                 summary
@@ -278,7 +278,7 @@ $(function () {
                 }
 
                 return {
-                    name: attachment.name || '',
+                    name: attachment.fileName || '',
                     summary
                 };
             })
@@ -323,7 +323,7 @@ $(function () {
                         attachmentSection,
                         formatSectionBody(
                             'OUTPUT',
-                            formatJsonOrRaw(application?.applicationAnalysis ?? application?.applicationAnalysisJson ?? '')
+                            formatJsonOrRaw(application?.aiAnalysisData ?? application?.aiAnalysis ?? '')
                         )
                     ])
                 );
@@ -335,7 +335,7 @@ $(function () {
                         attachmentSection,
                         formatSectionBody(
                             'OUTPUT',
-                            formatJsonOrRaw(application?.applicationScoringJson ?? '')
+                            formatJsonOrRaw(application?.aiScoresheetAnswers ?? application?.aIScoresheetAnswers ?? '')
                         )
                     ])
                 );
