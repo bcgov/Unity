@@ -106,12 +106,14 @@ namespace Unity.Flex.Web.Views.Shared.Components.DataGridWidget
             var dataColumns = GenerateDataColumns(dataGridValue, dataGridDefinition);
             var dataRows = GenerateDataRows(dataColumns, dataGridRowsValue, presentationSetttings);
             var columnNames = dataColumns.Select(s => s.Name);
+            var columnKeys = dataColumns.Select(s => s.Key);
 
             var viewModel = new DataGridViewModel()
             {
                 Field = fieldModel,
                 Name = modelName,
                 Columns = [.. columnNames],
+                ColumnKeys = [.. columnKeys],
                 Rows = [.. dataRows],
                 AllowEdit = true,
                 SummaryOption = ConvertSummaryOption(dataGridDefinition),
@@ -227,6 +229,7 @@ namespace Unity.Flex.Web.Views.Shared.Components.DataGridWidget
             return View(new DataGridViewModel()
             {
                 Columns = [.. columnsToRender],
+                ColumnKeys = [.. columnsToRender],
                 Summary = summary,
                 Rows = [.. previewRows],
                 SummaryOption = ConvertSummaryOption(dataGridDefinition),
@@ -249,6 +252,7 @@ namespace Unity.Flex.Web.Views.Shared.Components.DataGridWidget
             return View(new DataGridViewModel()
             {
                 Columns = [.. columnsToRender],
+                ColumnKeys = [.. columnsToRender],
                 Summary = summary,
                 Rows = [.. previewRows],
                 SummaryOption = ConvertSummaryOption(dataGridDefinition),
@@ -263,6 +267,7 @@ namespace Unity.Flex.Web.Views.Shared.Components.DataGridWidget
             return View(new DataGridViewModel()
             {
                 Columns = [.. GenerateDynamicPlaceholderColumn()],
+                ColumnKeys = [.. GenerateDynamicPlaceholderColumn()],
                 Rows = [.. GenerateDynamicRowPlaceholder()],
                 Summary = GenerateDynamicPlaceholderSummary(),
                 SummaryOption = ConvertSummaryOption(dataGridDefinition),

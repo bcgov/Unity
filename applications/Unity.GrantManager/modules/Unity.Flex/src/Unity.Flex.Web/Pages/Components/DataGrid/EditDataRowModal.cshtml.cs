@@ -102,11 +102,17 @@ public class EditDataRowModalModel(DataGridWriteService dataGridWriteService,
         var dynamicCheckboxKeys = DynamicFields?.Where(df => df.Type == CustomFieldType.Checkbox.ToString()).Select(df => df.Key[DynamicFieldPrefix.Length..]) ?? [];
         CheckboxKeys = string.Join(',', customCheckboxKeys.Concat(dynamicCheckboxKeys));
 
-        DynamicKeyMap = JsonSerializer.Serialize(
-            DynamicFields?.ToDictionary(
+        var keyMap = DynamicFields?.ToDictionary(
                 df => df.Key[DynamicFieldPrefix.Length..],
                 df => new DynamicKeyMapEntry(df.Name, df.Type)
-            ) ?? new Dictionary<string, DynamicKeyMapEntry>());
+            ) ?? new Dictionary<string, DynamicKeyMapEntry>();
+
+        foreach (var cf in Properties ?? [])
+        {
+            keyMap.TryAdd(cf.Name, new DynamicKeyMapEntry(cf.Label, cf.Type.ToString(), IsDynamic: false));
+        }
+
+        DynamicKeyMap = JsonSerializer.Serialize(keyMap);
 
         AllFields = MergeAndSortFields(DynamicFields ?? [], Properties ?? []);
     }
@@ -156,7 +162,6 @@ public class EditDataRowModalModel(DataGridWriteService dataGridWriteService,
         var result = await dataGridWriteService.WriteRowAsync(dataProps);
         var updates = DataGridReadService.ApplyPresentationFormat(keyValuePairs, result.MappedValues, presentationSettings);
         ApplyDynamicFieldPresentationFormat(updates, dynamicTypeMap, presentationSettings);
-        var translatedUpdates = TranslateKeysToColumnNames(updates, dynamicTypeMap);
 
         return new OkObjectResult(new ModalResponse()
         {
@@ -166,7 +171,7 @@ public class EditDataRowModalModel(DataGridWriteService dataGridWriteService,
             WorksheetId = result.WorksheetId,
             Row = result.Row,
             IsNew = result.IsNew,
-            Updates = translatedUpdates,
+            Updates = updates,
             UiAnchor = UiAnchor
         });
     }    
@@ -195,19 +200,16 @@ public class EditDataRowModalModel(DataGridWriteService dataGridWriteService,
     }
 
     private static Dictionary<string, string> StripDynamicFieldPrefix(Dictionary<string, string> keyValuePairs)
-        => keyValuePairs.ToDictionary(
-            kvp => kvp.Key.StartsWith(DynamicFieldPrefix, StringComparison.Ordinal)
-                ? kvp.Key[DynamicFieldPrefix.Length..]
-                : kvp.Key,
-            kvp => kvp.Value);
-
-    private static Dictionary<string, string> TranslateKeysToColumnNames(
-        Dictionary<string, string> updates,
-        Dictionary<string, DynamicKeyMapEntry> keyToColumnMap)
     {
-        return updates.ToDictionary(
-            kvp => keyToColumnMap.TryGetValue(kvp.Key, out var entry) ? entry.Name : kvp.Key,
-            kvp => kvp.Value);
+        var result = new Dictionary<string, string>();
+        foreach (var kvp in keyValuePairs)
+        {
+            var key = kvp.Key.StartsWith(DynamicFieldPrefix, StringComparison.Ordinal)
+                ? kvp.Key[DynamicFieldPrefix.Length..]
+                : kvp.Key;
+            result[key] = kvp.Value;
+        }
+        return result;
     }
 
     private static void ConvertDateTimeValuesForStorage(
@@ -218,7 +220,7 @@ public class EditDataRowModalModel(DataGridWriteService dataGridWriteService,
         var browserOffset = TimeSpan.FromMinutes(-browserOffsetMinutes);
         var dateTimeType = CustomFieldType.DateTime.ToString();
 
-        foreach (var (key, _) in dynamicTypeMap.Where(e => e.Value.Type == dateTimeType))
+        foreach (var (key, _) in dynamicTypeMap.Where(e => e.Value.IsDynamic && e.Value.Type == dateTimeType))
         {
             if (keyValuePairs.TryGetValue(key, out var rawValue)
                 && !string.IsNullOrEmpty(rawValue)
@@ -236,13 +238,13 @@ public class EditDataRowModalModel(DataGridWriteService dataGridWriteService,
         PresentationSettings presentationSettings)
     {
         foreach (var (key, entry) in dynamicTypeMap.Where(e =>
-            updates.ContainsKey(e.Key) && !string.IsNullOrEmpty(updates[e.Key])))
+            e.Value.IsDynamic && updates.ContainsKey(e.Key) && !string.IsNullOrEmpty(updates[e.Key])))
         {
             updates[key] = updates[key].ApplyPresentationFormatting(entry.Type, null, presentationSettings);
         }
     }
 
-    private sealed record DynamicKeyMapEntry(string Name, string Type);
+    private sealed record DynamicKeyMapEntry(string Name, string Type, bool IsDynamic = true);
 
     private static List<EditRowField> MergeAndSortFields(DynamicFieldMap[] dynamicFields, List<WorksheetFieldViewModel> customFields)
     {

@@ -33,10 +33,12 @@ namespace Unity.Flex.Web.Pages.Flex
 
             foreach (var column in definition.Columns)
             {
+                var displayName = value?.Columns?.Find(c => c.Key == column.Name)?.Name ?? column.Name;
+
                 fieldsToEdit.Add(new WorksheetFieldViewModel()
                 {
                     Name = column.Name,
-                    Label = column.Name,
+                    Label = displayName,
                     Id = Guid.Empty,
                     CurrentValue = GetCurrentValueAndTransform(dataRow, column),
                     CurrentValueId = Guid.Empty,

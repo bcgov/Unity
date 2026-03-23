@@ -6,7 +6,11 @@
 @using Unity.Flex.Web.Views.Shared.Components.YesNoWidget
 @using Unity.Flex.Worksheets;
 @using Unity.Flex;
+@using Unity.Flex.Localization;
+@using Microsoft.Extensions.Localization;
 @using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal;
+
+@inject IStringLocalizer<FlexResource> L
 
 @model Unity.Flex.Web.Pages.Flex.EditDataRowModalModel;
 
@@ -101,7 +105,7 @@
                     {
                         var field = entry.CustomField!;
                         <div class="edit_row_field unity-input-group">
-                            <label class="form-label" for="@field.Name">@field.Label <i class="fl fl-pin static-field-indicator" title="Predefined column"></i></label>
+                            <label class="form-label" for="@field.Name">@field.Label <i class="fl fl-pin static-field-indicator" aria-hidden="true" title="@L["DataGrids:PredefinedColumn"]"></i><span class="visually-hidden">(@L["DataGrids:PredefinedColumn"])</span></label>
                             @try
                             {
                                 @switch (field.Type)
@@ -170,64 +174,64 @@
 </form>
 <script defer>
     (function () {
-    $('.custom-currency-input').maskMoney({
-    thousands: ',',
-    decimal: '.'
-    }).maskMoney('mask');
+        $('.custom-currency-input').maskMoney({
+            thousands: ',',
+            decimal: '.'
+        }).maskMoney('mask');
 
-    let fieldId = $('#fieldId').val();
-    let formId = `editRowData-${fieldId}`;
-    let form = $(`#${formId}`);
-    let saveBtn = $(`#saveRowValues-${fieldId}`);
+        let fieldId = $('#fieldId').val();
+        let formId = `editRowData-${fieldId}`;
+        let form = $(`#${formId}`);
+        let saveBtn = $(`#saveRowValues-${fieldId}`);
 
-    // Select inputs, textareas, and selects within the form
-    let formElements = $(`#${formId} input, #${formId} textarea, #${formId} select`);
+        // Select inputs, textareas, and selects within the form
+        let formElements = $(`#${formId} input, #${formId} textarea, #${formId} select`);
 
-    // Remove any existing 'change' event handlers
-    formElements.removeAttr('onchange');
+        // Remove any existing 'change' event handlers
+        formElements.removeAttr('onchange');
 
-    // Add a new 'change' event handler
-    formElements.on('change', function () {
-    let isValid = form.valid();
-    let hasInvalidCurrency = rowEditFormHasInvalidCurrencyCustomFields(formId);
-    saveBtn.prop('disabled', !(isValid && !hasInvalidCurrency));
+        // Add a new 'change' event handler
+        formElements.on('change', function () {
+            let isValid = form.valid();
+            let hasInvalidCurrency = rowEditFormHasInvalidCurrencyCustomFields(formId);
+            saveBtn.prop('disabled', !(isValid && !hasInvalidCurrency));
 
-    if (!isValid) {
-    form.find(':input').each(function () {
-    if (!this.validity.valid) {
-    console.log('Invalid field:', this.name || this.id);
-    }
-    });
-    }
-    });
+            if (!isValid) {
+                form.find(':input').each(function () {
+                    if (!this.validity.valid) {
+                        console.log('Invalid field:', this.name || this.id);
+                    }
+                });
+            }
+        });
 
-    // Get all date/time elements
-    let datetimeElements = $(`#${formId} input[type="datetime-local"], #${formId} input[type="date"]`);
+        // Get all date/time elements
+        let datetimeElements = $(`#${formId} input[type="datetime-local"], #${formId} input[type="date"]`);
 
-    // Loop through all the input elements
-    datetimeElements.each(function () {
-    // Find the <i> element within the same .custom-input-group
-    var icon = $(this).closest('.custom-input-group').find('i');
+        // Loop through all the input elements
+        datetimeElements.each(function () {
+            // Find the <i> element within the same .custom-input-group
+            var icon = $(this).closest('.custom-input-group').find('i');
 
-    // Set the class of the <i> element to empty
-    icon.attr('class', '');
-    });
+            // Set the class of the <i> element to empty
+            icon.attr('class', '');
+        });
 
-    function rowEditFormHasInvalidCurrencyCustomFields(formId) {
-    let invalidFieldsFound = false;
-    $("#" + formId + " input:visible").each(function (i, el) {
-    let $field = $(this);
-    if ($field.hasClass('custom-currency-input')) {
-    if ($field.val() === '' || $field.val() === '0') {
-    $field.val('0.00');
-    }
-    if (!isValidCurrencyCustomField($field)) {
-    invalidFieldsFound = true;
-    }
-    }
-    });
+        function rowEditFormHasInvalidCurrencyCustomFields(formId) {
+            let invalidFieldsFound = false;
+            $('#' + formId + ' input:visible').each(function (i, el) {
+                let $field = $(this);
+                if ($field.hasClass('custom-currency-input')) {
+                    if ($field.val() === '' || $field.val() === '0') {
+                        $field.val('0.00');
+                    }
+                    if (!isValidCurrencyCustomField($field)) {
+                        invalidFieldsFound = true;
+                    }
+                }
+            });
 
-    return invalidFieldsFound;
-    }
+            return invalidFieldsFound;
+        }
     })();
 </script>

@@ -84,8 +84,8 @@ $(function () {
         if (isNewRow) {
             // Convert dataToUpdate object to an array of values in the same order as the columns
             let newRowData = table.columns().header().toArray().map(header => {
-                let columnName = $(header).text();
-                return dataToUpdate[columnName] !== undefined ? dataToUpdate[columnName] : '';
+                let key = $(header).data('key');
+                return dataToUpdate[key] !== undefined ? dataToUpdate[key] : '';
             });
 
             // Add a placeholder for the button in the last column
@@ -152,11 +152,11 @@ $(function () {
         return !isNaN(value) && isFinite(value);
     }
 
-    // Function to get the index of a column by its name
-    function getColumnIndex(table, columnName) {
+    // Function to get the index of a column by its key
+    function getColumnIndex(table, key) {
         let headers = table.columns().header().toArray();
         for (let i = 0; i < headers.length; i++) {
-            if ($(headers[i]).text() === columnName) {
+            if ($(headers[i]).data('key') === key) {
                 return i;
             }
         } return -1; // Return -1 if the column is not found 
