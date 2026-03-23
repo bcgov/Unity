@@ -26,7 +26,7 @@ class SchemaExtractor:
         self.junk_columns = {
             "CreatorId", "LastModificationTime", "LastModifierId",
             "ExtraProperties", "ConcurrencyStamp", "CreationTime",
-            "CorrelationProvider"
+            "CorrelationProvider", "AIScoresheetAnswers", "AIAnalysis"
         }
         self.junk_tables = {"ApplicationFormSubmissions", "__EFMigrationsHistory"}
     
