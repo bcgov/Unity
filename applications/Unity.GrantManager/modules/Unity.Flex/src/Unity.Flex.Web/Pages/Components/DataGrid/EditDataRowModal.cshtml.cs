@@ -128,13 +128,11 @@ public class EditDataRowModalModel(DataGridWriteService dataGridWriteService,
 
         if (CheckboxKeys != null)
         {
-            var keysToCheck = CheckboxKeys.Split(',');
-            foreach (var key in keysToCheck)
+            foreach (var key in CheckboxKeys.Split(','))
             {
-                if (!keyValuePairs.TryAdd(key, "false"))
-                {
-                    keyValuePairs[key] = keyValuePairs[key].IsTruthy() ? "true" : "false";
-                }
+                keyValuePairs[key] = keyValuePairs.TryGetValue(key, out var existing) && existing.IsTruthy()
+                    ? "true"
+                    : "false";
             }
         }
 
