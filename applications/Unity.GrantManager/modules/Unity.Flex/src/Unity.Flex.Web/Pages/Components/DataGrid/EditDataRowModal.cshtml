@@ -36,8 +36,17 @@
                     {
                         var df = entry.DynamicField!;
                         var fieldType = Enum.TryParse<CustomFieldType>(df.Type, out var parsed) ? parsed : CustomFieldType.Text;
+                        var isEditable = fieldType is CustomFieldType.Text or CustomFieldType.TextArea
+                            or CustomFieldType.Currency or CustomFieldType.Numeric
+                            or CustomFieldType.Date or CustomFieldType.DateTime
+                            or CustomFieldType.Checkbox or CustomFieldType.Phone or CustomFieldType.Email;
                         <div class="edit_row_field unity-input-group">
-                            @if (fieldType == CustomFieldType.Checkbox)
+                            @if (!isEditable)
+                            {
+                                <label class="form-label">@df.Name</label>
+                                <input type="text" class="form-control" value="@df.Value" disabled />
+                            }
+                            else if (fieldType == CustomFieldType.Checkbox)
                             {
                                 <div class="custom-fields-checkbox-wrapper">
                                     @if (df.Value.IsTruthy())
@@ -69,6 +78,14 @@
                                     <span id="@(df.Key)-error" class="text-danger field-validation-error"></span>
                                 </div>
                             }
+                            else if (fieldType == CustomFieldType.TextArea)
+                            {
+                                <label class="form-label" for="@df.Key">@df.Name</label>
+                                <textarea class="form-control"
+                                          id="@df.Key"
+                                          name="@df.Key"
+                                          rows="3">@df.InputValue</textarea>
+                            }
                             else
                             {
                                 <label class="form-label" for="@df.Key">@df.Name</label>
@@ -84,7 +101,7 @@
                     {
                         var field = entry.CustomField!;
                         <div class="edit_row_field unity-input-group">
-                            <label class="form-label" for="@field.Name">@field.Label</label>
+                            <label class="form-label" for="@field.Name">@field.Label <i class="fl fl-pin static-field-indicator" title="Predefined column"></i></label>
                             @try
                             {
                                 @switch (field.Type)

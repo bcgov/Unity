@@ -46,3 +46,10 @@
     display: flex;
     flex-direction: column;
 }
+
+.static-field-indicator {
+    font-size: 0.7em;
+    color: #8a8886;
+    margin-left: 4px;
+    vertical-align: middle;
+}

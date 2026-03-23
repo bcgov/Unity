@@ -117,6 +117,8 @@ namespace Unity.Flex.Web.Pages.Flex
             return type switch
             {
                 CustomFieldType.Currency => ValueConverterHelpers.ConvertDecimal(value),
+                CustomFieldType.Date => ValueConverterHelpers.ConvertDate(value),
+                CustomFieldType.DateTime => ValueConverterHelpers.ConvertDateTime(value),
                 CustomFieldType.YesNo => ValueConverterHelpers.ConvertYesNo(value),
                 CustomFieldType.Checkbox => ValueConverterHelpers.ConvertCheckbox(value),
                 _ => value

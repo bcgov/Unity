@@ -42,6 +42,7 @@ namespace Unity.Flex
             {
                 var ct when IsDateColumn(ct) && TryParseDate(value, out string formatted) => formatted,
                 var ct when IsDateTimeColumn(ct) && TryParseDateTimeForInput(value, presentationSettings.BrowserOffsetMinutes, out string formatted) => formatted,
+                var ct when IsCurrencyColumn(ct) => ValueConverterHelpers.ConvertDecimal(value),
                 _ => value
             };
         }
