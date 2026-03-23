@@ -1,6 +1,4 @@
 ﻿@page
-@using Microsoft.Extensions.Localization;
-@using Unity.Flex.Localization;
 @using Unity.Flex.Web.Views.Shared.Components.CheckboxWidget;
 @using Unity.Flex.Web.Views.Shared.Components.CurrencyWidget;
 @using Unity.Flex.Web.Views.Shared.Components.DateWidget;
@@ -12,7 +10,6 @@
 
 @model Unity.Flex.Web.Pages.Flex.EditDataRowModalModel;
 
-@inject IStringLocalizer<FlexResource> L
 @{
     Layout = null;
 }
@@ -31,27 +28,61 @@
             <abp-input type="hidden" id="UiAnchor" asp-for="@Model.UiAnchor" />
             <abp-input type="hidden" id="IsNew" asp-for="@Model.IsNew" />
             <abp-input type="hidden" id="CheckboxKeys" asp-for="@Model.CheckboxKeys" />
-            <div class="custom-fields-split">
-                @if (Model.DynamicFields?.Length > 0)
+            <abp-input type="hidden" id="DynamicKeyMap" asp-for="@Model.DynamicKeyMap" />
+            <div class="edit-row-fields">
+                @foreach (var entry in Model.AllFields)
                 {
-                    <div>
-                        <h6 class="customgrid-edit-row-header">@L["DataGrids:DynamicColumnsHeader"]:</h6>
-                        @foreach (var field in Model.DynamicFields ?? [])
-                        {
-                            <div class="edit_row_field unity-input-group">
-                                <label class="form-label" for="@field.Key">@field.Key</label>
-                                <input class="form-control customgrid-edit-dymanic-field" name="@field.Key" value="@field.Value" disabled />
-                            </div>
-                        }
-                    </div>
-                }
-                <div>
-                    @if (Model.DynamicFields?.Length > 0)
+                    @if (entry.IsDynamic)
                     {
-                        <h6 class="customgrid-edit-row-header">@L["DataGrids:CustomColumnsHeader"]:</h6>
+                        var df = entry.DynamicField!;
+                        var fieldType = Enum.TryParse<CustomFieldType>(df.Type, out var parsed) ? parsed : CustomFieldType.Text;
+                        <div class="edit_row_field unity-input-group">
+                            @if (fieldType == CustomFieldType.Checkbox)
+                            {
+                                <div class="custom-fields-checkbox-wrapper">
+                                    @if (df.Value.IsTruthy())
+                                    {
+                                        <input type="checkbox"
+                                               id="@df.Key"
+                                               name="@df.Key"
+                                               checked />
+                                    }
+                                    else
+                                    {
+                                        <input type="checkbox"
+                                               id="@df.Key"
+                                               name="@df.Key" />
+                                    }
+                                    <label for="@df.Key">@df.Name</label>
+                                </div>
+                            }
+                            else if (fieldType == CustomFieldType.Currency)
+                            {
+                                <label class="form-label" for="@df.Key">@df.Name</label>
+                                <div class="custom-input-group">
+                                    <span class="custom-input-prepend">$</span>
+                                    <input type="@fieldType.ConvertInputType()"
+                                           class="@fieldType.ApplyCssClass()"
+                                           id="@df.Key"
+                                           name="@df.Key"
+                                           value="@df.InputValue" />
+                                    <span id="@(df.Key)-error" class="text-danger field-validation-error"></span>
+                                </div>
+                            }
+                            else
+                            {
+                                <label class="form-label" for="@df.Key">@df.Name</label>
+                                <input type="@fieldType.ConvertInputType()"
+                                       class="@fieldType.ApplyCssClass()"
+                                       id="@df.Key"
+                                       name="@df.Key"
+                                       value="@df.InputValue" />
+                            }
+                        </div>
                     }
-                    @foreach (var field in Model.Properties ?? [])
+                    else
                     {
+                        var field = entry.CustomField!;
                         <div class="edit_row_field unity-input-group">
                             <label class="form-label" for="@field.Name">@field.Label</label>
                             @try
@@ -111,7 +142,7 @@
                             <span class="text-danger field-validation-valid" data-valmsg-for="@($"{field?.Name}.{field?.Name}.{field?.Id}")" data-valmsg-replace="true"></span>
                         </div>
                     }
-                </div>
+                }
             </div>
         </abp-modal-body>
         <abp-modal-footer>
@@ -122,64 +153,64 @@
 </form>
 <script defer>
     (function () {
-        $('.custom-currency-input').maskMoney({
-            thousands: ',',
-            decimal: '.'
-        }).maskMoney('mask');
+    $('.custom-currency-input').maskMoney({
+    thousands: ',',
+    decimal: '.'
+    }).maskMoney('mask');
 
-        let fieldId = $('#fieldId').val();
-        let formId = `editRowData-${fieldId}`;
-        let form = $(`#${formId}`);
-        let saveBtn = $(`#saveRowValues-${fieldId}`);
+    let fieldId = $('#fieldId').val();
+    let formId = `editRowData-${fieldId}`;
+    let form = $(`#${formId}`);
+    let saveBtn = $(`#saveRowValues-${fieldId}`);
 
-        // Select inputs, textareas, and selects within the form
-        let formElements = $(`#${formId} input, #${formId} textarea, #${formId} select`);
+    // Select inputs, textareas, and selects within the form
+    let formElements = $(`#${formId} input, #${formId} textarea, #${formId} select`);
 
-        // Remove any existing 'change' event handlers
-        formElements.removeAttr('onchange');
+    // Remove any existing 'change' event handlers
+    formElements.removeAttr('onchange');
 
-        // Add a new 'change' event handler
-        formElements.on('change', function () {
-            let isValid = form.valid();
-            let hasInvalidCurrency = rowEditFormHasInvalidCurrencyCustomFields(formId);
-            saveBtn.prop('disabled', !(isValid && !hasInvalidCurrency));
+    // Add a new 'change' event handler
+    formElements.on('change', function () {
+    let isValid = form.valid();
+    let hasInvalidCurrency = rowEditFormHasInvalidCurrencyCustomFields(formId);
+    saveBtn.prop('disabled', !(isValid && !hasInvalidCurrency));
 
-            if (!isValid) {
-                form.find(':input').each(function () {
-                    if (!this.validity.valid) {
-                        console.log('Invalid field:', this.name || this.id);
-                    }
-                });
-            }
-        });
+    if (!isValid) {
+    form.find(':input').each(function () {
+    if (!this.validity.valid) {
+    console.log('Invalid field:', this.name || this.id);
+    }
+    });
+    }
+    });
 
-        // Get all date/time elements
-        let datetimeElements = $(`#${formId} input[type="datetime-local"], #${formId} input[type="date"]`);
+    // Get all date/time elements
+    let datetimeElements = $(`#${formId} input[type="datetime-local"], #${formId} input[type="date"]`);
 
-        // Loop through all the input elements
-        datetimeElements.each(function () {
-            // Find the <i> element within the same .custom-input-group
-            var icon = $(this).closest('.custom-input-group').find('i');
+    // Loop through all the input elements
+    datetimeElements.each(function () {
+    // Find the <i> element within the same .custom-input-group
+    var icon = $(this).closest('.custom-input-group').find('i');
 
-            // Set the class of the <i> element to empty
-            icon.attr('class', '');
-        });
+    // Set the class of the <i> element to empty
+    icon.attr('class', '');
+    });
 
-        function rowEditFormHasInvalidCurrencyCustomFields(formId) {
-            let invalidFieldsFound = false;
-            $("#" + formId + " input:visible").each(function (i, el) {
-                let $field = $(this);
-                if ($field.hasClass('custom-currency-input')) {
-                    if ($field.val() === '' || $field.val() === '0') {
-                       $field.val('0.00');
-                    }
-                    if (!isValidCurrencyCustomField($field)) {
-                        invalidFieldsFound = true;
-                    }
-                }
-            });
+    function rowEditFormHasInvalidCurrencyCustomFields(formId) {
+    let invalidFieldsFound = false;
+    $("#" + formId + " input:visible").each(function (i, el) {
+    let $field = $(this);
+    if ($field.hasClass('custom-currency-input')) {
+    if ($field.val() === '' || $field.val() === '0') {
+    $field.val('0.00');
+    }
+    if (!isValidCurrencyCustomField($field)) {
+    invalidFieldsFound = true;
+    }
+    }
+    });
 
-            return invalidFieldsFound;
-        }
+    return invalidFieldsFound;
+    }
     })();
 </script>

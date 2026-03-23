@@ -42,21 +42,7 @@
     padding-bottom: 1rem;
 }
 
-.custom-fields-split {
+.edit-row-fields {
     display: flex;
-    flex-direction: row;
-    justify-content: space-around;
-    align-items: flex-start;
-}
-
-.custom-fields-split > div {
-    width: 100%;
-}
-
-.customgrid-edit-row-header {
-    margin-bottom: 1rem;
-}
-
-.customgrid-edit-dymanic-field {
-    width: 90%;
+    flex-direction: column;
 }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Text.Json;
 using Unity.Flex.Web.Views.Shared.Components.WorksheetInstanceWidget.ViewModels;
 using Unity.Flex.Worksheets;
@@ -59,7 +60,18 @@ namespace Unity.Flex.Web.Pages.Flex
         {
             if (dataRow == null) return null;
             var cell = dataRow.Cells.Find(s => s.Key == column.Name);
-            return ValueConverter.Convert(cell?.Value ?? string.Empty, CustomFieldType.Text);
+            var columnType = Enum.Parse<CustomFieldType>(column.Type);
+            var rawValue = cell?.Value ?? string.Empty;
+
+            // Normalize DateTime values to yyyy-MM-ddTHH:mm for HTML datetime-local input compatibility
+            if (columnType == CustomFieldType.DateTime
+                && !string.IsNullOrEmpty(rawValue)
+                && DateTime.TryParse(rawValue, CultureInfo.InvariantCulture, DateTimeStyles.None, out var dt))
+            {
+                rawValue = dt.ToString("yyyy-MM-ddTHH:mm", CultureInfo.InvariantCulture);
+            }
+
+            return ValueConverter.Convert(rawValue, columnType);
         }
 
         internal static CustomFieldType ResolveTypeColumnName(string key, DataGridDefinition? definition)
@@ -125,11 +137,12 @@ namespace Unity.Flex.Web.Pages.Flex
             return cells;
         }
 
-        internal static KeyValuePair<string, string>[] ExtractDynamicColumnsPairs(DataGridValue? dataGridValue, 
+        internal static DynamicFieldMap[] ExtractDynamicColumnsValues(DataGridValue? dataGridValue, 
             uint rowNumber, 
-            PresentationSettings presentationSettings)
+            PresentationSettings presentationSettings,
+            HashSet<string>? excludeKeys = null)
         {
-            var keyValues = new List<KeyValuePair<string, string>>();
+            var keyValues = new List<DynamicFieldMap>();
             var gridValue = DeserializeDataGridValue(dataGridValue?.Value?.ToString());
             if (gridValue == null) return [];
             var gridRowsValue = DeserializeDataGridRowsValue(dataGridValue?.Value?.ToString());
@@ -138,11 +151,21 @@ namespace Unity.Flex.Web.Pages.Flex
 
             foreach (var column in dataGridValue?.Columns ?? [])
             {
+                if (excludeKeys != null && excludeKeys.Contains(column.Key))
+                    continue;
+
                 var cell = row.Cells.Find(s => s.Key == column.Key);
 
                 if (cell != null)
                 {
-                    keyValues.Add(new(column.Name, cell.Value.ApplyPresentationFormatting(column.Type, null, presentationSettings)));
+                    keyValues.Add(new DynamicFieldMap
+                    {
+                        Key = column.Key,
+                        Name = column.Name,
+                        Value = cell.Value.ApplyPresentationFormatting(column.Type, null, presentationSettings),
+                        InputValue = cell.Value.ApplyInputFormatting(column.Type, presentationSettings),
+                        Type = column.Type
+                     });
                 }
             }
 
@@ -172,5 +195,14 @@ namespace Unity.Flex.Web.Pages.Flex
         public Guid WorksheetInstanceId { get; set; }
         public Guid WorksheetId { get; set; }
         public uint Row { get; set; }
+    }
+
+    public class DynamicFieldMap
+    {
+        public string Key { get; set; } = string.Empty;
+        public string Name { get; set; } = string.Empty;
+        public string Value { get; set; } = string.Empty;
+        public string InputValue { get; set; } = string.Empty;
+        public string Type { get; set; } = string.Empty;
     }
 }

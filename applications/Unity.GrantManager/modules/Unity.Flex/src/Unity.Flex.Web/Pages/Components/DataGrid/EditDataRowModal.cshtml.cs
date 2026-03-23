@@ -2,10 +2,13 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
+using System.Linq;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Unity.Flex.Web.Views.Shared.Components.WorksheetInstanceWidget.ViewModels;
-using System.Linq;
+using Unity.Flex.Worksheets;
 using Unity.Modules.Shared.Utils;
 
 namespace Unity.Flex.Web.Pages.Flex;
@@ -45,10 +48,17 @@ public class EditDataRowModalModel(DataGridWriteService dataGridWriteService,
     public List<WorksheetFieldViewModel>? Properties { get; set; }
 
     [BindProperty]
-    public KeyValuePair<string, string>[]? DynamicFields { get; set; }
+    public DynamicFieldMap[]? DynamicFields { get; set; }
 
     [BindProperty]
     public string? CheckboxKeys { get; set; }
+
+    [BindProperty]
+    public string? DynamicKeyMap { get; set; }
+
+    public List<EditRowField> AllFields { get; private set; } = [];
+
+    private const string DynamicFieldPrefix = "dynamicXdF-";
 
     public async Task OnGetAsync(Guid valueId,
         Guid fieldId,
@@ -86,13 +96,34 @@ public class EditDataRowModalModel(DataGridWriteService dataGridWriteService,
         PresentationSettings presentationSettings = new() { BrowserOffsetMinutes = browserUtils.GetBrowserOffset() };
         var (dynamicFields, customFields) = await dataGridReadService.GetPropertiesAsync(dataProps, presentationSettings);
         Properties = customFields;
-        DynamicFields = dynamicFields ?? [];
-        CheckboxKeys = string.Join(',', Properties?.Where(s => s.Type == Worksheets.CustomFieldType.Checkbox).Select(s => s.Name) ?? []);
+        DynamicFields = PrefixDynamicFields(dynamicFields ?? []);
+
+        var customCheckboxKeys = Properties?.Where(s => s.Type == CustomFieldType.Checkbox).Select(s => s.Name) ?? [];
+        var dynamicCheckboxKeys = DynamicFields?.Where(df => df.Type == CustomFieldType.Checkbox.ToString()).Select(df => df.Key[DynamicFieldPrefix.Length..]) ?? [];
+        CheckboxKeys = string.Join(',', customCheckboxKeys.Concat(dynamicCheckboxKeys));
+
+        DynamicKeyMap = JsonSerializer.Serialize(
+            DynamicFields?.ToDictionary(
+                df => df.Key[DynamicFieldPrefix.Length..],
+                df => new DynamicKeyMapEntry(df.Name, df.Type)
+            ) ?? new Dictionary<string, DynamicKeyMapEntry>());
+
+        AllFields = MergeAndSortFields(DynamicFields ?? [], Properties ?? []);
+    }
+
+    private static DynamicFieldMap[] PrefixDynamicFields(DynamicFieldMap[] dynamicFieldMaps)
+    {
+        foreach (var map in dynamicFieldMaps)
+        {
+            map.Key = $"{DynamicFieldPrefix}{map.Key}";
+        }
+
+        return dynamicFieldMaps;
     }
 
     public async Task<IActionResult> OnPostAsync()
     {
-        var keyValuePairs = GetKeyValuePairs(Request.Form);
+        var keyValuePairs = StripDynamicFieldPrefix(GetKeyValuePairs(Request.Form));
         var presentationSettings = new PresentationSettings() { BrowserOffsetMinutes = browserUtils.GetBrowserOffset() };
 
         if (CheckboxKeys != null)
@@ -100,9 +131,15 @@ public class EditDataRowModalModel(DataGridWriteService dataGridWriteService,
             var keysToCheck = CheckboxKeys.Split(',');
             foreach (var key in keysToCheck)
             {
-                keyValuePairs.TryAdd(key, "false");
+                if (!keyValuePairs.TryAdd(key, "false"))
+                {
+                    keyValuePairs[key] = keyValuePairs[key].IsTruthy() ? "true" : "false";
+                }
             }
         }
+
+        var dynamicTypeMap = JsonSerializer.Deserialize<Dictionary<string, DynamicKeyMapEntry>>(DynamicKeyMap ?? "{}") ?? [];
+        ConvertDateTimeValuesForStorage(keyValuePairs, dynamicTypeMap, presentationSettings.BrowserOffsetMinutes);
 
         var dataProps = new RowInputData()
         {
@@ -119,6 +156,9 @@ public class EditDataRowModalModel(DataGridWriteService dataGridWriteService,
         };
 
         var result = await dataGridWriteService.WriteRowAsync(dataProps);
+        var updates = DataGridReadService.ApplyPresentationFormat(keyValuePairs, result.MappedValues, presentationSettings);
+        ApplyDynamicFieldPresentationFormat(updates, dynamicTypeMap, presentationSettings);
+        var translatedUpdates = TranslateKeysToColumnNames(updates, dynamicTypeMap);
 
         return new OkObjectResult(new ModalResponse()
         {
@@ -128,10 +168,10 @@ public class EditDataRowModalModel(DataGridWriteService dataGridWriteService,
             WorksheetId = result.WorksheetId,
             Row = result.Row,
             IsNew = result.IsNew,
-            Updates = DataGridReadService.ApplyPresentationFormat(keyValuePairs, result.MappedValues, presentationSettings),
+            Updates = translatedUpdates,
             UiAnchor = UiAnchor
         });
-    }
+    }    
 
     private static Dictionary<string, string> GetKeyValuePairs(IFormCollection form)
     {
@@ -147,7 +187,101 @@ public class EditDataRowModalModel(DataGridWriteService dataGridWriteService,
             keyValuePairs[prefix] = value.ToString();
         }
 
+        foreach (string key in form.Keys)
+        {
+            if (key.StartsWith(DynamicFieldPrefix, StringComparison.Ordinal) && !keyValuePairs.ContainsKey(key))
+            {
+                keyValuePairs[key] = form[key].ToString();
+            }
+        }
+
         return keyValuePairs;
+    }
+
+    private static Dictionary<string, string> StripDynamicFieldPrefix(Dictionary<string, string> keyValuePairs)
+        => keyValuePairs.ToDictionary(
+            kvp => kvp.Key.StartsWith(DynamicFieldPrefix, StringComparison.Ordinal)
+                ? kvp.Key[DynamicFieldPrefix.Length..]
+                : kvp.Key,
+            kvp => kvp.Value);
+
+    private static Dictionary<string, string> TranslateKeysToColumnNames(
+        Dictionary<string, string> updates,
+        Dictionary<string, DynamicKeyMapEntry> keyToColumnMap)
+    {
+        return updates.ToDictionary(
+            kvp => keyToColumnMap.TryGetValue(kvp.Key, out var entry) ? entry.Name : kvp.Key,
+            kvp => kvp.Value);
+    }
+
+    private static void ConvertDateTimeValuesForStorage(
+        Dictionary<string, string> keyValuePairs,
+        Dictionary<string, DynamicKeyMapEntry> dynamicTypeMap,
+        int browserOffsetMinutes)
+    {
+        var browserOffset = TimeSpan.FromMinutes(-browserOffsetMinutes);
+        var dateTimeType = CustomFieldType.DateTime.ToString();
+
+        foreach (var (key, entry) in dynamicTypeMap)
+        {
+            if (entry.Type == dateTimeType
+                && keyValuePairs.TryGetValue(key, out var rawValue)
+                && !string.IsNullOrEmpty(rawValue)
+                && DateTime.TryParse(rawValue, CultureInfo.InvariantCulture, DateTimeStyles.None, out var localDateTime))
+            {
+                var dto = new DateTimeOffset(localDateTime, browserOffset);
+                keyValuePairs[key] = dto.ToString("yyyy-MM-ddTHH:mm:sszzz", CultureInfo.InvariantCulture);
+            }
+        }
+    }
+
+    private static void ApplyDynamicFieldPresentationFormat(
+        Dictionary<string, string> updates,
+        Dictionary<string, DynamicKeyMapEntry> dynamicTypeMap,
+        PresentationSettings presentationSettings)
+    {
+        foreach (var (key, entry) in dynamicTypeMap)
+        {
+            if (updates.TryGetValue(key, out var value) && !string.IsNullOrEmpty(value))
+            {
+                updates[key] = value.ApplyPresentationFormatting(entry.Type, null, presentationSettings);
+            }
+        }
+    }
+
+    private record DynamicKeyMapEntry(string Name, string Type);
+
+    private static List<EditRowField> MergeAndSortFields(DynamicFieldMap[] dynamicFields, List<WorksheetFieldViewModel> customFields)
+    {
+        var fields = new List<EditRowField>();
+
+        foreach (var df in dynamicFields)
+        {
+            fields.Add(new EditRowField
+            {
+                SortKey = df.Name,
+                DynamicField = df
+            });
+        }
+
+        foreach (var cf in customFields)
+        {
+            fields.Add(new EditRowField
+            {
+                SortKey = cf.Label,
+                CustomField = cf
+            });
+        }
+
+        return [.. fields.OrderBy(f => f.SortKey, StringComparer.OrdinalIgnoreCase)];
+    }
+
+    public class EditRowField
+    {
+        public string SortKey { get; set; } = string.Empty;
+        public WorksheetFieldViewModel? CustomField { get; set; }
+        public DynamicFieldMap? DynamicField { get; set; }
+        public bool IsDynamic => DynamicField != null;
     }
 
     public class ModalResponse

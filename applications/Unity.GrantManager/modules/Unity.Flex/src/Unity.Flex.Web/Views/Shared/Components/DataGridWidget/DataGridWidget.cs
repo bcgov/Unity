@@ -140,14 +140,19 @@ namespace Unity.Flex.Web.Views.Shared.Components.DataGridWidget
         {
             // Predefined column definitions
             List<DataGridColumn> dataColumns = dataGridValue?.Columns ?? [];
+            var existingKeys = new HashSet<string>(dataColumns.Select(c => c.Key), StringComparer.Ordinal);
+
             foreach (var dataColumn in dataGridDefinition?.Columns ?? [])
             {
-                dataColumns.Add(new DataGridColumn()
+                if (!existingKeys.Contains(dataColumn.Name))
                 {
-                    Key = dataColumn.Name,
-                    Name = dataColumn.Name,
-                    Type = dataColumn.Type
-                });
+                    dataColumns.Add(new DataGridColumn()
+                    {
+                        Key = dataColumn.Name,
+                        Name = dataColumn.Name,
+                        Type = dataColumn.Type
+                    });
+                }
             }
             return dataColumns;
         }
@@ -265,7 +270,7 @@ namespace Unity.Flex.Web.Views.Shared.Components.DataGridWidget
                 Summary = GenerateDynamicPlaceholderSummary(),
                 SummaryOption = ConvertSummaryOption(dataGridDefinition),
                 Field = fieldModel,
-                AllowEdit = false,
+                AllowEdit = true,
                 TableOptions = GenerateAvailableTableOptions(false)
             });
         }
