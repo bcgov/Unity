@@ -142,17 +142,14 @@ namespace Unity.Flex.Web.Views.Shared.Components.DataGridWidget
             List<DataGridColumn> dataColumns = dataGridValue?.Columns ?? [];
             var existingKeys = new HashSet<string>(dataColumns.Select(c => c.Key), StringComparer.Ordinal);
 
-            foreach (var dataColumn in dataGridDefinition?.Columns ?? [])
+            foreach (var dataColumn in (dataGridDefinition?.Columns ?? []).Where(c => !existingKeys.Contains(c.Name)))
             {
-                if (!existingKeys.Contains(dataColumn.Name))
+                dataColumns.Add(new DataGridColumn()
                 {
-                    dataColumns.Add(new DataGridColumn()
-                    {
-                        Key = dataColumn.Name,
-                        Name = dataColumn.Name,
-                        Type = dataColumn.Type
-                    });
-                }
+                    Key = dataColumn.Name,
+                    Name = dataColumn.Name,
+                    Type = dataColumn.Type
+                });
             }
             return dataColumns;
         }
@@ -387,23 +384,19 @@ namespace Unity.Flex.Web.Views.Shared.Components.DataGridWidget
         private static string SumCells(string? key, DataGridViewModelRow[] rows)
         {
             decimal sum = 0;
-            foreach (var row in rows)
+            foreach (var cell in rows.Select(row => row.Cells.Find(x => x.Key == key)).Where(cell => cell != null))
             {
-                var cell = row.Cells.Find(x => x.Key == key);
-                if (cell != null)
+                var preparse = cell!.Value.Replace("$", "").Replace(",", "");
+                if (decimal.TryParse(preparse, out decimal value))
                 {
-                    var preparse = cell.Value.Replace("$", "").Replace(",", "");
-                    if (decimal.TryParse(preparse, out decimal value))
+                    if (decimal.MaxValue - sum >= value)
                     {
-                        if (decimal.MaxValue - sum >= value)
-                        {
-                            sum += value;
-                        }
-                        else
-                        {
-                            sum = decimal.MaxValue;
-                            break;
-                        }
+                        sum += value;
+                    }
+                    else
+                    {
+                        sum = decimal.MaxValue;
+                        break;
                     }
                 }
             }

@@ -187,12 +187,10 @@ public class EditDataRowModalModel(DataGridWriteService dataGridWriteService,
             keyValuePairs[prefix] = value.ToString();
         }
 
-        foreach (string key in form.Keys)
+        foreach (string key in form.Keys.Where(key =>
+            key.StartsWith(DynamicFieldPrefix, StringComparison.Ordinal) && !keyValuePairs.ContainsKey(key)))
         {
-            if (key.StartsWith(DynamicFieldPrefix, StringComparison.Ordinal) && !keyValuePairs.ContainsKey(key))
-            {
-                keyValuePairs[key] = form[key].ToString();
-            }
+            keyValuePairs[key] = form[key].ToString();
         }
 
         return keyValuePairs;
@@ -222,10 +220,9 @@ public class EditDataRowModalModel(DataGridWriteService dataGridWriteService,
         var browserOffset = TimeSpan.FromMinutes(-browserOffsetMinutes);
         var dateTimeType = CustomFieldType.DateTime.ToString();
 
-        foreach (var (key, entry) in dynamicTypeMap)
+        foreach (var (key, _) in dynamicTypeMap.Where(e => e.Value.Type == dateTimeType))
         {
-            if (entry.Type == dateTimeType
-                && keyValuePairs.TryGetValue(key, out var rawValue)
+            if (keyValuePairs.TryGetValue(key, out var rawValue)
                 && !string.IsNullOrEmpty(rawValue)
                 && DateTime.TryParse(rawValue, CultureInfo.InvariantCulture, DateTimeStyles.None, out var localDateTime))
             {
@@ -240,16 +237,14 @@ public class EditDataRowModalModel(DataGridWriteService dataGridWriteService,
         Dictionary<string, DynamicKeyMapEntry> dynamicTypeMap,
         PresentationSettings presentationSettings)
     {
-        foreach (var (key, entry) in dynamicTypeMap)
+        foreach (var (key, entry) in dynamicTypeMap.Where(e =>
+            updates.ContainsKey(e.Key) && !string.IsNullOrEmpty(updates[e.Key])))
         {
-            if (updates.TryGetValue(key, out var value) && !string.IsNullOrEmpty(value))
-            {
-                updates[key] = value.ApplyPresentationFormatting(entry.Type, null, presentationSettings);
-            }
+            updates[key] = updates[key].ApplyPresentationFormatting(entry.Type, null, presentationSettings);
         }
     }
 
-    private record DynamicKeyMapEntry(string Name, string Type);
+    private sealed record DynamicKeyMapEntry(string Name, string Type);
 
     private static List<EditRowField> MergeAndSortFields(DynamicFieldMap[] dynamicFields, List<WorksheetFieldViewModel> customFields)
     {
