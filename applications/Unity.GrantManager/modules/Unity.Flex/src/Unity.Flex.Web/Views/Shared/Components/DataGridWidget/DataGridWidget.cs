@@ -106,12 +106,14 @@ namespace Unity.Flex.Web.Views.Shared.Components.DataGridWidget
             var dataColumns = GenerateDataColumns(dataGridValue, dataGridDefinition);
             var dataRows = GenerateDataRows(dataColumns, dataGridRowsValue, presentationSetttings);
             var columnNames = dataColumns.Select(s => s.Name);
+            var columnKeys = dataColumns.Select(s => s.Key);
 
             var viewModel = new DataGridViewModel()
             {
                 Field = fieldModel,
                 Name = modelName,
                 Columns = [.. columnNames],
+                ColumnKeys = [.. columnKeys],
                 Rows = [.. dataRows],
                 AllowEdit = true,
                 SummaryOption = ConvertSummaryOption(dataGridDefinition),
@@ -140,7 +142,9 @@ namespace Unity.Flex.Web.Views.Shared.Components.DataGridWidget
         {
             // Predefined column definitions
             List<DataGridColumn> dataColumns = dataGridValue?.Columns ?? [];
-            foreach (var dataColumn in dataGridDefinition?.Columns ?? [])
+            var existingKeys = new HashSet<string>(dataColumns.Select(c => c.Key), StringComparer.Ordinal);
+
+            foreach (var dataColumn in (dataGridDefinition?.Columns ?? []).Where(c => !existingKeys.Contains(c.Name)))
             {
                 dataColumns.Add(new DataGridColumn()
                 {
@@ -225,6 +229,7 @@ namespace Unity.Flex.Web.Views.Shared.Components.DataGridWidget
             return View(new DataGridViewModel()
             {
                 Columns = [.. columnsToRender],
+                ColumnKeys = [.. columnsToRender],
                 Summary = summary,
                 Rows = [.. previewRows],
                 SummaryOption = ConvertSummaryOption(dataGridDefinition),
@@ -247,6 +252,7 @@ namespace Unity.Flex.Web.Views.Shared.Components.DataGridWidget
             return View(new DataGridViewModel()
             {
                 Columns = [.. columnsToRender],
+                ColumnKeys = [.. columnsToRender],
                 Summary = summary,
                 Rows = [.. previewRows],
                 SummaryOption = ConvertSummaryOption(dataGridDefinition),
@@ -261,11 +267,12 @@ namespace Unity.Flex.Web.Views.Shared.Components.DataGridWidget
             return View(new DataGridViewModel()
             {
                 Columns = [.. GenerateDynamicPlaceholderColumn()],
+                ColumnKeys = [.. GenerateDynamicPlaceholderColumn()],
                 Rows = [.. GenerateDynamicRowPlaceholder()],
                 Summary = GenerateDynamicPlaceholderSummary(),
                 SummaryOption = ConvertSummaryOption(dataGridDefinition),
                 Field = fieldModel,
-                AllowEdit = false,
+                AllowEdit = true,
                 TableOptions = GenerateAvailableTableOptions(false)
             });
         }
@@ -382,23 +389,19 @@ namespace Unity.Flex.Web.Views.Shared.Components.DataGridWidget
         private static string SumCells(string? key, DataGridViewModelRow[] rows)
         {
             decimal sum = 0;
-            foreach (var row in rows)
+            foreach (var cell in rows.Select(row => row.Cells.Find(x => x.Key == key)).Where(cell => cell != null))
             {
-                var cell = row.Cells.Find(x => x.Key == key);
-                if (cell != null)
+                var preparse = cell!.Value.Replace("$", "").Replace(",", "");
+                if (decimal.TryParse(preparse, out decimal value))
                 {
-                    var preparse = cell.Value.Replace("$", "").Replace(",", "");
-                    if (decimal.TryParse(preparse, out decimal value))
+                    if (decimal.MaxValue - sum >= value)
                     {
-                        if (decimal.MaxValue - sum >= value)
-                        {
-                            sum += value;
-                        }
-                        else
-                        {
-                            sum = decimal.MaxValue;
-                            break;
-                        }
+                        sum += value;
+                    }
+                    else
+                    {
+                        sum = decimal.MaxValue;
+                        break;
                     }
                 }
             }
