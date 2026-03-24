@@ -1,6 +1,4 @@
 ﻿@page
-@using Microsoft.Extensions.Localization;
-@using Unity.Flex.Localization;
 @using Unity.Flex.Web.Views.Shared.Components.CheckboxWidget;
 @using Unity.Flex.Web.Views.Shared.Components.CurrencyWidget;
 @using Unity.Flex.Web.Views.Shared.Components.DateWidget;
@@ -8,11 +6,14 @@
 @using Unity.Flex.Web.Views.Shared.Components.YesNoWidget
 @using Unity.Flex.Worksheets;
 @using Unity.Flex;
+@using Unity.Flex.Localization;
+@using Microsoft.Extensions.Localization;
 @using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal;
+
+@inject IStringLocalizer<FlexResource> L
 
 @model Unity.Flex.Web.Pages.Flex.EditDataRowModalModel;
 
-@inject IStringLocalizer<FlexResource> L
 @{
     Layout = null;
 }
@@ -31,29 +32,80 @@
             <abp-input type="hidden" id="UiAnchor" asp-for="@Model.UiAnchor" />
             <abp-input type="hidden" id="IsNew" asp-for="@Model.IsNew" />
             <abp-input type="hidden" id="CheckboxKeys" asp-for="@Model.CheckboxKeys" />
-            <div class="custom-fields-split">
-                @if (Model.DynamicFields?.Length > 0)
+            <abp-input type="hidden" id="DynamicKeyMap" asp-for="@Model.DynamicKeyMap" />
+            <div class="edit-row-fields">
+                @foreach (var entry in Model.AllFields)
                 {
-                    <div>
-                        <h6 class="customgrid-edit-row-header">@L["DataGrids:DynamicColumnsHeader"]:</h6>
-                        @foreach (var field in Model.DynamicFields ?? [])
-                        {
-                            <div class="edit_row_field unity-input-group">
-                                <label class="form-label" for="@field.Key">@field.Key</label>
-                                <input class="form-control customgrid-edit-dymanic-field" name="@field.Key" value="@field.Value" disabled />
-                            </div>
-                        }
-                    </div>
-                }
-                <div>
-                    @if (Model.DynamicFields?.Length > 0)
+                    @if (entry.IsDynamic)
                     {
-                        <h6 class="customgrid-edit-row-header">@L["DataGrids:CustomColumnsHeader"]:</h6>
-                    }
-                    @foreach (var field in Model.Properties ?? [])
-                    {
+                        var df = entry.DynamicField!;
+                        var fieldType = Enum.TryParse<CustomFieldType>(df.Type, out var parsed) ? parsed : CustomFieldType.Text;
+                        var isEditable = fieldType is CustomFieldType.Text or CustomFieldType.TextArea
+                            or CustomFieldType.Currency or CustomFieldType.Numeric
+                            or CustomFieldType.Date or CustomFieldType.DateTime
+                            or CustomFieldType.Checkbox or CustomFieldType.Phone or CustomFieldType.Email;
                         <div class="edit_row_field unity-input-group">
-                            <label class="form-label" for="@field.Name">@field.Label</label>
+                            @if (!isEditable)
+                            {
+                                <label class="form-label">@df.Name</label>
+                                <input type="text" class="form-control" value="@df.Value" disabled />
+                            }
+                            else if (fieldType == CustomFieldType.Checkbox)
+                            {
+                                <div class="custom-fields-checkbox-wrapper">
+                                    @if (df.Value.IsTruthy())
+                                    {
+                                        <input type="checkbox"
+                                               id="@df.Key"
+                                               name="@df.Key"
+                                               checked />
+                                    }
+                                    else
+                                    {
+                                        <input type="checkbox"
+                                               id="@df.Key"
+                                               name="@df.Key" />
+                                    }
+                                    <label for="@df.Key">@df.Name</label>
+                                </div>
+                            }
+                            else if (fieldType == CustomFieldType.Currency)
+                            {
+                                <label class="form-label" for="@df.Key">@df.Name</label>
+                                <div class="custom-input-group">
+                                    <span class="custom-input-prepend">$</span>
+                                    <input type="@fieldType.ConvertInputType()"
+                                           class="@fieldType.ApplyCssClass()"
+                                           id="@df.Key"
+                                           name="@df.Key"
+                                           value="@df.InputValue" />
+                                    <span id="@(df.Key)-error" class="text-danger field-validation-error"></span>
+                                </div>
+                            }
+                            else if (fieldType == CustomFieldType.TextArea)
+                            {
+                                <label class="form-label" for="@df.Key">@df.Name</label>
+                                <textarea class="form-control"
+                                          id="@df.Key"
+                                          name="@df.Key"
+                                          rows="3">@df.InputValue</textarea>
+                            }
+                            else
+                            {
+                                <label class="form-label" for="@df.Key">@df.Name</label>
+                                <input type="@fieldType.ConvertInputType()"
+                                       class="@fieldType.ApplyCssClass()"
+                                       id="@df.Key"
+                                       name="@df.Key"
+                                       value="@df.InputValue" />
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        var field = entry.CustomField!;
+                        <div class="edit_row_field unity-input-group">
+                            <label class="form-label" for="@field.Name">@field.Label <i class="fl fl-pin static-field-indicator" aria-hidden="true" title="@L["DataGrids:PredefinedColumn"]"></i><span class="visually-hidden">(@L["DataGrids:PredefinedColumn"])</span></label>
                             @try
                             {
                                 @switch (field.Type)
@@ -111,7 +163,7 @@
                             <span class="text-danger field-validation-valid" data-valmsg-for="@($"{field?.Name}.{field?.Name}.{field?.Id}")" data-valmsg-replace="true"></span>
                         </div>
                     }
-                </div>
+                }
             </div>
         </abp-modal-body>
         <abp-modal-footer>
@@ -167,11 +219,11 @@
 
         function rowEditFormHasInvalidCurrencyCustomFields(formId) {
             let invalidFieldsFound = false;
-            $("#" + formId + " input:visible").each(function (i, el) {
+            $('#' + formId + ' input:visible').each(function (i, el) {
                 let $field = $(this);
                 if ($field.hasClass('custom-currency-input')) {
                     if ($field.val() === '' || $field.val() === '0') {
-                       $field.val('0.00');
+                        $field.val('0.00');
                     }
                     if (!isValidCurrencyCustomField($field)) {
                         invalidFieldsFound = true;
