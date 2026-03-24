@@ -321,6 +321,11 @@ const isProd =
       if (response.body.id) {
         createdSubmissionId = response.body.id;
         cy.log(`✅ Submission created with ID: ${response.body.id}`);
+        cy.log(`✅ Confirmation ID: ${response.body.confirmationId}`);
+        cy.writeFile("cypress/scripts/last-submission-id.json", {
+          submissionId: response.body.confirmationId,
+          createdAt: new Date().toISOString(),
+        });
       }
 
       expect(response.body).to.have.property("formVersionId", environment.versionId);
