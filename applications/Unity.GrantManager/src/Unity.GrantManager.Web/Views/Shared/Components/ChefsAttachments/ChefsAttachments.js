@@ -222,7 +222,6 @@ $(function () {
                 ? chefsDataTable.rows().data()
                 : chefsDataTable.rows({ selected: true }).data();
             const promptVersion = globalThis.getSelectedPromptVersion?.() || null;
-            const applicationId = $('#DetailsViewApplicationId').val();
 
             $button.removeData('trigger-button');
 
