@@ -297,7 +297,7 @@ function createNewApplicantDataObject(selectedData) {
         SectorSubSectorIndustryDesc: selectedData.SectorSubSectorIndustryDesc || '',
         FiscalDay: selectedData.FiscalDay || '',
         FiscalMonth: selectedData.FiscalMonth || '',
-        IsDuplicated: selectedData.IsDuplicated ?? false
+        IsDuplicated: selectedData.IsDuplicated
     };
 }
 
