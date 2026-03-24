@@ -25,81 +25,73 @@ public class GenerateContentBackgroundJob(
     {
         using (currentTenant.Change(args.TenantId))
         {
-            try
+            var attachmentSummariesEnabled = await featureChecker.IsEnabledAsync("Unity.AI.AttachmentSummaries");
+            var applicationAnalysisEnabled = await featureChecker.IsEnabledAsync("Unity.AI.ApplicationAnalysis");
+            var scoringEnabled = await featureChecker.IsEnabledAsync("Unity.AI.Scoring");
+
+            if (!attachmentSummariesEnabled && !applicationAnalysisEnabled && !scoringEnabled)
             {
-                var attachmentSummariesEnabled = await featureChecker.IsEnabledAsync("Unity.AI.AttachmentSummaries");
-                var applicationAnalysisEnabled = await featureChecker.IsEnabledAsync("Unity.AI.ApplicationAnalysis");
-                var scoringEnabled = await featureChecker.IsEnabledAsync("Unity.AI.Scoring");
+                logger.LogDebug("All AI features are disabled, skipping queued AI generation for application {ApplicationId}.", args.ApplicationId);
+                return;
+            }
 
-                if (!attachmentSummariesEnabled && !applicationAnalysisEnabled && !scoringEnabled)
+            if (!await aiService.IsAvailableAsync())
+            {
+                logger.LogWarning("AI service is not available, skipping queued AI generation for application {ApplicationId}.", args.ApplicationId);
+                return;
+            }
+
+            logger.LogInformation("Executing queued AI content pipeline for application {ApplicationId}.", args.ApplicationId);
+
+            if (attachmentSummariesEnabled)
+            {
+                await attachmentSummaryService.GenerateForApplicationAsync(args.ApplicationId, args.PromptVersion);
+            }
+
+            Exception? analysisException = null;
+            Exception? scoringException = null;
+
+            if (applicationAnalysisEnabled)
+            {
+                try
                 {
-                    logger.LogDebug("All AI features are disabled, skipping queued AI generation for application {ApplicationId}.", args.ApplicationId);
-                    return;
+                    await applicationAnalysisService.RegenerateAndSaveAsync(args.ApplicationId, args.PromptVersion);
                 }
-
-                if (!await aiService.IsAvailableAsync())
+                catch (Exception ex)
                 {
-                    logger.LogWarning("AI service is not available, skipping queued AI generation for application {ApplicationId}.", args.ApplicationId);
-                    return;
-                }
-
-                logger.LogInformation("Executing queued AI content pipeline for application {ApplicationId}.", args.ApplicationId);
-
-                if (attachmentSummariesEnabled)
-                {
-                    await attachmentSummaryService.GenerateForApplicationAsync(args.ApplicationId, args.PromptVersion);
-                }
-
-                Exception? analysisException = null;
-                Exception? scoringException = null;
-
-                if (applicationAnalysisEnabled)
-                {
-                    try
-                    {
-                        await applicationAnalysisService.RegenerateAndSaveAsync(args.ApplicationId, args.PromptVersion);
-                    }
-                    catch (Exception ex)
-                    {
-                        analysisException = ex;
-                        logger.LogError(ex, "Error executing AI application analysis stage for application {ApplicationId}.", args.ApplicationId);
-                    }
-                }
-
-                if (scoringEnabled)
-                {
-                    try
-                    {
-                        var result = await applicationScoringService.RegenerateAndSaveAsync(args.ApplicationId, args.PromptVersion);
-                        if (!string.Equals(result, "{}", StringComparison.Ordinal))
-                        {
-                            await localEventBus.PublishAsync(new AIApplicationScoringGeneratedEvent
-                            {
-                                ApplicationId = args.ApplicationId
-                            });
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        scoringException = ex;
-                        logger.LogError(ex, "Error executing AI application scoring stage for application {ApplicationId}.", args.ApplicationId);
-                    }
-                }
-
-                if (scoringException != null)
-                {
-                    throw scoringException;
-                }
-
-                if (analysisException != null)
-                {
-                    throw analysisException;
+                    analysisException = ex;
+                    logger.LogError(ex, "Error executing AI application analysis stage for application {ApplicationId}.", args.ApplicationId);
                 }
             }
-            catch (Exception ex)
+
+            if (scoringEnabled)
             {
-                logger.LogError(ex, "Error executing queued AI content pipeline for application {ApplicationId}.", args.ApplicationId);
-                throw;
+                try
+                {
+                    var result = await applicationScoringService.RegenerateAndSaveAsync(args.ApplicationId, args.PromptVersion);
+                    if (!string.Equals(result, "{}", StringComparison.Ordinal))
+                    {
+                        await localEventBus.PublishAsync(new AIApplicationScoringGeneratedEvent
+                        {
+                            ApplicationId = args.ApplicationId
+                        });
+                    }
+                }
+                catch (Exception ex)
+                {
+                    scoringException = ex;
+                    logger.LogError(ex, "Error executing AI application scoring stage for application {ApplicationId}.", args.ApplicationId);
+                }
+            }
+
+            if (scoringException != null)
+            {
+                throw scoringException;
+            }
+
+            if (analysisException != null)
+            {
+                throw analysisException;
             }
         }
     }

@@ -79,7 +79,7 @@ function normalizeFindings(items, fallbackType) {
     };
 
     return (items || [])
-        .filter(item => item)
+        .filter(Boolean)
         .map((item, index) => ({
             ...item,
             id: item.id || `${fallbackType}-${index}`,

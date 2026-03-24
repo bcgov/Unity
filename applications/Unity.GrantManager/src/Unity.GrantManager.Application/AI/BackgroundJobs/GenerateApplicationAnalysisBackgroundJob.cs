@@ -17,16 +17,8 @@ public class GenerateApplicationAnalysisBackgroundJob(
     {
         using (currentTenant.Change(args.TenantId))
         {
-            try
-            {
-                logger.LogInformation("Executing AI application analysis background job for application {ApplicationId}.", args.ApplicationId);
-                await applicationAnalysisService.RegenerateAndSaveAsync(args.ApplicationId, args.PromptVersion);
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "Error executing AI application analysis background job for application {ApplicationId}.", args.ApplicationId);
-                throw;
-            }
+            logger.LogInformation("Executing AI application analysis background job for application {ApplicationId}.", args.ApplicationId);
+            await applicationAnalysisService.RegenerateAndSaveAsync(args.ApplicationId, args.PromptVersion);
         }
     }
 }

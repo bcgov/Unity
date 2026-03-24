@@ -17,19 +17,11 @@ public class GenerateAttachmentSummaryBackgroundJob(
     {
         using (currentTenant.Change(args.TenantId))
         {
-            try
-            {
-                logger.LogInformation(
-                    "Executing AI attachment summary background job for {AttachmentCount} attachment(s).",
-                    args.AttachmentIds.Count);
+            logger.LogInformation(
+                "Executing AI attachment summary background job for {AttachmentCount} attachment(s).",
+                args.AttachmentIds.Count);
 
-                await attachmentSummaryService.GenerateAndSaveAsync(args.AttachmentIds, args.PromptVersion);
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "Error executing AI attachment summary background job.");
-                throw;
-            }
+            await attachmentSummaryService.GenerateAndSaveAsync(args.AttachmentIds, args.PromptVersion);
         }
     }
 }

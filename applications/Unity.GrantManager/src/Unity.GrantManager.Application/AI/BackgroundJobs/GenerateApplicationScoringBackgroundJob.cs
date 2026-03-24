@@ -20,23 +20,15 @@ public class GenerateApplicationScoringBackgroundJob(
     {
         using (currentTenant.Change(args.TenantId))
         {
-            try
-            {
-                logger.LogInformation("Executing AI application scoring background job for application {ApplicationId}.", args.ApplicationId);
+            logger.LogInformation("Executing AI application scoring background job for application {ApplicationId}.", args.ApplicationId);
 
-                var result = await applicationScoringService.RegenerateAndSaveAsync(args.ApplicationId, args.PromptVersion);
-                if (!string.Equals(result, "{}", StringComparison.Ordinal))
-                {
-                    await localEventBus.PublishAsync(new AIApplicationScoringGeneratedEvent
-                    {
-                        ApplicationId = args.ApplicationId
-                    });
-                }
-            }
-            catch (Exception ex)
+            var result = await applicationScoringService.RegenerateAndSaveAsync(args.ApplicationId, args.PromptVersion);
+            if (!string.Equals(result, "{}", StringComparison.Ordinal))
             {
-                logger.LogError(ex, "Error executing AI application scoring background job for application {ApplicationId}.", args.ApplicationId);
-                throw;
+                await localEventBus.PublishAsync(new AIApplicationScoringGeneratedEvent
+                {
+                    ApplicationId = args.ApplicationId
+                });
             }
         }
     }

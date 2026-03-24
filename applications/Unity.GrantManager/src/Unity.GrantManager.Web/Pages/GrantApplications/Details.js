@@ -2,6 +2,92 @@
  * Grant Application Details Page
  * Dependencies: ai-analysis.js - handles AI analysis rendering and management
  */
+function formatJsonOrRaw(value) {
+    if (!value) {
+        return '';
+    }
+
+    if (typeof value !== 'string') {
+        return JSON.stringify(value, null, 2);
+    }
+
+    try {
+        return JSON.stringify(JSON.parse(value), null, 2);
+    } catch {
+        return value;
+    }
+}
+
+function formatSectionBody(title, value) {
+    if (!value) {
+        return '';
+    }
+
+    return `${title}:\n${value}`;
+}
+
+function formatOutputBody(title, sections) {
+    const content = sections.filter(Boolean).join('\n\n');
+    if (!content) {
+        return '';
+    }
+
+    const promptVersion = globalThis.getSelectedPromptVersion?.();
+    const header = promptVersion ? `${title} - ${promptVersion}` : title;
+    return `${header}\n\n${content}`;
+}
+
+function unwrapWhenResult(result) {
+    if (
+        Array.isArray(result) &&
+        result.length === 3 &&
+        typeof result[1] === 'string'
+    ) {
+        return result[0];
+    }
+
+    return result;
+}
+
+function extractSubmissionDataObject(root) {
+    if (!root || typeof root !== 'object' || Array.isArray(root)) {
+        return null;
+    }
+
+    if (root.data && typeof root.data === 'object' && !Array.isArray(root.data)) {
+        return root.data;
+    }
+
+    if (
+        root.submission &&
+        typeof root.submission === 'object' &&
+        !Array.isArray(root.submission) &&
+        root.submission.data &&
+        typeof root.submission.data === 'object' &&
+        !Array.isArray(root.submission.data)
+    ) {
+        return root.submission.data;
+    }
+
+    return root;
+}
+
+function formatTimestamp(value) {
+    if (!value) {
+        return '';
+    }
+
+    const timestamp = new Date(value);
+    if (Number.isNaN(timestamp.getTime())) {
+        return '';
+    }
+
+    return timestamp.toLocaleString();
+}
+
+function getAttachmentSummaryValue(attachment) {
+    return attachment?.aiSummary ?? attachment?.aISummary ?? '';
+}
 
 $(function () {
     const excludedPromptDataKeys = new Set([
@@ -35,53 +121,6 @@ $(function () {
 
     function setDevAiOutputTimestamp(selector, value) {
         $(selector).text(value ? `(${value})` : '');
-    }
-
-    function formatJsonOrRaw(value) {
-        if (!value) {
-            return '';
-        }
-
-        if (typeof value !== 'string') {
-            return JSON.stringify(value, null, 2);
-        }
-
-        try {
-            return JSON.stringify(JSON.parse(value), null, 2);
-        } catch {
-            return value;
-        }
-    }
-
-    function formatSectionBody(title, value) {
-        if (!value) {
-            return '';
-        }
-
-        return `${title}:\n${value}`;
-    }
-
-    function formatOutputBody(title, sections) {
-        const content = sections.filter((section) => section).join('\n\n');
-        if (!content) {
-            return '';
-        }
-
-        const promptVersion = globalThis.getSelectedPromptVersion?.();
-        const header = promptVersion ? `${title} - ${promptVersion}` : title;
-        return `${header}\n\n${content}`;
-    }
-
-    function unwrapWhenResult(result) {
-        if (
-            Array.isArray(result) &&
-            result.length === 3 &&
-            typeof result[1] === 'string'
-        ) {
-            return result[0];
-        }
-
-        return result;
     }
 
     function getScoresheetSchemaJson() {
@@ -119,29 +158,6 @@ $(function () {
         } catch {
             return '';
         }
-    }
-
-    function extractSubmissionDataObject(root) {
-        if (!root || typeof root !== 'object' || Array.isArray(root)) {
-            return null;
-        }
-
-        if (root.data && typeof root.data === 'object' && !Array.isArray(root.data)) {
-            return root.data;
-        }
-
-        if (
-            root.submission &&
-            typeof root.submission === 'object' &&
-            !Array.isArray(root.submission) &&
-            root.submission.data &&
-            typeof root.submission.data === 'object' &&
-            !Array.isArray(root.submission.data)
-        ) {
-            return root.submission.data;
-        }
-
-        return root;
     }
 
     function extractAllowedSchemaKeys(formSchema) {
@@ -194,23 +210,6 @@ $(function () {
                 }
             }
         }
-    }
-
-    function formatTimestamp(value) {
-        if (!value) {
-            return '';
-        }
-
-        const timestamp = new Date(value);
-        if (Number.isNaN(timestamp.getTime())) {
-            return '';
-        }
-
-        return timestamp.toLocaleString();
-    }
-
-    function getAttachmentSummaryValue(attachment) {
-        return attachment?.aiSummary ?? attachment?.aISummary ?? '';
     }
 
     function formatAttachmentAiOutput(attachments) {
