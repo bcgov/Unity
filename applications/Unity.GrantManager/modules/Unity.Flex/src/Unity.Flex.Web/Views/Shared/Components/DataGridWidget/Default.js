@@ -85,7 +85,7 @@ $(function () {
             // Convert dataToUpdate object to an array of values in the same order as the columns
             let newRowData = table.columns().header().toArray().map(header => {
                 let key = $(header).data('key');
-                return dataToUpdate[key] !== undefined ? dataToUpdate[key] : '';
+                return dataToUpdate[key] === undefined ? '' : dataToUpdate[key];
             });
 
             // Add a placeholder for the button in the last column
