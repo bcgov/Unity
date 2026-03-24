@@ -1,8 +1,6 @@
 const l = abp.localization.getResource('GrantManager');
 const pageApplicationId = decodeURIComponent(document.querySelector("#DetailsViewApplicationId").value);
-const isAiScoringEnabled =
-    document.querySelector("#ReviewListAIScoringEnabled")?.value === 'True'
-    || document.querySelector("#AIScoringFeatureEnabled")?.value === 'True';
+const isAiScoringEnabled = document.querySelector("#ReviewListAIScoringEnabled")?.value === 'True';
 const canUseAiScoring = isAiScoringEnabled;
 
 const actionButtonConfigMap = {
@@ -30,7 +28,7 @@ const finalApplicationStates = [
 ];
 
 $(function () {
-    const nullPlaceholder = '-';
+    const nullPlaceholder = '—';
 
     let inputAction = function (requestData, dataTableSettings) {
         const applicationId = pageApplicationId

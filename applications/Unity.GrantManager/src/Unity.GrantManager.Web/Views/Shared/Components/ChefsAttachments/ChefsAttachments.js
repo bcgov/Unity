@@ -10,7 +10,7 @@ $(function () {
     const dt = $('#ChefsAttachmentsTable');
     let chefsDataTable;
     let selectedAtttachments = [];
-    const nullPlaceholder = '-';
+    const nullPlaceholder = '—';
 
     let inputAction = function (requestData, dataTableSettings) {
         const urlParams = new URL(window.location.toLocaleString())
