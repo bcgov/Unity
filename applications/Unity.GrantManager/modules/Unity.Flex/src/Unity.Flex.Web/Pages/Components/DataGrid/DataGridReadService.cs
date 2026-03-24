@@ -92,7 +92,7 @@ namespace Unity.Flex.Web.Pages.Flex
 
             var dataGridValue = JsonSerializer.Deserialize<DataGridValue>(customFieldValue.CurrentValue ?? "{}");
 
-            var definition = JsonSerializer.Deserialize<DataGridDefinition>(datagridDefinition?.Definition ?? "{}");
+            var definition = JsonSerializer.Deserialize<DataGridDefinition>(datagridDefinition.Definition ?? "{}");
             var customColumnKeys = new HashSet<string>(
                 definition?.Columns.Select(c => c.Name) ?? [], StringComparer.Ordinal);
 
