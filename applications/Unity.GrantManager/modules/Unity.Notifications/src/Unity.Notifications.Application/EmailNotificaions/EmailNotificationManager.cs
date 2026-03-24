@@ -86,8 +86,36 @@ namespace Unity.Notifications.EmailNotifications
             }
         }
 
+        public async Task<EmailLog> CreateDraftEmailLogAsync(Guid applicationId)
+        {
+            var emailLog = new EmailLog
+            {
+                ApplicationId = applicationId,
+                Status = EmailStatus.Draft
+            };
+            return await emailLogsRepository.InsertAsync(emailLog, autoSave: true);
+        }
+
         public async Task DeleteEmailLogAsync(Guid id)
         {
+            var emailLog = await emailLogsRepository.GetAsync(id);
+            if (emailLog.Status == EmailStatus.Sent)
+            {
+                throw new UserFriendlyException("Sent emails cannot be deleted.");
+            }
+
+            var attachments = await emailAttachmentService.GetAttachmentsAsync(id);
+            foreach (var s3Key in attachments.Select(attachment => attachment.S3ObjectKey))
+            {
+                try
+                {
+                    await emailAttachmentService.DeleteFromS3Async(s3Key);
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogError(ex, "Failed to delete S3 attachment for EmailLog {EmailLogId}", id);
+                }
+            }
             await emailLogsRepository.DeleteAsync(id);
         }
 

@@ -36,7 +36,7 @@
 
         <!-- Link Type dropdown -->
         <div class="mb-3">
-            <label class="form-label">Link Type</label>
+            <label class="form-label" for="linkTypeSelect">Link Type</label>
             <select id="linkTypeSelect" class="form-select">
                 <option value="@ApplicationLinkType.Related" selected>Related</option>
                 <option value="@ApplicationLinkType.Child">Child</option>
@@ -46,7 +46,7 @@
 
         <!-- Search input -->
         <div class="mb-3">
-            <label class="form-label">Submission to link</label>
+            <label class="form-label" for="submissionSearch">Submission to link (Search Submission #, Applicant Name, Application ID, Organization Name)</label>
             <div class="search-input-container">
                 <input type="text" id="submissionSearch" class="form-control" placeholder="Search for Submission..." autocomplete="off">
             </div>
@@ -54,8 +54,8 @@
 
         <!-- Links display area -->
         <div class="mb-3">
-            <label class="form-label">Links</label>
-            <div id="linksContainer" class="links-display-area border rounded p-3" style="min-height: 80px; max-height: 200px; overflow-y: auto;">
+            <label class="form-label" id="linksLabel"  for="linksContainer">Links</label>
+            <div id="linksContainer" aria-labelledby="linksLabel" class="links-display-area border rounded p-3" style="min-height: 80px; max-height: 200px; overflow-y: auto;">
                 <div class="text-muted" id="noLinksMessage">No links added yet.</div>
             </div>
         </div>

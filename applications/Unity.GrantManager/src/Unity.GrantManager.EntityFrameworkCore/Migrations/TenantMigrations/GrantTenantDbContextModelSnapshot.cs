@@ -836,7 +836,7 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<string>("IndigenousOrgInd")
                         .HasColumnType("text");
 
-                    b.Property<bool?>("IsDuplicated")
+                    b.Property<bool>("IsDuplicated")
                         .HasColumnType("boolean");
 
                     b.Property<string>("IssueTrackingComments")

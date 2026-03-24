@@ -177,6 +177,7 @@ function deleteDraftEmail(id, rowIndex) {
             .then(response => {
                 abp.notify.success('Draft email is successfully deleted.', 'Delete Draft Email');
                 PubSub.publish('refresh_application_emails');
+                PubSub.publish('draft_email_deleted', { id: id });
             })
             .catch(error => {
                 console.error('There was a problem with the fetch operation:', error);

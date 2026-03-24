@@ -4,15 +4,20 @@ using Unity.GrantManager.Applications;
 using Unity.GrantManager.Assessments;
 using Unity.GrantManager.GrantApplications;
 using Unity.GrantManager.Identity;
+using Unity.Modules.Shared.Constants;
 using Volo.Abp.Data;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Repositories;
+using Volo.Abp.Identity;
+using Volo.Abp.MultiTenancy;
 
 namespace Unity.GrantManager;
 
 public class GrantManagerDataSeederContributor(
     IApplicationStatusRepository applicationStatusRepository,
-    IPersonRepository personRepository) : IDataSeedContributor, ITransientDependency
+    IPersonRepository personRepository,
+    IIdentityUserRepository userRepository,
+    ICurrentTenant currentTenant) : IDataSeedContributor, ITransientDependency
 {
     public static class GrantApplicationStates
     {
@@ -36,6 +41,7 @@ public class GrantManagerDataSeederContributor(
 
         if (context.TenantId == null) // only seed into a tenant database
         {
+           await SeedMainBackgroundJobUserAsync(null);
            return;
         }   
 
@@ -86,6 +92,30 @@ public class GrantManagerDataSeederContributor(
                 Badge = AIScoringConstants.AiBadge,
                 TenantId = tenantId
             });
+        }
+    }
+
+
+    private async Task SeedMainBackgroundJobUserAsync(System.Guid? tenantId)
+    {
+        using (currentTenant.Change(tenantId)) // Null For Main Unity Grant Manager Context
+        {
+            // Check if the IdentityUser already exists
+            var existingUser = await userRepository.FindAsync(BackgroundJobConstants.BackgroundJobPersonId);
+            if (existingUser == null)
+            {
+                // Create the IdentityUser in the tenant context
+                await userRepository.InsertAsync(
+                    new IdentityUser(
+                        BackgroundJobConstants.BackgroundJobPersonId,
+                        BackgroundJobConstants.BackgroundJobUserName,
+                        BackgroundJobConstants.BackgroundJobEmail,
+                        null)
+                    {
+                        Name = BackgroundJobConstants.BackgroundJobName
+                    },
+                    autoSave: true);
+            }
         }
     }
 }

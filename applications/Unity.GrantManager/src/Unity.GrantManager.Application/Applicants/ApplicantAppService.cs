@@ -579,11 +579,25 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
 
 
     [RemoteService(true)]
+    public async Task TransferApplicantApplicationsAsync(TransferApplicantApplicationsDto dto)
+    {
+        var applications = await applicationRepository.GetByApplicantIdAsync(dto.NonPrincipalApplicantId);
+        foreach (var application in applications)
+        {
+            await UpdateApplicantIdAsync(new UpdateApplicantIdDto
+            {
+                ApplicationId = application.Id,
+                ApplicantId = dto.PrincipalApplicantId
+            });
+        }
+    }
+
+    [RemoteService(true)]
     public async Task SetDuplicatedAsync(SetApplicantDuplicateDto dto)
     {
         // Set principal as not duplicated
         var principal = await applicantRepository.GetAsync(dto.PrincipalApplicantId);
-        if (principal != null && principal.IsDuplicated != false)
+        if (principal != null && principal.IsDuplicated)
         {
             principal.IsDuplicated = false;
             await applicantRepository.UpdateAsync(principal);
@@ -591,7 +605,7 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
 
         // Set non-principal as duplicated
         var nonPrincipal = await applicantRepository.GetAsync(dto.NonPrincipalApplicantId);
-        if (nonPrincipal != null && nonPrincipal.IsDuplicated != true)
+        if (nonPrincipal != null && !nonPrincipal.IsDuplicated)
         {
             nonPrincipal.IsDuplicated = true;
             await applicantRepository.UpdateAsync(nonPrincipal);

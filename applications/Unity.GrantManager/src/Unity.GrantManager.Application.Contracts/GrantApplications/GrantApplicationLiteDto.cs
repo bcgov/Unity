@@ -8,5 +8,6 @@ public class GrantApplicationLiteDto : AuditedEntityDto<Guid>
     public string ProjectName { get; set; } = string.Empty;
     public string ReferenceNo { get; set; } = string.Empty;
     public string ApplicantName { get; set; } = string.Empty;
-    
+    public string OrganizationName { get; set; } = string.Empty;
+    public string UnityApplicantId { get; set; } = string.Empty;
 }
