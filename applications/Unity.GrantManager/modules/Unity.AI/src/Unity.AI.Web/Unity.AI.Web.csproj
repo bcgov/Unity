@@ -8,6 +8,7 @@
     <IsPackable>true</IsPackable>
     <OutputType>Library</OutputType>
     <RootNamespace>Unity.AI.Web</RootNamespace>
+    <GenerateEmbeddedFilesManifest>true</GenerateEmbeddedFilesManifest>
   </PropertyGroup>
 
   <ItemGroup>
@@ -24,6 +25,10 @@
     <EmbeddedResource Include="Pages\**\*.js" />
     <EmbeddedResource Include="Views\**\*.css" />
     <EmbeddedResource Include="Views\**\*.js" />
+    <Content Remove="Pages\**\*.css" />
+    <Content Remove="Pages\**\*.js" />
+    <Content Remove="Views\**\*.css" />
+    <Content Remove="Views\**\*.js" />
   </ItemGroup>
 
   <ItemGroup>
