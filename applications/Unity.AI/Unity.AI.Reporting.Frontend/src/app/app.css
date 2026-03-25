@@ -813,3 +813,8 @@
   z-index: 1;
   letter-spacing: 0.3px;
 }
+.retry-hint {
+  font-size: 0.9rem;
+  color: #666;
+  margin: 0;
+}

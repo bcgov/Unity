@@ -110,11 +110,12 @@ export class ApiService {
   }
 
   // Convenience methods for specific endpoints
-  askQuestion<T>(question: string, conversation: any[]): Observable<T> {
-    return this.post<T>('/ask', { 
-      question, 
-      conversation 
-    });
+  askQuestion<T>(question: string, conversation: any[], isRetry: boolean = false, retryErrorType?: string): Observable<T> {
+    const body: any = { question, conversation, is_retry: isRetry };
+    if (isRetry && retryErrorType) {
+      body.retry_error_type = retryErrorType;
+    }
+    return this.post<T>('/ask', body);
   }
 
   changeDisplay<T>(cardId: number, mode: string, xField: string, yField: string): Observable<T> {

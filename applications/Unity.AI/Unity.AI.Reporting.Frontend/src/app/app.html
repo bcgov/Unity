@@ -77,7 +77,16 @@
                         </div>
                         <div class="failure-message">{{ turn.errorMessage }}</div>
                         <div class="failure-actions">
-                          <button class="retry-btn" (click)="retryQuestion(turn)">Try Again</button>
+                          @if (turn.canRetry) {
+                            @if ((turn.retryCount ?? 0) < MAX_RETRIES) {
+                              <button class="retry-btn"
+                                (click)="retryQuestion(turn)">Try Again</button>
+                            } @else {
+                              <p class="retry-hint">Please rephrase your question and try again.</p>
+                            }
+                          } @else {
+                            <p class="retry-hint">Try rephrasing your question or adding more detail.</p>
+                          }
                         </div>
                       </div>
                     </div>

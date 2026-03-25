@@ -11,4 +11,6 @@ export interface Turn {
   sql_explanation_visible?: boolean; // Toggle visibility of SQL explanation
   errorType?: 'rate_limit' | 'connection_error' | 'ai_failure' | 'server_error' | 'unknown';
   errorMessage?: string;
+  retryCount?: number;
+  canRetry?: boolean;
 }

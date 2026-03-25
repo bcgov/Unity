@@ -181,12 +181,13 @@ class SQLGenerator:
             logger.warning("QDECOMP_examples.json not found, using empty examples")
             return []
     
-    def build_prompt(self, question: str, schemas: str, 
-                    past_questions: List[Dict]) -> str:
+    def build_prompt(self, question: str, schemas: str,
+                    past_questions: List[Dict], is_retry: bool = False,
+                    retry_error_type: Optional[str] = None) -> str:
         """Build the prompt for SQL generation"""
         examples = self.load_examples()
         newline = '\n'
-        
+
         # Add past question context if available
         past_context = ""
         if past_questions and len(past_questions) > 1:
@@ -195,13 +196,36 @@ class SQLGenerator:
                 f'Note that the previous question in this conversation was: '
                 f'"{last_q["question"]}" and the generated SQL was: "{last_q["SQL"]}". '
             )
-        
+
+        retry_context = ""
+        if is_retry:
+            error_descriptions = {
+                "rate_limit": "the previous request was rejected due to a rate limit on the AI service",
+                "connection_error": "the previous request failed due to a connection error",
+                "server_error": "the previous request failed due to a server error",
+                "ai_failure": "the previous attempt failed to produce a valid SQL query",
+            }
+            error_reason = error_descriptions.get(
+                retry_error_type or "", "an error occurred during the previous attempt"
+            )
+            # For service-level errors the model never ran, so SQL-specific guidance is not relevant
+            service_errors = {"rate_limit", "connection_error"}
+            if retry_error_type in service_errors:
+                retry_context = f"Note: {error_reason}. Please regenerate the query. "
+            else:
+                retry_context = (
+                    f"Note: {error_reason}. "
+                    "Please try a different approach — avoid repeating the same join path or table choice "
+                    "as before, and consider alternative columns or query structures. "
+                )
+
         prompt = (
             f"{f'{newline}{newline}'.join(examples)}{newline}{newline}"
             f"### Schema:{newline}{schemas}{newline}"
             f"### Question:{newline}"
             f"The current date is {dt.datetime.now().strftime('%Y-%m-%d')}. "
             f"{past_context}"
+            f"{retry_context}"
             f"Please generate sql and metadata for the following question, "
             f"with reasoning but no explanation. "
             f"Please enable map option only for questions involving regional districts: "
@@ -284,7 +308,8 @@ class SQLGenerator:
         return candidates[0][1], candidates[0][2]
 
     async def generate_sql(self, question: str, past_questions: List[Dict],
-                          db_id: int, tenant_id: Optional[str] = None) -> Tuple[Optional[str], Optional[Dict], Optional[Dict]]:
+                          db_id: int, tenant_id: Optional[str] = None,
+                          is_retry: bool = False, retry_error_type: Optional[str] = None) -> Tuple[Optional[str], Optional[Dict], Optional[Dict]]:
         """
         Generate SQL from natural language question using majority voting.
 
@@ -328,7 +353,7 @@ class SQLGenerator:
                 return None, None, None
 
             # Build prompt
-            prompt = self.build_prompt(question, parsed_schema[0], past_questions)
+            prompt = self.build_prompt(question, parsed_schema[0], past_questions, is_retry=is_retry, retry_error_type=retry_error_type)
             logger.debug(f"Prompt: {prompt[:200]}...")
             tasks = [
                 self.fetch_completion(prompt, session, i)

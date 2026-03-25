@@ -32,6 +32,7 @@ export class App implements OnInit, OnDestroy {
   currentTurnIndex: number = 0;
   visualizationDropdownOpen: boolean = false;
   selectedVisualization: string = 'table';
+  readonly MAX_RETRIES = 2;
 
   constructor(
     private readonly authService: AuthService,
@@ -331,7 +332,7 @@ export class App implements OnInit, OnDestroy {
     this.currentTurnIndex = 0;
   }
 
-  async askQuestion() {
+  async askQuestion(retryCount: number = 0, retryErrorType?: Turn['errorType']) {
     if (this.question.trim() === "") {
       alert("Please enter a question.");
       return;
@@ -342,7 +343,10 @@ export class App implements OnInit, OnDestroy {
     
     const turn = {question: this.question.trim(), embed: {"url": "", "card_id": 0, "x_field": "", "y_field": "", "title": "", "visualization_options": [], "SQL": ""}, safeUrl: 'loading' as 'loading' | 'failure' | SafeResourceUrl, iframeLoaded: false, sqlPanelOpen: false, sql_explanation: "", sql_explanation_visible: false} as Turn;
     this.conversation.push(turn);
-    
+    if (retryCount > 0) {
+      turn.retryCount = retryCount;
+    }
+
     // Set the new turn as the current turn for navigation
     this.currentTurnIndex = this.conversation.length - 1;
     
@@ -352,11 +356,11 @@ export class App implements OnInit, OnDestroy {
       if (! await this.authService.isAuthenticated()) throw new Error('Not authenticated');
 
       turn.embed = await firstValueFrom(
-        this.apiService.askQuestion<Embed>(turn.question, this.conversation)
+        this.apiService.askQuestion<Embed>(turn.question, this.conversation, retryCount > 0, retryErrorType)
       );
       turn.embed.current_visualization = 'table';
-      turn.iframeLoaded = true; // Mark as loaded since we're not using iframes anymore
-      turn.safeUrl = null; // No iframe URL needed anymore
+      turn.iframeLoaded = true;
+      turn.safeUrl = null;
 
       await this.saveChat();
     } catch (error: any) {
@@ -371,21 +375,27 @@ export class App implements OnInit, OnDestroy {
       if (error?.message === 'Not authenticated') {
         turn.errorType = 'unknown';
         turn.errorMessage = 'Your session has expired. Please sign in again.';
+        turn.canRetry = false;
       } else if (errorType === 'rate_limit' || error?.status === 429) {
         turn.errorType = 'rate_limit';
         turn.errorMessage = errorMsg || 'Rate limit exceeded. Please wait a moment and try again.';
+        turn.canRetry = true;
       } else if (errorType === 'connection_error' || error?.status === 503) {
         turn.errorType = 'connection_error';
         turn.errorMessage = errorMsg || 'Connection error. The service may be temporarily unavailable.';
+        turn.canRetry = true;
       } else if (errorType === 'ai_failure' || error?.status === 422) {
         turn.errorType = 'ai_failure';
         turn.errorMessage = errorMsg || "I couldn't generate a report from that question. Try rephrasing or adding more detail.";
+        turn.canRetry = false;
       } else if (errorType === 'server_error' || (error?.status && error.status >= 500)) {
         turn.errorType = 'server_error';
         turn.errorMessage = errorMsg || 'Something went wrong on our end. Please try again.';
+        turn.canRetry = true;
       } else {
         turn.errorType = 'unknown';
         turn.errorMessage = errorMsg || 'Something went wrong. Please try again.';
+        turn.canRetry = true;
       }
     } finally {
       this.cdr.markForCheck();
@@ -393,6 +403,9 @@ export class App implements OnInit, OnDestroy {
   }
 
   retryQuestion(turn: Turn): void {
+    const nextRetryCount = (turn.retryCount ?? 0) + 1;
+    const errorType = turn.errorType;
+
     // Reset the turn state and retry the question
     turn.safeUrl = "loading";
     turn.iframeLoaded = false;
@@ -401,7 +414,7 @@ export class App implements OnInit, OnDestroy {
     // Retry the question with the existing turn
     this.question = turn.question;
     this.conversation = this.conversation.filter(t => t !== turn);
-    this.askQuestion();
+    this.askQuestion(nextRetryCount, errorType);
   }
 
   toggleSidebar(): void {

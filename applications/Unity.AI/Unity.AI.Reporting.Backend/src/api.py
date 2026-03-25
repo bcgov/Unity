@@ -383,6 +383,8 @@ def ask():
     async def async_ask():
         question = data.get("question")
         conversation = data.get("conversation", [])
+        is_retry = bool(data.get("is_retry", False))
+        retry_error_type = data.get("retry_error_type") or None
         
         # Extract user context from JWT token
         tenant_id = user_data["tenant"]
@@ -405,7 +407,8 @@ def ask():
         logger.info("Starting SQL generation...")
         try:
             sql, metadata, sql_tokens = await sql_generator.generate_sql(
-                question, past_questions, db_id, tenant_id=tenant_id
+                question, past_questions, db_id, tenant_id=tenant_id,
+                is_retry=is_retry, retry_error_type=retry_error_type
             )
         except Exception as e:
             return _classify_sql_generation_error(e)
