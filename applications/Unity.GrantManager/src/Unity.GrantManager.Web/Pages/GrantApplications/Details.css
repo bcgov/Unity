@@ -72,21 +72,23 @@
     gap: 0.5rem;
 }
 
-.ai-prompt-capture-output {
-    min-height: 18rem;
-    max-height: 32rem;
+.ai-dev-output {
+    min-height: 10rem;
+    max-height: 24rem;
     overflow: auto;
     resize: vertical;
     white-space: pre;
     font-family: Consolas, "Courier New", monospace;
     line-height: 1.35;
+    padding-top: 0.75rem;
+    padding-right: 2.5rem;
 }
 
-.ai-prompt-capture-container {
+.ai-dev-output-container {
     position: relative;
 }
 
-.ai-prompt-capture-actions {
+.ai-dev-output-actions {
     position: absolute;
     top: 0.375rem;
     right: 0.5rem;
@@ -99,10 +101,15 @@
     border-radius: 999px;
 }
 
-.ai-prompt-capture-actions .btn-icon {
+.ai-dev-output-actions .btn-icon {
     width: 2rem;
     height: 2rem;
     padding: 0;
+    color: #5c6b7a;
+}
+
+.ai-dev-output-timestamp {
+    font-weight: 400;
     color: #5c6b7a;
 }
 
@@ -150,13 +157,6 @@
     align-items: center;
     gap: 0.75rem;
     flex-wrap: wrap;
-}
-
-.dev-prompt-section .ai-prompt-capture-output {
-    min-height: 4.5rem;
-    max-height: 16rem;
-    padding-top: 0.5rem;
-    padding-right: 2.5rem;
 }
 
 .left-card {

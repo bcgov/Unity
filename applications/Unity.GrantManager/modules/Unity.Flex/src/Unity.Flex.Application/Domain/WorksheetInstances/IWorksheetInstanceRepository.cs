@@ -11,5 +11,6 @@ namespace Unity.Flex.Domain.WorksheetInstances
         Task<List<WorksheetInstance>> GetByWorksheetCorrelationAsync(Guid worksheetId, string uiAnchor, Guid worksheetCorrelationId, string worksheetCorrelationProvider);
         Task<WorksheetInstance?> GetWithValuesAsync(Guid worksheetInstanceId);
         Task<bool> ExistsAsync(Guid worksheetId, Guid instanceCorrelationId, string instanceCorrelationProvider, Guid sheetCorrelationId, string sheetCorrelationProvider, string? uiAnchor);
+        Task<bool> AnyByWorksheetAndFormVersionAsync(Guid worksheetId, Guid formVersionId);
     }
 }

@@ -1,4 +1,4 @@
-﻿function saveScoresSection(formId, sectionId) {
+function saveScoresSection(formId, sectionId) {
     const assessmentId = $('#AssessmentId').val();
     const secSaveButton = document.getElementById(
         'scoresheet-section-save-' + sectionId
@@ -577,7 +577,7 @@ function collapseAllAccordions(divId) {
     });
 }
 
-function regenerateAIScoresheetAnswers(capturePromptIo = false, triggerButton = null) {
+function queueApplicationScoring(triggerButton = null) {
     const applicationId = $('#DetailsViewApplicationId').val();
     const $button = triggerButton ? $(triggerButton) : $('#regenerateAiScoresheetBtn');
     const existingHtml = $button.html();
@@ -587,29 +587,20 @@ function regenerateAIScoresheetAnswers(capturePromptIo = false, triggerButton = 
         return;
     }
 
-    if (!capturePromptIo && globalThis.hideAIPromptCapture) {
-        globalThis.hideAIPromptCapture('#aiScoringPromptCaptureContainer', '#aiScoringPromptCaptureOutput');
-    }
-
     $button
         .html(
-            '<span class="ai-button-content"><span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span><span>Generating...</span></span>'
+            '<span class="ai-button-content"><span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span><span>Queueing...</span></span>'
         )
         .prop('disabled', true);
 
-    unity.grantManager.grantApplications.applicationAIScoring
-        .generateAIScoresheetAnswers(applicationId, promptVersion, capturePromptIo)
+    unity.grantManager.grantApplications.applicationScoring
+        .generateApplicationScoring(applicationId, promptVersion)
         .done(function () {
-            abp.notify.success('AI scoring refreshed successfully.');
-            PubSub.publish('refresh_assessment_scores', {
-                promptVersion: promptVersion,
-                capturePromptIo: capturePromptIo,
-                applicationId: applicationId,
-            });
+            abp.notify.success('AI scoring queued. Refresh later to see updated results.');
         })
         .fail(function () {
             abp.message.error(
-                'Failed to refresh AI scoring. Please try again.'
+                'Failed to queue AI scoring. Please try again.'
             );
         })
         .always(function () {

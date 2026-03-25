@@ -1,0 +1,18 @@
+@using Unity.AI.Localization
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<AIResource> L
+
+<div class="container-fluid px-0">
+    <div class="action-bar p-2 filter-search-action-bar">
+        <div class="filter-search-action-bar_search-wrapper">
+            <input type="search" id="search-prompts" placeholder="@L["Common:Search"]" class="tbl-search">
+        </div>
+    </div>
+    <div class="p-3 pt-0">
+        <abp-card>
+            <abp-card-body>
+                <abp-table id="AIPromptsTable" striped-rows="false" class="nowrap"></abp-table>
+            </abp-card-body>
+        </abp-card>
+    </div>
+</div>
