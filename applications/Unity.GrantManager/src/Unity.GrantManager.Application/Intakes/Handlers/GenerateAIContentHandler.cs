@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Unity.AI.Settings;
 using Unity.GrantManager.AI;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Intakes.Events;
@@ -12,6 +13,7 @@ using Volo.Abp.EventBus.Local;
 using Unity.Flex.Domain.Scoresheets;
 using System.Text.Json;
 using Volo.Abp.Features;
+using Volo.Abp.Settings;
 using Newtonsoft.Json.Linq;
 
 namespace Unity.GrantManager.Intakes.Handlers
@@ -35,6 +37,7 @@ namespace Unity.GrantManager.Intakes.Handlers
         private readonly IApplicationFormVersionRepository _applicationFormVersionRepository;
         private readonly IFeatureChecker _featureChecker;
         public ILocalEventBus LocalEventBus { get; set; } = NullLocalEventBus.Instance;
+        public ISettingProvider SettingProvider { get; set; } = null!;
         private const string ComponentsKey = "components";
         private static readonly HashSet<string> NonDataComponentTypes = new()
         {
@@ -114,6 +117,11 @@ namespace Unity.GrantManager.Intakes.Handlers
             var attachmentSummariesEnabled = await _featureChecker.IsEnabledAsync(AttachmentSummariesFeatureName);
             var applicationAnalysisEnabled = await _featureChecker.IsEnabledAsync(ApplicationAnalysisFeatureName);
             var scoringEnabled = await _featureChecker.IsEnabledAsync(ScoringFeatureName);
+
+            if (scoringEnabled)
+            {
+                scoringEnabled = await SettingProvider.GetAsync<bool>(AISettings.ScoringAssistantEnabled, defaultValue: false);
+            }
 
             if (!attachmentSummariesEnabled && !applicationAnalysisEnabled && !scoringEnabled)
             {

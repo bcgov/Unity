@@ -35,7 +35,8 @@
     var aiApplicationAnalysisEnabled = await FeatureChecker.IsEnabledAsync("Unity.AI.ApplicationAnalysis")
         && await PermissionChecker.IsGrantedAsync(AIPermissions.ApplicationAnalysis.ApplicationAnalysisDefault);
     var aiScoringEnabled = await FeatureChecker.IsEnabledAsync("Unity.AI.Scoring")
-        && await PermissionChecker.IsGrantedAsync(AIPermissions.ScoringAssistant.ScoringAssistantDefault);
+        && await PermissionChecker.IsGrantedAsync(AIPermissions.ScoringAssistant.ScoringAssistantDefault)
+        && await SettingProvider.GetAsync<bool>(Unity.AI.Settings.AISettings.ScoringAssistantEnabled, defaultValue: false);
     var flexFeatureEnabled = await FeatureChecker.IsEnabledAsync("Unity.Flex");
 }
 @section styles

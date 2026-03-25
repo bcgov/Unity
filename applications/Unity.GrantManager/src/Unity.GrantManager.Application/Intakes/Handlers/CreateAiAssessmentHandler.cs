@@ -1,17 +1,20 @@
 using Microsoft.Extensions.Logging;
 using System;
 using System.Threading.Tasks;
+using Unity.AI.Settings;
 using Unity.GrantManager.Assessments;
 using Unity.GrantManager.Intakes.Events;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.EventBus;
 using Volo.Abp.Features;
+using Volo.Abp.Settings;
 
 namespace Unity.GrantManager.Intakes.Handlers;
 
 public class CreateAiAssessmentHandler(
     AssessmentManager assessmentManager,
     IFeatureChecker featureChecker,
+    ISettingProvider settingProvider,
     ILogger<CreateAiAssessmentHandler> logger) : ILocalEventHandler<AiScoresheetAnswersGeneratedEvent>, ITransientDependency
 {
     public async Task HandleEventAsync(AiScoresheetAnswersGeneratedEvent eventData)
@@ -23,6 +26,11 @@ public class CreateAiAssessmentHandler(
         }
 
         if (!await featureChecker.IsEnabledAsync("Unity.AI.Scoring"))
+        {
+            return;
+        }
+
+        if (!await settingProvider.GetAsync<bool>(AISettings.ScoringAssistantEnabled, defaultValue: false))
         {
             return;
         }
