@@ -147,13 +147,13 @@ namespace Unity.Flex.Worksheets
             var links = await worksheetLinkRepository.GetListByWorksheetAsync(worksheetId, CorrelationConsts.FormVersion);
             var result = new WorksheetLinkedFormsDto();
 
-            foreach (var link in links)
+            foreach (var correlationId in links.Select(link => link.CorrelationId))
             {
-                bool hasInstances = await worksheetInstanceRepository.AnyByWorksheetAndFormVersionAsync(worksheetId, link.CorrelationId);
+                bool hasInstances = await worksheetInstanceRepository.AnyByWorksheetAndFormVersionAsync(worksheetId, correlationId);
                 if (hasInstances)
-                    result.FormVersionIdsWithInstances.Add(link.CorrelationId);
+                    result.FormVersionIdsWithInstances.Add(correlationId);
                 else
-                    result.LinkedFormVersionIds.Add(link.CorrelationId);
+                    result.LinkedFormVersionIds.Add(correlationId);
             }
 
             return result;

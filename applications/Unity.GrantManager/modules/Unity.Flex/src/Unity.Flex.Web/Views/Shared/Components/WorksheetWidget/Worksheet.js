@@ -152,18 +152,6 @@ $(function () {
             });
     }
 
-    function executeWorksheetDelete(worksheetId) {
-        unity.flex.worksheets.worksheet.delete(worksheetId)
-            .done(function () {
-                PubSub.publish('refresh_worksheet_list', { worksheetId: worksheetId, action: 'Delete' });
-                abp.notify.success('Worksheet deleted successfully.', 'Delete Worksheet');
-            })
-            .fail(function (e) {
-                abp.notify.error('Failed to delete worksheet.');
-                console.warn('Worksheet deletion failed:', e);
-            });
-    }
-
     function openEditWorksheetModal(worksheetId) {
         editWorksheetModal.open({
             worksheetId: worksheetId,
@@ -275,3 +263,15 @@ $(function () {
         }
     );
 });
+
+function executeWorksheetDelete(worksheetId) {
+    unity.flex.worksheets.worksheet.delete(worksheetId)
+        .done(function () {
+            PubSub.publish('refresh_worksheet_list', { worksheetId: worksheetId, action: 'Delete' });
+            abp.notify.success('Worksheet deleted successfully.', 'Delete Worksheet');
+        })
+        .fail(function (e) {
+            abp.notify.error('Failed to delete worksheet.');
+            console.warn('Worksheet deletion failed:', e);
+        });
+}
