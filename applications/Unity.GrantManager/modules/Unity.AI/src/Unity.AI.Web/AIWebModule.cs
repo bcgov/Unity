@@ -1,17 +1,21 @@
 using Microsoft.Extensions.DependencyInjection;
 using Unity.AI.Localization;
+using Unity.AI.Web.Views.Settings;
 using Volo.Abp.AspNetCore.Mvc.Localization;
 using Volo.Abp.AspNetCore.Mvc.UI.Theme.Shared;
 using Volo.Abp.AutoMapper;
 using Volo.Abp.Modularity;
+using Volo.Abp.SettingManagement.Web;
+using Volo.Abp.SettingManagement.Web.Pages.SettingManagement;
 using Volo.Abp.VirtualFileSystem;
 
 namespace Unity.AI.Web;
 
 [DependsOn(
-    typeof(AIApplicationContractsModule),
+    typeof(AIApplicationModule),
     typeof(AbpAspNetCoreMvcUiThemeSharedModule),
-    typeof(AbpAutoMapperModule)
+    typeof(AbpAutoMapperModule),
+    typeof(AbpSettingManagementWebModule)
     )]
 public class AIWebModule : AbpModule
 {
@@ -39,6 +43,11 @@ public class AIWebModule : AbpModule
         Configure<AbpAutoMapperOptions>(options =>
         {
             options.AddMaps<AIWebModule>(validate: true);
+        });
+
+        Configure<SettingManagementPageOptions>(options =>
+        {
+            options.Contributors.Add(new AISettingPageContributor());
         });
     }
 }
