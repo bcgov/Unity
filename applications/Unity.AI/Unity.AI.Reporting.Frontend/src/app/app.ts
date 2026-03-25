@@ -626,7 +626,7 @@ export class App implements OnInit, OnDestroy {
 
     // Ordered alternation: comments → strings → identifiers → numbers → any char.
     // Identifier before number ensures digits inside words (col1) are not split off.
-    const TOKEN_RE = /--[^\n]*|\/\*[\s\S]*?\*\/|'(?:''|[^'])*'|"[^"]*"|[a-zA-Z_]\w*|\d+(?:\.\d*)?|[\s\S]/g;
+    const TOKEN_RE = /--.*|\/\*[^]*?\*\/|'[^']*'|"[^"]*"|[a-zA-Z_]\w*|\d+\.?\d*|[^]/g;
 
     const classify = (token: string): string => {
       const ch = token[0];
@@ -643,7 +643,7 @@ export class App implements OnInit, OnDestroy {
     // Wrap each line so CSS counters can add line numbers.
     // Join with no separator — display:block on .sql-line handles the line breaks,
     // so we avoid doubling the gap with a stray \n in the <pre>.
-    const highlighted = sql.replace(TOKEN_RE, classify);
+    const highlighted = sql.replaceAll(TOKEN_RE, classify);
     const numbered = highlighted.split('\n')
       .map(line => `<span class="sql-line">${line}</span>`)
       .join('');
