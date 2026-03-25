@@ -8,6 +8,8 @@ using System.Threading.Tasks;
 using Unity.GrantManager.Attachments;
 using Unity.GrantManager.Controllers;
 using Unity.GrantManager.Intakes;
+using Unity.Notifications.Emails;
+using Volo.Abp.MultiTenancy;
 using Volo.Abp.Validation;
 using Xunit;
 
@@ -24,7 +26,9 @@ namespace Unity.GrantManager.Components
             var configuration = builder.Build();
             var fileAppService = Substitute.For<IFileAppService>();
             var submissionAppService = Substitute.For<ISubmissionAppService>();
-            var attachmentController = new AttachmentController(fileAppService, configuration, submissionAppService);
+            var emailLogAttachmentUploadService = Substitute.For<IEmailLogAttachmentUploadService>();
+            var currentTenant = Substitute.For<ICurrentTenant>();
+            var attachmentController = new AttachmentController(fileAppService, configuration, submissionAppService, emailLogAttachmentUploadService, currentTenant);
             var applicationId = Guid.NewGuid();
             var userId = "testUserId";
             var userName = "testUserName";
@@ -67,7 +71,9 @@ namespace Unity.GrantManager.Components
                 ContentType = contentType
             };
             submissionAppService.GetChefsFileAttachment(formSubmissionId, chefsFileAttachmentId, fileName).Returns(await Task.FromResult(blobDto));
-            var attachmentController = new AttachmentController(fileAppService, configuration, submissionAppService);
+            var emailLogAttachmentUploadService = Substitute.For<IEmailLogAttachmentUploadService>();
+            var currentTenant = Substitute.For<ICurrentTenant>();
+            var attachmentController = new AttachmentController(fileAppService, configuration, submissionAppService, emailLogAttachmentUploadService, currentTenant);
 
             // Act
             Task<IActionResult> download = attachmentController.DownloadChefsAttachment(formSubmissionId, chefsFileAttachmentId, fileName);

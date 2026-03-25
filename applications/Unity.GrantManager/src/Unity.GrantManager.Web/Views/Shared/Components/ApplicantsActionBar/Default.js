@@ -43,12 +43,29 @@ $(function () {
                 $('#openApplicant').removeClass('action-bar-btn-unavailable');
             }
         }
+
+        // Show MERGE button only when exactly 2 applicants are selected
+        if (selectedApplicantIds.length === 2) {
+            $('#mergeApplicants').removeClass('d-none');
+        } else {
+            $('#mergeApplicants').addClass('d-none');
+        }
     }
 
     // Handle OPEN button click
     $('#openApplicant').click(function () {
         if (selectedApplicantIds.length === 1) {
             window.location.href = `/GrantApplicants/Details?ApplicantId=${selectedApplicantIds[0]}`;
+        }
+    });
+
+    // MERGE button click — open modal with the 2 selected applicants
+    $('#mergeApplicants').on('click', () => {
+        if (selectedApplicants.length === 2) {
+            PubSub.publish('open_applicant_list_merge', {
+                a: selectedApplicants[0],
+                b: selectedApplicants[1]
+            });
         }
     });
 

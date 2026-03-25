@@ -5,14 +5,17 @@ using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Linq;
 using System.Threading.Tasks;
+using Unity.AI.Permissions;
 using Unity.GrantManager.AI;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Identity;
 using Unity.GrantManager.Intakes;
+using Volo.Abp;
 using Volo.Abp.Application.Services;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Entities;
 using Volo.Abp.Domain.Repositories;
+using Volo.Abp.Features;
 
 namespace Unity.GrantManager.Attachments;
 
@@ -26,7 +29,8 @@ public class AttachmentAppService(
     IIntakeFormSubmissionManager intakeFormSubmissionManager,
     IPersonRepository personUserRepository, 
     IAIService aiService,
-    ISubmissionAppService submissionAppService) : ApplicationService, IAttachmentAppService
+    ISubmissionAppService submissionAppService,
+    IFeatureChecker featureChecker) : ApplicationService, IAttachmentAppService
 {
     private const string DefaultContentType = "application/octet-stream";
     private const string SummaryGenerationFailedMessage = "AI summary generation failed.";
@@ -189,8 +193,14 @@ public class AttachmentAppService(
         return attachment.CreatorId;
     }
 
+    [Authorize(AIPermissions.AttachmentSummary.AttachmentSummaryDefault)]
     public async Task<string> GenerateAISummaryAttachmentAsync(Guid attachmentId, string? promptVersion = null, bool capturePromptIo = false)
     {
+        if (!await featureChecker.IsEnabledAsync("Unity.AI.AttachmentSummaries"))
+        {
+            throw new UserFriendlyException("AI attachment summaries are not enabled.");
+        }
+
         if (!await aiService.IsAvailableAsync())
         {
             Logger.LogWarning("AI service is not available for attachment summary generation. AttachmentId: {AttachmentId}", attachmentId);
@@ -217,8 +227,14 @@ public class AttachmentAppService(
         return summaryResponse.Summary;
     }
     
+    [Authorize(AIPermissions.AttachmentSummary.AttachmentSummaryDefault)]
     public async Task<List<string>> GenerateAISummariesAttachmentsAsync(List<Guid> attachmentIds, string? promptVersion = null, bool capturePromptIo = false)
     {
+        if (!await featureChecker.IsEnabledAsync("Unity.AI.AttachmentSummaries"))
+        {
+            throw new UserFriendlyException("AI attachment summaries are not enabled.");
+        }
+
         if (!await aiService.IsAvailableAsync())
         {
             Logger.LogWarning("AI service is not available for bulk attachment summary generation.");

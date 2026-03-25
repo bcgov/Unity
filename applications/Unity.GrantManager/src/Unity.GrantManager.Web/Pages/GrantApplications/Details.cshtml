@@ -30,8 +30,12 @@
     PageLayout.Content.Title = L["Grants"].Value;
     var notificationsFeatureEnabled = await FeatureChecker.IsEnabledAsync("Unity.Notifications");
     var readEmailGranted = await PermissionChecker.IsGrantedAsync("Notifications.Email");
+    var aiAttachmentSummariesEnabled = await FeatureChecker.IsEnabledAsync("Unity.AI.AttachmentSummaries")
+        && await PermissionChecker.IsGrantedAsync(AIPermissions.AttachmentSummary.AttachmentSummaryDefault);
     var aiApplicationAnalysisEnabled = await FeatureChecker.IsEnabledAsync("Unity.AI.ApplicationAnalysis")
         && await PermissionChecker.IsGrantedAsync(AIPermissions.ApplicationAnalysis.ApplicationAnalysisDefault);
+    var aiScoringEnabled = await FeatureChecker.IsEnabledAsync("Unity.AI.Scoring")
+        && await PermissionChecker.IsGrantedAsync(AIPermissions.ScoringAssistant.ScoringAssistantDefault);
     var flexFeatureEnabled = await FeatureChecker.IsEnabledAsync("Unity.Flex");
 }
 @section styles
@@ -67,6 +71,7 @@
 <input type="hidden" id="RenderFormIoToHtml" value="@Model.RenderFormIoToHtml.ToString()" />
 <input type="hidden" id="ApplicationFormVersionId" value="@Model.ApplicationFormVersionId" />
 <input type="hidden" id="AIAnalysisFeatureEnabled" value="@aiApplicationAnalysisEnabled" />
+<input type="hidden" id="AIScoringFeatureEnabled" value="@aiScoringEnabled.ToString()" />
 
 @functions
 {
@@ -493,12 +498,15 @@
                             <div class="dev-prompt-section">
                                 <div class="dev-prompt-section-header">
                                     <h6 class="fw-bold m-0">Attachment</h6>
-                                    <button type="button" class="btn unt-btn-outline-primary btn-outline-primary btn-sm" onclick="generateAIAttachmentSummaries(true, this)">
-                                        <span class="ai-button-content">
-                                            <i class="unt-icon-sm fa-solid fa-wand-sparkles"></i>
-                                            <span>Generate</span>
-                                        </span>
-                                    </button>
+                                    @if (aiAttachmentSummariesEnabled)
+                                    {
+                                        <button type="button" class="btn unt-btn-outline-primary btn-outline-primary btn-sm" onclick="generateAIAttachmentSummaries(true, this)">
+                                            <span class="ai-button-content">
+                                                <i class="unt-icon-sm fa-solid fa-wand-sparkles"></i>
+                                                <span>Generate</span>
+                                            </span>
+                                        </button>
+                                    }
                                 </div>
                                 <div id="attachmentPromptCaptureContainer" class="ai-prompt-capture-container">
                                     <div class="ai-prompt-capture-actions">
@@ -533,12 +541,15 @@
                             <div class="dev-prompt-section">
                                 <div class="dev-prompt-section-header">
                                     <h6 class="fw-bold m-0">Scoring</h6>
-                                    <button type="button" class="btn unt-btn-outline-primary btn-outline-primary btn-sm" onclick="regenerateAIScoresheetAnswers(true, this)">
-                                        <span class="ai-button-content">
-                                            <i class="unt-icon-sm fa-solid fa-wand-sparkles"></i>
-                                            <span>Generate</span>
-                                        </span>
-                                    </button>
+                                    @if (aiScoringEnabled)
+                                    {
+                                        <button type="button" class="btn unt-btn-outline-primary btn-outline-primary btn-sm" onclick="regenerateAIScoresheetAnswers(true, this)">
+                                            <span class="ai-button-content">
+                                                <i class="unt-icon-sm fa-solid fa-wand-sparkles"></i>
+                                                <span>Generate</span>
+                                            </span>
+                                        </button>
+                                    }
                                 </div>
                                 <div id="aiScoringPromptCaptureContainer" class="ai-prompt-capture-container">
                                     <div class="ai-prompt-capture-actions">

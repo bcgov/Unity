@@ -1,15 +1,16 @@
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
-using System.Threading.Tasks;
+using System.Linq;
 using System.Threading;
-using Volo.Abp.EntityFrameworkCore;
+using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
+using Unity.Modules.Shared.Constants;
 using Volo.Abp.AuditLogging;
 using Volo.Abp.AuditLogging.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore;
-using System.Linq;
-using Volo.Abp.Identity;
 using Volo.Abp.DependencyInjection;
+using Volo.Abp.EntityFrameworkCore;
+using Volo.Abp.Identity;
 
 namespace Unity.GrantManager.Repositories
 {
@@ -53,7 +54,12 @@ namespace Unity.GrantManager.Repositories
 
         private async Task<string> ResolveUsername(Guid userId)
         {
-            var user = await identityUserRepository.GetAsync(userId);
+            if(userId == BackgroundJobConstants.BackgroundJobPersonId)
+            {
+                return $"{BackgroundJobConstants.BackgroundJobName}";
+            }
+
+            var user = await identityUserRepository.GetAsync(userId);            
             return user != null ? $"{user.Name} {user.Surname}" : string.Empty;
         }
     }

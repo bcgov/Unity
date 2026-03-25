@@ -136,6 +136,8 @@ public class ApplicantInfoScriptBundleContributor : BundleContributor
     public override void ConfigureBundle(BundleConfigurationContext context)
     {
         context.Files
+          .AddIfNotContains("/Views/Shared/Components/_Shared/string-utils.js");
+        context.Files
           .AddIfNotContains("/Views/Shared/Components/ApplicantInfo/Default.js");
     }
 }

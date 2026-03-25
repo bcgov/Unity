@@ -1,5 +1,15 @@
 - Use only DATA and ATTACHMENTS as evidence.
 - Do not invent missing application details.
+- Ignore fields or details that are not relevant to the specific question being answered.
+- Prefer, in order: direct evidence of the exact condition asked, closely related supporting evidence, then general context only when necessary.
+- If evidence is insufficient, partial, indirect, missing, or non-specific, choose the most conservative valid answer and explain the uncertainty.
+- Do not convert general project descriptions into evidence for a specific scored condition unless that condition is directly supported.
+- Treat prefilled labels, ratings, rankings, or statuses as background context only unless the question explicitly asks for that same item.
+- Do not treat related concepts as equivalent; answer the specific question asked, not a nearby concept.
+- Do not infer unsupported claims about requirements, conditions, relationships, compliance elements, mitigations, supports, or outcomes.
+- Answer a specific condition positively only when that exact condition is directly evidenced in DATA or ATTACHMENTS.
+- For eligibility, completeness, ownership, location, or compliance questions, do not answer positively unless the exact condition is directly confirmed in the provided evidence.
+- If the evidence shows only involvement, presence, relevance, or association, do not treat that alone as proof that a requirement or condition is satisfied.
 - Return exactly one answer object per question ID in SECTION.questions.
 - Do not omit any question IDs from SECTION.questions.
 - Do not add keys that are not question IDs from SECTION.questions.
@@ -9,16 +19,10 @@
 - Never omit "answer", "rationale", or "confidence" for any question type.
 - The "answer" value type must match question type: Number => numeric; YesNo/SelectList/Text/TextArea => string.
 - The "rationale" field must be 1-2 complete sentences grounded in concrete DATA/ATTACHMENTS evidence.
-- In rationale, cite concrete source evidence from the provided input content rather than prompt section headers.
+- In rationale, cite concrete source evidence from the provided input content in plain language rather than prompt section headers or internal field names.
+- Write reviewer-facing natural language. Do not refer to prompt section names, internal field keys, or schema labels such as DATA, ATTACHMENTS, ProjectSummary, CustomField1, or OrganizationType.
+- Refer to evidence by its plain-language meaning, quoted text, or attachment name rather than internal key names.
 - For every question, rationale must justify both the selected answer and the selected confidence level based on evidence strength.
-- If evidence is insufficient, partial, indirect, missing, or non-specific, choose the most conservative valid answer and explain the uncertainty.
-- Ignore fields or details that are not relevant to the specific question being answered.
-- Prefer, in order: direct evidence of the exact condition asked, closely related supporting evidence, then general context only when necessary.
-- Do not convert general project descriptions into evidence for a specific scored condition unless that condition is directly supported.
-- Treat prefilled labels, ratings, rankings, or statuses in DATA as background context only; do not use them as evidence unless the question explicitly asks you to report that same item.
-- Do not use one field's prior classification, rating, or judgment as evidence for a different question unless the question explicitly asks for that same classification, rating, or judgment.
-- Do not treat related concepts as equivalent; answer the specific question asked, not a nearby concept.
-- Do not infer unsupported claims about requirements, conditions, relationships, compliance elements, mitigations, supports, or outcomes.
 - The "confidence" field must be an integer from 0 to 100 in increments of 5 and represents confidence in the selected answer.
 - Set confidence by certainty of the selected answer based on available evidence, regardless of which option is selected.
 - Do not use maximum or near-maximum confidence when the answer depends on inference rather than an explicit statement of the exact condition.
@@ -35,18 +39,12 @@
 - If evidence supports the existence of a topic but not the required strength, completeness, or specificity, choose the lowest option consistent with that evidence.
 - If evidence is insufficient for a select list question, choose the lowest allowed answer value from question.allowed_answers and explain the uncertainty.
 - Do not treat broad project descriptions, general goals, high-level timelines, budget presence, or a single indirect reference as sufficient evidence for a higher-scored select-list answer.
-- Answer a specific condition positively only when that exact condition is directly evidenced in DATA or ATTACHMENTS.
-- If the evidence shows only involvement, presence, relevance, or association, do not treat that alone as proof that a requirement or condition is satisfied.
-- If a question asks whether something is eligible, complete, appropriate, or satisfied, require direct evidence of that exact condition rather than general relevance or presence.
 - For text and text area questions, answer must be concise, evidence-based, non-empty, and avoid boilerplate placeholders.
 - For text and text area questions, answer is the reviewer comment, and rationale must explain the evidence basis and certainty for that comment.
 - If no concerns are identified for a text or text area question, return a short non-empty evidence-based comment rather than leaving answer blank.
 - For comment fields, summarize only the evidence-based conclusions supported by the scored answers, including uncertainty where applicable, and do not introduce stronger claims.
-- For narrative comment fields, keep wording aligned with the scored answers and evidence; do not use stronger certainty or impact language than the evidence supports.
 - For comment fields, describe the evidence and resulting answer without elevating it into an overall assessment unless the question explicitly asks for one.
-- Do not treat the presence of a named person, partner, organization, location, document, or field as proof of a separate requirement, condition, or relationship unless that exact point is explicitly evidenced.
 - Do not add recommendations or stronger conclusions unless the question explicitly asks for them.
-- For comment fields, always provide a concise evidence-based summary even when no concerns are identified.
 - For comment fields, do not leave answer empty even when all other answers are positive.
 - Do not leave rationale empty when answer is populated.
 - Final self-check before responding: every question ID in RESPONSE must have a non-empty "answer", non-empty "rationale", and "confidence".

@@ -273,7 +273,8 @@ function getExistingApplicantData() {
         SubSector: getVal('ApplicantSummary_SubSector'),
         SectorSubSectorIndustryDesc: getVal('ApplicantSummary_SectorSubSectorIndustryDesc'),
         FiscalDay: getVal('ApplicantSummary_FiscalDay'),
-        FiscalMonth: getVal('ApplicantSummary_FiscalMonth')
+        FiscalMonth: getVal('ApplicantSummary_FiscalMonth'),
+        IsDuplicated: $activeWidget.find('#ApplicantSummary_IsDuplicated').val() === 'True'
     };
 }
 
@@ -295,7 +296,8 @@ function createNewApplicantDataObject(selectedData) {
         SubSector: selectedData.SubSector || '',
         SectorSubSectorIndustryDesc: selectedData.SectorSubSectorIndustryDesc || '',
         FiscalDay: selectedData.FiscalDay || '',
-        FiscalMonth: selectedData.FiscalMonth || ''
+        FiscalMonth: selectedData.FiscalMonth || '',
+        IsDuplicated: selectedData.IsDuplicated
     };
 }
 
@@ -303,6 +305,21 @@ function createNewApplicantDataObject(selectedData) {
 function populateMergeModal(existing, newData) {
     $('#existing_ApplicantNameHeader').text(existing.ApplicantName);
     $('#new_ApplicantNameHeader').text(newData.ApplicantName);
+
+    $('#mergeExistingDuplicateFlag').toggleClass('d-none', !existing.IsDuplicated);
+    $('#mergeNewDuplicateFlag').toggleClass('d-none', !newData.IsDuplicated);
+
+    // Name match summary badge
+    let score = compareStrings(existing.ApplicantName || '', newData.ApplicantName || '');
+    let $badge = $('#mergeNameMatchBadge');
+    $badge.removeClass('unity-badge-warning');
+    if (score >= 100) {
+        $badge.text('100% Matched - Possible Duplicate');
+    } else if (score >= 50) {
+        $badge.text('Partially Matched');
+    } else {
+        $badge.text('Not Matched').addClass('unity-badge-warning');
+    }
 
     for (const key in existing) {
         $(`#existing_${key}`).text(existing[key]);
@@ -369,7 +386,7 @@ async function executeMerge(existing, newData) {
     ApplicantInfoObj['worksheetId'] = worksheetId;
     ApplicantInfoObj.ApplicantId = principalApplicantId;
 
-    await handleApplicantMerge(applicationId, principalApplicantId, nonPrincipalApplicantId, newData, ApplicantInfoObj);
+    await handleApplicantMerge(applicationId, principalApplicantId, nonPrincipalApplicantId, ApplicantInfoObj);
 }
 
 // Helper function to setup merge modal handlers
@@ -392,6 +409,7 @@ function setupMergeModalHandlers(existing, newData) {
             await executeMerge(existing, newData);
         } catch (err) {
             console.error('[MERGE ERROR]', err);
+            abp.notify.error('Merge failed. Please try again.');
         }
 
         $('#mergeApplicantsSpinner').hide();
@@ -452,7 +470,8 @@ function initializeApplicantLookup() {
                         SectorSubSectorIndustryDesc: item.SectorSubSectorIndustryDesc,
                         FiscalDay: item.FiscalDay,
                         FiscalMonth: item.FiscalMonth,
-                        UnityApplicantId: item.UnityApplicantId
+                        UnityApplicantId: item.UnityApplicantId,
+                        IsDuplicated: item.IsDuplicated ?? false
                     };
                 });
                 return {
@@ -716,14 +735,9 @@ function getMergedApplicantInfo(existing, newData) {
     return merged;
 }
 
-async function handleApplicantMerge(applicationId, principalApplicantId, nonPrincipalApplicantId, newData, ApplicantInfoObj) {
-    
+async function handleApplicantMerge(applicationId, principalApplicantId, nonPrincipalApplicantId, ApplicantInfoObj) {
     await setApplicantDuplicatedStatus(principalApplicantId, nonPrincipalApplicantId);
-
-    if (principalApplicantId === newData.ApplicantId) {
-        await updatePrincipalApplicant(applicationId, principalApplicantId);
-    }
-    
+    await transferApplicantApplications(principalApplicantId, nonPrincipalApplicantId);
     await updateMergedApplicant(applicationId, ApplicantInfoObj);
 }
 
@@ -777,20 +791,15 @@ function setApplicantDuplicatedStatus(principalApplicantId, nonPrincipalApplican
     });
 }
 
-function updatePrincipalApplicant(applicationId, principalApplicantId) {
+function transferApplicantApplications(principalApplicantId, nonPrincipalApplicantId) {
     return $.ajax({
-            url: '/api/app/applicant/applicant-id',
-            type: 'PUT',
-            contentType: 'application/json',
-            data: JSON.stringify({
-                applicationId: applicationId,
-                applicantId: principalApplicantId
-            })
+        url: '/api/app/applicant/transfer-applicant-applications',
+        type: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({
+            principalApplicantId: principalApplicantId,
+            nonPrincipalApplicantId: nonPrincipalApplicantId
         })
-        .done(function () {
-            abp.notify.success('Principal Applicant updated successfully.');
-        })
-        .fail(function (xhr, status) {
-            abp.notify.error('Failed to update Principal Applicant.');
-         });
+    });
 }
+

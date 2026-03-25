@@ -8,6 +8,7 @@ namespace Unity.Flex.Web.Views.Shared.Components.DataGridWidget
     {
         public bool AllowEdit { get; set; }
         public string[] Columns { get; set; } = [];
+        public string[] ColumnKeys { get; set; } = [];
         public string TableOptions { get; set; } = string.Empty;
         public DataGridViewModelRow[] Rows { get; set; } = [];
         public DataGridDefinitionSummaryOption SummaryOption { get; set; }

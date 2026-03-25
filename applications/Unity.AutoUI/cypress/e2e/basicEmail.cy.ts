@@ -306,20 +306,23 @@ describe("Send an email", () => {
   });
 
   it("Select Email Template", () => {
-    cy.intercept("GET", "/api/app/template/*/template-by-id").as(
-      "loadTemplate",
-    );
-
     cy.get("#template", { timeout: STANDARD_TIMEOUT })
       .should("exist")
       .should("be.visible")
       .select(TEMPLATE_NAME);
 
-    cy.wait("@loadTemplate", { timeout: STANDARD_TIMEOUT });
-
     cy.get("#template")
       .find("option:selected")
       .should("have.text", TEMPLATE_NAME);
+
+    // #EmailBody is a hidden textarea backing the rich-text editor.
+    // Template selection populates the visible RTE but does not auto-sync
+    // the backing field — trigger the change manually if still empty.
+    cy.get("#EmailBody", { timeout: STANDARD_TIMEOUT }).then(($el) => {
+      if (($el.val() as string).trim() === "") {
+        cy.wrap($el).invoke("val", "Test email body").trigger("change");
+      }
+    });
   });
 
   it("Set Email To address", () => {

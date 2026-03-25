@@ -118,6 +118,28 @@
                 </abp-column>
             </abp-row>
         </fieldset>
+        <div id="email-attachments-section" style="display:none">
+            <abp-row class="m-0 p-0">
+                <abp-column size="_10" class="px-1">
+                    <h6 class="fw-bold pt-3 pb-1 m-0">Attachments</h6>
+                    <abp-table id="EmailAttachmentsTable"
+                               hoverable-rows="true"
+                               class="attachments-table nowrap"></abp-table>
+                    <div class="d-flex justify-content-end mt-2 mb-1">
+                        <form id="email-attachment-form" enctype="multipart/form-data">
+                            <input id="email_attachment_upload" type="file" multiple
+                                   style="display:none"
+                                   onchange="uploadEmailFiles('email_attachment_upload');" />
+                            <abp-button text="Add Attachments"
+                                        id="email_attachment_upload_btn"
+                                        icon-type="Other"
+                                        icon="fl fl-plus"
+                                        button-type="Light" />
+                        </form>
+                    </div>
+                </abp-column>
+            </abp-row>
+        </div>
         <abp-row class="m-0 p-0" abp-if="@sendEmailGranted">
             <abp-column size="_10" class="px-1">
             <abp-modal-footer>
