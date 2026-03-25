@@ -32,9 +32,7 @@ function formatOutputBody(title, sections) {
         return '';
     }
 
-    const promptVersion = globalThis.getSelectedPromptVersion?.();
-    const header = promptVersion ? `${title} - ${promptVersion}` : title;
-    return `${header}\n\n${content}`;
+    return `${title}\n\n${content}`;
 }
 
 function unwrapWhenResult(result) {
