@@ -622,80 +622,33 @@ export class App implements OnInit, OnDestroy {
     ]);
 
     const esc = (s: string) =>
-      s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      s.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
 
-    let result = '';
-    let i = 0;
-    while (i < sql.length) {
-      // Single-line comment
-      if (sql[i] === '-' && sql[i + 1] === '-') {
-        const end = sql.indexOf('\n', i);
-        const chunk = end === -1 ? sql.slice(i) : sql.slice(i, end);
-        result += `<span class="sql-comment">${esc(chunk)}</span>`;
-        i += chunk.length;
-        continue;
-      }
-      // Block comment
-      if (sql[i] === '/' && sql[i + 1] === '*') {
-        const end = sql.indexOf('*/', i + 2);
-        const chunk = end === -1 ? sql.slice(i) : sql.slice(i, end + 2);
-        result += `<span class="sql-comment">${esc(chunk)}</span>`;
-        i += chunk.length;
-        continue;
-      }
-      // String literal (single-quoted)
-      if (sql[i] === "'") {
-        let j = i + 1;
-        while (j < sql.length) {
-          if (sql[j] === "'" && sql[j + 1] === "'") { j += 2; continue; }
-          if (sql[j] === "'") { j++; break; }
-          j++;
-        }
-        result += `<span class="sql-string">${esc(sql.slice(i, j))}</span>`;
-        i = j;
-        continue;
-      }
-      // Quoted identifier (double-quoted)
-      if (sql[i] === '"') {
-        let j = i + 1;
-        while (j < sql.length && sql[j] !== '"') j++;
-        result += `<span class="sql-identifier">${esc(sql.slice(i, j + 1))}</span>`;
-        i = j + 1;
-        continue;
-      }
-      // Numeric literal
-      if (/[0-9]/.test(sql[i]) && (i === 0 || !/[a-zA-Z_]/.test(sql[i - 1]))) {
-        let j = i;
-        while (j < sql.length && /[0-9.]/.test(sql[j])) j++;
-        result += `<span class="sql-number">${esc(sql.slice(i, j))}</span>`;
-        i = j;
-        continue;
-      }
-      // Word token (keyword, function, or plain identifier)
-      if (/[a-zA-Z_]/.test(sql[i])) {
-        let j = i;
-        while (j < sql.length && /[a-zA-Z0-9_]/.test(sql[j])) j++;
-        const word = sql.slice(i, j);
-        const upper = word.toUpperCase();
-        if (KEYWORDS.has(upper)) {
-          result += `<span class="sql-keyword">${esc(word)}</span>`;
-        } else if (FUNCTIONS.has(upper)) {
-          result += `<span class="sql-function">${esc(word)}</span>`;
-        } else {
-          result += esc(word);
-        }
-        i = j;
-        continue;
-      }
-      result += esc(sql[i]);
-      i++;
-    }
+    // Ordered alternation: comments → strings → identifiers → numbers → any char.
+    // Identifier before number ensures digits inside words (col1) are not split off.
+    const TOKEN_RE = /--[^\n]*|\/\*[\s\S]*?\*\/|'(?:''|[^'])*'|"[^"]*"|[a-zA-Z_]\w*|\d+(?:\.\d*)?|[\s\S]/g;
+
+    const classify = (token: string): string => {
+      const ch = token[0];
+      if (ch === '-' || ch === '/') return `<span class="sql-comment">${esc(token)}</span>`;
+      if (ch === "'") return `<span class="sql-string">${esc(token)}</span>`;
+      if (ch === '"') return `<span class="sql-identifier">${esc(token)}</span>`;
+      if (ch >= '0' && ch <= '9') return `<span class="sql-number">${esc(token)}</span>`;
+      const upper = token.toUpperCase();
+      if (KEYWORDS.has(upper)) return `<span class="sql-keyword">${esc(token)}</span>`;
+      if (FUNCTIONS.has(upper)) return `<span class="sql-function">${esc(token)}</span>`;
+      return esc(token);
+    };
+
     // Wrap each line so CSS counters can add line numbers.
     // Join with no separator — display:block on .sql-line handles the line breaks,
     // so we avoid doubling the gap with a stray \n in the <pre>.
-    const numbered = result.split('\n')
+    const highlighted = sql.replace(TOKEN_RE, classify);
+    const numbered = highlighted.split('\n')
       .map(line => `<span class="sql-line">${line}</span>`)
       .join('');
+    // Safe: all SQL content is HTML-escaped via esc(); only hardcoded <span> tags with
+    // static class names are injected.
     return this.sanitizer.bypassSecurityTrustHtml(numbered);
   }
 
