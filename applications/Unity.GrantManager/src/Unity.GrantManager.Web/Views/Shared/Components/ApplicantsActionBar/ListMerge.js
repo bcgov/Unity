@@ -152,7 +152,18 @@
                     nonPrincipalApplicantId: nonPrincipal.id
                 })
             }).then(() => {
-                // Step 2: update principal's summary fields
+                // Step 2: transfer all non-principal applications to principal
+                return $.ajax({
+                    url: '/api/app/applicant/transfer-applicant-applications',
+                    method: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({
+                        principalApplicantId: principal.id,
+                        nonPrincipalApplicantId: nonPrincipal.id
+                    })
+                });
+            }).then(() => {
+                // Step 3: update principal's summary fields
                 return unity.grantManager.applicants.applicant
                     .partialUpdateApplicantSummary(principal.id, {
                         modifiedFields: modifiedFields,

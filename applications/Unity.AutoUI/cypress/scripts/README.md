@@ -42,7 +42,7 @@ Add or update the token in `cypress.env.json`:
 
 ```json
 {
-  "CHEFS_AUTH_TOKEN": "Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9..."
+  "CHEFS_AUTH_TOKEN": "Bearer *..."
 }
 ```
 

@@ -386,7 +386,7 @@ async function executeMerge(existing, newData) {
     ApplicantInfoObj['worksheetId'] = worksheetId;
     ApplicantInfoObj.ApplicantId = principalApplicantId;
 
-    await handleApplicantMerge(applicationId, principalApplicantId, nonPrincipalApplicantId, newData, ApplicantInfoObj);
+    await handleApplicantMerge(applicationId, principalApplicantId, nonPrincipalApplicantId, ApplicantInfoObj);
 }
 
 // Helper function to setup merge modal handlers
@@ -409,6 +409,7 @@ function setupMergeModalHandlers(existing, newData) {
             await executeMerge(existing, newData);
         } catch (err) {
             console.error('[MERGE ERROR]', err);
+            abp.notify.error('Merge failed. Please try again.');
         }
 
         $('#mergeApplicantsSpinner').hide();
@@ -734,14 +735,9 @@ function getMergedApplicantInfo(existing, newData) {
     return merged;
 }
 
-async function handleApplicantMerge(applicationId, principalApplicantId, nonPrincipalApplicantId, newData, ApplicantInfoObj) {
-    
+async function handleApplicantMerge(applicationId, principalApplicantId, nonPrincipalApplicantId, ApplicantInfoObj) {
     await setApplicantDuplicatedStatus(principalApplicantId, nonPrincipalApplicantId);
-
-    if (principalApplicantId === newData.ApplicantId) {
-        await updatePrincipalApplicant(applicationId, principalApplicantId);
-    }
-    
+    await transferApplicantApplications(principalApplicantId, nonPrincipalApplicantId);
     await updateMergedApplicant(applicationId, ApplicantInfoObj);
 }
 
@@ -795,20 +791,15 @@ function setApplicantDuplicatedStatus(principalApplicantId, nonPrincipalApplican
     });
 }
 
-function updatePrincipalApplicant(applicationId, principalApplicantId) {
+function transferApplicantApplications(principalApplicantId, nonPrincipalApplicantId) {
     return $.ajax({
-            url: '/api/app/applicant/applicant-id',
-            type: 'PUT',
-            contentType: 'application/json',
-            data: JSON.stringify({
-                applicationId: applicationId,
-                applicantId: principalApplicantId
-            })
+        url: '/api/app/applicant/transfer-applicant-applications',
+        type: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({
+            principalApplicantId: principalApplicantId,
+            nonPrincipalApplicantId: nonPrincipalApplicantId
         })
-        .done(function () {
-            abp.notify.success('Principal Applicant updated successfully.');
-        })
-        .fail(function (xhr, status) {
-            abp.notify.error('Failed to update Principal Applicant.');
-         });
+    });
 }
+

@@ -42,21 +42,14 @@
     padding-bottom: 1rem;
 }
 
-.custom-fields-split {
+.edit-row-fields {
     display: flex;
-    flex-direction: row;
-    justify-content: space-around;
-    align-items: flex-start;
+    flex-direction: column;
 }
 
-.custom-fields-split > div {
-    width: 100%;
-}
-
-.customgrid-edit-row-header {
-    margin-bottom: 1rem;
-}
-
-.customgrid-edit-dymanic-field {
-    width: 90%;
+.static-field-indicator {
+    font-size: 0.7em;
+    color: #8a8886;
+    margin-left: 4px;
+    vertical-align: middle;
 }

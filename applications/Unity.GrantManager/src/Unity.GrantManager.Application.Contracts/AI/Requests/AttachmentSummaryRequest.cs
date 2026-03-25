@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace Unity.GrantManager.AI
+namespace Unity.GrantManager.AI.Requests
 {
     public class AttachmentSummaryRequest
     {
@@ -15,11 +15,5 @@ namespace Unity.GrantManager.AI
 
         [JsonPropertyName("promptVersion")]
         public string? PromptVersion { get; set; }
-
-        [JsonPropertyName("capturePromptIo")]
-        public bool CapturePromptIo { get; set; }
-
-        [JsonPropertyName("captureContextId")]
-        public string? CaptureContextId { get; set; }
     }
 }

@@ -1,4 +1,6 @@
 using System.Threading.Tasks;
+using Unity.GrantManager.AI.Requests;
+using Unity.GrantManager.AI.Responses;
 
 namespace Unity.GrantManager.AI
 {
@@ -9,6 +11,6 @@ namespace Unity.GrantManager.AI
         Task<AICompletionResponse> GenerateCompletionAsync(AICompletionRequest request);
         Task<AttachmentSummaryResponse> GenerateAttachmentSummaryAsync(AttachmentSummaryRequest request);
         Task<ApplicationAnalysisResponse> GenerateApplicationAnalysisAsync(ApplicationAnalysisRequest request);
-        Task<ScoresheetSectionResponse> GenerateScoresheetSectionAsync(ScoresheetSectionRequest request);
+        Task<ApplicationScoringResponse> GenerateApplicationScoringAsync(ApplicationScoringRequest request);
     }
 }
