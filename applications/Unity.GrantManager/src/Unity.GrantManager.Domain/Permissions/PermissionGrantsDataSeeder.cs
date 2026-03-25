@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
+using Unity.Flex.Permissions;
 using Unity.GrantManager.Identity;
 using Unity.Modules.Shared;
 using Unity.Notifications.Permissions;
@@ -131,7 +132,8 @@ namespace Unity.GrantManager.Permissions
                     UnitySelector.Payment.Supplier.Update,
                     .. Notifications_CommonPermissions,
                     .. Dashboard_CommonPermissions,
-                    .. Tags_CommonPermissions
+                    .. Tags_CommonPermissions,
+                    FlexPermissions.Worksheets.Delete
             ], context.TenantId);
 
             // - Reviewer

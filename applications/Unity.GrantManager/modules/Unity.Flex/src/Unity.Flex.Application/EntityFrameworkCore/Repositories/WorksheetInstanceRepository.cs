@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Unity.Flex.Domain.WorksheetInstances;
+using Unity.Modules.Shared.Correlation;
 using Volo.Abp.Domain.Repositories.EntityFrameworkCore;
 using Volo.Abp.EntityFrameworkCore;
 
@@ -50,11 +51,11 @@ namespace Unity.Flex.EntityFrameworkCore.Repositories
                 .FirstOrDefaultAsync(wi => wi.Id == worksheetInstanceId);
         }
 
-        public async Task<bool> ExistsAsync(Guid worksheetId, 
-            Guid instanceCorrelationId, 
-            string instanceCorrelationProvider, 
-            Guid sheetCorrelationId, 
-            string sheetCorrelationProvider, 
+        public async Task<bool> ExistsAsync(Guid worksheetId,
+            Guid instanceCorrelationId,
+            string instanceCorrelationProvider,
+            Guid sheetCorrelationId,
+            string sheetCorrelationProvider,
             string? uiAnchor)
         {
             var dbSet = await GetDbSetAsync();
@@ -66,6 +67,14 @@ namespace Unity.Flex.EntityFrameworkCore.Repositories
                     && s.WorksheetCorrelationId == sheetCorrelationId
                     && s.WorksheetCorrelationProvider == sheetCorrelationProvider
                     && s.UiAnchor == uiAnchor);
+        }
+
+        public async Task<bool> AnyByWorksheetAndFormVersionAsync(Guid worksheetId, Guid formVersionId)
+        {
+            var dbSet = await GetDbSetAsync();
+            return await dbSet.AnyAsync(s => s.WorksheetId == worksheetId
+                && s.WorksheetCorrelationId == formVersionId
+                && s.WorksheetCorrelationProvider == CorrelationConsts.FormVersion);
         }
     }
 }
