@@ -380,7 +380,6 @@ namespace Unity.GrantManager.EntityFrameworkCore
             modelBuilder.ConfigureFlex();
             modelBuilder.ConfigureNotifications();
             modelBuilder.ConfigureReporting();
-            modelBuilder.ConfigureAI();
         }
     }
 }
