@@ -1,6 +1,6 @@
 <abp-row class="p-2 pt-0">
     <abp-column size="_12" class="d-flex justify-content-between align-items-center pb-2 pt-2">
-        <input type="hidden" id="ReviewListAIScoringEnabled" value="@((bool?)ViewBag.IsAIScoringEnabled == true)" />
+        <input type="hidden" id="ReviewListAIScoringEnabled" value="@(((bool?)ViewBag.IsAIScoringEnabled == true) ? "True" : "False")" />
         <div id="AdjudicationTitleRegion" class="d-flex align-items-center justify-content-start">
             <h6 class="ps-1 fw-bold m-0">Assessments</h6>
         </div>
