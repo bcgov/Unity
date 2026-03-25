@@ -89,6 +89,60 @@ function getAttachmentSummaryValue(attachment) {
     return attachment?.aiSummary ?? attachment?.aISummary ?? '';
 }
 
+function formatAttachmentSummaryBody(attachments) {
+    if (!Array.isArray(attachments) || attachments.length === 0) {
+        return '';
+    }
+
+    const summarizedAttachments = attachments.filter(
+        (attachment) => {
+            const summary = getAttachmentSummaryValue(attachment);
+            return summary && summary.trim() !== '';
+        }
+    );
+
+    if (summarizedAttachments.length === 0) {
+        return '';
+    }
+
+    return summarizedAttachments.map(function(attachment) {
+        const summary = getAttachmentSummaryValue(attachment);
+        return [
+            'NAME:',
+            attachment.fileName || '',
+            '',
+            'SUMMARY:',
+            summary
+        ].join('\n');
+    }).join('\n\n----------------------------------------\n\n');
+}
+
+function formatAttachmentSummaryJson(attachments) {
+    if (!Array.isArray(attachments) || attachments.length === 0) {
+        return '';
+    }
+
+    const summarizedAttachments = attachments
+        .map((attachment) => {
+            const summary = getAttachmentSummaryValue(attachment);
+            if (!summary || summary.trim() === '') {
+                return null;
+            }
+
+            return {
+                name: attachment.fileName || '',
+                summary
+            };
+        })
+        .filter((attachment) => attachment !== null);
+
+    if (summarizedAttachments.length === 0) {
+        return '';
+    }
+
+    return JSON.stringify(summarizedAttachments, null, 2);
+}
+
 $(function () {
     const excludedPromptDataKeys = new Set([
         'simplefile',
@@ -234,60 +288,6 @@ $(function () {
 
         setDevAiOutputTimestamp('#attachmentAiOutputTimestamp', formatTimestamp(latestTimestamp));
         return attachmentBody;
-    }
-
-    function formatAttachmentSummaryBody(attachments) {
-        if (!Array.isArray(attachments) || attachments.length === 0) {
-            return '';
-        }
-
-        const summarizedAttachments = attachments.filter(
-            (attachment) => {
-                const summary = getAttachmentSummaryValue(attachment);
-                return summary && summary.trim() !== '';
-            }
-        );
-
-        if (summarizedAttachments.length === 0) {
-            return '';
-        }
-
-        return summarizedAttachments.map(function(attachment) {
-            const summary = getAttachmentSummaryValue(attachment);
-            return [
-                'NAME:',
-                attachment.fileName || '',
-                '',
-                'SUMMARY:',
-                summary
-            ].join('\n');
-        }).join('\n\n----------------------------------------\n\n');
-    }
-
-    function formatAttachmentSummaryJson(attachments) {
-        if (!Array.isArray(attachments) || attachments.length === 0) {
-            return '';
-        }
-
-        const summarizedAttachments = attachments
-            .map((attachment) => {
-                const summary = getAttachmentSummaryValue(attachment);
-                if (!summary || summary.trim() === '') {
-                    return null;
-                }
-
-                return {
-                    name: attachment.fileName || '',
-                    summary
-                };
-            })
-            .filter((attachment) => attachment !== null);
-
-        if (summarizedAttachments.length === 0) {
-            return '';
-        }
-
-        return JSON.stringify(summarizedAttachments, null, 2);
     }
 
     function loadDevAiOutputs() {
