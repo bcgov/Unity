@@ -2,51 +2,389 @@
  * Grant Application Details Page
  * Dependencies: ai-analysis.js - handles AI analysis rendering and management
  */
+function formatJsonOrRaw(value) {
+    if (!value) {
+        return '';
+    }
+
+    if (typeof value !== 'string') {
+        return JSON.stringify(value, null, 2);
+    }
+
+    try {
+        return JSON.stringify(JSON.parse(value), null, 2);
+    } catch {
+        return value;
+    }
+}
+
+function formatSectionBody(title, value) {
+    if (!value) {
+        return '';
+    }
+
+    return `${title}:\n${value}`;
+}
+
+function formatOutputBody(title, sections) {
+    const content = sections.filter(Boolean).join('\n\n');
+    if (!content) {
+        return '';
+    }
+
+    return `${title}\n\n${content}`;
+}
+
+function unwrapWhenResult(result) {
+    if (
+        Array.isArray(result) &&
+        result.length === 3 &&
+        typeof result[1] === 'string'
+    ) {
+        return result[0];
+    }
+
+    return result;
+}
+
+function extractSubmissionDataObject(root) {
+    if (!root || typeof root !== 'object' || Array.isArray(root)) {
+        return null;
+    }
+
+    if (root.data && typeof root.data === 'object' && !Array.isArray(root.data)) {
+        return root.data;
+    }
+
+    if (
+        root.submission &&
+        typeof root.submission === 'object' &&
+        !Array.isArray(root.submission) &&
+        root.submission.data &&
+        typeof root.submission.data === 'object' &&
+        !Array.isArray(root.submission.data)
+    ) {
+        return root.submission.data;
+    }
+
+    return root;
+}
+
+function formatTimestamp(value) {
+    if (!value) {
+        return '';
+    }
+
+    const timestamp = new Date(value);
+    if (Number.isNaN(timestamp.getTime())) {
+        return '';
+    }
+
+    return timestamp.toLocaleString();
+}
+
+function getAttachmentSummaryValue(attachment) {
+    return attachment?.aiSummary ?? attachment?.aISummary ?? '';
+}
+
+function formatAttachmentSummaryBody(attachments) {
+    if (!Array.isArray(attachments) || attachments.length === 0) {
+        return '';
+    }
+
+    const summarizedAttachments = attachments.filter(
+        (attachment) => {
+            const summary = getAttachmentSummaryValue(attachment);
+            return summary && summary.trim() !== '';
+        }
+    );
+
+    if (summarizedAttachments.length === 0) {
+        return '';
+    }
+
+    return summarizedAttachments.map(function(attachment) {
+        const summary = getAttachmentSummaryValue(attachment);
+        return [
+            'NAME:',
+            attachment.fileName || '',
+            '',
+            'SUMMARY:',
+            summary
+        ].join('\n');
+    }).join('\n\n----------------------------------------\n\n');
+}
+
+function formatAttachmentSummaryJson(attachments) {
+    if (!Array.isArray(attachments) || attachments.length === 0) {
+        return '';
+    }
+
+    const summarizedAttachments = attachments
+        .map((attachment) => {
+            const summary = getAttachmentSummaryValue(attachment);
+            if (!summary || summary.trim() === '') {
+                return null;
+            }
+
+            return {
+                name: attachment.fileName || '',
+                summary
+            };
+        })
+        .filter((attachment) => attachment !== null);
+
+    if (summarizedAttachments.length === 0) {
+        return '';
+    }
+
+    return JSON.stringify(summarizedAttachments, null, 2);
+}
 
 $(function () {
+    const excludedPromptDataKeys = new Set([
+        'simplefile',
+        'applicantAgent',
+        'submit',
+        'lateEntry',
+        'metadata',
+        'full_application_form_submission',
+        'files',
+        'file',
+        'attachments'
+    ]);
+
+    const nonDataComponentTypes = new Set([
+        'button',
+        'simplebuttonadvanced',
+        'html',
+        'htmlelement',
+        'content',
+        'simpleseparator'
+    ]);
+
     globalThis.getSelectedPromptVersion = function() {
         return $('#devPromptVersion').val() || null;
     };
 
-    function setPromptCaptureOutput(outputSelector, value) {
-        $(outputSelector).val(value);
+    function setDevAiOutput(selector, value) {
+        $(selector).val(value || '');
     }
 
-    globalThis.hideAIPromptCapture = function(containerSelector, outputSelector) {
-        setPromptCaptureOutput(outputSelector, '');
-    };
+    function setDevAiOutputTimestamp(selector, value) {
+        $(selector).text(value ? `(${value})` : '');
+    }
 
+    function getScoresheetSchemaJson() {
+        return $('#ApplicationScoresheetSchemaJson').val() ||
+            $('#AssessmentScoresheetSchemaJson').val() ||
+            '';
+    }
 
-    globalThis.renderAIPromptCapture = function(containerSelector, outputSelector, captures) {
-        if (!Array.isArray(captures) || captures.length === 0) {
-            globalThis.hideAIPromptCapture(containerSelector, outputSelector);
+    function getPromptDataPayload() {
+        const submissionJson = $('#ApplicationFormSubmissionData').val();
+        if (!submissionJson) {
+            return '';
+        }
+
+        try {
+            const root = JSON.parse(submissionJson);
+            const submissionData = extractSubmissionDataObject(root);
+            if (!submissionData || typeof submissionData !== 'object' || Array.isArray(submissionData)) {
+                return '';
+            }
+
+            const filteredValues = { ...submissionData };
+            for (const key of excludedPromptDataKeys) {
+                delete filteredValues[key];
+            }
+
+            const allowedSchemaKeys = extractAllowedSchemaKeys($('#ApplicationFormSchema').val());
+            const payload = allowedSchemaKeys.size > 0
+                ? Object.fromEntries(
+                    Object.entries(filteredValues).filter(([key]) => allowedSchemaKeys.has(key))
+                )
+                : filteredValues;
+
+            return JSON.stringify(payload, null, 2);
+        } catch {
+            return '';
+        }
+    }
+
+    function extractAllowedSchemaKeys(formSchema) {
+        if (!formSchema) {
+            return new Set();
+        }
+
+        try {
+            const schema = JSON.parse(formSchema);
+            const keys = new Set();
+            extractSchemaKeys(schema.components, keys);
+            return keys;
+        } catch {
+            return new Set();
+        }
+    }
+
+    function extractSchemaKeys(components, keys) {
+        if (!Array.isArray(components)) {
             return;
         }
 
-        const formatted = captures
-            .map((capture) => formatAIPromptCaptureBlock(capture))
-            .join('\n\n----------------------------------------\n\n');
+        for (const component of components) {
+            if (!component || typeof component !== 'object') {
+                continue;
+            }
 
-        setPromptCaptureOutput(outputSelector, formatted);
-    };
+            const key = component.key;
+            const type = component.type;
+            const isInput = component.input === true;
 
-    globalThis.loadAIPromptCapture = function(applicationId, promptType, promptVersion, containerSelector, outputSelector) {
-        if (!applicationId || !promptType) {
-            globalThis.hideAIPromptCapture(containerSelector, outputSelector);
-            return Promise.resolve();
+            if (
+                typeof key === 'string' &&
+                typeof type === 'string' &&
+                !nonDataComponentTypes.has(type.toLowerCase()) &&
+                isInput
+            ) {
+                keys.add(key);
+            }
+
+            if (Array.isArray(component.components)) {
+                extractSchemaKeys(component.components, keys);
+            }
+
+            if (Array.isArray(component.columns)) {
+                for (const column of component.columns) {
+                    if (column && Array.isArray(column.components)) {
+                        extractSchemaKeys(column.components, keys);
+                    }
+                }
+            }
+        }
+    }
+
+    function formatAttachmentAiOutput(attachments) {
+        const attachmentBody = formatAttachmentSummaryBody(attachments);
+        if (!attachmentBody) {
+            setDevAiOutputTimestamp('#attachmentAiOutputTimestamp', '');
+            return '';
         }
 
-        return unity.grantManager.grantApplications.applicationAIPromptCapture
-            .getRecent(applicationId, promptType, promptVersion || null)
-            .then(function(captures) {
-                globalThis.renderAIPromptCapture(containerSelector, outputSelector, captures || []);
+        const summarizedAttachments = attachments.filter(
+            (attachment) => {
+                const summary = getAttachmentSummaryValue(attachment);
+                return summary && summary.trim() !== '';
+            }
+        );
+
+        const latestTimestamp = summarizedAttachments
+            .map((attachment) => attachment.lastModificationTime || attachment.creationTime || null)
+            .filter((timestamp) => !!timestamp)
+            .sort()
+            .at(-1);
+
+        setDevAiOutputTimestamp('#attachmentAiOutputTimestamp', formatTimestamp(latestTimestamp));
+        return attachmentBody;
+    }
+
+    function loadDevAiOutputs() {
+        const applicationId = $('#DetailsViewApplicationId').val();
+
+        if (!applicationId) {
+            setDevAiOutput('#analysisAiOutput', '');
+            setDevAiOutput('#scoringAiOutput', '');
+            setDevAiOutput('#attachmentAiOutput', '');
+            setDevAiOutputTimestamp('#analysisAiOutputTimestamp', '');
+            setDevAiOutputTimestamp('#scoringAiOutputTimestamp', '');
+            setDevAiOutputTimestamp('#attachmentAiOutputTimestamp', '');
+            return;
+        }
+
+        $.when(
+            unity.grantManager.grantApplications.grantApplication.get(applicationId),
+            unity.grantManager.attachments.attachment.getApplicationChefsFileAttachments(applicationId)
+        )
+            .done(function(applicationResponse, attachmentsResponse) {
+                const application = unwrapWhenResult(applicationResponse);
+                const attachments = unwrapWhenResult(attachmentsResponse);
+                const updatedAt = application?.lastModificationTime || application?.creationTime || null;
+                const formattedUpdatedAt = formatTimestamp(updatedAt);
+                const attachmentSection = formatSectionBody('ATTACHMENTS', formatAttachmentSummaryJson(attachments));
+                setDevAiOutputTimestamp('#analysisAiOutputTimestamp', formattedUpdatedAt);
+                setDevAiOutputTimestamp('#scoringAiOutputTimestamp', formattedUpdatedAt);
+                setDevAiOutput(
+                    '#analysisAiOutput',
+                    formatOutputBody('APPLICATION ANALYSIS', [
+                        formatSectionBody('DATA', getPromptDataPayload()),
+                        attachmentSection,
+                        formatSectionBody(
+                            'OUTPUT',
+                            formatJsonOrRaw(application?.aiAnalysisData ?? application?.aiAnalysis ?? '')
+                        )
+                    ])
+                );
+                setDevAiOutput(
+                    '#scoringAiOutput',
+                    formatOutputBody('APPLICATION SCORING', [
+                        formatSectionBody('SCORESHEET', formatJsonOrRaw(getScoresheetSchemaJson())),
+                        formatSectionBody('DATA', getPromptDataPayload()),
+                        attachmentSection,
+                        formatSectionBody(
+                            'OUTPUT',
+                            formatJsonOrRaw(application?.aiScoresheetAnswers ?? application?.aIScoresheetAnswers ?? '')
+                        )
+                    ])
+                );
+                setDevAiOutput(
+                    '#attachmentAiOutput',
+                    formatOutputBody('ATTACHMENT SUMMARY', [formatAttachmentAiOutput(attachments)])
+                );
             })
-            .catch(function() {
-                globalThis.hideAIPromptCapture(containerSelector, outputSelector);
+            .fail(function() {
+                setDevAiOutput('#analysisAiOutput', '');
+                setDevAiOutput('#scoringAiOutput', '');
+                setDevAiOutput('#attachmentAiOutput', '');
+                setDevAiOutputTimestamp('#analysisAiOutputTimestamp', '');
+                setDevAiOutputTimestamp('#scoringAiOutputTimestamp', '');
+                setDevAiOutputTimestamp('#attachmentAiOutputTimestamp', '');
+            });
+    }
+
+    globalThis.refreshDevAiOutputs = loadDevAiOutputs;
+
+    globalThis.generateAllAIDevOutputs = function(triggerButton = null) {
+        const $button = triggerButton ? $(triggerButton) : $('#generateAllAiDevToolsBtn');
+        const existingHtml = $button.html();
+        const applicationId = $('#DetailsViewApplicationId').val();
+        const promptVersion = globalThis.getSelectedPromptVersion?.() || null;
+
+        if (!applicationId || $button.prop('disabled')) {
+            return;
+        }
+
+        $button
+            .html('<span class="ai-button-content"><span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span><span>Queueing...</span></span>')
+            .prop('disabled', true);
+
+        unity.grantManager.grantApplications.applicationContent
+            .generateContent(applicationId, promptVersion)
+            .done(function() {
+                abp.notify.success('AI generate all queued. Refresh later to see updated results.');
+            })
+            .fail(function() {
+                abp.message.error('Failed to queue AI generate all. Please try again.');
+            })
+            .always(function() {
+                $button.html(existingHtml).prop('disabled', false);
             });
     };
 
-    $(document).on('click', '.ai-prompt-capture-copy-btn', async function () {
+    $('#generateAllAiDevToolsBtn').on('click', function() {
+        globalThis.generateAllAIDevOutputs(this);
+    });
+
+    $(document).on('click', '.ai-dev-output-copy-btn', async function () {
         const targetSelector = $(this).data('target');
         const text = $(targetSelector).val();
 
@@ -56,7 +394,7 @@ $(function () {
 
         try {
             await navigator.clipboard.writeText(text);
-            abp.notify.success('Copied prompt capture.');
+            abp.notify.success('Copied AI output.');
         } catch {
             const output = $(targetSelector);
             output.trigger('focus');
@@ -92,6 +430,7 @@ $(function () {
         updateLinksCounters();
         renderSubmission();
         loadAIAnalysis();
+        loadDevAiOutputs();
         applyTabHeightOffset();
     }
 
@@ -198,7 +537,7 @@ $(function () {
                 submissionData = submissionJson.submission;
             }
 
-            Formio.icons = 'fontawesome';            
+            Formio.icons = 'fontawesome';
 
             // Create container inside shadow DOM
             const container = document.createElement('div');
@@ -294,7 +633,7 @@ $(function () {
         );
     }
 
-   
+
 
     $('#assessment_upload_btn').click(function () {
         $('#assessment_upload').trigger('click');
@@ -374,23 +713,11 @@ $(function () {
     PubSub.subscribe('refresh_assessment_scores', (msg, data) => {
         assessmentScoresWidgetManager.refresh();
         updateSubtotal();
+        loadDevAiOutputs();
+    });
 
-        if (!data) {
-            return;
-        }
-
-        if (data.capturePromptIo && globalThis.loadAIPromptCapture) {
-            globalThis.loadAIPromptCapture(
-                data.applicationId,
-                'ScoresheetSection',
-                data.promptVersion || null,
-                '#aiScoringPromptCaptureContainer',
-                '#aiScoringPromptCaptureOutput'
-            );
-            return;
-        }
-
-        globalThis.hideAIPromptCapture?.('#aiScoringPromptCaptureContainer', '#aiScoringPromptCaptureOutput');
+    PubSub.subscribe('refresh_chefs_attachment_list', () => {
+        loadDevAiOutputs();
     });
 
     PubSub.subscribe('select_application_review', (msg, data) => {
@@ -539,31 +866,31 @@ $(function () {
     function openScoreSheetDataInNewTab(assessmentScoresheet) {
         const newTab = globalThis.open('', '_blank');
         const doc = newTab.document;
-        
+
         doc.open();
         doc.close();
         doc.title = 'Print';
-        
+
         // Create and append stylesheets
         const stylesheets = [
             { href: '/libs/bootstrap-4/dist/css/bootstrap.min.css' },
             { href: '/Pages/GrantApplications/ScoresheetPrint.css' }
         ];
-        
+
         stylesheets.forEach(({ href }) => {
             const link = doc.createElement('link');
             link.rel = 'stylesheet';
             link.href = href;
             doc.head.appendChild(link);
         });
-        
+
         // Add jQuery script
         const jqueryScript = doc.createElement('script');
         jqueryScript.src = '/libs/jquery/jquery.js';
         doc.head.appendChild(jqueryScript);
-        
+
         doc.body.innerHTML = assessmentScoresheet;
-        
+
         // Load and execute print script
         newTab.onload = function () {
             const script = doc.createElement('script');
@@ -697,7 +1024,7 @@ $(function () {
             tabCounters.files + tabCounters.chefs
         );
     });
-    
+
     PubSub.subscribe('update_ai_analysis_status', (msg, data) => {
         const $indicator = $('#ai_analysis_status');
         const status = data?.status;
@@ -883,36 +1210,6 @@ $(function () {
 
     globalThis.addEventListener('resize', windowResize);
 });
-
-function formatAIPromptCaptureBlock(capture) {
-    const output = capture.output || '';
-    const parts = [
-        `PROMPT TYPE: ${capture.promptType || ''}`,
-        `PROMPT VERSION: ${capture.promptVersion || ''}`
-    ];
-
-    if (capture.captureLabel) {
-        parts.push(`LABEL: ${capture.captureLabel}`);
-    }
-
-    if (capture.capturedAt) {
-        parts.push(`CAPTURED AT: ${capture.capturedAt}`);
-    }
-
-    parts.push(
-        '',
-        'SYSTEM PROMPT',
-        capture.systemPrompt || '',
-        '',
-        'USER PROMPT',
-        capture.userPrompt || '',
-        '',
-        'OUTPUT',
-        output
-    );
-
-    return parts.join('\n');
-}
 
 
 // Handle the card header click event
@@ -1376,4 +1673,3 @@ function clearCurrencyError(input) {
     document.getElementById(errorSpan).textContent = '';
     input.attr('aria-invalid', 'false');
 }
-

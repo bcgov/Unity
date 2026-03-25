@@ -36,7 +36,7 @@ namespace Unity.GrantManager.Reporting.Configuration
         /// <remarks>
         /// This method performs several operations:
         /// 1. Recursively scans all form components including nested structures (panels, tabs, columns, tables)
-        /// 2. Expands value options for radio groups and checkboxes into individual entries
+        /// 2. Expands value options for checkbox groups into individual entries (radio groups are kept as single entries)
         /// 3. Filters out UI-only components (buttons, HTML content, containers)
         /// 4. Handles duplicate paths by prefixing them with (DKx) notation
         /// 5. Creates data-focused paths for easier data access patterns
@@ -149,8 +149,7 @@ namespace Unity.GrantManager.Reporting.Configuration
                 "editgrid",
                 "form",
                 "wizard",
-                "selectboxes",
-                "radio"
+                "selectboxes"
             };
 
             // Remove components with types that should be skipped
@@ -490,7 +489,7 @@ namespace Unity.GrantManager.Reporting.Configuration
         }
 
         /// <summary>
-        /// Processes expanded value options for components like radio groups and checkbox groups
+        /// Processes expanded value options for checkbox group components
         /// </summary>
         /// <param name="component">The component with values to expand</param>
         /// <param name="componentsList">The list to populate with found components</param>
@@ -529,8 +528,9 @@ namespace Unity.GrantManager.Reporting.Configuration
         }
 
         /// <summary>
-        /// Determines if value options should be expanded into individual entries
-        /// Radio groups and checkbox groups are expanded to create individual entries for each option
+        /// Determines if value options should be expanded into individual entries.
+        /// Checkbox groups are expanded to create individual entries for each option.
+        /// Radio groups are NOT expanded because they store a single selected value.
         /// </summary>
         /// <param name="type">Component type</param>
         /// <returns>True if options should be expanded</returns>
@@ -544,11 +544,7 @@ namespace Unity.GrantManager.Reporting.Configuration
                 // Checkbox types
                 "simplecheckboxes",
                 "simplecheckboxadvanced",
-                "selectboxes",
-                // Radio types - expanded like checkboxes for reporting
-                "radio",
-                "simpleradios",
-                "simpleradioadvanced"
+                "selectboxes"
             };
 
             return expandTypes.Contains(type);

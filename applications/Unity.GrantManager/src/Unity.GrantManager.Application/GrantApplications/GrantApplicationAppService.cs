@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authorization.Infrastructure;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -17,7 +17,8 @@ using Unity.Flex.Worksheets;
 using Unity.GrantManager.Applicants;
 using Unity.GrantManager.ApplicationForms;
 using Unity.GrantManager.Applications;
-using Unity.GrantManager.AI;
+using Unity.GrantManager.AI.Models;
+using Unity.GrantManager.AI.Responses;
 using Unity.GrantManager.Events;
 using Unity.GrantManager.Flex;
 using Unity.GrantManager.Identity;
@@ -62,7 +63,7 @@ public class GrantApplicationAppService(
 
     public async Task<PagedResultDto<GrantApplicationDto>> GetListAsync(GrantApplicationListInputDto input)
     {
-        // 1️ Fetch applications with filters + paging in DB
+        // 1. Fetch applications with filters + paging in DB
         var applications = await applicationRepository.WithFullDetailsAsync(
             input.SkipCount,
             input.MaxResultCount,
@@ -73,7 +74,7 @@ public class GrantApplicationAppService(
 
         var applicationIds = applications.Select(a => a.Id).ToList();
 
-        // 2️ Fetch payment rollup batch if feature enabled
+        // 2. Fetch payment rollup batch if feature enabled
         bool paymentsFeatureEnabled = await FeatureChecker.IsEnabledAsync(PaymentConsts.UnityPaymentsFeature);
 
         Dictionary<Guid, ApplicationPaymentRollupDto> paymentRollupBatch = [];
@@ -83,7 +84,7 @@ public class GrantApplicationAppService(
             paymentRollupBatch = await paymentRequestService.GetApplicationPaymentRollupBatchAsync(applicationIds);
         }
 
-        // 3️ Map applications to DTOs
+        // 3. Map applications to DTOs
         var appDtos = applications.Select(app =>
         {
             var appDto = ObjectMapper.Map<Application, GrantApplicationDto>(app);
@@ -119,7 +120,7 @@ public class GrantApplicationAppService(
 
         }).ToList();
 
-        // 4️ Get total count using same filters
+        // 4. Get total count using same filters
         var totalCount = await applicationRepository.GetCountAsync(
             input.SubmittedFromDate,
             input.SubmittedToDate

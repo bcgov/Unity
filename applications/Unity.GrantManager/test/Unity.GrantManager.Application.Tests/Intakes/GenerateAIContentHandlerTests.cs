@@ -1,14 +1,15 @@
 using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
+using System;
 using System.Threading.Tasks;
 using Unity.AI.Settings;
 using Unity.GrantManager.AI;
-using Unity.GrantManager.Applications;
+using Unity.GrantManager.AI.BackgroundJobs;
+using Unity.GrantManager.AI.Operations;
 using Unity.GrantManager.Intakes.Events;
-using Unity.GrantManager.Intakes.Handlers;
-using Unity.Flex.Domain.Scoresheets;
 using Volo.Abp.EventBus.Local;
 using Volo.Abp.Features;
+using Volo.Abp.MultiTenancy;
 using Volo.Abp.Settings;
 using Xunit;
 using Xunit.Abstractions;
@@ -17,31 +18,29 @@ namespace Unity.GrantManager.Intakes;
 
 public class GenerateAIContentHandlerTests(ITestOutputHelper outputHelper) : GrantManagerApplicationTestBase(outputHelper)
 {
-    private static GenerateAIContentHandler BuildHandler(
+    private static GenerateContentBackgroundJob BuildJob(
         IFeatureChecker featureChecker,
         ISettingProvider settingProvider,
+        IApplicationScoringService? scoringService = null,
         IAIService? aiService = null)
     {
-        var handler = new GenerateAIContentHandler(
-            aiService ?? Substitute.For<IAIService>(),
-            Substitute.For<ISubmissionAppService>(),
-            Substitute.For<IApplicationChefsFileAttachmentRepository>(),
-            Substitute.For<IApplicationRepository>(),
-            Substitute.For<IApplicationFormSubmissionRepository>(),
-            NullLogger<GenerateAIContentHandler>.Instance,
-            Substitute.For<IScoresheetRepository>(),
-            Substitute.For<IApplicationFormRepository>(),
-            Substitute.For<IApplicationFormVersionRepository>(),
-            featureChecker)
-        {
-            LocalEventBus = Substitute.For<ILocalEventBus>(),
-            SettingProvider = settingProvider
-        };
-        return handler;
+        var ai = aiService ?? Substitute.For<IAIService>();
+        ai.IsAvailableAsync().Returns(true);
+
+        return new GenerateContentBackgroundJob(
+            Substitute.For<IAttachmentSummaryService>(),
+            Substitute.For<IApplicationAnalysisService>(),
+            scoringService ?? Substitute.For<IApplicationScoringService>(),
+            ai,
+            featureChecker,
+            settingProvider,
+            Substitute.For<ILocalEventBus>(),
+            Substitute.For<ICurrentTenant>(),
+            NullLogger<GenerateContentBackgroundJob>.Instance);
     }
 
     [Fact]
-    public async Task HandleEventAsync_Should_Skip_Scoring_When_Feature_Disabled()
+    public async Task ExecuteAsync_Should_Skip_Scoring_When_Feature_Disabled()
     {
         // Arrange — scoring feature OFF
         var featureChecker = Substitute.For<IFeatureChecker>();
@@ -49,21 +48,20 @@ public class GenerateAIContentHandlerTests(ITestOutputHelper outputHelper) : Gra
         featureChecker.IsEnabledAsync("Unity.AI.AttachmentSummaries").Returns(false);
         featureChecker.IsEnabledAsync("Unity.AI.ApplicationAnalysis").Returns(false);
         var settingProvider = Substitute.For<ISettingProvider>();
-        var aiService = Substitute.For<IAIService>();
+        var scoringService = Substitute.For<IApplicationScoringService>();
 
-        var handler = BuildHandler(featureChecker, settingProvider, aiService);
-        var application = new Application();
+        var job = BuildJob(featureChecker, settingProvider, scoringService);
 
         // Act
-        await handler.HandleEventAsync(new ApplicationProcessEvent { Application = application });
+        await job.ExecuteAsync(new GenerateContentBackgroundJobArgs { ApplicationId = Guid.NewGuid() });
 
-        // Assert — setting never checked, AI service never called
+        // Assert — setting never checked, scoring service never called
         await settingProvider.DidNotReceive().GetOrNullAsync(AISettings.ScoringAssistantEnabled);
-        await aiService.DidNotReceive().GenerateScoresheetSectionAsync(Arg.Any<ScoresheetSectionRequest>());
+        await scoringService.DidNotReceive().RegenerateAndSaveAsync(Arg.Any<Guid>(), Arg.Any<string?>());
     }
 
     [Fact]
-    public async Task HandleEventAsync_Should_Skip_Scoring_When_Feature_Enabled_But_Setting_Disabled()
+    public async Task ExecuteAsync_Should_Skip_Scoring_When_Feature_Enabled_But_Setting_Disabled()
     {
         // Arrange — scoring feature ON, tenant setting OFF
         var featureChecker = Substitute.For<IFeatureChecker>();
@@ -72,21 +70,19 @@ public class GenerateAIContentHandlerTests(ITestOutputHelper outputHelper) : Gra
         featureChecker.IsEnabledAsync("Unity.AI.ApplicationAnalysis").Returns(false);
         var settingProvider = Substitute.For<ISettingProvider>();
         settingProvider.GetOrNullAsync(AISettings.ScoringAssistantEnabled).Returns("false");
-        var aiService = Substitute.For<IAIService>();
-        aiService.IsAvailableAsync().Returns(true);
+        var scoringService = Substitute.For<IApplicationScoringService>();
 
-        var handler = BuildHandler(featureChecker, settingProvider, aiService);
-        var application = new Application();
+        var job = BuildJob(featureChecker, settingProvider, scoringService);
 
         // Act
-        await handler.HandleEventAsync(new ApplicationProcessEvent { Application = application });
+        await job.ExecuteAsync(new GenerateContentBackgroundJobArgs { ApplicationId = Guid.NewGuid() });
 
-        // Assert — all three features effectively disabled → early exit, scoresheet never called
-        await aiService.DidNotReceive().GenerateScoresheetSectionAsync(Arg.Any<ScoresheetSectionRequest>());
+        // Assert — scoring service never called
+        await scoringService.DidNotReceive().RegenerateAndSaveAsync(Arg.Any<Guid>(), Arg.Any<string?>());
     }
 
     [Fact]
-    public async Task HandleEventAsync_Should_Not_Check_Setting_When_Feature_Disabled()
+    public async Task ExecuteAsync_Should_Not_Check_Setting_When_Feature_Disabled()
     {
         // Arrange — scoring feature OFF
         var featureChecker = Substitute.For<IFeatureChecker>();
@@ -95,13 +91,12 @@ public class GenerateAIContentHandlerTests(ITestOutputHelper outputHelper) : Gra
         featureChecker.IsEnabledAsync("Unity.AI.ApplicationAnalysis").Returns(false);
         var settingProvider = Substitute.For<ISettingProvider>();
 
-        var handler = BuildHandler(featureChecker, settingProvider);
-        var application = new Application();
+        var job = BuildJob(featureChecker, settingProvider);
 
         // Act
-        await handler.HandleEventAsync(new ApplicationProcessEvent { Application = application });
+        await job.ExecuteAsync(new GenerateContentBackgroundJobArgs { ApplicationId = Guid.NewGuid() });
 
-        // Assert — setting provider is never consulted when feature is OFF
+        // Assert — setting provider never consulted when all features are OFF
         await settingProvider.DidNotReceive().GetOrNullAsync(Arg.Any<string>());
     }
 }

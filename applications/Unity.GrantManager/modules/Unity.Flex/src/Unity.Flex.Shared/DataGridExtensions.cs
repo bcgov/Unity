@@ -34,6 +34,31 @@ namespace Unity.Flex
             };
         }
 
+        public static string ApplyInputFormatting(this string value, string columnType, PresentationSettings presentationSettings)
+        {
+            if (value == null) return string.Empty;
+
+            return columnType switch
+            {
+                var ct when IsDateColumn(ct) && TryParseDate(value, out string formatted) => formatted,
+                var ct when IsDateTimeColumn(ct) && TryParseDateTimeForInput(value, presentationSettings.BrowserOffsetMinutes, out string formatted) => formatted,
+                var ct when IsCurrencyColumn(ct) => ValueConverterHelpers.ConvertDecimal(value),
+                _ => value
+            };
+        }
+
+        private static bool TryParseDateTimeForInput(string value, int browserOffsetMinutes, out string formatted)
+        {
+            if (DateTimeOffset.TryParse(value, new CultureInfo("en-CA"), DateTimeStyles.None, out DateTimeOffset dateTimeOffset))
+            {
+                dateTimeOffset = dateTimeOffset.ToOffset(TimeSpan.FromMinutes(-browserOffsetMinutes));
+                formatted = dateTimeOffset.DateTime.ToString("yyyy-MM-ddTHH:mm", CultureInfo.InvariantCulture);
+                return true;
+            }
+            formatted = string.Empty;
+            return false;
+        }
+
         private static bool TryParseDateTime(string value, int browserOffsetMinutes, out string formattedDateTime)
         {
             // Apply the browser offset before presenting the data

@@ -398,8 +398,14 @@ namespace Unity.GrantManager.Assessments
         /// <exception cref="BusinessException">
         /// Thrown when the specified assessment is not an AI assessment.
         /// </exception>
+        [Authorize(AIPermissions.ScoringAssistant.ScoringAssistantDefault)]
         public async Task<AssessmentDto> CloneFromAiAsync(Guid aiAssessmentId)
         {
+            if (!await _featureChecker.IsEnabledAsync("Unity.AI.Scoring"))
+            {
+                throw new UserFriendlyException("AI scoring is not enabled.");
+            }
+
             var aiAssessment = await _assessmentRepository.GetAsync(aiAssessmentId);
             if (!aiAssessment.IsAiAssessment)
             {

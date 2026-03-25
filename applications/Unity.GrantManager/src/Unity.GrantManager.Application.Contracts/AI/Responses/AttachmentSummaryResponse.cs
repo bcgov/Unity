@@ -1,6 +1,7 @@
 using System.Text.Json.Serialization;
+using Unity.GrantManager.AI.Models;
 
-namespace Unity.GrantManager.AI
+namespace Unity.GrantManager.AI.Responses
 {
     public class AttachmentSummaryResponse
     {

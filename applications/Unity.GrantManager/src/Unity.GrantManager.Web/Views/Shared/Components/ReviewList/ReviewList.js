@@ -1,6 +1,6 @@
 const l = abp.localization.getResource('GrantManager');
 const pageApplicationId = decodeURIComponent(document.querySelector("#DetailsViewApplicationId").value);
-const isAiScoringEnabled = document.querySelector("#AIScoringFeatureEnabled")?.value === 'True';
+const isAiScoringEnabled = document.querySelector("#ReviewListAIScoringEnabled")?.value === 'True';
 const canUseAiScoring = isAiScoringEnabled;
 
 const actionButtonConfigMap = {
@@ -79,7 +79,7 @@ $(function () {
         }
     });
 
-    $.fn.dataTable.Api.register('row().selectWithParams()', function (params) {        
+    $.fn.dataTable.Api.register('row().selectWithParams()', function (params) {
         this.params = params;
         return this.select();
     });
@@ -258,7 +258,7 @@ $(function () {
     $("#AdjudicationTeamLeadActionBar .dt-buttons").contents().unwrap();
     updateAiActionButtonsVisibility(reviewListTable);
 
-    reviewListTable.on('select', function (e, dt, type, indexes) {        
+    reviewListTable.on('select', function (e, dt, type, indexes) {
         handleRowSelection(e, dt, type, indexes, reviewListTable);
     });
 
@@ -297,7 +297,7 @@ function handleRowSelection(e, dt, type, indexes, reviewListTable) {
     if (type === 'row') {
         let selectedData = reviewListTable.row(indexes).data();
         document.getElementById("AssessmentId").value = selectedData.id;
-        if (refreshSidePanel) {            
+        if (refreshSidePanel) {
             PubSub.publish('select_application_review', selectedData);
             PubSub.publish('refresh_assessment_attachment_list', selectedData.id);
         }
@@ -460,19 +460,19 @@ function unityWorkflowButtonAction(e, dt, button, config) {
 
 function generateAiButtonAction(e, dt, button, config) {
     const triggerButton = button?.node ? $(button.node) : null;
+    const promptVersion = globalThis.getSelectedPromptVersion?.() || null;
 
     if (triggerButton?.length) {
         triggerButton.prop('disabled', true);
-        triggerButton.html('<span class="ai-button-content"><i class="unt-icon-sm fa-solid fa-wand-sparkles"></i><span>Generating...</span></span>');
+        triggerButton.html('<span class="ai-button-content"><i class="unt-icon-sm fa-solid fa-wand-sparkles"></i><span>Queueing...</span></span>');
     }
 
-    unity.grantManager.grantApplications.applicationAIScoring.generateAIScoresheetAnswers(pageApplicationId)
+    unity.grantManager.grantApplications.applicationScoring.generateApplicationScoring(pageApplicationId, promptVersion)
         .done(function () {
-            refreshReviewListSelectingAiAssessment(dt);
-            abp.notify.success('AI scoring generated successfully.');
+            abp.notify.success('AI scoring queued. Refresh later to see updated results.');
         })
         .fail(function () {
-            abp.message.error('Failed to generate AI scoring. Please try again.');
+            abp.message.error('Failed to queue AI scoring. Please try again.');
         })
         .always(function () {
             if (triggerButton?.length) {
@@ -480,19 +480,6 @@ function generateAiButtonAction(e, dt, button, config) {
                 triggerButton.html(generateAiButtonText(null, null, null));
             }
         });
-}
-
-function refreshReviewListSelectingAiAssessment(reviewListTable) {
-    reviewListTable.ajax.reload(function () {
-        const aiRowIndexes = reviewListTable.rows().eq(0).filter(function (rowIdx) {
-            const rowData = reviewListTable.row(rowIdx).data();
-            return rowData?.isAiAssessment === true;
-        });
-
-        if (aiRowIndexes.length > 0) {
-            reviewListTable.row(aiRowIndexes[0]).selectWithParams({ refreshSidePanel: true });
-        }
-    });
 }
 
 function executeAssessmentAction(assessmentId, triggerAction) {
@@ -550,4 +537,3 @@ function createButtonAction(e, dt, button, config) {
         });
     this.disable();
 }
-
