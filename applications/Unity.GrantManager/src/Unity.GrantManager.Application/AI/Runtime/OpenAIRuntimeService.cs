@@ -45,10 +45,10 @@ namespace Unity.GrantManager.AI.Runtime
         private const string DefaultMaxTokensParameterName = "max_completion_tokens";
         private const string LegacyMaxTokensParameterName = "max_tokens";
         private const string DefaultProviderName = "OpenAI";
-        private const int DefaultCompletionTokens = 150;
-        private const int DefaultAttachmentSummaryCompletionTokens = 500;
-        private const int DefaultApplicationAnalysisCompletionTokens = 2500;
-        private const int DefaultApplicationScoringCompletionTokens = 5000;
+        private const int DefaultCompletionTokens = 2000;
+        private const int DefaultAttachmentSummaryCompletionTokens = 2000;
+        private const int DefaultApplicationAnalysisCompletionTokens = 4000;
+        private const int DefaultApplicationScoringCompletionTokens = 8000;
 
         private int AttachmentSummaryCompletionTokens => ResolveCompletionTokens(AttachmentSummaryPromptType, DefaultAttachmentSummaryCompletionTokens);
         private int ApplicationAnalysisCompletionTokens => ResolveCompletionTokens(ApplicationAnalysisPromptType, DefaultApplicationAnalysisCompletionTokens);
