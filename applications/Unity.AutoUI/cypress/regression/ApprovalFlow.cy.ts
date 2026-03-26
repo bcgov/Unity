@@ -63,7 +63,7 @@ const TEST_CONFIG = {
 
   /** Navigate to the Payments tab and filter the table by submissionId. */
   function navigateToPaymentsAndSearch(): void {
-    cy.reload;
+    cy.reload();
     navPage.goToPayments();
     cy.location("pathname", { timeout: 20000 }).should("include", "Payment");
     cy.get("#search", { timeout: 20000 })
