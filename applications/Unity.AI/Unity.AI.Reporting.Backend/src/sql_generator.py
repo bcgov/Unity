@@ -202,10 +202,19 @@ class SQLGenerator:
             f"### Question:{newline}"
             f"The current date is {dt.datetime.now().strftime('%Y-%m-%d')}. "
             f"{past_context}"
-            f"Please generate sql and metadata for the following question, "
-            f"with reasoning but no explanation. "
-            f"Please enable map option only for questions involving regional districts: "
-            f"{question}{newline}"
+            f"Please generate SQL and metadata for the following question, with reasoning but no explanation.{newline}"
+            f"Rules:{newline}"
+            f"- The schema context above is divided into sections: PUBLIC TABLES, WORKSHEET VIEWS, and SCORESHEET VIEWS.{newline}"
+            f"- Use PUBLIC TABLES for application-level data (applicants, applications, statuses, funding amounts).{newline}"
+            f"- Use WORKSHEET VIEWS for program-specific form data and custom applicant fields collected on worksheets.{newline}"
+            f"- Use SCORESHEET VIEWS for evaluation, scoring, reviewer assessments, or scorecard data.{newline}"
+            f"- Do not mix WORKSHEET VIEWS and SCORESHEET VIEWS in the same query unless explicitly requested; prefer JOINing via a shared applicant or application identifier.{newline}"
+            f"- When using columns from WORKSHEET VIEWS or SCORESHEET VIEWS that have type/Text but contain numeric values (e.g. currency amounts), "
+            f"always cast them using ::numeric before applying any aggregation (e.g. SUM(\"m2Cost\"::numeric)).{newline}"
+            f"- When using type/Text date columns from WORKSHEET VIEWS or SCORESHEET VIEWS, cast them using ::date when filtering or ordering by date.{newline}"
+            f"- Enable the map visualization option only for questions involving regional districts.{newline}"
+            f"{newline}"
+            f"Question: {question}{newline}"
             f"### Reasoning:"
         )
         
@@ -254,8 +263,7 @@ class SQLGenerator:
                 continue
 
             # Unpack the tuple (text, usage)
-            raw, usage = result
-            logger.debug(f"Raw completion:\n{raw}")
+            _, usage = result
 
             # Aggregate tokens
             total_prompt += usage.get('prompt_tokens', 0)
@@ -308,10 +316,14 @@ class SQLGenerator:
 
         # Get relevant schemas
         schemas = self.embeddings.get_formatted_schemas(question, db_id)
+        if not schemas:
+            logger.error(f"No schemas found for db_id={db_id}. Embeddings may not have been generated yet.")
+            return None, None, None
 
         # Generate multiple completions in parallel
         async with aiohttp.ClientSession() as session:
             parsed_schema = await self.fetch_completion(f'''Please parse this schema to return only tables and columns relevant to the users question. Never add to the schema, only remove as necessary.
+Pay special attention to tables in the "Reporting" schema — if the question could plausibly be answered using data from a Reporting schema table, always keep that table.
                                   <question>{question}</question>
                                   <schema>{schemas}</schema>
                                   In the case that the question is NSFW or completely unrelated please return NSFW''', session, 0)

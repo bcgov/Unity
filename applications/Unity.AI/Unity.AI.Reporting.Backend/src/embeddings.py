@@ -26,10 +26,44 @@ class SchemaExtractor:
         self.junk_columns = {
             "CreatorId", "LastModificationTime", "LastModifierId",
             "ExtraProperties", "ConcurrencyStamp", "CreationTime",
-            "CorrelationProvider"
+            "CorrelationProvider", "AIScoresheetAnswers", "AIAnalysis"
         }
         self.junk_tables = {"ApplicationFormSubmissions", "__EFMigrationsHistory"}
     
+    def get_view_metadata(self, view_name: str, db_id: int,
+                         tenant_id: Optional[str] = None) -> dict:
+        """Returns {column_name: {label, forms_type}} from ReportColumnsMaps for a view."""
+        sql = f"""
+        SELECT
+            row_data->>'ColumnName' AS column_name,
+            row_data->>'Label'      AS label,
+            row_data->>'Type'       AS forms_type
+        FROM "Reporting"."ReportColumnsMaps" rcm,
+             jsonb_array_elements(rcm."Mapping"->'Rows') AS row_data
+        WHERE rcm."ViewName" = '{view_name}'
+        """
+        try:
+            result = self.metabase.execute_sql(sql, db_id, tenant_id=tenant_id)
+            return {
+                row[0]: {"label": row[1], "forms_type": row[2]}
+                for row in result["rows"]
+                if row[0]
+            }
+        except Exception as e:
+            logger.warning(f"Could not fetch metadata for view {view_name}: {e}")
+            return {}
+
+    def get_custom_field_labels(self, db_id: int,
+                               tenant_id: Optional[str] = None) -> dict:
+        """Returns {key: label} from Flex.CustomFields as fallback for old views."""
+        sql = 'SELECT "Key", "Label" FROM "Flex"."CustomFields" WHERE "Key" IS NOT NULL'
+        try:
+            result = self.metabase.execute_sql(sql, db_id, tenant_id=tenant_id)
+            return {row[0]: row[1] for row in result["rows"] if row[0]}
+        except Exception as e:
+            logger.warning(f"Could not fetch custom field labels: {e}")
+            return {}
+
     def get_column_example(self, is_text: bool, schema: str, table: str,
                           column: str, db_id: int,
                           tenant_id: Optional[str] = None) -> Optional[str]:
@@ -52,7 +86,14 @@ class SchemaExtractor:
             return True
         if schema_type == "public" and table["schema"] != "public":
             return True
-        if schema_type == "custom" and "Worksheet" not in table["name"]:
+        if schema_type == "public" and (
+            "scoresheet" in table["name"].lower() or "worksheet" in table["name"].lower()
+        ):
+            return True
+        if schema_type == "custom" and (
+            ("worksheet" not in table["name"].lower() and "scoresheet" not in table["name"].lower())
+            or table["schema"] != "Reporting"
+        ):
             return True
         return False
 
@@ -65,17 +106,31 @@ class SchemaExtractor:
 
     def _format_schema_with_examples(self, schema_name: str, table_name: str,
                                      columns: List[str], db_id: int,
-                                     tenant_id: Optional[str] = None) -> str:
+                                     tenant_id: Optional[str] = None,
+                                     view_metadata: Optional[dict] = None,
+                                     custom_labels: Optional[dict] = None) -> str:
         """Build a schema description string with example values for each column."""
         page = f'# "{schema_name}"."{table_name}"'
+        meta = view_metadata or {}
+        fallback = custom_labels or {}
         for col in columns:
             col_name = col.split(' ')[0]
             is_text = 'Text' in col
             example = self.get_column_example(is_text, schema_name, table_name, col_name, db_id,
                                               tenant_id=tenant_id)
+            col_meta = meta.get(col_name, {})
+            label = col_meta.get("label") or fallback.get(col_name, "")
+            forms_type = col_meta.get("forms_type", "")
+
+            line = f"\n - {col}"
+            if label:
+                line += f" | {label}"
+            if forms_type and forms_type not in ("textfield", "textarea"):
+                line += f" ({forms_type})"
             if example:
                 truncated = example[:50] + '...' if len(example) > 50 else example
-                page += f"\n - {col}: '{truncated}'"
+                line += f": '{truncated}'"
+            page += line
         return page
 
     def extract_schemas(self, db_id: int, schema_type: str = "public",
@@ -95,6 +150,11 @@ class SchemaExtractor:
         docs = []
         schema_name = "Reporting" if schema_type == "custom" else "public"
 
+        # Fetch custom field labels once as fallback for old views without ReportColumnsMaps records
+        custom_labels = {}
+        if schema_type == "custom":
+            custom_labels = self.get_custom_field_labels(db_id, tenant_id=tenant_id)
+
         for table in metadata["tables"]:
             # Filter tables based on schema type and exclusion rules
             if self._should_skip_table(table, schema_type):
@@ -111,9 +171,17 @@ class SchemaExtractor:
                 # Check if table has data
                 if not self._has_data(schema_name, table["name"], db_id, tenant_id=tenant_id):
                     continue
+                # Fetch column labels and forms types for worksheet views
+                view_metadata = {}
+                if schema_type == "custom":
+                    view_metadata = self.get_view_metadata(
+                        table["name"], db_id, tenant_id=tenant_id
+                    )
                 # Build schema description with examples
                 page = self._format_schema_with_examples(schema_name, table["name"], columns, db_id,
-                                                         tenant_id=tenant_id)
+                                                         tenant_id=tenant_id,
+                                                         view_metadata=view_metadata,
+                                                         custom_labels=custom_labels)
                 docs.append(page)
                 logger.debug(f"Extracted schema for {table['name']}")
             except Exception as e:
@@ -217,8 +285,22 @@ class EmbeddingManager:
                 self.vector_store.add_documents(documents)
                 logger.info(f"Added {len(documents)} {schema_type} schema embeddings")
     
+    def _get_all_custom_schemas(self, query: str, db_id: int) -> List[Document]:
+        """Retrieve ALL embedded custom/worksheet schemas for a db_id.
+
+        Uses a high k cap instead of top-k similarity — worksheet counts per
+        tenant are small (< 20) and we must never miss the relevant one.
+        Empty worksheets are already excluded at embed time via _has_data.
+        """
+        return self._retry_on_connection_error(
+            self.vector_store.similarity_search,
+            query,
+            k=200,
+            filter={"db_id": db_id, "schema_type": "custom"}
+        ) or []
+
     def search_similar_schemas(self, query: str, db_id: int,
-                             k_public: int = 4, k_custom: int = 4) -> List[Document]:
+                             k_public: int = 4) -> List[Document]:
         """
         Search for similar schemas based on query with automatic retry on connection errors.
 
@@ -226,7 +308,6 @@ class EmbeddingManager:
             query: Natural language query
             db_id: Database ID to filter by
             k_public: Number of public schemas to retrieve
-            k_custom: Number of custom schemas to retrieve
 
         Returns:
             List of similar schema documents
@@ -244,23 +325,41 @@ class EmbeddingManager:
             if public_results:
                 retrieved.extend(public_results)
 
-        # Get custom schemas if enabled with retry
-        if k_custom > 0 and config.app.embed_worksheets:
-            custom_results = self._retry_on_connection_error(
-                self.vector_store.similarity_search,
-                query,
-                k=k_custom,
-                filter={"db_id": db_id, "schema_type": "custom"}
-            )
+        # Get ALL custom/worksheet schemas — don't rely on top-k similarity
+        if config.app.embed_worksheets:
+            custom_results = self._get_all_custom_schemas(query, db_id)
             if custom_results:
                 retrieved.extend(custom_results)
 
         return retrieved
     
     def get_formatted_schemas(self, query: str, db_id: int) -> str:
-        """Get formatted schema text for prompt"""
+        """Get formatted schema text for prompt, grouped by section with headers."""
         schemas = self.search_similar_schemas(query, db_id)
-        return "\n".join(doc.page_content for doc in schemas)
+
+        section_headers = {
+            "public": "=== PUBLIC TABLES ===",
+            "worksheet": "=== WORKSHEET VIEWS ===",
+            "scoresheet": "=== SCORESHEET VIEWS ===",
+        }
+
+        sections: dict[str, list[str]] = {}
+        for doc in schemas:
+            schema_type = doc.metadata.get("schema_type", "public")
+            if schema_type == "custom":
+                first_line = doc.page_content.split('\n')[0].lower()
+                key = "scoresheet" if "scoresheet" in first_line else "worksheet"
+            else:
+                key = schema_type
+            sections.setdefault(key, []).append(doc.page_content)
+
+        parts = []
+        for stype in ("public", "worksheet", "scoresheet"):
+            if stype in sections:
+                parts.append(section_headers[stype])
+                parts.extend(sections[stype])
+
+        return "\n".join(parts)
 
 
 # Global embedding manager instance
