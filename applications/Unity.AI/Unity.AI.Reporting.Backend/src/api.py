@@ -385,6 +385,7 @@ def ask():
         conversation = data.get("conversation", [])
         is_retry = bool(data.get("is_retry", False))
         retry_error_type = data.get("retry_error_type") or None
+        retry_error_detail = data.get("retry_error_detail") or None
         
         # Extract user context from JWT token
         tenant_id = user_data["tenant"]
@@ -406,9 +407,10 @@ def ask():
         # Generate SQL from natural language
         logger.info("Starting SQL generation...")
         try:
-            sql, metadata, sql_tokens = await sql_generator.generate_sql(
+            sql, metadata, sql_tokens, error_detail = await sql_generator.generate_sql(
                 question, past_questions, db_id, tenant_id=tenant_id,
-                is_retry=is_retry, retry_error_type=retry_error_type
+                is_retry=is_retry, retry_error_type=retry_error_type,
+                retry_error_detail=retry_error_detail
             )
         except Exception as e:
             return _classify_sql_generation_error(e)
@@ -421,7 +423,8 @@ def ask():
             return _error_response(
                 "ai_failure",
                 "I couldn't generate a report from that question. Try rephrasing it or providing more detail.",
-                422
+                422,
+                detail=error_detail
             )
 
         logger.debug(f"SQL: {sql}")

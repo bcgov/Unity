@@ -332,7 +332,7 @@ export class App implements OnInit, OnDestroy {
     this.currentTurnIndex = 0;
   }
 
-  async askQuestion(retryCount: number = 0, retryErrorType?: Turn['errorType']) {
+  async askQuestion(retryCount: number = 0, retryErrorType?: Turn['errorType'], retryErrorDetail?: string | null) {
     if (this.question.trim() === "") {
       alert("Please enter a question.");
       return;
@@ -356,7 +356,7 @@ export class App implements OnInit, OnDestroy {
       if (! await this.authService.isAuthenticated()) throw new Error('Not authenticated');
 
       turn.embed = await firstValueFrom(
-        this.apiService.askQuestion<Embed>(turn.question, this.conversation, retryCount > 0, retryErrorType)
+        this.apiService.askQuestion<Embed>(turn.question, this.conversation, retryCount > 0, retryErrorType, retryErrorDetail)
       );
       turn.embed.current_visualization = 'table';
       turn.iframeLoaded = true;
@@ -371,6 +371,8 @@ export class App implements OnInit, OnDestroy {
       // Classify the error using the stable backend schema, falling back to HTTP status
       const errorType = error?.error?.error_type;
       const errorMsg = error?.error?.message;
+
+      turn.errorDetail = error?.error?.detail ?? null;
 
       if (error?.message === 'Not authenticated') {
         turn.errorType = 'unknown';
@@ -414,7 +416,7 @@ export class App implements OnInit, OnDestroy {
     // Retry the question with the existing turn
     this.question = turn.question;
     this.conversation = this.conversation.filter(t => t !== turn);
-    this.askQuestion(nextRetryCount, errorType);
+    this.askQuestion(nextRetryCount, errorType, turn.errorDetail);
   }
 
   toggleSidebar(): void {
