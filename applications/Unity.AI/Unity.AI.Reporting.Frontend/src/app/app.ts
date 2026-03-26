@@ -626,7 +626,7 @@ export class App implements OnInit, OnDestroy {
 
     // Ordered alternation: comments → strings → identifiers → numbers → any char.
     // Identifier before number ensures digits inside words (col1) are not split off.
-    const TOKEN_RE = /--.*|\/\*[^]*?\*\/|'[^']*'|"[^"]*"|[a-zA-Z_]\w*|\d+\.?\d*|[^]/g;
+    const TOKEN_RE = /--.*|\/\*[^]*?\*\/|'[^']*'|"[^"]*"|\d+\.?\d*|\w+|[^]/g;
 
     const classify = (token: string): string => {
       const ch = token[0];
