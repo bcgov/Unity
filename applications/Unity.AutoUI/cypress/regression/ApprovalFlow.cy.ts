@@ -339,8 +339,6 @@ const TEST_CONFIG = {
 
   it("Logout user1 and login as user2 for L2 approval", () => {
     cy.logout();
-    cy.clearCookies();
-    cy.clearLocalStorage();
     loginIfNeeded({
       username: Cypress.env("test2username") as string,
       password: Cypress.env("test2password") as string,
