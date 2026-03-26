@@ -206,6 +206,13 @@ public class GrantManagerWebModule : AbpModule
             options.IgnoredUrls.AddIfNotContains("/healthz");
         });
 
+        Configure<AbpErrorPageOptions>(options =>
+        {
+            options.ErrorViewUrls["404"] = "/Error?httpStatusCode=404";
+            options.ErrorViewUrls["403"] = "/Error?httpStatusCode=403";
+            options.ErrorViewUrls["500"] = "/Error?httpStatusCode=500";
+        });
+
         Configure<SettingManagementPageOptions>(options =>
         {
             options.Contributors.Add(new BackgroundJobsPageContributor());
@@ -547,16 +554,13 @@ public class GrantManagerWebModule : AbpModule
 
         if (!env.IsProduction())
         {
-            app.UseDeveloperExceptionPage();
             IdentityModelEventSource.ShowPII = true;
         }
 
         app.UseAbpRequestLocalization();
 
-        if (env.IsProduction())
-        {
-            app.UseErrorPage();
-        }
+        app.UseStatusCodePagesWithReExecute("/Error", "?httpStatusCode={0}");
+        app.UseErrorPage();
 
         if (Convert.ToBoolean(configuration["AuthServer:IsBehindTlsTerminationProxy"]))
         {
