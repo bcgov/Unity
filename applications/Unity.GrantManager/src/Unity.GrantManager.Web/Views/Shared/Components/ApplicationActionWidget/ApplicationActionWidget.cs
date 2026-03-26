@@ -28,7 +28,8 @@ public class ApplicationActionWidget : AbpViewComponent
         var viewModel = new ApplicationActionWidgetViewModel()
         {
             ApplicationId = applicationId,
-            ApplicationActions = await _applicationAppService.GetActions(applicationId)
+            ApplicationActions = await _applicationAppService.GetActions(applicationId),
+            IsRedStop = await _applicationAppService.IsApplicantRedStop(applicationId)
         };
 
         return View(viewModel);

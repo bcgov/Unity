@@ -10,6 +10,18 @@
                 let $button = $(this);
                 attachClickEvent($button);
             });
+
+            let isRedStop = document.getElementById('actionWidget_ApplicantIsRedStop')?.value === 'true';
+            if (isRedStop) {
+                let $dropdownToggle = $wrapper.find('#ApplicationActionDropdown .dropdown-toggle');
+                $dropdownToggle.attr({
+                    'data-bs-toggle': 'popover',
+                    'data-bs-trigger': 'hover',
+                    'data-bs-placement': 'top',
+                    'data-bs-content': l("GrantApplication:ActionButton.RedStopWarning"),
+                });
+                const redstopPopover = new bootstrap.Popover($dropdownToggle[0]);
+            }
         }
 
         function attachClickEvent($button) {
@@ -45,10 +57,10 @@
 
         function customConfirmation(triggerActionEnum) {
             let confirmationDetails = getConfirmationText(triggerActionEnum);
-            let isRedStop = $('#redStop').prop("checked");
+            let isRedStop = document.getElementById('actionWidget_ApplicantIsRedStop')?.value === 'true';
         
-            if (isRedStop && triggerActionEnum === 'Approve') {
-                return handleRedStopApproval();
+            if (isRedStop) {
+                return handleRedStopAction();
             }
         
             if (triggerActionEnum === 'CompleteAssessment') {
@@ -58,10 +70,10 @@
             }
         }
         
-        function handleRedStopApproval() {
+        function handleRedStopAction() {
             return Swal.fire({
                 icon: "error",
-                text: "This application is currently flagged as high risk. Approval is not permitted at this time",
+                text: l("GrantApplication:ActionButton.RedStopWarning"),
                 confirmButtonText: 'Ok',
                 customClass: {
                     confirmButton: 'btn btn-primary'
