@@ -8,6 +8,6 @@ public class ErrorModel : PageModel
 
     public void OnGet(int httpStatusCode = 0)
     {
-        HttpStatusCode = httpStatusCode;
+        HttpStatusCode = httpStatusCode;//HTTP Status Code
     }
 }
