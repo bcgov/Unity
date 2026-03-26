@@ -10,21 +10,6 @@
                 let $button = $(this);
                 attachClickEvent($button);
             });
-
-            let isRedStop = document.getElementById('actionWidget_ApplicantIsRedStop')?.value === 'true';
-            if (isRedStop) {
-                let $dropdownToggle = $wrapper.find('#ApplicationActionDropdown .dropdown-toggle');
-                $dropdownToggle.attr({
-                    'data-bs-toggle': 'popover',
-                    'data-bs-trigger': 'hover focus',
-                    'data-bs-placement': 'top'
-                });
-                let redstopPopover = new bootstrap.Popover($dropdownToggle[0]);
-                redstopPopover.setContent({
-                    '.popover-title': 'Red-Stop Restriction',
-                    '.popover-body': l("GrantApplication:ActionButton.RedStopWarning")
-                });
-            }
         }
 
         function attachClickEvent($button) {
