@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Unity.AI.Localization;
+using Unity.AI.Web.Menus;
 using Unity.AI.Web.Views.Settings;
 using Volo.Abp.AspNetCore.Mvc.Localization;
 using Volo.Abp.AspNetCore.Mvc.UI.Theme.Shared;
@@ -7,6 +8,7 @@ using Volo.Abp.AutoMapper;
 using Volo.Abp.Modularity;
 using Volo.Abp.SettingManagement.Web;
 using Volo.Abp.SettingManagement.Web.Pages.SettingManagement;
+using Volo.Abp.UI.Navigation;
 using Volo.Abp.VirtualFileSystem;
 
 namespace Unity.AI.Web;
@@ -37,6 +39,11 @@ public class AIWebModule : AbpModule
         Configure<AbpVirtualFileSystemOptions>(options =>
         {
             options.FileSets.AddEmbedded<AIWebModule>();
+        });
+
+        Configure<AbpNavigationOptions>(options =>
+        {
+            options.MenuContributors.Add(new AIMenuContributor());
         });
 
         context.Services.AddAutoMapperObjectMapper<AIWebModule>();

@@ -34,6 +34,8 @@
     "Worksheet:Configuration:AddColumnOptionText": "Add Column",
     "DataGrids:DynamicColumnsHeader": "Dynamic Columns",
     "DataGrids:CustomColumnsHeader": "Custom Columns",
-    "DataGrids:PredefinedColumn": "Predefined column"
+    "DataGrids:PredefinedColumn": "Predefined column",
+    "Permission:Flex.Worksheets": "Configure Worksheet",
+    "Permission:Flex.Worksheets.Delete": "Delete Worksheet"
   }
 }
