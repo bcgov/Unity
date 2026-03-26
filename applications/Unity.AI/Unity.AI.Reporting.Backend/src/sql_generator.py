@@ -339,7 +339,7 @@ class SQLGenerator:
             parsed_schema = await self.fetch_completion(f'''Please parse this schema to return only tables and columns relevant to the users question. Never add to the schema, only remove as necessary.
                                   <question>{question}</question>
                                   <schema>{schemas}</schema>
-                                  In the case that the question is NSFW or completely unrelated please return NSFW''', session, 0)
+                                  If the question is completely unrelated to the schema or is inappropriate, respond with only the word UNRELATED and nothing else.''', session, 0)
 
             if not parsed_schema:
                 logger.error("Schema parsing failed — no completion returned")
@@ -348,7 +348,7 @@ class SQLGenerator:
             print("Schema:", schemas)
             print("Parsed Schema:", parsed_schema[0])
 
-            if parsed_schema[0] == "NSFW":
+            if "UNRELATED" in parsed_schema[0].upper():
                 logger.error("Error: NSFW or irrelevant question.", exc_info=True)
                 return None, None, None
 
