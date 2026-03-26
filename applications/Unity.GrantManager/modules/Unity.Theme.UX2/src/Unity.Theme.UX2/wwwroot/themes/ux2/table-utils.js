@@ -638,6 +638,7 @@ function adjustColumnsWithRetry(api) {
 /**
  * Initializes FilterRow plugin if available and button exists.
  * @param {DataTable} iDt - DataTable instance
+ * @param {string} externalFilterButtonId - ID of external filter button element, skips initialization if null
  */
 function initializeFilterRowPlugin(iDt, externalFilterButtonId) {
     if (!externalFilterButtonId || !$('#' + externalFilterButtonId).length) return;
