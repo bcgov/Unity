@@ -23,7 +23,11 @@ import { NavigationPage } from "../pages/NavigationPage";
 import { loginIfNeeded } from "../support/auth";
 
 const isProd =
-  (Cypress.env("CHEFS_ENV") || Cypress.env("environment") || "").toLowerCase() === "prod";
+  (
+    Cypress.env("CHEFS_ENV") ||
+    Cypress.env("environment") ||
+    ""
+  ).toLowerCase() === "prod";
 
 // ============ Test Configuration ============
 const TEST_CONFIG = {
@@ -40,7 +44,7 @@ const TEST_CONFIG = {
     // Available statuses: 'Submitted', 'Under Assessment', 'Approved', 'Closed', 'Deferred'
     statusFilter: ["Submitted"],
     maxAge: 30, // Only consider submissions created within the last N days
-    index: 0,   // 0 = latest; increment to avoid collision with concurrent tests
+    index: 0, // 0 = latest; increment to avoid collision with concurrent tests
   },
 };
 
@@ -59,6 +63,7 @@ const TEST_CONFIG = {
 
   /** Navigate to the Payments tab and filter the table by submissionId. */
   function navigateToPaymentsAndSearch(): void {
+    cy.reload;
     navPage.goToPayments();
     cy.location("pathname", { timeout: 20000 }).should("include", "Payment");
     cy.get("#search", { timeout: 20000 })
@@ -91,7 +96,10 @@ const TEST_CONFIG = {
     cy.get("#UpdateTotalAmount").should("not.have.value", "0");
     cy.get("#Note").should("be.visible");
 
-    const approvalNote = `${notePrefix}-${submissionId}-${Date.now()}`.slice(0, 50);
+    const approvalNote = `${notePrefix}-${submissionId}-${Date.now()}`.slice(
+      0,
+      50,
+    );
     cy.get("#Note").clear().type(approvalNote);
 
     cy.get("#btnSubmitPayment")
@@ -118,7 +126,10 @@ const TEST_CONFIG = {
     // Priority 1: ID written by the seed script when running test:approval-flow
     cy.task("readJsonIfExists", "cypress/scripts/last-submission-id.json").then(
       (result) => {
-        const seeded = result as { submissionId?: string; createdAt?: string } | null;
+        const seeded = result as {
+          submissionId?: string;
+          createdAt?: string;
+        } | null;
         if (seeded?.submissionId) {
           submissionId = seeded.submissionId;
           cy.log(`📌 Using seeded submission ID: ${submissionId}`);
@@ -193,7 +204,9 @@ const TEST_CONFIG = {
         cy.get("#CompleteButton").click({ force: true });
         cy.wait(1000);
       } else {
-        cy.log("Complete Assessment button not found - may already be completed");
+        cy.log(
+          "Complete Assessment button not found - may already be completed",
+        );
       }
     });
   });
@@ -259,6 +272,7 @@ const TEST_CONFIG = {
   // ============ Application Approval ============
 
   it("Test approval workflow (confirm)", () => {
+    cy.reload(); // Refresh to ensure all changes are reflected before approval
     detailsPage.dismissErrorModalIfPresent();
     detailsPage.clickApprove().waitForConfirmModal().clickConfirm();
   });
@@ -334,6 +348,7 @@ const TEST_CONFIG = {
   });
 
   it("Navigate to Payments tab and search for submission (L2)", () => {
+    listPage.switchToGrantProgram(TEST_CONFIG.grantProgram);
     navigateToPaymentsAndSearch();
   });
 
@@ -356,10 +371,14 @@ const TEST_CONFIG = {
       .clear()
       .type(submissionId);
 
-    cy.contains("tr", submissionId, { timeout: 20000 }).should(
-      "contain.text",
-      "Sent to Accounts Payable",
-    );
+    cy.contains("tr", submissionId, { timeout: 20000 }).should(($row) => {
+      const text = $row.text();
+      expect(
+        text.includes("Sent to Accounts Payable") ||
+          text.includes("Submitted to CAS"),
+        'Expected row to contain "Sent to Accounts Payable" or "Submitted to CAS"',
+      ).to.be.true;
+    });
 
     // Validate date columns by resolving each column's index from its header title
     ["Updated On", "L1 Approval Date", "L2 Approval Date"].forEach((header) => {

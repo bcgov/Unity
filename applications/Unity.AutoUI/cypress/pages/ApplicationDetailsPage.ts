@@ -182,7 +182,7 @@ export class ApplicationDetailsPage extends BasePage {
       | "projectInfo"
       | "applicantInfo"
       | "fundingAgreement"
-      | "paymentInfo"
+      | "paymentInfo",
   ): this {
     const tabSelectors: Record<string, string> = {
       submission: this.tabs.submission,
@@ -348,8 +348,10 @@ export class ApplicationDetailsPage extends BasePage {
    * Verify Site Info table is populated
    */
   verifySiteInfoTablePopulated(): this {
-    cy.get("#SiteInfoTable tbody tr", { timeout: 20000 })
-      .should("have.length.at.least", 1);
+    cy.get("#SiteInfoTable tbody tr", { timeout: 20000 }).should(
+      "have.length.at.least",
+      1,
+    );
     return this;
   }
 
@@ -357,11 +359,13 @@ export class ApplicationDetailsPage extends BasePage {
    * Verify Site Info table has data in specific columns
    */
   verifySiteInfoTableHasData(): this {
-    cy.get("#SiteInfoTable tbody tr", { timeout: 20000 }).first().within(() => {
-      cy.get("td").eq(0).should("not.be.empty"); // Site #
-      cy.get("td").eq(1).should("not.be.empty"); // Pay Group
-      cy.get("td").eq(2).should("not.be.empty"); // Mailing Address
-    });
+    cy.get("#SiteInfoTable tbody tr", { timeout: 20000 })
+      .first()
+      .within(() => {
+        cy.get("td").eq(0).should("not.be.empty"); // Site #
+        cy.get("td").eq(1).should("not.be.empty"); // Pay Group
+        cy.get("td").eq(2).should("not.be.empty"); // Mailing Address
+      });
     return this;
   }
 
@@ -392,8 +396,9 @@ export class ApplicationDetailsPage extends BasePage {
    * Select Payment Group in Edit Site modal
    */
   selectPaymentGroup(paymentGroup: "EFT" | "Cheque"): this {
-    cy.get("#Site_PaymentGroup", { timeout: 20000 })
-      .select(paymentGroup, { force: true });
+    cy.get("#Site_PaymentGroup", { timeout: 20000 }).select(paymentGroup, {
+      force: true,
+    });
     return this;
   }
 
@@ -406,7 +411,9 @@ export class ApplicationDetailsPage extends BasePage {
       .click({ force: true });
     cy.wait(2000); // Wait for save to process
     cy.get("body").type("{esc}");
-    cy.get(".modal.show, .modal.fade.show", { timeout: 20000 }).should("not.exist");
+    cy.get(".modal.show, .modal.fade.show", { timeout: 20000 }).should(
+      "not.exist",
+    );
     cy.get(".modal-backdrop", { timeout: 20000 }).should("not.exist");
     return this;
   }
@@ -435,7 +442,9 @@ export class ApplicationDetailsPage extends BasePage {
           .click({ force: true });
       }
     });
-    cy.get(this.statusActions.dropdownMenu, { timeout: 10000 }).should("be.visible");
+    cy.get(this.statusActions.dropdownMenu, { timeout: 10000 }).should(
+      "be.visible",
+    );
   }
 
   /**
@@ -472,26 +481,39 @@ export class ApplicationDetailsPage extends BasePage {
 
   /**
    * Click Approve action.
-   * If "Complete Assessment" is enabled in the dropdown, click it first,
-   * then reopen the dropdown before clicking Approve.
+   * If "Complete Assessment" is present and enabled in the dropdown, click it first
+   * (and confirm any resulting dialog), then reopen the dropdown before clicking Approve.
    */
   clickApprove(): this {
     this.openStatusActionsDropdown();
-    cy.get(this.statusActions.completeAssessment).then(($btn) => {
-      if (!$btn.is(":disabled")) {
-        cy.wrap($btn).click({ force: true });
-        cy.get("body").then(($body) => {
-          if ($body.find(this.confirmModal.modal).filter(":visible").length > 0) {
+
+    // Use body-check so we never timeout when the button is absent from the DOM
+    cy.get("body").then(($body) => {
+      const $completeBtn = $body.find(this.statusActions.completeAssessment);
+      if ($completeBtn.length > 0 && !$completeBtn.is(":disabled")) {
+        cy.wait(10000); // Wait for any potential UI updates before clicking
+        // cy.wrap($completeBtn).click({ force: true });
+        cy.wrap($completeBtn).click();
+        cy.wait(2000); // Wait for any potential UI updates after clicking
+        // Confirm any SweetAlert2 dialog that appears after clicking Complete Assessment,
+        // or dismiss an error modal if the action failed
+        cy.get("body").then(($b) => {
+          if ($b.find(this.confirmModal.modal).filter(":visible").length > 0) {
             cy.get(this.confirmModal.modal)
               .find(this.confirmModal.confirmButton)
               .click({ force: true });
           }
         });
-        // Wait for page to stabilize after status transition
-        cy.get(this.statusActions.dropdownToggle, { timeout: 20000 }).should("be.visible");
+        this.dismissErrorModalIfPresent();
+
+        // Wait for the page to stabilize before reopening the dropdown
+        cy.get(this.statusActions.dropdownToggle, { timeout: 20000 }).should(
+          "be.visible",
+        );
         cy.wait(2000);
       }
     });
+
     // Always reopen dropdown fresh before clicking Approve (dropdown may have closed)
     this.openStatusActionsDropdown();
     cy.get(this.statusActions.approve, { timeout: 10000 })
@@ -604,7 +626,7 @@ export class ApplicationDetailsPage extends BasePage {
       | "close"
       | "withdraw"
       | "defer"
-      | "onHold"
+      | "onHold",
   ): void {
     const actionSelectors: Record<string, string> = {
       startReview: this.statusActions.startReview,
@@ -636,7 +658,7 @@ export class ApplicationDetailsPage extends BasePage {
       | "close"
       | "withdraw"
       | "defer"
-      | "onHold"
+      | "onHold",
   ): void {
     const actionSelectors: Record<string, string> = {
       startReview: this.statusActions.startReview,
