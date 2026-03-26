@@ -85,6 +85,7 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
         public string? CurrentUserName { get; set; }
         public string Extensions { get; set; }
         public string MaxFileSize { get; set; }
+        public string EmailAttachmentMaxFileSize { get; set; }
 
         [BindProperty(SupportsGet = true)]
         public List<BoundWorksheet> CustomTabs { get; set; } = [];
@@ -123,6 +124,7 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
             CurrentUserName = currentUser.SurName + ", " + currentUser.Name;
             Extensions = configuration["S3:DisallowedFileTypes"] ?? "";
             MaxFileSize = configuration["S3:MaxFileSize"] ?? "";
+            EmailAttachmentMaxFileSize = configuration["S3:EmailAttachmentMaxFileSize"] ?? "20";
             IsDevPromptControlsEnabled = aiPromptToolViewOptionsProvider.IsDevPromptControlsEnabled;
             DefaultPromptVersion = aiPromptToolViewOptionsProvider.DefaultPromptVersion;
         }

@@ -280,6 +280,19 @@ namespace Unity.GrantManager.Controllers
                 throw new AbpValidationException(message: "ERROR: Invalid File Type.", validationErrors: invalidFileTypes);
             }
 
+            var emailAttachmentMaxFileSizeConfig = _configuration["S3:EmailAttachmentMaxFileSize"] ?? "20";
+            if (double.TryParse(emailAttachmentMaxFileSizeConfig, out double maxFileSizeMB))
+            {
+                var oversizedFiles = files.Where(f => f.Length * 0.000001 > maxFileSizeMB).ToList();
+                if (oversizedFiles.Count > 0)
+                {
+                    var sizeErrors = oversizedFiles.Select(f =>
+                        new ValidationResult($"File '{f.FileName}' exceeds the maximum allowed size of {maxFileSizeMB} MB for email attachments.", [f.FileName])
+                    ).ToList();
+                    throw new AbpValidationException("One or more files exceed the maximum allowed size for email attachments.", sizeErrors);
+                }
+            }
+
             var results = new List<object>();
             foreach (var file in files)
             {

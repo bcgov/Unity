@@ -821,7 +821,7 @@ function uploadEmailFiles(inputId) {
     if (!input?.files?.length) return;
 
     const disallowedTypes = JSON.parse(decodeURIComponent($('#Extensions').val()));
-    const maxFileSize = decodeURIComponent($('#MaxFileSize').val());
+    const maxFileSize = decodeURIComponent($('#EmailAttachmentMaxFileSize').val());
 
     let isAllowedTypeError = false;
     let isMaxFileSizeError = false;
@@ -844,7 +844,10 @@ function uploadEmailFiles(inputId) {
     }
     if (isMaxFileSizeError) {
         input.value = '';
-        return abp.notify.error('Error', 'File size exceeds ' + maxFileSize + 'MB');
+        return abp.notify.error(
+            'File Too Large',
+            'The selected file exceeds the maximum allowed size of ' + maxFileSize + ' MB for email attachments. Please select a smaller file.'
+        );
     }
 
     $.ajax({
