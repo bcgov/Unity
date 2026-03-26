@@ -492,11 +492,8 @@ export class ApplicationDetailsPage extends BasePage {
       const $completeBtn = $body.find(this.statusActions.completeAssessment);
       if ($completeBtn.length > 0 && !$completeBtn.is(":disabled")) {
         cy.wait(10000); // Wait for any potential UI updates before clicking
-        // cy.wrap($completeBtn).click({ force: true });
         cy.wrap($completeBtn).click();
         cy.wait(2000); // Wait for any potential UI updates after clicking
-        // Confirm any SweetAlert2 dialog that appears after clicking Complete Assessment,
-        // or dismiss an error modal if the action failed
         cy.get("body").then(($b) => {
           if ($b.find(this.confirmModal.modal).filter(":visible").length > 0) {
             cy.get(this.confirmModal.modal)
