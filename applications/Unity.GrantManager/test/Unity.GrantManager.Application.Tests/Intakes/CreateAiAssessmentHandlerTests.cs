@@ -4,12 +4,14 @@ using Shouldly;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using Unity.AI.Settings;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Assessments;
 using Unity.GrantManager.Intakes.Events;
 using Unity.GrantManager.Intakes.Handlers;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Features;
+using Volo.Abp.Settings;
 using Volo.Abp.Uow;
 using Xunit;
 using Xunit.Abstractions;
@@ -31,18 +33,26 @@ public class CreateAiAssessmentHandlerTests : GrantManagerApplicationTestBase
         _unitOfWorkManager = GetRequiredService<IUnitOfWorkManager>();
     }
 
+    private CreateAIAssessmentHandler BuildHandler(IFeatureChecker featureChecker, ISettingProvider settingProvider)
+    {
+        return new CreateAIAssessmentHandler(
+            _assessmentManager,
+            _applicationRepository,
+            featureChecker,
+            settingProvider,
+            _unitOfWorkManager,
+            NullLogger<CreateAIAssessmentHandler>.Instance);
+    }
+
     [Fact]
     [Trait("Category", "Integration")]
     public async Task HandleEventAsync_Should_Skip_When_Application_Id_Is_Empty()
     {
         var featureChecker = Substitute.For<IFeatureChecker>();
         featureChecker.IsEnabledAsync("Unity.AI.Scoring").Returns(true);
-        var handler = new CreateAIAssessmentHandler(
-            _assessmentManager,
-            _applicationRepository,
-            featureChecker,
-            _unitOfWorkManager,
-            NullLogger<CreateAIAssessmentHandler>.Instance);
+        var settingProvider = Substitute.For<ISettingProvider>();
+        settingProvider.GetOrNullAsync(AISettings.ScoringAssistantEnabled).Returns("true");
+        var handler = BuildHandler(featureChecker, settingProvider);
 
         using var uow = _unitOfWorkManager.Begin();
         var beforeCount = (await _assessmentRepository.GetQueryableAsync()).Count(a => a.IsAiAssessment);
@@ -59,12 +69,8 @@ public class CreateAiAssessmentHandlerTests : GrantManagerApplicationTestBase
     {
         var featureChecker = Substitute.For<IFeatureChecker>();
         featureChecker.IsEnabledAsync("Unity.AI.Scoring").Returns(false);
-        var handler = new CreateAIAssessmentHandler(
-            _assessmentManager,
-            _applicationRepository,
-            featureChecker,
-            _unitOfWorkManager,
-            NullLogger<CreateAIAssessmentHandler>.Instance);
+        var settingProvider = Substitute.For<ISettingProvider>();
+        var handler = BuildHandler(featureChecker, settingProvider);
 
         using var uow = _unitOfWorkManager.Begin();
         var application = (await _applicationRepository.GetListAsync())[0];
@@ -78,16 +84,35 @@ public class CreateAiAssessmentHandlerTests : GrantManagerApplicationTestBase
 
     [Fact]
     [Trait("Category", "Integration")]
-    public async Task HandleEventAsync_Should_Create_AI_Assessment_When_Feature_Enabled()
+    public async Task HandleEventAsync_Should_Skip_When_Feature_Enabled_But_Setting_Disabled()
     {
+        // Arrange — feature ON but tenant setting OFF
         var featureChecker = Substitute.For<IFeatureChecker>();
         featureChecker.IsEnabledAsync("Unity.AI.Scoring").Returns(true);
-        var handler = new CreateAIAssessmentHandler(
-            _assessmentManager,
-            _applicationRepository,
-            featureChecker,
-            _unitOfWorkManager,
-            NullLogger<CreateAIAssessmentHandler>.Instance);
+        var settingProvider = Substitute.For<ISettingProvider>();
+        settingProvider.GetOrNullAsync(AISettings.ScoringAssistantEnabled).Returns("false");
+        var handler = BuildHandler(featureChecker, settingProvider);
+
+        using var uow = _unitOfWorkManager.Begin();
+        var application = (await _applicationRepository.GetListAsync())[0];
+        var beforeCount = (await _assessmentRepository.GetQueryableAsync()).Count(a => a.IsAiAssessment);
+
+        await handler.HandleEventAsync(new AIApplicationScoringGeneratedEvent { ApplicationId = application.Id });
+
+        var afterCount = (await _assessmentRepository.GetQueryableAsync()).Count(a => a.IsAiAssessment);
+        afterCount.ShouldBe(beforeCount);
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task HandleEventAsync_Should_Create_AI_Assessment_When_Feature_Enabled_And_Setting_Enabled()
+    {
+        // Arrange — feature ON and tenant setting ON
+        var featureChecker = Substitute.For<IFeatureChecker>();
+        featureChecker.IsEnabledAsync("Unity.AI.Scoring").Returns(true);
+        var settingProvider = Substitute.For<ISettingProvider>();
+        settingProvider.GetOrNullAsync(AISettings.ScoringAssistantEnabled).Returns("true");
+        var handler = BuildHandler(featureChecker, settingProvider);
 
         using var uow = _unitOfWorkManager.Begin();
         var application = await _applicationRepository.GetAsync(GrantManagerTestData.Application2_Id);
@@ -105,12 +130,9 @@ public class CreateAiAssessmentHandlerTests : GrantManagerApplicationTestBase
     {
         var featureChecker = Substitute.For<IFeatureChecker>();
         featureChecker.IsEnabledAsync("Unity.AI.Scoring").Returns(true);
-        var handler = new CreateAIAssessmentHandler(
-            _assessmentManager,
-            _applicationRepository,
-            featureChecker,
-            _unitOfWorkManager,
-            NullLogger<CreateAIAssessmentHandler>.Instance);
+        var settingProvider = Substitute.For<ISettingProvider>();
+        settingProvider.GetOrNullAsync(AISettings.ScoringAssistantEnabled).Returns("true");
+        var handler = BuildHandler(featureChecker, settingProvider);
 
         using var uow = _unitOfWorkManager.Begin();
         var application = await _applicationRepository.GetAsync(GrantManagerTestData.Application1_Id);

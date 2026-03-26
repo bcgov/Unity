@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using System;
 using System.Threading.Tasks;
+using Unity.AI.Settings;
 using Unity.GrantManager.AI.Operations;
 using Unity.GrantManager.Intakes.Events;
 using Volo.Abp.BackgroundJobs;
@@ -8,6 +9,7 @@ using Volo.Abp.DependencyInjection;
 using Volo.Abp.EventBus.Local;
 using Volo.Abp.Features;
 using Volo.Abp.MultiTenancy;
+using Volo.Abp.Settings;
 
 namespace Unity.GrantManager.AI.BackgroundJobs;
 
@@ -17,6 +19,7 @@ public class GenerateContentBackgroundJob(
     IApplicationScoringService applicationScoringService,
     IAIService aiService,
     IFeatureChecker featureChecker,
+    ISettingProvider settingProvider,
     ILocalEventBus localEventBus,
     ICurrentTenant currentTenant,
     ILogger<GenerateContentBackgroundJob> logger) : AsyncBackgroundJob<GenerateContentBackgroundJobArgs>, ITransientDependency
@@ -28,6 +31,11 @@ public class GenerateContentBackgroundJob(
             var attachmentSummariesEnabled = await featureChecker.IsEnabledAsync("Unity.AI.AttachmentSummaries");
             var applicationAnalysisEnabled = await featureChecker.IsEnabledAsync("Unity.AI.ApplicationAnalysis");
             var scoringEnabled = await featureChecker.IsEnabledAsync("Unity.AI.Scoring");
+
+            if (scoringEnabled)
+            {
+                scoringEnabled = await settingProvider.GetAsync<bool>(AISettings.ScoringAssistantEnabled, defaultValue: false);
+            }
 
             if (!attachmentSummariesEnabled && !applicationAnalysisEnabled && !scoringEnabled)
             {
