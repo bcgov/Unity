@@ -47,6 +47,11 @@ $(function () {
                 'data-selector': 'batch-payment-table-actions'
             },
             action: function (e, dt, node, config) {
+                if (!dt.rows({ selected: true }).any() || !selectedPaymentIds || selectedPaymentIds.length === 0) {
+                    abp.notify.info('No Payment Requests were selected for this action.')
+                    return;
+                }
+
                 $.ajax({
                     url: '/api/app/payment-request/manually-add-payment-requests-to-reconciliation-queue',
                     method: 'POST',
