@@ -1,12 +1,12 @@
     // Simple HTML escape utility to prevent XSS
     function escapeHtml(str) {
         return String(str)
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;')
-            .replace(/'/g, '&#39;')
-            .replace(/\//g, '&#47;');
+            .replaceAll('&', '&amp;')
+            .replaceAll('<', '&lt;')
+            .replaceAll('>', '&gt;')
+            .replaceAll('"', '&quot;')
+            .replaceAll("'", '&#39;')
+            .replaceAll('/', '&#47;');
     }
     
     // Format version number to VX.0 format
@@ -321,7 +321,7 @@ $(function () {
             const errorMessages = response.errorMessages || {};
             
             const activeValidationErrors = this.filterActiveErrors(state);
-            state.hasValidationErrors = Object.values(activeValidationErrors).some(v => v);
+            state.hasValidationErrors = Object.values(activeValidationErrors).some(Boolean);
             
             this.updateLinkValidationStates(state, errorMessages);
             
@@ -398,8 +398,11 @@ $(function () {
             const summaryContainer = $('#validationSummaryContainer');
             
             if (state.hasValidationErrors) {
-                const errorCount = Object.values(state.validationErrors).filter(v => v).length;
-                if (!summaryContainer.length) {
+                const errorCount = Object.values(state.validationErrors).filter(Boolean).length;
+                if (summaryContainer.length) {
+                    $('#validationErrorCount').text(errorCount);
+                    summaryContainer.show();
+                } else {
                     const summaryHtml = `
                         <div id="validationSummaryContainer" class="validation-summary alert alert-danger" role="alert">
                             <i class="fa fa-exclamation-triangle validation-summary-icon"></i>
@@ -408,9 +411,6 @@ $(function () {
                         </div>
                     `;
                     $(summaryHtml).insertBefore('.links-display-area');
-                } else {
-                    $('#validationErrorCount').text(errorCount);
-                    summaryContainer.show();
                 }
             } else if (summaryContainer.length) {
                 summaryContainer.hide();
@@ -629,9 +629,23 @@ $(function () {
                 const inputValue = searchInput.val().trim().toLowerCase();
                 
                 if (inputValue.length > 0) {
-                    const suggestions = state.suggestionsArray.filter(suggestion => 
-                        suggestion.toLowerCase().includes(inputValue)
-                    );
+                    const suggestions = state.grantApplicationsList
+                        .filter(app => {
+                            const id = (app.UnityApplicantId || '').toString().toLowerCase();
+                            const refNo = (app.ReferenceNo || '').toLowerCase();
+                            const applicantName = (app.ApplicantName || '').toLowerCase();
+                            const orgName = (app.OrganizationName || '').toLowerCase();
+                            return id.includes(inputValue)
+                                || refNo.includes(inputValue)
+                                || applicantName.includes(inputValue)
+                                || orgName.includes(inputValue);
+                        })
+                        .map(app => {
+                            
+                            const idPart = app.UnityApplicantId ? ` - (${app.UnityApplicantId})` : '';
+                            const orgPart = app.OrganizationName ? ` - (${app.OrganizationName})` : '';                            
+                            return `Submission #${app.ReferenceNo} - ${app.ApplicantName}${idPart}${orgPart}`;
+                        });
 
                     if (suggestions.length > 0) {
                         this.currentSuggestions = suggestions;
@@ -738,8 +752,9 @@ $(function () {
     // Link Selection Service
     const LinkSelectionService = {
         selectSuggestion: function(suggestion, state) {
-            const parts = suggestion.split(' - ');
-            const referenceNumber = parts[0].trim();
+            // Format: "Submission #<ReferenceNo> - <ApplicantName>"
+            const match = suggestion.match(/^Submission #(.+?) - /);
+            const referenceNumber = match ? match[1].trim() : suggestion.split(' - ')[0].trim();
             
             if (this.isDuplicate(referenceNumber, state)) {
                 abp.notify.warn('This application is already linked.');

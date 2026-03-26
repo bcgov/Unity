@@ -79,6 +79,15 @@ $(function () {
             });
         }
 
+        let deleteWorksheetButtons = $(".delete-worksheet-btn");
+
+        if (deleteWorksheetButtons) {
+            deleteWorksheetButtons.on("click", function (event) {
+                let btn = event.currentTarget;
+                handleDeleteWorksheet(btn.dataset.worksheetId, btn.dataset.worksheetTitle, btn.dataset.worksheetName);
+            });
+        }
+
         setupTooltips();
     }
 
@@ -223,3 +232,46 @@ $(function () {
         }
     );
 });
+
+function handleDeleteWorksheet(worksheetId, worksheetTitle, worksheetName) {
+    unity.grantManager.settingManagement.worksheetConfiguration.getDeletionCheck(worksheetId)
+        .done(function (result) {
+            if (result.blockingFormNames && result.blockingFormNames.length > 0) {
+                abp.message.error(
+                    'This worksheet cannot be deleted because it is already used by the following forms:\n' + result.blockingFormNames.join('\n'),
+                    'Delete Worksheet'
+                );
+            } else if (result.linkedFormNames && result.linkedFormNames.length > 0) {
+                abp.message.error(
+                    'Unlink the worksheet (' + worksheetTitle + ' \u2013 ' + worksheetName + ') from the following forms before deletion:\n' + result.linkedFormNames.join('\n'),
+                    'Delete Worksheet'
+                );
+            } else {
+                abp.message.confirm(
+                    'Are you sure you want to delete the worksheet "' + worksheetTitle + '"?',
+                    'Delete Worksheet',
+                    function (confirmed) {
+                        if (confirmed) {
+                            executeWorksheetDelete(worksheetId);
+                        }
+                    }
+                );
+            }
+        })
+        .fail(function (e) {
+            abp.notify.error('Failed to check worksheet deletion status.');
+            console.warn('Worksheet deletion check failed:', e);
+        });
+}
+
+function executeWorksheetDelete(worksheetId) {
+    unity.flex.worksheets.worksheet.delete(worksheetId)
+        .done(function () {
+            PubSub.publish('refresh_worksheet_list', { worksheetId: worksheetId, action: 'Delete' });
+            abp.notify.success('Worksheet deleted successfully.', 'Delete Worksheet');
+        })
+        .fail(function (e) {
+            abp.notify.error('Failed to delete worksheet.');
+            console.warn('Worksheet deletion failed:', e);
+        });
+}

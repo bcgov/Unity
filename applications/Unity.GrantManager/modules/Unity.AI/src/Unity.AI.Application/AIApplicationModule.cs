@@ -52,5 +52,7 @@ public class AIApplicationModule : AbpModule
         {
             options.ConventionalControllers.Create(typeof(AIApplicationModule).Assembly);
         });
+
+        context.Services.AddAssemblyOf<AIApplicationModule>();
     }
 }
