@@ -387,7 +387,11 @@ export class ReviewAssessmentPage extends BasePage {
    * Set decision date to today (format: YYYY-MM-DD)
    */
   setDecisionDateToToday(): this {
-    const today = new Date().toISOString().split("T")[0];
+    const now = new Date();
+    const yyyy = now.getFullYear();
+    const mm = String(now.getMonth() + 1).padStart(2, "0");
+    const dd = String(now.getDate()).padStart(2, "0");
+    const today = `${yyyy}-${mm}-${dd}`;
     cy.get(this.assessment.decisionDate, { timeout: this.STANDARD_TIMEOUT })
       .clear()
       .type(today);
