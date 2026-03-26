@@ -17,10 +17,13 @@
                 $dropdownToggle.attr({
                     'data-bs-toggle': 'popover',
                     'data-bs-trigger': 'hover',
-                    'data-bs-placement': 'top',
-                    'data-bs-content': l("GrantApplication:ActionButton.RedStopWarning"),
+                    'data-bs-placement': 'top'
                 });
-                const redstopPopover = new bootstrap.Popover($dropdownToggle[0]);
+                let redstopPopover = new bootstrap.Popover($dropdownToggle[0]);
+                redstopPopover.setContent({
+                    '.popover-title': 'Red-Stop Restriction',
+                    '.popover-body': l("GrantApplication:ActionButton.RedStopWarning")
+                });
             }
         }
 
