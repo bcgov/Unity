@@ -8,6 +8,16 @@ export default defineConfig({
   e2e: {
     setupNodeEvents(on) {
       on("task", {
+        readJsonIfExists(filePath: string): Record<string, unknown> | null {
+          try {
+            // path.resolve handles both forward and back slashes on Windows
+            const content = fs.readFileSync(path.resolve(filePath), "utf-8");
+            return JSON.parse(content);
+          } catch {
+            return null;
+          }
+        },
+
         async uploadChefsFile({
           baseURL,
           authToken,

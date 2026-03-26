@@ -4,60 +4,116 @@
  * Approval Flow Regression Test - Full Approval Workflow
  *
  * This test validates the complete application approval workflow including:
- * - Dynamic submission ID fetching from API
+ * - Submission ID resolution (seeded file → static override → dynamic API fetch)
  * - Searching and opening a submission
  * - Review and assessment process
  * - Payment info configuration
  * - Adding comments and attachments
- * - Approval action (confirmed via dialog)
- *
- * The submission ID is fetched dynamically from the API after login,
- * ensuring tests always run against valid, available data.
+ * - Application approval (confirmed via dialog)
+ * - Payment request submission
+ * - L1 and L2 payment approvals (two separate users)
+ * - Post-approval status and date validation on the Payments table
  */
 
 import { ApplicationsListPage } from "../pages/ApplicationsListPage";
 import { ApplicationDetailsPage } from "../pages/ApplicationDetailsPage";
 import { ReviewAssessmentPage } from "../pages/ReviewAssessmentPage";
 import { ApplicationDetailsRightTabPage } from "../pages/ApplicationDetailsRightTabPage";
+import { NavigationPage } from "../pages/NavigationPage";
 import { loginIfNeeded } from "../support/auth";
 
-const isProd = (Cypress.env("CHEFS_ENV") || Cypress.env("environment") || "").toLowerCase() === "prod";
+const isProd =
+  (
+    Cypress.env("CHEFS_ENV") ||
+    Cypress.env("environment") ||
+    ""
+  ).toLowerCase() === "prod";
 
 // ============ Test Configuration ============
-// Set submissionId to null for dynamic fetch, or provide a value to override
 const TEST_CONFIG = {
-  // Dynamic submission: set to null to fetch from API, or provide ID to use static value
+  // Set to null to resolve ID automatically, or provide a value to force a specific submission
   submissionId: null as string | null,
   grantProgram: "Default Grants Program",
   approvedAmount: "5000",
   supplierNumber: Cypress.env("environment") === "TEST" ? "2002712" : "2009366",
   paymentGroup: "Cheque" as const,
   testComment: "Test comment from automated regression test",
-  // Options for dynamic submission fetching (only used when submissionId is null)
-  // Results are sorted by submissionDate descending (latest first) by default
+  // Options used when fetching dynamically (ignored when submissionId is set or seeded file exists)
   fetchOptions: {
-    // Filter by category (required for this test)
     categoryFilter: "Data Seeder",
-    // Filter by status (uncomment to enable):
-    // Available: 'Submitted', 'Under Assessment', 'Approved', 'Closed', 'Deferred'
+    // Available statuses: 'Submitted', 'Under Assessment', 'Approved', 'Closed', 'Deferred'
     statusFilter: ["Submitted"],
-    // Limit to submissions within N days (uncomment to enable):
-    maxAge: 30,
-    // Which submission to use after sorting (0 = latest, 1 = second-latest, etc.)
-    // Use index > 0 to avoid picking the same submission as other concurrent tests
-    index: 0,
+    maxAge: 30, // Only consider submissions created within the last N days
+    index: 0, // 0 = latest; increment to avoid collision with concurrent tests
   },
 };
 
 (isProd ? describe.skip : describe)("Approval Flow Regression Test", () => {
-  // Page object instances (reused across all tests)
+  // Page object instances reused across all tests
   const listPage = new ApplicationsListPage();
   const detailsPage = new ApplicationDetailsPage();
   const reviewPage = new ReviewAssessmentPage();
   const rightTabPage = new ApplicationDetailsRightTabPage();
+  const navPage = new NavigationPage();
 
-  // Dynamic submission ID - populated after login
+  // Resolved after "Fetch submission ID from API" — shared across all subsequent tests
   let submissionId: string;
+
+  // ============ Shared Helpers ============
+
+  /** Navigate to the Payments tab and filter the table by submissionId. */
+  function navigateToPaymentsAndSearch(): void {
+    cy.reload();
+    navPage.goToPayments();
+    cy.location("pathname", { timeout: 20000 }).should("include", "Payment");
+    cy.get("#search", { timeout: 20000 })
+      .should("be.visible")
+      .clear()
+      .type(submissionId);
+    cy.contains("tr", submissionId, { timeout: 20000 }).should("exist");
+  }
+
+  /** Select the submissionId row and open the Approve Payments modal. */
+  function selectRowAndOpenApproveModal(): void {
+    cy.contains("tr", submissionId, { timeout: 20000 })
+      .find(".checkbox-select")
+      .click({ force: true });
+    cy.contains("button", "Approve", { timeout: 20000 })
+      .should("be.visible")
+      .click();
+    cy.contains(".modal-title", "Approve Payments", { timeout: 20000 }).should(
+      "be.visible",
+    );
+  }
+
+  /**
+   * Validate the Approve Payments modal fields, enter an auto-generated note,
+   * submit the approval and assert the modal closes.
+   * @param notePrefix - Short prefix to distinguish L1 vs L2 notes (max length enforced at 50 chars total)
+   */
+  function validateAndSubmitApproveModal(notePrefix: string): void {
+    cy.get("#ApplicationCount").should("have.value", "1");
+    cy.get("#UpdateTotalAmount").should("not.have.value", "0");
+    cy.get("#Note").should("be.visible");
+
+    const approvalNote = `${notePrefix}-${submissionId}-${Date.now()}`.slice(
+      0,
+      50,
+    );
+    cy.get("#Note").clear().type(approvalNote);
+
+    cy.get("#btnSubmitPayment")
+      .should("be.visible")
+      .and("not.be.disabled")
+      .click();
+
+    cy.contains(".modal-title", "Approve Payments", { timeout: 20000 }).should(
+      "not.exist",
+    );
+    cy.log(`✅ Payment approved with note: ${approvalNote}`);
+  }
+
+  // ============ Setup ============
 
   before(() => {
     Cypress.config("includeShadowDom", true);
@@ -67,18 +123,35 @@ const TEST_CONFIG = {
   // ============ Dynamic Submission Fetch ============
 
   it("Fetch submission ID from API", () => {
-    // Use static ID if provided, otherwise fetch dynamically
-    if (TEST_CONFIG.submissionId) {
-      submissionId = TEST_CONFIG.submissionId;
-      cy.log(`📌 Using static submission ID: ${submissionId}`);
-      return;
-    }
+    // Priority 1: ID written by the seed script when running test:approval-flow
+    cy.task("readJsonIfExists", "cypress/scripts/last-submission-id.json").then(
+      (result) => {
+        const seeded = result as {
+          submissionId?: string;
+          createdAt?: string;
+        } | null;
+        if (seeded?.submissionId) {
+          submissionId = seeded.submissionId;
+          cy.log(`📌 Using seeded submission ID: ${submissionId}`);
+          // Clear file to prevent reuse on the next standalone run
+          cy.writeFile("cypress/scripts/last-submission-id.json", {});
+          return;
+        }
 
-    // Fetch submission ID dynamically from API using session cookies
-    cy.fetchDynamicSubmission(TEST_CONFIG.fetchOptions).then((id) => {
-      submissionId = id;
-      cy.log(`✅ Fetched dynamic submission ID: ${submissionId}`);
-    });
+        // Priority 2: static override in TEST_CONFIG
+        if (TEST_CONFIG.submissionId) {
+          submissionId = TEST_CONFIG.submissionId;
+          cy.log(`📌 Using static submission ID: ${submissionId}`);
+          return;
+        }
+
+        // Priority 3: fetch the latest matching submission from the Unity API
+        cy.fetchDynamicSubmission(TEST_CONFIG.fetchOptions).then((id) => {
+          submissionId = id;
+          cy.log(`✅ Fetched dynamic submission ID: ${submissionId}`);
+        });
+      },
+    );
   });
 
   // ============ Navigation & Search ============
@@ -88,7 +161,6 @@ const TEST_CONFIG = {
   });
 
   it("Search for submission", () => {
-    // Ensure submissionId is available before searching
     expect(submissionId, "Submission ID should be set").to.exist;
     listPage
       .selectQuickDateRange("alltime")
@@ -115,11 +187,9 @@ const TEST_CONFIG = {
   });
 
   it("Create and complete assessment", () => {
-    // Wait for assessment section to load
-    cy.wait(2000);
+    cy.wait(2000); // Allow assessment section to fully load
     reviewPage.scrollToAssessmentList();
 
-    // Check if Create button exists and click it
     cy.get("body").then(($body) => {
       if ($body.find("#CreateButton").length > 0) {
         cy.get("#CreateButton").click({ force: true });
@@ -129,7 +199,6 @@ const TEST_CONFIG = {
       }
     });
 
-    // Check if Complete button exists and click it
     cy.get("body").then(($body) => {
       if ($body.find("#CompleteButton").length > 0) {
         cy.get("#CompleteButton").click({ force: true });
@@ -145,8 +214,7 @@ const TEST_CONFIG = {
   // ============ Payment Info ============
 
   it("Configure payment info", () => {
-    // Reload page to get fresh data and avoid concurrency issues
-    cy.reload();
+    cy.reload(); // Reload to get fresh data and avoid concurrency issues
     cy.wait(2000);
     detailsPage
       .goToPaymentInfoTab()
@@ -168,7 +236,6 @@ const TEST_CONFIG = {
   // ============ Comments & Attachments ============
 
   it("Add a comment", () => {
-    // Dismiss any error modals from previous steps
     detailsPage.dismissErrorModalIfPresent();
     rightTabPage
       .goToCommentsTab()
@@ -177,44 +244,153 @@ const TEST_CONFIG = {
   });
 
   it("Add an attachment", () => {
-    // Dismiss any error modals from previous steps
     detailsPage.dismissErrorModalIfPresent();
     rightTabPage.goToAttachmentsTab();
     cy.wait(1000); // Allow tab content to load
 
-    // Store initial count to verify upload
     rightTabPage.getAttachmentsCount().then((initialCount) => {
       cy.log(`Initial attachment count: ${initialCount}`);
 
-      // Generate unique filename to ensure new file is added
       const timestamp = Date.now();
       const uniqueFileName = `test-attachment-${timestamp}.txt`;
 
-      // Upload file with unique content
       rightTabPage.uploadUniqueAttachment(uniqueFileName, timestamp);
 
-      // Verify upload success
       cy.contains("Successful").should("be.visible");
-      cy.wait(2000); // Allow UI to update
+      cy.wait(2000); // Allow UI to update after upload
 
-      // Verify count increased
       rightTabPage.getAttachmentsCount().then((newCount) => {
         cy.log(`New attachment count: ${newCount}`);
         expect(newCount).to.be.greaterThan(initialCount);
       });
 
-      // Verify file appears in list
       rightTabPage.verifyAttachmentExists(uniqueFileName);
       cy.screenshot("attachment-upload-complete");
     });
   });
 
-  // ============ Approval Action ============
+  // ============ Application Approval ============
 
   it("Test approval workflow (confirm)", () => {
-    // Dismiss any error modals from previous steps
+    cy.reload(); // Refresh to ensure all changes are reflected before approval
     detailsPage.dismissErrorModalIfPresent();
     detailsPage.clickApprove().waitForConfirmModal().clickConfirm();
+  });
+
+  // ============ Post-Approval Verification ============
+
+  it("Navigate back to applications list", () => {
+    cy.visit(`${Cypress.env("webapp.url")}GrantApplications`);
+    listPage.switchToGrantProgram(TEST_CONFIG.grantProgram);
+  });
+
+  it("Verify application status is Approved", () => {
+    expect(submissionId, "Submission ID should be set").to.exist;
+    listPage
+      .selectQuickDateRange("alltime")
+      .waitForTableRefresh()
+      .searchForSubmission(submissionId);
+
+    cy.contains("tr", submissionId, { timeout: 20000 }).should(
+      "contain.text",
+      "Approved",
+    );
+  });
+
+  // ============ Payment Request ============
+
+  it("Select approved application and submit payment request", () => {
+    listPage.selectRowByText(submissionId).clickPaymentButtonWithWait();
+    listPage.waitForPaymentModalVisible();
+
+    // Description field has a max length of 40 chars
+    const paymentDescription = `AutoTest-${submissionId}`.slice(0, 40);
+
+    // Modal uses divs (not a table) — target description input by id suffix
+    cy.get("#payment-modal input[id$='__Description']")
+      .should("be.visible")
+      .clear()
+      .type(paymentDescription);
+
+    cy.contains("button", "Submit Payment Requests")
+      .should("be.visible")
+      .and("not.be.disabled")
+      .click();
+
+    cy.get("#payment-modal", { timeout: 20000 }).should("not.be.visible");
+    cy.log(`✅ Payment request submitted: ${paymentDescription}`);
+  });
+
+  // ============ L1 Payment Approval (User 1) ============
+
+  it("Navigate to Payments tab and search for submission", () => {
+    navigateToPaymentsAndSearch();
+  });
+
+  it("Select payment row and open Approve Payments modal", () => {
+    selectRowAndOpenApproveModal();
+  });
+
+  it("L1 Approval - Validate modal details, enter note and approve", () => {
+    validateAndSubmitApproveModal("AutoApproval");
+  });
+
+  // ============ L2 Payment Approval (User 2) ============
+
+  it("Logout user1 and login as user2 for L2 approval", () => {
+    cy.logout();
+    loginIfNeeded({
+      username: Cypress.env("test2username") as string,
+      password: Cypress.env("test2password") as string,
+    });
+  });
+
+  it("Navigate to Payments tab and search for submission (L2)", () => {
+    listPage.switchToGrantProgram(TEST_CONFIG.grantProgram);
+    navigateToPaymentsAndSearch();
+  });
+
+  it("Select payment row and open Approve Payments modal (L2)", () => {
+    selectRowAndOpenApproveModal();
+  });
+
+  it("L2 Approval - Validate modal details, enter note and approve", () => {
+    validateAndSubmitApproveModal("L2Approval");
+  });
+
+  // ============ Post-L2 Validation ============
+
+  it("Validate payment status and approval dates on Payments table", () => {
+    const today = listPage.getTodayIsoLocal();
+
+    // Re-search to ensure the table reflects the latest state after L2 approval
+    cy.get("#search", { timeout: 20000 })
+      .should("be.visible")
+      .clear()
+      .type(submissionId);
+
+    cy.contains("tr", submissionId, { timeout: 20000 }).should(($row) => {
+      const text = $row.text();
+      expect(
+        text.includes("Sent to Accounts Payable") ||
+          text.includes("Submitted to CAS"),
+        'Expected row to contain "Sent to Accounts Payable" or "Submitted to CAS"',
+      ).to.be.true;
+    });
+
+    // Validate date columns by resolving each column's index from its header title
+    ["Updated On", "L1 Approval Date", "L2 Approval Date"].forEach((header) => {
+      cy.get(".dt-scroll-head span.dt-column-title")
+        .contains(header)
+        .closest("th")
+        .invoke("index")
+        .then((colIndex) => {
+          cy.contains("tr", submissionId)
+            .find("td")
+            .eq(colIndex)
+            .should("contain.text", today);
+        });
+    });
   });
 
   // ============ Cleanup ============
