@@ -22,5 +22,5 @@ public interface IGrantApplicationAppService
     Task<string> HideAIAnalysisItemAsync(Guid applicationId, string itemId);
     Task<string> ShowAIAnalysisItemAsync(Guid applicationId, string itemId);
     Task<PagedResultDto<GrantApplicationDto>> GetListAsync(GrantApplicationListInputDto input);
-    Task<bool> IsApplicantRedStop(Guid applicationId);
+    Task<bool> IsApplicantRedStopAsync(Guid applicationId);
 }

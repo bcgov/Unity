@@ -16,7 +16,7 @@
                 let $dropdownToggle = $wrapper.find('#ApplicationActionDropdown .dropdown-toggle');
                 $dropdownToggle.attr({
                     'data-bs-toggle': 'popover',
-                    'data-bs-trigger': 'hover',
+                    'data-bs-trigger': 'hover focus',
                     'data-bs-placement': 'top'
                 });
                 let redstopPopover = new bootstrap.Popover($dropdownToggle[0]);

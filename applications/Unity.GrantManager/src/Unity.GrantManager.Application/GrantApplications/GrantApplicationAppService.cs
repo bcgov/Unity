@@ -955,11 +955,17 @@ public class GrantApplicationAppService(
         return form.AccountCodingId;
     }
 
-    public async Task<bool> IsApplicantRedStop(Guid applicationId)
+    
+
+    public async Task<bool> IsApplicantRedStopAsync(Guid applicationId)
     {
-        var application = await applicationRepository.GetAsync(applicationId, true) 
-            ?? throw new EntityNotFoundException($"Application with ID {applicationId} not found.");
-        var applicant = await applicantRepository.GetAsync(application.ApplicantId);
+        var application = await applicationRepository.GetAsync(applicationId, false);
+        return await IsApplicantRedStopInternalAsync(application);
+    }
+
+    private async Task<bool> IsApplicantRedStopInternalAsync(Application grantApplication)
+    {
+        var applicant = await applicantRepository.GetAsync(grantApplication.ApplicantId);
         return applicant.RedStop == true;
     }
 
@@ -982,7 +988,7 @@ public class GrantApplicationAppService(
 
         // NOTE: Authorization is applied on the AppService layer and is false by default
         // AUTHORIZATION HANDLING
-        bool isRedStop = await IsApplicantRedStop(applicationId);
+        bool isRedStop = application.Applicant != null && await IsApplicantRedStopInternalAsync(application);
         foreach (var item in actionDtos)
         {
             item.IsPermitted = !isRedStop && item.IsPermitted && (await AuthorizationService.IsGrantedAsync(application, GetActionAuthorizationRequirement(item.ApplicationAction)));
@@ -1012,7 +1018,7 @@ public class GrantApplicationAppService(
         }
 
         // RED STOP CHECK: Block all status actions when the applicant has RedStop = true
-        if (await IsApplicantRedStop(applicationId))
+        if (await IsApplicantRedStopInternalAsync(application))
         {
             throw new UserFriendlyException(L["GrantApplication:ActionButton.RedStopWarning"]);
         }

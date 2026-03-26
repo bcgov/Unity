@@ -29,7 +29,7 @@ public class ApplicationActionWidget : AbpViewComponent
         {
             ApplicationId = applicationId,
             ApplicationActions = await _applicationAppService.GetActions(applicationId),
-            IsRedStop = await _applicationAppService.IsApplicantRedStop(applicationId)
+            IsRedStop = await _applicationAppService.IsApplicantRedStopAsync(applicationId)
         };
 
         return View(viewModel);
