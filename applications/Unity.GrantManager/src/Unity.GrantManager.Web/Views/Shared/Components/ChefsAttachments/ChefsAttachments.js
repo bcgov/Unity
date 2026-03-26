@@ -187,8 +187,11 @@ $(function () {
                     $(row).after(summaryRow);
                 }
             },
+            externalFilterButtonId: 'btn-toggle-filter-submissions',
         })
     );
+
+    initializeFilterRowPlugin(chefsDataTable, 'btn-toggle-filter-submissions');
 
     PubSub.subscribe('refresh_chefs_attachment_list', (msg, data) => {
         chefsDataTable.ajax.reload();

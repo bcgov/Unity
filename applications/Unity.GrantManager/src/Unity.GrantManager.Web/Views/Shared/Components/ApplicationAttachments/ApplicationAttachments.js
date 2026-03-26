@@ -90,8 +90,11 @@ $(function () {
                     orderable: false
                 }
             ],
+            externalFilterButtonId: 'btn-toggle-filter-uploads',
         })
     );
+
+    initializeFilterRowPlugin(dataTable, 'btn-toggle-filter-uploads');
 
     dataTable.on('click', 'tbody tr', function (e) {
         e.currentTarget.classList.toggle('selected');
