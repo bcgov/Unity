@@ -2,6 +2,7 @@ using Unity.AI.Localization;
 using Volo.Abp.Authorization.Permissions;
 using Volo.Abp.Localization;
 using Volo.Abp.Features;
+using Volo.Abp.SettingManagement;
 
 namespace Unity.AI.Permissions;
 
@@ -34,6 +35,12 @@ public class AIPermissionDefinitionProvider : PermissionDefinitionProvider
                 AIPermissions.ScoringAssistant.ScoringAssistantDefault,
                 L("Permission:AI.ScoringAssistant"))
                  .RequireFeatures("Unity.AI.Scoring");
+
+            var settingManagement = context.GetGroup(SettingManagementPermissions.GroupName);
+            settingManagement.AddPermission(
+                AIPermissions.Configuration.ConfigureAI,
+                L("Permission:AI.ConfigureAI"))
+                .RequireFeatures("Unity.AI.Scoring");
 
     }
 

@@ -122,7 +122,7 @@ BEGIN
                     column_list := column_list || format('NULL::NUMERIC AS %I', column_name);
                 WHEN 'currency' THEN
                     column_list := column_list || format('NULL::DECIMAL(18,2) AS %I', column_name);
-                WHEN 'option', 'checkbox', 'radio' THEN
+                WHEN 'option', 'checkbox' THEN
                     column_list := column_list || format('NULL::BOOLEAN AS %I', column_name);
                 ELSE
                     column_list := column_list || format('NULL::TEXT AS %I', column_name);
@@ -229,7 +229,7 @@ BEGIN
                             ELSE (%s%s)::TEXT
                         END)', '{}', json_path, '{}', json_path, '{}', json_path, '{}', json_path);
                         
-                    WHEN 'option', 'checkbox', 'radio' THEN
+                    WHEN 'option', 'checkbox' THEN
                         IF json_path LIKE '%->%' THEN
                             json_path := regexp_replace(json_path, '->([^>]+)$', '->>\1');
                         ELSE
@@ -245,7 +245,7 @@ BEGIN
                             END
                             ELSE (%s%s)::TEXT
                         END)', '{}', json_path, '{}', json_path, '{}', json_path, '{}', json_path, '{}', json_path, '{}', json_path);
-                        
+
                     ELSE
                         -- Default to text
                         IF json_path LIKE '%->%' THEN
@@ -290,7 +290,7 @@ BEGIN
                             ELSE NULL
                         END)', '{}', json_path, '{}', json_path, '{}', json_path);
                         
-                    WHEN 'option', 'checkbox', 'radio' THEN
+                    WHEN 'option', 'checkbox' THEN
                         IF json_path LIKE '%->%' THEN
                             json_path := regexp_replace(json_path, '->([^>]+)$', '->>\1');
                         ELSE
@@ -306,7 +306,7 @@ BEGIN
                                 END
                             ELSE NULL
                         END)', '{}', json_path, '{}', json_path, '{}', json_path, '{}', json_path);
-                        
+
                     ELSE
                         -- Default to text
                         IF json_path LIKE '%->%' THEN
@@ -350,7 +350,7 @@ BEGIN
                             format('NULL::DECIMAL\(18,2\) AS %I([^_A-Za-z0-9]|$)', column_name),
                             format('%s AS %I\1', replace(data_path, '{}', current_source_prefix), column_name)
                         );
-                    WHEN 'option', 'checkbox', 'radio' THEN
+                    WHEN 'option', 'checkbox' THEN
                         legacy_select_clause := regexp_replace(legacy_select_clause,
                             format('NULL::BOOLEAN AS %I([^_A-Za-z0-9]|$)', column_name),
                             format('%s AS %I\1', replace(data_path, '{}', legacy_source_prefix), column_name)
@@ -550,7 +550,7 @@ BEGIN
                                 format('%s AS %I', replace(data_path, '{}', current_source_prefix), column_name)
                             );
                             
-                        WHEN 'option', 'checkbox', 'radio' THEN
+                        WHEN 'option', 'checkbox' THEN
                             IF json_path LIKE '%->%' THEN
                                 json_path := regexp_replace(json_path, '->([^>]+)$', '->>\1');
                             ELSE
@@ -566,7 +566,7 @@ BEGIN
                                     END
                                 ELSE NULL
                             END)', '{}', json_path, '{}', json_path, '{}', json_path, '{}', json_path);
-                            
+
                             legacy_select_clause := replace(legacy_select_clause,
                                 format('NULL::BOOLEAN AS %I', column_name),
                                 format('%s AS %I', replace(data_path, '{}', legacy_source_prefix), column_name)
@@ -575,7 +575,7 @@ BEGIN
                                 format('NULL::BOOLEAN AS %I', column_name),
                                 format('%s AS %I', replace(data_path, '{}', current_source_prefix), column_name)
                             );
-                            
+
                         ELSE
                             -- Default to text
                             IF json_path LIKE '%->%' THEN

@@ -10,7 +10,9 @@ using System.Linq;
 using System.Threading.Tasks;
 using Unity.GrantManager.Attachments;
 using Unity.GrantManager.Intakes;
+using Unity.Notifications.Emails;
 using Volo.Abp.AspNetCore.Mvc;
+using Volo.Abp.MultiTenancy;
 using Volo.Abp.Validation;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -24,17 +26,26 @@ namespace Unity.GrantManager.Controllers
         private readonly IFileAppService _fileAppService;
         private readonly IConfiguration _configuration;
         private readonly ISubmissionAppService _submissionAppService;
+        private readonly IEmailLogAttachmentUploadService _emailLogAttachmentUploadService;
+        private readonly ICurrentTenant _currentTenant;
         private ILogger logger => LazyServiceProvider.LazyGetService<ILogger>(provider => LoggerFactory?.CreateLogger(GetType().FullName!) ?? NullLogger.Instance);
         private const string badRequestFileMsg = "File name must be provided.";
         private const string NotFoundFileMsg = "File not found.";
         private const string errorFileMsg = "An error occurred while downloading the file.";
         private const string chefsApiAccessError = "You do not have access to this resource";
 
-        public AttachmentController(IFileAppService fileAppService, IConfiguration configuration, ISubmissionAppService submissionAppService)
+        public AttachmentController(
+            IFileAppService fileAppService,
+            IConfiguration configuration,
+            ISubmissionAppService submissionAppService,
+            IEmailLogAttachmentUploadService emailLogAttachmentUploadService,
+            ICurrentTenant currentTenant)
         {
             _fileAppService = fileAppService;
             _configuration = configuration;
             _submissionAppService = submissionAppService;
+            _emailLogAttachmentUploadService = emailLogAttachmentUploadService;
+            _currentTenant = currentTenant;
         }
 
         [HttpGet("application/{applicationId}/download/{fileName}")]
@@ -248,6 +259,79 @@ namespace Unity.GrantManager.Controllers
             }
 
             return await UploadFiles(files);
+        }
+
+        [HttpPost("email/{emailLogId}/upload")]
+        public async Task<IActionResult> UploadEmailAttachments(Guid emailLogId, IList<IFormFile> files)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            if (files == null || files.Count == 0)
+            {
+                return BadRequest("At least one file must be provided.");
+            }
+
+            List<ValidationResult> invalidFileTypes = GetInvalidFileTypes(files);
+            if (invalidFileTypes.Count > 0)
+            {
+                throw new AbpValidationException(message: "ERROR: Invalid File Type.", validationErrors: invalidFileTypes);
+            }
+
+            var emailAttachmentMaxFileSizeConfig = _configuration["S3:EmailAttachmentMaxFileSize"] ?? "20";
+            if (double.TryParse(emailAttachmentMaxFileSizeConfig, out double maxFileSizeMB))
+            {
+                var oversizedFiles = files.Where(f => f.Length * 0.000001 > maxFileSizeMB).ToList();
+                if (oversizedFiles.Count > 0)
+                {
+                    var sizeErrors = oversizedFiles.Select(f =>
+                        new ValidationResult($"File '{f.FileName}' exceeds the maximum allowed size of {maxFileSizeMB} MB for email attachments.", [f.FileName])
+                    ).ToList();
+                    throw new AbpValidationException("One or more files exceed the maximum allowed size for email attachments.", sizeErrors);
+                }
+            }
+
+            var totalMaxFileSizeConfig = _configuration["S3:EmailAttachmentsTotalMaxFileSize"] ?? "25";
+            if (double.TryParse(totalMaxFileSizeConfig, out double totalMaxSizeMB))
+            {
+                long existingTotalBytes = await _emailLogAttachmentUploadService
+                    .GetTotalFileSizeByEmailLogIdAsync(emailLogId);
+                long newFilesBytes = files.Sum(f => f.Length);
+                double combinedMB = (existingTotalBytes + newFilesBytes) * 0.000001;
+
+                if (combinedMB > totalMaxSizeMB)
+                {
+                    throw new AbpValidationException(
+                        $"The total size of all attachments ({combinedMB:F1} MB) would exceed the maximum allowed {totalMaxSizeMB} MB for email attachments. Please remove existing attachments or select a smaller file.",
+                        [new ValidationResult("Total attachment size exceeds the allowed limit.")]);
+                }
+            }
+
+            var results = new List<object>();
+            foreach (var file in files)
+            {
+                try
+                {
+                    using var ms = new MemoryStream();
+                    await file.CopyToAsync(ms);
+                    var dto = await _emailLogAttachmentUploadService.UploadAsync(
+                        emailLogId,
+                        _currentTenant.Id,
+                        file.FileName,
+                        ms.ToArray(),
+                        file.ContentType ?? "application/octet-stream");
+                    results.Add(dto);
+                }
+                catch (Exception ex)
+                {
+                    logger.LogError(ex, "AttachmentController->UploadEmailAttachments: Failed to upload {FileName}", file.FileName);
+                    return StatusCode(500, $"Failed to upload {file.FileName}: {ex.Message}");
+                }
+            }
+
+            return Ok(results);
         }
 
         private async Task<IActionResult> UploadFiles(IList<IFormFile> files)

@@ -1,5 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using System.Linq;
+using Unity.AI.Domain;
+using Unity.AI.EntityFrameworkCore;
 using Unity.GrantManager.Applicants;
 using Unity.GrantManager.Locality;
 using Unity.GrantManager.Tokens;
@@ -47,6 +49,9 @@ public class GrantManagerDbContext :
     public DbSet<InboxMessage> InboxMessages { get; set; }
     public DbSet<OutboxMessage> OutboxMessages { get; set; }
 
+    // Unity.AI entities
+    public DbSet<AIPrompt> AIPrompts { get; set; }
+    public DbSet<AIPromptVersion> AIPromptVersions { get; set; }
 
     #region Entities from the modules
 
@@ -97,6 +102,9 @@ public class GrantManagerDbContext :
 
         // Adds Quartz.NET PostgreSQL schema to EntityFrameworkCore
         modelBuilder.AddQuartz(builder => builder.UsePostgreSql("qrtz_", null));
+
+        // Unity.AI tables
+        modelBuilder.ConfigureAI();
 
         /* Configure your own tables/entities inside here */
         modelBuilder.Entity<CasClientCode>(b =>

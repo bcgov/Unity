@@ -267,6 +267,7 @@ flowchart TD
 - `ICurrentTenant` — for multi-tenant scoping
 - `IRepository<ApplicationFormSubmission>` — form submissions
 - `IRepository<Application>` — applications
+- `IRepository<ApplicationForm>` — application forms (for form name)
 - `IRepository<ApplicationStatus>` — status records
 - `IEndpointManagementAppService` — resolves the CHEFS API base URL
 - `ILogger<SubmissionInfoDataProvider>` — logging
@@ -277,13 +278,14 @@ flowchart TD
 2. Resolves the **CHEFS form view URL** from the `INTAKE_API_BASE` dynamic URL setting:
    - Fetches the base URL (e.g. `https://chefs-dev.apps.silver.devops.gov.bc.ca/app/api/v1`)
    - Strips the trailing `/api/v1` segment
-   - Appends `/form/view?s=` to create the view link template
+   - Appends `/user/view?s=` to create the view link template
    - Falls back to an empty string on failure.
 3. Switches to the requested tenant context.
-4. Queries `ApplicationFormSubmission` → `Application` → `ApplicationStatus` where `OidcSub` matches.
+4. Queries `ApplicationFormSubmission` → `Application` → `ApplicationForm` → `ApplicationStatus` where `OidcSub` matches.
 5. Maps each result to a `SubmissionInfoItemDto`:
    - `ReceivedTime` = the submission's `CreationTime` in the system.
    - `SubmissionTime` = the `createdAt` timestamp parsed from the CHEFS JSON payload; falls back to `CreationTime` if parsing fails.
+   - `Type` = the `ApplicationFormName` from the joined `ApplicationForm` record.
    - `Status` = the `ExternalStatus` from the application status record.
    - `LinkId` = the `ChefsSubmissionGuid` used to build a direct link to the form.
 
@@ -299,7 +301,7 @@ flowchart TD
     subgraph URLResolution["CHEFS Form View URL Resolution"]
         U1["Fetch INTAKE_API_BASE<br/>via IEndpointManagementAppService"]
         U2["Strip trailing /api/v1"]
-        U3["Append /form/view?s="]
+        U3["Append /user/view?s="]
         U4["Set as dto.LinkSource"]
         U1 --> U2 --> U3 --> U4
     end
@@ -309,14 +311,15 @@ flowchart TD
     subgraph Query["Submission Query"]
         Q1["ApplicationFormSubmission<br/>WHERE OidcSub = normalized"]
         Q2["JOIN Application<br/>ON Submission.ApplicationId = Application.Id"]
+        Q2b["JOIN ApplicationForm<br/>ON Application.ApplicationFormId = Form.Id"]
         Q3["JOIN ApplicationStatus<br/>ON Application.ApplicationStatusId = Status.Id"]
-        Q4["SELECT Id, ChefsSubmissionGuid,<br/>CreationTime, Submission JSON,<br/>ReferenceNo, ProjectName, ExternalStatus"]
-        Q1 --> Q2 --> Q3 --> Q4
+        Q4["SELECT Id, ChefsSubmissionGuid,<br/>CreationTime, Submission JSON,<br/>ReferenceNo, ApplicationFormName, ExternalStatus"]
+        Q1 --> Q2 --> Q2b --> Q3 --> Q4
     end
 
     Tenant --> Q1
 
-    Q4 --> MapItems["Map to SubmissionInfoItemDto<br/>ReceivedTime = CreationTime<br/>SubmissionTime = parse JSON createdAt<br/>Status = ExternalStatus<br/>LinkId = ChefsSubmissionGuid"]
+    Q4 --> MapItems["Map to SubmissionInfoItemDto<br/>ReceivedTime = CreationTime<br/>SubmissionTime = parse JSON createdAt<br/>Type = ApplicationFormName<br/>Status = ExternalStatus<br/>LinkId = ChefsSubmissionGuid"]
 
     U4 --> Result
     MapItems --> Result([Return ApplicantSubmissionInfoDto])
@@ -428,7 +431,7 @@ flowchart LR
 | DTO Field | Source | Type | Description |
 |-----------|--------|------|-------------|
 | `Id` | `PaymentRequest.Id` | `Guid` | Payment request identifier |
-| `PaymentNumber` | `PaymentRequest.PaymentNumber` | `string` | CAS payment number (empty string if null) |
+| `PaymentNumber` | `PaymentRequest.InvoiceNumber` | `string` | CAS invoice number (empty string if null) |
 | `ReferenceNo` | `Application.ReferenceNo` | `string` | Application reference number, resolved via `CorrelationId → Application` lookup |
 | `Amount` | `PaymentRequest.Amount` | `decimal` | Requested payment amount |
 | `PaymentDate` | `PaymentRequest.PaymentDate` | `string?` | Date string populated during CAS reconciliation |

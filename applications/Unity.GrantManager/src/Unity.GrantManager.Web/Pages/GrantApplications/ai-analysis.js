@@ -79,7 +79,7 @@ function normalizeFindings(items, fallbackType) {
     };
 
     return (items || [])
-        .filter(item => item)
+        .filter(Boolean)
         .map((item, index) => ({
             ...item,
             id: item.id || `${fallbackType}-${index}`,
@@ -391,9 +391,9 @@ function tryParseRawAnalysis(analysisJson) {
     }
 }
 
-globalThis.regenerateAIAnalysis = function(capturePromptIo = false, triggerButton = null) {
+globalThis.queueApplicationAnalysis = function(triggerButton = null) {
     const applicationId = $('#DetailsViewApplicationId').val();
-    const $button = triggerButton ? $(triggerButton) : $('#regenerateAiAnalysis');
+    const $button = triggerButton ? $(triggerButton) : $('#regenerateApplicationAnalysis');
     const existingHtml = $button.html();
     const promptVersion = globalThis.getSelectedPromptVersion?.() || null;
 
@@ -401,31 +401,17 @@ globalThis.regenerateAIAnalysis = function(capturePromptIo = false, triggerButto
         return;
     }
 
-    if (!capturePromptIo && globalThis.hideAIPromptCapture) {
-        globalThis.hideAIPromptCapture('#aiAnalysisPromptCaptureContainer', '#aiAnalysisPromptCaptureOutput');
-    }
-
     $button
-        .html('<span class="ai-button-content"><span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span><span>Generating...</span></span>')
+        .html('<span class="ai-button-content"><span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span><span>Queueing...</span></span>')
         .prop('disabled', true);
 
-    unity.grantManager.grantApplications.applicationAIAnalysis
-        .generateAIAnalysis(applicationId, promptVersion, capturePromptIo)
+    unity.grantManager.grantApplications.applicationAnalysis
+        .generateApplicationAnalysis(applicationId, promptVersion)
         .then(function() {
-            abp.notify.success('AI analysis refreshed successfully.');
-            loadAIAnalysis();
-            if (capturePromptIo && globalThis.loadAIPromptCapture) {
-                return globalThis.loadAIPromptCapture(
-                    applicationId,
-                    'ApplicationAnalysis',
-                    promptVersion,
-                    '#aiAnalysisPromptCaptureContainer',
-                    '#aiAnalysisPromptCaptureOutput'
-                );
-            }
+            abp.notify.success('AI analysis queued. Refresh later to see updated results.');
         })
         .catch(function() {
-            abp.message.error('Failed to refresh AI analysis. Please try again.');
+            abp.message.error('Failed to queue AI analysis. Please try again.');
         })
         .always(function() {
             $button.html(existingHtml).prop('disabled', false);
@@ -465,10 +451,10 @@ function loadAIAnalysis() {
 }
 
 $(function() {
-    const $regenerateButton = $('#regenerateAiAnalysis');
+    const $regenerateButton = $('#regenerateApplicationAnalysis');
     if ($regenerateButton.length > 0) {
         $regenerateButton.on('click', function() {
-            regenerateAIAnalysis();
+            queueApplicationAnalysis();
         });
     }
 });

@@ -3,12 +3,12 @@ $(document).ready(function () {
     initializeApplicantDetailsPage();
     scheduleInitialLayoutPasses();
 
-    window.addEventListener('applicant-submissions-layout-changed', function () {
+    globalThis.addEventListener('applicant-submissions-layout-changed', function () {
         applyTabHeightOffset();
         debouncedResizeAwareDataTables();
         scheduleDeferredLayoutPass();
     });
-    window.addEventListener('applicant-addresses-layout-changed', function () {
+    globalThis.addEventListener('applicant-addresses-layout-changed', function () {
         applyTabHeightOffset();
         debouncedResizeAwareDataTables();
         scheduleDeferredLayoutPass();
@@ -16,7 +16,7 @@ $(document).ready(function () {
 
     // Handle breadcrumb back button
     $('#goBackToApplicants').on('click', function () {
-        window.location.href = '/GrantApplicants';
+        globalThis.location.href = '/GrantApplicants';
     });
 
     // Handle tab switching animations
@@ -61,7 +61,7 @@ function initializeApplicantDetailsPage() {
     }, 500);
 
     // Initialize tooltips if any
-    let tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    let tooltipTriggerList = Array.prototype.slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
     tooltipTriggerList.map(function (tooltipTriggerEl) {
         return new bootstrap.Tooltip(tooltipTriggerEl);
     });
@@ -71,9 +71,8 @@ function initializeApplicantDetailsPage() {
 function debounce(func, wait) {
     let timeout;
     return function (...args) {
-        const context = this;
         clearTimeout(timeout);
-        timeout = setTimeout(() => func.apply(context, args), wait);
+        timeout = setTimeout(() => func.apply(this, args), wait);
     };
 }
 
@@ -296,7 +295,7 @@ function getAvailableViewportHeight(element, minHeight) {
     const bottomSpacing = 12;
     return Math.max(
         minHeight,
-        Math.floor(window.innerHeight - element.getBoundingClientRect().top - bottomSpacing)
+        Math.floor(globalThis.innerHeight - element.getBoundingClientRect().top - bottomSpacing)
     );
 }
 
@@ -347,8 +346,8 @@ function initializeResizableDivider() {
     };
 
     const restoreDividerPosition = () => {
-        const savedPercentage = parseFloat(localStorage.getItem(storageKey));
-        if (isNaN(savedPercentage)) {
+        const savedPercentage = Number.parseFloat(localStorage.getItem(storageKey));
+        if (Number.isNaN(savedPercentage)) {
             return;
         }
 
@@ -368,8 +367,8 @@ function initializeResizableDivider() {
         document.body.style.cursor = 'col-resize';
     });
 
-    window.addEventListener('resize', restoreDividerPosition);
-    window.addEventListener('resize', applyTabHeightOffset);
+    globalThis.addEventListener('resize', restoreDividerPosition);
+    globalThis.addEventListener('resize', applyTabHeightOffset);
 }
 
 function initCommentsWidget() {

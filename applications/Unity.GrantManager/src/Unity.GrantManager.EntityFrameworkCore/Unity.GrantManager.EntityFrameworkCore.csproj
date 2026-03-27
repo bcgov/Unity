@@ -44,6 +44,7 @@
 		<ProjectReference Include="..\..\modules\Unity.Payments\src\Unity.Payments.Application\Unity.Payments.Application.csproj" />
 		<ProjectReference Include="..\..\modules\Unity.Reporting\src\Unity.Reporting.Application\Unity.Reporting.Application.csproj" />
 		<ProjectReference Include="..\..\modules\Unity.AI\src\Unity.AI.Application\Unity.AI.Application.csproj" />
+		<ProjectReference Include="..\Unity.GrantManager.Domain.Shared\Unity.GrantManager.Domain.Shared.csproj" />
 		<ProjectReference Include="..\Unity.GrantManager.Domain\Unity.GrantManager.Domain.csproj" />
 		<PackageReference Include="AppAny.Quartz.EntityFrameworkCore.Migrations.PostgreSQL" Version="0.5.1" />
 		<PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.5">

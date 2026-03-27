@@ -1,0 +1,37 @@
+@page
+@using Unity.AI.Localization
+@using Unity.AI.Web.Pages.Prompts
+@using Microsoft.Extensions.Localization
+@using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal
+@model EditModalModel
+@inject IStringLocalizer<AIResource> L
+@{
+    Layout = null;
+}
+
+<abp-dynamic-form abp-model="Prompt" asp-page="/Prompts/EditModal">
+    <abp-modal>
+        <abp-modal-header title="@L["AIPrompt"].Value"></abp-modal-header>
+        <abp-modal-body>
+            <abp-input asp-for="Id" />
+            <abp-form-content />
+        </abp-modal-body>
+        <abp-modal-footer>
+            <button class="btn btn-primary" data-busy-text="Saving..." type="submit">Save</button>
+            <button class="btn btn-secondary" data-bs-dismiss="modal" type="button">Cancel</button>
+        </abp-modal-footer>
+    </abp-modal>
+</abp-dynamic-form>
+
+<hr />
+
+<div class="container-fluid px-0">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <h6>@L["AIPromptVersions"]</h6>
+        <button id="addVersionBtn" class="btn btn-sm btn-outline-primary" type="button"
+                data-prompt-id="@Model.Id">
+            + Add Version
+        </button>
+    </div>
+    <abp-table id="VersionsTable"></abp-table>
+</div>

@@ -61,7 +61,7 @@ namespace Unity.GrantManager.ApplicantProfile
                 dto.Payments.AddRange(paymentDetails.Select(p => new PaymentInfoItemDto
                 {
                     Id = p.Id,
-                    PaymentNumber = p.PaymentNumber ?? string.Empty,
+                    PaymentNumber = p.InvoiceNumber,
                     ReferenceNo = applicationLookup.TryGetValue(p.CorrelationId, out var refNo) ? refNo : string.Empty,
                     Amount = p.Amount,
                     PaymentDate = p.PaymentDate,

@@ -32,6 +32,12 @@ public class EmailNotificationService(
         System.Text.Encodings.Web.UrlEncoder urlEncoder) : ApplicationService, IEmailNotificationService
 {
 
+    public async Task<Guid> InitializeDraftAsync(Guid applicationId)
+    {
+        var emailLog = await emailNotificationManager.CreateDraftEmailLogAsync(applicationId);
+        return emailLog.Id;
+    }
+
     public async Task DeleteEmail(Guid id)
     {
         await emailNotificationManager.DeleteEmailLogAsync(id);

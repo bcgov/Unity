@@ -1,6 +1,6 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
-using Unity.GrantManager.AI;
+using Unity.GrantManager.AI.Responses;
 using Unity.GrantManager.ApplicationForms;
 using Volo.Abp.Application.Dtos;
 
@@ -85,4 +85,5 @@ public class GrantApplicationDto : AuditedEntityDto<Guid>
     public string? ApplicantElectoralDistrict { get; set; }
     public string? AIAnalysis { get; set; }
     public ApplicationAnalysisResponse? AIAnalysisData { get; set; }
+    public string? AIScoresheetAnswers { get; set; }
 }

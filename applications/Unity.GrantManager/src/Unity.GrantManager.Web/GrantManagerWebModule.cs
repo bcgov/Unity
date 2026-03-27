@@ -171,6 +171,9 @@ public class GrantManagerWebModule : AbpModule
                 )
             );
 
+            options.IsEnabledForAnonymousUsers = true;
+            options.IsEnabledForIntegrationServices = true; // Enable auditing for background jobs and message consumers
+
             options.EntityHistorySelectors.Add(
                 new NamedTypeSelector(
                  "ExplictEntityAudit",
@@ -179,7 +182,8 @@ public class GrantManagerWebModule : AbpModule
 
                      if (type.Name.Contains("Role", StringComparison.OrdinalIgnoreCase)
                         || type.Name.Contains("User", StringComparison.OrdinalIgnoreCase)
-                        || type.Name.Contains("Permission", StringComparison.OrdinalIgnoreCase))
+                        || type.Name.Contains("Permission", StringComparison.OrdinalIgnoreCase)
+                        || type.Name.Contains("Payment", StringComparison.OrdinalIgnoreCase))
                      {
                          return true;
                      }
@@ -200,6 +204,13 @@ public class GrantManagerWebModule : AbpModule
         Configure<AbpAspNetCoreAuditingOptions>(options =>
         {
             options.IgnoredUrls.AddIfNotContains("/healthz");
+        });
+
+        Configure<AbpErrorPageOptions>(options =>
+        {
+            options.ErrorViewUrls["404"] = "/Error?httpStatusCode=404";
+            options.ErrorViewUrls["403"] = "/Error?httpStatusCode=403";
+            options.ErrorViewUrls["500"] = "/Error?httpStatusCode=500";
         });
 
         Configure<SettingManagementPageOptions>(options =>
@@ -543,16 +554,13 @@ public class GrantManagerWebModule : AbpModule
 
         if (!env.IsProduction())
         {
-            app.UseDeveloperExceptionPage();
             IdentityModelEventSource.ShowPII = true;
         }
 
         app.UseAbpRequestLocalization();
 
-        if (env.IsProduction())
-        {
-            app.UseErrorPage();
-        }
+        app.UseStatusCodePagesWithReExecute("/Error", "?httpStatusCode={0}");
+        app.UseErrorPage();
 
         if (Convert.ToBoolean(configuration["AuthServer:IsBehindTlsTerminationProxy"]))
         {

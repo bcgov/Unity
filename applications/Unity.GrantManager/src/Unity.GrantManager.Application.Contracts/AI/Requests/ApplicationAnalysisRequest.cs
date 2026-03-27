@@ -1,8 +1,9 @@
 using System.Collections.Generic;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Unity.GrantManager.AI.Models;
 
-namespace Unity.GrantManager.AI
+namespace Unity.GrantManager.AI.Requests
 {
     public class ApplicationAnalysisRequest
     {
@@ -17,11 +18,5 @@ namespace Unity.GrantManager.AI
 
         [JsonPropertyName("promptVersion")]
         public string? PromptVersion { get; set; }
-
-        [JsonPropertyName("capturePromptIo")]
-        public bool CapturePromptIo { get; set; }
-
-        [JsonPropertyName("captureContextId")]
-        public string? CaptureContextId { get; set; }
     }
 }

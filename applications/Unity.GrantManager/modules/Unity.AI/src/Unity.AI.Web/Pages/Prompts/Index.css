@@ -1,0 +1,122 @@
+/* ── Split-pane container ─────────────────────────────────────────────────── */
+.prompts-split-container {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    min-height: 400px;
+    gap: 0;
+    /* No fixed height — lets the DataTable footer and page footer remain visible */
+}
+
+/* ── Left pane ────────────────────────────────────────────────────────────── */
+.prompts-left-pane {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    transition: none;
+}
+
+/* ── Drag divider ─────────────────────────────────────────────────────────── */
+.prompts-split-divider {
+    display: none;
+    width: 7px;
+    flex-shrink: 0;
+    cursor: col-resize;
+    background: #dee2e6;
+    border-left: 1px solid #ced4da;
+    border-right: 1px solid #ced4da;
+    position: sticky;
+    top: 10px;
+    height: calc(100vh - 190px);
+    z-index: 10;
+    transition: background 0.15s;
+}
+
+.prompts-split-divider::after {
+    content: '⋮';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: #868e96;
+    font-size: 20px;
+    line-height: 1;
+    pointer-events: none;
+}
+
+.prompts-split-divider:hover,
+.prompts-split-divider.dragging {
+    background: #adb5bd;
+}
+
+.prompts-split-container.split-active .prompts-split-divider {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* ── Right pane ───────────────────────────────────────────────────────────── */
+.prompts-right-pane {
+    flex-shrink: 0;
+    width: 52%;
+    min-width: 300px;
+    max-width: 80%;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    /* Sticky so the editor stays visible as the left-pane table grows */
+    position: sticky;
+    top: 10px;
+    /* Explicit height (not max-height) so h-100 on the inner card resolves correctly */
+    height: calc(100vh - 190px);
+}
+
+/* ── Version editor header ────────────────────────────────────────────────── */
+.version-editor-header {
+    background: #f8f9fa;
+    flex-shrink: 0;
+}
+
+.version-select {
+    min-width: 160px;
+    max-width: 220px;
+}
+
+/* ── Version editor form body ─────────────────────────────────────────────── */
+.version-editor-body {
+    flex: 1 1 0;      /* 0 basis so flex shrinks below content natural size */
+    min-height: 0;    /* required for overflow-y:auto to work inside a flex column */
+    overflow-y: auto;
+}
+
+/* ── Resizable textareas ──────────────────────────────────────────────────── */
+.version-textarea {
+    resize: vertical;
+    min-height: 72px;
+    font-size: 0.82rem;
+    line-height: 1.5;
+}
+
+.version-textarea--code {
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+}
+
+.version-textarea--json {
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+    min-height: 120px;
+}
+
+/* ── Row selection ────────────────────────────────────────────────────────── */
+#AIPromptsTable tbody tr {
+    cursor: pointer;
+}
+
+#AIPromptsTable tbody tr.prompt-selected td {
+    background-color: #cfe2ff !important;
+}
+
+/* ── Drag ghost (prevent text selection while dragging) ───────────────────── */
+body.split-dragging {
+    cursor: col-resize !important;
+    user-select: none !important;
+}

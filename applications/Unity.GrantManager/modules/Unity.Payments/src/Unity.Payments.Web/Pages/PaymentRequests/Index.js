@@ -43,14 +43,30 @@ $(function () {
         {
             text: 'Check Status',
             className: 'custom-table-btn flex-none btn btn-secondary payment-check-status',
+            attr: {
+                'data-selector': 'batch-payment-table-actions'
+            },
             action: function (e, dt, node, config) {
+                if (!dt.rows({ selected: true }).any() || !selectedPaymentIds || selectedPaymentIds.length === 0) {
+                    abp.notify.info('No Payment Requests were selected for this action.')
+                    return;
+                }
+
                 $.ajax({
                     url: '/api/app/payment-request/manually-add-payment-requests-to-reconciliation-queue',
                     method: 'POST',
                     contentType: 'application/json',
                     data: JSON.stringify(selectedPaymentIds)
                 })
-                .done(() => abp.notify.success('The Status Check has been sent for verification to CFS. Please refresh this page to check for Status updates.'))
+                .done(() => {
+                    abp.notify.success('The Status Check has been sent for verification to CFS. Please refresh this page to check for Status updates.');
+                    $(".select-all-payments").prop("checked", false);
+                    payment_approve_buttons.disable();
+                    payment_check_status_buttons.disable();
+                    history_button.disable();
+                    selectedPaymentIds = [];
+                    PubSub.publish("deselect_batchpayment_application", "reset_data");
+                })
                 .fail(() => abp.notify.error(l('Failed To Add To Reconciliation Queue')));
             }
         },
@@ -733,8 +749,10 @@ $(function () {
         dataTable.ajax.reload(null, false);
         $(".select-all-payments").prop("checked", false);
         payment_approve_buttons.disable();
-
+        payment_check_status_buttons.disable();
+        history_button.disable();
         selectedPaymentIds = [];
+        PubSub.publish("deselect_batchpayment_application", "reset_data");
     });
 
     function getStatusTextColor(status) {
@@ -785,6 +803,11 @@ $(function () {
         (msg, data) => {
             dataTable.ajax.reload(null, false);
             $(".select-all-payments").prop("checked", false);
+            payment_approve_buttons.disable();
+            payment_check_status_buttons.disable();
+            history_button.disable();
+            selectedPaymentIds = [];
+            PubSub.publish("deselect_batchpayment_application", "reset_data");
             PubSub.publish('clear_selected_payment');
         }
     );

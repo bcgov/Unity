@@ -15,28 +15,15 @@ using Unity.Notifications.Integrations.RabbitMQ;
 
 namespace Unity.Payments.PaymentRequests
 {
-    public class CasPaymentRequestCoordinator : ApplicationService
-    {
-        private readonly IPaymentRequestRepository _paymentRequestsRepository;
-        private readonly IUnitOfWorkManager _unitOfWorkManager;
-        private readonly ITenantRepository _tenantRepository;
-        private readonly ICurrentTenant _currentTenant;
-        private readonly PaymentQueueService _paymentQueueService;
-        private static int TenMinutes = 10;
-
-        public CasPaymentRequestCoordinator(
-            PaymentQueueService paymentQueueService,
+    public class CasPaymentRequestCoordinator(PaymentQueueService paymentQueueService,
             IPaymentRequestRepository paymentRequestsRepository,
             IUnitOfWorkManager unitOfWorkManager,
             ITenantRepository tenantRepository,
-            ICurrentTenant currentTenant)
-        {
-            _paymentQueueService = paymentQueueService;
-            _paymentRequestsRepository = paymentRequestsRepository;
-            _tenantRepository = tenantRepository;
-            _currentTenant = currentTenant;
-            _unitOfWorkManager = unitOfWorkManager;
-        }
+            ICurrentTenant currentTenant) : ApplicationService
+    {
+
+        private static int TenMinutes = 10;
+
 
         protected virtual dynamic GetPaymentRequestObject(
             Guid paymentRequestId,
@@ -60,7 +47,7 @@ namespace Unity.Payments.PaymentRequests
         {
             try
             {                
-                if (!string.IsNullOrEmpty(paymentRequest.InvoiceNumber) && _currentTenant != null && _currentTenant.Id != null)
+                if (!string.IsNullOrEmpty(paymentRequest.InvoiceNumber) && currentTenant != null && currentTenant.Id != null)
                 {                    
                     InvoiceMessages message = new InvoiceMessages
                     {
@@ -69,10 +56,10 @@ namespace Unity.Payments.PaymentRequests
                         InvoiceNumber = paymentRequest.InvoiceNumber,
                         SupplierNumber = paymentRequest.SupplierNumber,
                         SiteNumber = paymentRequest.Site.Number,
-                        TenantId = (Guid)_currentTenant.Id
+                        TenantId = (Guid)currentTenant.Id
                     };
 
-                    await _paymentQueueService.SendPaymentToInvoiceQueueAsync(message);
+                    await paymentQueueService.SendPaymentToInvoiceQueueAsync(message);
                 }
             }
             catch (Exception ex)
@@ -93,21 +80,21 @@ namespace Unity.Payments.PaymentRequests
                     InvoiceNumber = paymentRequest.InvoiceNumber,
                     SupplierNumber = paymentRequest.SupplierNumber,
                     SiteNumber = paymentRequest.Site?.Number ?? string.Empty,
-                    TenantId = paymentRequest.TenantId ?? _currentTenant.Id!.Value
+                    TenantId = paymentRequest.TenantId ?? currentTenant.Id!.Value
                 };
 
-                await _paymentQueueService.SendPaymentToReconciliationQueueAsync(reconcilePaymentMessage);
+                await paymentQueueService.SendPaymentToReconciliationQueueAsync(reconcilePaymentMessage);
             }
         }
 
         public async Task AddPaymentRequestsToReconciliationQueue()
         {
-            var tenants = await _tenantRepository.GetListAsync();
+            var tenants = await tenantRepository.GetListAsync();
             foreach (var tenantId in tenants.Select(tenant => tenant.Id))
             {
-                using (_currentTenant.Change(tenantId))
+                using (currentTenant.Change(tenantId))
                 {
-                    List<PaymentRequest> paymentRequests = await _paymentRequestsRepository.GetPaymentRequestsBySentToCasStatusAsync();
+                    List<PaymentRequest> paymentRequests = await paymentRequestsRepository.GetPaymentRequestsBySentToCasStatusAsync();
                     foreach (PaymentRequest paymentRequest in paymentRequests)
                     {
                         ReconcilePaymentMessages reconcilePaymentMessage = new ReconcilePaymentMessages
@@ -120,52 +107,60 @@ namespace Unity.Payments.PaymentRequests
                             TenantId = tenantId
                         };
 
-                        await _paymentQueueService.SendPaymentToReconciliationQueueAsync(reconcilePaymentMessage);
+                        await paymentQueueService.SendPaymentToReconciliationQueueAsync(reconcilePaymentMessage);
                     }
                 }
             }
         }
 
+        /// <summary>
+        /// Updates payment request status from CAS integration results.
+        /// Tenant context and audit scope are already established by the caller
+        /// (via <see cref="QueueConsumerHandler{TMessageConsumer,TQueueMessage}"/>);
+        /// this method only needs to own its unit of work.
+        /// </summary>
         public async Task<PaymentRequest?> UpdatePaymentRequestStatus(Guid TenantId, Guid PaymentRequestId, CasPaymentSearchResult result)
         {
-            PaymentRequest? paymentReqeust = null;
-            if (TenantId != Guid.Empty)
+            if (TenantId == Guid.Empty)
             {
-                using (_currentTenant.Change(TenantId))
-                {
-                    try
-                    {
-                        using var uow = _unitOfWorkManager.Begin(true, false);
-                        paymentReqeust = await _paymentRequestsRepository.GetAsync(PaymentRequestId);
-                        if (paymentReqeust != null)
-                        {
-                            if(paymentReqeust.InvoiceStatus == CasPaymentRequestStatus.NotFound && result.InvoiceStatus == CasPaymentRequestStatus.NotFound)
-                            {
-                                result.InvoiceStatus = CasPaymentRequestStatus.NotFound+"2";
-                            }
-
-                            paymentReqeust.SetInvoiceStatus(result.InvoiceStatus ?? "");
-                            paymentReqeust.SetPaymentStatus(result.PaymentStatus ?? "");
-                            paymentReqeust.SetPaymentDate(result.PaymentDate ?? "");
-                            paymentReqeust.SetPaymentNumber(result.PaymentNumber ?? "");
-                            if(result.InvoiceStatus != null)
-                            {
-                                paymentReqeust.SetCasHttpStatusCode((int)System.Net.HttpStatusCode.OK);
-                                paymentReqeust.SetCasResponse("SUCCEEDED"); 
-                            }
-
-                            await _paymentRequestsRepository.UpdateAsync(paymentReqeust, autoSave: false);
-                            await uow.SaveChangesAsync();
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        string ExceptionMessage = ex.Message;
-                        Logger.LogInformation(ex, "UpdatePaymentRequestStatus: Error updating payment request: {ExceptionMessage}", ExceptionMessage);
-                    }
-                }
+                return null;
             }
-            return paymentReqeust;
+
+            using var uow = unitOfWorkManager.Begin(requiresNew: true, isTransactional: true);
+
+            var paymentRequest = await paymentRequestsRepository.GetAsync(PaymentRequestId);
+
+            UpdatePaymentRequestFromCasResult(paymentRequest, result);
+
+            await paymentRequestsRepository.UpdateAsync(paymentRequest, autoSave: false);
+
+            // CompleteAsync commits the transaction and calls SaveChangesAsync,
+            // which triggers AbpDbContext to collect entity changes into the active audit log.
+            // The audit log is then persisted by QueueConsumerHandler after ConsumeAsync returns.
+            await uow.CompleteAsync();
+
+            return paymentRequest;
+        }
+
+        private static void UpdatePaymentRequestFromCasResult(PaymentRequest paymentRequest, CasPaymentSearchResult result)
+        {
+            // Handle duplicate NotFound status by appending "2"
+            if (paymentRequest.InvoiceStatus == CasPaymentRequestStatus.NotFound && 
+                result.InvoiceStatus == CasPaymentRequestStatus.NotFound)
+            {
+                result.InvoiceStatus = CasPaymentRequestStatus.NotFound + "2";
+            }
+
+            paymentRequest.SetInvoiceStatus(result.InvoiceStatus ?? "");
+            paymentRequest.SetPaymentStatus(result.PaymentStatus ?? "");
+            paymentRequest.SetPaymentDate(result.PaymentDate ?? "");
+            paymentRequest.SetPaymentNumber(result.PaymentNumber ?? "");
+            
+            if (result.InvoiceStatus != null)
+            {
+                paymentRequest.SetCasHttpStatusCode((int)System.Net.HttpStatusCode.OK);
+                paymentRequest.SetCasResponse("SUCCEEDED");
+            }
         }
     }
 }

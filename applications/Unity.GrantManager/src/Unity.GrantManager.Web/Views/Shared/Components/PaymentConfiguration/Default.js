@@ -204,13 +204,18 @@
             ? (UIElements.defaultPaymentGroup.val() || '1')
             : null;
 
+        const rawThreshold = UIElements.paymentApprovalThreshold.val();
+        const unMaskedPaymentApprovalThreshold = rawThreshold === ''
+            ? null
+            : (UIElements.paymentApprovalThreshold.maskMoney('unmasked')[0] ?? null);
+
         unity.grantManager.applicationForms.applicationForm.savePaymentConfiguration(
             {
                 accountCodingId: UIElements.accountCode.val(),
                 applicationFormId: UIElements.appFormId.val(),
                 preventPayment: UIElements.preventPayment.is(':checked'),
                 payable: UIElements.payable.is(':checked'),
-                paymentApprovalThreshold: UIElements.paymentApprovalThreshold.val() === '' ? null : UIElements.paymentApprovalThreshold.val(),
+                paymentApprovalThreshold: unMaskedPaymentApprovalThreshold,
                 formHierarchy: Number.isNaN(formHierarchy) ? null : formHierarchy,
                 parentFormId: parentFormId || null,
                 defaultPaymentGroup: defaultPaymentGroupValue
@@ -261,4 +266,32 @@
         }
     }
 
+    // On load: Apply mask only if field has a value
+    $('.unity-currency-input').each(function() {
+        const $field = $(this);
+        let value = $field.val();
+        if (value && value.trim() !== '') {
+            value = Number.parseFloat(value).toFixed(2);
+            $field.val(value);
+            $field.maskMoney({ allowZero: true }).maskMoney('mask');
+        }
+    });
+
+    // On focus: Remove mask to allow empty values
+    $('.unity-currency-input').on('focus', function() {
+        $(this).maskMoney('destroy');
+    });
+
+    // On leave: Apply mask only if there's a value
+    $('.unity-currency-input').on('blur', function() {
+        const $field = $(this);
+        let value = $field.val();
+        
+        if (value && value !== '') {
+            value = (Math.round(value * 100) / 100).toFixed(2);
+            $field.val(value);
+            // Call twice, one to re-initalize on a destroyed field, second to mask
+            $field.maskMoney({ allowZero: true }).maskMoney('mask');
+        }
+    });
 });

@@ -14,7 +14,6 @@ using Unity.Payments.EntityFrameworkCore;
 using Unity.Flex.EntityFrameworkCore;
 using Unity.Notifications.EntityFrameworkCore;
 using Unity.Reporting.EntityFrameworkCore;
-using Unity.AI.EntityFrameworkCore;
 using Unity.GrantManager.GlobalTag;
 using Unity.GrantManager.Contacts;
 
@@ -394,7 +393,6 @@ namespace Unity.GrantManager.EntityFrameworkCore
             modelBuilder.ConfigureFlex();
             modelBuilder.ConfigureNotifications();
             modelBuilder.ConfigureReporting();
-            modelBuilder.ConfigureAI();
         }
     }
 }

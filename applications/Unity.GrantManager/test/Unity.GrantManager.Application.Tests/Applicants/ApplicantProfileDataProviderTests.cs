@@ -72,12 +72,14 @@ namespace Unity.GrantManager.Applicants
             submissionRepo.GetQueryableAsync().Returns(Task.FromResult(Enumerable.Empty<ApplicationFormSubmission>().AsAsyncQueryable()));
             var applicationRepo = Substitute.For<IRepository<Application, Guid>>();
             applicationRepo.GetQueryableAsync().Returns(Task.FromResult(Enumerable.Empty<Application>().AsAsyncQueryable()));
+            var formRepo = Substitute.For<IRepository<ApplicationForm, Guid>>();
+            formRepo.GetQueryableAsync().Returns(Task.FromResult(Enumerable.Empty<ApplicationForm>().AsAsyncQueryable()));
             var statusRepo = Substitute.For<IRepository<ApplicationStatus, Guid>>();
             statusRepo.GetQueryableAsync().Returns(Task.FromResult(Enumerable.Empty<ApplicationStatus>().AsAsyncQueryable()));
             var endpointManagementAppService = Substitute.For<IEndpointManagementAppService>();
             endpointManagementAppService.GetChefsApiBaseUrlAsync().Returns(Task.FromResult(string.Empty));
             var logger = Substitute.For<Microsoft.Extensions.Logging.ILogger<SubmissionInfoDataProvider>>();
-            return new SubmissionInfoDataProvider(currentTenant, submissionRepo, applicationRepo, statusRepo, endpointManagementAppService, logger);
+            return new SubmissionInfoDataProvider(currentTenant, submissionRepo, applicationRepo, formRepo, statusRepo, endpointManagementAppService, logger);
         }
 
         [Fact]

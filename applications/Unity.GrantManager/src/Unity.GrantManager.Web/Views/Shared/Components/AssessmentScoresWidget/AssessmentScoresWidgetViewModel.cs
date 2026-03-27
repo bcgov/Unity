@@ -25,6 +25,8 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentScoresWidget
         public Guid CurrentUserId { get; set; }
         public Guid AssessorId { get; set; }
         public ScoresheetDto? Scoresheet { get; set; }
+        public bool IsAIScoringEnabled { get; set; }
+        public bool IsAiAssessment { get; set; }
         public bool IsDisabled()
         {
             if(CurrentUserId != AssessorId)

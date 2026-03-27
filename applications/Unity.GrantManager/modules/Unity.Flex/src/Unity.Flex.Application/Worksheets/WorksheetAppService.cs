@@ -7,8 +7,12 @@ using System.Threading.Tasks;
 using Unity.Flex.Domain.Services;
 using Unity.Flex.Domain.Settings;
 using Unity.Flex.Domain.Utils;
+using Unity.Flex.Domain.WorksheetInstances;
+using Unity.Flex.Domain.WorksheetLinks;
 using Unity.Flex.Domain.Worksheets;
+using Unity.Flex.Permissions;
 using Unity.Flex.Reporting.FieldGenerators;
+using Unity.Modules.Shared.Correlation;
 using Unity.Modules.Shared.Features;
 using Volo.Abp;
 using Volo.Abp.Features;
@@ -19,7 +23,9 @@ namespace Unity.Flex.Worksheets
     public partial class WorksheetAppService(IWorksheetRepository worksheetRepository,
         WorksheetsManager worksheetsManager,
         IReportingFieldsGeneratorService<Worksheet> reportingFieldsGeneratorService,
-        IFeatureChecker featureChecker) : FlexAppService, IWorksheetAppService
+        IFeatureChecker featureChecker,
+        IWorksheetLinkRepository worksheetLinkRepository,
+        IWorksheetInstanceRepository worksheetInstanceRepository) : FlexAppService, IWorksheetAppService
     {
         public virtual async Task<WorksheetDto> GetAsync(Guid id)
         {
@@ -118,9 +124,39 @@ namespace Unity.Flex.Worksheets
             return await Task.FromResult(true);
         }
 
+        [Authorize(FlexPermissions.Worksheets.Delete)]
         public virtual async Task DeleteAsync(Guid id)
         {
+            var linkedForms = await GetLinkedFormsAsync(id);
+
+            if (linkedForms.FormVersionIdsWithInstances.Count > 0)
+            {
+                throw new UserFriendlyException("This worksheet cannot be deleted because it has existing instances.");
+            }
+
+            if (linkedForms.LinkedFormVersionIds.Count > 0)
+            {
+                throw new UserFriendlyException("This worksheet cannot be deleted because it is still linked to one or more forms. Unlink it first.");
+            }
+
             await worksheetRepository.DeleteAsync(id);
+        }
+
+        public virtual async Task<WorksheetLinkedFormsDto> GetLinkedFormsAsync(Guid worksheetId)
+        {
+            var links = await worksheetLinkRepository.GetListByWorksheetAsync(worksheetId, CorrelationConsts.FormVersion);
+            var result = new WorksheetLinkedFormsDto();
+
+            foreach (var correlationId in links.Select(link => link.CorrelationId))
+            {
+                bool hasInstances = await worksheetInstanceRepository.AnyByWorksheetAndFormVersionAsync(worksheetId, correlationId);
+                if (hasInstances)
+                    result.FormVersionIdsWithInstances.Add(correlationId);
+                else
+                    result.LinkedFormVersionIds.Add(correlationId);
+            }
+
+            return result;
         }
 
         public virtual async Task ResequenceSectionsAsync(Guid id, uint oldIndex, uint newIndex)

@@ -1,0 +1,137 @@
+@page
+@using Unity.AI.Localization
+@using Unity.AI.Web.Pages.Prompts
+@using Microsoft.Extensions.Localization
+@using Volo.Abp.AspNetCore.Mvc.UI.Layout
+@model IndexModel
+@inject IStringLocalizer<AIResource> L
+@inject IPageLayout PageLayout
+@{
+    PageLayout.Content.BreadCrumb.Add(L["AIPrompts"].Value);
+}
+@section styles {
+    <abp-style src="/Pages/Prompts/Index.css" />
+}
+@section scripts {
+    <abp-script src="/Pages/Prompts/Index.js" />
+}
+
+<div class="container-fluid px-0">
+    <div class="action-bar p-2 filter-search-action-bar">
+        <div class="unity-page-titlebar">
+            <h4>@L["AIPrompts"]</h4>
+        </div>
+        <div class="filter-search-action-bar_search-wrapper">
+            <input type="search" id="search-prompts" placeholder="Search" class="tbl-search">
+        </div>
+        <div id="dynamicButtonContainerId" class="dynamic-buttons-div button-gap-1"></div>
+    </div>
+
+    <div id="promptsSplitContainer" class="prompts-split-container px-3 pb-3">
+
+        <!-- Left pane: prompts table -->
+        <div id="promptsLeftPane" class="prompts-left-pane">
+            <div class="card h-100">
+                <div class="card-body p-2">
+                    <abp-table id="AIPromptsTable" striped-rows="false" class="nowrap"></abp-table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Drag divider (shown when a row is selected) -->
+        <div id="promptsDivider" class="prompts-split-divider" title="Drag to resize"></div>
+
+        <!-- Right pane: version editor (hidden until a row is selected) -->
+        <div id="promptsRightPane" class="prompts-right-pane" style="display:none;">
+            <div class="card h-100 d-flex flex-column">
+
+                <div class="card-header version-editor-header py-2">
+                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                        <strong id="versionEditorTitle" class="text-truncate me-1" style="max-width:160px;"></strong>
+                        <label class="mb-0 small text-muted">Version:</label>
+                        <select id="versionSelect" class="form-select form-select-sm version-select"></select>
+                        <button id="newVersionBtn" class="btn btn-sm btn-outline-primary">
+                            <i class="fa fa-plus"></i> New Version
+                        </button>
+                        <button id="saveVersionBtn" class="btn btn-sm btn-primary ms-auto">
+                            <span id="saveVersionBtnLabel">Save Version</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="card-body version-editor-body overflow-auto">
+                    <form id="versionEditForm" autocomplete="off">
+                        <input type="hidden" id="versionId" />
+                        <input type="hidden" id="versionPromptId" />
+                        <input type="hidden" id="versionNumber" />
+
+                        <div class="row g-3">
+
+                            <div class="col-sm-6">
+                                <label for="versionTargetModel" class="form-label small fw-semibold mb-1">@L["TargetModel"]</label>
+                                <input type="text" id="versionTargetModel" class="form-control form-control-sm" maxlength="100" placeholder="e.g. gpt-4o" />
+                            </div>
+                            <div class="col-sm-6">
+                                <label for="versionTargetProvider" class="form-label small fw-semibold mb-1">@L["TargetProvider"]</label>
+                                <input type="text" id="versionTargetProvider" class="form-control form-control-sm" maxlength="100" placeholder="e.g. openai" />
+                            </div>
+
+                            <div class="col-6 col-sm-3">
+                                <label for="versionTemperature" class="form-label small fw-semibold mb-1">@L["Temperature"]</label>
+                                <input type="number" id="versionTemperature" class="form-control form-control-sm" step="0.05" min="0" max="2" placeholder="0.2" />
+                            </div>
+                            <div class="col-6 col-sm-3">
+                                <label for="versionMaxTokens" class="form-label small fw-semibold mb-1">@L["MaxTokens"]</label>
+                                <input type="number" id="versionMaxTokens" class="form-control form-control-sm" min="1" placeholder="unlimited" />
+                            </div>
+                            <div class="col-6 col-sm-3 d-flex align-items-end pb-1">
+                                <div class="form-check">
+                                    <input type="checkbox" id="versionIsPublished" class="form-check-input" />
+                                    <label class="form-check-label small" for="versionIsPublished">@L["IsPublished"]</label>
+                                </div>
+                            </div>
+                            <div class="col-6 col-sm-3 d-flex align-items-end pb-1">
+                                <div class="form-check">
+                                    <input type="checkbox" id="versionIsDeprecated" class="form-check-input" />
+                                    <label class="form-check-label small" for="versionIsDeprecated">@L["IsDeprecated"]</label>
+                                </div>
+                            </div>
+
+                            <div class="col-12">
+                                <label for="versionSystemPrompt" class="form-label small fw-semibold mb-1">@L["SystemPrompt"] <span class="text-danger">*</span></label>
+                                <textarea id="versionSystemPrompt" class="form-control version-textarea version-textarea--code" rows="7" spellcheck="false"></textarea>
+                                <div class="invalid-feedback">System Prompt is required.</div>
+                            </div>
+
+                            <div class="col-12">
+                                <label for="versionUserPromptTemplate" class="form-label small fw-semibold mb-1">@L["UserPromptTemplate"] <span class="text-danger">*</span></label>
+                                <textarea id="versionUserPromptTemplate" class="form-control version-textarea version-textarea--code" rows="7" spellcheck="false"></textarea>
+                                <div class="invalid-feedback">User Prompt Template is required.</div>
+                            </div>
+
+                            <div class="col-12">
+                                <label for="versionDeveloperNotes" class="form-label small fw-semibold mb-1">@L["DeveloperNotes"]</label>
+                                <textarea id="versionDeveloperNotes" class="form-control version-textarea" rows="3" spellcheck="false"></textarea>
+                            </div>
+
+                            <div class="col-12">
+                                <div class="d-flex align-items-center gap-2 mb-1">
+                                    <label for="versionMetadataJson" class="form-label small fw-semibold mb-0">Metadata JSON</label>
+                                    <span class="badge bg-secondary" style="font-size:0.6rem;">jsonb</span>
+                                    <button type="button" id="formatJsonBtn" class="btn btn-link btn-sm p-0 ms-1" title="Format JSON">
+                                        <i class="fa fa-indent"></i> Format
+                                    </button>
+                                    <span id="jsonValidationMsg" class="small text-danger ms-1" style="display:none;"></span>
+                                </div>
+                                <textarea id="versionMetadataJson" class="form-control version-textarea version-textarea--json" rows="10" spellcheck="false" placeholder='{"sections": {...}}'></textarea>
+                            </div>
+
+                        </div>
+                    </form>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+</div>

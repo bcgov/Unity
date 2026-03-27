@@ -58,7 +58,9 @@ public class GrantManagerApplicationAutoMapperProfile : Profile
                 opts => opts.MapFrom(src => src.CreationTime));
         CreateMap<AssessmentWithAssessorQueryResultItem, AssessmentListItemDto>()
             .ForMember(d => d.SubTotal, opt => opt.Ignore());
-        CreateMap<ApplicationChefsFileAttachment, ApplicationChefsFileAttachmentDto>();
+        CreateMap<ApplicationChefsFileAttachment, ApplicationChefsFileAttachmentDto>()
+            .ForMember(dest => dest.CreatedTime, opt => opt.MapFrom(src => src.CreationTime))
+            .ForMember(dest => dest.UpdatedTime, opt => opt.MapFrom(src => src.LastModificationTime));
         CreateMap<ApplicationAttachment, ApplicationAttachmentDto>();
         CreateMap<Intakes.Intake, IntakeDto>();
         CreateMap<ApplicationForm, ApplicationFormDto>();
