@@ -88,22 +88,35 @@ public class ApplicationFormAppService
         {
             if (!string.IsNullOrWhiteSpace(input.ChefsApplicationFormGuid) && !string.IsNullOrWhiteSpace(input.ApiKey))
             {
-                var form = await _formsApiService.GetForm(
-                    Guid.Parse(input.ChefsApplicationFormGuid),
+                var form = await _formsApiService.GetFormDataAsync(
                     input.ChefsApplicationFormGuid,
                     input.ApiKey);
 
                 if (form is JObject formObject)
                 {
                     var formName = formObject.SelectToken("name")?.ToString();
+
                     if (!string.IsNullOrWhiteSpace(formName))
                     {
-                        input.ApplicationFormName = formName;
-                        applicationFormDto = await base.UpdateAsync(id, input);
-                    }
+                        // Only update the name from CHEFS if the user hasn't set a custom name
+                        if (string.IsNullOrWhiteSpace(input.ApplicationFormName)
+                            || input.ApplicationFormName == "New Form - Setup API KEY")
+                        {
+                            input.ApplicationFormName = formName;
+                        }
 
-                    await _applicationFormVersionAppService.InitializePublishedFormVersion(formObject, id, initializePublishedOnly: false);
+                        // Preserve user-entered description - only populate from CHEFS if empty
+                        var formDescription = formObject.SelectToken("description")?.ToString();
+                        if (string.IsNullOrWhiteSpace(input.ApplicationFormDescription)
+                            && !string.IsNullOrWhiteSpace(formDescription))
+                        {
+                            input.ApplicationFormDescription = formDescription;
+                        }
+                    }
                 }
+
+                applicationFormDto = await base.UpdateAsync(id, input);
+                await _applicationFormVersionAppService.InitializePublishedFormVersion(form, id, true);
             }
 
             return applicationFormDto;
