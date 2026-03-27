@@ -269,6 +269,7 @@
     "AssessmentResultsView:AssessmentResultsForm.RiskRanking": "Risk Ranking",
 
     "GrantApplication:ActionButtonName": "Status Actions",
+    "GrantApplication:ActionButton.RedStopWarning": "This application is from an applicant with a Red-Stop. Status actions are not permitted.",
     "Enum:GrantApplicationAction.Open": "Open",
     "Enum:GrantApplicationAction.Submit": "Submit",
     "Enum:GrantApplicationAction.Internal_Assign": "Assign",

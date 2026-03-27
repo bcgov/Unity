@@ -2,16 +2,23 @@
 @using Unity.GrantManager.Localization;
 @using Microsoft.Extensions.Localization;
 @using Unity.GrantManager.Web.Views.Shared.Components.ApplicationActionWidget;
+@using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Button;
 
 @model ApplicationActionWidgetViewModel;
 
 @inject IStringLocalizer<GrantManagerResource> L
 @inject IAuthorizationService AuthorizationService
 
+@{
+    var actionButtonType = Model.IsRedStop ? AbpButtonType.Danger : AbpButtonType.Light;
+    var actionButtonTitleText = Model.IsRedStop ? L["GrantApplication:ActionButton.RedStopWarning"].Value : string.Empty;
+}
+
+<input type="hidden" id="actionWidget_ApplicantIsRedStop" value="@Model.IsRedStop.ToString().ToLower()" />
 <abp-dropdown id="ApplicationActionDropdown">
-    <abp-dropdown-button 
-        button-type="Light"
-        text="@L["GrantApplication:ActionButtonName"].Value" />
+    <abp-dropdown-button button-type=@(actionButtonType)
+        text="@L["GrantApplication:ActionButtonName"].Value"
+        title="@actionButtonTitleText" />
     <ul class="dropdown-menu">
         @foreach (var item in Model.ApplicationActions.Items.Where(x => x.IsAuthorized))
         {
