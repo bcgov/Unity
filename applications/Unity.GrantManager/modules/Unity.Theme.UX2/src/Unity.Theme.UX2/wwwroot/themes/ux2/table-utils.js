@@ -54,7 +54,7 @@ if ($.fn.dataTable !== undefined && $.fn.dataTable.ext) {
         },
     };
 
-    $.fn.dataTable.Buttons.defaults.dom.button.className = 'btn btn-light custom-table-btn flex-none btn-secondary';
+    $.fn.dataTable.Buttons.defaults.dom.button.className = 'btn custom-table-btn flex-none';
     $.fn.dataTable.Buttons.defaults.dom.button.liner.tag = false;
 }
 
