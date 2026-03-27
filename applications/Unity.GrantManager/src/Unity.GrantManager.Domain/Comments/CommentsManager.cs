@@ -65,7 +65,7 @@ namespace Unity.GrantManager.Comments
                     var applicantCommentsQry = await _applicantCommentsRepository.GetQueryableAsync();
                     return applicantCommentsQry.Where(c => c.ApplicantId.Equals(ownerId)).OrderByDescending(s => s.CreationTime).ToList();
                 default:
-                    throw new ArgumentOutOfRangeException(nameof(type));;
+                    throw new ArgumentOutOfRangeException(nameof(type));
             }
         }
 
@@ -86,7 +86,7 @@ namespace Unity.GrantManager.Comments
                     applicantComment.Comment = comment;
                     return await _applicantCommentsRepository.UpdateAsync((ApplicantComment)applicantComment!, autoSave: true);
                 default:
-                    throw new ArgumentOutOfRangeException(nameof(type));;
+                    throw new ArgumentOutOfRangeException(nameof(type));
             }
         }
 
@@ -104,7 +104,7 @@ namespace Unity.GrantManager.Comments
                     var applicantCommentsQry = await _applicantCommentsRepository.GetQueryableAsync();
                     return applicantCommentsQry.FirstOrDefault(s => s.ApplicantId == ownerId && s.Id == commentId);
                 default:
-                    throw new ArgumentOutOfRangeException(nameof(type));;
+                    throw new ArgumentOutOfRangeException(nameof(type));
             }
         }
 
@@ -173,7 +173,7 @@ namespace Unity.GrantManager.Comments
                                                 };
                     return applicantCommentsQry.ToList();
                 default:
-                    throw new ArgumentOutOfRangeException(nameof(type));;
+                    throw new ArgumentOutOfRangeException(nameof(type));
             }
         }
 
