@@ -775,6 +775,17 @@
                         width: '25%'
                     },
                     {
+                        title: 'File Size',
+                        data: 'fileSize',
+                        className: 'data-table-header',
+                        width: '90px',
+                        render: function (data) {
+                            if (!data) return '—';
+                            const mb = data * 0.000001;
+                            return mb >= 1 ? mb.toFixed(2) + ' MB' : (data / 1024).toFixed(0) + ' KB';
+                        }
+                    },
+                    {
                         title: '',
                         data: 'id',
                         width: '80px',
@@ -784,9 +795,42 @@
                             return isDraft ? generateEmailAttachmentButtonContent(data) : '';
                         }
                     }
-                ]
+                ],
+                drawCallback: function () {
+                    if (isDraft) {
+                        checkTotalAttachmentSize();
+                    }
+                }
             })
         );
+    }
+
+    function checkTotalAttachmentSize() {
+        const totalMaxFileSize = parseFloat(
+            decodeURIComponent($('#TotalEmailAttachmentMaxFileSize').val()) || '25'
+        );
+
+        let totalBytes = 0;
+        if (emailAttachmentsTable) {
+            emailAttachmentsTable.rows().data().each(function (row) {
+                totalBytes += (row.fileSize || 0);
+            });
+        }
+
+        const totalMB = totalBytes * 0.000001;
+        const isExceeded = totalMB > totalMaxFileSize;
+
+        if (isExceeded) {
+            $('#email-attachment-size-error-message').text(
+                'The total size of all attachments (' + totalMB.toFixed(2) + ' MB) exceeds the ' +
+                'maximum allowed ' + totalMaxFileSize + ' MB. Please remove one or more attachments before sending.'
+            );
+            $('#email-attachment-size-error').show();
+            $('#btn-send').prop('disabled', true);
+        } else {
+            $('#email-attachment-size-error').hide();
+            $('#btn-send').prop('disabled', false);
+        }
     }
 
     function reloadEmailAttachmentsTable() {
@@ -798,6 +842,110 @@
     $('#email_attachment_upload_btn').on('click', function () {
         $('#email_attachment_upload').click();
     });
+
+    $('#email_attachment_upload').on('change', function () {
+        uploadEmailFiles('email_attachment_upload');
+    });
+
+    function uploadEmailFiles(inputId) {
+        const emailLogId = $('#EmailId').val();
+        const input = document.getElementById(inputId);
+        if (!input?.files?.length) return;
+
+        const disallowedTypes = JSON.parse(decodeURIComponent($('#Extensions').val()));
+        const maxFileSize = decodeURIComponent($('#EmailAttachmentMaxFileSize').val());
+
+        let isAllowedTypeError = false;
+        let isMaxFileSizeError = false;
+        const formData = new FormData();
+
+        for (let file of input.files) {
+            const ext = file.name.slice(file.name.lastIndexOf('.') + 1).toLowerCase();
+            if (disallowedTypes.includes(ext)) {
+                isAllowedTypeError = true;
+            }
+            if (file.size * 0.000001 > maxFileSize) {
+                isMaxFileSizeError = true;
+            }
+            formData.append('files', file);
+        }
+
+        if (isAllowedTypeError) {
+            input.value = '';
+            return abp.notify.error('Error', 'File type not supported');
+        }
+        if (isMaxFileSizeError) {
+            input.value = '';
+            return abp.notify.error(
+                'File Too Large',
+                'The selected file exceeds the maximum allowed size of ' + maxFileSize + ' MB for email attachments. Please select a smaller file.'
+            );
+        }
+
+        const totalMaxFileSize = parseFloat(
+            decodeURIComponent($('#TotalEmailAttachmentMaxFileSize').val()) || '25'
+        );
+        let existingTotalBytes = 0;
+        if (emailAttachmentsTable) {
+            emailAttachmentsTable.rows().data().each(function (row) {
+                existingTotalBytes += (row.fileSize || 0);
+            });
+        }
+        let newFilesBytes = 0;
+        for (let file of input.files) {
+            newFilesBytes += file.size;
+        }
+        const combinedMB = (existingTotalBytes + newFilesBytes) * 0.000001;
+        if (combinedMB > totalMaxFileSize) {
+            input.value = '';
+            return abp.notify.error(
+                'Total Size Exceeded',
+                'The total size of all attachments would exceed the maximum allowed ' + totalMaxFileSize +
+                ' MB. Please remove existing attachments or select a smaller file.'
+            );
+        }
+
+        $.ajax({
+            url: `/api/app/attachment/email/${emailLogId}/upload`,
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            xhr: function () {
+                const xhr = new globalThis.XMLHttpRequest();
+                xhr.upload.addEventListener('progress', function (e) {
+                    if (e.lengthComputable) {
+                        const pct = Math.round((e.loaded / e.total) * 100);
+                        $('#attachment-upload-progress-bar')
+                            .css('width', pct + '%')
+                            .attr('aria-valuenow', pct)
+                            .text(pct + '%');
+                    }
+                });
+                return xhr;
+            },
+            beforeSend: function () {
+                $('#email_attachment_upload_btn')
+                    .html('<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>Uploading...')
+                    .prop('disabled', true);
+                $('#attachment-upload-progress-bar').css('width', '0%').text('0%');
+                $('#attachment-upload-progress').show();
+            },
+            success: function () {
+                PubSub.publish('reload_email_attachments_table');
+            },
+            error: function (xhr) {
+                abp.notify.error(xhr.responseText || 'Failed to upload attachment.');
+            },
+            complete: function () {
+                input.value = '';
+                $('#email_attachment_upload_btn')
+                    .html('<i class="fl fl-plus me-1"></i>Add Attachments')
+                    .prop('disabled', false);
+                $('#attachment-upload-progress').hide();
+            }
+        });
+    }
 });
 
 function generateEmailAttachmentButtonContent(attachmentId) {
@@ -813,83 +961,6 @@ function generateEmailAttachmentButtonContent(attachmentId) {
                 </button>
             </div>
         </div>`;
-}
-
-function uploadEmailFiles(inputId) {
-    const emailLogId = $('#EmailId').val();
-    const input = document.getElementById(inputId);
-    if (!input?.files?.length) return;
-
-    const disallowedTypes = JSON.parse(decodeURIComponent($('#Extensions').val()));
-    const maxFileSize = decodeURIComponent($('#EmailAttachmentMaxFileSize').val());
-
-    let isAllowedTypeError = false;
-    let isMaxFileSizeError = false;
-    const formData = new FormData();
-
-    for (let file of input.files) {
-        const ext = file.name.slice(file.name.lastIndexOf('.') + 1).toLowerCase();
-        if (disallowedTypes.includes(ext)) {
-            isAllowedTypeError = true;
-        }
-        if (file.size * 0.000001 > maxFileSize) {
-            isMaxFileSizeError = true;
-        }
-        formData.append('files', file);
-    }
-
-    if (isAllowedTypeError) {
-        input.value = '';
-        return abp.notify.error('Error', 'File type not supported');
-    }
-    if (isMaxFileSizeError) {
-        input.value = '';
-        return abp.notify.error(
-            'File Too Large',
-            'The selected file exceeds the maximum allowed size of ' + maxFileSize + ' MB for email attachments. Please select a smaller file.'
-        );
-    }
-
-    $.ajax({
-        url: `/api/app/attachment/email/${emailLogId}/upload`,
-        type: 'POST',
-        data: formData,
-        processData: false,
-        contentType: false,
-        xhr: function () {
-            const xhr = new window.XMLHttpRequest();
-            xhr.upload.addEventListener('progress', function (e) {
-                if (e.lengthComputable) {
-                    const pct = Math.round((e.loaded / e.total) * 100);
-                    $('#attachment-upload-progress-bar')
-                        .css('width', pct + '%')
-                        .attr('aria-valuenow', pct)
-                        .text(pct + '%');
-                }
-            });
-            return xhr;
-        },
-        beforeSend: function () {
-            $('#email_attachment_upload_btn')
-                .html('<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>Uploading...')
-                .prop('disabled', true);
-            $('#attachment-upload-progress-bar').css('width', '0%').text('0%');
-            $('#attachment-upload-progress').show();
-        },
-        success: function () {
-            PubSub.publish('reload_email_attachments_table');
-        },
-        error: function (xhr) {
-            abp.notify.error(xhr.responseText || 'Failed to upload attachment.');
-        },
-        complete: function () {
-            input.value = '';
-            $('#email_attachment_upload_btn')
-                .html('<i class="fl fl-plus me-1"></i>Add Attachments')
-                .prop('disabled', false);
-            $('#attachment-upload-progress').hide();
-        }
-    });
 }
 
 function deleteEmailAttachment(attachmentId) {

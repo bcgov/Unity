@@ -293,6 +293,22 @@ namespace Unity.GrantManager.Controllers
                 }
             }
 
+            var totalMaxFileSizeConfig = _configuration["S3:EmailAttachmentsTotalMaxFileSize"] ?? "25";
+            if (double.TryParse(totalMaxFileSizeConfig, out double totalMaxSizeMB))
+            {
+                long existingTotalBytes = await _emailLogAttachmentUploadService
+                    .GetTotalFileSizeByEmailLogIdAsync(emailLogId);
+                long newFilesBytes = files.Sum(f => f.Length);
+                double combinedMB = (existingTotalBytes + newFilesBytes) * 0.000001;
+
+                if (combinedMB > totalMaxSizeMB)
+                {
+                    throw new AbpValidationException(
+                        $"The total size of all attachments ({combinedMB:F1} MB) would exceed the maximum allowed {totalMaxSizeMB} MB for email attachments. Please remove existing attachments or select a smaller file.",
+                        [new ValidationResult("Total attachment size exceeds the allowed limit.")]);
+                }
+            }
+
             var results = new List<object>();
             foreach (var file in files)
             {

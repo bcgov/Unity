@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using Unity.Notifications.Emails;
 using Volo.Abp.DependencyInjection;
@@ -172,6 +173,12 @@ public class EmailAttachmentService : ITransientDependency
     public async Task<List<EmailLogAttachment>> GetAttachmentsAsync(Guid emailLogId)
     {
         return await _emailLogAttachmentRepository.GetByEmailLogIdAsync(emailLogId);
+    }
+
+    public async Task<long> GetTotalFileSizeAsync(Guid emailLogId)
+    {
+        var attachments = await _emailLogAttachmentRepository.GetByEmailLogIdAsync(emailLogId);
+        return attachments.Sum(a => a.FileSize);
     }
 
     private static string BuildUserAttachmentS3Key(Guid? tenantId, Guid emailLogId, Guid attachmentId, string fileName)
