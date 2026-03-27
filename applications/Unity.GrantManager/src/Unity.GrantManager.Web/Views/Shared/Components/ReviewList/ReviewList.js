@@ -52,9 +52,6 @@ $(function () {
         renderEnum: (data) => l('Enum:AssessmentState.' + data),
     };
 
-    $.fn.dataTable.Buttons.defaults.dom.button.className = 'btn unt-btn-outline-primary btn-outline-primary';
-    $.fn.dataTable.Buttons.defaults.dom.button.liner.tag = false;
-
     $.extend(DataTable.ext.buttons, {
         unityWorkflow: {
             className: 'btn unt-btn-outline-primary btn-outline-primary',
