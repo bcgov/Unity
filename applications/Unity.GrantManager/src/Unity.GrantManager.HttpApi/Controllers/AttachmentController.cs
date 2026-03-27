@@ -280,6 +280,35 @@ namespace Unity.GrantManager.Controllers
                 throw new AbpValidationException(message: "ERROR: Invalid File Type.", validationErrors: invalidFileTypes);
             }
 
+            var emailAttachmentMaxFileSizeConfig = _configuration["S3:EmailAttachmentMaxFileSize"] ?? "20";
+            if (double.TryParse(emailAttachmentMaxFileSizeConfig, out double maxFileSizeMB))
+            {
+                var oversizedFiles = files.Where(f => f.Length * 0.000001 > maxFileSizeMB).ToList();
+                if (oversizedFiles.Count > 0)
+                {
+                    var sizeErrors = oversizedFiles.Select(f =>
+                        new ValidationResult($"File '{f.FileName}' exceeds the maximum allowed size of {maxFileSizeMB} MB for email attachments.", [f.FileName])
+                    ).ToList();
+                    throw new AbpValidationException("One or more files exceed the maximum allowed size for email attachments.", sizeErrors);
+                }
+            }
+
+            var totalMaxFileSizeConfig = _configuration["S3:EmailAttachmentsTotalMaxFileSize"] ?? "25";
+            if (double.TryParse(totalMaxFileSizeConfig, out double totalMaxSizeMB))
+            {
+                long existingTotalBytes = await _emailLogAttachmentUploadService
+                    .GetTotalFileSizeByEmailLogIdAsync(emailLogId);
+                long newFilesBytes = files.Sum(f => f.Length);
+                double combinedMB = (existingTotalBytes + newFilesBytes) * 0.000001;
+
+                if (combinedMB > totalMaxSizeMB)
+                {
+                    throw new AbpValidationException(
+                        $"The total size of all attachments ({combinedMB:F1} MB) would exceed the maximum allowed {totalMaxSizeMB} MB for email attachments. Please remove existing attachments or select a smaller file.",
+                        [new ValidationResult("Total attachment size exceeds the allowed limit.")]);
+                }
+            }
+
             var results = new List<object>();
             foreach (var file in files)
             {

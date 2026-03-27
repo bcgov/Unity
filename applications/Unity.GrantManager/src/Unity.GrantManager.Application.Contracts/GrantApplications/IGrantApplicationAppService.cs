@@ -4,23 +4,23 @@ using System.Threading.Tasks;
 using Unity.Modules.Shared;
 using Volo.Abp.Application.Dtos;
 
-namespace Unity.GrantManager.GrantApplications
+namespace Unity.GrantManager.GrantApplications;
+
+public interface IGrantApplicationAppService
 {
-    public interface IGrantApplicationAppService
-    {
-        Task<ApplicationStatusDto> GetApplicationStatusAsync(Guid id);
-        Task<ListResultDto<ApplicationActionDto>> GetActions(Guid applicationId, bool includeInternal = false);        
-        Task<GrantApplicationDto> UpdateProjectInfoAsync(Guid id, CreateUpdateProjectInfoDto input);
-        Task<GrantApplicationDto> UpdatePartialProjectInfoAsync(Guid id, PartialUpdateDto<UpdateProjectInfoDto> input);        
-        Task<GrantApplicationDto> UpdateAssessmentResultsAsync(Guid id, CreateUpdateAssessmentResultsDto input);
-        Task UpdateSupplierNumberAsync(Guid applicationId, string supplierNumber);
-        Task<List<GrantApplicationLiteDto>> GetAllApplicationsAsync();
-        Task<IList<GrantApplicationDto>> GetApplicationDetailsListAsync(List<Guid> applicationIds);
-        Task<GrantApplicationDto> GetAsync(Guid id);
-        Task<GrantApplicationDto> TriggerAction(Guid applicationId, GrantApplicationAction triggerAction);
-        Task<Guid?> GetAccountCodingIdFromFormIdAsync(Guid formId);
-        Task<string> HideAIAnalysisItemAsync(Guid applicationId, string itemId);
-        Task<string> ShowAIAnalysisItemAsync(Guid applicationId, string itemId);
-        Task<PagedResultDto<GrantApplicationDto>> GetListAsync(GrantApplicationListInputDto input);
-    }
+    Task<ApplicationStatusDto> GetApplicationStatusAsync(Guid id);
+    Task<ListResultDto<ApplicationActionDto>> GetActions(Guid applicationId, bool includeInternal = false);        
+    Task<GrantApplicationDto> UpdateProjectInfoAsync(Guid id, CreateUpdateProjectInfoDto input);
+    Task<GrantApplicationDto> UpdatePartialProjectInfoAsync(Guid id, PartialUpdateDto<UpdateProjectInfoDto> input);        
+    Task<GrantApplicationDto> UpdateAssessmentResultsAsync(Guid id, CreateUpdateAssessmentResultsDto input);
+    Task UpdateSupplierNumberAsync(Guid applicationId, string supplierNumber);
+    Task<List<GrantApplicationLiteDto>> GetAllApplicationsAsync();
+    Task<IList<GrantApplicationDto>> GetApplicationDetailsListAsync(List<Guid> applicationIds);
+    Task<GrantApplicationDto> GetAsync(Guid id);
+    Task<GrantApplicationDto> TriggerAction(Guid applicationId, GrantApplicationAction triggerAction);
+    Task<Guid?> GetAccountCodingIdFromFormIdAsync(Guid formId);
+    Task<string> HideAIAnalysisItemAsync(Guid applicationId, string itemId);
+    Task<string> ShowAIAnalysisItemAsync(Guid applicationId, string itemId);
+    Task<PagedResultDto<GrantApplicationDto>> GetListAsync(GrantApplicationListInputDto input);
+    Task<bool> IsApplicantRedStopAsync(Guid applicationId);
 }

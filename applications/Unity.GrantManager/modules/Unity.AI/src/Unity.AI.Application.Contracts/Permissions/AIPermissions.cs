@@ -26,8 +26,12 @@ public static class AIPermissions
     public static class ScoringAssistant
     {
         public const string ScoringAssistantDefault = GroupName + ".ScoringAssistant";
-    }        
+    }
 
+    public static class Configuration
+    {
+        public const string ConfigureAI = "SettingManagement.ConfigureAI";
+    }
 
     public static string[] GetAll()
     {

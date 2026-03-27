@@ -45,10 +45,10 @@
 
         function customConfirmation(triggerActionEnum) {
             let confirmationDetails = getConfirmationText(triggerActionEnum);
-            let isRedStop = $('#redStop').prop("checked");
+            let isRedStop = document.getElementById('actionWidget_ApplicantIsRedStop')?.value === 'true';
         
-            if (isRedStop && triggerActionEnum === 'Approve') {
-                return handleRedStopApproval();
+            if (isRedStop) {
+                return handleRedStopAction();
             }
         
             if (triggerActionEnum === 'CompleteAssessment') {
@@ -58,10 +58,10 @@
             }
         }
         
-        function handleRedStopApproval() {
+        function handleRedStopAction() {
             return Swal.fire({
                 icon: "error",
-                text: "This application is currently flagged as high risk. Approval is not permitted at this time",
+                text: l("GrantApplication:ActionButton.RedStopWarning"),
                 confirmButtonText: 'Ok',
                 customClass: {
                     confirmButton: 'btn btn-primary'

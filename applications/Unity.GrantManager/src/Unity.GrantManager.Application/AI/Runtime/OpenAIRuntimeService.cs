@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Concurrent;
@@ -16,6 +17,7 @@ using Unity.GrantManager.AI.Prompts;
 using Unity.GrantManager.AI.Requests;
 using Unity.GrantManager.AI.Responses;
 using Volo.Abp.DependencyInjection;
+using Volo.Abp.MultiTenancy;
 
 namespace Unity.GrantManager.AI.Runtime
 {
@@ -26,6 +28,8 @@ namespace Unity.GrantManager.AI.Runtime
         private readonly IConfiguration _configuration;
         private readonly ILogger<OpenAIRuntimeService> _logger;
         private readonly ITextExtractionService _textExtractionService;
+        private readonly ICurrentTenant _currentTenant;
+        private readonly IHostEnvironment _hostEnvironment;
         private const string ApplicationAnalysisPromptType = AIPromptTypes.ApplicationAnalysis;
         private const string AttachmentSummaryPromptType = AIPromptTypes.AttachmentSummary;
         private const string ApplicationScoringPromptType = AIPromptTypes.ApplicationScoring;
@@ -45,10 +49,10 @@ namespace Unity.GrantManager.AI.Runtime
         private const string DefaultMaxTokensParameterName = "max_completion_tokens";
         private const string LegacyMaxTokensParameterName = "max_tokens";
         private const string DefaultProviderName = "OpenAI";
-        private const int DefaultCompletionTokens = 150;
-        private const int DefaultAttachmentSummaryCompletionTokens = 500;
-        private const int DefaultApplicationAnalysisCompletionTokens = 2500;
-        private const int DefaultApplicationScoringCompletionTokens = 5000;
+        private const int DefaultCompletionTokens = 2000;
+        private const int DefaultAttachmentSummaryCompletionTokens = 2000;
+        private const int DefaultApplicationAnalysisCompletionTokens = 4000;
+        private const int DefaultApplicationScoringCompletionTokens = 8000;
 
         private int AttachmentSummaryCompletionTokens => ResolveCompletionTokens(AttachmentSummaryPromptType, DefaultAttachmentSummaryCompletionTokens);
         private int ApplicationAnalysisCompletionTokens => ResolveCompletionTokens(ApplicationAnalysisPromptType, DefaultApplicationAnalysisCompletionTokens);
@@ -75,12 +79,16 @@ namespace Unity.GrantManager.AI.Runtime
             HttpClient httpClient,
             IConfiguration configuration,
             ILogger<OpenAIRuntimeService> logger,
-            ITextExtractionService textExtractionService)
+            ITextExtractionService textExtractionService,
+            ICurrentTenant currentTenant,
+            IHostEnvironment hostEnvironment)
         {
             _httpClient = httpClient;
             _configuration = configuration;
             _logger = logger;
             _textExtractionService = textExtractionService;
+            _currentTenant = currentTenant;
+            _hostEnvironment = hostEnvironment;
         }
 
         public Task<bool> IsAvailableAsync()
@@ -214,7 +222,7 @@ namespace Unity.GrantManager.AI.Runtime
                     "OpenAI chat completions response received. StatusCode: {StatusCode}, ResponseLength: {ResponseLength}",
                     response.StatusCode,
                     responseContent?.Length ?? 0);
-                LogProviderMetadata(operationName, providerResponse);
+                LogProviderMetadata(operationName, providerResponse, response.IsSuccessStatusCode);
 
                 if (!response.IsSuccessStatusCode)
                 {
@@ -621,7 +629,7 @@ namespace Unity.GrantManager.AI.Runtime
             }
         }
 
-        private void LogProviderMetadata(string? operationName, AIProviderResult response)
+        private void LogProviderMetadata(string? operationName, AIProviderResult response, bool success)
         {
             if (string.IsNullOrWhiteSpace(response.Model)
                 && string.IsNullOrWhiteSpace(response.FinishReason)
@@ -631,6 +639,19 @@ namespace Unity.GrantManager.AI.Runtime
                 && response.ReasoningTokens == null)
             {
                 return;
+            }
+
+            if (response.PromptTokens != null || response.CompletionTokens != null || response.TotalTokens != null)
+            {
+                _logger.LogInformation(
+                    "AI token usage. FeatureName={FeatureName}, InputTokens={InputTokens}, CompletionTokens={CompletionTokens}, TotalTokens={TotalTokens}, Environment={Environment}, TenantId={TenantId}, Status={Status}",
+                    operationName ?? "completion",
+                    response.PromptTokens,
+                    response.CompletionTokens,
+                    response.TotalTokens,
+                    _hostEnvironment.EnvironmentName,
+                    _currentTenant.Id,
+                    success ? "success" : "failed");
             }
 
             _logger.LogDebug(

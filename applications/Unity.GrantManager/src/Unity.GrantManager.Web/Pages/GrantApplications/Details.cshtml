@@ -35,7 +35,8 @@
     var aiApplicationAnalysisEnabled = await FeatureChecker.IsEnabledAsync("Unity.AI.ApplicationAnalysis")
         && await PermissionChecker.IsGrantedAsync(AIPermissions.ApplicationAnalysis.ApplicationAnalysisDefault);
     var aiScoringEnabled = await FeatureChecker.IsEnabledAsync("Unity.AI.Scoring")
-        && await PermissionChecker.IsGrantedAsync(AIPermissions.ScoringAssistant.ScoringAssistantDefault);
+        && await PermissionChecker.IsGrantedAsync(AIPermissions.ScoringAssistant.ScoringAssistantDefault)
+        && await SettingProvider.GetAsync<bool>(Unity.AI.Settings.AISettings.ScoringAssistantEnabled, defaultValue: false);
     var flexFeatureEnabled = await FeatureChecker.IsEnabledAsync("Unity.Flex");
 }
 @section styles
@@ -69,6 +70,8 @@
 <input type="hidden" id="CurrentUserName" value="@Model.CurrentUserName" />
 <input type="hidden" id="Extensions" value="@Model.Extensions" />
 <input type="hidden" id="MaxFileSize" value="@Model.MaxFileSize" />
+<input type="hidden" id="EmailAttachmentMaxFileSize" value="@Model.EmailAttachmentMaxFileSize" />
+<input type="hidden" id="TotalEmailAttachmentMaxFileSize" value="@Model.TotalEmailAttachmentMaxFileSize" />
 <input type="hidden" id="RenderFormIoToHtml" value="@Model.RenderFormIoToHtml.ToString()" />
 <input type="hidden" id="ApplicationFormVersionId" value="@Model.ApplicationFormVersionId" />
 <input type="hidden" id="AIAnalysisFeatureEnabled" value="@aiApplicationAnalysisEnabled" />

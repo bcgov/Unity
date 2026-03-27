@@ -28,7 +28,7 @@ $(function () {
         abp.libs.datatables.normalizeConfiguration({
             serverSide: false,
             order: [[2, 'asc']],
-            searching: false,
+            searching: true,
             paging: false,
             select: false,
             info: false,
@@ -90,8 +90,11 @@ $(function () {
                     orderable: false
                 }
             ],
+            externalFilterButtonId: 'btn-toggle-filter-uploads',
         })
     );
+
+    initializeFilterRowPlugin(dataTable, 'btn-toggle-filter-uploads');
 
     dataTable.on('click', 'tbody tr', function (e) {
         e.currentTarget.classList.toggle('selected');
