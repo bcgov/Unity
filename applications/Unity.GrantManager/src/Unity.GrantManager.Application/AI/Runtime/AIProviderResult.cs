@@ -5,6 +5,7 @@ namespace Unity.GrantManager.AI.Runtime
         string RawResponse = "",
         string? Model = null,
         string? FinishReason = null,
+        int? HttpStatusCode = null,
         int? PromptTokens = null,
         int? CompletionTokens = null,
         int? TotalTokens = null,
