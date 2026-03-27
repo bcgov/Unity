@@ -1,27 +1,53 @@
-﻿/* Updated for DataTables v2 - ensure proper width handling with scrollX */
-#EmailHistoryTable_wrapper .dt-scroll-body {
-    overflow: unset !important;
-}
+﻿/* Email History Table - Responsive layout without horizontal overflow */
 
-/* Ensure table wrapper uses full width */
+/* Container constraints */
 #EmailHistoryTable_wrapper {
     width: 100%;
+    box-sizing: border-box;
+    overflow: hidden;
 }
 
-    /* Ensure scroll container properly sizes */
-    #EmailHistoryTable_wrapper .dt-scroll {
-        overflow-x: auto;
-    }
+/* Disable scrolling and force fixed layout */
+#EmailHistoryTable_wrapper .dt-scroll {
+    overflow: visible !important;
+    width: 100%;
+    box-sizing: border-box;
+}
 
-    /* Ensure inner scroll elements take full width */
-    #EmailHistoryTable_wrapper .dt-scroll-head .dt-scroll-headInner,
-    #EmailHistoryTable_wrapper .dt-scroll-head .dt-scroll-headInner table {
-        width: 100% !important;
-    }
+#EmailHistoryTable_wrapper .dt-scroll-body {
+    overflow: visible !important;
+    width: 100%;
+    box-sizing: border-box;
+}
 
-    #EmailHistoryTable_wrapper .dt-scroll-body table {
-        width: 100% !important;
-    }
+#EmailHistoryTable_wrapper .dt-scroll-head,
+#EmailHistoryTable_wrapper .dt-scroll-body {
+    max-width: 100%;
+}
+
+/* Force fixed table layout to prevent column expansion */
+#EmailHistoryTable {
+    width: 100% !important;
+    table-layout: fixed !important;
+    box-sizing: border-box;
+}
+
+/* Consistent cell sizing and text handling */
+#EmailHistoryTable th,
+#EmailHistoryTable td {
+    box-sizing: border-box;
+    word-wrap: break-word;
+    word-break: break-word;
+    overflow-wrap: break-word;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Allow expansion for text content in Subject column only */
+#EmailHistoryTable td:nth-child(2),
+#EmailHistoryTable th:nth-child(2) {
+    white-space: normal;
+}
 
 @media (max-height: 768px) {
     .dt-scroll-body {

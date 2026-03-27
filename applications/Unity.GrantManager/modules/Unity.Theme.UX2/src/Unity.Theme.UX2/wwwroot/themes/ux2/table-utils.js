@@ -53,6 +53,9 @@ if ($.fn.dataTable !== undefined && $.fn.dataTable.ext) {
             return csv;
         },
     };
+
+    $.fn.dataTable.Buttons.defaults.dom.button.className = 'btn custom-table-btn flex-none';
+    $.fn.dataTable.Buttons.defaults.dom.button.liner.tag = false;
 }
 
 // ============================================================================
