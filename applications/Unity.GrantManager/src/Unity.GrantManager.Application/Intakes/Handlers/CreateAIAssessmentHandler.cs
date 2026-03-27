@@ -1,12 +1,14 @@
 using Microsoft.Extensions.Logging;
 using System;
 using System.Threading.Tasks;
+using Unity.AI.Settings;
 using Unity.GrantManager.Assessments;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Intakes.Events;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.EventBus;
 using Volo.Abp.Features;
+using Volo.Abp.Settings;
 using Volo.Abp.Uow;
 
 namespace Unity.GrantManager.Intakes.Handlers;
@@ -15,6 +17,7 @@ public class CreateAIAssessmentHandler(
     AssessmentManager assessmentManager,
     IApplicationRepository applicationRepository,
     IFeatureChecker featureChecker,
+    ISettingProvider settingProvider,
     IUnitOfWorkManager unitOfWorkManager,
     ILogger<CreateAIAssessmentHandler> logger) : ILocalEventHandler<AIApplicationScoringGeneratedEvent>, ITransientDependency
 {
@@ -27,6 +30,11 @@ public class CreateAIAssessmentHandler(
         }
 
         if (!await featureChecker.IsEnabledAsync("Unity.AI.Scoring"))
+        {
+            return;
+        }
+
+        if (!await settingProvider.GetAsync<bool>(AISettings.ScoringAssistantEnabled, defaultValue: false))
         {
             return;
         }

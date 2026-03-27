@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
+using Unity.AI.Permissions;
 using Unity.Flex.Permissions;
 using Unity.GrantManager.Identity;
 using Unity.Modules.Shared;
@@ -133,6 +134,7 @@ namespace Unity.GrantManager.Permissions
                     .. Notifications_CommonPermissions,
                     .. Dashboard_CommonPermissions,
                     .. Tags_CommonPermissions,
+                    AIPermissions.Configuration.ConfigureAI,
                     FlexPermissions.Worksheets.Delete
             ], context.TenantId);
 
@@ -241,6 +243,7 @@ namespace Unity.GrantManager.Permissions
                     .. Tags_CommonPermissions,
                     UnitySettingManagementPermissions.ConfigurePayments,
                     UnitySettingManagementPermissions.BackgroundJobSettings,
+                    AIPermissions.Configuration.ConfigureAI,
                 ], context.TenantId);
 
 

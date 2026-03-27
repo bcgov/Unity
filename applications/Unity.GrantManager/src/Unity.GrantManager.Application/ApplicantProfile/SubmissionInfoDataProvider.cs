@@ -24,6 +24,7 @@ namespace Unity.GrantManager.ApplicantProfile
         ICurrentTenant currentTenant,
         IRepository<ApplicationFormSubmission, Guid> applicationFormSubmissionRepository,
         IRepository<Application, Guid> applicationRepository,
+        IRepository<ApplicationForm, Guid> applicationFormRepository,
         IRepository<ApplicationStatus, Guid> applicationStatusRepository,
         IEndpointManagementAppService endpointManagementAppService,
         ILogger<SubmissionInfoDataProvider> logger)
@@ -49,11 +50,13 @@ namespace Unity.GrantManager.ApplicantProfile
             {
                 var submissionsQuery = await applicationFormSubmissionRepository.GetQueryableAsync();
                 var applicationsQuery = await applicationRepository.GetQueryableAsync();
+                var formsQuery = await applicationFormRepository.GetQueryableAsync();
                 var statusesQuery = await applicationStatusRepository.GetQueryableAsync();
 
                 var results = await (
                     from submission in submissionsQuery
                     join application in applicationsQuery on submission.ApplicationId equals application.Id
+                    join form in formsQuery on application.ApplicationFormId equals form.Id
                     join status in statusesQuery on application.ApplicationStatusId equals status.Id
                     where submission.OidcSub == normalizedSubject
                     select new
@@ -63,7 +66,7 @@ namespace Unity.GrantManager.ApplicantProfile
                         submission.CreationTime,
                         submission.Submission,
                         application.ReferenceNo,
-                        application.ProjectName,
+                        FormName = form.ApplicationFormName ?? string.Empty,
                         Status = status.ExternalStatus
                     }).ToListAsync();
 
@@ -74,7 +77,7 @@ namespace Unity.GrantManager.ApplicantProfile
                     ReceivedTime = s.CreationTime,
                     SubmissionTime = ResolveSubmissionTime(s.Submission, s.CreationTime),
                     ReferenceNo = s.ReferenceNo,
-                    ProjectName = s.ProjectName,
+                    Type = s.FormName,
                     Status = s.Status
                 }));
             }

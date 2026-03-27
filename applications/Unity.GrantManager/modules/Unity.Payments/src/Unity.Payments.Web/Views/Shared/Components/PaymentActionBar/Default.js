@@ -189,6 +189,7 @@ $(function () {
             'Payment Tags'
         );
         selectedPaymentIds = [];
+        manageActionButtons();
         PubSub.publish("refresh_payment_list");
     });
 });

@@ -6,6 +6,7 @@ using Unity.AI.Domain;
 using Volo.Abp.Data;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Repositories;
+using Volo.Abp.MultiTenancy;
 
 namespace Unity.AI.DataSeed;
 
@@ -17,7 +18,8 @@ namespace Unity.AI.DataSeed;
 /// </summary>
 public class AIPromptDataSeeder(
     IRepository<AIPrompt, Guid> promptRepository,
-    IRepository<AIPromptVersion, Guid> versionRepository) : IDataSeedContributor, ITransientDependency
+    IRepository<AIPromptVersion, Guid> versionRepository,
+    ICurrentTenant currentTenant) : IDataSeedContributor, ITransientDependency
 {
     // Fixed deterministic GUIDs — never change these; they ensure idempotent re-seeding
     private static readonly Guid AnalysisPromptId   = new("4a100001-1000-4000-a000-000000000001");
@@ -28,9 +30,12 @@ public class AIPromptDataSeeder(
     {
         if (context.TenantId != null) return; // host database only
 
-        await SeedAnalysisPromptAsync();
-        await SeedAttachmentPromptAsync();
-        await SeedScoresheetPromptAsync();
+        using (currentTenant.Change(null))
+        {
+            await SeedAnalysisPromptAsync();
+            await SeedAttachmentPromptAsync();
+            await SeedScoresheetPromptAsync();
+        }
     }
 
     // ─── ANALYSIS ────────────────────────────────────────────────────────────
