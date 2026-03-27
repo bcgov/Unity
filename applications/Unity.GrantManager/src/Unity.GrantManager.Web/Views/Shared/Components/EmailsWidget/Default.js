@@ -856,6 +856,26 @@ function uploadEmailFiles(inputId) {
         data: formData,
         processData: false,
         contentType: false,
+        xhr: function () {
+            const xhr = new window.XMLHttpRequest();
+            xhr.upload.addEventListener('progress', function (e) {
+                if (e.lengthComputable) {
+                    const pct = Math.round((e.loaded / e.total) * 100);
+                    $('#attachment-upload-progress-bar')
+                        .css('width', pct + '%')
+                        .attr('aria-valuenow', pct)
+                        .text(pct + '%');
+                }
+            });
+            return xhr;
+        },
+        beforeSend: function () {
+            $('#email_attachment_upload_btn')
+                .html('<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>Uploading...')
+                .prop('disabled', true);
+            $('#attachment-upload-progress-bar').css('width', '0%').text('0%');
+            $('#attachment-upload-progress').show();
+        },
         success: function () {
             PubSub.publish('reload_email_attachments_table');
         },
@@ -864,6 +884,10 @@ function uploadEmailFiles(inputId) {
         },
         complete: function () {
             input.value = '';
+            $('#email_attachment_upload_btn')
+                .html('<i class="fl fl-plus me-1"></i>Add Attachments')
+                .prop('disabled', false);
+            $('#attachment-upload-progress').hide();
         }
     });
 }
