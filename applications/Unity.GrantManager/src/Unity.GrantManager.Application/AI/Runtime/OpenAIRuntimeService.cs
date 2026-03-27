@@ -669,8 +669,7 @@ namespace Unity.GrantManager.AI.Runtime
             if (response.PromptTokens != null || response.CompletionTokens != null || response.TotalTokens != null)
             {
                 _logger.LogInformation(
-                    "AI token usage. FeatureName={FeatureName}, OperationName={OperationName}, InputTokens={InputTokens}, CompletionTokens={CompletionTokens}, TotalTokens={TotalTokens}, Environment={Environment}, TenantId={TenantId}, Status={Status}, PromptVersion={PromptVersion}, Model={Model}, HttpStatusCode={HttpStatusCode}, FileName={FileName}",
-                    operationName ?? "completion",
+                    "AI token usage. OperationName={OperationName}, InputTokens={InputTokens}, CompletionTokens={CompletionTokens}, TotalTokens={TotalTokens}, Environment={Environment}, TenantId={TenantId}, Status={Status}, PromptVersion={PromptVersion}, Model={Model}, HttpStatusCode={HttpStatusCode}, FileName={FileName}",
                     operationName ?? "completion",
                     response.PromptTokens,
                     response.CompletionTokens,
