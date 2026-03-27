@@ -15,7 +15,7 @@ namespace Unity.GrantManager.Repositories;
 [Dependency(ReplaceServices = true)]
 [ExposeServices(typeof(ICommentsRepository<ApplicantComment>))]
 #pragma warning disable CS8613 // Nullability of reference types in return type doesn't match implicitly implemented member.
-// This pattern is an implementation ontop of ABP framework, will not change this
+// This pattern is an implementation built on top of the ABP framework and will not be changed.
 public class ApplicantCommentsRepository : EfCoreRepository<GrantTenantDbContext, ApplicantComment, Guid>, ICommentsRepository<ApplicantComment>
 #pragma warning restore CS8613 // Nullability of reference types in return type doesn't match implicitly implemented member.
 {
