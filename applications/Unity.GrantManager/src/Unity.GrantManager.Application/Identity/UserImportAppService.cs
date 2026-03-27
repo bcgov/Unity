@@ -166,7 +166,7 @@ namespace Unity.GrantManager.Identity
                 }
             }
 
-            return users;
+            return users.GroupBy(u => u.UserGuid).Select(g => g.First()).ToList();
         }
 
         private async Task<IdentityUser?> CreateNewIdentityUserAsync(Guid newUserId, string? username, string? firstName, string? lastName, string? emailAddress)
