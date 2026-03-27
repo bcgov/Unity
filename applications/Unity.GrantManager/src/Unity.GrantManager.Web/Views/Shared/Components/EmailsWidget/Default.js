@@ -806,7 +806,7 @@
     }
 
     function checkTotalAttachmentSize() {
-        const totalMaxFileSize = parseFloat(
+        const totalMaxFileSize = Number.parseFloat(
             decodeURIComponent($('#TotalEmailAttachmentMaxFileSize').val()) || '25'
         );
 
@@ -882,7 +882,7 @@
             );
         }
 
-        const totalMaxFileSize = parseFloat(
+        const totalMaxFileSize = Number.parseFloat(
             decodeURIComponent($('#TotalEmailAttachmentMaxFileSize').val()) || '25'
         );
         let existingTotalBytes = 0;
