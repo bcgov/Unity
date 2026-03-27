@@ -241,6 +241,14 @@
             </abp-row>
         </zone-fieldset>
 
+        @* Zone Section : AdditionalContact *@
+        <zone id="@UnitySelector.Applicant.AdditionalContact.Default"
+              permission-requirement="@UnitySelector.Applicant.AdditionalContact.Default"
+              form-id="@Model.ApplicationFormId" show-legend="false"
+              editable-if="IsAdditionalContactEditable">
+            @await Component.InvokeAsync("ApplicationContactsWidget", new { applicationId = Model.ApplicationId })
+        </zone>
+
         @* Zone Section : Address *@
         <zone-fieldset id="@UnitySelector.Applicant.Location.Default" form-id="@Model.ApplicationFormId" show-legend="true"
                        update-permission-requirement="@UnitySelector.Applicant.Location.Update">
@@ -362,17 +370,6 @@
         </zone>
     </form>
 </abp-row>
-
-@* Zone Section : AdditionalContact *@
-<zone id="@UnitySelector.Applicant.AdditionalContact.Default"
-      permission-requirement="@UnitySelector.Applicant.AdditionalContact.Default"
-      form-id="@Model.ApplicationFormId" show-legend="false"
-      editable-if="IsAdditionalContactEditable">
-    <abp-row class="px-1 pb-2 mb-4 summary-container">
-        @await Component.InvokeAsync("ApplicationContactsWidget", new { applicationId = Model.ApplicationId })
-    </abp-row>
-</zone>
-
 
 <div class="modal fade" id="mergeDuplicateApplicantsModal" tabindex="-1" aria-labelledby="mergeApplicantsModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-centered">
