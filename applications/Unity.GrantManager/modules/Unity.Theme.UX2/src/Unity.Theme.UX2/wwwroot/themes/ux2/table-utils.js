@@ -53,6 +53,9 @@ if ($.fn.dataTable !== undefined && $.fn.dataTable.ext) {
             return csv;
         },
     };
+
+    $.fn.dataTable.Buttons.defaults.dom.button.className = 'btn unt-btn-outline-primary btn-outline-primary';
+    $.fn.dataTable.Buttons.defaults.dom.button.liner.tag = false;
 }
 
 // ============================================================================
