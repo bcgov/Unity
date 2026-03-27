@@ -27,7 +27,7 @@ public class EmailLogAttachmentAppService(
 
         foreach (var attachment in attachments)
         {
-            var dto = new EmailLogAttachmentDto
+            dtos.Add(new EmailLogAttachmentDto
             {
                 Id = attachment.Id,
                 FileName = attachment.FileName,
@@ -37,8 +37,7 @@ public class EmailLogAttachmentAppService(
                 ContentType = attachment.ContentType,
                 S3ObjectKey = attachment.S3ObjectKey,
                 AttachedBy = await ResolveUserNameAsync(attachment.UserId)
-            };
-            dtos.Add(dto);
+            });
         }
 
         return dtos;
@@ -63,6 +62,11 @@ public class EmailLogAttachmentAppService(
             Logger.LogError(ex, "Failed to delete S3 object {S3ObjectKey} for attachment {AttachmentId}", attachment.S3ObjectKey, id);
         }
         await emailLogAttachmentRepository.DeleteAsync(id);
+    }
+
+    public async Task<long> GetTotalFileSizeByEmailLogIdAsync(Guid emailLogId)
+    {
+        return await emailAttachmentService.GetTotalFileSizeAsync(emailLogId);
     }
 
     public async Task<EmailLogAttachmentDto> UploadAsync(Guid emailLogId, Guid? tenantId, string fileName, byte[] content, string contentType)
