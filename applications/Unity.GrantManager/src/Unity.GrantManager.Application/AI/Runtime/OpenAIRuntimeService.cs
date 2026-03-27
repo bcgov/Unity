@@ -143,7 +143,8 @@ namespace Unity.GrantManager.AI.Runtime
                     applicationAnalysisContent,
                     systemPrompt,
                     ApplicationAnalysisCompletionTokens,
-                    operationName: ApplicationAnalysisPromptType),
+                    operationName: ApplicationAnalysisPromptType,
+                    promptVersion: promptVersion),
                 AIProviderPayloadValidator.IsValidApplicationAnalysisJson,
                 "application analysis");
             await LogPromptOutputAsync(ApplicationAnalysisPromptType, promptVersion, result.CaptureOutput);
@@ -161,7 +162,9 @@ namespace Unity.GrantManager.AI.Runtime
             string? systemPrompt,
             int maxTokens = 150,
             double? temperature = null,
-            string? operationName = null)
+            string? operationName = null,
+            string? promptVersion = null,
+            string? fileName = null)
         {
             var providerName = ResolveProviderName(operationName);
             if (!string.Equals(providerName, DefaultProviderName, StringComparison.Ordinal))
@@ -216,13 +219,17 @@ namespace Unity.GrantManager.AI.Runtime
                 var response = await _httpClient.PostAsync(ResolveApiUrl(operationName), httpContent);
                 var responseContent = await response.Content.ReadAsStringAsync();
                 var metadata = TryExtractProviderMetadata(responseContent);
-                var providerResponse = BuildProviderResponseFromMetadata(string.Empty, responseContent, metadata);
+                var providerResponse = BuildProviderResponseFromMetadata(
+                    string.Empty,
+                    responseContent,
+                    metadata,
+                    (int)response.StatusCode);
 
                 _logger.LogDebug(
                     "OpenAI chat completions response received. StatusCode: {StatusCode}, ResponseLength: {ResponseLength}",
                     response.StatusCode,
                     responseContent?.Length ?? 0);
-                LogProviderMetadata(operationName, providerResponse, response.IsSuccessStatusCode);
+                LogProviderMetadata(operationName, promptVersion, fileName, providerResponse, response.IsSuccessStatusCode);
 
                 if (!response.IsSuccessStatusCode)
                 {
@@ -245,7 +252,11 @@ namespace Unity.GrantManager.AI.Runtime
                         var modelOutput = message.GetProperty("content").GetString();
                         return string.IsNullOrWhiteSpace(modelOutput)
                             ? AIOperationResult.InvalidOutput(providerResponse)
-                            : AIOperationResult.Success(BuildProviderResponseFromMetadata(modelOutput, responseContent, metadata));
+                            : AIOperationResult.Success(BuildProviderResponseFromMetadata(
+                                modelOutput,
+                                responseContent,
+                                metadata,
+                                (int)response.StatusCode));
                     }
 
                     return AIOperationResult.InvalidOutput(providerResponse);
@@ -298,11 +309,13 @@ namespace Unity.GrantManager.AI.Runtime
 
                 await LogPromptInputAsync(AttachmentSummaryPromptType, promptVersion, prompt, contentToAnalyze);
                 var result = await GenerateWithRetryAsync(
-                    () => GenerateSummaryAsync(
-                        contentToAnalyze,
-                        prompt,
-                        AttachmentSummaryCompletionTokens,
-                        operationName: AttachmentSummaryPromptType),
+                () => GenerateSummaryAsync(
+                    contentToAnalyze,
+                    prompt,
+                    AttachmentSummaryCompletionTokens,
+                    operationName: AttachmentSummaryPromptType,
+                    promptVersion: promptVersion,
+                    fileName: fileName),
                     AIProviderPayloadValidator.IsValidAttachmentSummaryText,
                     "attachment summary");
                 await LogPromptOutputAsync(AttachmentSummaryPromptType, promptVersion, result.CaptureOutput);
@@ -462,11 +475,12 @@ namespace Unity.GrantManager.AI.Runtime
 
                 await LogPromptInputAsync(ApplicationScoringPromptType, promptVersion, systemPrompt, applicationScoringContent);
                 var result = await GenerateWithRetryAsync(
-                    () => GenerateSummaryAsync(
-                        applicationScoringContent,
-                        systemPrompt,
-                        ApplicationScoringCompletionTokens,
-                        operationName: ApplicationScoringPromptType),
+                () => GenerateSummaryAsync(
+                    applicationScoringContent,
+                    systemPrompt,
+                    ApplicationScoringCompletionTokens,
+                    operationName: ApplicationScoringPromptType,
+                    promptVersion: promptVersion),
                     content => AIProviderPayloadValidator.IsValidApplicationScoringJson(content, sectionJson),
                     $"application scoring section {request.SectionName}");
                 await LogPromptOutputAsync(ApplicationScoringPromptType, promptVersion, result.CaptureOutput);
@@ -564,13 +578,18 @@ namespace Unity.GrantManager.AI.Runtime
             return AIOperationResult.PermanentFailure(response);
         }
 
-        private static AIProviderResult BuildProviderResponseFromMetadata(string content, string? rawResponse, AIProviderResponseMetadata? metadata)
+        private static AIProviderResult BuildProviderResponseFromMetadata(
+            string content,
+            string? rawResponse,
+            AIProviderResponseMetadata? metadata,
+            int? httpStatusCode = null)
         {
             return new AIProviderResult(
                 content,
                 rawResponse ?? string.Empty,
                 metadata?.Model,
                 metadata?.FinishReason,
+                httpStatusCode,
                 metadata?.PromptTokens,
                 metadata?.CompletionTokens,
                 metadata?.TotalTokens,
@@ -629,10 +648,16 @@ namespace Unity.GrantManager.AI.Runtime
             }
         }
 
-        private void LogProviderMetadata(string? operationName, AIProviderResult response, bool success)
+        private void LogProviderMetadata(
+            string? operationName,
+            string? promptVersion,
+            string? fileName,
+            AIProviderResult response,
+            bool success)
         {
             if (string.IsNullOrWhiteSpace(response.Model)
                 && string.IsNullOrWhiteSpace(response.FinishReason)
+                && response.HttpStatusCode == null
                 && response.PromptTokens == null
                 && response.CompletionTokens == null
                 && response.TotalTokens == null
@@ -644,21 +669,26 @@ namespace Unity.GrantManager.AI.Runtime
             if (response.PromptTokens != null || response.CompletionTokens != null || response.TotalTokens != null)
             {
                 _logger.LogInformation(
-                    "AI token usage. FeatureName={FeatureName}, InputTokens={InputTokens}, CompletionTokens={CompletionTokens}, TotalTokens={TotalTokens}, Environment={Environment}, TenantId={TenantId}, Status={Status}",
+                    "AI token usage. OperationName={OperationName}, InputTokens={InputTokens}, CompletionTokens={CompletionTokens}, TotalTokens={TotalTokens}, Environment={Environment}, TenantId={TenantId}, Status={Status}, PromptVersion={PromptVersion}, Model={Model}, HttpStatusCode={HttpStatusCode}, FileName={FileName}",
                     operationName ?? "completion",
                     response.PromptTokens,
                     response.CompletionTokens,
                     response.TotalTokens,
                     _hostEnvironment.EnvironmentName,
                     _currentTenant.Id,
-                    success ? "success" : "failed");
+                    success ? "success" : "failed",
+                    promptVersion,
+                    response.Model,
+                    response.HttpStatusCode,
+                    fileName);
             }
 
             _logger.LogDebug(
-                "AI provider response metadata for {OperationName}: Model={Model}, FinishReason={FinishReason}, PromptTokens={PromptTokens}, CompletionTokens={CompletionTokens}, TotalTokens={TotalTokens}, ReasoningTokens={ReasoningTokens}",
+                "AI provider response metadata for {OperationName}: Model={Model}, FinishReason={FinishReason}, HttpStatusCode={HttpStatusCode}, PromptTokens={PromptTokens}, CompletionTokens={CompletionTokens}, TotalTokens={TotalTokens}, ReasoningTokens={ReasoningTokens}",
                 operationName ?? "completion",
                 response.Model,
                 response.FinishReason,
+                response.HttpStatusCode,
                 response.PromptTokens,
                 response.CompletionTokens,
                 response.TotalTokens,
