@@ -1,4 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
@@ -6,6 +8,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
+using Unity.GrantManager.Notifications;
 using Unity.Notifications.Emails;
 using Unity.Notifications.Permissions;
 using Unity.Notifications.Settings;
@@ -14,9 +17,8 @@ using Volo.Abp.Application.Services;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Features;
 using Volo.Abp.SettingManagement;
-using Microsoft.AspNetCore.Http;
+using Volo.Abp.UI.Navigation.Urls;
 using Volo.Abp.Users;
-using Unity.GrantManager.Notifications;
 
 namespace Unity.Notifications.EmailNotifications;
 
@@ -29,6 +31,7 @@ public class EmailNotificationService(
         ISettingManager settingManager,
         IHttpContextAccessor httpContextAccessor,
         IFeatureChecker featureChecker,
+        IAppUrlProvider appUrlProvider,
         System.Text.Encodings.Web.UrlEncoder urlEncoder) : ApplicationService, IEmailNotificationService
 {
 
@@ -72,6 +75,12 @@ public class EmailNotificationService(
         await notificationAppService.PostToTeamsAsync(activityTitle, activitySubtitle);
     }
 
+    public async Task<string> GetBaseUrlAsync()
+    {
+        var appUrl = await appUrlProvider.GetUrlAsync(appName: "MVC");
+        return appUrl;
+    }
+
     public async Task<HttpResponseMessage> SendCommentNotification(EmailCommentDto input)
     {
         HttpResponseMessage res = new();
@@ -80,24 +89,17 @@ public class EmailNotificationService(
             if (await featureChecker.IsEnabledAsync("Unity.Notifications"))
             {
                 var defaultFromAddress = await SettingProvider.GetOrNullAsync(NotificationsSettings.Mailing.DefaultFromAddress);
-                var scheme = "https";
-                var request = (httpContextAccessor.HttpContext?.Request) ?? throw new InvalidOperationException("HttpContext or Request is null.");
-                var host = request.Host.ToUriComponent();
-                var baseUrl = await SettingProvider.GetOrNullAsync("App:BaseUrl") 
-                    ?? throw new BusinessException("App:BaseUrlNotConfigured");
-
-                const int ApplicantCommentType = 2;
-                var pathBase = input.CommentType == ApplicantCommentType
-                    ? "/GrantApplicants/Details"
-                    : "/GrantApplications/Details";
-
-                var queryParamName = input.CommentType == ApplicantCommentType 
-                    ? "ApplicantId" 
-                    : "ApplicationId";
-
-                // Use the injected urlEncoder
+                var baseUrl = await GetBaseUrlAsync();
                 var encodedOwnerId = urlEncoder.Encode(input.OwnerId.ToString());
-                var commentLink = $"{baseUrl}{pathBase}?{queryParamName}={encodedOwnerId}";
+
+                string commentLink = input.CommentType switch
+                {
+                    Comments.CommentType.ApplicationComment or Comments.CommentType.AssessmentComment => 
+                        QueryHelpers.AddQueryString($"{baseUrl}/GrantApplications/Details", "ApplicationId", encodedOwnerId),
+                    Comments.CommentType.ApplicantComment => 
+                        QueryHelpers.AddQueryString($"{baseUrl}/GrantApplicants/Details", "ApplicantId", encodedOwnerId),
+                    _ => throw new InvalidOperationException("Invalid comment type.")
+                };
 
                 var subject = $"Unity-Comment: {input.Subject}";
                 var fromEmail = defaultFromAddress ?? "NoReply@gov.bc.ca";
