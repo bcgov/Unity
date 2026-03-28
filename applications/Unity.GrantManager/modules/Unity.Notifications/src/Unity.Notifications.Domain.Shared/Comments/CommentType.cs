@@ -1,8 +1,8 @@
 ﻿using System.Text.Json.Serialization;
 
-namespace Unity.GrantManager.Comments;
+namespace Unity.Notifications.Comments;
 
-/// Edit Unity.Notifications.Comments.CommenType if changing this enum as it is shared between the two projects and used in the API layer.
+/// Edit Unity.GrantManager.Comments.CommenType if changing this enum as it is shared between the two projects and used in the API layer.
 [JsonConverter(typeof(JsonStringEnumConverter))]
 public enum CommentType
 {
