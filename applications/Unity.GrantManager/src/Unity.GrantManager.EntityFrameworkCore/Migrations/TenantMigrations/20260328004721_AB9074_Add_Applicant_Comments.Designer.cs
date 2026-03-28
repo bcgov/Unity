@@ -13,7 +13,7 @@ using Volo.Abp.EntityFrameworkCore;
 namespace Unity.GrantManager.Migrations.TenantMigrations
 {
     [DbContext(typeof(GrantTenantDbContext))]
-    [Migration("20260309215203_AB9074_Add_Applicant_Comments")]
+    [Migration("20260328004721_AB9074_Add_Applicant_Comments")]
     partial class AB9074_Add_Applicant_Comments
     {
         /// <inheritdoc />
@@ -839,7 +839,7 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<string>("IndigenousOrgInd")
                         .HasColumnType("text");
 
-                    b.Property<bool?>("IsDuplicated")
+                    b.Property<bool>("IsDuplicated")
                         .HasColumnType("boolean");
 
                     b.Property<string>("IssueTrackingComments")
