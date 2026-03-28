@@ -17,7 +17,8 @@
     bool IsAdditionalContactEditable = await PermissionChecker.IsGrantedAsync(UnitySelector.Applicant.AdditionalContact.Update);
 }
 
-<h6 class="ps-2 mb-3 fw-bold">@L["Summary:ContactsTitle"].Value</h6>
+<div class="pb-2 summary-container">
+<h6 class="ps-1 pb-3 pt-2 mt-3 fw-bold">@L["Summary:ContactsTitle"].Value</h6>
 <input id="ApplicationContactsWidget_ApplicationId" value="@Model.ApplicationId" type="hidden"/>
 @if (Model.ApplicationContacts.Count > 0) {
     <p class="px-2 mb-0 fw-bold text-muted">Info</p>
@@ -75,3 +76,4 @@
             button-type="Light" />
     </div>
 }
+</div>
