@@ -6,7 +6,7 @@ namespace Unity.GrantManager.Comments;
 [JsonConverter(typeof(JsonStringEnumConverter))]
 public enum CommentType
 {
-    ApplicationComment = 0,
-    AssessmentComment = 1,
-    ApplicantComment = 2,
+    ApplicationComment,
+    AssessmentComment,
+    ApplicantComment,
 }
