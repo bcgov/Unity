@@ -1,0 +1,18 @@
+/*
+ * chefs-vuetify-bs-bridge.css
+ * Overrides Bootstrap bg-* utility classes with CHEFS BC Government theme colors.
+ * Color values are sourced from the CHEFS Vuetify chefsTheme (vuetify-theme-stylesheet).
+ *
+ * NOTE: chefs-vuetify-theme.css is intentionally NOT loaded in the shadow DOM because
+ * it defines --v-theme-surface (white) which activates dormant Vuetify CSS rules in
+ * chefs-index.css that override panel backgrounds with white.
+ *
+ * Formio panel themes are a fixed set (primary, secondary, info, success, warning, danger)
+ * so all cases are covered here without needing dynamic CSS variable resolution.
+ */
+.bg-primary   { background-color: rgb(0,   51,  102) !important; color: rgb(255, 255, 255) !important; } /* --v-theme-primary */
+.bg-secondary { background-color: rgb(252, 186, 25)  !important; color: rgb(0,   0,   0)   !important; } /* --v-theme-secondary */
+.bg-success   { background-color: rgb(46,  133, 64)  !important; color: rgb(255, 255, 255) !important; } /* --v-theme-success */
+.bg-info      { background-color: rgb(33,  150, 243) !important; color: rgb(255, 255, 255) !important; } /* --v-theme-info */
+.bg-warning   { background-color: rgb(218, 113, 2)   !important; color: rgb(255, 255, 255) !important; } /* --v-theme-warning */
+.bg-danger    { background-color: rgb(216, 41,  47)  !important; color: rgb(255, 255, 255) !important; } /* --v-theme-error */
