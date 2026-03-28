@@ -2,8 +2,9 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Threading.Tasks;
+using Unity.AI;
 using Unity.AI.Permissions;
-using Unity.GrantManager.AI.BackgroundJobs;
+using Unity.GrantManager.GrantApplications.Automation.BackgroundJobs;
 using Volo.Abp;
 using Volo.Abp.BackgroundJobs;
 using Volo.Abp.Features;
@@ -16,7 +17,7 @@ namespace Unity.GrantManager.GrantApplications;
 public class ApplicationContentAppService(
     IBackgroundJobManager backgroundJobManager,
     IFeatureChecker featureChecker)
-    : GrantManagerAppService, IApplicationContentAppService
+    : AIAppService, IApplicationContentAppService
 {
     public async Task<string> GenerateContentAsync(Guid applicationId, string? promptVersion = null)
     {
@@ -31,7 +32,7 @@ public class ApplicationContentAppService(
                 throw new UserFriendlyException("AI generate all is not enabled.");
             }
 
-            await backgroundJobManager.EnqueueAsync(new GenerateContentBackgroundJobArgs
+            await backgroundJobManager.EnqueueAsync(new GenerateApplicationAIContentJobArgs
             {
                 ApplicationId = applicationId,
                 PromptVersion = promptVersion,

@@ -1,6 +1,6 @@
 using System.Threading.Tasks;
 
-namespace Unity.GrantManager.AI.Extraction
+namespace Unity.AI.Extraction
 {
     public interface ITextExtractionService
     {

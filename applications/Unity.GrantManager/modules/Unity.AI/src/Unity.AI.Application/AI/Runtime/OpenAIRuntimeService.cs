@@ -11,15 +11,15 @@ using System.Net.Http;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
-using Unity.GrantManager.AI.Extraction;
-using Unity.GrantManager.AI.Models;
-using Unity.GrantManager.AI.Prompts;
-using Unity.GrantManager.AI.Requests;
-using Unity.GrantManager.AI.Responses;
+using Unity.AI.Extraction;
+using Unity.AI.Models;
+using Unity.AI.Prompts;
+using Unity.AI.Requests;
+using Unity.AI.Responses;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.MultiTenancy;
 
-namespace Unity.GrantManager.AI.Runtime
+namespace Unity.AI.Runtime
 {
     [ExposeServices(typeof(IAIService))]
     public class OpenAIRuntimeService : IAIService, ITransientDependency

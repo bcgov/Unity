@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace Unity.GrantManager.AI.Models
+namespace Unity.AI.Models
 {
     public class ApplicationAnalysisFinding
     {

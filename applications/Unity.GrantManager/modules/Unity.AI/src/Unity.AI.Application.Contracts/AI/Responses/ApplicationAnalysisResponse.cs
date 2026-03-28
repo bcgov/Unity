@@ -1,8 +1,8 @@
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
-using Unity.GrantManager.AI.Models;
+using Unity.AI.Models;
 
-namespace Unity.GrantManager.AI.Responses
+namespace Unity.AI.Responses
 {
     public class ApplicationAnalysisResponse
     {

@@ -1,4 +1,4 @@
-namespace Unity.GrantManager.AI.Prompts;
+namespace Unity.AI.Prompts;
 
 public static class AIPromptTypes
 {

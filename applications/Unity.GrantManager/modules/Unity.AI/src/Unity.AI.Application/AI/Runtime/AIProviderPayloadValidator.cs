@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Text.Json;
-using Unity.GrantManager.AI.Models;
+using Unity.AI.Models;
 
-namespace Unity.GrantManager.AI.Runtime
+namespace Unity.AI.Runtime
 {
     internal static class AIProviderPayloadValidator
     {

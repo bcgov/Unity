@@ -2,8 +2,9 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Threading.Tasks;
+using Unity.AI;
 using Unity.AI.Permissions;
-using Unity.GrantManager.AI.BackgroundJobs;
+using Unity.GrantManager.GrantApplications.Automation.BackgroundJobs;
 using Volo.Abp;
 using Volo.Abp.BackgroundJobs;
 using Volo.Abp.Features;
@@ -14,7 +15,7 @@ namespace Unity.GrantManager.GrantApplications;
 public class ApplicationScoringAppService(
     IBackgroundJobManager backgroundJobManager,
     IFeatureChecker featureChecker)
-    : GrantManagerAppService, IApplicationScoringAppService
+    : AIAppService, IApplicationScoringAppService
 {
     public async Task<string> GenerateApplicationScoringAsync(Guid applicationId, string? promptVersion = null)
     {

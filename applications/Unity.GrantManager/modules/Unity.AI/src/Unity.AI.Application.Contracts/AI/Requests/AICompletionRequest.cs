@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace Unity.GrantManager.AI.Requests
+namespace Unity.AI.Requests
 {
     public class AICompletionRequest
     {

@@ -13,7 +13,7 @@ using System.Xml.Linq;
 using UglyToad.PdfPig;
 using Volo.Abp.DependencyInjection;
 
-namespace Unity.GrantManager.AI.Extraction
+namespace Unity.AI.Extraction
 {
     public partial class TextExtractionService : ITextExtractionService, ITransientDependency
     {

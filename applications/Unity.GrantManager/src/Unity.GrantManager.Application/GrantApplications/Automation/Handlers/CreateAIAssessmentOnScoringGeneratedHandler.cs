@@ -2,43 +2,38 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Threading.Tasks;
 using Unity.AI.Settings;
-using Unity.GrantManager.Assessments;
 using Unity.GrantManager.Applications;
-using Unity.GrantManager.Intakes.Events;
+using Unity.GrantManager.Assessments;
+using Unity.GrantManager.GrantApplications.Automation.Events;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.EventBus;
 using Volo.Abp.Features;
 using Volo.Abp.Settings;
 using Volo.Abp.Uow;
-
-namespace Unity.GrantManager.Intakes.Handlers;
-
-public class CreateAIAssessmentHandler(
+namespace Unity.GrantManager.GrantApplications.Automation.Handlers;
+public class CreateAIAssessmentOnScoringGeneratedHandler(
     AssessmentManager assessmentManager,
     IApplicationRepository applicationRepository,
     IFeatureChecker featureChecker,
     ISettingProvider settingProvider,
     IUnitOfWorkManager unitOfWorkManager,
-    ILogger<CreateAIAssessmentHandler> logger) : ILocalEventHandler<AIApplicationScoringGeneratedEvent>, ITransientDependency
+    ILogger<CreateAIAssessmentOnScoringGeneratedHandler> logger) : ILocalEventHandler<ApplicationAIScoringGeneratedEvent>, ITransientDependency
 {
-    public async Task HandleEventAsync(AIApplicationScoringGeneratedEvent eventData)
+    public async Task HandleEventAsync(ApplicationAIScoringGeneratedEvent eventData)
     {
         if (eventData == null || eventData.ApplicationId == Guid.Empty)
         {
-            logger.LogWarning("Event data or application ID is null in CreateAIAssessmentHandler.");
+            logger.LogWarning("Event data or application ID is null in CreateAIAssessmentOnScoringGeneratedHandler.");
             return;
         }
-
         if (!await featureChecker.IsEnabledAsync("Unity.AI.Scoring"))
         {
             return;
         }
-
         if (!await settingProvider.GetAsync<bool>(AISettings.ScoringAssistantEnabled, defaultValue: false))
         {
             return;
         }
-
         try
         {
             using var uow = unitOfWorkManager.Begin(requiresNew: true);

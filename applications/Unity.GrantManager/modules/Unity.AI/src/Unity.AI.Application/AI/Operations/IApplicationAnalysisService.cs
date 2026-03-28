@@ -1,7 +1,7 @@
 using System;
 using System.Threading.Tasks;
 
-namespace Unity.GrantManager.AI.Operations
+namespace Unity.AI.Operations
 {
     public interface IApplicationAnalysisService
     {

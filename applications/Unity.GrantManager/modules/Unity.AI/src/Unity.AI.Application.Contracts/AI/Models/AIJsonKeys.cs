@@ -1,4 +1,4 @@
-namespace Unity.GrantManager.AI.Models
+namespace Unity.AI.Models
 {
     public static class AIJsonKeys
     {

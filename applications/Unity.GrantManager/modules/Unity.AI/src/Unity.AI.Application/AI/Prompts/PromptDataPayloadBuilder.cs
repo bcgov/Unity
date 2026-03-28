@@ -6,7 +6,7 @@ using System.Linq;
 using System.Text.Json;
 using Unity.GrantManager.Applications;
 
-namespace Unity.GrantManager.AI.Prompts
+namespace Unity.AI.Prompts
 {
     internal static class PromptDataPayloadBuilder
     {

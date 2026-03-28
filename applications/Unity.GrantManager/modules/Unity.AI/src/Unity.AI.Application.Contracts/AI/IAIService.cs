@@ -1,8 +1,8 @@
 using System.Threading.Tasks;
-using Unity.GrantManager.AI.Requests;
-using Unity.GrantManager.AI.Responses;
+using Unity.AI.Requests;
+using Unity.AI.Responses;
 
-namespace Unity.GrantManager.AI
+namespace Unity.AI
 {
     public interface IAIService
     {

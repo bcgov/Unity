@@ -1,4 +1,4 @@
-namespace Unity.GrantManager.AI.Runtime
+namespace Unity.AI.Runtime
 {
     internal sealed record AIProviderResult(
         string Content,

@@ -1,9 +1,9 @@
 using System.Collections.Generic;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Unity.GrantManager.AI.Models;
+using Unity.AI.Models;
 
-namespace Unity.GrantManager.AI.Requests
+namespace Unity.AI.Requests
 {
     public class ApplicationScoringRequest
     {

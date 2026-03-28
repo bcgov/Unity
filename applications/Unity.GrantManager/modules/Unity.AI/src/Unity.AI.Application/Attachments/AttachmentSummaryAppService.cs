@@ -3,10 +3,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Unity.AI;
 using Unity.AI.Permissions;
-using Unity.GrantManager.AI.BackgroundJobs;
+using Unity.GrantManager.GrantApplications.Automation.BackgroundJobs;
 using Volo.Abp;
-using Volo.Abp.Application.Services;
 using Volo.Abp.BackgroundJobs;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Features;
@@ -18,7 +18,7 @@ namespace Unity.GrantManager.Attachments;
 [ExposeServices(typeof(AttachmentSummaryAppService), typeof(IAttachmentSummaryAppService))]
 public class AttachmentSummaryAppService(
     IBackgroundJobManager backgroundJobManager,
-    IFeatureChecker featureChecker) : ApplicationService, IAttachmentSummaryAppService
+    IFeatureChecker featureChecker) : AIAppService, IAttachmentSummaryAppService
 {
     private const string SummaryGenerationQueuedMessage = "AI summary generation queued.";
 

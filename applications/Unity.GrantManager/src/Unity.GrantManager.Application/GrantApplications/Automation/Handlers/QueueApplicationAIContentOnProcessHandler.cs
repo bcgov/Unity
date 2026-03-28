@@ -1,36 +1,32 @@
 using Microsoft.Extensions.Logging;
 using System;
 using System.Threading.Tasks;
-using Unity.GrantManager.AI.BackgroundJobs;
+using Unity.GrantManager.GrantApplications.Automation.BackgroundJobs;
 using Unity.GrantManager.Intakes.Events;
 using Volo.Abp.BackgroundJobs;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.EventBus;
 using Volo.Abp.MultiTenancy;
-
-namespace Unity.GrantManager.Intakes.Handlers;
-
-public class GenerateAIContentHandler(
+namespace Unity.GrantManager.GrantApplications.Automation.Handlers;
+public class QueueApplicationAIContentOnProcessHandler(
     IBackgroundJobManager backgroundJobManager,
     ICurrentTenant currentTenant,
-    ILogger<GenerateAIContentHandler> logger) : ILocalEventHandler<ApplicationProcessEvent>, ITransientDependency
+    ILogger<QueueApplicationAIContentOnProcessHandler> logger) : ILocalEventHandler<ApplicationProcessEvent>, ITransientDependency
 {
     public async Task HandleEventAsync(ApplicationProcessEvent eventData)
     {
         if (eventData?.Application == null)
         {
-            logger.LogWarning("Event data or application is null in GenerateAIContentHandler.");
+            logger.LogWarning("Event data or application is null in QueueApplicationAIContentOnProcessHandler.");
             return;
         }
-
         try
         {
-            await backgroundJobManager.EnqueueAsync(new GenerateContentBackgroundJobArgs
+            await backgroundJobManager.EnqueueAsync(new GenerateApplicationAIContentJobArgs
             {
                 ApplicationId = eventData.Application.Id,
                 TenantId = currentTenant.Id
             });
-
             logger.LogInformation("Queued AI content generation for application {ApplicationId}.", eventData.Application.Id);
         }
         catch (Exception ex)

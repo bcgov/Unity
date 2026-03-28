@@ -5,13 +5,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
-using Unity.GrantManager.AI.Models;
-using Unity.GrantManager.AI.Prompts;
-using Unity.GrantManager.AI.Requests;
+using Unity.AI.Models;
+using Unity.AI.Prompts;
+using Unity.AI.Requests;
 using Unity.GrantManager.Applications;
 using Volo.Abp.DependencyInjection;
 
-namespace Unity.GrantManager.AI.Operations
+namespace Unity.AI.Operations
 {
     public class ApplicationAnalysisService(
         IApplicationRepository applicationRepository,

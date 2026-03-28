@@ -2,7 +2,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Threading.Tasks;
-using Unity.GrantManager.AI.BackgroundJobs;
+using Unity.AI;
+using Unity.GrantManager.GrantApplications.Automation.BackgroundJobs;
 using Unity.AI.Permissions;
 using Volo.Abp;
 using Volo.Abp.BackgroundJobs;
@@ -14,7 +15,7 @@ namespace Unity.GrantManager.GrantApplications;
 public class ApplicationAnalysisAppService(
     IBackgroundJobManager backgroundJobManager,
     IFeatureChecker featureChecker)
-    : GrantManagerAppService, IApplicationAnalysisAppService
+    : AIAppService, IApplicationAnalysisAppService
 {
     public async Task<string> GenerateApplicationAnalysisAsync(Guid applicationId, string? promptVersion = null)
     {

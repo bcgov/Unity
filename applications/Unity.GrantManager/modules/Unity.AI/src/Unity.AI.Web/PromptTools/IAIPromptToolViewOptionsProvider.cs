@@ -1,9 +1,7 @@
-namespace Unity.GrantManager.Web.AI
-{
-    public interface IAIPromptToolViewOptionsProvider
-    {
-        bool IsDevPromptControlsEnabled { get; }
+namespace Unity.AI.Web.PromptTools;
 
-        string DefaultPromptVersion { get; }
-    }
+public interface IAIPromptToolViewOptionsProvider
+{
+    bool IsDevPromptControlsEnabled { get; }
+    string DefaultPromptVersion { get; }
 }
