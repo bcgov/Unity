@@ -90,14 +90,13 @@ public class EmailNotificationService(
             {
                 var defaultFromAddress = await SettingProvider.GetOrNullAsync(NotificationsSettings.Mailing.DefaultFromAddress);
                 var baseUrl = await GetBaseUrlAsync();
-                var encodedOwnerId = urlEncoder.Encode(input.OwnerId.ToString());
 
                 string commentLink = input.CommentType switch
                 {
-                    Comments.CommentType.ApplicationComment or Comments.CommentType.AssessmentComment => 
-                        QueryHelpers.AddQueryString($"{baseUrl}/GrantApplications/Details", "ApplicationId", encodedOwnerId),
-                    Comments.CommentType.ApplicantComment => 
-                        QueryHelpers.AddQueryString($"{baseUrl}/GrantApplicants/Details", "ApplicantId", encodedOwnerId),
+                    Comments.CommentType.ApplicationComment or Comments.CommentType.AssessmentComment =>
+                        QueryHelpers.AddQueryString($"{baseUrl}/GrantApplications/Details", "ApplicationId", input.OwnerId.ToString()),
+                    Comments.CommentType.ApplicantComment =>
+                        QueryHelpers.AddQueryString($"{baseUrl}/GrantApplicants/Details", "ApplicantId", input.OwnerId.ToString()),
                     _ => throw new InvalidOperationException("Invalid comment type.")
                 };
 
