@@ -3,10 +3,9 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Threading.Tasks;
 using Unity.AI;
+using Unity.AI.Automation;
 using Unity.AI.Permissions;
-using Unity.GrantManager.GrantApplications.Automation.BackgroundJobs;
 using Volo.Abp;
-using Volo.Abp.BackgroundJobs;
 using Volo.Abp.Features;
 
 namespace Unity.GrantManager.GrantApplications;
@@ -15,7 +14,7 @@ namespace Unity.GrantManager.GrantApplications;
 [Authorize(AIPermissions.ApplicationAnalysis.ApplicationAnalysisDefault)]
 [Authorize(AIPermissions.ScoringAssistant.ScoringAssistantDefault)]
 public class ApplicationContentAppService(
-    IBackgroundJobManager backgroundJobManager,
+    IApplicationAIGenerationQueue aiGenerationQueue,
     IFeatureChecker featureChecker)
     : AIAppService, IApplicationContentAppService
 {
@@ -32,12 +31,7 @@ public class ApplicationContentAppService(
                 throw new UserFriendlyException("AI generate all is not enabled.");
             }
 
-            await backgroundJobManager.EnqueueAsync(new GenerateApplicationAIContentJobArgs
-            {
-                ApplicationId = applicationId,
-                PromptVersion = promptVersion,
-                TenantId = CurrentTenant.Id
-            });
+            await aiGenerationQueue.QueueApplicationPipelineAsync(applicationId, CurrentTenant.Id, promptVersion);
 
             return "{}";
         }

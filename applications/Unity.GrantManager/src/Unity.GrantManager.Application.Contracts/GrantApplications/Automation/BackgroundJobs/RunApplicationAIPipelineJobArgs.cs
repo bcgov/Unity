@@ -1,6 +1,6 @@
 using System;
 namespace Unity.GrantManager.GrantApplications.Automation.BackgroundJobs;
-public class GenerateApplicationAIContentJobArgs
+public class RunApplicationAIPipelineJobArgs
 {
     public Guid ApplicationId { get; set; }
     public Guid? TenantId { get; set; }

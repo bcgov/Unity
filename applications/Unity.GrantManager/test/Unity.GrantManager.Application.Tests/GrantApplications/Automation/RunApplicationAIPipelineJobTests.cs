@@ -13,9 +13,9 @@ using Volo.Abp.Settings;
 using Xunit;
 using Xunit.Abstractions;
 namespace Unity.GrantManager.GrantApplications.Automation;
-public class GenerateApplicationAIContentJobTests(ITestOutputHelper outputHelper) : GrantManagerApplicationTestBase(outputHelper)
+public class RunApplicationAIPipelineJobTests(ITestOutputHelper outputHelper) : GrantManagerApplicationTestBase(outputHelper)
 {
-    private static GenerateApplicationAIContentJob BuildJob(
+    private static RunApplicationAIPipelineJob BuildJob(
         IFeatureChecker featureChecker,
         ISettingProvider settingProvider,
         IApplicationScoringService? scoringService = null,
@@ -23,7 +23,7 @@ public class GenerateApplicationAIContentJobTests(ITestOutputHelper outputHelper
     {
         var ai = aiService ?? Substitute.For<IAIService>();
         ai.IsAvailableAsync().Returns(true);
-        return new GenerateApplicationAIContentJob(
+        return new RunApplicationAIPipelineJob(
             Substitute.For<IAttachmentSummaryService>(),
             Substitute.For<IApplicationAnalysisService>(),
             scoringService ?? Substitute.For<IApplicationScoringService>(),
@@ -32,7 +32,7 @@ public class GenerateApplicationAIContentJobTests(ITestOutputHelper outputHelper
             settingProvider,
             Substitute.For<ILocalEventBus>(),
             Substitute.For<ICurrentTenant>(),
-            NullLogger<GenerateApplicationAIContentJob>.Instance);
+            NullLogger<RunApplicationAIPipelineJob>.Instance);
     }
     [Fact]
     public async Task ExecuteAsync_Should_Skip_Scoring_When_Feature_Disabled()
@@ -46,7 +46,7 @@ public class GenerateApplicationAIContentJobTests(ITestOutputHelper outputHelper
         var scoringService = Substitute.For<IApplicationScoringService>();
         var job = BuildJob(featureChecker, settingProvider, scoringService);
         // Act
-        await job.ExecuteAsync(new GenerateApplicationAIContentJobArgs { ApplicationId = Guid.NewGuid() });
+        await job.ExecuteAsync(new RunApplicationAIPipelineJobArgs { ApplicationId = Guid.NewGuid() });
         // Assert - setting never checked, scoring service never called
         await settingProvider.DidNotReceive().GetOrNullAsync(AISettings.ScoringAssistantEnabled);
         await scoringService.DidNotReceive().RegenerateAndSaveAsync(Arg.Any<Guid>(), Arg.Any<string?>());
@@ -64,7 +64,7 @@ public class GenerateApplicationAIContentJobTests(ITestOutputHelper outputHelper
         var scoringService = Substitute.For<IApplicationScoringService>();
         var job = BuildJob(featureChecker, settingProvider, scoringService);
         // Act
-        await job.ExecuteAsync(new GenerateApplicationAIContentJobArgs { ApplicationId = Guid.NewGuid() });
+        await job.ExecuteAsync(new RunApplicationAIPipelineJobArgs { ApplicationId = Guid.NewGuid() });
         // Assert - scoring service never called
         await scoringService.DidNotReceive().RegenerateAndSaveAsync(Arg.Any<Guid>(), Arg.Any<string?>());
     }
@@ -79,7 +79,7 @@ public class GenerateApplicationAIContentJobTests(ITestOutputHelper outputHelper
         var settingProvider = Substitute.For<ISettingProvider>();
         var job = BuildJob(featureChecker, settingProvider);
         // Act
-        await job.ExecuteAsync(new GenerateApplicationAIContentJobArgs { ApplicationId = Guid.NewGuid() });
+        await job.ExecuteAsync(new RunApplicationAIPipelineJobArgs { ApplicationId = Guid.NewGuid() });
         // Assert - setting provider never consulted when all features are OFF
         await settingProvider.DidNotReceive().GetOrNullAsync(Arg.Any<string>());
     }

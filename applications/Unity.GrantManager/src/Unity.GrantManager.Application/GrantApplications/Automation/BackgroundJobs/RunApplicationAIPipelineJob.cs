@@ -12,7 +12,7 @@ using Volo.Abp.Features;
 using Volo.Abp.MultiTenancy;
 using Volo.Abp.Settings;
 namespace Unity.GrantManager.GrantApplications.Automation.BackgroundJobs;
-public class GenerateApplicationAIContentJob(
+public class RunApplicationAIPipelineJob(
     IAttachmentSummaryService attachmentSummaryService,
     IApplicationAnalysisService applicationAnalysisService,
     IApplicationScoringService applicationScoringService,
@@ -21,9 +21,9 @@ public class GenerateApplicationAIContentJob(
     ISettingProvider settingProvider,
     ILocalEventBus localEventBus,
     ICurrentTenant currentTenant,
-    ILogger<GenerateApplicationAIContentJob> logger) : AsyncBackgroundJob<GenerateApplicationAIContentJobArgs>, ITransientDependency
+    ILogger<RunApplicationAIPipelineJob> logger) : AsyncBackgroundJob<RunApplicationAIPipelineJobArgs>, ITransientDependency
 {
-    public override async Task ExecuteAsync(GenerateApplicationAIContentJobArgs args)
+    public override async Task ExecuteAsync(RunApplicationAIPipelineJobArgs args)
     {
         using (currentTenant.Change(args.TenantId))
         {

@@ -3,17 +3,16 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Threading.Tasks;
 using Unity.AI;
+using Unity.AI.Automation;
 using Unity.AI.Permissions;
-using Unity.GrantManager.GrantApplications.Automation.BackgroundJobs;
 using Volo.Abp;
-using Volo.Abp.BackgroundJobs;
 using Volo.Abp.Features;
 
 namespace Unity.GrantManager.GrantApplications;
 
 [Authorize(AIPermissions.ScoringAssistant.ScoringAssistantDefault)]
 public class ApplicationScoringAppService(
-    IBackgroundJobManager backgroundJobManager,
+    IApplicationAIGenerationQueue aiGenerationQueue,
     IFeatureChecker featureChecker)
     : AIAppService, IApplicationScoringAppService
 {
@@ -26,12 +25,7 @@ public class ApplicationScoringAppService(
                 throw new UserFriendlyException("AI scoring is not enabled.");
             }
 
-            await backgroundJobManager.EnqueueAsync(new GenerateApplicationScoringBackgroundJobArgs
-            {
-                ApplicationId = applicationId,
-                PromptVersion = promptVersion,
-                TenantId = CurrentTenant.Id
-            });
+            await aiGenerationQueue.QueueApplicationScoringAsync(applicationId, CurrentTenant.Id, promptVersion);
 
             return "{}";
         }

@@ -4,10 +4,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Unity.AI;
+using Unity.AI.Automation;
 using Unity.AI.Permissions;
-using Unity.GrantManager.GrantApplications.Automation.BackgroundJobs;
 using Volo.Abp;
-using Volo.Abp.BackgroundJobs;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Features;
 
@@ -17,7 +16,7 @@ namespace Unity.GrantManager.Attachments;
 [Dependency(ReplaceServices = true)]
 [ExposeServices(typeof(AttachmentSummaryAppService), typeof(IAttachmentSummaryAppService))]
 public class AttachmentSummaryAppService(
-    IBackgroundJobManager backgroundJobManager,
+    IApplicationAIGenerationQueue aiGenerationQueue,
     IFeatureChecker featureChecker) : AIAppService, IAttachmentSummaryAppService
 {
     private const string SummaryGenerationQueuedMessage = "AI summary generation queued.";
@@ -29,12 +28,7 @@ public class AttachmentSummaryAppService(
             throw new UserFriendlyException("AI attachment summaries are not enabled.");
         }
 
-        await backgroundJobManager.EnqueueAsync(new GenerateAttachmentSummaryBackgroundJobArgs
-        {
-            AttachmentIds = [attachmentId],
-            PromptVersion = promptVersion,
-            TenantId = CurrentTenant.Id
-        });
+        await aiGenerationQueue.QueueAttachmentSummariesAsync([attachmentId], CurrentTenant.Id, promptVersion);
 
         return SummaryGenerationQueuedMessage;
     }
@@ -51,12 +45,7 @@ public class AttachmentSummaryAppService(
             return [];
         }
 
-        await backgroundJobManager.EnqueueAsync(new GenerateAttachmentSummaryBackgroundJobArgs
-        {
-            AttachmentIds = attachmentIds,
-            PromptVersion = promptVersion,
-            TenantId = CurrentTenant.Id
-        });
+        await aiGenerationQueue.QueueAttachmentSummariesAsync(attachmentIds, CurrentTenant.Id, promptVersion);
 
         return attachmentIds.Select(_ => SummaryGenerationQueuedMessage).ToList();
     }

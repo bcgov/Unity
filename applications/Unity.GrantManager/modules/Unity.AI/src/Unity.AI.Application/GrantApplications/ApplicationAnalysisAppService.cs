@@ -3,17 +3,16 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Threading.Tasks;
 using Unity.AI;
-using Unity.GrantManager.GrantApplications.Automation.BackgroundJobs;
 using Unity.AI.Permissions;
+using Unity.AI.Automation;
 using Volo.Abp;
-using Volo.Abp.BackgroundJobs;
 using Volo.Abp.Features;
 
 namespace Unity.GrantManager.GrantApplications;
 
 [Authorize(AIPermissions.ApplicationAnalysis.ApplicationAnalysisDefault)]
 public class ApplicationAnalysisAppService(
-    IBackgroundJobManager backgroundJobManager,
+    IApplicationAIGenerationQueue aiGenerationQueue,
     IFeatureChecker featureChecker)
     : AIAppService, IApplicationAnalysisAppService
 {
@@ -26,12 +25,7 @@ public class ApplicationAnalysisAppService(
                 throw new UserFriendlyException("AI application analysis is not enabled.");
             }
 
-            await backgroundJobManager.EnqueueAsync(new GenerateApplicationAnalysisBackgroundJobArgs
-            {
-                ApplicationId = applicationId,
-                PromptVersion = promptVersion,
-                TenantId = CurrentTenant.Id
-            });
+            await aiGenerationQueue.QueueApplicationAnalysisAsync(applicationId, CurrentTenant.Id, promptVersion);
 
             return "{}";
         }
