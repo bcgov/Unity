@@ -92,6 +92,20 @@ def _sanitize_card_id(card_id):
     return None
 
 
+def _error_response(error_type, message, status, detail=None):
+    """Build a consistent error JSON response.
+
+    Schema:
+        error_type  – machine-readable key (rate_limit | connection_error | ai_failure | server_error)
+        message     – user-facing text
+        detail      – optional developer-facing detail (not shown to users)
+    """
+    body = {"error_type": error_type, "message": message}
+    if detail:
+        body["detail"] = detail
+    return jsonify(body), status
+
+
 def _classify_sql_generation_error(error):
     """Classify an SQL generation error and return an appropriate (response, status) tuple."""
     error_str = str(error)
@@ -102,27 +116,46 @@ def _classify_sql_generation_error(error):
     # Check if it's a rate limit
     if "429" in error_str or "rate limit" in error_lower:
         logger.warning("Azure OpenAI rate limit exceeded")
-        return jsonify({
-            "error": "Rate limit exceeded",
-            "message": "Azure OpenAI rate limit exceeded. Please try again in a few moments.",
-            "url": "rate_limit"
-        }), 429
+        return _error_response(
+            "rate_limit",
+            "Azure OpenAI rate limit exceeded. Please try again in a few moments.",
+            429,
+            detail=error_str
+        )
 
-    # Check if it's a connection error
-    if "connection aborted" in error_lower or "remotedisconnected" in error_lower:
+    # Check if it's a connection / network / config error
+    connection_keywords = [
+        "connection aborted", "remotedisconnected", "connection error",
+        "connectionerror", "invalidurl", "invalid url", "name or service not known",
+        "nodename nor servname", "getaddrinfo failed", "timeout",
+        "cannot connect", "connection refused", "unreachable"
+    ]
+    if any(kw in error_lower for kw in connection_keywords):
         logger.error("Connection error during SQL generation")
-        return jsonify({
-            "error": "Connection error",
-            "message": "Connection error during SQL generation. Please try again.",
-            "url": "connection_error"
-        }), 503
+        return _error_response(
+            "connection_error",
+            "Connection error during SQL generation. Please try again.",
+            503,
+            detail=error_str
+        )
+
+    # Check if it's an authentication/authorization error (e.g. missing/invalid Azure OpenAI API key)
+    if "401" in error_str or "unauthorized" in error_lower or "403" in error_str or "forbidden" in error_lower:
+        logger.error("Azure OpenAI authentication/authorization error - check API key configuration")
+        return _error_response(
+            "server_error",
+            "Service configuration error. Please contact support.",
+            503,
+            detail=error_str
+        )
 
     logger.error("Unknown error during SQL generation")
-    return jsonify({
-        "error": "SQL generation failed",
-        "message": "Unable to generate SQL query. Please try again.",
-        "url": "fail"
-    }), 500
+    return _error_response(
+        "server_error",
+        "Something went wrong during SQL generation. Please try again.",
+        500,
+        detail=error_str
+    )
 
 
 def create_app():
@@ -361,6 +394,9 @@ def ask():
     async def async_ask():
         question = data.get("question")
         conversation = data.get("conversation", [])
+        is_retry = bool(data.get("is_retry", False))
+        retry_error_type = data.get("retry_error_type") or None
+        retry_error_detail = data.get("retry_error_detail") or None
         
         # Extract user context from JWT token
         tenant_id = user_data["tenant"]
@@ -382,8 +418,10 @@ def ask():
         # Generate SQL from natural language
         logger.info("Starting SQL generation...")
         try:
-            sql, metadata, sql_tokens = await sql_generator.generate_sql(
-                question, past_questions, db_id, tenant_id=tenant_id
+            sql, metadata, sql_tokens, error_detail = await sql_generator.generate_sql(
+                question, past_questions, db_id, tenant_id=tenant_id,
+                is_retry=is_retry, retry_error_type=retry_error_type,
+                retry_error_detail=retry_error_detail
             )
         except Exception as e:
             return _classify_sql_generation_error(e)
@@ -393,7 +431,12 @@ def ask():
 
         if not sql or not metadata:
             logger.warning("SQL generation failed - returning fail response")
-            return {"url": "fail", "card_id": 0, "x_field": "", "y_field": ""}, 200
+            return _error_response(
+                "ai_failure",
+                "I couldn't generate a report from that question. Try rephrasing it or providing more detail.",
+                422,
+                detail=error_detail
+            )
 
         logger.debug(f"SQL: {sql}")
         logger.debug(f"Metadata: {metadata}")
@@ -428,7 +471,12 @@ def ask():
         return asyncio.run(async_ask())
     except Exception as e:
         logger.error(f"Error in /api/ask: {e}", exc_info=True)
-        return abort(500, INTERNAL_SERVER_ERROR)
+        return _error_response(
+            "server_error",
+            "Something went wrong on our end. Please try again.",
+            500,
+            detail=str(e)
+        )
 
 
 @app.route("/api/change_display", methods=["POST"])

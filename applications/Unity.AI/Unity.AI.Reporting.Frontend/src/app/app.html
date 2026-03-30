@@ -59,11 +59,34 @@
                   @if (turn.safeUrl == 'failure') {
                     <div class="failure-container">
                       <div class="failure-content">
-                        <div class="failure-icon">⚠️</div>
-                        <div class="failure-title">Unable to Generate Report</div>
-                        <div class="failure-message">Sorry, I couldn't process your request. Please try rephrasing your question or check if the data you're looking for exists.</div>
+                        <div class="failure-icon">
+                          @switch (turn.errorType) {
+                            @case ('rate_limit') { &#9203; }
+                            @case ('connection_error') { &#128268; }
+                            @default { &#9888;&#65039; }
+                          }
+                        </div>
+                        <div class="failure-title">
+                          @switch (turn.errorType) {
+                            @case ('rate_limit') { Service Busy }
+                            @case ('connection_error') { Connection Error }
+                            @case ('ai_failure') { Unable to Generate Report }
+                            @case ('server_error') { Something Went Wrong }
+                            @default { Something Went Wrong }
+                          }
+                        </div>
+                        <div class="failure-message">{{ turn.errorMessage }}</div>
                         <div class="failure-actions">
-                          <button class="retry-btn" (click)="retryQuestion(turn)">Try Again</button>
+                          @if ((turn.retryCount ?? 0) < MAX_RETRIES && turn.canRetry) {
+                            <button class="retry-btn" (click)="retryQuestion(turn)">Try Again</button>
+                          } @else {
+                            <button class="retry-btn retry-btn--disabled" disabled>Try Again</button>
+                            @if (turn.errorType === 'ai_failure') {
+                              <p class="retry-hint">Try rephrasing your question or adding more detail.</p>
+                            } @else {
+                              <p class="retry-hint">Please start a new question.</p>
+                            }
+                          }
                         </div>
                       </div>
                     </div>
