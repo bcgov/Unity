@@ -251,6 +251,7 @@ $(function () {
                 searching: true,
                 serverside: false,
                 info: false,
+                autoWidth: false,
                 lengthChange: false,
                 deferRender: false, // Required for DOM manipulation in addNewRow and configureTable
                 layout: {
