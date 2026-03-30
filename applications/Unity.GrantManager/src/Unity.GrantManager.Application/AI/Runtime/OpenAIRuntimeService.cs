@@ -462,7 +462,7 @@ namespace Unity.GrantManager.AI.Runtime
                     ApplicationScoringCompletionTokens,
                     operationName: ApplicationScoringPromptType,
                     promptVersion: promptVersion),
-                    content => AIProviderPayloadValidator.IsValidApplicationScoringJson(content, sectionJson),
+                    content => AIProviderPayloadValidator.IsValidApplicationScoringJson(content, section),
                     $"application scoring section {request.SectionName}");
                 await LogPromptOutputAsync(ApplicationScoringPromptType, promptVersion, result.CaptureOutput);
 
