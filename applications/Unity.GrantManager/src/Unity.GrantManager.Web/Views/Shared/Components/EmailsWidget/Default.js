@@ -77,6 +77,10 @@
         toastr.options.positionClass = 'toast-top-center';
         initTemplateDetails();
         $('#templateTextContainer').hide();
+        UIElements.btnSave.hide();
+        UIElements.btnSend.hide();
+        UIElements.btnDiscard.hide();
+        UIElements.btnSendClose.hide();
     }
 
     async function initTemplateDetails() {
@@ -121,6 +125,10 @@
         UIElements.emailForm.trigger("reset");
         $('#email-attachments-section').hide();
         enableEmail();
+        UIElements.btnSave.hide();
+        UIElements.btnSend.hide();
+        UIElements.btnDiscard.hide();
+        UIElements.btnSendClose.hide();
     }
 
     function handleCloseEmail() {
@@ -238,6 +246,10 @@
         UIElements.emailForm.addClass('active');
         UIElements.btnNewEmail.addClass('hide');
         UIElements.alertEmailReadonly.addClass('hide');
+        UIElements.btnSave.show();
+        UIElements.btnSend.show();
+        UIElements.btnDiscard.show();
+        UIElements.btnSendClose.show();
     }
 
     function validateEmail(email) {
