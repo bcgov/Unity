@@ -109,7 +109,7 @@
                       @if (turn.sqlPanelOpen) {
                         <div class="sql-panel">
                           <div class="sql-panel-header">Generated SQL</div>
-                          <pre class="sql-code">{{turn.embed.SQL}}</pre>
+                          <pre class="sql-code" [innerHTML]="highlightSql(turn.embed.SQL)"></pre>
                         </div>
                       }
                     </div>

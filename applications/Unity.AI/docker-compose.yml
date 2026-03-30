@@ -57,6 +57,7 @@ services:
       - MB_URL=${MB_URL}
       - DEFAULT_EMBED_DB_ID=${DEFAULT_EMBED_DB_ID:-5}
       - MB_EMBED_ID=${MB_EMBED_ID}
+      - MB_MAP_REGION_UUID=${MB_MAP_REGION_UUID}
 
       # Alternative (optional) AI Model config
       - AI_MODEL=${AI_MODEL:-gpt-4o-mini}
