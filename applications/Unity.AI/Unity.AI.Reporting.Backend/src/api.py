@@ -138,10 +138,20 @@ def _classify_sql_generation_error(error):
             detail=error_str
         )
 
+    # Check if it's an authentication/authorization error (e.g. missing/invalid Azure OpenAI API key)
+    if "401" in error_str or "unauthorized" in error_lower or "403" in error_str or "forbidden" in error_lower:
+        logger.error("Azure OpenAI authentication/authorization error - check API key configuration")
+        return _error_response(
+            "server_error",
+            "Service configuration error. Please contact support.",
+            503,
+            detail=error_str
+        )
+
     logger.error("Unknown error during SQL generation")
     return _error_response(
-        "ai_failure",
-        "Unable to generate SQL query. Please try again.",
+        "server_error",
+        "Something went wrong during SQL generation. Please try again.",
         500,
         detail=error_str
     )

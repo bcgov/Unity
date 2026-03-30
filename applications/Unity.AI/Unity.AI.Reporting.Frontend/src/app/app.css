@@ -709,6 +709,8 @@
 
 .failure-actions {
   display: flex;
+  flex-direction: column;
+  align-items: center;
   gap: 8px;
   margin-top: 4px;
 }
@@ -732,6 +734,18 @@
   background: #2c5aa0;
   transform: translateY(-1px);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.retry-btn--disabled {
+  background: #a0aec0;
+  color: #e2e8f0;
+  cursor: not-allowed;
+}
+
+.retry-btn--disabled:hover {
+  background: #a0aec0;
+  transform: none;
+  box-shadow: none;
 }
 
 .help-btn {
