@@ -6,11 +6,9 @@ using Unity.GrantManager.Intakes.Events;
 using Volo.Abp.BackgroundJobs;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.EventBus;
-using Volo.Abp.MultiTenancy;
 namespace Unity.GrantManager.GrantApplications.Automation.Handlers;
 public class QueueApplicationAIPipelineOnProcessHandler(
     IBackgroundJobManager backgroundJobManager,
-    ICurrentTenant currentTenant,
     ILogger<QueueApplicationAIPipelineOnProcessHandler> logger) : ILocalEventHandler<ApplicationProcessEvent>, ITransientDependency
 {
     public async Task HandleEventAsync(ApplicationProcessEvent eventData)
