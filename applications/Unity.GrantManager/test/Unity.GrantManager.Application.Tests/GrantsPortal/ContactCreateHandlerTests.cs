@@ -3,6 +3,9 @@ using Newtonsoft.Json.Linq;
 using NSubstitute;
 using Shouldly;
 using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Unity.GrantManager.Contacts;
@@ -30,6 +33,10 @@ public class ContactCreateHandlerTests
         _contactRepository.InsertAsync(Arg.Any<Contact>(), Arg.Any<bool>(), Arg.Any<CancellationToken>())
             .Returns(ci => ci.ArgAt<Contact>(0));
         _contactLinkRepository.InsertAsync(Arg.Any<ContactLink>(), Arg.Any<bool>(), Arg.Any<CancellationToken>())
+            .Returns(ci => ci.ArgAt<ContactLink>(0));
+        _contactLinkRepository.GetListAsync(Arg.Any<Expression<Func<ContactLink, bool>>>(), Arg.Any<bool>(), Arg.Any<CancellationToken>())
+            .Returns(new List<ContactLink>());
+        _contactLinkRepository.UpdateAsync(Arg.Any<ContactLink>(), Arg.Any<bool>(), Arg.Any<CancellationToken>())
             .Returns(ci => ci.ArgAt<ContactLink>(0));
 
         _handler = new ContactCreateHandler(
@@ -154,6 +161,70 @@ public class ContactCreateHandlerTests
         savedLink.Role.ShouldBe("Primary Contact");
         savedLink.IsPrimary.ShouldBeTrue();
         savedLink.IsActive.ShouldBeTrue();
+    }
+
+    [Fact]
+    public async Task HandleAsync_WhenIsPrimary_ShouldDemoteExistingPrimaryLinks()
+    {
+        // Arrange
+        var contactId = Guid.NewGuid();
+        var applicantId = Guid.NewGuid();
+
+        var existingPrimary = WithId(new ContactLink
+        {
+            ContactId = Guid.NewGuid(),
+            RelatedEntityId = applicantId,
+            RelatedEntityType = "Applicant",
+            IsPrimary = true,
+            IsActive = true
+        }, Guid.NewGuid());
+
+        _contactLinkRepository
+            .GetListAsync(Arg.Any<Expression<Func<ContactLink, bool>>>(), Arg.Any<bool>(), Arg.Any<CancellationToken>())
+            .Returns(new List<ContactLink> { existingPrimary });
+
+        var payload = CreatePayload(contactId: contactId, applicantId: applicantId);
+
+        // Act
+        var result = await _handler.HandleAsync(payload);
+
+        // Assert
+        result.ShouldBe("Contact created successfully");
+        existingPrimary.IsPrimary.ShouldBeFalse();
+        await _contactLinkRepository.Received(1).UpdateAsync(Arg.Any<ContactLink>(), Arg.Any<bool>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task HandleAsync_WhenNotPrimary_ShouldNotDemoteExistingLinks()
+    {
+        // Arrange
+        var contactId = Guid.NewGuid();
+        var applicantId = Guid.NewGuid();
+
+        var data = JObject.FromObject(new
+        {
+            name = "Jane Doe",
+            email = "jane@example.com",
+            title = "Director",
+            contactType = "Applicant",
+            homePhoneNumber = "111-1111",
+            mobilePhoneNumber = "222-2222",
+            workPhoneNumber = "333-3333",
+            workPhoneExtension = "101",
+            role = "Secondary Contact",
+            isPrimary = false,
+            applicantId = applicantId
+        });
+
+        var payload = CreatePayload(contactId: contactId, applicantId: applicantId, data: data);
+
+        // Act
+        var result = await _handler.HandleAsync(payload);
+
+        // Assert
+        result.ShouldBe("Contact created successfully");
+        await _contactLinkRepository.DidNotReceive().GetListAsync(Arg.Any<Expression<Func<ContactLink, bool>>>(), Arg.Any<bool>(), Arg.Any<CancellationToken>());
+        await _contactLinkRepository.DidNotReceive().UpdateAsync(Arg.Any<ContactLink>(), Arg.Any<bool>(), Arg.Any<CancellationToken>());
     }
 
     #endregion

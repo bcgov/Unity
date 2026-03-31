@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Unity.GrantManager.Contacts;
@@ -15,6 +16,8 @@ public class ContactCreateHandler(
     IContactLinkRepository contactLinkRepository,
     ILogger<ContactCreateHandler> logger) : IPortalCommandHandler, ITransientDependency
 {
+    private const string ApplicantEntityType = "Applicant";
+
     public string DataType => "CONTACT_CREATE_COMMAND";
 
     [UnitOfWork]
@@ -50,11 +53,26 @@ public class ContactCreateHandler(
 
         await contactRepository.InsertAsync(contact);
 
+        // Demote existing primary contact links for the same applicant
+        if (innerData.IsPrimary)
+        {
+            var contactLinks = await contactLinkRepository.GetListAsync(
+                cl => cl.RelatedEntityType == ApplicantEntityType
+                      && cl.RelatedEntityId == innerData.ApplicantId
+                      && cl.IsActive);
+
+            foreach (var stale in contactLinks.Where(cl => cl.IsPrimary))
+            {
+                stale.IsPrimary = false;
+                await contactLinkRepository.UpdateAsync(stale);
+            }
+        }
+
         // Create a contact link to track the relationship and primary status
         var contactLink = new ContactLink
         {
             ContactId = contactId,
-            RelatedEntityType = "Applicant",
+            RelatedEntityType = ApplicantEntityType,
             RelatedEntityId = innerData.ApplicantId,
             Role = innerData.Role,
             IsPrimary = innerData.IsPrimary,
