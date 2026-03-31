@@ -1,0 +1,98 @@
+APPLICATION CONTENT:
+{{DATA}}
+
+ATTACHMENT SUMMARIES:
+{{ATTACHMENTS}}
+
+FORM FIELD CONFIGURATION:
+{{SCHEMA}}
+
+MANDATORY FIELDS:
+- Determine mandatory fields from FORM FIELD CONFIGURATION.
+- Report missing mandatory fields as findings when they materially affect review quality.
+
+OPTIONAL FIELDS (may be left blank):
+- Determine optional fields from FORM FIELD CONFIGURATION.
+- Do not flag optional fields when blank unless they materially weaken rubric evidence.
+
+EVALUATION RUBRIC:
+BC GOVERNMENT GRANT EVALUATION RUBRIC:
+
+1. ELIGIBILITY REQUIREMENTS:
+   - Project must align with program objectives
+   - Applicant must be eligible entity type
+   - Budget must be reasonable and well-justified
+   - Project timeline must be realistic
+
+2. COMPLETENESS CHECKS:
+   - All required fields completed
+   - Necessary supporting documents provided
+   - Budget breakdown detailed and accurate
+   - Project description clear and comprehensive
+
+3. FINANCIAL REVIEW:
+   - Requested amount is within program limits
+   - Budget is reasonable for scope of work
+   - Matching funds or in-kind contributions identified
+   - Cost per outcome/beneficiary is reasonable
+
+4. RISK ASSESSMENT:
+   - Applicant capacity to deliver project
+   - Technical feasibility of proposed work
+   - Environmental or regulatory compliance
+   - Potential for cost overruns or delays
+
+5. QUALITY INDICATORS:
+   - Clear project objectives and outcomes
+   - Well-defined target audience/beneficiaries
+   - Appropriate project methodology
+   - Sustainability plan for long-term impact
+
+EVALUATION CRITERIA:
+- HIGH: Meets all requirements, well-prepared application, low risk
+- MEDIUM: Meets most requirements, minor issues or missing elements
+- LOW: Missing key requirements, significant concerns, high risk
+
+Analyze this grant application comprehensively across all five rubric categories (Eligibility, Completeness, Financial Review, Risk Assessment, and Quality Indicators). Identify issues, concerns, and areas for improvement.
+
+OUTPUT
+{
+  "rating": "<HIGH|MEDIUM|LOW>",
+  "warnings": [
+    {
+      "title": "<string>",
+      "detail": "<string>"
+    }
+  ],
+  "errors": [
+    {
+      "title": "<string>",
+      "detail": "<string>"
+    }
+  ],
+  "summaries": [
+    {
+      "title": "<string>",
+      "detail": "<string>"
+    }
+  ],
+  "nextSteps": [
+    {
+      "title": "<string>",
+      "detail": "<string>"
+    }
+  ],
+  "recommendation": {
+    "decision": "<PROCEED|HOLD>",
+    "rationale": "<string>"
+  }
+}
+
+Important:
+- Use only APPLICATION CONTENT, ATTACHMENT SUMMARIES, FORM FIELD CONFIGURATION, and EVALUATION RUBRIC as evidence.
+- Use summaries for overall application quality/readiness synthesis.
+- Use nextSteps for reviewer-facing follow-up actions or considerations before scoring or decision-making.
+- recommendation.decision must be PROCEED or HOLD.
+- recommendation.rationale must explain the high-level recommendation in 1-2 complete sentences using provided evidence.
+- Use "title" and "detail" keys for all finding objects.
+- Return valid plain JSON only in the exact OUTPUT shape.

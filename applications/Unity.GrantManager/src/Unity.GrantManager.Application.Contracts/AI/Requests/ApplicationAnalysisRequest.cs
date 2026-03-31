@@ -1,8 +1,9 @@
 using System.Collections.Generic;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Unity.GrantManager.AI.Models;
 
-namespace Unity.GrantManager.AI
+namespace Unity.GrantManager.AI.Requests
 {
     public class ApplicationAnalysisRequest
     {
@@ -15,7 +16,7 @@ namespace Unity.GrantManager.AI
         [JsonPropertyName("attachments")]
         public List<AIAttachmentItem> Attachments { get; set; } = new();
 
-        [JsonPropertyName("rubric")]
-        public string? Rubric { get; set; }
+        [JsonPropertyName("promptVersion")]
+        public string? PromptVersion { get; set; }
     }
 }

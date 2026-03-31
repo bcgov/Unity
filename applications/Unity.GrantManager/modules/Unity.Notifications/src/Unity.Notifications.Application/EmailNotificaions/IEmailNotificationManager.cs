@@ -32,7 +32,12 @@ namespace Unity.Notifications.EmailNotifications
         Task<EmailLog?> GetEmailLogByIdAsync(Guid id);
 
         /// <summary>
-        /// Deletes an email log
+        /// Creates an empty draft email log for composing
+        /// </summary>
+        Task<EmailLog> CreateDraftEmailLogAsync(Guid applicationId);
+
+        /// <summary>
+        /// Deletes an email log and its S3 attachments
         /// </summary>
         Task DeleteEmailLogAsync(Guid id);
 

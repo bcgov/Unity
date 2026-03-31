@@ -17,6 +17,7 @@ namespace Unity.Flex.Worksheets
         Task<WorksheetDto> CloneAsync(Guid id);
         Task<bool> PublishAsync(Guid id);
         Task DeleteAsync(Guid id);
+        Task<WorksheetLinkedFormsDto> GetLinkedFormsAsync(Guid worksheetId);
         Task ResequenceSectionsAsync(Guid id, uint oldIndex, uint newIndex);
         Task<bool> ExistsAsync(Guid worksheetId);
         Task<ExportWorksheetDto> ExportWorksheet(Guid worksheetId);

@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authorization.Infrastructure;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -11,14 +11,14 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Text.Json;
-using System.Text.Json.Nodes;
 using System.Threading.Tasks;
 using Unity.Flex.WorksheetInstances;
 using Unity.Flex.Worksheets;
+using Unity.GrantManager.AI.Models;
+using Unity.GrantManager.AI.Responses;
 using Unity.GrantManager.Applicants;
 using Unity.GrantManager.ApplicationForms;
 using Unity.GrantManager.Applications;
-using Unity.GrantManager.AI;
 using Unity.GrantManager.Events;
 using Unity.GrantManager.Flex;
 using Unity.GrantManager.Identity;
@@ -63,7 +63,7 @@ public class GrantApplicationAppService(
 
     public async Task<PagedResultDto<GrantApplicationDto>> GetListAsync(GrantApplicationListInputDto input)
     {
-        // 1️ Fetch applications with filters + paging in DB
+        // 1. Fetch applications with filters + paging in DB
         var applications = await applicationRepository.WithFullDetailsAsync(
             input.SkipCount,
             input.MaxResultCount,
@@ -74,7 +74,7 @@ public class GrantApplicationAppService(
 
         var applicationIds = applications.Select(a => a.Id).ToList();
 
-        // 2️ Fetch payment rollup batch if feature enabled
+        // 2. Fetch payment rollup batch if feature enabled
         bool paymentsFeatureEnabled = await FeatureChecker.IsEnabledAsync(PaymentConsts.UnityPaymentsFeature);
 
         Dictionary<Guid, ApplicationPaymentRollupDto> paymentRollupBatch = [];
@@ -84,7 +84,7 @@ public class GrantApplicationAppService(
             paymentRollupBatch = await paymentRequestService.GetApplicationPaymentRollupBatchAsync(applicationIds);
         }
 
-        // 3️ Map applications to DTOs
+        // 3. Map applications to DTOs
         var appDtos = applications.Select(app =>
         {
             var appDto = ObjectMapper.Map<Application, GrantApplicationDto>(app);
@@ -120,7 +120,7 @@ public class GrantApplicationAppService(
 
         }).ToList();
 
-        // 4️ Get total count using same filters
+        // 4. Get total count using same filters
         var totalCount = await applicationRepository.GetCountAsync(
             input.SubmittedFromDate,
             input.SubmittedToDate
@@ -955,6 +955,14 @@ public class GrantApplicationAppService(
         return form.AccountCodingId;
     }
 
+    
+
+    public async Task<bool> IsApplicantRedStopAsync(Guid applicationId)
+    {
+        var application = await applicationRepository.GetAsync(applicationId, true);
+        return application.Applicant != null && application.Applicant.RedStop == true;
+    }
+
     #region APPLICATION WORKFLOW
     /// <summary>
     /// Fetches the list of actions and their status context for a given application.
@@ -974,11 +982,12 @@ public class GrantApplicationAppService(
 
         // NOTE: Authorization is applied on the AppService layer and is false by default
         // AUTHORIZATION HANDLING
-        actionDtos.ForEach(async item =>
+         bool isRedStop = application.Applicant != null && application.Applicant.RedStop == true;
+        foreach (var item in actionDtos)
         {
-            item.IsPermitted = item.IsPermitted && (await AuthorizationService.IsGrantedAsync(application, GetActionAuthorizationRequirement(item.ApplicationAction)));
+            item.IsPermitted = !isRedStop && item.IsPermitted && (await AuthorizationService.IsGrantedAsync(application, GetActionAuthorizationRequirement(item.ApplicationAction)));
             item.IsAuthorized = true;
-        });
+        }
 
         return new ListResultDto<ApplicationActionDto>(actionDtos);
     }
@@ -1000,6 +1009,12 @@ public class GrantApplicationAppService(
         if (!await AuthorizationService.IsGrantedAsync(application, GetActionAuthorizationRequirement(triggerAction)))
         {
             throw new UnauthorizedAccessException();
+        }
+
+        // RED STOP CHECK: Block all status actions when the applicant has RedStop = true
+        if (application.Applicant != null && application.Applicant.RedStop == true)
+        {
+            throw new UserFriendlyException(L["GrantApplication:ActionButton.RedStopWarning"]);
         }
 
         application = await applicationManager.TriggerAction(applicationId, triggerAction);
@@ -1030,7 +1045,9 @@ public class GrantApplicationAppService(
                         Id = applications.Id,
                         ProjectName = applications.ProjectName,
                         ReferenceNo = applications.ReferenceNo,
-                        ApplicantName = applicant != null ? (applicant.ApplicantName ?? GrantManagerConsts.UnknownValue) : GrantManagerConsts.UnknownValue
+                        ApplicantName = applicant != null ? (applicant.ApplicantName ?? GrantManagerConsts.UnknownValue) : GrantManagerConsts.UnknownValue,
+                        OrganizationName = applicant != null ? (applicant.OrgName ?? string.Empty) : string.Empty,
+                        UnityApplicantId = applicant != null ? (applicant.UnityApplicantId ?? string.Empty) : string.Empty
                     };
 
         return await query.ToListAsync();
@@ -1054,21 +1071,21 @@ public class GrantApplicationAppService(
         return result;
     }
 
-    public async Task<string> DismissAIIssueAsync(Guid applicationId, string issueId)
+    public async Task<string> HideAIAnalysisItemAsync(Guid applicationId, string itemId)
     {
-        return await UpdateAIIssueDismissStateAsync(applicationId, issueId, isDismiss: true);
+        return await UpdateAIAnalysisItemVisibilityStateAsync(applicationId, itemId, isHidden: true);
     }
 
-    public async Task<string> RestoreAIIssueAsync(Guid applicationId, string issueId)
+    public async Task<string> ShowAIAnalysisItemAsync(Guid applicationId, string itemId)
     {
-        return await UpdateAIIssueDismissStateAsync(applicationId, issueId, isDismiss: false);
+        return await UpdateAIAnalysisItemVisibilityStateAsync(applicationId, itemId, isHidden: false);
     }
 
-    private async Task<string> UpdateAIIssueDismissStateAsync(Guid applicationId, string issueId, bool isDismiss)
+    private async Task<string> UpdateAIAnalysisItemVisibilityStateAsync(Guid applicationId, string itemId, bool isHidden)
     {
-        if (string.IsNullOrWhiteSpace(issueId))
+        if (string.IsNullOrWhiteSpace(itemId))
         {
-            throw new UserFriendlyException("AI issue id is required.");
+            throw new UserFriendlyException("AI analysis item id is required.");
         }
 
         var application = await applicationRepository.GetAsync(applicationId);
@@ -1080,76 +1097,63 @@ public class GrantApplicationAppService(
 
         try
         {
-            var updatedAnalysis = ModifyDismissedItems(application.AIAnalysis, issueId, isDismiss);
+            var updatedAnalysis = SetAnalysisItemHiddenState(application.AIAnalysis, itemId, isHidden);
             application.AIAnalysis = updatedAnalysis;
             await applicationRepository.UpdateAsync(application);
             return updatedAnalysis;
         }
         catch (Exception ex)
         {
-            var action = isDismiss ? "dismissing" : "restoring";
-            var userMessage = isDismiss
-                ? "Failed to dismiss the AI issue. Please try again."
-                : "Failed to restore the AI issue. Please try again.";
+            var action = isHidden ? "hiding" : "showing";
+            var userMessage = isHidden
+                ? "Failed to hide the AI item. Please try again."
+                : "Failed to show the AI item. Please try again.";
 
-            Logger.LogError(ex, "Error {Action} AI issue {IssueId} for application {ApplicationId}", action, issueId, applicationId);
+            Logger.LogError(ex, "Error {Action} AI analysis item {ItemId} for application {ApplicationId}", action, itemId, applicationId);
             throw new UserFriendlyException(userMessage);
         }
     }
 
-    private static string ModifyDismissedItems(string analysisJson, string issueId, bool isDismiss)
+    private static string SetAnalysisItemHiddenState(string analysisJson, string itemId, bool isHidden)
     {
         if (string.IsNullOrWhiteSpace(analysisJson))
         {
             return analysisJson;
         }
 
-        JsonObject? root;
         try
         {
-            root = JsonNode.Parse(analysisJson) as JsonObject;
+            var analysis = System.Text.Json.JsonSerializer.Deserialize<ApplicationAnalysisResponse>(analysisJson, AiAnalysisReadOptions);
+            if (analysis == null)
+            {
+                return analysisJson;
+            }
+
+            UpdateFindingHiddenState(analysis.Errors, itemId, isHidden);
+            UpdateFindingHiddenState(analysis.Warnings, itemId, isHidden);
+            UpdateFindingHiddenState(analysis.Summaries, itemId, isHidden);
+            UpdateFindingHiddenState(analysis.NextSteps, itemId, isHidden);
+
+            return System.Text.Json.JsonSerializer.Serialize(analysis, AiAnalysisWriteOptions);
         }
         catch (System.Text.Json.JsonException)
         {
             return analysisJson;
         }
+    }
 
-        if (root == null)
+    private static void UpdateFindingHiddenState(IEnumerable<ApplicationAnalysisFinding> findings, string itemId, bool isHidden)
+    {
+        foreach (var finding in findings)
         {
-            return analysisJson;
-        }
-
-        var dismissedItems = new List<string>();
-        var seen = new HashSet<string>(StringComparer.Ordinal);
-
-        if (root[AIJsonKeys.Dismissed] is JsonArray dismissedArray)
-        {
-            foreach (var item in dismissedArray)
+            if (!string.Equals(finding.Id, itemId, StringComparison.Ordinal))
             {
-                var id = item?.GetValue<string>();
-                if (string.IsNullOrWhiteSpace(id) || !seen.Add(id))
-                {
-                    continue;
-                }
-
-                dismissedItems.Add(id);
+                continue;
             }
-        }
 
-        if (isDismiss)
-        {
-            if (seen.Add(issueId))
-            {
-                dismissedItems.Add(issueId);
-            }
+            finding.Hidden = isHidden;
+            return;
         }
-        else
-        {
-            dismissedItems.RemoveAll(id => string.Equals(id, issueId, StringComparison.Ordinal));
-        }
-
-        root[AIJsonKeys.Dismissed] = new JsonArray(dismissedItems.Select(id => JsonValue.Create(id)).ToArray());
-        return root.ToJsonString(AiAnalysisWriteOptions);
     }
 
     private static ApplicationAnalysisResponse? ParseAiAnalysisData(string? analysisJson)

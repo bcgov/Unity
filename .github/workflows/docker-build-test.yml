@@ -63,7 +63,7 @@ jobs:
     environment: test
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with:
           fetch-depth: '1'
     - name: Get short commitId
@@ -91,7 +91,7 @@ jobs:
     environment: test
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with:
           fetch-depth: '1'
     - name: Generate Next Git Tag
@@ -118,7 +118,7 @@ jobs:
     environment: test
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with:
           fetch-depth: '1'
     - name: Set repository version variables
@@ -145,7 +145,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: test
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
     - name: Build Docker images
       run: |
         rm -f ./docker-compose.override.yml

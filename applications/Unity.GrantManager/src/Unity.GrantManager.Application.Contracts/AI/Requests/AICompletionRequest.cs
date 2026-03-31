@@ -1,14 +1,11 @@
 using System.Text.Json.Serialization;
 
-namespace Unity.GrantManager.AI
+namespace Unity.GrantManager.AI.Requests
 {
     public class AICompletionRequest
     {
         [JsonPropertyName("userPrompt")]
         public string UserPrompt { get; set; } = string.Empty;
-
-        [JsonPropertyName("systemPrompt")]
-        public string? SystemPrompt { get; set; }
 
         [JsonPropertyName("maxTokens")]
         public int MaxTokens { get; set; } = 150;

@@ -3,7 +3,7 @@ using Unity.Modules.Shared.MessageBrokers.RabbitMQ.Interfaces;
 
 namespace Unity.Payments.RabbitMQ.QueueMessages
 {
-    public class ReconcilePaymentMessages : IQueueMessage
+    public class ReconcilePaymentMessages : ITenantedQueueMessage
     {
         public Guid MessageId { get; set; }
         public TimeSpan TimeToLive { get; set; }

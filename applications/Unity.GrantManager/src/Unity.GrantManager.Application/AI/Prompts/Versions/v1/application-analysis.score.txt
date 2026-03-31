@@ -1,0 +1,3 @@
+HIGH: Application demonstrates strong evidence across most rubric areas with few or no issues.
+MEDIUM: Application has some gaps or weaknesses that require reviewer attention.
+LOW: Application has significant gaps or risks across key rubric areas.

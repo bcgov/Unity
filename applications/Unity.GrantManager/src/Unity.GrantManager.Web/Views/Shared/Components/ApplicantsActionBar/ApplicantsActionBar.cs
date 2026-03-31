@@ -32,7 +32,11 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantsActionBar
         public override void ConfigureBundle(BundleConfigurationContext context)
         {
             context.Files
+              .AddIfNotContains("/Views/Shared/Components/_Shared/string-utils.js");
+            context.Files
               .AddIfNotContains("/Views/Shared/Components/ApplicantsActionBar/Default.js");
+            context.Files
+              .AddIfNotContains("/Views/Shared/Components/ApplicantsActionBar/ListMerge.js");
         }
     }
 }

@@ -1,4 +1,4 @@
-﻿function saveScoresSection(formId, sectionId) {
+function saveScoresSection(formId, sectionId) {
     const assessmentId = $('#AssessmentId').val();
     const secSaveButton = document.getElementById(
         'scoresheet-section-save-' + sectionId
@@ -575,4 +575,35 @@ function collapseAllAccordions(divId) {
             .querySelector('.accordion-button')
             .classList.add('collapsed');
     });
+}
+
+function queueApplicationScoring(triggerButton = null) {
+    const applicationId = $('#DetailsViewApplicationId').val();
+    const $button = triggerButton ? $(triggerButton) : $('#regenerateAiScoresheetBtn');
+    const existingHtml = $button.html();
+    const promptVersion = globalThis.getSelectedPromptVersion?.() || null;
+
+    if (!applicationId || $button.prop('disabled')) {
+        return;
+    }
+
+    $button
+        .html(
+            '<span class="ai-button-content"><span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span><span>Queueing...</span></span>'
+        )
+        .prop('disabled', true);
+
+    unity.grantManager.grantApplications.applicationScoring
+        .generateApplicationScoring(applicationId, promptVersion)
+        .done(function () {
+            abp.notify.success('AI scoring queued. Refresh later to see updated results.');
+        })
+        .fail(function () {
+            abp.message.error(
+                'Failed to queue AI scoring. Please try again.'
+            );
+        })
+        .always(function () {
+            $button.html(existingHtml).prop('disabled', false);
+        });
 }

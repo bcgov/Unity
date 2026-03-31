@@ -28,7 +28,7 @@
                 style: 'single'
             },
             info: false,
-            scrollX: true,
+            scrollX: false,
             ajax: abp.libs.datatables.createAjax(
                 unity.notifications.emailNotifications.emailNotification.getHistoryByApplicationId, inputAction, responseCallback
             ),
@@ -37,26 +37,26 @@
                     className: 'dt-control',
                     orderable: false,
                     data: null,
-                    width: '30px',
+                    width: '2%',
                     defaultContent: ''
                 },
                 {
                     title: 'Subject',
                     data: 'subject',
                     className: 'data-table-header text-break',
-                    width: '30%'
+                    width: '38%'
                 },
                 {
                     title: 'Status',
                     data: 'status',
                     className: 'data-table-header',
-                    width: '15%'
+                    width: '13%'
                 },
                 {
                     title: 'Created',
                     data: 'creationTime',
                     className: 'data-table-header',
-                    width: '180px',
+                    width: '23%',
                     render: function (data) {
                         return data != null ? luxon.DateTime.fromISO(data, {
                             locale: abp.localization.currentCulture.name,
@@ -74,7 +74,7 @@
                     title: 'Sent By',
                     data: 'sentBy',
                     className: 'data-table-header',
-                    width: '20%',
+                    width: '16%',
                     render: function (data) {
                         return data ? data.name + ' ' + data.surname : '—';
                     },
@@ -99,7 +99,7 @@
                 },
                 {
                     data: 'status',
-                    width: '60px',
+                    width: '8%',
                     className: 'text-center',
                     render: function (data, _, full, meta) {
                         if (data === 'Draft' && abp.auth.isGranted('Notifications.Email.Send')) {
@@ -177,6 +177,7 @@ function deleteDraftEmail(id, rowIndex) {
             .then(response => {
                 abp.notify.success('Draft email is successfully deleted.', 'Delete Draft Email');
                 PubSub.publish('refresh_application_emails');
+                PubSub.publish('draft_email_deleted', { id: id });
             })
             .catch(error => {
                 console.error('There was a problem with the fetch operation:', error);

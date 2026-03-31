@@ -1,40 +1,46 @@
+using System;
 using System.Threading.Tasks;
 using Unity.Modules.Shared.MessageBrokers.RabbitMQ.Interfaces;
-using Unity.Payments.RabbitMQ.QueueMessages;
-using System;
-using Unity.Payments.PaymentRequests;
 using Unity.Payments.Integrations.Cas;
-using Volo.Abp.MultiTenancy;
+using Unity.Payments.PaymentRequests;
+using Unity.Payments.RabbitMQ.QueueMessages;
 
 namespace Unity.Payments.Integrations.RabbitMQ;
 
+/// <summary>
+/// Processes payment reconciliation messages from RabbitMQ.
+/// Tenant context and audit scope are established by <see cref="QueueConsumerHandler{TMessageConsumer,TQueueMessage}"/>
+/// before this consumer is invoked — no manual wiring needed here.
+/// </summary>
 public class ReconciliationConsumer(
-            CasPaymentRequestCoordinator casPaymentRequestCoordinator,
-            InvoiceService invoiceService,
-            ICurrentTenant currentTenant
-        ) : IQueueConsumer<ReconcilePaymentMessages>
+    CasPaymentRequestCoordinator casPaymentRequestCoordinator,
+    InvoiceService invoiceService
+) : IQueueConsumer<ReconcilePaymentMessages>
 {
     public async Task ConsumeAsync(ReconcilePaymentMessages reconcilePaymentMessage)
     {
-        if (reconcilePaymentMessage != null && !reconcilePaymentMessage.InvoiceNumber.IsNullOrEmpty() && reconcilePaymentMessage.TenantId != Guid.Empty)
-        {            
+        if (reconcilePaymentMessage == null ||
+            reconcilePaymentMessage.InvoiceNumber.IsNullOrEmpty() ||
+            reconcilePaymentMessage.TenantId == Guid.Empty)
+        {
+            return;
+        }
 
-            using (currentTenant.Change(reconcilePaymentMessage.TenantId))
-            {
-                // string invoiceNumber, string supplierNumber, string siteNumber)
-                // Go to CAS retrieve the status of the payment
-                CasPaymentSearchResult result = await invoiceService.GetCasPaymentAsync(
-                    reconcilePaymentMessage.TenantId,   
-                    reconcilePaymentMessage.InvoiceNumber,
-                    reconcilePaymentMessage.SupplierNumber,
-                    reconcilePaymentMessage.SiteNumber);
+        // string invoiceNumber, string supplierNumber, string siteNumber)
+        // Go to CAS retrieve the status of the payment
+        CasPaymentSearchResult result = await invoiceService.GetCasPaymentAsync(
+            reconcilePaymentMessage.TenantId,   
+            reconcilePaymentMessage.InvoiceNumber,
+            reconcilePaymentMessage.SupplierNumber,
+            reconcilePaymentMessage.SiteNumber);
 
-                if (result != null && result.InvoiceStatus != null && result.InvoiceStatus != "")
-                {
-                    await casPaymentRequestCoordinator.UpdatePaymentRequestStatus(reconcilePaymentMessage.TenantId, reconcilePaymentMessage.PaymentRequestId, result);
-                }
-            }
+
+        if (!string.IsNullOrEmpty(result?.InvoiceStatus))
+        {
+            await casPaymentRequestCoordinator.UpdatePaymentRequestStatus(
+                reconcilePaymentMessage.TenantId,
+                reconcilePaymentMessage.PaymentRequestId,
+                result);
         }
     }
-
 }

@@ -153,11 +153,6 @@
     "Permission:GrantManagerManagement.ApplicationForms.Default": "Manage Forms",
     "Permission:GrantApplicationManagement.Approvals.BulkApplicationApproval": "Bulk Application Approval",
     "Permission:GrantApplicationManagement.AIReporting.Default": "AI Reporting",
-    "Permission:AI": "AI",
-    "Permission:AI.Reporting": "AI Reporting",
-    "Permission:AI.ApplicationAnalysis": "AI Application Analysis",
-    "Permission:AI.AttachmentSummary": "AI Attachment Summary",
-    "Permission:AI.ScoringAssistant": "AI Scoring Assistant",
 
     "ApplicationForms": "Forms",
     "ApplicationForms:Description": "Description",
@@ -274,6 +269,7 @@
     "AssessmentResultsView:AssessmentResultsForm.RiskRanking": "Risk Ranking",
 
     "GrantApplication:ActionButtonName": "Status Actions",
+    "GrantApplication:ActionButton.RedStopWarning": "This application is from an applicant with a Red-Stop. Status actions are not permitted.",
     "Enum:GrantApplicationAction.Open": "Open",
     "Enum:GrantApplicationAction.Submit": "Submit",
     "Enum:GrantApplicationAction.Internal_Assign": "Assign",

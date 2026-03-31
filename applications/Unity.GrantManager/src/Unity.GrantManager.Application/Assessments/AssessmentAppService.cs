@@ -1,11 +1,12 @@
 ﻿using Microsoft.AspNetCore.Authorization;
-using Volo.Abp;
 using Microsoft.AspNetCore.Authorization.Infrastructure;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
+using Unity.AI.Permissions;
+using Unity.AI.Settings;
 using Unity.Flex;
 using Unity.Flex.Scoresheets;
 using Unity.Flex.Scoresheets.Enums;
@@ -14,15 +15,16 @@ using Unity.Flex.Worksheets.Definitions;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Comments;
 using Unity.GrantManager.Exceptions;
-using Unity.GrantManager.Permissions;
 using Unity.GrantManager.Workflow;
 using Unity.Modules.Shared;
+using Volo.Abp;
 using Volo.Abp.Application.Services;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.EventBus.Local;
 using Volo.Abp.Features;
 using Volo.Abp.Identity.Integration;
+using Volo.Abp.Settings;
 using Volo.Abp.Users;
 using Volo.Abp.Validation;
 
@@ -92,11 +94,12 @@ namespace Unity.GrantManager.Assessments
             var assessments = await _assessmentRepository.GetListWithAssessorsAsync(applicationId);
             var assessmentList = ObjectMapper.Map<List<AssessmentWithAssessorQueryResultItem>, List<AssessmentListItemDto>>(assessments);
 
-            // If AI Scoring feature is disabled, or user doesn't have permissions to view AI assessments, filter out AI assessments from the list
+            // If AI Scoring feature is disabled, tenant setting is off, or user lacks permission, filter out AI assessments
             var aiScoringEnabled = await _featureChecker.IsEnabledAsync("Unity.AI.Scoring");
-            var canViewAI = await AuthorizationService.IsGrantedAsync(GrantApplicationPermissions.AI.ScoringAssistant.Default);
+            var aiScoringSettingEnabled = aiScoringEnabled && await SettingProvider.GetAsync<bool>(AISettings.ScoringAssistantEnabled, defaultValue: false);
+            var canViewAI = await AuthorizationService.IsGrantedAsync(AIPermissions.ScoringAssistant.ScoringAssistantDefault);
             assessmentList = assessmentList
-                .Where(a => !a.IsAiAssessment || (aiScoringEnabled && canViewAI))
+                .Where(a => !a.IsAiAssessment || (aiScoringSettingEnabled && canViewAI))
                 .OrderByDescending(a => a.IsAiAssessment)
                 .ThenByDescending(a => a.StartDate)
                 .ToList();
@@ -395,8 +398,14 @@ namespace Unity.GrantManager.Assessments
         /// <exception cref="BusinessException">
         /// Thrown when the specified assessment is not an AI assessment.
         /// </exception>
+        [Authorize(AIPermissions.ScoringAssistant.ScoringAssistantDefault)]
         public async Task<AssessmentDto> CloneFromAiAsync(Guid aiAssessmentId)
         {
+            if (!await _featureChecker.IsEnabledAsync("Unity.AI.Scoring"))
+            {
+                throw new UserFriendlyException("AI scoring is not enabled.");
+            }
+
             var aiAssessment = await _assessmentRepository.GetAsync(aiAssessmentId);
             if (!aiAssessment.IsAiAssessment)
             {

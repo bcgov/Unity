@@ -38,6 +38,9 @@
     let applicationDetails;
     let mappingConfig;
     let editorInstance;
+    let isNewEmailDraft = false;
+    let newDraftId = null;
+    let emailAttachmentsTable = null;
     function bindUIEvents() {
         UIElements.btnNewEmail.on('click', handleNewEmail);
         UIElements.btnSend.on('click', handleSendEmail);
@@ -74,6 +77,10 @@
         toastr.options.positionClass = 'toast-top-center';
         initTemplateDetails();
         $('#templateTextContainer').hide();
+        UIElements.btnSave.hide();
+        UIElements.btnSend.hide();
+        UIElements.btnDiscard.hide();
+        UIElements.btnSendClose.hide();
     }
 
     async function initTemplateDetails() {
@@ -110,13 +117,28 @@
         e.currentTarget.value = trimmedString;
     }
 
-    function handleCloseEmail() {
+    function closeEmailFormUI() {
         $('#modal-content, #modal-background').removeClass('active');
         UIElements.emailForm.removeClass('active');
         UIElements.btnNewEmail.removeClass('hide');
         UIElements.alertEmailReadonly.removeClass('hide');
         UIElements.emailForm.trigger("reset");
+        $('#email-attachments-section').hide();
         enableEmail();
+        UIElements.btnSave.hide();
+        UIElements.btnSend.hide();
+        UIElements.btnDiscard.hide();
+        UIElements.btnSendClose.hide();
+    }
+
+    function handleCloseEmail() {
+        if (isNewEmailDraft && newDraftId) {
+            $.ajax({ url: `/api/app/email-notification/${newDraftId}/email`, type: 'DELETE' })
+                .catch(e => console.warn('Failed to delete draft on close:', e));
+            isNewEmailDraft = false; 
+            newDraftId = null;
+        }
+        closeEmailFormUI();
     }
 
     function handleDiscardEmail() {
@@ -150,21 +172,44 @@
         // 2. Clear the underlying <textarea>
         $('#' + id).val('');           // ← this line prevents the old HTML from coming back
     }
-    function handleNewEmail() {
-        resetEmailBody();  
+
+    async function initializeDraft(applicationId) {
+        const emailNotificationService = unity?.notifications?.emailNotifications?.emailNotification;
+
+        if (emailNotificationService?.initializeDraft) {
+            return await emailNotificationService.initializeDraft(applicationId);
+        }
+
+        return await $.ajax({
+            url: `/api/app/email-notification/initialize-draft?applicationId=${applicationId}`,
+            type: 'POST'
+        });
+    }
+
+    async function handleNewEmail() {
+        resetEmailBody();
         $('#templateListContainer').show();
         $('#templateTextContainer').hide();
-        UIElements.inputEmailId.val(emptyGuid);
-        // Support discard to empty email template for new emails
         UIElements.inputOriginalEmailTo.val(defaultValues.emailTo);
         UIElements.inputOriginalEmailCC.val(defaultValues.emailCC);
         UIElements.inputOriginalEmailBCC.val(defaultValues.emailBCC);
         UIElements.inputOriginalEmailFrom.val(defaultValues.emailFrom);
         UIElements.inputOriginalEmailSubject.val("");
         UIElements.inputOriginalEmailBody.val("");
-        
+
+        try {
+            const draftId = await initializeDraft(UIElements.applicationId);
+            UIElements.inputEmailId.val(draftId);
+            isNewEmailDraft = true;
+            newDraftId = draftId;
+        } catch (e) {
+            console.warn('Failed to initialize email draft:', e);
+            abp.notify.error('Failed to create email draft. Please try again.');
+            return;
+        }
+
         if (tinymce.get("EmailBody")) {
-            tinymce.get("EmailBody").remove(); // remove existing instance
+            tinymce.get("EmailBody").remove();
         }
 
         tinymce.init({
@@ -180,16 +225,18 @@
             content_css: false,
             skin: false,
             setup: function (editor) {
-               
                 editor.on("input", (e) => {
-                    UIElements.inputEmailBody.val(editor.getContent())
+                    UIElements.inputEmailBody.val(editor.getContent());
                     handleDraftChange();
                 });
                 editorInstance = editor;
                 editorInstance.setContent('');
             }
         });
-        console.log(editorInstance.getContent())
+
+        $('#email-attachments-section').show();
+        $('#email_attachment_upload_btn').show();
+        initEmailAttachmentsTable(UIElements.inputEmailId.val(), true);
         handleDraftChange();
         showModalEmail();
         resetValidationErrors();
@@ -199,6 +246,10 @@
         UIElements.emailForm.addClass('active');
         UIElements.btnNewEmail.addClass('hide');
         UIElements.alertEmailReadonly.addClass('hide');
+        UIElements.btnSave.show();
+        UIElements.btnSend.show();
+        UIElements.btnDiscard.show();
+        UIElements.btnSendClose.show();
     }
 
     function validateEmail(email) {
@@ -222,15 +273,12 @@
         UIElements.confirmationModal.hide();
         UIElements.emailSpinner.show();
         let templateName = '';
-        if (!UIElements.inputEmailId[0].value || UIElements.inputEmailId[0].value === emptyGuid) {
-            // id is either null/undefined/"" OR the empty GUID
+        if (isNewEmailDraft) {
             templateName = $("#template option:selected").text();
-            if (!templateName || templateName == '' || templateName == 'Please select') {
-                // id is either null/undefined/"" OR the empty GUID
-                templateName = "No Template Selected"
+            if (!templateName || templateName === '' || templateName === 'Please select') {
+                templateName = "No Template Selected";
             }
-        }
-        else {
+        } else {
             templateName = $('#templateText').val();
         }
         unity.grantManager.emails.email
@@ -247,6 +295,7 @@
                 emailTemplateName: templateName,
             })
             .then(function () {
+                isNewEmailDraft = false; newDraftId = null;
                 hideConfirmation();
                 handleCloseEmail();
                 abp.notify.success('Your email is being sent');
@@ -270,42 +319,38 @@
 
     function handleSaveEmail(e) {
         if (validateEmailForm(e)) {
-
-            let templateName = ''; 
-            if (!UIElements.inputEmailId[0].value || UIElements.inputEmailId[0].value === emptyGuid) {
-                // id is either null/undefined/"" OR the empty GUID
+            let templateName = '';
+            if (isNewEmailDraft) {
                 templateName = $("#template option:selected").text();
-                if (!templateName || templateName == '' || templateName == 'Please select') {
-                    // id is either null/undefined/"" OR the empty GUID
-                    templateName = "No Template Selected"
+                if (!templateName || templateName === '' || templateName === 'Please select') {
+                    templateName = "No Template Selected";
                 }
-            }
-            else {
+            } else {
                 templateName = $('#templateText').val();
             }
-           
-        unity.grantManager.emails.email
-            .saveDraft({
-                emailId: UIElements.inputEmailId[0].value,
-                applicationId: UIElements.applicationId,
-                emailTo: UIElements.inputEmailTo[0].value,
-                emailCC: UIElements.inputEmailCC[0].value,
-                emailBCC: UIElements.inputEmailBCC[0].value,
-                emailFrom: UIElements.inputEmailFrom[0].value,
-                emailBody: editorInstance.getContent(),
-                emailSubject: UIElements.inputEmailSubject[0].value,
-                currentUserId: decodeURIComponent(abp.currentUser.id),
-                emailTemplateName: templateName,
-            })
-            .then(function () {
-                handleCloseEmail();
-                abp.notify.success('Your email has been saved.');
-                PubSub.publish('refresh_application_emails');
-            }).catch(function () {
-                abp.notify.error('An error ocurred your email could not be saved.');
-            });
-        }
-        else {
+
+            unity.grantManager.emails.email
+                .saveDraft({
+                    emailId: UIElements.inputEmailId[0].value,
+                    applicationId: UIElements.applicationId,
+                    emailTo: UIElements.inputEmailTo[0].value,
+                    emailCC: UIElements.inputEmailCC[0].value,
+                    emailBCC: UIElements.inputEmailBCC[0].value,
+                    emailFrom: UIElements.inputEmailFrom[0].value,
+                    emailBody: editorInstance.getContent(),
+                    emailSubject: UIElements.inputEmailSubject[0].value,
+                    currentUserId: decodeURIComponent(abp.currentUser.id),
+                    emailTemplateName: templateName,
+                })
+                .then(function () {
+                    isNewEmailDraft = false; newDraftId = null;
+                    handleCloseEmail();
+                    abp.notify.success('Your email has been saved.');
+                    PubSub.publish('refresh_application_emails');
+                }).catch(function () {
+                    abp.notify.error('An error ocurred your email could not be saved.');
+                });
+        } else {
             return false;
         }
     }
@@ -596,6 +641,12 @@
     }
 
     PubSub.subscribe('email_selected', (msg, data) => {
+        if (isNewEmailDraft && newDraftId) {
+            $.ajax({ url: `/api/app/email-notification/${newDraftId}/email`, type: 'DELETE' })
+                .catch(e => console.warn('Failed to delete abandoned draft on email_selected:', e));
+            isNewEmailDraft = false; 
+            newDraftId = null;
+        }
         resetValidationErrors();
         console.log("data", data)
         $('#templateListContainer').hide();
@@ -641,13 +692,17 @@
         UIElements.inputEmailSubject.val(data.subject);
         UIElements.inputEmailBody.val(data.body);
 
-        if (data && data.status === 'Draft') {
-            // Must run after form inputs are assigned
+        const isDraft = data?.status === 'Draft';
+        if (isDraft) {
             enableEmail();
             handleDraftChange();
+            $('#email_attachment_upload_btn').show();
         } else {
             disableEmail();
+            $('#email_attachment_upload_btn').hide();
         }
+        $('#email-attachments-section').show();
+        initEmailAttachmentsTable(data.id, isDraft);
 
         showModalEmail();
         resetValidationErrors();
@@ -656,11 +711,287 @@
     PubSub.subscribe(
         'applicant_info_updated',
         (_, ApplicantInfoObj) => {
-            if(ApplicantInfoObj+"" !== "undefined" 
+            if(ApplicantInfoObj+"" !== "undefined"
                 && ApplicantInfoObj.ContactEmail+"" != "undefined"
                 && ApplicantInfoObj.ContactEmail !== "") {
                 UIElements.inputEmailTo[0].value = ApplicantInfoObj.ContactEmail;
             }
         }
     );
+
+    PubSub.subscribe('draft_email_deleted', (msg, data) => {
+        if (UIElements.inputEmailId.val() === data.id) {
+            isNewEmailDraft = false; newDraftId = null;
+            closeEmailFormUI();
+        }
+    });
+
+    PubSub.subscribe('reload_email_attachments_table', () => {
+        reloadEmailAttachmentsTable();
+    });
+
+    function initEmailAttachmentsTable(emailLogId, isDraft) {
+        if (emailAttachmentsTable) {
+            emailAttachmentsTable.destroy();
+            emailAttachmentsTable = null;
+        }
+
+        emailAttachmentsTable = $('#EmailAttachmentsTable').DataTable(
+            abp.libs.datatables.normalizeConfiguration({
+                serverSide: false,
+                order: [[2, 'asc']],
+                searching: false,
+                paging: false,
+                select: false,
+                info: false,
+                scrollX: true,
+                scrollY: '200px',
+                scrollCollapse: true,
+                ajax: abp.libs.datatables.createAjax(
+                    unity.notifications.emails.emailLogAttachment.getListByEmailLogId,
+                    function () { return emailLogId; },
+                    function (result) { return { data: result }; }
+                ),
+                columnDefs: [
+                    {
+                        title: '<i class="fl fl-paperclip"></i>',
+                        width: '40px',
+                        className: 'text-center',
+                        orderable: false,
+                        render: function () {
+                            return '<i class="fl fl-paperclip"></i>';
+                        }
+                    },
+                    {
+                        title: 'Document Name',
+                        data: 'fileName',
+                        className: 'data-table-header text-break',
+                        width: '40%'
+                    },
+                    {
+                        title: 'Date',
+                        data: 'time',
+                        className: 'data-table-header',
+                        width: '130px',
+                        render: function (data, type) {
+                            if (type === 'display') {
+                                return new Date(data).toDateString();
+                            }
+                            return data;
+                        }
+                    },
+                    {
+                        title: 'Attached by',
+                        data: 'attachedBy',
+                        className: 'data-table-header',
+                        width: '25%'
+                    },
+                    {
+                        title: 'File Size',
+                        data: 'fileSize',
+                        className: 'data-table-header',
+                        width: '90px',
+                        render: function (data) {
+                            if (!data) return '—';
+                            const mb = data * 0.000001;
+                            return mb >= 1 ? mb.toFixed(2) + ' MB' : (data / 1024).toFixed(0) + ' KB';
+                        }
+                    },
+                    {
+                        title: '',
+                        data: 'id',
+                        width: '80px',
+                        className: 'text-center',
+                        orderable: false,
+                        render: function (data) {
+                            return isDraft ? generateEmailAttachmentButtonContent(data) : '';
+                        }
+                    }
+                ],
+                drawCallback: function () {
+                    if (isDraft) {
+                        checkTotalAttachmentSize();
+                    }
+                }
+            })
+        );
+    }
+
+    function checkTotalAttachmentSize() {
+        const totalMaxFileSize = Number.parseFloat(
+            decodeURIComponent($('#TotalEmailAttachmentMaxFileSize').val()) || '25'
+        );
+
+        let totalBytes = 0;
+        if (emailAttachmentsTable) {
+            emailAttachmentsTable.rows().data().each(function (row) {
+                totalBytes += (row.fileSize || 0);
+            });
+        }
+
+        const totalMB = totalBytes * 0.000001;
+        const isExceeded = totalMB > totalMaxFileSize;
+
+        if (isExceeded) {
+            $('#email-attachment-size-error-message').text(
+                'The total size of all attachments (' + totalMB.toFixed(2) + ' MB) exceeds the ' +
+                'maximum allowed ' + totalMaxFileSize + ' MB. Please remove one or more attachments before sending.'
+            );
+            $('#email-attachment-size-error').show();
+            $('#btn-send').prop('disabled', true);
+        } else {
+            $('#email-attachment-size-error').hide();
+            $('#btn-send').prop('disabled', false);
+        }
+    }
+
+    function reloadEmailAttachmentsTable() {
+        if (emailAttachmentsTable) {
+            emailAttachmentsTable.ajax.reload();
+        }
+    }
+
+    $('#email_attachment_upload_btn').on('click', function () {
+        $('#email_attachment_upload').click();
+    });
+
+    $('#email_attachment_upload').on('change', function () {
+        uploadEmailFiles('email_attachment_upload');
+    });
+
+    function uploadEmailFiles(inputId) {
+        const emailLogId = $('#EmailId').val();
+        const input = document.getElementById(inputId);
+        if (!input?.files?.length) return;
+
+        const disallowedTypes = JSON.parse(decodeURIComponent($('#Extensions').val()));
+        const maxFileSize = decodeURIComponent($('#EmailAttachmentMaxFileSize').val());
+
+        let isAllowedTypeError = false;
+        let isMaxFileSizeError = false;
+        const formData = new FormData();
+
+        for (let file of input.files) {
+            const ext = file.name.slice(file.name.lastIndexOf('.') + 1).toLowerCase();
+            if (disallowedTypes.includes(ext)) {
+                isAllowedTypeError = true;
+            }
+            if (file.size * 0.000001 > maxFileSize) {
+                isMaxFileSizeError = true;
+            }
+            formData.append('files', file);
+        }
+
+        if (isAllowedTypeError) {
+            input.value = '';
+            return abp.notify.error('Error', 'File type not supported');
+        }
+        if (isMaxFileSizeError) {
+            input.value = '';
+            return abp.notify.error(
+                'File Too Large',
+                'The selected file exceeds the maximum allowed size of ' + maxFileSize + ' MB for email attachments. Please select a smaller file.'
+            );
+        }
+
+        const totalMaxFileSize = Number.parseFloat(
+            decodeURIComponent($('#TotalEmailAttachmentMaxFileSize').val()) || '25'
+        );
+        let existingTotalBytes = 0;
+        if (emailAttachmentsTable) {
+            emailAttachmentsTable.rows().data().each(function (row) {
+                existingTotalBytes += (row.fileSize || 0);
+            });
+        }
+        let newFilesBytes = 0;
+        for (let file of input.files) {
+            newFilesBytes += file.size;
+        }
+        const combinedMB = (existingTotalBytes + newFilesBytes) * 0.000001;
+        if (combinedMB > totalMaxFileSize) {
+            input.value = '';
+            return abp.notify.error(
+                'Total Size Exceeded',
+                'The total size of all attachments would exceed the maximum allowed ' + totalMaxFileSize +
+                ' MB. Please remove existing attachments or select a smaller file.'
+            );
+        }
+
+        $.ajax({
+            url: `/api/app/attachment/email/${emailLogId}/upload`,
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            xhr: function () {
+                const xhr = new globalThis.XMLHttpRequest();
+                xhr.upload.addEventListener('progress', function (e) {
+                    if (e.lengthComputable) {
+                        const pct = Math.round((e.loaded / e.total) * 100);
+                        $('#attachment-upload-progress-bar')
+                            .css('width', pct + '%')
+                            .attr('aria-valuenow', pct)
+                            .text(pct + '%');
+                    }
+                });
+                return xhr;
+            },
+            beforeSend: function () {
+                $('#email_attachment_upload_btn')
+                    .html('<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>Uploading...')
+                    .prop('disabled', true);
+                $('#attachment-upload-progress-bar').css('width', '0%').text('0%');
+                $('#attachment-upload-progress').show();
+            },
+            success: function () {
+                PubSub.publish('reload_email_attachments_table');
+            },
+            error: function (xhr) {
+                abp.notify.error(xhr.responseText || 'Failed to upload attachment.');
+            },
+            complete: function () {
+                input.value = '';
+                $('#email_attachment_upload_btn')
+                    .html('<i class="fl fl-plus me-1"></i>Add Attachments')
+                    .prop('disabled', false);
+                $('#attachment-upload-progress').hide();
+            }
+        });
+    }
 });
+
+function generateEmailAttachmentButtonContent(attachmentId) {
+    return `
+        <div class="dropdown" style="float:right;">
+            <button class="btn btn-light dropbtn" type="button">
+                <i class="fl fl-attachment-more"></i>
+            </button>
+            <div class="dropdown-content">
+                <button class="btn fullWidth" style="margin:10px" type="button"
+                        onclick="deleteEmailAttachment('${attachmentId}')">
+                    <i class="fl fl-cancel"></i><span>Delete Attachment</span>
+                </button>
+            </div>
+        </div>`;
+}
+
+function deleteEmailAttachment(attachmentId) {
+    abp.message.confirm(
+        'Are you sure you want to delete this attachment?',
+        'Delete Attachment',
+        function (confirmed) {
+            if (confirmed) {
+                unity.notifications.emails.emailLogAttachment
+                    .delete(attachmentId)
+                    .then(function () {
+                        abp.notify.success('Attachment deleted successfully.');
+                        PubSub.publish('reload_email_attachments_table');
+                    })
+                    .catch(function (e) {
+                        console.warn('Failed to delete attachment:', e);
+                        abp.notify.error('Failed to delete attachment.');
+                    });
+            }
+        }
+    );
+}

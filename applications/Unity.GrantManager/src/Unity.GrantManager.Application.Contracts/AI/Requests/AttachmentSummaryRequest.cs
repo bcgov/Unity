@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace Unity.GrantManager.AI
+namespace Unity.GrantManager.AI.Requests
 {
     public class AttachmentSummaryRequest
     {
@@ -12,5 +12,8 @@ namespace Unity.GrantManager.AI
 
         [JsonPropertyName("contentType")]
         public string ContentType { get; set; } = "application/octet-stream";
+
+        [JsonPropertyName("promptVersion")]
+        public string? PromptVersion { get; set; }
     }
 }

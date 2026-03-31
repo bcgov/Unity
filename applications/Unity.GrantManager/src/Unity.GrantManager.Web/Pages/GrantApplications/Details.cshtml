@@ -1,10 +1,10 @@
-﻿@page "{@Model.ApplicationFormSubmissionId?}"
+@page "{@Model.ApplicationFormSubmissionId?}"
 @* #pragma warning disable S1128 *@
 @using Microsoft.Extensions.Localization
+@using Unity.AI.Permissions
 @using Unity.Flex.Web.Views.Shared.Components.WorksheetInstanceWidget
 @using Unity.GrantManager.Flex
 @using Unity.GrantManager.Localization
-@using Unity.GrantManager.Permissions
 @using Unity.GrantManager.Web.Pages.GrantApplications
 @using Unity.GrantManager.Web.Views.Shared.Components.CustomTabWidget
 @using Unity.GrantManager.Web.Views.Shared.Components.DetailsActionBar
@@ -30,8 +30,13 @@
     PageLayout.Content.Title = L["Grants"].Value;
     var notificationsFeatureEnabled = await FeatureChecker.IsEnabledAsync("Unity.Notifications");
     var readEmailGranted = await PermissionChecker.IsGrantedAsync("Notifications.Email");
+    var aiAttachmentSummariesEnabled = await FeatureChecker.IsEnabledAsync("Unity.AI.AttachmentSummaries")
+        && await PermissionChecker.IsGrantedAsync(AIPermissions.AttachmentSummary.AttachmentSummaryDefault);
     var aiApplicationAnalysisEnabled = await FeatureChecker.IsEnabledAsync("Unity.AI.ApplicationAnalysis")
-        && await PermissionChecker.IsGrantedAsync(GrantApplicationPermissions.AI.ApplicationAnalysis.Default);
+        && await PermissionChecker.IsGrantedAsync(AIPermissions.ApplicationAnalysis.ApplicationAnalysisDefault);
+    var aiScoringEnabled = await FeatureChecker.IsEnabledAsync("Unity.AI.Scoring")
+        && await PermissionChecker.IsGrantedAsync(AIPermissions.ScoringAssistant.ScoringAssistantDefault)
+        && await SettingProvider.GetAsync<bool>(Unity.AI.Settings.AISettings.ScoringAssistantEnabled, defaultValue: false);
     var flexFeatureEnabled = await FeatureChecker.IsEnabledAsync("Unity.Flex");
 }
 @section styles
@@ -58,15 +63,19 @@
 <input type="hidden" id="ChefsSubmissionId" value="@Model.ChefsSubmissionId" />
 <input type="hidden" id="ApplicationFormSubmissionData" value="@Model.ApplicationFormSubmissionData" />
 <input type="hidden" id="ApplicationFormSchema" value="@Model.ApplicationFormSchema" />
+<input type="hidden" id="ApplicationScoresheetSchemaJson" value="@Model.ApplicationScoresheetSchemaJson" />
 <input type="hidden" id="ApplicationFormId" value="@Model.ApplicationFormId" />
 <input type="hidden" id="HasRenderedHTML" value="@Model.HasRenderedHTML.ToString()" />
 <input type="hidden" id="CurrentUserId" value="@Model.CurrentUserId" />
 <input type="hidden" id="CurrentUserName" value="@Model.CurrentUserName" />
 <input type="hidden" id="Extensions" value="@Model.Extensions" />
 <input type="hidden" id="MaxFileSize" value="@Model.MaxFileSize" />
+<input type="hidden" id="EmailAttachmentMaxFileSize" value="@Model.EmailAttachmentMaxFileSize" />
+<input type="hidden" id="TotalEmailAttachmentMaxFileSize" value="@Model.TotalEmailAttachmentMaxFileSize" />
 <input type="hidden" id="RenderFormIoToHtml" value="@Model.RenderFormIoToHtml.ToString()" />
 <input type="hidden" id="ApplicationFormVersionId" value="@Model.ApplicationFormVersionId" />
 <input type="hidden" id="AIAnalysisFeatureEnabled" value="@aiApplicationAnalysisEnabled" />
+<input type="hidden" id="AIScoringFeatureEnabled" value="@aiScoringEnabled.ToString()" />
 
 @functions
 {
@@ -263,9 +272,15 @@
                     <button class="nav-link" id="history-tab" data-bs-toggle="tab" data-bs-target="#history" type="button" role="tab" aria-controls="history" aria-selected="false"><i class="fl fl-history" aria-hidden="true"></i> </button>
                 </li>
             @if (aiApplicationAnalysisEnabled)
-            {                
+            {
                 <li class="nav-item">
-                    <button class="nav-link" id="ai-analysis-tab" data-bs-toggle="tab" data-bs-target="#ai-analysis" type="button" role="tab" aria-controls="ai-analysis" aria-selected="false"><i class="fa-solid fa-wand-sparkles" aria-hidden="true"></i>(<span id="ai_analysis_count">0</span>)</button>
+                    <button class="nav-link" id="ai-analysis-tab" data-bs-toggle="tab" data-bs-target="#ai-analysis" type="button" role="tab" aria-controls="ai-analysis" aria-selected="false"><span class="ai-analysis-tab-icon-wrap"><i class="fl fl-review-user" aria-hidden="true"></i><span class="ai-analysis-tab-indicator" id="ai_analysis_status" style="display:none;"></span></span></button>
+                </li>
+            }
+            @if (Model.IsDevPromptControlsEnabled)
+            {
+                <li class="nav-item ms-auto">
+                    <button class="nav-link" id="dev-tools-tab" data-bs-toggle="tab" data-bs-target="#dev-tools" type="button" role="tab" aria-controls="dev-tools" aria-selected="false">Dev</button>
                 </li>
             }
             </ul>
@@ -301,10 +316,8 @@
                             @await Component.InvokeAsync("UserInfoWidget", new { displayName = "", badge = "", title = "" })
                         </div>
 
-                        <h6 class="fw-bold px-3 pt-4 pb-2">Assessment Scores</h6>
-
                         <div id="assessmentScoresWidgetArea">
-                            @await Component.InvokeAsync("AssessmentScoresWidget", new { assessmentId = Model.AssessmentId })
+                            @await Component.InvokeAsync("AssessmentScoresWidget", new { assessmentId = Model.AssessmentId, currentUserId = Model.CurrentUserId })
                         </div>
 
                         <h6 class="fw-bold px-3 pt-4 pb-2">Scoring Attachments</h6>
@@ -397,71 +410,187 @@
                 </div>
                 @*-------- History Tab Section END ---------*@
 
-                @*-------- AI Analysis Tab Section ---------*@
                 @if (aiApplicationAnalysisEnabled)
-                { 
+                {
                 <div class="tab-pane fade" id="ai-analysis" role="tabpanel" aria-labelledby="ai-analysis-tab">
-                    <h6 class="fw-bold px-3 pt-4 pb-2 m-0">AI Application Analysis</h6>
+                    <div class="d-flex justify-content-between align-items-center px-3 pt-4 pb-2">
+                        <h6 class="fw-bold m-0">AI Application Analysis</h6>
+                        <button type="button" class="btn unt-btn-outline-primary btn-outline-primary" id="regenerateApplicationAnalysis">
+                            <span class="ai-button-content">
+                                <i class="unt-icon-sm fa-solid fa-wand-sparkles"></i>
+                                <span>Generate</span>
+                            </span>
+                        </button>
+                    </div>
                     <div class="ai-analysis-container">
                         @* Default message when no analysis data is available *@
                         <div class="ai-analysis-no-data px-3 py-4" id="aiAnalysisNoData">
                             <div class="text-center text-muted">
-                                <i class="fa-solid fa-wand-sparkles fa-2x mb-3 opacity-50"></i>
+                                <i class="fl fl-review-user fa-2x mb-3 opacity-50"></i>
                                 <h6 class="mb-2">No AI Analysis Available</h6>
                                 <p class="small mb-0">AI analysis results will appear here when available.</p>
                             </div>
                         </div>
-                        @* Accordion list for errors, warnings, and summary *@
-                        <div class="ai-analysis-accordion-list" id="aiAnalysisAccordionList">
-                            @* Accordion items will be dynamically generated here *@
+                        <div class="ai-analysis-sections px-3 pb-3" id="aiAnalysisSections">
+                            @* Analysis sections will be dynamically generated here *@
                         </div>
                     </div>
 
                     @* Hidden HTML templates for AI analysis items *@
                     <div class="d-none" id="aiAnalysisTemplates">
-                        @* Template for accordion group *@
-                        <div class="ai-analysis-accordion-item" data-template="accordion-group">
-                            <div class="ai-analysis-accordion-header" data-element="header">
-                                <span class="ai-analysis-accordion-arrow"></span>
-                                <i class="ai-analysis-accordion-icon fl" data-element="icon"></i>
-                                <span class="ai-analysis-accordion-title" data-element="title"></span>
+                        <div class="ai-analysis-section" data-template="section">
+                            <div class="ai-analysis-section-header">
+                                <div class="ai-analysis-section-title-row">
+                                    <i class="ai-analysis-section-icon fl" data-element="icon"></i>
+                                    <span class="ai-analysis-section-title" data-element="title"></span>
+                                </div>
+                                <span data-element="status-chip" style="display:none;"></span>
+                                <button type="button" class="ai-analysis-section-toggle" data-element="hidden-toggle" style="display:none;"></button>
                             </div>
-                            <div class="ai-analysis-accordion-body" data-element="body">
-                                @* Content will be populated here *@
+                            <div class="ai-analysis-section-body">
+                                <div data-element="items"></div>
                             </div>
                         </div>
 
-                        @* Template for dismissible item (errors/warnings) *@
-                        <div class="ai-analysis-detail-item" data-template="dismissible-item">
+                        <div class="ai-analysis-detail-item" data-template="active-item">
                             <div class="ai-analysis-detail-header">
                                 <div class="ai-analysis-detail-category" data-element="category"></div>
-                                <button type="button" class="ai-analysis-dismiss-btn" data-element="dismiss-btn" title="Dismiss this item">
-                                    <i class="fa fa-times"></i>
+                                <button type="button" class="ai-analysis-action-btn" data-element="hide-btn" title="Hide this item">
+                                    Hide
                                 </button>
                             </div>
                             <div class="ai-analysis-detail-message" data-element="message"></div>
                         </div>
 
-                        @* Template for dismissed item *@
-                        <div class="ai-analysis-detail-item dismissed" data-template="dismissed-item">
+                        <div class="ai-analysis-detail-item hidden-item" data-template="hidden-item">
                             <div class="ai-analysis-detail-header">
                                 <div class="ai-analysis-detail-category" data-element="category"></div>
-                                <button type="button" class="ai-analysis-restore-btn" data-element="restore-btn" title="Restore this item">
-                                    <i class="fa fa-undo"></i>
+                                <button type="button" class="ai-analysis-action-btn" data-element="show-btn" title="Show this item">
+                                    Show
                                 </button>
                             </div>
-                            <div class="ai-analysis-detail-message" data-element="message"></div>
-                        </div>
-
-                        @* Template for summary item *@
-                        <div class="ai-analysis-detail-item" data-template="summary-item">
-                            <div class="ai-analysis-detail-category" data-element="category"></div>
                             <div class="ai-analysis-detail-message" data-element="message"></div>
                         </div>
                     </div>
                 </div>
                 }
                 @*-------- AI Analysis Tab Section END ---------*@
+                @if (Model.IsDevPromptControlsEnabled)
+                {
+                    <div class="tab-pane fade" id="dev-tools" role="tabpanel" aria-labelledby="dev-tools-tab">
+                        <div class="dev-tools-header px-3 pt-4 pb-3">
+                            <h6 class="fw-bold m-0">AI Dev Tools</h6>
+                            <div class="dev-prompt-toolbar-row">
+                                <div class="dev-prompt-toolbar-inline">
+                                    <select id="devPromptVersion" class="form-select form-select-sm">
+                                        @if (Model.DefaultPromptVersion == "v0")
+                                        {
+                                            <option value="v0" selected>v0</option>
+                                            <option value="v1">v1</option>
+                                        }
+                                        else
+                                        {
+                                            <option value="v1" selected>v1</option>
+                                            <option value="v0">v0</option>
+                                        }
+                                    </select>
+                                    @if (aiAttachmentSummariesEnabled && aiApplicationAnalysisEnabled && aiScoringEnabled)
+                                    {
+                                        <button type="button" class="btn unt-btn-outline-primary btn-outline-primary btn-sm" id="generateAllAiDevToolsBtn">
+                                            <span class="ai-button-content">
+                                                <i class="unt-icon-sm fa-solid fa-wand-sparkles"></i>
+                                                <span>Generate All</span>
+                                            </span>
+                                        </button>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                        <div class="px-3 pb-3">
+
+                            <div class="dev-prompt-section">
+                                <div class="dev-prompt-section-header">
+                                    <h6 class="fw-bold m-0">Attachment Summary <span class="ai-dev-output-timestamp" id="attachmentAiOutputTimestamp"></span></h6>
+                                    @if (aiAttachmentSummariesEnabled)
+                                    {
+                                        <button type="button" class="btn unt-btn-outline-primary btn-outline-primary btn-sm" onclick="queueAttachmentSummary(this)">
+                                            <span class="ai-button-content">
+                                                <i class="unt-icon-sm fa-solid fa-wand-sparkles"></i>
+                                                <span>Generate</span>
+                                            </span>
+                                        </button>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted small">Unavailable: feature or permission not enabled</span>
+                                    }
+                                </div>
+                                <div class="ai-dev-output-container">
+                                    <div class="ai-dev-output-actions">
+                                        <button type="button" class="btn btn-icon ai-dev-output-copy-btn" data-target="#attachmentAiOutput" title="Copy" aria-label="Copy">
+                                            <i class="fl fl-copy" aria-hidden="true"></i>
+                                        </button>
+                                    </div>
+                                    <textarea class="form-control form-control-sm ai-dev-output" id="attachmentAiOutput" readonly spellcheck="false"></textarea>
+                                </div>
+                            </div>
+
+                            <div class="dev-prompt-section">
+                                <div class="dev-prompt-section-header">
+                                    <h6 class="fw-bold m-0">Application Analysis <span class="ai-dev-output-timestamp" id="analysisAiOutputTimestamp"></span></h6>
+                                    @if (aiApplicationAnalysisEnabled)
+                                    {
+                                        <button type="button" class="btn unt-btn-outline-primary btn-outline-primary btn-sm" onclick="queueApplicationAnalysis(this)">
+                                            <span class="ai-button-content">
+                                                <i class="unt-icon-sm fa-solid fa-wand-sparkles"></i>
+                                                <span>Generate</span>
+                                            </span>
+                                        </button>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted small">Unavailable: feature or permission not enabled</span>
+                                    }
+                                </div>
+                                <div class="ai-dev-output-container">
+                                    <div class="ai-dev-output-actions">
+                                        <button type="button" class="btn btn-icon ai-dev-output-copy-btn" data-target="#analysisAiOutput" title="Copy" aria-label="Copy">
+                                            <i class="fl fl-copy" aria-hidden="true"></i>
+                                        </button>
+                                    </div>
+                                    <textarea class="form-control form-control-sm ai-dev-output" id="analysisAiOutput" readonly spellcheck="false"></textarea>
+                                </div>
+                            </div>
+
+                            <div class="dev-prompt-section">
+                                <div class="dev-prompt-section-header">
+                                    <h6 class="fw-bold m-0">Application Scoring <span class="ai-dev-output-timestamp" id="scoringAiOutputTimestamp"></span></h6>
+                                    @if (aiScoringEnabled)
+                                    {
+                                        <button type="button" class="btn unt-btn-outline-primary btn-outline-primary btn-sm" onclick="queueApplicationScoring(this)">
+                                            <span class="ai-button-content">
+                                                <i class="unt-icon-sm fa-solid fa-wand-sparkles"></i>
+                                                <span>Generate</span>
+                                            </span>
+                                        </button>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted small">Unavailable: feature or permission not enabled</span>
+                                    }
+                                </div>
+                                <div class="ai-dev-output-container">
+                                    <div class="ai-dev-output-actions">
+                                        <button type="button" class="btn btn-icon ai-dev-output-copy-btn" data-target="#scoringAiOutput" title="Copy" aria-label="Copy">
+                                            <i class="fl fl-copy" aria-hidden="true"></i>
+                                        </button>
+                                    </div>
+                                    <textarea class="form-control form-control-sm ai-dev-output" id="scoringAiOutput" readonly spellcheck="false"></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
             </div>
 
         </abp-card>

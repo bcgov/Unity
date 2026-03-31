@@ -107,6 +107,8 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.PaymentConfiguration
               .AddIfNotContains("/libs/pubsub-js/src/pubsub.js");
             context.Files
               .AddIfNotContains("/libs/select2/js/select2.full.min.js");
+            context.Files
+                .AddIfNotContains("/libs/jquery-maskmoney/dist/jquery.maskMoney.min.js");
         }
     }
 }

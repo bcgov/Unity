@@ -20,6 +20,7 @@ namespace Unity.Notifications.EmailNotifications
         Task SendEmailToQueue(EmailLog emailLog);
         Task<List<EmailHistoryDto>> GetHistoryByApplicationId(Guid applicationId);
         Task UpdateSettings(NotificationsSettingsDto settingsDto);
+        Task<Guid> InitializeDraftAsync(Guid applicationId);
         Task DeleteEmail(Guid id);
         Task<int> GetEmailsChesWithNoResponseCountAsync();
     }

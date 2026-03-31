@@ -22,4 +22,5 @@ public class ApplicantSummaryDto
     public string? FiscalDay { get; set; }
     public string? FiscalMonth { get; set; }
     public string? ElectoralDistrict { get; set; }
+    public bool IsDuplicated { get; set; }
 }

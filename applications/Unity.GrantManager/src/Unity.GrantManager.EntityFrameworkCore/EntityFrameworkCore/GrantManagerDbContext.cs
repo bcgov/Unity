@@ -1,5 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using System.Linq;
+using Unity.AI.Domain;
+using Unity.AI.EntityFrameworkCore;
 using Unity.GrantManager.Applicants;
 using Unity.GrantManager.Locality;
 using Unity.GrantManager.Tokens;
@@ -19,6 +21,8 @@ using Volo.Abp.TenantManagement.EntityFrameworkCore;
 using AppAny.Quartz.EntityFrameworkCore.Migrations;
 using AppAny.Quartz.EntityFrameworkCore.Migrations.PostgreSQL;
 using Unity.GrantManager.Integrations;
+using Unity.GrantManager.Messaging;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace Unity.GrantManager.EntityFrameworkCore;
 
@@ -42,7 +46,12 @@ public class GrantManagerDbContext :
     public DbSet<RegionalDistrict> RegionalDistricts { get; set; }
     public DbSet<TenantToken> TenantTokens { get; set; }
     public DbSet<Community> Communities { get; set; }
+    public DbSet<InboxMessage> InboxMessages { get; set; }
+    public DbSet<OutboxMessage> OutboxMessages { get; set; }
 
+    // Unity.AI entities
+    public DbSet<AIPrompt> AIPrompts { get; set; }
+    public DbSet<AIPromptVersion> AIPromptVersions { get; set; }
 
     #region Entities from the modules
 
@@ -93,6 +102,9 @@ public class GrantManagerDbContext :
 
         // Adds Quartz.NET PostgreSQL schema to EntityFrameworkCore
         modelBuilder.AddQuartz(builder => builder.UsePostgreSql("qrtz_", null));
+
+        // Unity.AI tables
+        modelBuilder.ConfigureAI();
 
         /* Configure your own tables/entities inside here */
         modelBuilder.Entity<CasClientCode>(b =>
@@ -179,7 +191,51 @@ public class GrantManagerDbContext :
             b.HasIndex(x => x.OidcSubUsername);
             b.HasIndex(x => new { x.OidcSubUsername, x.TenantId }).IsUnique();
         });
-        
+
+        modelBuilder.Entity<InboxMessage>(b =>
+        {
+            b.ToTable(GrantManagerConsts.DbTablePrefix + "InboxMessages",
+                GrantManagerConsts.DbSchema);
+
+            b.ConfigureByConvention();
+
+            b.Property(x => x.Source).IsRequired().HasMaxLength(50);
+            b.Property(x => x.MessageId).IsRequired().HasMaxLength(64);
+            b.Property(x => x.CorrelationId).HasMaxLength(128);
+            b.Property(x => x.DataType).IsRequired().HasMaxLength(100);
+            b.Property(x => x.Payload).IsRequired().HasColumnType("jsonb");
+            b.Property(x => x.Details).HasMaxLength(2000);
+
+            b.Property(x => x.Status)
+                .IsRequired()
+                .HasConversion(new EnumToStringConverter<MessageStatus>());
+
+            b.HasIndex(x => x.MessageId).IsUnique();
+            b.HasIndex(x => new { x.Source, x.Status });
+        });
+
+        modelBuilder.Entity<OutboxMessage>(b =>
+        {
+            b.ToTable(GrantManagerConsts.DbTablePrefix + "OutboxMessages",
+                GrantManagerConsts.DbSchema);
+
+            b.ConfigureByConvention();
+
+            b.Property(x => x.Source).IsRequired().HasMaxLength(50);
+            b.Property(x => x.MessageId).IsRequired().HasMaxLength(64);
+            b.Property(x => x.OriginalMessageId).IsRequired().HasMaxLength(64);
+            b.Property(x => x.CorrelationId).HasMaxLength(128);
+            b.Property(x => x.DataType).IsRequired().HasMaxLength(100);
+            b.Property(x => x.AckStatus).IsRequired().HasMaxLength(20);
+            b.Property(x => x.Details).HasMaxLength(2000);
+
+            b.Property(x => x.Status)
+                .IsRequired()
+                .HasConversion(new EnumToStringConverter<MessageStatus>());
+
+            b.HasIndex(x => new { x.Source, x.Status });
+        });
+
 
         var allEntityTypes = modelBuilder.Model.GetEntityTypes();
         foreach (var type in allEntityTypes.Where(t => t.ClrType != typeof(ExtraPropertyDictionary)).Select(t => t.ClrType))

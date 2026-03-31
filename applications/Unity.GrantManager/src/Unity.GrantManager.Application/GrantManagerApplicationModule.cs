@@ -31,6 +31,7 @@ using System;
 using Quartz;
 using Unity.Modules.Shared.MessageBrokers.RabbitMQ;
 using Volo.Abp.BackgroundJobs;
+using Unity.AI;
 using Unity.Reporting;
 using Volo.Abp.DistributedLocking;
 using Unity.GrantManager.Zones;
@@ -41,6 +42,10 @@ using JsonSerializerOptions = System.Text.Json.JsonSerializerOptions;
 using Unity.GrantManager.Integrations.Chefs;
 using Unity.Modules.Shared.Http;
 using Unity.GrantManager.Integrations.Geocoder;
+using Unity.GrantManager.GrantsPortal;
+using Unity.GrantManager.GrantsPortal.Configuration;
+using Unity.GrantManager.GrantsPortal.Handlers;
+using Unity.GrantManager.Messaging;
 
 namespace Unity.GrantManager;
 
@@ -57,6 +62,7 @@ namespace Unity.GrantManager;
     typeof(PaymentsApplicationModule),
     typeof(FlexApplicationModule),
     typeof(ReportingApplicationModule),
+    typeof(AIApplicationModule),
     typeof(AbpDistributedLockingModule)
 )]
 public class GrantManagerApplicationModule : AbpModule
@@ -147,6 +153,29 @@ public class GrantManagerApplicationModule : AbpModule
         }
 
         context.Services.ConfigureRabbitMQ();
+
+        // Grants Applicant Portal RabbitMQ integration
+        context.Services.Configure<GrantsPortalRabbitMqOptions>(configuration.GetSection(GrantsPortalRabbitMqOptions.SectionName));
+        context.Services.AddTransient<IPortalCommandHandler, ContactCreateHandler>();
+        context.Services.AddTransient<IPortalCommandHandler, ContactEditHandler>();
+        context.Services.AddTransient<IPortalCommandHandler, ContactSetPrimaryHandler>();
+        context.Services.AddTransient<IPortalCommandHandler, ContactDeleteHandler>();
+        context.Services.AddTransient<IPortalCommandHandler, AddressEditHandler>();
+        context.Services.AddTransient<IPortalCommandHandler, AddressSetPrimaryHandler>();
+        context.Services.AddTransient<IPortalCommandHandler, OrganizationEditHandler>();
+
+        // Register generic IInboxMessageHandler adapters for each portal command handler
+        context.Services.AddTransient<IInboxMessageHandler>(sp => new PortalCommandHandlerAdapter(sp.GetRequiredService<ContactCreateHandler>()));
+        context.Services.AddTransient<IInboxMessageHandler>(sp => new PortalCommandHandlerAdapter(sp.GetRequiredService<ContactEditHandler>()));
+        context.Services.AddTransient<IInboxMessageHandler>(sp => new PortalCommandHandlerAdapter(sp.GetRequiredService<ContactSetPrimaryHandler>()));
+        context.Services.AddTransient<IInboxMessageHandler>(sp => new PortalCommandHandlerAdapter(sp.GetRequiredService<ContactDeleteHandler>()));
+        context.Services.AddTransient<IInboxMessageHandler>(sp => new PortalCommandHandlerAdapter(sp.GetRequiredService<AddressEditHandler>()));
+        context.Services.AddTransient<IInboxMessageHandler>(sp => new PortalCommandHandlerAdapter(sp.GetRequiredService<AddressSetPrimaryHandler>()));
+        context.Services.AddTransient<IInboxMessageHandler>(sp => new PortalCommandHandlerAdapter(sp.GetRequiredService<OrganizationEditHandler>()));
+
+        context.Services.AddScoped<GrantsPortalAcknowledgmentPublisher>();
+        context.Services.AddHostedService<GrantsPortalCommandConsumerService>();  // RabbitMQ → inbox table
+
         context.Services.AddScoped<IZoneChecker, ZoneChecker>();
 
         context.Services.AddSingleton(provider =>

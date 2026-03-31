@@ -55,6 +55,7 @@
                        update-permission-requirement="@UnitySelector.Applicant.Summary.Update">
             
             <abp-input asp-for="@Model.ApplicantSummary.ApplicantId" type="hidden" />
+            <abp-input asp-for="@Model.ApplicantSummary.IsDuplicated" type="hidden" />
 
             <abp-row class="m-0 project-info-form">
                 <abp-row class="m-0 p-0" abp-if="@IsLookupEnabled">
@@ -240,6 +241,14 @@
             </abp-row>
         </zone-fieldset>
 
+        @* Zone Section : AdditionalContact *@
+        <zone id="@UnitySelector.Applicant.AdditionalContact.Default"
+              permission-requirement="@UnitySelector.Applicant.AdditionalContact.Default"
+              form-id="@Model.ApplicationFormId" show-legend="false"
+              editable-if="IsAdditionalContactEditable">
+            @await Component.InvokeAsync("ApplicationContactsWidget", new { applicationId = Model.ApplicationId })
+        </zone>
+
         @* Zone Section : Address *@
         <zone-fieldset id="@UnitySelector.Applicant.Location.Default" form-id="@Model.ApplicationFormId" show-legend="true"
                        update-permission-requirement="@UnitySelector.Applicant.Location.Update">
@@ -362,17 +371,6 @@
     </form>
 </abp-row>
 
-@* Zone Section : AdditionalContact *@
-<zone id="@UnitySelector.Applicant.AdditionalContact.Default"
-      permission-requirement="@UnitySelector.Applicant.AdditionalContact.Default"
-      form-id="@Model.ApplicationFormId" show-legend="false"
-      editable-if="IsAdditionalContactEditable">
-    <abp-row class="px-1 pb-2 mb-4 summary-container">
-        @await Component.InvokeAsync("ApplicationContactsWidget", new { applicationId = Model.ApplicationId })
-    </abp-row>
-</zone>
-
-
 <div class="modal fade" id="mergeDuplicateApplicantsModal" tabindex="-1" aria-labelledby="mergeApplicantsModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-centered">
         <div class="modal-content">
@@ -386,6 +384,9 @@
                     <div class="text-center mb-3">
                         <h6 class="fw-bold">Compare Accounts</h6>
                         <p>Choose one account record as the principal, and choose the field values that you want to keep.</p>
+                        <div class="mb-1">
+                            <span id="mergeNameMatchBadge" class="unity-match-badge"></span>
+                        </div>
                     </div>
                     <div class="table-responsive">
                         <table class="table align-middle">
@@ -393,10 +394,12 @@
                                 <th></th>
                                 <th>
                                     <span class="fw-bold" id="existing_ApplicantNameHeader"></span>
+                                    <div id="mergeExistingDuplicateFlag" class="d-none" style="color:red;font-size:0.85em;">Flagged as Duplicated</div>
                                     <button type="button" class="btn btn-link unt-btn-link me-2" id="selectAllExistingBtn">Select All</button>
                                 </th>
                                 <th>
                                     <span class="fw-bold" id="new_ApplicantNameHeader"></span>
+                                    <div id="mergeNewDuplicateFlag" class="d-none" style="color:red;font-size:0.85em;">Flagged as Duplicated</div>
                                     <button type="button" class="btn btn-link unt-btn-link " id="selectAllNewBtn">Select All</button>
                                 </th>
                             </tr>

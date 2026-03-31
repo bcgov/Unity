@@ -1,11 +1,9 @@
-﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.Extensions.Logging;
+using Microsoft.AspNetCore.Authorization;
 using System;
 using System.Collections.Generic;
-using System.Linq.Expressions;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Threading.Tasks;
-using Unity.GrantManager.AI;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Identity;
 using Unity.GrantManager.Intakes;
@@ -24,13 +22,8 @@ public class AttachmentAppService(
     IApplicationChefsFileAttachmentRepository applicationChefsFileAttachmentRepository,
     IAssessmentAttachmentRepository assessmentAttachmentRepository,
     IIntakeFormSubmissionManager intakeFormSubmissionManager,
-    IPersonRepository personUserRepository, 
-    IAIService aiService,
-    ISubmissionAppService submissionAppService) : ApplicationService, IAttachmentAppService
+    IPersonRepository personUserRepository) : ApplicationService, IAttachmentAppService
 {
-    private const string DefaultContentType = "application/octet-stream";
-    private const string SummaryGenerationFailedMessage = "AI summary generation failed.";
-
     public async Task<IList<ApplicationAttachmentDto>> GetApplicationAsync(Guid applicationId)
     {
         return (await GetAttachmentsAsync(new AttachmentParametersDto(AttachmentType.APPLICATION, applicationId)))
@@ -188,91 +181,4 @@ public class AttachmentAppService(
     {
         return attachment.CreatorId;
     }
-
-    public async Task<string> GenerateAISummaryAttachmentAsync(Guid attachmentId)
-    {
-        if (!await aiService.IsAvailableAsync())
-        {
-            Logger.LogWarning("AI service is not available for attachment summary generation. AttachmentId: {AttachmentId}", attachmentId);
-            return SummaryGenerationFailedMessage;
-        }
-
-        var attachment = await applicationChefsFileAttachmentRepository.GetAsync(attachmentId);
-        var fileName = string.IsNullOrWhiteSpace(attachment.FileName) ? "unknown" : attachment.FileName;
-        var (fileContent, contentType) = await GetAttachmentContentForSummaryAsync(attachment, fileName);
-
-        var summaryResponse = await aiService.GenerateAttachmentSummaryAsync(new AttachmentSummaryRequest
-        {
-            FileName = fileName,
-            FileContent = fileContent,
-            ContentType = contentType
-        });
-
-        attachment.AISummary = summaryResponse.Summary;
-        await applicationChefsFileAttachmentRepository.UpdateAsync(attachment);
-
-        return summaryResponse.Summary;
-    }
-    
-    public async Task<List<string>> GenerateAISummariesAttachmentsAsync(List<Guid> attachmentIds)
-    {
-        if (!await aiService.IsAvailableAsync())
-        {
-            Logger.LogWarning("AI service is not available for bulk attachment summary generation.");
-            return attachmentIds.Select(_ => SummaryGenerationFailedMessage).ToList();
-        }
-
-        var summaries = new List<string>();
-        
-        foreach (var attachmentId in attachmentIds)
-        {
-            try
-            {
-                var summary = await GenerateAISummaryAttachmentAsync(attachmentId);
-                summaries.Add(summary);
-            }
-            catch (Exception ex)
-            {
-                Logger.LogError(ex, "Error generating AI summary for attachment {AttachmentId}", attachmentId);
-                summaries.Add(SummaryGenerationFailedMessage);
-            }
-        }
-        
-        return summaries;
-    }
-
-    private async Task<(byte[] Content, string ContentType)> GetAttachmentContentForSummaryAsync(ApplicationChefsFileAttachment attachment, string fileName)
-    {
-        if (!Guid.TryParse(attachment.ChefsSubmissionId, out var submissionId) ||
-            !Guid.TryParse(attachment.ChefsFileId, out var fileId))
-        {
-            Logger.LogWarning(
-                "Attachment {AttachmentId} has invalid CHEFS IDs. Falling back to metadata-only summary generation.",
-                attachment.Id);
-            return (Array.Empty<byte>(), DefaultContentType);
-        }
-
-        try
-        {
-            var fileDto = await submissionAppService.GetChefsFileAttachment(submissionId, fileId, fileName);
-            if (fileDto?.Content == null)
-            {
-                Logger.LogWarning(
-                    "Attachment {AttachmentId} has no retrievable content. Falling back to metadata-only summary generation.",
-                    attachment.Id);
-                return (Array.Empty<byte>(), DefaultContentType);
-            }
-
-            return (fileDto.Content, string.IsNullOrWhiteSpace(fileDto.ContentType) ? DefaultContentType : fileDto.ContentType);
-        }
-        catch (Exception ex)
-        {
-            Logger.LogWarning(
-                ex,
-                "Failed retrieving CHEFS content for attachment {AttachmentId}. Falling back to metadata-only summary generation.",
-                attachment.Id);
-            return (Array.Empty<byte>(), DefaultContentType);
-        }
-    }
-
 }
