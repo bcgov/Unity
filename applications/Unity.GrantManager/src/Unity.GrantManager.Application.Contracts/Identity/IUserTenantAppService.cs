@@ -8,5 +8,6 @@ namespace Unity.GrantManager.Identity
     {
         Task<UserTenantAccountDto?> GetUserAdminAccountAsync(string oidcSub);
         Task<List<UserTenantAccountDto>> GetUserTenantsAsync(string oidcSub);
+        Task<List<UserTenantAccountDto>> GetListAsync();
     }
 }

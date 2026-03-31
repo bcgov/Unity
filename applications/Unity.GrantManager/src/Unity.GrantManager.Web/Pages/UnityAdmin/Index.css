@@ -1,0 +1,97 @@
+.dataTables_wrapper .dataTables_scrollHead {
+    background-color: transparent;
+}
+
+#reconciliation-report-div {
+    width:70%;
+    min-width:700px;
+}
+
+.reconciliation-report {
+    flex: none;
+}
+
+.card {
+    padding: 1rem;
+    max-height: 80vh;
+    overflow: scroll;
+    margin-top:20px;
+}
+
+.unity-app-main-container {
+    margin: auto;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+}
+
+#UnityAdminSideMenu.side-menu {
+    float: left;
+    position: absolute;
+    left: 0px;
+    top: 150px;
+}
+
+#UnityAdminSideMenu ul {
+    padding-left: 0;
+}
+
+#UnityAdminSideMenu li {
+    height: 40px;
+    padding: 10px;
+    border-radius: 0 100em 100em 0;
+}
+
+#UnityAdminSideMenu .nav-item {
+    justify-content: left;
+}
+
+.unity-admin-config {
+    padding: 1rem;
+    max-height: 80vh;
+    overflow: auto;
+}
+
+
+.hide {
+    display: none !important;
+}
+
+.reconciliation-filter-row {
+    display: flex;
+}
+
+.reconciliation-filter-inputs {
+    display: flex;
+}
+
+.reconciliation-filter-buttons {
+    display: flex;
+}
+
+label {
+    margin: 0px !important;
+    font-size:14px;
+}
+
+.form-control {
+    border: 2px solid rgb(46, 93, 215);
+
+}
+.tbl-search{
+    display:block;
+}
+
+.abp-application-layout {
+    overflow-y: scroll;
+}
+
+
+.date-input-filter-div {
+    display: inline-block;
+    padding-bottom: 0px !important;
+}
+
+#btn-toggle-filter {
+    margin-right:10px;
+}
