@@ -39,7 +39,7 @@ $(function () {
 
     function menuItemClick(e) {
         removeActiveClassFromMenuItems();
-        e.target.classList.add('active');
+        $(e.currentTarget).addClass('active');
 
         UIElements.reconciliationReportDiv.addClass('hide');
         UIElements.reconciliationReportDiv.removeClass('hide');
@@ -87,36 +87,7 @@ $(function () {
         runRecTableReload();
     }
 
-    function getDateRange(rangeType) {
-        let today = new Date();
-        let toDate = formatDate(new Date());
-        let fromDate;
 
-        switch (rangeType) {
-            case 'today':
-                fromDate = toDate;
-                break;
-            case 'last7days':
-                fromDate = formatDate(new Date(today.setDate(today.getDate() - 7)));
-                break;
-            case 'last30days':
-                fromDate = formatDate(new Date(today.setDate(today.getDate() - 30)));
-                break;
-            case 'last3months':
-                fromDate = formatDate(new Date(today.setMonth(today.getMonth() - 3)));
-                break;
-            case 'last6months':
-                fromDate = formatDate(new Date(today.setMonth(today.getMonth() - 6)));
-                break;
-            case 'alltime':
-                return { fromDate: null, toDate: null };
-            case 'custom':
-            default:
-                return null;
-        }
-
-        return { fromDate, toDate };
-    }
 
     function setDateRangeFilters(quickDateRange, range) {
         UIElements.quickDateRange.val(quickDateRange);
@@ -134,14 +105,6 @@ $(function () {
             UIElements.customDateInputs.hide();
         }
     }
-
-    function formatDate(date) {
-        let year = date.getFullYear();
-        let month = String(date.getMonth() + 1).padStart(2, '0');
-        let day = String(date.getDate()).padStart(2, '0');
-        return year + '-' + month + '-' + day;
-    }
-
     function getActiveDateFilters() {
         let fromVal = UIElements.submittedFromDate.val();
         let toVal = UIElements.submittedToDate.val();
@@ -244,7 +207,7 @@ $(function () {
 
         // Initialize FilterRow plugin on the button
         if ($.fn.dataTable.FilterRow !== 'undefined') {
-            new $.fn.dataTable.FilterRow(recDt.settings()[0], {
+            new $.fn.dataTable.FilterRow(recDt.settings()[0], { // NOSONAR - False positive flag on S1848
                 buttonId: 'btn-toggle-filter',
                 buttonText: FilterDesc.Default,
                 buttonTextActive: FilterDesc.With_Filter,
@@ -258,3 +221,41 @@ $(function () {
         });
     }
 });
+
+function formatDate(date) {
+    let year = date.getFullYear();
+    let month = String(date.getMonth() + 1).padStart(2, '0');
+    let day = String(date.getDate()).padStart(2, '0');
+    return year + '-' + month + '-' + day;
+}
+
+function getDateRange(rangeType) {
+    let today = new Date();
+    let toDate = formatDate(new Date());
+    let fromDate;
+
+    switch (rangeType) {
+        case 'today':
+            fromDate = toDate;
+            break;
+        case 'last7days':
+            fromDate = formatDate(new Date(today.setDate(today.getDate() - 7)));
+            break;
+        case 'last30days':
+            fromDate = formatDate(new Date(today.setDate(today.getDate() - 30)));
+            break;
+        case 'last3months':
+            fromDate = formatDate(new Date(today.setMonth(today.getMonth() - 3)));
+            break;
+        case 'last6months':
+            fromDate = formatDate(new Date(today.setMonth(today.getMonth() - 6)));
+            break;
+        case 'alltime':
+            return { fromDate: null, toDate: null };
+        case 'custom':
+        default:
+            return null;
+    }
+
+    return { fromDate, toDate };
+}

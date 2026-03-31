@@ -174,9 +174,19 @@ public class SubmissionAppService(
 
         if (input.DateFrom.HasValue || input.DateTo.HasValue)
         {
+            DateTime? exclusiveUpperBoundForDateTo = null;
+            if (input.DateTo.HasValue && input.DateTo.Value.TimeOfDay == TimeSpan.Zero)
+            {
+                // Inclusive end-of-day
+                exclusiveUpperBoundForDateTo = input.DateTo.Value.Date.AddDays(1);
+            }
             chefsSubmissions.RemoveAll(submission =>
                 (input.DateFrom.HasValue && submission.CreatedAt < input.DateFrom.Value) ||
-                (input.DateTo.HasValue && submission.CreatedAt > input.DateTo.Value));
+                (input.DateTo.HasValue && (
+                    exclusiveUpperBoundForDateTo.HasValue
+                        ? submission.CreatedAt >= exclusiveUpperBoundForDateTo.Value
+                        : submission.CreatedAt > input.DateTo.Value
+                )));
         }
 
         if (!input.ReturnAllSubmissions)

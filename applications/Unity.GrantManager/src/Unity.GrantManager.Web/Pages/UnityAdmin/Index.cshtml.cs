@@ -1,14 +1,17 @@
+using Microsoft.AspNetCore.Authorization;
+
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Authorization;
+
 using Unity.GrantManager.Identity;
+using Unity.Modules.Shared.Permissions;
 
 using Volo.Abp.MultiTenancy;
 
-namespace Unity.GrantManager.Web.Pages.Administration
+namespace Unity.GrantManager.Web.Pages.UnityAdmin
 {
-    [Authorize]
+    [Authorize(IdentityConsts.ITOperationsPolicyName)]
     public class IndexModel(IUserTenantAppService userTenantAppService, ICurrentTenant currentTenant) : GrantManagerPageModel
     {
         public List<string> Tenants { get; set; } = [];
