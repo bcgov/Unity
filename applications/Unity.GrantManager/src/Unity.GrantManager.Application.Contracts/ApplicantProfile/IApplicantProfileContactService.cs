@@ -14,11 +14,14 @@ namespace Unity.GrantManager.ApplicantProfile;
 public interface IApplicantProfileContactService
 {
     /// <summary>
-    /// Retrieves contacts linked to the specified applicant profile.
-    /// </summary>
-    /// <param name="profileId">The unique identifier of the applicant profile.</param>
-    /// <returns>A list of <see cref="ContactInfoItemDto"/> with <c>IsEditable</c> set to <c>true</c>.</returns>
-    Task<List<ContactInfoItemDto>> GetProfileContactsAsync(Guid profileId);
+    /// Retrieves contacts linked to the applicant profile by resolving applicant IDs from
+    /// form submissions that match the given OIDC subject. When the subject resolves to a
+    /// single applicant ID the returned contacts are editable; when multiple applicant IDs
+    /// are found they are read-only.
+    /// </summary>    
+    /// <param name="subject">The pre-normalized OIDC subject identifier used to resolve applicant IDs from submissions.</param>
+    /// <returns>A list of <see cref="ContactInfoItemDto"/> with <c>IsEditable</c> reflecting the applicant-count rule.</returns>
+    Task<List<ContactInfoItemDto>> GetApplicantContactsAsync(string subject);
 
     /// <summary>
     /// Retrieves application contacts associated with submissions matching the given OIDC subject.

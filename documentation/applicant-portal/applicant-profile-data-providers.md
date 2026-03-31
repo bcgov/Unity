@@ -112,7 +112,7 @@ All providers are registered via ABP's `[ExposeServices(typeof(IApplicantProfile
 
 ### 1. ContactInfoDataProvider (`CONTACTINFO`)
 
-**Purpose:** Aggregates contact information from three sources — profile-linked contacts, application-level contacts, and applicant agent contacts derived from the submission login token.
+**Purpose:** Aggregates contact information from three sources — applicant-linked contacts, application-level contacts, and applicant agent contacts derived from the submission login token.
 
 **Dependencies:**
 - `ICurrentTenant` — for multi-tenant scoping
@@ -121,7 +121,7 @@ All providers are registered via ABP's `[ExposeServices(typeof(IApplicantProfile
 **Logic:**
 
 1. Switches to the requested tenant context.
-2. Retrieves **profile contacts** — contacts linked to the applicant profile via `ContactLink` records where `RelatedEntityType == "ApplicantProfile"` and `RelatedEntityId == profileId`. These are **editable** (`IsEditable = true`).
+2. Retrieves **applicant contacts** — resolves applicant IDs from `ApplicationFormSubmission` records matching the normalized OIDC subject, then queries `ContactLink` records where `RelatedEntityType == "Applicant"` and `RelatedEntityId` is in the resolved set. When the subject resolves to a **single** applicant ID the contacts are **editable** (`IsEditable = true`); when **multiple** applicant IDs are found they are **read-only** (`IsEditable = false`). If no submissions match, an empty list is returned.
 3. Retrieves **application contacts** — contacts on applications whose form submissions match the normalized OIDC subject. These are **read-only** (`IsEditable = false`).
 4. Retrieves **applicant agent contacts** — contact information derived from `ApplicantAgent` records on applications whose form submissions match the normalized OIDC subject. The join path is `Submission → Application → ApplicantAgent`. These are **read-only** (`IsEditable = false`).
 5. Merges all three lists into a single `ApplicantContactInfoDto.Contacts` collection.
@@ -133,11 +133,21 @@ flowchart TD
     Start([GetDataAsync called])
     Tenant["Switch to request.TenantId"]
 
-    subgraph ProfileContacts["Profile Contacts - Editable"]
-        PC1["Query ContactLink<br/>WHERE RelatedEntityType = 'ApplicantProfile'<br/>AND RelatedEntityId = profileId<br/>AND IsActive = true"]
+    subgraph ProfileContacts["Applicant Contacts - Conditionally Editable"]
+        PC0["Normalize Subject<br/>strip domain, uppercase"]
+        PC0a["Query ApplicationFormSubmission<br/>WHERE OidcSub = normalizedSubject"]
+        PC0b["Extract distinct ApplicantIds"]
+        PC0c{"Single<br/>ApplicantId?"}
+        PC1["Query ContactLink<br/>WHERE RelatedEntityType = 'Applicant'<br/>AND RelatedEntityId IN applicantIds<br/>AND IsActive = true"]
         PC2["JOIN Contact ON ContactId"]
-        PC3["Map to ContactInfoItemDto<br/>IsEditable = true"]
-        PC1 --> PC2 --> PC3
+        PC3e["Map to ContactInfoItemDto<br/>IsEditable = true"]
+        PC3r["Map to ContactInfoItemDto<br/>IsEditable = false"]
+        PC0 --> PC0a --> PC0b --> PC0c
+        PC0c -->|Yes| PC1
+        PC0c -->|No| PC1
+        PC1 --> PC2
+        PC0c -->|Yes| PC3e
+        PC0c -->|No| PC3r
     end
 
     subgraph AppContacts["Application Contacts - Read-Only"]
@@ -159,10 +169,11 @@ flowchart TD
     end
 
     Start --> Tenant
-    Tenant --> PC1
+    Tenant --> PC0
     Tenant --> AC1
     Tenant --> AG1
-    PC3 --> Merge["Merge into Contacts list"]
+    PC3e --> Merge["Merge into Contacts list"]
+    PC3r --> Merge
     AC4 --> Merge
     AG4 --> Merge
     Merge --> Return([Return ApplicantContactInfoDto])
@@ -172,7 +183,7 @@ flowchart TD
 
 | Source | Entity | Join Path | Editable |
 |--------|--------|-----------|----------|
-| Profile Contacts | `ContactLink` → `Contact` | `ContactLink.RelatedEntityId = profileId` | ✅ Yes |
+| Applicant Contacts | `ApplicationFormSubmission` → `ContactLink` → `Contact` | `Submission.OidcSub = normalizedSubject` → distinct `ApplicantId` set → `ContactLink.RelatedEntityId IN applicantIds` | ✅ Single applicant / ❌ Multiple |
 | Application Contacts | `ApplicationFormSubmission` → `ApplicationContact` → `Application` | `Submission.OidcSub = normalizedSubject`, `Application.Id` for `ReferenceNo` | ❌ No |
 | Applicant Agent Contacts | `ApplicationFormSubmission` → `ApplicantAgent` → `Application` | `Submission.ApplicationId = Agent.ApplicationId`, `Application.Id` for `ReferenceNo` | ❌ No |
 
@@ -480,7 +491,7 @@ Providers distinguish between **editable** and **read-only** data:
 
 | Provider | Editable Source | Read-Only Source |
 |----------|----------------|-----------------|
-| ContactInfo | Profile-linked contacts | Application-level contacts, Applicant agent contacts |
+| ContactInfo | Applicant-linked contacts | Application-level contacts, Applicant agent contacts |
 | AddressInfo | Addresses linked via ApplicantId | Addresses linked via ApplicationId |
 
 ---

@@ -3,6 +3,8 @@ using Newtonsoft.Json.Linq;
 using NSubstitute;
 using Shouldly;
 using System;
+using System.Collections.Generic;
+using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Unity.GrantManager.Contacts;
@@ -16,17 +18,23 @@ namespace Unity.GrantManager.GrantsPortal;
 public class ContactEditHandlerTests
 {
     private readonly IContactRepository _contactRepository;
+    private readonly IContactLinkRepository _contactLinkRepository;
     private readonly ContactEditHandler _handler;
 
     public ContactEditHandlerTests()
     {
         _contactRepository = Substitute.For<IContactRepository>();
+        _contactLinkRepository = Substitute.For<IContactLinkRepository>();
 
         _contactRepository.UpdateAsync(Arg.Any<Contact>(), Arg.Any<bool>(), Arg.Any<CancellationToken>())
             .Returns(ci => ci.ArgAt<Contact>(0));
 
+        _contactLinkRepository.GetListAsync(Arg.Any<Expression<Func<ContactLink, bool>>>(), Arg.Any<bool>(), Arg.Any<CancellationToken>())
+            .Returns(new List<ContactLink>());
+
         _handler = new ContactEditHandler(
             _contactRepository,
+            _contactLinkRepository,
             NullLogger<ContactEditHandler>.Instance);
     }
 
@@ -50,7 +58,8 @@ public class ContactEditHandlerTests
             homePhoneNumber = "444-4444",
             mobilePhoneNumber = "555-5555",
             workPhoneNumber = "666-6666",
-            workPhoneExtension = "202"
+            workPhoneExtension = "202",
+            applicantId = Guid.NewGuid()
         });
 
         return new PluginDataPayload

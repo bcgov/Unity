@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging.Abstractions;
+using Newtonsoft.Json.Linq;
 using NSubstitute;
 using Shouldly;
 using System;
@@ -44,17 +45,20 @@ public class ContactSetPrimaryHandlerTests
 
     private static PluginDataPayload CreatePayload(
         Guid? contactId = null,
-        Guid? profileId = null)
+        Guid? profileId = null,
+        Guid? applicantId = null)
     {
         contactId ??= Guid.NewGuid();
         profileId ??= Guid.NewGuid();
+        applicantId ??= Guid.NewGuid();
 
         return new PluginDataPayload
         {
             Action = "CONTACT_SET_PRIMARY_COMMAND",
             ContactId = contactId.Value.ToString(),
             ProfileId = profileId.Value.ToString(),
-            Provider = Guid.NewGuid().ToString()
+            Provider = Guid.NewGuid().ToString(),
+            Data = JObject.FromObject(new { applicantId })
         };
     }
 

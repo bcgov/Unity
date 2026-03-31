@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Unity.GrantManager.Contacts;
@@ -11,6 +12,7 @@ namespace Unity.GrantManager.GrantsPortal.Handlers;
 
 public class ContactEditHandler(
     IContactRepository contactRepository,
+    IContactLinkRepository contactLinkRepository,
     ILogger<ContactEditHandler> logger) : IPortalCommandHandler, ITransientDependency
 {
     public string DataType => "CONTACT_EDIT_COMMAND";
@@ -20,7 +22,7 @@ public class ContactEditHandler(
     {
         var contactId = Guid.Parse(payload.ContactId ?? throw new ArgumentException("contactId is required"));
         var innerData = payload.Data?.ToObject<ContactEditData>()
-                        ?? throw new ArgumentException("Contact data is required");
+                        ?? throw new ArgumentException("Contact data is required");        
 
         logger.LogInformation("Editing contact {ContactId} for profile {ProfileId}", contactId, payload.ProfileId);
 
@@ -33,6 +35,23 @@ public class ContactEditHandler(
         contact.MobilePhoneNumber = innerData.MobilePhoneNumber;
         contact.WorkPhoneNumber = innerData.WorkPhoneNumber;
         contact.WorkPhoneExtension = innerData.WorkPhoneExtension;
+
+        // Only update links whose primary flag actually needs to change
+        var contactLinks = await contactLinkRepository.GetListAsync(
+            cl => cl.RelatedEntityId == innerData.ApplicantId && cl.IsActive);
+
+        foreach (var stale in contactLinks.Where(cl => cl.IsPrimary && cl.ContactId != contactId))
+        {
+            stale.IsPrimary = false;
+            await contactLinkRepository.UpdateAsync(stale);
+        }
+
+        var newPrimary = contactLinks.FirstOrDefault(cl => cl.ContactId == contactId && !cl.IsPrimary);
+        if (newPrimary != null)
+        {
+            newPrimary.IsPrimary = true;
+            await contactLinkRepository.UpdateAsync(newPrimary);
+        }
 
         await contactRepository.UpdateAsync(contact);
 

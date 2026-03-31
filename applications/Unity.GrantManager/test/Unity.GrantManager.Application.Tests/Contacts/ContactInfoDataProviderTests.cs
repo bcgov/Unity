@@ -23,12 +23,12 @@ namespace Unity.GrantManager.Contacts
             _currentTenant.Change(Arg.Any<Guid?>()).Returns(Substitute.For<IDisposable>());
             _applicantProfileContactService = Substitute.For<IApplicantProfileContactService>();
 
-            _applicantProfileContactService.GetProfileContactsAsync(Arg.Any<Guid>())
-                .Returns(new List<ContactInfoItemDto>());
+            _applicantProfileContactService.GetApplicantContactsAsync(Arg.Any<string>())
+                .Returns([]);
             _applicantProfileContactService.GetApplicationContactsBySubjectAsync(Arg.Any<string>())
-                .Returns(new List<ContactInfoItemDto>());
+                .Returns([]);
             _applicantProfileContactService.GetApplicantAgentContactsBySubjectAsync(Arg.Any<string>())
-                .Returns(new List<ContactInfoItemDto>());
+                .Returns([]);
 
             _provider = new ContactInfoDataProvider(_currentTenant, _applicantProfileContactService);
         }
@@ -64,7 +64,7 @@ namespace Unity.GrantManager.Contacts
             await _provider.GetDataAsync(request);
 
             // Assert
-            await _applicantProfileContactService.Received(1).GetProfileContactsAsync(request.ProfileId);
+            await _applicantProfileContactService.Received(1).GetApplicantContactsAsync("TESTUSER");
         }
 
         [Fact]
@@ -111,7 +111,7 @@ namespace Unity.GrantManager.Contacts
             {
                 new() { ContactId = Guid.NewGuid(), Name = "Agent Contact 1", IsEditable = false, ContactType = "ApplicantAgent" }
             };
-            _applicantProfileContactService.GetProfileContactsAsync(request.ProfileId).Returns(profileContacts);
+            _applicantProfileContactService.GetApplicantContactsAsync("TESTUSER").Returns(profileContacts);
             _applicantProfileContactService.GetApplicationContactsBySubjectAsync("TESTUSER").Returns(appContacts);
             _applicantProfileContactService.GetApplicantAgentContactsBySubjectAsync("TESTUSER").Returns(agentContacts);
 
@@ -163,7 +163,7 @@ namespace Unity.GrantManager.Contacts
                 IsEditable = false,
                 ContactType = "ApplicantAgent"
             };
-            _applicantProfileContactService.GetProfileContactsAsync(request.ProfileId)
+            _applicantProfileContactService.GetApplicantContactsAsync("TESTUSER")
                 .Returns(new List<ContactInfoItemDto> { profileContact });
             _applicantProfileContactService.GetApplicationContactsBySubjectAsync("TESTUSER")
                 .Returns(new List<ContactInfoItemDto> { appContact });

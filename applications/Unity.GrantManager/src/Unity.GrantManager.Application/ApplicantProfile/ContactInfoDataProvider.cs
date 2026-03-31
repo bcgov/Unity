@@ -7,7 +7,7 @@ namespace Unity.GrantManager.ApplicantProfile
 {
     /// <summary>
     /// Provides contact information for the applicant profile by aggregating
-    /// profile-linked contacts, application-level contacts, and applicant agent contacts.
+    /// applicant linked contacts, application-level contacts, and applicant agent contacts.
     /// </summary>
     [ExposeServices(typeof(IApplicantProfileDataProvider))]
     public class ContactInfoDataProvider(
@@ -33,7 +33,7 @@ namespace Unity.GrantManager.ApplicantProfile
 
             using (currentTenant.Change(tenantId))
             {
-                var profileContacts = await applicantProfileContactService.GetProfileContactsAsync(request.ProfileId);
+                var profileContacts = await applicantProfileContactService.GetApplicantContactsAsync(normalizedSubject);
                 dto.Contacts.AddRange(profileContacts);
 
                 var applicationContacts = await applicantProfileContactService.GetApplicationContactsBySubjectAsync(normalizedSubject);
