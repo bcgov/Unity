@@ -162,6 +162,7 @@ function scheduleDeferredLayoutPass() {
 }
 
 function resizeSubmissionsScrollBody() {
+    const submissionsTable = document.getElementById('ApplicantSubmissionsTable');
     const tabContent = document.querySelector('#detailsTab .tab-content');
     const submissionsTableWrapper = document.getElementById(
         'ApplicantSubmissionsTable_wrapper'
@@ -169,6 +170,16 @@ function resizeSubmissionsScrollBody() {
     const submissionsScrollBody = submissionsTableWrapper?.querySelector(
         '.dt-scroll-body'
     );
+
+    if (submissionsTable && $.fn.DataTable?.isDataTable(submissionsTable)) {
+        const submissionsDataTable = $(submissionsTable).DataTable();
+        const scrollResize = submissionsDataTable?.settings?.()[0]?._scrollResize;
+
+        if (scrollResize && typeof scrollResize._size === 'function') {
+            scrollResize._size();
+            return;
+        }
+    }
 
     if (!tabContent || !submissionsTableWrapper || !submissionsScrollBody) {
         return;
@@ -333,6 +344,5 @@ function initializeResizableDivider() {
     globalThis.addEventListener('resize', restoreDividerPosition);
     globalThis.addEventListener('resize', applyTabHeightOffset);
 }
-
 
 

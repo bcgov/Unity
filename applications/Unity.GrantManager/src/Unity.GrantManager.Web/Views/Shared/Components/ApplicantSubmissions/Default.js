@@ -1219,6 +1219,7 @@ $(function () {
         serverSideEnabled: false,
         pagingEnabled: true,
         reorderEnabled: true,
+        fixedHeaders: true,
         dataTableName: 'ApplicantSubmissionsTable',
         dynamicButtonContainerId: 'submissionsDynamicButtonContainerId'
     });
@@ -1245,4 +1246,3 @@ $(function () {
     updateOpenButtonState(dataTable);
 
 });
-
