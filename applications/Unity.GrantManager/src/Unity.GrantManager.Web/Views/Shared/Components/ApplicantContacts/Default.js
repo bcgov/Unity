@@ -7,10 +7,6 @@ $(function () {
     let contactsTable = null;
     let zoneForm = null;
 
-    function notifyApplicantContactsLayoutChange() {
-        window.dispatchEvent(new CustomEvent('applicant-contacts-layout-changed'));
-    }
-
     function renderTableLink(data, row) {
         if (!data || !row.applicationId) {
             return nullPlaceholder;
@@ -156,36 +152,40 @@ $(function () {
                 });
         });
     }
-
-    function safeParse(value) {
-        try {
-            return JSON.parse(value || '[]');
-        } catch (error) {
-            console.warn('Unable to parse ApplicantContacts data.', error);
-            return [];
-        }
-    }
-
-    function isGuidEmpty(value) {
-        return !value || value === '00000000-0000-0000-0000-000000000000';
-    }
-
-    function updateContactTableAfterSave(contactPayload, contactsDt) {
-        if (!contactsDt || !contactPayload) {
-            return;
-        }
-
-        contactsDt.rows().every(function () {
-            const rowData = this.data();
-            if (rowData.id === contactPayload.id) {
-                rowData.name = contactPayload.fullName || '';
-                rowData.email = contactPayload.email || '';
-                rowData.phone = contactPayload.businessPhone || contactPayload.cellPhone || '';
-                rowData.title = contactPayload.title || '';
-                this.data(rowData);
-            }
-        });
-
-        contactsDt.rows().invalidate().draw(false);
-    }
 });
+
+function safeParse(value) {
+    try {
+        return JSON.parse(value || '[]');
+    } catch (error) {
+        console.warn('Unable to parse ApplicantContacts data.', error);
+        return [];
+    }
+}
+
+function notifyApplicantContactsLayoutChange() {
+    globalThis.dispatchEvent(new CustomEvent('applicant-contacts-layout-changed'));
+}
+
+function isGuidEmpty(value) {
+    return !value || value === '00000000-0000-0000-0000-000000000000';
+}
+
+function updateContactTableAfterSave(contactPayload, contactsDt) {
+    if (!contactsDt || !contactPayload) {
+        return;
+    }
+
+    contactsDt.rows().every(function () {
+        const rowData = this.data();
+        if (rowData.id === contactPayload.id) {
+            rowData.name = contactPayload.fullName || '';
+            rowData.email = contactPayload.email || '';
+            rowData.phone = contactPayload.businessPhone || contactPayload.cellPhone || '';
+            rowData.title = contactPayload.title || '';
+            this.data(rowData);
+        }
+    });
+
+    contactsDt.rows().invalidate().draw(false);
+}
