@@ -67,7 +67,8 @@ public class ApplicantProfileContactService(
                 Role = link.Role,
                 IsPrimary = link.IsPrimary,
                 IsEditable = isEditable,
-                ReferenceNo = null
+                ReferenceNo = null,
+                CreationTime = contact.CreationTime
             }).ToListAsync();
     }
 
@@ -96,7 +97,8 @@ public class ApplicantProfileContactService(
                 IsPrimary = false,
                 IsEditable = false,
                 ApplicationId = appContact.ApplicationId,
-                ReferenceNo = application.ReferenceNo
+                ReferenceNo = application.ReferenceNo,
+                CreationTime = appContact.CreationTime
             }).ToListAsync();
 
         return applicationContacts;
@@ -128,7 +130,8 @@ public class ApplicantProfileContactService(
                 IsPrimary = false,
                 IsEditable = false,
                 ApplicationId = agent.ApplicationId,
-                ReferenceNo = application.ReferenceNo
+                ReferenceNo = application.ReferenceNo,
+                CreationTime = agent.CreationTime
             }).ToListAsync();
 
         return agentContacts;

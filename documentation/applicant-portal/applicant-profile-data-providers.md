@@ -203,6 +203,7 @@ The `ApplicantAgent` entity is populated from the CHEFS submission login token d
 | `RoleForApplicant` | `Role` |
 | `ApplicationId` | `ApplicationId` |
 | `Application.ReferenceNo` | `ReferenceNo` |
+| `CreationTime` | `CreationTime` |
 | _(literal)_ `"ApplicantAgent"` | `ContactType` |
 
 ---
