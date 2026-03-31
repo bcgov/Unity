@@ -1,0 +1,92 @@
+@using Unity.GrantManager.Web.Views.Shared.Components.ApplicantContacts
+
+@model ApplicantContactsViewModel
+
+@{
+    Layout = null;
+    var canEditPrimaryContact = Model.PrimaryContact.IsEditable && Model.CanEditContact;
+}
+
+<div class="applicant-contacts-widget applicant-info-container px-1 pb-2 mb-4">
+    @if (Model.ApplicantId == Guid.Empty)
+    {
+        <div class="alert alert-warning m-3">
+            Applicant information not found.
+        </div>
+    }
+    else
+    {
+        <form id="ApplicantContactsForm" autocomplete="off" class="applicant-organization-info">
+            <input type="hidden" id="ApplicantContacts_ApplicantId" value="@Model.ApplicantId" />
+            <input type="hidden" id="ApplicantContacts_PrimaryContactId" value="@Model.PrimaryContact.Id" />
+
+            @if (Model.CanSave)
+            {
+                <div class="save-button-container">
+                    <abp-button text="Save"
+                                id="saveApplicantContactsBtn"
+                                class="floating-save-btn"
+                                icon-type="Other"
+                                icon="fl fl-save"
+                                button-type="Primary"
+                                disabled="true" />
+                </div>
+            }
+
+            <section class="primary-section mt-3">
+                <div class="primary-section__title fw-bold">Primary Contact</div>
+                <div class="primary-section__body">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <abp-input asp-for="PrimaryContact.FullName"
+                                       id="PrimaryContact_FullName"
+                                       disabled="@(!canEditPrimaryContact)" />
+                        </div>
+                        <div class="col-md-4">
+                            <abp-input asp-for="PrimaryContact.Title"
+                                       id="PrimaryContact_Title"
+                                       disabled="@(!canEditPrimaryContact)" />
+                        </div>
+                        <div class="col-md-4">
+                            <abp-input asp-for="PrimaryContact.Email"
+                                       type="email"
+                                       id="PrimaryContact_Email"
+                                       disabled="@(!canEditPrimaryContact)" />
+                        </div>
+                        <div class="col-md-4">
+                            <abp-input asp-for="PrimaryContact.BusinessPhone"
+                                       id="PrimaryContact_BusinessPhone"
+                                       disabled="@(!canEditPrimaryContact)" />
+                        </div>
+                        <div class="col-md-4">
+                            <abp-input asp-for="PrimaryContact.CellPhone"
+                                       id="PrimaryContact_CellPhone"
+                                       disabled="@(!canEditPrimaryContact)" />
+                        </div>
+                    </div>
+                    @if (!Model.PrimaryContact.IsEditable)
+                    {
+                        <div class="text-muted mt-3 small">No primary contact on record.</div>
+                    }
+                </div>
+            </section>
+
+            <div class="table-card mt-3">
+                <div class="table-card__header">
+                    <h6 class="fw-bold mb-0">Contacts</h6>
+                </div>
+                <div class="table-card__body">
+                    <abp-table id="ApplicantContactsTable"
+                               hoverable-rows="true"
+                               data-resize-aware="true"
+                               class="contacts-table">
+                    </abp-table>
+                </div>
+            </div>
+        </form>
+    }
+</div>
+
+<input type="hidden"
+       id="ApplicantContacts_Data"
+       value='@Json.Serialize(Model.Contacts)' />

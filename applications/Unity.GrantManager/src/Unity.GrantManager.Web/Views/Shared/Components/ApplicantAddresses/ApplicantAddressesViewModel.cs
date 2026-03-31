@@ -7,31 +7,11 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantAddresses
     public class ApplicantAddressesViewModel
     {
         public Guid ApplicantId { get; set; }
-        public bool CanEditContact { get; set; }
         public bool CanEditAddress { get; set; }
-        public bool CanSave => (CanEditContact && PrimaryContact.IsEditable)
-            || (CanEditAddress && (PrimaryPhysicalAddress.IsEditable || PrimaryMailingAddress.IsEditable));
-        public ApplicantPrimaryContactViewModel PrimaryContact { get; set; } = new();
+        public bool CanSave => CanEditAddress && (PrimaryPhysicalAddress.IsEditable || PrimaryMailingAddress.IsEditable);
         public ApplicantPrimaryAddressViewModel PrimaryPhysicalAddress { get; set; } = new();
         public ApplicantPrimaryAddressViewModel PrimaryMailingAddress { get; set; } = new();
-        public List<ApplicantContactItemDto> Contacts { get; set; } = new();
         public List<ApplicantAddressItemDto> Addresses { get; set; } = new List<ApplicantAddressItemDto>();
-    }
-
-    public class ApplicantPrimaryContactViewModel
-    {
-        public Guid Id { get; set; }
-        [Display(Name = "Full Name")]
-        public string FullName { get; set; } = string.Empty;
-        [Display(Name = "Title")]
-        public string Title { get; set; } = string.Empty;
-        [Display(Name = "Business Phone")]
-        public string BusinessPhone { get; set; } = string.Empty;
-        [Display(Name = "Cell Phone")]
-        public string CellPhone { get; set; } = string.Empty;
-        [Display(Name = "Email")]
-        public string Email { get; set; } = string.Empty;
-        public bool IsEditable => Id != Guid.Empty;
     }
 
     public class ApplicantPrimaryAddressViewModel
@@ -50,19 +30,6 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantAddresses
         [Display(Name = "Postal Code")]
         public string PostalCode { get; set; } = string.Empty;
         public bool IsEditable => Id != Guid.Empty;
-    }
-
-    public class ApplicantContactItemDto
-    {
-        public Guid Id { get; set; }
-        public string Name { get; set; } = string.Empty;
-        public string Email { get; set; } = string.Empty;
-        public string Phone { get; set; } = string.Empty;
-        public string Title { get; set; } = string.Empty;
-        public string Type { get; set; } = string.Empty;
-        public DateTime CreationTime { get; set; }
-        public string ReferenceNo { get; set; } = string.Empty;
-        public Guid? ApplicationId { get; set; }
     }
 
     public class ApplicantAddressItemDto

@@ -2,11 +2,6 @@
 
 .applicant-addresses-widget {
     position: relative;
-    height: 100%;
-    min-height: 0;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
 }
 
 .applicant-info-container {
@@ -18,28 +13,19 @@
     border-radius: 8px;
     padding: 0 1rem 1rem 1rem;
     margin-bottom: 0;
+}
+
+.applicant-addresses-widget .save-button-container {
     display: flex;
-    flex-direction: column;
-    height: 100%;
-    min-height: 0;
-    overflow: hidden;
+    justify-content: flex-end;
+    position: sticky;
+    top: 56px;
+    padding-right: 24px;
+    z-index: 999;
 }
 
-.sub-tab-header {
-    display: flex;
-    align-items: flex-end;
-    justify-content: space-between;
-    margin-bottom: 0.25rem;
-}
-
-.sub-tab-header .nav-tabs {
-    flex: 1;
-    border-bottom: none;
-}
-
-.sub-tab-header .floating-save-btn {
-    min-width: 120px;
-    margin-bottom: 4px;
+.applicant-addresses-widget .save-button-container .floating-save-btn {
+    position: static;
 }
 
 .applicant-organization-info .form-label {
@@ -49,45 +35,6 @@
     overflow: hidden;
     text-overflow: ellipsis;
     margin-bottom: 0;
-}
-
-
-.primary-section {
-    padding-bottom: 1rem;
-    border-bottom: 1px solid #dee2e6;
-}
-
-.primary-section:last-child {
-    border-bottom: none;
-}
-
-.primary-section__title {
-    font-weight: 600;
-    margin-bottom: 0.75rem;
-    color: #1f2933;
-}
-
-.tab-content > .tab-pane {
-    padding-top: 0.5rem;
-}
-
-.applicant-organization-info > .tab-content {
-    flex: 1;
-    min-height: 0;
-    overflow: hidden;
-}
-
-.applicant-organization-info > .tab-content > .tab-pane {
-    height: 100%;
-    min-height: 0;
-    overflow-y: auto;
-    overflow-x: hidden;
-}
-
-#contactsSubTabPane,
-#addressesSubTabPane {
-    overflow-y: auto;
-    overflow-x: hidden;
 }
 
 .table-card {
@@ -107,47 +54,37 @@
     overflow: visible;
 }
 
-.addresses-table,
-.contacts-table {
+.addresses-table {
     width: 100%;
 }
 
-#ApplicantAddressesTable_wrapper,
-#ApplicantContactsTable_wrapper {
+#ApplicantAddressesTable_wrapper {
     width: 100%;
     overflow: visible !important;
 }
 
 #ApplicantAddressesTable_wrapper .dt-container,
-#ApplicantContactsTable_wrapper .dt-container,
 #ApplicantAddressesTable_wrapper .dt-scroll,
-#ApplicantContactsTable_wrapper .dt-scroll,
-#ApplicantAddressesTable_wrapper .dt-layout-row,
-#ApplicantContactsTable_wrapper .dt-layout-row {
+#ApplicantAddressesTable_wrapper .dt-layout-row {
     overflow: visible !important;
 }
 
 #ApplicantAddressesTable_wrapper .dt-scroll-head .dt-scroll-headInner,
-#ApplicantContactsTable_wrapper .dt-scroll-head .dt-scroll-headInner,
-#ApplicantAddressesTable_wrapper .dt-scroll-head .dt-scroll-headInner table,
-#ApplicantContactsTable_wrapper .dt-scroll-head .dt-scroll-headInner table {
+#ApplicantAddressesTable_wrapper .dt-scroll-head .dt-scroll-headInner table {
     width: 100% !important;
 }
 
-#ApplicantAddressesTable_wrapper .dt-scroll-body,
-#ApplicantContactsTable_wrapper .dt-scroll-body {
+#ApplicantAddressesTable_wrapper .dt-scroll-body {
     overflow-x: auto;
     overflow-y: visible;
     max-height: none !important;
 }
 
-#ApplicantAddressesTable_wrapper .dt-scroll-body table,
-#ApplicantContactsTable_wrapper .dt-scroll-body table {
+#ApplicantAddressesTable_wrapper .dt-scroll-body table {
     width: 100% !important;
 }
 
-#ApplicantAddressesTable,
-#ApplicantContactsTable {
+#ApplicantAddressesTable {
     width: 100% !important;
 }
 
