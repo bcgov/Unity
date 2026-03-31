@@ -1,11 +1,10 @@
-﻿using Newtonsoft.Json;
+using Newtonsoft.Json;
 using System;
 
-namespace Unity.GrantManager.GrantsPortal.Messages.Commands
+namespace Unity.GrantManager.GrantsPortal.Messages.Commands;
+
+public class ContactSetPrimaryData
 {
-    public class ContactSetPrimaryData
-    {
-        [JsonProperty("applicantId")]
-        public Guid ApplicantId { get; set; }
-    }
+    [JsonProperty("applicantId")]
+    public Guid ApplicantId { get; set; }
 }

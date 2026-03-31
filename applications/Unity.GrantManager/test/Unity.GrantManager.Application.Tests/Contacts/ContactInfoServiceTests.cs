@@ -46,11 +46,10 @@ namespace Unity.GrantManager.Contacts
         }
 
         [Fact]
-        public async Task GetProfileContactsAsync_WithMatchingLinks_ShouldReturnContacts()
+        public async Task GetApplicantContactsAsync_WithMatchingLinks_ShouldReturnContacts()
         {
-            var profileId = Guid.NewGuid();
+            var applicantId = Guid.NewGuid();
             var contactId = Guid.NewGuid();
-            var applicantId = profileId;
 
             var submissions = new[]
             {
@@ -382,7 +381,7 @@ namespace Unity.GrantManager.Contacts
         }
 
         [Fact]
-        public async Task GetProfileContactsAsync_MultipleApplicantIds_ShouldReturnNotEditable()
+        public async Task GetApplicantContactsAsync_MultipleApplicantIds_ShouldReturnNotEditable()
         {
             var applicantId1 = Guid.NewGuid();
             var applicantId2 = Guid.NewGuid();
@@ -433,9 +432,9 @@ namespace Unity.GrantManager.Contacts
         }
 
         [Fact]
-        public async Task GetProfileContactsAsync_NoMatchingSubmissions_ShouldReturnEmpty()
+        public async Task GetApplicantContactsAsync_NoMatchingSubmissions_ShouldReturnEmpty()
         {
-            var profileId = Guid.NewGuid();
+            var applicantId = Guid.NewGuid();
             var contactId = Guid.NewGuid();
 
             var submissions = Array.Empty<ApplicationFormSubmission>().AsAsyncQueryable();
@@ -451,7 +450,7 @@ namespace Unity.GrantManager.Contacts
                 {
                     ContactId = contactId,
                     RelatedEntityType = "Applicant",
-                    RelatedEntityId = profileId,
+                    RelatedEntityId = applicantId,
                     IsActive = true
                 }
             }.AsAsyncQueryable();
@@ -466,7 +465,7 @@ namespace Unity.GrantManager.Contacts
         }
 
         [Fact]
-        public async Task GetProfileContactsAsync_MultipleSubmissionsSameApplicant_ShouldReturnEditable()
+        public async Task GetApplicantContactsAsync_MultipleSubmissionsSameApplicant_ShouldReturnEditable()
         {
             var applicantId = Guid.NewGuid();
             var contactId = Guid.NewGuid();

@@ -55,7 +55,7 @@ namespace Unity.GrantManager.Contacts
         }
 
         [Fact]
-        public async Task GetDataAsync_ShouldCallGetProfileContactsWithProfileId()
+        public async Task GetDataAsync_ShouldCallGetApplicantContactsWithNormalizedSubject()
         {
             // Arrange
             var request = CreateRequest();
@@ -98,10 +98,10 @@ namespace Unity.GrantManager.Contacts
         {
             // Arrange
             var request = CreateRequest();
-            var profileContacts = new List<ContactInfoItemDto>
+            var applicantContacts = new List<ContactInfoItemDto>
             {
-                new() { ContactId = Guid.NewGuid(), Name = "Profile Contact 1", IsEditable = true },
-                new() { ContactId = Guid.NewGuid(), Name = "Profile Contact 2", IsEditable = true }
+                new() { ContactId = Guid.NewGuid(), Name = "Applicant Contact 1", IsEditable = true },
+                new() { ContactId = Guid.NewGuid(), Name = "Applicant Contact 2", IsEditable = true }
             };
             var appContacts = new List<ContactInfoItemDto>
             {
@@ -111,7 +111,7 @@ namespace Unity.GrantManager.Contacts
             {
                 new() { ContactId = Guid.NewGuid(), Name = "Agent Contact 1", IsEditable = false, ContactType = "ApplicantAgent" }
             };
-            _applicantProfileContactService.GetApplicantContactsAsync("TESTUSER").Returns(profileContacts);
+            _applicantProfileContactService.GetApplicantContactsAsync("TESTUSER").Returns(applicantContacts);
             _applicantProfileContactService.GetApplicationContactsBySubjectAsync("TESTUSER").Returns(appContacts);
             _applicantProfileContactService.GetApplicantAgentContactsBySubjectAsync("TESTUSER").Returns(agentContacts);
 
@@ -144,10 +144,10 @@ namespace Unity.GrantManager.Contacts
         {
             // Arrange
             var request = CreateRequest();
-            var profileContact = new ContactInfoItemDto
+            var applicantContact = new ContactInfoItemDto
             {
                 ContactId = Guid.NewGuid(),
-                Name = "Profile First",
+                Name = "Applicant First",
                 IsEditable = true
             };
             var appContact = new ContactInfoItemDto
@@ -164,7 +164,7 @@ namespace Unity.GrantManager.Contacts
                 ContactType = "ApplicantAgent"
             };
             _applicantProfileContactService.GetApplicantContactsAsync("TESTUSER")
-                .Returns(new List<ContactInfoItemDto> { profileContact });
+                .Returns(new List<ContactInfoItemDto> { applicantContact });
             _applicantProfileContactService.GetApplicationContactsBySubjectAsync("TESTUSER")
                 .Returns(new List<ContactInfoItemDto> { appContact });
             _applicantProfileContactService.GetApplicantAgentContactsBySubjectAsync("TESTUSER")
@@ -175,7 +175,7 @@ namespace Unity.GrantManager.Contacts
 
             // Assert
             var dto = result.ShouldBeOfType<ApplicantContactInfoDto>();
-            dto.Contacts[0].Name.ShouldBe("Profile First");
+            dto.Contacts[0].Name.ShouldBe("Applicant First");
             dto.Contacts[1].Name.ShouldBe("App Second");
             dto.Contacts[2].Name.ShouldBe("Agent Third");
         }

@@ -15,6 +15,8 @@ public class ContactEditHandler(
     IContactLinkRepository contactLinkRepository,
     ILogger<ContactEditHandler> logger) : IPortalCommandHandler, ITransientDependency
 {
+    private const string ApplicantEntityType = "Applicant";
+
     public string DataType => "CONTACT_EDIT_COMMAND";
 
     [UnitOfWork]
@@ -23,6 +25,11 @@ public class ContactEditHandler(
         var contactId = Guid.Parse(payload.ContactId ?? throw new ArgumentException("contactId is required"));
         var innerData = payload.Data?.ToObject<ContactEditData>()
                         ?? throw new ArgumentException("Contact data is required");        
+
+        if (innerData.ApplicantId == Guid.Empty)
+        {
+            throw new ArgumentException("applicantId is required");
+        }
 
         logger.LogInformation("Editing contact {ContactId} for profile {ProfileId}", contactId, payload.ProfileId);
 
@@ -36,21 +43,35 @@ public class ContactEditHandler(
         contact.WorkPhoneNumber = innerData.WorkPhoneNumber;
         contact.WorkPhoneExtension = innerData.WorkPhoneExtension;
 
-        // Only update links whose primary flag actually needs to change
+        // Sync contact-link primary flags to match the incoming value
         var contactLinks = await contactLinkRepository.GetListAsync(
-            cl => cl.RelatedEntityId == innerData.ApplicantId && cl.IsActive);
+            cl => cl.RelatedEntityType == ApplicantEntityType
+                  && cl.RelatedEntityId == innerData.ApplicantId
+                  && cl.IsActive);
 
-        foreach (var stale in contactLinks.Where(cl => cl.IsPrimary && cl.ContactId != contactId))
+        if (innerData.IsPrimary)
         {
-            stale.IsPrimary = false;
-            await contactLinkRepository.UpdateAsync(stale);
+            foreach (var stale in contactLinks.Where(cl => cl.IsPrimary && cl.ContactId != contactId))
+            {
+                stale.IsPrimary = false;
+                await contactLinkRepository.UpdateAsync(stale);
+            }
+
+            var newPrimary = contactLinks.FirstOrDefault(cl => cl.ContactId == contactId && !cl.IsPrimary);
+            if (newPrimary != null)
+            {
+                newPrimary.IsPrimary = true;
+                await contactLinkRepository.UpdateAsync(newPrimary);
+            }
         }
-
-        var newPrimary = contactLinks.FirstOrDefault(cl => cl.ContactId == contactId && !cl.IsPrimary);
-        if (newPrimary != null)
+        else
         {
-            newPrimary.IsPrimary = true;
-            await contactLinkRepository.UpdateAsync(newPrimary);
+            var demoted = contactLinks.FirstOrDefault(cl => cl.ContactId == contactId && cl.IsPrimary);
+            if (demoted != null)
+            {
+                demoted.IsPrimary = false;
+                await contactLinkRepository.UpdateAsync(demoted);
+            }
         }
 
         await contactRepository.UpdateAsync(contact);

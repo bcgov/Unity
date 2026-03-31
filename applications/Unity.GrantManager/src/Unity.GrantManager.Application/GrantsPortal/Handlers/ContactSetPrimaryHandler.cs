@@ -14,6 +14,8 @@ public class ContactSetPrimaryHandler(
     IContactLinkRepository contactLinkRepository,
     ILogger<ContactSetPrimaryHandler> logger) : IPortalCommandHandler, ITransientDependency
 {
+    private const string ApplicantEntityType = "Applicant";
+
     public string DataType => "CONTACT_SET_PRIMARY_COMMAND";
 
     [UnitOfWork]
@@ -24,11 +26,18 @@ public class ContactSetPrimaryHandler(
         var innerData = payload.Data?.ToObject<ContactSetPrimaryData>()
                         ?? throw new ArgumentException("Contact data is required");
 
+        if (innerData.ApplicantId == Guid.Empty)
+        {
+            throw new ArgumentException("applicantId is required");
+        }
+
         logger.LogInformation("Setting contact {ContactId} as primary for profile {ProfileId}", contactId, profileId);
 
         // Only update links whose primary flag actually needs to change
         var contactLinks = await contactLinkRepository.GetListAsync(
-            cl => cl.RelatedEntityId == innerData.ApplicantId && cl.IsActive);
+            cl => cl.RelatedEntityType == ApplicantEntityType
+                  && cl.RelatedEntityId == innerData.ApplicantId
+                  && cl.IsActive);
 
         foreach (var stale in contactLinks.Where(cl => cl.IsPrimary && cl.ContactId != contactId))
         {

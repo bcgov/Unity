@@ -156,5 +156,162 @@ public class ContactEditHandlerTests
         await Should.ThrowAsync<ArgumentException>(() => _handler.HandleAsync(payload));
     }
 
+    [Fact]
+    public async Task HandleAsync_WhenApplicantIdEmpty_ShouldThrow()
+    {
+        // Arrange
+        var payload = CreatePayload();
+        payload.Data = JObject.FromObject(new
+        {
+            name = "Test",
+            email = "test@example.com",
+            applicantId = Guid.Empty
+        });
+
+        // Act & Assert
+        await Should.ThrowAsync<ArgumentException>(() => _handler.HandleAsync(payload));
+    }
+
+    #endregion
+
+    #region Primary-link behaviour
+
+    [Fact]
+    public async Task HandleAsync_WhenIsPrimaryFalse_ShouldDemoteContact()
+    {
+        // Arrange — contact is currently primary, edit says isPrimary = false
+        var contactId = Guid.NewGuid();
+        var applicantId = Guid.NewGuid();
+
+        _contactRepository.GetAsync(contactId, Arg.Any<bool>(), Arg.Any<CancellationToken>())
+            .Returns(WithId(new Contact { Name = "Old" }, contactId));
+
+        var link = WithId(new ContactLink
+        {
+            ContactId = contactId,
+            RelatedEntityId = applicantId,
+            RelatedEntityType = "Applicant",
+            IsPrimary = true,
+            IsActive = true
+        }, Guid.NewGuid());
+
+        _contactLinkRepository
+            .GetListAsync(Arg.Any<Expression<Func<ContactLink, bool>>>(), Arg.Any<bool>(), Arg.Any<CancellationToken>())
+            .Returns(new List<ContactLink> { link });
+
+        _contactLinkRepository.UpdateAsync(Arg.Any<ContactLink>(), Arg.Any<bool>(), Arg.Any<CancellationToken>())
+            .Returns(ci => ci.ArgAt<ContactLink>(0));
+
+        var payload = CreatePayload(contactId: contactId, data: JObject.FromObject(new
+        {
+            name = "Updated",
+            email = "updated@example.com",
+            isPrimary = false,
+            applicantId
+        }));
+
+        // Act
+        await _handler.HandleAsync(payload);
+
+        // Assert
+        link.IsPrimary.ShouldBeFalse();
+        await _contactLinkRepository.Received(1)
+            .UpdateAsync(Arg.Any<ContactLink>(), Arg.Any<bool>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task HandleAsync_WhenIsPrimaryFalseAndAlreadyNotPrimary_ShouldNotUpdateLinks()
+    {
+        // Arrange — contact is already non-primary, edit says isPrimary = false
+        var contactId = Guid.NewGuid();
+        var applicantId = Guid.NewGuid();
+
+        _contactRepository.GetAsync(contactId, Arg.Any<bool>(), Arg.Any<CancellationToken>())
+            .Returns(WithId(new Contact { Name = "Old" }, contactId));
+
+        var link = WithId(new ContactLink
+        {
+            ContactId = contactId,
+            RelatedEntityId = applicantId,
+            RelatedEntityType = "Applicant",
+            IsPrimary = false,
+            IsActive = true
+        }, Guid.NewGuid());
+
+        _contactLinkRepository
+            .GetListAsync(Arg.Any<Expression<Func<ContactLink, bool>>>(), Arg.Any<bool>(), Arg.Any<CancellationToken>())
+            .Returns(new List<ContactLink> { link });
+
+        var payload = CreatePayload(contactId: contactId, data: JObject.FromObject(new
+        {
+            name = "Updated",
+            email = "updated@example.com",
+            isPrimary = false,
+            applicantId
+        }));
+
+        // Act
+        await _handler.HandleAsync(payload);
+
+        // Assert
+        link.IsPrimary.ShouldBeFalse();
+        await _contactLinkRepository.DidNotReceive()
+            .UpdateAsync(Arg.Any<ContactLink>(), Arg.Any<bool>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task HandleAsync_WhenIsPrimaryTrue_ShouldSetPrimaryAndClearOthers()
+    {
+        // Arrange
+        var contactId = Guid.NewGuid();
+        var otherContactId = Guid.NewGuid();
+        var applicantId = Guid.NewGuid();
+
+        _contactRepository.GetAsync(contactId, Arg.Any<bool>(), Arg.Any<CancellationToken>())
+            .Returns(WithId(new Contact { Name = "Old" }, contactId));
+
+        var targetLink = WithId(new ContactLink
+        {
+            ContactId = contactId,
+            RelatedEntityId = applicantId,
+            RelatedEntityType = "Applicant",
+            IsPrimary = false,
+            IsActive = true
+        }, Guid.NewGuid());
+
+        var otherLink = WithId(new ContactLink
+        {
+            ContactId = otherContactId,
+            RelatedEntityId = applicantId,
+            RelatedEntityType = "Applicant",
+            IsPrimary = true,
+            IsActive = true
+        }, Guid.NewGuid());
+
+        _contactLinkRepository
+            .GetListAsync(Arg.Any<Expression<Func<ContactLink, bool>>>(), Arg.Any<bool>(), Arg.Any<CancellationToken>())
+            .Returns(new List<ContactLink> { targetLink, otherLink });
+
+        _contactLinkRepository.UpdateAsync(Arg.Any<ContactLink>(), Arg.Any<bool>(), Arg.Any<CancellationToken>())
+            .Returns(ci => ci.ArgAt<ContactLink>(0));
+
+        var payload = CreatePayload(contactId: contactId, data: JObject.FromObject(new
+        {
+            name = "Updated",
+            email = "updated@example.com",
+            isPrimary = true,
+            applicantId
+        }));
+
+        // Act
+        await _handler.HandleAsync(payload);
+
+        // Assert
+        targetLink.IsPrimary.ShouldBeTrue();
+        otherLink.IsPrimary.ShouldBeFalse();
+        await _contactLinkRepository.Received(2)
+            .UpdateAsync(Arg.Any<ContactLink>(), Arg.Any<bool>(), Arg.Any<CancellationToken>());
+    }
+
     #endregion
 }

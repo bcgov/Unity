@@ -33,8 +33,8 @@ namespace Unity.GrantManager.ApplicantProfile
 
             using (currentTenant.Change(tenantId))
             {
-                var profileContacts = await applicantProfileContactService.GetApplicantContactsAsync(normalizedSubject);
-                dto.Contacts.AddRange(profileContacts);
+                var applicantContacts = await applicantProfileContactService.GetApplicantContactsAsync(normalizedSubject);
+                dto.Contacts.AddRange(applicantContacts);
 
                 var applicationContacts = await applicantProfileContactService.GetApplicationContactsBySubjectAsync(normalizedSubject);
                 dto.Contacts.AddRange(applicationContacts);
