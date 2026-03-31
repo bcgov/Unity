@@ -14,7 +14,6 @@ public class FundingHistoryModalViewModel
     public string? GrantCategory { get; set; }
 
     [DisplayName("Funding Year")]
-    [RegularExpression(@"^\d{4}$", ErrorMessage = "Funding Year must be a 4-digit number.")]
     public string? FundingYear { get; set; }
 
     [DisplayName("Renewed Funding")]
