@@ -21,7 +21,7 @@
             <div class="mb-3">
                 <label class="form-label" for="FundingHistoryForm_FundingYear">Funding Year</label>
                 <input type="text" id="FundingHistoryForm_FundingYear" name="FundingHistoryForm.FundingYear"
-                       class="form-control" inputmode="numeric" maxlength="4"
+                       class="form-control"
                        value="@Model.FundingHistoryForm?.FundingYear" />
             </div>
 
@@ -94,11 +94,6 @@
                 }
             });
 
-            var $fundingYear = $('#FundingHistoryForm_FundingYear');
-
-            $fundingYear.on('input', function () {
-                $(this).val($(this).val().replace(/\D/g, '').slice(0, 4));
-            });
         }
     })();
 </script>
