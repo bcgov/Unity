@@ -90,10 +90,18 @@ $(function () {
                         })
                         dt.colReorder.order(orderedIndexes);
 
-                        $('#search, .custom-filter-input').val('');
-                        dt.columns().search('');
-                        dt.search('');
-                        dt.order(initialSortOrder);
+                        if (typeof dt.filterRow === 'function') {
+                            const filterRowApi = dt.filterRow();
+                            if (filterRowApi && typeof filterRowApi?.clearFilters === 'function') {
+                                filterRowApi.clearFilters();
+                            }
+                        }
+                        else {
+                            $('#search, .custom-filter-input').val('');
+                            dt.columns().search('');
+                            dt.search('');
+                            dt.order(initialSortOrder);
+                        }
 
                         // Reset date range filters
                         const range = getDateRange(defaultQuickDateRange);
