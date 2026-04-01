@@ -232,14 +232,9 @@ class SQLGenerator:
             f"### Question:{newline}"
             f"The current date is {dt.datetime.now().strftime('%Y-%m-%d')}. "
             f"{past_context}"
-<<<<<<< feature/AB#32454-AddError-InfoRetryPrompt
             f"{retry_context}"
-            f"Please generate sql and metadata for the following question, "
-            f"with reasoning but no explanation. "
-            f"Please enable map option only for questions involving regional districts: "
-            f"{question}{newline}"
-=======
             f"Please generate SQL and metadata for the following question, with reasoning but no explanation.{newline}"
+            f"{newline}"
             f"Rules:{newline}"
             f"- The schema context above is divided into sections: PUBLIC TABLES, WORKSHEET VIEWS, and SCORESHEET VIEWS.{newline}"
             f"- Use PUBLIC TABLES for application-level data (applicants, applications, statuses, funding amounts).{newline}"
@@ -252,9 +247,9 @@ class SQLGenerator:
             f"- Enable the map visualization option only for questions involving regional districts.{newline}"
             f"{newline}"
             f"Question: {question}{newline}"
->>>>>>> dev
             f"### Reasoning:"
         )
+
         
         return prompt
     
@@ -369,7 +364,7 @@ class SQLGenerator:
 Pay special attention to tables in the "Reporting" schema — if the question could plausibly be answered using data from a Reporting schema table, always keep that table.
                                   <question>{question}</question>
                                   <schema>{schemas}</schema>
-                                  In the case that the question is NSFW or completely unrelated please return NSFW''', session, 0)
+                                  If the question is completely unrelated to the schema or is inappropriate, respond with only the word UNRELATED and nothing else.''', session, 0)
 
             if not parsed_schema:
                 logger.error("Schema parsing failed — no completion returned")
