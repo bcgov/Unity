@@ -3,6 +3,15 @@
     justify-content: space-between;
 }
 
+.custom-dynamic-table {
+    table-layout: fixed;
+    width: 100% !important;
+}
+
+.custom-dynamic-table td {
+    overflow-wrap: anywhere;
+}
+
 .custom-dynamic-table.custom-table-actions th:last-child {
     width: 75px !important;
     max-width: 75px !important;
