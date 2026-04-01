@@ -1,3 +1,4 @@
+using System.Linq;
 using System.Threading.Tasks;
 using Unity.GrantManager.ApplicantProfile.ProfileData;
 using Volo.Abp.DependencyInjection;
@@ -41,6 +42,14 @@ namespace Unity.GrantManager.ApplicantProfile
 
                 var agentContacts = await applicantProfileContactService.GetApplicantAgentContactsBySubjectAsync(normalizedSubject);
                 dto.Contacts.AddRange(agentContacts);
+            }
+
+            if (dto.Contacts.Count > 0 && !dto.Contacts.Any(c => c.IsPrimary))
+            {
+                var latest = dto.Contacts
+                    .OrderByDescending(c => c.CreationTime)
+                    .First();
+                latest.IsPrimary = true;
             }
 
             return dto;

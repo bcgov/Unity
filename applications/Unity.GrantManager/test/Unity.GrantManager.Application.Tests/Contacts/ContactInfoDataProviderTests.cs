@@ -212,5 +212,63 @@ namespace Unity.GrantManager.Contacts
             await _applicantProfileContactService.Received(1).GetApplicationContactsBySubjectAsync("TESTUSER");
             await _applicantProfileContactService.Received(1).GetApplicantAgentContactsBySubjectAsync("TESTUSER");
         }
+
+        [Fact]
+        public async Task GetDataAsync_NoPrimary_ShouldMarkLatestByCreationTimeAsPrimary()
+        {
+            // Arrange
+            var request = CreateRequest();
+            var contacts = new List<ContactInfoItemDto>
+            {
+                new() { ContactId = Guid.NewGuid(), Name = "Older", IsPrimary = false, CreationTime = new DateTime(2024, 1, 1) },
+                new() { ContactId = Guid.NewGuid(), Name = "Newest", IsPrimary = false, CreationTime = new DateTime(2024, 6, 15) },
+                new() { ContactId = Guid.NewGuid(), Name = "Middle", IsPrimary = false, CreationTime = new DateTime(2024, 3, 10) }
+            };
+            _applicantProfileContactService.GetApplicantContactsAsync("TESTUSER").Returns(contacts);
+
+            // Act
+            var result = await _provider.GetDataAsync(request);
+
+            // Assert
+            var dto = result.ShouldBeOfType<ApplicantContactInfoDto>();
+            dto.Contacts.Count(c => c.IsPrimary).ShouldBe(1);
+            dto.Contacts.First(c => c.IsPrimary).Name.ShouldBe("Newest");
+        }
+
+        [Fact]
+        public async Task GetDataAsync_ExistingPrimary_ShouldNotChangePrimary()
+        {
+            // Arrange
+            var request = CreateRequest();
+            var contacts = new List<ContactInfoItemDto>
+            {
+                new() { ContactId = Guid.NewGuid(), Name = "Already Primary", IsPrimary = true, CreationTime = new DateTime(2024, 1, 1) },
+                new() { ContactId = Guid.NewGuid(), Name = "Newer But Not Primary", IsPrimary = false, CreationTime = new DateTime(2024, 6, 15) }
+            };
+            _applicantProfileContactService.GetApplicantContactsAsync("TESTUSER").Returns(contacts);
+
+            // Act
+            var result = await _provider.GetDataAsync(request);
+
+            // Assert
+            var dto = result.ShouldBeOfType<ApplicantContactInfoDto>();
+            dto.Contacts.Count(c => c.IsPrimary).ShouldBe(1);
+            dto.Contacts.First(c => c.IsPrimary).Name.ShouldBe("Already Primary");
+        }
+
+        [Fact]
+        public async Task GetDataAsync_EmptyContacts_ShouldNotSetPrimary()
+        {
+            // Arrange
+            var request = CreateRequest();
+
+            // Act
+            var result = await _provider.GetDataAsync(request);
+
+            // Assert
+            var dto = result.ShouldBeOfType<ApplicantContactInfoDto>();
+            dto.Contacts.ShouldBeEmpty();
+            dto.Contacts.Any(c => c.IsPrimary).ShouldBeFalse();
+        }
     }
 }

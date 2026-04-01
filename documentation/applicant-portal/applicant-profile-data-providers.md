@@ -125,6 +125,7 @@ All providers are registered via ABP's `[ExposeServices(typeof(IApplicantProfile
 3. Retrieves **application contacts** — contacts on applications whose form submissions match the normalized OIDC subject. These are **read-only** (`IsEditable = false`).
 4. Retrieves **applicant agent contacts** — contact information derived from `ApplicantAgent` records on applications whose form submissions match the normalized OIDC subject. The join path is `Submission → Application → ApplicantAgent`. These are **read-only** (`IsEditable = false`).
 5. Merges all three lists into a single `ApplicantContactInfoDto.Contacts` collection.
+6. Checks the `IsPrimary` flag on contacts; if no contact is marked primary, the most recently created contact (by `CreationTime`) is auto-promoted to primary.
 
 **Subject Normalization:** The OIDC subject (e.g. `user@idir`) is normalized by stripping everything after `@` and converting to uppercase.
 
@@ -176,7 +177,10 @@ flowchart TD
     PC3r --> Merge
     AC4 --> Merge
     AG4 --> Merge
-    Merge --> Return([Return ApplicantContactInfoDto])
+    Merge --> PrimaryCheck{"Any contact\nIsPrimary?"}
+    PrimaryCheck -->|Yes| Return([Return ApplicantContactInfoDto])
+    PrimaryCheck -->|No| AutoPromote["Auto-promote latest\nby CreationTime"]
+    AutoPromote --> Return
 ```
 
 **Data Sources:**
