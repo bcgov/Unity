@@ -21,7 +21,8 @@ $(function () {
         abp.libs.datatables.normalizeConfiguration({
             serverSide: false,
             order: [[2, 'asc']],
-            searching: false,
+            searching: true,
+            externalFilterButtonId: 'btn-toggle-filter-submissions',
             paging: false,
             select: false,
             info: false,
@@ -89,6 +90,13 @@ $(function () {
     dataTable.on('click', 'tbody tr', function (e) {
         e.currentTarget.classList.toggle('selected');
     });
+
+        initializeFilterRowPlugin(dataTable, 'btn-toggle-filter-submissions');
+
+
+
+
+
 
     PubSub.subscribe(
         'refresh_assessment_attachment_list',
