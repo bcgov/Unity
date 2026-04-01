@@ -14,10 +14,9 @@ public interface ISubmissionAppService : IApplicationService
     /// <summary>
     /// List submissions for a form 
     /// </summary>
-    /// <param name="formId">ID of the form</param>
-    /// <param name="fields">A list of form fields to search on. Refer to the related &#x60;versions/{formVersionId}/fields&#x60; endpoint for a list of valid values to query for. The list should be comma separated.</param>
+    /// <param name="input">Filter parameters including tenant, date range, and whether to include all submissions.</param>
     /// <returns>List&lt;FormSubmissionSummary&gt;</returns>
-    Task<PagedResultDto<FormSubmissionSummaryDto>> GetSubmissionsList(bool allSubmissions);
+    Task<PagedResultDto<FormSubmissionSummaryDto>> GetSubmissionsListAsync(GetSubmissionsListInput input);
 
     /// <summary>
     /// Get a form submission 

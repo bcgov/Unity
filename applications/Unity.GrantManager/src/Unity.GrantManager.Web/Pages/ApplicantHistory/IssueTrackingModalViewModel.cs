@@ -1,5 +1,6 @@
 using System;
 using System.ComponentModel;
+using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Unity.GrantManager.Web.Pages.ApplicantHistory;
@@ -10,7 +11,7 @@ public class IssueTrackingModalViewModel
     public Guid ApplicantId { get; set; }
 
     [DisplayName("Year")]
-    public int? Year { get; set; }
+    public string? Year { get; set; }
 
     [DisplayName("Issue Heading")]
     public string? IssueHeading { get; set; }
