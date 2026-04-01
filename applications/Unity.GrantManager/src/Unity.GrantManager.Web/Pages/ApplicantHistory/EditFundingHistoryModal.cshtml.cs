@@ -33,6 +33,7 @@ public class EditFundingHistoryModal : AbpPageModel
             RenewedFunding = record.RenewedFunding,
             ApprovedAmount = record.ApprovedAmount,
             ReconsiderationAmount = record.ReconsiderationAmount,
+            OneTimeConsideration = record.OneTimeConsideration,
             TotalGrantAmount = record.TotalGrantAmount,
             FundingNotes = record.FundingNotes
         };
@@ -48,6 +49,7 @@ public class EditFundingHistoryModal : AbpPageModel
             RenewedFunding = FundingHistoryForm.RenewedFunding,
             ApprovedAmount = FundingHistoryForm.ApprovedAmount,
             ReconsiderationAmount = FundingHistoryForm.ReconsiderationAmount,
+            OneTimeConsideration = FundingHistoryForm.OneTimeConsideration,
             TotalGrantAmount = FundingHistoryForm.TotalGrantAmount,
             FundingNotes = FundingHistoryForm.FundingNotes
         };

@@ -47,6 +47,7 @@ $(function () {
             { title: 'Renewed Funding', data: 'renewedFunding', name: 'renewedFunding', className: 'data-table-header', width: '110px', render: (d) => d === true ? 'Yes' : 'No' },
             { title: 'Approved Amount', data: 'approvedAmount', name: 'approvedAmount', className: 'data-table-header currency-display', render: (d) => formatCurrency(d) },
             { title: 'Reconsideration Amount', data: 'reconsiderationAmount', name: 'reconsiderationAmount', className: 'data-table-header currency-display', render: (d) => formatCurrency(d) },
+            { title: 'One-Time Consideration', data: 'oneTimeConsideration', name: 'oneTimeConsideration', className: 'data-table-header currency-display', render: (d) => formatCurrency(d) },
             { title: 'Total Grant Amount', data: 'totalGrantAmount', name: 'totalGrantAmount', className: 'data-table-header currency-display', render: (d) => formatCurrency(d) },
             {
                 title: 'Notes', data: 'fundingNotes', name: 'fundingNotes', className: 'data-table-header', width: '200px',
@@ -165,7 +166,7 @@ $(function () {
 
     const fundingHistoryTable = initializeDataTable({
         dt: $('#FundingHistoryTable'),
-        defaultVisibleColumns: ['grantCategory', 'fundingYear', 'renewedFunding', 'approvedAmount', 'reconsiderationAmount', 'totalGrantAmount', 'fundingNotes', 'actions'],
+        defaultVisibleColumns: ['grantCategory', 'fundingYear', 'renewedFunding', 'approvedAmount', 'reconsiderationAmount', 'oneTimeConsideration', 'totalGrantAmount', 'fundingNotes', 'actions'],
         listColumns: getFundingHistoryColumns(),
         dataEndpoint: () => unity.grantManager.applicantProfile.applicantHistory.getFundingHistoryList(getApplicantId()),
         data: () => ({}),
