@@ -91,12 +91,7 @@ $(function () {
         e.currentTarget.classList.toggle('selected');
     });
 
-        initializeFilterRowPlugin(dataTable, 'btn-toggle-filter-submissions');
-
-
-
-
-
+    initializeFilterRowPlugin(dataTable, 'btn-toggle-filter-submissions');
 
     PubSub.subscribe(
         'refresh_assessment_attachment_list',
