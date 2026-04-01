@@ -2,6 +2,7 @@
 Metabase API integration module.
 Handles all interactions with Metabase including queries, cards, and embeddings.
 """
+import os
 import requests
 import time
 import logging
@@ -119,7 +120,8 @@ class MetabaseClient:
         return r.json()
 
     def create_card(self, sql: str, db_id: int, collection_id: int,
-                    name: str, tenant_id: Optional[str] = None) -> int:
+                    name: str, tenant_id: Optional[str] = None,
+                    visualization_settings: Optional[Dict[str, Any]] = None) -> int:
         """
         Create a new Metabase card (saved question).
 
@@ -137,7 +139,7 @@ class MetabaseClient:
         url = f"{self.config.url}/api/card"
         payload = {
             "name": name,
-            "visualization_settings": {},
+            "visualization_settings": visualization_settings or {},
             "collection_id": collection_id,
             "enable_embedding": True,
             "dataset_query": {
@@ -215,7 +217,7 @@ class MetabaseClient:
                 "pie.metric": y_fields[0] if y_fields else ""
             })
         elif display_mode == "map":
-            visualization_settings["map.region"] = "1c5d50ee-4389-4593-37c1-fa8d4687ff4c"
+            visualization_settings["map.region"] = os.getenv("MB_MAP_REGION_UUID", "1c5d50ee-4389-4593-37c1-fa8d4687ff4c")
 
         r = requests.put(
             f"{self.config.url}/api/card/{card_id}",

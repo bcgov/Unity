@@ -56,3 +56,32 @@ button, input {
   height: 70px;
   width: auto;
 }
+
+/* SQL syntax highlighting — VS Code Light+ palette */
+.sql-keyword    { color: #0000ff; font-weight: 600; }
+.sql-function   { color: #795e26; }
+.sql-string     { color: #a31515; }
+.sql-number     { color: #098658; }
+.sql-comment    { color: #008000; font-style: italic; }
+.sql-identifier { color: #267f99; }
+
+/* Line numbers via CSS counter */
+.sql-line {
+  display: block;
+  counter-increment: sql-line-counter;
+  padding-left: 3.5em;
+  position: relative;
+}
+.sql-line::before {
+  content: counter(sql-line-counter);
+  position: absolute;
+  left: 0;
+  width: 2.8em;
+  text-align: right;
+  color: #aaaaaa;
+  font-size: 0.85em;
+  user-select: none;
+  padding-right: 0.6em;
+  border-right: 1px solid #e2e8f0;
+  line-height: inherit;
+}

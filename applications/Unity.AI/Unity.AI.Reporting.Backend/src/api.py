@@ -13,6 +13,7 @@ from chat import chat_manager
 from sql_generator import sql_generator
 from auth import require_auth, get_user_from_token
 from static_routes import add_static_routes
+import os
 import re
 
 # Define constants
@@ -138,10 +139,20 @@ def _classify_sql_generation_error(error):
             detail=error_str
         )
 
+    # Check if it's an authentication/authorization error (e.g. missing/invalid Azure OpenAI API key)
+    if "401" in error_str or "unauthorized" in error_lower or "403" in error_str or "forbidden" in error_lower:
+        logger.error("Azure OpenAI authentication/authorization error - check API key configuration")
+        return _error_response(
+            "server_error",
+            "Service configuration error. Please contact support.",
+            503,
+            detail=error_str
+        )
+
     logger.error("Unknown error during SQL generation")
     return _error_response(
-        "ai_failure",
-        "Unable to generate SQL query. Please try again.",
+        "server_error",
+        "Something went wrong during SQL generation. Please try again.",
         500,
         detail=error_str
     )
@@ -385,6 +396,7 @@ def ask():
         conversation = data.get("conversation", [])
         is_retry = bool(data.get("is_retry", False))
         retry_error_type = data.get("retry_error_type") or None
+        retry_error_detail = data.get("retry_error_detail") or None
         
         # Extract user context from JWT token
         tenant_id = user_data["tenant"]
@@ -406,9 +418,10 @@ def ask():
         # Generate SQL from natural language
         logger.info("Starting SQL generation...")
         try:
-            sql, metadata, sql_tokens = await sql_generator.generate_sql(
+            sql, metadata, sql_tokens, error_detail = await sql_generator.generate_sql(
                 question, past_questions, db_id, tenant_id=tenant_id,
-                is_retry=is_retry, retry_error_type=retry_error_type
+                is_retry=is_retry, retry_error_type=retry_error_type,
+                retry_error_detail=retry_error_detail
             )
         except Exception as e:
             return _classify_sql_generation_error(e)
@@ -421,7 +434,8 @@ def ask():
             return _error_response(
                 "ai_failure",
                 "I couldn't generate a report from that question. Try rephrasing it or providing more detail.",
-                422
+                422,
+                detail=error_detail
             )
 
         logger.debug(f"SQL: {sql}")
@@ -432,9 +446,14 @@ def ask():
         # Create Metabase card
         logger.info(f"Creating Metabase card with SQL length: {len(sql)}")
         logger.debug("Calling metabase_client.create_card...")
+        initial_viz_settings = {}
+        if "map" in metadata.get("visualization_options", []):
+            initial_viz_settings["map.region"] = os.getenv("MB_MAP_REGION_UUID", "1c5d50ee-4389-4593-37c1-fa8d4687ff4c")
+
         card_id = metabase_client.create_card(
             sql, db_id, collection_id, metadata['title'],
-            tenant_id=tenant_id
+            tenant_id=tenant_id,
+            visualization_settings=initial_viz_settings
         )
         logger.info(f"Card created successfully with ID: {card_id}")
 

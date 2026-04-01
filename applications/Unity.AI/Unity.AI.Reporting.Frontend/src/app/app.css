@@ -643,19 +643,20 @@
 }
 
 .sql-code {
-  padding: 16px;
+  padding: 12px 16px;
   margin: 0;
-  font-family: 'Fira Mono', 'Consolas', monospace;
-  font-size: 16px;
-  line-height: 1.5;
-  color: gray;
-  background: #fff;
+  font-family: 'Fira Mono', 'Consolas', 'Courier New', monospace;
+  font-size: 14px;
+  line-height: 1.35;
+  color: #1e1e1e;
+  background: #ffffff;
   white-space: pre-wrap;
   overflow-y: auto;
   border-radius: 8px;
   border: 1px solid var(--mb-gray-200);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
   flex: 1;
+  counter-reset: sql-line-counter;
 }
 
 .sql-panel::-webkit-scrollbar {
@@ -709,6 +710,8 @@
 
 .failure-actions {
   display: flex;
+  flex-direction: column;
+  align-items: center;
   gap: 8px;
   margin-top: 4px;
 }
@@ -732,6 +735,18 @@
   background: #2c5aa0;
   transform: translateY(-1px);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.retry-btn--disabled {
+  background: #a0aec0;
+  color: #e2e8f0;
+  cursor: not-allowed;
+}
+
+.retry-btn--disabled:hover {
+  background: #a0aec0;
+  transform: none;
+  box-shadow: none;
 }
 
 .help-btn {
