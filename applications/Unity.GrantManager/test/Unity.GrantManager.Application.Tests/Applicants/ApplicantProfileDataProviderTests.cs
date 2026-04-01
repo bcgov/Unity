@@ -31,7 +31,7 @@ namespace Unity.GrantManager.Applicants
             var currentTenant = Substitute.For<ICurrentTenant>();
             currentTenant.Change(Arg.Any<Guid?>()).Returns(Substitute.For<IDisposable>());
             var applicantProfileContactService = Substitute.For<IApplicantProfileContactService>();
-            applicantProfileContactService.GetProfileContactsAsync(Arg.Any<Guid>())
+            applicantProfileContactService.GetApplicantContactsAsync(Arg.Any<string>())
                 .Returns(Task.FromResult(new List<ContactInfoItemDto>()));
             applicantProfileContactService.GetApplicationContactsBySubjectAsync(Arg.Any<string>())
                 .Returns(Task.FromResult(new List<ContactInfoItemDto>()));

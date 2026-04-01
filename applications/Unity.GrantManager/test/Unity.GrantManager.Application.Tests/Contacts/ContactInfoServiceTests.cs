@@ -3,7 +3,6 @@ using Shouldly;
 using System;
 using System.Threading.Tasks;
 using Unity.GrantManager.ApplicantProfile;
-using Unity.GrantManager.ApplicantProfile.ProfileData;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.TestHelpers;
 using Volo.Abp.Domain.Entities;
@@ -47,11 +46,21 @@ namespace Unity.GrantManager.Contacts
         }
 
         [Fact]
-        public async Task GetProfileContactsAsync_WithMatchingLinks_ShouldReturnContacts()
+        public async Task GetApplicantContactsAsync_WithMatchingLinks_ShouldReturnContacts()
         {
-            // Arrange
-            var profileId = Guid.NewGuid();
+            var applicantId = Guid.NewGuid();
             var contactId = Guid.NewGuid();
+
+            var submissions = new[]
+            {
+                new ApplicationFormSubmission
+                {
+                    OidcSub = "TESTUSER",
+                    ApplicantId = applicantId,
+                    ApplicationId = Guid.NewGuid(),
+                    ApplicationFormId = Guid.NewGuid()
+                }
+            }.AsAsyncQueryable();
 
             var contacts = new[]
             {
@@ -72,21 +81,20 @@ namespace Unity.GrantManager.Contacts
                 new ContactLink
                 {
                     ContactId = contactId,
-                    RelatedEntityType = "ApplicantProfile",
-                    RelatedEntityId = profileId,
+                    RelatedEntityType = "Applicant",
+                    RelatedEntityId = applicantId,
                     Role = "Primary Contact",
                     IsPrimary = true,
                     IsActive = true
                 }
             }.AsAsyncQueryable();
 
+            _submissionRepository.GetQueryableAsync().Returns(submissions);
             _contactRepository.GetQueryableAsync().Returns(contacts);
             _contactLinkRepository.GetQueryableAsync().Returns(contactLinks);
 
-            // Act
-            var result = await _service.GetProfileContactsAsync(profileId);
+            var result = await _service.GetApplicantContactsAsync("TESTUSER");
 
-            // Assert
             result.Count.ShouldBe(1);
             var contact = result[0];
             contact.ContactId.ShouldBe(contactId);
@@ -104,16 +112,14 @@ namespace Unity.GrantManager.Contacts
         }
 
         [Fact]
-        public async Task GetProfileContactsAsync_WithNoLinks_ShouldReturnEmpty()
+        public async Task GetApplicantContactsAsync_WithNoLinks_ShouldReturnEmpty()
         {
-            // Arrange
+            _submissionRepository.GetQueryableAsync().Returns(Array.Empty<ApplicationFormSubmission>().AsAsyncQueryable());
             _contactRepository.GetQueryableAsync().Returns(Array.Empty<Contact>().AsAsyncQueryable());
             _contactLinkRepository.GetQueryableAsync().Returns(Array.Empty<ContactLink>().AsAsyncQueryable());
 
-            // Act
-            var result = await _service.GetProfileContactsAsync(Guid.NewGuid());
+            var result = await _service.GetApplicantContactsAsync("TESTUSER");
 
-            // Assert
             result.ShouldBeEmpty();
         }
 
@@ -372,6 +378,140 @@ namespace Unity.GrantManager.Contacts
 
             // Assert
             result.ShouldBeEmpty();
+        }
+
+        [Fact]
+        public async Task GetApplicantContactsAsync_MultipleApplicantIds_ShouldReturnNotEditable()
+        {
+            var applicantId1 = Guid.NewGuid();
+            var applicantId2 = Guid.NewGuid();
+            var contactId = Guid.NewGuid();
+
+            var submissions = new[]
+            {
+                new ApplicationFormSubmission
+                {
+                    OidcSub = "TESTUSER",
+                    ApplicantId = applicantId1,
+                    ApplicationId = Guid.NewGuid(),
+                    ApplicationFormId = Guid.NewGuid()
+                },
+                new ApplicationFormSubmission
+                {
+                    OidcSub = "TESTUSER",
+                    ApplicantId = applicantId2,
+                    ApplicationId = Guid.NewGuid(),
+                    ApplicationFormId = Guid.NewGuid()
+                }
+            }.AsAsyncQueryable();
+
+            var contacts = new[]
+            {
+                WithId(new Contact { Name = "Multi Contact" }, contactId)
+            }.AsAsyncQueryable();
+
+            var contactLinks = new[]
+            {
+                new ContactLink
+                {
+                    ContactId = contactId,
+                    RelatedEntityType = "Applicant",
+                    RelatedEntityId = applicantId1,
+                    IsActive = true
+                }
+            }.AsAsyncQueryable();
+
+            _submissionRepository.GetQueryableAsync().Returns(submissions);
+            _contactRepository.GetQueryableAsync().Returns(contacts);
+            _contactLinkRepository.GetQueryableAsync().Returns(contactLinks);
+
+            var result = await _service.GetApplicantContactsAsync("TESTUSER");
+
+            result.Count.ShouldBe(1);
+            result[0].IsEditable.ShouldBeFalse();
+        }
+
+        [Fact]
+        public async Task GetApplicantContactsAsync_NoMatchingSubmissions_ShouldReturnEmpty()
+        {
+            var applicantId = Guid.NewGuid();
+            var contactId = Guid.NewGuid();
+
+            var submissions = Array.Empty<ApplicationFormSubmission>().AsAsyncQueryable();
+
+            var contacts = new[]
+            {
+                WithId(new Contact { Name = "Fallback Contact" }, contactId)
+            }.AsAsyncQueryable();
+
+            var contactLinks = new[]
+            {
+                new ContactLink
+                {
+                    ContactId = contactId,
+                    RelatedEntityType = "Applicant",
+                    RelatedEntityId = applicantId,
+                    IsActive = true
+                }
+            }.AsAsyncQueryable();
+
+            _submissionRepository.GetQueryableAsync().Returns(submissions);
+            _contactRepository.GetQueryableAsync().Returns(contacts);
+            _contactLinkRepository.GetQueryableAsync().Returns(contactLinks);
+
+            var result = await _service.GetApplicantContactsAsync("UNKNOWNUSER");
+
+            result.ShouldBeEmpty();
+        }
+
+        [Fact]
+        public async Task GetApplicantContactsAsync_MultipleSubmissionsSameApplicant_ShouldReturnEditable()
+        {
+            var applicantId = Guid.NewGuid();
+            var contactId = Guid.NewGuid();
+
+            var submissions = new[]
+            {
+                new ApplicationFormSubmission
+                {
+                    OidcSub = "TESTUSER",
+                    ApplicantId = applicantId,
+                    ApplicationId = Guid.NewGuid(),
+                    ApplicationFormId = Guid.NewGuid()
+                },
+                new ApplicationFormSubmission
+                {
+                    OidcSub = "TESTUSER",
+                    ApplicantId = applicantId,
+                    ApplicationId = Guid.NewGuid(),
+                    ApplicationFormId = Guid.NewGuid()
+                }
+            }.AsAsyncQueryable();
+
+            var contacts = new[]
+            {
+                WithId(new Contact { Name = "Same Applicant Contact" }, contactId)
+            }.AsAsyncQueryable();
+
+            var contactLinks = new[]
+            {
+                new ContactLink
+                {
+                    ContactId = contactId,
+                    RelatedEntityType = "Applicant",
+                    RelatedEntityId = applicantId,
+                    IsActive = true
+                }
+            }.AsAsyncQueryable();
+
+            _submissionRepository.GetQueryableAsync().Returns(submissions);
+            _contactRepository.GetQueryableAsync().Returns(contacts);
+            _contactLinkRepository.GetQueryableAsync().Returns(contactLinks);
+
+            var result = await _service.GetApplicantContactsAsync("TESTUSER");
+
+            result.Count.ShouldBe(1);
+            result[0].IsEditable.ShouldBeTrue();
         }
     }
 }

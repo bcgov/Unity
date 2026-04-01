@@ -58,6 +58,7 @@ namespace Unity.GrantManager.ApplicantProfile
                         applicant.Sector,
                         applicant.SubSector
                     })
+                    .Distinct()
                     .ToListAsync();
 
                 dto.Organizations.AddRange(results.Select(r => new OrgInfoItemDto
