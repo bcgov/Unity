@@ -33,15 +33,6 @@ public class ReportingMenuContributor : IMenuContributor
     /// <returns>A completed task representing the synchronous menu item addition operations.</returns>
     private static Task ConfigureReportingMenuAsync(MenuConfigurationContext context)
     {
-        // Add Reconciliation menu item for IT Admin users
-        context.Menu.AddItem(
-            new ApplicationMenuItem(
-                    ReportingMenus.Prefix,
-                    displayName: "Reconciliation",
-                    "~/TenantManagement/Reconciliation",
-                    requiredPermissionName: IdentityConsts.ITAdminPermissionName
-        ));
-
         // Add Reporting Configuration menu item for IT Admin users
         context.Menu.AddItem(
            new ApplicationMenuItem(

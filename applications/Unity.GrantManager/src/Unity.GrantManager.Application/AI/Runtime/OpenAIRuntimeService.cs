@@ -436,26 +436,7 @@ namespace Unity.GrantManager.AI.Runtime
                     ? string.Join("\n- ", attachmentSummaries.Select((summary, index) => $"Attachment {index + 1}: {summary}"))
                     : "No attachments provided.";
 
-                object sectionQuestionsPayload = sectionJson;
-                if (!string.IsNullOrWhiteSpace(sectionJson))
-                {
-                    try
-                    {
-                        using var sectionDoc = JsonDocument.Parse(sectionJson);
-                        sectionQuestionsPayload = sectionDoc.RootElement.Clone();
-                    }
-                    catch (JsonException)
-                    {
-                        // Keep raw string payload when JSON parsing fails.
-                    }
-                }
-
-                var sectionPayload = new
-                {
-                    name = request.SectionName,
-                    questions = sectionQuestionsPayload
-                };
-                var section = JsonSerializer.Serialize(sectionPayload, JsonLogOptions);
+                var section = BuildAliasedApplicationScoringSection(request.SectionName, sectionJson, out var questionIdAliasMap);
                 var response = BuildApplicationScoringResponseTemplate(section);
                 if (response == "{}")
                 {
@@ -481,7 +462,7 @@ namespace Unity.GrantManager.AI.Runtime
                     ApplicationScoringCompletionTokens,
                     operationName: ApplicationScoringPromptType,
                     promptVersion: promptVersion),
-                    content => AIProviderPayloadValidator.IsValidApplicationScoringJson(content, sectionJson),
+                    content => AIProviderPayloadValidator.IsValidApplicationScoringJson(content, section),
                     $"application scoring section {request.SectionName}");
                 await LogPromptOutputAsync(ApplicationScoringPromptType, promptVersion, result.CaptureOutput);
 
@@ -490,7 +471,7 @@ namespace Unity.GrantManager.AI.Runtime
                     return new ApplicationScoringResponse();
                 }
 
-                return ParseApplicationScoringResponse(result.Content);
+                return ParseApplicationScoringResponse(result.Content, questionIdAliasMap);
             }
             catch (Exception ex)
             {
@@ -954,7 +935,9 @@ namespace Unity.GrantManager.AI.Runtime
             };
         }
 
-        private static ApplicationScoringResponse ParseApplicationScoringResponse(string raw)
+        private static ApplicationScoringResponse ParseApplicationScoringResponse(
+            string raw,
+            IReadOnlyDictionary<string, string>? questionIdAliasMap = null)
         {
             var response = new ApplicationScoringResponse();
             if (!TryParseJsonObjectFromResponse(raw, out var root))
@@ -982,7 +965,12 @@ namespace Unity.GrantManager.AI.Runtime
                     ? NormalizeConfidence(parsedConfidence)
                     : 0;
 
-                response.Answers[property.Name] = new ApplicationScoringAnswer
+                var questionId = questionIdAliasMap != null &&
+                                 questionIdAliasMap.TryGetValue(property.Name, out var originalQuestionId)
+                    ? originalQuestionId
+                    : property.Name;
+
+                response.Answers[questionId] = new ApplicationScoringAnswer
                 {
                     Answer = answer,
                     Rationale = rationale,
@@ -1042,6 +1030,72 @@ namespace Unity.GrantManager.AI.Runtime
             catch (JsonException)
             {
                 return "{}";
+            }
+        }
+
+        private static string BuildAliasedApplicationScoringSection(
+            string? sectionName,
+            string sectionJson,
+            out IReadOnlyDictionary<string, string> questionIdAliasMap)
+        {
+            questionIdAliasMap = new Dictionary<string, string>(StringComparer.Ordinal);
+
+            if (string.IsNullOrWhiteSpace(sectionJson))
+            {
+                return JsonSerializer.Serialize(new { name = sectionName, questions = sectionJson }, JsonLogOptions);
+            }
+
+            try
+            {
+                using var sectionDoc = JsonDocument.Parse(sectionJson);
+                if (sectionDoc.RootElement.ValueKind != JsonValueKind.Array)
+                {
+                    return JsonSerializer.Serialize(new { name = sectionName, questions = sectionDoc.RootElement.Clone() }, JsonLogOptions);
+                }
+
+                var aliasedQuestions = new List<Dictionary<string, object?>>();
+                var aliasMap = new Dictionary<string, string>(StringComparer.Ordinal);
+                var index = 1;
+
+                foreach (var question in sectionDoc.RootElement.EnumerateArray())
+                {
+                    if (question.ValueKind != JsonValueKind.Object)
+                    {
+                        continue;
+                    }
+
+                    var aliasedQuestion = new Dictionary<string, object?>(StringComparer.Ordinal);
+                    string? questionAlias = null;
+
+                    foreach (var property in question.EnumerateObject())
+                    {
+                        if (property.NameEquals("id") && property.Value.ValueKind == JsonValueKind.String)
+                        {
+                            var originalQuestionId = property.Value.GetString();
+                            if (!string.IsNullOrWhiteSpace(originalQuestionId))
+                            {
+                                questionAlias = $"q{index++}";
+                                aliasMap[questionAlias] = originalQuestionId;
+                                aliasedQuestion[property.Name] = questionAlias;
+                                continue;
+                            }
+                        }
+
+                        aliasedQuestion[property.Name] = property.Value.Clone();
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(questionAlias))
+                    {
+                        aliasedQuestions.Add(aliasedQuestion);
+                    }
+                }
+
+                questionIdAliasMap = aliasMap;
+                return JsonSerializer.Serialize(new { name = sectionName, questions = aliasedQuestions }, JsonLogOptions);
+            }
+            catch (JsonException)
+            {
+                return JsonSerializer.Serialize(new { name = sectionName, questions = sectionJson }, JsonLogOptions);
             }
         }
 
@@ -1402,6 +1456,15 @@ namespace Unity.GrantManager.AI.Runtime
             if (TryGetPromptTemplate(version, baseScopedCandidate, out _))
             {
                 return baseScopedCandidate;
+            }
+
+            if (string.Equals(placeholderName, "RESPONSE", StringComparison.Ordinal))
+            {
+                var outputCandidate = $"{baseTemplateName}.output";
+                if (TryGetPromptTemplate(version, outputCandidate, out _))
+                {
+                    return outputCandidate;
+                }
             }
 
             if (TryResolveCommonTemplateName(placeholderName, out var commonTemplateName) &&

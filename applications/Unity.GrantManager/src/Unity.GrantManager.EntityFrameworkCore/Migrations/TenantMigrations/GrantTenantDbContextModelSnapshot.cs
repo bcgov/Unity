@@ -2187,8 +2187,8 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<string>("FundingNotes")
                         .HasColumnType("text");
 
-                    b.Property<int?>("FundingYear")
-                        .HasColumnType("integer");
+                    b.Property<string>("FundingYear")
+                        .HasColumnType("text");
 
                     b.Property<string>("GrantCategory")
                         .HasColumnType("text");
@@ -2273,8 +2273,8 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .HasColumnType("uuid")
                         .HasColumnName("TenantId");
 
-                    b.Property<int?>("Year")
-                        .HasColumnType("integer");
+                    b.Property<string>("Year")
+                        .HasColumnType("text");
 
                     b.HasKey("Id");
 

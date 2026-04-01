@@ -14,7 +14,7 @@ public class FundingHistoryModalViewModel
     public string? GrantCategory { get; set; }
 
     [DisplayName("Funding Year")]
-    public int? FundingYear { get; set; }
+    public string? FundingYear { get; set; }
 
     [DisplayName("Renewed Funding")]
     public bool? RenewedFunding { get; set; }

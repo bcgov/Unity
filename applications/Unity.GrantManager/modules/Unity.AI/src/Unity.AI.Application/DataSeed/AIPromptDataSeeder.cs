@@ -306,8 +306,8 @@ public class AIPromptDataSeeder(
         SCORE
         {{SCORE}}
 
-        OUTPUT
-        {{OUTPUT}}
+        RESPONSE
+        {{RESPONSE}}
 
         RULES
         {{RULES}}
@@ -441,8 +441,8 @@ public class AIPromptDataSeeder(
         ATTACHMENT
         {{ATTACHMENT}}
 
-        OUTPUT
-        {{OUTPUT}}
+        RESPONSE
+        {{RESPONSE}}
 
         RULES
         {{RULES}}
@@ -552,9 +552,6 @@ public class AIPromptDataSeeder(
 
         RESPONSE
         {{RESPONSE}}
-
-        OUTPUT
-        {{OUTPUT}}
 
         RULES
         {{RULES}}

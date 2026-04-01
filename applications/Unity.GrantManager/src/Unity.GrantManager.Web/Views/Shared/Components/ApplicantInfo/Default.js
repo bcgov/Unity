@@ -483,8 +483,8 @@ function initializeApplicantLookup() {
         placeholder: 'Start typing applicant name or number to search for applicant...',
         templateResult: function(item) {
             if (item.loading) return item.text;
-            // Hide cached items without full data
-            if (!item.UnityApplicantId && item.id) {
+            // Hide cached items without full data (cached items only have id+text, no ApplicantName)
+            if (item.ApplicantName === undefined && item.id) {
                 return null;
             }
             return item.text;
