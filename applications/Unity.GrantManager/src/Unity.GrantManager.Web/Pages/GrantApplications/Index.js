@@ -95,6 +95,12 @@ $(function () {
                         dt.search('');
                         dt.order(initialSortOrder);
 
+                        const filterRow = dt.settings()[0]._filterRow;
+                        if (filterRow) {
+                            filterRow.s.filterData = {};
+                            filterRow._updateButtonState();
+                        }
+
                         // Reset date range filters
                         const range = getDateRange(defaultQuickDateRange);
                         setDateRangeFilters(defaultQuickDateRange, range);
