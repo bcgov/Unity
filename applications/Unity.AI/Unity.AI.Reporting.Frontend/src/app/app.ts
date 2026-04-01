@@ -663,9 +663,9 @@ export class App implements OnInit, OnDestroy {
     const esc = (s: string) =>
       s.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
 
-    // Ordered alternation: comments → strings → identifiers → numbers → any char.
-    // Identifier before number ensures digits inside words (col1) are not split off.
-    const TOKEN_RE = /--.*|\/\*[^]*?\*\/|'[^']*'|"[^"]*"|\d+\.?\d*|\w+|[^]/g;
+    // Ordered alternation: comments → strings → identifiers → any char.
+    // \w+ matches integers; classify() detects numbers via first-char check.
+    const TOKEN_RE = /--.*|\/\*[^]*?\*\/|'[^']*'|"[^"]*"|\w+|[^]/g;
 
     const classify = (token: string): string => {
       const ch = token[0];
