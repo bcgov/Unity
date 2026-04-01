@@ -101,8 +101,9 @@ X-Api-Key: your-api-key-here
         "contactId": "a1b2c3d4-...",
         "name": "John Doe",
         "email": "applicant@example.com",
-        "contactType": "ApplicantProfile",
-        "isEditable": true
+        "contactType": "Applicant",
+        "isEditable": true,
+        "creationTime": "2025-06-15T18:30:00Z"
       }
     ]
   }

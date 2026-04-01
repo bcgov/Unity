@@ -14,7 +14,7 @@ using System.Linq;
 using Unity.Flex.Worksheets;
 using Unity.Flex;
 using Unity.Flex.Scoresheets.Enums;
-using Unity.GrantManager.AI.Models;
+using Unity.AI.Models;
 using Unity.GrantManager.Applications;
 using System.Text.Json;
 using Unity.AI.Permissions;

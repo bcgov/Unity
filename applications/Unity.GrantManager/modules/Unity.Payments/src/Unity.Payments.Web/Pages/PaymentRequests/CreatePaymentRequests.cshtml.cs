@@ -209,6 +209,17 @@ namespace Unity.Payments.Web.Pages.Payments
                 errorList.Add("The selected Application is not Approved. To continue please remove the item from the list.");
             }
 
+            var allLinks = await applicationLinksService.GetListByApplicationAsync(application.Id);
+            var parentLink = allLinks.Find(link => link.LinkType == ApplicationLinkType.Parent && link.ApplicationId != application.Id);
+            if (parentLink != null)
+            {
+                var parentApplication = await applicationService.GetAsync(parentLink.ApplicationId);
+                if (parentApplication.Id == Guid.Empty || parentApplication.StatusCode != GrantApplicationState.GRANT_APPROVED)
+                {
+                    errorList.Add("Payment cannot be processed because the linked parent submission is not approved. Please ensure the parent submission is approved before creating a payment.");
+                }
+            }
+
             if (!application.ApplicationForm.Payable)
             {
                 errorList.Add("The selected application is not Payable. To continue please remove the item from the list.");

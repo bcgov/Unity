@@ -465,17 +465,22 @@ $(function () {
         // Create shadow DOM with open mode (allows external JS access)
         const shadowRoot = formioContainer.attachShadow({mode: 'open'});
 
-        // Load form.io CSS inside shadow DOM
-        const formioStyle = document.createElement('link');
-        formioStyle.rel = 'stylesheet';
-        formioStyle.href = '/libs/formiojs/formio.form.css';
-        shadowRoot.appendChild(formioStyle);
+        // Load CHEFS CSS (replaces Bootstrap and formio CSS — CHEFS bundles both inside their index CSS)
+        const chefsIndexStyle = document.createElement('link');
+        chefsIndexStyle.rel = 'stylesheet';
+        chefsIndexStyle.href = '/Pages/GrantApplications/chefs-index.css';
+        shadowRoot.appendChild(chefsIndexStyle);
 
-        // Load bootstrap CSS
-        const bootstrapStyle = document.createElement('link');
-        bootstrapStyle.rel = 'stylesheet';
-        bootstrapStyle.href = '/libs/bootstrap-4/dist/css/bootstrap.min.css';
-        shadowRoot.appendChild(bootstrapStyle);
+        const chefsFormViewerStyle = document.createElement('link');
+        chefsFormViewerStyle.rel = 'stylesheet';
+        chefsFormViewerStyle.href = '/Pages/GrantApplications/chefs-form-viewer.css';
+        shadowRoot.appendChild(chefsFormViewerStyle);
+
+        // Override Bootstrap bg-* classes with CHEFS BC Government theme colors
+        const chefsVuetifyBsBridge = document.createElement('link');
+        chefsVuetifyBsBridge.rel = 'stylesheet';
+        chefsVuetifyBsBridge.href = '/Pages/GrantApplications/chefs-vuetify-bs-bridge.css';
+        shadowRoot.appendChild(chefsVuetifyBsBridge);
 
         // Load Details-shadow-dom.css into shadow DOM (CRITICAL for accordion, styling, etc.)
         const detailsStyle = document.createElement('link');
@@ -1502,7 +1507,7 @@ function updateCommentsCounters() {
                 $('#' + $(this).data('counttag')).html($(this).data('count'));
             })
             .get();
-    }, 100);
+    }, 500);
 }
 
 function updateLinksCounters() {

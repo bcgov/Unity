@@ -1,3 +1,4 @@
+using System.Linq;
 using System.Threading.Tasks;
 using Unity.GrantManager.ApplicantProfile.ProfileData;
 using Volo.Abp.DependencyInjection;
@@ -7,7 +8,7 @@ namespace Unity.GrantManager.ApplicantProfile
 {
     /// <summary>
     /// Provides contact information for the applicant profile by aggregating
-    /// profile-linked contacts, application-level contacts, and applicant agent contacts.
+    /// applicant linked contacts, application-level contacts, and applicant agent contacts.
     /// </summary>
     [ExposeServices(typeof(IApplicantProfileDataProvider))]
     public class ContactInfoDataProvider(
@@ -33,14 +34,22 @@ namespace Unity.GrantManager.ApplicantProfile
 
             using (currentTenant.Change(tenantId))
             {
-                var profileContacts = await applicantProfileContactService.GetProfileContactsAsync(request.ProfileId);
-                dto.Contacts.AddRange(profileContacts);
+                var applicantContacts = await applicantProfileContactService.GetApplicantContactsAsync(normalizedSubject);
+                dto.Contacts.AddRange(applicantContacts);
 
                 var applicationContacts = await applicantProfileContactService.GetApplicationContactsBySubjectAsync(normalizedSubject);
                 dto.Contacts.AddRange(applicationContacts);
 
                 var agentContacts = await applicantProfileContactService.GetApplicantAgentContactsBySubjectAsync(normalizedSubject);
                 dto.Contacts.AddRange(agentContacts);
+            }
+
+            if (dto.Contacts.Count > 0 && !dto.Contacts.Any(c => c.IsPrimary))
+            {
+                var latest = dto.Contacts
+                    .OrderByDescending(c => c.CreationTime)
+                    .First();
+                latest.IsPrimary = true;
             }
 
             return dto;

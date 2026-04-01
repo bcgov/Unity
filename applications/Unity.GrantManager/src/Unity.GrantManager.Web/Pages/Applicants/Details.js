@@ -8,6 +8,11 @@ $(document).ready(function () {
         debouncedResizeAwareDataTables();
         scheduleDeferredLayoutPass();
     });
+    globalThis.addEventListener('applicant-contacts-layout-changed', function () {
+        applyTabHeightOffset();
+        debouncedResizeAwareDataTables();
+        scheduleDeferredLayoutPass();
+    });
     globalThis.addEventListener('applicant-addresses-layout-changed', function () {
         applyTabHeightOffset();
         debouncedResizeAwareDataTables();
@@ -43,9 +48,10 @@ $(document).ready(function () {
 
     // Handle resizable divider
     initializeResizableDivider();
+    initCommentsWidget();
 });
 
-const LEFT_INTERNAL_SCROLL_TABS = new Set(['nav-submissions', 'nav-addresses']);
+const LEFT_INTERNAL_SCROLL_TABS = new Set(['nav-submissions']);
 const INITIAL_LAYOUT_DELAYS = [0, 120, 300, 650, 1100];
 const DEFERRED_LAYOUT_DELAYS = [0, 30, 120, 250];
 const LEFT_TAB_SCROLL_RESET_DELAYS = [0, 40, 120, 220];
@@ -157,9 +163,8 @@ function scheduleDeferredLayoutPass() {
 }
 
 function resizeSubmissionsScrollBody() {
-    const submissionsWidget = document.querySelector(
-        '#nav-submissions .applicant-submissions-widget'
-    );
+    const submissionsTable = document.getElementById('ApplicantSubmissionsTable');
+    const tabContent = document.querySelector('#detailsTab .tab-content');
     const submissionsTableWrapper = document.getElementById(
         'ApplicantSubmissionsTable_wrapper'
     );
@@ -167,13 +172,23 @@ function resizeSubmissionsScrollBody() {
         '.dt-scroll-body'
     );
 
-    if (!submissionsWidget || !submissionsTableWrapper || !submissionsScrollBody) {
+    if (submissionsTable && $.fn.DataTable?.isDataTable(submissionsTable)) {
+        const submissionsDataTable = $(submissionsTable).DataTable();
+        const scrollResize = submissionsDataTable?.settings?.()[0]?._scrollResize;
+
+        if (scrollResize && typeof scrollResize._size === 'function') {
+            scrollResize._size();
+            return;
+        }
+    }
+
+    if (!tabContent || !submissionsTableWrapper || !submissionsScrollBody) {
         return;
     }
 
-    const widgetRect = submissionsWidget.getBoundingClientRect();
+    const tabContentRect = tabContent.getBoundingClientRect();
     const wrapperRect = submissionsTableWrapper.getBoundingClientRect();
-    const availableWrapperHeight = Math.floor(widgetRect.bottom - wrapperRect.top - 8);
+    const availableWrapperHeight = Math.floor(tabContentRect.bottom - wrapperRect.top - 8);
 
     if (availableWrapperHeight <= 0) {
         return;
@@ -198,39 +213,6 @@ function resizeSubmissionsScrollBody() {
     submissionsScrollBody.style.overflowX = 'auto';
 }
 
-function resizeApplicantAddressesPane(addressesPane) {
-    const addressesWidget = addressesPane.querySelector('.applicant-addresses-widget');
-    const addressesForm = addressesPane.querySelector('.applicant-organization-info');
-    const innerTabContent = addressesPane.querySelector('.applicant-organization-info > .tab-content');
-    const activeSubPane = innerTabContent?.querySelector('.tab-pane.active');
-
-    if (!addressesWidget || !addressesForm || !innerTabContent || !activeSubPane) {
-        return;
-    }
-
-    const availableWidgetHeight = Math.max(
-        220,
-        Math.floor(addressesPane.getBoundingClientRect().height - 8)
-    );
-    addressesWidget.style.height = `${availableWidgetHeight}px`;
-    addressesWidget.style.minHeight = '0';
-
-    const innerTabContentTop = innerTabContent.getBoundingClientRect().top;
-    const widgetBottom = addressesWidget.getBoundingClientRect().bottom;
-    const availableInnerTabHeight = Math.max(
-        140,
-        Math.floor(widgetBottom - innerTabContentTop - 8)
-    );
-
-    addressesForm.style.height = `${availableWidgetHeight}px`;
-    addressesForm.style.minHeight = '0';
-    innerTabContent.style.height = `${availableInnerTabHeight}px`;
-    innerTabContent.style.minHeight = '0';
-    activeSubPane.style.height = `${innerTabContent.clientHeight || availableInnerTabHeight}px`;
-    activeSubPane.style.minHeight = '0';
-    activeSubPane.style.overflowY = 'auto';
-    activeSubPane.style.overflowX = 'hidden';
-}
 
 function scheduleLayoutPasses(delays) {
     delays.forEach((delay) => {
@@ -271,12 +253,6 @@ function applyLeftPanelLayout() {
         tabContent.scrollTop = 0;
     }
 
-    if (activeLeftPaneId === 'nav-addresses' && activeLeftPane) {
-        activeLeftPane.style.height = '100%';
-        activeLeftPane.style.minHeight = '0';
-        activeLeftPane.style.overflow = 'hidden';
-        resizeApplicantAddressesPane(activeLeftPane);
-    }
 }
 
 function applyRightPanelLayout() {
@@ -370,5 +346,32 @@ function initializeResizableDivider() {
     globalThis.addEventListener('resize', applyTabHeightOffset);
 }
 
+function initCommentsWidget() {
+    const currentUserId = decodeURIComponent($('#CurrentUserId').val());
+    const applicantCommentsWidgetManager = new abp.WidgetManager({
+        wrapper: '#applicantCommentsWidget',
+        filterCallback: function () {
+            return {
+                ownerId: $('#DetailsViewApplicantId').val(),
+                commentType: 2, // Unity.GrantManager.Comments.CommentType.ApplicantComment
+                currentUserId: currentUserId,
+            };
+        },
+    });
 
+    updateCommentsCounters();
+    PubSub.subscribe('ApplicantComment_refresh', () => {
+        applicantCommentsWidgetManager.refresh();
+        updateCommentsCounters();
+    });
+}
 
+function updateCommentsCounters() {
+    setTimeout(() => {
+        $('.comments-container')
+            .map(function () {
+                $('#' + $(this).data('counttag')).html($(this).data('count'));
+            })
+            .get();
+    }, 500);
+}
