@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Unity.GrantManager.EntityFrameworkCore;
@@ -12,9 +13,11 @@ using Volo.Abp.EntityFrameworkCore;
 namespace Unity.GrantManager.Migrations.TenantMigrations
 {
     [DbContext(typeof(GrantTenantDbContext))]
-    partial class GrantTenantDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260328004721_AB9074_Add_Applicant_Comments")]
+    partial class AB9074_Add_Applicant_Comments
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -2187,8 +2190,8 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<string>("FundingNotes")
                         .HasColumnType("text");
 
-                    b.Property<string>("FundingYear")
-                        .HasColumnType("text");
+                    b.Property<int?>("FundingYear")
+                        .HasColumnType("integer");
 
                     b.Property<string>("GrantCategory")
                         .HasColumnType("text");
@@ -2273,8 +2276,8 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .HasColumnType("uuid")
                         .HasColumnName("TenantId");
 
-                    b.Property<string>("Year")
-                        .HasColumnType("text");
+                    b.Property<int?>("Year")
+                        .HasColumnType("integer");
 
                     b.HasKey("Id");
 

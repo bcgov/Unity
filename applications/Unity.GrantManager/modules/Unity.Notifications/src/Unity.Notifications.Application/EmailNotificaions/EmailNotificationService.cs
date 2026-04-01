@@ -1,4 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
@@ -6,6 +8,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
+using Unity.GrantManager.Notifications;
 using Unity.Notifications.Emails;
 using Unity.Notifications.Permissions;
 using Unity.Notifications.Settings;
@@ -14,9 +17,8 @@ using Volo.Abp.Application.Services;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Features;
 using Volo.Abp.SettingManagement;
-using Microsoft.AspNetCore.Http;
+using Volo.Abp.UI.Navigation.Urls;
 using Volo.Abp.Users;
-using Unity.GrantManager.Notifications;
 
 namespace Unity.Notifications.EmailNotifications;
 
@@ -27,8 +29,8 @@ public class EmailNotificationService(
         EmailNotificationManager emailNotificationManager,
         IExternalUserLookupServiceProvider externalUserLookupServiceProvider,
         ISettingManager settingManager,
-        IHttpContextAccessor httpContextAccessor,
-        IFeatureChecker featureChecker) : ApplicationService, IEmailNotificationService
+        IFeatureChecker featureChecker,
+        IAppUrlProvider appUrlProvider) : ApplicationService, IEmailNotificationService
 {
 
     public async Task<Guid> InitializeDraftAsync(Guid applicationId)
@@ -71,6 +73,12 @@ public class EmailNotificationService(
         await notificationAppService.PostToTeamsAsync(activityTitle, activitySubtitle);
     }
 
+    public async Task<string> GetBaseUrlAsync()
+    {
+        var appUrl = await appUrlProvider.GetUrlAsync(appName: "MVC");
+        return appUrl;
+    }
+
     public async Task<HttpResponseMessage> SendCommentNotification(EmailCommentDto input)
     {
         HttpResponseMessage res = new();
@@ -79,18 +87,33 @@ public class EmailNotificationService(
             if (await featureChecker.IsEnabledAsync("Unity.Notifications"))
             {
                 var defaultFromAddress = await SettingProvider.GetOrNullAsync(NotificationsSettings.Mailing.DefaultFromAddress);
-                var scheme = "https";
-                var request = (httpContextAccessor.HttpContext?.Request) ?? throw new InvalidOperationException("HttpContext or Request is null.");
-                var host = request.Host.ToUriComponent();
-                var pathBase = "/GrantApplications/Details?ApplicationId=";
-                var baseUrl = $"{scheme}://{host}{pathBase}";
-                var commentLink = $"{baseUrl}{input.ApplicationId}";
+                var baseUrl = await GetBaseUrlAsync();
+
+                string commentLink = input.CommentType switch
+                {
+                    Comments.CommentType.ApplicationComment or Comments.CommentType.AssessmentComment =>
+                        QueryHelpers.AddQueryString($"{baseUrl}/GrantApplications/Details", "ApplicationId", input.OwnerId),
+                    Comments.CommentType.ApplicantComment =>
+                        QueryHelpers.AddQueryString($"{baseUrl}/GrantApplicants/Details", "ApplicantId", input.OwnerId),
+                    _ => throw new InvalidOperationException("Invalid comment type.")
+                };
+
                 var subject = $"Unity-Comment: {input.Subject}";
                 var fromEmail = defaultFromAddress ?? "NoReply@gov.bc.ca";
+
+                var hasSurname = !string.IsNullOrWhiteSpace(CurrentUser.SurName);
+                var hasName = !string.IsNullOrWhiteSpace(CurrentUser.Name);
+
+                var currentUserText = (hasSurname, hasName) switch
+                {
+                    (true, true) => $"{CurrentUser.SurName}, {CurrentUser.Name}",
+                    _ => CurrentUser.UserName ?? "Unknown User"
+                };
+
                 string htmlBody = $@"
                 <html lang='en' xmlns='http://www.w3.org/1999/xhtml' xmlns:v='urn:schemas-microsoft-com:vml' xmlns:o='urn:schemas-microsoft-com:office:office'>
                 <body style='font-family: Arial, sans-serif;'>
-                    <h3 style='color: #0a58ca;'>{input.From} mentioned you in a comment.</h3>
+                    <h3 style='color: #0a58ca;'>{currentUserText} mentioned you in a comment.</h3>
                     <table style='width: 100%; background-color: #f9f9f9; border-left: 3px solid #ccc;'>
                         <tr>
                             <td style='padding: 15px;'>

@@ -45,6 +45,8 @@ public class GrantManagerApplicationAutoMapperProfile : Profile
             .ForMember(dest => dest.OwnerId, opt => opt.MapFrom(src => src.AssessmentId));
         CreateMap<ApplicationComment, CommentDto>()
             .ForMember(dest => dest.OwnerId, opt => opt.MapFrom(src => src.ApplicationId));
+        CreateMap<ApplicantComment, CommentDto>()
+            .ForMember(dest => dest.OwnerId, opt => opt.MapFrom(src => src.ApplicantId));
         CreateMap<CommentListItem, CommentDto>()
             .ForMember(dest => dest.Badge, opt => opt.MapFrom(src => src.CommenterBadge))
             .ForMember(dest => dest.Commenter, opt => opt.MapFrom(src => src.CommenterDisplayName))

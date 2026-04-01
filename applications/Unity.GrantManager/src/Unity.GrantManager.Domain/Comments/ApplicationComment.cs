@@ -1,9 +1,8 @@
 ﻿using System;
 
-namespace Unity.GrantManager.Comments
+namespace Unity.GrantManager.Comments;
+
+public class ApplicationComment : CommentBase
 {
-    public class ApplicationComment : CommentBase
-    {
-        public Guid ApplicationId { get; set; }        
-    }
+    public Guid ApplicationId { get; set; }
 }

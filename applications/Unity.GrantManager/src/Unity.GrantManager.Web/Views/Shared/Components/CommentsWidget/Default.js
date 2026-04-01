@@ -159,16 +159,15 @@ function saveComment(ownerId, comment, commentType, mentionList) {
 }
 
 function sendComment(tempIsEdit, tempOwnerId, tempCommentType, tempComment, tempMentionedNamesEmail, tempItemId, mentionList) {
-    const submissionNo = $(".reference-no").first().text();
-    const applicantName = $(".applicant-name").first().text();
-    const currentUserName = $("#CurrentUserName").val();
-    const appId = $("#DetailsViewApplicationId").val();
+    const submissionNo = $(".reference-no").first().text().trim();
+    const applicantName = $(".applicant-name").first().text().trim();
+    const subject = submissionNo ? `${submissionNo}-${applicantName}` : applicantName;
 
     const requestData = {
-        subject: `${submissionNo}-${applicantName}`,
-        from: currentUserName,
+        subject: subject,
         body: tempComment,
-        applicationId: appId,
+        ownerId: tempOwnerId,
+        commentType: tempCommentType,
         mentionNamesEmail: tempMentionedNamesEmail
     };
 

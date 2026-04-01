@@ -1507,7 +1507,7 @@ function updateCommentsCounters() {
                 $('#' + $(this).data('counttag')).html($(this).data('count'));
             })
             .get();
-    }, 100);
+    }, 500);
 }
 
 function updateLinksCounters() {

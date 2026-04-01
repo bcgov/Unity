@@ -48,6 +48,7 @@ $(document).ready(function () {
 
     // Handle resizable divider
     initializeResizableDivider();
+    initCommentsWidget();
 });
 
 const LEFT_INTERNAL_SCROLL_TABS = new Set(['nav-submissions']);
@@ -345,4 +346,32 @@ function initializeResizableDivider() {
     globalThis.addEventListener('resize', applyTabHeightOffset);
 }
 
+function initCommentsWidget() {
+    const currentUserId = decodeURIComponent($('#CurrentUserId').val());
+    const applicantCommentsWidgetManager = new abp.WidgetManager({
+        wrapper: '#applicantCommentsWidget',
+        filterCallback: function () {
+            return {
+                ownerId: $('#DetailsViewApplicantId').val(),
+                commentType: 2, // Unity.GrantManager.Comments.CommentType.ApplicantComment
+                currentUserId: currentUserId,
+            };
+        },
+    });
 
+    updateCommentsCounters();
+    PubSub.subscribe('ApplicantComment_refresh', () => {
+        applicantCommentsWidgetManager.refresh();
+        updateCommentsCounters();
+    });
+}
+
+function updateCommentsCounters() {
+    setTimeout(() => {
+        $('.comments-container')
+            .map(function () {
+                $('#' + $(this).data('counttag')).html($(this).data('count'));
+            })
+            .get();
+    }, 500);
+}
