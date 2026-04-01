@@ -29,10 +29,8 @@ public class EmailNotificationService(
         EmailNotificationManager emailNotificationManager,
         IExternalUserLookupServiceProvider externalUserLookupServiceProvider,
         ISettingManager settingManager,
-        IHttpContextAccessor httpContextAccessor,
         IFeatureChecker featureChecker,
-        IAppUrlProvider appUrlProvider,
-        System.Text.Encodings.Web.UrlEncoder urlEncoder) : ApplicationService, IEmailNotificationService
+        IAppUrlProvider appUrlProvider) : ApplicationService, IEmailNotificationService
 {
 
     public async Task<Guid> InitializeDraftAsync(Guid applicationId)
