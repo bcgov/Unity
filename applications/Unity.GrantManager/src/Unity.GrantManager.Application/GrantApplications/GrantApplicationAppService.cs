@@ -1045,6 +1045,7 @@ public class GrantApplicationAppService(
                         Id = applications.Id,
                         ProjectName = applications.ProjectName,
                         ReferenceNo = applications.ReferenceNo,
+                        UnityApplicationId = applications.UnityApplicationId ?? string.Empty,
                         ApplicantName = applicant != null ? (applicant.ApplicantName ?? GrantManagerConsts.UnknownValue) : GrantManagerConsts.UnknownValue,
                         OrganizationName = applicant != null ? (applicant.OrgName ?? string.Empty) : string.Empty,
                         UnityApplicantId = applicant != null ? (applicant.UnityApplicantId ?? string.Empty) : string.Empty

@@ -2196,6 +2196,9 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<string>("GrantCategory")
                         .HasColumnType("text");
 
+                    b.Property<decimal?>("OneTimeConsideration")
+                        .HasColumnType("numeric");
+
                     b.Property<DateTime?>("LastModificationTime")
                         .HasColumnType("timestamp without time zone")
                         .HasColumnName("LastModificationTime");
