@@ -13,7 +13,8 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
             migrationBuilder.AddColumn<decimal>(
                 name: "OneTimeConsideration",
                 table: "FundingHistories",
-                type: "numeric");
+                type: "numeric",
+                nullable: true);
         }
 
         /// <inheritdoc />
