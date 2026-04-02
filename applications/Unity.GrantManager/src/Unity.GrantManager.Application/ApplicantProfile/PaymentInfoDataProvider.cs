@@ -47,7 +47,9 @@ namespace Unity.GrantManager.ApplicantProfile
                     join application in applicationsQuery on submission.ApplicationId equals application.Id
                     where submission.OidcSub == normalizedSubject
                     select new { application.Id, application.ReferenceNo }
-                ).Distinct().ToDictionaryAsync(a => a.Id, a => a.ReferenceNo);
+                )
+                .Distinct()
+                .ToDictionaryAsync(a => a.Id, a => a.ReferenceNo);
 
                 if (applicationLookup.Count == 0) return dto;
 
@@ -55,7 +57,8 @@ namespace Unity.GrantManager.ApplicantProfile
 
                 var paymentsQueryable = await paymentRequestRepository.GetQueryableAsync();
                 var paymentDetails = await paymentsQueryable
-                    .Where(pr => applicationLookup.Keys.Contains(pr.CorrelationId))
+                    .Where(pr => applicationLookup.Keys.Contains(pr.CorrelationId)
+                                 && pr.PaymentStatus == "Paid")
                     .ToListAsync();
 
                 dto.Payments.AddRange(paymentDetails.Select(p => new PaymentInfoItemDto
@@ -65,7 +68,7 @@ namespace Unity.GrantManager.ApplicantProfile
                     ReferenceNo = applicationLookup.TryGetValue(p.CorrelationId, out var refNo) ? refNo : string.Empty,
                     Amount = p.Amount,
                     PaymentDate = p.PaymentDate,
-                    PaymentStatus = p.Status.ToString()
+                    PaymentStatus = "Paid"
                 }));
             }
 

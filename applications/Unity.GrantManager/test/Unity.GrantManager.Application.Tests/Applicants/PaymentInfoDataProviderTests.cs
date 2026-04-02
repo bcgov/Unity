@@ -9,7 +9,6 @@ using Unity.GrantManager.ApplicantProfile.ProfileData;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.TestHelpers;
 using Unity.Payments.Domain.PaymentRequests;
-using Unity.Payments.Enums;
 using Unity.Payments.PaymentRequests;
 using Volo.Abp.Domain.Entities;
 using Volo.Abp.Domain.Repositories;
@@ -84,7 +83,7 @@ namespace Unity.GrantManager.Applicants
             return entity;
         }
 
-        private static PaymentRequest CreatePaymentRequest(Guid correlationId, decimal amount = 1000m, string invoiceNumber = "INV-001")
+        private static PaymentRequest CreatePaymentRequest(Guid correlationId, decimal amount = 1000m, string invoiceNumber = "INV-001", string? paymentStatus = "Paid")
         {
             var siteId = Guid.NewGuid();
             var dto = new CreatePaymentRequestDto
@@ -99,7 +98,12 @@ namespace Unity.GrantManager.Applicants
                 CorrelationId = correlationId,
                 CorrelationProvider = "Application"
             };
-            return new PaymentRequest(Guid.NewGuid(), dto);
+            var paymentRequest = new PaymentRequest(Guid.NewGuid(), dto);
+            if (paymentStatus is not null)
+            {
+                paymentRequest.SetPaymentStatus(paymentStatus);
+            }
+            return paymentRequest;
         }
 
         [Fact]
@@ -170,7 +174,6 @@ namespace Unity.GrantManager.Applicants
 
             var payment = CreatePaymentRequest(applicationId, 5000m);
             payment.SetPaymentDate("15-Jan-2025");
-            payment.SetPaymentRequestStatus(PaymentRequestStatus.Paid);
 
             SetupQueryables(
                 [CreateSubmission(applicationId, "TESTUSER")],
@@ -294,28 +297,27 @@ namespace Unity.GrantManager.Applicants
             dto.Payments[0].PaymentNumber.ShouldBe(string.Empty);
         }
 
-        [Theory]
-        [InlineData(PaymentRequestStatus.L1Pending, "L1Pending")]
-        [InlineData(PaymentRequestStatus.Submitted, "Submitted")]
-        [InlineData(PaymentRequestStatus.Paid, "Paid")]
-        [InlineData(PaymentRequestStatus.Failed, "Failed")]
-        public async Task GetDataAsync_ShouldMapPaymentStatus(PaymentRequestStatus status, string expectedStatusString)
+        [Fact]
+        public async Task GetDataAsync_ShouldOnlyReturnPaidPayments()
         {
             var request = CreateRequest();
             var applicationId = Guid.NewGuid();
 
-            var payment = CreatePaymentRequest(applicationId);
-            payment.SetPaymentRequestStatus(status);
-
             SetupQueryables(
                 [CreateSubmission(applicationId, "TESTUSER")],
                 [CreateApplication(applicationId, "REF-001")],
-                [payment]);
+                [
+                    CreatePaymentRequest(applicationId, 1000m, paymentStatus: "Paid"),
+                    CreatePaymentRequest(applicationId, 2000m, paymentStatus: null),
+                    CreatePaymentRequest(applicationId, 3000m, paymentStatus: "Pending"),
+                    CreatePaymentRequest(applicationId, 4000m, paymentStatus: "Failed")
+                ]);
 
             var result = await _provider.GetDataAsync(request);
 
             var dto = result.ShouldBeOfType<ApplicantPaymentInfoDto>();
-            dto.Payments[0].PaymentStatus.ShouldBe(expectedStatusString);
+            dto.Payments.Count.ShouldBe(1);
+            dto.Payments[0].Amount.ShouldBe(1000m);
         }
 
         [Fact]
