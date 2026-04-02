@@ -635,16 +635,22 @@ $(function () {
                             const refNo = (app.ReferenceNo || '').toLowerCase();
                             const applicantName = (app.ApplicantName || '').toLowerCase();
                             const orgName = (app.OrganizationName || '').toLowerCase();
+                            const applicationId = (app.UnityApplicationId || '').toString().toLowerCase();
                             return id.includes(inputValue)
                                 || refNo.includes(inputValue)
                                 || applicantName.includes(inputValue)
-                                || orgName.includes(inputValue);
+                                || orgName.includes(inputValue)
+                                || applicationId.includes(inputValue);
                         })
                         .map(app => {
-                            
-                            const idPart = app.UnityApplicantId ? ` - (${app.UnityApplicantId})` : '';
-                            const orgPart = app.OrganizationName ? ` - (${app.OrganizationName})` : '';                            
-                            return `Submission #${app.ReferenceNo} - ${app.ApplicantName}${idPart}${orgPart}`;
+                            // Submission # (Application Id) - Applicant Name/Organization Name (Applicant Id)
+                            const idPart = app.UnityApplicantId ? ` (${app.UnityApplicantId})` : '';
+                            const applicationIdPart = app.UnityApplicationId ? ` (${app.UnityApplicationId})` : '';                            
+                            const orgName = app.OrganizationName ? ` - ${app.OrganizationName}` : '';
+                            const orgPart = app.ApplicantName === '' ? orgName : '';
+                            const applicantPart = app.ApplicantName ? ` - ${app.ApplicantName}` : '';
+
+                            return `${app.ReferenceNo}${applicationIdPart}${applicantPart}${orgPart}${idPart}`;
                         });
 
                     if (suggestions.length > 0) {
