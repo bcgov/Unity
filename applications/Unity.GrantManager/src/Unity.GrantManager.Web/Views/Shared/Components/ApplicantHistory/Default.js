@@ -46,8 +46,8 @@ $(function () {
             { title: 'Funding Year', data: 'fundingYear', name: 'fundingYear', className: 'data-table-header', width: '80px', render: (d) => d ?? nullPlaceholder },
             { title: 'Renewed Funding', data: 'renewedFunding', name: 'renewedFunding', className: 'data-table-header', width: '110px', render: (d) => d === true ? 'Yes' : 'No' },
             { title: 'Approved Amount', data: 'approvedAmount', name: 'approvedAmount', className: 'data-table-header currency-display', render: (d) => formatCurrency(d) },
-            { title: 'Reconsideration Amount', data: 'reconsiderationAmount', name: 'reconsiderationAmount', className: 'data-table-header currency-display', render: (d) => formatCurrency(d) },
             { title: 'One-Time Consideration', data: 'oneTimeConsideration', name: 'oneTimeConsideration', className: 'data-table-header currency-display', render: (d) => formatCurrency(d) },
+            { title: 'Reconsideration Amount', data: 'reconsiderationAmount', name: 'reconsiderationAmount', className: 'data-table-header currency-display', render: (d) => formatCurrency(d) },            
             { title: 'Total Grant Amount', data: 'totalGrantAmount', name: 'totalGrantAmount', className: 'data-table-header currency-display', render: (d) => formatCurrency(d) },
             {
                 title: 'Notes', data: 'fundingNotes', name: 'fundingNotes', className: 'data-table-header', width: '200px',
