@@ -11,18 +11,6 @@ $(function () {
         };
     };
 
-    let responseCallback = function (result) {
-        if (result) {
-            setTimeout(function () {
-                PubSub.publish('update_applicant_attachment_count', { files: result.length });
-            }, 10);
-        }
-
-        return {
-            data: result
-        };
-    };
-
     const dataTable = $('#ApplicantAttachmentsTable').DataTable(
         abp.libs.datatables.normalizeConfiguration({
             serverSide: false,
@@ -33,7 +21,7 @@ $(function () {
             info: false,
             scrollX: true,
             ajax: abp.libs.datatables.createAjax(
-                unity.grantManager.attachments.attachment.getAttachments, inputAction, responseCallback
+                unity.grantManager.attachments.attachment.getAttachments, inputAction, attachmentCountResponseCallback
             ),
             columnDefs: [
                 {
@@ -113,3 +101,15 @@ $(function () {
         $('#applicant_attachment_upload').click();
     });
 });
+
+function attachmentCountResponseCallback(result) {
+    if (result) {
+        setTimeout(function () {
+            PubSub.publish('update_applicant_attachment_count', { files: result.length });
+        }, 10);
+    }
+
+    return {
+        data: result
+    };
+}
