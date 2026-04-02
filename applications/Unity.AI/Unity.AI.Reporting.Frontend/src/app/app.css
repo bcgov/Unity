@@ -738,8 +738,8 @@
 }
 
 .retry-btn--disabled {
-  background: #a0aec0;
-  color: #e2e8f0;
+  background: #64748b;
+  color: #ffffff;
   cursor: not-allowed;
 }
 
