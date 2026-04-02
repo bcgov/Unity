@@ -65,7 +65,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@v5
         with:
           dotnet-version: "9.0.x"
 
@@ -81,7 +81,7 @@ jobs:
             --logger "trx;LogFileName=${NAME}.trx" \
             --results-directory TestResults
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         with:
           name: test-output-${{ strategy.job-index }}
           path: TestResults/
@@ -129,7 +129,7 @@ jobs:
           echo "failed=$FAILED" >> $GITHUB_OUTPUT
           echo "skipped=$SKIPPED" >> $GITHUB_OUTPUT
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         with:
           name: merged-test-results
           path: merged/
