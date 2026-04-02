@@ -1,9 +1,11 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
 using System;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Permissions;
+using Volo.Abp.Users;
 
 namespace Unity.GrantManager.Web.Pages.Applicants
 {
@@ -19,10 +21,21 @@ namespace Unity.GrantManager.Web.Pages.Applicants
         public string ApplicantDisplayName { get; set; } = string.Empty;
         public string UnityApplicantId { get; set; } = string.Empty;
         public string Status { get; set; } = string.Empty;
+        public Guid? CurrentUserId { get; set; }
+        public string CurrentUserName { get; set; }
+        public string Extensions { get; set; } = string.Empty;
+        public string MaxFileSize { get; set; } = string.Empty;
 
-        public DetailsModel(IApplicantRepository applicantRepository)
+        public DetailsModel(
+            IApplicantRepository applicantRepository,
+            ICurrentUser currentUser,
+            IConfiguration configuration)
         {
             _applicantRepository = applicantRepository;
+            CurrentUserId = currentUser.Id;
+            CurrentUserName = currentUser.SurName + ", " + currentUser.Name;
+            Extensions = configuration["S3:DisallowedFileTypes"] ?? "";
+            MaxFileSize = configuration["S3:MaxFileSize"] ?? "";
         }
 
         public async Task<IActionResult> OnGetAsync()

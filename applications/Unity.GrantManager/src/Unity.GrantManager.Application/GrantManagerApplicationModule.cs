@@ -120,6 +120,7 @@ public class GrantManagerApplicationModule : AbpModule
                     provider.SecretAccessKey = configuration["S3:SecretAccessKey"] ?? "";
                     provider.ApplicationS3Folder = configuration["S3:ApplicationS3Folder"] ?? "";
                     provider.AssessmentS3Folder = configuration["S3:AssessmentS3Folder"] ?? "";
+                    provider.ApplicantS3Folder = configuration["S3:ApplicantS3Folder"] ?? "";
                 });
             });
         });

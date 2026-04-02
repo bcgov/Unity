@@ -39,6 +39,7 @@ namespace Unity.GrantManager.EntityFrameworkCore
         public DbSet<ApplicationTags> ApplicationTags { get; set; }
         public DbSet<ApplicantAgent> ApplicantAgents { get; set; }
         public DbSet<ApplicantComment> ApplicantComments { get; set; }
+        public DbSet<ApplicantAttachment> ApplicantAttachments { get; set; }
         public DbSet<ApplicationAttachment> ApplicationAttachments { get; set; }
         public DbSet<ApplicationFormSubmission> ApplicationFormSubmissions { get; set; }
         public DbSet<AssessmentAttachment> AssessmentAttachments { get; set; }
@@ -215,6 +216,14 @@ namespace Unity.GrantManager.EntityFrameworkCore
                    .WithMany()
                    .HasPrincipalKey(x => x.Id)
                    .HasForeignKey(x => x.CommenterId);
+            });
+
+            modelBuilder.Entity<ApplicantAttachment>(b =>
+            {
+                b.ToTable(GrantManagerConsts.TenantTablePrefix + "ApplicantAttachments", GrantManagerConsts.DbSchema);
+
+                b.ConfigureByConvention();
+                b.HasOne<Applicant>().WithMany().HasForeignKey(x => x.ApplicantId).IsRequired();
             });
 
             modelBuilder.Entity<ApplicationAttachment>(b =>

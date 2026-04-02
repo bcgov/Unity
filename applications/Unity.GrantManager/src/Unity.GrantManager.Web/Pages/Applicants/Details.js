@@ -375,3 +375,84 @@ function updateCommentsCounters() {
             .get();
     }, 500);
 }
+
+function uploadApplicantFiles(inputId) {
+    let applicantId = decodeURIComponent($('#DetailsViewApplicantId').val());
+    let currentUserId = decodeURIComponent($('#CurrentUserId').val());
+    let currentUserName = decodeURIComponent($('#CurrentUserName').val());
+    let url =
+        '/api/app/attachment/applicant/' +
+        applicantId +
+        '/upload?userId=' +
+        currentUserId +
+        '&userName=' +
+        currentUserName;
+    uploadFiles(inputId, url, 'refresh_applicant_attachment_list');
+}
+
+function uploadFiles(inputId, urlStr, channel) {
+    let input = document.getElementById(inputId);
+    let files = input.files;
+    let formData = new FormData();
+    const disallowedTypes = JSON.parse(
+        decodeURIComponent($('#Extensions').val())
+    );
+    const maxFileSize = decodeURIComponent($('#MaxFileSize').val());
+
+    let isAllowedTypeError = false;
+    let isMaxFileSizeError = false;
+    if (files.length == 0) {
+        return;
+    }
+
+    for (let file of files) {
+        if (
+            disallowedTypes.includes(
+                file.name
+                    .slice(file.name.lastIndexOf('.') + 1, file.name.length)
+                    .toLowerCase()
+            )
+        ) {
+            isAllowedTypeError = true;
+        }
+        if (file.size * 0.000001 > maxFileSize) {
+            isMaxFileSizeError = true;
+        }
+
+        formData.append('files', file);
+    }
+
+    if (isAllowedTypeError) {
+        input.value = null;
+        return abp.notify.error('Error', 'File type not supported');
+    }
+    if (isMaxFileSizeError) {
+        input.value = null;
+        return abp.notify.error(
+            'Error',
+            'File size exceeds ' + maxFileSize + 'MB'
+        );
+    }
+
+    $.ajax({
+        url: urlStr,
+        data: formData,
+        processData: false,
+        contentType: false,
+        type: 'POST',
+        success: function (data) {
+            abp.notify.success(data.responseText, 'File Upload Is Successful');
+            PubSub.publish(channel);
+            input.value = null;
+        },
+        error: function (data) {
+            abp.notify.error(data.responseText, 'File Upload Not Successful');
+            PubSub.publish(channel);
+            input.value = null;
+        },
+    });
+}
+
+PubSub.subscribe('update_applicant_attachment_count', function (msg, data) {
+    $('#applicant_attachment_count').text(data.files);
+});
