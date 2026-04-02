@@ -23,6 +23,10 @@ public class FundingHistoryModalViewModel
     [DataType(DataType.Currency)]
     public decimal? ApprovedAmount { get; set; }
 
+    [DisplayName("One-Time Consideration")]
+    [DataType(DataType.Currency)]
+    public decimal? OneTimeConsideration { get; set; }    
+
     [DisplayName("Reconsideration Amount")]
     [DataType(DataType.Currency)]
     public decimal? ReconsiderationAmount { get; set; }
