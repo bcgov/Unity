@@ -5,7 +5,6 @@ using Unity.Payments.Domain.Suppliers;
 using Volo.Abp.Features;
 using Microsoft.Extensions.Logging;
 using Volo.Abp;
-using System.Linq;
 
 namespace Unity.Payments.Suppliers
 {
