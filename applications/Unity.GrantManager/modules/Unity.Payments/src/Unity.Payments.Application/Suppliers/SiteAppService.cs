@@ -5,6 +5,7 @@ using Unity.Payments.Domain.Suppliers;
 using Volo.Abp.Features;
 using Microsoft.Extensions.Logging;
 using Volo.Abp;
+using System.Linq;
 
 namespace Unity.Payments.Suppliers
 {
@@ -40,6 +41,18 @@ namespace Unity.Payments.Suppliers
         {
             try
             {
+                // Guard against duplicates — if a site with the same Number already exists
+                // for this supplier, update it instead of creating a second row
+                var existing = (await siteRepository.GetBySupplierAsync(siteDto.SupplierId))
+                    .Find(s => s.Number == siteDto.Number);
+
+                if (existing != null)
+                {
+                    logger.LogWarning("Site with Number {Number} already exists for SupplierId {SupplierId}. Updating instead of inserting.", siteDto.Number, siteDto.SupplierId);
+                    siteDto.Id = existing.Id;
+                    return await UpdateAsync(siteDto);
+                }
+
                 Site site = new Site(siteDto);
                 await siteRepository.InsertAsync(site, true);
                 return site.Id;
