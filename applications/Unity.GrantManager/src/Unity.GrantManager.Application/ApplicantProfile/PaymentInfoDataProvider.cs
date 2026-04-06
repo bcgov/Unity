@@ -29,6 +29,8 @@ namespace Unity.GrantManager.ApplicantProfile
         /// <inheritdoc />
         public async Task<ApplicantProfileDataDto> GetDataAsync(ApplicantProfileInfoRequest request)
         {
+            const string FullyPaidStatus = "Fully Paid";
+
             var dto = new ApplicantPaymentInfoDto
             {
                 Payments = []
@@ -58,7 +60,7 @@ namespace Unity.GrantManager.ApplicantProfile
                 var paymentsQueryable = await paymentRequestRepository.GetQueryableAsync();
                 var paymentDetails = await paymentsQueryable
                     .Where(pr => applicationLookup.Keys.Contains(pr.CorrelationId)
-                                 && pr.PaymentStatus == "Paid")
+                                 && pr.PaymentStatus == FullyPaidStatus)
                     .ToListAsync();
 
                 dto.Payments.AddRange(paymentDetails.Select(p => new PaymentInfoItemDto
@@ -68,7 +70,7 @@ namespace Unity.GrantManager.ApplicantProfile
                     ReferenceNo = applicationLookup.TryGetValue(p.CorrelationId, out var refNo) ? refNo : string.Empty,
                     Amount = p.Amount,
                     PaymentDate = p.PaymentDate,
-                    PaymentStatus = "Paid"
+                    PaymentStatus = FullyPaidStatus
                 }));
             }
 

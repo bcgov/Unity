@@ -83,7 +83,7 @@ namespace Unity.GrantManager.Applicants
             return entity;
         }
 
-        private static PaymentRequest CreatePaymentRequest(Guid correlationId, decimal amount = 1000m, string invoiceNumber = "INV-001", string? paymentStatus = "Paid")
+        private static PaymentRequest CreatePaymentRequest(Guid correlationId, decimal amount = 1000m, string invoiceNumber = "INV-001", string? paymentStatus = "Fully Paid")
         {
             var siteId = Guid.NewGuid();
             var dto = new CreatePaymentRequestDto
@@ -190,7 +190,7 @@ namespace Unity.GrantManager.Applicants
             item.ReferenceNo.ShouldBe("REF-001");
             item.Amount.ShouldBe(5000m);
             item.PaymentDate.ShouldBe("2025-01-15");
-            item.PaymentStatus.ShouldBe("Paid");
+            item.PaymentStatus.ShouldBe("Fully Paid");
         }
 
         [Fact]
@@ -307,7 +307,7 @@ namespace Unity.GrantManager.Applicants
                 [CreateSubmission(applicationId, "TESTUSER")],
                 [CreateApplication(applicationId, "REF-001")],
                 [
-                    CreatePaymentRequest(applicationId, 1000m, paymentStatus: "Paid"),
+                    CreatePaymentRequest(applicationId, 1000m, paymentStatus: "Fully Paid"),
                     CreatePaymentRequest(applicationId, 2000m, paymentStatus: null),
                     CreatePaymentRequest(applicationId, 3000m, paymentStatus: "Pending"),
                     CreatePaymentRequest(applicationId, 4000m, paymentStatus: "Failed")

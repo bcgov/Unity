@@ -422,7 +422,7 @@ flowchart LR
 
 **Source**: `PaymentRequest` entity (from `Unity.Payments` module), linked via `ApplicationFormSubmission` → `Application` where `PaymentRequest.CorrelationId` matches the application ID.
 
-**Query**: Normalizes the OIDC subject, then joins `ApplicationFormSubmission` → `Application` to build a lookup of `ApplicationId → ReferenceNo`. Payment requests whose `CorrelationId` is in that set are returned with the application's `ReferenceNo` resolved from the lookup.
+**Query**: Normalizes the OIDC subject, then joins `ApplicationFormSubmission` → `Application` to build a lookup of `ApplicationId → ReferenceNo`. Payment requests whose `CorrelationId` is in that set **and** whose CAS `PaymentStatus` is `"Fully Paid"` are returned with the application's `ReferenceNo` resolved from the lookup.
 
 **Response DTO**: `ApplicantPaymentInfoDto`
 
@@ -436,7 +436,7 @@ flowchart LR
       "referenceNo": "REF-001",
       "amount": 5000.00,
       "paymentDate": "2025-01-15",
-      "paymentStatus": "Paid"
+      "paymentStatus": "Fully Paid"
     }
   ]
 }
@@ -451,7 +451,7 @@ flowchart LR
 | `ReferenceNo` | `Application.ReferenceNo` | `string` | Application reference number, resolved via `CorrelationId → Application` lookup |
 | `Amount` | `PaymentRequest.Amount` | `decimal` | Requested payment amount |
 | `PaymentDate` | `PaymentRequest.PaymentDate` | `string?` | Date string populated during CAS reconciliation |
-| `PaymentStatus` | `PaymentRequest.Status` | `string` | Enum converted to string (e.g. `L1Pending`, `Submitted`, `Paid`, `Failed`) |
+| `PaymentStatus` | Constant `"Fully Paid"` | `string` | Always `"Fully Paid"` — only payments with CAS `PaymentStatus` of `"Fully Paid"` are returned |
 
 **Cross-module note**: This provider queries the `PaymentRequest` entity directly from the `Unity.Payments` module via `IRepository<PaymentRequest, Guid>`. The `CorrelationId` on `PaymentRequest` corresponds to the `Application.Id` in the grant manager domain.
 
