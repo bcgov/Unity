@@ -8,6 +8,7 @@ using Unity.GrantManager.ApplicantProfile;
 using Unity.GrantManager.ApplicantProfile.ProfileData;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.TestHelpers;
+using Unity.Payments.Codes;
 using Unity.Payments.Domain.PaymentRequests;
 using Unity.Payments.PaymentRequests;
 using Volo.Abp.Domain.Entities;
@@ -83,7 +84,7 @@ namespace Unity.GrantManager.Applicants
             return entity;
         }
 
-        private static PaymentRequest CreatePaymentRequest(Guid correlationId, decimal amount = 1000m, string invoiceNumber = "INV-001", string? paymentStatus = "Fully Paid")
+        private static PaymentRequest CreatePaymentRequest(Guid correlationId, decimal amount = 1000m, string invoiceNumber = "INV-001", string? paymentStatus = CasPaymentRequestStatus.FullyPaid)
         {
             var siteId = Guid.NewGuid();
             var dto = new CreatePaymentRequestDto
@@ -190,7 +191,7 @@ namespace Unity.GrantManager.Applicants
             item.ReferenceNo.ShouldBe("REF-001");
             item.Amount.ShouldBe(5000m);
             item.PaymentDate.ShouldBe("2025-01-15");
-            item.PaymentStatus.ShouldBe("Fully Paid");
+            item.PaymentStatus.ShouldBe(CasPaymentRequestStatus.FullyPaid);
         }
 
         [Fact]
@@ -307,10 +308,10 @@ namespace Unity.GrantManager.Applicants
                 [CreateSubmission(applicationId, "TESTUSER")],
                 [CreateApplication(applicationId, "REF-001")],
                 [
-                    CreatePaymentRequest(applicationId, 1000m, paymentStatus: "Fully Paid"),
+                    CreatePaymentRequest(applicationId, 1000m, paymentStatus: CasPaymentRequestStatus.FullyPaid),
                     CreatePaymentRequest(applicationId, 2000m, paymentStatus: null),
-                    CreatePaymentRequest(applicationId, 3000m, paymentStatus: "Pending"),
-                    CreatePaymentRequest(applicationId, 4000m, paymentStatus: "Failed")
+                    CreatePaymentRequest(applicationId, 3000m, paymentStatus: CasPaymentRequestStatus.NotPaid),
+                    CreatePaymentRequest(applicationId, 4000m, paymentStatus: CasPaymentRequestStatus.ErrorFromCas)
                 ]);
 
             var result = await _provider.GetDataAsync(request);
@@ -318,6 +319,34 @@ namespace Unity.GrantManager.Applicants
             var dto = result.ShouldBeOfType<ApplicantPaymentInfoDto>();
             dto.Payments.Count.ShouldBe(1);
             dto.Payments[0].Amount.ShouldBe(1000m);
+        }
+
+        [Theory]
+        [InlineData("FULLY PAID")]
+        [InlineData("fully paid")]
+        [InlineData("Fully Paid")]
+        [InlineData(" Fully Paid ")]
+        [InlineData("  FULLY PAID  ")]
+        public async Task GetDataAsync_ShouldMatchFullyPaidCaseInsensitiveWithWhitespace(string paymentStatus)
+        {
+            var request = CreateRequest();
+            var applicationId = Guid.NewGuid();
+
+            SetupQueryables(
+                [CreateSubmission(applicationId, "TESTUSER")],
+                [CreateApplication(applicationId, "REF-001")],
+                [
+                    CreatePaymentRequest(applicationId, 1500m, paymentStatus: paymentStatus),
+                    CreatePaymentRequest(applicationId, 2000m, paymentStatus: null),
+                    CreatePaymentRequest(applicationId, 3000m, paymentStatus: CasPaymentRequestStatus.NotPaid)
+                ]);
+
+            var result = await _provider.GetDataAsync(request);
+
+            var dto = result.ShouldBeOfType<ApplicantPaymentInfoDto>();
+            dto.Payments.Count.ShouldBe(1);
+            dto.Payments[0].Amount.ShouldBe(1500m);
+            dto.Payments[0].PaymentStatus.ShouldBe(CasPaymentRequestStatus.FullyPaid);
         }
 
         [Fact]
