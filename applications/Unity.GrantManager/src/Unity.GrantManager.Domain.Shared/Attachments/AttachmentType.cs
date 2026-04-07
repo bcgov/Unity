@@ -8,5 +8,6 @@ public enum AttachmentType
     APPLICATION = 0,
     ASSESSMENT = 1,
     CHEFS = 2,
-    EMAIL = 3
+    EMAIL = 3,
+    APPLICANT = 4
 }
