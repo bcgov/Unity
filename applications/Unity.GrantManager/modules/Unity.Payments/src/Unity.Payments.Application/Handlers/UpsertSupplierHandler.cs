@@ -49,7 +49,13 @@ namespace Unity.Payments.Handlers
                     UpsertSupplierEto upsertSupplierEto,
                     PaymentGroup defaultPaymentGroup)
         {
-            foreach (var siteEto in upsertSupplierEto.SiteEtos)
+            // Deduplicate incoming SiteEtos by SupplierSiteCode — CAS can return duplicate site codes
+            var uniqueSiteEtos = upsertSupplierEto.SiteEtos
+                .GroupBy(s => s.SupplierSiteCode)
+                .Select(g => g.First())
+                .ToList();
+
+            foreach (var siteEto in uniqueSiteEtos)
             {
                 var siteDto = supplierAppService.GetSiteDtoFromSiteEto(siteEto, supplierId, defaultPaymentGroup);
 

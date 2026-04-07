@@ -33,6 +33,7 @@ namespace Unity.GrantManager.Controllers
         private const string NotFoundFileMsg = "File not found.";
         private const string errorFileMsg = "An error occurred while downloading the file.";
         private const string chefsApiAccessError = "You do not have access to this resource";
+        private const string fileProvidedError = "At least one file must be provided.";
 
         public AttachmentController(
             IFileAppService fileAppService,
@@ -46,6 +47,53 @@ namespace Unity.GrantManager.Controllers
             _submissionAppService = submissionAppService;
             _emailLogAttachmentUploadService = emailLogAttachmentUploadService;
             _currentTenant = currentTenant;
+        }
+
+        [HttpGet("applicant/{applicantId}/download/{fileName}")]
+        public async Task<IActionResult> DownloadApplicantAttachment(string applicantId, string fileName)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            if (string.IsNullOrWhiteSpace(applicantId))
+            {
+                return BadRequest("Applicant ID must be provided.");
+            }
+
+            if (string.IsNullOrWhiteSpace(fileName))
+            {
+                return BadRequest(badRequestFileMsg);
+            }
+
+            var folder = _configuration["S3:ApplicantS3Folder"] ?? throw new AbpValidationException("Missing server configuration: S3:ApplicantS3Folder");
+
+            if (!folder.EndsWith('/'))
+            {
+                folder += "/";
+            }
+
+            folder += applicantId;
+            var key = folder + "/" + fileName;
+
+            try
+            {
+                var fileDto = await _fileAppService.GetBlobAsync(new GetBlobRequestDto { S3ObjectKey = key, Name = fileName });
+
+                if (fileDto == null || fileDto.Content == null)
+                {
+                    return NotFound(NotFoundFileMsg);
+                }
+
+                return File(fileDto.Content, fileDto.ContentType, fileDto.Name);
+            }
+            catch (Exception ex)
+            {
+                string ExceptionMessage = ex.Message;
+                logger.LogError(ex, "AttachmentController->DownloadApplicantAttachment: {ExceptionMessage}", ExceptionMessage);
+                return StatusCode(500, errorFileMsg);
+            }
         }
 
         [HttpGet("application/{applicationId}/download/{fileName}")]
@@ -225,6 +273,24 @@ namespace Unity.GrantManager.Controllers
             return Ok(files);
         }
 
+        [HttpPost("applicant/{applicantId}/upload")]
+#pragma warning disable IDE0060 // Remove unused parameter
+        public async Task<IActionResult> UploadApplicantAttachments(Guid applicantId, IList<IFormFile> files, string userId, string userName)
+#pragma warning restore IDE0060 // Remove unused parameter
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            if (files == null || files.Count == 0)
+            {
+                return BadRequest(fileProvidedError);
+            }
+
+            return await UploadFiles(files);
+        }
+
         [HttpPost("assessment/{assessmentId}/upload")]
 #pragma warning disable IDE0060 // Remove unused parameter
         public async Task<IActionResult> UploadAssessmentAttachments(Guid assessmentId, IList<IFormFile> files)
@@ -237,7 +303,7 @@ namespace Unity.GrantManager.Controllers
 
             if (files == null || files.Count == 0)
             {
-                return BadRequest("At least one file must be provided.");
+                return BadRequest(fileProvidedError);
             }
 
             return await UploadFiles(files);
@@ -255,7 +321,7 @@ namespace Unity.GrantManager.Controllers
 
             if (files == null || files.Count == 0)
             {
-                return BadRequest("At least one file must be provided.");
+                return BadRequest(fileProvidedError);
             }
 
             return await UploadFiles(files);
@@ -271,7 +337,7 @@ namespace Unity.GrantManager.Controllers
 
             if (files == null || files.Count == 0)
             {
-                return BadRequest("At least one file must be provided.");
+                return BadRequest(fileProvidedError);
             }
 
             List<ValidationResult> invalidFileTypes = GetInvalidFileTypes(files);
