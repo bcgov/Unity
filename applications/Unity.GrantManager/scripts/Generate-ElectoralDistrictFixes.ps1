@@ -111,13 +111,19 @@ if ($highConfidence.Count -gt 0) {
 
     foreach ($row in $highConfidence) {
         $appId       = $row.ApplicationId.Trim()
+        $parsedGuid  = [System.Guid]::Empty
+        if (-not [System.Guid]::TryParse($appId, [ref]$parsedGuid)) {
+            Write-Host "  SKIPPED: Invalid ApplicationId '$appId' (ReferenceNo: $($row.ReferenceNo))" -ForegroundColor Red
+            continue
+        }
+        $appId       = $parsedGuid.ToString()
         $currentED   = Escape-SqlString $row.ApplicantElectoralDistrict.Trim()
         $expectedED  = Escape-SqlString $row.ExpectedElectoralDistrict.Trim()
         $score       = $row.GeocoderScore
         $refNo       = $row.ReferenceNo
 
         [void]$sb.AppendLine("-- ReferenceNo: $refNo | Score: $score | '$currentED' -> '$expectedED'")
-        [void]$sb.AppendLine("UPDATE ""Applications"" SET ""ApplicantElectoralDistrict"" = '$expectedED' WHERE ""Id"" = '$appId';")
+        [void]$sb.AppendLine("UPDATE ""Applications"" SET ""ApplicantElectoralDistrict"" = '$expectedED' WHERE ""Id"" = '$appId' AND ""ApplicantElectoralDistrict"" = '$currentED';")
         [void]$sb.AppendLine("")
     }
 
@@ -144,12 +150,18 @@ if ($IncludeLowConfidence -and $lowConfidence.Count -gt 0) {
 
     foreach ($row in $lowConfidence) {
         $appId     = $row.ApplicationId.Trim()
+        $parsedGuid = [System.Guid]::Empty
+        if (-not [System.Guid]::TryParse($appId, [ref]$parsedGuid)) {
+            Write-Host "  SKIPPED: Invalid ApplicationId '$appId' (ReferenceNo: $($row.ReferenceNo))" -ForegroundColor Red
+            continue
+        }
+        $appId     = $parsedGuid.ToString()
         $currentED = Escape-SqlString $row.ApplicantElectoralDistrict.Trim()
         $score     = $row.GeocoderScore
         $refNo     = $row.ReferenceNo
 
         [void]$sbNull.AppendLine("-- ReferenceNo: $refNo | Score: $score | '$currentED' -> NULL")
-        [void]$sbNull.AppendLine("UPDATE ""Applications"" SET ""ApplicantElectoralDistrict"" = NULL WHERE ""Id"" = '$appId';")
+        [void]$sbNull.AppendLine("UPDATE ""Applications"" SET ""ApplicantElectoralDistrict"" = NULL WHERE ""Id"" = '$appId' AND ""ApplicantElectoralDistrict"" = '$currentED';")
         [void]$sbNull.AppendLine("")
     }
 

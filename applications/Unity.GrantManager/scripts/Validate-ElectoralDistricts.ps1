@@ -44,7 +44,7 @@ param(
     [Parameter(Mandatory)]
     [string]$GeocoderApiBase,
 
-    [int]$InitialDelayMs = 250
+    [int]$InitialDelayMs = 100
 )
 
 Set-StrictMode -Version Latest
@@ -158,9 +158,8 @@ function Invoke-GeocoderRequest {
             if (($statusCode -eq 429 -or $statusCode -eq 503) -and $attempt -le $MaxRetries) {
                 # Exponential backoff
                 $script:currentDelayMs = [Math]::Min($maxDelayMs, $script:currentDelayMs * 2)
-                $backoffMs = $script:currentDelayMs * $attempt
-                Write-Host "    Rate limited (HTTP $statusCode). Backing off ${backoffMs}ms (attempt $attempt/$MaxRetries)..." -ForegroundColor Yellow
-                Start-Sleep -Milliseconds $backoffMs
+                Write-Host "    Rate limited (HTTP $statusCode). Backing off $($script:currentDelayMs)ms (attempt $attempt/$MaxRetries)..." -ForegroundColor Yellow
+                Start-Sleep -Milliseconds $script:currentDelayMs
             }
             else {
                 throw
@@ -201,8 +200,8 @@ foreach ($entry in $addressLookup.GetEnumerator()) {
         }
 
         $coords    = $locationResult.features[0].geometry.coordinates
-        $latitude  = $coords[0]   # Mirrors C# ResultMapper: coordinates[0] → Latitude
-        $longitude = $coords[1]   # Mirrors C# ResultMapper: coordinates[1] → Longitude
+        $coordX    = $coords[0]   # EPSG:3005 easting  (mirrors C# ResultMapper: coordinates[0])
+        $coordY    = $coords[1]   # EPSG:3005 northing (mirrors C# ResultMapper: coordinates[1])
         $score     = $locationResult.features[0].properties.score
         $fullAddr  = $locationResult.features[0].properties.fullAddress
 
@@ -212,10 +211,10 @@ foreach ($entry in $addressLookup.GetEnumerator()) {
 
         # Step 2: Look up electoral district from coordinates
         $edUri = "${GeocoderApiBase}${edFeature}" +
-                 "&srsname=EPSG:4326" +
+                 "&srsname=EPSG:3005" +
                  "&propertyName=${edProperty}" +
                  "&outputFormat=application/json" +
-                 "&cql_filter=INTERSECTS(${edQueryType},POINT($latitude $longitude))"
+                 "&cql_filter=INTERSECTS(${edQueryType},POINT($coordX $coordY))"
 
         Start-Sleep -Milliseconds $script:currentDelayMs
         $edResult = Invoke-GeocoderRequest -Uri $edUri
@@ -223,7 +222,7 @@ foreach ($entry in $addressLookup.GetEnumerator()) {
         if (-not $edResult.features -or $edResult.features.Count -eq 0) {
             Write-Host "    No electoral district found for coordinates" -ForegroundColor Yellow
             $addr.ExpectedED = ""
-            $addr.Error = "No electoral district for coordinates ($latitude, $longitude)"
+            $addr.Error = "No electoral district for coordinates ($coordX, $coordY)"
             $errorCount++
             continue
         }
