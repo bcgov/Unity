@@ -91,12 +91,35 @@ namespace Unity.GrantManager.Intakes.Handlers
                 }
 
                 // Extract from geo services
-                var address = matchedAddressType.GetFullAddress();
+                var address = matchedAddressType.GetSearchAddress();
                 var geoAddressDetails = await geocoderApiService.GetAddressDetailsAsync(address);
 
                 if (geoAddressDetails == null || geoAddressDetails.Coordinates == null)
                 {
-                    logger.LogWarning("No coordinates found for address: {Address}", address);
+                    logger.LogWarning("No coordinates found for address: {Address} for application {ApplicationId}.",
+                        address, application.Id);
+                    return;
+                }
+
+                logger.LogInformation(
+                    "Geocoder resolved address for application {ApplicationId}: " +
+                    "Input={Address}, Resolved={ResolvedAddress}, Score={GeocoderScore}, " +
+                    "Coordinates=({Latitude}, {Longitude})",
+                    application.Id,
+                    address,
+                    geoAddressDetails.FullAddress,
+                    geoAddressDetails.Score,
+                    geoAddressDetails.Coordinates.Latitude,
+                    geoAddressDetails.Coordinates.Longitude);
+
+                if (geoAddressDetails.Score < 60)
+                {
+                    application.ApplicantElectoralDistrict = null;
+                    logger.LogWarning(
+                        "Low geocoder confidence score {GeocoderScore} for application {ApplicationId}. " +
+                        "Input={Address}, Resolved={ResolvedAddress}. " +
+                        "Electoral district set to null due to unreliable geocoding.",
+                        geoAddressDetails.Score, application.Id, address, geoAddressDetails.FullAddress);
                     return;
                 }
 
@@ -105,12 +128,17 @@ namespace Unity.GrantManager.Intakes.Handlers
                 if (electoralDistrict.Name != null)
                 {
                     application.ApplicantElectoralDistrict = electoralDistrict.Name;
-                    logger.LogInformation("Electoral district '{ElectoralDistrict}' determined for address: {Address}",
-                        electoralDistrict.Name, address);
+                    logger.LogInformation(
+                        "Electoral district '{ElectoralDistrict}' determined for application {ApplicationId}. " +
+                        "Address={Address}, GeocoderScore={GeocoderScore}",
+                        electoralDistrict.Name, application.Id, address, geoAddressDetails.Score);
                 }
                 else
                 {
-                    logger.LogWarning("Electoral district could not be determined for address: {Address}", address);
+                    logger.LogWarning(
+                        "Electoral district could not be determined for application {ApplicationId}. " +
+                        "Address={Address}, GeocoderScore={GeocoderScore}",
+                        application.Id, address, geoAddressDetails.Score);
                 }
             }
             catch (Exception ex)

@@ -42,19 +42,15 @@ public class ApplicantAddress : AuditedAggregateRoot<Guid>, IMultiTenant
     public Guid? TenantId { get; set; }
 
     /// <summary>
-    /// Returns the address as a single comma-separated string, ordered by relevance.
+    /// Returns a search-friendly address string (Street, Street2, City) for geocoding lookups.
     /// </summary>
-    public string GetFullAddress()
+    public string GetSearchAddress()
     {
         var parts = new[]
         {
             Street,
             Street2,
-            Unit,
-            City,
-            Province,
-            Postal,
-            Country
+            City
         };
 
         var address = string.Join(", ", parts
