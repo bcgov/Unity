@@ -96,7 +96,7 @@ class SQLGenerator:
         return winner if freq > 1 else None
     
     async def fetch_completion(self, prompt: str, session: aiohttp.ClientSession,
-                              index: int) -> Optional[Tuple[str, Dict[str, int]]]:
+                              index: int, system_message: str = "You are a professional SQL programmer.") -> Optional[Tuple[str, Dict[str, int]]]:
         """Fetch a single completion from the LLM
 
         Returns:
@@ -116,7 +116,7 @@ class SQLGenerator:
             
             json_data = {
                 "messages": [
-                    {"role": "system", "content": "You are a professional SQL programmer."},
+                    {"role": "system", "content": system_message},
                     {"role": "user", "content": prompt}
                 ],
                 "temperature": self.config.temperature
@@ -127,13 +127,13 @@ class SQLGenerator:
                 "Authorization": f"Bearer {self.config.completion_key}",
                 "Content-Type": CONTENT_TYPE
             }
-            
+
             endpoint = self.config.completion_endpoint
-            
+
             json_data = {
                 "model": self.config.model,
                 "messages": [
-                    {"role": "system", "content": "You are a professional SQL programmer."},
+                    {"role": "system", "content": system_message},
                     {"role": "user", "content": prompt}
                 ],
                 "temperature": self.config.temperature
@@ -360,11 +360,18 @@ class SQLGenerator:
 
         # Generate multiple completions in parallel
         async with aiohttp.ClientSession() as session:
-            parsed_schema = await self.fetch_completion(f'''Please parse this schema to return only tables and columns relevant to the users question. Never add to the schema, only remove as necessary.
-Pay special attention to tables in the "Reporting" schema — if the question could plausibly be answered using data from a Reporting schema table, always keep that table.
-                                  <question>{question}</question>
-                                  <schema>{schemas}</schema>
-                                  If the question is completely unrelated to the schema or is inappropriate, respond with only the word UNRELATED and nothing else.''', session, 0)
+            parsed_schema = await self.fetch_completion(
+                f'''Your ONLY task is to decide if the question is related to the database schema.
+DO NOT generate SQL.
+DO NOT explain anything.
+DO NOT infer missing information.
+Output EXACTLY one word: RELATED or UNRELATED.
+
+<question>{question}</question>
+<schema>{schemas}</schema>''',
+                session, 0,
+                system_message="You are a schema relevance filter. Output only RELATED or UNRELATED."
+            )
 
             if not parsed_schema:
                 logger.error("Schema parsing failed — no completion returned")
@@ -372,13 +379,14 @@ Pay special attention to tables in the "Reporting" schema — if the question co
 
             print("Schema:", schemas)
             print("Parsed Schema:", parsed_schema[0])
+            logger.info(f"[RelevanceCheck] Q: {question!r} | Raw: {parsed_schema[0]!r}")
 
-            if "NSFW" in parsed_schema[0].upper():
+            if parsed_schema[0].strip().upper() != "RELATED":
                 logger.error("Error: NSFW or irrelevant question.", exc_info=True)
                 return None, None, None, None
 
             # Build prompt
-            prompt = self.build_prompt(question, parsed_schema[0], past_questions, is_retry=is_retry, retry_error_type=retry_error_type, retry_error_detail=retry_error_detail)
+            prompt = self.build_prompt(question, schemas, past_questions, is_retry=is_retry, retry_error_type=retry_error_type)
             logger.debug(f"Prompt: {prompt[:200]}...")
             tasks = [
                 self.fetch_completion(prompt, session, i)

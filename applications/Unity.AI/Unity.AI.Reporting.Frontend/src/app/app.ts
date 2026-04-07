@@ -389,7 +389,7 @@ export class App implements OnInit, OnDestroy {
         turn.canRetry = true;
       } else if (errorType === 'ai_failure' || error?.status === 422) {
         turn.errorType = 'ai_failure';
-        turn.errorMessage = errorMsg || "I couldn't generate a report from that question. Try rephrasing or adding more detail.";
+        turn.errorMessage = errorMsg || "I couldn't generate a report from that question.";
         turn.canRetry = false;
       } else if (errorType === 'server_error' || (error?.status && error.status >= 500)) {
         turn.errorType = 'server_error';

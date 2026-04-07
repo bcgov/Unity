@@ -76,7 +76,7 @@ class SchemaExtractor:
             result = self.metabase.execute_sql(sql, db_id, tenant_id=tenant_id)
             if result["rows"]:
                 return str(result["rows"][0][0])
-        except (KeyError, IndexError, TypeError):
+        except Exception:
             pass  # No example value available for this column
         return None
     
@@ -101,8 +101,11 @@ class SchemaExtractor:
                   tenant_id: Optional[str] = None) -> bool:
         """Check if a table has at least one row of data."""
         sql = f'SELECT * FROM "{schema_name}"."{table_name}" LIMIT 1'
-        result = self.metabase.execute_sql(sql, db_id, tenant_id=tenant_id)
-        return bool(result["rows"])
+        try:
+            result = self.metabase.execute_sql(sql, db_id, tenant_id=tenant_id)
+            return bool(result["rows"])
+        except Exception:
+            return False
 
     def _format_schema_with_examples(self, schema_name: str, table_name: str,
                                      columns: List[str], db_id: int,
