@@ -51,5 +51,12 @@ public class S3BlobProviderConfiguration
                 .GetConfiguration<string>("S3BlobProvider.AssessmentS3Folder");
         set => _containerConfiguration
             .SetConfiguration("S3BlobProvider.AssessmentS3Folder", value);
+    }
+    public string ApplicantS3Folder
+    {
+        get => _containerConfiguration
+                .GetConfiguration<string>("S3BlobProvider.ApplicantS3Folder");
+        set => _containerConfiguration
+            .SetConfiguration("S3BlobProvider.ApplicantS3Folder", value);
     }    
 }
