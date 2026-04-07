@@ -251,7 +251,7 @@
                             <label class="form-check-label">Show Filter Row</label>
                         </div>
                         <button id="btnClearFilter" class="btn btn-primary" type="button">
-                            Clear Filter
+                            CLEAR FILTERS
                         </button>
                     `;
                 },
