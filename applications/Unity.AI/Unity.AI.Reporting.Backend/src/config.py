@@ -69,6 +69,12 @@ class AIConfig:
         """Check if Azure OpenAI embeddings should be used"""
         return bool(self.azure_endpoint and self.azure_api_key and self.azure_embedding_deployment)
 
+    @property
+    def supports_temperature(self) -> bool:
+        """Check if the deployed model supports non-default temperature values.
+        gpt-5-mini and future gpt-5 variants only accept the default temperature of 1."""
+        return "gpt-5" not in self.azure_deployment.lower()
+
 
 @dataclass
 class AppConfig:

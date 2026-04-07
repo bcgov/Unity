@@ -118,9 +118,10 @@ class SQLGenerator:
                 "messages": [
                     {"role": "system", "content": system_message},
                     {"role": "user", "content": prompt}
-                ],
-                "temperature": self.config.temperature
+                ]
             }
+            if self.config.supports_temperature:
+                json_data["temperature"] = self.config.temperature
         else:
             # Use standard OpenAI
             headers = {
@@ -589,9 +590,10 @@ ORDER BY
                     "messages": [
                         {"role": "system", "content": "You are a helpful assistant that explains SQL queries in simple terms."},
                         {"role": "user", "content": prompt}
-                    ],
-                    "temperature": 0.3
+                    ]
                 }
+                if self.config.supports_temperature:
+                    json_data["temperature"] = 0.3
             else:
                 # Use standard OpenAI
                 headers = {
