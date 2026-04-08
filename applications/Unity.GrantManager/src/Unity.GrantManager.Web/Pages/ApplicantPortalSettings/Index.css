@@ -1,0 +1,50 @@
+.unity-app-main-container {
+    margin: auto;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+}
+
+#PortalSettingsSideMenu.side-menu {
+    float: left;
+    position: absolute;
+    left: 0px;
+    top: 150px;
+}
+
+#PortalSettingsSideMenu ul {
+    padding-left: 0;
+}
+
+#PortalSettingsSideMenu li {
+    height: 40px;
+    padding: 10px;
+    border-radius: 0 100em 100em 0;
+}
+
+#PortalSettingsSideMenu .nav-item {
+    justify-content: left;
+}
+
+.portal-settings-config {
+    /*max-height: 80vh;*/
+    overflow: auto;
+}
+
+.portal-status-table th {
+    font-weight: 600;
+    border-bottom: 2px solid #dee2e6;
+}
+
+.portal-status-table td {
+    vertical-align: middle;
+}
+
+.portal-status-table label {
+    margin-bottom: 0;
+    font-weight: 400;
+}
+
+.portal-status-table .form-control {
+    max-width: 300px;
+}

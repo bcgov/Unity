@@ -19,10 +19,20 @@ public class ApplicationStatusAppService : ApplicationService, IApplicationStatu
         _applicationStatusRepository = repository;
     }
 
-    public async Task<IList<ApplicationStatusDto>> GetListAsync()
+    public virtual async Task<IList<ApplicationStatusDto>> GetListAsync()
     {        
         var statuses = await _applicationStatusRepository.GetListAsync();
 
         return ObjectMapper.Map<List<ApplicationStatus>, List<ApplicationStatusDto>>(statuses.OrderBy(s => s.StatusCode).ToList());
+    }
+
+    public virtual async Task UpdateExternalStatusLabelsAsync(UpdateApplicationStatusExternalLabelsDto input)
+    {
+        foreach (var statusDto in input.Statuses)
+        {
+            var status = await _applicationStatusRepository.GetAsync(statusDto.Id);
+            status.ExternalStatus = statusDto.ExternalStatus;
+            await _applicationStatusRepository.UpdateAsync(status);
+        }
     }
 }

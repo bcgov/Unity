@@ -1,0 +1,77 @@
+@page
+@using Microsoft.Extensions.Localization
+@using Unity.GrantManager.Localization
+@using Unity.GrantManager.GrantApplications
+@using Volo.Abp.AspNetCore.Mvc.UI.Layout
+
+@model Unity.GrantManager.Web.Pages.ApplicantPortalSettings.IndexModel
+
+@inject IStringLocalizer<GrantManagerResource> L
+@inject IPageLayout PageLayout
+
+@{
+    PageLayout.Content.Title = L["ApplicantPortalSettings:Title"].Value;
+    ViewBag.PageTitle = L["ApplicantPortalSettings:Title"].Value;
+}
+
+@section styles {
+    <abp-style src="/Pages/ApplicantPortalSettings/Index.css" />
+}
+@section scripts {
+    <abp-script src="/Pages/ApplicantPortalSettings/Index.js" />
+}
+
+<div id="PortalSettingsSideMenu" class="side-menu">
+    <ul>
+        <li id="manage-statuses-menu-item" class="nav-item btn btn-nav active ps-3 pe-4">
+            @L["ApplicantPortalSettings:ManageStatuses"]
+        </li>
+    </ul>
+</div>
+
+<div id="portal-status-div" class="input-area card mb-3 mt-5 p-6 portal-settings-config">
+    <div class="container-fluid px-0">
+        <div class="px-5 pt-4 pb-2">
+            <h5 class="fw-bold">@L["ApplicantPortalSettings:PortalStatusHeading"]</h5>
+        </div>
+        <form id="PortalStatusForm">
+            <div class="px-5 py-0">
+                <table id="PortalStatusTable" class="table table-striped portal-status-table">
+                    <thead>
+                        <tr>
+                            <th>@L["ApplicantPortalSettings:InternalStatus"]</th>
+                            <th>@L["ApplicantPortalSettings:PortalStatusLabel"]</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (var i = 0; i < Model.Statuses.Count; i++)
+                        {
+                            var status = Model.Statuses[i];
+                            <tr>
+                                <td class="align-middle">
+                                    <label>@status.InternalStatus</label>
+                                </td>
+                                <td>
+                                    <input type="hidden"
+                                           name="Statuses[@i].Id"
+                                           value="@status.Id" />
+                                    <input type="text"
+                                           class="form-control"
+                                           name="Statuses[@i].ExternalStatus"
+                                           value="@status.ExternalStatus"
+                                           required
+                                           maxlength="@ApplicationStatusConsts.MaxNameLength" />
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+            <div class="d-flex p-5 pt-3">
+                <abp-button button-type="Primary"
+                            type="submit"
+                            text="@L["ApplicantPortalSettings:SaveChanges"].Value" />
+            </div>
+        </form>
+    </div>
+</div>
