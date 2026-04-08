@@ -49,6 +49,8 @@ namespace Unity.AI.Runtime
         private const string DefaultMaxTokensParameterName = "max_completion_tokens";
         private const string LegacyMaxTokensParameterName = "max_tokens";
         private const string DefaultProviderName = "OpenAI";
+        private const string OpenAiApiKeyEnvironmentVariableName = "AZURE_OPENAI_API_KEY";
+        private const string OpenAiEndpointEnvironmentVariableName = "AZURE_OPENAI_ENDPOINT";
         private const int DefaultCompletionTokens = 2000;
         private const int DefaultAttachmentSummaryCompletionTokens = 2000;
         private const int DefaultApplicationAnalysisCompletionTokens = 4000;
@@ -742,6 +744,15 @@ namespace Unity.AI.Runtime
         private string? ResolveApiKey(string? operationName = null)
         {
             var providerName = ResolveProviderName(operationName);
+            if (string.Equals(providerName, DefaultProviderName, StringComparison.Ordinal))
+            {
+                var injectedApiKey = _configuration[OpenAiApiKeyEnvironmentVariableName];
+                if (!string.IsNullOrWhiteSpace(injectedApiKey))
+                {
+                    return injectedApiKey;
+                }
+            }
+
             return _configuration[$"Azure:{providerName}:ApiKey"];
         }
 
@@ -772,7 +783,13 @@ namespace Unity.AI.Runtime
             var providerName = ResolveProviderName(operationName);
             var profileName = ResolveProfileName(operationName);
             var profileApiUrl = ResolveProfileSetting(providerName, profileName, "ApiUrl");
+            var injectedEndpoint = ResolveInjectedEndpoint(providerName);
             var legacyOpenAiApiUrl = _configuration["Azure:OpenAI:ApiUrl"];
+
+            if (!string.IsNullOrWhiteSpace(injectedEndpoint) && !string.IsNullOrWhiteSpace(profileApiUrl))
+            {
+                return CombineEndpointAndPath(injectedEndpoint, profileApiUrl);
+            }
 
             if (!string.IsNullOrWhiteSpace(profileApiUrl))
             {
@@ -785,6 +802,22 @@ namespace Unity.AI.Runtime
             }
 
             throw new InvalidOperationException($"AI API URL is not configured for provider '{providerName}'.");
+        }
+
+        private string? ResolveInjectedEndpoint(string providerName)
+        {
+            if (!string.Equals(providerName, DefaultProviderName, StringComparison.Ordinal))
+            {
+                return _configuration[$"Azure:{providerName}:Endpoint"];
+            }
+
+            var injectedEndpoint = _configuration[OpenAiEndpointEnvironmentVariableName];
+            if (!string.IsNullOrWhiteSpace(injectedEndpoint))
+            {
+                return injectedEndpoint;
+            }
+
+            return _configuration["Azure:OpenAI:Endpoint"];
         }
 
         private string? ResolveProfileName(string? operationName)
@@ -811,6 +844,23 @@ namespace Unity.AI.Runtime
 
             var profileSetting = _configuration[$"Azure:{providerName}:Profiles:{profileName}:{settingName}"];
             return string.IsNullOrWhiteSpace(profileSetting) ? null : profileSetting;
+        }
+
+        private static string CombineEndpointAndPath(string endpoint, string profilePath)
+        {
+            if (Uri.TryCreate(profilePath, UriKind.Absolute, out var absoluteUri))
+            {
+                return absoluteUri.ToString();
+            }
+
+            var trimmedEndpoint = endpoint.Trim().TrimEnd('/');
+            var trimmedPath = profilePath.Trim();
+            if (!trimmedPath.StartsWith("/", StringComparison.Ordinal))
+            {
+                trimmedPath = "/" + trimmedPath;
+            }
+
+            return trimmedEndpoint + trimmedPath;
         }
 
         private static ApplicationAnalysisResponse ParseApplicationAnalysisResponse(string raw)
