@@ -484,7 +484,7 @@ $(function () {
 
         prepareDisplayData: function(link) {
             const referenceNumber = escapeHtml(link.referenceNumber || 'Unknown Reference');
-            const applicantName = escapeHtml(link.applicantName || 'Unknown Applicant');
+            const applicantName = escapeHtml(link.applicantName || 'Applicant Name');
             const category = escapeHtml(link.category || 'Unknown Category');
             const applicationStatus = escapeHtml(link.applicationStatus || 'Status Unavailable');
             const linkType = escapeHtml(link.linkType || 'Related');
@@ -758,9 +758,8 @@ $(function () {
     // Link Selection Service
     const LinkSelectionService = {
         selectSuggestion: function(suggestion, state) {
-            // Format: "Submission #<ReferenceNo> - <ApplicantName>"
-            const match = suggestion.match(/^Submission #(.+?) - /);
-            const referenceNumber = match ? match[1].trim() : suggestion.split(' - ')[0].trim();
+            // Format: "<ReferenceNo> (<UnityApplicationId>) - <ApplicantName> (<UnityApplicantId>)"
+            const referenceNumber = suggestion.split(' ')[0].trim();
             
             if (this.isDuplicate(referenceNumber, state)) {
                 abp.notify.warn('This application is already linked.');

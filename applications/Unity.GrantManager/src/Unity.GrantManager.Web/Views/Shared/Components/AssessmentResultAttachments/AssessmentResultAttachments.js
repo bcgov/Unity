@@ -22,7 +22,7 @@ $(function () {
             serverSide: false,
             order: [[2, 'asc']],
             searching: true,
-            externalFilterButtonId: 'btn-toggle-filter-submissions',
+            externalFilterButtonId: 'btn-toggle-filter-assessment-attachments',
             paging: false,
             select: false,
             info: false,
@@ -61,7 +61,7 @@ $(function () {
                     className: 'data-table-header',
                     width: '140px',
                     render: function (data, type) {
-                        if (type === 'display') {
+                     if (type === 'display' || type === 'filter') {
                             return new Date(data).toDateString();
                         }
                         return data;
@@ -91,7 +91,7 @@ $(function () {
         e.currentTarget.classList.toggle('selected');
     });
 
-    initializeFilterRowPlugin(dataTable, 'btn-toggle-filter-submissions');
+    initializeFilterRowPlugin(dataTable, 'btn-toggle-filter-assessment-attachments');
 
     PubSub.subscribe(
         'refresh_assessment_attachment_list',

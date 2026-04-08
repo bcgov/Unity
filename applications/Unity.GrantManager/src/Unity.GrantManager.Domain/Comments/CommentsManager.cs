@@ -118,7 +118,7 @@ namespace Unity.GrantManager.Comments
                                                  where applicationComment.ApplicationId == ownerId
                                                  orderby applicationComment.PinDateTime.HasValue descending,
                                                          applicationComment.PinDateTime ascending,
-                                                         applicationComment.CreationTime descending
+                                                         (applicationComment.LastModificationTime ?? applicationComment.CreationTime) descending
                                                  select new CommentListItem
                                                  {
                                                      Comment = applicationComment.Comment,
@@ -138,7 +138,7 @@ namespace Unity.GrantManager.Comments
                                                 where assessmentComment.AssessmentId == ownerId
                                                 orderby assessmentComment.PinDateTime.HasValue descending,
                                                         assessmentComment.PinDateTime ascending,
-                                                        assessmentComment.CreationTime descending
+                                                        (assessmentComment.LastModificationTime ?? assessmentComment.CreationTime) descending
                                                 select new CommentListItem
                                                 {
                                                     Comment = assessmentComment.Comment,
@@ -158,19 +158,19 @@ namespace Unity.GrantManager.Comments
                                                where applicantComment.ApplicantId == ownerId
                                                orderby applicantComment.PinDateTime.HasValue descending,
                                                        applicantComment.PinDateTime ascending,
-                                                        applicantComment.CreationTime descending
-                                                select new CommentListItem
-                                                {
-                                                    Comment = applicantComment.Comment,
-                                                    CommenterId = applicantComment.CommenterId,
-                                                    CommenterDisplayName = user.OidcDisplayName,
-                                                    CommenterBadge = user.Badge,
-                                                    CreationTime = applicantComment.CreationTime,
-                                                    OwnerId = ownerId,
-                                                    Id = applicantComment.Id,
-                                                    LastModificationTime = applicantComment.LastModificationTime,
-                                                    PinDateTime = applicantComment.PinDateTime,
-                                                };
+                                                       (applicantComment.LastModificationTime ?? applicantComment.CreationTime) descending
+                                               select new CommentListItem
+                                               {
+                                                   Comment = applicantComment.Comment,
+                                                   CommenterId = applicantComment.CommenterId,
+                                                   CommenterDisplayName = user.OidcDisplayName,
+                                                   CommenterBadge = user.Badge,
+                                                   CreationTime = applicantComment.CreationTime,
+                                                   OwnerId = ownerId,
+                                                   Id = applicantComment.Id,
+                                                   LastModificationTime = applicantComment.LastModificationTime,
+                                                   PinDateTime = applicantComment.PinDateTime,
+                                               };
                     return applicantCommentsQry.ToList();
                 default:
                     throw new ArgumentOutOfRangeException(nameof(type));

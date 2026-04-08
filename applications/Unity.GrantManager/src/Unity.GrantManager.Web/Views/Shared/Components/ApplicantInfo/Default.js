@@ -71,7 +71,23 @@ abp.widgets.ApplicantInfo = function ($wrapper) {
             );
 
             // Save button handler
-            self.zoneForm.saveButton.on('click', function () {
+            self.zoneForm.saveButton.on('click', async function () {
+                if (self.zoneForm.modifiedFields.has('ApplicantSummary.UnityApplicantId')) {
+                    const newId = $('#ApplicantSummary_UnityApplicantId').val()?.trim();
+                    const currentApplicantId = $('#ApplicantInfoViewApplicantId').val();
+                    if (newId && currentApplicantId) {
+                        try {
+                            const isAvailable = await unity.grantManager.applicants.applicant.isUnityApplicantIdAvailable(newId, currentApplicantId);
+                            if (!isAvailable) {
+                                abp.notify.error('Applicant ID already exists. Please enter a unique ID.');
+                                return;
+                            }
+                        } catch (error) {
+                            console.warn('Failed to check Applicant ID availability:', error);
+                        }
+                    }
+                }
+
                 let applicationId = document.getElementById('ApplicantInfo_ApplicationId').value;
                 let applicantInfoSubmission = self.getPartialUpdate();
                 try {
@@ -636,8 +652,9 @@ function registerApplicantInfoSummaryDropdowns($container) {
             let org_status = entry_status.value == "HIS" ? "HISTORICAL" : "ACTIVE";
             let entity_type = getAttributeObjectByType("entity_type", response.attributes);
             let business_number = getAttributeObjectByType("business_number", response.names);
+            let entity_name = getAttributeObjectByType("entity_name", response.names);
 
-            $container.find('#ApplicantSummary_OrgName').val(response.names[0].text).trigger('change');
+            $container.find('#ApplicantSummary_OrgName').val(entity_name.text).trigger('change');
             $container.find('#ApplicantSummary_OrgNumber').val(orgBookId).trigger('change');
             $container.find('#ApplicantSummary_OrgStatus').val(org_status).trigger('change');
             $container.find('#ApplicantSummary_OrganizationType').val(entity_type.value).trigger('change');

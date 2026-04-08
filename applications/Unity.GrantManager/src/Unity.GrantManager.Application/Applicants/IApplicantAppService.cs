@@ -20,6 +20,7 @@ public interface IApplicantAppService : IApplicationService
     Task RelateDefaultSupplierAsync(ApplicantAgentDto applicantAgentDto);
     Task<Applicant> UpdateApplicantOrgMatchAsync(Applicant applicant);
     Task<int> GetNextUnityApplicantIdAsync();
+    Task<bool> IsUnityApplicantIdAvailableAsync(string unityApplicantId, Guid currentApplicantId);
     Task<List<Applicant>> GetApplicantsBySiteIdAsync(Guid siteId);
     Task<JsonDocument> GetApplicantLookUpAutocompleteQueryAsync(string? applicantLookUpQuery);
     Task<PagedResultDto<ApplicantListDto>> GetListAsync(ApplicantListRequestDto input);

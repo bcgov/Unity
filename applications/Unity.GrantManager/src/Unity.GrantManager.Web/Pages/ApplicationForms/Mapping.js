@@ -256,15 +256,22 @@
                     url: `/api/app/form/${chefsFormId}/version/${chefsFormVersionId}`,
                     type: "POST",
                     success: function (data) {
-                        let availableChefsFields = JSON.parse(data.availableChefsFields)
+                        let formVersion = data.formVersion;
+                        let updatedApplicationFormName = data.updatedFormName;
+                        let updatedNameMessage = updatedApplicationFormName ? 'Form name updated to ' + updatedApplicationFormName : 'Form name is unchanged';
+                        if (updatedApplicationFormName) {
+                            document.getElementById('applicationFormName').textContent = updatedApplicationFormName;                            
+                        }
+
+                        let availableChefsFields = JSON.parse(formVersion.availableChefsFields)
                         document.getElementById('availableChefsFields').value = JSON.stringify(availableChefsFields);
                         initializeIntakeMap(availableChefsFields);
 
                         abp.notify.success(
                             '',
-                            'Synchronized Successful'
+                            'Synchronized Successful' + updatedNameMessage 
                         );
-                        navigateToVersion(data.chefsFormVersionGuid);
+                        navigateToVersion(formVersion.chefsFormVersionGuid);
                     },
                     error: function () {
                         abp.notify.error(
