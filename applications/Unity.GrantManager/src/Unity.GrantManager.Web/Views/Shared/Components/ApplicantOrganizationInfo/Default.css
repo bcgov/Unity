@@ -64,6 +64,21 @@
     padding-bottom: 1.25rem;
 }
 
+/* Generate button styles for input-group fields */
+.unt-input-group .mb-3 {
+    width: 100%;
+}
+
+.unt-input-group-append {
+    position: absolute;
+    right: 0;
+    margin: 28px 2px 0px 0px;
+}
+
+.unt-btn-link {
+    margin: 0px;
+}
+
 /* Form field spacing */
 .px-1 {
     padding-left: 0.25rem !important;

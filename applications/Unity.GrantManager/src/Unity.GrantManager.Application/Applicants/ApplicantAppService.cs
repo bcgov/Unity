@@ -357,17 +357,20 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
 
         foreach (var id in orderedIds)
         {
-            if (id == candidate)
-            {
-                candidate++;
-            }
-            else // Gap found: candidate is the first available ID.
-            {
-                break;
-            }
+            if (id < candidate) continue; // Skip duplicates already passed.
+            if (id == candidate) candidate++;
+            else break; // Gap found: candidate is the first available ID.
         }
 
         return candidate;
+    }
+
+    [RemoteService(true)]
+    public async Task<bool> IsUnityApplicantIdAvailableAsync(string unityApplicantId, Guid currentApplicantId)
+    {
+        if (string.IsNullOrEmpty(unityApplicantId)) return true;
+        var existing = await applicantRepository.GetByUnityApplicantIdAsync(unityApplicantId);
+        return existing == null || existing.Id == currentApplicantId;
     }
 
     [RemoteService(true)]
