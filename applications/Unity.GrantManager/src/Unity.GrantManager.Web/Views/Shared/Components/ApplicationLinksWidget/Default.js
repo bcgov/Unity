@@ -484,7 +484,7 @@ $(function () {
 
         prepareDisplayData: function(link) {
             const referenceNumber = escapeHtml(link.referenceNumber || 'Unknown Reference');
-            const applicantName = escapeHtml(link.applicantName || 'Unknown Applicant');
+            const applicantName = escapeHtml(link.applicantName || 'Applicant Name');
             const category = escapeHtml(link.category || 'Unknown Category');
             const applicationStatus = escapeHtml(link.applicationStatus || 'Status Unavailable');
             const linkType = escapeHtml(link.linkType || 'Related');

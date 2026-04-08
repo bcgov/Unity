@@ -72,7 +72,7 @@ namespace Unity.GrantManager.Web.Pages.Applicants
                 // Set properties for breadcrumb and display
                 ApplicantDisplayName = !string.IsNullOrEmpty(Applicant.ApplicantName)
                     ? Applicant.ApplicantName
-                    : "Unknown Applicant";
+                    : "Applicant Name";
 
                 UnityApplicantId = Applicant.UnityApplicantId ?? "N/A";
                 Status = Applicant.Status ?? "Active";
