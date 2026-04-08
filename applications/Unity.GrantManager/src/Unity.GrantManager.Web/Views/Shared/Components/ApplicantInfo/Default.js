@@ -636,8 +636,9 @@ function registerApplicantInfoSummaryDropdowns($container) {
             let org_status = entry_status.value == "HIS" ? "HISTORICAL" : "ACTIVE";
             let entity_type = getAttributeObjectByType("entity_type", response.attributes);
             let business_number = getAttributeObjectByType("business_number", response.names);
+            let entity_name = getAttributeObjectByType("entity_name", response.names);
 
-            $container.find('#ApplicantSummary_OrgName').val(response.names[0].text).trigger('change');
+            $container.find('#ApplicantSummary_OrgName').val(entity_name.text).trigger('change');
             $container.find('#ApplicantSummary_OrgNumber').val(orgBookId).trigger('change');
             $container.find('#ApplicantSummary_OrgStatus').val(org_status).trigger('change');
             $container.find('#ApplicantSummary_OrganizationType').val(entity_type.value).trigger('change');

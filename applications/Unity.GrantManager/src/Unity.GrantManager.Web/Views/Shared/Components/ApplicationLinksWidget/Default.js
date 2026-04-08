@@ -758,9 +758,8 @@ $(function () {
     // Link Selection Service
     const LinkSelectionService = {
         selectSuggestion: function(suggestion, state) {
-            // Format: "Submission #<ReferenceNo> - <ApplicantName>"
-            const match = suggestion.match(/^Submission #(.+?) - /);
-            const referenceNumber = match ? match[1].trim() : suggestion.split(' - ')[0].trim();
+            // Format: "<ReferenceNo> (<UnityApplicationId>) - <ApplicantName> (<UnityApplicantId>)"
+            const referenceNumber = suggestion.split(' ')[0].trim();
             
             if (this.isDuplicate(referenceNumber, state)) {
                 abp.notify.warn('This application is already linked.');
