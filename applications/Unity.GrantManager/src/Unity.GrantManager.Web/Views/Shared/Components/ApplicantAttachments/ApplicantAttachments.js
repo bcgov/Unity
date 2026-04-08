@@ -54,7 +54,7 @@ $(function () {
                     className: 'data-table-header',
                     width: '140px',
                     render: function (data, type) {
-                        if (type === 'display') {
+                     if (type === 'display' || type === 'filter') {
                             return new Date(data).toDateString();
                         }
                         return data;
