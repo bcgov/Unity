@@ -287,7 +287,8 @@
   padding: 10px 10px 10px 24px;
 }
 
-/* Visualization dropdown */
+/* VISUALIZATION DROPDOWN: Commented out - not functional since switching to Metabase redirect.
+   Restore when custom visualization is implemented.
 .visualization-dropdown {
   position: relative;
   flex-shrink: 0;
@@ -315,7 +316,7 @@
 .visualization-dropdown.open .dropdown-trigger {
   border-top-left-radius: 0;
   border-top-right-radius: 0;
-  
+
   border-color: #adb5bd;
   border-top-color: transparent;
   background: #fff;
@@ -412,6 +413,7 @@
 .dropdown-item[hidden] {
   display: none !important;
 }
+*/
 
 .ask-row input[type="text"] {
   flex: 1 1 0;

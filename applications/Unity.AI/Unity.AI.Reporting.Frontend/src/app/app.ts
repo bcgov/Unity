@@ -295,7 +295,7 @@ export class App implements OnInit, OnDestroy {
       }
       
       // Update dropdown selection for the new current turn
-      this.updateDropdownSelection();
+      // this.updateDropdownSelection(); // VISUALIZATION: commented out
       
       // Save the updated conversation to the database
       await this.saveChat();
@@ -312,21 +312,23 @@ export class App implements OnInit, OnDestroy {
     }
   }
 
-  async changeDisplay(turn: Turn, mode: string) {
-    try {
-      await firstValueFrom(
-        this.apiService.changeDisplay<Embed>(turn.embed.card_id, mode, turn.embed.x_field, turn.embed.y_field)
-      );
-      // Update the current visualization in the embed
-      turn.embed.current_visualization = mode;
-    } catch (error) {
-      // Log the error and notify the user
-      this.logger.error('Error changing display mode:', error);
-      this.toastService.error('Failed to change display mode. Please try again.');
-    } finally {
-      this.cdr.markForCheck();
-    }
-  }
+  // VISUALIZATION: Commented out - not functional since switching to Metabase redirect.
+  //               Restore when custom visualization is implemented.
+  // async changeDisplay(turn: Turn, mode: string) {
+  //   try {
+  //     await firstValueFrom(
+  //       this.apiService.changeDisplay<Embed>(turn.embed.card_id, mode, turn.embed.x_field, turn.embed.y_field)
+  //     );
+  //     // Update the current visualization in the embed
+  //     turn.embed.current_visualization = mode;
+  //   } catch (error) {
+  //     // Log the error and notify the user
+  //     this.logger.error('Error changing display mode:', error);
+  //     this.toastService.error('Failed to change display mode. Please try again.');
+  //   } finally {
+  //     this.cdr.markForCheck();
+  //   }
+  // }
 
   async resetConversation() {
     this.conversation = [];
@@ -389,7 +391,7 @@ export class App implements OnInit, OnDestroy {
         turn.canRetry = true;
       } else if (errorType === 'ai_failure' || error?.status === 422) {
         turn.errorType = 'ai_failure';
-        turn.errorMessage = errorMsg || "I couldn't generate a report from that question. Try rephrasing or adding more detail.";
+        turn.errorMessage = errorMsg || "I couldn't generate a report from that question.";
         turn.canRetry = false;
       } else if (errorType === 'server_error' || (error?.status && error.status >= 500)) {
         turn.errorType = 'server_error';
@@ -460,7 +462,7 @@ export class App implements OnInit, OnDestroy {
       this.currentTurnIndex = Math.max(0, this.conversation.length - 1);
       
       // Update dropdown selection based on the current turn
-      this.updateDropdownSelection();
+      // this.updateDropdownSelection(); // VISUALIZATION: commented out
       
       // Scroll to bottom instantly after loading chat
       this.scrollToBottomInstant();
@@ -516,7 +518,7 @@ export class App implements OnInit, OnDestroy {
     if (this.currentTurnIndex > 0) {
       this.currentTurnIndex--;
       this.scrollToTurn(this.currentTurnIndex);
-      this.updateDropdownSelection();
+      // this.updateDropdownSelection(); // VISUALIZATION: commented out
     }
   }
 
@@ -524,7 +526,7 @@ export class App implements OnInit, OnDestroy {
     if (this.currentTurnIndex < this.conversation.length - 1) {
       this.currentTurnIndex++;
       this.scrollToTurn(this.currentTurnIndex);
-      this.updateDropdownSelection();
+      // this.updateDropdownSelection(); // VISUALIZATION: commented out
     }
   }
 
@@ -551,87 +553,89 @@ export class App implements OnInit, OnDestroy {
     }
   }
 
-  toggleVisualizationDropdown(): void {
-    // Only toggle if there are other options available
-    if (this.hasOtherVisualizationOptions()) {
-      this.visualizationDropdownOpen = !this.visualizationDropdownOpen;
-    }
-  }
+  // VISUALIZATION: Commented out - not functional since switching to Metabase redirect.
+  //               Restore when custom visualization is implemented.
+  // toggleVisualizationDropdown(): void {
+  //   // Only toggle if there are other options available
+  //   if (this.hasOtherVisualizationOptions()) {
+  //     this.visualizationDropdownOpen = !this.visualizationDropdownOpen;
+  //   }
+  // }
 
-  async selectVisualization(type: string): Promise<void> {
-    this.selectedVisualization = type;
-    this.visualizationDropdownOpen = false;
-    
-    // If we have a current turn, apply the visualization change immediately
-    if (this.conversation.length > 0 && this.currentTurnIndex >= 0 && this.currentTurnIndex < this.conversation.length) {
-      const currentTurn = this.conversation[this.currentTurnIndex];
-      if (currentTurn.embed?.card_id) {
-        await this.changeDisplay(currentTurn, type);
-        // Save the chat to persist the visualization change
-        await this.saveChat();
-      }
-    }
-  }
+  // async selectVisualization(type: string): Promise<void> {
+  //   this.selectedVisualization = type;
+  //   this.visualizationDropdownOpen = false;
+  //
+  //   // If we have a current turn, apply the visualization change immediately
+  //   if (this.conversation.length > 0 && this.currentTurnIndex >= 0 && this.currentTurnIndex < this.conversation.length) {
+  //     const currentTurn = this.conversation[this.currentTurnIndex];
+  //     if (currentTurn.embed?.card_id) {
+  //       await this.changeDisplay(currentTurn, type);
+  //       // Save the chat to persist the visualization change
+  //       await this.saveChat();
+  //     }
+  //   }
+  // }
 
-  getVisualizationDisplayName(type: string): string {
-    const names: { [key: string]: string } = {
-      'table': 'Table',
-      'bar': 'Bar Chart',
-      'line': 'Line Chart',
-      'pie': 'Pie Chart',
-      'map': 'Map'
-    };
-    return names[type] || type;
-  }
+  // getVisualizationDisplayName(type: string): string {
+  //   const names: { [key: string]: string } = {
+  //     'table': 'Table',
+  //     'bar': 'Bar Chart',
+  //     'line': 'Line Chart',
+  //     'pie': 'Pie Chart',
+  //     'map': 'Map'
+  //   };
+  //   return names[type] || type;
+  // }
 
-  getAvailableVisualizationOptions(): string[] {
-    // Always include table as it's the default
-    const options = ['table'];
-    const all_options = ['bar', 'line', 'pie', 'map'];
-    
-    // If we have a conversation, get options from the current turn
-    if (this.conversation.length > 0 && this.currentTurnIndex >= 0 && this.currentTurnIndex < this.conversation.length) {
-      const currentTurn = this.conversation[this.currentTurnIndex];
-      
-      if (currentTurn.embed?.visualization_options) {
-        // Add available options from the current turn, avoiding duplicates
-        currentTurn.embed.visualization_options.forEach(option => {
-          if (!options.includes(option) && all_options.includes(option)) {
-            options.push(option);
-          }
-        });
-      }
-    } else {
-      // If no conversation yet, show all possible options
-      options.push(...all_options);
-    }
-    
-    return options;
-  }
+  // getAvailableVisualizationOptions(): string[] {
+  //   // Always include table as it's the default
+  //   const options = ['table'];
+  //   const all_options = ['bar', 'line', 'pie', 'map'];
+  //
+  //   // If we have a conversation, get options from the current turn
+  //   if (this.conversation.length > 0 && this.currentTurnIndex >= 0 && this.currentTurnIndex < this.conversation.length) {
+  //     const currentTurn = this.conversation[this.currentTurnIndex];
+  //
+  //     if (currentTurn.embed?.visualization_options) {
+  //       // Add available options from the current turn, avoiding duplicates
+  //       currentTurn.embed.visualization_options.forEach(option => {
+  //         if (!options.includes(option) && all_options.includes(option)) {
+  //           options.push(option);
+  //         }
+  //       });
+  //     }
+  //   } else {
+  //     // If no conversation yet, show all possible options
+  //     options.push(...all_options);
+  //   }
+  //
+  //   return options;
+  // }
 
-  hasOtherVisualizationOptions(): boolean {
-    const availableOptions = this.getAvailableVisualizationOptions();
-    return availableOptions.some(option => option !== this.selectedVisualization);
-  }
+  // hasOtherVisualizationOptions(): boolean {
+  //   const availableOptions = this.getAvailableVisualizationOptions();
+  //   return availableOptions.some(option => option !== this.selectedVisualization);
+  // }
 
-  updateDropdownSelection(): void {
-    if (this.conversation.length > 0 && this.currentTurnIndex >= 0 && this.currentTurnIndex < this.conversation.length) {
-      const currentTurn = this.conversation[this.currentTurnIndex];
-      if (currentTurn.embed?.current_visualization) {
-        this.selectedVisualization = currentTurn.embed.current_visualization;
-      } else if (currentTurn.embed) {
-        // For older chats without current_visualization, default to table and save it
-        this.selectedVisualization = 'table';
-        currentTurn.embed.current_visualization = 'table';
-      } else {
-        // Default to table if no embed data
-        this.selectedVisualization = 'table';
-      }
-    } else {
-      // No conversation or invalid turn index
-      this.selectedVisualization = 'table';
-    }
-  }
+  // updateDropdownSelection(): void {
+  //   if (this.conversation.length > 0 && this.currentTurnIndex >= 0 && this.currentTurnIndex < this.conversation.length) {
+  //     const currentTurn = this.conversation[this.currentTurnIndex];
+  //     if (currentTurn.embed?.current_visualization) {
+  //       this.selectedVisualization = currentTurn.embed.current_visualization;
+  //     } else if (currentTurn.embed) {
+  //       // For older chats without current_visualization, default to table and save it
+  //       this.selectedVisualization = 'table';
+  //       currentTurn.embed.current_visualization = 'table';
+  //     } else {
+  //       // Default to table if no embed data
+  //       this.selectedVisualization = 'table';
+  //     }
+  //   } else {
+  //     // No conversation or invalid turn index
+  //     this.selectedVisualization = 'table';
+  //   }
+  // }
 
   highlightSql(sql: string): SafeHtml {
     if (!sql) return this.sanitizer.bypassSecurityTrustHtml('');

@@ -433,9 +433,8 @@ def ask():
             logger.warning("SQL generation failed - returning fail response")
             return _error_response(
                 "ai_failure",
-                "I couldn't generate a report from that question. Try rephrasing it or providing more detail.",
-                422,
-                detail=error_detail
+                "I couldn't generate a report from that question.",
+                422
             )
 
         logger.debug(f"SQL: {sql}")

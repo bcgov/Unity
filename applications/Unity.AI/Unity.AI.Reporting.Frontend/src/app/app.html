@@ -128,6 +128,8 @@
               </div>
               <div class="ask-row-bottom">
                 <div class="bottom-left-controls">
+                  <!-- VISUALIZATION DROPDOWN: Commented out - not functional since switching to Metabase redirect.
+                       Restore when custom visualization is implemented.
                   <div class="visualization-dropdown" [class.open]="visualizationDropdownOpen">
                     <button class="dropdown-trigger"
                       (click)="toggleVisualizationDropdown()"
@@ -147,6 +149,7 @@
                       </div>
                     }
                   </div>
+                  -->
                   @if (conversation.length > 0 && currentTurnIndex >= 0 && currentTurnIndex < conversation.length) {
                     <div class="action-buttons">
                       <button class="action-button" (click)="redirectToMB(conversation[currentTurnIndex])" title="View in Metabase">
