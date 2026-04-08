@@ -72,7 +72,7 @@ namespace Unity.GrantManager.ApplicantProfile
             // Extract the username part from the OIDC sub (part before '@')
             var subUsername = SubjectNormalizer.Normalize(request.Subject);
             if (subUsername is null) return [];
-            List<ApplicantTenantDto>? mappings = [];
+            List<ApplicantTenantDto> mappings = [];
 
             // Query the ApplicantTenantMaps table in the host database
             using (currentTenant.Change(null))
@@ -100,13 +100,13 @@ namespace Unity.GrantManager.ApplicantProfile
         /// <summary>
         /// Add on any relevant tenant specific metadata
         /// </summary>
-        /// <param name="map"></param>        
+        /// <param name="tenantMap">The applicant tenant DTO to enrich with tenant-specific metadata.</param>        
         private async Task AddTenantMetadataAsync(ApplicantTenantDto tenantMap)
         {
             using (currentTenant.Change(tenantMap.TenantId))
             {
                 var defaultEmailAddress = await settingProvider.GetOrNullAsync(NotificationsSettings.Mailing.DefaultFromAddress);
-                tenantMap.Metadata.Add("DefaultFromAddress", defaultEmailAddress ?? "NoReply@gov.bc.ca");
+                tenantMap.Metadata[ApplicantTenantMetadataKeys.DefaultFromAddress] = defaultEmailAddress ?? "NoReply@gov.bc.ca";
             }
         }
 
