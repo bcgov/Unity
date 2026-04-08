@@ -35,7 +35,7 @@
 
         zoneForm.init();
 
-        saveButton.on('click', function (event) {
+        saveButton.on('click', async function (event) {
             event.preventDefault();
 
             if (!zoneForm || zoneForm.modifiedFields.size === 0) {
@@ -51,6 +51,21 @@
             const payload = buildPartialUpdatePayload();
             if (!payload) {
                 return;
+            }
+
+            if (payload.modifiedFields.includes('UnityApplicantId')) {
+                const newId = $('#ApplicantOrganizationInfo_UnityApplicantId').val()?.trim();
+                if (newId) {
+                    try {
+                        const isAvailable = await unity.grantManager.applicants.applicant.isUnityApplicantIdAvailable(newId, applicantId);
+                        if (!isAvailable) {
+                            abp.notify.error('Applicant ID already exists. Please enter a unique ID.');
+                            return;
+                        }
+                    } catch (error) {
+                        console.warn('Failed to check Applicant ID availability:', error);
+                    }
+                }
             }
 
             unity.grantManager.applicants.applicant
@@ -123,6 +138,15 @@
             data: fieldValues
         };
     }
+
+    $('#btn-generate-org-info').on('click', async function () {
+        try {
+            const nextUnityApplicantId = await unity.grantManager.applicants.applicant.getNextUnityApplicantId();
+            $('#ApplicantOrganizationInfo_UnityApplicantId').val(nextUnityApplicantId).trigger('change');
+        } catch (error) {
+            console.warn('Failed to generate Unity Applicant ID:', error);
+        }
+    });
 
     let sectors = [];
 
