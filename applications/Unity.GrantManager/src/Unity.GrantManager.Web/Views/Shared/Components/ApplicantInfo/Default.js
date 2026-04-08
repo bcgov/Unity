@@ -71,7 +71,23 @@ abp.widgets.ApplicantInfo = function ($wrapper) {
             );
 
             // Save button handler
-            self.zoneForm.saveButton.on('click', function () {
+            self.zoneForm.saveButton.on('click', async function () {
+                if (self.zoneForm.modifiedFields.has('ApplicantSummary.UnityApplicantId')) {
+                    const newId = $('#ApplicantSummary_UnityApplicantId').val()?.trim();
+                    const currentApplicantId = $('#ApplicantInfoViewApplicantId').val();
+                    if (newId && currentApplicantId) {
+                        try {
+                            const isAvailable = await unity.grantManager.applicants.applicant.isUnityApplicantIdAvailable(newId, currentApplicantId);
+                            if (!isAvailable) {
+                                abp.notify.error('Applicant ID already exists. Please enter a unique ID.');
+                                return;
+                            }
+                        } catch (error) {
+                            console.warn('Failed to check Applicant ID availability:', error);
+                        }
+                    }
+                }
+
                 let applicationId = document.getElementById('ApplicantInfo_ApplicationId').value;
                 let applicantInfoSubmission = self.getPartialUpdate();
                 try {
