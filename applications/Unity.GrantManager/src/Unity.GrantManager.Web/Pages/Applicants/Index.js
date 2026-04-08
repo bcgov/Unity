@@ -90,14 +90,15 @@ $(function () {
             className: 'data-table-header',
             index: columnIndex,
             render: function (data, type, row) {
-                let applicantName = (typeof data !== 'string' || data.trim() === '') ? '(Applicant Name)' : data;
+                let applicantName = (typeof data !== 'string' || data.trim() === '') ? 'Applicant Name' : data;
 
                 if (type === 'sort' || type === 'filter') {
                     return applicantName;
                 }
 
+                const safeApplicantName = $.fn.dataTable.render.text().display(applicantName);
+
                 if (type === 'display') {
-                    const safeApplicantName = $.fn.dataTable.render.text().display(applicantName);
                     const applicantId = row?.id;
                     const isGuid = applicantId && guidPattern.test(applicantId);
 

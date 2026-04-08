@@ -49,8 +49,15 @@ namespace Unity.GrantManager.Web.Pages.Applicants
             // Resolve ApplicantId from ApplicationId if needed
             if (ApplicantId == Guid.Empty && ApplicationId.HasValue)
             {
-                var application = await _applicationRepository.WithBasicDetailsAsync(ApplicationId.Value);
-                ApplicantId = application.ApplicantId;
+                try
+                {
+                    var application = await _applicationRepository.WithBasicDetailsAsync(ApplicationId.Value);
+                    ApplicantId = application.ApplicantId;
+                }
+                catch (Exception)
+                {
+                    return NotFound();
+                }
             }
 
             if (ApplicantId == Guid.Empty)
