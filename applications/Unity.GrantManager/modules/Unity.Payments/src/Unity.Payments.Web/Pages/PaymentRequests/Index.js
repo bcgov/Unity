@@ -2,6 +2,7 @@ $(function () {
     const l = abp.localization.getResource('Payments');
     const nullPlaceholder = '—';
     const formatter = createNumberFormatter();
+    const guidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     let dt = $('#PaymentRequestListTable');
     let dataTable;
     let isApprove = false;
@@ -377,7 +378,28 @@ $(function () {
             name: 'applicantName',
             data: 'payeeName',
             className: 'data-table-header',
-            index: columnIndex
+            index: columnIndex,
+            render: function (data, type, row) {
+                let applicantName = (typeof data !== 'string' || data.trim() === '') ? '(Applicant Name)' : data;
+
+                if (type === 'sort' || type === 'filter') {
+                    return applicantName;
+                }
+
+                if (type === 'display' && abp.auth.isGranted('GrantApplicationManagement.Applicants.ViewList')) {
+                    const safeApplicantName = $.fn.dataTable.render.text().display(applicantName);
+                    const applicantId = row?.correlationId;
+                    const isGuid = applicantId && guidPattern.test(applicantId);
+
+                    if (row?.correlationProvider === 'Application' && isGuid) {
+                        return `<a href="/GrantApplicants/Details?ApplicationId=${encodeURIComponent(applicantId)}">${safeApplicantName}</a>`;
+                    }
+
+                    return safeApplicantName;
+                }
+
+                return applicantName;
+            },
         };
     }
 
