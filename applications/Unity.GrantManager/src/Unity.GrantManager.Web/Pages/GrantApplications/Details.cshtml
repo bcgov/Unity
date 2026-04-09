@@ -266,12 +266,12 @@
                     <button class="nav-link" id="links-tab" data-bs-toggle="tab" data-bs-target="#links" type="button" role="tab" aria-controls="links" aria-selected="false"><i class="fl fl-link" aria-hidden="true"></i> (<span id="application_links_count">0</span>)</button>
                 </li>
                 <li class="nav-item">
-                    <button class="nav-link" id="history-tab" data-bs-toggle="tab" data-bs-target="#history" type="button" role="tab" aria-controls="history" aria-selected="false"><i class="fl fl-history" aria-hidden="true"></i> </button>
+                    <button class="nav-link" id="history-tab" data-bs-toggle="tab" data-bs-target="#history" type="button" role="tab" aria-controls="history" aria-selected="false"><i class="fl fl-history" aria-hidden="true"></i></button>
                 </li>
             @if (aiApplicationAnalysisEnabled)
             {
                 <li class="nav-item">
-                    <button class="nav-link" id="ai-analysis-tab" data-bs-toggle="tab" data-bs-target="#ai-analysis" type="button" role="tab" aria-controls="ai-analysis" aria-selected="false"><span class="ai-analysis-tab-icon-wrap"><i class="fl fl-review-user" aria-hidden="true"></i><span class="ai-analysis-tab-indicator" id="ai_analysis_status" style="display:none;"></span></span></button>
+                    <button class="nav-link" id="ai-analysis-tab" data-bs-toggle="tab" data-bs-target="#ai-analysis" type="button" role="tab" aria-controls="ai-analysis" aria-selected="false" title="Application Analysis"><i class="fa fa-wand-sparkles" aria-hidden="true"></i></button>
                 </li>
             }
             @if (Model.IsDevPromptControlsEnabled)
@@ -414,7 +414,7 @@
                 {
                 <div class="tab-pane fade" id="ai-analysis" role="tabpanel" aria-labelledby="ai-analysis-tab">
                     <div class="d-flex justify-content-between align-items-center px-3 pt-4 pb-2">
-                        <h6 class="fw-bold m-0">AI Application Analysis</h6>
+                        <h6 class="fw-bold m-0">Application Analysis</h6>
                         <button type="button" class="btn unt-btn-outline-primary btn-outline-primary" id="regenerateApplicationAnalysis">
                             <span class="ai-button-content">
                                 <i class="unt-icon-sm fa-solid fa-wand-sparkles"></i>
@@ -441,22 +441,28 @@
                         <div class="ai-analysis-section" data-template="section">
                             <div class="ai-analysis-section-header">
                                 <div class="ai-analysis-section-title-row">
-                                    <i class="ai-analysis-section-icon fl" data-element="icon"></i>
                                     <span class="ai-analysis-section-title" data-element="title"></span>
                                 </div>
-                                <span data-element="status-chip" style="display:none;"></span>
-                                <button type="button" class="ai-analysis-section-toggle" data-element="hidden-toggle" style="display:none;"></button>
+                                <div class="ai-analysis-section-actions">
+                                    <span data-element="status-chip" style="display:none;"></span>
+                                    <button type="button" class="ai-analysis-collapse-toggle" data-element="collapse-toggle" aria-expanded="true" title="Collapse section">
+                                        <i class="fa fa-chevron-down" aria-hidden="true"></i>
+                                    </button>
+                                </div>
                             </div>
                             <div class="ai-analysis-section-body">
                                 <div data-element="items"></div>
+                                <div class="ai-analysis-section-footer">
+                                    <button type="button" class="ai-analysis-section-toggle" data-element="hidden-toggle" style="display:none;"></button>
+                                </div>
                             </div>
                         </div>
 
                         <div class="ai-analysis-detail-item" data-template="active-item">
                             <div class="ai-analysis-detail-header">
                                 <div class="ai-analysis-detail-category" data-element="category"></div>
-                                <button type="button" class="ai-analysis-action-btn" data-element="hide-btn" title="Hide this item">
-                                    Hide
+                                <button type="button" class="ai-analysis-action-btn" data-element="dismiss-btn" title="Dismiss this item">
+                                    Dismiss
                                 </button>
                             </div>
                             <div class="ai-analysis-detail-message" data-element="message"></div>
@@ -465,8 +471,8 @@
                         <div class="ai-analysis-detail-item hidden-item" data-template="hidden-item">
                             <div class="ai-analysis-detail-header">
                                 <div class="ai-analysis-detail-category" data-element="category"></div>
-                                <button type="button" class="ai-analysis-action-btn" data-element="show-btn" title="Show this item">
-                                    Show
+                                <button type="button" class="ai-analysis-action-btn" data-element="restore-btn" title="Restore this item">
+                                    Restore
                                 </button>
                             </div>
                             <div class="ai-analysis-detail-message" data-element="message"></div>

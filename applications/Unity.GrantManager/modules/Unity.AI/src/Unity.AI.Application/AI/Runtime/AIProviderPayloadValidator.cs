@@ -19,16 +19,16 @@ namespace Unity.AI.Runtime
                 return false;
             }
 
-            return root.TryGetProperty(AIJsonKeys.Rating, out var rating)
-                   && rating.ValueKind == JsonValueKind.String
+            return root.TryGetProperty(AIJsonKeys.Decision, out var decision)
+                   && decision.ValueKind == JsonValueKind.String
                    && root.TryGetProperty(AIJsonKeys.Errors, out var errors)
                    && errors.ValueKind == JsonValueKind.Array
                    && root.TryGetProperty(AIJsonKeys.Warnings, out var warnings)
                    && warnings.ValueKind == JsonValueKind.Array
                    && root.TryGetProperty(AIJsonKeys.Summaries, out var summaries)
                    && summaries.ValueKind == JsonValueKind.Array
-                   && root.TryGetProperty(AIJsonKeys.NextSteps, out var nextSteps)
-                   && nextSteps.ValueKind == JsonValueKind.Array;
+                   && root.TryGetProperty(AIJsonKeys.Recommendations, out var recommendations)
+                   && recommendations.ValueKind == JsonValueKind.Array;
         }
 
         public static bool IsValidApplicationScoringJson(string response, string sectionJson)

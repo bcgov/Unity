@@ -1072,12 +1072,12 @@ public class GrantApplicationAppService(
         return result;
     }
 
-    public async Task<string> HideAIAnalysisItemAsync(Guid applicationId, string itemId)
+    public async Task<string> DismissAIAnalysisItemAsync(Guid applicationId, string itemId)
     {
         return await UpdateAIAnalysisItemVisibilityStateAsync(applicationId, itemId, isHidden: true);
     }
 
-    public async Task<string> ShowAIAnalysisItemAsync(Guid applicationId, string itemId)
+    public async Task<string> RestoreAIAnalysisItemAsync(Guid applicationId, string itemId)
     {
         return await UpdateAIAnalysisItemVisibilityStateAsync(applicationId, itemId, isHidden: false);
     }
@@ -1105,10 +1105,10 @@ public class GrantApplicationAppService(
         }
         catch (Exception ex)
         {
-            var action = isHidden ? "hiding" : "showing";
+            var action = isHidden ? "dismissing" : "restoring";
             var userMessage = isHidden
-                ? "Failed to hide the AI item. Please try again."
-                : "Failed to show the AI item. Please try again.";
+                ? "Failed to dismiss the AI item. Please try again."
+                : "Failed to restore the AI item. Please try again.";
 
             Logger.LogError(ex, "Error {Action} AI analysis item {ItemId} for application {ApplicationId}", action, itemId, applicationId);
             throw new UserFriendlyException(userMessage);
@@ -1133,7 +1133,7 @@ public class GrantApplicationAppService(
             UpdateFindingHiddenState(analysis.Errors, itemId, isHidden);
             UpdateFindingHiddenState(analysis.Warnings, itemId, isHidden);
             UpdateFindingHiddenState(analysis.Summaries, itemId, isHidden);
-            UpdateFindingHiddenState(analysis.NextSteps, itemId, isHidden);
+            UpdateFindingHiddenState(analysis.Recommendations, itemId, isHidden);
 
             return System.Text.Json.JsonSerializer.Serialize(analysis, AiAnalysisWriteOptions);
         }

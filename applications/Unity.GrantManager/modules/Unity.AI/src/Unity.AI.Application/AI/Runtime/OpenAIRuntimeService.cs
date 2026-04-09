@@ -362,7 +362,7 @@ namespace Unity.AI.Runtime
                         if (outputPropertyName == AIJsonKeys.Errors ||
                             outputPropertyName == AIJsonKeys.Warnings ||
                             outputPropertyName == AIJsonKeys.Summaries ||
-                            outputPropertyName == AIJsonKeys.NextSteps)
+                            outputPropertyName == AIJsonKeys.Recommendations)
                         {
                             writer.WritePropertyName(outputPropertyName);
                             writer.WriteStartArray();
@@ -874,9 +874,9 @@ namespace Unity.AI.Runtime
                 return response;
             }
 
-            if (TryGetStringProperty(root, AIJsonKeys.Rating, out var rating))
+            if (TryGetStringProperty(root, AIJsonKeys.Decision, out var decision))
             {
-                response.Rating = rating;
+                response.Decision = decision?.Trim().ToUpperInvariant();
             }
 
             if (root.TryGetProperty("errors", out var errors) && errors.ValueKind == JsonValueKind.Array)
@@ -894,14 +894,9 @@ namespace Unity.AI.Runtime
                 response.Summaries = ParseFindings(summaries);
             }
 
-            if (root.TryGetProperty(AIJsonKeys.NextSteps, out var nextSteps) && nextSteps.ValueKind == JsonValueKind.Array)
+            if (root.TryGetProperty(AIJsonKeys.Recommendations, out var recommendations) && recommendations.ValueKind == JsonValueKind.Array)
             {
-                response.NextSteps = ParseFindings(nextSteps);
-            }
-
-            if (root.TryGetProperty(AIJsonKeys.Recommendation, out var recommendation) && recommendation.ValueKind == JsonValueKind.Object)
-            {
-                response.Recommendation = ParseRecommendation(recommendation);
+                response.Recommendations = ParseFindings(recommendations);
             }
 
             return response;
@@ -957,34 +952,6 @@ namespace Unity.AI.Runtime
             }
 
             return findings;
-        }
-
-        private static ApplicationAnalysisRecommendation? ParseRecommendation(JsonElement recommendation)
-        {
-            string? decision = null;
-            if (recommendation.TryGetProperty(AIJsonKeys.Decision, out var decisionProp) &&
-                decisionProp.ValueKind == JsonValueKind.String)
-            {
-                decision = decisionProp.GetString();
-            }
-
-            string? rationale = null;
-            if (recommendation.TryGetProperty(AIJsonKeys.Rationale, out var rationaleProp) &&
-                rationaleProp.ValueKind == JsonValueKind.String)
-            {
-                rationale = rationaleProp.GetString();
-            }
-
-            if (string.IsNullOrWhiteSpace(decision) && string.IsNullOrWhiteSpace(rationale))
-            {
-                return null;
-            }
-
-            return new ApplicationAnalysisRecommendation
-            {
-                Decision = decision,
-                Rationale = rationale
-            };
         }
 
         private static ApplicationScoringResponse ParseApplicationScoringResponse(
