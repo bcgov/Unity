@@ -10,6 +10,29 @@ const dismissedSectionVisibility = {
     recommendation: false
 };
 
+function getAnalysisLabels() {
+    const labels = document.getElementById('aiAnalysisLabels')?.dataset ?? {};
+
+    return {
+        errors: labels.errors || 'Errors',
+        warnings: labels.warnings || 'Warnings',
+        summary: labels.summary || 'Summary',
+        recommendations: labels.recommendations || 'Recommendations',
+        proceed: labels.proceed || 'Proceed',
+        hold: labels.hold || 'Hold',
+        noSummary: labels.noSummary || 'No summary',
+        noRecommendations: labels.noRecommendations || 'No recommendations',
+        showDismissed: labels.showDismissed || 'Show dismissed items',
+        hideDismissed: labels.hideDismissed || 'Hide dismissed items',
+        dismiss: labels.dismiss || 'Dismiss',
+        restore: labels.restore || 'Restore',
+        dismissTitle: labels.dismissTitle || 'Dismiss this item',
+        restoreTitle: labels.restoreTitle || 'Restore this item',
+        collapseTitle: labels.collapseTitle || 'Collapse section',
+        expandTitle: labels.expandTitle || 'Expand section'
+    };
+}
+
 function bindTemplateAction($element, actionData) {
     $element.attr('data-id', actionData.id).attr('data-type', actionData.type);
 }
@@ -78,20 +101,31 @@ function normalizeFindings(items, fallbackType) {
         .map((item, index) => ({
             ...item,
             id: item.id || `${fallbackType}-${index}`,
-            hidden: item.hidden === true,
+            dismissed: item.dismissed === true,
             title: item.title || item.category || fallbackTitles[fallbackType] || 'Item',
             detail: item.detail || item.message || ''
         }));
 }
 
 function createFindingItem(item, type, hidden) {
+    const labels = getAnalysisLabels();
     const templateName = hidden ? 'hidden-item' : 'active-item';
     const actionKey = hidden ? 'restore-btn' : 'dismiss-btn';
-    return createItemFromTemplate(templateName, {
+    const $item = createItemFromTemplate(templateName, {
         category: item.title,
         message: getFindingDetailText(item),
         [actionKey]: { id: item.id, type: type }
     });
+
+    if (hidden) {
+        $item.find('[data-element="restore-text"]').text(labels.restore);
+        $item.find('[data-element="restore-btn"]').attr('title', labels.restoreTitle);
+    } else {
+        $item.find('[data-element="dismiss-text"]').text(labels.dismiss);
+        $item.find('[data-element="dismiss-btn"]').attr('title', labels.dismissTitle);
+    }
+
+    return $item;
 }
 
 function updateVisibleItemLayout($items) {
@@ -105,6 +139,7 @@ function updateVisibleItemLayout($items) {
 }
 
 function configureSectionDecision($status, decision) {
+    const labels = getAnalysisLabels();
     if (!decision) {
         return;
     }
@@ -112,11 +147,12 @@ function configureSectionDecision($status, decision) {
     $status
         .addClass('ai-analysis-status-chip')
         .addClass(decision.toLowerCase())
-        .text(decision === 'PROCEED' ? 'Proceed' : 'Hold')
+        .text(decision === 'PROCEED' ? labels.proceed : labels.hold)
         .show();
 }
 
 function configureCollapseToggle($section, $collapseToggle) {
+    const labels = getAnalysisLabels();
     $collapseToggle
         .off('click')
         .on('click', function() {
@@ -125,7 +161,7 @@ function configureCollapseToggle($section, $collapseToggle) {
 
             $(this)
                 .attr('aria-expanded', (!isCollapsed).toString())
-                .attr('title', isCollapsed ? 'Expand section' : 'Collapse section');
+                .attr('title', isCollapsed ? labels.expandTitle : labels.collapseTitle);
 
             $icon
                 .toggleClass('fa-chevron-down', !isCollapsed)
@@ -170,12 +206,13 @@ function appendSectionItems($items, section, isDismissedVisible) {
 }
 
 function configureDismissedItemsToggle($items, $toggle, section, isDismissedVisible) {
+    const labels = getAnalysisLabels();
     const hiddenCount = section.hiddenItems.length;
 
     if (hiddenCount === 0) {
         dismissedSectionVisibility[section.itemType] = false;
         $toggle
-            .text('Show dismissed items')
+            .text(labels.showDismissed)
             .css('visibility', 'hidden')
             .prop('disabled', true)
             .show();
@@ -184,7 +221,7 @@ function configureDismissedItemsToggle($items, $toggle, section, isDismissedVisi
 
     $toggle
         .css('visibility', 'visible')
-        .text(isDismissedVisible ? 'Hide dismissed items' : 'Show dismissed items')
+        .text(isDismissedVisible ? labels.hideDismissed : labels.showDismissed)
         .prop('disabled', false)
         .show()
         .off('click')
@@ -193,7 +230,7 @@ function configureDismissedItemsToggle($items, $toggle, section, isDismissedVisi
             dismissedSectionVisibility[section.itemType] = shouldShow;
             $items.find('.hidden-item').toggle(shouldShow);
             updateVisibleItemLayout($items);
-            $toggle.text(shouldShow ? 'Hide dismissed items' : 'Show dismissed items');
+            $toggle.text(shouldShow ? labels.hideDismissed : labels.showDismissed);
         });
 }
 
@@ -228,12 +265,13 @@ function renderSection(section) {
 
 function splitFindingsByVisibility(items) {
     return {
-        activeItems: items.filter(item => item.hidden !== true),
-        hiddenItems: items.filter(item => item.hidden === true)
+        activeItems: items.filter(item => item.dismissed !== true),
+        hiddenItems: items.filter(item => item.dismissed === true)
     };
 }
 
 function buildAnalysisSections(analysisData) {
+    const labels = getAnalysisLabels();
     const decision = normalizeDecision(analysisData.decision);
     const errors = normalizeFindings(analysisData.errors, 'error');
     const warnings = normalizeFindings(analysisData.warnings, 'warning');
@@ -247,7 +285,7 @@ function buildAnalysisSections(analysisData) {
     return {
         sections: [
             {
-                title: 'Errors',
+                title: labels.errors,
                 sectionClass: 'error',
                 itemType: 'error',
                 activeItems: errorGroups.activeItems,
@@ -255,7 +293,7 @@ function buildAnalysisSections(analysisData) {
                 hiddenItems: errorGroups.hiddenItems
             },
             {
-                title: 'Warnings',
+                title: labels.warnings,
                 sectionClass: 'warning',
                 itemType: 'warning',
                 activeItems: warningGroups.activeItems,
@@ -263,20 +301,20 @@ function buildAnalysisSections(analysisData) {
                 hiddenItems: warningGroups.hiddenItems
             },
             {
-                title: 'Summary',
+                title: labels.summary,
                 sectionClass: 'summary',
                 itemType: 'summary',
-                headerOnlyText: summaryGroups.activeItems.length === 0 && summaryGroups.hiddenItems.length === 0 ? 'No summary' : null,
+                headerOnlyText: summaryGroups.activeItems.length === 0 && summaryGroups.hiddenItems.length === 0 ? labels.noSummary : null,
                 activeItems: summaryGroups.activeItems,
                 allItems: summaries,
                 hiddenItems: summaryGroups.hiddenItems
             },
             {
-                title: 'Recommendations',
+                title: labels.recommendations,
                 sectionClass: 'recommendations',
                 itemType: 'recommendation',
                 decision: decision,
-                headerOnlyText: recommendationGroups.activeItems.length === 0 && recommendationGroups.hiddenItems.length === 0 ? 'No recommendations' : null,
+                headerOnlyText: recommendationGroups.activeItems.length === 0 && recommendationGroups.hiddenItems.length === 0 ? labels.noRecommendations : null,
                 activeItems: recommendationGroups.activeItems,
                 allItems: recommendations,
                 hiddenItems: recommendationGroups.hiddenItems

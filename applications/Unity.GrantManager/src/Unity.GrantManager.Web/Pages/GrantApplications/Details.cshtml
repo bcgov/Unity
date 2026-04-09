@@ -425,15 +425,32 @@
                     <div class="ai-analysis-container">
                         @* Default message when no analysis data is available *@
                         <div class="ai-analysis-no-data px-3 py-4" id="aiAnalysisNoData">
-                            <div class="text-center text-muted">
-                                <i class="fl fl-review-user fa-2x mb-3 opacity-50"></i>
-                                <h6 class="mb-2">No AI Analysis Available</h6>
-                                <p class="small mb-0">AI analysis results will appear here when available.</p>
-                            </div>
+                        <div class="text-center text-muted">
+                            <i class="fl fl-review-user fa-2x mb-3 opacity-50"></i>
+                            <h6 class="mb-2">No AI Analysis Available</h6>
+                            <p class="small mb-0">AI analysis results will appear here when available.</p>
                         </div>
-                        <div class="ai-analysis-sections px-3 pb-3" id="aiAnalysisSections">
-                            @* Analysis sections will be dynamically generated here *@
-                        </div>
+                    </div>
+                    <div class="d-none" id="aiAnalysisLabels"
+                         data-errors="Errors"
+                         data-warnings="Warnings"
+                         data-summary="Summary"
+                         data-recommendations="Recommendations"
+                         data-proceed="Proceed"
+                         data-hold="Hold"
+                         data-no-summary="No summary"
+                         data-no-recommendations="No recommendations"
+                         data-show-dismissed="Show dismissed items"
+                         data-hide-dismissed="Hide dismissed items"
+                         data-dismiss="Dismiss"
+                         data-restore="Restore"
+                         data-dismiss-title="Dismiss this item"
+                         data-restore-title="Restore this item"
+                         data-collapse-title="Collapse section"
+                         data-expand-title="Expand section"></div>
+                    <div class="ai-analysis-sections px-3 pb-3" id="aiAnalysisSections">
+                        @* Analysis sections will be dynamically generated here *@
+                    </div>
                     </div>
 
                     @* Hidden HTML templates for AI analysis items *@
@@ -446,7 +463,7 @@
                                 </div>
                                 <div class="ai-analysis-section-actions">
                                     <button type="button" class="ai-analysis-section-toggle" data-element="hidden-toggle" style="display:none;"></button>
-                                    <button type="button" class="ai-analysis-collapse-toggle" data-element="collapse-toggle" aria-expanded="true" title="Collapse section">
+                                    <button type="button" class="ai-analysis-collapse-toggle" data-element="collapse-toggle" aria-expanded="true">
                                         <i class="fa fa-chevron-down" aria-hidden="true"></i>
                                     </button>
                                 </div>
@@ -459,8 +476,8 @@
                         <div class="ai-analysis-detail-item" data-template="active-item">
                             <div class="ai-analysis-detail-header">
                                 <div class="ai-analysis-detail-category" data-element="category"></div>
-                                <button type="button" class="ai-analysis-action-btn" data-element="dismiss-btn" title="Dismiss this item">
-                                    Dismiss
+                                <button type="button" class="ai-analysis-action-btn" data-element="dismiss-btn">
+                                    <span data-element="dismiss-text"></span>
                                 </button>
                             </div>
                             <div class="ai-analysis-detail-message" data-element="message"></div>
@@ -469,8 +486,8 @@
                         <div class="ai-analysis-detail-item hidden-item" data-template="hidden-item">
                             <div class="ai-analysis-detail-header">
                                 <div class="ai-analysis-detail-category" data-element="category"></div>
-                                <button type="button" class="ai-analysis-action-btn" data-element="restore-btn" title="Restore this item">
-                                    Restore
+                                <button type="button" class="ai-analysis-action-btn" data-element="restore-btn">
+                                    <span data-element="restore-text"></span>
                                 </button>
                             </div>
                             <div class="ai-analysis-detail-message" data-element="message"></div>

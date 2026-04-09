@@ -7,7 +7,7 @@ namespace Unity.AI.Models
         public const string Summaries = "summaries";
         public const string Recommendations = "recommendations";
         public const string Decision = "decision";
-        public const string Hidden = "hidden";
+        public const string Dismissed = "dismissed";
 
         public const string Id = "id";
         public const string Title = "title";

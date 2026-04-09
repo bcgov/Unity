@@ -1152,7 +1152,7 @@ public class GrantApplicationAppService(
                 continue;
             }
 
-            finding.Hidden = isDismissed;
+            finding.Dismissed = isDismissed;
             return;
         }
     }

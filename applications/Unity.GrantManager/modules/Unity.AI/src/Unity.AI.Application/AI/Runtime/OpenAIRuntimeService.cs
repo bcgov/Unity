@@ -373,12 +373,12 @@ namespace Unity.AI.Runtime
 
                                 // Add unique ID first
                                 writer.WriteString("id", Guid.NewGuid().ToString());
-                                writer.WriteBoolean(AIJsonKeys.Hidden, false);
+                                writer.WriteBoolean(AIJsonKeys.Dismissed, false);
 
                                 // Copy existing properties
                                 foreach (var itemProperty in item.EnumerateObject())
                                 {
-                                    if (itemProperty.NameEquals(AIJsonKeys.Id) || itemProperty.NameEquals(AIJsonKeys.Hidden))
+                                    if (itemProperty.NameEquals(AIJsonKeys.Id) || itemProperty.NameEquals(AIJsonKeys.Dismissed))
                                     {
                                         continue;
                                     }
@@ -927,9 +927,9 @@ namespace Unity.AI.Runtime
                 var id = item.TryGetProperty(AIJsonKeys.Id, out var idProp) && idProp.ValueKind == JsonValueKind.String
                     ? idProp.GetString()
                     : null;
-                var hidden = item.TryGetProperty(AIJsonKeys.Hidden, out var hiddenProp) &&
-                    (hiddenProp.ValueKind == JsonValueKind.True || hiddenProp.ValueKind == JsonValueKind.False) &&
-                    hiddenProp.GetBoolean();
+                var dismissed = item.TryGetProperty(AIJsonKeys.Dismissed, out var dismissedProp) &&
+                    (dismissedProp.ValueKind == JsonValueKind.True || dismissedProp.ValueKind == JsonValueKind.False) &&
+                    dismissedProp.GetBoolean();
                 string? title = null;
                 if (item.TryGetProperty(AIJsonKeys.Title, out var titleProp) && titleProp.ValueKind == JsonValueKind.String)
                 {
@@ -945,7 +945,7 @@ namespace Unity.AI.Runtime
                 findings.Add(new ApplicationAnalysisFinding
                 {
                     Id = id,
-                    Hidden = hidden,
+                    Dismissed = dismissed,
                     Title = title,
                     Detail = detail
                 });
