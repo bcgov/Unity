@@ -632,6 +632,12 @@ form label.error {
     border-bottom: none;
 }
 
+.ai-analysis-detail-item.last-visible {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: none;
+}
+
 .ai-analysis-detail-category {
     font-weight: 700;
     color: #212529;

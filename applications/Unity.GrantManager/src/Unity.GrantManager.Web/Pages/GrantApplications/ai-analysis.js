@@ -94,6 +94,14 @@ function createFindingItem(item, type, hidden) {
     });
 }
 
+function updateVisibleItemLayout($items) {
+    const $allItems = $items.children('.ai-analysis-detail-item');
+    const $visibleItems = $allItems.filter(':visible');
+
+    $allItems.removeClass('last-visible');
+    $visibleItems.last().addClass('last-visible');
+}
+
 function renderSection(section) {
     const $section = createItemFromTemplate('section', {
         title: section.title
@@ -157,6 +165,8 @@ function renderSection(section) {
 
             $items.append($item);
         });
+
+        updateVisibleItemLayout($items);
     }
 
     if (hiddenCount > 0) {
@@ -172,6 +182,7 @@ function renderSection(section) {
                 const shouldShow = dismissedSectionVisibility[section.itemType] !== true;
                 dismissedSectionVisibility[section.itemType] = shouldShow;
                 $items.find('.hidden-item').toggle(shouldShow);
+                updateVisibleItemLayout($items);
                 $toggle.text(
                     shouldShow
                         ? 'Hide dismissed items'
