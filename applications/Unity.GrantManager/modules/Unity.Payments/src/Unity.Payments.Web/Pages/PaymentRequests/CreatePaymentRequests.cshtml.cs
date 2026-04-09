@@ -485,7 +485,7 @@ namespace Unity.Payments.Web.Pages.Payments
                     // Parent not in submission, get from first child's link
                     var firstChild = await applicationService.GetAsync(children[0].CorrelationId);
                     var allLinks = await applicationLinksService.GetListByApplicationAsync(firstChild.Id);
-                    var parentLink = allLinks.Find(link => link.LinkType == ApplicationLinkType.Parent);
+                    var parentLink = allLinks.Find(link => link.LinkType == ApplicationLinkType.Parent && link.ApplicationId != firstChild.Id);
 
                     if (parentLink == null)
                     {
@@ -569,7 +569,7 @@ namespace Unity.Payments.Web.Pages.Payments
                     // Parent not in submission, get from first child's link
                     var firstChild = await applicationService.GetAsync(children[0].CorrelationId);
                     var allLinks = await applicationLinksService.GetListByApplicationAsync(firstChild.Id);
-                    var parentLink = allLinks.Find(link => link.LinkType == ApplicationLinkType.Parent);
+                    var parentLink = allLinks.Find(link => link.LinkType == ApplicationLinkType.Parent && link.ApplicationId != firstChild.Id);
 
                     if (parentLink == null)
                     {
