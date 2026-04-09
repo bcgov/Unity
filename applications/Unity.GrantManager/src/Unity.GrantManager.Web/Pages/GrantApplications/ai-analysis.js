@@ -16,7 +16,7 @@ function getAnalysisLabels() {
     return {
         errors: labels.errors || 'Errors',
         warnings: labels.warnings || 'Warnings',
-        summary: labels.summary || 'Summary',
+        summaries: labels.summaries || 'Summaries',
         recommendations: labels.recommendations || 'Recommendations',
         proceed: labels.proceed || 'Proceed',
         hold: labels.hold || 'Hold',
@@ -282,7 +282,7 @@ function buildAnalysisSections(analysisData) {
                 hiddenItems: warningGroups.hiddenItems
             },
             {
-                title: labels.summary,
+                title: labels.summaries,
                 sectionClass: 'summary',
                 itemType: 'summary',
                 activeItems: summaryGroups.activeItems,
