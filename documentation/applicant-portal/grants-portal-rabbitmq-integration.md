@@ -1,4 +1,4 @@
-# Grants Portal — RabbitMQ Messaging Integration
+﻿# Grants Portal — RabbitMQ Messaging Integration
 
 ## Overview
 
@@ -254,11 +254,13 @@ The return string becomes the `Details` field in the outbound acknowledgment.
 | DataType | Handler | Entity | Description |
 |----------|---------|--------|-------------|
 | `CONTACT_CREATE_COMMAND` | `ContactCreateHandler` | `Contact` + `ContactLink` | Creates a new contact and links it to the profile. Enriches the contact with applicant agent IDs from matching submissions. Idempotent — skips if contact already exists. |
-| `CONTACT_EDIT_COMMAND` | `ContactEditHandler` | `Contact` | Updates an existing contact's fields. |
+| `CONTACT_EDIT_COMMAND` | `ContactEditHandler` | `Contact` | Updates an existing contact's fields. Syncs `IsPrimary` on the contact link — when set to true, demotes other links for the same profile. |
 | `CONTACT_SET_PRIMARY_COMMAND` | `ContactSetPrimaryHandler` | `ContactLink` | Sets one contact as primary for a profile; clears primary on all other links. |
 | `CONTACT_DELETE_COMMAND` | `ContactDeleteHandler` | `ContactLink` + `Contact` | Deletes contact links then the contact entity. |
-| `ADDRESS_EDIT_COMMAND` | `AddressEditHandler` | `ApplicantAddress` | Updates address fields (street, city, province, etc.) and address type. |
+| `ADDRESS_CREATE_COMMAND` | `AddressCreateHandler` | `ApplicantAddress` | Creates a new address for the applicant. Sets `profileId` and `isPrimary` as extra properties. When `isPrimary` is true, demotes any existing primary addresses for the same applicant. Idempotent — skips if address already exists. |
+| `ADDRESS_EDIT_COMMAND` | `AddressEditHandler` | `ApplicantAddress` | Updates address fields (street, city, province, etc.) and address type. Syncs `isPrimary` extra property — when set to true, demotes sibling addresses; when false, clears the flag. |
 | `ADDRESS_SET_PRIMARY_COMMAND` | `AddressSetPrimaryHandler` | `ApplicantAddress` | Sets `isPrimary` extra property on the target address; clears it on sibling addresses that had it set. |
+| `ADDRESS_DELETE_COMMAND` | `AddressDeleteHandler` | `ApplicantAddress` | Deletes the address entity. Idempotent — succeeds silently if address does not exist. |
 | `ORGANIZATION_EDIT_COMMAND` | `OrganizationEditHandler` | `Applicant` | Updates organization fields on the applicant entity. The `organizationId` corresponds to `Applicant.Id` returned by [OrgInfoDataProvider](./applicant-profile-data-providers.md#orginfordataprovider). |
 
 ### Command Data Payloads
@@ -320,6 +322,22 @@ If `subject` is null/empty, or no matching submissions or agents are found, the 
   "postalCode": "V8V 1A1",
   "country": "Canada",
   "isPrimary": false
+}
+```
+
+**AddressCreateData** (same fields as edit, plus `applicantId`):
+```json
+{
+  "addressType": "PHYSICAL",
+  "street": "123 Main St",
+  "street2": "Suite 100",
+  "unit": "4B",
+  "city": "Victoria",
+  "province": "BC",
+  "postalCode": "V8V 1A1",
+  "country": "Canada",
+  "isPrimary": false,
+  "applicantId": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
 }
 ```
 
@@ -418,8 +436,10 @@ context.Services.AddTransient<IPortalCommandHandler, ContactCreateHandler>();
 context.Services.AddTransient<IPortalCommandHandler, ContactEditHandler>();
 context.Services.AddTransient<IPortalCommandHandler, ContactSetPrimaryHandler>();
 context.Services.AddTransient<IPortalCommandHandler, ContactDeleteHandler>();
+context.Services.AddTransient<IPortalCommandHandler, AddressCreateHandler>();
 context.Services.AddTransient<IPortalCommandHandler, AddressEditHandler>();
 context.Services.AddTransient<IPortalCommandHandler, AddressSetPrimaryHandler>();
+context.Services.AddTransient<IPortalCommandHandler, AddressDeleteHandler>();
 context.Services.AddTransient<IPortalCommandHandler, OrganizationEditHandler>();
 
 // Acknowledgment publisher

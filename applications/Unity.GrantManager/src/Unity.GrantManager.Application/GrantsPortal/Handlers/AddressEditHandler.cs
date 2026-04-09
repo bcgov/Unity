@@ -5,6 +5,7 @@ using Unity.GrantManager.Applications;
 using Unity.GrantManager.GrantApplications;
 using Unity.GrantManager.GrantsPortal.Messages;
 using Unity.GrantManager.GrantsPortal.Messages.Commands;
+using Volo.Abp.Data;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Uow;
 
@@ -35,6 +36,32 @@ public class AddressEditHandler(
         address.Postal = innerData.PostalCode;
         address.Country = innerData.Country;
         address.AddressType = MapAddressType(innerData.AddressType);
+
+        // Sync isPrimary extra property and demote/promote siblings
+        if (innerData.IsPrimary)
+        {
+            if (address.ApplicantId.HasValue)
+            {
+                var siblingAddresses = await applicantAddressRepository.FindByApplicantIdAsync(address.ApplicantId.Value);
+
+                foreach (var sibling in siblingAddresses)
+                {
+                    if (sibling.Id == addressId) continue;
+                    if (!sibling.HasProperty("isPrimary")) continue;
+                    if (!sibling.GetProperty<bool>("isPrimary")) continue;
+
+                    var trackedSibling = await applicantAddressRepository.GetAsync(sibling.Id);
+                    trackedSibling.SetProperty("isPrimary", false);
+                    await applicantAddressRepository.UpdateAsync(trackedSibling);
+                }
+            }
+
+            address.SetProperty("isPrimary", true);
+        }
+        else
+        {
+            address.SetProperty("isPrimary", false);
+        }
 
         await applicantAddressRepository.UpdateAsync(address);
 
