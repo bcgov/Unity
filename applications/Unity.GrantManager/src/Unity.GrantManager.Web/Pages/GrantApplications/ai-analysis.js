@@ -20,8 +20,6 @@ function getAnalysisLabels() {
         recommendations: labels.recommendations || 'Recommendations',
         proceed: labels.proceed || 'Proceed',
         hold: labels.hold || 'Hold',
-        noSummary: labels.noSummary || 'No summary',
-        noRecommendations: labels.noRecommendations || 'No recommendations',
         showDismissed: labels.showDismissed || 'Show dismissed items',
         hideDismissed: labels.hideDismissed || 'Hide dismissed items',
         dismiss: labels.dismiss || 'Dismiss',
@@ -169,21 +167,8 @@ function configureCollapseToggle($section, $collapseToggle) {
         });
 }
 
-function renderHeaderOnlySection($section, $status, $toggle, $collapseToggle, section) {
-    $section.addClass('header-only');
-
-    if (section.decision) {
-        $status.show();
-    } else {
-        $status
-            .addClass('ai-analysis-status-chip')
-            .text(section.headerOnlyText)
-            .show();
-    }
-
-    $toggle.hide();
-    $collapseToggle.hide();
-    return $section;
+function shouldRenderSection(section) {
+    return section.allItems.length > 0;
 }
 
 function appendSectionItems($items, section, isDismissedVisible) {
@@ -253,10 +238,6 @@ function renderSection(section) {
     configureSectionDecision($status, section.decision);
     configureCollapseToggle($section, $collapseToggle);
 
-    if (section.headerOnlyText) {
-        return renderHeaderOnlySection($section, $status, $toggle, $collapseToggle, section);
-    }
-
     appendSectionItems($items, section, isDismissedVisible);
     configureDismissedItemsToggle($items, $toggle, section, isDismissedVisible);
 
@@ -304,7 +285,6 @@ function buildAnalysisSections(analysisData) {
                 title: labels.summary,
                 sectionClass: 'summary',
                 itemType: 'summary',
-                headerOnlyText: summaryGroups.activeItems.length === 0 && summaryGroups.hiddenItems.length === 0 ? labels.noSummary : null,
                 activeItems: summaryGroups.activeItems,
                 allItems: summaries,
                 hiddenItems: summaryGroups.hiddenItems
@@ -314,7 +294,6 @@ function buildAnalysisSections(analysisData) {
                 sectionClass: 'recommendations',
                 itemType: 'recommendation',
                 decision: decision,
-                headerOnlyText: recommendationGroups.activeItems.length === 0 && recommendationGroups.hiddenItems.length === 0 ? labels.noRecommendations : null,
                 activeItems: recommendationGroups.activeItems,
                 allItems: recommendations,
                 hiddenItems: recommendationGroups.hiddenItems
@@ -344,7 +323,7 @@ function renderRealAIAnalysis(analysisData) {
     $sections.empty();
 
     sections.forEach(section => {
-        if ((section.itemType === 'error' || section.itemType === 'warning') && section.allItems.length === 0) {
+        if (!shouldRenderSection(section)) {
             return;
         }
 
@@ -352,8 +331,13 @@ function renderRealAIAnalysis(analysisData) {
     });
 
     const $noDataMessage = $('#aiAnalysisNoData');
-    $noDataMessage.hide();
-    $sections.show();
+    if ($sections.children().length === 0) {
+        $noDataMessage.show();
+        $sections.hide();
+    } else {
+        $noDataMessage.hide();
+        $sections.show();
+    }
 
     bindAnalysisItemActions($sections);
 }
