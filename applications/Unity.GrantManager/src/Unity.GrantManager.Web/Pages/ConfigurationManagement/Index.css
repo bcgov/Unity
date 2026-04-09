@@ -1,0 +1,38 @@
+#ConfigurationManagementSideMenu.side-menu {
+    float: left;
+    position: absolute;
+    left: 0px;
+    top: 150px;
+}
+
+#ConfigurationManagementSideMenu ul {
+    padding-left: 0;
+}
+
+#ConfigurationManagementSideMenu li {
+    height: 40px;
+    padding: 10px;
+    border-radius: 0 100em 100em 0;
+}
+
+#ConfigurationManagementSideMenu .nav-item {
+    justify-content: left;
+}
+
+.config-management {
+    padding: 1rem;
+    max-height: 80vh;
+    overflow: auto;
+    margin-top: 20px;
+}
+
+.unity-app-main-container {
+    margin: auto;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+}
+
+.hide {
+    display: none !important;
+}

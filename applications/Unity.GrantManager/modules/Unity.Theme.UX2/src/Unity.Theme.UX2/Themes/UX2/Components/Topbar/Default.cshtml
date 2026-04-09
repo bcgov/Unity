@@ -57,6 +57,10 @@
             }
             @if (CurrentUser.IsInRole("system_admin") && await FeatureChecker.IsEnabledAsync("SettingManagement.Enable"))
             {
+                <abp-dropdown-item href="/ConfigurationManagement">Configuration Management</abp-dropdown-item>
+            }
+            @if (CurrentUser.IsInRole("system_admin") && await FeatureChecker.IsEnabledAsync("SettingManagement.Enable"))
+            {
                 <abp-dropdown-item href="/SettingManagement">Settings</abp-dropdown-item>
             }
             <abp-dropdown-item href="/Account/Logout">Logout</abp-dropdown-item>
