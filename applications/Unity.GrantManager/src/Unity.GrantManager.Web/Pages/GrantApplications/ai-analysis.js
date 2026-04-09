@@ -96,7 +96,9 @@ function createFindingItem(item, type, hidden) {
 
 function updateVisibleItemLayout($items) {
     const $allItems = $items.children('.ai-analysis-detail-item');
-    const $visibleItems = $allItems.filter(':visible');
+    const $visibleItems = $allItems.filter(function() {
+        return this.style.display !== 'none';
+    });
 
     $allItems.removeClass('last-visible');
     $visibleItems.last().addClass('last-visible');
