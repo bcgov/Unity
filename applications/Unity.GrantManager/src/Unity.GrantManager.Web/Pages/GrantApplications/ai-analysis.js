@@ -123,9 +123,13 @@ function renderSection(section) {
         .off('click')
         .on('click', function() {
             const isCollapsed = $section.toggleClass('collapsed').hasClass('collapsed');
+            const $icon = $(this).find('i');
             $(this)
                 .attr('aria-expanded', (!isCollapsed).toString())
                 .attr('title', isCollapsed ? 'Expand section' : 'Collapse section');
+            $icon
+                .toggleClass('fa-chevron-down', !isCollapsed)
+                .toggleClass('fa-chevron-up', isCollapsed);
         });
 
     if (section.headerOnlyText) {
