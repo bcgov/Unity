@@ -319,7 +319,7 @@ namespace Unity.Payments.Web.Pages.Payments
 
             // Get parent links for this application
             var allLinks = await applicationLinksService.GetListByApplicationAsync(application.Id);
-            var parentLink = allLinks.Find(link => link.LinkType == ApplicationLinkType.Parent && link.ApplicationId != application.Id);
+            var parentLink = allLinks.Find(link => link.LinkType == ApplicationLinkType.Parent);
 
             // Rule 2: No parent link exists
             if (parentLink == null)
