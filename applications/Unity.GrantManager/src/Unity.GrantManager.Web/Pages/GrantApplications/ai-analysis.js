@@ -104,6 +104,99 @@ function updateVisibleItemLayout($items) {
     $visibleItems.last().addClass('last-visible');
 }
 
+function configureSectionDecision($status, decision) {
+    if (!decision) {
+        return;
+    }
+
+    $status
+        .addClass('ai-analysis-status-chip')
+        .addClass(decision.toLowerCase())
+        .text(decision === 'PROCEED' ? 'Proceed' : 'Hold')
+        .show();
+}
+
+function configureCollapseToggle($section, $collapseToggle) {
+    $collapseToggle
+        .off('click')
+        .on('click', function() {
+            const isCollapsed = $section.toggleClass('collapsed').hasClass('collapsed');
+            const $icon = $(this).find('i');
+
+            $(this)
+                .attr('aria-expanded', (!isCollapsed).toString())
+                .attr('title', isCollapsed ? 'Expand section' : 'Collapse section');
+
+            $icon
+                .toggleClass('fa-chevron-down', !isCollapsed)
+                .toggleClass('fa-chevron-up', isCollapsed);
+        });
+}
+
+function renderHeaderOnlySection($section, $status, $toggle, $collapseToggle, section) {
+    $section.addClass('header-only');
+
+    if (section.decision) {
+        $status.show();
+    } else {
+        $status
+            .addClass('ai-analysis-status-chip')
+            .text(section.headerOnlyText)
+            .show();
+    }
+
+    $toggle.hide();
+    $collapseToggle.hide();
+    return $section;
+}
+
+function appendSectionItems($items, section, isDismissedVisible) {
+    if (section.activeItems.length === 0 && section.hiddenItems.length === 0) {
+        return;
+    }
+
+    section.allItems.forEach(item => {
+        const isHidden = item.hidden === true;
+        const $item = createFindingItem(item, section.itemType, isHidden);
+
+        if (isHidden && !isDismissedVisible) {
+            $item.hide();
+        }
+
+        $items.append($item);
+    });
+
+    updateVisibleItemLayout($items);
+}
+
+function configureDismissedItemsToggle($items, $toggle, section, isDismissedVisible) {
+    const hiddenCount = section.hiddenItems.length;
+
+    if (hiddenCount === 0) {
+        dismissedSectionVisibility[section.itemType] = false;
+        $toggle
+            .text('Show dismissed items')
+            .css('visibility', 'hidden')
+            .prop('disabled', true)
+            .show();
+        return;
+    }
+
+    $toggle
+        .css('visibility', 'visible')
+        .text(isDismissedVisible ? 'Hide dismissed items' : 'Show dismissed items')
+        .prop('disabled', false)
+        .show()
+        .off('click')
+        .on('click', function() {
+            const shouldShow = dismissedSectionVisibility[section.itemType] !== true;
+            dismissedSectionVisibility[section.itemType] = shouldShow;
+            $items.find('.hidden-item').toggle(shouldShow);
+            updateVisibleItemLayout($items);
+            $toggle.text(shouldShow ? 'Hide dismissed items' : 'Show dismissed items');
+        });
+}
+
 function renderSection(section) {
     const $section = createItemFromTemplate('section', {
         title: section.title
@@ -118,87 +211,17 @@ function renderSection(section) {
     const $status = $section.find('[data-element="status-chip"]');
     const $toggle = $section.find('[data-element="hidden-toggle"]');
     const $collapseToggle = $section.find('[data-element="collapse-toggle"]');
-    const hiddenCount = section.hiddenItems.length;
     const isDismissedVisible = dismissedSectionVisibility[section.itemType] === true;
 
-    if (section.decision) {
-        $status
-            .addClass('ai-analysis-status-chip')
-            .addClass(section.decision.toLowerCase())
-            .text(section.decision === 'PROCEED' ? 'Proceed' : 'Hold')
-            .show();
-    }
-
-    $collapseToggle
-        .off('click')
-        .on('click', function() {
-            const isCollapsed = $section.toggleClass('collapsed').hasClass('collapsed');
-            const $icon = $(this).find('i');
-            $(this)
-                .attr('aria-expanded', (!isCollapsed).toString())
-                .attr('title', isCollapsed ? 'Expand section' : 'Collapse section');
-            $icon
-                .toggleClass('fa-chevron-down', !isCollapsed)
-                .toggleClass('fa-chevron-up', isCollapsed);
-        });
+    configureSectionDecision($status, section.decision);
+    configureCollapseToggle($section, $collapseToggle);
 
     if (section.headerOnlyText) {
-        $section.addClass('header-only');
-        if (section.decision) {
-            $status.show();
-        } else {
-            $status
-                .addClass('ai-analysis-status-chip')
-                .text(section.headerOnlyText)
-                .show();
-        }
-        $toggle.hide();
-        $collapseToggle.hide();
-        return $section;
+        return renderHeaderOnlySection($section, $status, $toggle, $collapseToggle, section);
     }
 
-    if (section.activeItems.length > 0 || hiddenCount > 0) {
-        section.allItems.forEach(item => {
-            const isHidden = item.hidden === true;
-            const $item = createFindingItem(item, section.itemType, isHidden);
-            if (isHidden && !isDismissedVisible) {
-                $item.hide();
-            }
-
-            $items.append($item);
-        });
-
-        updateVisibleItemLayout($items);
-    }
-
-    if (hiddenCount > 0) {
-        $toggle
-            .css('visibility', 'visible')
-            .text(isDismissedVisible
-                ? 'Hide dismissed items'
-                : 'Show dismissed items')
-            .prop('disabled', false)
-            .show()
-            .off('click')
-            .on('click', function() {
-                const shouldShow = dismissedSectionVisibility[section.itemType] !== true;
-                dismissedSectionVisibility[section.itemType] = shouldShow;
-                $items.find('.hidden-item').toggle(shouldShow);
-                updateVisibleItemLayout($items);
-                $toggle.text(
-                    shouldShow
-                        ? 'Hide dismissed items'
-                        : 'Show dismissed items'
-                );
-            });
-    } else {
-        dismissedSectionVisibility[section.itemType] = false;
-        $toggle
-            .text('Show dismissed items')
-            .css('visibility', 'hidden')
-            .prop('disabled', true)
-            .show();
-    }
+    appendSectionItems($items, section, isDismissedVisible);
+    configureDismissedItemsToggle($items, $toggle, section, isDismissedVisible);
 
     return $section;
 }
