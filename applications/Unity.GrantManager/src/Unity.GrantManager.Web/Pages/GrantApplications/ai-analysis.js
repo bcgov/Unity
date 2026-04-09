@@ -227,7 +227,6 @@ function buildAnalysisSections(analysisData) {
                 title: 'Errors',
                 sectionClass: 'error',
                 itemType: 'error',
-                headerOnlyText: errorGroups.activeItems.length === 0 && errorGroups.hiddenItems.length === 0 ? '0 errors' : null,
                 activeItems: errorGroups.activeItems,
                 allItems: errors,
                 hiddenItems: errorGroups.hiddenItems
@@ -236,7 +235,6 @@ function buildAnalysisSections(analysisData) {
                 title: 'Warnings',
                 sectionClass: 'warning',
                 itemType: 'warning',
-                headerOnlyText: warningGroups.activeItems.length === 0 && warningGroups.hiddenItems.length === 0 ? '0 warnings' : null,
                 activeItems: warningGroups.activeItems,
                 allItems: warnings,
                 hiddenItems: warningGroups.hiddenItems
@@ -285,6 +283,10 @@ function renderRealAIAnalysis(analysisData) {
     $sections.empty();
 
     sections.forEach(section => {
+        if ((section.itemType === 'error' || section.itemType === 'warning') && section.allItems.length === 0) {
+            return;
+        }
+
         $sections.append(renderSection(section));
     });
 
