@@ -65,13 +65,18 @@ jobs:
         working-directory: ./applications/Unity.GrantManager
         run: dotnet restore Unity.GrantManager.sln
 
-      - name: Build and analyze
+      - name: Build solution
         working-directory: ./applications/Unity.GrantManager
+        run: dotnet build Unity.GrantManager.sln --no-restore
+
+      - name: Run tests with coverage
+        working-directory: ./applications/Unity.GrantManager
+        run: dotnet test Unity.GrantManager.sln --no-build --verbosity normal --collect:"XPlat Code Coverage" --results-directory ./TestResults/
+
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarqube-scan-action@v7
+        with:
+          projectBaseDir: applications/Unity.GrantManager
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: |
-          dotnet-sonarscanner begin /k:"bcgov_Unity" /o:"bcgov-sonarcloud" /d:sonar.token="${{ secrets.SONAR_TOKEN }}" /d:sonar.host.url="https://sonarcloud.io" /v:"${{ env.BUILD_VERSION }}"
-          dotnet build Unity.GrantManager.sln --no-restore
-          dotnet test Unity.GrantManager.sln --no-build --verbosity normal --collect:"XPlat Code Coverage" --results-directory ./TestResults/
-          dotnet-sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
