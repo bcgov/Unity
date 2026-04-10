@@ -16,8 +16,6 @@ permissions:
   checks: write
   security-events: write
 
-env:
-  UGM_BUILD_VERSION: ${{vars.UGM_BUILD_VERSION}}
 
 jobs:
   sonarcloud:
