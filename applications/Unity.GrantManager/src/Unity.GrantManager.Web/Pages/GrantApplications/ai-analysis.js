@@ -20,6 +20,8 @@ function getAnalysisLabels() {
         recommendations: labels.recommendations || 'Recommendations',
         proceed: labels.proceed || 'Proceed',
         hold: labels.hold || 'Hold',
+        noErrors: labels.noErrors || 'No errors',
+        noWarnings: labels.noWarnings || 'No warnings',
         showDismissed: labels.showDismissed || 'Show dismissed items',
         hideDismissed: labels.hideDismissed || 'Hide dismissed items',
         dismiss: labels.dismiss || 'Dismiss',
@@ -137,13 +139,28 @@ function updateVisibleItemLayout($items) {
 }
 
 function configureSectionDecision($status, decision) {
-    const labels = getAnalysisLabels();
     if (!decision) {
         return;
     }
 
     $status
         .addClass('ai-analysis-status-chip')
+        .text(decision)
+        .show();
+}
+
+function configureDecisionChip(decision) {
+    const labels = getAnalysisLabels();
+    const $decisionChip = $('#aiAnalysisDecisionChip');
+
+    $decisionChip.removeClass('proceed hold');
+
+    if (!decision) {
+        $decisionChip.hide().text('');
+        return;
+    }
+
+    $decisionChip
         .addClass(decision.toLowerCase())
         .text(decision === 'PROCEED' ? labels.proceed : labels.hold)
         .show();
@@ -168,7 +185,7 @@ function configureCollapseToggle($section, $collapseToggle) {
 }
 
 function shouldRenderSection(section) {
-    return section.allItems.length > 0;
+    return true;
 }
 
 function appendSectionItems($items, section, isDismissedVisible) {
@@ -177,7 +194,7 @@ function appendSectionItems($items, section, isDismissedVisible) {
     }
 
     section.allItems.forEach(item => {
-        const isHidden = item.hidden === true;
+        const isHidden = item.dismissed === true;
         const $item = createFindingItem(item, section.itemType, isHidden);
 
         if (isHidden && !isDismissedVisible) {
@@ -235,7 +252,7 @@ function renderSection(section) {
     const $collapseToggle = $section.find('[data-element="collapse-toggle"]');
     const isDismissedVisible = dismissedSectionVisibility[section.itemType] === true;
 
-    configureSectionDecision($status, section.decision);
+    configureSectionDecision($status, section.countLabel);
     configureCollapseToggle($section, $collapseToggle);
 
     appendSectionItems($items, section, isDismissedVisible);
@@ -269,6 +286,7 @@ function buildAnalysisSections(analysisData) {
                 title: labels.errors,
                 sectionClass: 'error',
                 itemType: 'error',
+                countLabel: errors.length.toString(),
                 activeItems: errorGroups.activeItems,
                 allItems: errors,
                 hiddenItems: errorGroups.hiddenItems
@@ -277,6 +295,7 @@ function buildAnalysisSections(analysisData) {
                 title: labels.warnings,
                 sectionClass: 'warning',
                 itemType: 'warning',
+                countLabel: warnings.length.toString(),
                 activeItems: warningGroups.activeItems,
                 allItems: warnings,
                 hiddenItems: warningGroups.hiddenItems
@@ -285,6 +304,7 @@ function buildAnalysisSections(analysisData) {
                 title: labels.summaries,
                 sectionClass: 'summary',
                 itemType: 'summary',
+                countLabel: summaries.length.toString(),
                 activeItems: summaryGroups.activeItems,
                 allItems: summaries,
                 hiddenItems: summaryGroups.hiddenItems
@@ -293,12 +313,13 @@ function buildAnalysisSections(analysisData) {
                 title: labels.recommendations,
                 sectionClass: 'recommendations',
                 itemType: 'recommendation',
-                decision: decision,
+                countLabel: recommendations.length.toString(),
                 activeItems: recommendationGroups.activeItems,
                 allItems: recommendations,
                 hiddenItems: recommendationGroups.hiddenItems
             }
-        ]
+        ],
+        decision
     };
 }
 
@@ -318,9 +339,10 @@ function bindAnalysisItemActions($sections) {
 }
 
 function renderRealAIAnalysis(analysisData) {
-    const { sections } = buildAnalysisSections(analysisData);
+    const { sections, decision } = buildAnalysisSections(analysisData);
     const $sections = $('#aiAnalysisSections');
     $sections.empty();
+    configureDecisionChip(decision);
 
     sections.forEach(section => {
         if (!shouldRenderSection(section)) {
@@ -369,6 +391,7 @@ globalThis.restoreAnalysisItem = function(itemId) {
 }
 
 function resetAnalysisView() {
+    configureDecisionChip('');
     $('#aiAnalysisSections').empty().hide();
     $('#aiAnalysisNoData').show();
 }
