@@ -138,31 +138,21 @@ function updateVisibleItemLayout($items) {
     $visibleItems.last().addClass('last-visible');
 }
 
-function configureSectionDecision($status, decision) {
-    if (!decision) {
+function configureSectionStatus($status, text, statusClass) {
+    if (!text) {
         return;
     }
 
     $status
-        .addClass('ai-analysis-status-chip')
-        .text(decision)
-        .show();
-}
+        .removeClass('proceed hold')
+        .addClass('ai-analysis-status-chip');
 
-function configureDecisionChip(decision) {
-    const labels = getAnalysisLabels();
-    const $decisionChip = $('#aiAnalysisDecisionChip');
-
-    $decisionChip.removeClass('proceed hold');
-
-    if (!decision) {
-        $decisionChip.hide().text('');
-        return;
+    if (statusClass) {
+        $status.addClass(statusClass);
     }
 
-    $decisionChip
-        .addClass(decision.toLowerCase())
-        .text(decision === 'PROCEED' ? labels.proceed : labels.hold)
+    $status
+        .text(text)
         .show();
 }
 
@@ -185,7 +175,7 @@ function configureCollapseToggle($section, $collapseToggle) {
 }
 
 function shouldRenderSection(section) {
-    return true;
+    return section.alwaysVisible === true || section.allItems.length > 0;
 }
 
 function appendSectionItems($items, section, isDismissedVisible) {
@@ -240,11 +230,12 @@ function renderSection(section) {
     const $section = createItemFromTemplate('section', {
         title: section.title
     });
+    const hasItems = section.allItems.length > 0;
 
-    $section.addClass(section.sectionClass);
-    if (section.activeItems.length === 0) {
-        $section.addClass('compact');
-    }
+    $section
+        .addClass(section.sectionClass)
+        .toggleClass('compact', section.activeItems.length === 0)
+        .toggleClass('header-only', !hasItems);
 
     const $items = $section.find('[data-element="items"]');
     const $status = $section.find('[data-element="status-chip"]');
@@ -252,8 +243,9 @@ function renderSection(section) {
     const $collapseToggle = $section.find('[data-element="collapse-toggle"]');
     const isDismissedVisible = dismissedSectionVisibility[section.itemType] === true;
 
-    configureSectionDecision($status, section.countLabel);
+    configureSectionStatus($status, section.statusText, section.statusClass);
     configureCollapseToggle($section, $collapseToggle);
+    $collapseToggle.toggle(hasItems);
 
     appendSectionItems($items, section, isDismissedVisible);
     configureDismissedItemsToggle($items, $toggle, section, isDismissedVisible);
@@ -280,13 +272,21 @@ function buildAnalysisSections(analysisData) {
     const summaryGroups = splitFindingsByVisibility(summaries);
     const recommendationGroups = splitFindingsByVisibility(recommendations);
 
+    const recommendationDecision = decision
+        ? {
+            statusText: decision === 'PROCEED' ? labels.proceed : labels.hold,
+            statusClass: decision.toLowerCase()
+        }
+        : {};
+
     return {
         sections: [
             {
                 title: labels.errors,
                 sectionClass: 'error',
                 itemType: 'error',
-                countLabel: errors.length.toString(),
+                statusText: errors.length.toString(),
+                alwaysVisible: true,
                 activeItems: errorGroups.activeItems,
                 allItems: errors,
                 hiddenItems: errorGroups.hiddenItems
@@ -295,7 +295,8 @@ function buildAnalysisSections(analysisData) {
                 title: labels.warnings,
                 sectionClass: 'warning',
                 itemType: 'warning',
-                countLabel: warnings.length.toString(),
+                statusText: warnings.length.toString(),
+                alwaysVisible: true,
                 activeItems: warningGroups.activeItems,
                 allItems: warnings,
                 hiddenItems: warningGroups.hiddenItems
@@ -304,7 +305,6 @@ function buildAnalysisSections(analysisData) {
                 title: labels.summaries,
                 sectionClass: 'summary',
                 itemType: 'summary',
-                countLabel: summaries.length.toString(),
                 activeItems: summaryGroups.activeItems,
                 allItems: summaries,
                 hiddenItems: summaryGroups.hiddenItems
@@ -313,13 +313,12 @@ function buildAnalysisSections(analysisData) {
                 title: labels.recommendations,
                 sectionClass: 'recommendations',
                 itemType: 'recommendation',
-                countLabel: recommendations.length.toString(),
+                ...recommendationDecision,
                 activeItems: recommendationGroups.activeItems,
                 allItems: recommendations,
                 hiddenItems: recommendationGroups.hiddenItems
             }
-        ],
-        decision
+        ]
     };
 }
 
@@ -339,10 +338,9 @@ function bindAnalysisItemActions($sections) {
 }
 
 function renderRealAIAnalysis(analysisData) {
-    const { sections, decision } = buildAnalysisSections(analysisData);
+    const { sections } = buildAnalysisSections(analysisData);
     const $sections = $('#aiAnalysisSections');
     $sections.empty();
-    configureDecisionChip(decision);
 
     sections.forEach(section => {
         if (!shouldRenderSection(section)) {
@@ -391,7 +389,6 @@ globalThis.restoreAnalysisItem = function(itemId) {
 }
 
 function resetAnalysisView() {
-    configureDecisionChip('');
     $('#aiAnalysisSections').empty().hide();
     $('#aiAnalysisNoData').show();
 }
