@@ -57,48 +57,37 @@ describe('Grant Manager Login and List Navigation', () => {
         const listboxSel = '#bs-select-1[role="listbox"]'
         const searchSel = 'input[type="search"][aria-controls="bs-select-1"]'
 
-        cy.get('body').then(($body) => {
-            if ($body.find(btnSel).length === 0) {
-                cy.log('Skipping intake switch: selector not found')
-                return
-            }
+        cy.get(btnSel, { timeout: 30000 })
+            .should('be.visible')
+            .first()
+            .click({ force: true })
 
-            cy.get(btnSel).first().click({ force: true })
-            cy.get(listboxSel, { timeout: 20000 }).should('exist')
+        cy.get(listboxSel, { timeout: 30000 }).should('be.visible')
 
-            cy.get('body').then(($b2) => {
-                if ($b2.find(searchSel).length > 0) {
-                    cy.get(searchSel).clear().type('Test')
+        cy.get(searchSel, { timeout: 30000 })
+            .should('be.visible')
+            .clear()
+            .type('Test')
+
+        cy.contains(`${listboxSel} a.dropdown-item[role="option"] span.text`, /^Test$/, { timeout: 30000 })
+            .closest('a.dropdown-item')
+            .then(($opt) => {
+                const selected =
+                    $opt.attr('aria-selected') === 'true' ||
+                    $opt.hasClass('selected')
+
+                if (!selected) {
+                    cy.wrap($opt).scrollIntoView().click({ force: true })
                 }
             })
 
-            cy.get(listboxSel).within(() => {
-                cy.get('a.dropdown-item[role="option"]').then(($opts) => {
-                    const match = $opts.filter((_, el) => {
-                        const textNode = el.querySelector('span.text')
-                        const text = textNode ? textNode.textContent || '' : ''
-                        return text.trim() === 'Test'
-                    })
-
-                    if (match.length === 0) {
-                        cy.log('Skipping intake switch: Test not found')
-                        return
-                    }
-
-                    const el = match.get(0)
-                    const selected =
-                        el.getAttribute('aria-selected') === 'true' ||
-                        el.classList.contains('selected')
-
-                    if (!selected) {
-                        cy.wrap(el).scrollIntoView().click({ force: true })
-                    }
-                })
-            })
-
-            cy.get(btnSel).first().click({ force: true })
-            cy.get(btnSel).first().should('have.attr', 'aria-expanded', 'false')
+        cy.get('select#dashboardIntakeId option:selected').should(($opts) => {
+            const texts = Array.from($opts, (opt) => (opt.textContent || '').trim())
+            expect(texts).to.include('Test')
         })
+
+        cy.get(btnSel).first().click({ force: true })
+        cy.get(btnSel).first().should('have.attr', 'aria-expanded', 'false')
     }
 
     it('Verify Login', () => {
@@ -160,28 +149,30 @@ describe('Grant Manager Login and List Navigation', () => {
         cy.get('#user-dropdown .btn-dropdown span')
             .should('contain', 'Default Grants Program')
 
-        cy.contains("Applications").click()
+        cy.contains('Applications').click()
         cy.get('tbody tr').should('have.length.at.least', 1)
 
-        cy.contains("Roles").click()
+        cy.contains('Roles').click()
         cy.get('tbody tr').should('have.length.at.least', 1)
 
-        cy.contains("Users").click()
+        cy.contains('Users').click()
         cy.get('tbody tr').should('have.length.at.least', 1)
 
-        cy.contains("Intakes").click()
+        cy.contains('Intakes').click()
         cy.get('tbody tr').should('have.length.at.least', 1)
 
-        cy.contains("Forms").click()
+        cy.contains('Forms').click()
         cy.get('tbody tr').should('have.length.at.least', 1)
 
-        cy.contains("Dashboard").click()
+        cy.contains('Dashboard').click()
+        cy.location('pathname', { timeout: 30000 }).should('include', '/Dashboard')
         setDashboardIntakeToTestIfAvailable()
 
-        cy.get('#applicationStatusChart text')
+        cy.get('#applicationStatusChart text', { timeout: 30000 })
             .first()
-            .invoke('text')
-            .then(n => expect(parseInt(n, 10)).to.be.gt(0))
+            .should(($el) => {
+                expect(parseInt($el.text(), 10)).to.be.gt(0)
+            })
 
         cy.visit(Cypress.env('webapp.url'))
     })
