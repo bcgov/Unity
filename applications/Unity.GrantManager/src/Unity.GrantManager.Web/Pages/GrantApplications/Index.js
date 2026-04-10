@@ -193,12 +193,12 @@ $(function () {
         let isCustomRange = savedQuickRange === 'custom';
         toggleCustomDateInputs(isCustomRange);
 
-        let range = !isCustomRange
-            ? getDateRange(savedQuickRange)
-            : {
+        let range = isCustomRange
+            ? {
                 fromDate: savedFromDate || '',
                 toDate: savedToDate || ''
-            };
+            }
+            : getDateRange(savedQuickRange);
 
         if (!isCustomRange && !range) {
             savedQuickRange = defaultQuickDateRange;
@@ -479,12 +479,12 @@ $(function () {
         let isCustomRange = filters.quickDateRange === 'custom';
         toggleCustomDateInputs(isCustomRange);
 
-        let range = !isCustomRange
-            ? getDateRange(quickRange)
-            : {
+        let range = isCustomRange
+            ? {
                 fromDate: filters.submittedFromDate || '',
                 toDate: filters.submittedToDate || ''
-            };
+            }
+            : getDateRange(quickRange);
 
         if (!isCustomRange && !range) {
             quickRange = defaultQuickDateRange;
@@ -705,9 +705,9 @@ $(function () {
             render: function (data, type, row) {
                 let displayText = ' ';
 
-                if (data != null && data.length == 1) {
+                if (data?.length === 1) {
                     displayText = type === 'fullName' ? getNames(data) : (data[0].fullName + getDutyText(data[0]));
-                } else if (data.length > 1) {
+                } else if (data?.length > 1) {
                     displayText = getNames(data);
                 }
 
