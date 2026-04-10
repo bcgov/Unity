@@ -95,7 +95,7 @@ namespace Unity.GrantManager.ApplicantProfile
                     Province = r.address.Province ?? string.Empty,
                     PostalCode = r.address.Postal ?? string.Empty,
                     Country = r.address.Country ?? string.Empty,
-                    IsPrimary = r.address.HasProperty("isPrimary") && r.address.GetProperty<bool>("isPrimary"),
+                    IsPrimary = r.address.HasProperty(AddressExtraPropertyNames.IsPrimary) && r.address.GetProperty<bool>(AddressExtraPropertyNames.IsPrimary),
                     IsEditable = r.IsFromApplicantPath && applicantPathEditable,
                     ReferenceNo = r.ReferenceNo
                 }).ToList();
