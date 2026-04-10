@@ -51,8 +51,8 @@ public class AddressCreateHandler(
 
         EntityHelper.TrySetId(address, () => addressId);
 
-        address.SetProperty("profileId", profileId.ToString());
-        address.SetProperty("isPrimary", innerData.IsPrimary);
+        address.SetProperty(AddressExtraPropertyNames.ProfileId, profileId.ToString());
+        address.SetProperty(AddressExtraPropertyNames.IsPrimary, innerData.IsPrimary);
 
         // Demote existing primary addresses for the same applicant
         if (innerData.IsPrimary)
@@ -61,11 +61,11 @@ public class AddressCreateHandler(
 
             foreach (var sibling in siblingAddresses)
             {
-                if (!sibling.HasProperty("isPrimary")) continue;
-                if (!sibling.GetProperty<bool>("isPrimary")) continue;
+                if (!sibling.HasProperty(AddressExtraPropertyNames.IsPrimary)) continue;
+                if (!sibling.GetProperty<bool>(AddressExtraPropertyNames.IsPrimary)) continue;
 
                 var trackedSibling = await applicantAddressRepository.GetAsync(sibling.Id);
-                trackedSibling.SetProperty("isPrimary", false);
+                trackedSibling.SetProperty(AddressExtraPropertyNames.IsPrimary, false);
                 await applicantAddressRepository.UpdateAsync(trackedSibling);
             }
         }

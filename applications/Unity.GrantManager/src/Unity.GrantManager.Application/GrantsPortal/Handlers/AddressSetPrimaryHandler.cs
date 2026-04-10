@@ -2,6 +2,7 @@ using System;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Unity.GrantManager.Applications;
+using Unity.GrantManager.GrantApplications;
 using Unity.GrantManager.GrantsPortal.Messages;
 using Volo.Abp.Data;
 using Volo.Abp.DependencyInjection;
@@ -26,8 +27,8 @@ public class AddressSetPrimaryHandler(
 
         var address = await applicantAddressRepository.GetAsync(addressId);
 
-        address.SetProperty("profileId", profileId.ToString());
-        address.SetProperty("isPrimary", true);
+        address.SetProperty(AddressExtraPropertyNames.ProfileId, profileId.ToString());
+        address.SetProperty(AddressExtraPropertyNames.IsPrimary, true);
 
         if (address.ApplicantId.HasValue)
         {
@@ -36,10 +37,10 @@ public class AddressSetPrimaryHandler(
             foreach (var sibling in siblingAddresses)
             {
                 if (sibling.Id == addressId) continue;
-                if (!sibling.HasProperty("isPrimary")) continue;
+                if (!sibling.HasProperty(AddressExtraPropertyNames.IsPrimary)) continue;
 
                 var trackedSibling = await applicantAddressRepository.GetAsync(sibling.Id);
-                trackedSibling.SetProperty("isPrimary", false);
+                trackedSibling.SetProperty(AddressExtraPropertyNames.IsPrimary, false);
                 await applicantAddressRepository.UpdateAsync(trackedSibling);
             }
         }

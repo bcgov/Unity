@@ -47,20 +47,20 @@ public class AddressEditHandler(
                 foreach (var sibling in siblingAddresses)
                 {
                     if (sibling.Id == addressId) continue;
-                    if (!sibling.HasProperty("isPrimary")) continue;
-                    if (!sibling.GetProperty<bool>("isPrimary")) continue;
+                    if (!sibling.HasProperty(AddressExtraPropertyNames.IsPrimary)) continue;
+                    if (!sibling.GetProperty<bool>(AddressExtraPropertyNames.IsPrimary)) continue;
 
                     var trackedSibling = await applicantAddressRepository.GetAsync(sibling.Id);
-                    trackedSibling.SetProperty("isPrimary", false);
+                    trackedSibling.SetProperty(AddressExtraPropertyNames.IsPrimary, false);
                     await applicantAddressRepository.UpdateAsync(trackedSibling);
                 }
             }
 
-            address.SetProperty("isPrimary", true);
+            address.SetProperty(AddressExtraPropertyNames.IsPrimary, true);
         }
         else
         {
-            address.SetProperty("isPrimary", false);
+            address.SetProperty(AddressExtraPropertyNames.IsPrimary, false);
         }
 
         await applicantAddressRepository.UpdateAsync(address);
