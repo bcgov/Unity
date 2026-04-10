@@ -458,7 +458,7 @@ class CacheRepository:
         embedding_str = "[" + ",".join(str(v) for v in embedding) + "]"
         with self.db.get_connection() as conn:
             with conn.cursor() as cur:
-                cur.execute("SET ivfflat.probes = 10")
+                cur.execute("SET hnsw.ef_search = 64")
                 cur.execute("""
                     SELECT cache_id, response_payload,
                            1 - (query_embedding <=> %s::vector) AS similarity
@@ -527,8 +527,9 @@ class CacheRepository:
                 conn.commit()
                 return deleted
 
-    def ensure_ivfflat_index(self):
-        """Create the ivfflat index once the table has rows (requires > 0 rows)."""
+    def ensure_hnsw_index(self):
+        """Create the hnsw index once the table has rows. hnsw supports up to 16000 dimensions,
+        unlike ivfflat which caps at 2000 — required for text-embedding-3-large (3072-d)."""
         with self.db.get_connection() as conn:
             with conn.cursor() as cur:
                 cur.execute("SELECT COUNT(*) FROM query_cache")
@@ -537,8 +538,8 @@ class CacheRepository:
                     cur.execute("""
                         CREATE INDEX IF NOT EXISTS idx_query_cache_embedding
                             ON query_cache
-                            USING ivfflat (query_embedding vector_cosine_ops)
-                            WITH (lists = 50)
+                            USING hnsw (query_embedding vector_cosine_ops)
+                            WITH (m = 16, ef_construction = 64)
                     """)
                     conn.commit()
 

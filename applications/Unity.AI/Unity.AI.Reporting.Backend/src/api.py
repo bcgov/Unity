@@ -549,7 +549,7 @@ def ask():
                         "tokens": sql_tokens,
                     }
                 )
-                cache_repository.ensure_ivfflat_index()
+                cache_repository.ensure_hnsw_index()
                 logger.info(
                     f"Cache stored: tenant={tenant_id} "
                     f"tokens={sql_tokens.get('total_tokens', 0)}"
