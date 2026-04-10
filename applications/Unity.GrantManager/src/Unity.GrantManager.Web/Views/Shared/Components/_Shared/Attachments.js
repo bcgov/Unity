@@ -32,6 +32,8 @@ function getAttachmentOwnerId(attachmentType) {
             return decodeURIComponent($("#AssessmentId").val());
         case 'Application':
             return decodeURIComponent($("#DetailsViewApplicationId").val());
+        case 'Applicant':
+            return decodeURIComponent($("#DetailsViewApplicantId").val());
         default:
             return null;
     }
@@ -82,6 +84,8 @@ function refreshAttachmentWidget(attachmentType) {
             PubSub.publish('refresh_assessment_attachment_list'); break;
         case 'Application':
             PubSub.publish('refresh_application_attachment_list'); break;
+        case 'Applicant':
+            PubSub.publish('refresh_applicant_attachment_list'); break;
         case 'CHEFS':
             PubSub.publish('refresh_chefs_attachment_list'); break;
         default: break;

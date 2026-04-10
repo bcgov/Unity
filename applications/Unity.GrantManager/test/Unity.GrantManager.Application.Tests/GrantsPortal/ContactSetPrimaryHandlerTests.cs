@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging.Abstractions;
+using Newtonsoft.Json.Linq;
 using NSubstitute;
 using Shouldly;
 using System;
@@ -44,17 +45,20 @@ public class ContactSetPrimaryHandlerTests
 
     private static PluginDataPayload CreatePayload(
         Guid? contactId = null,
-        Guid? profileId = null)
+        Guid? profileId = null,
+        Guid? applicantId = null)
     {
         contactId ??= Guid.NewGuid();
         profileId ??= Guid.NewGuid();
+        applicantId ??= Guid.NewGuid();
 
         return new PluginDataPayload
         {
             Action = "CONTACT_SET_PRIMARY_COMMAND",
             ContactId = contactId.Value.ToString(),
             ProfileId = profileId.Value.ToString(),
-            Provider = Guid.NewGuid().ToString()
+            Provider = Guid.NewGuid().ToString(),
+            Data = JObject.FromObject(new { applicantId })
         };
     }
 
@@ -66,12 +70,13 @@ public class ContactSetPrimaryHandlerTests
         // Arrange
         var contactId = Guid.NewGuid();
         var otherContactId = Guid.NewGuid();
-        var profileId = Guid.NewGuid();
+        var applicantId = Guid.NewGuid();
 
         var targetLink = WithId(new ContactLink
         {
             ContactId = contactId,
-            RelatedEntityId = profileId,
+            RelatedEntityId = applicantId,
+            RelatedEntityType = "Applicant",
             IsPrimary = false,
             IsActive = true
         }, Guid.NewGuid());
@@ -79,7 +84,8 @@ public class ContactSetPrimaryHandlerTests
         var otherLink = WithId(new ContactLink
         {
             ContactId = otherContactId,
-            RelatedEntityId = profileId,
+            RelatedEntityId = applicantId,
+            RelatedEntityType = "Applicant",
             IsPrimary = true,
             IsActive = true
         }, Guid.NewGuid());
@@ -88,7 +94,7 @@ public class ContactSetPrimaryHandlerTests
             .GetListAsync(Arg.Any<Expression<Func<ContactLink, bool>>>(), Arg.Any<bool>(), Arg.Any<CancellationToken>())
             .Returns(new List<ContactLink> { targetLink, otherLink });
 
-        var payload = CreatePayload(contactId: contactId, profileId: profileId);
+        var payload = CreatePayload(contactId: contactId, applicantId: applicantId);
 
         // Act
         var result = await _handler.HandleAsync(payload);
@@ -119,20 +125,20 @@ public class ContactSetPrimaryHandlerTests
     {
         // Arrange — three links, only the target should be primary
         var contactId = Guid.NewGuid();
-        var profileId = Guid.NewGuid();
+        var applicantId = Guid.NewGuid();
 
         var links = new List<ContactLink>
         {
-            WithId(new ContactLink { ContactId = contactId, RelatedEntityId = profileId, IsPrimary = false, IsActive = true }, Guid.NewGuid()),
-            WithId(new ContactLink { ContactId = Guid.NewGuid(), RelatedEntityId = profileId, IsPrimary = true, IsActive = true }, Guid.NewGuid()),
-            WithId(new ContactLink { ContactId = Guid.NewGuid(), RelatedEntityId = profileId, IsPrimary = true, IsActive = true }, Guid.NewGuid())
+            WithId(new ContactLink { ContactId = contactId, RelatedEntityId = applicantId, RelatedEntityType = "Applicant", IsPrimary = false, IsActive = true }, Guid.NewGuid()),
+            WithId(new ContactLink { ContactId = Guid.NewGuid(), RelatedEntityId = applicantId, RelatedEntityType = "Applicant", IsPrimary = true, IsActive = true }, Guid.NewGuid()),
+            WithId(new ContactLink { ContactId = Guid.NewGuid(), RelatedEntityId = applicantId, RelatedEntityType = "Applicant", IsPrimary = true, IsActive = true }, Guid.NewGuid())
         };
 
         _contactLinkRepository
             .GetListAsync(Arg.Any<Expression<Func<ContactLink, bool>>>(), Arg.Any<bool>(), Arg.Any<CancellationToken>())
             .Returns(links);
 
-        var payload = CreatePayload(contactId: contactId, profileId: profileId);
+        var payload = CreatePayload(contactId: contactId, applicantId: applicantId);
 
         // Act
         await _handler.HandleAsync(payload);
@@ -163,6 +169,16 @@ public class ContactSetPrimaryHandlerTests
         // Arrange
         var payload = CreatePayload();
         payload.ProfileId = null;
+
+        // Act & Assert
+        await Should.ThrowAsync<ArgumentException>(() => _handler.HandleAsync(payload));
+    }
+
+    [Fact]
+    public async Task HandleAsync_WhenApplicantIdEmpty_ShouldThrow()
+    {
+        // Arrange
+        var payload = CreatePayload(applicantId: Guid.Empty);
 
         // Act & Assert
         await Should.ThrowAsync<ArgumentException>(() => _handler.HandleAsync(payload));

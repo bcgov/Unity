@@ -21,7 +21,7 @@
             <div class="mb-3">
                 <label class="form-label" for="FundingHistoryForm_FundingYear">Funding Year</label>
                 <input type="text" id="FundingHistoryForm_FundingYear" name="FundingHistoryForm.FundingYear"
-                       class="form-control" inputmode="numeric" maxlength="4"
+                       class="form-control"
                        value="@Model.FundingHistoryForm?.FundingYear" />
             </div>
 
@@ -46,6 +46,16 @@
                            value="@Model.FundingHistoryForm?.ApprovedAmount" />
                 </div>
             </div>
+
+            <div class="mb-3">
+                <div class="unity-input-group">
+                    <span class="unity-input-prepend">$</span>
+                    <label class="form-label" for="FundingHistoryForm_OneTimeConsideration">One-Time Consideration</label>
+                    <input type="text" id="FundingHistoryForm_OneTimeConsideration" name="FundingHistoryForm.OneTimeConsideration"
+                           class="form-control unity-currency-input"
+                           value="@Model.FundingHistoryForm?.OneTimeConsideration" />
+                </div>
+            </div>            
 
             <div class="mb-3">
                 <div class="unity-input-group">
@@ -94,11 +104,6 @@
                 }
             });
 
-            var $fundingYear = $('#FundingHistoryForm_FundingYear');
-
-            $fundingYear.on('input', function () {
-                $(this).val($(this).val().replace(/\D/g, '').slice(0, 4));
-            });
         }
     })();
 </script>

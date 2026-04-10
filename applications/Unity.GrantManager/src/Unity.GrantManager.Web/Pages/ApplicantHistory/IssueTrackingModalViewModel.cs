@@ -10,7 +10,7 @@ public class IssueTrackingModalViewModel
     public Guid ApplicantId { get; set; }
 
     [DisplayName("Year")]
-    public int? Year { get; set; }
+    public string? Year { get; set; }
 
     [DisplayName("Issue Heading")]
     public string? IssueHeading { get; set; }

@@ -148,10 +148,10 @@
         {
             text: 'Filter',
             className: 'custom-table-btn flex-none btn btn-secondary',
-            id: 'btn-toggle-filter',
+            id: 'btn-toggle-filter-payment-list',
             action: function (e, dt, node, config) {},
             attr: {
-                id: 'btn-toggle-filter',
+                id: 'btn-toggle-filter-payment-list',
             },
         },
         {
@@ -214,6 +214,7 @@
         languageSetValues: {},
         dataTableName: 'ApplicationPaymentRequestListTable',
         externalSearchId: 'PaymentListSearch',
+        externalFilterButtonId: 'btn-toggle-filter-payment-list',
         dynamicButtonContainerId: 'dynamicButtonContainerId',
         lengthMenu: [10, 25, 50, -1]
     });

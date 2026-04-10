@@ -14,7 +14,7 @@ public class FundingHistoryModalViewModel
     public string? GrantCategory { get; set; }
 
     [DisplayName("Funding Year")]
-    public int? FundingYear { get; set; }
+    public string? FundingYear { get; set; }
 
     [DisplayName("Renewed Funding")]
     public bool? RenewedFunding { get; set; }
@@ -22,6 +22,10 @@ public class FundingHistoryModalViewModel
     [DisplayName("Approved Amount")]
     [DataType(DataType.Currency)]
     public decimal? ApprovedAmount { get; set; }
+
+    [DisplayName("One-Time Consideration")]
+    [DataType(DataType.Currency)]
+    public decimal? OneTimeConsideration { get; set; }    
 
     [DisplayName("Reconsideration Amount")]
     [DataType(DataType.Currency)]

@@ -1,15 +1,17 @@
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 using Unity.GrantManager.Applicants;
 using Unity.GrantManager.Applications;
+using Unity.Notifications.Settings;
 using Volo.Abp;
 using Volo.Abp.Application.Services;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.MultiTenancy;
+using Volo.Abp.Settings;
 using Volo.Abp.TenantManagement;
 
 namespace Unity.GrantManager.ApplicantProfile
@@ -20,7 +22,8 @@ namespace Unity.GrantManager.ApplicantProfile
             ITenantRepository tenantRepository,
             IRepository<ApplicantTenantMap, Guid> applicantTenantMapRepository,
             IRepository<ApplicationFormSubmission, Guid> applicationFormSubmissionRepository,
-            IEnumerable<IApplicantProfileDataProvider> dataProviders)
+            IEnumerable<IApplicantProfileDataProvider> dataProviders,
+            ISettingProvider settingProvider)
         : ApplicationService, IApplicantProfileAppService
     {
         private readonly Dictionary<string, IApplicantProfileDataProvider> _providersByKey
@@ -69,12 +72,13 @@ namespace Unity.GrantManager.ApplicantProfile
             // Extract the username part from the OIDC sub (part before '@')
             var subUsername = SubjectNormalizer.Normalize(request.Subject);
             if (subUsername is null) return [];
+            List<ApplicantTenantDto> mappings = [];
 
             // Query the ApplicantTenantMaps table in the host database
             using (currentTenant.Change(null))
             {
                 var queryable = await applicantTenantMapRepository.GetQueryableAsync();
-                var mappings = await queryable
+                mappings = await queryable
                     .Where(m => m.OidcSubUsername == subUsername)
                     .Select(m => new ApplicantTenantDto
                     {
@@ -82,8 +86,27 @@ namespace Unity.GrantManager.ApplicantProfile
                         TenantName = m.TenantName
                     })
                     .ToListAsync();
+            }
 
-                return mappings;
+            // Apply tenant specific metadata
+            foreach (var map in mappings)
+            {
+                await AddTenantMetadataAsync(map);
+            }
+
+            return mappings;
+        }
+
+        /// <summary>
+        /// Add on any relevant tenant specific metadata
+        /// </summary>
+        /// <param name="tenantMap">The applicant tenant DTO to enrich with tenant-specific metadata.</param>        
+        private async Task AddTenantMetadataAsync(ApplicantTenantDto tenantMap)
+        {
+            using (currentTenant.Change(tenantMap.TenantId))
+            {
+                var defaultEmailAddress = await settingProvider.GetOrNullAsync(NotificationsSettings.Mailing.DefaultFromAddress);
+                tenantMap.Metadata[ApplicantTenantMetadataKeys.DefaultFromAddress] = defaultEmailAddress ?? "NoReply@gov.bc.ca";
             }
         }
 

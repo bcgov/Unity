@@ -31,6 +31,7 @@ using System;
 using Quartz;
 using Unity.Modules.Shared.MessageBrokers.RabbitMQ;
 using Volo.Abp.BackgroundJobs;
+using Unity.AI;
 using Unity.Reporting;
 using Volo.Abp.DistributedLocking;
 using Unity.GrantManager.Zones;
@@ -61,6 +62,7 @@ namespace Unity.GrantManager;
     typeof(PaymentsApplicationModule),
     typeof(FlexApplicationModule),
     typeof(ReportingApplicationModule),
+    typeof(AIApplicationModule),
     typeof(AbpDistributedLockingModule)
 )]
 public class GrantManagerApplicationModule : AbpModule
@@ -118,6 +120,7 @@ public class GrantManagerApplicationModule : AbpModule
                     provider.SecretAccessKey = configuration["S3:SecretAccessKey"] ?? "";
                     provider.ApplicationS3Folder = configuration["S3:ApplicationS3Folder"] ?? "";
                     provider.AssessmentS3Folder = configuration["S3:AssessmentS3Folder"] ?? "";
+                    provider.ApplicantS3Folder = configuration["S3:ApplicantS3Folder"] ?? "";
                 });
             });
         });

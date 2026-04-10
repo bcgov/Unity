@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authorization.Infrastructure;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -14,10 +14,11 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using Unity.Flex.WorksheetInstances;
 using Unity.Flex.Worksheets;
+using Unity.AI.Models;
+using Unity.AI.Responses;
 using Unity.GrantManager.Applicants;
 using Unity.GrantManager.ApplicationForms;
 using Unity.GrantManager.Applications;
-using Unity.GrantManager.AI;
 using Unity.GrantManager.Events;
 using Unity.GrantManager.Flex;
 using Unity.GrantManager.Identity;
@@ -62,7 +63,7 @@ public class GrantApplicationAppService(
 
     public async Task<PagedResultDto<GrantApplicationDto>> GetListAsync(GrantApplicationListInputDto input)
     {
-        // 1️ Fetch applications with filters + paging in DB
+        // 1. Fetch applications with filters + paging in DB
         var applications = await applicationRepository.WithFullDetailsAsync(
             input.SkipCount,
             input.MaxResultCount,
@@ -73,7 +74,7 @@ public class GrantApplicationAppService(
 
         var applicationIds = applications.Select(a => a.Id).ToList();
 
-        // 2️ Fetch payment rollup batch if feature enabled
+        // 2. Fetch payment rollup batch if feature enabled
         bool paymentsFeatureEnabled = await FeatureChecker.IsEnabledAsync(PaymentConsts.UnityPaymentsFeature);
 
         Dictionary<Guid, ApplicationPaymentRollupDto> paymentRollupBatch = [];
@@ -83,7 +84,7 @@ public class GrantApplicationAppService(
             paymentRollupBatch = await paymentRequestService.GetApplicationPaymentRollupBatchAsync(applicationIds);
         }
 
-        // 3️ Map applications to DTOs
+        // 3. Map applications to DTOs
         var appDtos = applications.Select(app =>
         {
             var appDto = ObjectMapper.Map<Application, GrantApplicationDto>(app);
@@ -119,7 +120,7 @@ public class GrantApplicationAppService(
 
         }).ToList();
 
-        // 4️ Get total count using same filters
+        // 4. Get total count using same filters
         var totalCount = await applicationRepository.GetCountAsync(
             input.SubmittedFromDate,
             input.SubmittedToDate
@@ -954,6 +955,14 @@ public class GrantApplicationAppService(
         return form.AccountCodingId;
     }
 
+    
+
+    public async Task<bool> IsApplicantRedStopAsync(Guid applicationId)
+    {
+        var application = await applicationRepository.GetAsync(applicationId, true);
+        return application.Applicant != null && application.Applicant.RedStop == true;
+    }
+
     #region APPLICATION WORKFLOW
     /// <summary>
     /// Fetches the list of actions and their status context for a given application.
@@ -973,9 +982,10 @@ public class GrantApplicationAppService(
 
         // NOTE: Authorization is applied on the AppService layer and is false by default
         // AUTHORIZATION HANDLING
+         bool isRedStop = application.Applicant != null && application.Applicant.RedStop == true;
         foreach (var item in actionDtos)
         {
-            item.IsPermitted = item.IsPermitted && (await AuthorizationService.IsGrantedAsync(application, GetActionAuthorizationRequirement(item.ApplicationAction)));
+            item.IsPermitted = !isRedStop && item.IsPermitted && (await AuthorizationService.IsGrantedAsync(application, GetActionAuthorizationRequirement(item.ApplicationAction)));
             item.IsAuthorized = true;
         }
 
@@ -999,6 +1009,12 @@ public class GrantApplicationAppService(
         if (!await AuthorizationService.IsGrantedAsync(application, GetActionAuthorizationRequirement(triggerAction)))
         {
             throw new UnauthorizedAccessException();
+        }
+
+        // RED STOP CHECK: Block all status actions when the applicant has RedStop = true
+        if (application.Applicant != null && application.Applicant.RedStop == true)
+        {
+            throw new UserFriendlyException(L["GrantApplication:ActionButton.RedStopWarning"]);
         }
 
         application = await applicationManager.TriggerAction(applicationId, triggerAction);
@@ -1029,6 +1045,7 @@ public class GrantApplicationAppService(
                         Id = applications.Id,
                         ProjectName = applications.ProjectName,
                         ReferenceNo = applications.ReferenceNo,
+                        UnityApplicationId = applications.UnityApplicationId ?? string.Empty,
                         ApplicantName = applicant != null ? (applicant.ApplicantName ?? GrantManagerConsts.UnknownValue) : GrantManagerConsts.UnknownValue,
                         OrganizationName = applicant != null ? (applicant.OrgName ?? string.Empty) : string.Empty,
                         UnityApplicantId = applicant != null ? (applicant.UnityApplicantId ?? string.Empty) : string.Empty

@@ -14,7 +14,6 @@ using Unity.Payments.EntityFrameworkCore;
 using Unity.Flex.EntityFrameworkCore;
 using Unity.Notifications.EntityFrameworkCore;
 using Unity.Reporting.EntityFrameworkCore;
-using Unity.AI.EntityFrameworkCore;
 using Unity.GrantManager.GlobalTag;
 using Unity.GrantManager.Contacts;
 
@@ -39,6 +38,8 @@ namespace Unity.GrantManager.EntityFrameworkCore
         public DbSet<ApplicantAddress> ApplicantAddresses { get; set; }
         public DbSet<ApplicationTags> ApplicationTags { get; set; }
         public DbSet<ApplicantAgent> ApplicantAgents { get; set; }
+        public DbSet<ApplicantComment> ApplicantComments { get; set; }
+        public DbSet<ApplicantAttachment> ApplicantAttachments { get; set; }
         public DbSet<ApplicationAttachment> ApplicationAttachments { get; set; }
         public DbSet<ApplicationFormSubmission> ApplicationFormSubmissions { get; set; }
         public DbSet<AssessmentAttachment> AssessmentAttachments { get; set; }
@@ -181,6 +182,19 @@ namespace Unity.GrantManager.EntityFrameworkCore
                 b.HasOne<Applicant>().WithMany().HasForeignKey(x => x.ApplicantId).IsRequired();
             });
 
+            modelBuilder.Entity<ApplicantComment>(b =>
+            {
+                b.ToTable(GrantManagerConsts.TenantTablePrefix + "ApplicantComments", GrantManagerConsts.DbSchema);
+
+                b.ConfigureByConvention();
+                b.HasOne<Applicant>().WithMany().HasForeignKey(x => x.ApplicantId).IsRequired();
+
+                b.HasOne<Person>()
+                   .WithMany()
+                   .HasPrincipalKey(x => x.Id)
+                   .HasForeignKey(x => x.CommenterId);
+            });
+
             modelBuilder.Entity<ApplicationFormSubmission>(b =>
             {
                 b.ToTable(GrantManagerConsts.TenantTablePrefix + "ApplicationFormSubmissions",
@@ -202,6 +216,14 @@ namespace Unity.GrantManager.EntityFrameworkCore
                    .WithMany()
                    .HasPrincipalKey(x => x.Id)
                    .HasForeignKey(x => x.CommenterId);
+            });
+
+            modelBuilder.Entity<ApplicantAttachment>(b =>
+            {
+                b.ToTable(GrantManagerConsts.TenantTablePrefix + "ApplicantAttachments", GrantManagerConsts.DbSchema);
+
+                b.ConfigureByConvention();
+                b.HasOne<Applicant>().WithMany().HasForeignKey(x => x.ApplicantId).IsRequired();
             });
 
             modelBuilder.Entity<ApplicationAttachment>(b =>
@@ -380,7 +402,6 @@ namespace Unity.GrantManager.EntityFrameworkCore
             modelBuilder.ConfigureFlex();
             modelBuilder.ConfigureNotifications();
             modelBuilder.ConfigureReporting();
-            modelBuilder.ConfigureAI();
         }
     }
 }

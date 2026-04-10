@@ -30,7 +30,7 @@ public class GrantManagerDataSeederContributor(
         public const string INITITAL_REVIEW_COMPLETED = "Initial Review Completed";
         public const string UNDER_ASSESSMENT = "Under Assessment";
         public const string ASSESSMENT_COMPLETED = "Assessment Completed";
-        public const string GRANT_APPROVED = "Grant Approved";
+        public const string GRANT_APPROVED = "Approved";
         public const string DECLINED = "Declined";
         public const string DEFER = "Deferred";
         public const string ON_HOLD = "On Hold";

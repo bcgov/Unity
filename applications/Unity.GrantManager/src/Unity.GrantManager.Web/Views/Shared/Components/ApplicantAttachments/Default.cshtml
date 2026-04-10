@@ -1,0 +1,26 @@
+<div class="attachments-upload__title-button-split d-flex flex-row justify-content-between align-items-end mb-2">
+    <div class="upload-attachment-title">
+        <h6 class="fw-bold px-3 pt-4 pb-2 m-0">Applicant Attachments</h6>
+    </div>
+    <div class="upload-attachment-section d-flex me-3">
+        <button type="button" class="btn unt-btn-outline-primary btn-outline-primary me-2" id="btn-toggle-filter-applicant-uploads" title="Filter">
+            <span>Filter</span>
+        </button>
+    </div>
+</div>
+<div class="px-3">
+    <abp-table id="ApplicantAttachmentsTable" 
+        hoverable-rows="true" 
+        data-resize-aware="true" 
+        class="attachments-table"></abp-table>
+</div>
+<div class="d-flex justify-content-end m-3">
+    <form id="form" name="form" action="/uploader" enctype="multipart/form-data" method="post">
+        <input id="applicant_attachment_upload" name="applicant_attachment_upload" type="file" size="1" multiple onchange="uploadApplicantFiles('applicant_attachment_upload');" style="display: none" />
+        <abp-button text="Add Attachments"
+                    id="applicant_attachment_upload_btn"
+                    icon-type="Other"
+                    icon="fl fl-plus"
+                    button-type="Light" />
+    </form>
+</div>

@@ -112,7 +112,7 @@ All providers are registered via ABP's `[ExposeServices(typeof(IApplicantProfile
 
 ### 1. ContactInfoDataProvider (`CONTACTINFO`)
 
-**Purpose:** Aggregates contact information from three sources — profile-linked contacts, application-level contacts, and applicant agent contacts derived from the submission login token.
+**Purpose:** Aggregates contact information from three sources — applicant-linked contacts, application-level contacts, and applicant agent contacts derived from the submission login token.
 
 **Dependencies:**
 - `ICurrentTenant` — for multi-tenant scoping
@@ -121,10 +121,11 @@ All providers are registered via ABP's `[ExposeServices(typeof(IApplicantProfile
 **Logic:**
 
 1. Switches to the requested tenant context.
-2. Retrieves **profile contacts** — contacts linked to the applicant profile via `ContactLink` records where `RelatedEntityType == "ApplicantProfile"` and `RelatedEntityId == profileId`. These are **editable** (`IsEditable = true`).
+2. Retrieves **applicant contacts** — resolves applicant IDs from `ApplicationFormSubmission` records matching the normalized OIDC subject, then queries `ContactLink` records where `RelatedEntityType == "Applicant"` and `RelatedEntityId` is in the resolved set. When the subject resolves to a **single** applicant ID the contacts are **editable** (`IsEditable = true`); when **multiple** applicant IDs are found they are **read-only** (`IsEditable = false`). If no submissions match, an empty list is returned.
 3. Retrieves **application contacts** — contacts on applications whose form submissions match the normalized OIDC subject. These are **read-only** (`IsEditable = false`).
 4. Retrieves **applicant agent contacts** — contact information derived from `ApplicantAgent` records on applications whose form submissions match the normalized OIDC subject. The join path is `Submission → Application → ApplicantAgent`. These are **read-only** (`IsEditable = false`).
 5. Merges all three lists into a single `ApplicantContactInfoDto.Contacts` collection.
+6. Checks the `IsPrimary` flag on contacts; if no contact is marked primary, the most recently created contact (by `CreationTime`) is auto-promoted to primary.
 
 **Subject Normalization:** The OIDC subject (e.g. `user@idir`) is normalized by stripping everything after `@` and converting to uppercase.
 
@@ -133,11 +134,21 @@ flowchart TD
     Start([GetDataAsync called])
     Tenant["Switch to request.TenantId"]
 
-    subgraph ProfileContacts["Profile Contacts - Editable"]
-        PC1["Query ContactLink<br/>WHERE RelatedEntityType = 'ApplicantProfile'<br/>AND RelatedEntityId = profileId<br/>AND IsActive = true"]
+    subgraph ProfileContacts["Applicant Contacts - Conditionally Editable"]
+        PC0["Normalize Subject<br/>strip domain, uppercase"]
+        PC0a["Query ApplicationFormSubmission<br/>WHERE OidcSub = normalizedSubject"]
+        PC0b["Extract distinct ApplicantIds"]
+        PC0c{"Single<br/>ApplicantId?"}
+        PC1["Query ContactLink<br/>WHERE RelatedEntityType = 'Applicant'<br/>AND RelatedEntityId IN applicantIds<br/>AND IsActive = true"]
         PC2["JOIN Contact ON ContactId"]
-        PC3["Map to ContactInfoItemDto<br/>IsEditable = true"]
-        PC1 --> PC2 --> PC3
+        PC3e["Map to ContactInfoItemDto<br/>IsEditable = true"]
+        PC3r["Map to ContactInfoItemDto<br/>IsEditable = false"]
+        PC0 --> PC0a --> PC0b --> PC0c
+        PC0c -->|Yes| PC1
+        PC0c -->|No| PC1
+        PC1 --> PC2
+        PC0c -->|Yes| PC3e
+        PC0c -->|No| PC3r
     end
 
     subgraph AppContacts["Application Contacts - Read-Only"]
@@ -159,20 +170,24 @@ flowchart TD
     end
 
     Start --> Tenant
-    Tenant --> PC1
+    Tenant --> PC0
     Tenant --> AC1
     Tenant --> AG1
-    PC3 --> Merge["Merge into Contacts list"]
+    PC3e --> Merge["Merge into Contacts list"]
+    PC3r --> Merge
     AC4 --> Merge
     AG4 --> Merge
-    Merge --> Return([Return ApplicantContactInfoDto])
+    Merge --> PrimaryCheck{"Any contact\nIsPrimary?"}
+    PrimaryCheck -->|Yes| Return([Return ApplicantContactInfoDto])
+    PrimaryCheck -->|No| AutoPromote["Auto-promote latest\nby CreationTime"]
+    AutoPromote --> Return
 ```
 
 **Data Sources:**
 
 | Source | Entity | Join Path | Editable |
 |--------|--------|-----------|----------|
-| Profile Contacts | `ContactLink` → `Contact` | `ContactLink.RelatedEntityId = profileId` | ✅ Yes |
+| Applicant Contacts | `ApplicationFormSubmission` → `ContactLink` → `Contact` | `Submission.OidcSub = normalizedSubject` → distinct `ApplicantId` set → `ContactLink.RelatedEntityId IN applicantIds` | ✅ Single applicant / ❌ Multiple |
 | Application Contacts | `ApplicationFormSubmission` → `ApplicationContact` → `Application` | `Submission.OidcSub = normalizedSubject`, `Application.Id` for `ReferenceNo` | ❌ No |
 | Applicant Agent Contacts | `ApplicationFormSubmission` → `ApplicantAgent` → `Application` | `Submission.ApplicationId = Agent.ApplicationId`, `Application.Id` for `ReferenceNo` | ❌ No |
 
@@ -192,6 +207,7 @@ The `ApplicantAgent` entity is populated from the CHEFS submission login token d
 | `RoleForApplicant` | `Role` |
 | `ApplicationId` | `ApplicationId` |
 | `Application.ReferenceNo` | `ReferenceNo` |
+| `CreationTime` | `CreationTime` |
 | _(literal)_ `"ApplicantAgent"` | `ContactType` |
 
 ---
@@ -267,6 +283,7 @@ flowchart TD
 - `ICurrentTenant` — for multi-tenant scoping
 - `IRepository<ApplicationFormSubmission>` — form submissions
 - `IRepository<Application>` — applications
+- `IRepository<ApplicationForm>` — application forms (for form name)
 - `IRepository<ApplicationStatus>` — status records
 - `IEndpointManagementAppService` — resolves the CHEFS API base URL
 - `ILogger<SubmissionInfoDataProvider>` — logging
@@ -277,13 +294,14 @@ flowchart TD
 2. Resolves the **CHEFS form view URL** from the `INTAKE_API_BASE` dynamic URL setting:
    - Fetches the base URL (e.g. `https://chefs-dev.apps.silver.devops.gov.bc.ca/app/api/v1`)
    - Strips the trailing `/api/v1` segment
-   - Appends `/form/view?s=` to create the view link template
+   - Appends `/user/view?s=` to create the view link template
    - Falls back to an empty string on failure.
 3. Switches to the requested tenant context.
-4. Queries `ApplicationFormSubmission` → `Application` → `ApplicationStatus` where `OidcSub` matches.
+4. Queries `ApplicationFormSubmission` → `Application` → `ApplicationForm` → `ApplicationStatus` where `OidcSub` matches.
 5. Maps each result to a `SubmissionInfoItemDto`:
    - `ReceivedTime` = the submission's `CreationTime` in the system.
    - `SubmissionTime` = the `createdAt` timestamp parsed from the CHEFS JSON payload; falls back to `CreationTime` if parsing fails.
+   - `Type` = the `ApplicationFormName` from the joined `ApplicationForm` record.
    - `Status` = the `ExternalStatus` from the application status record.
    - `LinkId` = the `ChefsSubmissionGuid` used to build a direct link to the form.
 
@@ -299,7 +317,7 @@ flowchart TD
     subgraph URLResolution["CHEFS Form View URL Resolution"]
         U1["Fetch INTAKE_API_BASE<br/>via IEndpointManagementAppService"]
         U2["Strip trailing /api/v1"]
-        U3["Append /form/view?s="]
+        U3["Append /user/view?s="]
         U4["Set as dto.LinkSource"]
         U1 --> U2 --> U3 --> U4
     end
@@ -309,14 +327,15 @@ flowchart TD
     subgraph Query["Submission Query"]
         Q1["ApplicationFormSubmission<br/>WHERE OidcSub = normalized"]
         Q2["JOIN Application<br/>ON Submission.ApplicationId = Application.Id"]
+        Q2b["JOIN ApplicationForm<br/>ON Application.ApplicationFormId = Form.Id"]
         Q3["JOIN ApplicationStatus<br/>ON Application.ApplicationStatusId = Status.Id"]
-        Q4["SELECT Id, ChefsSubmissionGuid,<br/>CreationTime, Submission JSON,<br/>ReferenceNo, ProjectName, ExternalStatus"]
-        Q1 --> Q2 --> Q3 --> Q4
+        Q4["SELECT Id, ChefsSubmissionGuid,<br/>CreationTime, Submission JSON,<br/>ReferenceNo, ApplicationFormName, ExternalStatus"]
+        Q1 --> Q2 --> Q2b --> Q3 --> Q4
     end
 
     Tenant --> Q1
 
-    Q4 --> MapItems["Map to SubmissionInfoItemDto<br/>ReceivedTime = CreationTime<br/>SubmissionTime = parse JSON createdAt<br/>Status = ExternalStatus<br/>LinkId = ChefsSubmissionGuid"]
+    Q4 --> MapItems["Map to SubmissionInfoItemDto<br/>ReceivedTime = CreationTime<br/>SubmissionTime = parse JSON createdAt<br/>Type = ApplicationFormName<br/>Status = ExternalStatus<br/>LinkId = ChefsSubmissionGuid"]
 
     U4 --> Result
     MapItems --> Result([Return ApplicantSubmissionInfoDto])
@@ -403,7 +422,7 @@ flowchart LR
 
 **Source**: `PaymentRequest` entity (from `Unity.Payments` module), linked via `ApplicationFormSubmission` → `Application` where `PaymentRequest.CorrelationId` matches the application ID.
 
-**Query**: Normalizes the OIDC subject, then joins `ApplicationFormSubmission` → `Application` to build a lookup of `ApplicationId → ReferenceNo`. Payment requests whose `CorrelationId` is in that set are returned with the application's `ReferenceNo` resolved from the lookup.
+**Query**: Normalizes the OIDC subject, then joins `ApplicationFormSubmission` → `Application` to build a lookup of `ApplicationId → ReferenceNo`. Payment requests whose `CorrelationId` is in that set **and** whose CAS `PaymentStatus` is `"Fully Paid"` are returned with the application's `ReferenceNo` resolved from the lookup.
 
 **Response DTO**: `ApplicantPaymentInfoDto`
 
@@ -417,7 +436,7 @@ flowchart LR
       "referenceNo": "REF-001",
       "amount": 5000.00,
       "paymentDate": "2025-01-15",
-      "paymentStatus": "Paid"
+      "paymentStatus": "Fully Paid"
     }
   ]
 }
@@ -432,7 +451,7 @@ flowchart LR
 | `ReferenceNo` | `Application.ReferenceNo` | `string` | Application reference number, resolved via `CorrelationId → Application` lookup |
 | `Amount` | `PaymentRequest.Amount` | `decimal` | Requested payment amount |
 | `PaymentDate` | `PaymentRequest.PaymentDate` | `string?` | Date string populated during CAS reconciliation |
-| `PaymentStatus` | `PaymentRequest.Status` | `string` | Enum converted to string (e.g. `L1Pending`, `Submitted`, `Paid`, `Failed`) |
+| `PaymentStatus` | Constant `"Fully Paid"` | `string` | Always `"Fully Paid"` — only payments with CAS `PaymentStatus` of `"Fully Paid"` are returned |
 
 **Cross-module note**: This provider queries the `PaymentRequest` entity directly from the `Unity.Payments` module via `IRepository<PaymentRequest, Guid>`. The `CorrelationId` on `PaymentRequest` corresponds to the `Application.Id` in the grant manager domain.
 
@@ -477,7 +496,7 @@ Providers distinguish between **editable** and **read-only** data:
 
 | Provider | Editable Source | Read-Only Source |
 |----------|----------------|-----------------|
-| ContactInfo | Profile-linked contacts | Application-level contacts, Applicant agent contacts |
+| ContactInfo | Applicant-linked contacts | Application-level contacts, Applicant agent contacts |
 | AddressInfo | Addresses linked via ApplicantId | Addresses linked via ApplicationId |
 
 ---

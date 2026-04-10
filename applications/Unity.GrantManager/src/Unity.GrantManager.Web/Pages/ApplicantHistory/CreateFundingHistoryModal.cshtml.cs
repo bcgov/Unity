@@ -36,6 +36,7 @@ public class CreateFundingHistoryModal : AbpPageModel
             RenewedFunding = FundingHistoryForm.RenewedFunding,
             ApprovedAmount = FundingHistoryForm.ApprovedAmount,
             ReconsiderationAmount = FundingHistoryForm.ReconsiderationAmount,
+            OneTimeConsideration = FundingHistoryForm.OneTimeConsideration,
             TotalGrantAmount = FundingHistoryForm.TotalGrantAmount,
             FundingNotes = FundingHistoryForm.FundingNotes
         };

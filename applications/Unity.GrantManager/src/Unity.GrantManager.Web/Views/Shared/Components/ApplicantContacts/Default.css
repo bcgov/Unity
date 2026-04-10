@@ -1,0 +1,89 @@
+/* ApplicantContacts Component Styles */
+
+.applicant-contacts-widget {
+    position: relative;
+}
+
+.applicant-contacts-widget .applicant-organization-info {
+    border-radius: 8px;
+    padding: 0 1rem 1rem 1rem;
+    margin-bottom: 0;
+}
+
+.applicant-contacts-widget .save-button-container {
+    display: flex;
+    justify-content: flex-end;
+    position: sticky;
+    top: 56px;
+    padding-right: 24px;
+    z-index: 999;
+}
+
+.applicant-contacts-widget .save-button-container .floating-save-btn {
+    position: static;
+}
+
+.applicant-contacts-widget .form-label {
+    font-size: var(--bc-font-size-sm);
+    color: var(--bc-colors-grey-text-300);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 0;
+}
+
+.applicant-contacts-widget .primary-section {
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.applicant-contacts-widget .table-card {
+    background-color: #fff;
+    border: 1px solid #e0e6ed;
+    border-radius: 8px;
+    box-shadow: 0 6px 12px rgba(1, 51, 102, 0.05);
+}
+
+.applicant-contacts-widget .table-card__header {
+    border-bottom: 1px solid #e0e6ed;
+    padding: 0.75rem 1.25rem;
+}
+
+.applicant-contacts-widget .table-card__body {
+    padding: 1.25rem;
+    overflow: visible;
+}
+
+.contacts-table {
+    width: 100%;
+}
+
+#ApplicantContactsTable_wrapper {
+    width: 100%;
+    overflow: visible !important;
+}
+
+#ApplicantContactsTable_wrapper .dt-container,
+#ApplicantContactsTable_wrapper .dt-scroll,
+#ApplicantContactsTable_wrapper .dt-layout-row {
+    overflow: visible !important;
+}
+
+#ApplicantContactsTable_wrapper .dt-scroll-head .dt-scroll-headInner,
+#ApplicantContactsTable_wrapper .dt-scroll-head .dt-scroll-headInner table {
+    width: 100% !important;
+}
+
+#ApplicantContactsTable_wrapper .dt-scroll-body {
+    overflow-x: auto;
+    overflow-y: visible;
+    max-height: none !important;
+}
+
+#ApplicantContactsTable_wrapper .dt-scroll-body table {
+    width: 100% !important;
+}
+
+#ApplicantContactsTable {
+    width: 100% !important;
+}

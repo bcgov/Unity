@@ -484,7 +484,7 @@ $(function () {
 
         prepareDisplayData: function(link) {
             const referenceNumber = escapeHtml(link.referenceNumber || 'Unknown Reference');
-            const applicantName = escapeHtml(link.applicantName || 'Unknown Applicant');
+            const applicantName = escapeHtml(link.applicantName || 'Applicant Name');
             const category = escapeHtml(link.category || 'Unknown Category');
             const applicationStatus = escapeHtml(link.applicationStatus || 'Status Unavailable');
             const linkType = escapeHtml(link.linkType || 'Related');
@@ -635,16 +635,22 @@ $(function () {
                             const refNo = (app.ReferenceNo || '').toLowerCase();
                             const applicantName = (app.ApplicantName || '').toLowerCase();
                             const orgName = (app.OrganizationName || '').toLowerCase();
+                            const applicationId = (app.UnityApplicationId || '').toString().toLowerCase();
                             return id.includes(inputValue)
                                 || refNo.includes(inputValue)
                                 || applicantName.includes(inputValue)
-                                || orgName.includes(inputValue);
+                                || orgName.includes(inputValue)
+                                || applicationId.includes(inputValue);
                         })
                         .map(app => {
-                            
-                            const idPart = app.UnityApplicantId ? ` - (${app.UnityApplicantId})` : '';
-                            const orgPart = app.OrganizationName ? ` - (${app.OrganizationName})` : '';                            
-                            return `Submission #${app.ReferenceNo} - ${app.ApplicantName}${idPart}${orgPart}`;
+                            // Submission # (Application Id) - Applicant Name/Organization Name (Applicant Id)
+                            const idPart = app.UnityApplicantId ? ` (${app.UnityApplicantId})` : '';
+                            const applicationIdPart = app.UnityApplicationId ? ` (${app.UnityApplicationId})` : '';                            
+                            const orgName = app.OrganizationName ? ` - ${app.OrganizationName}` : '';
+                            const orgPart = app.ApplicantName === '' ? orgName : '';
+                            const applicantPart = app.ApplicantName ? ` - ${app.ApplicantName}` : '';
+
+                            return `${app.ReferenceNo}${applicationIdPart}${applicantPart}${orgPart}${idPart}`;
                         });
 
                     if (suggestions.length > 0) {
@@ -752,9 +758,8 @@ $(function () {
     // Link Selection Service
     const LinkSelectionService = {
         selectSuggestion: function(suggestion, state) {
-            // Format: "Submission #<ReferenceNo> - <ApplicantName>"
-            const match = suggestion.match(/^Submission #(.+?) - /);
-            const referenceNumber = match ? match[1].trim() : suggestion.split(' - ')[0].trim();
+            // Format: "<ReferenceNo> (<UnityApplicationId>) - <ApplicantName> (<UnityApplicantId>)"
+            const referenceNumber = suggestion.split(' ')[0].trim();
             
             if (this.isDuplicate(referenceNumber, state)) {
                 abp.notify.warn('This application is already linked.');

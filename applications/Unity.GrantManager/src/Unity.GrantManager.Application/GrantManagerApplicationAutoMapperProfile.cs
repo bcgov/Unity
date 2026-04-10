@@ -45,6 +45,8 @@ public class GrantManagerApplicationAutoMapperProfile : Profile
             .ForMember(dest => dest.OwnerId, opt => opt.MapFrom(src => src.AssessmentId));
         CreateMap<ApplicationComment, CommentDto>()
             .ForMember(dest => dest.OwnerId, opt => opt.MapFrom(src => src.ApplicationId));
+        CreateMap<ApplicantComment, CommentDto>()
+            .ForMember(dest => dest.OwnerId, opt => opt.MapFrom(src => src.ApplicantId));
         CreateMap<CommentListItem, CommentDto>()
             .ForMember(dest => dest.Badge, opt => opt.MapFrom(src => src.CommenterBadge))
             .ForMember(dest => dest.Commenter, opt => opt.MapFrom(src => src.CommenterDisplayName))
@@ -56,7 +58,9 @@ public class GrantManagerApplicationAutoMapperProfile : Profile
                 opts => opts.MapFrom(src => src.CreationTime));
         CreateMap<AssessmentWithAssessorQueryResultItem, AssessmentListItemDto>()
             .ForMember(d => d.SubTotal, opt => opt.Ignore());
-        CreateMap<ApplicationChefsFileAttachment, ApplicationChefsFileAttachmentDto>();
+        CreateMap<ApplicationChefsFileAttachment, ApplicationChefsFileAttachmentDto>()
+            .ForMember(dest => dest.CreatedTime, opt => opt.MapFrom(src => src.CreationTime))
+            .ForMember(dest => dest.UpdatedTime, opt => opt.MapFrom(src => src.LastModificationTime));
         CreateMap<ApplicationAttachment, ApplicationAttachmentDto>();
         CreateMap<Intakes.Intake, IntakeDto>();
         CreateMap<ApplicationForm, ApplicationFormDto>();

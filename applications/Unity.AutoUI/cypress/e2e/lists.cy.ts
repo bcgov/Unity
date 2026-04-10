@@ -75,7 +75,8 @@ describe('Grant Manager Login and List Navigation', () => {
             cy.get(listboxSel).within(() => {
                 cy.get('a.dropdown-item[role="option"]').then(($opts) => {
                     const match = $opts.filter((_, el) => {
-                        const text = el.querySelector('span.text')?.textContent || ''
+                        const textNode = el.querySelector('span.text')
+                        const text = textNode ? textNode.textContent || '' : ''
                         return text.trim() === 'Test'
                     })
 
@@ -95,7 +96,8 @@ describe('Grant Manager Login and List Navigation', () => {
                 })
             })
 
-            cy.get('body').click(0, 0)
+            cy.get(btnSel).first().click({ force: true })
+            cy.get(btnSel).first().should('have.attr', 'aria-expanded', 'false')
         })
     }
 

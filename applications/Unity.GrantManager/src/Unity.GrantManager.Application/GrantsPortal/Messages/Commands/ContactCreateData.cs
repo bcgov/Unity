@@ -1,4 +1,5 @@
 using Newtonsoft.Json;
+using System;
 
 namespace Unity.GrantManager.GrantsPortal.Messages.Commands;
 
@@ -33,4 +34,7 @@ public class ContactCreateData
 
     [JsonProperty("isPrimary")]
     public bool IsPrimary { get; set; }
+    
+    [JsonProperty("applicantId")]
+    public Guid ApplicantId { get; set; }
 }

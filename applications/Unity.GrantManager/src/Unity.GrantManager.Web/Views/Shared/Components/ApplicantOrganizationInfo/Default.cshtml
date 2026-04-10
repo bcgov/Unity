@@ -49,7 +49,14 @@
                                     <abp-input asp-for="ApplicantName" id="ApplicantOrganizationInfo_ApplicantName" />
                                 </abp-column>
                                 <abp-column size="_4" class="px-1">
-                                    <abp-input asp-for="UnityApplicantId" id="ApplicantOrganizationInfo_UnityApplicantId" />
+                                    <div class="input-group unt-input-group">
+                                        <abp-input asp-for="UnityApplicantId" id="ApplicantOrganizationInfo_UnityApplicantId" maxlength="6" class="unt-input" />
+                                        <div class="unt-input-group-append">
+                                            <button class="btn unt-btn-link btn-link" id="btn-generate-org-info" type="button">
+                                                <i class="unt-icon-m fa-solid fa-arrows-rotate"></i>
+                                            </button>
+                                        </div>
+                                    </div>
                                 </abp-column>
                                 <abp-column size="_4" class="px-1">
                                     <div class="switch-container">

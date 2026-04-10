@@ -53,6 +53,9 @@ if ($.fn.dataTable !== undefined && $.fn.dataTable.ext) {
             return csv;
         },
     };
+
+    $.fn.dataTable.Buttons.defaults.dom.button.className = 'btn custom-table-btn flex-none';
+    $.fn.dataTable.Buttons.defaults.dom.button.liner.tag = false;
 }
 
 // ============================================================================
@@ -183,6 +186,7 @@ if ($.fn.dataTable !== undefined && $.fn.dataTable.Api) {
  * @param {string} options.dynamicButtonContainerId - DOM ID where buttons are rendered
  * @param {boolean} [options.useNullPlaceholder=false] - Replace nulls with placeholder character
  * @param {string} [options.externalSearchId='search'] - ID of external search input element
+ * @param {string} [options.externalFilterButtonId='btn-toggle-filter'] - ID of external filter button element
  * @param {boolean} [options.disableColumnSelect=false] - Disable column visibility toggle
  * @param {Array<Object>} [options.listColumnDefs] - Additional columnDefs configurations
  * @param {Function} [options.onStateSaveParams] - Hook for additional state save parameters
@@ -218,6 +222,7 @@ function initializeDataTable(options) {
         dynamicButtonContainerId,
         useNullPlaceholder = false,
         externalSearchId = 'search',
+        externalFilterButtonId='btn-toggle-filter',
         disableColumnSelect = false,
         listColumnDefs,
         onStateSaveParams, //External hooks for save/load/loaded
@@ -421,7 +426,7 @@ function initializeDataTable(options) {
     let iDt = new DataTable(dt, configuration);
 
     // Initialize FilterRow plugin
-    initializeFilterRowPlugin(iDt);
+    initializeFilterRowPlugin(iDt, externalFilterButtonId);
 
     // Move buttons to designated container
     moveButtonsToContainer(iDt, updatedActionButtons, dynamicButtonContainerId);
@@ -636,12 +641,13 @@ function adjustColumnsWithRetry(api) {
 /**
  * Initializes FilterRow plugin if available and button exists.
  * @param {DataTable} iDt - DataTable instance
+ * @param {string} externalFilterButtonId - ID of external filter button element, skips initialization if null
  */
-function initializeFilterRowPlugin(iDt) {
-    if (!$('#btn-toggle-filter').length) return;
+function initializeFilterRowPlugin(iDt, externalFilterButtonId) {
+    if (!externalFilterButtonId || !$('#' + externalFilterButtonId).length) return;
     if ($.fn.dataTable?.FilterRow) {
         const filterRow = new $.fn.dataTable.FilterRow(iDt.settings()[0], {
-            buttonId: 'btn-toggle-filter',
+            buttonId: externalFilterButtonId,
             buttonText: FilterDesc.Default,
             buttonTextActive: FilterDesc.With_Filter,
             enablePopover: $.fn.popover !== undefined,

@@ -8,4 +8,5 @@ public class ApplicationActionWidgetViewModel
 {
     public Guid ApplicationId { get; set; }
     public ListResultDto<ApplicationActionDto> ApplicationActions { get; set; } = new();
+    public bool IsRedStop { get; set; }
 }

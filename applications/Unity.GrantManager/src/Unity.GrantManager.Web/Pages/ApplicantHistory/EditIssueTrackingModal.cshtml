@@ -15,7 +15,7 @@
             <div class="mb-3">
                 <label class="form-label" for="IssueTrackingForm_Year">Year</label>
                 <input type="text" id="IssueTrackingForm_Year" name="IssueTrackingForm.Year"
-                       class="form-control" inputmode="numeric" maxlength="4"
+                       class="form-control"
                        value="@Model.IssueTrackingForm?.Year" />
             </div>
 
@@ -56,12 +56,3 @@
     </abp-modal>
 </form>
 
-<script defer>
-    (function () {
-        if (window.jQuery) {
-            $('#IssueTrackingForm_Year').on('input', function () {
-                $(this).val($(this).val().replace(/\D/g, '').slice(0, 4));
-            });
-        }
-    })();
-</script>

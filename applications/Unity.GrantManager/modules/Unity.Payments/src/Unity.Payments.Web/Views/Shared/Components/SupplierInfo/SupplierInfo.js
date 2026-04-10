@@ -212,6 +212,9 @@ $(function () {
                 return;
             }
 
+            const $btn = $(this);
+            $btn.attr('disabled', 'disabled');
+
             const applicantId = $('#PaymentInfo_ApplicantId').val();
             const applicationId = $('#PaymentInfoViewApplicationId').val() || '';
             $.ajax({
@@ -221,6 +224,9 @@ $(function () {
                 error: function (xhr, status, error) {
                     console.error('Error loading sites:', error);
                     abp.notify.error('Failed to refresh sites');
+                },
+                complete: function () {
+                    $btn.removeAttr('disabled');
                 },
             });
         });
@@ -297,10 +303,10 @@ $(function () {
             {
                 text: 'Filter',
                 className: 'custom-table-btn flex-none btn btn-secondary',
-                id: 'btn-toggle-filter',
+                id: 'btn-supplier-toggle-filter',
                 action: function (e, dt, node, config) { },
                 attr: {
-                    id: 'btn-toggle-filter',
+                    id: 'btn-supplier-toggle-filter',
                 },
             },
         ];
@@ -327,6 +333,9 @@ $(function () {
             externalSearchInputId: 'SiteInfoSearch',
             dynamicButtonContainerId: 'siteDynamicButtonContainerId',
         });
+
+        initializeFilterRowPlugin(dataTable, 'btn-supplier-toggle-filter');
+
 
         function getColumns() {
             let columnIndex = 0;

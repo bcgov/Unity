@@ -1,8 +1,7 @@
 // Note: File depends on Unity.GrantManager.Web\Views\Shared\Components\_Shared\Attachments.js
 $(function () {
-    globalThis.generateAIAttachmentSummaries = function(capturePromptIo = false, triggerButton = null) {
+    globalThis.queueAttachmentSummary = function(triggerButton = null) {
         $('#generateAiSummaries')
-            .data('capture-prompt-io', capturePromptIo)
             .data('trigger-button', triggerButton || null)
             .trigger('click');
     };
@@ -188,8 +187,11 @@ $(function () {
                     $(row).after(summaryRow);
                 }
             },
+            externalFilterButtonId: 'btn-toggle-filter-submissions',
         })
     );
+
+    initializeFilterRowPlugin(chefsDataTable, 'btn-toggle-filter-submissions');
 
     PubSub.subscribe('refresh_chefs_attachment_list', (msg, data) => {
         chefsDataTable.ajax.reload();
@@ -223,10 +225,7 @@ $(function () {
                 ? chefsDataTable.rows().data()
                 : chefsDataTable.rows({ selected: true }).data();
             const promptVersion = globalThis.getSelectedPromptVersion?.() || null;
-            const capturePromptIo = $button.data('capture-prompt-io') === true;
-            const applicationId = $('#DetailsViewApplicationId').val();
 
-            $button.removeData('capture-prompt-io');
             $button.removeData('trigger-button');
 
             if (rowsToProcess.length === 0) {
@@ -242,59 +241,37 @@ $(function () {
 
             const existingHTML = $activeButton.html();
 
-            if (!capturePromptIo && globalThis.hideAIPromptCapture) {
-                globalThis.hideAIPromptCapture('#attachmentPromptCaptureContainer', '#attachmentPromptCaptureOutput');
-            }
-
             // Call the backend API
             $.ajax({
                 url:
-                    '/api/app/attachment/generate-aISummaries-attachments' +
+                    '/api/app/attachment-summary/generate-attachment-summaries' +
                     '?promptVersion=' +
-                    encodeURIComponent(promptVersion || '') +
-                    '&capturePromptIo=' +
-                    encodeURIComponent(String(capturePromptIo)),
+                    encodeURIComponent(promptVersion || ''),
                 data: JSON.stringify(attachmentIds),
                 contentType: 'application/json',
                 type: 'POST',
                 beforeSend: function () {
                     $activeButton
                         .html(
-                            '<span class="ai-button-content"><span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span><span>Generating...</span></span>'
+                            '<span class="ai-button-content"><span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span><span>Queueing...</span></span>'
                         )
                         .prop('disabled', true);
                 },
                 success: function (summaries) {
                     abp.notify.success(
-                        'AI summaries generated successfully for ' +
+                        'AI summaries queued for ' +
                             summaries.length +
-                            ' attachment(s).'
+                            ' attachment(s). Refresh later to see updated results.'
                     );
 
                     resetAttachmentSelectionState();
-
-                    // Reload the table to show new summaries
-                    chefsDataTable.ajax.reload();
-
-                    // Enable the toggle button now that we have summaries
-                    $('#toggleAllAISummaries').prop('disabled', false);
-
-                    if (capturePromptIo && globalThis.loadAIPromptCapture) {
-                        globalThis.loadAIPromptCapture(
-                            applicationId,
-                            'AttachmentSummary',
-                            promptVersion,
-                            '#attachmentPromptCaptureContainer',
-                            '#attachmentPromptCaptureOutput'
-                        );
-                    }
 
                     $activeButton.html(existingHTML).prop('disabled', false);
                 },
                 error: function (error) {
                     console.error('Error generating AI summaries:', error);
                     abp.notify.error(
-                        'An error occurred while generating AI summaries. Please try again.'
+                        'An error occurred while queueing AI summaries. Please try again.'
                     );
                     $activeButton.html(existingHTML).prop('disabled', false);
                 },
@@ -310,7 +287,9 @@ $(function () {
         $toggleAllAISummariesButton.on('click', function () {
             const $button = $(this);
             const $icon = $button.find('i');
-            const $text = $button.find('.toggle-ai-summaries-label');
+            const $text = $button.contents().filter(function () {
+                return this.nodeType === 3;
+            });
 
             // Don't do anything if button is disabled
             if ($button.prop('disabled')) {
@@ -337,7 +316,7 @@ $(function () {
                     }
                 });
                 $icon.removeClass('fa-chevron-up').addClass('fa-chevron-down');
-                $text.text('Show Summaries');
+                $text.replaceWith('Show Summaries');
                 $button.attr('title', 'Show AI Summaries');
                 allAISummariesExpanded = false;
             } else {
@@ -365,7 +344,7 @@ $(function () {
                     }
                 });
                 $icon.removeClass('fa-chevron-down').addClass('fa-chevron-up');
-                $text.text('Hide Summaries');
+                $text.replaceWith('Hide Summaries');
                 $button.attr('title', 'Hide AI Summaries');
                 allAISummariesExpanded = true;
             }
@@ -377,9 +356,11 @@ $(function () {
         if (allAISummariesExpanded) {
             const $button = $('#toggleAllAISummaries');
             const $icon = $button.find('i');
-            const $text = $button.find('.toggle-ai-summaries-label');
+            const $text = $button.contents().filter(function () {
+                return this.nodeType === 3;
+            });
             $icon.removeClass('fa-chevron-up').addClass('fa-chevron-down');
-            $text.text('Show Summaries');
+            $text.replaceWith('Show Summaries');
             $button.attr('title', 'Show AI Summaries');
             allAISummariesExpanded = false;
         }
@@ -636,4 +617,3 @@ function showChefsAPIAccessError() {
         },
     });
 }
-

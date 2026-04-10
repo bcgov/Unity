@@ -7,7 +7,7 @@
 @model ApplicationBreadcrumbWidgetViewModel
 
 @{
-    var renderedApplicantName = string.IsNullOrWhiteSpace(Model.ApplicantName) ? "Unknown Applicant" : Model.ApplicantName;
+    var renderedApplicantName = string.IsNullOrWhiteSpace(Model.ApplicantName) ? "Applicant Name" : Model.ApplicantName;
     var hasViewPermission = await PermissionChecker.IsGrantedAsync(GrantApplicationPermissions.Applicants.ViewList);
 }
 

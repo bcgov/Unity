@@ -178,6 +178,7 @@ namespace Unity.GrantManager.Assessments
         {
             // Arrange
             Login(GrantManagerTestData.User1_UserId);
+            SetFeatureEnabled("Unity.AI.Scoring", true);
 
             using var uow = _unitOfWorkManager.Begin();
 
@@ -192,6 +193,7 @@ namespace Unity.GrantManager.Assessments
         {
             // Arrange — User2 has no existing human assessment on Application1
             Login(GrantManagerTestData.User2_UserId);
+            SetFeatureEnabled("Unity.AI.Scoring", true);
 
             using var uow = _unitOfWorkManager.Begin();
             var beforeCount = (await _assessmentRepository.GetQueryableAsync())
@@ -214,6 +216,7 @@ namespace Unity.GrantManager.Assessments
         {
             // Arrange — Unity.AI.Scoring feature is disabled by default in test environment
             Login(GrantManagerTestData.User1_UserId);
+            SetFeatureEnabled("Unity.AI.Scoring", false);
 
             using var uow = _unitOfWorkManager.Begin();
 

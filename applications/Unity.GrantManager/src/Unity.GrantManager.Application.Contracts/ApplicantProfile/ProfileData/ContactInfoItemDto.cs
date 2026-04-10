@@ -18,5 +18,6 @@ namespace Unity.GrantManager.ApplicantProfile.ProfileData
         public bool IsEditable { get; set; }
         public Guid? ApplicationId { get; set; }
         public string? ReferenceNo { get; set; }
+        public DateTime? CreationTime { get; set; }
     }
 }

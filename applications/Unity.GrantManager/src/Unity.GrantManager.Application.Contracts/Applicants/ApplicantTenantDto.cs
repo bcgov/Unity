@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace Unity.GrantManager.Applicants
 {
@@ -6,5 +7,6 @@ namespace Unity.GrantManager.Applicants
     {
         public Guid TenantId { get; set; }
         public string TenantName { get; set; } = string.Empty;
+        public Dictionary<string, string> Metadata { get; set; } = [];
     }
 }

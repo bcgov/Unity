@@ -234,7 +234,7 @@ namespace Unity.GrantManager.Applicants
         }
 
         [Fact]
-        public async Task GetDataAsync_MultipleSubmissionsSameApplicant_ShouldReturnDuplicates()
+        public async Task GetDataAsync_MultipleSubmissionsSameApplicant_ShouldReturnDistinct()
         {
             var request = CreateRequest();
             var applicantId = Guid.NewGuid();
@@ -251,8 +251,8 @@ namespace Unity.GrantManager.Applicants
             var result = await _provider.GetDataAsync(request);
 
             var dto = result.ShouldBeOfType<ApplicantOrgInfoDto>();
-            dto.Organizations.Count.ShouldBe(2);
-            dto.Organizations.ShouldAllBe(o => o.OrgName == "Same Org");
+            dto.Organizations.Count.ShouldBe(1);
+            dto.Organizations[0].OrgName.ShouldBe("Same Org");
         }
 
         [Fact]

@@ -15,8 +15,11 @@ namespace Unity.GrantManager.ApplicantProfile;
 /// <summary>
 /// Applicant-profile-specific contact service. Retrieves contacts linked to applicant profiles,
 /// application-level contacts matched by OIDC subject, and applicant agent contacts derived from
-/// the submission login token. This service operates independently from the generic
-/// <see cref="Contacts.ContactAppService"/> and queries repositories directly.
+/// the submission login token. Profile contacts are resolved by looking up form submissions that
+/// match the OIDC subject to obtain applicant IDs, then querying <see cref="Contacts.ContactLink"/>
+/// records against those IDs. When a single applicant ID is resolved the contacts are editable;
+/// when multiple IDs are found the contacts are read-only. This service operates independently from the
+/// generic <see cref="Contacts.ContactAppService"/> and queries repositories directly.
 /// </summary>
 public class ApplicantProfileContactService(
     IContactRepository contactRepository,
@@ -27,19 +30,28 @@ public class ApplicantProfileContactService(
     IRepository<Application, Guid> applicationRepository)
     : IApplicantProfileContactService, ITransientDependency
 {
-    private const string ApplicantProfileEntityType = "ApplicantProfile";
+    private const string ApplicantEntityType = "Applicant";
 
     /// <inheritdoc />
-    public async Task<List<ContactInfoItemDto>> GetProfileContactsAsync(Guid profileId)
+    public async Task<List<ContactInfoItemDto>> GetApplicantContactsAsync(string subject)
     {
         var contactLinksQuery = await contactLinkRepository.GetQueryableAsync();
         var contactsQuery = await contactRepository.GetQueryableAsync();
+        var submissionsQuery = await applicationFormSubmissionRepository.GetQueryableAsync();
+
+        var applicantIds = await submissionsQuery
+            .Where(s => s.OidcSub == subject)
+            .Select(s => s.ApplicantId)
+            .Distinct()
+            .ToListAsync();
+
+        var isEditable = applicantIds.Count <= 1;
 
         return await (
             from link in contactLinksQuery
             join contact in contactsQuery on link.ContactId equals contact.Id
-            where link.RelatedEntityType == ApplicantProfileEntityType
-                  && link.RelatedEntityId == profileId
+            where link.RelatedEntityType == ApplicantEntityType
+                  && applicantIds.Contains(link.RelatedEntityId)
                   && link.IsActive
             select new ContactInfoItemDto
             {
@@ -54,9 +66,9 @@ public class ApplicantProfileContactService(
                 ContactType = link.RelatedEntityType,
                 Role = link.Role,
                 IsPrimary = link.IsPrimary,
-                IsEditable = true,
-                ApplicationId = null,
-                ReferenceNo = null
+                IsEditable = isEditable,
+                ReferenceNo = null,
+                CreationTime = contact.CreationTime
             }).ToListAsync();
     }
 
@@ -85,7 +97,8 @@ public class ApplicantProfileContactService(
                 IsPrimary = false,
                 IsEditable = false,
                 ApplicationId = appContact.ApplicationId,
-                ReferenceNo = application.ReferenceNo
+                ReferenceNo = application.ReferenceNo,
+                CreationTime = appContact.CreationTime
             }).ToListAsync();
 
         return applicationContacts;
@@ -117,7 +130,8 @@ public class ApplicantProfileContactService(
                 IsPrimary = false,
                 IsEditable = false,
                 ApplicationId = agent.ApplicationId,
-                ReferenceNo = application.ReferenceNo
+                ReferenceNo = application.ReferenceNo,
+                CreationTime = agent.CreationTime
             }).ToListAsync();
 
         return agentContacts;

@@ -162,15 +162,16 @@ namespace Unity.GrantManager.Reporting
 
             // Assert
             result.ShouldNotBeNull();
-            
-            // Radio component itself is filtered out, but options should be present
-            var radioOption = result.Components.FirstOrDefault(x => x.Key == "s01_RadioGroupComponent-option1");
-            radioOption.ShouldNotBeNull();
-            radioOption.Type.ShouldBe("option");
-            radioOption.Label.ShouldBe("Option 1");
-            radioOption.Path.ShouldBe("s01_RadioGroupComponent->option1");
-            radioOption.TypePath.ShouldBe("radio->option");
-            radioOption.DataPath.ShouldBe("s01_RadioGroupComponent->option1"); // "s01_RadioGroupComponent" is filtered out because it contains "Group"
+            result.Components.Count.ShouldBe(1);
+
+            // Radio group should appear as a single component (not expanded into individual options)
+            var radioGroup = result.Components.FirstOrDefault(x => x.Key == "s01_RadioGroupComponent");
+            radioGroup.ShouldNotBeNull();
+            radioGroup.Type.ShouldBe("radio");
+            radioGroup.Label.ShouldBe("Select One");
+            radioGroup.Path.ShouldBe("s01_RadioGroupComponent");
+            radioGroup.TypePath.ShouldBe("radio");
+            radioGroup.DataPath.ShouldBe("s01_RadioGroupComponent");
         }
 
         [Fact]
@@ -210,12 +211,13 @@ namespace Unity.GrantManager.Reporting
 
             // Assert
             result.ShouldNotBeNull();
-            result.Components.Count.ShouldBe(3); // Only 3 options (radio group is filtered out)
-            
-            // Check that we have the expanded options
-            result.Components.ShouldContain(x => x.Key == "preferredContact-email" && x.Type == "option");
-            result.Components.ShouldContain(x => x.Key == "preferredContact-phone" && x.Type == "option");
-            result.Components.ShouldContain(x => x.Key == "preferredContact-mail" && x.Type == "option");
+            result.Components.Count.ShouldBe(1); // Single radio group entry (not expanded into individual options)
+
+            // Radio stores a single selected value, so only one component for the group
+            var radioGroup = result.Components.FirstOrDefault(x => x.Key == "preferredContact");
+            radioGroup.ShouldNotBeNull();
+            radioGroup.Type.ShouldBe("radio");
+            radioGroup.Label.ShouldBe("Preferred Contact Method");
         }
 
         [Fact]
