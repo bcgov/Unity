@@ -374,6 +374,7 @@ select.selected {
     overflow-x: hidden;
     height: calc(100vh - 276px);
     margin-right: -6px;
+    position: relative;
 }
 
 #detailsTabContent {

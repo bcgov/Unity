@@ -174,6 +174,32 @@ public class AddressSetPrimaryHandlerTests
         await _addressRepository.DidNotReceive().GetAsync(siblingWithoutProp, Arg.Any<bool>(), Arg.Any<CancellationToken>());
     }
 
+    [Fact]
+    public async Task HandleAsync_ShouldSkipSiblingsAlreadyNotPrimary()
+    {
+        // Arrange
+        var addressId = Guid.NewGuid();
+        var siblingId = Guid.NewGuid();
+        var applicantId = Guid.NewGuid();
+
+        var address = WithId(new ApplicantAddress { ApplicantId = applicantId }, addressId);
+        var sibling = WithId(new ApplicantAddress { ApplicantId = applicantId }, siblingId);
+        sibling.SetProperty("isPrimary", false);
+
+        _addressRepository.GetAsync(addressId, Arg.Any<bool>(), Arg.Any<CancellationToken>())
+            .Returns(address);
+        _addressRepository.FindByApplicantIdAsync(applicantId)
+            .Returns(new List<ApplicantAddress> { address, sibling });
+
+        var payload = CreatePayload(addressId: addressId);
+
+        // Act
+        await _handler.HandleAsync(payload);
+
+        // Assert — sibling should not have been fetched for update since it's already not primary
+        await _addressRepository.DidNotReceive().GetAsync(siblingId, Arg.Any<bool>(), Arg.Any<CancellationToken>());
+    }
+
     #endregion
 
     #region Validation

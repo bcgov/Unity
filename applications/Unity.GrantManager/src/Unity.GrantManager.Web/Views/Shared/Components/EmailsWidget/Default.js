@@ -64,6 +64,10 @@
         UIElements.inputEmailFrom.on('input', handleDraftChange);
         UIElements.inputEmailSubject.on('input', handleDraftChange);
         UIElements.inputEmailBody.on('input', handleDraftChange);
+
+        $('.details-scrollable').on('scroll.emailWidget', function () {
+            $('.tox-toolbar__overflow').hide();
+        });
     }
 
     init();
@@ -224,6 +228,7 @@
             promotion: false,
             content_css: false,
             skin: false,
+            ui_container: '.details-scrollable',
             setup: function (editor) {
                 editor.on("input", (e) => {
                     UIElements.inputEmailBody.val(editor.getContent());
@@ -676,6 +681,7 @@
             promotion: false,
             content_css: false,
             skin: false,
+            ui_container: '.details-scrollable',
             setup: function (editor) {
                 editor.on("input", (e) => {
                     UIElements.inputEmailBody.val(editor.getContent())
