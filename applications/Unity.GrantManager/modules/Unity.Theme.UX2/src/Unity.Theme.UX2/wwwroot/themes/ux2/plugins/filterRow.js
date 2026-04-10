@@ -112,6 +112,11 @@
                 this._rebuildFilterRow();
             });
 
+            // Update button state whenever the global search changes
+            dt.on('search' + this.s.namespace, () => {
+                this._updateButtonState();
+            });
+
             // Listen for destroy event to cleanup
             dt.on('destroy' + this.s.namespace, () => {
                 this._destroy();
@@ -311,14 +316,16 @@
          */
         _updateButtonState: function () {
             let dt = this.s.dt;
-            let hasFilters = false;
+            let hasFilters = dt.search() !== '';
 
-            dt.columns().every(function () {
-                if (this.search()) {
-                    hasFilters = true;
-                    return false;
-                }
-            });
+            if (!hasFilters) {
+                dt.columns().every(function () {
+                    if (this.search()) {
+                        hasFilters = true;
+                        return false;
+                    }
+                });
+            }
 
             if (this.dom.button) {
                 this.dom.button.text(
