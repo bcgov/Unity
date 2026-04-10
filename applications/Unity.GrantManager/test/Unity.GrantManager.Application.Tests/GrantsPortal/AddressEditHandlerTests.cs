@@ -217,7 +217,7 @@ public class AddressEditHandlerTests
 
         var address = WithId(new ApplicantAddress { ApplicantId = applicantId }, addressId);
         var sibling = WithId(new ApplicantAddress { ApplicantId = applicantId }, siblingId);
-        sibling.SetProperty("isPrimary", true);
+        sibling.SetProperty(AddressExtraPropertyNames.IsPrimary, true);
 
         _addressRepository.GetAsync(addressId, Arg.Any<bool>(), Arg.Any<CancellationToken>())
             .Returns(address);
@@ -232,8 +232,8 @@ public class AddressEditHandlerTests
         await _handler.HandleAsync(payload);
 
         // Assert
-        address.GetProperty<bool>("isPrimary").ShouldBeTrue();
-        sibling.GetProperty<bool>("isPrimary").ShouldBeFalse();
+        address.GetProperty<bool>(AddressExtraPropertyNames.IsPrimary).ShouldBeTrue();
+        sibling.GetProperty<bool>(AddressExtraPropertyNames.IsPrimary).ShouldBeFalse();
     }
 
     [Fact]
@@ -242,7 +242,7 @@ public class AddressEditHandlerTests
         // Arrange
         var addressId = Guid.NewGuid();
         var address = WithId(new ApplicantAddress(), addressId);
-        address.SetProperty("isPrimary", true);
+        address.SetProperty(AddressExtraPropertyNames.IsPrimary, true);
 
         _addressRepository.GetAsync(addressId, Arg.Any<bool>(), Arg.Any<CancellationToken>())
             .Returns(address);
@@ -263,7 +263,7 @@ public class AddressEditHandlerTests
         await _handler.HandleAsync(payload);
 
         // Assert
-        address.GetProperty<bool>("isPrimary").ShouldBeFalse();
+        address.GetProperty<bool>(AddressExtraPropertyNames.IsPrimary).ShouldBeFalse();
     }
 
     [Fact]

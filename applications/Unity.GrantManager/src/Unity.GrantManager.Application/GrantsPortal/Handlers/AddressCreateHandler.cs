@@ -26,6 +26,11 @@ public class AddressCreateHandler(
         var innerData = payload.Data?.ToObject<AddressCreateData>()
                         ?? throw new ArgumentException("Address data is required");
 
+        if (innerData.ApplicantId == Guid.Empty)
+        {
+            throw new ArgumentException("applicantId is required");
+        }
+
         // Idempotency: if the address already exists, treat as success
         var existing = await applicantAddressRepository.FindAsync(addressId);
         if (existing != null)
@@ -46,7 +51,7 @@ public class AddressCreateHandler(
             Province = innerData.Province,
             Postal = innerData.PostalCode,
             Country = innerData.Country,
-            AddressType = MapAddressType(innerData.AddressType)            
+            AddressType = MapAddressType(innerData.AddressType)
         };
 
         EntityHelper.TrySetId(address, () => addressId);

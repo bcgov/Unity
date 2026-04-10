@@ -1,4 +1,4 @@
-﻿# Grants Portal — RabbitMQ Messaging Integration
+# Grants Portal — RabbitMQ Messaging Integration
 
 ## Overview
 

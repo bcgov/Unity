@@ -38,6 +38,7 @@ public class AddressSetPrimaryHandler(
             {
                 if (sibling.Id == addressId) continue;
                 if (!sibling.HasProperty(AddressExtraPropertyNames.IsPrimary)) continue;
+                if (!sibling.GetProperty<bool>(AddressExtraPropertyNames.IsPrimary)) continue;
 
                 var trackedSibling = await applicantAddressRepository.GetAsync(sibling.Id);
                 trackedSibling.SetProperty(AddressExtraPropertyNames.IsPrimary, false);

@@ -189,8 +189,8 @@ public class AddressCreateHandlerTests
 
         // Assert
         savedAddress.ShouldNotBeNull();
-        savedAddress.GetProperty<string>("profileId").ShouldBe(profileId.ToString());
-        savedAddress.GetProperty<bool>("isPrimary").ShouldBeTrue();
+        savedAddress.GetProperty<string>(AddressExtraPropertyNames.ProfileId).ShouldBe(profileId.ToString());
+        savedAddress.GetProperty<bool>(AddressExtraPropertyNames.IsPrimary).ShouldBeTrue();
     }
 
     #endregion
@@ -299,6 +299,25 @@ public class AddressCreateHandlerTests
         await Should.ThrowAsync<ArgumentException>(() => _handler.HandleAsync(payload));
     }
 
+    [Fact]
+    public async Task HandleAsync_WhenApplicantIdEmpty_ShouldThrow()
+    {
+        // Arrange
+        var data = JObject.FromObject(new
+        {
+            street = "123 Main St",
+            city = "Victoria",
+            province = "BC",
+            postalCode = "V8W 1A1",
+            applicantId = Guid.Empty
+        });
+
+        var payload = CreatePayload(data: data);
+
+        // Act & Assert
+        await Should.ThrowAsync<ArgumentException>(() => _handler.HandleAsync(payload));
+    }
+
     #endregion
 
     #region Primary demotion
@@ -312,7 +331,7 @@ public class AddressCreateHandlerTests
         var applicantId = Guid.NewGuid();
 
         var sibling = WithId(new ApplicantAddress { ApplicantId = applicantId }, siblingId);
-        sibling.SetProperty("isPrimary", true);
+        sibling.SetProperty(AddressExtraPropertyNames.IsPrimary, true);
 
         _addressRepository.GetAsync(siblingId, Arg.Any<bool>(), Arg.Any<CancellationToken>())
             .Returns(sibling);
@@ -333,9 +352,9 @@ public class AddressCreateHandlerTests
         await _handler.HandleAsync(payload);
 
         // Assert — sibling should have isPrimary cleared
-        sibling.GetProperty<bool>("isPrimary").ShouldBeFalse();
+        sibling.GetProperty<bool>(AddressExtraPropertyNames.IsPrimary).ShouldBeFalse();
         savedAddress.ShouldNotBeNull();
-        savedAddress.GetProperty<bool>("isPrimary").ShouldBeTrue();
+        savedAddress.GetProperty<bool>(AddressExtraPropertyNames.IsPrimary).ShouldBeTrue();
     }
 
     [Fact]
