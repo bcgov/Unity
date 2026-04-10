@@ -17,7 +17,7 @@ function getAnalysisLabels() {
         errors: labels.errors || 'Errors',
         warnings: labels.warnings || 'Warnings',
         summaries: labels.summaries || 'Summaries',
-        recommendations: labels.recommendations || 'Recommendations',
+        recommendation: labels.recommendation || labels.recommendations || 'Recommendation',
         proceed: labels.proceed || 'Proceed',
         hold: labels.hold || 'Hold',
         noErrors: labels.noErrors || 'No errors',
@@ -136,6 +136,10 @@ function updateVisibleItemLayout($items) {
 
     $allItems.removeClass('last-visible');
     $visibleItems.last().addClass('last-visible');
+}
+
+function formatCountStatus(count) {
+    return `(${count})`;
 }
 
 function configureSectionStatus($status, text, statusClass) {
@@ -272,7 +276,7 @@ function buildAnalysisSections(analysisData) {
     const summaryGroups = splitFindingsByVisibility(summaries);
     const recommendationGroups = splitFindingsByVisibility(recommendations);
 
-    const recommendationDecision = decision
+    const recommendationStatus = decision
         ? {
             statusText: decision === 'PROCEED' ? labels.proceed : labels.hold,
             statusClass: decision.toLowerCase()
@@ -285,7 +289,7 @@ function buildAnalysisSections(analysisData) {
                 title: labels.errors,
                 sectionClass: 'error',
                 itemType: 'error',
-                statusText: errors.length.toString(),
+                statusText: formatCountStatus(errors.length),
                 alwaysVisible: true,
                 activeItems: errorGroups.activeItems,
                 allItems: errors,
@@ -295,7 +299,7 @@ function buildAnalysisSections(analysisData) {
                 title: labels.warnings,
                 sectionClass: 'warning',
                 itemType: 'warning',
-                statusText: warnings.length.toString(),
+                statusText: formatCountStatus(warnings.length),
                 alwaysVisible: true,
                 activeItems: warningGroups.activeItems,
                 allItems: warnings,
@@ -305,15 +309,16 @@ function buildAnalysisSections(analysisData) {
                 title: labels.summaries,
                 sectionClass: 'summary',
                 itemType: 'summary',
+                statusText: formatCountStatus(summaries.length),
                 activeItems: summaryGroups.activeItems,
                 allItems: summaries,
                 hiddenItems: summaryGroups.hiddenItems
             },
             {
-                title: labels.recommendations,
+                title: labels.recommendation,
                 sectionClass: 'recommendations',
                 itemType: 'recommendation',
-                ...recommendationDecision,
+                ...recommendationStatus,
                 activeItems: recommendationGroups.activeItems,
                 allItems: recommendations,
                 hiddenItems: recommendationGroups.hiddenItems
