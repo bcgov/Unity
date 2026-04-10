@@ -1,6 +1,7 @@
 import { Component, ViewChild, ElementRef, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { FormsModule } from '@angular/forms';
+import { DecimalPipe } from '@angular/common';
 import { SafeResourceUrl, DomSanitizer, SafeHtml } from '@angular/platform-browser';
 
 import { Embed } from './embed';
@@ -18,7 +19,7 @@ import { environment } from '../environments/environment';
 
 @Component({
   selector: 'app-root',
-  imports: [FormsModule, SqlExplanationComponent, SidebarComponent, ToastComponent],
+  imports: [FormsModule, DecimalPipe, SqlExplanationComponent, SidebarComponent, ToastComponent],
   templateUrl: './app.html',
   styleUrls: ['./app.css']
 })

@@ -336,6 +336,10 @@ class EmbeddingManager:
 
         return retrieved
     
+    def embed_query(self, query: str) -> list:
+        """Return raw embedding vector for a single query string."""
+        return self.embedding_model.embed_query(query)
+
     def get_formatted_schemas(self, query: str, db_id: int) -> str:
         """Get formatted schema text for prompt, grouped by section with headers."""
         schemas = self.search_similar_schemas(query, db_id)

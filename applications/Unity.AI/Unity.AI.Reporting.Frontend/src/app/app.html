@@ -96,6 +96,11 @@
                       @if (turn.sql_explanation_visible) {
                         <app-sql-explanation [explanation]="turn.embed.sql_explanation"></app-sql-explanation>
                       }
+                      @if (turn.embed.from_cache) {
+                        <div class="cache-badge" [title]="'Reused answer · similarity: ' + (turn.embed.cache_similarity | number:'1.2-2')">
+                          Reused answer
+                        </div>
+                      }
                       <div class="metabase-view-container">
                         <button class="metabase-view-btn" (click)="redirectToMB(turn)" title="View in Metabase">
                           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">

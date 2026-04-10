@@ -1,3 +1,19 @@
+/* ---------- semantic cache badge ---------- */
+
+.cache-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  color: #166534;
+  margin-bottom: 8px;
+  cursor: default;
+  user-select: none;
+}
+
 /* ---------- basics ---------- */
 
 .outer-container {

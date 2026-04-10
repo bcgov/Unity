@@ -7,11 +7,12 @@ import asyncio
 import logging
 import datetime
 from config import config
-from database import db_manager, chat_repository, feedback_repository
+from database import db_manager, chat_repository, feedback_repository, cache_repository
 from metabase import metabase_client
 from chat import chat_manager
 from sql_generator import sql_generator
 from auth import require_auth, get_user_from_token
+from embeddings import embedding_manager
 from static_routes import add_static_routes
 import os
 import re
@@ -397,23 +398,95 @@ def ask():
         is_retry = bool(data.get("is_retry", False))
         retry_error_type = data.get("retry_error_type") or None
         retry_error_detail = data.get("retry_error_detail") or None
-        
+
         # Extract user context from JWT token
         tenant_id = user_data["tenant"]
-        
+
         if not question:
             return abort(400, "question is required")
-        
+
         # Get tenant configuration
         tenant_config = config.get_tenant_config(tenant_id)
         db_id = tenant_config["db_id"]
         collection_id = tenant_config["collection_id"]
+        schema_types = tenant_config.get("schema_types", ["public"])
+        collection_name = config.app.collection_name
 
         logger.info(f"Request - Tenant: {tenant_id}, DB: {db_id}, Collection: {collection_id}")
 
         # Extract past questions from conversation
         past_questions = chat_manager.extract_past_questions(conversation)
         logger.debug(f"Extracted {len(past_questions)} past questions")
+
+        # ── Semantic cache lookup ────────────────────────────────────────────
+        cache_hit = None
+        query_embedding = None
+        normalized_query = question.strip().lower()
+
+        if config.app.semantic_cache_enabled and not is_retry:
+            # Layer 1: exact match (no embedding cost)
+            cache_hit = cache_repository.find_exact(
+                tenant_id, db_id, schema_types, collection_name, normalized_query
+            )
+
+            # Layer 2: semantic similarity
+            if not cache_hit:
+                loop = asyncio.get_event_loop()
+                query_embedding = await loop.run_in_executor(
+                    None, embedding_manager.embed_query, normalized_query
+                )
+                cache_hit = cache_repository.find_similar(
+                    tenant_id, db_id, schema_types, collection_name,
+                    query_embedding, config.app.semantic_cache_threshold
+                )
+
+            if cache_hit:
+                cached = cache_hit["response_payload"]
+                # Validate cached SQL is still valid before reusing
+                try:
+                    loop = asyncio.get_event_loop()
+                    is_valid, _ = await loop.run_in_executor(
+                        None,
+                        lambda: metabase_client.validate_sql(cached["sql"], db_id, tenant_id)
+                    )
+                except Exception:
+                    is_valid = False
+
+                if not is_valid:
+                    logger.info(
+                        f"Cache hit rejected — SQL no longer valid "
+                        f"(similarity={cache_hit['similarity']:.3f}, tenant={tenant_id})"
+                    )
+                    cache_hit = None
+                else:
+                    initial_viz_settings = {}
+                    if "map" in cached.get("visualization_options", []):
+                        initial_viz_settings["map.region"] = os.getenv(
+                            "MB_MAP_REGION_UUID", "1c5d50ee-4389-4593-37c1-fa8d4687ff4c"
+                        )
+                    card_id = metabase_client.create_card(
+                        cached["sql"], db_id, collection_id, cached["title"],
+                        tenant_id=tenant_id,
+                        visualization_settings=initial_viz_settings
+                    )
+                    cache_repository.touch(cache_hit["cache_id"])
+                    logger.info(
+                        f"Cache hit served: tenant={tenant_id} "
+                        f"similarity={cache_hit['similarity']:.3f} "
+                        f"tokens_saved≈{cached.get('tokens', {}).get('total_tokens', 0)}"
+                    )
+                    return jsonify({
+                        "card_id": card_id,
+                        "x_field": cached.get("x_field", []),
+                        "y_field": cached.get("y_field", []),
+                        "title": cached["title"],
+                        "visualization_options": cached.get("visualization_options", []),
+                        "SQL": cached["sql"],
+                        "tokens": {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0},
+                        "from_cache": True,
+                        "cache_similarity": round(cache_hit["similarity"], 4),
+                    }), 200
+        # ── End cache lookup ─────────────────────────────────────────────────
 
         # Generate SQL from natural language
         logger.info("Starting SQL generation...")
@@ -455,6 +528,35 @@ def ask():
             visualization_settings=initial_viz_settings
         )
         logger.info(f"Card created successfully with ID: {card_id}")
+
+        # ── Store result in semantic cache ───────────────────────────────────
+        if config.app.semantic_cache_enabled and not error_detail:
+            try:
+                if query_embedding is None:
+                    loop = asyncio.get_event_loop()
+                    query_embedding = await loop.run_in_executor(
+                        None, embedding_manager.embed_query, normalized_query
+                    )
+                cache_repository.save(
+                    tenant_id, db_id, schema_types, collection_name,
+                    question, normalized_query, query_embedding,
+                    {
+                        "sql": sql,
+                        "title": metadata.get("title", "Untitled"),
+                        "x_field": metadata.get("x_axis", []),
+                        "y_field": metadata.get("y_axis", []),
+                        "visualization_options": metadata.get("visualization_options", []),
+                        "tokens": sql_tokens,
+                    }
+                )
+                cache_repository.ensure_ivfflat_index()
+                logger.info(
+                    f"Cache stored: tenant={tenant_id} "
+                    f"tokens={sql_tokens.get('total_tokens', 0)}"
+                )
+            except Exception as cache_err:
+                logger.warning(f"Cache store failed (non-fatal): {cache_err}")
+        # ── End cache store ──────────────────────────────────────────────────
 
         return {
             "card_id": card_id,
