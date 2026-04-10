@@ -848,16 +848,18 @@ namespace Unity.AI.Runtime
 
         private static string CombineEndpointAndPath(string endpoint, string profilePath)
         {
+            const char UrlPathSeparator = '/';
+
             if (Uri.TryCreate(profilePath, UriKind.Absolute, out var absoluteUri))
             {
                 return absoluteUri.ToString();
             }
 
-            var trimmedEndpoint = endpoint.Trim().TrimEnd('/');
+            var trimmedEndpoint = endpoint.Trim().TrimEnd(UrlPathSeparator);
             var trimmedPath = profilePath.Trim();
-            if (!trimmedPath.StartsWith("/", StringComparison.Ordinal))
+            if (!trimmedPath.StartsWith(UrlPathSeparator))
             {
-                trimmedPath = "/" + trimmedPath;
+                trimmedPath = string.Concat(UrlPathSeparator, trimmedPath);
             }
 
             return trimmedEndpoint + trimmedPath;
