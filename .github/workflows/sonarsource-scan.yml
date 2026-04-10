@@ -71,7 +71,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
-          dotnet-sonarscanner begin /k:"bcgov_Unity" /o:"bcgov-sonarcloud" /d:sonar.login="${{ secrets.GITHUB_TOKEN }}" /d:sonar.host.url="https://sonarcloud.io" /v:"${{ env.BUILD_VERSION }}"
+          dotnet-sonarscanner begin /k:"bcgov_Unity" /o:"bcgov-sonarcloud" /d:sonar.token="${{ secrets.SONAR_TOKEN }}" /d:sonar.host.url="https://sonarcloud.io" /v:"${{ env.BUILD_VERSION }}"
           dotnet build Unity.GrantManager.sln --no-restore
           dotnet test Unity.GrantManager.sln --no-build --verbosity normal --collect:"XPlat Code Coverage" --results-directory ./TestResults/
-          dotnet-sonarscanner end /d:sonar.login="${{ secrets.GITHUB_TOKEN }}"
+          dotnet-sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
