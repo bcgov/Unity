@@ -138,8 +138,8 @@ function updateVisibleItemLayout($items) {
     $visibleItems.last().addClass('last-visible');
 }
 
-function formatCountStatus(count) {
-    return `(${count})`;
+function formatSectionTitle(title, count) {
+    return `${title} (${count})`;
 }
 
 function configureSectionStatus($status, text, statusClass) {
@@ -178,8 +178,17 @@ function configureCollapseToggle($section, $collapseToggle) {
         });
 }
 
-function shouldRenderSection(section) {
-    return section.alwaysVisible === true || section.allItems.length > 0;
+function createAnalysisSection(config) {
+    const groups = splitFindingsByVisibility(config.items);
+    const hasItems = config.items.length > 0;
+
+    return {
+        ...config,
+        activeItems: groups.activeItems,
+        allItems: config.items,
+        hiddenItems: groups.hiddenItems,
+        hasItems
+    };
 }
 
 function appendSectionItems($items, section, isDismissedVisible) {
@@ -234,12 +243,11 @@ function renderSection(section) {
     const $section = createItemFromTemplate('section', {
         title: section.title
     });
-    const hasItems = section.allItems.length > 0;
 
     $section
         .addClass(section.sectionClass)
         .toggleClass('compact', section.activeItems.length === 0)
-        .toggleClass('header-only', !hasItems);
+        .toggleClass('header-only', !section.hasItems);
 
     const $items = $section.find('[data-element="items"]');
     const $status = $section.find('[data-element="status-chip"]');
@@ -249,7 +257,7 @@ function renderSection(section) {
 
     configureSectionStatus($status, section.statusText, section.statusClass);
     configureCollapseToggle($section, $collapseToggle);
-    $collapseToggle.toggle(hasItems);
+    $collapseToggle.toggle(section.hasItems);
 
     appendSectionItems($items, section, isDismissedVisible);
     configureDismissedItemsToggle($items, $toggle, section, isDismissedVisible);
@@ -271,58 +279,40 @@ function buildAnalysisSections(analysisData) {
     const warnings = normalizeFindings(analysisData.warnings, 'warning');
     const summaries = normalizeFindings(analysisData.summaries, 'summary');
     const recommendations = normalizeFindings(analysisData.recommendations, 'recommendation');
-    const errorGroups = splitFindingsByVisibility(errors);
-    const warningGroups = splitFindingsByVisibility(warnings);
-    const summaryGroups = splitFindingsByVisibility(summaries);
-    const recommendationGroups = splitFindingsByVisibility(recommendations);
-
-    const recommendationStatus = decision
-        ? {
-            statusText: decision === 'PROCEED' ? labels.proceed : labels.hold,
-            statusClass: decision.toLowerCase()
-        }
-        : {};
+    const recommendationStatusText = decision === 'PROCEED'
+        ? labels.proceed
+        : decision === 'HOLD'
+            ? labels.hold
+            : '';
 
     return {
         sections: [
-            {
-                title: labels.errors,
+            createAnalysisSection({
+                title: formatSectionTitle(labels.errors, errors.length),
                 sectionClass: 'error',
                 itemType: 'error',
-                statusText: formatCountStatus(errors.length),
-                alwaysVisible: true,
-                activeItems: errorGroups.activeItems,
-                allItems: errors,
-                hiddenItems: errorGroups.hiddenItems
-            },
-            {
-                title: labels.warnings,
+                items: errors
+            }),
+            createAnalysisSection({
+                title: formatSectionTitle(labels.warnings, warnings.length),
                 sectionClass: 'warning',
                 itemType: 'warning',
-                statusText: formatCountStatus(warnings.length),
-                alwaysVisible: true,
-                activeItems: warningGroups.activeItems,
-                allItems: warnings,
-                hiddenItems: warningGroups.hiddenItems
-            },
-            {
-                title: labels.summaries,
+                items: warnings
+            }),
+            createAnalysisSection({
+                title: formatSectionTitle(labels.summaries, summaries.length),
                 sectionClass: 'summary',
                 itemType: 'summary',
-                statusText: formatCountStatus(summaries.length),
-                activeItems: summaryGroups.activeItems,
-                allItems: summaries,
-                hiddenItems: summaryGroups.hiddenItems
-            },
-            {
+                items: summaries
+            }),
+            createAnalysisSection({
                 title: labels.recommendation,
                 sectionClass: 'recommendations',
                 itemType: 'recommendation',
-                ...recommendationStatus,
-                activeItems: recommendationGroups.activeItems,
-                allItems: recommendations,
-                hiddenItems: recommendationGroups.hiddenItems
-            }
+                statusText: recommendationStatusText,
+                statusClass: decision ? decision.toLowerCase() : '',
+                items: recommendations
+            })
         ]
     };
 }
@@ -348,10 +338,6 @@ function renderRealAIAnalysis(analysisData) {
     $sections.empty();
 
     sections.forEach(section => {
-        if (!shouldRenderSection(section)) {
-            return;
-        }
-
         $sections.append(renderSection(section));
     });
 
