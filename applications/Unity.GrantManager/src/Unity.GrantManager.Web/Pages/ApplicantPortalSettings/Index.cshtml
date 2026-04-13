@@ -67,10 +67,15 @@
                     </tbody>
                 </table>
             </div>
-            <div class="d-flex p-5 pt-3">
-                <abp-button button-type="Primary"
+            <div class="d-flex gap-2 p-5 pt-3">
+                <abp-button id="SaveButton"
+                            button-type="Primary"
                             type="submit"
                             text="@L["ApplicantPortalSettings:SaveChanges"].Value" />
+                <abp-button id="ResetButton"
+                            button-type="Secondary"
+                            type="button"
+                            text="@L["ApplicantPortalSettings:ResetChanges"].Value" />
             </div>
         </form>
     </div>
