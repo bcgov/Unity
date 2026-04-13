@@ -57,10 +57,12 @@ All auto-generated column names go through the same sanitization pipeline regard
 
 ### Implementation Details
 
-The column name source selection is implemented in `ReportMappingUtils.GetDefaultColumnNameSource()`:
+The column name source selection is implemented identically on server and client with no cross-field fallbacks:
 
-- **Server-side**: Used by `CreateNewMap()` and `UpdateExistingMap()` when auto-generating column names for unmapped or newly discovered fields.
-- **Client-side**: The `getDefaultColumnNameSource()` function in `Default.js` mirrors this logic for the initial DataTable display when no saved configuration exists.
+- **Server-side** — `ReportMappingUtils.GetDefaultColumnNameSource()` returns `field.Key ?? ""` for `formversion`, or `field.Label ?? ""` for all other providers. Used by `CreateNewMap()` and `UpdateExistingMap()` when auto-generating column names for unmapped or newly discovered fields. The provider comparison is case-insensitive via `StringComparison.OrdinalIgnoreCase`.
+- **Client-side** — `getDefaultColumnNameSource()` in `Default.js` uses the same logic: `field.key || ''` when `currentProvider === 'formversion'`, otherwise `field.label || ''`. This is used by `transformFieldsMetadata()` to set initial column name values in the DataTable when no saved configuration exists.
+
+> **Important:** Neither implementation falls back from Key to Label or vice versa. If the source value is null/empty, an empty string is used, and the downstream sanitization produces `"col_1"` as a placeholder. This ensures client and server always produce identical defaults.
 
 ### Impact on Existing Configurations
 

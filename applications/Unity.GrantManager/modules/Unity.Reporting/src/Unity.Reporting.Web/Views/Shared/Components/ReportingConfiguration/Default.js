@@ -468,13 +468,15 @@ $(function () {
     }
 
     // Helper function to get the default column name source based on the current provider.
-    // For formversion (Submissions), use the CHEFS Property Name (key) as it provides more stable identifiers.
-    // For worksheets and scoresheets, use the label as it provides more human-readable column names.
+    // Mirrors the server-side ReportMappingUtils.GetDefaultColumnNameSource() logic exactly:
+    //   - formversion: use Key only (CHEFS Property Name), no fallback to Label
+    //   - worksheet/scoresheet: use Label only, no fallback to Key
+    // No cross-field fallback ensures the client and server produce identical defaults.
     function getDefaultColumnNameSource(field) {
         if (currentProvider === 'formversion') {
-            return field.key || field.label || '';
+            return field.key || '';
         }
-        return field.label || field.key || '';
+        return field.label || '';
     }
 
     // Helper function to transform fields metadata (module-level to reduce nesting)
