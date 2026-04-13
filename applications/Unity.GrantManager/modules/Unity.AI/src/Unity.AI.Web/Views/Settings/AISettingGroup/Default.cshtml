@@ -1,48 +1,12 @@
 @model Unity.AI.Web.Views.Settings.AISettingGroup.AISettingViewModel
 
-<abp-script src="/Views/Settings/AISettingGroup/Default.js" />
-
 <div class="container-fluid px-0">
     <div class="unity-page-titlebar">
         <h4 class="m-0">AI Configuration</h4>
     </div>
-
     <div class="row">
         <div class="p-3">
-            <form id="AISettingsForm">
-                <abp-row>
-                    <abp-column size-md="_12" class="mx-2">
-                        <div class="form-check form-switch">
-                            <input class="form-check-input"
-                                   type="checkbox"
-                                   id="ScoringAssistantEnabled"
-                                   name="ScoringAssistantEnabled"
-                                   value="true"
-                                   @(Model.ScoringAssistantEnabled ? "checked" : "") />
-                            <label class="form-check-label fw-bold" for="ScoringAssistantEnabled">
-                                AI Scoring Assistant
-                            </label>
-                        </div>
-                    </abp-column>
-                </abp-row>
-
-                <abp-row>
-                    <hr class="my-4" />
-                    <div class="d-flex p-2">
-                        <abp-button id="AISettingsSaveButton"
-                                    text="Save Changes"
-                                    button-type="Primary"
-                                    class="me-2"
-                                    type="submit" />
-
-                        <abp-button id="AISettingsDiscardButton"
-                                    text="Discard Changes"
-                                    button-type="Light"
-                                    class="me-2"
-                                    disabled="true" />
-                    </div>
-                </abp-row>
-            </form>
+            <p class="text-muted">AI configuration settings will appear here.</p>
         </div>
     </div>
 </div>
