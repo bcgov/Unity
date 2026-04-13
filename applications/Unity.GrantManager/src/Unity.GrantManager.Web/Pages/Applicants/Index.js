@@ -1,6 +1,7 @@
 $(function () {    
     let dt = $('#ApplicantsTable');
     let dataTable;
+    const guidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
     // Default visible columns as per requirements
     const defaultVisibleColumns = [
@@ -87,7 +88,29 @@ $(function () {
             data: 'applicantName',
             name: 'applicantName',
             className: 'data-table-header',
-            index: columnIndex
+            index: columnIndex,
+            render: function (data, type, row) {
+                let applicantName = (typeof data !== 'string' || data.trim() === '') ? 'Applicant Name' : data;
+
+                if (type === 'sort' || type === 'filter') {
+                    return applicantName;
+                }
+
+                const safeApplicantName = $.fn.dataTable.render.text().display(applicantName);
+
+                if (type === 'display') {
+                    const applicantId = row?.id;
+                    const isGuid = applicantId && guidPattern.test(applicantId);
+
+                    if (isGuid) {
+                        return `<a href="/GrantApplicants/Details?ApplicantId=${encodeURIComponent(applicantId)}">${safeApplicantName}</a>`;
+                    }
+
+                    return safeApplicantName;
+                }
+
+                return applicantName;
+            }
         }
     }
 

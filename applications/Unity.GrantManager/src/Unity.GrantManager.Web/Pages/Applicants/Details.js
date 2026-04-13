@@ -86,7 +86,7 @@ const debouncedResizeAwareDataTables = debounce(() => {
     $('table[data-resize-aware="true"]:visible').each(function () {
         try {
             const table = $(this).DataTable();
-            table.columns.adjust().draw(false);
+            table.columns.adjust();
         }
         catch (error) {
             console.error('Failed to adjust DataTable columns:', error);
@@ -104,7 +104,7 @@ function adjustVisibleTablesInContainer(containerId) {
     tables.each(function () {
         try {
             const table = $(this).DataTable();
-            table.columns.adjust().draw(false);
+            table.columns.adjust();
         }
         catch (error) {
             console.error('Failed to adjust DataTable in tab:', error);

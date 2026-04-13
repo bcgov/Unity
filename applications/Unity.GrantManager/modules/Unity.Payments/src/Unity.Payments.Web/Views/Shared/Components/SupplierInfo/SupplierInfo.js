@@ -303,10 +303,10 @@ $(function () {
             {
                 text: 'Filter',
                 className: 'custom-table-btn flex-none btn btn-secondary',
-                id: 'btn-toggle-filter',
+                id: 'btn-supplier-toggle-filter',
                 action: function (e, dt, node, config) { },
                 attr: {
-                    id: 'btn-toggle-filter',
+                    id: 'btn-supplier-toggle-filter',
                 },
             },
         ];
@@ -333,6 +333,9 @@ $(function () {
             externalSearchInputId: 'SiteInfoSearch',
             dynamicButtonContainerId: 'siteDynamicButtonContainerId',
         });
+
+        initializeFilterRowPlugin(dataTable, 'btn-supplier-toggle-filter');
+
 
         function getColumns() {
             let columnIndex = 0;

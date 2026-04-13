@@ -26,7 +26,10 @@ namespace Unity.Payments.Handlers
         {
             SupplierDto supplierDto = await GetSupplierFromEvent(eventData);
             var existingSites = await siteAppService.GetSitesBySupplierIdAsync(supplierDto.Id);
-            var existingSitesDictionary = existingSites?.ToDictionary(s => s.Number) ?? new Dictionary<string, Site>();
+            var existingSitesDictionary = existingSites?
+                .GroupBy(s => s.Number)
+                .ToDictionary(g => g.Key, g => g.First())
+                ?? new Dictionary<string, Site>();
 
             var defaultPaymentGroup = await ResolveDefaultPaymentGroupAsync(eventData);
             await UpsertSitesFromEventDtoAsync(existingSitesDictionary, supplierDto.Id, eventData, defaultPaymentGroup);

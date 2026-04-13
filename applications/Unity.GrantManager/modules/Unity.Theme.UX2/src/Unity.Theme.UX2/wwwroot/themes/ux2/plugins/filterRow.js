@@ -32,6 +32,7 @@
     'use strict';
 
     let DataTable = $.fn.dataTable;
+    let _filterRowInstanceCount = 0;
 
     // Ensure DataTable is loaded
     if (!DataTable) {
@@ -55,7 +56,7 @@
 
         this.s = {
             dt: new DataTable.Api(settings),
-            namespace: '.dtFilterRow',
+            namespace: '.dtFilterRow' + (++_filterRowInstanceCount),
             filterData: {},
             opts: $.extend({}, DataTable.FilterRow.defaults, opts)
         };
@@ -109,6 +110,11 @@
 
             dt.on('column-visibility' + this.s.namespace, () => {
                 this._rebuildFilterRow();
+            });
+
+            // Update button state whenever the global search changes
+            dt.on('search' + this.s.namespace, () => {
+                this._updateButtonState();
             });
 
             // Listen for destroy event to cleanup
@@ -260,7 +266,8 @@
 
             $btn.on('shown.bs.popover' + this.s.namespace, () => {
 
-                const $popover = $('.popover.custom-popover');
+                const popoverId = $btn.attr('aria-describedby');
+                const $popover = popoverId ? $('#' + popoverId) : $('.popover.custom-popover');
 
                 $popover.find('#showFilter')
                     .off('click' + this.s.namespace)
@@ -309,14 +316,16 @@
          */
         _updateButtonState: function () {
             let dt = this.s.dt;
-            let hasFilters = false;
+            let hasFilters = dt.search() !== '';
 
-            dt.columns().every(function () {
-                if (this.search()) {
-                    hasFilters = true;
-                    return false;
-                }
-            });
+            if (!hasFilters) {
+                dt.columns().every(function () {
+                    if (this.search()) {
+                        hasFilters = true;
+                        return false;
+                    }
+                });
+            }
 
             if (this.dom.button) {
                 this.dom.button.text(
@@ -348,7 +357,12 @@
                 }
             });
 
-            if (Object.keys(this.s.filterData).length > 0) {
+            // Show filter row if filters are active
+            let externalSearchId = dt.init().externalSearchInputId;
+            let externalSearchVal = externalSearchId ? $(externalSearchId).val() : '';
+            let hasFilters = Object.keys(this.s.filterData).length > 0 || externalSearchVal !== '';
+
+            if (hasFilters) {
                 this.dom.filterRow.show();
             }
 
@@ -390,24 +404,40 @@
             this._updateButtonState();
         },
 
+        /**
+         * Show the filter row
+         * @public
+         */
         show: function () {
             this.dom.filterRow.show();
             this.s.dt.trigger('filterRow-visibility', [true]);
             return this;
         },
 
+        /**
+         * Hide the filter row
+         * @public
+         */
         hide: function () {
             this.dom.filterRow.hide();
             this.s.dt.trigger('filterRow-visibility', [false]);
             return this;
         },
 
+        /**
+         * Toggle the filter row visibility
+         * @public
+         */
         toggle: function () {
             this.dom.filterRow.toggle();
             this.s.dt.trigger('filterRow-visibility', [this.dom.filterRow.is(':visible')]);
             return this;
         },
 
+        /**
+         * Destroy the filter row feature
+         * @private
+         */
         _destroy: function () {
             let dt = this.s.dt;
 

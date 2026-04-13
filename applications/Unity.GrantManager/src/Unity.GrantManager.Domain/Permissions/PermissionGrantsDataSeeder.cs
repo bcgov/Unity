@@ -135,6 +135,7 @@ namespace Unity.GrantManager.Permissions
                     .. Dashboard_CommonPermissions,
                     .. Tags_CommonPermissions,
                     AIPermissions.Configuration.ConfigureAI,
+                    FlexPermissions.Worksheets.Default,
                     FlexPermissions.Worksheets.Delete
             ], context.TenantId);
 

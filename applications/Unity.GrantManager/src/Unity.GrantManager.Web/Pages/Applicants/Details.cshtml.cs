@@ -13,9 +13,13 @@ namespace Unity.GrantManager.Web.Pages.Applicants
     public class DetailsModel : GrantManagerPageModel
     {
         private readonly IApplicantRepository _applicantRepository;
+        private readonly IApplicationRepository _applicationRepository;
 
         [BindProperty(SupportsGet = true)]
         public Guid ApplicantId { get; set; }
+
+        [BindProperty(SupportsGet = true)]
+        public Guid? ApplicationId { get; set; } = null;
 
         public Applicant? Applicant { get; set; }
         public string ApplicantDisplayName { get; set; } = string.Empty;
@@ -28,10 +32,12 @@ namespace Unity.GrantManager.Web.Pages.Applicants
 
         public DetailsModel(
             IApplicantRepository applicantRepository,
+            IApplicationRepository applicationRepository,
             ICurrentUser currentUser,
             IConfiguration configuration)
         {
             _applicantRepository = applicantRepository;
+            _applicationRepository = applicationRepository;
             CurrentUserId = currentUser.Id;
             CurrentUserName = currentUser.SurName + ", " + currentUser.Name;
             Extensions = configuration["S3:DisallowedFileTypes"] ?? "";
@@ -40,6 +46,20 @@ namespace Unity.GrantManager.Web.Pages.Applicants
 
         public async Task<IActionResult> OnGetAsync()
         {
+            // Resolve ApplicantId from ApplicationId if needed
+            if (ApplicantId == Guid.Empty && ApplicationId.HasValue)
+            {
+                try
+                {
+                    var application = await _applicationRepository.WithBasicDetailsAsync(ApplicationId.Value);
+                    ApplicantId = application.ApplicantId;
+                }
+                catch (Exception)
+                {
+                    return NotFound();
+                }
+            }
+
             if (ApplicantId == Guid.Empty)
             {
                 return NotFound();
@@ -52,7 +72,7 @@ namespace Unity.GrantManager.Web.Pages.Applicants
                 // Set properties for breadcrumb and display
                 ApplicantDisplayName = !string.IsNullOrEmpty(Applicant.ApplicantName)
                     ? Applicant.ApplicantName
-                    : "Unknown Applicant";
+                    : "Applicant Name";
 
                 UnityApplicantId = Applicant.UnityApplicantId ?? "N/A";
                 Status = Applicant.Status ?? "Active";
