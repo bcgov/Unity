@@ -28,11 +28,22 @@ public class ApplicationStatusAppService : ApplicationService, IApplicationStatu
 
     public virtual async Task UpdateExternalStatusLabelsAsync(UpdateApplicationStatusExternalLabelsDto input)
     {
-        foreach (var statusDto in input.Statuses)
+        // Load all statuses in a single query by IDs
+        var statusIds = input.Statuses.Select(s => s.Id).ToList();
+        var statuses = await _applicationStatusRepository.GetListAsync(s => statusIds.Contains(s.Id));
+
+        // Build a lookup for efficient matching
+        var statusMap = input.Statuses.ToDictionary(s => s.Id);
+
+        // Update statuses in memory
+        foreach (var status in statuses)
         {
-            var status = await _applicationStatusRepository.GetAsync(statusDto.Id);
-            status.ExternalStatus = statusDto.ExternalStatus;
-            await _applicationStatusRepository.UpdateAsync(status);
+            if (statusMap.TryGetValue(status.Id, out var statusDto))
+            {
+                status.ExternalStatus = statusDto.ExternalStatus;
+                await _applicationStatusRepository.UpdateAsync(status);
+            }
         }
+        // ABP's UnitOfWork batches all UpdateAsync calls into a single SaveChanges
     }
 }

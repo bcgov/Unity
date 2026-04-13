@@ -6,7 +6,7 @@
 
     let portalStatusTable = new DataTable("#PortalStatusTable", {
         paging: false,
-        sort: false,
+        ordering: false,
         info: false
     });
 
@@ -14,6 +14,8 @@
         e.preventDefault();
 
         const statuses = [];
+        let hasValidationError = false;
+
         $form.find('tbody tr').each(function () {
             const $row = $(this);
             const id = $row.find('input[type="hidden"]').val();
@@ -21,6 +23,7 @@
 
             if (!externalStatus) {
                 abp.notify.warn(l('ApplicantPortalSettings:ValidationRequired'));
+                hasValidationError = true;
                 return false;
             }
 
@@ -30,7 +33,7 @@
             });
         });
 
-        if (statuses.length === 0) {
+        if (statuses.length === 0 || hasValidationError) {
             return;
         }
 
