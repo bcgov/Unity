@@ -4,11 +4,11 @@ on:
   push:
     branches:
       - dev2
-#      - dev
-#      - test
-#      - main
-#  pull_request:
-#    types: [opened, synchronize, reopened]
+      - dev
+      - test
+      - main
+  pull_request:
+    types: [opened, synchronize, reopened]
   workflow_dispatch:
 
 permissions:
