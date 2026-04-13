@@ -3,7 +3,9 @@
     /// <summary>
     /// Data transfer object containing user-specified field-to-column mapping overrides for report configuration.
     /// Allows users to customize column names for specific fields instead of relying entirely on auto-generated names.
-    /// Fields not included in this mapping will receive auto-generated column names based on their labels.
+    /// Fields not included in this mapping will receive auto-generated column names based on the correlation provider:
+    /// for form versions, column names are derived from field keys (CHEFS Property Names); for worksheets and scoresheets,
+    /// column names are derived from field labels.
     /// </summary>
     public class UpsertColumnMappingDto
     {

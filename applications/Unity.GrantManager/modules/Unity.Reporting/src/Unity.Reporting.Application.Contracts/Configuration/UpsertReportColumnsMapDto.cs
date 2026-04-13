@@ -24,7 +24,8 @@ namespace Unity.Reporting.Configuration
         /// <summary>
         /// Gets or sets the optional column mapping configuration containing user-specified field-to-column mappings.
         /// When provided, these mappings override auto-generated column names for specific fields.
-        /// Empty mappings will result in fully auto-generated column names based on field labels.
+        /// Empty mappings will result in fully auto-generated column names derived from field keys
+        /// (for form versions) or field labels (for worksheets and scoresheets).
         /// </summary>
         public UpsertColumnMappingDto Mapping { get; set; } = new();
     }
