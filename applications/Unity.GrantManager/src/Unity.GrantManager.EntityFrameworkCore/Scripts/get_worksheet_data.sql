@@ -100,11 +100,11 @@ BEGIN
                                     format('(CASE WHEN ((SELECT cell_elem->>''value'' FROM jsonb_array_elements(dg_tbl.dg_data->''cells'') AS cell_elem WHERE cell_elem->>''key'' = %L)) IS NULL THEN NULL WHEN ((SELECT cell_elem->>''value'' FROM jsonb_array_elements(dg_tbl.dg_data->''cells'') AS cell_elem WHERE cell_elem->>''key'' = %L)) ~ ''^-?[0-9]+\.?[0-9]*$'' THEN ((SELECT cell_elem->>''value'' FROM jsonb_array_elements(dg_tbl.dg_data->''cells'') AS cell_elem WHERE cell_elem->>''key'' = %L))::NUMERIC ELSE NULL END) AS %I',
                                         um.field_name, um.field_name, um.field_name, um.column_name)
                                 WHEN 'date' THEN 
-                                    format('(CASE WHEN ((SELECT cell_elem->>''value'' FROM jsonb_array_elements(dg_tbl.dg_data->''cells'') AS cell_elem WHERE cell_elem->>''key'' = %L)) IS NULL OR trim((SELECT cell_elem->>''value'' FROM jsonb_array_elements(dg_tbl.dg_data->''cells'') AS cell_elem WHERE cell_elem->>''key'' = %L)) = '''' THEN NULL ELSE ((SELECT cell_elem->>''value'' FROM jsonb_array_elements(dg_tbl.dg_data->''cells'') AS cell_elem WHERE cell_elem->>''key'' = %L))::DATE END) AS %I',
-                                        um.field_name, um.field_name, um.field_name, um.column_name)
+                                    format('"Reporting".safe_to_date((SELECT cell_elem->>''value'' FROM jsonb_array_elements(dg_tbl.dg_data->''cells'') AS cell_elem WHERE cell_elem->>''key'' = %L)) AS %I',
+                                        um.field_name, um.column_name)
                                 WHEN 'datetime' THEN 
-                                    format('(CASE WHEN ((SELECT cell_elem->>''value'' FROM jsonb_array_elements(dg_tbl.dg_data->''cells'') AS cell_elem WHERE cell_elem->>''key'' = %L)) IS NULL OR trim((SELECT cell_elem->>''value'' FROM jsonb_array_elements(dg_tbl.dg_data->''cells'') AS cell_elem WHERE cell_elem->>''key'' = %L)) = '''' THEN NULL ELSE ((SELECT cell_elem->>''value'' FROM jsonb_array_elements(dg_tbl.dg_data->''cells'') AS cell_elem WHERE cell_elem->>''key'' = %L))::TIMESTAMP END) AS %I',
-                                        um.field_name, um.field_name, um.field_name, um.column_name)
+                                    format('"Reporting".safe_to_timestamp((SELECT cell_elem->>''value'' FROM jsonb_array_elements(dg_tbl.dg_data->''cells'') AS cell_elem WHERE cell_elem->>''key'' = %L)) AS %I',
+                                        um.field_name, um.column_name)
                                 WHEN 'checkbox' THEN 
                                     -- Check if this is a checkbox group field by looking at the type_path
                                     CASE 
@@ -189,15 +189,11 @@ BEGIN
                                         COALESCE(um.clean_data_path, um.property_name), 
                                         um.column_name)
                                 WHEN 'date' THEN 
-                                    format('(CASE WHEN ((SELECT v_elem->>''value'' FROM jsonb_array_elements(wi."CurrentValue"->''values'') AS v_elem WHERE v_elem->>''key'' = %L)) IS NULL OR trim((SELECT v_elem->>''value'' FROM jsonb_array_elements(wi."CurrentValue"->''values'') AS v_elem WHERE v_elem->>''key'' = %L)) = '''' THEN NULL ELSE ((SELECT v_elem->>''value'' FROM jsonb_array_elements(wi."CurrentValue"->''values'') AS v_elem WHERE v_elem->>''key'' = %L))::DATE END) AS %I',
-                                        COALESCE(um.clean_data_path, um.property_name), 
-                                        COALESCE(um.clean_data_path, um.property_name), 
+                                    format('"Reporting".safe_to_date((SELECT v_elem->>''value'' FROM jsonb_array_elements(wi."CurrentValue"->''values'') AS v_elem WHERE v_elem->>''key'' = %L)) AS %I',
                                         COALESCE(um.clean_data_path, um.property_name), 
                                         um.column_name)
                                 WHEN 'datetime' THEN 
-                                    format('(CASE WHEN ((SELECT v_elem->>''value'' FROM jsonb_array_elements(wi."CurrentValue"->''values'') AS v_elem WHERE v_elem->>''key'' = %L)) IS NULL OR trim((SELECT v_elem->>''value'' FROM jsonb_array_elements(wi."CurrentValue"->''values'') AS v_elem WHERE v_elem->>''key'' = %L)) = '''' THEN NULL ELSE ((SELECT v_elem->>''value'' FROM jsonb_array_elements(wi."CurrentValue"->''values'') AS v_elem WHERE v_elem->>''key'' = %L))::TIMESTAMP END) AS %I',
-                                        COALESCE(um.clean_data_path, um.property_name), 
-                                        COALESCE(um.clean_data_path, um.property_name), 
+                                    format('"Reporting".safe_to_timestamp((SELECT v_elem->>''value'' FROM jsonb_array_elements(wi."CurrentValue"->''values'') AS v_elem WHERE v_elem->>''key'' = %L)) AS %I',
                                         COALESCE(um.clean_data_path, um.property_name), 
                                         um.column_name)
                                 WHEN 'checkbox' THEN 
