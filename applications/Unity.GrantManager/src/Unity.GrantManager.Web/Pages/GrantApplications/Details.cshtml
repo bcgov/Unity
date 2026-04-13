@@ -14,7 +14,6 @@
 @using Volo.Abp.Authorization.Permissions
 @using Volo.Abp.Features
 @using Volo.Abp.MultiTenancy
-@using Volo.Abp.Settings
 @* #pragma warning restore S1128 *@
 
 
@@ -24,7 +23,6 @@
 @inject IFeatureChecker FeatureChecker
 @inject IPermissionChecker PermissionChecker
 @inject ICurrentTenant CurrentTenant
-@inject ISettingProvider SettingProvider
 
 @{
     PageLayout.Content.Title = L["Grants"].Value;
@@ -35,8 +33,7 @@
     var aiApplicationAnalysisEnabled = await FeatureChecker.IsEnabledAsync("Unity.AI.ApplicationAnalysis")
         && await PermissionChecker.IsGrantedAsync(AIPermissions.ApplicationAnalysis.ApplicationAnalysisDefault);
     var aiScoringEnabled = await FeatureChecker.IsEnabledAsync("Unity.AI.Scoring")
-        && await PermissionChecker.IsGrantedAsync(AIPermissions.ScoringAssistant.ScoringAssistantDefault)
-        && await SettingProvider.GetAsync<bool>(Unity.AI.Settings.AISettings.ScoringAssistantEnabled, defaultValue: false);
+        && await PermissionChecker.IsGrantedAsync(AIPermissions.ScoringAssistant.ScoringAssistantDefault);
     var flexFeatureEnabled = await FeatureChecker.IsEnabledAsync("Unity.Flex");
 }
 @section styles
