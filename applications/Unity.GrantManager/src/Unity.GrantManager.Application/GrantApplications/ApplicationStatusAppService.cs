@@ -31,19 +31,15 @@ public class ApplicationStatusAppService : ApplicationService, IApplicationStatu
         // Load all statuses in a single query by IDs
         var statusIds = input.Statuses.Select(s => s.Id).ToList();
         var statuses = await _applicationStatusRepository.GetListAsync(s => statusIds.Contains(s.Id));
+        var statusMap = statuses.ToDictionary(s => s.Id);
 
-        // Build a lookup for efficient matching
-        var statusMap = input.Statuses.ToDictionary(s => s.Id);
-
-        // Update statuses in memory
-        foreach (var status in statuses)
+        foreach (var statusDto in input.Statuses)
         {
-            if (statusMap.TryGetValue(status.Id, out var statusDto))
+            if (statusMap.TryGetValue(statusDto.Id, out var status))
             {
                 status.ExternalStatus = statusDto.ExternalStatus;
                 await _applicationStatusRepository.UpdateAsync(status);
             }
         }
-        // ABP's UnitOfWork batches all UpdateAsync calls into a single SaveChanges
     }
 }
