@@ -6,9 +6,9 @@ on:
       - dev2
       - dev
       - test
-#      - main
-#  pull_request:
-#    types: [opened, synchronize, reopened]
+      - main
+  pull_request:
+    types: [opened, synchronize, reopened]
   workflow_dispatch:
 
 permissions:
