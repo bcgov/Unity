@@ -17,7 +17,6 @@ permissions:
   checks: write
   security-events: write
 
-
 jobs:
   sonarcloud:
     name: SonarCloud
