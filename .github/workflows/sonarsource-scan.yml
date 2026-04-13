@@ -4,9 +4,9 @@ on:
   push:
     branches:
       - dev2
-      - dev
-      - test
-      - main
+#      - dev
+#      - test
+#      - main
 #  pull_request:
 #    types: [opened, synchronize, reopened]
   workflow_dispatch:
@@ -16,7 +16,6 @@ permissions:
   pull-requests: write
   checks: write
   security-events: write
-
 
 jobs:
   sonarcloud:
