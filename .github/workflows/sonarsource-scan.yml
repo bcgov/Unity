@@ -4,8 +4,8 @@ on:
   push:
     branches:
       - dev2
-#      - dev
-#      - test
+      - dev
+      - test
 #      - main
 #  pull_request:
 #    types: [opened, synchronize, reopened]
