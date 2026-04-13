@@ -467,6 +467,16 @@ $(function () {
         };
     }
 
+    // Helper function to get the default column name source based on the current provider.
+    // For formversion (Submissions), use the CHEFS Property Name (key) as it provides more stable identifiers.
+    // For worksheets and scoresheets, use the label as it provides more human-readable column names.
+    function getDefaultColumnNameSource(field) {
+        if (currentProvider === 'formversion') {
+            return field.key || field.label || '';
+        }
+        return field.label || field.key || '';
+    }
+
     // Helper function to transform fields metadata (module-level to reduce nesting)
     function transformFieldsMetadata(fieldsMetadata) {
         const items = fieldsMetadata.fields.map(field => ({
@@ -475,7 +485,7 @@ $(function () {
             type: field.type,
             path: field.path,
             dataPath: field.dataPath,
-            columnName: field.label || field.key,
+            columnName: getDefaultColumnNameSource(field),
             typePath: field.typePath
         }));
 
