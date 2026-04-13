@@ -79,7 +79,7 @@ jobs:
         working-directory: ./applications/Unity.GrantManager
         run: dotnet build Unity.GrantManager.sln --no-restore
 
-      - name: Generate minimal coverage data
+      - name: Generate minimal code coverage data
         working-directory: ./applications/Unity.GrantManager
         run: |
           # Create minimal coverage data for SonarCloud (bypass hanging coverlet)
