@@ -13,19 +13,17 @@ public static class AIPermissions
         public const string ReportingDefault = GroupName + ".Reporting";
     }
 
-    public static class ApplicationAnalysis
+    public static class Analysis
     {
-        public const string ApplicationAnalysisDefault = GroupName + ".ApplicationAnalysis";
-    }
+        public const string AnalysisDefault = GroupName + ".Analysis";
 
-    public static class AttachmentSummary
-    {
-        public const string AttachmentSummaryDefault = GroupName + ".AttachmentSummary";
-    }
+        public const string ViewApplicationAnalysis = GroupName + ".Analysis.ViewApplicationAnalysis";
+        public const string ViewAttachmentSummary   = GroupName + ".Analysis.ViewAttachmentSummary";
+        public const string ViewScoringResult       = GroupName + ".Analysis.ViewScoringResult";
 
-    public static class ScoringAssistant
-    {
-        public const string ScoringAssistantDefault = GroupName + ".ScoringAssistant";
+        public const string GenerateApplicationAnalysis = GroupName + ".Analysis.GenerateApplicationAnalysis";
+        public const string GenerateAttachmentSummaries = GroupName + ".Analysis.GenerateAttachmentSummaries";
+        public const string GenerateScoring             = GroupName + ".Analysis.GenerateScoring";
     }
 
     public static class Configuration

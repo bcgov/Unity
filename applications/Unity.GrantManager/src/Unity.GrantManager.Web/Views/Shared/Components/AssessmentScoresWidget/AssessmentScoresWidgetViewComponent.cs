@@ -100,7 +100,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentScoresWidget
                 CurrentUserId = currentUserId,
                 AssessorId = assessment.AssessorId,
                 IsAIScoringEnabled = await featureChecker.IsEnabledAsync("Unity.AI.Scoring") &&
-                    await permissionChecker.IsGrantedAsync(AIPermissions.ScoringAssistant.ScoringAssistantDefault),
+                    await permissionChecker.IsGrantedAsync(AIPermissions.Analysis.ViewScoringResult),
                 IsAiAssessment = assessment.IsAiAssessment,
             };
 
