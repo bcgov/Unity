@@ -24,11 +24,11 @@
     <input type="hidden" id="MaxFileSize" value="@Model.MaxFileSize" />
     <div class="worksheet-scrollable-content">
         <abp-row class="m-0 h-100 worksheet-configuration-container">
-            <abp-column class="p-0">
+            <abp-column id="worksheet-left-col" class="p-0">
                 <abp-card>
                     <abp-card-body>
-                        <h4><b>Worksheets</b></h4>
-                        <div class="d-flex justify-content-end m-3">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h4 class="mb-0"><b>Worksheets</b></h4>
                             <form id="form" name="form" action="/uploader" enctype="multipart/form-data" method="post">
                                 <input id="worksheet_import_upload" name="worksheet_import_upload" type="file" size="1" onchange="importWorksheetFile('worksheet_import_upload');" style="display: none" />
                                 <abp-button text="Import Worksheet"
@@ -37,6 +37,16 @@
                                             icon="fl fl-import"
                                             button-type="Light" />
                             </form>
+                        </div>
+                        <div class="worksheet-filters d-flex gap-2 mb-2 align-items-center px-1">
+                            <input type="text" id="worksheet-name-filter" class="form-control form-control-sm" placeholder="Filter by title or name..." />
+                            <fieldset class="btn-group btn-group-sm flex-shrink-0" id="worksheet-published-toggle">
+                                <legend class="visually-hidden">Published filter</legend>
+                                <button type="button" class="btn btn-outline-secondary active" data-filter="all">All</button>
+                                <button type="button" class="btn btn-outline-secondary" data-filter="published">Published</button>
+                                <button type="button" class="btn btn-outline-secondary" data-filter="unpublished">Unpublished</button>
+                                <button type="button" class="btn btn-outline-secondary" data-filter="archived">Archived</button>
+                            </fieldset>
                         </div>
                         <div id="worksheet-info-widget-list">
                             @await Component.InvokeAsync(typeof(WorksheetListWidget))
@@ -51,7 +61,8 @@
                     </abp-card-body>
                 </abp-card>
             </abp-column>
-            <abp-column class="pe-0 ps-2 preview-scrollable">
+            <div class="column-resizer" id="column-resizer"></div>
+            <abp-column id="worksheet-right-col" class="pe-0 ps-2 preview-scrollable">
                 <abp-card class="right-card sticky-preview">
                     <abp-card-body>
                         <h4><b>Preview</b></h4>

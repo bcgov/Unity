@@ -79,6 +79,17 @@ $(function () {
             });
         }
 
+        let archiveWorksheetButtons = $(".archive-worksheet-btn");
+
+        if (archiveWorksheetButtons) {
+            archiveWorksheetButtons.on("click", function (event) {
+                const btn = event.currentTarget;
+                const worksheetId = btn.dataset.worksheetId;
+                const isArchived = btn.dataset.isArchived === 'true';
+                handleArchiveWorksheet(worksheetId, isArchived);
+            });
+        }
+
         let deleteWorksheetButtons = $(".delete-worksheet-btn");
 
         if (deleteWorksheetButtons) {
@@ -232,6 +243,39 @@ $(function () {
         }
     );
 });
+
+function handleArchiveWorksheet(worksheetId, currentlyArchived) {
+    const action = currentlyArchived ? 'unarchive' : 'archive';
+    const label  = currentlyArchived ? 'Unarchive Worksheet' : 'Archive Worksheet';
+    const message = currentlyArchived
+        ? 'This worksheet will be restored and visible in the default list.'
+        : 'Archived worksheets are hidden from the default view. You can find them using the Archived filter.';
+
+    Swal.fire({
+        title: label + '?',
+        text: message,
+        showCancelButton: true,
+        confirmButtonText: 'Confirm',
+        customClass: {
+            confirmButton: 'btn btn-primary',
+            cancelButton: 'btn btn-secondary'
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            unity.flex.worksheets.worksheet.archive(worksheetId, !currentlyArchived)
+                .done(function () {
+                    PubSub.publish('refresh_worksheet_list');
+                    abp.notify.success(
+                        currentlyArchived ? 'Worksheet has been unarchived.' : 'Worksheet has been archived.',
+                        label
+                    );
+                })
+                .fail(function () {
+                    abp.notify.error('Failed to ' + action + ' the worksheet.');
+                });
+        }
+    });
+}
 
 function handleDeleteWorksheet(worksheetId, worksheetTitle, worksheetName) {
     unity.grantManager.settingManagement.worksheetConfiguration.getDeletionCheck(worksheetId)
