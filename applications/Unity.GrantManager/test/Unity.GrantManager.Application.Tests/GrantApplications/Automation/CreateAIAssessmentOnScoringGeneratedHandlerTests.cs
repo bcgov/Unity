@@ -4,12 +4,14 @@ using Shouldly;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using Unity.AI.Settings;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Assessments;
 using Unity.GrantManager.GrantApplications.Automation.Events;
 using Unity.GrantManager.GrantApplications.Automation.Handlers;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Features;
+using Volo.Abp.Settings;
 using Volo.Abp.Uow;
 using Xunit;
 using Xunit.Abstractions;
@@ -27,12 +29,21 @@ public class CreateAIAssessmentOnScoringGeneratedHandlerTests : GrantManagerAppl
         _applicationRepository = GetRequiredService<IApplicationRepository>();
         _unitOfWorkManager = GetRequiredService<IUnitOfWorkManager>();
     }
-    private CreateAIAssessmentOnScoringGeneratedHandler BuildHandler(IFeatureChecker featureChecker)
+    private CreateAIAssessmentOnScoringGeneratedHandler BuildHandler(
+        IFeatureChecker featureChecker,
+        ISettingProvider? settingProvider = null)
     {
+        var settings = settingProvider ?? Substitute.For<ISettingProvider>();
+        if (settingProvider == null)
+        {
+            settings.GetOrNullAsync(AISettings.AutomaticGenerationEnabled).Returns("true");
+        }
+
         return new CreateAIAssessmentOnScoringGeneratedHandler(
             _assessmentManager,
             _applicationRepository,
             featureChecker,
+            settings,
             _unitOfWorkManager,
             NullLogger<CreateAIAssessmentOnScoringGeneratedHandler>.Instance);
     }

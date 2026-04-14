@@ -4,10 +4,12 @@ using System;
 using System.Threading.Tasks;
 using Unity.AI;
 using Unity.AI.Operations;
+using Unity.AI.Settings;
 using Unity.GrantManager.GrantApplications.Automation.BackgroundJobs;
 using Volo.Abp.EventBus.Local;
 using Volo.Abp.Features;
 using Volo.Abp.MultiTenancy;
+using Volo.Abp.Settings;
 using Xunit;
 using Xunit.Abstractions;
 namespace Unity.GrantManager.GrantApplications.Automation;
@@ -16,18 +18,30 @@ public class RunApplicationAIPipelineJobTests(ITestOutputHelper outputHelper) : 
     private static RunApplicationAIPipelineJob BuildJob(
         IFeatureChecker featureChecker,
         IApplicationScoringService? scoringService = null,
-        IAIService? aiService = null)
+        IAIService? aiService = null,
+        ISettingProvider? settingProvider = null)
     {
         var ai = aiService ?? Substitute.For<IAIService>();
         ai.IsAvailableAsync().Returns(true);
-        return new RunApplicationAIPipelineJob(
+
+        var settings = settingProvider ?? Substitute.For<ISettingProvider>();
+        if (settingProvider == null)
+        {
+            settings.GetOrNullAsync(AISettings.AutomaticGenerationEnabled).Returns("true");
+        }
+
+        var aiServices = new AIOperationServices(
             Substitute.For<IAttachmentSummaryService>(),
             Substitute.For<IApplicationAnalysisService>(),
             scoringService ?? Substitute.For<IApplicationScoringService>(),
-            ai,
+            ai);
+
+        return new RunApplicationAIPipelineJob(
+            aiServices,
             featureChecker,
             Substitute.For<ILocalEventBus>(),
             Substitute.For<ICurrentTenant>(),
+            settings,
             NullLogger<RunApplicationAIPipelineJob>.Instance);
     }
     [Fact]
