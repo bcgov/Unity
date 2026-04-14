@@ -521,7 +521,7 @@ class CacheRepository:
             with conn.cursor() as cur:
                 cur.execute("""
                     DELETE FROM query_cache
-                    WHERE created_at < NOW() - INTERVAL '%s days'
+                    WHERE accessed_at < NOW() - %s * INTERVAL '1 day'
                 """, (days,))
                 deleted = cur.rowcount
                 conn.commit()

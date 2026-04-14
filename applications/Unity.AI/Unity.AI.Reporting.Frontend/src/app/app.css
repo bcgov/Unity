@@ -3,15 +3,42 @@
 .cache-badge {
   display: inline-flex;
   align-items: center;
-  padding: 2px 8px;
-  background: #f0fdf4;
-  border: 1px solid #bbf7d0;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 4px 10px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
   border-radius: 4px;
   font-size: 0.8rem;
-  color: #166534;
+  color: #334155;
   margin-bottom: 8px;
   cursor: default;
   user-select: none;
+}
+
+.cache-badge-hint {
+  color: #64748b;
+}
+
+.cache-fresh-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  margin-left: 4px;
+  font-size: inherit;
+  color: #2563eb;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.cache-fresh-btn:hover:not(:disabled) {
+  color: #1d4ed8;
+}
+
+.cache-fresh-btn:disabled {
+  color: #94a3b8;
+  cursor: not-allowed;
+  text-decoration: none;
 }
 
 /* ---------- basics ---------- */

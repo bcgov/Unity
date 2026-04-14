@@ -14,4 +14,5 @@ export interface Embed {
     };
     from_cache?: boolean;           // True when response was served from semantic cache
     cache_similarity?: number;      // Cosine similarity score (0–1) of the cache hit
+    cache_hit_type?: 'exact_hit' | 'semantic_hit';  // Exact vs fuzzy semantic match
 }

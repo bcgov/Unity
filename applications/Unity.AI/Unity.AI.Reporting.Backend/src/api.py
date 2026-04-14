@@ -454,11 +454,19 @@ def ask():
 
                 if not is_valid:
                     logger.info(
-                        f"Cache hit rejected — SQL no longer valid "
-                        f"(similarity={cache_hit['similarity']:.3f}, tenant={tenant_id})"
+                        f"[cache:rejected] tenant={tenant_id} db={db_id} "
+                        f"similarity={cache_hit['similarity']:.4f} "
+                        f"reason=sql_validation_failed"
                     )
                     cache_hit = None
                 else:
+                    hit_type = "exact_hit" if cache_hit["similarity"] == 1.0 else "semantic_hit"
+                    if hit_type == "semantic_hit":
+                        logger.info(
+                            f"[cache:semantic_hit] tenant={tenant_id} db={db_id} "
+                            f"similarity={cache_hit['similarity']:.4f}"
+                        )
+                    tokens_saved = cached.get("tokens", {}).get("total_tokens", 0)
                     initial_viz_settings = {}
                     if "map" in cached.get("visualization_options", []):
                         initial_viz_settings["map.region"] = os.getenv(
@@ -471,9 +479,9 @@ def ask():
                     )
                     cache_repository.touch(cache_hit["cache_id"])
                     logger.info(
-                        f"Cache hit served: tenant={tenant_id} "
-                        f"similarity={cache_hit['similarity']:.3f} "
-                        f"tokens_saved≈{cached.get('tokens', {}).get('total_tokens', 0)}"
+                        f"[cache:{hit_type}] tenant={tenant_id} db={db_id} "
+                        f"similarity={cache_hit['similarity']:.4f} "
+                        f"tokens_saved={tokens_saved}"
                     )
                     return jsonify({
                         "card_id": card_id,
@@ -485,8 +493,14 @@ def ask():
                         "tokens": {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0},
                         "from_cache": True,
                         "cache_similarity": round(cache_hit["similarity"], 4),
+                        "cache_hit_type": hit_type,
                     }), 200
         # ── End cache lookup ─────────────────────────────────────────────────
+        if config.app.semantic_cache_enabled and not is_retry:
+            logger.info(
+                f"[cache:miss] tenant={tenant_id} db={db_id} "
+                f"query=\"{normalized_query[:80]}\""
+            )
 
         # Generate SQL from natural language
         logger.info("Starting SQL generation...")

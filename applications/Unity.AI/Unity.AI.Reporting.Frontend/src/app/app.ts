@@ -423,6 +423,18 @@ export class App implements OnInit, OnDestroy {
     this.askQuestion(nextRetryCount, errorType, turn.errorDetail);
   }
 
+  getFreshAnswer(turn: Turn): void {
+    if (this.isLoading) return;
+    // Resubmit the question with retry_count=1 so the backend skips the semantic cache (is_retry=true).
+    this.question = turn.question;
+    this.conversation = this.conversation.filter(t => t !== turn);
+    this.askQuestion(1);
+  }
+
+  get isLoading(): boolean {
+    return this.conversation.some(t => t.safeUrl === 'loading');
+  }
+
   toggleSidebar(): void {
     this.sidebarOpen = !this.sidebarOpen;
     

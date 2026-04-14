@@ -96,9 +96,17 @@
                       @if (turn.sql_explanation_visible) {
                         <app-sql-explanation [explanation]="turn.embed.sql_explanation"></app-sql-explanation>
                       }
-                      @if (turn.embed.from_cache) {
-                        <div class="cache-badge" [title]="'Reused answer · similarity: ' + (turn.embed.cache_similarity | number:'1.2-2')">
-                          Reused answer
+                      @if (turn.embed.cache_hit_type === 'semantic_hit') {
+                        <div class="cache-badge">
+                          Based on a similar previous question.
+                          <span class="cache-badge-hint">Check if this matches what you meant.</span>
+                          <button
+                            class="cache-fresh-btn"
+                            [disabled]="isLoading"
+                            aria-label="Generate a new answer for this question"
+                            (click)="getFreshAnswer(turn)">
+                            Generate a new answer
+                          </button>
                         </div>
                       }
                       <div class="metabase-view-container">
