@@ -440,7 +440,7 @@ $(function () {
 
     // Helper function to process detected changes alert (module-level to reduce nesting)
     function processDetectedChanges(detectedChanges) {
-        if (detectedChanges && detectedChanges.trim() !== '') {
+        if (detectedChanges?.trim() !== '') {
             setTimeout(function () {
                 displayDetectedChangesAlert(detectedChanges);
             }, 100);
@@ -832,16 +832,6 @@ $(function () {
     function isReportingTabVisible() {
         const reportingPanel = document.querySelector('#nav-reporting-configuration');
         return reportingPanel?.classList.contains('show', 'active');
-    }
-
-    // Force table column width recalculation
-    function forceTableColumnAdjustment() {
-        if (!dataTable) return;
-        try {
-            dataTable.columns.adjust();
-        } catch (error) {
-            console.warn('Error during force column adjustment:', error);
-        }
     }
 
     // Column name sanitization function
@@ -1534,7 +1524,7 @@ $(function () {
                     try {
                         const errorResponse = JSON.parse(xhr.responseText);
                         if (errorResponse?.error?.message) {
-                            errorMessage = errorResponse.error.message;
+                            errorMessage = errorResponse?.error?.message;
                         } else if (typeof errorResponse === 'string') {
                             errorMessage = errorResponse;
                         } else {
@@ -1556,9 +1546,9 @@ $(function () {
                     try {
                         const parsedError = JSON.parse(xhr.responseText);
                         if (parsedError?.error?.message) {
-                            errorMessage = parsedError.error.message;
-                        } else if (parsedError.message) {
-                            errorMessage = parsedError.message;
+                            errorMessage = parsedError?.error?.message;
+                        } else if (parsedError?.message) {
+                            errorMessage = parsedError?.message;
                         } else {
                             errorMessage = xhr.responseText;
                         }
@@ -1597,7 +1587,7 @@ $(function () {
             const viewName = result.viewName;
             const $deleteViewListItem = $('#deleteViewListItem');
             
-            if (viewName && viewName.trim() !== '') {
+            if (viewName?.trim() !== '') {
                 // Update the view name in the list item and show it
                 $deleteViewListItem.html(`The associated database view (${viewName})`);
                 $deleteViewListItem.show();
@@ -1698,7 +1688,7 @@ $(function () {
             } else if (xhr.status === 400) {
                 const errorResponse = JSON.parse(xhr.responseText);
                 if (errorResponse?.error?.message) {
-                    errorMessage = errorResponse.error.message;
+                    errorMessage = errorResponse?.error?.message;
                 } else if (typeof errorResponse === 'string') {
                     errorMessage = errorResponse;
                 } else {
@@ -1715,9 +1705,9 @@ $(function () {
             } else if (xhr.responseText) {
                 const parsedError = JSON.parse(xhr.responseText);
                 if (parsedError?.error?.message) {
-                    errorMessage = parsedError.error.message;
-                } else if (parsedError.message) {
-                    errorMessage = parsedError.message;
+                    errorMessage = parsedError?.error?.message;
+                } else if (parsedError?.message) {
+                    errorMessage = parsedError?.message;
                 } else {
                     errorMessage = xhr.responseText;
                 }
@@ -1807,11 +1797,11 @@ $(function () {
      */
     function isViewGenerated() {
         // Check hidden field first (server-rendered initial state)
-        var status = ($('#reportingViewStatus').val() || '').toUpperCase();
+        const status = ($('#reportingViewStatus').val() || '').toUpperCase();
         if (status === 'SUCCESS') return true;
 
         // Fallback: inspect the view-status widget DOM
-        var $widget = $('.view-status-compact');
+        const $widget = $('.view-status-compact');
         if ($widget.find('.fl-checkmark').length > 0) return true;
 
         return false;
@@ -1826,22 +1816,22 @@ $(function () {
         if (!dataTable) return;
 
         // Build a lookup: propertyName → columnName
-        var lookup = {};
+        const lookup = {};
         mappingArray.forEach(function (item) {
             lookup[item.propertyName] = item.columnName;
         });
 
-        var appliedCount = 0;
+        let appliedCount = 0;
 
         dataTable.rows().every(function () {
-            var rowData = this.data();
-            var node = this.node();
-            var $input = $(node).find('.column-name-input');
+            const rowData = this.data();
+            const node = this.node();
+            const $input = $(node).find('.column-name-input');
             if (!$input.length) return;
 
-            var propertyName = rowData.key;
+            const propertyName = rowData.key;
             if (propertyName in lookup) {
-                var newValue = sanitizeColumnName(lookup[propertyName] || '');
+                const newValue = sanitizeColumnName(lookup[propertyName] || '');
                 if ($input.val() !== newValue) {
                     $input.val(newValue);
                     validateColumnNameInput($input, newValue, $input.data('path'));
@@ -1858,7 +1848,7 @@ $(function () {
     }
 
     // Shared validators for the JSON editor and file import
-    var mappingValidators = [
+    const mappingValidators = [
         {
             name: 'isArray',
             message: 'JSON must be an array of objects.',
@@ -1870,7 +1860,7 @@ $(function () {
             severity: 'warning',
             validate: function (data) {
                 if (!Array.isArray(data)) return true;
-                var names = data.map(function (r) { return r.propertyName; });
+                const names = data.map(function (r) { return r.propertyName; });
                 return new Set(names).size === names.length;
             }
         },
@@ -1879,7 +1869,7 @@ $(function () {
             message: 'Duplicate columnName values found. Each columnName must be unique.',
             validate: function (data) {
                 if (!Array.isArray(data)) return true;
-                var cols = data.filter(function (r) { return r.columnName; })
+                const cols = data.filter(function (r) { return r.columnName; })
                               .map(function (r) { return r.columnName.toLowerCase(); });
                 return new Set(cols).size === cols.length;
             }
@@ -1920,14 +1910,14 @@ $(function () {
     ];
 
     // Create the editor instance (lazy – modal built on first use)
-    var mappingEditor = new UnityJsonEditor({
+    const mappingEditor = new UnityJsonEditor({
         title: 'Edit Column Mapping',
         requiredFields: ['propertyName', 'columnName'],
         validators: mappingValidators,
         onSave: function (data, warnings) {
-            var count = applyJsonMappingToTable(data);
-            var msg = count + ' column mapping(s) updated. Remember to Save to persist changes.';
-            if (warnings && warnings.length > 0) {
+            const count = applyJsonMappingToTable(data);
+            const msg = count + ' column mapping(s) updated. Remember to Save to persist changes.';
+            if (warnings?.length > 0) {
                 abp.message.warn(msg + '\n\n\u26A0 ' + warnings.map(function (w) { return w.message; }).join('\n'));
             } else {
                 abp.message.success(msg);
@@ -1943,15 +1933,15 @@ $(function () {
             return;
         }
 
-        var mapping = buildJsonMapping();
+        const mapping = buildJsonMapping();
         if (mapping.length === 0) {
             abp.message.warn('No mapping data to export.');
             return;
         }
 
-        var provider = getCorrelationProvider();
-        var correlationId = getCurrentCorrelationId();
-        var filename = 'column-mapping-' + provider + '-' + (correlationId || 'new') + '.json';
+        const provider = getCorrelationProvider();
+        const correlationId = getCurrentCorrelationId();
+        const filename = 'column-mapping-' + provider + '-' + (correlationId || 'new') + '.json';
         UnityJsonEditor.exportToFile(mapping, filename);
     });
 
@@ -1968,7 +1958,7 @@ $(function () {
             return;
         }
 
-        var importWarnings = [];
+        let importWarnings = [];
         UnityJsonEditor.importFromFile({
             validators: mappingValidators.concat([
                 {
@@ -1987,8 +1977,8 @@ $(function () {
                 importWarnings = warnings;
             }
         }).then(function (data) {
-            var count = applyJsonMappingToTable(data);
-            var msg = count + ' column mapping(s) imported. Remember to Save to persist changes.';
+            const count = applyJsonMappingToTable(data);
+            const msg = count + ' column mapping(s) imported. Remember to Save to persist changes.';
             if (importWarnings.length > 0) {
                 abp.message.warn(msg + '\n\n\u26A0 ' + importWarnings.map(function (w) { return w.message; }).join('\n'));
             } else {
@@ -2012,7 +2002,7 @@ $(function () {
             return;
         }
 
-        var mapping = buildJsonMapping();
+        const mapping = buildJsonMapping();
         mappingEditor.open(mapping);
     });
 
@@ -2098,7 +2088,7 @@ $(function () {
 
     // Keep the hidden view-status field in sync when async generation completes
     PubSub.subscribe('view_generation_completed', function (msg, data) {
-        if (data && data.finalStatus) {
+        if (data?.finalStatus) {
             $('#reportingViewStatus').val(data.finalStatus);
         }
     });

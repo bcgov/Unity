@@ -147,15 +147,15 @@ var UnityJsonEditor = (function ($) {
      */
     UnityJsonEditor.exportToFile = function (data, filename) {
         filename = filename || 'export.json';
-        var json = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
-        var blob = new Blob([json], { type: 'application/json' });
-        var url = URL.createObjectURL(blob);
-        var a = document.createElement('a');
+        const json = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
+        const blob = new Blob([json], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
         a.href = url;
         a.download = filename;
         document.body.appendChild(a);
         a.click();
-        document.body.removeChild(a);
+        a.remove();
         setTimeout(function () { URL.revokeObjectURL(url); }, 100);
     };
 
@@ -169,53 +169,44 @@ var UnityJsonEditor = (function ($) {
      */
     UnityJsonEditor.importFromFile = function (opts) {
         opts = opts || {};
-        var accept = opts.accept || '.json';
-        var validators = opts.validators || [];
-        var onWarning = opts.onWarning || null;
+        const accept = opts.accept || '.json';
+        const validators = opts.validators || [];
+        const onWarning = opts.onWarning || null;
 
         return new Promise(function (resolve, reject) {
-            var input = document.createElement('input');
+            const input = document.createElement('input');
             input.type = 'file';
             input.accept = accept;
             input.style.display = 'none';
 
             input.addEventListener('change', function () {
                 // Remove from DOM now that the browser has fired the change event
-                if (input.parentNode) {
-                    input.parentNode.removeChild(input);
-                }
+                input.remove();
 
-                var file = input.files && input.files[0];
+                const file = input.files && input.files[0];
                 if (!file) {
                     reject(new Error('No file selected.'));
                     return;
                 }
-                var reader = new FileReader();
-                reader.onload = function (e) {
-                    try {
-                        var data = JSON.parse(e.target.result);
+                file.text().then(function (text) {
+                    const data = JSON.parse(text);
 
-                        // Run validators if provided
-                        var result = _runValidators(data, validators, null);
-                        if (result.errors.length > 0) {
-                            reject(new Error(result.errors.map(function (err) { return err.message; }).join('\n')));
-                            return;
-                        }
-
-                        // Report warnings but allow import
-                        if (result.warnings.length > 0 && typeof onWarning === 'function') {
-                            onWarning(result.warnings);
-                        }
-
-                        resolve(data);
-                    } catch (ex) {
-                        reject(new Error('Invalid JSON file: ' + ex.message));
+                    // Run validators if provided
+                    const result = _runValidators(data, validators, null);
+                    if (result.errors.length > 0) {
+                        reject(new Error(result.errors.map(function (err) { return err.message; }).join('\n')));
+                        return;
                     }
-                };
-                reader.onerror = function () {
-                    reject(new Error('Failed to read file.'));
-                };
-                reader.readAsText(file);
+
+                    // Report warnings but allow import
+                    if (result.warnings.length > 0 && typeof onWarning === 'function') {
+                        onWarning(result.warnings);
+                    }
+
+                    resolve(data);
+                }).catch(function (ex) {
+                    reject(new Error('Invalid JSON file: ' + ex.message));
+                });
             });
 
             document.body.appendChild(input);
@@ -240,7 +231,7 @@ var UnityJsonEditor = (function ($) {
             }
 
             this._savedFlag = false;
-            var json = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
+            const json = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
             this._textarea.val(json);
             this._clearStatus();
             this._validate();
@@ -301,11 +292,11 @@ var UnityJsonEditor = (function ($) {
          * @private
          */
         _build: function () {
-            var self = this;
-            var opts = this._opts;
-            var id = this._modalId;
+            const self = this;
+            const opts = this._opts;
+            const id = this._modalId;
 
-            var html =
+            const html =
                 '<div class="modal fade" id="' + id + '" tabindex="-1" aria-labelledby="' + id + 'Label" aria-hidden="true">' +
                 '  <div class="modal-dialog ' + opts.size + '">' +
                 '    <div class="modal-content">' +
@@ -373,9 +364,9 @@ var UnityJsonEditor = (function ($) {
             this._textarea.on('keydown', function (e) {
                 if (e.key === 'Tab') {
                     e.preventDefault();
-                    var start = this.selectionStart;
-                    var end = this.selectionEnd;
-                    var value = $(this).val();
+                    const start = this.selectionStart;
+                    const end = this.selectionEnd;
+                    const value = $(this).val();
                     $(this).val(value.substring(0, start) + '  ' + value.substring(end));
                     this.selectionStart = this.selectionEnd = start + 2;
                     $(self._textarea).trigger('input');
@@ -390,7 +381,7 @@ var UnityJsonEditor = (function ($) {
          * @private
          */
         _updateUI: function () {
-            var opts = this._opts;
+            const opts = this._opts;
             this._modal.find('.modal-title').text(opts.title);
             this._modal.find('.uje-format-btn').html('<i class="fa fa-align-left me-1"></i>' + _escapeHtml(opts.formatButtonText));
             if (this._saveBtn.length) {
@@ -405,8 +396,8 @@ var UnityJsonEditor = (function ($) {
          */
         _format: function () {
             try {
-                var raw = this._textarea.val();
-                var parsed = JSON.parse(raw);
+                const raw = this._textarea.val();
+                const parsed = JSON.parse(raw);
                 this._textarea.val(JSON.stringify(parsed, null, 2));
                 this._validate();
             } catch (_) {
@@ -421,7 +412,7 @@ var UnityJsonEditor = (function ($) {
          * @returns {boolean} True if no errors (warnings are acceptable).
          */
         _validate: function () {
-            var raw = this._textarea.val().trim();
+            const raw = this._textarea.val().trim();
             this._lastWarnings = [];
 
             // Empty check
@@ -432,7 +423,7 @@ var UnityJsonEditor = (function ($) {
             }
 
             // JSON syntax check
-            var data;
+            let data;
             try {
                 data = JSON.parse(raw);
             } catch (e) {
@@ -442,17 +433,16 @@ var UnityJsonEditor = (function ($) {
             }
 
             // Required fields check (only for arrays of objects)
-            var requiredFields = this._opts.requiredFields;
+            const requiredFields = this._opts.requiredFields;
             if (requiredFields && requiredFields.length > 0 && Array.isArray(data)) {
-                for (var i = 0; i < data.length; i++) {
-                    if (typeof data[i] !== 'object' || data[i] === null) {
+                for (const [i, item] of data.entries()) {
+                    if (typeof item !== 'object' || item === null) {
                         this._showStatus('error', 'Item at index ' + i + ' is not an object.');
                         this._setSaveEnabled(false);
                         return false;
                     }
-                    for (var f = 0; f < requiredFields.length; f++) {
-                        var field = requiredFields[f];
-                        if (!(field in data[i]) || data[i][field] === null || data[i][field] === undefined) {
+                    for (const field of requiredFields) {
+                        if (!(field in item) || item[field] === null || item[field] === undefined) {
                             this._showStatus('error', 'Item at index ' + i + ' is missing required field "' + field + '".');
                             this._setSaveEnabled(false);
                             return false;
@@ -462,7 +452,7 @@ var UnityJsonEditor = (function ($) {
             }
 
             // Custom validators (errors + warnings)
-            var result = _runValidators(data, this._opts.validators, this._opts.requiredFields);
+            const result = _runValidators(data, this._opts.validators, this._opts.requiredFields);
 
             // Errors block save
             if (result.errors.length > 0) {
@@ -475,10 +465,10 @@ var UnityJsonEditor = (function ($) {
             }
 
             // Warnings allow save but show amber status
-            var itemCount = Array.isArray(data) ? data.length + ' items' : 'Object';
+            const itemCount = Array.isArray(data) ? data.length + ' items' : 'Object';
             if (result.warnings.length > 0) {
                 this._lastWarnings = result.warnings;
-                var warningText = result.warnings[0].message;
+                const warningText = result.warnings[0].message;
                 this._showStatus('warning', 'Valid JSON \u00B7 ' + itemCount, '\u26A0 ' + warningText);
                 this._textarea.removeClass('is-invalid');
                 this._setSaveEnabled(true);
@@ -498,8 +488,8 @@ var UnityJsonEditor = (function ($) {
         _onSave: function () {
             if (!this._validate()) return;
 
-            var data = JSON.parse(this._textarea.val());
-            var warnings = this._lastWarnings || [];
+            const data = JSON.parse(this._textarea.val());
+            const warnings = this._lastWarnings || [];
             if (typeof this._opts.onSave === 'function') {
                 this._opts.onSave(data, warnings);
             }
@@ -514,14 +504,14 @@ var UnityJsonEditor = (function ($) {
          * @param {string} message
          */
         _showStatus: function (type, message, secondLine) {
-            var icon = type === 'success' ? 'fa-check-circle' :
+            const icon = type === 'success' ? 'fa-check-circle' :
                        type === 'error'   ? 'fa-times-circle' :
                                             'fa-exclamation-circle';
-            var colorClass = type === 'success' ? 'text-success' :
+            const colorClass = type === 'success' ? 'text-success' :
                              type === 'error'   ? 'text-danger' :
                                                   'text-warning';
 
-            var html = '<i class="fa ' + icon + ' me-1"></i>' + _escapeHtml(message);
+            let html = '<i class="fa ' + icon + ' me-1"></i>' + _escapeHtml(message);
             if (secondLine) {
                 html += '<br>' + _escapeHtml(secondLine);
             }
@@ -571,16 +561,15 @@ var UnityJsonEditor = (function ($) {
      * @returns {{errors: Array<{validator: string, message: string}>, warnings: Array<{validator: string, message: string}>}}
      */
     function _runValidators(data, validators, requiredFields) {
-        var errors = [];
-        var warnings = [];
+        const errors = [];
+        const warnings = [];
         if (!validators || validators.length === 0) return { errors: errors, warnings: warnings };
 
-        for (var i = 0; i < validators.length; i++) {
-            var v = validators[i];
-            var isWarning = v.severity === 'warning';
-            var target = isWarning ? warnings : errors;
+        for (const v of validators) {
+            const isWarning = v.severity === 'warning';
+            const target = isWarning ? warnings : errors;
             try {
-                var result = v.validate(data, requiredFields);
+                const result = v.validate(data, requiredFields);
                 if (result === false) {
                     target.push({ validator: v.name, message: v.message || 'Validation failed: ' + v.name });
                 } else if (typeof result === 'object' && result !== null && result.valid === false) {
@@ -599,7 +588,7 @@ var UnityJsonEditor = (function ($) {
      * @returns {string}
      */
     function _escapeHtml(str) {
-        var div = document.createElement('div');
+        const div = document.createElement('div');
         div.appendChild(document.createTextNode(str));
         return div.innerHTML;
     }
