@@ -183,7 +183,7 @@ const UnityJsonEditor = (function ($) {
                 // Remove from DOM now that the browser has fired the change event
                 input.remove();
 
-                const file = input.files && input.files[0];
+                const file = input.files?.[0];
                 if (!file) {
                     reject(new Error('No file selected.'));
                     return;
