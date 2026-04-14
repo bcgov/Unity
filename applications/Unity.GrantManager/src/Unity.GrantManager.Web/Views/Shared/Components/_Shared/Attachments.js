@@ -8,6 +8,9 @@
                 <i class="fl fl-attachment-more"></i>
             </button>
             <div class="dropdown-content">
+                <button class="btn fullWidth" style="margin:10px" type="button" onclick="previewAttachment('${attachmentType}','${ownerId}','${full.fileName}','${full.displayName || full.fileName}')">
+                    <i class="fa fa-eye"></i><span>Preview Attachment</span>
+                </button>
                 <a href="${downloadUrl}" target="_blank" download="${data}" class="fullwidth">
                     <button class="btn fullWidth" style="margin:10px" type="button">
                         <i class="fl fl-download"></i><span>Download Attachment</span>
@@ -24,6 +27,18 @@
     `;
 
     return html;
+}
+
+function previewAttachment(attachmentType, ownerId, fileName, displayName) {
+    let previewModal = new abp.ModalManager({
+        viewUrl: '../Attachments/PreviewAttachmentModal'
+    });
+    previewModal.open({
+        attachmentType: attachmentType,
+        ownerId: ownerId,
+        fileName: fileName,
+        displayName: displayName
+    });
 }
 
 function getAttachmentOwnerId(attachmentType) {
@@ -77,6 +92,11 @@ function updateAttachmentMetadata(attachmentType, attachmentId) {
         attachmentId: attachmentId
     });
 }
+
+$(document).on('mouseenter', '.attachments-table .dropdown', function () {
+    var rect = this.getBoundingClientRect();
+    $(this).find('.dropdown-content').css('top', rect.bottom + 'px');
+});
 
 function refreshAttachmentWidget(attachmentType) {
     switch (attachmentType) {

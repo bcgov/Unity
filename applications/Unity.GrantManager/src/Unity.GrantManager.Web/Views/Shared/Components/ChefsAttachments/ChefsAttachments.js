@@ -116,10 +116,23 @@ $(function () {
             title: '',
             name: 'chefsFileDownload',
             data: 'chefsFileId',
-            width: '150px',
+            width: '220px',
             className: 'text-nowrap',
             render: function (data, type, full, meta) {
                 let html =
+                    '<button class="btn px-2" name="chefs-preview-btn" type="button"' +
+                    ' chefs-submission-id=' +
+                    encodeURIComponent(full.chefsSubmissionId) +
+                    ' chefs-data=' +
+                    encodeURIComponent(data) +
+                    ' chefs-file-name=' +
+                    encodeURIComponent(full.fileName) +
+                    ' chefs-display-name=' +
+                    encodeURIComponent(full.displayName || full.fileName) +
+                    ' onclick="previewChefsFile(event)">' +
+                    '<i class="fa fa-eye"></i>' +
+                    '<span>Preview</span>' +
+                    '</button>' +
                     '<button class="btn px-2" name="chefs-download-btn" type="button"' +
                     ' chefs-submission-id=' +
                     encodeURIComponent(full.chefsSubmissionId) +
@@ -600,6 +613,25 @@ function downloadChefsFile(event) {
                 );
             }
         },
+    });
+}
+
+function previewChefsFile(event) {
+    const button = event.currentTarget;
+    const chefsFileId = button.getAttribute('chefs-data');
+    const chefsSubmissionId = button.getAttribute('chefs-submission-id');
+    const chefsFileName = button.getAttribute('chefs-file-name');
+    const chefsDisplayName = button.getAttribute('chefs-display-name');
+
+    let previewModal = new abp.ModalManager({
+        viewUrl: '../Attachments/PreviewAttachmentModal'
+    });
+    previewModal.open({
+        attachmentType: 'chefs',
+        ownerId: chefsSubmissionId,
+        chefsFileId: chefsFileId,
+        fileName: chefsFileName,
+        displayName: chefsDisplayName
     });
 }
 

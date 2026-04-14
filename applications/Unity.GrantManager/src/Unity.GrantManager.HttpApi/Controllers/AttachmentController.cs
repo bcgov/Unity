@@ -28,6 +28,7 @@ namespace Unity.GrantManager.Controllers
         private readonly ISubmissionAppService _submissionAppService;
         private readonly IEmailLogAttachmentUploadService _emailLogAttachmentUploadService;
         private readonly ICurrentTenant _currentTenant;
+        private readonly IS3PresignedUrlService _s3PresignedUrlService;
         private ILogger logger => LazyServiceProvider.LazyGetService<ILogger>(provider => LoggerFactory?.CreateLogger(GetType().FullName!) ?? NullLogger.Instance);
         private const string badRequestFileMsg = "File name must be provided.";
         private const string NotFoundFileMsg = "File not found.";
@@ -40,13 +41,15 @@ namespace Unity.GrantManager.Controllers
             IConfiguration configuration,
             ISubmissionAppService submissionAppService,
             IEmailLogAttachmentUploadService emailLogAttachmentUploadService,
-            ICurrentTenant currentTenant)
+            ICurrentTenant currentTenant,
+            IS3PresignedUrlService s3PresignedUrlService)
         {
             _fileAppService = fileAppService;
             _configuration = configuration;
             _submissionAppService = submissionAppService;
             _emailLogAttachmentUploadService = emailLogAttachmentUploadService;
             _currentTenant = currentTenant;
+            _s3PresignedUrlService = s3PresignedUrlService;
         }
 
         [HttpGet("applicant/{applicantId}/download/{fileName}")]
@@ -271,6 +274,72 @@ namespace Unity.GrantManager.Controllers
                 }
             }
             return Ok(files);
+        }
+
+        [HttpGet("application/{applicationId}/presigned-url/{fileName}")]
+        public IActionResult GetApplicationPresignedUrl(string applicationId, string fileName)
+        {
+            if (string.IsNullOrWhiteSpace(applicationId)) return BadRequest("Application ID must be provided.");
+            if (string.IsNullOrWhiteSpace(fileName)) return BadRequest(badRequestFileMsg);
+
+            var folder = _configuration["S3:ApplicationS3Folder"] ?? throw new AbpValidationException("Missing server configuration: S3:ApplicationS3Folder");
+            if (!folder.EndsWith('/')) folder += "/";
+            var key = folder + applicationId + "/" + fileName;
+
+            try
+            {
+                var url = _s3PresignedUrlService.GetPresignedUrl(key);
+                return Ok(new { url });
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "AttachmentController->GetApplicationPresignedUrl: {Message}", ex.Message);
+                return StatusCode(500, errorFileMsg);
+            }
+        }
+
+        [HttpGet("assessment/{assessmentId}/presigned-url/{fileName}")]
+        public IActionResult GetAssessmentPresignedUrl(string assessmentId, string fileName)
+        {
+            if (string.IsNullOrWhiteSpace(assessmentId)) return BadRequest("Assessment ID must be provided.");
+            if (string.IsNullOrWhiteSpace(fileName)) return BadRequest(badRequestFileMsg);
+
+            var folder = _configuration["S3:AssessmentS3Folder"] ?? throw new AbpValidationException("Missing server configuration: S3:AssessmentS3Folder");
+            if (!folder.EndsWith('/')) folder += "/";
+            var key = folder + assessmentId + "/" + fileName;
+
+            try
+            {
+                var url = _s3PresignedUrlService.GetPresignedUrl(key);
+                return Ok(new { url });
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "AttachmentController->GetAssessmentPresignedUrl: {Message}", ex.Message);
+                return StatusCode(500, errorFileMsg);
+            }
+        }
+
+        [HttpGet("applicant/{applicantId}/presigned-url/{fileName}")]
+        public IActionResult GetApplicantPresignedUrl(string applicantId, string fileName)
+        {
+            if (string.IsNullOrWhiteSpace(applicantId)) return BadRequest("Applicant ID must be provided.");
+            if (string.IsNullOrWhiteSpace(fileName)) return BadRequest(badRequestFileMsg);
+
+            var folder = _configuration["S3:ApplicantS3Folder"] ?? throw new AbpValidationException("Missing server configuration: S3:ApplicantS3Folder");
+            if (!folder.EndsWith('/')) folder += "/";
+            var key = folder + applicantId + "/" + fileName;
+
+            try
+            {
+                var url = _s3PresignedUrlService.GetPresignedUrl(key);
+                return Ok(new { url });
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "AttachmentController->GetApplicantPresignedUrl: {Message}", ex.Message);
+                return StatusCode(500, errorFileMsg);
+            }
         }
 
         [HttpPost("applicant/{applicantId}/upload")]
