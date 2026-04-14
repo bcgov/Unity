@@ -682,10 +682,7 @@ $(function () {
             dynamicButtonContainerId: 'reportConfigDynamicButtons',
             useNullPlaceholder: true,
             externalSearchId: 'search-report-config',
-            // Enable scrolling - let CSS handle the height
-            scrollY: true,
-            scrollCollapse: true,
-            responsive: true
+            fixedHeaders: true
         });
 
         // Add event handler for when DataTable completes drawing
@@ -700,33 +697,7 @@ $(function () {
             // Check for dynamic columns placeholder and update warning
             const hasDynamicColumns = checkForDynamicColumnsInTable();
             updateDynamicColumnsWarning(hasDynamicColumns);
-
-            // Force column adjustment after draw if tab is visible
-            setTimeout(function () {
-                if (isReportingTabVisible()) {
-                    forceTableColumnAdjustment();
-                }
-            }, 50);
         });
-
-        // Add event handler for when DataTable data is loaded
-        dataTable.on('xhr.dt', function () {
-            // Force layout adjustment after data is loaded
-            setTimeout(function () {
-                if (isReportingTabVisible()) {
-                    adjustTableLayout();
-                    forceTableColumnAdjustment();
-                }
-            }, 100);
-        });
-
-        // Initial adjustment with longer delay to ensure DOM is ready
-        setTimeout(function () {
-            if (isReportingTabVisible()) {
-                adjustTableLayout();
-                forceTableColumnAdjustment();
-            }
-        }, 500);
 
         // Track changes on column name inputs with validation
         $('#ReportConfigurationTable').on('input', '.column-name-input', function () {
@@ -863,33 +834,11 @@ $(function () {
         return reportingPanel?.classList.contains('show', 'active');
     }
 
-    // Enhanced function to force table column adjustment
+    // Force table column width recalculation
     function forceTableColumnAdjustment() {
         if (!dataTable) return;
-
         try {
-            // Multiple approaches to ensure columns are properly sized
-            // 1. Force recalc of column widths
             dataTable.columns.adjust();
-
-            // 2. Trigger responsive recalc if responsive is enabled
-            if (dataTable.responsive) {
-                dataTable.responsive.recalc();
-            }
-
-            // 3. Force a layout recalculation by temporarily changing display
-            const wrapper = $('#ReportConfigurationTable_wrapper');
-            if (wrapper.length) {
-                // Force browser reflow                
-                wrapper.hide();
-                wrapper.show();
-
-                // Final column adjustment after showing
-                setTimeout(function () {
-                    dataTable.columns.adjust();
-                }, 10);
-            }
-
         } catch (error) {
             console.warn('Error during force column adjustment:', error);
         }
@@ -1730,6 +1679,9 @@ $(function () {
                 dataTable.ajax.reload();
             }
 
+            // Clear the cached view status so import/edit are no longer blocked
+            $('#reportingViewStatus').val('');
+
             // Refresh view status widget
             refreshViewStatusWidget(correlationId, getCorrelationProvider());
 
@@ -1832,79 +1784,252 @@ $(function () {
     // Initialize the delete button functionality
     updateCheckConfigurationExistsCallbacks();
 
+    // ======================================================================
+    // JSON Export / Import / Edit
+    // ======================================================================
+
+    /**
+     * Builds the simple [{propertyName, columnName}] array from the current
+     * DataTable state.  This is what gets exported / shown in the editor.
+     */
+    function buildJsonMapping() {
+        return getCurrentTableData().map(function (row) {
+            return {
+                propertyName: row.propertyName,
+                columnName: row.columnName
+            };
+        });
+    }
+
+    /**
+     * Checks whether the view has been successfully generated.
+     * When true, import and edit are blocked because the mapping is locked.
+     */
+    function isViewGenerated() {
+        // Check hidden field first (server-rendered initial state)
+        var status = ($('#reportingViewStatus').val() || '').toUpperCase();
+        if (status === 'SUCCESS') return true;
+
+        // Fallback: inspect the view-status widget DOM
+        var $widget = $('.view-status-compact');
+        if ($widget.find('.fl-checkmark').length > 0) return true;
+
+        return false;
+    }
+
+    /**
+     * Applies an imported / edited [{propertyName, columnName}] array back
+     * into the DataTable inputs.  Matching is done by propertyName; unmatched
+     * rows are silently skipped so partial imports work.
+     */
+    function applyJsonMappingToTable(mappingArray) {
+        if (!dataTable) return;
+
+        // Build a lookup: propertyName → columnName
+        var lookup = {};
+        mappingArray.forEach(function (item) {
+            lookup[item.propertyName] = item.columnName;
+        });
+
+        var appliedCount = 0;
+
+        dataTable.rows().every(function () {
+            var rowData = this.data();
+            var node = this.node();
+            var $input = $(node).find('.column-name-input');
+            if (!$input.length) return;
+
+            var propertyName = rowData.key;
+            if (propertyName in lookup) {
+                var newValue = sanitizeColumnName(lookup[propertyName] || '');
+                if ($input.val() !== newValue) {
+                    $input.val(newValue);
+                    validateColumnNameInput($input, newValue, $input.data('path'));
+                    appliedCount++;
+                }
+            }
+        });
+
+        if (appliedCount > 0) {
+            markAsChanged();
+        }
+
+        return appliedCount;
+    }
+
+    // Shared validators for the JSON editor and file import
+    var mappingValidators = [
+        {
+            name: 'isArray',
+            message: 'JSON must be an array of objects.',
+            validate: function (data) { return Array.isArray(data); }
+        },
+        {
+            name: 'uniquePropertyNames',
+            message: 'Duplicate propertyName values detected. Rows sharing the same propertyName will all receive the last columnName value when applied — use inline table editing for those rows instead.',
+            severity: 'warning',
+            validate: function (data) {
+                var names = data.map(function (r) { return r.propertyName; });
+                return new Set(names).size === names.length;
+            }
+        },
+        {
+            name: 'uniqueColumnNames',
+            message: 'Duplicate columnName values found. Each columnName must be unique.',
+            validate: function (data) {
+                var cols = data.filter(function (r) { return r.columnName; })
+                              .map(function (r) { return r.columnName.toLowerCase(); });
+                return new Set(cols).size === cols.length;
+            }
+        },
+        {
+            name: 'columnNameFormat',
+            message: 'One or more column names contain invalid characters. Use only lowercase letters, numbers, and underscores.',
+            validate: function (data) {
+                return data.every(function (r) {
+                    if (!r.columnName) return true; // empty is allowed
+                    return /^[a-z_][a-z0-9_]*$/i.test(r.columnName);
+                });
+            }
+        },
+        {
+            name: 'columnNameLength',
+            message: 'One or more column names exceed the maximum length of ' + COLUMN_VALIDATION.MAX_LENGTH + ' characters.',
+            validate: function (data) {
+                return data.every(function (r) {
+                    if (!r.columnName) return true;
+                    return r.columnName.length <= COLUMN_VALIDATION.MAX_LENGTH;
+                });
+            }
+        },
+        {
+            name: 'reservedWords',
+            message: 'One or more column names use a PostgreSQL reserved word.',
+            validate: function (data) {
+                return data.every(function (r) {
+                    if (!r.columnName) return true;
+                    return !COLUMN_VALIDATION.RESERVED_WORDS.includes(r.columnName.toLowerCase());
+                });
+            }
+        }
+    ];
+
+    // Create the editor instance (lazy – modal built on first use)
+    var mappingEditor = new UnityJsonEditor({
+        title: 'Edit Column Mapping',
+        requiredFields: ['propertyName', 'columnName'],
+        validators: mappingValidators,
+        onSave: function (data, warnings) {
+            var count = applyJsonMappingToTable(data);
+            var msg = count + ' column mapping(s) updated. Remember to Save to persist changes.';
+            if (warnings && warnings.length > 0) {
+                abp.message.warn(msg + '\n\n\u26A0 ' + warnings.map(function (w) { return w.message; }).join('\n'));
+            } else {
+                abp.message.success(msg);
+            }
+        }
+    });
+
+    // --- Export ---
+    $('#btn-export-json-mapping').on('click', function (e) {
+        e.preventDefault();
+        if (!dataTable) {
+            abp.message.warn('No mapping data loaded.');
+            return;
+        }
+
+        var mapping = buildJsonMapping();
+        if (mapping.length === 0) {
+            abp.message.warn('No mapping data to export.');
+            return;
+        }
+
+        var provider = getCorrelationProvider();
+        var correlationId = getCurrentCorrelationId();
+        var filename = 'column-mapping-' + provider + '-' + (correlationId || 'new') + '.json';
+        UnityJsonEditor.exportToFile(mapping, filename);
+    });
+
+    // --- Import ---
+    $('#btn-import-json-mapping').on('click', function (e) {
+        e.preventDefault();
+        if (isViewGenerated()) {
+            abp.message.error('Cannot import mapping: a database view has already been generated. Delete the view first to modify the mapping.');
+            return;
+        }
+
+        if (!dataTable) {
+            abp.message.warn('No mapping data loaded. Please load a configuration first.');
+            return;
+        }
+
+        var importWarnings = [];
+        UnityJsonEditor.importFromFile({
+            validators: mappingValidators.concat([
+                {
+                    name: 'hasRequiredFields',
+                    message: 'Each item must have "propertyName" and "columnName" fields.',
+                    validate: function (data) {
+                        if (!Array.isArray(data)) return false;
+                        return data.every(function (r) {
+                            return r !== null && typeof r === 'object' &&
+                                'propertyName' in r && 'columnName' in r;
+                        });
+                    }
+                }
+            ]),
+            onWarning: function (warnings) {
+                importWarnings = warnings;
+            }
+        }).then(function (data) {
+            var count = applyJsonMappingToTable(data);
+            var msg = count + ' column mapping(s) imported. Remember to Save to persist changes.';
+            if (importWarnings.length > 0) {
+                abp.message.warn(msg + '\n\n\u26A0 ' + importWarnings.map(function (w) { return w.message; }).join('\n'));
+            } else {
+                abp.message.success(msg);
+            }
+        }).catch(function (err) {
+            abp.message.error(err.message || 'Failed to import file.');
+        });
+    });
+
+    // --- Edit JSON ---
+    $('#btn-edit-json-mapping').on('click', function (e) {
+        e.preventDefault();
+        if (isViewGenerated()) {
+            abp.message.error('Cannot edit mapping: a database view has already been generated. Delete the view first to modify the mapping.');
+            return;
+        }
+
+        if (!dataTable) {
+            abp.message.warn('No mapping data loaded. Please load a configuration first.');
+            return;
+        }
+
+        var mapping = buildJsonMapping();
+        mappingEditor.open(mapping);
+    });
+
     // Initialize version selector visibility based on provider
     updateVersionSelectorVisibility();
 
-    // Function to adjust table layout dynamically
+    // Trigger ScrollResize recalculation by dispatching a window resize event.
+    // The ScrollResize plugin (enabled via fixedHeaders) handles all scroll body
+    // height calculations dynamically.
     function adjustTableLayout() {
-        if (dataTable && dataTable.settings().length > 0) {
-            try {
-                const container = $('.report-config-table-container');
-                const containerHeight = container.height();
-
-                if (containerHeight > 100) { // Only adjust if container has reasonable height
-                    // Calculate available height for the table body
-                    // Updated for DataTables v2 class names
-                    const wrapper = $('#ReportConfigurationTable_wrapper');
-                    const header = wrapper.find('.dt-scroll-head');
-                    const info = wrapper.find('.dt-info');
-                    const paginate = wrapper.find('.dt-paging');
-
-                    const headerHeight = header.length ? header.outerHeight(true) : 0;
-                    const infoHeight = info.length ? info.outerHeight(true) : 0;
-                    const paginateHeight = paginate.length ? paginate.outerHeight(true) : 0;
-                    const padding = 20; // Extra padding
-
-                    const availableHeight = containerHeight - headerHeight - infoHeight - paginateHeight - padding;
-                    const minHeight = 200; // Minimum table body height
-
-                    const scrollBodyHeight = Math.max(minHeight, availableHeight);
-
-                    // Apply the calculated height
-                    wrapper.find('.dt-scroll-body').css({
-                        'max-height': scrollBodyHeight + 'px',
-                        'height': scrollBodyHeight + 'px'
-                    });
-                }
-            } catch (error) {
-                console.warn('Error adjusting table layout:', error);
-            }
-        }
+        window.dispatchEvent(new Event('resize'));
     }
 
-    // Function to handle tab visibility changes with improved column adjustment
+    // Function to handle tab visibility changes
+    // When the tab becomes visible, recalculate column widths and trigger
+    // ScrollResize to set the correct scroll body height.
     function handleTabVisibilityChange() {
-        // Check if the reporting configuration tab is now visible
-        if (isReportingTabVisible()) {
-            // Progressive approach with multiple attempts
-            const adjustmentSequence = [
-                { delay: 50, action: 'initial' },
-                { delay: 150, action: 'layout' },
-                { delay: 300, action: 'columns' },
-                { delay: 500, action: 'final' }
-            ];
-
-            adjustmentSequence.forEach(step => {
-                setTimeout(() => {
-                    if (dataTable && isReportingTabVisible()) {
-                        switch (step.action) {
-                            case 'initial':
-                                dataTable.columns.adjust();
-                                break;
-                            case 'layout':
-                                adjustTableLayout();
-                                break;
-                            case 'columns':
-                                forceTableColumnAdjustment();
-                                break;
-                            case 'final':
-                                dataTable.columns.adjust();
-                                dataTable.draw(false);
-                                break;
-                        }
-                    }
-                }, step.delay);
-            });
+        if (isReportingTabVisible() && dataTable) {
+            setTimeout(function () {
+                dataTable.columns.adjust();
+                dataTable.draw(false);
+            }, 50);
         }
     }
 
@@ -1928,17 +2053,6 @@ $(function () {
         setTimeout(() => {
             handleTabVisibilityChange();
         }, 150);
-    });
-
-    // Also handle window resize events
-    $(window).on('resize', function () {
-        if (isReportingTabVisible()) {
-            adjustTableLayout();
-            // Add column adjustment on resize
-            setTimeout(function () {
-                forceTableColumnAdjustment();
-            }, 100);
-        }
     });
 
     // Add intersection observer for visibility detection (fallback)
@@ -1983,4 +2097,11 @@ $(function () {
             });
         }
     }
+
+    // Keep the hidden view-status field in sync when async generation completes
+    PubSub.subscribe('view_generation_completed', function (msg, data) {
+        if (data && data.finalStatus) {
+            $('#reportingViewStatus').val(data.finalStatus);
+        }
+    });
 });

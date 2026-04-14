@@ -13,9 +13,10 @@
     <input type="hidden" id="reportingCorrelationId" value="@Model.CorrelationId" />
     <input type="hidden" id="reportingProvider" value="@Model.Provider" />
     <input type="hidden" id="hasDuplicateKeys" value="@Model.HasDuplicateKeys.ToString().ToLower()" />
+    <input type="hidden" id="reportingViewStatus" value="@Model.ViewStatus" />
 
     <!-- Provider Toggle Section -->
-    <div class="provider-toggle-section mb-3">
+    <div class="provider-toggle-section mb-1">
         <div class="d-flex align-items-center gap-3">
             <div class="btn-group" role="group" aria-label="Provider toggle">
                 <input type="radio" class="btn-check" name="provider-toggle" id="provider-submissions" value="formversion" @(Model.Provider == "formversion" ? "checked" : "")>
@@ -174,6 +175,32 @@
                                 data-bs-placement="top"
                                 data-bs-original-title="Generate unique column names for all fields with duplicate names"
                                 class="btn unt-btn-outline-primary btn-outline-primary"></abp-button>
+
+                    <div class="btn-group" role="group">
+                        <button type="button"
+                                class="btn unt-btn-outline-primary btn-outline-primary dropdown-toggle"
+                                data-bs-toggle="dropdown"
+                                aria-expanded="false">
+                            <i class="fl fl-code me-1"></i> JSON Mapping
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li>
+                                <a class="dropdown-item" href="#" id="btn-export-json-mapping">
+                                    <i class="fl fl-arrow-export me-2"></i> Export
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="#" id="btn-import-json-mapping">
+                                    <i class="fl fl-arrow-import me-2"></i> Import
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="#" id="btn-edit-json-mapping">
+                                    <i class="fl fl-code me-2"></i> Edit JSON
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
                 </div>
             }
         </div>
