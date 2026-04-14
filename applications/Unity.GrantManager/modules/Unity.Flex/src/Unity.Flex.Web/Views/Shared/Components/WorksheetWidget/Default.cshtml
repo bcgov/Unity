@@ -71,7 +71,7 @@
                                 title="Collapse/Expand fields">
                             <i class="fl fl-chevron-up section-chevron"></i>
                         </button>
-                        @if (!Model.Worksheet.Published)
+                        @if (!Model.Worksheet.Published && !worksheet.IsArchived)
                         {
                             <button data-toggle="tooltip" title="Add Field" class="btn float-end add-custom-field-btn worksheet-btn" data-worksheet-id="@worksheet.Id" data-section-id="@sect.Id" data-action="Insert" type="button">
                                 <i class="fl fl-plus"></i>
@@ -94,7 +94,7 @@
                                 <span class="p-2">
                                     <i class="@Model.IconMap[customField.Type.ToString()]" data-toggle="tooltip" title="@customField.Type"></i>
                                 </span>
-                                @if (!Model.Worksheet.Published)
+                                @if (!Model.Worksheet.Published && !worksheet.IsArchived)
                                 {
                                     <button data-toggle="tooltip" title="Edit Field" class="btn float-end edit-custom-field-btn worksheet-btn" type="button" data-worksheet-id="@worksheet.Id" data-section-id="@sect.Id" data-field-id="@customField.Id" data-action="Update">
                                         <i class="fl fl-edit"></i>
@@ -109,7 +109,7 @@
         }
     </div>
 
-    @if (!Model.Worksheet.Published)
+    @if (!Model.Worksheet.Published && !worksheet.IsArchived)
     {
         <div class="row">
             <div class="col-md-6">
