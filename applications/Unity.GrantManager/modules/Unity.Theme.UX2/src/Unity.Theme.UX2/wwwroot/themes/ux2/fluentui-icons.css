@@ -153,6 +153,11 @@
     content: '\ED25';
 }
 
+/* U+E8B7 : Folder (closed) */
+.fl-folder:before {
+    content: '\E8B7';
+}
+
 /*GID841 : U+EC25*/
 .fl-personal-folder:before {
     content: '\EC25';

@@ -28,6 +28,36 @@
                     <abp-input asp-for="@Model.Name" />
                 </abp-column>
             </abp-row>
+            <abp-row class="m-0 p-0 mt-3">
+                <abp-column size="_12" class="px-1">
+                    <label class="form-label fw-bold" for="FieldWidth">
+                        Field Width: <span id="field-width-display">@(Model.FieldWidth > 0 ? $"{Model.FieldWidth}%" : "Auto (CSS layout)")</span>
+                    </label>
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="text-muted small">Auto</span>
+                        <input type="range" class="form-range flex-grow-1" id="FieldWidth" name="FieldWidth"
+                               min="0" max="100" step="1"
+                               value="@Model.FieldWidth"
+                               oninput="onSliderInput(this.value)" />
+                        <span class="text-muted small">100%</span>
+                        <input type="number" class="form-control" id="FieldWidthNumber"
+                               min="0" max="100" step="1"
+                               value="@Model.FieldWidth"
+                               style="width: 70px;"
+                               oninput="onNumberInput(this.value)" />
+                    </div>
+                    <div class="d-flex align-items-center gap-2 mt-2">
+                        <label class="form-label mb-0" for="FieldColumns">Number of Fields</label>
+                        <input type="number" class="form-control" id="FieldColumns"
+                               min="1" max="10" step="1"
+                               style="width: 70px;"
+                               oninput="onColumnsInput(this.value)" />
+                    </div>
+                    <div class="form-text text-muted mt-1">
+                        Set to 0 to use automatic column layout based on number of fields. Otherwise fields in this section will be a fixed percentage width.
+                    </div>
+                </abp-column>
+            </abp-row>
         </abp-modal-body>
         <abp-modal-footer>
             <button type="submit" id="save_worksheet_section_btn" name="saveSectionBtn" class="btn btn-primary" value="save">@AbpModalButtons.Save</button>
@@ -42,6 +72,53 @@
 
 
 <script>
+    function updateFieldWidthDisplay(value) {
+        const display = document.getElementById('field-width-display');
+        display.textContent = value > 0 ? value + '%' : 'Auto (CSS layout)';
+    }
+
+    // Returns columns (1–10) for a given width, or '' when width is 0 (auto)
+    function widthToColumns(width) {
+        if (!width || width <= 0) return '';
+        return Math.min(10, Math.max(1, Math.floor(100 / width)));
+    }
+
+    // Returns width percentage for a given column count (1–10)
+    function columnsToWidth(cols) {
+        const c = Math.min(10, Math.max(1, parseInt(cols, 10) || 1));
+        return Math.round(100 / c);
+    }
+
+    function onSliderInput(value) {
+        const clamped = Math.min(100, Math.max(0, parseInt(value, 10) || 0));
+        document.getElementById('FieldWidthNumber').value = clamped;
+        document.getElementById('FieldColumns').value = widthToColumns(clamped);
+        updateFieldWidthDisplay(clamped);
+    }
+
+    function onNumberInput(value) {
+        let clamped = parseInt(value, 10);
+        if (isNaN(clamped)) clamped = 0;
+        clamped = Math.min(100, Math.max(0, clamped));
+        document.getElementById('FieldWidth').value = clamped;
+        document.getElementById('FieldColumns').value = widthToColumns(clamped);
+        updateFieldWidthDisplay(clamped);
+    }
+
+    function onColumnsInput(value) {
+        const cols = Math.min(10, Math.max(1, parseInt(value, 10) || 1));
+        const width = columnsToWidth(cols);
+        document.getElementById('FieldWidth').value = width;
+        document.getElementById('FieldWidthNumber').value = width;
+        updateFieldWidthDisplay(width);
+    }
+
+    // Initialise the columns input from the current FieldWidth on page load
+    (function () {
+        const initialWidth = parseInt(document.getElementById('FieldWidth').value, 10) || 0;
+        document.getElementById('FieldColumns').value = widthToColumns(initialWidth);
+    })();
+
     function deleteSection() {
         Swal.fire({
             title: "Delete Section?",

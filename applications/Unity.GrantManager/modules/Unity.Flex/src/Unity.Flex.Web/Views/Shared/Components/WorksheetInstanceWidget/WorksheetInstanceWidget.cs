@@ -137,7 +137,8 @@ public class WorksheetInstanceWidget(IWorksheetInstanceAppService worksheetInsta
         {
             worksheetVM.Sections.Add(new WorksheetInstanceSectionViewModel()
             {
-                Name = section.Name
+                Name = section.Name,
+                FieldWidth = section.FieldWidth
             });
 
             foreach (var field in section.Fields)
