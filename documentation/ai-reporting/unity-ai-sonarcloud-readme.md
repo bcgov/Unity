@@ -41,11 +41,7 @@ This document provides a guide for the Unity-AI SonarCloud, including setup, per
 
 ### First-Time SonarCloud Access
 
-1. **Navigate to SonarCloud:**
-
-   ```link
-   https://sonarcloud.io
-   ```
+1. **Navigate to SonarCloud:** https://sonarcloud.io
 
 2. **GitHub SSO Login:**
    - Click "Log in with GitHub"
