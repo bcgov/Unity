@@ -42,7 +42,7 @@
  *       console.log('Imported:', data);
  *   });
  */
-var UnityJsonEditor = (function ($) {
+const UnityJsonEditor = (function ($) {
     'use strict';
 
     let _instanceCount = 0;
@@ -188,25 +188,9 @@ var UnityJsonEditor = (function ($) {
                     reject(new Error('No file selected.'));
                     return;
                 }
-                file.text().then(function (text) {
-                    const data = JSON.parse(text);
-
-                    // Run validators if provided
-                    const result = _runValidators(data, validators, null);
-                    if (result.errors.length > 0) {
-                        reject(new Error(result.errors.map(function (err) { return err.message; }).join('\n')));
-                        return;
-                    }
-
-                    // Report warnings but allow import
-                    if (result.warnings.length > 0 && typeof onWarning === 'function') {
-                        onWarning(result.warnings);
-                    }
-
-                    resolve(data);
-                }).catch(function (ex) {
-                    reject(new Error('Invalid JSON file: ' + ex.message));
-                });
+                _processImportedFile(file, validators, onWarning)
+                    .then(resolve)
+                    .catch(reject);
             });
 
             document.body.appendChild(input);
@@ -254,7 +238,8 @@ var UnityJsonEditor = (function ($) {
         getData: function () {
             try {
                 return JSON.parse(this._textarea.val());
-            } catch (_) {
+            } catch (e) {
+                console.debug('getData: invalid JSON in editor', e.message);
                 return null;
             }
         },
@@ -292,7 +277,6 @@ var UnityJsonEditor = (function ($) {
          * @private
          */
         _build: function () {
-            const self = this;
             const opts = this._opts;
             const id = this._modalId;
 
@@ -336,40 +320,41 @@ var UnityJsonEditor = (function ($) {
             this._bsModal = new bootstrap.Modal(document.getElementById(id));
 
             // Event: real-time validation on input
-            this._textarea.on('input', function () {
-                self._validate();
+            this._textarea.on('input', () => {
+                this._validate();
             });
 
             // Event: format button
-            this._modal.find('.uje-format-btn').on('click', function () {
-                self._format();
+            this._modal.find('.uje-format-btn').on('click', () => {
+                this._format();
             });
 
             // Event: save button
             if (!opts.readOnly) {
-                this._saveBtn.on('click', function () {
-                    self._onSave();
+                this._saveBtn.on('click', () => {
+                    this._onSave();
                 });
             }
 
             // Event: modal hidden — only fire onCancel when not closed via save
-            this._modal.on('hidden.bs.modal', function () {
-                if (!self._savedFlag && typeof opts.onCancel === 'function') {
+            this._modal.on('hidden.bs.modal', () => {
+                if (!this._savedFlag && typeof opts.onCancel === 'function') {
                     opts.onCancel();
                 }
-                self._savedFlag = false;
+                this._savedFlag = false;
             });
 
             // Tab key inserts spaces instead of changing focus
-            this._textarea.on('keydown', function (e) {
+            this._textarea.on('keydown', (e) => {
                 if (e.key === 'Tab') {
                     e.preventDefault();
-                    const start = this.selectionStart;
-                    const end = this.selectionEnd;
-                    const value = $(this).val();
-                    $(this).val(value.substring(0, start) + '  ' + value.substring(end));
-                    this.selectionStart = this.selectionEnd = start + 2;
-                    $(self._textarea).trigger('input');
+                    const target = e.target;
+                    const start = target.selectionStart;
+                    const end = target.selectionEnd;
+                    const value = $(target).val();
+                    $(target).val(value.substring(0, start) + '  ' + value.substring(end));
+                    target.selectionStart = target.selectionEnd = start + 2;
+                    $(this._textarea).trigger('input');
                 }
             });
 
@@ -400,10 +385,36 @@ var UnityJsonEditor = (function ($) {
                 const parsed = JSON.parse(raw);
                 this._textarea.val(JSON.stringify(parsed, null, 2));
                 this._validate();
-            } catch (_) {
-                // Validation will show the error
+            } catch (e) {
+                console.debug('_format: could not parse JSON', e.message);
                 this._validate();
             }
+        },
+
+        /**
+         * Checks required fields on each item in an array of objects.
+         * @private
+         * @param {*} data - Parsed JSON data.
+         * @returns {string|null} Error message if validation fails, null if valid.
+         */
+        _checkRequiredFields: function (data) {
+            const requiredFields = this._opts.requiredFields;
+            if (!requiredFields || requiredFields.length === 0 || !Array.isArray(data)) {
+                return null;
+            }
+
+            for (const [i, item] of data.entries()) {
+                if (typeof item !== 'object' || item === null) {
+                    return 'Item at index ' + i + ' is not an object.';
+                }
+                for (const field of requiredFields) {
+                    if (!(field in item) || item[field] === null || item[field] === undefined) {
+                        return 'Item at index ' + i + ' is missing required field "' + field + '".';
+                    }
+                }
+            }
+
+            return null;
         },
 
         /**
@@ -433,22 +444,11 @@ var UnityJsonEditor = (function ($) {
             }
 
             // Required fields check (only for arrays of objects)
-            const requiredFields = this._opts.requiredFields;
-            if (requiredFields && requiredFields.length > 0 && Array.isArray(data)) {
-                for (const [i, item] of data.entries()) {
-                    if (typeof item !== 'object' || item === null) {
-                        this._showStatus('error', 'Item at index ' + i + ' is not an object.');
-                        this._setSaveEnabled(false);
-                        return false;
-                    }
-                    for (const field of requiredFields) {
-                        if (!(field in item) || item[field] === null || item[field] === undefined) {
-                            this._showStatus('error', 'Item at index ' + i + ' is missing required field "' + field + '".');
-                            this._setSaveEnabled(false);
-                            return false;
-                        }
-                    }
-                }
+            const requiredFieldsError = this._checkRequiredFields(data);
+            if (requiredFieldsError) {
+                this._showStatus('error', requiredFieldsError);
+                this._setSaveEnabled(false);
+                return false;
             }
 
             // Custom validators (errors + warnings)
@@ -504,12 +504,10 @@ var UnityJsonEditor = (function ($) {
          * @param {string} message
          */
         _showStatus: function (type, message, secondLine) {
-            const icon = type === 'success' ? 'fa-check-circle' :
-                       type === 'error'   ? 'fa-times-circle' :
-                                            'fa-exclamation-circle';
-            const colorClass = type === 'success' ? 'text-success' :
-                             type === 'error'   ? 'text-danger' :
-                                                  'text-warning';
+            const iconMap = { success: 'fa-check-circle', error: 'fa-times-circle', warning: 'fa-exclamation-circle' };
+            const colorMap = { success: 'text-success', error: 'text-danger', warning: 'text-warning' };
+            const icon = iconMap[type] || iconMap.warning;
+            const colorClass = colorMap[type] || colorMap.warning;
 
             let html = '<i class="fa ' + icon + ' me-1"></i>' + _escapeHtml(message);
             if (secondLine) {
@@ -580,6 +578,35 @@ var UnityJsonEditor = (function ($) {
             }
         }
         return { errors: errors, warnings: warnings };
+    }
+
+    /**
+     * Reads a file, parses JSON, runs validators, and resolves with the data.
+     * Extracted from importFromFile to keep function nesting shallow.
+     * @param {File} file - The file to read.
+     * @param {Array} validators - Validators to run on the parsed data.
+     * @param {function|null} onWarning - Callback for non-blocking warnings.
+     * @returns {Promise<*>} Resolves with parsed JSON data, rejects on error.
+     */
+    function _processImportedFile(file, validators, onWarning) {
+        return file.text().then(function (text) {
+            const data = JSON.parse(text);
+
+            // Run validators if provided
+            const result = _runValidators(data, validators, null);
+            if (result.errors.length > 0) {
+                throw new Error(result.errors.map(function (err) { return err.message; }).join('\n'));
+            }
+
+            // Report warnings but allow import
+            if (result.warnings.length > 0 && typeof onWarning === 'function') {
+                onWarning(result.warnings);
+            }
+
+            return data;
+        }).catch(function (ex) {
+            throw new Error('Invalid JSON file: ' + ex.message);
+        });
     }
 
     /**

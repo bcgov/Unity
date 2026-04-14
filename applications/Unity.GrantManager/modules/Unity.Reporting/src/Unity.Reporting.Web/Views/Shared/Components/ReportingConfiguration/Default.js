@@ -1587,13 +1587,13 @@ $(function () {
             const viewName = result.viewName;
             const $deleteViewListItem = $('#deleteViewListItem');
             
-            if (viewName?.trim() !== '') {
+            if (!viewName?.trim()) {
+                // Hide the view deletion item if no view exists
+                $deleteViewListItem.hide();
+            } else {
                 // Update the view name in the list item and show it
                 $deleteViewListItem.html(`The associated database view (${viewName})`);
                 $deleteViewListItem.show();
-            } else {
-                // Hide the view deletion item if no view exists
-                $deleteViewListItem.hide();
             }
             
             // Call the callback to show the modal
