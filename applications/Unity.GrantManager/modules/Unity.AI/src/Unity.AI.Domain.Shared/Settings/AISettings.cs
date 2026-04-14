@@ -1,7 +1,7 @@
 namespace Unity.AI.Settings;
 
-#pragma warning disable S2094
 public static class AISettings
-#pragma warning restore S2094
 {
+    public const string AutomaticGenerationEnabled = "GrantManager.AI.AutomaticGenerationEnabled";
+    public const string ManualGenerationEnabled    = "GrantManager.AI.ManualGenerationEnabled";
 }
