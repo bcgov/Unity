@@ -6,7 +6,6 @@
     "Permission:AI.ApplicationAnalysis": "AI Application Analysis",
     "Permission:AI.AttachmentSummary": "AI Attachment Summary",
     "Permission:AI.ScoringAssistant": "AI Scoring Assistant",
-    "Setting:AI.ScoringAssistantEnabled": "AI Scoring Assistant",
     "Permission:AI.ConfigureAI": "AI Configuration",
     "Permission:AI.Prompts": "AI Prompt Management",
     "Permission:AI.Prompts.Create": "Create Prompts",

@@ -6,7 +6,6 @@ using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Unity.AI.Permissions;
-using Unity.AI.Settings;
 using Unity.Flex;
 using Unity.Flex.Scoresheets;
 using Unity.Flex.Scoresheets.Enums;
@@ -94,12 +93,11 @@ namespace Unity.GrantManager.Assessments
             var assessments = await _assessmentRepository.GetListWithAssessorsAsync(applicationId);
             var assessmentList = ObjectMapper.Map<List<AssessmentWithAssessorQueryResultItem>, List<AssessmentListItemDto>>(assessments);
 
-            // If AI Scoring feature is disabled, tenant setting is off, or user lacks permission, filter out AI assessments
+            // If AI Scoring feature is disabled or user lacks permission, filter out AI assessments
             var aiScoringEnabled = await _featureChecker.IsEnabledAsync("Unity.AI.Scoring");
-            var aiScoringSettingEnabled = aiScoringEnabled && await SettingProvider.GetAsync<bool>(AISettings.ScoringAssistantEnabled, defaultValue: false);
             var canViewAI = await AuthorizationService.IsGrantedAsync(AIPermissions.ScoringAssistant.ScoringAssistantDefault);
             assessmentList = assessmentList
-                .Where(a => !a.IsAiAssessment || (aiScoringSettingEnabled && canViewAI))
+                .Where(a => !a.IsAiAssessment || (aiScoringEnabled && canViewAI))
                 .OrderByDescending(a => a.IsAiAssessment)
                 .ThenByDescending(a => a.StartDate)
                 .ToList();

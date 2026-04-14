@@ -1,10 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
-using Unity.AI.Settings;
 using Volo.Abp.AspNetCore.Mvc;
 using Volo.Abp.AspNetCore.Mvc.UI.Bundling;
 using Volo.Abp.AspNetCore.Mvc.UI.Widgets;
-using Volo.Abp.Settings;
 
 namespace Unity.AI.Web.Views.Settings.AISettingGroup;
 
@@ -12,17 +10,12 @@ namespace Unity.AI.Web.Views.Settings.AISettingGroup;
     ScriptTypes = [typeof(AISettingScriptBundleContributor)],
     AutoInitialize = true
 )]
-public class AISettingViewComponent(ISettingProvider settingProvider) : AbpViewComponent
+public class AISettingViewComponent : AbpViewComponent
 {
-    public virtual async Task<IViewComponentResult> InvokeAsync()
+    public virtual Task<IViewComponentResult> InvokeAsync()
     {
-        var model = new AISettingViewModel
-        {
-            ScoringAssistantEnabled = await settingProvider.GetAsync<bool>(
-                AISettings.ScoringAssistantEnabled, defaultValue: false)
-        };
-
-        return View("~/Views/Settings/AISettingGroup/Default.cshtml", model);
+        return Task.FromResult<IViewComponentResult>(
+            View("~/Views/Settings/AISettingGroup/Default.cshtml", new AISettingViewModel()));
     }
 
     public class AISettingScriptBundleContributor : BundleContributor
