@@ -49,7 +49,6 @@
                 var fieldStyleAttr = !string.IsNullOrEmpty(fieldDef?.Style) ? $" style=\"{fieldDef.Style}\"" : "";
                 var fieldExtraCssClass = !string.IsNullOrEmpty(fieldDef?.CssClass) ? $" {fieldDef.CssClass}" : "";
                 var labelStyleAttr = !string.IsNullOrEmpty(fieldDef?.LabelStyle) ? $" style=\"{fieldDef.LabelStyle}\"" : "";
-                var labelExtraCssClass = !string.IsNullOrEmpty(fieldDef?.LabelCssClass) ? $" {fieldDef.LabelCssClass}" : "";
 
                 <div class="worksheet_field worksheet_field_@Model.UiAnchor @labelPositionClass@fieldExtraCssClass"
                      @Html.Raw(fieldDef?.IsHidden == true ? "hidden" : "")
@@ -58,7 +57,7 @@
 
                     @if (fieldDef?.HideLabel != true)
                     {
-                        <label class="field-label mb-1@labelExtraCssClass" for="@fieldInputId" @Html.Raw(labelStyleAttr)>@field.Label</label>
+                        <label class="field-label mb-1@(!string.IsNullOrEmpty(fieldDef?.LabelCssClass) ? $" {fieldDef.LabelCssClass}" : "")" for="@fieldInputId" @Html.Raw(labelStyleAttr)>@field.Label</label>
                     }
 
                     <div class="field-content">
