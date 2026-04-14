@@ -875,9 +875,9 @@ $(function () {
             errors.push(`Column name exceeds maximum length of ${COLUMN_VALIDATION.MAX_LENGTH} characters`);
         }
 
-        // Check format (should be alphanumeric + underscores, not starting with number)
-        if (!/^[a-z_][a-z0-9_]*$/i.test(name)) {
-            errors.push('Column name must start with a letter or underscore and contain only letters, numbers, and underscores');
+        // Check format (should be lowercase alphanumeric + underscores, not starting with number)
+        if (!/^[a-z_][a-z0-9_]*$/.test(name)) {
+            errors.push('Column name must start with a letter or underscore and contain only lowercase letters, numbers, and underscores');
         }
 
         // Check reserved words
@@ -1869,6 +1869,7 @@ $(function () {
             message: 'Duplicate propertyName values detected. Rows sharing the same propertyName will all receive the last columnName value when applied — use inline table editing for those rows instead.',
             severity: 'warning',
             validate: function (data) {
+                if (!Array.isArray(data)) return true;
                 var names = data.map(function (r) { return r.propertyName; });
                 return new Set(names).size === names.length;
             }
@@ -1877,6 +1878,7 @@ $(function () {
             name: 'uniqueColumnNames',
             message: 'Duplicate columnName values found. Each columnName must be unique.',
             validate: function (data) {
+                if (!Array.isArray(data)) return true;
                 var cols = data.filter(function (r) { return r.columnName; })
                               .map(function (r) { return r.columnName.toLowerCase(); });
                 return new Set(cols).size === cols.length;
@@ -1886,9 +1888,10 @@ $(function () {
             name: 'columnNameFormat',
             message: 'One or more column names contain invalid characters. Use only lowercase letters, numbers, and underscores.',
             validate: function (data) {
+                if (!Array.isArray(data)) return true;
                 return data.every(function (r) {
                     if (!r.columnName) return true; // empty is allowed
-                    return /^[a-z_][a-z0-9_]*$/i.test(r.columnName);
+                    return /^[a-z_][a-z0-9_]*$/.test(r.columnName);
                 });
             }
         },
@@ -1896,6 +1899,7 @@ $(function () {
             name: 'columnNameLength',
             message: 'One or more column names exceed the maximum length of ' + COLUMN_VALIDATION.MAX_LENGTH + ' characters.',
             validate: function (data) {
+                if (!Array.isArray(data)) return true;
                 return data.every(function (r) {
                     if (!r.columnName) return true;
                     return r.columnName.length <= COLUMN_VALIDATION.MAX_LENGTH;
@@ -1906,6 +1910,7 @@ $(function () {
             name: 'reservedWords',
             message: 'One or more column names use a PostgreSQL reserved word.',
             validate: function (data) {
+                if (!Array.isArray(data)) return true;
                 return data.every(function (r) {
                     if (!r.columnName) return true;
                     return !COLUMN_VALIDATION.RESERVED_WORDS.includes(r.columnName.toLowerCase());
@@ -2013,13 +2018,6 @@ $(function () {
 
     // Initialize version selector visibility based on provider
     updateVersionSelectorVisibility();
-
-    // Trigger ScrollResize recalculation by dispatching a window resize event.
-    // The ScrollResize plugin (enabled via fixedHeaders) handles all scroll body
-    // height calculations dynamically.
-    function adjustTableLayout() {
-        window.dispatchEvent(new Event('resize'));
-    }
 
     // Function to handle tab visibility changes
     // When the tab becomes visible, recalculate column widths and trigger

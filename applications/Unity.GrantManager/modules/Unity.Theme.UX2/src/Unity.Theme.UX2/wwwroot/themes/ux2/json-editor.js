@@ -100,7 +100,8 @@ var UnityJsonEditor = (function ($) {
         onSave: null,
 
         /**
-         * Callback invoked when the user cancels or closes the modal.
+         * Callback invoked when the user cancels or closes the modal without saving.
+         * Not called when the modal is closed after a successful save.
          * @type {function(): void|null}
          */
         onCancel: null,
@@ -131,6 +132,7 @@ var UnityJsonEditor = (function ($) {
         this._statusBar = null;
         this._saveBtn = null;
         this._lastWarnings = [];
+        this._savedFlag = false;
         this._built = false;
     }
 
@@ -154,7 +156,7 @@ var UnityJsonEditor = (function ($) {
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
-        URL.revokeObjectURL(url);
+        setTimeout(function () { URL.revokeObjectURL(url); }, 100);
     };
 
     /**
@@ -178,6 +180,11 @@ var UnityJsonEditor = (function ($) {
             input.style.display = 'none';
 
             input.addEventListener('change', function () {
+                // Remove from DOM now that the browser has fired the change event
+                if (input.parentNode) {
+                    input.parentNode.removeChild(input);
+                }
+
                 var file = input.files && input.files[0];
                 if (!file) {
                     reject(new Error('No file selected.'));
@@ -213,7 +220,6 @@ var UnityJsonEditor = (function ($) {
 
             document.body.appendChild(input);
             input.click();
-            document.body.removeChild(input);
         });
     };
 
@@ -233,6 +239,7 @@ var UnityJsonEditor = (function ($) {
                 this._build();
             }
 
+            this._savedFlag = false;
             var json = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
             this._textarea.val(json);
             this._clearStatus();
@@ -354,11 +361,12 @@ var UnityJsonEditor = (function ($) {
                 });
             }
 
-            // Event: modal hidden (cancel)
+            // Event: modal hidden — only fire onCancel when not closed via save
             this._modal.on('hidden.bs.modal', function () {
-                if (typeof opts.onCancel === 'function') {
+                if (!self._savedFlag && typeof opts.onCancel === 'function') {
                     opts.onCancel();
                 }
+                self._savedFlag = false;
             });
 
             // Tab key inserts spaces instead of changing focus
@@ -495,6 +503,7 @@ var UnityJsonEditor = (function ($) {
             if (typeof this._opts.onSave === 'function') {
                 this._opts.onSave(data, warnings);
             }
+            this._savedFlag = true;
             this.close();
         },
 
