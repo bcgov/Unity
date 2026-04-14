@@ -95,7 +95,7 @@ namespace Unity.GrantManager.Assessments
 
             // If AI Scoring feature is disabled or user lacks permission, filter out AI assessments
             var aiScoringEnabled = await _featureChecker.IsEnabledAsync("Unity.AI.Scoring");
-            var canViewAI = await AuthorizationService.IsGrantedAsync(AIPermissions.ScoringAssistant.ScoringAssistantDefault);
+            var canViewAI = await AuthorizationService.IsGrantedAsync(AIPermissions.Analysis.ViewScoringResult);
             assessmentList = assessmentList
                 .Where(a => !a.IsAiAssessment || (aiScoringEnabled && canViewAI))
                 .OrderByDescending(a => a.IsAiAssessment)
@@ -396,7 +396,7 @@ namespace Unity.GrantManager.Assessments
         /// <exception cref="BusinessException">
         /// Thrown when the specified assessment is not an AI assessment.
         /// </exception>
-        [Authorize(AIPermissions.ScoringAssistant.ScoringAssistantDefault)]
+        [Authorize(AIPermissions.Analysis.ViewScoringResult)]
         public async Task<AssessmentDto> CloneFromAiAsync(Guid aiAssessmentId)
         {
             if (!await _featureChecker.IsEnabledAsync("Unity.AI.Scoring"))

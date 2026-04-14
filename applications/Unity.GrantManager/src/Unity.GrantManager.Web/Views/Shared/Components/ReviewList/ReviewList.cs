@@ -26,7 +26,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ReviewList
             var scoringFeatureEnabled = await featureChecker.IsEnabledAsync("Unity.AI.Scoring");
             ViewBag.IsAIScoringEnabled =
                 scoringFeatureEnabled &&
-                await permissionChecker.IsGrantedAsync(AIPermissions.ScoringAssistant.ScoringAssistantDefault);
+                await permissionChecker.IsGrantedAsync(AIPermissions.Analysis.ViewScoringResult);
 
             return View();
         }

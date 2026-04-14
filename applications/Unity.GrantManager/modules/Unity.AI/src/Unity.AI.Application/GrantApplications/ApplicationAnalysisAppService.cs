@@ -10,7 +10,7 @@ using Volo.Abp.Features;
 
 namespace Unity.GrantManager.GrantApplications;
 
-[Authorize(AIPermissions.ApplicationAnalysis.ApplicationAnalysisDefault)]
+[Authorize(AIPermissions.Analysis.ViewApplicationAnalysis)]
 public class ApplicationAnalysisAppService(
     IApplicationAIGenerationQueue aiGenerationQueue,
     IFeatureChecker featureChecker)
