@@ -145,8 +145,7 @@ const UnityJsonEditor = (function ($) {
      * @param {*} data - Data to serialize.
      * @param {string} [filename='export.json'] - Download filename.
      */
-    UnityJsonEditor.exportToFile = function (data, filename) {
-        filename = filename || 'export.json';
+    UnityJsonEditor.exportToFile = function (data, filename = 'export.json') {
         const json = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
         const blob = new Blob([json], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
