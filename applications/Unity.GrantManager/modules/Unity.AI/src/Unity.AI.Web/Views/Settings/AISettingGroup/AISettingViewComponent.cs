@@ -1,8 +1,10 @@
 using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
+using Unity.AI.Settings;
 using Volo.Abp.AspNetCore.Mvc;
 using Volo.Abp.AspNetCore.Mvc.UI.Bundling;
 using Volo.Abp.AspNetCore.Mvc.UI.Widgets;
+using Volo.Abp.Settings;
 
 namespace Unity.AI.Web.Views.Settings.AISettingGroup;
 
@@ -10,12 +12,19 @@ namespace Unity.AI.Web.Views.Settings.AISettingGroup;
     ScriptTypes = [typeof(AISettingScriptBundleContributor)],
     AutoInitialize = true
 )]
-public class AISettingViewComponent : AbpViewComponent
+public class AISettingViewComponent(ISettingProvider settingProvider) : AbpViewComponent
 {
-    public virtual Task<IViewComponentResult> InvokeAsync()
+    public virtual async Task<IViewComponentResult> InvokeAsync()
     {
-        return Task.FromResult<IViewComponentResult>(
-            View("~/Views/Settings/AISettingGroup/Default.cshtml", new AISettingViewModel()));
+        var model = new AISettingViewModel
+        {
+            AutomaticGenerationEnabled = await settingProvider.GetAsync<bool>(
+                AISettings.AutomaticGenerationEnabled, defaultValue: false),
+            ManualGenerationEnabled = await settingProvider.GetAsync<bool>(
+                AISettings.ManualGenerationEnabled, defaultValue: false)
+        };
+
+        return View("~/Views/Settings/AISettingGroup/Default.cshtml", model);
     }
 
     public class AISettingScriptBundleContributor : BundleContributor
