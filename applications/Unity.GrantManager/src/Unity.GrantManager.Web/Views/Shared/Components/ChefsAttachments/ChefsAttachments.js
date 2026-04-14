@@ -1,22 +1,23 @@
 // Note: File depends on Unity.GrantManager.Web\Views\Shared\Components\_Shared\Attachments.js
 $(function () {
-    globalThis.queueAttachmentSummary = function(triggerButton = null) {
+    globalThis.queueAttachmentSummary = function (triggerButton = null) {
         $('#generateAiSummaries')
             .data('trigger-button', triggerButton || null)
             .trigger('click');
     };
 
-    const downloadAll = $('#downloadAll');
+    const downloadSelected = $('#downloadSelected');
     const dt = $('#ChefsAttachmentsTable');
+    const selectAllClass = 'select-all-chefs-files';
     let chefsDataTable;
     let selectedAtttachments = [];
-    const nullPlaceholder = '—';
+    const nullPlaceholder = '-';
+    const tableWrapperSelector = '#ChefsAttachmentsTable_wrapper';
 
-    let inputAction = function (requestData, dataTableSettings) {
+    let inputAction = function () {
         const urlParams = new URL(window.location.toLocaleString())
             .searchParams;
-        const applicationId = urlParams.get('ApplicationId');
-        return applicationId;
+        return urlParams.get('ApplicationId');
     };
 
     let responseCallback = function (result) {
@@ -32,27 +33,15 @@ $(function () {
             }, 10);
 
             if (result.length === 0 || selectedAtttachments.length === 0) {
-                $(downloadAll).prop('disabled', true);
+                $(downloadSelected).prop('disabled', true);
 
                 if (document.getElementById('generateAiSummaries')) {
                     $generateAISummariesButton.prop('disabled', true);
                 }
             }
 
-            // Check if any attachments have AI summaries and enable/disable toggle button
-            const hasAISummaries = result.some(
-                (item) => item.aiSummary && item.aiSummary.trim() !== ''
-            );
-            const $toggleButton = $('#toggleAllAISummaries');
-            if ($toggleButton.length > 0) {
-                $toggleButton.prop('disabled', !hasAISummaries);
-                if (!hasAISummaries) {
-                    $toggleButton.attr('title', 'No AI summaries available');
-                } else {
-                    $toggleButton.attr('title', 'Toggle AI Summaries');
-                }
-            }
         }
+
         return {
             data: formatItems(result),
         };
@@ -60,109 +49,54 @@ $(function () {
 
     function getColumns() {
         return [
-            getSelectColumn('Select Attachment', 'rowCount', 'chefs-files'),
-            getChefsFileNameColumn(),
-            getChefsLabelColumn(),
-            getChefsFileDownloadColumn(),
+            {
+                ...getAttachmentSelectColumn(selectAllClass),
+                className:
+                    'notexport dt-checkboxes-cell attachment-select-cell select-checkbox-cell text-center',
+            },
+            {
+                title: 'Filename',
+                name: 'chefsFileName',
+                data: 'fileName',
+                className: 'data-table-header text-break',
+                index: 1,
+                width: '40%',
+            },
+            {
+                title: 'Label',
+                data: 'displayName',
+                className: 'data-table-header text-break',
+                width: '35%',
+                render: function (data, type, row) {
+                    return renderAttachmentLabelCell(
+                        data ?? nullPlaceholder,
+                        row.id
+                    );
+                },
+            },
         ];
     }
 
-    function getChefsFileNameColumn() {
-        return {
-            title: 'Document Name',
-            name: 'chefsFileName',
-            data: 'fileName',
-            className: 'data-table-header text-break',
-            index: 1,
-            orderable: false,
-            width: '40%',
-        };
+    function formatItems(items) {
+        return items.map((item, index) => ({
+            ...item,
+            rowCount: index,
+        }));
     }
-
-    function getChefsLabelColumn() {
-        return {
-            title: 'Label',
-            data: 'displayName',
-            className: 'data-table-header text-break',
-            width: '35%',
-            render: function (data) {
-                let $cellWrapper = $('<div>').addClass(
-                    'd-flex align-items-center'
-                );
-                let $textWrapper = $('<div>')
-                    .addClass('w-100')
-                    .append(data ?? nullPlaceholder);
-                let $buttonWrapper = $('<div>').addClass('flex-shrink-1');
-
-                let $editButton = $('<button>')
-                    .addClass('btn btn-sm edit-button px-0 float-end')
-                    .attr({
-                        'aria-label': 'Edit',
-                        title: 'Edit',
-                    })
-                    .append($('<i>').addClass('fl fl-edit'));
-
-                $cellWrapper.append($textWrapper);
-                $buttonWrapper.append($editButton);
-                $cellWrapper.append($buttonWrapper);
-
-                return $cellWrapper.prop('outerHTML');
-            },
-        };
-    }
-
-    function getChefsFileDownloadColumn() {
-        return {
-            title: '',
-            name: 'chefsFileDownload',
-            data: 'chefsFileId',
-            width: '150px',
-            className: 'text-nowrap',
-            render: function (data, type, full, meta) {
-                let html =
-                    '<button class="btn px-2" name="chefs-download-btn" type="button"' +
-                    ' chefs-submission-id=' +
-                    encodeURIComponent(full.chefsSubmissionId) +
-                    ' chefs-data=' +
-                    encodeURIComponent(data) +
-                    ' chefs-file-name=' +
-                    encodeURIComponent(full.fileName) +
-                    ' onclick="downloadChefsFile(event)">' +
-                    '<i class="fl fl-download"></i>' +
-                    '<span>Download</span>' +
-                    '</button>';
-                return html;
-            },
-            orderable: false,
-            index: 2,
-        };
-    }
-
-    let formatItems = function (items) {
-        const newData = items.map((item, index) => {
-            return {
-                ...item,
-                rowCount: index,
-            };
-        });
-        return newData;
-    };
 
     chefsDataTable = dt.DataTable(
         abp.libs.datatables.normalizeConfiguration({
             serverSide: false,
-            paging: true,
-            order: [[1, 'desc']],
+            paging: false,
+            info: false,
+            order: [[1, 'asc']],
+            orderSequence: ['asc', 'desc'],
             searching: true,
-            iDisplayLength: 25,
-            lengthMenu: [10, 25, 50, 100],
-            scrollX: true,
-            scrollCollapse: false,
             processing: true,
-            autoWidth: true,
+            autoWidth: false,
             select: {
                 style: 'multiple',
-                selector: 'td:not(:nth-child(4))',
+                selector: 'td.select-checkbox-cell',
             },
             ajax: abp.libs.datatables.createAjax(
                 unity.grantManager.attachments.attachment
@@ -171,19 +105,25 @@ $(function () {
                 responseCallback
             ),
             columnDefs: getColumns(),
+            headerCallback: buildAttachmentHeaderCallback(selectAllClass),
             createdRow: function (row, data, dataIndex) {
                 if (data.aiSummary) {
                     let summaryRow = $(
                         '<tr class="ai-summary-row" data-parent-row="' +
                             dataIndex +
                             '" style="background-color: #f8f9fa; display: none;">'
-                    )
-                        .append($('<td>'))
-                        .append(
-                            $(
-                                '<td colspan="4" style="font-size: 1em; color: #6c757d; font-style: italic;">'
-                            ).text(data.aiSummary)
-                        );
+                    ).append(
+                        $('<td colspan="3">').append(
+                            $('<div class="ai-summary-content">')
+                                .append(
+                                    $('<strong>')
+                                        .append(
+                                            '<i class="unt-icon-sm fa-solid fa-wand-sparkles"></i> Summary:'
+                                        )
+                                )
+                                .append($('<p>').text(data.aiSummary))
+                        )
+                    );
                     $(row).after(summaryRow);
                 }
             },
@@ -191,29 +131,26 @@ $(function () {
         })
     );
 
+    const $generateAISummariesButton = $('#generateAiSummaries');
+
     initializeFilterRowPlugin(chefsDataTable, 'btn-toggle-filter-submissions');
 
-    PubSub.subscribe('refresh_chefs_attachment_list', (msg, data) => {
+    PubSub.subscribe('refresh_chefs_attachment_list', () => {
         chefsDataTable.ajax.reload();
     });
 
-    chefsDataTable.on(
-        'click',
-        'td button.edit-button',
-        function (event, dt, type, indexes) {
-            event.stopPropagation();
-            let rowData = chefsDataTable.row(event.target.closest('tr')).data();
-            updateAttachmentMetadata('CHEFS', rowData.id);
-        }
-    );
-    //Generate AI summaries for attachments
-    const $generateAISummariesButton = $('#generateAiSummaries');
+    chefsDataTable.on('click', 'td button.edit-button', function (event) {
+        event.stopPropagation();
+        let rowData = chefsDataTable.row(event.target.closest('tr')).data();
+        updateAttachmentMetadata('CHEFS', rowData.id);
+    });
+
     if ($generateAISummariesButton.length > 0) {
         function resetAttachmentSelectionState() {
             selectedAtttachments = [];
-            $('.select-all-chefs-files').prop('checked', false);
-            $('.chkbox').prop('checked', false);
-            $(downloadAll).prop('disabled', true);
+            $(tableWrapperSelector).find(`.${selectAllClass}`).prop('checked', false);
+            $(tableWrapperSelector).find('.row-checkbox').prop('checked', false);
+            $(downloadSelected).prop('disabled', true);
             $generateAISummariesButton.prop('disabled', true);
         }
 
@@ -238,10 +175,8 @@ $(function () {
             }
 
             const attachmentIds = rowsToProcess.toArray().map((row) => row.id);
-
             const existingHTML = $activeButton.html();
 
-            // Call the backend API
             $.ajax({
                 url:
                     '/api/app/attachment-summary/generate-attachment-summaries' +
@@ -251,10 +186,10 @@ $(function () {
                 contentType: 'application/json',
                 type: 'POST',
                 beforeSend: function () {
-                    $activeButton
-                        .html(
-                            '<span class="ai-button-content"><span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span><span>Queueing...</span></span>'
-                        )
+                            $activeButton
+                                .html(
+                            '<span class="button-content"><span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span><span>Queueing...</span></span>'
+                                )
                         .prop('disabled', true);
                 },
                 success: function (summaries) {
@@ -265,7 +200,6 @@ $(function () {
                     );
 
                     resetAttachmentSelectionState();
-
                     $activeButton.html(existingHTML).prop('disabled', false);
                 },
                 error: function (error) {
@@ -279,92 +213,88 @@ $(function () {
         });
     }
 
-    // Toggle all AI summaries (only if feature is enabled)
     const $toggleAllAISummariesButton = $('#toggleAllAISummaries');
-    let allAISummariesExpanded = false;
+    let allAISummariesExpanded = true;
+
+    function expandAllAISummaries() {
+        chefsDataTable.rows().every(function () {
+            const row = this;
+            const rowData = row.data();
+
+            if (rowData.aiSummary && rowData.aiSummary.trim() !== '') {
+                const summaryHtml = formatAISummary(rowData);
+                row.child(summaryHtml).show();
+                $(row.child()).find('td').first().addClass('ai-summary-cell');
+                $(row.node()).addClass('shown');
+            }
+        });
+    }
+
+    function collapseAllAISummaries() {
+        chefsDataTable.rows().every(function () {
+            const row = this;
+            if (row.child.isShown()) {
+                row.child.hide();
+                $(row.node()).removeClass('shown');
+            }
+        });
+    }
+
+    function syncAISummaryToggleButton() {
+        if (!$toggleAllAISummariesButton.length) {
+            return;
+        }
+
+        const $icon = $toggleAllAISummariesButton.find('i');
+        const $text = $toggleAllAISummariesButton.find('.toggle-ai-summaries-label');
+
+        if (allAISummariesExpanded) {
+            $icon.removeClass('fa-chevron-down').addClass('fa-chevron-up');
+            $text.text('Hide Summaries');
+            $toggleAllAISummariesButton.attr('title', 'Hide AI Summaries');
+        } else {
+            $icon.removeClass('fa-chevron-up').addClass('fa-chevron-down');
+            $text.text('Show Summaries');
+            $toggleAllAISummariesButton.attr('title', 'Show AI Summaries');
+        }
+    }
 
     if ($toggleAllAISummariesButton.length > 0) {
         $toggleAllAISummariesButton.on('click', function () {
             const $button = $(this);
-            const $icon = $button.find('i');
-            const $text = $button.contents().filter(function () {
-                return this.nodeType === 3;
-            });
 
-            // Don't do anything if button is disabled
             if ($button.prop('disabled')) {
                 return;
             }
 
             if (allAISummariesExpanded) {
-                // Collapse all
-                chefsDataTable.rows().every(function () {
-                    const row = this;
-                    if (row.child.isShown()) {
-                        const $childRow = $(row.child());
-                        const $summaryRow = $childRow.find('.ai-summary-row');
-
-                        // Add fade-out class to the summary row
-                        $summaryRow.removeClass('fade-in').addClass('fade-out');
-
-                        // Wait for animation to complete before hiding
-                        setTimeout(function () {
-                            row.child.hide();
-                            $(row.node()).removeClass('shown');
-                            $summaryRow.removeClass('fade-out');
-                        }, 500); // Match animation duration
-                    }
-                });
-                $icon.removeClass('fa-chevron-up').addClass('fa-chevron-down');
-                $text.replaceWith('Show Summaries');
-                $button.attr('title', 'Show AI Summaries');
                 allAISummariesExpanded = false;
+                collapseAllAISummaries();
             } else {
-                // Expand all
-                chefsDataTable.rows().every(function () {
-                    const row = this;
-                    const rowData = row.data();
-
-                    // Only expand if there's an AI summary
-                    if (rowData.aiSummary && rowData.aiSummary.trim() !== '') {
-                        // Create the summary HTML
-                        const summaryHtml = formatAISummary(rowData);
-
-                        // Show the child row
-                        row.child(summaryHtml).show();
-                        $(row.node()).addClass('shown');
-
-                        // Add fade-in animation after DOM is ready
-                        setTimeout(function () {
-                            const $childRow = $(row.child());
-                            $childRow
-                                .find('.ai-summary-row')
-                                .addClass('fade-in');
-                        }, 10);
-                    }
-                });
-                $icon.removeClass('fa-chevron-down').addClass('fa-chevron-up');
-                $text.replaceWith('Hide Summaries');
-                $button.attr('title', 'Hide AI Summaries');
                 allAISummariesExpanded = true;
+                expandAllAISummaries();
             }
+
+            syncAISummaryToggleButton();
         });
     }
 
-    // Reset AI summary expansion state when table is reloaded
     chefsDataTable.on('draw.dt', function () {
         if (allAISummariesExpanded) {
-            const $button = $('#toggleAllAISummaries');
-            const $icon = $button.find('i');
-            const $text = $button.contents().filter(function () {
-                return this.nodeType === 3;
-            });
-            $icon.removeClass('fa-chevron-up').addClass('fa-chevron-down');
-            $text.replaceWith('Show Summaries');
-            $button.attr('title', 'Show AI Summaries');
-            allAISummariesExpanded = false;
+            expandAllAISummaries();
+        } else {
+            collapseAllAISummaries();
         }
+
+        syncAISummaryToggleButton();
     });
+
+    function adjustChefsAttachmentsTable() {
+        chefsDataTable.columns.adjust();
+    }
+
+    observeAttachmentTableResize(tableWrapperSelector, adjustChefsAttachmentsTable);
+    $('#attachments-tab').on('shown.bs.tab', adjustChefsAttachmentsTable);
 
     function formatAISummary(data) {
         const safeSummary = escapeHtml(data.aiSummary || 'No summary available');
@@ -380,76 +310,48 @@ $(function () {
         );
     }
 
-    chefsDataTable.on('select', function (e, dt, type, indexes) {
-        if (indexes?.length) {
-            indexes.forEach((index) => {
-                $('#row_' + index).prop('checked', true);
-                if ($('.chkbox:checked').length == $('.chkbox').length) {
-                    $('.select-all-chefs-files').prop('checked', true);
-                }
-                selectAttachment(type, index, 'select_chefs_file');
-            });
-        }
-    });
-
-    chefsDataTable.on('deselect', function (e, dt, type, indexes) {
-        if (indexes?.length) {
-            indexes.forEach((index) => {
-                $('#row_' + index).prop('checked', false);
-                if ($('.chkbox:checked').length != $('.chkbox').length) {
-                    $('.select-all-chefs-files').prop('checked', false);
-                }
-                selectAttachment(type, index, 'deselect_chefs_file');
-            });
-        }
-    });
-
     function selectAttachment(type, indexes, action) {
-        if (type === 'row') {
-            let data = chefsDataTable.row(indexes).data();
-            PubSub.publish(action, data);
+        if (type !== 'row') {
+            return;
+        }
 
-            if (action == 'select_chefs_file') {
-                const found = selectedAtttachments.some(
-                    (item) => item.chefsFileId === data.chefsFileId
-                );
-                if (!found) {
-                    selectedAtttachments.push({
-                        FormSubmissionId: data.chefsSubmissionId,
-                        ChefsFileId: data.chefsFileId,
-                        Filename: data.fileName,
-                    });
-                }
-            } else if (action == 'deselect_chefs_file') {
-                const filtedItems = selectedAtttachments.filter(
-                    (item) => item.ChefsFileId !== data.chefsFileId
-                );
-                selectedAtttachments = filtedItems;
-            }
+        let data = chefsDataTable.row(indexes).data();
+        PubSub.publish(action, data);
 
-            if (selectedAtttachments.length > 0) {
-                $(downloadAll).prop('disabled', false);
-            } else {
-                $(downloadAll).prop('disabled', true);
+        if (action == 'select_chefs_file') {
+            const found = selectedAtttachments.some(
+                (item) => item.chefsFileId === data.chefsFileId
+            );
+            if (!found) {
+                selectedAtttachments.push({
+                    FormSubmissionId: data.chefsSubmissionId,
+                    ChefsFileId: data.chefsFileId,
+                    Filename: data.fileName,
+                });
             }
+        } else if (action == 'deselect_chefs_file') {
+            selectedAtttachments = selectedAtttachments.filter(
+                (item) => item.ChefsFileId !== data.chefsFileId
+            );
+        }
 
-            if (
-                document.getElementById('generateAiSummaries') &&
-                selectedAtttachments.length > 0
-            ) {
-                $generateAISummariesButton.prop('disabled', false);
-            } else {
-                $generateAISummariesButton.prop('disabled', true);
-            }
+        const hasSelection = chefsDataTable.rows({ selected: true }).count() > 0;
+        $(downloadSelected).prop('disabled', !hasSelection);
+
+        if (document.getElementById('generateAiSummaries')) {
+            $generateAISummariesButton.prop(
+                'disabled',
+                !hasSelection
+            );
         }
     }
 
-    $('.select-all-chefs-files').on('click', function () {
-        if ($(this).is(':checked')) {
-            chefsDataTable.rows({ page: 'current' }).select();
-        } else {
-            chefsDataTable.rows({ page: 'current' }).deselect();
-        }
+    bindAttachmentSelectionBehavior({
+        dataTable: chefsDataTable,
+        tableWrapper: tableWrapperSelector,
+        selectAllClass,
+        onSelect: (index) => selectAttachment('row', index, 'select_chefs_file'),
+        onDeselect: (index) => selectAttachment('row', index, 'deselect_chefs_file'),
     });
 
     $('#resyncSubmissionAttachments').on('click', function () {
@@ -475,7 +377,7 @@ $(function () {
         chefsDataTable.columns.adjust();
     });
 
-    $(downloadAll).on('click', function () {
+    $(downloadSelected).on('click', function () {
         const refNo =
             document.getElementsByClassName('reference-no')[0].textContent;
         const _this = $(this);
@@ -484,14 +386,12 @@ $(function () {
         const tempFiles = selectedAtttachments;
 
         if (tempFiles.length > 0) {
-            //Calls an endpoint
             $.ajax({
                 url: '/api/app/attachment/chefs/download-all',
                 data: JSON.stringify(tempFiles),
                 contentType: 'application/json',
                 type: 'POST',
                 beforeSend: function () {
-                    //Add loading spinner
                     $(_this)
                         .html(
                             '<div class="spinner-loading"><span class="spinner-border spinner-border-sm mr-2" role="status" aria-hidden="true"></span> Downloading...</div>'
@@ -505,12 +405,10 @@ $(function () {
                         });
                     });
 
-                    zip.generateAsync({ type: 'blob' }).then(function (
-                        content
-                    ) {
+                    zip.generateAsync({ type: 'blob' }).then(function (content) {
                         const link = document.createElement('a');
                         link.href = URL.createObjectURL(content);
-                        link.download = `${refNo}-All_Attachments.zip`;
+                        link.download = `${refNo}-Selected_Attachments.zip`;
                         link.click();
                     });
 
@@ -518,7 +416,6 @@ $(function () {
                         '',
                         'The files have been downloaded successfully.'
                     );
-                    //show original HTML and enable
                     $(_this).html(existingHTML).prop('disabled', false);
                 },
                 error: function (error) {
@@ -542,65 +439,6 @@ function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
-}
-
-function downloadChefsFile(event) {
-    const button = event.currentTarget;
-    const chefsFileId = button.getAttribute('chefs-data');
-    const chefsSubmissionId = button.getAttribute('chefs-submission-id');
-    const chefsFileName = button.getAttribute('chefs-file-name');
-    console.log('Downloading CHEFS file:', {
-        chefsFileId,
-        chefsSubmissionId,
-        chefsFileName,
-    });
-
-    //Calls an endpoint
-    $.ajax({
-        url:
-            '/api/app/attachment/chefs/' +
-            chefsSubmissionId +
-            '/download/' +
-            chefsFileId +
-            '/' +
-            chefsFileName,
-        type: 'GET',
-        success: function (data) {
-            // Download file by navigating to the endpoint
-            const downloadUrl =
-                '/api/app/attachment/chefs/' +
-                encodeURIComponent(chefsSubmissionId) +
-                '/download/' +
-                encodeURIComponent(chefsFileId) +
-                '/' +
-                encodeURIComponent(chefsFileName);
-
-            // Create a temporary link and trigger download
-            const link = document.createElement('a');
-            link.href = downloadUrl;
-            link.download = chefsFileName;
-            link.style.display = 'none';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            abp.notify.success(
-                '',
-                'The file has been downloaded successfully.'
-            );
-        },
-        error: function (error) {
-            console.log('Error downloading CHEFS file:', error);
-            if (error.responseText?.includes('You do not have access')) {
-                showChefsAPIAccessError();
-            } else {
-                abp.notify.error(
-                    '',
-                    error.responseText ||
-                        'An error occurred while downloading the file.'
-                );
-            }
-        },
-    });
 }
 
 function showChefsAPIAccessError() {

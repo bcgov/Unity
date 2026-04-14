@@ -1,4 +1,135 @@
-﻿function generateAttachmentButtonContent(data, type, full, meta, attachmentType) {
+function getAttachmentSelectAllMarkup(selectAllClass) {
+    return `<input type="checkbox" class="form-check-input checkbox-select chkbox ${selectAllClass}">`;
+}
+
+function getAttachmentSelectColumn(selectAllClass, rowIdPrefix = 'row_') {
+    return {
+        title: '',
+        data: 'rowCount',
+        name: 'select',
+        orderable: false,
+        className: 'notexport dt-checkboxes-cell attachment-select-cell text-center',
+        checkboxes: {
+            selectRow: true,
+            selectAllRender: getAttachmentSelectAllMarkup(selectAllClass),
+        },
+        render: function (data) {
+            return `<input type="checkbox" class="form-check-input checkbox-select chkbox row-checkbox" id="${rowIdPrefix}${data}">`;
+        },
+    };
+}
+
+function renderAttachmentLabelCell(label, attachmentId) {
+    let $cellWrapper = $('<div>').addClass('d-flex align-items-center');
+    let $textWrapper = $('<div>')
+        .addClass('w-100')
+        .append(label ?? '-');
+    let $buttonWrapper = $('<div>').addClass('flex-shrink-1');
+
+    let $editButton = $('<button>')
+        .addClass('btn btn-sm edit-button px-0 float-end')
+        .attr({
+            'aria-label': 'Edit',
+            title: 'Edit',
+        })
+        .data('attachment-id', attachmentId)
+        .append($('<i>').addClass('fl fl-edit'));
+
+    $cellWrapper.append($textWrapper);
+    $buttonWrapper.append($editButton);
+    $cellWrapper.append($buttonWrapper);
+
+    return $cellWrapper.prop('outerHTML');
+}
+
+function buildAttachmentHeaderCallback(selectAllClass) {
+    return function (thead) {
+        const $headerCell = $(thead).find('th').first();
+        $headerCell.html(getAttachmentSelectAllMarkup(selectAllClass));
+    };
+}
+
+function bindAttachmentSelectionBehavior({
+    dataTable,
+    tableWrapper,
+    selectAllClass,
+    rowIdPrefix = 'row_',
+    onSelect,
+    onDeselect,
+}) {
+    const $tableWrapper = $(tableWrapper);
+
+    function syncSelectAllHeader() {
+        const allRows = $tableWrapper.find('.row-checkbox').length;
+        const checkedRows = $tableWrapper.find('.row-checkbox:checked').length;
+        $tableWrapper.find(`.${selectAllClass}`).prop(
+            'checked',
+            allRows > 0 && checkedRows === allRows
+        );
+    }
+
+    dataTable.on('select', function (e, dt, type, indexes) {
+        if (!indexes?.length) {
+            return;
+        }
+
+        indexes.forEach((index) => {
+            $tableWrapper.find(`#${rowIdPrefix}${index}`).prop('checked', true);
+            onSelect?.(index);
+        });
+
+        syncSelectAllHeader();
+    });
+
+    dataTable.on('deselect', function (e, dt, type, indexes) {
+        if (!indexes?.length) {
+            return;
+        }
+
+        indexes.forEach((index) => {
+            $tableWrapper.find(`#${rowIdPrefix}${index}`).prop('checked', false);
+            onDeselect?.(index);
+        });
+
+        syncSelectAllHeader();
+    });
+
+    dataTable.on('draw', function () {
+        syncSelectAllHeader();
+    });
+
+    $tableWrapper.on('click', `.${selectAllClass}`, function () {
+        if ($(this).is(':checked')) {
+            dataTable.rows().select();
+            return;
+        }
+
+        dataTable.rows().deselect();
+    });
+}
+
+function observeAttachmentTableResize(tableWrapperSelector, adjustTableColumns) {
+    const tableWrapper = document.querySelector(tableWrapperSelector);
+    if (!tableWrapper || typeof ResizeObserver === 'undefined') {
+        return null;
+    }
+
+    let rafId = null;
+    const observer = new ResizeObserver(() => {
+        if (rafId) {
+            cancelAnimationFrame(rafId);
+        }
+
+        rafId = requestAnimationFrame(() => {
+            adjustTableColumns();
+        });
+    });
+
+    observer.observe(tableWrapper);
+    return observer;
+}
+
+function generateAttachmentButtonContent(data, type, full, meta, attachmentType) {
     let ownerId = getAttachmentOwnerId(attachmentType);
     let downloadUrl = `/api/app/attachment/${attachmentType}/${encodeURIComponent(ownerId)}/download/${encodeURIComponent(full.fileName)}`;
     let isCreator = abp.currentUser.id == full.creatorId;
@@ -42,7 +173,7 @@ function getAttachmentOwnerId(attachmentType) {
 function deleteAttachment(attachmentType, s3ObjectKey, fileName) {
     let deleteAttachmentModal = new abp.ModalManager({
         viewUrl: '../Attachments/DeleteAttachmentModal'
-    });    
+    });
 
     deleteAttachmentModal.onResult(function () {
         abp.notify.success(
@@ -91,4 +222,3 @@ function refreshAttachmentWidget(attachmentType) {
         default: break;
     }
 }
-

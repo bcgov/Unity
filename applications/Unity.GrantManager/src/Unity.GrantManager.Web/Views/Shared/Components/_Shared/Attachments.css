@@ -1,4 +1,71 @@
-﻿.attachments-table .dropdown-content {
+.attachments-panel {
+    margin: 16px;
+}
+
+.attachments-panel-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 12px 12px;
+    margin: 0 0 12px;
+}
+
+.attachments-panel-title {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    height: 42px;
+}
+
+.attachments-panel-actions {
+    display: flex;
+    flex: 1 1 0;
+    margin-left: auto;
+    flex-wrap: wrap;
+    align-items: center;
+    align-content: center;
+    justify-content: flex-end;
+    gap: 8px;
+    min-width: 0;
+}
+
+.attachments-panel-actions .btn {
+    flex: 0 0 auto;
+    height: 42px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    white-space: nowrap;
+}
+
+.attachments-panel-actions .button-content {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    white-space: nowrap;
+}
+
+.attachments-panel-actions .toggle-ai-summaries-label {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.attachments-panel .dt-container {
+    max-height: none;
+    overflow-x: visible;
+    overflow-y: visible;
+}
+
+.attachments-panel .dt-scroll-body {
+    overflow-y: visible !important;
+    max-height: none !important;
+    height: auto !important;
+}
+
+.attachments-table .dropdown-content {
     display: none;
     position: fixed;
     right: 0;
@@ -11,14 +78,14 @@
     --bs-btn-active-bg: var(--bc-colors-blue-primary-500);
 }
 
-    .attachments-table .dropdown-content a {
-        text-decoration: none;
-        display: block;
-    }
+.attachments-table .dropdown-content a {
+    text-decoration: none;
+    display: block;
+}
 
-        .attachments-table .dropdown-content a:hover {
-            background-color: #f1f1f1;
-        }
+.attachments-table .dropdown-content a:hover {
+    background-color: #f1f1f1;
+}
 
 .attachments-table .dropdown:hover .dropdown-content {
     display: block;

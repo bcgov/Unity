@@ -4,25 +4,9 @@
     --bs-btn-active-bg: var(--bc-colors-blue-primary-500);
 }
 
-.attachments__title-button-split {
-    display: flex;
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: flex-end;
-    margin-bottom: 8px;
-}
-
 .sorting_disabled:before,
 .sorting_disabled:after {
     content: '' !important;
-}
-
-.submission-title {
-    display: inline-block;
-}
-
-.submission-button-section {
-    display: flex;
 }
 
 #ChefsAttachmentsTable_paginate {
@@ -33,58 +17,26 @@
 /* AI Summary Row Styles */
 .ai-summary-row {
     border-left: 4px solid var(--bc-colors-blue-primary);
-    margin: -8px -10px 5px;
     background: #faf9f8;
-    padding: 10px 15px;
-    opacity: 0;
-    transition: opacity 0.5s ease-in-out;
+    padding: 0;
 }
 
-.ai-summary-row.fade-in {
-    opacity: 1;
-    animation: fadeIn 0.5s ease-in forwards;
+#ChefsAttachmentsTable td.ai-summary-cell {
+    padding: 0 !important;
 }
 
-.ai-summary-row.fade-out {
-    opacity: 0;
-    animation: fadeOut 0.5s ease-out forwards;
-}
-
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(-10px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-@keyframes fadeOut {
-    from {
-        opacity: 1;
-        transform: translateY(0);
-    }
-    to {
-        opacity: 0;
-        transform: translateY(-10px);
-    }
-}
-
-.ai-summary-content {
-    font-size: 14px;
-    line-height: 1.6;
+#ChefsAttachmentsTable .ai-summary-content {
     color: #292929;
+    padding: 8px 12px;
 }
 
-.ai-summary-content strong {
+#ChefsAttachmentsTable .ai-summary-content strong {
     color: var(--bc-colors-blue-primary);
     font-weight: 600;
     font-size: 13px;
 }
 
-.ai-summary-content p {
+#ChefsAttachmentsTable .ai-summary-content p {
     margin-bottom: 0;
     color: #495057;
     white-space: pre-wrap;
@@ -93,40 +45,4 @@
 
 #ChefsAttachmentsTable tr.shown {
     background-color: rgba(13, 110, 253, 0.05);
-}
-
-/* Disabled state for AI summary toggle button */
-#toggleAllAISummaries:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    pointer-events: none;
-}
-
-#toggleAllAISummaries:disabled i {
-    opacity: 0.5;
-}
-
-/* Fix double scrollbar issue when AI summaries are expanded */
-#ChefsAttachmentsTable_wrapper .dt-scroll-body {
-    max-height: none !important;
-    overflow-y: visible !important;
-}
-
-/* Ensure table wrapper uses full width */
-#ChefsAttachmentsTable_wrapper {
-    width: 100%;
-}
-
-/* Ensure scroll container properly sizes */
-#ChefsAttachmentsTable_wrapper .dt-scroll {
-    overflow-x: auto;
-}
-
-#ChefsAttachmentsTable_wrapper .dt-scroll-head .dt-scroll-headInner,
-#ChefsAttachmentsTable_wrapper .dt-scroll-head .dt-scroll-headInner table {
-    width: 100% !important;
-}
-
-#ChefsAttachmentsTable_wrapper .dt-scroll-body table {
-    width: 100% !important;
 }
