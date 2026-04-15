@@ -865,9 +865,9 @@ $(function () {
             errors.push(`Column name exceeds maximum length of ${COLUMN_VALIDATION.MAX_LENGTH} characters`);
         }
 
-        // Check format (should be lowercase alphanumeric + underscores, not starting with number)
-        if (!/^[a-z_][a-z0-9_]*$/.test(name)) {
-            errors.push('Column name must start with a letter or underscore and contain only lowercase letters, numbers, and underscores');
+        // Check format (alphanumeric + underscores, not starting with number)
+        if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(name)) {
+            errors.push('Column name must start with a letter or underscore and contain only letters, numbers, and underscores');
         }
 
         // Check reserved words
@@ -965,14 +965,14 @@ $(function () {
     function sanitizeSqlNames(name) {
         if (!name || typeof name !== 'string') return '';
 
-        // Convert to lowercase and trim
-        let sanitized = name.toLowerCase().trim();
+        // Trim whitespace
+        let sanitized = name.trim();
 
         // Replace multiple spaces/hyphens with single underscore
         sanitized = sanitized.replace(/[\s-]+/g, '_');
 
         // Remove all non-alphanumeric characters except underscores
-        sanitized = sanitized.replace(/[^a-z0-9_]/g, '');
+        sanitized = sanitized.replace(/[^a-zA-Z0-9_]/g, '');
 
         // Remove leading/trailing underscores safely without vulnerable regex
         while (sanitized.startsWith('_')) {
@@ -997,7 +997,7 @@ $(function () {
 
     // View name sanitization function
     function sanitizeViewName(name) {
-        let sanitized = sanitizeSqlNames(name);
+        let sanitized = sanitizeSqlNames(name).toLowerCase();
 
         // Truncate to max length
         if (sanitized.length > VIEW_NAME_VALIDATION.MAX_LENGTH) {
@@ -1189,6 +1189,36 @@ $(function () {
             return;
         }
 
+        // Check if a view has been generated and warn the user
+        const viewStatus = ($('#reportingViewStatus').val() || '').toUpperCase();
+        const hasGeneratedView = viewStatus === 'SUCCESS' ||
+            $('.view-status-compact').find('.fl-checkmark').length > 0;
+
+        if (hasGeneratedView) {
+            Swal.fire({
+                title: 'Existing View Detected',
+                text: 'A database view has already been generated. These mapping changes will only take effect after you delete and re-create the view.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Save Anyway',
+                cancelButtonText: 'Cancel',
+                customClass: {
+                    confirmButton: 'btn btn-primary',
+                    cancelButton: 'btn btn-secondary'
+                }
+            }).then(function (result) {
+                if (result.isConfirmed) {
+                    performSave(correlationId);
+                }
+            });
+            return;
+        }
+
+        performSave(correlationId);
+    });
+
+    // Extracted save logic into a reusable function
+    function performSave(correlationId) {
         // Disable all control buttons during save
         setControlButtonsLoadingState(true);
 
@@ -1253,7 +1283,7 @@ $(function () {
             // Re-enable all control buttons after save completes (success or error)
             setControlButtonsLoadingState(false);
         });
-    });
+    }
 
     // Helper function to update view name validation UI (module-level to reduce nesting)
     function updateViewNameValidationUI(isValid, errors, $viewNameInput, $confirmButton, $feedback) {
@@ -1669,7 +1699,7 @@ $(function () {
                 dataTable.ajax.reload();
             }
 
-            // Clear the cached view status so import/edit are no longer blocked
+            // Clear the cached view status after deletion
             $('#reportingViewStatus').val('');
 
             // Refresh view status widget
@@ -1779,49 +1809,41 @@ $(function () {
     // ======================================================================
 
     /**
-     * Builds the simple [{propertyName, columnName}] array from the current
+     * Builds the [{propertyName, path, columnName}] array from the current
      * DataTable state.  This is what gets exported / shown in the editor.
      */
     function buildJsonMapping() {
         return getCurrentTableData().map(function (row) {
             return {
                 propertyName: row.propertyName,
+                path: row.path || '',
                 columnName: row.columnName
             };
         });
     }
 
     /**
-     * Checks whether the view has been successfully generated.
-     * When true, import and edit are blocked because the mapping is locked.
+     * Creates a composite lookup key from propertyName and path.
+     * @param {string} propertyName
+     * @param {string} path
+     * @returns {string}
      */
-    function isViewGenerated() {
-        // Check hidden field first (server-rendered initial state)
-        const status = ($('#reportingViewStatus').val() || '').toUpperCase();
-        if (status === 'SUCCESS') return true;
-
-        // Fallback: inspect the view-status widget DOM
-        const $widget = $('.view-status-compact');
-        if ($widget.find('.fl-checkmark').length > 0) return true;
-
-        return false;
+    function compositeKey(propertyName, path) {
+        return (propertyName || '') + '|||' + (path || '');
     }
 
-    /**
-     * Applies an imported / edited [{propertyName, columnName}] array back
-     * into the DataTable inputs.  Matching is done by propertyName; unmatched
-     * rows are silently skipped so partial imports work.
-     */
     function applyJsonMappingToTable(mappingArray) {
-        if (!dataTable) return;
+        if (!dataTable) return { appliedCount: 0, unmatchedItems: [] };
 
-        // Build a lookup: propertyName → columnName
+        // Build a lookup: (propertyName + path) → columnName
         const lookup = {};
         mappingArray.forEach(function (item) {
-            lookup[item.propertyName] = item.columnName;
+            var key = compositeKey(item.propertyName, item.path);
+            lookup[key] = item.columnName;
         });
 
         let appliedCount = 0;
+        const matchedKeys = new Set();
 
         dataTable.rows().every(function () {
             const rowData = this.data();
@@ -1829,9 +1851,10 @@ $(function () {
             const $input = $(node).find('.column-name-input');
             if (!$input.length) return;
 
-            const propertyName = rowData.key;
-            if (propertyName in lookup) {
-                const newValue = sanitizeColumnName(lookup[propertyName] || '');
+            var key = compositeKey(rowData.key, rowData.path);
+            if (key in lookup) {
+                matchedKeys.add(key);
+                const newValue = sanitizeColumnName(lookup[key] || '');
                 if ($input.val() !== newValue) {
                     $input.val(newValue);
                     validateColumnNameInput($input, newValue, $input.data('path'));
@@ -1840,11 +1863,17 @@ $(function () {
             }
         });
 
+        // Identify items from the import that did not match any table row
+        const unmatchedItems = mappingArray.filter(function (item) {
+            var key = compositeKey(item.propertyName, item.path);
+            return !matchedKeys.has(key);
+        });
+
         if (appliedCount > 0) {
             markAsChanged();
         }
 
-        return appliedCount;
+        return { appliedCount: appliedCount, unmatchedItems: unmatchedItems };
     }
 
     // Shared validators for the JSON editor and file import
@@ -1856,12 +1885,12 @@ $(function () {
         },
         {
             name: 'uniquePropertyNames',
-            message: 'Duplicate propertyName values detected. Rows sharing the same propertyName will all receive the last columnName value when applied — use inline table editing for those rows instead.',
+            message: 'Duplicate propertyName+path combinations detected. Rows sharing the same combination will all receive the last columnName value when applied — use inline table editing for those rows instead.',
             severity: 'warning',
             validate: function (data) {
                 if (!Array.isArray(data)) return true;
-                const names = data.map(function (r) { return r.propertyName; });
-                return new Set(names).size === names.length;
+                var keys = data.map(function (r) { return compositeKey(r.propertyName, r.path); });
+                return new Set(keys).size === keys.length;
             }
         },
         {
@@ -1876,12 +1905,12 @@ $(function () {
         },
         {
             name: 'columnNameFormat',
-            message: 'One or more column names contain invalid characters. Use only lowercase letters, numbers, and underscores.',
+            message: 'One or more column names contain invalid characters. Use only letters, numbers, and underscores.',
             validate: function (data) {
                 if (!Array.isArray(data)) return true;
                 return data.every(function (r) {
                     if (!r.columnName) return true; // empty is allowed
-                    return /^[a-z_][a-z0-9_]*$/.test(r.columnName);
+                    return /^[a-zA-Z_][a-zA-Z0-9_]*$/.test(r.columnName);
                 });
             }
         },
@@ -1912,13 +1941,20 @@ $(function () {
     // Create the editor instance (lazy – modal built on first use)
     const mappingEditor = new UnityJsonEditor({
         title: 'Edit Column Mapping',
-        requiredFields: ['propertyName', 'columnName'],
+        requiredFields: ['propertyName', 'path', 'columnName'],
         validators: mappingValidators,
         onSave: function (data, warnings) {
-            const count = applyJsonMappingToTable(data);
-            const msg = count + ' column mapping(s) updated. Remember to Save to persist changes.';
-            if (warnings?.length > 0) {
-                abp.message.warn(msg + '\n\n\u26A0 ' + warnings.map(function (w) { return w.message; }).join('\n'));
+            const result = applyJsonMappingToTable(data);
+            const msg = result.appliedCount + ' column mapping(s) updated. Remember to Save to persist changes.';
+            const allWarnings = (warnings || []).slice();
+            if (result.unmatchedItems.length > 0) {
+                const unmatchedNames = result.unmatchedItems.map(function (item) {
+                    return item.propertyName + (item.path ? ' (' + item.path + ')' : '');
+                });
+                allWarnings.push({ message: result.unmatchedItems.length + ' item(s) could not be matched and were ignored: ' + unmatchedNames.join(', ') });
+            }
+            if (allWarnings.length > 0) {
+                abp.message.warn(msg + '\n\n\u26A0 ' + allWarnings.map(function (w) { return w.message; }).join('\n'));
             } else {
                 abp.message.success(msg);
             }
@@ -1948,11 +1984,6 @@ $(function () {
     // --- Import ---
     $('#btn-import-json-mapping').on('click', function (e) {
         e.preventDefault();
-        if (isViewGenerated()) {
-            abp.message.error('Cannot import mapping: a database view has already been generated. Delete the view first to modify the mapping.');
-            return;
-        }
-
         if (!dataTable) {
             abp.message.warn('No mapping data loaded. Please load a configuration first.');
             return;
@@ -1977,10 +2008,17 @@ $(function () {
                 importWarnings = warnings;
             }
         }).then(function (data) {
-            const count = applyJsonMappingToTable(data);
-            const msg = count + ' column mapping(s) imported. Remember to Save to persist changes.';
-            if (importWarnings.length > 0) {
-                abp.message.warn(msg + '\n\n\u26A0 ' + importWarnings.map(function (w) { return w.message; }).join('\n'));
+            const result = applyJsonMappingToTable(data);
+            const msg = result.appliedCount + ' column mapping(s) imported. Remember to Save to persist changes.';
+            const allWarnings = importWarnings.slice();
+            if (result.unmatchedItems.length > 0) {
+                const unmatchedNames = result.unmatchedItems.map(function (item) {
+                    return item.propertyName + (item.path ? ' (' + item.path + ')' : '');
+                });
+                allWarnings.push({ message: result.unmatchedItems.length + ' item(s) could not be matched and were ignored: ' + unmatchedNames.join(', ') });
+            }
+            if (allWarnings.length > 0) {
+                abp.message.warn(msg + '\n\n\u26A0 ' + allWarnings.map(function (w) { return w.message; }).join('\n'));
             } else {
                 abp.message.success(msg);
             }
@@ -1992,11 +2030,6 @@ $(function () {
     // --- Edit JSON ---
     $('#btn-edit-json-mapping').on('click', function (e) {
         e.preventDefault();
-        if (isViewGenerated()) {
-            abp.message.error('Cannot edit mapping: a database view has already been generated. Delete the view first to modify the mapping.');
-            return;
-        }
-
         if (!dataTable) {
             abp.message.warn('No mapping data loaded. Please load a configuration first.');
             return;

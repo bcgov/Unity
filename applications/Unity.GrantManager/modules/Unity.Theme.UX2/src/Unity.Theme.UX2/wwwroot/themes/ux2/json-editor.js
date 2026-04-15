@@ -62,13 +62,13 @@ const UnityJsonEditor = (function ($) {
         rows: 18,
 
         /** Text for the save/apply button */
-        saveButtonText: 'Apply Changes',
+        saveButtonText: 'Apply',
 
         /** Text for the cancel button */
         cancelButtonText: 'Cancel',
 
         /** Text for the format button */
-        formatButtonText: 'Format JSON',
+        formatButtonText: 'Format',
 
         /** Whether the modal should be read-only (disables editing and save) */
         readOnly: false,
@@ -281,29 +281,32 @@ const UnityJsonEditor = (function ($) {
 
             const html =
                 '<div class="modal fade" id="' + id + '" tabindex="-1" aria-labelledby="' + id + 'Label" aria-hidden="true">' +
-                '  <div class="modal-dialog ' + opts.size + '">' +
+                '  <div class="modal-dialog modal-dialog-scrollable ' + opts.size + '">' +
                 '    <div class="modal-content">' +
                 '      <div class="modal-header">' +
                 '        <h5 class="modal-title" id="' + id + 'Label">' + _escapeHtml(opts.title) + '</h5>' +
+                '        <span class="uje-status-text ms-auto me-2"></span>' +
                 '        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>' +
                 '      </div>' +
                 '      <div class="modal-body">' +
-                '        <div class="uje-toolbar">' +
-                '          <button type="button" class="btn btn-sm btn-outline-secondary uje-format-btn">' +
-                '            <i class="fa fa-align-left me-1"></i>' + _escapeHtml(opts.formatButtonText) +
-                '          </button>' +
-                '          <span class="uje-status-text"></span>' +
-                '        </div>' +
-                '        <textarea class="form-control uje-textarea" rows="' + opts.rows + '" spellcheck="false"' +
+                '        <div class="uje-textarea-wrapper">' +
+                '          <textarea class="form-control uje-textarea" rows="' + opts.rows + '" spellcheck="false"' +
                 (opts.readOnly ? ' readonly' : '') + '></textarea>' +
+                '          <button type="button" class="uje-scroll-top" aria-label="Scroll to top" style="display:none;">' +
+                '            <i class="fa fa-arrow-up"></i>' +
+                '          </button>' +
+                '        </div>' +
                 '        <div class="uje-status-bar">' +
                 '          <span class="uje-validation-msg"></span>' +
                 '        </div>' +
                 '      </div>' +
                 '      <div class="modal-footer">' +
-                '        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">' + _escapeHtml(opts.cancelButtonText) + '</button>' +
+                '        <div class="uje-footer-actions">' +
                 (opts.readOnly ? '' :
-                '        <button type="button" class="btn btn-primary uje-save-btn" disabled>' + _escapeHtml(opts.saveButtonText) + '</button>') +
+                '          <button type="button" class="btn btn-primary uje-save-btn" disabled>' + _escapeHtml(opts.saveButtonText) + '</button>') +
+                '          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">' + _escapeHtml(opts.cancelButtonText) + '</button>' +
+                '          <button type="button" class="btn btn-sm btn-outline-secondary uje-format-btn">' + _escapeHtml(opts.formatButtonText) + '</button>' +
+                '        </div>' +
                 '      </div>' +
                 '    </div>' +
                 '  </div>' +
@@ -357,6 +360,16 @@ const UnityJsonEditor = (function ($) {
                 }
             });
 
+            // Scroll-to-top button: show when scrolled, click to jump to top
+            const $scrollBtn = this._modal.find('.uje-scroll-top');
+            this._textarea.on('scroll', function () {
+                $scrollBtn.toggle(this.scrollTop > 100);
+            });
+            $scrollBtn.on('click', () => {
+                this._textarea[0].scrollTop = 0;
+                $scrollBtn.hide();
+            });
+
             this._built = true;
         },
 
@@ -367,7 +380,7 @@ const UnityJsonEditor = (function ($) {
         _updateUI: function () {
             const opts = this._opts;
             this._modal.find('.modal-title').text(opts.title);
-            this._modal.find('.uje-format-btn').html('<i class="fa fa-align-left me-1"></i>' + _escapeHtml(opts.formatButtonText));
+            this._modal.find('.uje-format-btn').text(_escapeHtml(opts.formatButtonText));
             if (this._saveBtn.length) {
                 this._saveBtn.text(opts.saveButtonText);
             }
