@@ -1,8 +1,17 @@
+/* Page layout: side menu + content side-by-side */
+.config-page-layout {
+    display: flex;
+    align-items: flex-start;
+    width: 100%;
+    gap: 0;
+}
+
 #ConfigurationManagementSideMenu.side-menu {
-    float: left;
-    position: absolute;
-    left: 0px;
-    top: 150px;
+    position: sticky;
+    margin-top: 20px;
+    top: 100px;
+    flex-shrink: 0;
+    z-index: 10;
 }
 
 #ConfigurationManagementSideMenu ul {
@@ -12,6 +21,8 @@
 #ConfigurationManagementSideMenu li {
     height: 40px;
     padding: 10px;
+    min-width: 200px;
+    margin-top: 2px;
     border-radius: 0 100em 100em 0;
 }
 
@@ -19,20 +30,88 @@
     justify-content: left;
 }
 
+.config-content {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
 .config-management {
     padding: 1rem;
     max-height: 80vh;
     overflow: auto;
     margin-top: 20px;
+    width: 95%;
 }
 
 .unity-app-main-container {
     margin: auto;
     display: flex;
-    justify-content: center;
     align-items: flex-start;
 }
 
 .hide {
     display: none !important;
+}
+
+/* Resizable split layout for Worksheets and Scoresheets */
+.config-split-container {
+    display: flex;
+    height: calc(80vh - 60px);
+    width: 100%;
+}
+
+.config-split-left,
+.config-split-right {
+    overflow-y: auto;
+}
+
+.config-split-right {
+    width: 67%;
+    padding-left: 0;
+}
+
+.config-split-left {
+    width: 33%;
+    padding-right: 0;
+}
+
+.config-split-divider {
+    width: 10px;
+    background-color: #ccc;
+    cursor: col-resize;
+    border-radius: 10px;
+    flex-shrink: 0;
+}
+
+.config-split-divider:hover {
+    background-color: #aaa;
+}
+
+/* Preview panel (shared by Worksheets and Scoresheets) */
+.sticky-preview {
+    position: sticky;
+    top: 0;
+}
+
+.preview-section {
+    display: flex;
+    flex-wrap: wrap;
+    flex-direction: row;
+    justify-content: space-evenly;
+    align-items: center;
+}
+
+.preview-section:has(> :nth-child(1)) .preview-field {
+    flex: 0 0 99%;
+}
+
+.preview-section:has(> :nth-child(2)) .preview-field {
+    flex: 0 0 45%;
+}
+
+.preview-section:has(> :nth-child(3)) .preview-field {
+    flex: 0 0 30%;
 }

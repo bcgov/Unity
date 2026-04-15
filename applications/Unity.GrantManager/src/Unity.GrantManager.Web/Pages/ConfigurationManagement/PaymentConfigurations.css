@@ -2,8 +2,8 @@
 
 .readonly {
 	color: var(--bc-colors-grey-text-500);
-    background-color: #D8EAFD;
-    width: 332px !important;
+	background-color: var(--bc-colors-blue-100, #D8EAFD);
+	width: 332px !important;
 }
 
 .currencyinput {
@@ -59,12 +59,12 @@
     width: 100%;
 }
 
-.modal-dialog {
-    max-width: 850px !important;
-    min-width: 850px !important;
+#payments-div .modal-dialog {
+	max-width: 850px !important;
+	min-width: 850px !important;
 }
 
-input.form-control:focus, input.form-control:active, textarea.form-control:focus, textarea.form-control:active, .form-select:focus, .form-select:active {
+#payments-div input.form-control:focus, #payments-div input.form-control:active, #payments-div textarea.form-control:focus, #payments-div textarea.form-control:active, #payments-div .form-select:focus, #payments-div .form-select:active {
 	font-weight: inherit !important;
 }
 

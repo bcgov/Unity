@@ -1,6 +1,3 @@
-/* PaymentConfigurations JS - local copy for ConfigurationManagement */
-/* Side-menu toggle removed; Payments tab now uses internal Bootstrap nav-tabs */
-
 let accountCodingDataTable;
 let paymentSettingsDataTable;
 
@@ -57,22 +54,8 @@ $(function () {
         UIElements.inputPaymentThreshold.on('keyup', preventDecimalKeyUp);
         UIElements.inputPaymentThreshold.on('keypress', preventNonCurrencyKeyPress);
 
-        function preventNonCurrencyKeyPress(e) {
-            if (/[a-zA-Z]/.test(e.key) || e.key === ' ' || e.key === '-' || e.keyCode === 45) {
-                e.preventDefault();
-            }
-        }
 
-        function preventDecimalKeyUp(e) {
-            const input = e.target;
-            const cursorPosition = input.selectionStart;
-            const decimalMatch = input.value.match(/\.(\d+)/);
 
-            if (decimalMatch && decimalMatch[1].length > 2) {
-                input.value = input.value.replace(/\.(\d{2}).*/, '.$1');
-                input.setSelectionRange(cursorPosition, cursorPosition);
-            }
-        }
 
         function setAccountCodingDisplay() {
             let currentAccount = $(UIElements.inputMinistryClient).val() + "." +
@@ -97,14 +80,6 @@ $(function () {
             'description'
         ];
 
-        let responseCallback = function (result) {
-            return {
-                recordsTotal: result.length,
-                recordsFiltered: result.length,
-                data: result
-            };
-        };
-
         let dt = UIElements.paymentSettingsDT;
         return initializeDataTable({
             dt,
@@ -117,7 +92,7 @@ $(function () {
             },
             dataEndpoint: unity.grantManager.payments.paymentSettings.getL2ApproversThresholds,
             data: {},
-            responseCallback,
+            responseCallback: paymentSettingsResponseCallback,
             actionButtons,
             pagingEnabled: true,
             reorderEnabled: false,
@@ -129,70 +104,7 @@ $(function () {
             externalSearchId: 'search-data-table'
         });
 
-        function getPaymentSettingsColumns() {
-            let index = 0;
-            return [
-                {
-                    title: 'Id',
-                    name: "id",
-                    data: "id",
-                    visible: false,
-                    index: index++
-                },
-                {
-                    title: 'User Id',
-                    name: "userId",
-                    data: "userId",
-                    visible: false,
-                    index: index++
-                },
-                {
-                    title: 'Expense Authority',
-                    name: "userName",
-                    data: "userName",
-                    visible: true,
-                    index: index++
-                },
-                {
-                    title: 'Approval Threshold',
-                    name: "paymentThreshold",
-                    className: 'dt-body-right',
-                    data: "threshold",
-                    visible: true,
-                    index: index++,
-                    render: function (data, type, row) {
-                        if (data == null || data === '') return '';
-                        return formatter.format(data);
-                    }
-                },
-                {
-                    title: 'Description',
-                    name: "description",
-                    data: "description",
-                    visible: true,
-                    index: index++
-                },
-                {
-                    title: 'Action',
-                    orderable: false,
-                    sortable: false,
-                    data: 'id',
-                    className: 'notexport text-center',
-                    name: 'rowActions',
-                    visible: true,
-                    index: index++,
-                    rowAction: {
-                        items:
-                            [
-                                {
-                                    text: 'Edit',
-                                    action: (data) => editThresholdBtn(data.record.id, data.record.userName)
-                                }
-                            ]
-                    }
-                }
-            ];
-        }
+        
     }
 
     function initializeAccountCodesDataTable() {
@@ -220,14 +132,6 @@ $(function () {
             'rowActions',
         ];
 
-        let responseCallback = function (result) {
-            return {
-                recordsTotal: result.totalCount,
-                recordsFiltered: result.items.length,
-                data: result.items
-            };
-        };
-
         let dt = UIElements.accountCodingDT;
         return initializeDataTable({
             dt,
@@ -240,7 +144,7 @@ $(function () {
             },
             dataEndpoint: unity.grantManager.payments.accountCoding.getList,
             data: {},
-            responseCallback,
+            responseCallback: accountCodesResponseCallback,
             actionButtons,
             pagingEnabled: true,
             reorderEnabled: false,
@@ -345,16 +249,16 @@ $(function () {
         paymentSettingsDataTable.ajax.reload();
     });
 
-    function editAccountCodingBtn(id) {
-        updateModal.open({ id: id });
-        updateModal.onOpen(function () {
+    function editThresholdBtn(id, userName) {
+        updateThresholdModal.open({ id: id, userName: userName });
+        updateThresholdModal.onOpen(function () {
             bindModalElements();
         });
     }
 
-    function editThresholdBtn(id, userName) {
-        updateThresholdModal.open({ id: id, userName: userName });
-        updateThresholdModal.onOpen(function () {
+    function editAccountCodingBtn(id) {
+        updateModal.open({ id: id });
+        updateModal.onOpen(function () {
             bindModalElements();
         });
     }
@@ -382,11 +286,7 @@ $(function () {
     function checkEnableDiscard() {
         const originalPrefix = UIElements.originalPaymentPrefix.val();
         const currentPrefix = UIElements.paymentPrefixInput.val();
-        if (currentPrefix !== originalPrefix) {
-            UIElements.paymentPrefixDiscardButton.prop('disabled', false);
-        } else {
-            UIElements.paymentPrefixDiscardButton.prop('disabled', true);
-        }
+        UIElements.paymentPrefixDiscardButton.prop('disabled', currentPrefix === originalPrefix);
     }
 
     function discardPaymentPrefix() {
@@ -394,7 +294,88 @@ $(function () {
         toastr.info('Payment prefix changes discarded.');
         checkEnableDiscard();
     }
+
+    function getPaymentSettingsColumns() {
+        let index = 0;
+        return [
+            {
+                title: 'Id',
+                name: "id",
+                data: "id",
+                visible: false,
+                index: index++
+            },
+            {
+                title: 'User Id',
+                name: "userId",
+                data: "userId",
+                visible: false,
+                index: index++
+            },
+            {
+                title: 'Expense Authority',
+                name: "userName",
+                data: "userName",
+                visible: true,
+                index: index++
+            },
+            {
+                title: 'Approval Threshold',
+                name: "paymentThreshold",
+                className: 'dt-body-right',
+                data: "threshold",
+                visible: true,
+                index: index++,
+                render: function (data, type, row) {
+                    if (data == null || data === '') return '';
+                    return formatter.format(data);
+                }
+            },
+            {
+                title: 'Description',
+                name: "description",
+                data: "description",
+                visible: true,
+                index: index++
+            },
+            {
+                title: 'Action',
+                orderable: false,
+                sortable: false,
+                data: 'id',
+                className: 'notexport text-center',
+                name: 'rowActions',
+                visible: true,
+                index: index++,
+                rowAction: {
+                    items:
+                        [
+                            {
+                                text: 'Edit',
+                                action: (data) => editThresholdBtn(data.record.id, data.record.userName)
+                            }
+                        ]
+                }
+            }
+        ];
+    }
 });
+
+function paymentSettingsResponseCallback(result) {
+    return {
+        recordsTotal: result.length,
+        recordsFiltered: result.length,
+        data: result
+    };
+}
+
+function accountCodesResponseCallback(result) {
+    return {
+        recordsTotal: result.totalCount,
+        recordsFiltered: result.items.length,
+        data: result.items
+    };
+}
 
 function clearFilter() {
     $('#search-data-table').val('');
@@ -419,4 +400,21 @@ function clearAccountCodesSearchAndReload() {
     localStorage.removeItem('DataTables_PaymentSettingsDataTable_/ConfigurationManagement');
 
     accountCodingDataTable.ajax.reload();
+}
+
+function preventNonCurrencyKeyPress(e) {
+    if (/[a-zA-Z]/.test(e.key) || e.key === ' ' || e.key === '-' || e.keyCode === 45) {
+        e.preventDefault();
+    }
+}
+
+function preventDecimalKeyUp(e) {
+    const input = e.target;
+    const cursorPosition = input.selectionStart;
+    const decimalMatch = input.value.match(/\.(\d+)/);
+
+    if (decimalMatch && decimalMatch[1].length > 2) {
+        input.value = input.value.replace(/\.(\d{2}).*/, '.$1');
+        input.setSelectionRange(cursorPosition, cursorPosition);
+    }
 }
