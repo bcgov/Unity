@@ -15,6 +15,10 @@
     "Permission:AI.Prompts.Create": "Create Prompts",
     "Permission:AI.Prompts.Update": "Edit Prompts",
     "Permission:AI.Prompts.Delete": "Delete Prompts",
+
+    "Setting:AI.AutomaticGenerationEnabled": "Automatically Generate AI Analysis",
+    "Setting:AI.ManualGenerationEnabled": "Manually Initiate AI Analysis",
+
     "AIPrompts": "AI Prompts",
     "AIPrompt": "AI Prompt",
     "AIPromptVersion": "Prompt Version",
