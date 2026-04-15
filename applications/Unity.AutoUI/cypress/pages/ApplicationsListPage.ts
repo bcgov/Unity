@@ -245,14 +245,29 @@ export class ApplicationsListPage extends ApplicationsPage {
    * Select a row by index (clicks on a non-link cell)
    */
   selectRowByIndex(rowIndex: number, withCtrl = false): this {
-    cy.get(this.scrollTable.tableRows, { timeout: this.STANDARD_TIMEOUT })
-      .eq(rowIndex)
-      .find("td")
-      .not(":has(a)")
-      .first()
-      .scrollIntoView()
-      .should("be.visible")
-      .click({ ctrlKey: withCtrl });
+    const getTargetCell = () =>
+      cy
+        .get(this.scrollTable.tableRows, { timeout: this.STANDARD_TIMEOUT })
+        .eq(rowIndex)
+        .find("td")
+        .not(":has(a)")
+        .first();
+
+    cy.get(this.scrollTable.tableRows, {
+      timeout: this.STANDARD_TIMEOUT,
+    }).should("have.length.greaterThan", rowIndex);
+
+    getTargetCell().should("exist");
+
+    // Break the chain and re-query right before click to avoid stale element errors
+    // when the datatable re-renders asynchronously.
+    getTargetCell().then(($cell) => {
+      if (Cypress.dom.isAttached($cell) && Cypress.dom.isVisible($cell)) {
+        cy.wrap($cell).scrollIntoView().click({ ctrlKey: withCtrl });
+      } else {
+        getTargetCell().click({ ctrlKey: withCtrl, force: true });
+      }
+    });
     return this;
   }
 
