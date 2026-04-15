@@ -90,6 +90,30 @@ public class CreateAIAssessmentOnScoringGeneratedHandlerTests : GrantManagerAppl
     }
     [Fact]
     [Trait("Category", "Integration")]
+    public async Task Should_Skip_AssessmentCreation_When_AutomaticGenerationEnabled_Is_False()
+    {
+        // Arrange - automatic generation OFF at tenant level
+        var featureChecker = Substitute.For<IFeatureChecker>();
+        featureChecker.IsEnabledAsync("Unity.AI.Scoring").Returns(true);
+
+        var settings = Substitute.For<ISettingProvider>();
+        settings.GetOrNullAsync(AISettings.AutomaticGenerationEnabled).Returns("false");
+
+        var handler = BuildHandler(featureChecker, settings);
+        using var uow = _unitOfWorkManager.Begin();
+        var application = (await _applicationRepository.GetListAsync())[0];
+        var beforeCount = (await _assessmentRepository.GetQueryableAsync()).Count(a => a.IsAiAssessment);
+
+        // Act
+        await handler.HandleEventAsync(new ApplicationAIScoringGeneratedEvent { ApplicationId = application.Id });
+
+        // Assert - no new AI assessment created
+        var afterCount = (await _assessmentRepository.GetQueryableAsync()).Count(a => a.IsAiAssessment);
+        afterCount.ShouldBe(beforeCount);
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
     public async Task HandleEventAsync_Should_Be_Idempotent()
     {
         var featureChecker = Substitute.For<IFeatureChecker>();
