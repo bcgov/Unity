@@ -422,7 +422,7 @@ def ask():
         # ── Semantic cache lookup ────────────────────────────────────────────
         cache_hit = None
         query_embedding = None
-        normalized_query = question.strip().lower()
+        normalized_query = cache_reranker.normalize_query(question)
 
         if config.app.semantic_cache_enabled and not is_retry:
             # Layer 1: exact match (no embedding cost)
@@ -451,16 +451,22 @@ def ask():
                             f"score={fuzzy_match['score']:.1f}"
                         )
 
-            # Layer 2: semantic similarity
+            # Layer 2: dense embedding — top-K with borderline zone floor
             if not cache_hit:
                 loop = asyncio.get_event_loop()
                 query_embedding = await loop.run_in_executor(
                     None, embedding_manager.embed_query, normalized_query
                 )
-                cache_hit = cache_repository.find_similar(
+                candidates = cache_repository.find_similar_topk(
                     tenant_id, db_id, schema_types, collection_name,
-                    query_embedding, config.app.semantic_cache_threshold
+                    query_embedding,
+                    threshold=config.app.semantic_cache_borderline_low,
+                    k=config.app.semantic_cache_top_k
                 )
+                # Direct accept: best candidate clears the high-confidence threshold
+                # Borderline zone [0.85, 0.95) is reserved for Phase 3 LLM judge
+                if candidates and candidates[0]["similarity"] >= config.app.semantic_cache_threshold:
+                    cache_hit = candidates[0]
 
             if cache_hit:
                 cached = cache_hit["response_payload"]
@@ -485,11 +491,6 @@ def ask():
                     hit_type = cache_hit.get("hit_type_override") or (
                         "exact_hit" if cache_hit["similarity"] == 1.0 else "semantic_hit"
                     )
-                    if hit_type == "semantic_hit":
-                        logger.info(
-                            f"[cache:semantic_hit] tenant={tenant_id} db={db_id} "
-                            f"similarity={cache_hit['similarity']:.4f}"
-                        )
                     tokens_saved = cached.get("tokens", {}).get("total_tokens", 0)
                     initial_viz_settings = {}
                     if "map" in cached.get("visualization_options", []):
@@ -502,11 +503,19 @@ def ask():
                         visualization_settings=initial_viz_settings
                     )
                     cache_repository.touch(cache_hit["cache_id"])
-                    logger.info(
-                        f"[cache:{hit_type}] tenant={tenant_id} db={db_id} "
-                        f"similarity={cache_hit['similarity']:.4f} "
-                        f"tokens_saved={tokens_saved}"
-                    )
+                    if hit_type == "semantic_hit":
+                        logger.info(
+                            f"[cache:semantic_hit] tenant={tenant_id} db={db_id} "
+                            f"similarity={cache_hit['similarity']:.4f} "
+                            f"threshold={config.app.semantic_cache_threshold} "
+                            f"tokens_saved={tokens_saved}"
+                        )
+                    else:
+                        logger.info(
+                            f"[cache:{hit_type}] tenant={tenant_id} db={db_id} "
+                            f"similarity={cache_hit['similarity']:.4f} "
+                            f"tokens_saved={tokens_saved}"
+                        )
                     return jsonify({
                         "card_id": card_id,
                         "x_field": cached.get("x_field", []),

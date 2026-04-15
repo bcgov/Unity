@@ -1,13 +1,43 @@
 """
 cache_reranker.py — Multi-layer cache reranking.
-Phase 1: FuzzyMatcher only.
+Phase 1: FuzzyMatcher, normalize_query.
 """
 import logging
+import re
 from typing import Optional, List, Dict
 
 from rapidfuzz import fuzz, process
 
 logger = logging.getLogger(__name__)
+
+# Domain-specific BC Government fiscal reporting abbreviations.
+# Extend this list as new patterns are identified from query logs.
+_ABBREVIATIONS = [
+    (re.compile(r'\bfy\s*(\d{4})\b', re.I),  r'fiscal year \1'),  # FY2024 → fiscal year 2024
+    (re.compile(r'\bq([1-4])\b', re.I),        r'quarter \1'),      # Q3 → quarter 3
+    (re.compile(r'\bytd\b', re.I),             'year to date'),
+    (re.compile(r'\bmtd\b', re.I),             'month to date'),
+    (re.compile(r'\bqtd\b', re.I),             'quarter to date'),
+    (re.compile(r'\bapprox\.?\b', re.I),       'approximately'),
+]
+
+
+def normalize_query(text: str) -> str:
+    """Normalise a natural-language query before any cache lookup.
+
+    Safe operations only: whitespace collapsing, trailing punctuation removal,
+    and domain-specific abbreviation expansion.
+
+    Stopword removal and stemming are intentionally excluded — they hurt
+    transformer embedding quality for short analytical NL queries where
+    every word carries semantic weight (e.g. 'not', 'by', 'excluding').
+    """
+    text = text.strip().lower()
+    text = re.sub(r'\s+', ' ', text)            # collapse multiple spaces
+    text = re.sub(r'[?!.]+$', '', text).strip() # strip trailing punctuation
+    for pattern, replacement in _ABBREVIATIONS:
+        text = pattern.sub(replacement, text)
+    return text
 
 
 class FuzzyMatcher:

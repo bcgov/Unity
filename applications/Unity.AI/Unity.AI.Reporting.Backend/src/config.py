@@ -89,6 +89,8 @@ class AppConfig:
     fuzzy_match_enabled: bool = True
     fuzzy_match_threshold: float = 92.0
     fuzzy_match_limit: int = 200
+    semantic_cache_borderline_low: float = 0.85
+    semantic_cache_top_k: int = 5
 
 
 class Config:
@@ -136,6 +138,8 @@ class Config:
             fuzzy_match_enabled=os.getenv("FUZZY_MATCH_ENABLED", "true").lower() == "true",
             fuzzy_match_threshold=float(os.getenv("FUZZY_MATCH_THRESHOLD", "92")),
             fuzzy_match_limit=int(os.getenv("FUZZY_MATCH_LIMIT", "200")),
+            semantic_cache_borderline_low=float(os.getenv("SEMANTIC_CACHE_BORDERLINE_LOW", "0.85")),
+            semantic_cache_top_k=int(os.getenv("SEMANTIC_CACHE_TOP_K", "5")),
         )
         
         # Tenant configuration - extensible for different use cases
