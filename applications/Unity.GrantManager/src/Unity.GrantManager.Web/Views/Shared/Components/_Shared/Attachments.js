@@ -95,7 +95,15 @@ function updateAttachmentMetadata(attachmentType, attachmentId) {
 
 $(document).on('mouseenter', '.attachments-table .dropdown', function () {
     var rect = this.getBoundingClientRect();
-    $(this).find('.dropdown-content').css('top', rect.bottom + 'px');
+    var $content = $(this).find('.dropdown-content');
+    $content.css({ visibility: 'hidden', display: 'block', top: '', bottom: '' });
+    var dropdownHeight = $content.outerHeight();
+    $content.css({ visibility: '', display: '' });
+    if (rect.bottom + dropdownHeight > window.innerHeight) {
+        $content.css({ bottom: (window.innerHeight - rect.top) + 'px', top: '' });
+    } else {
+        $content.css({ top: rect.bottom + 'px', bottom: '' });
+    }
 });
 
 function refreshAttachmentWidget(attachmentType) {
