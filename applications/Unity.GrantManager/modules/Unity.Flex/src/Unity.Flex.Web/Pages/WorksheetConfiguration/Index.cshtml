@@ -27,16 +27,23 @@
             <abp-column id="worksheet-left-col" class="p-0">
                 <abp-card>
                     <abp-card-body>
+                        <form id="form" name="form" action="/uploader" enctype="multipart/form-data" method="post" class="d-none">
+                            <input id="worksheet_import_upload" name="worksheet_import_upload" type="file" size="1" onchange="importWorksheetFile('worksheet_import_upload');" />
+                        </form>
                         <div class="d-flex justify-content-between align-items-center mb-3">
                             <h4 class="mb-0"><b>Worksheets</b></h4>
-                            <form id="form" name="form" action="/uploader" enctype="multipart/form-data" method="post">
-                                <input id="worksheet_import_upload" name="worksheet_import_upload" type="file" size="1" onchange="importWorksheetFile('worksheet_import_upload');" style="display: none" />
-                                <abp-button text="Import Worksheet"
-                                            id="worksheet_import_upload_btn"
+                            <div class="d-flex gap-2">
+                                <abp-button text="@L["Worksheet:Configuration:AddWorksheetButtonText"].Value"
+                                            class="worksheet-add-btn"
+                                            icon-type="Other"
+                                            icon="fl fl-plus"
+                                            button-type="Light" />
+                                <abp-button text="Import"
+                                            class="worksheet-import-btn"
                                             icon-type="Other"
                                             icon="fl fl-import"
                                             button-type="Light" />
-                            </form>
+                            </div>
                         </div>
                         <div class="worksheet-filters d-flex gap-2 mb-2 align-items-center px-1">
                             <input type="text" id="worksheet-name-filter" class="form-control form-control-sm" placeholder="Filter by title or name..." />
@@ -51,11 +58,16 @@
                         <div id="worksheet-info-widget-list">
                             @await Component.InvokeAsync(typeof(WorksheetListWidget))
                         </div>
-                        <div class="p-4">
+                        <div class="d-flex justify-content-end gap-2 p-3">
                             <abp-button text="@L["Worksheet:Configuration:AddWorksheetButtonText"].Value"
-                                        id="add_worksheet_btn"
+                                        class="worksheet-add-btn"
                                         icon-type="Other"
-                                        icon="fl fl-plus"                                        
+                                        icon="fl fl-plus"
+                                        button-type="Light" />
+                            <abp-button text="Import"
+                                        class="worksheet-import-btn"
+                                        icon-type="Other"
+                                        icon="fl fl-import"
                                         button-type="Light" />
                         </div>
                     </abp-card-body>

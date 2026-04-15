@@ -1,5 +1,5 @@
 $(function () {
-    $('#worksheet_import_upload_btn').click(function () {
+    $('.worksheet-import-btn').on('click', function () {
         $('#worksheet_import_upload').trigger('click');
     });
 

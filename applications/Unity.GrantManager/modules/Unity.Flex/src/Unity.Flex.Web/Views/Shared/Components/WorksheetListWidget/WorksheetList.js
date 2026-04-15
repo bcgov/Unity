@@ -11,7 +11,7 @@ $(function () {
     makeSectionsAndFieldsSortable();
 
     function bindActionButtons() {
-        let addWorksheetButton = $("#add_worksheet_btn");
+        let addWorksheetButton = $(".worksheet-add-btn");
 
         if (addWorksheetButton) {
             addWorksheetButton.on("click", function (_) {

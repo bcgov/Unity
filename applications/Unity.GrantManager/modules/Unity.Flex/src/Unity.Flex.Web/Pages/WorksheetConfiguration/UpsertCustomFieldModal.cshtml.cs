@@ -80,6 +80,9 @@ public class UpsertCustomFieldModalModel(ICustomFieldAppService customFieldAppSe
     [DisplayName("Security Classification")]
     public string? SecurityClassification { get; set; }
 
+    [BindProperty]
+    public string? Placeholder { get; set; }
+
     [SelectItems(nameof(FieldTypes))]
     [Required]
     [BindProperty]
@@ -116,6 +119,7 @@ public class UpsertCustomFieldModalModel(ICustomFieldAppService customFieldAppSe
                 LabelStyle = existingDef?.LabelStyle;
                 LabelCssClass = existingDef?.LabelCssClass;
                 SecurityClassification = existingDef?.SecurityClassification;
+                Placeholder = existingDef?.Placeholder;
             }
         }
     }
@@ -207,6 +211,7 @@ public class UpsertCustomFieldModalModel(ICustomFieldAppService customFieldAppSe
         def.LabelStyle = string.IsNullOrWhiteSpace(LabelStyle) ? null : LabelStyle.Trim();
         def.LabelCssClass = string.IsNullOrWhiteSpace(LabelCssClass) ? null : LabelCssClass.Trim();
         def.SecurityClassification = string.IsNullOrEmpty(SecurityClassification) ? null : SecurityClassification;
+        def.Placeholder = string.IsNullOrWhiteSpace(Placeholder) ? null : Placeholder.Trim();
     }
 
     private OkObjectResult MapModalResponse(CustomFieldDto customFieldDto)

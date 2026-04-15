@@ -4,7 +4,8 @@ $(function () {
     });
 
     let customFieldModal = new abp.ModalManager({
-        viewUrl: 'WorksheetConfiguration/UpsertCustomFieldModal'
+        viewUrl: 'WorksheetConfiguration/UpsertCustomFieldModal',
+        modalClass: 'UpsertCustomFieldModal'
     });
 
     let editWorksheetModal = new abp.ModalManager({
