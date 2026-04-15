@@ -86,7 +86,10 @@ class AppConfig:
     collection_name: str = "embedded_schema"
     semantic_cache_enabled: bool = True
     semantic_cache_threshold: float = 0.95
-    
+    fuzzy_match_enabled: bool = True
+    fuzzy_match_threshold: float = 92.0
+    fuzzy_match_limit: int = 200
+
 
 class Config:
     """Central configuration manager"""
@@ -129,7 +132,10 @@ class Config:
             testing=False,
             embed_worksheets=os.getenv("EMBED_WORKSHEETS", "true").lower() == "true",
             semantic_cache_enabled=os.getenv("SEMANTIC_CACHE_ENABLED", "true").lower() == "true",
-            semantic_cache_threshold=float(os.getenv("SEMANTIC_CACHE_THRESHOLD", "0.95"))
+            semantic_cache_threshold=float(os.getenv("SEMANTIC_CACHE_THRESHOLD", "0.95")),
+            fuzzy_match_enabled=os.getenv("FUZZY_MATCH_ENABLED", "true").lower() == "true",
+            fuzzy_match_threshold=float(os.getenv("FUZZY_MATCH_THRESHOLD", "92")),
+            fuzzy_match_limit=int(os.getenv("FUZZY_MATCH_LIMIT", "200")),
         )
         
         # Tenant configuration - extensible for different use cases

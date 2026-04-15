@@ -14,6 +14,7 @@ from sql_generator import sql_generator
 from auth import require_auth, get_user_from_token
 from embeddings import embedding_manager
 from static_routes import add_static_routes
+import cache_reranker
 import os
 import re
 
@@ -429,6 +430,27 @@ def ask():
                 tenant_id, db_id, schema_types, collection_name, normalized_query
             )
 
+            # Layer 1.5: fuzzy match 
+            if not cache_hit and config.app.fuzzy_match_enabled:
+                recent = cache_repository.get_recent_normalized_queries(
+                    tenant_id, db_id, schema_types, collection_name,
+                    config.app.fuzzy_match_limit
+                )
+                fuzzy_match = cache_reranker.fuzzy_matcher.find_best(
+                    normalized_query, recent, config.app.fuzzy_match_threshold
+                )
+                if fuzzy_match:
+                    cache_hit = cache_repository.find_exact(
+                        tenant_id, db_id, schema_types, collection_name,
+                        fuzzy_match["normalized_query"]
+                    )
+                    if cache_hit:
+                        cache_hit["hit_type_override"] = "fuzzy_hit"
+                        logger.info(
+                            f"[cache:fuzzy_hit] tenant={tenant_id} db={db_id} "
+                            f"score={fuzzy_match['score']:.1f}"
+                        )
+
             # Layer 2: semantic similarity
             if not cache_hit:
                 loop = asyncio.get_event_loop()
@@ -460,7 +482,9 @@ def ask():
                     )
                     cache_hit = None
                 else:
-                    hit_type = "exact_hit" if cache_hit["similarity"] == 1.0 else "semantic_hit"
+                    hit_type = cache_hit.get("hit_type_override") or (
+                        "exact_hit" if cache_hit["similarity"] == 1.0 else "semantic_hit"
+                    )
                     if hit_type == "semantic_hit":
                         logger.info(
                             f"[cache:semantic_hit] tenant={tenant_id} db={db_id} "

@@ -480,6 +480,29 @@ class CacheRepository:
                     }
         return None
 
+    def get_recent_normalized_queries(
+        self, tenant_id: str, db_id: int, schema_types: list,
+        collection_name: str, limit: int = 200
+    ) -> list:
+        """Fetch recent normalized queries for fuzzy matching.
+        Returns list of {"normalized_query": str, "cache_id": str} ordered by accessed_at DESC."""
+        fp = self.build_fingerprint(db_id, schema_types, collection_name)
+        with self.db.get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    SELECT normalized_query, cache_id
+                    FROM query_cache
+                    WHERE tenant_id = %s
+                      AND db_id = %s
+                      AND schema_fingerprint = %s
+                    ORDER BY accessed_at DESC
+                    LIMIT %s
+                """, (tenant_id, db_id, fp, limit))
+                return [
+                    {"normalized_query": row[0], "cache_id": str(row[1])}
+                    for row in cur.fetchall()
+                ]
+
     def save(self, tenant_id: str, db_id: int, schema_types: list, collection_name: str,
              query_text: str, normalized_query: str, embedding: list,
              response_payload: Dict[str, Any]):
