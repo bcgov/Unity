@@ -61,20 +61,7 @@ $(function () {
         PubSub.publish('refresh_worksheet_list');
     });
 
-    function refreshWorksheetListWidget() {
-        const url = `../Flex/Widgets/WorksheetList/Refresh`;
-        fetch(url)
-            .then(response => response.text())
-            .then(data => {
-                document.getElementById('worksheet-info-widget-list').innerHTML = data;
-                setTimeout(() => {
-                    PubSub.publish('worksheet_list_refreshed');
-                }, 100);
-            })
-            .catch(error => {
-                console.error('Error refreshing worksheet-info-list-widget:', error);
-            });
-    }
+
 
     function makeSectionsAndFieldsSortable() {
         makeCustomFieldsSortable();
@@ -146,37 +133,6 @@ $(function () {
             });
     }
 
-    function updatePreview() {
-        let worksheets = $('button.accordion-button[aria-expanded=true]');
-        const previewPane = $('#preview');
-
-        if (worksheets?.length > 0) {
-            let worksheetId = worksheets[0].dataset.worksheetId;
-            const url = `../Flex/Widgets/WorksheetInstance/Refresh?`
-                + `instanceCorrelationId=00000000-0000-0000-0000-000000000000&`
-                + `instanceCorrelationProvider=Preview&`
-                + `sheetCorrelationId=00000000-0000-0000-0000-000000000000&`
-                + `sheetCorrelationProvider=Preview&`
-                + `uiAnchor=Preview&`
-                + `worksheetId=${worksheetId}`;
-            fetch(url)
-                .then(response => response.text())
-                .then(data => {
-                    previewPane.html(data);
-                    $("#preview :input").prop("readonly", true);
-                    PubSub.publish('worksheet_preview_datagrid_refresh');
-                })
-                .catch(error => {
-                    console.error('Error generating preview:', error);
-                });
-
-        } else {
-            previewPane?.html('<p>No sections to display.</p>');
-        }
-
-        $('.preview-scrollable').first().scrollTop(0);
-    }
-
     PubSub.subscribe(
         'refresh_worksheet_list',
         () => {
@@ -205,3 +161,48 @@ $(function () {
         }
     );
 });
+
+function refreshWorksheetListWidget() {
+    const url = `../Flex/Widgets/WorksheetList/Refresh`;
+    fetch(url)
+        .then(response => response.text())
+        .then(data => {
+            document.getElementById('worksheet-info-widget-list').innerHTML = data;
+            setTimeout(() => {
+                PubSub.publish('worksheet_list_refreshed');
+            }, 100);
+        })
+        .catch(error => {
+            console.error('Error refreshing worksheet-info-list-widget:', error);
+        });
+}
+
+function updatePreview() {
+    let worksheets = $('button.accordion-button[aria-expanded=true]');
+    const previewPane = $('#preview');
+
+    if (worksheets?.length > 0) {
+        let worksheetId = worksheets[0].dataset.worksheetId;
+        const url = `../Flex/Widgets/WorksheetInstance/Refresh?`
+            + `instanceCorrelationId=00000000-0000-0000-0000-000000000000&`
+            + `instanceCorrelationProvider=Preview&`
+            + `sheetCorrelationId=00000000-0000-0000-0000-000000000000&`
+            + `sheetCorrelationProvider=Preview&`
+            + `uiAnchor=Preview&`
+            + `worksheetId=${worksheetId}`;
+        fetch(url)
+            .then(response => response.text())
+            .then(data => {
+                previewPane.html(data);
+                $('#preview :input').prop('readonly', true);
+                PubSub.publish('worksheet_preview_datagrid_refresh');
+            })
+            .catch(error => {
+                console.error('Error generating preview:', error);
+            });
+    } else {
+        previewPane?.html('<p>No sections to display.</p>');
+    }
+
+    $('.preview-scrollable').first().scrollTop(0);
+}
