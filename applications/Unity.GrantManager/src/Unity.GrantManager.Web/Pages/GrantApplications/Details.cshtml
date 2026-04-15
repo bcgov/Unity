@@ -532,12 +532,15 @@
                                             <option value="v0">v0</option>
                                         }
                                     </select>
-                                    <button type="button" class="btn unt-btn-outline-primary btn-outline-primary btn-sm" id="generateAllAiDevToolsBtn">
-                                        <span class="ai-button-content">
-                                            <i class="unt-icon-sm fa-solid fa-wand-sparkles"></i>
-                                            <span>Generate All</span>
-                                        </span>
-                                    </button>
+                                    @if (aiAttachmentSummariesEnabled && aiApplicationAnalysisEnabled && aiScoringEnabled)
+                                    {
+                                        <button type="button" class="btn unt-btn-outline-primary btn-outline-primary btn-sm" id="generateAllAiDevToolsBtn">
+                                            <span class="ai-button-content">
+                                                <i class="unt-icon-sm fa-solid fa-wand-sparkles"></i>
+                                                <span>Generate All</span>
+                                            </span>
+                                        </button>
+                                    }
                                 </div>
                             </div>
                         </div>
