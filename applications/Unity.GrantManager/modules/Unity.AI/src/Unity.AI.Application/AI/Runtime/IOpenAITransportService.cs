@@ -3,7 +3,7 @@ using Unity.AI.Models;
 
 namespace Unity.AI.Runtime;
 
-internal interface IOpenAITransportService
+public interface IOpenAITransportService
 {
     Task<AIOperationResult> GenerateSummaryAsync(
         string content,

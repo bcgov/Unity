@@ -24,14 +24,24 @@ internal class OpenAIResponseParser : IOpenAIResponseParser, ITransientDependenc
             response.Rating = rating;
         }
 
-        if (TryGetStringProperty(root, AIJsonKeys.Comments, out var comments))
+        if (TryGetArrayProperty(root, AIJsonKeys.Errors, out var errorsArray))
         {
-            response.Comments = comments;
+            response.Errors = ParseFindings(errorsArray).ToList();
         }
 
-        if (TryGetArrayProperty(root, AIJsonKeys.Finding, out var findingsArray))
+        if (TryGetArrayProperty(root, AIJsonKeys.Warnings, out var warningsArray))
         {
-            response.Findings = ParseFindings(findingsArray).ToList();
+            response.Warnings = ParseFindings(warningsArray).ToList();
+        }
+
+        if (TryGetArrayProperty(root, AIJsonKeys.Summaries, out var summariesArray))
+        {
+            response.Summaries = ParseFindings(summariesArray).ToList();
+        }
+
+        if (TryGetArrayProperty(root, AIJsonKeys.NextSteps, out var nextStepsArray))
+        {
+            response.NextSteps = ParseFindings(nextStepsArray).ToList();
         }
 
         if (TryGetObjectProperty(root, AIJsonKeys.Recommendation, out var recommendation))

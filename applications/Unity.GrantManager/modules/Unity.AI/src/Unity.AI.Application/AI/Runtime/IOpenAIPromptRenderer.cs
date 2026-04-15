@@ -2,7 +2,7 @@ using System.Collections.Generic;
 
 namespace Unity.AI.Runtime;
 
-internal interface IOpenAIPromptRenderer
+public interface IOpenAIPromptRenderer
 {
     string ResolvePromptVersion(string? version);
 
