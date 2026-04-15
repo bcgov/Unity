@@ -18,7 +18,7 @@ public class ApplicationContentAppService(
     IFeatureChecker featureChecker)
     : AIAppService, IApplicationContentAppService
 {
-    public async Task<string> GenerateContentAsync(Guid applicationId, string? promptVersion = null)
+    public async Task<ApplicationContentResultDto> GenerateContentAsync(Guid applicationId, string? promptVersion = null)
     {
         try
         {
@@ -33,7 +33,10 @@ public class ApplicationContentAppService(
 
             await aiGenerationQueue.QueueApplicationPipelineAsync(applicationId, CurrentTenant.Id, promptVersion);
 
-            return "{}";
+            return new ApplicationContentResultDto
+            {
+                Completed = true
+            };
         }
         catch (Exception ex)
         {

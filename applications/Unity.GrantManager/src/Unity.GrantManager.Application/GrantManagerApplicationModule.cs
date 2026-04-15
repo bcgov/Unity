@@ -31,7 +31,6 @@ using System;
 using Quartz;
 using Unity.Modules.Shared.MessageBrokers.RabbitMQ;
 using Volo.Abp.BackgroundJobs;
-using Unity.AI;
 using Unity.Reporting;
 using Volo.Abp.DistributedLocking;
 using Unity.GrantManager.Zones;
@@ -62,7 +61,6 @@ namespace Unity.GrantManager;
     typeof(PaymentsApplicationModule),
     typeof(FlexApplicationModule),
     typeof(ReportingApplicationModule),
-    typeof(AIApplicationModule),
     typeof(AbpDistributedLockingModule)
 )]
 public class GrantManagerApplicationModule : AbpModule
