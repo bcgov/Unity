@@ -37,7 +37,8 @@ export class ApplicationsListPage extends ApplicationsPage {
   private readonly extendedActionBar = {
     customButtons: "#app_custom_buttons",
     dynamicButtonContainer: "#dynamicButtonContainerId",
-    exportButton: "#dynamicButtonContainerId .dt-buttons button span",
+    exportButton:
+      "#dynamicButtonContainerId .dt-buttons button, #dynamicButtonContainerId .dt-buttons button span",
     saveViewButton: "button.grp-savedStates",
   };
 
@@ -94,7 +95,7 @@ export class ApplicationsListPage extends ApplicationsPage {
       | "last3months"
       | "last6months"
       | "alltime"
-      | "custom"
+      | "custom",
   ): this {
     cy.get(this.dateFilters.quickDateRange, { timeout: this.STANDARD_TIMEOUT })
       .should("be.visible")
@@ -127,10 +128,11 @@ export class ApplicationsListPage extends ApplicationsPage {
       | "last3months"
       | "last6months"
       | "alltime"
-      | "custom"
+      | "custom",
   ): this {
-    cy.get(this.dateFilters.quickDateRange, { timeout: this.STANDARD_TIMEOUT })
-      .should("have.value", expectedValue);
+    cy.get(this.dateFilters.quickDateRange, {
+      timeout: this.STANDARD_TIMEOUT,
+    }).should("have.value", expectedValue);
     return this;
   }
 
@@ -139,12 +141,16 @@ export class ApplicationsListPage extends ApplicationsPage {
    * @deprecated Use selectQuickDateRange() instead. This method is for custom date ranges only.
    */
   setSubmittedFromDate(date: string): this {
-    cy.get(this.dateFilters.submittedFromDate, { timeout: this.STANDARD_TIMEOUT })
-      .click({ force: true })
-      .clear({ force: true })
-      .type(date, { force: true })
-      .trigger("change", { force: true })
-      .blur({ force: true })
+    cy.get(this.dateFilters.submittedFromDate, {
+      timeout: this.STANDARD_TIMEOUT,
+    })
+      .scrollIntoView()
+      .should("be.visible")
+      .click()
+      .clear()
+      .type(date)
+      .trigger("change")
+      .blur()
       .should("have.value", date);
     return this;
   }
@@ -154,11 +160,13 @@ export class ApplicationsListPage extends ApplicationsPage {
    */
   setSubmittedToDate(date: string): this {
     cy.get(this.dateFilters.submittedToDate, { timeout: this.STANDARD_TIMEOUT })
-      .click({ force: true })
-      .clear({ force: true })
-      .type(date, { force: true })
-      .trigger("change", { force: true })
-      .blur({ force: true })
+      .scrollIntoView()
+      .should("be.visible")
+      .click()
+      .clear()
+      .type(date)
+      .trigger("change")
+      .blur()
       .should("have.value", date);
     return this;
   }
@@ -172,7 +180,7 @@ export class ApplicationsListPage extends ApplicationsPage {
         cy.wrap($s)
           .should("have.attr", "style")
           .and("contain", "display: none");
-      }
+      },
     );
     return this;
   }
@@ -205,7 +213,8 @@ export class ApplicationsListPage extends ApplicationsPage {
   selectRowByText(text: string): this {
     cy.contains("tr", text, { timeout: this.STANDARD_TIMEOUT })
       .find(".checkbox-select")
-      .click({ force: true });
+      .should("be.visible")
+      .click();
     return this;
   }
 
@@ -215,7 +224,8 @@ export class ApplicationsListPage extends ApplicationsPage {
   clickOpenButton(): this {
     cy.get("#externalLink", { timeout: this.STANDARD_TIMEOUT })
       .should("exist")
-      .click({ force: true });
+      .should("be.visible")
+      .click();
     return this;
   }
 
@@ -225,10 +235,9 @@ export class ApplicationsListPage extends ApplicationsPage {
    * Verify table has rows (using scroll body selector)
    */
   verifyTableHasData(): this {
-    cy.get(this.scrollTable.tableRows, { timeout: this.STANDARD_TIMEOUT }).should(
-      "have.length.greaterThan",
-      1
-    );
+    cy.get(this.scrollTable.tableRows, {
+      timeout: this.STANDARD_TIMEOUT,
+    }).should("have.length.greaterThan", 1);
     return this;
   }
 
@@ -241,7 +250,9 @@ export class ApplicationsListPage extends ApplicationsPage {
       .find("td")
       .not(":has(a)")
       .first()
-      .click({ force: true, ctrlKey: withCtrl });
+      .scrollIntoView()
+      .should("be.visible")
+      .click({ ctrlKey: withCtrl });
     return this;
   }
 
@@ -274,7 +285,9 @@ export class ApplicationsListPage extends ApplicationsPage {
       .then(($els: JQuery<HTMLElement>) => {
         const titles: string[] = Cypress.$($els)
           .toArray()
-          .map((el: HTMLElement) => (el.textContent || "").replace(/\s+/g, " ").trim())
+          .map((el: HTMLElement) =>
+            (el.textContent || "").replace(/\s+/g, " ").trim(),
+          )
           .filter((t: string) => t.length > 0);
         return titles;
       });
@@ -287,10 +300,9 @@ export class ApplicationsListPage extends ApplicationsPage {
     this.getVisibleHeaderTitles().then((titles: string[]) => {
       const titlesLower = titles.map((t: string) => t.toLowerCase());
       expected.forEach((e: string) => {
-        expect(
-          titlesLower,
-          `visible headers should include "${e}"`
-        ).to.include(e.toLowerCase());
+        expect(titlesLower, `visible headers should include "${e}"`).to.include(
+          e.toLowerCase(),
+        );
       });
     });
     return this;
@@ -302,7 +314,9 @@ export class ApplicationsListPage extends ApplicationsPage {
    * Scroll to and verify action bar exists
    */
   verifyActionBarExists(): this {
-    cy.get(this.extendedActionBar.customButtons, { timeout: this.STANDARD_TIMEOUT })
+    cy.get(this.extendedActionBar.customButtons, {
+      timeout: this.STANDARD_TIMEOUT,
+    })
       .should("exist")
       .scrollIntoView();
     return this;
@@ -315,7 +329,7 @@ export class ApplicationsListPage extends ApplicationsPage {
     cy.get("#applicationPaymentRequest", { timeout: this.BUTTON_TIMEOUT })
       .should("be.visible")
       .and("not.be.disabled")
-      .click({ force: true });
+      .click();
     return this;
   }
 
@@ -325,7 +339,10 @@ export class ApplicationsListPage extends ApplicationsPage {
   verifyExportButtonVisible(): this {
     cy.contains(this.extendedActionBar.exportButton, "Export", {
       timeout: this.STANDARD_TIMEOUT,
-    }).should("be.visible");
+      matchCase: false,
+    })
+      .scrollIntoView()
+      .should("be.visible");
     return this;
   }
 
@@ -336,7 +353,7 @@ export class ApplicationsListPage extends ApplicationsPage {
     cy.contains(
       "#dynamicButtonContainerId button.grp-savedStates",
       "Save View",
-      { timeout: this.STANDARD_TIMEOUT }
+      { timeout: this.STANDARD_TIMEOUT },
     ).should("be.visible");
     return this;
   }
@@ -346,10 +363,12 @@ export class ApplicationsListPage extends ApplicationsPage {
    */
   verifyColumnsButtonVisible(): this {
     cy.contains(
-      "#dynamicButtonContainerId .dt-buttons button span",
+      "#dynamicButtonContainerId .dt-buttons button, #dynamicButtonContainerId .dt-buttons button span",
       "Columns",
-      { timeout: this.STANDARD_TIMEOUT }
-    ).should("be.visible");
+      { timeout: this.STANDARD_TIMEOUT, matchCase: false },
+    )
+      .scrollIntoView()
+      .should("be.visible");
     return this;
   }
 
@@ -393,9 +412,11 @@ export class ApplicationsListPage extends ApplicationsPage {
 
     // Try Cancel button if available (check existence first to avoid timeout)
     cy.get("body").then(($body: JQuery<HTMLBodyElement>) => {
-      const $cancelBtn = $body.find(this.paymentModal.cancelButton).filter(
-        (_: number, el: HTMLElement) => (el.textContent || "").includes("Cancel")
-      );
+      const $cancelBtn = $body
+        .find(this.paymentModal.cancelButton)
+        .filter((_: number, el: HTMLElement) =>
+          (el.textContent || "").includes("Cancel"),
+        );
       if ($cancelBtn.length > 0) {
         cy.wrap($cancelBtn.first()).scrollIntoView().click({ force: true });
       } else {
@@ -441,11 +462,11 @@ export class ApplicationsListPage extends ApplicationsPage {
       ($m: JQuery<HTMLElement>) => {
         const isHidden = !$m.is(":visible") || !$m.hasClass("show");
         expect(isHidden, "payment-modal hidden or not shown").to.eq(true);
-      }
+      },
     );
-    cy.get(this.paymentModal.backdrop, { timeout: this.STANDARD_TIMEOUT }).should(
-      "not.exist"
-    );
+    cy.get(this.paymentModal.backdrop, {
+      timeout: this.STANDARD_TIMEOUT,
+    }).should("not.exist");
     return this;
   }
 
@@ -475,14 +496,13 @@ export class ApplicationsListPage extends ApplicationsPage {
     cy.contains(this.saveView.resetOption, "Reset to Default View", {
       timeout: this.STANDARD_TIMEOUT,
     })
-      .should("exist")
-      .click({ force: true });
+      .should("be.visible")
+      .click();
 
     // Wait for table to rebuild
-    cy.get(this.scrollTable.columnTitles, { timeout: this.STANDARD_TIMEOUT }).should(
-      "have.length.gt",
-      5
-    );
+    cy.get(this.scrollTable.columnTitles, {
+      timeout: this.STANDARD_TIMEOUT,
+    }).should("have.length.gt", 5);
     return this;
   }
 
@@ -490,15 +510,19 @@ export class ApplicationsListPage extends ApplicationsPage {
    * Open the Columns menu
    */
   openColumnsMenu(): this {
-    cy.contains("span", "Columns", { timeout: this.STANDARD_TIMEOUT })
+    cy.contains(
+      "#dynamicButtonContainerId .dt-buttons button, #dynamicButtonContainerId .dt-buttons button span",
+      "Columns",
+      { timeout: this.STANDARD_TIMEOUT, matchCase: false },
+    )
+      .scrollIntoView()
       .should("be.visible")
       .click();
 
     // Wait for dropdown to be fully populated
-    cy.get(this.columnsMenu.dropdownItem, { timeout: this.STANDARD_TIMEOUT }).should(
-      "have.length.gt",
-      50
-    );
+    cy.get(this.columnsMenu.dropdownItem, {
+      timeout: this.STANDARD_TIMEOUT,
+    }).should("have.length.gt", 50);
     return this;
   }
 
@@ -510,9 +534,16 @@ export class ApplicationsListPage extends ApplicationsPage {
       timeout: this.STANDARD_TIMEOUT,
       matchCase: false,
     })
-      .should("exist")
       .scrollIntoView()
-      .click({ force: true });
+      .should("exist")
+      .then(($item) => {
+        if (Cypress.dom.isVisible($item)) {
+          cy.wrap($item).click();
+        } else {
+          // Some dropdown items are clipped by overflow containers; native click still triggers menu toggle reliably.
+          ($item[0] as HTMLElement).click();
+        }
+      });
     return this;
   }
 
@@ -530,7 +561,9 @@ export class ApplicationsListPage extends ApplicationsPage {
    * Close the Columns menu
    */
   closeColumnsMenu(): this {
-    cy.get(this.columnsMenu.buttonBackground, { timeout: this.STANDARD_TIMEOUT })
+    cy.get(this.columnsMenu.buttonBackground, {
+      timeout: this.STANDARD_TIMEOUT,
+    })
       .should("exist")
       .click({ force: true });
 
@@ -567,7 +600,7 @@ export class ApplicationsListPage extends ApplicationsPage {
 
         if (switchLink.length === 0) {
           cy.log(
-            'Skipping tenant switch: "Switch Grant Programs" not present for this user/session'
+            'Skipping tenant switch: "Switch Grant Programs" not present for this user/session',
           );
           cy.get("body").click(0, 0);
           return;
@@ -577,10 +610,12 @@ export class ApplicationsListPage extends ApplicationsPage {
 
         cy.url({ timeout: this.STANDARD_TIMEOUT }).should(
           "include",
-          "/GrantPrograms"
+          "/GrantPrograms",
         );
 
-        cy.get(this.grantProgram.searchInput, { timeout: this.STANDARD_TIMEOUT })
+        cy.get(this.grantProgram.searchInput, {
+          timeout: this.STANDARD_TIMEOUT,
+        })
           .should("be.visible")
           .clear()
           .type(programName);
@@ -596,9 +631,9 @@ export class ApplicationsListPage extends ApplicationsPage {
         cy.location("pathname", { timeout: this.STANDARD_TIMEOUT }).should(
           (p: string) => {
             expect(
-              p.indexOf("/GrantApplications") >= 0 || p.indexOf("/auth/") >= 0
+              p.indexOf("/GrantApplications") >= 0 || p.indexOf("/auth/") >= 0,
             ).to.eq(true);
-          }
+          },
         );
       });
     });

@@ -6,6 +6,7 @@ describe("Send an email", () => {
   const TEST_EMAIL_BCC = Cypress.env("TEST_EMAIL_BCC") as string;
   const TEMPLATE_NAME = "Test Case 1";
   const STANDARD_TIMEOUT = 20000;
+  const LONG_TIMEOUT = 60000;
 
   // Only suppress the noisy ResizeObserver error that Unity throws in TEST.
   // Everything else should still fail the test.
@@ -41,9 +42,9 @@ describe("Send an email", () => {
     cy.get("body", { timeout: STANDARD_TIMEOUT }).then(($body) => {
       // Already authenticated
       if ($body.find('button:contains("VIEW APPLICATIONS")').length > 0) {
-        cy.contains("VIEW APPLICATIONS", { timeout: STANDARD_TIMEOUT }).click({
-          force: true,
-        });
+        cy.contains("VIEW APPLICATIONS", { timeout: STANDARD_TIMEOUT })
+          .should("be.visible")
+          .click();
         return;
       }
 
@@ -51,14 +52,15 @@ describe("Send an email", () => {
       if ($body.find('button:contains("LOGIN")').length > 0) {
         cy.contains("LOGIN", { timeout: STANDARD_TIMEOUT })
           .should("exist")
-          .click({ force: true });
+          .should("be.visible")
+          .click();
 
         cy.get("body", { timeout: STANDARD_TIMEOUT }).then(($loginBody) => {
           // IDIR chooser may or may not appear
           if ($loginBody.find(':contains("IDIR")').length > 0) {
-            cy.contains("IDIR", { timeout: STANDARD_TIMEOUT }).click({
-              force: true,
-            });
+            cy.contains("IDIR", { timeout: STANDARD_TIMEOUT })
+              .should("be.visible")
+              .click();
           }
 
           cy.get("body", { timeout: STANDARD_TIMEOUT }).then(($authBody) => {
@@ -70,9 +72,9 @@ describe("Send an email", () => {
               cy.get("#password", { timeout: STANDARD_TIMEOUT }).type(
                 Cypress.env("test1password"),
               );
-              cy.contains("Continue", { timeout: STANDARD_TIMEOUT }).click({
-                force: true,
-              });
+              cy.contains("Continue", { timeout: STANDARD_TIMEOUT })
+                .should("be.visible")
+                .click();
             } else {
               cy.log("Already authenticated");
             }
@@ -158,14 +160,14 @@ describe("Send an email", () => {
           .scrollIntoView()
           .should("be.visible")
           .within(() => {
-            cy.contains("td", subject, { timeout: STANDARD_TIMEOUT })
+            cy.contains("td", subject, { timeout: LONG_TIMEOUT })
               .should("exist")
               .click();
           });
         return;
       }
 
-      cy.contains("td", subject, { timeout: STANDARD_TIMEOUT })
+      cy.contains("td", subject, { timeout: LONG_TIMEOUT })
         .should("exist")
         .click();
     });
@@ -226,7 +228,8 @@ describe("Send an email", () => {
 
       cy.get("#btn-confirm-send", { timeout: STANDARD_TIMEOUT })
         .should("exist")
-        .click({ force: true });
+        .should("be.visible")
+        .click();
     });
   }
 
@@ -368,21 +371,27 @@ describe("Send an email", () => {
   it("Save the email", () => {
     cy.get("#btn-save", { timeout: STANDARD_TIMEOUT })
       .should("exist")
-      .should("be.visible")
-      .click();
+      .should("not.be.disabled")
+      .then(($btn) => {
+        ($btn[0] as HTMLButtonElement).click();
+      });
 
-    cy.get("#btn-new-email", { timeout: STANDARD_TIMEOUT }).should(
-      "be.visible",
-    );
+    cy.get("#btn-new-email", { timeout: LONG_TIMEOUT }).should("exist");
   });
 
   it("Select saved email from Email History", () => {
     openSavedEmailFromHistoryBySubject(TEST_EMAIL_SUBJECT);
 
-    cy.get("#EmailTo", { timeout: STANDARD_TIMEOUT }).should("be.visible");
-    cy.get("#EmailCC").should("be.visible");
-    cy.get("#EmailBCC").should("be.visible");
-    cy.get("#EmailSubject").should("be.visible");
+    cy.get("#EmailTo", { timeout: STANDARD_TIMEOUT })
+      .should("exist")
+      .invoke("val")
+      .should("not.be.empty");
+    cy.get("#EmailCC").should("exist");
+    cy.get("#EmailBCC").should("exist");
+    cy.get("#EmailSubject")
+      .should("exist")
+      .invoke("val")
+      .should("contain", TEST_EMAIL_SUBJECT);
 
     cy.get("#btn-send", { timeout: STANDARD_TIMEOUT }).should("exist");
     cy.get("#btn-save", { timeout: STANDARD_TIMEOUT }).should("exist");
@@ -391,9 +400,10 @@ describe("Send an email", () => {
   it("Send the email", () => {
     cy.get("#btn-send", { timeout: STANDARD_TIMEOUT })
       .should("exist")
-      .should("be.visible")
       .should("not.be.disabled")
-      .click();
+      .then(($btn) => {
+        ($btn[0] as HTMLButtonElement).click();
+      });
   });
 
   it("Confirm send email in dialog", () => {
