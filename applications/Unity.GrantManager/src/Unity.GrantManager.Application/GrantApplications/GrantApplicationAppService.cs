@@ -26,6 +26,7 @@ using Unity.GrantManager.Payments;
 using Unity.Modules.Shared;
 using Unity.Modules.Shared.Correlation;
 using Unity.Payments.PaymentRequests;
+using Unity.AI.Automation;
 using Volo.Abp;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Authorization;
@@ -48,7 +49,9 @@ public class GrantApplicationAppService(
     IApplicantAgentRepository applicantAgentRepository,
     IApplicantAddressRepository applicantAddressRepository,
     IApplicantSupplierAppService applicantSupplierService,
-    IPaymentRequestAppService paymentRequestService)
+    IPaymentRequestAppService paymentRequestService,
+    IApplicationAIGenerationQueue aiGenerationQueue,
+    IAIGenerationStatusAppService aiGenerationStatusAppService)
     : GrantManagerAppService, IGrantApplicationAppService
 {
     private static readonly JsonSerializerOptions AiAnalysisReadOptions = new()
@@ -1028,6 +1031,28 @@ public class GrantApplicationAppService(
         );
 
         return ObjectMapper.Map<Application, GrantApplicationDto>(application);
+    }
+
+    public async Task<AIGenerationRequestDto> QueueAIGenerationAsync(Guid applicationId, string? promptVersion = null)
+    {
+        return await QueueAIPipelineAsync(applicationId, promptVersion);
+    }
+
+    public async Task<AIGenerationRequestDto?> GetAIGenerationStatusAsync(Guid applicationId, string operationType, string? promptVersion = null)
+    {
+        return await aiGenerationStatusAppService.GetLatestAsync(applicationId, operationType, promptVersion);
+    }
+
+    public async Task<AIGenerationRequestDto> QueueAIPipelineAsync(Guid applicationId, string? promptVersion = null)
+    {
+        await aiGenerationQueue.QueueApplicationPipelineAsync(applicationId, CurrentTenant.Id, promptVersion);
+
+        var request = await aiGenerationStatusAppService.GetLatestAsync(
+            applicationId,
+            AIGenerationRequestKeyHelper.PipelineOperationType,
+            promptVersion);
+
+        return request ?? throw new UserFriendlyException("Unable to queue AI generation request.");
     }
     #endregion APPLICATION WORKFLOW
 

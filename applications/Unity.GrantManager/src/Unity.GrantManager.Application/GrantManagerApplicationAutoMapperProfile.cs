@@ -98,6 +98,7 @@ public class GrantManagerApplicationAutoMapperProfile : Profile
         CreateMap<ApplicationTags, ApplicationTagsDto>();
         CreateMap<ApplicationTags, ApplicationTagsDto>()
         .ForMember(dest => dest.Tag, opt => opt.MapFrom(src => src.Tag));
+        CreateMap<AIGenerationRequest, AIGenerationRequestDto>();
 
         //-- APPLICANT HISTORY
         CreateMap<FundingHistory, FundingHistoryDto>();
