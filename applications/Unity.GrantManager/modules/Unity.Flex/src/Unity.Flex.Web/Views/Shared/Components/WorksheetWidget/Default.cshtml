@@ -53,7 +53,7 @@
         </div>
     </div>
 
-    <div id="sections-custom-fields" class="list-group col sections-wrapper-outer" data-worksheet-id="@worksheet.Id">
+    <div id="sections-custom-fields" class="list-group col sections-wrapper-outer" data-worksheet-id="@worksheet.Id" data-is-archived="@worksheet.IsArchived.ToString().ToLower()">
         @foreach (var sect in worksheet.Sections)
         {
             var cfCollapseId = $"cf-collapse-{sect.Id:N}";
