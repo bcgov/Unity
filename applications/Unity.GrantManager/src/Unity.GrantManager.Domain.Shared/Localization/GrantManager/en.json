@@ -480,7 +480,7 @@
     "ApplicationLinks:Status": "Status",
     "ApplicationLinks:LinkType": "Link Type",
 
-    "ApplicantPortalSettings:Title": "Applicant Portal Settings",
+    "ApplicantPortalSettings:Title": "Applicant Portal Configuration",
     "ApplicantPortalSettings:ManageStatuses": "Manage Statuses",
     "ApplicantPortalSettings:PortalStatusHeading": "Applicant Portal Status",
     "ApplicantPortalSettings:InternalStatus": "Internal Status",

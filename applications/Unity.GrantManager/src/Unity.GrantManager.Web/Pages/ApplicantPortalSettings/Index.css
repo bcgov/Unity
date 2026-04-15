@@ -1,14 +1,14 @@
 .unity-app-main-container {
     margin: auto;
-    display: flex;
-    justify-content: center;
-    align-items: flex-start;
+    display: block;
+}
+
+.portal-settings-layout {
+    min-height: calc(100vh - 200px);
 }
 
 #PortalSettingsSideMenu.side-menu {
-    float: left;
-    position: absolute;
-    left: 0px;
+    position: sticky;
     top: 150px;
 }
 
@@ -28,6 +28,13 @@
 
 .portal-settings-config {
     overflow: auto;
+    max-width: 750px;
+    max-height: calc(100vh - 180px);
+    width: 100%;
+}
+
+.portal-settings-actions {
+    background: #fff;
 }
 
 .portal-status-table th {
@@ -46,4 +53,16 @@
 
 .portal-status-table .form-control {
     max-width: 300px;
+}
+
+#PortalStatusForm .dt-container {
+    max-height: none !important;
+}
+
+.breadcrumb-container {
+    background-color: #fff;
+    margin: 0 -0.5rem;
+    padding: 0.75rem 1rem;
+    display: flex;
+    margin-top: 1px;
 }

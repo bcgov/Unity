@@ -44,7 +44,7 @@
             }
             @if (CurrentTenant.Id != null)
             {
-                <abp-dropdown-item href="/ApplicantPortalSettings">Applicant Portal Settings</abp-dropdown-item>
+                <abp-dropdown-item href="/ApplicantPortalSettings">Applicant Portal Configuration</abp-dropdown-item>
             }
             @if (await FeatureChecker.IsEnabledAsync("Unity.Payments") && isAuthorizedForPaymentConfiguration)
             {
