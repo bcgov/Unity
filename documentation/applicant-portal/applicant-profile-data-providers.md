@@ -379,6 +379,8 @@ flowchart LR
   "organizations": [
     {
       "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+      "unityApplicantId": "APP-00123",
+      "applicantName": "Jane Smith",
       "orgName": "Acme Corp",
       "organizationType": "Non-Profit",
       "orgNumber": "BC1234567",
@@ -399,6 +401,8 @@ flowchart LR
 | DTO Field | Entity Field | Type | Description |
 |-----------|-------------|------|-------------|
 | `Id` | `Applicant.Id` | `Guid` | Applicant ID — used as `organizationId` for edit commands |
+| `UnityApplicantId` | `Applicant.UnityApplicantId` | `string?` | System-generated applicant identifier |
+| `ApplicantName` | `Applicant.ApplicantName` | `string?` | Name of the applicant |
 | `OrgName` | `Applicant.OrgName` | `string?` | Organization name |
 | `OrganizationType` | `Applicant.OrganizationType` | `string?` | Type of organization |
 | `OrgNumber` | `Applicant.OrgNumber` | `string?` | Organization registration number |
