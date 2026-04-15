@@ -10,9 +10,20 @@ public class AISettingDefinitionProvider : SettingDefinitionProvider
     {
         context.Add(
             new SettingDefinition(
-                AISettings.ScoringAssistantEnabled,
+                AISettings.AutomaticGenerationEnabled,
                 "false",
-                L("Setting:AI.ScoringAssistantEnabled"),
+                L("Setting:AI.AutomaticGenerationEnabled"),
+                isVisibleToClients: false,
+                isInherited: false,
+                isEncrypted: false)
+            .WithProviders(TenantSettingValueProvider.ProviderName)
+        );
+
+        context.Add(
+            new SettingDefinition(
+                AISettings.ManualGenerationEnabled,
+                "false",
+                L("Setting:AI.ManualGenerationEnabled"),
                 isVisibleToClients: false,
                 isInherited: false,
                 isEncrypted: false)

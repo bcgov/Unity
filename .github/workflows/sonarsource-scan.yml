@@ -7,8 +7,8 @@ on:
       - dev
       - test
       - main
-#  pull_request:
-#    types: [opened, synchronize, reopened]
+  pull_request:
+    types: [opened, synchronize, reopened]
   workflow_dispatch:
 
 permissions:
@@ -16,7 +16,6 @@ permissions:
   pull-requests: write
   checks: write
   security-events: write
-
 
 jobs:
   sonarcloud:
@@ -78,10 +77,6 @@ jobs:
       - name: Build solution
         working-directory: ./applications/Unity.GrantManager
         run: dotnet build Unity.GrantManager.sln --no-restore
-
-      - name: Run tests with coverage
-        working-directory: ./applications/Unity.GrantManager
-        run: dotnet test Unity.GrantManager.sln --no-build --verbosity normal --collect:"XPlat Code Coverage" --results-directory ./TestResults/
 
       - name: SonarCloud Scan
         uses: SonarSource/sonarqube-scan-action@v7

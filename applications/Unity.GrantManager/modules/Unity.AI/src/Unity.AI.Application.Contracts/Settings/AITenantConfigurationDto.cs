@@ -1,6 +1,6 @@
-namespace Unity.AI.Web.Views.Settings.AISettingGroup;
+namespace Unity.AI.Settings;
 
-public class AISettingViewModel
+public class AITenantConfigurationDto
 {
     public bool AutomaticGenerationEnabled { get; set; }
     public bool ManualGenerationEnabled { get; set; }
