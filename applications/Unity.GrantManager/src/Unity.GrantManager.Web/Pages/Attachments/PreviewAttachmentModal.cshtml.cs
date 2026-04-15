@@ -10,7 +10,7 @@ public class PreviewAttachmentModalModel : AbpPageModel
     public string DisplayName { get; private set; } = "";
     public string DownloadUrl { get; private set; } = "";
     public string AttachmentType { get; private set; } = "";
-    public string PresignedUrlEndpoint { get; private set; } = "";
+    public string PreviewPdfUrl { get; private set; } = "";
 
 #pragma warning disable CS1998
     public async Task OnGetAsync(
@@ -28,12 +28,12 @@ public class PreviewAttachmentModalModel : AbpPageModel
         if (string.Equals(attachmentType, "chefs", StringComparison.OrdinalIgnoreCase))
         {
             DownloadUrl = $"/api/app/attachment/chefs/{Uri.EscapeDataString(ownerId)}/download/{Uri.EscapeDataString(chefsFileId ?? string.Empty)}/{Uri.EscapeDataString(fileName)}";
-            PresignedUrlEndpoint = "";
+            PreviewPdfUrl = $"/api/app/attachment/chefs/{Uri.EscapeDataString(ownerId)}/preview-pdf/{Uri.EscapeDataString(chefsFileId ?? string.Empty)}/{Uri.EscapeDataString(fileName)}";
         }
         else
         {
             DownloadUrl = $"/api/app/attachment/{AttachmentType}/{Uri.EscapeDataString(ownerId)}/download/{Uri.EscapeDataString(fileName)}";
-            PresignedUrlEndpoint = $"/api/app/attachment/{AttachmentType}/{Uri.EscapeDataString(ownerId)}/presigned-url/{Uri.EscapeDataString(fileName)}";
+            PreviewPdfUrl = $"/api/app/attachment/{AttachmentType}/{Uri.EscapeDataString(ownerId)}/preview-pdf/{Uri.EscapeDataString(fileName)}";
         }
     }
 }

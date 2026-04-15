@@ -85,5 +85,9 @@ RUN mkdir -p /.aspnet && \
     chmod 644 /usr/local/share/ca-certificates/ssoroot.crt && \
     update-ca-certificates
 
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends libreoffice-nogui && \
+    rm -rf /var/lib/apt/lists/*
+
 COPY --from=publish /app/publish .
 ENTRYPOINT ["dotnet", "Unity.GrantManager.Web.dll"]

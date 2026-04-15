@@ -28,13 +28,15 @@ namespace Unity.GrantManager.Controllers
         private readonly ISubmissionAppService _submissionAppService;
         private readonly IEmailLogAttachmentUploadService _emailLogAttachmentUploadService;
         private readonly ICurrentTenant _currentTenant;
-        private readonly IS3PresignedUrlService _s3PresignedUrlService;
+        private readonly ILibreOfficeConversionService _libreOfficeConversionService;
+        private readonly IAttachmentPreviewAppService _attachmentPreviewAppService;
         private ILogger logger => LazyServiceProvider.LazyGetService<ILogger>(provider => LoggerFactory?.CreateLogger(GetType().FullName!) ?? NullLogger.Instance);
         private const string badRequestFileMsg = "File name must be provided.";
         private const string NotFoundFileMsg = "File not found.";
         private const string errorFileMsg = "An error occurred while downloading the file.";
         private const string chefsApiAccessError = "You do not have access to this resource";
         private const string fileProvidedError = "At least one file must be provided.";
+        private const string libreOfficeNotInstalledMsg = "LibreOffice is not installed on the server. File preview is unavailable.";
 
         public AttachmentController(
             IFileAppService fileAppService,
@@ -42,14 +44,16 @@ namespace Unity.GrantManager.Controllers
             ISubmissionAppService submissionAppService,
             IEmailLogAttachmentUploadService emailLogAttachmentUploadService,
             ICurrentTenant currentTenant,
-            IS3PresignedUrlService s3PresignedUrlService)
+            ILibreOfficeConversionService libreOfficeConversionService,
+            IAttachmentPreviewAppService attachmentPreviewAppService)
         {
             _fileAppService = fileAppService;
             _configuration = configuration;
             _submissionAppService = submissionAppService;
             _emailLogAttachmentUploadService = emailLogAttachmentUploadService;
             _currentTenant = currentTenant;
-            _s3PresignedUrlService = s3PresignedUrlService;
+            _libreOfficeConversionService = libreOfficeConversionService;
+            _attachmentPreviewAppService = attachmentPreviewAppService;
         }
 
         [HttpGet("applicant/{applicantId}/download/{fileName}")]
@@ -276,69 +280,81 @@ namespace Unity.GrantManager.Controllers
             return Ok(files);
         }
 
-        [HttpGet("application/{applicationId}/presigned-url/{fileName}")]
-        public IActionResult GetApplicationPresignedUrl(string applicationId, string fileName)
+        [HttpGet("application/{applicationId}/preview-pdf/{fileName}")]
+        public async Task<IActionResult> PreviewApplicationAttachment(string applicationId, string fileName)
         {
             if (string.IsNullOrWhiteSpace(applicationId)) return BadRequest("Application ID must be provided.");
             if (string.IsNullOrWhiteSpace(fileName)) return BadRequest(badRequestFileMsg);
-
-            var folder = _configuration["S3:ApplicationS3Folder"] ?? throw new AbpValidationException("Missing server configuration: S3:ApplicationS3Folder");
-            if (!folder.EndsWith('/')) folder += "/";
-            var key = folder + applicationId + "/" + fileName;
-
+            if (!_libreOfficeConversionService.IsInstalled()) return StatusCode(503, new { error = libreOfficeNotInstalledMsg });
             try
             {
-                var url = _s3PresignedUrlService.GetPresignedUrl(key);
-                return Ok(new { url });
+                var blob = await _attachmentPreviewAppService.GetOrCreatePreviewPdfAsync(AttachmentType.APPLICATION, Guid.Parse(applicationId), fileName);
+                if (blob?.Content == null) return NotFound(NotFoundFileMsg);
+                return File(blob.Content, "application/pdf");
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "AttachmentController->GetApplicationPresignedUrl: {Message}", ex.Message);
+                logger.LogError(ex, "AttachmentController->PreviewApplicationAttachment: {Message}", ex.Message);
                 return StatusCode(500, errorFileMsg);
             }
         }
 
-        [HttpGet("assessment/{assessmentId}/presigned-url/{fileName}")]
-        public IActionResult GetAssessmentPresignedUrl(string assessmentId, string fileName)
+        [HttpGet("assessment/{assessmentId}/preview-pdf/{fileName}")]
+        public async Task<IActionResult> PreviewAssessmentAttachment(string assessmentId, string fileName)
         {
             if (string.IsNullOrWhiteSpace(assessmentId)) return BadRequest("Assessment ID must be provided.");
             if (string.IsNullOrWhiteSpace(fileName)) return BadRequest(badRequestFileMsg);
-
-            var folder = _configuration["S3:AssessmentS3Folder"] ?? throw new AbpValidationException("Missing server configuration: S3:AssessmentS3Folder");
-            if (!folder.EndsWith('/')) folder += "/";
-            var key = folder + assessmentId + "/" + fileName;
-
+            if (!_libreOfficeConversionService.IsInstalled()) return StatusCode(503, new { error = libreOfficeNotInstalledMsg });
             try
             {
-                var url = _s3PresignedUrlService.GetPresignedUrl(key);
-                return Ok(new { url });
+                var blob = await _attachmentPreviewAppService.GetOrCreatePreviewPdfAsync(AttachmentType.ASSESSMENT, Guid.Parse(assessmentId), fileName);
+                if (blob?.Content == null) return NotFound(NotFoundFileMsg);
+                return File(blob.Content, "application/pdf");
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "AttachmentController->GetAssessmentPresignedUrl: {Message}", ex.Message);
+                logger.LogError(ex, "AttachmentController->PreviewAssessmentAttachment: {Message}", ex.Message);
                 return StatusCode(500, errorFileMsg);
             }
         }
 
-        [HttpGet("applicant/{applicantId}/presigned-url/{fileName}")]
-        public IActionResult GetApplicantPresignedUrl(string applicantId, string fileName)
+        [HttpGet("applicant/{applicantId}/preview-pdf/{fileName}")]
+        public async Task<IActionResult> PreviewApplicantAttachment(string applicantId, string fileName)
         {
             if (string.IsNullOrWhiteSpace(applicantId)) return BadRequest("Applicant ID must be provided.");
             if (string.IsNullOrWhiteSpace(fileName)) return BadRequest(badRequestFileMsg);
-
-            var folder = _configuration["S3:ApplicantS3Folder"] ?? throw new AbpValidationException("Missing server configuration: S3:ApplicantS3Folder");
-            if (!folder.EndsWith('/')) folder += "/";
-            var key = folder + applicantId + "/" + fileName;
-
+            if (!_libreOfficeConversionService.IsInstalled()) return StatusCode(503, new { error = libreOfficeNotInstalledMsg });
             try
             {
-                var url = _s3PresignedUrlService.GetPresignedUrl(key);
-                return Ok(new { url });
+                var blob = await _attachmentPreviewAppService.GetOrCreatePreviewPdfAsync(AttachmentType.APPLICANT, Guid.Parse(applicantId), fileName);
+                if (blob?.Content == null) return NotFound(NotFoundFileMsg);
+                return File(blob.Content, "application/pdf");
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "AttachmentController->GetApplicantPresignedUrl: {Message}", ex.Message);
+                logger.LogError(ex, "AttachmentController->PreviewApplicantAttachment: {Message}", ex.Message);
                 return StatusCode(500, errorFileMsg);
+            }
+        }
+
+        [HttpGet("chefs/{formSubmissionId}/preview-pdf/{chefsFileId}/{fileName}")]
+        public async Task<IActionResult> PreviewChefsAttachment(Guid formSubmissionId, Guid chefsFileId, string fileName)
+        {
+            if (string.IsNullOrWhiteSpace(fileName)) return BadRequest(badRequestFileMsg);
+            if (!_libreOfficeConversionService.IsInstalled()) return StatusCode(503, new { error = libreOfficeNotInstalledMsg });
+            try
+            {
+                var chefsBlob = await _submissionAppService.GetChefsFileAttachment(formSubmissionId, chefsFileId, fileName);
+                if (chefsBlob?.Content == null) return NotFound(NotFoundFileMsg);
+                var blob = await _attachmentPreviewAppService.GetOrCreateChefsPreviewPdfAsync(formSubmissionId, chefsFileId, fileName, chefsBlob.Content);
+                if (blob?.Content == null) return NotFound(NotFoundFileMsg);
+                return File(blob.Content, "application/pdf");
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "AttachmentController->PreviewChefsAttachment: {Message}", ex.Message);
+                var errorCode = ex.Data.Contains("ErrorCode") ? Convert.ToInt32(ex.Data["ErrorCode"]) : 500;
+                return StatusCode(errorCode, errorFileMsg);
             }
         }
 

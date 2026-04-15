@@ -28,8 +28,9 @@ namespace Unity.GrantManager.Components
             var submissionAppService = Substitute.For<ISubmissionAppService>();
             var emailLogAttachmentUploadService = Substitute.For<IEmailLogAttachmentUploadService>();
             var currentTenant = Substitute.For<ICurrentTenant>();
-            var s3PresignedUrlService = Substitute.For<IS3PresignedUrlService>();
-            var attachmentController = new AttachmentController(fileAppService, configuration, submissionAppService, emailLogAttachmentUploadService, currentTenant, s3PresignedUrlService);
+            var libreOfficeConversionService = Substitute.For<ILibreOfficeConversionService>();
+            var attachmentPreviewAppService = Substitute.For<IAttachmentPreviewAppService>();
+            var attachmentController = new AttachmentController(fileAppService, configuration, submissionAppService, emailLogAttachmentUploadService, currentTenant, libreOfficeConversionService, attachmentPreviewAppService);
             var applicationId = Guid.NewGuid();
             var userId = "testUserId";
             var userName = "testUserName";
@@ -74,8 +75,9 @@ namespace Unity.GrantManager.Components
             submissionAppService.GetChefsFileAttachment(formSubmissionId, chefsFileAttachmentId, fileName).Returns(await Task.FromResult(blobDto));
             var emailLogAttachmentUploadService = Substitute.For<IEmailLogAttachmentUploadService>();
             var currentTenant = Substitute.For<ICurrentTenant>();
-            var s3PresignedUrlService = Substitute.For<IS3PresignedUrlService>();
-            var attachmentController = new AttachmentController(fileAppService, configuration, submissionAppService, emailLogAttachmentUploadService, currentTenant, s3PresignedUrlService);
+            var libreOfficeConversionService = Substitute.For<ILibreOfficeConversionService>();
+            var attachmentPreviewAppService = Substitute.For<IAttachmentPreviewAppService>();
+            var attachmentController = new AttachmentController(fileAppService, configuration, submissionAppService, emailLogAttachmentUploadService, currentTenant, libreOfficeConversionService, attachmentPreviewAppService);
 
             // Act
             Task<IActionResult> download = attachmentController.DownloadChefsAttachment(formSubmissionId, chefsFileAttachmentId, fileName);

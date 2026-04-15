@@ -32,7 +32,5 @@ module.exports = {
         '@node_modules/tributejs': '@libs/tributejs',
         '@node_modules/tinymce': '@libs/tinymce',
         '@node_modules/handlebars': '@libs/handlebars',
-        '@node_modules/mammoth/': '@libs/mammoth/',
-        '@node_modules/xlsx/dist/': '@libs/xlsx/dist/'
     },
 };

@@ -11,7 +11,7 @@
         <div id="previewData"
              data-download-url="@Model.DownloadUrl"
              data-file-name="@Model.FileName"
-             data-presigned-url-endpoint="@Model.PresignedUrlEndpoint">
+             data-preview-pdf-url="@Model.PreviewPdfUrl">
         </div>
 
         <div id="previewSpinner" class="text-center py-5">
@@ -21,10 +21,6 @@
         </div>
 
         <iframe id="previewFrame" style="width:100%;height:70vh;border:none;display:none;" title="@Model.DisplayName"></iframe>
-
-        <div id="previewDocx" style="display:none;overflow:auto;max-height:70vh;padding:1rem;"></div>
-
-        <div id="previewSheet" style="display:none;overflow:auto;max-height:70vh;"></div>
 
         <div id="previewImageWrapper" class="text-center" style="display:none;">
             <img id="previewImage" style="max-width:100%;max-height:70vh;" alt="@Model.DisplayName" />
@@ -38,7 +34,7 @@
 
         <div id="previewFallback" class="text-center py-5" style="display:none;">
             <i class="fa fa-exclamation-circle fa-3x text-muted mb-3" style="display:block;"></i>
-            <p class="text-muted">Preview unavailable. The file may be corrupted or in an unsupported format.</p>
+            <p id="previewFallbackMessage" class="text-muted">Preview unavailable. The file may be corrupted or in an unsupported format.</p>
         </div>
     </abp-modal-body>
     <abp-modal-footer>
@@ -51,8 +47,11 @@
 
 <script>
 (function () {
-    var mammothSrc = '/libs/mammoth/mammoth.browser.min.js';
-    var xlsxSrc = '/libs/xlsx/dist/xlsx.full.min.js';
+    var officeExts = ['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'csv', 'odt', 'ods', 'odp', 'rtf'];
+    var imageExts  = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp'];
+    var videoExts  = ['mp4', 'webm', 'ogv'];
+    var audioExts  = ['mp3', 'wav', 'ogg', 'aac', 'flac'];
+    var textExts   = ['txt', 'json', 'xml', 'log'];
 
     function showEl(id) {
         var spinner = document.getElementById('previewSpinner');
@@ -65,24 +64,14 @@
         showEl('previewFallback');
     }
 
-    function loadScript(src, globalName, callback) {
-        if (window[globalName]) {
-            callback();
-            return;
-        }
-        var script = document.createElement('script');
-        script.src = src;
-        script.onload = callback;
-        script.onerror = function () { showFallback(); };
-        document.head.appendChild(script);
+    function showError(msg) {
+        var msgEl = document.getElementById('previewFallbackMessage');
+        if (msgEl && msg) { msgEl.textContent = msg; }
+        showEl('previewFallback');
     }
 
-    function initPreview(downloadUrl, fileName, presignedUrlEndpoint) {
+    function initPreview(downloadUrl, fileName, previewPdfUrl) {
         var ext = fileName.split('.').pop().toLowerCase();
-        var imageExts = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp'];
-        var videoExts = ['mp4', 'webm', 'ogv'];
-        var audioExts = ['mp3', 'wav', 'ogg', 'aac', 'flac'];
-        var textExts  = ['txt', 'json', 'xml', 'log'];
 
         if (ext === 'pdf') {
             fetch(downloadUrl, { credentials: 'include' })
@@ -91,48 +80,29 @@
                     return r.blob();
                 })
                 .then(function (blob) {
-                    var blobUrl = URL.createObjectURL(blob);
                     var frame = document.getElementById('previewFrame');
-                    frame.src = blobUrl;
+                    frame.src = URL.createObjectURL(blob);
                     showEl('previewFrame');
                 })
                 .catch(function (e) { console.warn('Preview pdf error:', e); showFallback(); });
 
-        } else if (ext === 'docx' || ext === 'doc') {
-            loadScript(mammothSrc, 'mammoth', function () {
-                fetch(downloadUrl, { credentials: 'include' })
-                    .then(function (r) {
-                        if (!r.ok) { throw new Error('HTTP ' + r.status); }
-                        return r.arrayBuffer();
-                    })
-                    .then(function (buf) { return mammoth.convertToHtml({ arrayBuffer: buf }); })
-                    .then(function (result) {
-                        document.getElementById('previewDocx').innerHTML = result.value;
-                        showEl('previewDocx');
-                    })
-                    .catch(function (e) { console.warn('Preview docx error:', e); showFallback(); });
-            });
-
-        } else if (ext === 'xlsx' || ext === 'xls' || ext === 'csv') {
-            loadScript(xlsxSrc, 'XLSX', function () {
-                fetch(downloadUrl, { credentials: 'include' })
-                    .then(function (r) {
-                        if (!r.ok) { throw new Error('HTTP ' + r.status); }
-                        return r.arrayBuffer();
-                    })
-                    .then(function (buf) {
-                        try {
-                            var wb = XLSX.read(buf, { type: 'array' });
-                            var ws = wb.Sheets[wb.SheetNames[0]];
-                            document.getElementById('previewSheet').innerHTML = XLSX.utils.sheet_to_html(ws, { editable: false });
-                            showEl('previewSheet');
-                        } catch (e) {
-                            console.warn('Preview xlsx error:', e);
-                            showFallback();
-                        }
-                    })
-                    .catch(function (e) { console.warn('Preview fetch error:', e); showFallback(); });
-            });
+        } else if (officeExts.indexOf(ext) !== -1) {
+            if (!previewPdfUrl) { showFallback(); return; }
+            fetch(previewPdfUrl, { credentials: 'include' })
+                .then(function (r) {
+                    if (r.status === 503) {
+                        return r.json().then(function (d) {
+                            showError(d.error || 'Preview service unavailable.');
+                        });
+                    }
+                    if (!r.ok) { throw new Error('HTTP ' + r.status); }
+                    return r.blob().then(function (blob) {
+                        var frame = document.getElementById('previewFrame');
+                        frame.src = URL.createObjectURL(blob);
+                        showEl('previewFrame');
+                    });
+                })
+                .catch(function (e) { console.warn('Preview office error:', e); showFallback(); });
 
         } else if (imageExts.indexOf(ext) !== -1) {
             fetch(downloadUrl, { credentials: 'include' })
@@ -188,20 +158,6 @@
                 })
                 .catch(function (e) { console.warn('Preview text error:', e); showFallback(); });
 
-        } else if ((ext === 'pptx' || ext === 'ppt') && presignedUrlEndpoint) {
-            fetch(presignedUrlEndpoint, { credentials: 'include' })
-                .then(function (r) {
-                    if (!r.ok) { throw new Error('HTTP ' + r.status); }
-                    return r.json();
-                })
-                .then(function (data) {
-                    var viewerUrl = 'https://view.officeapps.live.com/op/view.aspx?src=' + encodeURIComponent(data.url);
-                    var frame = document.getElementById('previewFrame');
-                    frame.src = viewerUrl;
-                    showEl('previewFrame');
-                })
-                .catch(function (e) { console.warn('Preview pptx error:', e); showFallback(); });
-
         } else {
             showFallback();
         }
@@ -212,7 +168,7 @@
         initPreview(
             previewData.getAttribute('data-download-url'),
             previewData.getAttribute('data-file-name'),
-            previewData.getAttribute('data-presigned-url-endpoint')
+            previewData.getAttribute('data-preview-pdf-url')
         );
     }
 })();
