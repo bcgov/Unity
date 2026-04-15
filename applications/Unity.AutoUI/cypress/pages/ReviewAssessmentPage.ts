@@ -78,13 +78,13 @@ export class ReviewAssessmentPage extends BasePage {
 
   // Assessment selectors
   private readonly assessment = {
-    approvedAmount: '#ApprovalView_ApprovedAmount',
-    decisionDate: '#ApprovalView_FinalDecisionDate',
+    approvedAmount: "#ApprovalView_ApprovedAmount",
+    decisionDate: "#ApprovalView_FinalDecisionDate",
     saveButton: 'button:contains("Save")',
     // Assessment List view buttons
-    createAssessmentButton: '#CreateButton',
-    completeAssessmentButton: '#CompleteButton',
-    assessmentMainView: '#assessmentMainView',
+    createAssessmentButton: "#CreateButton",
+    completeAssessmentButton: "#CompleteButton",
+    assessmentMainView: "#assessmentMainView",
   };
 
   constructor() {
@@ -104,7 +104,7 @@ export class ReviewAssessmentPage extends BasePage {
       | "projectInfo"
       | "projectTimelines"
       | "projectBudget"
-      | "attestation"
+      | "attestation",
   ): this {
     cy.contains("h4.card-title", this.getSectionTitle(sectionName), {
       timeout: this.STANDARD_TIMEOUT,
@@ -141,7 +141,7 @@ export class ReviewAssessmentPage extends BasePage {
       | "projectInfo"
       | "projectTimelines"
       | "projectBudget"
-      | "attestation"
+      | "attestation",
   ): this {
     cy.contains("h4.card-title", this.getSectionTitle(sectionName), {
       timeout: this.STANDARD_TIMEOUT,
@@ -156,7 +156,9 @@ export class ReviewAssessmentPage extends BasePage {
    */
   getApplicantName(): Cypress.Chainable<string> {
     return cy
-      .get(this.organizationInfo.applicantName, { timeout: this.STANDARD_TIMEOUT })
+      .get(this.organizationInfo.applicantName, {
+        timeout: this.STANDARD_TIMEOUT,
+      })
       .invoke("val")
       .then((val) => String(val));
   }
@@ -165,8 +167,9 @@ export class ReviewAssessmentPage extends BasePage {
    * Verify applicant name
    */
   verifyApplicantName(expectedValue: string): this {
-    cy.get(this.organizationInfo.applicantName, { timeout: this.STANDARD_TIMEOUT })
-      .should("have.value", expectedValue);
+    cy.get(this.organizationInfo.applicantName, {
+      timeout: this.STANDARD_TIMEOUT,
+    }).should("have.value", expectedValue);
     return this;
   }
 
@@ -175,7 +178,9 @@ export class ReviewAssessmentPage extends BasePage {
    */
   getRegisteredBusinessName(): Cypress.Chainable<string> {
     return cy
-      .get(this.organizationInfo.registeredBusinessName, { timeout: this.STANDARD_TIMEOUT })
+      .get(this.organizationInfo.registeredBusinessName, {
+        timeout: this.STANDARD_TIMEOUT,
+      })
       .invoke("val")
       .then((val) => String(val));
   }
@@ -184,8 +189,9 @@ export class ReviewAssessmentPage extends BasePage {
    * Verify registered business name
    */
   verifyRegisteredBusinessName(expectedValue: string): this {
-    cy.get(this.organizationInfo.registeredBusinessName, { timeout: this.STANDARD_TIMEOUT })
-      .should("have.value", expectedValue);
+    cy.get(this.organizationInfo.registeredBusinessName, {
+      timeout: this.STANDARD_TIMEOUT,
+    }).should("have.value", expectedValue);
     return this;
   }
 
@@ -194,7 +200,9 @@ export class ReviewAssessmentPage extends BasePage {
    */
   getRegisteredBusinessNumber(): Cypress.Chainable<string> {
     return cy
-      .get(this.organizationInfo.registeredBusinessNumber, { timeout: this.STANDARD_TIMEOUT })
+      .get(this.organizationInfo.registeredBusinessNumber, {
+        timeout: this.STANDARD_TIMEOUT,
+      })
       .invoke("val")
       .then((val) => String(val));
   }
@@ -203,8 +211,9 @@ export class ReviewAssessmentPage extends BasePage {
    * Verify registered business number
    */
   verifyRegisteredBusinessNumber(expectedValue: string): this {
-    cy.get(this.organizationInfo.registeredBusinessNumber, { timeout: this.STANDARD_TIMEOUT })
-      .should("have.value", expectedValue);
+    cy.get(this.organizationInfo.registeredBusinessNumber, {
+      timeout: this.STANDARD_TIMEOUT,
+    }).should("have.value", expectedValue);
     return this;
   }
 
@@ -214,8 +223,9 @@ export class ReviewAssessmentPage extends BasePage {
    * Verify contact name
    */
   verifyContactName(expectedValue: string): this {
-    cy.get(this.contactInfo.contactName, { timeout: this.STANDARD_TIMEOUT })
-      .should("have.value", expectedValue);
+    cy.get(this.contactInfo.contactName, {
+      timeout: this.STANDARD_TIMEOUT,
+    }).should("have.value", expectedValue);
     return this;
   }
 
@@ -223,8 +233,9 @@ export class ReviewAssessmentPage extends BasePage {
    * Verify contact title
    */
   verifyContactTitle(expectedValue: string): this {
-    cy.get(this.contactInfo.contactTitle, { timeout: this.STANDARD_TIMEOUT })
-      .should("have.value", expectedValue);
+    cy.get(this.contactInfo.contactTitle, {
+      timeout: this.STANDARD_TIMEOUT,
+    }).should("have.value", expectedValue);
     return this;
   }
 
@@ -232,8 +243,9 @@ export class ReviewAssessmentPage extends BasePage {
    * Verify contact email
    */
   verifyContactEmail(expectedValue: string): this {
-    cy.get(this.contactInfo.contactEmail, { timeout: this.STANDARD_TIMEOUT })
-      .should("have.value", expectedValue);
+    cy.get(this.contactInfo.contactEmail, {
+      timeout: this.STANDARD_TIMEOUT,
+    }).should("have.value", expectedValue);
     return this;
   }
 
@@ -241,8 +253,9 @@ export class ReviewAssessmentPage extends BasePage {
    * Verify contact phone primary
    */
   verifyContactPhonePrimary(expectedValue: string): this {
-    cy.get(this.contactInfo.contactPhonePrimary, { timeout: this.STANDARD_TIMEOUT })
-      .should("have.value", expectedValue);
+    cy.get(this.contactInfo.contactPhonePrimary, {
+      timeout: this.STANDARD_TIMEOUT,
+    }).should("have.value", expectedValue);
     return this;
   }
 
@@ -250,8 +263,9 @@ export class ReviewAssessmentPage extends BasePage {
    * Verify contact phone secondary
    */
   verifyContactPhoneSecondary(expectedValue: string): this {
-    cy.get(this.contactInfo.contactPhoneSecondary, { timeout: this.STANDARD_TIMEOUT })
-      .should("have.value", expectedValue);
+    cy.get(this.contactInfo.contactPhoneSecondary, {
+      timeout: this.STANDARD_TIMEOUT,
+    }).should("have.value", expectedValue);
     return this;
   }
 
@@ -261,8 +275,10 @@ export class ReviewAssessmentPage extends BasePage {
    * Verify mailing address city
    */
   verifyMailingCity(expectedValue: string): this {
-    cy.get(this.mailingAddress.city, { timeout: this.STANDARD_TIMEOUT })
-      .should("have.value", expectedValue);
+    cy.get(this.mailingAddress.city, { timeout: this.STANDARD_TIMEOUT }).should(
+      "have.value",
+      expectedValue,
+    );
     return this;
   }
 
@@ -270,8 +286,9 @@ export class ReviewAssessmentPage extends BasePage {
    * Verify mailing address street 1
    */
   verifyMailingStreet1(expectedValue: string): this {
-    cy.get(this.mailingAddress.street1, { timeout: this.STANDARD_TIMEOUT })
-      .should("have.value", expectedValue);
+    cy.get(this.mailingAddress.street1, {
+      timeout: this.STANDARD_TIMEOUT,
+    }).should("have.value", expectedValue);
     return this;
   }
 
@@ -279,8 +296,9 @@ export class ReviewAssessmentPage extends BasePage {
    * Verify mailing address postal code
    */
   verifyMailingPostalCode(expectedValue: string): this {
-    cy.get(this.mailingAddress.postalCode, { timeout: this.STANDARD_TIMEOUT })
-      .should("have.value", expectedValue);
+    cy.get(this.mailingAddress.postalCode, {
+      timeout: this.STANDARD_TIMEOUT,
+    }).should("have.value", expectedValue);
     return this;
   }
 
@@ -290,7 +308,9 @@ export class ReviewAssessmentPage extends BasePage {
    * Expand Organization Info panel
    */
   expandOrganizationInfoPanel(): this {
-    cy.contains(".card-header", "Organization Info", { timeout: this.STANDARD_TIMEOUT })
+    cy.contains(".card-header", "Organization Info", {
+      timeout: this.STANDARD_TIMEOUT,
+    })
       .should("be.visible")
       .click({ force: true });
     return this;
@@ -300,7 +320,9 @@ export class ReviewAssessmentPage extends BasePage {
    * Expand Contact Info panel
    */
   expandContactInfoPanel(): this {
-    cy.contains(".card-header", "Contact Info", { timeout: this.STANDARD_TIMEOUT })
+    cy.contains(".card-header", "Contact Info", {
+      timeout: this.STANDARD_TIMEOUT,
+    })
       .should("be.visible")
       .click({ force: true });
     return this;
@@ -310,7 +332,9 @@ export class ReviewAssessmentPage extends BasePage {
    * Expand Mailing Address panel
    */
   expandMailingAddressPanel(): this {
-    cy.contains(".card-header", "Mailing Address", { timeout: this.STANDARD_TIMEOUT })
+    cy.contains(".card-header", "Mailing Address", {
+      timeout: this.STANDARD_TIMEOUT,
+    })
       .should("be.visible")
       .click({ force: true });
     return this;
@@ -336,8 +360,19 @@ export class ReviewAssessmentPage extends BasePage {
    * Verify formio container is loaded
    */
   verifyFormioLoaded(): this {
-    cy.get(this.containers.formioContainer, { timeout: this.STANDARD_TIMEOUT })
-      .should("exist");
+    cy.get("body", { timeout: this.STANDARD_TIMEOUT }).should(($body) => {
+      const formioVisible =
+        $body.find(`${this.containers.formioContainer}:visible`).length > 0;
+      const approvalVisible =
+        $body.find(`${this.assessment.approvedAmount}:visible`).length > 0;
+      const assessmentListVisible =
+        $body.find(`${this.assessment.assessmentMainView}:visible`).length > 0;
+
+      expect(
+        formioVisible || approvalVisible || assessmentListVisible,
+        "expected review and assessment content to be visible",
+      ).to.eq(true);
+    });
     return this;
   }
 
@@ -346,7 +381,9 @@ export class ReviewAssessmentPage extends BasePage {
    */
   getFieldValue(fieldName: string): Cypress.Chainable<string> {
     return cy
-      .get(`input[name="data[${fieldName}]"]`, { timeout: this.STANDARD_TIMEOUT })
+      .get(`input[name="data[${fieldName}]"]`, {
+        timeout: this.STANDARD_TIMEOUT,
+      })
       .invoke("val")
       .then((val) => String(val));
   }
@@ -355,8 +392,9 @@ export class ReviewAssessmentPage extends BasePage {
    * Verify field value by name attribute
    */
   verifyFieldValue(fieldName: string, expectedValue: string): this {
-    cy.get(`input[name="data[${fieldName}]"]`, { timeout: this.STANDARD_TIMEOUT })
-      .should("have.value", expectedValue);
+    cy.get(`input[name="data[${fieldName}]"]`, {
+      timeout: this.STANDARD_TIMEOUT,
+    }).should("have.value", expectedValue);
     return this;
   }
 
@@ -364,7 +402,9 @@ export class ReviewAssessmentPage extends BasePage {
    * Verify select field has expected text (for Choices.js dropdowns)
    */
   verifySelectFieldText(fieldName: string, expectedText: string): this {
-    cy.get(`select[name="data[${fieldName}]"]`, { timeout: this.STANDARD_TIMEOUT })
+    cy.get(`select[name="data[${fieldName}]"]`, {
+      timeout: this.STANDARD_TIMEOUT,
+    })
       .parent()
       .find(".choices__item--selectable")
       .should("contain.text", expectedText);
@@ -378,8 +418,11 @@ export class ReviewAssessmentPage extends BasePage {
    */
   enterApprovedAmount(amount: string): this {
     cy.get(this.assessment.approvedAmount, { timeout: this.STANDARD_TIMEOUT })
-      .clear()
-      .type(amount);
+      .scrollIntoView({ block: "center" })
+      .should("exist")
+      .and("not.be.disabled")
+      .clear({ force: true })
+      .type(amount, { force: true });
     return this;
   }
 
@@ -393,8 +436,11 @@ export class ReviewAssessmentPage extends BasePage {
     const dd = String(now.getDate()).padStart(2, "0");
     const today = `${yyyy}-${mm}-${dd}`;
     cy.get(this.assessment.decisionDate, { timeout: this.STANDARD_TIMEOUT })
-      .clear()
-      .type(today);
+      .scrollIntoView({ block: "center" })
+      .should("exist")
+      .and("not.be.disabled")
+      .clear({ force: true })
+      .type(today, { force: true });
     return this;
   }
 
@@ -403,8 +449,11 @@ export class ReviewAssessmentPage extends BasePage {
    */
   setDecisionDate(date: string): this {
     cy.get(this.assessment.decisionDate, { timeout: this.STANDARD_TIMEOUT })
-      .clear()
-      .type(date);
+      .scrollIntoView({ block: "center" })
+      .should("exist")
+      .and("not.be.disabled")
+      .clear({ force: true })
+      .type(date, { force: true });
     return this;
   }
 
@@ -422,7 +471,10 @@ export class ReviewAssessmentPage extends BasePage {
    * Scroll to Assessment List section
    */
   scrollToAssessmentList(): this {
-    cy.get(this.assessment.assessmentMainView, { timeout: this.STANDARD_TIMEOUT })
+    cy.get(this.assessment.assessmentMainView, {
+      timeout: this.STANDARD_TIMEOUT,
+    })
+      .should("be.visible")
       .scrollIntoView();
     return this;
   }
@@ -431,7 +483,9 @@ export class ReviewAssessmentPage extends BasePage {
    * Click Create Assessment button in Assessment List view
    */
   clickCreateAssessment(): this {
-    cy.get(this.assessment.createAssessmentButton, { timeout: this.STANDARD_TIMEOUT })
+    cy.get(this.assessment.createAssessmentButton, {
+      timeout: this.STANDARD_TIMEOUT,
+    })
       .should("be.visible")
       .click({ force: true });
     return this;
@@ -441,7 +495,9 @@ export class ReviewAssessmentPage extends BasePage {
    * Click Complete Assessment button in Assessment List view
    */
   clickCompleteAssessment(): this {
-    cy.get(this.assessment.completeAssessmentButton, { timeout: this.STANDARD_TIMEOUT })
+    cy.get(this.assessment.completeAssessmentButton, {
+      timeout: this.STANDARD_TIMEOUT,
+    })
       .should("not.be.disabled")
       .click({ force: true });
     return this;

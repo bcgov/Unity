@@ -63,6 +63,11 @@ export class ApplicationsListPage extends ApplicationsPage {
     cancelButton: "#payment-modal .modal-footer button",
   };
 
+  private readonly blockingUi = {
+    bootstrapModal: ".modal.show",
+    swalContainer: ".swal2-container",
+  };
+
   // Grant program selectors
   private readonly grantProgram = {
     userInitials: ".unity-user-initials",
@@ -97,8 +102,11 @@ export class ApplicationsListPage extends ApplicationsPage {
       | "alltime"
       | "custom",
   ): this {
+    this.waitForNoBlockingOverlay();
     cy.get(this.dateFilters.quickDateRange, { timeout: this.STANDARD_TIMEOUT })
+      .scrollIntoView()
       .should("be.visible")
+      .and("not.be.disabled")
       .select(range);
     return this;
   }
@@ -211,7 +219,9 @@ export class ApplicationsListPage extends ApplicationsPage {
    * Select a row by matching text content
    */
   selectRowByText(text: string): this {
+    this.waitForNoBlockingOverlay();
     cy.contains("tr", text, { timeout: this.STANDARD_TIMEOUT })
+      .scrollIntoView()
       .find(".checkbox-select")
       .should("be.visible")
       .click();
@@ -341,6 +351,7 @@ export class ApplicationsListPage extends ApplicationsPage {
    * Click the Payment button (extended with visibility checks)
    */
   clickPaymentButtonWithWait(): this {
+    this.waitForNoBlockingOverlay();
     cy.get("#applicationPaymentRequest", { timeout: this.BUTTON_TIMEOUT })
       .should("be.visible")
       .and("not.be.disabled")
@@ -408,6 +419,27 @@ export class ApplicationsListPage extends ApplicationsPage {
     cy.get(this.paymentModal.modal, { timeout: this.STANDARD_TIMEOUT })
       .should("be.visible")
       .and("have.class", "show");
+    cy.get(this.paymentModal.backdrop, {
+      timeout: this.STANDARD_TIMEOUT,
+    }).should("exist");
+    return this;
+  }
+
+  /**
+   * Wait for blocking modal overlays to clear before interacting with list controls.
+   */
+  waitForNoBlockingOverlay(): this {
+    cy.get(this.blockingUi.swalContainer, {
+      timeout: this.STANDARD_TIMEOUT,
+    }).should("not.exist");
+
+    cy.get(this.blockingUi.bootstrapModal, {
+      timeout: this.STANDARD_TIMEOUT,
+    }).should("not.exist");
+
+    cy.get(this.paymentModal.backdrop, {
+      timeout: this.STANDARD_TIMEOUT,
+    }).should("not.exist");
     return this;
   }
 
@@ -415,58 +447,71 @@ export class ApplicationsListPage extends ApplicationsPage {
    * Close payment modal using multiple strategies
    */
   closePaymentModal(): this {
-    // Attempt ESC key
-    cy.get("body").type("{esc}", { force: true });
-
-    // Click backdrop if present (check existence first to avoid timeout)
     cy.get("body").then(($body: JQuery<HTMLBodyElement>) => {
-      if ($body.find(this.paymentModal.backdrop).length > 0) {
-        cy.get(this.paymentModal.backdrop).click("topLeft", { force: true });
+      if ($body.find(`${this.paymentModal.modal}.show`).length === 0) {
+        return;
       }
-    });
 
-    // Try Cancel button if available (check existence first to avoid timeout)
-    cy.get("body").then(($body: JQuery<HTMLBodyElement>) => {
       const $cancelBtn = $body
         .find(this.paymentModal.cancelButton)
         .filter((_: number, el: HTMLElement) =>
           (el.textContent || "").includes("Cancel"),
         );
+
       if ($cancelBtn.length > 0) {
         cy.wrap($cancelBtn.first()).scrollIntoView().click({ force: true });
-      } else {
-        cy.log("Cancel button not present, proceeding to hard-close fallback");
       }
     });
 
-    // Hard close fallback using jQuery
-    cy.window().then((win: Cypress.AUTWindow) => {
-      try {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const windowWithModal = win as any;
-        if (typeof windowWithModal.closePaymentModal === "function") {
-          windowWithModal.closePaymentModal();
-        }
-      } catch {
-        /* ignore */
-      }
-
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const $ = (win as any).jQuery || (win as any).$;
-      if ($) {
-        try {
-          $("#payment-modal")
-            .removeClass("show")
-            .attr("aria-hidden", "true")
-            .css("display", "none");
-          $(".modal-backdrop").remove();
-          $("body").removeClass("modal-open").css("overflow", "");
-        } catch {
-          /* ignore */
-        }
+    cy.get("body").then(($body: JQuery<HTMLBodyElement>) => {
+      if ($body.find(`${this.paymentModal.modal}.show`).length > 0) {
+        cy.get("body").type("{esc}", { force: true });
       }
     });
-    return this;
+
+    cy.get("body").then(($body: JQuery<HTMLBodyElement>) => {
+      if (
+        $body.find(`${this.paymentModal.modal}.show`).length > 0 &&
+        $body.find(this.paymentModal.backdrop).length > 0
+      ) {
+        cy.get(this.paymentModal.backdrop).first().click("topLeft", {
+          force: true,
+        });
+      }
+    });
+
+    cy.get("body").then(($body: JQuery<HTMLBodyElement>) => {
+      if ($body.find(`${this.paymentModal.modal}.show`).length > 0) {
+        cy.window().then((win: Cypress.AUTWindow) => {
+          try {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const windowWithModal = win as any;
+            if (typeof windowWithModal.closePaymentModal === "function") {
+              windowWithModal.closePaymentModal();
+            }
+          } catch {
+            /* ignore */
+          }
+
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const $ = (win as any).jQuery || (win as any).$;
+          if ($) {
+            try {
+              $(this.paymentModal.modal)
+                .removeClass("show")
+                .attr("aria-hidden", "true")
+                .css("display", "none");
+              $(this.paymentModal.backdrop).remove();
+              $("body").removeClass("modal-open").css("overflow", "");
+            } catch {
+              /* ignore */
+            }
+          }
+        });
+      }
+    });
+
+    return this.verifyPaymentModalClosed();
   }
 
   /**
@@ -479,13 +524,16 @@ export class ApplicationsListPage extends ApplicationsPage {
         expect(isHidden, "payment-modal hidden or not shown").to.eq(true);
       },
     );
+
     cy.get(this.paymentModal.backdrop, {
+      timeout: this.STANDARD_TIMEOUT,
+    }).should("not.exist");
+
+    cy.get(this.blockingUi.bootstrapModal, {
       timeout: this.STANDARD_TIMEOUT,
     }).should("not.exist");
     return this;
   }
-
-  // ============ Columns Menu Methods ============
 
   /**
    * Close any open dropdowns or modals
