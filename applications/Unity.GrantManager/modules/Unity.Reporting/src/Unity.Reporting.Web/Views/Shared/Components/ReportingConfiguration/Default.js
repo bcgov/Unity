@@ -866,7 +866,7 @@ $(function () {
         }
 
         // Check format (alphanumeric + underscores, not starting with number)
-        if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(name)) {
+        if (!/^[a-zA-Z_]\w*$/.test(name)) {
             errors.push('Column name must start with a letter or underscore and contain only letters, numbers, and underscores');
         }
 
@@ -969,10 +969,10 @@ $(function () {
         let sanitized = name.trim();
 
         // Replace multiple spaces/hyphens with single underscore
-        sanitized = sanitized.replace(/[\s-]+/g, '_');
+        sanitized = sanitized.replaceAll(/[\s-]+/g, '_');
 
         // Remove all non-alphanumeric characters except underscores
-        sanitized = sanitized.replace(/[^a-zA-Z0-9_]/g, '');
+        sanitized = sanitized.replaceAll(/\W/g, '');
 
         // Remove leading/trailing underscores safely without vulnerable regex
         while (sanitized.startsWith('_')) {
@@ -1032,7 +1032,7 @@ $(function () {
         }
 
         // Check format (should be alphanumeric + underscores, not starting with number)
-        if (!/^[a-z_][a-z0-9_]*$/i.test(name)) {
+        if (!/^[a-zA-Z_]\w*$/.test(name)) {
             errors.push('View name must start with a letter or underscore and contain only letters, numbers, and underscores');
         }
 
@@ -1838,7 +1838,7 @@ $(function () {
         // Build a lookup: (propertyName + path) → columnName
         const lookup = {};
         mappingArray.forEach(function (item) {
-            var key = compositeKey(item.propertyName, item.path);
+            const key = compositeKey(item.propertyName, item.path);
             lookup[key] = item.columnName;
         });
 
@@ -1851,7 +1851,7 @@ $(function () {
             const $input = $(node).find('.column-name-input');
             if (!$input.length) return;
 
-            var key = compositeKey(rowData.key, rowData.path);
+            const key = compositeKey(rowData.key, rowData.path);
             if (key in lookup) {
                 matchedKeys.add(key);
                 const newValue = sanitizeColumnName(lookup[key] || '');
@@ -1865,7 +1865,7 @@ $(function () {
 
         // Identify items from the import that did not match any table row
         const unmatchedItems = mappingArray.filter(function (item) {
-            var key = compositeKey(item.propertyName, item.path);
+            const key = compositeKey(item.propertyName, item.path);
             return !matchedKeys.has(key);
         });
 
@@ -1889,7 +1889,7 @@ $(function () {
             severity: 'warning',
             validate: function (data) {
                 if (!Array.isArray(data)) return true;
-                var keys = data.map(function (r) { return compositeKey(r.propertyName, r.path); });
+                const keys = data.map(function (r) { return compositeKey(r.propertyName, r.path); });
                 return new Set(keys).size === keys.length;
             }
         },
@@ -1910,7 +1910,7 @@ $(function () {
                 if (!Array.isArray(data)) return true;
                 return data.every(function (r) {
                     if (!r.columnName) return true; // empty is allowed
-                    return /^[a-zA-Z_][a-zA-Z0-9_]*$/.test(r.columnName);
+                    return /^[a-zA-Z_]\w*$/.test(r.columnName);
                 });
             }
         },
