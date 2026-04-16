@@ -17,6 +17,33 @@ using Volo.Abp.Validation;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Unity.GrantManager.Models;
+using System.Threading;
+
+internal static class LibreOfficeInstallationCache
+{
+    private static int _hasCachedValue;
+    private static bool _isInstalled;
+    private static readonly object SyncRoot = new();
+
+    public static bool IsInstalled(Func<bool> installationCheck)
+    {
+        if (Volatile.Read(ref _hasCachedValue) == 1)
+        {
+            return _isInstalled;
+        }
+
+        lock (SyncRoot)
+        {
+            if (_hasCachedValue == 0)
+            {
+                _isInstalled = installationCheck();
+                Volatile.Write(ref _hasCachedValue, 1);
+            }
+        }
+
+        return _isInstalled;
+    }
+}
 
 namespace Unity.GrantManager.Controllers
 {
@@ -285,7 +312,7 @@ namespace Unity.GrantManager.Controllers
         {
             if (string.IsNullOrWhiteSpace(applicationId)) return BadRequest("Application ID must be provided.");
             if (string.IsNullOrWhiteSpace(fileName)) return BadRequest(badRequestFileMsg);
-            if (!_libreOfficeConversionService.IsInstalled()) return StatusCode(503, new { error = libreOfficeNotInstalledMsg });
+            if (!LibreOfficeInstallationCache.IsInstalled(() => _libreOfficeConversionService.IsInstalled())) return StatusCode(503, new { error = libreOfficeNotInstalledMsg });
             try
             {
                 var blob = await _attachmentPreviewAppService.GetOrCreatePreviewPdfAsync(AttachmentType.APPLICATION, Guid.Parse(applicationId), fileName);
@@ -304,7 +331,7 @@ namespace Unity.GrantManager.Controllers
         {
             if (string.IsNullOrWhiteSpace(assessmentId)) return BadRequest("Assessment ID must be provided.");
             if (string.IsNullOrWhiteSpace(fileName)) return BadRequest(badRequestFileMsg);
-            if (!_libreOfficeConversionService.IsInstalled()) return StatusCode(503, new { error = libreOfficeNotInstalledMsg });
+            if (!LibreOfficeInstallationCache.IsInstalled(() => _libreOfficeConversionService.IsInstalled())) return StatusCode(503, new { error = libreOfficeNotInstalledMsg });
             try
             {
                 var blob = await _attachmentPreviewAppService.GetOrCreatePreviewPdfAsync(AttachmentType.ASSESSMENT, Guid.Parse(assessmentId), fileName);
