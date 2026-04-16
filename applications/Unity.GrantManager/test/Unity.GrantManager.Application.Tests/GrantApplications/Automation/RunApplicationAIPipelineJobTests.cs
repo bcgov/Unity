@@ -1,10 +1,12 @@
 using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
 using System;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Unity.AI;
 using Unity.AI.Operations;
 using Unity.AI.Settings;
+using Unity.GrantManager.Applications;
 using Unity.GrantManager.GrantApplications.Automation.BackgroundJobs;
 using Volo.Abp.EventBus.Local;
 using Volo.Abp.Features;
@@ -17,21 +19,49 @@ public class RunApplicationAIPipelineJobTests(ITestOutputHelper outputHelper) : 
 {
     private static RunApplicationAIPipelineJob BuildJob(
         IFeatureChecker featureChecker,
-        ISettingProvider settingProvider,
         IApplicationScoringService? scoringService = null,
-        IAIService? aiService = null)
+        IAIService? aiService = null,
+        ISettingProvider? settingProvider = null,
+        bool formAutomaticAIEnabled = true)
     {
         var ai = aiService ?? Substitute.For<IAIService>();
         ai.IsAvailableAsync().Returns(true);
-        return new RunApplicationAIPipelineJob(
+
+        var settings = settingProvider ?? Substitute.For<ISettingProvider>();
+        if (settingProvider == null)
+        {
+            settings.GetOrNullAsync(AISettings.AutomaticGenerationEnabled).Returns("true");
+        }
+
+        var aiServices = new AIOperationServices(
             Substitute.For<IAttachmentSummaryService>(),
             Substitute.For<IApplicationAnalysisService>(),
             scoringService ?? Substitute.For<IApplicationScoringService>(),
-            ai,
+            ai);
+
+        var formId = Guid.NewGuid();
+
+        var application = (Application)RuntimeHelpers.GetUninitializedObject(typeof(Application));
+        application.ApplicationFormId = formId;
+
+        var applicationForm = (ApplicationForm)RuntimeHelpers.GetUninitializedObject(typeof(ApplicationForm));
+        applicationForm.AutomaticallyGenerateAIAnalysis = formAutomaticAIEnabled;
+
+        var applicationRepository = Substitute.For<IApplicationRepository>();
+        applicationRepository.GetAsync(Arg.Any<Guid>(), Arg.Any<bool>()).Returns(application);
+
+        var applicationFormRepository = Substitute.For<IApplicationFormRepository>();
+        applicationFormRepository.GetAsync(Arg.Any<Guid>(), Arg.Any<bool>()).Returns(applicationForm);
+
+        var applicationFormServices = new ApplicationFormServices(applicationRepository, applicationFormRepository);
+
+        return new RunApplicationAIPipelineJob(
+            aiServices,
+            applicationFormServices,
             featureChecker,
-            settingProvider,
             Substitute.For<ILocalEventBus>(),
             Substitute.For<ICurrentTenant>(),
+            settings,
             NullLogger<RunApplicationAIPipelineJob>.Instance);
     }
     [Fact]
@@ -42,45 +72,78 @@ public class RunApplicationAIPipelineJobTests(ITestOutputHelper outputHelper) : 
         featureChecker.IsEnabledAsync("Unity.AI.Scoring").Returns(false);
         featureChecker.IsEnabledAsync("Unity.AI.AttachmentSummaries").Returns(false);
         featureChecker.IsEnabledAsync("Unity.AI.ApplicationAnalysis").Returns(false);
-        var settingProvider = Substitute.For<ISettingProvider>();
         var scoringService = Substitute.For<IApplicationScoringService>();
-        var job = BuildJob(featureChecker, settingProvider, scoringService);
-        // Act
-        await job.ExecuteAsync(new RunApplicationAIPipelineJobArgs { ApplicationId = Guid.NewGuid() });
-        // Assert - setting never checked, scoring service never called
-        await settingProvider.DidNotReceive().GetOrNullAsync(AISettings.ScoringAssistantEnabled);
-        await scoringService.DidNotReceive().RegenerateAndSaveAsync(Arg.Any<Guid>(), Arg.Any<string?>());
-    }
-    [Fact]
-    public async Task ExecuteAsync_Should_Skip_Scoring_When_Feature_Enabled_But_Setting_Disabled()
-    {
-        // Arrange - scoring feature ON, tenant setting OFF
-        var featureChecker = Substitute.For<IFeatureChecker>();
-        featureChecker.IsEnabledAsync("Unity.AI.Scoring").Returns(true);
-        featureChecker.IsEnabledAsync("Unity.AI.AttachmentSummaries").Returns(false);
-        featureChecker.IsEnabledAsync("Unity.AI.ApplicationAnalysis").Returns(false);
-        var settingProvider = Substitute.For<ISettingProvider>();
-        settingProvider.GetOrNullAsync(AISettings.ScoringAssistantEnabled).Returns("false");
-        var scoringService = Substitute.For<IApplicationScoringService>();
-        var job = BuildJob(featureChecker, settingProvider, scoringService);
+        var job = BuildJob(featureChecker, scoringService);
         // Act
         await job.ExecuteAsync(new RunApplicationAIPipelineJobArgs { ApplicationId = Guid.NewGuid() });
         // Assert - scoring service never called
         await scoringService.DidNotReceive().RegenerateAndSaveAsync(Arg.Any<Guid>(), Arg.Any<string?>());
     }
+
     [Fact]
-    public async Task ExecuteAsync_Should_Not_Check_Setting_When_Feature_Disabled()
+    public async Task Should_Skip_Pipeline_When_AutomaticGenerationEnabled_Is_False()
     {
-        // Arrange - scoring feature OFF
+        // Arrange - automatic generation OFF at tenant level
+        var settings = Substitute.For<ISettingProvider>();
+        settings.GetOrNullAsync(AISettings.AutomaticGenerationEnabled).Returns("false");
+
         var featureChecker = Substitute.For<IFeatureChecker>();
-        featureChecker.IsEnabledAsync("Unity.AI.Scoring").Returns(false);
-        featureChecker.IsEnabledAsync("Unity.AI.AttachmentSummaries").Returns(false);
-        featureChecker.IsEnabledAsync("Unity.AI.ApplicationAnalysis").Returns(false);
-        var settingProvider = Substitute.For<ISettingProvider>();
-        var job = BuildJob(featureChecker, settingProvider);
+        featureChecker.IsEnabledAsync(Arg.Any<string>()).Returns(true);
+
+        var scoringService = Substitute.For<IApplicationScoringService>();
+        var job = BuildJob(featureChecker, scoringService, settingProvider: settings);
+
         // Act
         await job.ExecuteAsync(new RunApplicationAIPipelineJobArgs { ApplicationId = Guid.NewGuid() });
-        // Assert - setting provider never consulted when all features are OFF
-        await settingProvider.DidNotReceive().GetOrNullAsync(Arg.Any<string>());
+
+        // Assert - pipeline never reaches any AI service
+        await scoringService.DidNotReceive().RegenerateAndSaveAsync(Arg.Any<Guid>(), Arg.Any<string?>());
+        await featureChecker.DidNotReceive().IsEnabledAsync(Arg.Any<string>());
     }
+
+    [Fact]
+    public async Task Should_Run_Pipeline_When_AutomaticGenerationEnabled_Is_True()
+    {
+        // Arrange - automatic generation ON, all features enabled
+        var settings = Substitute.For<ISettingProvider>();
+        settings.GetOrNullAsync(AISettings.AutomaticGenerationEnabled).Returns("true");
+
+        var featureChecker = Substitute.For<IFeatureChecker>();
+        featureChecker.IsEnabledAsync("Unity.AI.Scoring").Returns(true);
+        featureChecker.IsEnabledAsync("Unity.AI.AttachmentSummaries").Returns(false);
+        featureChecker.IsEnabledAsync("Unity.AI.ApplicationAnalysis").Returns(false);
+
+        var scoringService = Substitute.For<IApplicationScoringService>();
+        scoringService.RegenerateAndSaveAsync(Arg.Any<Guid>(), Arg.Any<string?>()).Returns("{}");
+
+        var job = BuildJob(featureChecker, scoringService, settingProvider: settings);
+
+        // Act
+        await job.ExecuteAsync(new RunApplicationAIPipelineJobArgs { ApplicationId = Guid.NewGuid() });
+
+        // Assert - pipeline reached the scoring service
+        await scoringService.Received(1).RegenerateAndSaveAsync(Arg.Any<Guid>(), Arg.Any<string?>());
+    }
+
+    [Fact]
+    public async Task Should_NotRunAIPipeline_When_FormAutomaticAIDisabled()
+    {
+        // Arrange - tenant ON, but form-level automatic AI OFF
+        var settings = Substitute.For<ISettingProvider>();
+        settings.GetOrNullAsync(AISettings.AutomaticGenerationEnabled).Returns("true");
+
+        var featureChecker = Substitute.For<IFeatureChecker>();
+        featureChecker.IsEnabledAsync(Arg.Any<string>()).Returns(true);
+
+        var scoringService = Substitute.For<IApplicationScoringService>();
+        var job = BuildJob(featureChecker, scoringService, settingProvider: settings, formAutomaticAIEnabled: false);
+
+        // Act
+        await job.ExecuteAsync(new RunApplicationAIPipelineJobArgs { ApplicationId = Guid.NewGuid() });
+
+        // Assert - pipeline never reaches any AI service
+        await scoringService.DidNotReceive().RegenerateAndSaveAsync(Arg.Any<Guid>(), Arg.Any<string?>());
+        await featureChecker.DidNotReceive().IsEnabledAsync(Arg.Any<string>());
+    }
+
 }

@@ -1,8 +1,4 @@
 name: Main - Branch Protection - CI & Unit Tests
-permissions:
-  contents: read
-  pull-requests: write
-  issues: write
 
 on:
   pull_request:
@@ -15,6 +11,8 @@ jobs:
   # ---------------------------------------------------------------------  
   check-main-branch:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     outputs:
       branch-allowed: ${{ steps.branch-check.outputs.allowed }}    
     steps:
@@ -37,6 +35,8 @@ jobs:
     needs: check-main-branch
     if: needs.check-main-branch.outputs.branch-allowed == 'true'
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     outputs:
       matrix: ${{ steps.discover.outputs.matrix }}
     steps:
@@ -56,6 +56,8 @@ jobs:
   test-project:
     needs: discover-test-projects
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
 
     strategy:
       fail-fast: false
@@ -92,6 +94,10 @@ jobs:
   aggregate-results:
     needs: test-project
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
     steps:
       - uses: actions/download-artifact@v4
         with:

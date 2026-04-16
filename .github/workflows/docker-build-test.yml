@@ -1,6 +1,4 @@
 name: Test - Build & Push docker images
-permissions:
-  contents: read
 
 on:
   push:
@@ -42,6 +40,8 @@ jobs:
   Setup:
     runs-on: ubuntu-latest
     environment: test
+    permissions:
+      contents: read
     steps:
     - name: Get variables
       run: |
@@ -61,6 +61,8 @@ jobs:
     needs: [Setup]
     runs-on: ubuntu-latest
     environment: test
+    permissions:
+      contents: read
     steps:
     - name: Checkout repository
       uses: actions/checkout@v6
@@ -89,6 +91,8 @@ jobs:
     needs: [Setup,Branch]
     runs-on: ubuntu-latest
     environment: test
+    permissions:
+      contents: write
     steps:
     - name: Checkout repository
       uses: actions/checkout@v6
@@ -114,6 +118,7 @@ jobs:
     needs: [Setup,Branch,GenerateTag]
     permissions:
       actions: write
+      contents: read
     runs-on: ubuntu-latest
     environment: test
     steps:
@@ -144,6 +149,8 @@ jobs:
     needs: [Setup,Branch,GenerateTag,PushVariables]
     runs-on: ubuntu-latest
     environment: test
+    permissions:
+      contents: read
     steps:
     - uses: actions/checkout@v6
     - name: Build Docker images

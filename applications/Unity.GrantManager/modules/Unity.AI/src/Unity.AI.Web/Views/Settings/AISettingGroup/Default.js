@@ -20,10 +20,12 @@ $(function () {
     uiElements.settingForm.on('submit', function (event) {
         event.preventDefault();
 
-        const scoringEnabled = $('#ScoringAssistantEnabled').is(':checked');
+        const automaticEnabled = $('#AutomaticGenerationEnabled').is(':checked');
+        const manualEnabled = $('#ManualGenerationEnabled').is(':checked');
 
-        unity.aI.settings.aIConfiguration.updateScoringSettings({
-            scoringAssistantEnabled: scoringEnabled
+        unity.aI.settings.aIConfiguration.updateTenantConfiguration({
+            automaticGenerationEnabled: automaticEnabled,
+            manualGenerationEnabled: manualEnabled
         }).then(function () {
             $(document).trigger('AbpSettingSaved');
             initialFormState = uiElements.settingForm.serialize();

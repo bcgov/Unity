@@ -161,8 +161,10 @@ public class GrantManagerApplicationModule : AbpModule
         context.Services.AddTransient<IPortalCommandHandler, ContactEditHandler>();
         context.Services.AddTransient<IPortalCommandHandler, ContactSetPrimaryHandler>();
         context.Services.AddTransient<IPortalCommandHandler, ContactDeleteHandler>();
+        context.Services.AddTransient<IPortalCommandHandler, AddressCreateHandler>();
         context.Services.AddTransient<IPortalCommandHandler, AddressEditHandler>();
         context.Services.AddTransient<IPortalCommandHandler, AddressSetPrimaryHandler>();
+        context.Services.AddTransient<IPortalCommandHandler, AddressDeleteHandler>();
         context.Services.AddTransient<IPortalCommandHandler, OrganizationEditHandler>();
 
         // Register generic IInboxMessageHandler adapters for each portal command handler
@@ -170,8 +172,10 @@ public class GrantManagerApplicationModule : AbpModule
         context.Services.AddTransient<IInboxMessageHandler>(sp => new PortalCommandHandlerAdapter(sp.GetRequiredService<ContactEditHandler>()));
         context.Services.AddTransient<IInboxMessageHandler>(sp => new PortalCommandHandlerAdapter(sp.GetRequiredService<ContactSetPrimaryHandler>()));
         context.Services.AddTransient<IInboxMessageHandler>(sp => new PortalCommandHandlerAdapter(sp.GetRequiredService<ContactDeleteHandler>()));
+        context.Services.AddTransient<IInboxMessageHandler>(sp => new PortalCommandHandlerAdapter(sp.GetRequiredService<AddressCreateHandler>()));
         context.Services.AddTransient<IInboxMessageHandler>(sp => new PortalCommandHandlerAdapter(sp.GetRequiredService<AddressEditHandler>()));
         context.Services.AddTransient<IInboxMessageHandler>(sp => new PortalCommandHandlerAdapter(sp.GetRequiredService<AddressSetPrimaryHandler>()));
+        context.Services.AddTransient<IInboxMessageHandler>(sp => new PortalCommandHandlerAdapter(sp.GetRequiredService<AddressDeleteHandler>()));
         context.Services.AddTransient<IInboxMessageHandler>(sp => new PortalCommandHandlerAdapter(sp.GetRequiredService<OrganizationEditHandler>()));
 
         context.Services.AddScoped<GrantsPortalAcknowledgmentPublisher>();

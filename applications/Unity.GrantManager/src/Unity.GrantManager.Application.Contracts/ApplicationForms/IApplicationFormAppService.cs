@@ -18,6 +18,7 @@ namespace Unity.GrantManager.ApplicationForms
         Task<IList<ApplicationFormVersionDto>> GetVersionsAsync(Guid id);
         Task<IList<ApplicationFormVersionDto>> GetPublishedVersionsAsync(Guid id);
         Task PatchOtherConfig(Guid id, OtherConfigDto config);
+        Task PatchAiConfig(Guid id, AIConfigDto config);
         Task<decimal?> GetFormPaymentApprovalThresholdByApplicationIdAsync(Guid applicationId);
         Task<bool> GetFormPreventPaymentStatusByApplicationId(Guid applicationId);
         Task<ApplicationFormDetailsDto> GetFormDetailsByApplicationIdAsync(Guid applicationId);

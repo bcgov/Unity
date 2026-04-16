@@ -10,9 +10,9 @@ using Volo.Abp.Features;
 
 namespace Unity.GrantManager.GrantApplications;
 
-[Authorize(AIPermissions.AttachmentSummary.AttachmentSummaryDefault)]
-[Authorize(AIPermissions.ApplicationAnalysis.ApplicationAnalysisDefault)]
-[Authorize(AIPermissions.ScoringAssistant.ScoringAssistantDefault)]
+[Authorize(AIPermissions.Analysis.ViewAttachmentSummary)]
+[Authorize(AIPermissions.Analysis.ViewApplicationAnalysis)]
+[Authorize(AIPermissions.Analysis.ViewScoringResult)]
 public class ApplicationContentAppService(
     IApplicationAIGenerationQueue aiGenerationQueue,
     IFeatureChecker featureChecker)

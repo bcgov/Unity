@@ -176,6 +176,15 @@ public class ApplicationFormAppService
         await Repository.UpdateAsync(form);
     }
 
+    [Authorize(GrantManagerPermissions.ApplicationForms.Default)]
+    public async Task PatchAiConfig(Guid id, AIConfigDto config)
+    {
+        var form = await Repository.GetAsync(id);
+        form.AutomaticallyGenerateAIAnalysis = config.AutomaticallyGenerateAIAnalysis;
+        form.ManuallyInitiateAIAnalysis = config.ManuallyInitiateAIAnalysis;
+        await Repository.UpdateAsync(form);
+    }
+
     [Authorize(PaymentsPermissions.Payments.EditFormPaymentConfiguration)]
     public async Task<bool> GetFormPreventPaymentStatusByApplicationId(Guid applicationId)
     {

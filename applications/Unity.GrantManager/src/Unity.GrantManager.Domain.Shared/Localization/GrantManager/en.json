@@ -478,6 +478,19 @@
     "ApplicationLinks:Category": "Category",
     "ApplicationLinks:ID": "ID",
     "ApplicationLinks:Status": "Status",
-    "ApplicationLinks:LinkType": "Link Type"
+    "ApplicationLinks:LinkType": "Link Type",
+
+    "ApplicantPortalSettings:Title": "Applicant Portal Configuration",
+    "ApplicantPortalSettings:ManageStatuses": "Manage Statuses",
+    "ApplicantPortalSettings:PortalStatusHeading": "Applicant Portal Status",
+    "ApplicantPortalSettings:InternalStatus": "Internal Status",
+    "ApplicantPortalSettings:PortalStatusLabel": "Portal Status Label",
+    "ApplicantPortalSettings:SaveChanges": "Save Changes",
+    "ApplicantPortalSettings:ResetChanges": "Reset",
+    "ApplicantPortalSettings:SaveSuccess": "Portal status labels updated successfully.",
+    "ApplicantPortalSettings:SaveError": "An error occurred while saving portal status labels.",
+    "ApplicantPortalSettings:ValidationRequired": "Portal status label cannot be empty.",
+    "ApplicantPortalSettings:NoChanges": "No changes to save.",
+    "ApplicantPortalSettings:ChangesReset": "Changes have been reset to original values."
   }
 }

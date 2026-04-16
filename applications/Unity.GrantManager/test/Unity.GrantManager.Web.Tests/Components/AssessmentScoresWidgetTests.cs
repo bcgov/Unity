@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.AspNetCore.Mvc.ViewComponents;
 using NSubstitute;
@@ -12,7 +12,6 @@ using Unity.GrantManager.Assessments;
 using Unity.GrantManager.Web.Views.Shared.Components.AssessmentScoresWidget;
 using Volo.Abp.Authorization.Permissions;
 using Volo.Abp.Features;
-using Volo.Abp.Settings;
 using Xunit;
 
 namespace Unity.GrantManager.Components
@@ -55,8 +54,6 @@ namespace Unity.GrantManager.Components
             instanceRepository.GetByCorrelationAsync(assessmentId).Returns(Task.FromResult<ScoresheetInstance?>(null));
             featureChecker.IsEnabledAsync("Unity.AI.Scoring").Returns(Task.FromResult(true));
             permissionChecker.IsGrantedAsync(Arg.Any<string>()).Returns(Task.FromResult(true));
-            var settingProvider = Substitute.For<ISettingProvider>();
-            settingProvider.GetOrNullAsync(Unity.AI.Settings.AISettings.ScoringAssistantEnabled).Returns(Task.FromResult<string?>("true"));
 
             var viewContext = new ViewContext
             {
@@ -73,8 +70,7 @@ namespace Unity.GrantManager.Components
                 instanceRepository,
                 applicationRepository,
                 featureChecker,
-                permissionChecker,
-                settingProvider)
+                permissionChecker)
             {
                 ViewComponentContext = viewComponentContext
             };
