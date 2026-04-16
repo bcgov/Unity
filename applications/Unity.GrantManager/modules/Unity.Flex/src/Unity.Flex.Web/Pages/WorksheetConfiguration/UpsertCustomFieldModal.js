@@ -6,7 +6,7 @@ abp.modals.UpsertCustomFieldModal = function () {
         'ProtectedC': 'The most sensitive level — disclosure could cause extremely grave injury.'
     };
 
-    const placeholderSupportedTypes = ['Text', 'TextArea', 'Numeric', 'Currency', 'Email', 'Phone'];
+    const placeholderSupportedTypes = new Set(['Text', 'TextArea', 'Numeric', 'Currency', 'Email', 'Phone']);
 
     function updateClassificationHint(value) {
         const hint = document.getElementById('classificationHint');
@@ -15,7 +15,7 @@ abp.modals.UpsertCustomFieldModal = function () {
 
     function updatePlaceholderVisibility(type) {
         const row = document.getElementById('placeholder-row');
-        if (row) row.style.display = placeholderSupportedTypes.includes(type) ? '' : 'none';
+        if (row) row.style.display = placeholderSupportedTypes.has(type) ? '' : 'none';
     }
 
     function initModal(modalManager, args) {
@@ -58,33 +58,37 @@ abp.modals.UpsertCustomFieldModal = function () {
             });
         });
 
+        function checkPaneErrors(activePaneId, tabButtons, paneId) {
+            if (paneId === activePaneId) return false;
+            let pane = document.getElementById(paneId);
+            let invalid = pane ? pane.querySelector(':invalid') : null;
+            let btn = document.getElementById(tabButtons[paneId]);
+            if (!btn) return false;
+            let badge = btn.querySelector('.tab-error-badge');
+            if (invalid) {
+                if (!badge) {
+                    badge = document.createElement('span');
+                    badge.className = 'tab-error-badge';
+                    badge.setAttribute('aria-label', 'This tab has errors');
+                    btn.appendChild(badge);
+                }
+                return true;
+            }
+            if (badge) badge.remove();
+            return false;
+        }
+
         document.querySelector('[name="saveCustomFieldBtn"]')?.addEventListener('click', function () {
             setTimeout(function () {
-                var panes = ['pane-display', 'pane-attributes'];
-                var tabButtons = { 'pane-display': 'tab-display', 'pane-attributes': 'tab-attributes' };
-                var activePane = document.querySelector('#customFieldTabContent .tab-pane.show');
-                var activePaneId = activePane ? activePane.id : null;
-                var hasOffTabErrors = false;
+                let panes = ['pane-display', 'pane-attributes'];
+                let tabButtons = { 'pane-display': 'tab-display', 'pane-attributes': 'tab-attributes' };
+                let activePane = document.querySelector('#customFieldTabContent .tab-pane.show');
+                let activePaneId = activePane ? activePane.id : null;
+                let hasOffTabErrors = false;
 
-                panes.forEach(function (paneId) {
-                    if (paneId === activePaneId) return;
-                    var pane = document.getElementById(paneId);
-                    var invalid = pane ? pane.querySelector(':invalid') : null;
-                    var btn = document.getElementById(tabButtons[paneId]);
-                    if (!btn) return;
-                    var badge = btn.querySelector('.tab-error-badge');
-                    if (invalid) {
-                        if (!badge) {
-                            badge = document.createElement('span');
-                            badge.className = 'tab-error-badge';
-                            badge.setAttribute('aria-label', 'This tab has errors');
-                            btn.appendChild(badge);
-                        }
-                        hasOffTabErrors = true;
-                    } else {
-                        if (badge) badge.remove();
-                    }
-                });
+                for (const paneId of panes) {
+                    if (checkPaneErrors(activePaneId, tabButtons, paneId)) hasOffTabErrors = true;
+                }
 
                 if (hasOffTabErrors) {
                     abp.notify.warn('There are validation errors on another tab. Please review all tabs before saving.');
@@ -94,7 +98,7 @@ abp.modals.UpsertCustomFieldModal = function () {
 
         document.querySelectorAll('#customFieldTabs [data-bs-toggle="tab"]').forEach(function (btn) {
             btn.addEventListener('shown.bs.tab', function () {
-                var badge = btn.querySelector('.tab-error-badge');
+                let badge = btn.querySelector('.tab-error-badge');
                 if (badge) badge.remove();
             });
         });
