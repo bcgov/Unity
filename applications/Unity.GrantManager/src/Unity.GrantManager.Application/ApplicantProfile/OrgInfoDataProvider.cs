@@ -66,7 +66,7 @@ namespace Unity.GrantManager.ApplicantProfile
                 dto.Organizations.AddRange(results.Select(r => new OrgInfoItemDto
                 {
                     Id = r.Id,
-                    UnityApplicantId = r.UnityApplicantId,
+                    ApplicantRefId = r.UnityApplicantId,
                     ApplicantName = r.ApplicantName,
                     OrgName = r.OrgName,
                     OrganizationType = r.OrganizationType,

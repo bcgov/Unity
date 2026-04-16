@@ -150,7 +150,7 @@ namespace Unity.GrantManager.Applicants
 
             var org = dto.Organizations[0];
             org.Id.ShouldBe(applicantId);
-            org.UnityApplicantId.ShouldBe("APP-00123");
+            org.ApplicantRefId.ShouldBe("APP-00123");
             org.ApplicantName.ShouldBe("Jane Smith");
             org.OrgName.ShouldBe("Acme Corp");
             org.OrganizationType.ShouldBe("Non-Profit");
@@ -182,7 +182,7 @@ namespace Unity.GrantManager.Applicants
 
             var org = dto.Organizations[0];
             org.OrgName.ShouldBeNull();
-            org.UnityApplicantId.ShouldBeNull();
+            org.ApplicantRefId.ShouldBeNull();
             org.ApplicantName.ShouldBeNull();
             org.OrganizationType.ShouldBeNull();
             org.OrgNumber.ShouldBeNull();

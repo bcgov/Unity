@@ -5,7 +5,7 @@ namespace Unity.GrantManager.ApplicantProfile.ProfileData
     public class OrgInfoItemDto
     {
         public Guid Id { get; set; }
-        public string? UnityApplicantId { get; set; }
+        public string? ApplicantRefId { get; set; }
         public string? ApplicantName { get; set; }
         public string? OrgName { get; set; }
         public string? OrganizationType { get; set; }
