@@ -1,10 +1,12 @@
 using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
 using System;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Unity.AI;
 using Unity.AI.Operations;
 using Unity.AI.Settings;
+using Unity.GrantManager.Applications;
 using Unity.GrantManager.GrantApplications.Automation.BackgroundJobs;
 using Volo.Abp.EventBus.Local;
 using Volo.Abp.Features;
@@ -19,7 +21,8 @@ public class RunApplicationAIPipelineJobTests(ITestOutputHelper outputHelper) : 
         IFeatureChecker featureChecker,
         IApplicationScoringService? scoringService = null,
         IAIService? aiService = null,
-        ISettingProvider? settingProvider = null)
+        ISettingProvider? settingProvider = null,
+        bool formAutomaticAIEnabled = true)
     {
         var ai = aiService ?? Substitute.For<IAIService>();
         ai.IsAvailableAsync().Returns(true);
@@ -36,8 +39,25 @@ public class RunApplicationAIPipelineJobTests(ITestOutputHelper outputHelper) : 
             scoringService ?? Substitute.For<IApplicationScoringService>(),
             ai);
 
+        var formId = Guid.NewGuid();
+
+        var application = (Application)RuntimeHelpers.GetUninitializedObject(typeof(Application));
+        application.ApplicationFormId = formId;
+
+        var applicationForm = (ApplicationForm)RuntimeHelpers.GetUninitializedObject(typeof(ApplicationForm));
+        applicationForm.AutomaticallyGenerateAIAnalysis = formAutomaticAIEnabled;
+
+        var applicationRepository = Substitute.For<IApplicationRepository>();
+        applicationRepository.GetAsync(Arg.Any<Guid>(), Arg.Any<bool>()).Returns(application);
+
+        var applicationFormRepository = Substitute.For<IApplicationFormRepository>();
+        applicationFormRepository.GetAsync(Arg.Any<Guid>(), Arg.Any<bool>()).Returns(applicationForm);
+
+        var applicationFormServices = new ApplicationFormServices(applicationRepository, applicationFormRepository);
+
         return new RunApplicationAIPipelineJob(
             aiServices,
+            applicationFormServices,
             featureChecker,
             Substitute.For<ILocalEventBus>(),
             Substitute.For<ICurrentTenant>(),
@@ -104,4 +124,26 @@ public class RunApplicationAIPipelineJobTests(ITestOutputHelper outputHelper) : 
         // Assert - pipeline reached the scoring service
         await scoringService.Received(1).RegenerateAndSaveAsync(Arg.Any<Guid>(), Arg.Any<string?>());
     }
+
+    [Fact]
+    public async Task Should_NotRunAIPipeline_When_FormAutomaticAIDisabled()
+    {
+        // Arrange - tenant ON, but form-level automatic AI OFF
+        var settings = Substitute.For<ISettingProvider>();
+        settings.GetOrNullAsync(AISettings.AutomaticGenerationEnabled).Returns("true");
+
+        var featureChecker = Substitute.For<IFeatureChecker>();
+        featureChecker.IsEnabledAsync(Arg.Any<string>()).Returns(true);
+
+        var scoringService = Substitute.For<IApplicationScoringService>();
+        var job = BuildJob(featureChecker, scoringService, settingProvider: settings, formAutomaticAIEnabled: false);
+
+        // Act
+        await job.ExecuteAsync(new RunApplicationAIPipelineJobArgs { ApplicationId = Guid.NewGuid() });
+
+        // Assert - pipeline never reaches any AI service
+        await scoringService.DidNotReceive().RegenerateAndSaveAsync(Arg.Any<Guid>(), Arg.Any<string?>());
+        await featureChecker.DidNotReceive().IsEnabledAsync(Arg.Any<string>());
+    }
+
 }

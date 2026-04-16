@@ -12,6 +12,7 @@ using Volo.Abp.Settings;
 namespace Unity.GrantManager.GrantApplications.Automation.BackgroundJobs;
 public class RunApplicationAIPipelineJob(
     AIOperationServices aiOperationServices,
+    ApplicationFormServices applicationFormServices,
     IFeatureChecker featureChecker,
     ILocalEventBus localEventBus,
     ICurrentTenant currentTenant,
@@ -28,6 +29,15 @@ public class RunApplicationAIPipelineJob(
             if (!automaticGenerationEnabled)
             {
                 logger.LogDebug("Automatic AI generation is disabled at tenant level, skipping intake pipeline for application {ApplicationId}.", args.ApplicationId);
+                return;
+            }
+
+            var application = await applicationFormServices.Application.GetAsync(args.ApplicationId);
+            var applicationForm = await applicationFormServices.ApplicationForm.GetAsync(application.ApplicationFormId);
+
+            if (!applicationForm.AutomaticallyGenerateAIAnalysis)
+            {
+                logger.LogDebug("Automatic AI analysis is disabled at form level for application {ApplicationId}, skipping intake pipeline.", args.ApplicationId);
                 return;
             }
 

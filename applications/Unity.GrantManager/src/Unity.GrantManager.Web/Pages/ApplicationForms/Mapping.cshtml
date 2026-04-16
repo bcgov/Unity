@@ -73,6 +73,11 @@
             }
             <button class="nav-link" id="nav-other-configuration-tab" data-bs-toggle="tab"
                 data-bs-target="#nav-other-configuration" type="button" role="tab">Other Configuration</button>
+            @if (Model?.ShowAITab == true)
+            {
+                <button class="nav-link" id="nav-ai-configuration-tab" data-bs-toggle="tab"
+                    data-bs-target="#nav-ai-configuration" type="button" role="tab">AI</button>
+            }
         </div>
     </nav>
     <div class="tab-content unt-tab-content" id="nav-tabContent">
@@ -246,6 +251,65 @@
             @await Component.InvokeAsync(typeof(ApplicationFormConfigWidget), new { configType = "Other",
             applicationForm = Model?.ApplicationFormDto })
         </div>
+
+        @if (Model?.ShowAITab == true)
+        {
+            <!--Tab Content: AI Configuration-->
+            <div class="tab-pane fade" id="nav-ai-configuration" role="tabpanel"
+                aria-labelledby="nav-ai-configuration-tab">
+                <div class="p-3">
+                    <h6 class="mb-3"><b>AI Configuration</b></h6>
+
+                    @if (Model?.ShowAutomatic == true)
+                    {
+                        <div class="form-check form-switch mb-3">
+                            <input class="form-check-input"
+                                   type="checkbox"
+                                   id="AutomaticallyGenerateAIAnalysis"
+                                   name="AutomaticallyGenerateAIAnalysis"
+                                   @(Model.ApplicationFormDto?.AutomaticallyGenerateAIAnalysis == true ? "checked" : "") />
+                            <label class="form-check-label fw-bold" for="AutomaticallyGenerateAIAnalysis">
+                                Automatically Generate AI Analysis
+                            </label>
+                            <div class="text-muted small">
+                                When enabled, all AI analysis features run automatically when a new application is submitted through this form.
+                                Requires tenant-level Automatic AI Generation to also be enabled.
+                            </div>
+                        </div>
+                    }
+
+                    @if (Model?.ShowManual == true)
+                    {
+                        <div class="form-check form-switch mb-3">
+                            <input class="form-check-input"
+                                   type="checkbox"
+                                   id="ManuallyInitiateAIAnalysis"
+                                   name="ManuallyInitiateAIAnalysis"
+                                   @(Model.ApplicationFormDto?.ManuallyInitiateAIAnalysis == true ? "checked" : "") />
+                            <label class="form-check-label fw-bold" for="ManuallyInitiateAIAnalysis">
+                                Manually Initiate AI Analysis
+                            </label>
+                            <div class="text-muted small">
+                                When enabled, users with appropriate permissions can manually generate or regenerate AI analysis for applications submitted through this form.
+                                Includes: AI Attachment Summary, Application Analysis, AI Scoring.
+                            </div>
+                        </div>
+                    }
+
+                    <div class="d-flex justify-content-start mt-3">
+                        <abp-button id="btn-save-ai-config"
+                                    text="Save"
+                                    icon-type="Other"
+                                    icon="fl fl-save"
+                                    class="btn unt-btn-primary btn-primary"
+                                    button-type="Primary" />
+                        <abp-button id="btn-cancel-ai-config"
+                                    class="btn unt-btn-outline-primary btn-outline-primary mx-1"
+                                    abp-tooltip="Cancel changes">Cancel</abp-button>
+                    </div>
+                </div>
+            </div>
+        }
     </div>
 
     <abp-modal centered="true" scrollable="true" size="Large" id="editMappingModal">

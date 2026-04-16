@@ -14,7 +14,9 @@ using Volo.Abp.AspNetCore.Mvc.UI.RazorPages;
 using Volo.Abp.Features;
 using Unity.Modules.Shared.Correlation;
 using Unity.Flex.Worksheets.Definitions;
+using Unity.AI.Settings;
 using Unity.Flex;
+using Volo.Abp.Settings;
 
 namespace Unity.GrantManager.Web.Pages.ApplicationForms
 {
@@ -22,7 +24,8 @@ namespace Unity.GrantManager.Web.Pages.ApplicationForms
     public class MappingModel(IApplicationFormAppService applicationFormAppService,
                         IApplicationFormVersionAppService applicationFormVersionAppService,
                         IWorksheetAppService worksheetAppService,
-                        IFeatureChecker featureChecker) : AbpPageModel
+                        IFeatureChecker featureChecker,
+                        ISettingProvider settingProvider) : AbpPageModel
     {
 
         [BindProperty(SupportsGet = true)]
@@ -49,11 +52,19 @@ namespace Unity.GrantManager.Web.Pages.ApplicationForms
         [BindProperty]
         public bool FlexEnabled { get; set; }
 
+        public bool ShowAITab { get; set; }
+        public bool ShowAutomatic { get; set; }
+        public bool ShowManual { get; set; }
+
         public async Task OnGetAsync()
         {
             ApplicationFormDto = await applicationFormAppService.GetAsync(ApplicationId);
             ApplicationFormVersionDtoList = (List<ApplicationFormVersionDto>?) await applicationFormAppService.GetVersionsAsync(ApplicationFormDto.Id);
             FlexEnabled = await featureChecker.IsEnabledAsync("Unity.Flex");
+
+            ShowAutomatic = await settingProvider.GetAsync<bool>(AISettings.AutomaticGenerationEnabled, defaultValue: false);
+            ShowManual = await settingProvider.GetAsync<bool>(AISettings.ManualGenerationEnabled, defaultValue: false);
+            ShowAITab = ShowAutomatic || ShowManual;
 
             if (ApplicationFormVersionDtoList != null)
             {
