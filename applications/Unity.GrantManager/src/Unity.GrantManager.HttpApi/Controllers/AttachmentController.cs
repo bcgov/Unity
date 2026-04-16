@@ -19,34 +19,34 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Unity.GrantManager.Models;
 using System.Threading;
 
-internal static class LibreOfficeInstallationCache
-{
-    private static int _hasCachedValue;
-    private static bool _isInstalled;
-    private static readonly object SyncRoot = new();
-
-    public static bool IsInstalled(Func<bool> installationCheck)
-    {
-        if (Volatile.Read(ref _hasCachedValue) == 1)
-        {
-            return _isInstalled;
-        }
-
-        lock (SyncRoot)
-        {
-            if (_hasCachedValue == 0)
-            {
-                _isInstalled = installationCheck();
-                Volatile.Write(ref _hasCachedValue, 1);
-            }
-        }
-
-        return _isInstalled;
-    }
-}
-
 namespace Unity.GrantManager.Controllers
 {
+    internal static class LibreOfficeInstallationCache
+    {
+        private static int _hasCachedValue;
+        private static bool _isInstalled;
+        private static readonly object SyncRoot = new();
+
+        public static bool IsInstalled(Func<bool> installationCheck)
+        {
+            if (Volatile.Read(ref _hasCachedValue) == 1)
+            {
+                return _isInstalled;
+            }
+
+            lock (SyncRoot)
+            {
+                if (_hasCachedValue == 0)
+                {
+                    _isInstalled = installationCheck();
+                    Volatile.Write(ref _hasCachedValue, 1);
+                }
+            }
+
+            return _isInstalled;
+        }
+    }
+
     [Route("api/app/attachment")]
     public class AttachmentController : AbpController
     {
@@ -64,6 +64,8 @@ namespace Unity.GrantManager.Controllers
         private const string chefsApiAccessError = "You do not have access to this resource";
         private const string fileProvidedError = "At least one file must be provided.";
         private const string libreOfficeNotInstalledMsg = "LibreOffice is not installed on the server. File preview is unavailable.";
+        private const string ErrorCodeKey = "ErrorCode";
+        private const string PdfContentType = "application/pdf";
 
         public AttachmentController(
             IFileAppService fileAppService,
@@ -252,7 +254,7 @@ namespace Unity.GrantManager.Controllers
             {
                 string ExceptionMessage = ex.Message;
                 logger.LogError(ex, "AttachmentController->DownloadChefsAttachment: {ExceptionMessage}", ExceptionMessage);
-                var errorCode = ex.Data.Contains("ErrorCode") ? Convert.ToInt32(ex.Data["ErrorCode"]) : 500;
+                var errorCode = ex.Data.Contains(ErrorCodeKey) ? Convert.ToInt32(ex.Data[ErrorCodeKey]) : 500;
                 return StatusCode(errorCode, ExceptionMessage);
             }
         }
@@ -310,6 +312,7 @@ namespace Unity.GrantManager.Controllers
         [HttpGet("application/{applicationId}/preview-pdf/{fileName}")]
         public async Task<IActionResult> PreviewApplicationAttachment(string applicationId, string fileName)
         {
+            if (!ModelState.IsValid) return BadRequest(ModelState);
             if (string.IsNullOrWhiteSpace(applicationId)) return BadRequest("Application ID must be provided.");
             if (!Guid.TryParse(applicationId, out var parsedApplicationId)) return BadRequest("Application ID must be a valid GUID.");
             if (string.IsNullOrWhiteSpace(fileName)) return BadRequest(badRequestFileMsg);
@@ -318,7 +321,7 @@ namespace Unity.GrantManager.Controllers
             {
                 var blob = await _attachmentPreviewAppService.GetOrCreatePreviewPdfAsync(AttachmentType.APPLICATION, parsedApplicationId, fileName);
                 if (blob?.Content == null) return NotFound(NotFoundFileMsg);
-                return File(blob.Content, "application/pdf");
+                return File(blob.Content, PdfContentType);
             }
             catch (Exception ex)
             {
@@ -330,6 +333,7 @@ namespace Unity.GrantManager.Controllers
         [HttpGet("assessment/{assessmentId}/preview-pdf/{fileName}")]
         public async Task<IActionResult> PreviewAssessmentAttachment(string assessmentId, string fileName)
         {
+            if (!ModelState.IsValid) return BadRequest(ModelState);
             if (string.IsNullOrWhiteSpace(assessmentId)) return BadRequest("Assessment ID must be provided.");
             if (!Guid.TryParse(assessmentId, out var parsedAssessmentId)) return BadRequest("Assessment ID must be a valid GUID.");
             if (string.IsNullOrWhiteSpace(fileName)) return BadRequest(badRequestFileMsg);
@@ -338,7 +342,7 @@ namespace Unity.GrantManager.Controllers
             {
                 var blob = await _attachmentPreviewAppService.GetOrCreatePreviewPdfAsync(AttachmentType.ASSESSMENT, parsedAssessmentId, fileName);
                 if (blob?.Content == null) return NotFound(NotFoundFileMsg);
-                return File(blob.Content, "application/pdf");
+                return File(blob.Content, PdfContentType);
             }
             catch (Exception ex)
             {
@@ -350,6 +354,7 @@ namespace Unity.GrantManager.Controllers
         [HttpGet("applicant/{applicantId}/preview-pdf/{fileName}")]
         public async Task<IActionResult> PreviewApplicantAttachment(string applicantId, string fileName)
         {
+            if (!ModelState.IsValid) return BadRequest(ModelState);
             if (string.IsNullOrWhiteSpace(applicantId)) return BadRequest("Applicant ID must be provided.");
             if (string.IsNullOrWhiteSpace(fileName)) return BadRequest(badRequestFileMsg);
             if (!_libreOfficeConversionService.IsInstalled()) return StatusCode(503, new { error = libreOfficeNotInstalledMsg });
@@ -357,7 +362,7 @@ namespace Unity.GrantManager.Controllers
             {
                 var blob = await _attachmentPreviewAppService.GetOrCreatePreviewPdfAsync(AttachmentType.APPLICANT, Guid.Parse(applicantId), fileName);
                 if (blob?.Content == null) return NotFound(NotFoundFileMsg);
-                return File(blob.Content, "application/pdf");
+                return File(blob.Content, PdfContentType);
             }
             catch (Exception ex)
             {
@@ -369,6 +374,7 @@ namespace Unity.GrantManager.Controllers
         [HttpGet("chefs/{formSubmissionId}/preview-pdf/{chefsFileId}/{fileName}")]
         public async Task<IActionResult> PreviewChefsAttachment(Guid formSubmissionId, Guid chefsFileId, string fileName)
         {
+            if (!ModelState.IsValid) return BadRequest(ModelState);
             if (string.IsNullOrWhiteSpace(fileName)) return BadRequest(badRequestFileMsg);
             if (!_libreOfficeConversionService.IsInstalled()) return StatusCode(503, new { error = libreOfficeNotInstalledMsg });
             try
@@ -377,12 +383,12 @@ namespace Unity.GrantManager.Controllers
                 if (chefsBlob?.Content == null) return NotFound(NotFoundFileMsg);
                 var blob = await _attachmentPreviewAppService.GetOrCreateChefsPreviewPdfAsync(formSubmissionId, chefsFileId, fileName, chefsBlob.Content);
                 if (blob?.Content == null) return NotFound(NotFoundFileMsg);
-                return File(blob.Content, "application/pdf");
+                return File(blob.Content, PdfContentType);
             }
             catch (Exception ex)
             {
                 logger.LogError(ex, "AttachmentController->PreviewChefsAttachment: {Message}", ex.Message);
-                var errorCode = ex.Data.Contains("ErrorCode") ? Convert.ToInt32(ex.Data["ErrorCode"]) : 500;
+                var errorCode = ex.Data.Contains(ErrorCodeKey) ? Convert.ToInt32(ex.Data[ErrorCodeKey]) : 500;
                 return StatusCode(errorCode, errorFileMsg);
             }
         }

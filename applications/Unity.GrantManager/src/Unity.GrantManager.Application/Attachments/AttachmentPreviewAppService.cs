@@ -46,7 +46,7 @@ public class AttachmentPreviewAppService : ApplicationService, IAttachmentPrevie
         _applicantFolder = NormalizeFolder(configuration["S3:ApplicantS3Folder"] ?? throw new InvalidOperationException("Missing server configuration: S3:ApplicantS3Folder"));
     }
 
-    public async Task<BlobDto> GetOrCreatePreviewPdfAsync(AttachmentType attachmentType, Guid ownerId, string fileName)
+    public async Task<BlobDto?> GetOrCreatePreviewPdfAsync(AttachmentType attachmentType, Guid ownerId, string fileName)
     {
         var folder = attachmentType switch
         {
@@ -79,7 +79,7 @@ public class AttachmentPreviewAppService : ApplicationService, IAttachmentPrevie
         }
         catch (AmazonS3Exception ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
         {
-            Logger.LogWarning("AttachmentPreviewAppService: original file not found in S3 for {FileName} [{AttachmentType}/{OwnerId}]", safeFileName, attachmentType, ownerId);
+            Logger.LogWarning(ex, "AttachmentPreviewAppService: original file not found in S3 for {FileName} [{AttachmentType}/{OwnerId}]", safeFileName, attachmentType, ownerId);
             return null;
         }
         var pdfBytes = await _libreOfficeConversionService.ConvertToPdfAsync(original.Content, fileName);
@@ -89,7 +89,7 @@ public class AttachmentPreviewAppService : ApplicationService, IAttachmentPrevie
         return new BlobDto { Content = pdfBytes, ContentType = "application/pdf", Name = previewName };
     }
 
-    public async Task<BlobDto> GetOrCreateChefsPreviewPdfAsync(Guid formSubmissionId, Guid chefsFileId, string fileName, byte[] originalContent)
+    public async Task<BlobDto?> GetOrCreateChefsPreviewPdfAsync(Guid formSubmissionId, Guid chefsFileId, string fileName, byte[] originalContent)
     {
         var previewKey  = $"chefs/{formSubmissionId}/{chefsFileId}/preview/{fileName}.pdf";
         var previewName = fileName + ".pdf";
@@ -167,6 +167,15 @@ public class AttachmentPreviewAppService : ApplicationService, IAttachmentPrevie
     }
     public void Dispose()
     {
-        _amazonS3Client.Dispose();
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+
+    protected virtual void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            _amazonS3Client.Dispose();
+        }
     }
 }

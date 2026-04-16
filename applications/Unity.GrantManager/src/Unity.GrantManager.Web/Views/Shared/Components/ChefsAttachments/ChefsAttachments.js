@@ -91,60 +91,7 @@ $(function () {
         };
     }
 
-    function escapeHtmlAttribute(value) {
-        return String(value ?? '')
-            .replace(/&/g, '&amp;')
-            .replace(/"/g, '&quot;')
-            .replace(/'/g, '&#39;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;');
-    }
 
-    function getChefsFileDownloadColumn() {
-        return {
-            title: '',
-            name: 'chefsFileDownload',
-            data: 'chefsFileId',
-            width: '60px',
-            className: 'text-nowrap',
-            render: function (data, type, full, meta) {
-                let submissionId = encodeURIComponent(full.chefsSubmissionId);
-                let fileId       = encodeURIComponent(data);
-                let fileName     = full.fileName;
-                let displayName  = full.displayName || full.fileName;
-                let html =
-                    '<div class="dropdown" style="float:right;">' +
-                        '<button class="btn btn-light dropbtn" type="button">' +
-                            '<i class="fl fl-attachment-more"></i>' +
-                        '</button>' +
-                        '<div class="dropdown-content">' +
-                            '<button class="btn fullWidth" style="margin:10px" type="button"' +
-                                ' chefs-submission-id="' + escapeHtmlAttribute(submissionId) + '"' +
-                                ' chefs-data="' + escapeHtmlAttribute(fileId) + '"' +
-                                ' chefs-file-name="' + escapeHtmlAttribute(fileName) + '"' +
-                                ' chefs-display-name="' + escapeHtmlAttribute(displayName) + '"' +
-                                ' onclick="previewChefsFile(event)">' +
-                                '<i class="fa fa-eye"></i><span>Preview Attachment</span>' +
-                            '</button>' +
-                            '<button class="btn fullWidth" style="margin:10px" type="button"' +
-                                ' chefs-submission-id="' + escapeHtmlAttribute(submissionId) + '"' +
-                                ' chefs-data="' + escapeHtmlAttribute(fileId) + '"' +
-                                ' chefs-file-name="' + escapeHtmlAttribute(fileName) + '"' +
-                                ' onclick="downloadChefsFile(event)">' +
-                                '<i class="fl fl-download"></i><span>Download Attachment</span>' +
-                            '</button>' +
-                            '<button class="btn fullWidth" style="margin:10px" type="button"' +
-                                ' onclick="updateAttachmentMetadata(\'CHEFS\',\'' + full.id + '\')">' +
-                                '<i class="fl fl-edit"></i><span>Edit Attachment</span>' +
-                            '</button>' +
-                        '</div>' +
-                    '</div>';
-                return html;
-            },
-            orderable: false,
-            index: 2,
-        };
-    }
 
     let formatItems = function (items) {
         const newData = items.map((item, index) => {
@@ -536,6 +483,52 @@ $(function () {
         }
     });
 });
+
+function getChefsFileDownloadColumn() {
+    return {
+        title: '',
+        name: 'chefsFileDownload',
+        data: 'chefsFileId',
+        width: '60px',
+        className: 'text-nowrap',
+        render: function (data, type, full, meta) {
+            let submissionId = encodeURIComponent(full.chefsSubmissionId);
+            let fileId       = encodeURIComponent(data);
+            let fileName     = full.fileName;
+            let displayName  = full.displayName || full.fileName;
+            let html =
+                '<div class="dropdown" style="float:right;">' +
+                    '<button class="btn btn-light dropbtn" type="button">' +
+                        '<i class="fl fl-attachment-more"></i>' +
+                    '</button>' +
+                    '<div class="dropdown-content">' +
+                        '<button class="btn fullWidth" style="margin:10px" type="button"' +
+                            ' chefs-submission-id="' + escapeHtmlAttribute(submissionId) + '"' +
+                            ' chefs-data="' + escapeHtmlAttribute(fileId) + '"' +
+                            ' chefs-file-name="' + escapeHtmlAttribute(fileName) + '"' +
+                            ' chefs-display-name="' + escapeHtmlAttribute(displayName) + '"' +
+                            ' onclick="previewChefsFile(event)">' +
+                            '<i class="fa fa-eye"></i><span>Preview Attachment</span>' +
+                        '</button>' +
+                        '<button class="btn fullWidth" style="margin:10px" type="button"' +
+                            ' chefs-submission-id="' + escapeHtmlAttribute(submissionId) + '"' +
+                            ' chefs-data="' + escapeHtmlAttribute(fileId) + '"' +
+                            ' chefs-file-name="' + escapeHtmlAttribute(fileName) + '"' +
+                            ' onclick="downloadChefsFile(event)">' +
+                            '<i class="fl fl-download"></i><span>Download Attachment</span>' +
+                        '</button>' +
+                        '<button class="btn fullWidth" style="margin:10px" type="button"' +
+                            ' onclick="updateAttachmentMetadata(\'CHEFS\',\'' + full.id + '\')">' +
+                            '<i class="fl fl-edit"></i><span>Edit Attachment</span>' +
+                        '</button>' +
+                    '</div>' +
+                '</div>';
+            return html;
+        },
+        orderable: false,
+        index: 2,
+    };
+}
 
 function escapeHtml(text) {
     const div = document.createElement('div');
