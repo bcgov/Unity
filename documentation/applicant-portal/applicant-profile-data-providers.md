@@ -379,7 +379,7 @@ flowchart LR
   "organizations": [
     {
       "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-      "applicantRefId": "APP-00123",
+      "applicantRefId": "100000",
       "applicantName": "Jane Smith",
       "orgName": "Acme Corp",
       "organizationType": "Non-Profit",

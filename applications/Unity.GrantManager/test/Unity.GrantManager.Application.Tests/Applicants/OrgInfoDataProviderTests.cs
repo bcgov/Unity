@@ -129,7 +129,7 @@ namespace Unity.GrantManager.Applicants
                 [CreateSubmission(applicationId, "TESTUSER", applicantId)],
                 [CreateApplicant(applicantId, a =>
                 {
-                    a.UnityApplicantId = "APP-00123";
+                    a.UnityApplicantId = "00123";
                     a.ApplicantName = "Jane Smith";
                     a.OrgName = "Acme Corp";
                     a.OrganizationType = "Non-Profit";
@@ -150,7 +150,7 @@ namespace Unity.GrantManager.Applicants
 
             var org = dto.Organizations[0];
             org.Id.ShouldBe(applicantId);
-            org.ApplicantRefId.ShouldBe("APP-00123");
+            org.ApplicantRefId.ShouldBe("00123");
             org.ApplicantName.ShouldBe("Jane Smith");
             org.OrgName.ShouldBe("Acme Corp");
             org.OrganizationType.ShouldBe("Non-Profit");
