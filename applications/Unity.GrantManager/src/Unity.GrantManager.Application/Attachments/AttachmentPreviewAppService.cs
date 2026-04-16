@@ -98,7 +98,7 @@ public class AttachmentPreviewAppService : ApplicationService, IAttachmentPrevie
         Logger.LogInformation("AttachmentPreviewAppService: no cached preview found for CHEFS file {FileName} [{FormSubmissionId}/{ChefsFileId}] — starting LibreOffice conversion", safeFileNameForLog, formSubmissionId, chefsFileId);
         var pdfBytes = await _libreOfficeConversionService.ConvertToPdfAsync(originalContent, fileName);
         await UploadPreviewAsync(previewKey, pdfBytes);
-        Logger.LogInformation("AttachmentPreviewAppService: conversion complete for CHEFS file {FileName} — preview cached at {PreviewKey}", safeFileNameForLog, previewKey);
+        Logger.LogInformation("AttachmentPreviewAppService: conversion complete for CHEFS file {FileName} — preview cached at {PreviewKey}", safeFileNameForLog, SanitizeForLog(previewKey));
 
         return new BlobDto { Content = pdfBytes, ContentType = "application/pdf", Name = previewName };
     }
@@ -143,31 +143,17 @@ public class AttachmentPreviewAppService : ApplicationService, IAttachmentPrevie
             return string.Empty;
 
         return value
-            .Replace("\r", string.Empty)
-            .Replace("\n", string.Empty);
+            .Replace("\r", "\\r")
+            .Replace("\n", "\\n");
     }
 
     private static string NormalizeFolder(string folder)
         => folder.EndsWith('/') ? folder.TrimEnd('/') : folder;
-
-    private static string SanitizeForLog(string value)
-    {
-        if (string.IsNullOrEmpty(value))
-            return string.Empty;
-
-        return value
-            .Replace("\r", "\\r")
-            .Replace("\n", "\\n");
-    }
 
     private static string EscapeKeyFileName(string s3ObjectKey)
     {
         var lastSlash = s3ObjectKey.LastIndexOf('/');
         if (lastSlash < 0) return Uri.EscapeDataString(s3ObjectKey);
         return s3ObjectKey[..(lastSlash + 1)] + Uri.EscapeDataString(s3ObjectKey[(lastSlash + 1)..]);
-    }
-    private static string SanitizeForLog(string value)
-    {
-        return value?.Replace("\r", string.Empty).Replace("\n", string.Empty) ?? string.Empty;
     }
 }

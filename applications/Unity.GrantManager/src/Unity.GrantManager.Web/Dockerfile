@@ -73,9 +73,9 @@ RUN mkdir -p /.aspnet && \
     mkdir -p /app/logs && \
     chmod 755 /.aspnet && \
     chmod 755 /.dotnet && \
-    chmod 755 /app/logs && \        
+    chmod 755 /app/logs && \
     chmod 644 /usr/local/share/ca-certificates/cas2024inter.crt && \
-    chmod 644 /usr/local/share/ca-certificates/cas2024root.crt && \ 
+    chmod 644 /usr/local/share/ca-certificates/cas2024root.crt && \
     chmod 644 /usr/local/share/ca-certificates/cas2025inter.crt && \
     chmod 644 /usr/local/share/ca-certificates/cas2025root.crt && \
     chmod 644 /usr/local/share/ca-certificates/cas2025top.crt && \
@@ -83,9 +83,8 @@ RUN mkdir -p /.aspnet && \
     chmod 644 /usr/local/share/ca-certificates/casroot.crt && \
     chmod 644 /usr/local/share/ca-certificates/sslcomroot.crt && \
     chmod 644 /usr/local/share/ca-certificates/ssoroot.crt && \
-    update-ca-certificates
-
-RUN apt-get update && \
+    update-ca-certificates && \
+    apt-get update && \
     apt-get install -y --no-install-recommends libreoffice-nogui && \
     rm -rf /var/lib/apt/lists/*
 

@@ -94,10 +94,10 @@ function updateAttachmentMetadata(attachmentType, attachmentId) {
 }
 
 $(document).on('mouseenter', '.attachments-table .dropdown', function () {
-    var rect = this.getBoundingClientRect();
-    var $content = $(this).find('.dropdown-content');
+    const rect = this.getBoundingClientRect();
+    const $content = $(this).find('.dropdown-content');
     $content.css({ visibility: 'hidden', display: 'block', top: '', bottom: '' });
-    var dropdownHeight = $content.outerHeight();
+    const dropdownHeight = $content.outerHeight();
     $content.css({ visibility: '', display: '' });
     if (rect.bottom + dropdownHeight > window.innerHeight) {
         $content.css({ bottom: (window.innerHeight - rect.top) + 'px', top: '' });
