@@ -19,10 +19,27 @@ public class ApplicationStatusAppService : ApplicationService, IApplicationStatu
         _applicationStatusRepository = repository;
     }
 
-    public async Task<IList<ApplicationStatusDto>> GetListAsync()
+    public virtual async Task<IList<ApplicationStatusDto>> GetListAsync()
     {        
         var statuses = await _applicationStatusRepository.GetListAsync();
 
         return ObjectMapper.Map<List<ApplicationStatus>, List<ApplicationStatusDto>>(statuses.OrderBy(s => s.StatusCode).ToList());
+    }
+
+    public virtual async Task UpdateExternalStatusLabelsAsync(UpdateApplicationStatusExternalLabelsDto input)
+    {
+        // Load all statuses in a single query by IDs
+        var statusIds = input.Statuses.Select(s => s.Id).ToList();
+        var statuses = await _applicationStatusRepository.GetListAsync(s => statusIds.Contains(s.Id));
+        var statusMap = statuses.ToDictionary(s => s.Id);
+
+        foreach (var statusDto in input.Statuses)
+        {
+            if (statusMap.TryGetValue(statusDto.Id, out var status))
+            {
+                status.ExternalStatus = statusDto.ExternalStatus;
+                await _applicationStatusRepository.UpdateAsync(status);
+            }
+        }
     }
 }
