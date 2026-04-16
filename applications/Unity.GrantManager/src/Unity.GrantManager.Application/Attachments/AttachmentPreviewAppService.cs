@@ -10,7 +10,7 @@ using Volo.Abp.DependencyInjection;
 
 namespace Unity.GrantManager.Attachments;
 
-public class AttachmentPreviewAppService : ApplicationService, IAttachmentPreviewAppService, ITransientDependency
+public class AttachmentPreviewAppService : ApplicationService, IAttachmentPreviewAppService, ITransientDependency, IDisposable
 {
     private readonly IFileAppService _fileAppService;
     private readonly ILibreOfficeConversionService _libreOfficeConversionService;
@@ -155,5 +155,9 @@ public class AttachmentPreviewAppService : ApplicationService, IAttachmentPrevie
         var lastSlash = s3ObjectKey.LastIndexOf('/');
         if (lastSlash < 0) return Uri.EscapeDataString(s3ObjectKey);
         return s3ObjectKey[..(lastSlash + 1)] + Uri.EscapeDataString(s3ObjectKey[(lastSlash + 1)..]);
+    }
+    public void Dispose()
+    {
+        _amazonS3Client.Dispose();
     }
 }
