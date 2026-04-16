@@ -84,20 +84,21 @@ public class AttachmentPreviewAppService : ApplicationService, IAttachmentPrevie
     {
         var previewKey  = $"chefs/{formSubmissionId}/{chefsFileId}/preview/{fileName}.pdf";
         var previewName = fileName + ".pdf";
+        var safeFileNameForLog = SanitizeForLog(fileName);
 
         // Try S3 cache first
         var cached = await TryGetCachedPreviewAsync(previewKey, previewName);
         if (cached != null)
         {
-            Logger.LogInformation("AttachmentPreviewAppService: serving cached preview for CHEFS file {FileName} [{FormSubmissionId}/{ChefsFileId}]", fileName, formSubmissionId, chefsFileId);
+            Logger.LogInformation("AttachmentPreviewAppService: serving cached preview for CHEFS file {FileName} [{FormSubmissionId}/{ChefsFileId}]", safeFileNameForLog, formSubmissionId, chefsFileId);
             return cached;
         }
 
         // Cache miss — convert provided content, cache, return
-        Logger.LogInformation("AttachmentPreviewAppService: no cached preview found for CHEFS file {FileName} [{FormSubmissionId}/{ChefsFileId}] — starting LibreOffice conversion", fileName, formSubmissionId, chefsFileId);
+        Logger.LogInformation("AttachmentPreviewAppService: no cached preview found for CHEFS file {FileName} [{FormSubmissionId}/{ChefsFileId}] — starting LibreOffice conversion", safeFileNameForLog, formSubmissionId, chefsFileId);
         var pdfBytes = await _libreOfficeConversionService.ConvertToPdfAsync(originalContent, fileName);
         await UploadPreviewAsync(previewKey, pdfBytes);
-        Logger.LogInformation("AttachmentPreviewAppService: conversion complete for CHEFS file {FileName} — preview cached at {PreviewKey}", fileName, previewKey);
+        Logger.LogInformation("AttachmentPreviewAppService: conversion complete for CHEFS file {FileName} — preview cached at {PreviewKey}", safeFileNameForLog, previewKey);
 
         return new BlobDto { Content = pdfBytes, ContentType = "application/pdf", Name = previewName };
     }
@@ -134,6 +135,16 @@ public class AttachmentPreviewAppService : ApplicationService, IAttachmentPrevie
             DisablePayloadSigning = false
         };
         await _amazonS3Client.PutObjectAsync(putRequest);
+    }
+
+    private static string SanitizeForLog(string value)
+    {
+        if (string.IsNullOrEmpty(value))
+            return string.Empty;
+
+        return value
+            .Replace("\r", string.Empty)
+            .Replace("\n", string.Empty);
     }
 
     private static string NormalizeFolder(string folder)
