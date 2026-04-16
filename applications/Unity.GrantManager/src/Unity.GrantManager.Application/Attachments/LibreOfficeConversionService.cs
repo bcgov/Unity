@@ -8,6 +8,22 @@ namespace Unity.GrantManager.Attachments;
 
 public class LibreOfficeConversionService : ILibreOfficeConversionService, ITransientDependency
 {
+    private static string GetSafeFileName(string fileName)
+    {
+        if (string.IsNullOrWhiteSpace(fileName))
+        {
+            throw new ArgumentException("File name must be provided.", nameof(fileName));
+        }
+
+        var safeFileName = Path.GetFileName(fileName);
+        if (safeFileName.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0)
+        {
+            throw new ArgumentException("File name contains invalid characters.", nameof(fileName));
+        }
+
+        return safeFileName;
+    }
+
     public bool IsInstalled()
     {
         try
@@ -35,24 +51,32 @@ public class LibreOfficeConversionService : ILibreOfficeConversionService, ITran
 
     public async Task<byte[]> ConvertToPdfAsync(byte[] fileContent, string fileName)
     {
+        var safeFileName = GetSafeFileName(fileName);
         var tempDir = Path.Combine(Path.GetTempPath(), "unity-libreoffice-preview", Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(tempDir);
 
         try
         {
-            var inputPath = Path.Combine(tempDir, fileName);
+            var inputPath = Path.Combine(tempDir, safeFileName);
             await File.WriteAllBytesAsync(inputPath, fileContent);
+
+            var startInfo = new ProcessStartInfo
+            {
+                FileName = "libreoffice",
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false
+            };
+            startInfo.ArgumentList.Add("--headless");
+            startInfo.ArgumentList.Add("--convert-to");
+            startInfo.ArgumentList.Add("pdf");
+            startInfo.ArgumentList.Add("--outdir");
+            startInfo.ArgumentList.Add(tempDir);
+            startInfo.ArgumentList.Add(inputPath);
 
             var process = new Process
             {
-                StartInfo = new ProcessStartInfo
-                {
-                    FileName = "libreoffice",
-                    Arguments = $"--headless --convert-to pdf --outdir \"{tempDir}\" \"{inputPath}\"",
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true,
-                    UseShellExecute = false
-                }
+                StartInfo = startInfo
             };
 
             process.Start();
@@ -61,21 +85,21 @@ public class LibreOfficeConversionService : ILibreOfficeConversionService, ITran
             if (timedOut)
             {
                 process.Kill();
-                throw new InvalidOperationException($"LibreOffice conversion timed out for file: {fileName}");
+                throw new InvalidOperationException($"LibreOffice conversion timed out for file: {safeFileName}");
             }
 
             if (process.ExitCode != 0)
             {
                 var error = await process.StandardError.ReadToEndAsync();
-                throw new InvalidOperationException($"LibreOffice conversion failed for file: {fileName}. Error: {error}");
+                throw new InvalidOperationException($"LibreOffice conversion failed for file: {safeFileName}. Error: {error}");
             }
 
-            var pdfFileName = Path.GetFileNameWithoutExtension(fileName) + ".pdf";
+            var pdfFileName = Path.GetFileNameWithoutExtension(safeFileName) + ".pdf";
             var pdfPath = Path.Combine(tempDir, pdfFileName);
 
             if (!File.Exists(pdfPath))
             {
-                throw new InvalidOperationException($"LibreOffice did not produce a PDF output for file: {fileName}");
+                throw new InvalidOperationException($"LibreOffice did not produce a PDF output for file: {safeFileName}");
             }
 
             return await File.ReadAllBytesAsync(pdfPath);
