@@ -8,6 +8,7 @@ namespace Unity.GrantManager.Attachments;
 
 public class LibreOfficeConversionService : ILibreOfficeConversionService, ITransientDependency
 {
+    private const string LibreOfficeBinary = "/usr/bin/libreoffice";
     private static readonly Lazy<bool> IsInstalledCache = new(ProbeIsInstalled, true);
 
     private static string GetSafeFileName(string fileName)
@@ -34,7 +35,7 @@ public class LibreOfficeConversionService : ILibreOfficeConversionService, ITran
             {
                 StartInfo = new ProcessStartInfo
                 {
-                    FileName = "libreoffice",
+                    FileName = LibreOfficeBinary,
                     Arguments = "--version",
                     UseShellExecute = false
                 }
@@ -69,7 +70,7 @@ public class LibreOfficeConversionService : ILibreOfficeConversionService, ITran
 
             var startInfo = new ProcessStartInfo
             {
-                FileName = "libreoffice",
+                FileName = LibreOfficeBinary,
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
                 UseShellExecute = false
