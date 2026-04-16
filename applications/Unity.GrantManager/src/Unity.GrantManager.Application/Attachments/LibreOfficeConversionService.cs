@@ -36,8 +36,6 @@ public class LibreOfficeConversionService : ILibreOfficeConversionService, ITran
                 {
                     FileName = "libreoffice",
                     Arguments = "--version",
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true,
                     UseShellExecute = false
                 }
             };
@@ -89,17 +87,26 @@ public class LibreOfficeConversionService : ILibreOfficeConversionService, ITran
             };
 
             process.Start();
-            var timedOut = !process.WaitForExit(60000);
 
-            if (timedOut)
+            var standardOutputTask = process.StandardOutput.ReadToEndAsync();
+            var standardErrorTask = process.StandardError.ReadToEndAsync();
+            var exitTask = process.WaitForExitAsync();
+            var completedTask = await Task.WhenAny(exitTask, Task.Delay(60000));
+
+            if (completedTask != exitTask)
             {
-                process.Kill();
+                process.Kill(entireProcessTree: true);
+                await process.WaitForExitAsync();
+                await Task.WhenAll(standardOutputTask, standardErrorTask);
                 throw new InvalidOperationException($"LibreOffice conversion timed out for file: {safeFileName}");
             }
 
+            await exitTask;
+            await Task.WhenAll(standardOutputTask, standardErrorTask);
+
             if (process.ExitCode != 0)
             {
-                var error = await process.StandardError.ReadToEndAsync();
+                var error = await standardErrorTask;
                 throw new InvalidOperationException($"LibreOffice conversion failed for file: {safeFileName}. Error: {error}");
             }
 
