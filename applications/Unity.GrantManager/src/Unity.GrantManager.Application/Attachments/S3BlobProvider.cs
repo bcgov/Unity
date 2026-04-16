@@ -65,6 +65,19 @@ public partial class S3BlobProvider : BlobProviderBase, ITransientDependency
         };
         
         await _amazonS3Client.DeleteObjectAsync(deleteObjectRequest);
+
+        // Also delete the cached preview PDF if one was generated (S3 DeleteObject is idempotent)
+        var lastSlash = s3ObjectKey.LastIndexOf('/');
+        if (lastSlash >= 0)
+        {
+            var previewKey = s3ObjectKey[..lastSlash] + "/preview/" + s3ObjectKey[(lastSlash + 1)..] + ".pdf";
+            await _amazonS3Client.DeleteObjectAsync(new DeleteObjectRequest
+            {
+                BucketName = config.Bucket,
+                Key = EscapeKeyFileName(previewKey)
+            });
+        }
+
         if (attachmentType == "Application")
         {
             if (attachmentTypeId.IsNullOrEmpty())

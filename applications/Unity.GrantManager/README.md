@@ -24,6 +24,16 @@ This is the main grant management application for the Unity platform. It include
     - Right click on `Unity.GrantManager.DbMigrator` and click **"Set As Startup Project"**
     - `Ctrl + F5` to run without debugging
 
+## Attachment Preview
+
+Office file preview (DOCX, XLSX, PPTX, ODT, ODS, ODP, RTF, CSV) uses **LibreOffice** for server-side PDF conversion. LibreOffice is installed automatically in the Docker image via the Dockerfile — no manual setup is needed for deployed environments (DEV, TEST, PROD).
+
+**Local development (Visual Studio on Windows):**
+LibreOffice conversion requires a Linux environment and is not supported when running the app directly on Windows. Clicking "Preview" on an office file will show the message *"LibreOffice is not installed on the server. File preview is unavailable."* This is expected behaviour. Use the **Download** button to open the file locally. To test the full preview feature, run the application via Docker.
+
+**Preview caching:**
+The first preview request converts the file and caches the PDF in S3 alongside the original (e.g. `applications/{id}/preview/{filename}.pdf`). Subsequent preview requests serve the cached PDF. The cached PDF is automatically deleted when the original attachment is deleted.
+
 ## See Also
 
 - https://docs.abp.io/en/abp/latest
