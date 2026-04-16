@@ -311,11 +311,12 @@ namespace Unity.GrantManager.Controllers
         public async Task<IActionResult> PreviewApplicationAttachment(string applicationId, string fileName)
         {
             if (string.IsNullOrWhiteSpace(applicationId)) return BadRequest("Application ID must be provided.");
+            if (!Guid.TryParse(applicationId, out var parsedApplicationId)) return BadRequest("Application ID must be a valid GUID.");
             if (string.IsNullOrWhiteSpace(fileName)) return BadRequest(badRequestFileMsg);
             if (!LibreOfficeInstallationCache.IsInstalled(() => _libreOfficeConversionService.IsInstalled())) return StatusCode(503, new { error = libreOfficeNotInstalledMsg });
             try
             {
-                var blob = await _attachmentPreviewAppService.GetOrCreatePreviewPdfAsync(AttachmentType.APPLICATION, Guid.Parse(applicationId), fileName);
+                var blob = await _attachmentPreviewAppService.GetOrCreatePreviewPdfAsync(AttachmentType.APPLICATION, parsedApplicationId, fileName);
                 if (blob?.Content == null) return NotFound(NotFoundFileMsg);
                 return File(blob.Content, "application/pdf");
             }
@@ -330,11 +331,12 @@ namespace Unity.GrantManager.Controllers
         public async Task<IActionResult> PreviewAssessmentAttachment(string assessmentId, string fileName)
         {
             if (string.IsNullOrWhiteSpace(assessmentId)) return BadRequest("Assessment ID must be provided.");
+            if (!Guid.TryParse(assessmentId, out var parsedAssessmentId)) return BadRequest("Assessment ID must be a valid GUID.");
             if (string.IsNullOrWhiteSpace(fileName)) return BadRequest(badRequestFileMsg);
             if (!LibreOfficeInstallationCache.IsInstalled(() => _libreOfficeConversionService.IsInstalled())) return StatusCode(503, new { error = libreOfficeNotInstalledMsg });
             try
             {
-                var blob = await _attachmentPreviewAppService.GetOrCreatePreviewPdfAsync(AttachmentType.ASSESSMENT, Guid.Parse(assessmentId), fileName);
+                var blob = await _attachmentPreviewAppService.GetOrCreatePreviewPdfAsync(AttachmentType.ASSESSMENT, parsedAssessmentId, fileName);
                 if (blob?.Content == null) return NotFound(NotFoundFileMsg);
                 return File(blob.Content, "application/pdf");
             }
