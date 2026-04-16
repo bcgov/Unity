@@ -4,6 +4,7 @@ API module with Flask routes for the application.
 from flask import Flask, request, abort, jsonify
 from flask_cors import CORS
 import asyncio
+import aiohttp
 import logging
 import datetime
 from config import config
@@ -463,10 +464,73 @@ def ask():
                     threshold=config.app.semantic_cache_borderline_low,
                     k=config.app.semantic_cache_top_k
                 )
+                if candidates:
+                    candidate_sims = ', '.join(f"{c['similarity']:.4f}" for c in candidates)
+                    logger.info(
+                        f"[cache:candidates] tenant={tenant_id} db={db_id} "
+                        f"count={len(candidates)} "
+                        f"similarities=[{candidate_sims}]"
+                    )
                 # Direct accept: best candidate clears the high-confidence threshold
-                # Borderline zone [0.85, 0.95) is reserved for Phase 3 LLM judge
                 if candidates and candidates[0]["similarity"] >= config.app.semantic_cache_threshold:
                     cache_hit = candidates[0]
+
+                # Borderline zone [borderline_low, threshold): score ALL candidates in parallel, pick best above threshold
+                if not cache_hit and candidates and config.app.llm_judge_enabled:
+                    borderline = [
+                        c for c in candidates
+                        if c["similarity"] < config.app.semantic_cache_threshold
+                    ]
+                    if borderline:
+                        borderline_sims = ', '.join(f"{c['similarity']:.4f}" for c in borderline)
+                        logger.info(
+                            f"[cache:borderline] tenant={tenant_id} db={db_id} "
+                            f"count={len(borderline)} "
+                            f"similarities=[{borderline_sims}]"
+                        )
+                        async with aiohttp.ClientSession() as judge_session:
+                            results = await asyncio.gather(*[
+                                cache_reranker.llm_judge.score_candidate(
+                                    normalized_query,
+                                    candidate["query_text"],
+                                    judge_session,
+                                    config.ai,
+                                )
+                                for candidate in borderline
+                            ])
+
+                        best_candidate = None
+                        best_score = -1  # sentinel; valid scores are 0..10
+                        for candidate, (score, judge_tokens) in zip(borderline, results):
+                            logger.info(
+                                f"[cache:llm_judge] tenant={tenant_id} db={db_id} "
+                                f"similarity={candidate['similarity']:.4f} "
+                                f"score={score} "
+                                f"tokens={judge_tokens}"
+                            )
+                            if score > best_score or (
+                                score == best_score
+                                and best_candidate is not None
+                                and candidate["similarity"] > best_candidate["similarity"]
+                            ):
+                                best_score = score
+                                best_candidate = candidate
+
+                        if best_candidate is not None and best_score >= config.app.llm_judge_score_threshold:
+                            cache_hit = best_candidate
+                            cache_hit["hit_type_override"] = "llm_judge_hit"
+                            logger.info(
+                                f"[cache:llm_judge_selected] tenant={tenant_id} db={db_id} "
+                                f"score={best_score} "
+                                f"similarity={cache_hit['similarity']:.4f} "
+                                f"threshold={config.app.llm_judge_score_threshold}"
+                            )
+                        else:
+                            logger.info(
+                                f"[cache:llm_judge_miss] tenant={tenant_id} db={db_id} "
+                                f"best_score={best_score} "
+                                f"threshold={config.app.llm_judge_score_threshold}"
+                            )
 
             if cache_hit:
                 cached = cache_hit["response_payload"]
@@ -527,6 +591,7 @@ def ask():
                         "from_cache": True,
                         "cache_similarity": round(cache_hit["similarity"], 4),
                         "cache_hit_type": hit_type,
+                        "cache_original_query": cache_hit.get("query_text", "") if hit_type == "llm_judge_hit" else None,
                     }), 200
         # ── End cache lookup ─────────────────────────────────────────────────
         if config.app.semantic_cache_enabled and not is_retry:

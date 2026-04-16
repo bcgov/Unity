@@ -1,9 +1,12 @@
 """
 cache_reranker.py — Multi-layer cache reranking.
-Phase 1: FuzzyMatcher, normalize_query.
+Phase 1: FuzzyMatcher — rapidfuzz layer 1.5 between exact and embedding search.
+Phase 2: normalize_query — whitespace, punctuation, domain abbreviation expansion.
+Phase 3: LLMJudge — binary equivalence judge for borderline cosine zone.
 """
 import logging
 import re
+import aiohttp
 from typing import Optional, List, Dict
 
 from rapidfuzz import fuzz, process
@@ -107,3 +110,108 @@ class FuzzyMatcher:
 
 
 fuzzy_matcher = FuzzyMatcher()
+
+
+_SCORER_SYSTEM = "You are a query equivalence scorer. Reply with a single integer from 0 to 10 and nothing else."
+
+_SCORER_PROMPT = """\
+Rate the semantic equivalence of these two analytical questions on a scale of 0 to 10.
+
+Q1: {q1}
+Q2: {q2}
+
+Scoring guide:
+  10 — Identical intent; the same SQL would correctly answer both.
+   8-9 — Same intent, trivially different phrasing only (synonyms, word order).
+   5-7 — Overlapping topic but differ in at least one of: filters, time range,
+          grouping dimension, or aggregation function.
+   2-4 — Related subject area but clearly different questions.
+   0-1 — Unrelated or contradictory.
+
+Penalise for ANY difference in:
+- Filters (WHERE clauses, included/excluded categories)
+- Aggregation (SUM vs COUNT, row-level vs aggregate)
+- Grouping dimension (GROUP BY fields)
+- Time range (this year, last month, fiscal year, YTD)
+- Named entities (specific programs, regions, columns)
+
+Reply with exactly one integer, no punctuation, no explanation.\
+"""
+
+
+class LLMJudge:
+    """Phase 3 — Scored equivalence ranker for borderline cosine zone [low, threshold).
+
+    Calls the configured Azure OpenAI deployment with a 0-10 scoring prompt.
+    Scores ALL borderline candidates and returns the best one above the threshold,
+    rather than stopping at the first acceptable match.
+    Fail-safe: returns score=0 on any API error — a miss is always safer than
+    a false cache hit that returns wrong SQL.
+    """
+
+    async def score_candidate(
+        self,
+        q1: str,
+        q2: str,
+        session: aiohttp.ClientSession,
+        ai_config,
+    ) -> tuple[int, int]:
+        """Return (score, total_tokens). score in [0, 10]. Returns (0, 0) on any error."""
+        try:
+            headers = {
+                "api-key": ai_config.azure_api_key,
+                "Content-Type": "application/json",
+            }
+            endpoint = (
+                f"{ai_config.azure_endpoint}/openai/deployments/"
+                f"{ai_config.azure_deployment}/chat/completions"
+                f"?api-version={ai_config.azure_api_version}"
+            )
+            payload = {
+                "messages": [
+                    {"role": "system", "content": _SCORER_SYSTEM},
+                    {"role": "user", "content": _SCORER_PROMPT.format(q1=q1, q2=q2)},
+                ],
+                "max_completion_tokens": 1000,
+            }
+            if ai_config.supports_temperature:
+                payload["temperature"] = 0
+            async with session.post(endpoint, headers=headers, json=payload) as resp:
+                if resp.status != 200:
+                    error_body = await resp.text()
+                    logger.warning(f"[llm_judge] API error status={resp.status} body={error_body}")
+                    return 0, 0
+                data = await resp.json()
+                choice = data["choices"][0]
+                finish_reason = choice.get("finish_reason", "unknown")
+                text = choice["message"].get("content") or ""
+                usage = data.get("usage", {})
+                tokens = usage.get("total_tokens", 0)
+                reasoning_tokens = usage.get("completion_tokens_details", {}).get("reasoning_tokens", 0)
+                if finish_reason == "content_filter":
+                    logger.warning(
+                        f"[llm_judge] content_filter triggered — defaulting score=0"
+                    )
+                    return 0, tokens
+                score = self._parse_score(text)
+                logger.debug(
+                    f"[llm_judge] finish_reason={finish_reason} "
+                    f"reasoning_tokens={reasoning_tokens} "
+                    f"raw_response={text!r} parsed_score={score}"
+                )
+                return score, tokens
+        except Exception as exc:
+            logger.warning(f"[llm_judge] Exception, defaulting score=0: {exc}")
+            return 0, 0
+
+    def _parse_score(self, text: str) -> int:
+        """Parse integer 0-10 from LLM output. Returns 0 on any parse failure."""
+        cleaned = re.sub(r'[^0-9.]', ' ', text.strip()).strip()
+        first_token = cleaned.split()[0] if cleaned.split() else ""
+        try:
+            return max(0, min(10, int(float(first_token))))
+        except (ValueError, IndexError):
+            return 0
+
+
+llm_judge = LLMJudge()

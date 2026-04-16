@@ -96,16 +96,20 @@
                       @if (turn.sql_explanation_visible) {
                         <app-sql-explanation [explanation]="turn.embed.sql_explanation"></app-sql-explanation>
                       }
-                      @if (turn.embed.cache_hit_type === 'semantic_hit') {
+                      @if (turn.embed.cache_hit_type === 'llm_judge_hit') {
                         <div class="cache-badge">
                           Based on a similar previous question.
-                          <span class="cache-badge-hint">Check if this matches what you meant.</span>
+                          @if (turn.embed.cache_original_query) {
+                            <span class="cache-badge-hint">Previous question: "{{ turn.embed.cache_original_query }}"</span>
+                          } @else {
+                            <span class="cache-badge-hint">Check if this matches what you meant.</span>
+                          }
                           <button
                             class="cache-fresh-btn"
                             [disabled]="isLoading"
                             aria-label="Generate a new answer for this question"
                             (click)="getFreshAnswer(turn)">
-                            Generate a new answer
+                            Get fresh answer
                           </button>
                         </div>
                       }
