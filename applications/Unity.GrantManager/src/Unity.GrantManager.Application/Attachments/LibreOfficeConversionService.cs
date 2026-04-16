@@ -75,6 +75,7 @@ public class LibreOfficeConversionService : ILibreOfficeConversionService, ITran
                 RedirectStandardError = true,
                 UseShellExecute = false
             };
+            startInfo.ArgumentList.Add($"-env:UserInstallation=file://{tempDir}");
             startInfo.ArgumentList.Add("--headless");
             startInfo.ArgumentList.Add("--convert-to");
             startInfo.ArgumentList.Add("pdf");
