@@ -1,14 +1,27 @@
-﻿function generateAttachmentButtonContent(data, type, full, meta, attachmentType) {
+﻿function escapeHtmlAttribute(value) {
+    return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+}
+
+function generateAttachmentButtonContent(data, type, full, meta, attachmentType) {
     let ownerId = getAttachmentOwnerId(attachmentType);
     let downloadUrl = `/api/app/attachment/${attachmentType}/${encodeURIComponent(ownerId)}/download/${encodeURIComponent(full.fileName)}`;
     let isCreator = abp.currentUser.id == full.creatorId;
+    let escapedAttachmentType = escapeHtmlAttribute(attachmentType);
+    let escapedOwnerId = escapeHtmlAttribute(ownerId);
+    let escapedFileName = escapeHtmlAttribute(full.fileName);
+    let escapedDisplayName = escapeHtmlAttribute(full.displayName || full.fileName);
     let html = `
         <div class="dropdown" style="float:right;">
             <button class="btn btn-light dropbtn" type="button">
                 <i class="fl fl-attachment-more"></i>
             </button>
             <div class="dropdown-content">
-                <button class="btn fullWidth" style="margin:10px" type="button" onclick="previewAttachment('${attachmentType}','${ownerId}','${full.fileName}','${full.displayName || full.fileName}')">
+                <button class="btn fullWidth js-preview-attachment" style="margin:10px" type="button" data-attachment-type="${escapedAttachmentType}" data-owner-id="${escapedOwnerId}" data-file-name="${escapedFileName}" data-display-name="${escapedDisplayName}">
                     <i class="fa fa-eye"></i><span>Preview Attachment</span>
                 </button>
                 <a href="${downloadUrl}" target="_blank" download="${data}" class="fullwidth">
@@ -40,6 +53,15 @@ function previewAttachment(attachmentType, ownerId, fileName, displayName) {
         displayName: displayName
     });
 }
+
+$(document).on('click', '.js-preview-attachment', function () {
+    previewAttachment(
+        $(this).attr('data-attachment-type'),
+        $(this).attr('data-owner-id'),
+        $(this).attr('data-file-name'),
+        $(this).attr('data-display-name')
+    );
+});
 
 function getAttachmentOwnerId(attachmentType) {
     switch (attachmentType) {
