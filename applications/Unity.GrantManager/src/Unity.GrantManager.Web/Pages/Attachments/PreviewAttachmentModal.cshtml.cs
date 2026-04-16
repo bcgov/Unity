@@ -1,5 +1,4 @@
 using System;
-using System.Threading.Tasks;
 using Volo.Abp.AspNetCore.Mvc.UI.RazorPages;
 
 namespace Unity.GrantManager.Web.Pages.Attachments;
@@ -12,14 +11,12 @@ public class PreviewAttachmentModalModel : AbpPageModel
     public string AttachmentType { get; private set; } = "";
     public string PreviewPdfUrl { get; private set; } = "";
 
-#pragma warning disable CS1998
-    public async Task OnGetAsync(
+    public void OnGet(
         string attachmentType,
         string ownerId,
         string fileName,
         string? displayName = null,
         string? chefsFileId = null)
-#pragma warning restore CS1998
     {
         FileName = fileName;
         DisplayName = string.IsNullOrWhiteSpace(displayName) ? fileName : displayName;
