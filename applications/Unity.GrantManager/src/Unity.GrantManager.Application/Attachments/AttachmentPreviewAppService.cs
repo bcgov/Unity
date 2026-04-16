@@ -59,21 +59,23 @@ public class AttachmentPreviewAppService : ApplicationService, IAttachmentPrevie
         var originalKey = $"{folder}/{ownerId}/{fileName}";
         var previewKey  = $"{folder}/{ownerId}/preview/{fileName}.pdf";
         var previewName = fileName + ".pdf";
+        var safeFileName = SanitizeForLog(fileName);
+        var safePreviewKey = SanitizeForLog(previewKey);
 
         // Try S3 cache first
         var cached = await TryGetCachedPreviewAsync(previewKey, previewName);
         if (cached != null)
         {
-            Logger.LogInformation("AttachmentPreviewAppService: serving cached preview for {FileName} [{AttachmentType}/{OwnerId}]", fileName, attachmentType, ownerId);
+            Logger.LogInformation("AttachmentPreviewAppService: serving cached preview for {FileName} [{AttachmentType}/{OwnerId}]", safeFileName, attachmentType, ownerId);
             return cached;
         }
 
         // Cache miss — download original, convert, cache, return
-        Logger.LogInformation("AttachmentPreviewAppService: no cached preview found for {FileName} [{AttachmentType}/{OwnerId}] — starting LibreOffice conversion", fileName, attachmentType, ownerId);
+        Logger.LogInformation("AttachmentPreviewAppService: no cached preview found for {FileName} [{AttachmentType}/{OwnerId}] — starting LibreOffice conversion", safeFileName, attachmentType, ownerId);
         var original = await _fileAppService.GetBlobAsync(new GetBlobRequestDto { S3ObjectKey = originalKey, Name = fileName });
         var pdfBytes = await _libreOfficeConversionService.ConvertToPdfAsync(original.Content, fileName);
         await UploadPreviewAsync(previewKey, pdfBytes);
-        Logger.LogInformation("AttachmentPreviewAppService: conversion complete for {FileName} — preview cached at {PreviewKey}", fileName, previewKey);
+        Logger.LogInformation("AttachmentPreviewAppService: conversion complete for {FileName} — preview cached at {PreviewKey}", safeFileName, safePreviewKey);
 
         return new BlobDto { Content = pdfBytes, ContentType = "application/pdf", Name = previewName };
     }
@@ -142,5 +144,9 @@ public class AttachmentPreviewAppService : ApplicationService, IAttachmentPrevie
         var lastSlash = s3ObjectKey.LastIndexOf('/');
         if (lastSlash < 0) return Uri.EscapeDataString(s3ObjectKey);
         return s3ObjectKey[..(lastSlash + 1)] + Uri.EscapeDataString(s3ObjectKey[(lastSlash + 1)..]);
+    }
+    private static string SanitizeForLog(string value)
+    {
+        return value?.Replace("\r", string.Empty).Replace("\n", string.Empty) ?? string.Empty;
     }
 }
