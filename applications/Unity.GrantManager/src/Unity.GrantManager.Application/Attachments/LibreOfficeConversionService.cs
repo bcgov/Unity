@@ -8,6 +8,8 @@ namespace Unity.GrantManager.Attachments;
 
 public class LibreOfficeConversionService : ILibreOfficeConversionService, ITransientDependency
 {
+    private static readonly Lazy<bool> IsInstalledCache = new(ProbeIsInstalled, true);
+
     private static string GetSafeFileName(string fileName)
     {
         if (string.IsNullOrWhiteSpace(fileName))
@@ -24,11 +26,11 @@ public class LibreOfficeConversionService : ILibreOfficeConversionService, ITran
         return safeFileName;
     }
 
-    public bool IsInstalled()
+    private static bool ProbeIsInstalled()
     {
         try
         {
-            var process = new Process
+            using var process = new Process
             {
                 StartInfo = new ProcessStartInfo
                 {
@@ -39,14 +41,21 @@ public class LibreOfficeConversionService : ILibreOfficeConversionService, ITran
                     UseShellExecute = false
                 }
             };
+
             process.Start();
-            process.WaitForExit(5000);
-            return process.ExitCode == 0;
+            var exited = process.WaitForExit(5000);
+
+            return exited && process.ExitCode == 0;
         }
         catch
         {
             return false;
         }
+    }
+
+    public bool IsInstalled()
+    {
+        return IsInstalledCache.Value;
     }
 
     public async Task<byte[]> ConvertToPdfAsync(byte[] fileContent, string fileName)
@@ -74,7 +83,7 @@ public class LibreOfficeConversionService : ILibreOfficeConversionService, ITran
             startInfo.ArgumentList.Add(tempDir);
             startInfo.ArgumentList.Add(inputPath);
 
-            var process = new Process
+            using var process = new Process
             {
                 StartInfo = startInfo
             };
