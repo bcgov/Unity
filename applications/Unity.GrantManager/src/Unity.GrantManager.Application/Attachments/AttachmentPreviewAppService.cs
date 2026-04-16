@@ -117,7 +117,7 @@ public class AttachmentPreviewAppService : ApplicationService, IAttachmentPrevie
         }
         catch (Exception ex)
         {
-            Logger.LogWarning(ex, "AttachmentPreviewAppService: unexpected error checking preview cache for key {PreviewKey}", previewKey);
+            Logger.LogWarning(ex, "AttachmentPreviewAppService: unexpected error checking preview cache for key {PreviewKey}", SanitizeForLog(previewKey));
         }
         return null;
     }
@@ -149,6 +149,16 @@ public class AttachmentPreviewAppService : ApplicationService, IAttachmentPrevie
 
     private static string NormalizeFolder(string folder)
         => folder.EndsWith('/') ? folder.TrimEnd('/') : folder;
+
+    private static string SanitizeForLog(string value)
+    {
+        if (string.IsNullOrEmpty(value))
+            return string.Empty;
+
+        return value
+            .Replace("\r", "\\r")
+            .Replace("\n", "\\n");
+    }
 
     private static string EscapeKeyFileName(string s3ObjectKey)
     {
