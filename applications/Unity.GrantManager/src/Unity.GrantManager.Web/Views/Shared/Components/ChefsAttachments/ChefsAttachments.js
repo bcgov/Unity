@@ -91,6 +91,15 @@ $(function () {
         };
     }
 
+    function escapeHtmlAttribute(value) {
+        return String(value ?? '')
+            .replace(/&/g, '&amp;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;');
+    }
+
     function getChefsFileDownloadColumn() {
         return {
             title: '',
@@ -101,8 +110,8 @@ $(function () {
             render: function (data, type, full, meta) {
                 let submissionId = encodeURIComponent(full.chefsSubmissionId);
                 let fileId       = encodeURIComponent(data);
-                let fileName     = encodeURIComponent(full.fileName);
-                let displayName  = encodeURIComponent(full.displayName || full.fileName);
+                let fileName     = full.fileName;
+                let displayName  = full.displayName || full.fileName;
                 let html =
                     '<div class="dropdown" style="float:right;">' +
                         '<button class="btn btn-light dropbtn" type="button">' +
@@ -110,17 +119,17 @@ $(function () {
                         '</button>' +
                         '<div class="dropdown-content">' +
                             '<button class="btn fullWidth" style="margin:10px" type="button"' +
-                                ' chefs-submission-id=' + submissionId +
-                                ' chefs-data=' + fileId +
-                                ' chefs-file-name=' + fileName +
-                                ' chefs-display-name=' + displayName +
+                                ' chefs-submission-id="' + escapeHtmlAttribute(submissionId) + '"' +
+                                ' chefs-data="' + escapeHtmlAttribute(fileId) + '"' +
+                                ' chefs-file-name="' + escapeHtmlAttribute(fileName) + '"' +
+                                ' chefs-display-name="' + escapeHtmlAttribute(displayName) + '"' +
                                 ' onclick="previewChefsFile(event)">' +
                                 '<i class="fa fa-eye"></i><span>Preview Attachment</span>' +
                             '</button>' +
                             '<button class="btn fullWidth" style="margin:10px" type="button"' +
-                                ' chefs-submission-id=' + submissionId +
-                                ' chefs-data=' + fileId +
-                                ' chefs-file-name=' + fileName +
+                                ' chefs-submission-id="' + escapeHtmlAttribute(submissionId) + '"' +
+                                ' chefs-data="' + escapeHtmlAttribute(fileId) + '"' +
+                                ' chefs-file-name="' + escapeHtmlAttribute(fileName) + '"' +
                                 ' onclick="downloadChefsFile(event)">' +
                                 '<i class="fl fl-download"></i><span>Download Attachment</span>' +
                             '</button>' +
