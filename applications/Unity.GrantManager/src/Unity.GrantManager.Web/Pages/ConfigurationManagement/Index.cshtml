@@ -20,21 +20,40 @@
 @section styles {
     <abp-style-bundle name="@typeof(IndexModel).FullName">
         <abp-style src="/Pages/ConfigurationManagement/Index.css" />
-        <abp-style src="/Pages/ConfigurationManagement/PaymentConfigurations.css" />
+        @if (Model.ShowPayments)
+        {
+            <abp-style src="/Pages/ConfigurationManagement/PaymentConfigurations.css" />
+        }
+        @if (Model.ShowNotifications)
+        {
+            <abp-style src="/Views/Settings/NotificationsSettingGroup/Default.css" />
+        }
     </abp-style-bundle>
 }
 
 @section scripts {
     <abp-script-bundle name="@typeof(IndexModel).FullName">
         <abp-script src="/Pages/ConfigurationManagement/Index.js" />
-        <abp-script src="/Pages/ConfigurationManagement/PaymentConfigurations.js" />
+        @if (Model.ShowPayments)
+        {
+            <abp-script src="/Pages/ConfigurationManagement/PaymentConfigurations.js" />
+        }
         <abp-script src="/Pages/ConfigurationManagement/WorksheetConfiguration.js" />
         <abp-script src="/Pages/ConfigurationManagement/ScoresheetConfiguration.js" />
-        <abp-script src="/Views/Settings/NotificationsSettingGroup/Default.js" />               <!--src\Unity.GrantManager.Web\Views\-->
-        <abp-script src="/Views/Settings/NotificationsSettingGroup/InternalEmailGroups.js" />   <!--src\Unity.GrantManager.Web\Views\-->
-        <abp-script src="/Views/Settings/TagManagement/TagManagement.js" />                     <!--src\Unity.GrantManager.Web\Views\-->
-        <abp-script src="/Views/Settings/AISettingGroup/Default.js" />                          <!--modules\Unity.AI\Unity.Ai.Web\Views\-->
-        <abp-script src="/libs/sortablejs/Sortable.js" />  
+        <abp-script src="/libs/sortablejs/Sortable.js" />
+        @if (Model.ShowNotifications)
+        {
+            <abp-script src="/Views/Settings/NotificationsSettingGroup/Default.js" />
+            <abp-script src="/Views/Settings/NotificationsSettingGroup/InternalEmailGroups.js" />
+        }
+        @if (Model.ShowTags)
+        {
+            <abp-script src="/Views/Settings/TagManagement/TagManagement.js" />
+        }
+        @if (Model.ShowAI)
+        {
+            <abp-script src="/Views/Settings/AISettingGroup/Default.js" />
+        }
     </abp-script-bundle>
 }
 
@@ -264,6 +283,7 @@
                                                 id="add_scoresheet_btn"
                                                 icon-type="Other"
                                                 icon="fl fl-plus"
+                                                onKeyPress="openScoresheetModal(null,'Add Scoresheet');"
                                                 onclick="openScoresheetModal(null,'Add Scoresheet');"
                                                 button-type="Light" />
                                 </div>

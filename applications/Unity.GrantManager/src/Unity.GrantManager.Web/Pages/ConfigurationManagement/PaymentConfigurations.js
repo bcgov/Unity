@@ -23,8 +23,17 @@ $(function () {
     init();
 
     function init() {
-        accountCodingDataTable = initializeAccountCodesDataTable();
-        paymentSettingsDataTable = initializePaymentSettingsDataTable();
+        const hasAccountCodesDataTable = UIElements.accountCodingDT.length > 0;
+        const hasPaymentSettingsDataTable = UIElements.paymentSettingsDT.length > 0;
+        if (!hasAccountCodesDataTable && !hasPaymentSettingsDataTable) {
+            return;
+        }
+        if (hasAccountCodesDataTable) {
+            accountCodingDataTable = initializeAccountCodesDataTable();
+        }
+        if (hasPaymentSettingsDataTable) {
+            paymentSettingsDataTable = initializePaymentSettingsDataTable();
+        }
         bindUIElements();
     }
 
