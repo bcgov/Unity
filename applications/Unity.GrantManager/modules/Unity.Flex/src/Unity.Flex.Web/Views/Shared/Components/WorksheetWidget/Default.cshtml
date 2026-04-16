@@ -22,6 +22,12 @@
                 <button data-worksheet-id="@worksheet.Id" data-is-archived="true" class="btn btn-light archive-worksheet-btn worksheet-btn" type="button">
                     <i class="fl fl-open-folder"></i> <span>Unarchive</span>
                 </button>
+                @if (await PermissionChecker.IsGrantedAsync(FlexPermissions.Worksheets.Delete))
+                {
+                    <button data-worksheet-id="@worksheet.Id" data-worksheet-title="@worksheet.Title" data-worksheet-name="@worksheet.Name" class="btn btn-light delete-worksheet-btn worksheet-btn" type="button">
+                        <i class="fl fl-delete"></i> <span>@L["Worksheet:Configuration:DeleteWorksheetButtonText"].Value</span>
+                    </button>
+                }
             }
             else
             {
@@ -53,7 +59,7 @@
         </div>
     </div>
 
-    <div id="sections-custom-fields" class="list-group col sections-wrapper-outer" data-worksheet-id="@worksheet.Id">
+    <div id="sections-custom-fields" class="list-group col sections-wrapper-outer" data-worksheet-id="@worksheet.Id" data-is-archived="@worksheet.IsArchived.ToString().ToLower()">
         @foreach (var sect in worksheet.Sections)
         {
             var cfCollapseId = $"cf-collapse-{sect.Id:N}";

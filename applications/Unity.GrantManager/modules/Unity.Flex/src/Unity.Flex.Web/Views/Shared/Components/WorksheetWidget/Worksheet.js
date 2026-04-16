@@ -4,7 +4,8 @@ $(function () {
     });
 
     let customFieldModal = new abp.ModalManager({
-        viewUrl: 'WorksheetConfiguration/UpsertCustomFieldModal'
+        viewUrl: 'WorksheetConfiguration/UpsertCustomFieldModal',
+        modalClass: 'UpsertCustomFieldModal'
     });
 
     let editWorksheetModal = new abp.ModalManager({
@@ -102,36 +103,6 @@ $(function () {
         setupTooltips();
     }
 
-    function setupTooltips() {
-        $('[data-toggle="tooltip"]').tooltip({
-            placement: 'top',
-            delay: { show: 100, hide: 0 }
-        });
-    }
-
-    function exportWorksheet(worksheetId, worksheetName, worksheetTitle) {
-        fetch(`/api/app/worksheet/export/${worksheetId}`)
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                return response.blob();
-            })
-            .then(blob => {
-                let url = window.URL.createObjectURL(blob);
-                let a = document.createElement('a');
-                a.style.display = 'none';
-                a.href = url;
-                a.download = `worksheet_${worksheetTitle}_${worksheetName}.json`;
-                document.body.appendChild(a);
-                a.click();
-                window.URL.revokeObjectURL(url);
-            })
-            .catch(error => {
-                console.error('There was a problem with the fetch operation:', error);
-            });
-    }
-
     function openEditWorksheetModal(worksheetId) {
         editWorksheetModal.open({
             worksheetId: worksheetId,
@@ -187,39 +158,6 @@ $(function () {
         PubSub.publish('refresh_worksheet', { worksheetId: response.responseText.worksheetId });
     });
 
-    function refreshWorksheetInfoWidget(worksheetId) {
-        const url = `../Flex/Widgets/Worksheet/Refresh?worksheetId=${worksheetId}`;
-        fetch(url)
-            .then(response => response.text())
-            .then(data => {
-                document.getElementById('worksheet-info-widget-' + worksheetId).innerHTML = data;
-                PubSub.publish('worksheet_refreshed', worksheetId);
-            })
-            .catch(error => {
-                console.error('Error refreshing worksheet-info-widget:', error);
-            });
-    }
-
-    function updateWorksheetAccordionButton(worksheetId) {
-        // Get basic refreshed header level details of the worksheet        
-        unity.flex.worksheets.worksheetList.get(worksheetId)
-            .done(function (result) {
-                let titleField = $("#worksheet-title-" + worksheetId);
-                let nameField = $("#worksheet-name-" + worksheetId);
-                let sectionCountField = $("#worksheet-total-sections-" + worksheetId);
-                let fieldsCountField = $("#worksheet-total-fields-" + worksheetId);
-                let worksheetPublished = $("#worksheet-published-" + worksheetId);
-
-                titleField?.text(result.title);
-                sectionCountField?.text(result.totalSections);
-                fieldsCountField?.text(result.totalFields);
-                nameField?.text(result.name);
-                if (result.published) {
-                    worksheetPublished?.removeClass('hidden');
-                }
-            });
-    }
-
     PubSub.subscribe(
         'worksheet_refreshed',
         (_, data) => {
@@ -243,6 +181,69 @@ $(function () {
         }
     );
 });
+
+function setupTooltips() {
+    $('[data-toggle="tooltip"]').tooltip({
+        placement: 'top',
+        delay: { show: 100, hide: 0 }
+    });
+}
+
+function exportWorksheet(worksheetId, worksheetName, worksheetTitle) {
+    fetch(`/api/app/worksheet/export/${worksheetId}`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.blob();
+        })
+        .then(blob => {
+            let url = globalThis.URL.createObjectURL(blob);
+            let a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            a.download = `worksheet_${worksheetTitle}_${worksheetName}.json`;
+            document.body.appendChild(a);
+            a.click();
+            globalThis.URL.revokeObjectURL(url);
+        })
+        .catch(error => {
+            console.error('There was a problem with the fetch operation:', error);
+        });
+}
+
+function refreshWorksheetInfoWidget(worksheetId) {
+    const url = `../Flex/Widgets/Worksheet/Refresh?worksheetId=${worksheetId}`;
+    fetch(url)
+        .then(response => response.text())
+        .then(data => {
+            document.getElementById('worksheet-info-widget-' + worksheetId).innerHTML = data;
+            PubSub.publish('worksheet_refreshed', worksheetId);
+        })
+        .catch(error => {
+            console.error('Error refreshing worksheet-info-widget:', error);
+        });
+}
+
+function updateWorksheetAccordionButton(worksheetId) {
+    // Get basic refreshed header level details of the worksheet
+    unity.flex.worksheets.worksheetList.get(worksheetId)
+        .done(function (result) {
+            let titleField = $("#worksheet-title-" + worksheetId);
+            let nameField = $("#worksheet-name-" + worksheetId);
+            let sectionCountField = $("#worksheet-total-sections-" + worksheetId);
+            let fieldsCountField = $("#worksheet-total-fields-" + worksheetId);
+            let worksheetPublished = $("#worksheet-published-" + worksheetId);
+
+            titleField?.text(result.title);
+            sectionCountField?.text(result.totalSections);
+            fieldsCountField?.text(result.totalFields);
+            nameField?.text(result.name);
+            if (result.published) {
+                worksheetPublished?.removeClass('hidden');
+            }
+        });
+}
 
 function handleArchiveWorksheet(worksheetId, currentlyArchived) {
     const action = currentlyArchived ? 'unarchive' : 'archive';

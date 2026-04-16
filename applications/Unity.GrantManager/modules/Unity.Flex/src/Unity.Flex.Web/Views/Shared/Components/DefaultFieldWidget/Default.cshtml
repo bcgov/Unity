@@ -19,6 +19,7 @@
            max="@fieldDef?.GetMaxValueOrNull()"
            minlength="@fieldDef?.GetMinLengthValueOrNull()"
            maxlength="@fieldDef?.GetMaxLengthValueOrNull()"
+           placeholder="@fieldDef?.Placeholder"
            id="@fieldId"
            name="@fieldId"
            onchange="@($"notifyFieldChange('{Model.Name}', '{Model.Field.UiAnchor}', this)")" />

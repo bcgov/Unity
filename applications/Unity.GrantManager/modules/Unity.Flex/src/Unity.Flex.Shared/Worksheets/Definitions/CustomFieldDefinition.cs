@@ -34,6 +34,9 @@ namespace Unity.Flex.Worksheets.Definitions
         [JsonPropertyName("securityClassification")]
         public string? SecurityClassification { get; set; }
 
+        [JsonPropertyName("placeholder")]
+        public string? Placeholder { get; set; }
+
         public CustomFieldDefinition() : base()
         {
         }

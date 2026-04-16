@@ -1,5 +1,5 @@
 $(function () {
-    $('#worksheet_import_upload_btn').click(function () {
+    $('.worksheet-import-btn').on('click', function () {
         $('#worksheet_import_upload').trigger('click');
     });
 
@@ -49,6 +49,7 @@ $(function () {
         const searchText = $('#worksheet-name-filter').val().toLowerCase();
         const publishedFilter = $('#worksheet-published-toggle .active').data('filter');
 
+        let visibleCount = 0;
         $('#worksheet-accordion .accordion-item').each(function () {
             const $item = $(this);
             const title = $item.find('.worksheet-title').text().toLowerCase();
@@ -66,8 +67,12 @@ $(function () {
                         (publishedFilter === 'unpublished' && !isPublished)
                     );
 
-            $item.toggle(matchesText && matchesFilter);
+            const visible = matchesText && matchesFilter;
+            $item.toggle(visible);
+            if (visible) visibleCount++;
         });
+
+        $('#worksheet-no-results').toggle(visibleCount === 0);
     }
 
     $(document).on('input', '#worksheet-name-filter', applyWorksheetFilters);

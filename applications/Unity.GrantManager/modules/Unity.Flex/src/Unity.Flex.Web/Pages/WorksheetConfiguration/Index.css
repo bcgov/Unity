@@ -3,9 +3,27 @@
     flex-wrap: nowrap;
 }
 
-.worksheet-configuration-container > .col {
-    overflow-y: scroll;
+#worksheet-left-col {
+    overflow: hidden;
 }
+
+.worksheet-left-header {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background-color: var(--bs-card-bg, #fff);
+    padding: 1rem 1rem 0;
+    border-bottom: 1px solid var(--bs-border-color, #dee2e6);
+    padding-bottom: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.worksheet-left-body {
+    overflow-y: auto;
+    flex: 1 1 auto;
+    padding: 0 1rem;
+}
+
 
 .column-resizer {
     width: 6px;
@@ -23,6 +41,10 @@
 
 .worksheet-filters {
     flex-wrap: nowrap;
+}
+
+#worksheet-accordion {
+    padding-top: 1px;
 }
 
 .btn-label-position {
