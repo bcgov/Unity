@@ -72,7 +72,16 @@ public class AttachmentPreviewAppService : ApplicationService, IAttachmentPrevie
 
         // Cache miss — download original, convert, cache, return
         Logger.LogInformation("AttachmentPreviewAppService: no cached preview found for {FileName} [{AttachmentType}/{OwnerId}] — starting LibreOffice conversion", safeFileName, attachmentType, ownerId);
-        var original = await _fileAppService.GetBlobAsync(new GetBlobRequestDto { S3ObjectKey = originalKey, Name = fileName });
+        BlobDto original;
+        try
+        {
+            original = await _fileAppService.GetBlobAsync(new GetBlobRequestDto { S3ObjectKey = originalKey, Name = fileName });
+        }
+        catch (AmazonS3Exception ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
+        {
+            Logger.LogWarning("AttachmentPreviewAppService: original file not found in S3 for {FileName} [{AttachmentType}/{OwnerId}]", safeFileName, attachmentType, ownerId);
+            return null;
+        }
         var pdfBytes = await _libreOfficeConversionService.ConvertToPdfAsync(original.Content, fileName);
         await UploadPreviewAsync(previewKey, pdfBytes);
         Logger.LogInformation("AttachmentPreviewAppService: conversion complete for {FileName} — preview cached at {PreviewKey}", safeFileName, safePreviewKey);
