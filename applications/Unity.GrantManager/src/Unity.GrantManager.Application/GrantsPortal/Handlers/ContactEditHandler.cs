@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -33,50 +34,55 @@ public class ContactEditHandler(
 
         logger.LogInformation("Editing contact {ContactId} for profile {ProfileId}", contactId, payload.ProfileId);
 
-        var contact = await contactRepository.GetAsync(contactId);
-
-        contact.Name = innerData.Name;
-        contact.Email = innerData.Email;
-        contact.Title = innerData.Title;
-        contact.HomePhoneNumber = innerData.HomePhoneNumber;
-        contact.MobilePhoneNumber = innerData.MobilePhoneNumber;
-        contact.WorkPhoneNumber = innerData.WorkPhoneNumber;
-        contact.WorkPhoneExtension = innerData.WorkPhoneExtension;
-
-        // Sync contact-link primary flags to match the incoming value
-        var contactLinks = await contactLinkRepository.GetListAsync(
-            cl => cl.RelatedEntityType == ApplicantEntityType
-                  && cl.RelatedEntityId == innerData.ApplicantId
-                  && cl.IsActive);
-
-        if (innerData.IsPrimary)
-        {
-            foreach (var stale in contactLinks.Where(cl => cl.IsPrimary && cl.ContactId != contactId))
-            {
-                stale.IsPrimary = false;
-                await contactLinkRepository.UpdateAsync(stale);
-            }
-
-            var newPrimary = contactLinks.FirstOrDefault(cl => cl.ContactId == contactId && !cl.IsPrimary);
-            if (newPrimary != null)
-            {
-                newPrimary.IsPrimary = true;
-                await contactLinkRepository.UpdateAsync(newPrimary);
-            }
-        }
-        else
-        {
-            var demoted = contactLinks.FirstOrDefault(cl => cl.ContactId == contactId && cl.IsPrimary);
-            if (demoted != null)
-            {
-                demoted.IsPrimary = false;
-                await contactLinkRepository.UpdateAsync(demoted);
-            }
-        }
-
-        await contactRepository.UpdateAsync(contact);
+        await UpdateContactAsync(contactId, innerData);
+        await SyncContactLinkAsync(contactId, innerData);
 
         logger.LogInformation("Contact {ContactId} updated successfully", contactId);
         return "Contact updated successfully";
+    }
+
+    private async Task UpdateContactAsync(Guid contactId, ContactEditData data)
+    {
+        var contact = await contactRepository.GetAsync(contactId);
+
+        contact.Name = data.Name;
+        contact.Email = data.Email;
+        contact.Title = data.Title;
+        contact.HomePhoneNumber = data.HomePhoneNumber;
+        contact.MobilePhoneNumber = data.MobilePhoneNumber;
+        contact.WorkPhoneNumber = data.WorkPhoneNumber;
+        contact.WorkPhoneExtension = data.WorkPhoneExtension;
+
+        await contactRepository.UpdateAsync(contact);
+    }
+
+    private async Task SyncContactLinkAsync(Guid contactId, ContactEditData data)
+    {
+        var contactLinks = await contactLinkRepository.GetListAsync(
+            cl => cl.RelatedEntityType == ApplicantEntityType
+                  && cl.RelatedEntityId == data.ApplicantId
+                  && cl.IsActive);
+
+        if (data.IsPrimary)
+        {
+            await DemoteOtherPrimaryLinksAsync(contactLinks, contactId);
+        }
+
+        var targetLink = contactLinks.FirstOrDefault(cl => cl.ContactId == contactId);
+        if (targetLink != null)
+        {
+            targetLink.IsPrimary = data.IsPrimary;
+            targetLink.Role = data.Role;
+            await contactLinkRepository.UpdateAsync(targetLink);
+        }
+    }
+
+    private async Task DemoteOtherPrimaryLinksAsync(List<ContactLink> contactLinks, Guid contactId)
+    {
+        foreach (var stale in contactLinks.Where(cl => cl.IsPrimary && cl.ContactId != contactId))
+        {
+            stale.IsPrimary = false;
+            await contactLinkRepository.UpdateAsync(stale);
+        }
     }
 }

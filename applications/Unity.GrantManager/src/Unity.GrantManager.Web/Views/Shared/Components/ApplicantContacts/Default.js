@@ -81,6 +81,12 @@ $(function () {
                 render: (data) => data || nullPlaceholder
             },
             {
+                title: 'Primary',
+                data: 'isPrimary',
+                width: '8%',
+                render: (data) => data ? 'Yes' : ''
+            },
+            {
                 title: 'Submission #',
                 data: 'referenceNo',
                 width: '15%',
@@ -129,9 +135,12 @@ $(function () {
                 return;
             }
 
+            const contactSource = $('#ApplicantContacts_PrimaryContactSource').val();
+
             const payload = {
                 primaryContact: {
                     id: contactId,
+                    source: contactSource,
                     fullName: form.find('[name="PrimaryContact.FullName"]').val(),
                     title: form.find('[name="PrimaryContact.Title"]').val(),
                     email: form.find('[name="PrimaryContact.Email"]').val(),

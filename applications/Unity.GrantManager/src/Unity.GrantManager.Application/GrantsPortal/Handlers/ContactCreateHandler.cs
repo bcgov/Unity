@@ -83,28 +83,5 @@ public class ContactCreateHandler(
 
         logger.LogInformation("Contact {ContactId} created successfully", contactId);
         return "Contact created successfully";
-    }   
-
-    /// <summary>
-    /// Normalizes a raw OIDC subject by stripping the IDP suffix (after @) and uppercasing.
-    /// This matches the format stored in ApplicationFormSubmission.OidcSub.
-    /// </summary>
-    internal static string? NormalizeOidcSub(string? subject)
-    {
-        if (string.IsNullOrWhiteSpace(subject))
-        {
-            return null;
-        }
-
-        var atIndex = subject.IndexOf('@');
-
-        if (atIndex == 0)
-        {
-            return null;
-        }
-
-        return atIndex > 0
-            ? subject[..atIndex].ToUpperInvariant()
-            : subject.ToUpperInvariant();
     }
 }

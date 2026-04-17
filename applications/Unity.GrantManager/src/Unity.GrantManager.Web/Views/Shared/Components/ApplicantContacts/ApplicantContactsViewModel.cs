@@ -16,6 +16,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantContacts
     public class ApplicantPrimaryContactViewModel
     {
         public Guid Id { get; set; }
+        public string Source { get; set; } = string.Empty;
         [Display(Name = "Full Name")]
         public string FullName { get; set; } = string.Empty;
         [Display(Name = "Title")]
@@ -37,6 +38,8 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantContacts
         public string Phone { get; set; } = string.Empty;
         public string Title { get; set; } = string.Empty;
         public string Type { get; set; } = string.Empty;
+        public string Source { get; set; } = string.Empty;
+        public bool IsPrimary { get; set; }
         public DateTime CreationTime { get; set; }
         public string ReferenceNo { get; set; } = string.Empty;
         public Guid? ApplicationId { get; set; }

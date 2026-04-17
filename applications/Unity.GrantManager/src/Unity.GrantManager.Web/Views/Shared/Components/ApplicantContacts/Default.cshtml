@@ -19,6 +19,7 @@
         <form id="ApplicantContactsForm" autocomplete="off" class="applicant-organization-info">
             <input type="hidden" id="ApplicantContacts_ApplicantId" value="@Model.ApplicantId" />
             <input type="hidden" id="ApplicantContacts_PrimaryContactId" value="@Model.PrimaryContact.Id" />
+            <input type="hidden" id="ApplicantContacts_PrimaryContactSource" value="@Model.PrimaryContact.Source" />
 
             @if (Model.CanSave)
             {
