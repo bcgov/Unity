@@ -362,7 +362,7 @@ namespace Unity.AI.Runtime
                         if (outputPropertyName == AIJsonKeys.Errors ||
                             outputPropertyName == AIJsonKeys.Warnings ||
                             outputPropertyName == AIJsonKeys.Summaries ||
-                            outputPropertyName == AIJsonKeys.NextSteps)
+                            outputPropertyName == AIJsonKeys.Recommendations)
                         {
                             writer.WritePropertyName(outputPropertyName);
                             writer.WriteStartArray();
@@ -373,12 +373,12 @@ namespace Unity.AI.Runtime
 
                                 // Add unique ID first
                                 writer.WriteString("id", Guid.NewGuid().ToString());
-                                writer.WriteBoolean(AIJsonKeys.Hidden, false);
+                                writer.WriteBoolean(AIJsonKeys.Dismissed, false);
 
                                 // Copy existing properties
                                 foreach (var itemProperty in item.EnumerateObject())
                                 {
-                                    if (itemProperty.NameEquals(AIJsonKeys.Id) || itemProperty.NameEquals(AIJsonKeys.Hidden))
+                                    if (itemProperty.NameEquals(AIJsonKeys.Id) || itemProperty.NameEquals(AIJsonKeys.Dismissed))
                                     {
                                         continue;
                                     }
@@ -874,9 +874,9 @@ namespace Unity.AI.Runtime
                 return response;
             }
 
-            if (TryGetStringProperty(root, AIJsonKeys.Rating, out var rating))
+            if (TryGetStringProperty(root, AIJsonKeys.Decision, out var decision))
             {
-                response.Rating = rating;
+                response.Decision = decision?.Trim().ToUpperInvariant();
             }
 
             if (root.TryGetProperty("errors", out var errors) && errors.ValueKind == JsonValueKind.Array)
@@ -894,14 +894,9 @@ namespace Unity.AI.Runtime
                 response.Summaries = ParseFindings(summaries);
             }
 
-            if (root.TryGetProperty(AIJsonKeys.NextSteps, out var nextSteps) && nextSteps.ValueKind == JsonValueKind.Array)
+            if (root.TryGetProperty(AIJsonKeys.Recommendations, out var recommendations) && recommendations.ValueKind == JsonValueKind.Array)
             {
-                response.NextSteps = ParseFindings(nextSteps);
-            }
-
-            if (root.TryGetProperty(AIJsonKeys.Recommendation, out var recommendation) && recommendation.ValueKind == JsonValueKind.Object)
-            {
-                response.Recommendation = ParseRecommendation(recommendation);
+                response.Recommendations = ParseFindings(recommendations);
             }
 
             return response;
@@ -932,9 +927,9 @@ namespace Unity.AI.Runtime
                 var id = item.TryGetProperty(AIJsonKeys.Id, out var idProp) && idProp.ValueKind == JsonValueKind.String
                     ? idProp.GetString()
                     : null;
-                var hidden = item.TryGetProperty(AIJsonKeys.Hidden, out var hiddenProp) &&
-                    (hiddenProp.ValueKind == JsonValueKind.True || hiddenProp.ValueKind == JsonValueKind.False) &&
-                    hiddenProp.GetBoolean();
+                var dismissed = item.TryGetProperty(AIJsonKeys.Dismissed, out var dismissedProp) &&
+                    (dismissedProp.ValueKind == JsonValueKind.True || dismissedProp.ValueKind == JsonValueKind.False) &&
+                    dismissedProp.GetBoolean();
                 string? title = null;
                 if (item.TryGetProperty(AIJsonKeys.Title, out var titleProp) && titleProp.ValueKind == JsonValueKind.String)
                 {
@@ -950,41 +945,13 @@ namespace Unity.AI.Runtime
                 findings.Add(new ApplicationAnalysisFinding
                 {
                     Id = id,
-                    Hidden = hidden,
+                    Dismissed = dismissed,
                     Title = title,
                     Detail = detail
                 });
             }
 
             return findings;
-        }
-
-        private static ApplicationAnalysisRecommendation? ParseRecommendation(JsonElement recommendation)
-        {
-            string? decision = null;
-            if (recommendation.TryGetProperty(AIJsonKeys.Decision, out var decisionProp) &&
-                decisionProp.ValueKind == JsonValueKind.String)
-            {
-                decision = decisionProp.GetString();
-            }
-
-            string? rationale = null;
-            if (recommendation.TryGetProperty(AIJsonKeys.Rationale, out var rationaleProp) &&
-                rationaleProp.ValueKind == JsonValueKind.String)
-            {
-                rationale = rationaleProp.GetString();
-            }
-
-            if (string.IsNullOrWhiteSpace(decision) && string.IsNullOrWhiteSpace(rationale))
-            {
-                return null;
-            }
-
-            return new ApplicationAnalysisRecommendation
-            {
-                Decision = decision,
-                Rationale = rationale
-            };
         }
 
         private static ApplicationScoringResponse ParseApplicationScoringResponse(

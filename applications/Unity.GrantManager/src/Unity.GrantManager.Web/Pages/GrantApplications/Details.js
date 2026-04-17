@@ -1030,20 +1030,6 @@ $(function () {
         );
     });
 
-    PubSub.subscribe('update_ai_analysis_status', (msg, data) => {
-        const $indicator = $('#ai_analysis_status');
-        const status = data?.status;
-
-        $indicator.removeClass('proceed hold');
-
-        if (status === 'proceed' || status === 'hold') {
-            $indicator.addClass(status).show();
-            return;
-        }
-
-        $indicator.hide();
-    });
-
     PubSub.subscribe('update_application_emails_count', (msg, data) => {
         if (data.itemCount || data.itemCount === 0) {
             tabCounters.emails = data.itemCount;
