@@ -12,7 +12,6 @@ using Unity.AI.Prompts;
 using Unity.AI.Requests;
 using Unity.AI.Responses;
 using Volo.Abp.DependencyInjection;
-using Volo.Abp.MultiTenancy;
 
 namespace Unity.AI.Runtime
 {
