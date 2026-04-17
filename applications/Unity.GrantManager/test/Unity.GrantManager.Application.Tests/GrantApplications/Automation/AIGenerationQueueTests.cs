@@ -71,11 +71,14 @@ public class AIGenerationQueueTests(ITestOutputHelper outputHelper) : GrantManag
 
         RunApplicationAIPipelineJobArgs? capturedArgs = null;
         var backgroundJobManager = Substitute.For<IBackgroundJobManager>();
-        backgroundJobManager.EnqueueAsync(Arg.Any<RunApplicationAIPipelineJobArgs>())
+        backgroundJobManager.EnqueueAsync<RunApplicationAIPipelineJobArgs>(
+                Arg.Any<RunApplicationAIPipelineJobArgs>(),
+                Arg.Any<BackgroundJobPriority>(),
+                Arg.Any<TimeSpan?>())
             .Returns(callInfo =>
             {
                 capturedArgs = callInfo.Arg<RunApplicationAIPipelineJobArgs>();
-                return Task.CompletedTask;
+                return Task.FromResult(string.Empty);
             });
 
         var queue = new ApplicationAIGenerationQueue(backgroundJobManager, repository, new TestDistributedLockProvider());
@@ -119,6 +122,8 @@ public class AIGenerationQueueTests(ITestOutputHelper outputHelper) : GrantManag
 
     private sealed class TestDistributedSynchronizationHandle : IDistributedSynchronizationHandle
     {
+        public CancellationToken HandleLostToken => CancellationToken.None;
+
         public void Dispose()
         {
         }

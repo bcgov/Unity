@@ -379,6 +379,7 @@ $(function () {
     }
 
     let aiGenerationPollTimeoutId = null;
+    const aiGenerationPollIntervalMs = 15000;
 
     function stopAIGenerationPolling() {
         if (aiGenerationPollTimeoutId) {
@@ -387,10 +388,10 @@ $(function () {
         }
     }
 
-    function pollAIGenerationStatus(applicationId, promptVersion, restoreButton, originalHtml) {
+    function pollAIGenerationStatus(applicationId, operationType, promptVersion, restoreButton, originalHtml) {
         const poll = function() {
             unity.grantManager.grantApplications.grantApplication
-                .getAIGenerationStatus(applicationId, 'pipeline', promptVersion)
+                .getAIGenerationStatus(applicationId, operationType, promptVersion)
                 .done(function(request) {
                     const statusText = formatAiGenerationStatus(request?.status);
                     setAiGenerationStatus(statusText);
@@ -417,16 +418,87 @@ $(function () {
                         return;
                     }
 
-                    aiGenerationPollTimeoutId = setTimeout(poll, 2000);
+                    aiGenerationPollTimeoutId = setTimeout(poll, aiGenerationPollIntervalMs);
                 })
                 .fail(function() {
-                    aiGenerationPollTimeoutId = setTimeout(poll, 3000);
+                    aiGenerationPollTimeoutId = setTimeout(poll, aiGenerationPollIntervalMs);
                 });
         };
 
         stopAIGenerationPolling();
         aiGenerationPollTimeoutId = setTimeout(poll, 500);
     }
+
+    function queueAIGenerationOperation(queueAction, operationType, queuedMessage, failureMessage, restoreButton, originalHtml) {
+        queueAction()
+            .done(function(request) {
+                const statusText = formatAiGenerationStatus(request?.status);
+                setAiGenerationStatus(statusText || 'Queued');
+                pollAIGenerationStatus(
+                    $('#DetailsViewApplicationId').val(),
+                    operationType,
+                    globalThis.getSelectedPromptVersion?.() || null,
+                    restoreButton,
+                    originalHtml
+                );
+                abp.notify.success(queuedMessage);
+            })
+            .fail(function() {
+                setAiGenerationStatus('');
+                abp.message.error(failureMessage);
+                restoreButton.html(originalHtml).prop('disabled', false);
+            });
+    }
+
+    globalThis.queueAttachmentSummary = function(triggerButton = null) {
+        const applicationId = $('#DetailsViewApplicationId').val();
+        const $button = triggerButton ? $(triggerButton) : $('[onclick*="queueAttachmentSummary"]').first();
+        const existingHtml = $button.html();
+        const promptVersion = globalThis.getSelectedPromptVersion?.() || null;
+
+        if (!applicationId || $button.prop('disabled')) {
+            return;
+        }
+
+        $button
+            .html('<span class="ai-button-content"><span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span><span>Queueing...</span></span>')
+            .prop('disabled', true);
+        setAiGenerationStatus('Queueing');
+
+        queueAIGenerationOperation(
+            () => unity.grantManager.attachments.attachmentSummary.generateAttachmentSummary(applicationId, promptVersion),
+            'attachment-summary',
+            'AI attachment summary queued.',
+            'Failed to queue AI attachment summary. Please try again.',
+            $button,
+            existingHtml
+        );
+    };
+
+    globalThis.queueApplicationScoring = function(triggerButton = null) {
+        const applicationId = $('#DetailsViewApplicationId').val();
+        const $button = triggerButton ? $(triggerButton) : $('[onclick*="queueApplicationScoring"]').first();
+        const existingHtml = $button.html();
+        const promptVersion = globalThis.getSelectedPromptVersion?.() || null;
+
+        if (!applicationId || $button.prop('disabled')) {
+            return;
+        }
+
+        $button
+            .html('<span class="ai-button-content"><span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span><span>Queueing...</span></span>')
+            .prop('disabled', true);
+        setAiGenerationStatus('Queueing');
+
+        queueAIGenerationOperation(
+            () => unity.grantManager.grantApplications.applicationScoring.generateApplicationScoring(applicationId, promptVersion),
+            'application-scoring',
+            'AI application scoring queued.',
+            'Failed to queue AI application scoring. Please try again.',
+            $button,
+            existingHtml
+        );
+    };
 
     globalThis.refreshDevAiOutputs = loadDevAiOutputs;
 
@@ -446,13 +518,13 @@ $(function () {
         setAiGenerationStatus('Queueing');
 
         unity.grantManager.grantApplications.grantApplication
-            .queueAIGeneration(applicationId, promptVersion)
-            .done(function(request) {
-                const statusText = formatAiGenerationStatus(request?.status);
-                setAiGenerationStatus(statusText || 'Queued');
-                pollAIGenerationStatus(applicationId, promptVersion, $button, existingHtml);
-                abp.notify.success('AI generate all queued.');
-            })
+                .queueAIGeneration(applicationId, promptVersion)
+                .done(function(request) {
+                    const statusText = formatAiGenerationStatus(request?.status);
+                    setAiGenerationStatus(statusText || 'Queued');
+                    pollAIGenerationStatus(applicationId, 'pipeline', promptVersion, $button, existingHtml);
+                    abp.notify.success('AI generate all queued.');
+                })
             .fail(function() {
                 setAiGenerationStatus('');
                 abp.message.error('Failed to queue AI generate all. Please try again.');

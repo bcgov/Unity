@@ -416,6 +416,7 @@ globalThis.queueApplicationAnalysis = function(triggerButton = null) {
     const $button = triggerButton ? $(triggerButton) : $('#regenerateApplicationAnalysis');
     const existingHtml = $button.html();
     const promptVersion = globalThis.getSelectedPromptVersion?.() || null;
+    const aiAnalysisPollIntervalMs = 15000;
 
     if (!applicationId || $button.prop('disabled')) {
         return;
@@ -425,16 +426,58 @@ globalThis.queueApplicationAnalysis = function(triggerButton = null) {
         .html('<span class="ai-button-content"><span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span><span>Queueing...</span></span>')
         .prop('disabled', true);
 
+    let aiAnalysisPollTimeoutId = null;
+    const stopAIAnalysisPolling = function() {
+        if (aiAnalysisPollTimeoutId) {
+            clearTimeout(aiAnalysisPollTimeoutId);
+            aiAnalysisPollTimeoutId = null;
+        }
+    };
+
+    const poll = function() {
+        unity.grantManager.grantApplications.grantApplication
+            .getAIGenerationStatus(applicationId, 'application-analysis', promptVersion)
+            .done(function(request) {
+                const statusText = request?.status ?? 'Queued';
+                updateAnalysisTabStatus(statusText);
+
+                if (statusText === 'Failed') {
+                    stopAIAnalysisPolling();
+                    loadAIAnalysis();
+                    $button.html(existingHtml).prop('disabled', false);
+                    abp.message.error(request?.failureReason || 'AI analysis failed.');
+                    return;
+                }
+
+                if (!request || request.isActive === false || statusText === 'Completed') {
+                    stopAIAnalysisPolling();
+                    loadAIAnalysis();
+                    $button.html(existingHtml).prop('disabled', false);
+                    if (statusText === 'Completed') {
+                        abp.notify.success('AI analysis completed.');
+                    }
+                    return;
+                }
+
+                aiAnalysisPollTimeoutId = setTimeout(poll, aiAnalysisPollIntervalMs);
+            })
+            .fail(function() {
+                aiAnalysisPollTimeoutId = setTimeout(poll, aiAnalysisPollIntervalMs);
+            });
+    };
+
     unity.grantManager.grantApplications.applicationAnalysis
         .generateApplicationAnalysis(applicationId, promptVersion)
         .then(function() {
+            updateAnalysisTabStatus('Queued');
             abp.notify.success('AI analysis queued. Refresh later to see updated results.');
+            stopAIAnalysisPolling();
+            aiAnalysisPollTimeoutId = setTimeout(poll, 500);
         })
         .catch(function() {
-            abp.message.error('Failed to queue AI analysis. Please try again.');
-        })
-        .always(function() {
+            stopAIAnalysisPolling();
             $button.html(existingHtml).prop('disabled', false);
+            abp.message.error('Failed to queue AI analysis. Please try again.');
         });
 }
 
