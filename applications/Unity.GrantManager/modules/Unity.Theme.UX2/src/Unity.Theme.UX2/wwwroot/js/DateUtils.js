@@ -52,11 +52,11 @@ const DateUtils = (function () {
      * @param {object} options - Additional Intl.DateTimeFormat options
      */
     function formatUtcToBcPacificDate(dateUtc, type, options) {
-        if (!dateUtc) return null;
-        const date = new Date(dateUtc);
-        if (type === 'sort' || type === 'type') return date.getTime();
-        // Etc/GMT+8 is a fixed UTC-8 zone with no DST -- matches BC PST in 2026.
-        return date.toLocaleDateString(abp.localization.currentCulture.name, {
+        if (type === 'sort' || type === 'type') {
+            return dateUtc ? new Date(dateUtc).getTime() : 0;
+        }
+        if (!dateUtc) return '';
+        return new Date(dateUtc).toLocaleDateString(abp.localization.currentCulture.name, {
             timeZone: 'Etc/GMT+8',
             year: 'numeric',
             month: '2-digit',
@@ -72,10 +72,11 @@ const DateUtils = (function () {
      * @param {string} type - DataTables type ('sort'|'type' returns numeric timestamp)
      */
     function formatUtcToBcPacificDateTime(dateUtc, type) {
-        if (!dateUtc) return null;
-        const date = new Date(dateUtc);
-        if (type === 'sort' || type === 'type') return date.getTime();
-        const formatted = date.toLocaleString(abp.localization.currentCulture.name, {
+        if (type === 'sort' || type === 'type') {
+            return dateUtc ? new Date(dateUtc).getTime() : 0;
+        }
+        if (!dateUtc) return '';
+        const formatted = new Date(dateUtc).toLocaleString(abp.localization.currentCulture.name, {
             timeZone: 'Etc/GMT+8',
             year: 'numeric',
             month: '2-digit',
@@ -93,11 +94,12 @@ const DateUtils = (function () {
      * @param {string} type - DataTables type ('sort'|'type' returns numeric timestamp)
      */
     function formatUtcToBcMountainDateTime(dateUtc, type) {
-        if (!dateUtc) return null;
-        const date = new Date(dateUtc);
-        if (type === 'sort' || type === 'type') return date.getTime();
+        if (type === 'sort' || type === 'type') {
+            return dateUtc ? new Date(dateUtc).getTime() : 0;
+        }
+        if (!dateUtc) return '';
         // America/Edmonton follows MST/MDT -- DST applies in NE BC.
-        return date.toLocaleString(abp.localization.currentCulture.name, {
+        return new Date(dateUtc).toLocaleString(abp.localization.currentCulture.name, {
             timeZone: 'America/Edmonton',
             year: 'numeric',
             month: '2-digit',
@@ -121,7 +123,7 @@ const DateUtils = (function () {
         // Append the BC PST fixed offset so Date parses it as UTC-8, not browser-local.
         const withOffset = localDatetimeString + '-08:00';
         const date = new Date(withOffset);
-        return isNaN(date.getTime()) ? null : date.toISOString();
+        return Number.isNaN(date.getTime()) ? null : date.toISOString();
     }
 
     /**

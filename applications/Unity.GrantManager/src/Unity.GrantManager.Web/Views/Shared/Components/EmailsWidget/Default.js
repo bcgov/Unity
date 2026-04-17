@@ -149,8 +149,8 @@
 
         // Shortcut chip buttons — set picker to now + N days in BC PST
         $(document).on('click', '.delay-shortcut', function () {
-            const days = parseInt($(this).data('days'), 10);
-            if (!isNaN(days) && days > 0) {
+            const days = Number.parseInt($(this).data('days'), 10);
+            if (!Number.isNaN(days) && days > 0) {
                 const targetUtcMs = Date.now() + days * 24 * 60 * 60 * 1000;
                 UIElements.sendOnDateTimePicker.val(DateUtils.utcMsToBcPstDatetimeLocal(targetUtcMs));
                 UIElements.delayDaysHelper.val(days);
@@ -160,8 +160,8 @@
 
         // Manual days helper — sets the datetime picker
         UIElements.delayDaysHelper.on('input', function () {
-            const days = parseInt(this.value, 10);
-            if (!isNaN(days) && days > 0) {
+            const days = Number.parseInt(this.value, 10);
+            if (!Number.isNaN(days) && days > 0) {
                 const targetUtcMs = Date.now() + days * 24 * 60 * 60 * 1000;
                 UIElements.sendOnDateTimePicker.val(DateUtils.utcMsToBcPstDatetimeLocal(targetUtcMs));
                 UIElements.scheduleModalValidation.hide();
