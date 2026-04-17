@@ -3,12 +3,35 @@
  * Renders a stable sectioned view for AI-generated analysis results.
  */
 
-const hiddenSectionVisibility = {
+const dismissedSectionVisibility = {
     error: false,
     warning: false,
     summary: false,
-    nextStep: false
+    recommendation: false
 };
+
+function getAnalysisLabels() {
+    const labels = document.getElementById('aiAnalysisLabels')?.dataset ?? {};
+
+    return {
+        errors: labels.errors || 'Errors',
+        warnings: labels.warnings || 'Warnings',
+        summaries: labels.summaries || 'Summaries',
+        recommendation: labels.recommendation || labels.recommendations || 'Recommendation',
+        proceed: labels.proceed || 'Proceed',
+        hold: labels.hold || 'Hold',
+        noErrors: labels.noErrors || 'No errors',
+        noWarnings: labels.noWarnings || 'No warnings',
+        showDismissed: labels.showDismissed || 'Show dismissed items',
+        hideDismissed: labels.hideDismissed || 'Hide dismissed items',
+        dismiss: labels.dismiss || 'Dismiss',
+        restore: labels.restore || 'Restore',
+        dismissTitle: labels.dismissTitle || 'Dismiss this item',
+        restoreTitle: labels.restoreTitle || 'Restore this item',
+        collapseTitle: labels.collapseTitle || 'Collapse section',
+        expandTitle: labels.expandTitle || 'Expand section'
+    };
+}
 
 function bindTemplateAction($element, actionData) {
     $element.attr('data-id', actionData.id).attr('data-type', actionData.type);
@@ -20,13 +43,8 @@ function bindTemplateValue($item, key, value) {
         return;
     }
 
-    if (key === 'hide-btn' || key === 'show-btn') {
+    if (key === 'dismiss-btn' || key === 'restore-btn') {
         bindTemplateAction($element, value);
-        return;
-    }
-
-    if (key === 'icon') {
-        $element.addClass(value);
         return;
     }
 
@@ -59,15 +77,15 @@ function getFindingDetailText(item) {
     }
 }
 
-function updateAnalysisTabStatus(recommendation) {
-    let status = '';
-    if (recommendation) {
-        status = recommendation.decision === 'PROCEED' ? 'proceed' : 'hold';
+function normalizeDecision(decision) {
+    if (typeof decision !== 'string') {
+        return '';
     }
 
-    PubSub.publish('update_ai_analysis_status', {
-        status: status
-    });
+    const normalized = decision.trim().toUpperCase();
+    return normalized === 'PROCEED' || normalized === 'HOLD'
+        ? normalized
+        : '';
 }
 
 function normalizeFindings(items, fallbackType) {
@@ -75,7 +93,7 @@ function normalizeFindings(items, fallbackType) {
         error: 'Error',
         warning: 'Warning',
         summary: 'Summary',
-        nextStep: 'Next step'
+        recommendation: 'Recommendation'
     };
 
     return (items || [])
@@ -83,246 +101,249 @@ function normalizeFindings(items, fallbackType) {
         .map((item, index) => ({
             ...item,
             id: item.id || `${fallbackType}-${index}`,
-            hidden: item.hidden === true,
+            dismissed: item.dismissed === true,
             title: item.title || item.category || fallbackTitles[fallbackType] || 'Item',
             detail: item.detail || item.message || ''
         }));
 }
 
-function normalizeRecommendation(recommendation) {
-    if (!recommendation || typeof recommendation !== 'object') {
-        return null;
-    }
-
-    const decision = typeof recommendation.decision === 'string'
-        ? recommendation.decision.trim().toUpperCase()
-        : '';
-    const rationale = typeof recommendation.rationale === 'string'
-        ? recommendation.rationale.trim()
-        : '';
-
-    if (decision !== 'PROCEED' && decision !== 'HOLD') {
-        return null;
-    }
-
-    return {
-        decision: decision,
-        rationale: rationale
-    };
-}
-
 function createFindingItem(item, type, hidden) {
-    const templateName = hidden ? 'hidden-item' : 'active-item';
-    const actionKey = hidden ? 'show-btn' : 'hide-btn';
-    return createItemFromTemplate(templateName, {
+    const labels = getAnalysisLabels();
+    const templateName = hidden ? 'dismissed-item' : 'active-item';
+    const actionKey = hidden ? 'restore-btn' : 'dismiss-btn';
+    const $item = createItemFromTemplate(templateName, {
         category: item.title,
         message: getFindingDetailText(item),
         [actionKey]: { id: item.id, type: type }
     });
+
+    if (hidden) {
+        $item.find('[data-element="restore-text"]').text(labels.restore);
+        $item.find('[data-element="restore-btn"]').attr('title', labels.restoreTitle);
+    } else {
+        $item.find('[data-element="dismiss-text"]').text(labels.dismiss);
+        $item.find('[data-element="dismiss-btn"]').attr('title', labels.dismissTitle);
+    }
+
+    return $item;
+}
+
+function updateVisibleItemLayout($items) {
+    const $allItems = $items.children('.ai-analysis-detail-item');
+    const $visibleItems = $allItems.filter(function() {
+        return this.style.display !== 'none';
+    });
+
+    $allItems.removeClass('last-visible');
+    $visibleItems.last().addClass('last-visible');
+}
+
+function formatSectionTitle(title, count) {
+    return `${title} (${count})`;
+}
+
+function configureSectionStatus($status, text, statusClass) {
+    if (!text) {
+        return;
+    }
+
+    $status
+        .removeClass('proceed hold')
+        .addClass('ai-analysis-status-chip');
+
+    if (statusClass) {
+        $status.addClass(statusClass);
+    }
+
+    $status
+        .text(text)
+        .show();
+}
+
+function configureCollapseToggle($section, $collapseToggle) {
+    const labels = getAnalysisLabels();
+    $collapseToggle
+        .off('click')
+        .on('click', function() {
+            const isCollapsed = $section.toggleClass('collapsed').hasClass('collapsed');
+            const $icon = $(this).find('i');
+
+            $(this)
+                .attr('aria-expanded', (!isCollapsed).toString())
+                .attr('title', isCollapsed ? labels.expandTitle : labels.collapseTitle);
+
+            $icon
+                .toggleClass('fa-chevron-down', !isCollapsed)
+                .toggleClass('fa-chevron-up', isCollapsed);
+        });
+}
+
+function createAnalysisSection(config) {
+    const groups = splitFindingsByVisibility(config.items);
+    const hasItems = config.items.length > 0;
+
+    return {
+        ...config,
+        activeItems: groups.activeItems,
+        allItems: config.items,
+        hiddenItems: groups.hiddenItems,
+        hasItems
+    };
+}
+
+function appendSectionItems($items, section, isDismissedVisible) {
+    if (section.activeItems.length === 0 && section.hiddenItems.length === 0) {
+        return;
+    }
+
+    section.allItems.forEach(item => {
+        const isHidden = item.dismissed === true;
+        const $item = createFindingItem(item, section.itemType, isHidden);
+
+        if (isHidden && !isDismissedVisible) {
+            $item.hide();
+        }
+
+        $items.append($item);
+    });
+
+    updateVisibleItemLayout($items);
+}
+
+function configureDismissedItemsToggle($items, $toggle, section, isDismissedVisible) {
+    const labels = getAnalysisLabels();
+    const hiddenCount = section.hiddenItems.length;
+
+    if (hiddenCount === 0) {
+        dismissedSectionVisibility[section.itemType] = false;
+        $toggle
+            .text(labels.showDismissed)
+            .css('visibility', 'hidden')
+            .prop('disabled', true)
+            .show();
+        return;
+    }
+
+    $toggle
+        .css('visibility', 'visible')
+        .text(isDismissedVisible ? labels.hideDismissed : labels.showDismissed)
+        .prop('disabled', false)
+        .show()
+        .off('click')
+        .on('click', function() {
+            const shouldShow = dismissedSectionVisibility[section.itemType] !== true;
+            dismissedSectionVisibility[section.itemType] = shouldShow;
+            $items.find('.dismissed-item').toggle(shouldShow);
+            updateVisibleItemLayout($items);
+            $toggle.text(shouldShow ? labels.hideDismissed : labels.showDismissed);
+        });
 }
 
 function renderSection(section) {
     const $section = createItemFromTemplate('section', {
-        icon: section.icon,
         title: section.title
     });
 
-    $section.addClass(section.sectionClass);
-    if (section.activeItems.length === 0) {
-        $section.addClass('compact');
-    }
+    $section
+        .addClass(section.sectionClass)
+        .toggleClass('compact', section.activeItems.length === 0)
+        .toggleClass('header-only', !section.hasItems);
 
     const $items = $section.find('[data-element="items"]');
     const $status = $section.find('[data-element="status-chip"]');
     const $toggle = $section.find('[data-element="hidden-toggle"]');
-    const hiddenCount = section.hiddenItems.length;
-    const isHiddenVisible = hiddenSectionVisibility[section.itemType] === true;
+    const $collapseToggle = $section.find('[data-element="collapse-toggle"]');
+    const isDismissedVisible = dismissedSectionVisibility[section.itemType] === true;
 
-    if (section.headerOnlyText) {
-        $section.addClass('header-only');
-        $status
-            .addClass('ai-analysis-status-chip')
-            .text(section.headerOnlyText)
-            .show();
-        $toggle.hide();
-        return $section;
-    }
+    configureSectionStatus($status, section.statusText, section.statusClass);
+    configureCollapseToggle($section, $collapseToggle);
+    $collapseToggle.toggle(section.hasItems);
 
-    if (section.activeItems.length > 0 || hiddenCount > 0) {
-        section.allItems.forEach(item => {
-            const isHidden = item.hidden === true;
-            const $item = createFindingItem(item, section.itemType, isHidden);
-            if (isHidden && !isHiddenVisible) {
-                $item.hide();
-            }
-
-            $items.append($item);
-        });
-    }
-
-    if (hiddenCount > 0) {
-        $toggle
-            .css('visibility', 'visible')
-            .text(isHiddenVisible
-                ? 'Hide hidden items'
-                : 'Show hidden items')
-            .prop('disabled', false)
-            .show()
-            .off('click')
-            .on('click', function() {
-                const shouldShow = hiddenSectionVisibility[section.itemType] !== true;
-                hiddenSectionVisibility[section.itemType] = shouldShow;
-                $items.find('.hidden-item').toggle(shouldShow);
-                $toggle.text(
-                    shouldShow
-                        ? 'Hide hidden items'
-                        : 'Show hidden items'
-                );
-            });
-    } else {
-        hiddenSectionVisibility[section.itemType] = false;
-        $toggle
-            .text('Show hidden items')
-            .css('visibility', 'hidden')
-            .prop('disabled', true)
-            .show();
-    }
-
-    return $section;
-}
-
-function renderRecommendationSection(recommendation) {
-    if (!recommendation) {
-        return null;
-    }
-
-    const shouldProceed = recommendation.decision === 'PROCEED';
-    const $section = createItemFromTemplate('section', {
-        icon: 'fl-info-circle',
-        title: 'Recommendation'
-    });
-
-    $section.addClass('recommendation compact');
-    $section.find('[data-element="status-chip"]')
-        .addClass('ai-analysis-status-badge')
-        .addClass(shouldProceed ? 'proceed' : 'hold')
-        .text(shouldProceed ? 'Proceed' : 'Hold')
-        .show();
-    $section.find('[data-element="hidden-toggle"]').remove();
-    $section.find('[data-element="items"]').append(
-        $('<div class="ai-analysis-recommendation-rationale"></div>')
-            .text(recommendation.rationale || 'No rationale provided.')
-    );
+    appendSectionItems($items, section, isDismissedVisible);
+    configureDismissedItemsToggle($items, $toggle, section, isDismissedVisible);
 
     return $section;
 }
 
 function splitFindingsByVisibility(items) {
     return {
-        activeItems: items.filter(item => item.hidden !== true),
-        hiddenItems: items.filter(item => item.hidden === true)
+        activeItems: items.filter(item => item.dismissed !== true),
+        hiddenItems: items.filter(item => item.dismissed === true)
     };
 }
 
 function buildAnalysisSections(analysisData) {
-    const recommendation = normalizeRecommendation(analysisData.recommendation);
+    const labels = getAnalysisLabels();
+    const decision = normalizeDecision(analysisData.decision);
     const errors = normalizeFindings(analysisData.errors, 'error');
     const warnings = normalizeFindings(analysisData.warnings, 'warning');
-    const summaries = normalizeFindings(analysisData.summaries || analysisData.recommendations, 'summary');
-    const nextSteps = normalizeFindings(analysisData.nextSteps, 'nextStep');
-    const errorGroups = splitFindingsByVisibility(errors);
-    const warningGroups = splitFindingsByVisibility(warnings);
-    const summaryGroups = splitFindingsByVisibility(summaries);
-    const nextStepGroups = splitFindingsByVisibility(nextSteps);
+    const summaries = normalizeFindings(analysisData.summaries, 'summary');
+    const recommendations = normalizeFindings(analysisData.recommendations, 'recommendation');
+    let recommendationStatusText = '';
+    if (decision === 'PROCEED') {
+        recommendationStatusText = labels.proceed;
+    } else if (decision === 'HOLD') {
+        recommendationStatusText = labels.hold;
+    }
 
     return {
-        recommendation,
         sections: [
-            {
-                title: 'Errors',
-                icon: 'fl-times-circle',
+            createAnalysisSection({
+                title: formatSectionTitle(labels.errors, errors.length),
                 sectionClass: 'error',
                 itemType: 'error',
-                headerOnlyText: errorGroups.activeItems.length === 0 && errorGroups.hiddenItems.length === 0 ? 'No errors' : null,
-                activeItems: errorGroups.activeItems,
-                allItems: errors,
-                hiddenItems: errorGroups.hiddenItems
-            },
-            {
-                title: 'Warnings',
-                icon: 'fl-exclamation-triangle',
+                items: errors
+            }),
+            createAnalysisSection({
+                title: formatSectionTitle(labels.warnings, warnings.length),
                 sectionClass: 'warning',
                 itemType: 'warning',
-                headerOnlyText: warningGroups.activeItems.length === 0 && warningGroups.hiddenItems.length === 0 ? 'No warnings' : null,
-                activeItems: warningGroups.activeItems,
-                allItems: warnings,
-                hiddenItems: warningGroups.hiddenItems
-            },
-            {
-                title: 'Summary',
-                icon: 'fl-info-circle',
+                items: warnings
+            }),
+            createAnalysisSection({
+                title: formatSectionTitle(labels.summaries, summaries.length),
                 sectionClass: 'summary',
                 itemType: 'summary',
-                headerOnlyText: summaryGroups.activeItems.length === 0 && summaryGroups.hiddenItems.length === 0 ? 'No summary' : null,
-                activeItems: summaryGroups.activeItems,
-                allItems: summaries,
-                hiddenItems: summaryGroups.hiddenItems
-            },
-            {
-                title: 'Next Steps',
-                icon: 'fl-check-square',
-                sectionClass: 'next-steps',
-                itemType: 'nextStep',
-                headerOnlyText: nextStepGroups.activeItems.length === 0 && nextStepGroups.hiddenItems.length === 0 ? 'No next steps' : null,
-                activeItems: nextStepGroups.activeItems,
-                allItems: nextSteps,
-                hiddenItems: nextStepGroups.hiddenItems
-            }
+                items: summaries
+            }),
+            createAnalysisSection({
+                title: labels.recommendation,
+                sectionClass: 'recommendation',
+                itemType: 'recommendation',
+                statusText: recommendationStatusText,
+                statusClass: decision ? decision.toLowerCase() : '',
+                items: recommendations
+            })
         ]
     };
 }
 
-function hasAnyAnalysisContent(recommendation, sections) {
-    if (recommendation) {
-        return true;
-    }
-
-    return sections.some(section => section.allItems.length > 0);
-}
-
 function bindAnalysisItemActions($sections) {
     $sections.off('click');
-    $sections.on('click', '[data-element="hide-btn"]', function(e) {
+    $sections.on('click', '[data-element="dismiss-btn"]', function(e) {
         e.preventDefault();
         const itemId = $(this).data('id');
-        hideAnalysisItem(itemId);
+        dismissAnalysisItem(itemId);
     });
 
-    $sections.on('click', '[data-element="show-btn"]', function(e) {
+    $sections.on('click', '[data-element="restore-btn"]', function(e) {
         e.preventDefault();
         const itemId = $(this).data('id');
-        showAnalysisItem(itemId);
+        restoreAnalysisItem(itemId);
     });
 }
 
 function renderRealAIAnalysis(analysisData) {
-    const { recommendation, sections } = buildAnalysisSections(analysisData);
+    const { sections } = buildAnalysisSections(analysisData);
     const $sections = $('#aiAnalysisSections');
     $sections.empty();
-    const $recommendationSection = renderRecommendationSection(recommendation);
-    const hasRecommendation = $recommendationSection !== null;
-    if ($recommendationSection) {
-        $sections.append($recommendationSection);
-    }
 
     sections.forEach(section => {
         $sections.append(renderSection(section));
     });
 
-    updateAnalysisTabStatus(recommendation);
-
     const $noDataMessage = $('#aiAnalysisNoData');
-    if (!hasRecommendation && !hasAnyAnalysisContent(recommendation, sections)) {
+    if ($sections.children().length === 0) {
         $noDataMessage.show();
         $sections.hide();
     } else {
@@ -333,36 +354,35 @@ function renderRealAIAnalysis(analysisData) {
     bindAnalysisItemActions($sections);
 }
 
-globalThis.hideAnalysisItem = function(itemId) {
+globalThis.dismissAnalysisItem = function(itemId) {
     const applicationId = $('#DetailsViewApplicationId').val();
 
     unity.grantManager.grantApplications.grantApplication
-        .hideAIAnalysisItem(applicationId, itemId)
+        .dismissAIAnalysisItem(applicationId, itemId)
         .then(function() {
             loadAIAnalysis();
         })
         .catch(function() {
-            abp.message.error('Failed to hide the item. Please try again.');
+            abp.message.error('Failed to dismiss the item. Please try again.');
         });
 }
 
-globalThis.showAnalysisItem = function(itemId) {
+globalThis.restoreAnalysisItem = function(itemId) {
     const applicationId = $('#DetailsViewApplicationId').val();
 
     unity.grantManager.grantApplications.grantApplication
-        .showAIAnalysisItem(applicationId, itemId)
+        .restoreAIAnalysisItem(applicationId, itemId)
         .then(function() {
             loadAIAnalysis();
         })
         .catch(function() {
-            abp.message.error('Failed to show the item. Please try again.');
+            abp.message.error('Failed to restore the item. Please try again.');
         });
 }
 
 function resetAnalysisView() {
     $('#aiAnalysisSections').empty().hide();
     $('#aiAnalysisNoData').show();
-    updateAnalysisTabStatus(null);
 }
 
 function tryParseRawAnalysis(analysisJson) {

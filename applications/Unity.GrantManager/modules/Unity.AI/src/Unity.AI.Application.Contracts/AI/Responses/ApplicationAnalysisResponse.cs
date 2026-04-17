@@ -6,8 +6,8 @@ namespace Unity.AI.Responses
 {
     public class ApplicationAnalysisResponse
     {
-        [JsonPropertyName(AIJsonKeys.Rating)]
-        public string? Rating { get; set; }
+        [JsonPropertyName(AIJsonKeys.Decision)]
+        public string? Decision { get; set; }
 
         [JsonPropertyName(AIJsonKeys.Errors)]
         public List<ApplicationAnalysisFinding> Errors { get; set; } = new();
@@ -18,10 +18,7 @@ namespace Unity.AI.Responses
         [JsonPropertyName(AIJsonKeys.Summaries)]
         public List<ApplicationAnalysisFinding> Summaries { get; set; } = new();
 
-        [JsonPropertyName(AIJsonKeys.NextSteps)]
-        public List<ApplicationAnalysisFinding> NextSteps { get; set; } = new();
-
-        [JsonPropertyName(AIJsonKeys.Recommendation)]
-        public ApplicationAnalysisRecommendation? Recommendation { get; set; }
+        [JsonPropertyName(AIJsonKeys.Recommendations)]
+        public List<ApplicationAnalysisFinding> Recommendations { get; set; } = new();
     }
 }

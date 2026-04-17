@@ -1,14 +1,9 @@
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Net;
-using System.Net.Http;
-using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Unity.AI.Extraction;
@@ -17,48 +12,32 @@ using Unity.AI.Prompts;
 using Unity.AI.Requests;
 using Unity.AI.Responses;
 using Volo.Abp.DependencyInjection;
-using Volo.Abp.MultiTenancy;
 
 namespace Unity.AI.Runtime
 {
     [ExposeServices(typeof(IAIService))]
     public class OpenAIRuntimeService : IAIService, ITransientDependency
     {
-        private readonly HttpClient _httpClient;
         private readonly IConfiguration _configuration;
         private readonly ILogger<OpenAIRuntimeService> _logger;
         private readonly ITextExtractionService _textExtractionService;
-        private readonly ICurrentTenant _currentTenant;
-        private readonly IHostEnvironment _hostEnvironment;
+        private readonly OpenAITransportService _openAITransportService;
+        private readonly OpenAIConfigurationResolver _openAIConfigurationResolver;
         private const string ApplicationAnalysisPromptType = AIPromptTypes.ApplicationAnalysis;
         private const string AttachmentSummaryPromptType = AIPromptTypes.AttachmentSummary;
         private const string ApplicationScoringPromptType = AIPromptTypes.ApplicationScoring;
-        private const string PromptVersionV0 = "v0";
-        private const string PromptVersionV1 = "v1";
-        private static readonly string PromptTemplatesFolder = Path.Combine("AI", "Prompts", "Versions");
-        private const string ApplicationAnalysisSystemTemplateName = "application-analysis.system";
-        private const string ApplicationAnalysisUserTemplateName = "application-analysis.user";
-        private const string AttachmentSummarySystemTemplateName = "attachment-summary.system";
-        private const string AttachmentSummaryUserTemplateName = "attachment-summary.user";
-        private const string ApplicationScoringSystemTemplateName = "application-scoring.system";
-        private const string ApplicationScoringUserTemplateName = "application-scoring.user";
         private const string AIServiceNotConfiguredMessage = "AI service not available - service not configured.";
         private const string AIServiceTemporarilyUnavailableMessage = "AI request failed - service temporarily unavailable.";
         private const string AIRequestFailedRetryMessage = "AI request failed - please try again later.";
         private const int MaxAiAttempts = 3;
-        private const string DefaultMaxTokensParameterName = "max_completion_tokens";
-        private const string LegacyMaxTokensParameterName = "max_tokens";
-        private const string DefaultProviderName = "OpenAI";
-        private const string OpenAiApiKeyEnvironmentVariableName = "AZURE_OPENAI_API_KEY";
-        private const string OpenAiEndpointEnvironmentVariableName = "AZURE_OPENAI_ENDPOINT";
         private const int DefaultCompletionTokens = 2000;
         private const int DefaultAttachmentSummaryCompletionTokens = 2000;
         private const int DefaultApplicationAnalysisCompletionTokens = 4000;
         private const int DefaultApplicationScoringCompletionTokens = 8000;
 
-        private int AttachmentSummaryCompletionTokens => ResolveCompletionTokens(AttachmentSummaryPromptType, DefaultAttachmentSummaryCompletionTokens);
-        private int ApplicationAnalysisCompletionTokens => ResolveCompletionTokens(ApplicationAnalysisPromptType, DefaultApplicationAnalysisCompletionTokens);
-        private int ApplicationScoringCompletionTokens => ResolveCompletionTokens(ApplicationScoringPromptType, DefaultApplicationScoringCompletionTokens);
+        private int AttachmentSummaryCompletionTokens => _openAIConfigurationResolver.ResolveCompletionTokens(AttachmentSummaryPromptType, DefaultAttachmentSummaryCompletionTokens);
+        private int ApplicationAnalysisCompletionTokens => _openAIConfigurationResolver.ResolveCompletionTokens(ApplicationAnalysisPromptType, DefaultApplicationAnalysisCompletionTokens);
+        private int ApplicationScoringCompletionTokens => _openAIConfigurationResolver.ResolveCompletionTokens(ApplicationScoringPromptType, DefaultApplicationScoringCompletionTokens);
         private readonly string MissingApiKeyMessage = "OpenAI API key is not configured";
 
         // Optional local debugging sink for prompt payload logs to a local file.
@@ -69,33 +48,23 @@ namespace Unity.AI.Runtime
 
         private static readonly JsonSerializerOptions JsonLogOptions = new() { WriteIndented = true };
 
-        private static readonly Dictionary<string, string> PromptProfiles =
-            new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-            {
-                [PromptVersionV0] = PromptVersionV0,
-                [PromptVersionV1] = PromptVersionV1
-            };
-        private static readonly ConcurrentDictionary<string, string> PromptTemplateCache = new(StringComparer.OrdinalIgnoreCase);
-
         public OpenAIRuntimeService(
-            HttpClient httpClient,
             IConfiguration configuration,
             ILogger<OpenAIRuntimeService> logger,
             ITextExtractionService textExtractionService,
-            ICurrentTenant currentTenant,
-            IHostEnvironment hostEnvironment)
+            OpenAITransportService openAITransportService,
+            OpenAIConfigurationResolver openAIConfigurationResolver)
         {
-            _httpClient = httpClient;
             _configuration = configuration;
             _logger = logger;
             _textExtractionService = textExtractionService;
-            _currentTenant = currentTenant;
-            _hostEnvironment = hostEnvironment;
+            _openAITransportService = openAITransportService;
+            _openAIConfigurationResolver = openAIConfigurationResolver;
         }
 
         public Task<bool> IsAvailableAsync()
         {
-            if (string.IsNullOrEmpty(ResolveApiKey()))
+            if (string.IsNullOrEmpty(_openAIConfigurationResolver.ResolveApiKey()))
             {
                 _logger.LogWarning("Error: {Message}", MissingApiKeyMessage);
                 return Task.FromResult(false);
@@ -107,7 +76,7 @@ namespace Unity.AI.Runtime
         public async Task<AICompletionResponse> GenerateCompletionAsync(AICompletionRequest request)
         {
             var result = await GenerateWithRetryAsync(
-                () => GenerateSummaryAsync(
+                () => _openAITransportService.GenerateSummaryAsync(
                 request?.UserPrompt ?? string.Empty,
                 null,
                 request?.MaxTokens ?? DefaultCompletionTokens,
@@ -120,7 +89,7 @@ namespace Unity.AI.Runtime
         public async Task<ApplicationAnalysisResponse> GenerateApplicationAnalysisAsync(ApplicationAnalysisRequest request)
         {
             ArgumentNullException.ThrowIfNull(request);
-            var promptVersion = ResolvePromptVersion(request.PromptVersion ?? ResolvePromptVersionSetting(ApplicationAnalysisPromptType));
+            var promptVersion = OpenAIPromptRenderer.ResolvePromptVersion(request.PromptVersion ?? ResolvePromptVersionSetting(ApplicationAnalysisPromptType));
             var data = JsonSerializer.Serialize(request.Data, JsonLogOptions);
             var schema = JsonSerializer.Serialize(request.Schema, JsonLogOptions);
 
@@ -133,15 +102,15 @@ namespace Unity.AI.Runtime
                 .Cast<object>();
 
             var attachments = JsonSerializer.Serialize(attachmentsPayload, JsonLogOptions);
-            var systemPrompt = BuildApplicationAnalysisSystemPrompt(promptVersion);
-            var applicationAnalysisContent = BuildApplicationAnalysisUserPrompt(
+            var systemPrompt = OpenAIPromptRenderer.BuildApplicationAnalysisSystemPrompt(promptVersion);
+            var applicationAnalysisContent = OpenAIPromptRenderer.BuildApplicationAnalysisUserPrompt(
                 promptVersion,
                 schema,
                 data,
                 attachments);
             await LogPromptInputAsync(ApplicationAnalysisPromptType, promptVersion, systemPrompt, applicationAnalysisContent);
             var result = await GenerateWithRetryAsync(
-                () => GenerateSummaryAsync(
+                () => _openAITransportService.GenerateSummaryAsync(
                     applicationAnalysisContent,
                     systemPrompt,
                     ApplicationAnalysisCompletionTokens,
@@ -156,124 +125,7 @@ namespace Unity.AI.Runtime
                 return new ApplicationAnalysisResponse();
             }
 
-            return ParseApplicationAnalysisResponse(AddIdsToAnalysisItems(result.Content));
-        }
-
-        private async Task<AIOperationResult> GenerateSummaryAsync(
-            string content,
-            string? systemPrompt,
-            int maxTokens = 150,
-            double? temperature = null,
-            string? operationName = null,
-            string? promptVersion = null,
-            string? fileName = null)
-        {
-            var providerName = ResolveProviderName(operationName);
-            if (!string.Equals(providerName, DefaultProviderName, StringComparison.Ordinal))
-            {
-                _logger.LogWarning("Provider {ProviderName} is not supported by OpenAIRuntimeService.", providerName);
-                return AIOperationResult.PermanentFailure(new AIProviderResult($"Unsupported provider: {providerName}"));
-            }
-
-            var apiKey = ResolveApiKey(operationName);
-            if (string.IsNullOrEmpty(apiKey))
-            {
-                _logger.LogWarning("Error: {Message}", MissingApiKeyMessage);
-                return AIOperationResult.PermanentFailure(new AIProviderResult(MissingApiKeyMessage));
-            }
-
-            _logger.LogDebug("Calling OpenAI chat completions. PromptLength: {PromptLength}, MaxTokens: {MaxTokens}", content?.Length ?? 0, maxTokens);
-
-            try
-            {
-                var resolvedSystemPrompt = string.IsNullOrWhiteSpace(systemPrompt)
-                    ? "You are a professional grant analyst for the BC Government."
-                    : systemPrompt;
-                var userPrompt = content ?? string.Empty;
-
-                var requestBody = new
-                {
-                    messages = new[]
-                    {
-                       new { role = "system", content = resolvedSystemPrompt },
-                       new { role = "user", content = userPrompt }
-                   }
-                };
-
-                var requestPayload = new Dictionary<string, object?>
-                {
-                    ["messages"] = requestBody.messages,
-                    [ResolveMaxTokensParameterNameForOperation(operationName)] = maxTokens
-                };
-
-                var resolvedTemperature = temperature ?? ResolveConfiguredTemperature(operationName);
-                if (resolvedTemperature.HasValue)
-                {
-                    requestPayload["temperature"] = resolvedTemperature.Value;
-                }
-
-                var json = JsonSerializer.Serialize(requestPayload);
-                var httpContent = new StringContent(json, Encoding.UTF8, "application/json");
-
-                _httpClient.DefaultRequestHeaders.Clear();
-                _httpClient.DefaultRequestHeaders.Add("Authorization", apiKey);
-
-                var response = await _httpClient.PostAsync(ResolveApiUrl(operationName), httpContent);
-                var responseContent = await response.Content.ReadAsStringAsync();
-                var metadata = TryExtractProviderMetadata(responseContent);
-                var providerResponse = BuildProviderResponseFromMetadata(
-                    string.Empty,
-                    responseContent,
-                    metadata,
-                    (int)response.StatusCode);
-
-                _logger.LogDebug(
-                    "OpenAI chat completions response received. StatusCode: {StatusCode}, ResponseLength: {ResponseLength}",
-                    response.StatusCode,
-                    responseContent?.Length ?? 0);
-                LogProviderMetadata(operationName, promptVersion, fileName, providerResponse, response.IsSuccessStatusCode);
-
-                if (!response.IsSuccessStatusCode)
-                {
-                    _logger.LogError("OpenAI API request failed: {StatusCode} - {Content}", response.StatusCode, responseContent);
-                    return MapFailureOutcome(response.StatusCode, providerResponse);
-                }
-
-                if (string.IsNullOrWhiteSpace(responseContent))
-                {
-                    return AIOperationResult.InvalidOutput(providerResponse);
-                }
-
-                try
-                {
-                    using var jsonDoc = JsonDocument.Parse(responseContent);
-                    var choices = jsonDoc.RootElement.GetProperty("choices");
-                    if (choices.GetArrayLength() > 0)
-                    {
-                        var message = choices[0].GetProperty("message");
-                        var modelOutput = message.GetProperty("content").GetString();
-                        return string.IsNullOrWhiteSpace(modelOutput)
-                            ? AIOperationResult.InvalidOutput(providerResponse)
-                            : AIOperationResult.Success(BuildProviderResponseFromMetadata(
-                                modelOutput,
-                                responseContent,
-                                metadata,
-                                (int)response.StatusCode));
-                    }
-
-                    return AIOperationResult.InvalidOutput(providerResponse);
-                }
-                catch (Exception ex) when (ex is JsonException || ex is KeyNotFoundException || ex is InvalidOperationException)
-                {
-                    _logger.LogWarning(ex, "AI response payload had an invalid output shape");
-                    return AIOperationResult.InvalidOutput(providerResponse);
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error generating AI summary");
-                return AIOperationResult.TransientFailure(new AIProviderResult(ex.Message));
-            }
+            return OpenAIResponseParser.ParseApplicationAnalysisResponse(result.Content);
         }
 
         public async Task<AttachmentSummaryResponse> GenerateAttachmentSummaryAsync(AttachmentSummaryRequest request)
@@ -282,12 +134,12 @@ namespace Unity.AI.Runtime
             var fileName = request.FileName ?? string.Empty;
             var fileContent = request.FileContent ?? Array.Empty<byte>();
             var contentType = request.ContentType ?? "application/octet-stream";
-            var promptVersion = ResolvePromptVersion(request.PromptVersion ?? ResolvePromptVersionSetting(AttachmentSummaryPromptType));
+            var promptVersion = OpenAIPromptRenderer.ResolvePromptVersion(request.PromptVersion ?? ResolvePromptVersionSetting(AttachmentSummaryPromptType));
 
             try
             {
                 var extractedText = await _textExtractionService.ExtractTextAsync(fileName, fileContent, contentType);
-                var prompt = BuildAttachmentSummarySystemPrompt(promptVersion);
+                var prompt = OpenAIPromptRenderer.BuildAttachmentSummarySystemPrompt(promptVersion);
 
                 var attachmentText = string.IsNullOrWhiteSpace(extractedText) ? null : extractedText;
                 if (attachmentText != null)
@@ -307,11 +159,11 @@ namespace Unity.AI.Runtime
                     text = attachmentText
                 };
                 var attachment = JsonSerializer.Serialize(attachmentPayload, JsonLogOptions);
-                var contentToAnalyze = BuildAttachmentSummaryUserPrompt(promptVersion, attachment);
+                var contentToAnalyze = OpenAIPromptRenderer.BuildAttachmentSummaryUserPrompt(promptVersion, attachment);
 
                 await LogPromptInputAsync(AttachmentSummaryPromptType, promptVersion, prompt, contentToAnalyze);
-                var result = await GenerateWithRetryAsync(
-                () => GenerateSummaryAsync(
+            var result = await GenerateWithRetryAsync(
+                () => _openAITransportService.GenerateSummaryAsync(
                     contentToAnalyze,
                     prompt,
                     AttachmentSummaryCompletionTokens,
@@ -345,88 +197,17 @@ namespace Unity.AI.Runtime
             }
         }
 
-        private string AddIdsToAnalysisItems(string analysisJson)
-        {
-            try
-            {
-                using var jsonDoc = JsonDocument.Parse(analysisJson);
-                using var memoryStream = new System.IO.MemoryStream();
-                using (var writer = new Utf8JsonWriter(memoryStream, new JsonWriterOptions { Indented = true }))
-                {
-                    writer.WriteStartObject();
-
-                    foreach (var property in jsonDoc.RootElement.EnumerateObject())
-                    {
-                        var outputPropertyName = property.Name;
-
-                        if (outputPropertyName == AIJsonKeys.Errors ||
-                            outputPropertyName == AIJsonKeys.Warnings ||
-                            outputPropertyName == AIJsonKeys.Summaries ||
-                            outputPropertyName == AIJsonKeys.NextSteps)
-                        {
-                            writer.WritePropertyName(outputPropertyName);
-                            writer.WriteStartArray();
-
-                            foreach (var item in property.Value.EnumerateArray())
-                            {
-                                writer.WriteStartObject();
-
-                                // Add unique ID first
-                                writer.WriteString("id", Guid.NewGuid().ToString());
-                                writer.WriteBoolean(AIJsonKeys.Hidden, false);
-
-                                // Copy existing properties
-                                foreach (var itemProperty in item.EnumerateObject())
-                                {
-                                    if (itemProperty.NameEquals(AIJsonKeys.Id) || itemProperty.NameEquals(AIJsonKeys.Hidden))
-                                    {
-                                        continue;
-                                    }
-
-                                    itemProperty.WriteTo(writer);
-                                }
-
-                                writer.WriteEndObject();
-                            }
-
-                            writer.WriteEndArray();
-                        }
-                        else
-                        {
-                            if (outputPropertyName != property.Name)
-                            {
-                                writer.WritePropertyName(outputPropertyName);
-                                property.Value.WriteTo(writer);
-                                continue;
-                            }
-
-                            property.WriteTo(writer);
-                        }
-                    }
-
-                    writer.WriteEndObject();
-                }
-
-                return Encoding.UTF8.GetString(memoryStream.ToArray());
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error adding IDs to analysis items, returning original JSON");
-                return analysisJson; // Return original if processing fails
-            }
-        }
-
         public async Task<ApplicationScoringResponse> GenerateApplicationScoringAsync(ApplicationScoringRequest request)
         {
             ArgumentNullException.ThrowIfNull(request);
-            var promptVersion = ResolvePromptVersion(request.PromptVersion ?? ResolvePromptVersionSetting(ApplicationScoringPromptType));
+            var promptVersion = OpenAIPromptRenderer.ResolvePromptVersion(request.PromptVersion ?? ResolvePromptVersionSetting(ApplicationScoringPromptType));
             var dataJson = JsonSerializer.Serialize(request.Data, JsonLogOptions);
             var sectionJson = JsonSerializer.Serialize(request.SectionSchema, JsonLogOptions);
 
             var attachmentSummaries = request.Attachments
                 .Select(a => $"{a.Name}: {a.Summary}")
                 .ToList();
-            if (string.IsNullOrEmpty(ResolveApiKey(ApplicationScoringPromptType)))
+            if (string.IsNullOrEmpty(_openAIConfigurationResolver.ResolveApiKey(ApplicationScoringPromptType)))
             {
                 _logger.LogWarning("{Message}", MissingApiKeyMessage);
                 return new ApplicationScoringResponse();
@@ -438,8 +219,8 @@ namespace Unity.AI.Runtime
                     ? string.Join("\n- ", attachmentSummaries.Select((summary, index) => $"Attachment {index + 1}: {summary}"))
                     : "No attachments provided.";
 
-                var section = BuildAliasedApplicationScoringSection(request.SectionName, sectionJson, out var questionIdAliasMap);
-                var response = BuildApplicationScoringResponseTemplate(section);
+                var section = OpenAIPromptRenderer.BuildAliasedApplicationScoringSection(request.SectionName, sectionJson, out var questionIdAliasMap);
+                var response = OpenAIPromptRenderer.BuildApplicationScoringResponseTemplate(section);
                 if (response == "{}")
                 {
                     _logger.LogWarning(
@@ -448,17 +229,17 @@ namespace Unity.AI.Runtime
                     return new ApplicationScoringResponse();
                 }
 
-                var applicationScoringContent = BuildApplicationScoringUserPrompt(
+                var applicationScoringContent = OpenAIPromptRenderer.BuildApplicationScoringUserPrompt(
                     promptVersion,
                     dataJson,
                     attachments,
                     section,
                     response);
-                var systemPrompt = BuildApplicationScoringSystemPrompt(promptVersion);
+                var systemPrompt = OpenAIPromptRenderer.BuildApplicationScoringSystemPrompt(promptVersion);
 
                 await LogPromptInputAsync(ApplicationScoringPromptType, promptVersion, systemPrompt, applicationScoringContent);
                 var result = await GenerateWithRetryAsync(
-                () => GenerateSummaryAsync(
+                () => _openAITransportService.GenerateSummaryAsync(
                     applicationScoringContent,
                     systemPrompt,
                     ApplicationScoringCompletionTokens,
@@ -473,7 +254,7 @@ namespace Unity.AI.Runtime
                     return new ApplicationScoringResponse();
                 }
 
-                return ParseApplicationScoringResponse(result.Content, questionIdAliasMap);
+                return OpenAIResponseParser.ParseApplicationScoringResponse(result.Content, questionIdAliasMap);
             }
             catch (Exception ex)
             {
@@ -547,137 +328,6 @@ namespace Unity.AI.Runtime
             };
         }
 
-        private static AIOperationResult MapFailureOutcome(HttpStatusCode statusCode, AIProviderResult response)
-        {
-            var statusCodeValue = (int)statusCode;
-
-            if (statusCode == HttpStatusCode.RequestTimeout
-                || statusCode == (HttpStatusCode)429
-                || statusCodeValue >= 500)
-            {
-                return AIOperationResult.TransientFailure(response);
-            }
-
-            return AIOperationResult.PermanentFailure(response);
-        }
-
-        private static AIProviderResult BuildProviderResponseFromMetadata(
-            string content,
-            string? rawResponse,
-            AIProviderResponseMetadata? metadata,
-            int? httpStatusCode = null)
-        {
-            return new AIProviderResult(
-                content,
-                rawResponse ?? string.Empty,
-                metadata?.Model,
-                metadata?.FinishReason,
-                httpStatusCode,
-                metadata?.PromptTokens,
-                metadata?.CompletionTokens,
-                metadata?.TotalTokens,
-                metadata?.ReasoningTokens);
-        }
-
-        private static AIProviderResponseMetadata? TryExtractProviderMetadata(string? responseContent)
-        {
-            if (string.IsNullOrWhiteSpace(responseContent))
-            {
-                return null;
-            }
-
-            try
-            {
-                using var jsonDoc = JsonDocument.Parse(responseContent);
-                var root = jsonDoc.RootElement;
-                var model = root.TryGetProperty("model", out var modelProp) && modelProp.ValueKind == JsonValueKind.String
-                    ? modelProp.GetString()
-                    : null;
-
-                string? finishReason = null;
-                if (root.TryGetProperty("choices", out var choices)
-                    && choices.ValueKind == JsonValueKind.Array
-                    && choices.GetArrayLength() > 0)
-                {
-                    var firstChoice = choices[0];
-                    if (firstChoice.TryGetProperty("finish_reason", out var finishReasonProp) && finishReasonProp.ValueKind == JsonValueKind.String)
-                    {
-                        finishReason = finishReasonProp.GetString();
-                    }
-                }
-
-                int? promptTokens = null;
-                int? completionTokens = null;
-                int? totalTokens = null;
-                int? reasoningTokens = null;
-                if (root.TryGetProperty("usage", out var usage) && usage.ValueKind == JsonValueKind.Object)
-                {
-                    promptTokens = TryGetInt32(usage, "prompt_tokens");
-                    completionTokens = TryGetInt32(usage, "completion_tokens");
-                    totalTokens = TryGetInt32(usage, "total_tokens");
-
-                    if (usage.TryGetProperty("completion_tokens_details", out var completionTokenDetails)
-                        && completionTokenDetails.ValueKind == JsonValueKind.Object)
-                    {
-                        reasoningTokens = TryGetInt32(completionTokenDetails, "reasoning_tokens");
-                    }
-                }
-
-                return new AIProviderResponseMetadata(model, finishReason, promptTokens, completionTokens, totalTokens, reasoningTokens);
-            }
-            catch (JsonException)
-            {
-                return null;
-            }
-        }
-
-        private void LogProviderMetadata(
-            string? operationName,
-            string? promptVersion,
-            string? fileName,
-            AIProviderResult response,
-            bool success)
-        {
-            if (string.IsNullOrWhiteSpace(response.Model)
-                && string.IsNullOrWhiteSpace(response.FinishReason)
-                && response.HttpStatusCode == null
-                && response.PromptTokens == null
-                && response.CompletionTokens == null
-                && response.TotalTokens == null
-                && response.ReasoningTokens == null)
-            {
-                return;
-            }
-
-            if (response.PromptTokens != null || response.CompletionTokens != null || response.TotalTokens != null)
-            {
-                _logger.LogInformation(
-                    "AI token usage. OperationName={OperationName}, InputTokens={InputTokens}, CompletionTokens={CompletionTokens}, TotalTokens={TotalTokens}, Environment={Environment}, TenantId={TenantId}, Status={Status}, PromptVersion={PromptVersion}, Model={Model}, HttpStatusCode={HttpStatusCode}, FileName={FileName}",
-                    operationName ?? "completion",
-                    response.PromptTokens,
-                    response.CompletionTokens,
-                    response.TotalTokens,
-                    _hostEnvironment.EnvironmentName,
-                    _currentTenant.Id,
-                    success ? "success" : "failed",
-                    promptVersion,
-                    response.Model,
-                    response.HttpStatusCode,
-                    fileName);
-            }
-
-            _logger.LogDebug(
-                "AI provider response metadata for {OperationName}: Model={Model}, FinishReason={FinishReason}, HttpStatusCode={HttpStatusCode}, PromptTokens={PromptTokens}, CompletionTokens={CompletionTokens}, TotalTokens={TotalTokens}, ReasoningTokens={ReasoningTokens}",
-                operationName ?? "completion",
-                response.Model,
-                response.FinishReason,
-                response.HttpStatusCode,
-                response.PromptTokens,
-                response.CompletionTokens,
-                response.TotalTokens,
-                response.ReasoningTokens);
-        }
-
         private static int? TryGetInt32(JsonElement element, string propertyName)
         {
             return element.TryGetProperty(propertyName, out var property)
@@ -685,28 +335,6 @@ namespace Unity.AI.Runtime
                 && property.TryGetInt32(out var value)
                 ? value
                 : null;
-        }
-
-        private static string ResolveMaxTokensParameterName(string? configuredParameterName)
-        {
-            if (string.Equals(configuredParameterName, LegacyMaxTokensParameterName, StringComparison.Ordinal))
-            {
-                return LegacyMaxTokensParameterName;
-            }
-
-            return DefaultMaxTokensParameterName;
-        }
-
-        private int ResolveCompletionTokens(string operationName, int defaultValue)
-        {
-            var configuredValue = _configuration.GetValue<int?>($"Azure:Operations:{operationName}:MaxCompletionTokens");
-            if (configuredValue is > 0)
-            {
-                return configuredValue.Value;
-            }
-
-            var defaultConfiguredValue = _configuration.GetValue<int?>("Azure:Operations:Defaults:MaxCompletionTokens");
-            return defaultConfiguredValue is > 0 ? defaultConfiguredValue.Value : defaultValue;
         }
 
         private string? ResolvePromptVersionSetting(string operationName)
@@ -724,431 +352,6 @@ namespace Unity.AI.Runtime
             }
 
             return _configuration["Azure:OpenAI:PromptVersion"];
-        }
-
-        private string ResolveProviderName(string? operationName = null)
-        {
-            if (!string.IsNullOrWhiteSpace(operationName))
-            {
-                var configuredProvider = _configuration[$"Azure:Operations:{operationName}:Provider"];
-                if (!string.IsNullOrWhiteSpace(configuredProvider))
-                {
-                    return configuredProvider.Trim();
-                }
-            }
-
-            var defaultProvider = _configuration["Azure:Operations:Defaults:Provider"];
-            return string.IsNullOrWhiteSpace(defaultProvider) ? DefaultProviderName : defaultProvider.Trim();
-        }
-
-        private string? ResolveApiKey(string? operationName = null)
-        {
-            var providerName = ResolveProviderName(operationName);
-            if (string.Equals(providerName, DefaultProviderName, StringComparison.Ordinal))
-            {
-                var injectedApiKey = _configuration[OpenAiApiKeyEnvironmentVariableName];
-                if (!string.IsNullOrWhiteSpace(injectedApiKey))
-                {
-                    return injectedApiKey;
-                }
-            }
-
-            return _configuration[$"Azure:{providerName}:ApiKey"];
-        }
-
-        private string ResolveMaxTokensParameterNameForOperation(string? operationName = null)
-        {
-            var providerName = ResolveProviderName(operationName);
-            var profileName = ResolveProfileName(operationName);
-            var profileParameterName = ResolveProfileSetting(providerName, profileName, "MaxTokensParameter");
-            return ResolveMaxTokensParameterName(profileParameterName);
-        }
-
-        private double? ResolveConfiguredTemperature(string? operationName = null)
-        {
-            var providerName = ResolveProviderName(operationName);
-            var profileName = ResolveProfileName(operationName);
-            var profileTemperature = ResolveProfileSetting(providerName, profileName, "Temperature");
-            if (profileTemperature != null
-                && double.TryParse(profileTemperature, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var parsedTemperature))
-            {
-                return parsedTemperature;
-            }
-
-            return null;
-        }
-
-        private string ResolveApiUrl(string? operationName)
-        {
-            var providerName = ResolveProviderName(operationName);
-            var profileName = ResolveProfileName(operationName);
-            var profileApiUrl = ResolveProfileSetting(providerName, profileName, "ApiUrl");
-            var injectedEndpoint = ResolveInjectedEndpoint(providerName);
-            var legacyOpenAiApiUrl = _configuration["Azure:OpenAI:ApiUrl"];
-
-            if (!string.IsNullOrWhiteSpace(injectedEndpoint) && !string.IsNullOrWhiteSpace(profileApiUrl))
-            {
-                return CombineEndpointAndPath(injectedEndpoint, profileApiUrl);
-            }
-
-            if (!string.IsNullOrWhiteSpace(profileApiUrl))
-            {
-                return profileApiUrl;
-            }
-
-            if (!string.IsNullOrWhiteSpace(legacyOpenAiApiUrl))
-            {
-                return legacyOpenAiApiUrl;
-            }
-
-            throw new InvalidOperationException($"AI API URL is not configured for provider '{providerName}'.");
-        }
-
-        private string? ResolveInjectedEndpoint(string providerName)
-        {
-            if (!string.Equals(providerName, DefaultProviderName, StringComparison.Ordinal))
-            {
-                return _configuration[$"Azure:{providerName}:Endpoint"];
-            }
-
-            var injectedEndpoint = _configuration[OpenAiEndpointEnvironmentVariableName];
-            if (!string.IsNullOrWhiteSpace(injectedEndpoint))
-            {
-                return injectedEndpoint;
-            }
-
-            return _configuration["Azure:OpenAI:Endpoint"];
-        }
-
-        private string? ResolveProfileName(string? operationName)
-        {
-            if (!string.IsNullOrWhiteSpace(operationName))
-            {
-                var operationProfile = _configuration[$"Azure:Operations:{operationName}:Profile"];
-                if (!string.IsNullOrWhiteSpace(operationProfile))
-                {
-                    return operationProfile.Trim();
-                }
-            }
-
-            var defaultProfile = _configuration["Azure:Operations:Defaults:Profile"];
-            return string.IsNullOrWhiteSpace(defaultProfile) ? null : defaultProfile.Trim();
-        }
-
-        private string? ResolveProfileSetting(string providerName, string? profileName, string settingName)
-        {
-            if (string.IsNullOrWhiteSpace(profileName))
-            {
-                return null;
-            }
-
-            var profileSetting = _configuration[$"Azure:{providerName}:Profiles:{profileName}:{settingName}"];
-            return string.IsNullOrWhiteSpace(profileSetting) ? null : profileSetting;
-        }
-
-        private static string CombineEndpointAndPath(string endpoint, string profilePath)
-        {
-            const char UrlPathSeparator = '/';
-
-            if (Uri.TryCreate(profilePath, UriKind.Absolute, out var absoluteUri))
-            {
-                return absoluteUri.ToString();
-            }
-
-            var trimmedEndpoint = endpoint.Trim().TrimEnd(UrlPathSeparator);
-            var trimmedPath = profilePath.Trim();
-            if (!trimmedPath.StartsWith(UrlPathSeparator))
-            {
-                trimmedPath = string.Concat(UrlPathSeparator, trimmedPath);
-            }
-
-            return trimmedEndpoint + trimmedPath;
-        }
-
-        private static ApplicationAnalysisResponse ParseApplicationAnalysisResponse(string raw)
-        {
-            var response = new ApplicationAnalysisResponse();
-
-            if (!TryParseJsonObjectFromResponse(raw, out var root))
-            {
-                return response;
-            }
-
-            if (TryGetStringProperty(root, AIJsonKeys.Rating, out var rating))
-            {
-                response.Rating = rating;
-            }
-
-            if (root.TryGetProperty("errors", out var errors) && errors.ValueKind == JsonValueKind.Array)
-            {
-                response.Errors = ParseFindings(errors);
-            }
-
-            if (root.TryGetProperty("warnings", out var warnings) && warnings.ValueKind == JsonValueKind.Array)
-            {
-                response.Warnings = ParseFindings(warnings);
-            }
-
-            if (root.TryGetProperty(AIJsonKeys.Summaries, out var summaries) && summaries.ValueKind == JsonValueKind.Array)
-            {
-                response.Summaries = ParseFindings(summaries);
-            }
-
-            if (root.TryGetProperty(AIJsonKeys.NextSteps, out var nextSteps) && nextSteps.ValueKind == JsonValueKind.Array)
-            {
-                response.NextSteps = ParseFindings(nextSteps);
-            }
-
-            if (root.TryGetProperty(AIJsonKeys.Recommendation, out var recommendation) && recommendation.ValueKind == JsonValueKind.Object)
-            {
-                response.Recommendation = ParseRecommendation(recommendation);
-            }
-
-            return response;
-        }
-
-        private static bool TryGetStringProperty(JsonElement root, string propertyName, out string? value)
-        {
-            value = null;
-            if (!root.TryGetProperty(propertyName, out var property) || property.ValueKind != JsonValueKind.String)
-            {
-                return false;
-            }
-
-            value = property.GetString();
-            return !string.IsNullOrWhiteSpace(value);
-        }
-
-        private static List<ApplicationAnalysisFinding> ParseFindings(JsonElement array)
-        {
-            var findings = new List<ApplicationAnalysisFinding>();
-            foreach (var item in array.EnumerateArray())
-            {
-                if (item.ValueKind != JsonValueKind.Object)
-                {
-                    continue;
-                }
-
-                var id = item.TryGetProperty(AIJsonKeys.Id, out var idProp) && idProp.ValueKind == JsonValueKind.String
-                    ? idProp.GetString()
-                    : null;
-                var hidden = item.TryGetProperty(AIJsonKeys.Hidden, out var hiddenProp) &&
-                    (hiddenProp.ValueKind == JsonValueKind.True || hiddenProp.ValueKind == JsonValueKind.False) &&
-                    hiddenProp.GetBoolean();
-                string? title = null;
-                if (item.TryGetProperty(AIJsonKeys.Title, out var titleProp) && titleProp.ValueKind == JsonValueKind.String)
-                {
-                    title = titleProp.GetString();
-                }
-
-                string? detail = null;
-                if (item.TryGetProperty(AIJsonKeys.Detail, out var detailProp) && detailProp.ValueKind == JsonValueKind.String)
-                {
-                    detail = detailProp.GetString();
-                }
-
-                findings.Add(new ApplicationAnalysisFinding
-                {
-                    Id = id,
-                    Hidden = hidden,
-                    Title = title,
-                    Detail = detail
-                });
-            }
-
-            return findings;
-        }
-
-        private static ApplicationAnalysisRecommendation? ParseRecommendation(JsonElement recommendation)
-        {
-            string? decision = null;
-            if (recommendation.TryGetProperty(AIJsonKeys.Decision, out var decisionProp) &&
-                decisionProp.ValueKind == JsonValueKind.String)
-            {
-                decision = decisionProp.GetString();
-            }
-
-            string? rationale = null;
-            if (recommendation.TryGetProperty(AIJsonKeys.Rationale, out var rationaleProp) &&
-                rationaleProp.ValueKind == JsonValueKind.String)
-            {
-                rationale = rationaleProp.GetString();
-            }
-
-            if (string.IsNullOrWhiteSpace(decision) && string.IsNullOrWhiteSpace(rationale))
-            {
-                return null;
-            }
-
-            return new ApplicationAnalysisRecommendation
-            {
-                Decision = decision,
-                Rationale = rationale
-            };
-        }
-
-        private static ApplicationScoringResponse ParseApplicationScoringResponse(
-            string raw,
-            IReadOnlyDictionary<string, string>? questionIdAliasMap = null)
-        {
-            var response = new ApplicationScoringResponse();
-            if (!TryParseJsonObjectFromResponse(raw, out var root))
-            {
-                return response;
-            }
-
-            foreach (var property in root.EnumerateObject())
-            {
-                if (property.Value.ValueKind != JsonValueKind.Object)
-                {
-                    continue;
-                }
-
-                var answer = property.Value.TryGetProperty("answer", out var answerProp)
-                    ? answerProp.Clone()
-                    : default;
-                var rationale = property.Value.TryGetProperty("rationale", out var rationaleProp) &&
-                                rationaleProp.ValueKind == JsonValueKind.String
-                    ? rationaleProp.GetString() ?? string.Empty
-                    : string.Empty;
-                var confidence = property.Value.TryGetProperty("confidence", out var confidenceProp) &&
-                                 confidenceProp.ValueKind == JsonValueKind.Number &&
-                                 confidenceProp.TryGetInt32(out var parsedConfidence)
-                    ? NormalizeConfidence(parsedConfidence)
-                    : 0;
-
-                var questionId = questionIdAliasMap != null &&
-                                 questionIdAliasMap.TryGetValue(property.Name, out var originalQuestionId)
-                    ? originalQuestionId
-                    : property.Name;
-
-                response.Answers[questionId] = new ApplicationScoringAnswer
-                {
-                    Answer = answer,
-                    Rationale = rationale,
-                    Confidence = confidence
-                };
-            }
-
-            return response;
-        }
-
-        private static int NormalizeConfidence(int confidence)
-        {
-            var clamped = Math.Clamp(confidence, 0, 100);
-            var rounded = (int)Math.Round(clamped / 5.0, MidpointRounding.AwayFromZero) * 5;
-            return Math.Clamp(rounded, 0, 100);
-        }
-
-        private static string BuildApplicationScoringResponseTemplate(string sectionPayloadJson)
-        {
-            try
-            {
-                using var doc = JsonDocument.Parse(sectionPayloadJson);
-                if (!doc.RootElement.TryGetProperty("questions", out var questions) || questions.ValueKind != JsonValueKind.Array)
-                {
-                    return "{}";
-                }
-
-                var template = new Dictionary<string, object>();
-                foreach (var question in questions.EnumerateArray())
-                {
-                    if (!question.TryGetProperty("id", out var idProp) || idProp.ValueKind != JsonValueKind.String)
-                    {
-                        continue;
-                    }
-
-                    var questionId = idProp.GetString();
-                    if (string.IsNullOrWhiteSpace(questionId))
-                    {
-                        continue;
-                    }
-
-                    template[questionId] = new
-                    {
-                        answer = string.Empty,
-                        rationale = string.Empty,
-                        confidence = 0
-                    };
-                }
-
-                if (template.Count == 0)
-                {
-                    return "{}";
-                }
-
-                return JsonSerializer.Serialize(template, JsonLogOptions);
-            }
-            catch (JsonException)
-            {
-                return "{}";
-            }
-        }
-
-        private static string BuildAliasedApplicationScoringSection(
-            string? sectionName,
-            string sectionJson,
-            out IReadOnlyDictionary<string, string> questionIdAliasMap)
-        {
-            questionIdAliasMap = new Dictionary<string, string>(StringComparer.Ordinal);
-
-            if (string.IsNullOrWhiteSpace(sectionJson))
-            {
-                return JsonSerializer.Serialize(new { name = sectionName, questions = sectionJson }, JsonLogOptions);
-            }
-
-            try
-            {
-                using var sectionDoc = JsonDocument.Parse(sectionJson);
-                if (sectionDoc.RootElement.ValueKind != JsonValueKind.Array)
-                {
-                    return JsonSerializer.Serialize(new { name = sectionName, questions = sectionDoc.RootElement.Clone() }, JsonLogOptions);
-                }
-
-                var aliasedQuestions = new List<Dictionary<string, object?>>();
-                var aliasMap = new Dictionary<string, string>(StringComparer.Ordinal);
-                var index = 1;
-
-                foreach (var question in sectionDoc.RootElement.EnumerateArray())
-                {
-                    if (question.ValueKind != JsonValueKind.Object)
-                    {
-                        continue;
-                    }
-
-                    var aliasedQuestion = new Dictionary<string, object?>(StringComparer.Ordinal);
-                    string? questionAlias = null;
-
-                    foreach (var property in question.EnumerateObject())
-                    {
-                        if (property.NameEquals("id") && property.Value.ValueKind == JsonValueKind.String)
-                        {
-                            var originalQuestionId = property.Value.GetString();
-                            if (!string.IsNullOrWhiteSpace(originalQuestionId))
-                            {
-                                questionAlias = $"q{index++}";
-                                aliasMap[questionAlias] = originalQuestionId;
-                                aliasedQuestion[property.Name] = questionAlias;
-                                continue;
-                            }
-                        }
-
-                        aliasedQuestion[property.Name] = property.Value.Clone();
-                    }
-
-                    if (!string.IsNullOrWhiteSpace(questionAlias))
-                    {
-                        aliasedQuestions.Add(aliasedQuestion);
-                    }
-                }
-
-                questionIdAliasMap = aliasMap;
-                return JsonSerializer.Serialize(new { name = sectionName, questions = aliasedQuestions }, JsonLogOptions);
-            }
-            catch (JsonException)
-            {
-                return JsonSerializer.Serialize(new { name = sectionName, questions = sectionJson }, JsonLogOptions);
-            }
         }
 
         private async Task LogPromptInputAsync(string promptType, string promptVersion, string? systemPrompt, string userPrompt)
@@ -1333,255 +536,6 @@ namespace Unity.AI.Runtime
             {
                 return false;
             }
-        }
-
-        private static string ResolvePromptVersion(string? version)
-        {
-            if (!string.IsNullOrWhiteSpace(version) &&
-                PromptProfiles.TryGetValue(version.Trim(), out var selectedVersion))
-            {
-                return selectedVersion;
-            }
-
-            return PromptVersionV1;
-        }
-
-        private static string BuildApplicationAnalysisSystemPrompt(string version)
-        {
-            return GetRequiredPromptTemplate(version, ApplicationAnalysisSystemTemplateName);
-        }
-
-        private static string BuildApplicationAnalysisUserPrompt(
-            string version,
-            string schema,
-            string data,
-            string attachments)
-        {
-            var replacements = new Dictionary<string, string>
-            {
-                ["SCHEMA"] = schema,
-                ["DATA"] = data,
-                ["ATTACHMENTS"] = attachments
-            };
-
-            return RenderPromptTemplate(version, ApplicationAnalysisUserTemplateName, replacements);
-        }
-
-        private static string BuildAttachmentSummarySystemPrompt(string version)
-        {
-            return GetRequiredPromptTemplate(version, AttachmentSummarySystemTemplateName);
-        }
-
-        private static string BuildAttachmentSummaryUserPrompt(string version, string attachment)
-        {
-            return RenderPromptTemplate(version, AttachmentSummaryUserTemplateName, new Dictionary<string, string>
-            {
-                ["ATTACHMENT"] = attachment
-            });
-        }
-
-        private static string BuildApplicationScoringSystemPrompt(string version)
-        {
-            return GetRequiredPromptTemplate(version, ApplicationScoringSystemTemplateName);
-        }
-
-        private static string BuildApplicationScoringUserPrompt(
-            string version,
-            string data,
-            string attachments,
-            string section,
-            string response)
-        {
-            return RenderPromptTemplate(version, ApplicationScoringUserTemplateName, new Dictionary<string, string>
-            {
-                ["DATA"] = data,
-                ["ATTACHMENTS"] = attachments,
-                ["SECTION"] = section,
-                ["RESPONSE"] = response
-            });
-        }
-
-        private static bool TryGetPromptTemplate(string version, string templateName, out string template)
-        {
-            template = string.Empty;
-            var cacheKey = $"{version}/{templateName}";
-            if (PromptTemplateCache.TryGetValue(cacheKey, out var cachedTemplate))
-            {
-                template = cachedTemplate;
-                return true;
-            }
-
-            var path = Path.Combine(AppContext.BaseDirectory, PromptTemplatesFolder, version, $"{templateName}.txt");
-            if (!File.Exists(path))
-            {
-                return false;
-            }
-
-            var loaded = PromptTemplateCache.GetOrAdd(cacheKey, _ => File.ReadAllText(path));
-            if (string.IsNullOrWhiteSpace(loaded))
-            {
-                return false;
-            }
-
-            template = loaded;
-            return true;
-        }
-
-        private static string GetRequiredPromptTemplate(string version, string templateName)
-        {
-            if (TryGetPromptTemplate(version, templateName, out var template))
-            {
-                return template;
-            }
-
-            throw new InvalidOperationException(
-                $"Missing required prompt template '{templateName}.txt' for prompt version '{version}'.");
-        }
-
-        private static string RenderPromptTemplate(
-            string version,
-            string templateName,
-            IReadOnlyDictionary<string, string> runtimeReplacements)
-        {
-            return RenderPromptTemplateInternal(
-                version,
-                templateName,
-                runtimeReplacements,
-                new HashSet<string>(StringComparer.OrdinalIgnoreCase));
-        }
-
-        private static string RenderPromptTemplateInternal(
-            string version,
-            string templateName,
-            IReadOnlyDictionary<string, string> runtimeReplacements,
-            ISet<string> resolutionStack)
-        {
-            if (!resolutionStack.Add(templateName))
-            {
-                throw new InvalidOperationException(
-                    $"Detected cyclic prompt fragment reference while resolving '{templateName}.txt' for prompt version '{version}'.");
-            }
-
-            var template = GetRequiredPromptTemplate(version, templateName);
-            var replacements = new Dictionary<string, string>(runtimeReplacements, StringComparer.Ordinal);
-            var baseTemplateName = GetTemplateBaseName(templateName);
-
-            foreach (var placeholder in GetTemplatePlaceholders(template))
-            {
-                if (replacements.ContainsKey(placeholder))
-                {
-                    continue;
-                }
-
-                var fragmentTemplateName = ResolveFragmentTemplateName(version, baseTemplateName, placeholder);
-                if (!string.IsNullOrWhiteSpace(fragmentTemplateName))
-                {
-                    replacements[placeholder] = RenderPromptTemplateInternal(
-                        version,
-                        fragmentTemplateName,
-                        new Dictionary<string, string>(StringComparer.Ordinal),
-                        resolutionStack).TrimEnd();
-                }
-            }
-
-            var rendered = template;
-            foreach (var replacement in replacements)
-            {
-                rendered = rendered.Replace($"{{{{{replacement.Key}}}}}", replacement.Value ?? string.Empty, StringComparison.Ordinal);
-            }
-
-            var unresolved = GetTemplatePlaceholders(rendered);
-            if (unresolved.Count > 0)
-            {
-                throw new InvalidOperationException(
-                    $"Unresolved prompt placeholders in '{templateName}.txt' for prompt version '{version}': {string.Join(", ", unresolved.OrderBy(item => item))}");
-            }
-
-            resolutionStack.Remove(templateName);
-            return rendered;
-        }
-
-        private static string? ResolveFragmentTemplateName(string version, string baseTemplateName, string placeholderName)
-        {
-            var normalizedPlaceholder = placeholderName.ToLowerInvariant();
-            var baseScopedCandidate = $"{baseTemplateName}.{normalizedPlaceholder}";
-            if (TryGetPromptTemplate(version, baseScopedCandidate, out _))
-            {
-                return baseScopedCandidate;
-            }
-
-            if (string.Equals(placeholderName, "RESPONSE", StringComparison.Ordinal))
-            {
-                var outputCandidate = $"{baseTemplateName}.output";
-                if (TryGetPromptTemplate(version, outputCandidate, out _))
-                {
-                    return outputCandidate;
-                }
-            }
-
-            if (TryResolveCommonTemplateName(placeholderName, out var commonTemplateName) &&
-                TryGetPromptTemplate(version, commonTemplateName, out _))
-            {
-                return commonTemplateName;
-            }
-
-            return null;
-        }
-
-        private static bool TryResolveCommonTemplateName(string placeholderName, out string commonTemplateName)
-        {
-            commonTemplateName = string.Empty;
-            if (!placeholderName.StartsWith("COMMON_", StringComparison.Ordinal))
-            {
-                return false;
-            }
-
-            var suffix = placeholderName.Substring("COMMON_".Length).ToLowerInvariant();
-            suffix = suffix.Replace('_', '.');
-            commonTemplateName = $"common.{suffix}";
-            return true;
-        }
-
-        private static string GetTemplateBaseName(string templateName)
-        {
-            var separatorIndex = templateName.IndexOf('.', StringComparison.Ordinal);
-            if (separatorIndex <= 0)
-            {
-                return templateName;
-            }
-
-            return templateName.Substring(0, separatorIndex);
-        }
-
-        private static HashSet<string> GetTemplatePlaceholders(string template)
-        {
-            var placeholders = new HashSet<string>(StringComparer.Ordinal);
-            var searchIndex = 0;
-
-            while (searchIndex < template.Length)
-            {
-                var start = template.IndexOf("{{", searchIndex, StringComparison.Ordinal);
-                if (start < 0)
-                {
-                    break;
-                }
-
-                var end = template.IndexOf("}}", start + 2, StringComparison.Ordinal);
-                if (end < 0)
-                {
-                    break;
-                }
-
-                var placeholder = template.Substring(start + 2, end - start - 2).Trim();
-                if (!string.IsNullOrWhiteSpace(placeholder))
-                {
-                    placeholders.Add(placeholder);
-                }
-
-                searchIndex = end + 2;
-            }
-
-            return placeholders;
         }
 
         private static string ExtractSummaryFromJson(string output)
