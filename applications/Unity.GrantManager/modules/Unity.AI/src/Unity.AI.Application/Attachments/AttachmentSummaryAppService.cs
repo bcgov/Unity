@@ -12,7 +12,7 @@ using Volo.Abp.Features;
 
 namespace Unity.GrantManager.Attachments;
 
-[Authorize(AIPermissions.AttachmentSummary.AttachmentSummaryDefault)]
+[Authorize(AIPermissions.Analysis.ViewAttachmentSummary)]
 [Dependency(ReplaceServices = true)]
 [ExposeServices(typeof(AttachmentSummaryAppService), typeof(IAttachmentSummaryAppService))]
 public class AttachmentSummaryAppService(

@@ -1,0 +1,95 @@
+/* ==========================================================================
+   UnityJsonEditor - Reusable JSON editor component styles
+   ========================================================================== */
+
+/* Header: title + item count + close */
+.uje-status-text {
+    font-size: 0.8125rem;
+    color: #6c757d;
+    white-space: nowrap;
+}
+
+/* Body: flex column — textarea fills available space, status bar stays pinned below */
+.modal-body:has(.uje-textarea-wrapper) {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.uje-textarea-wrapper {
+    position: relative;
+    flex: 1 1 auto;        
+    overflow: hidden;
+}
+
+.uje-textarea {
+    font-family: 'Cascadia Code', 'Fira Code', 'SF Mono', 'Consolas', 'Liberation Mono', 'Menlo', monospace;
+    font-size: 0.8125rem;
+    line-height: 1.5;
+    min-height: 120px;
+    max-height: 350px;
+    height: 100%;
+    tab-size: 2;
+    white-space: pre;
+    overflow-wrap: normal;
+    overflow-x: auto;
+    resize: none;
+}
+
+    .uje-textarea:focus {
+        border-color: #86b7fe;
+        box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.15);
+    }
+
+    .uje-textarea[readonly] {
+        background-color: #f8f9fa;
+        cursor: default;
+    }
+
+/* Footer: buttons left-aligned */
+.uje-footer-actions {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+/* Status bar: reserved space at bottom of body for validation messages */
+.uje-status-bar {
+    flex: 0 0 auto;
+    min-height: 1.5em;
+    max-height: 4.5em;
+    overflow-y: auto;
+    font-size: 0.8125rem;
+    width: 100%;
+    padding-top: 0.375rem;
+}
+
+.uje-validation-msg i {
+    font-size: 0.875rem;
+}
+
+/* Scroll-to-top button */
+.uje-scroll-top {
+    position: absolute;
+    bottom: 0.5rem;
+    right: 0.75rem;
+    width: 1.75rem;
+    height: 1.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #ced4da;
+    border-radius: 0.25rem;
+    background-color: rgba(255, 255, 255, 0.9);
+    color: #6c757d;
+    font-size: 0.75rem;
+    cursor: pointer;
+    opacity: 0.7;
+    transition: opacity 0.15s ease-in-out;
+}
+
+    .uje-scroll-top:hover {
+        opacity: 1;
+        color: #495057;
+        border-color: #86b7fe;
+    }

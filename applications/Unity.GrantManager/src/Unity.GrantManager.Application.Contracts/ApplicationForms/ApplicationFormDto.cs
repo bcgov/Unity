@@ -27,6 +27,8 @@ namespace Unity.GrantManager.ApplicationForms
         public Guid? ScoresheetId { get; set; }
         public Guid? TenantId { get; set; }
         public bool IsDirectApproval { get; set; }
+        public bool AutomaticallyGenerateAIAnalysis { get; set; }
+        public bool ManuallyInitiateAIAnalysis { get; set; }
         public AddressType? ElectoralDistrictAddressType { get; set; }
         public string? Prefix { get; set; }
         public SuffixConfigType? SuffixType { get; set; }

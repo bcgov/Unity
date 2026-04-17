@@ -1658,6 +1658,9 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<DateTime?>("AttemptedConnectionDate")
                         .HasColumnType("timestamp without time zone");
 
+                    b.Property<bool>("AutomaticallyGenerateAIAnalysis")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("AvailableChefsFields")
                         .HasColumnType("text");
 
@@ -1729,6 +1732,9 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<Guid?>("LastModifierId")
                         .HasColumnType("uuid")
                         .HasColumnName("LastModifierId");
+
+                    b.Property<bool>("ManuallyInitiateAIAnalysis")
+                        .HasColumnType("boolean");
 
                     b.Property<Guid?>("ParentFormId")
                         .HasColumnType("uuid");
