@@ -11,7 +11,7 @@ namespace Unity.AI.Runtime;
 
 public class OpenAIResponseParser : ITransientDependency
 {
-    public ApplicationAnalysisResponse ParseApplicationAnalysisResponse(string raw)
+    public static ApplicationAnalysisResponse ParseApplicationAnalysisResponse(string raw)
     {
         var response = new ApplicationAnalysisResponse();
         if (!TryParseJsonObjectFromResponse(AddIdsToAnalysisItems(raw), out var root))
@@ -107,7 +107,7 @@ public class OpenAIResponseParser : ITransientDependency
         }
     }
 
-    public ApplicationScoringResponse ParseApplicationScoringResponse(string raw, IReadOnlyDictionary<string, string>? questionIdAliasMap = null)
+    public static ApplicationScoringResponse ParseApplicationScoringResponse(string raw, IReadOnlyDictionary<string, string>? questionIdAliasMap = null)
     {
         var response = new ApplicationScoringResponse();
         if (!TryParseJsonObjectFromResponse(raw, out var root))
