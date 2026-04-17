@@ -11,7 +11,9 @@ using Unity.GrantManager.Applications;
 using Unity.GrantManager.Assessments;
 using Unity.GrantManager.Web.Views.Shared.Components.AssessmentScoresWidget;
 using Volo.Abp.Authorization.Permissions;
+using Volo.Abp.DependencyInjection;
 using Volo.Abp.Features;
+using Volo.Abp.Settings;
 using Xunit;
 
 namespace Unity.GrantManager.Components
@@ -27,8 +29,11 @@ namespace Unity.GrantManager.Components
             var scoresheetRepository = Substitute.For<IScoresheetRepository>();
             var instanceRepository = Substitute.For<IScoresheetInstanceRepository>();
             var applicationRepository = Substitute.For<IApplicationRepository>();
+            var applicationFormRepository = Substitute.For<IApplicationFormRepository>();
             var featureChecker = Substitute.For<IFeatureChecker>();
             var permissionChecker = Substitute.For<IPermissionChecker>();
+            var settingProvider = Substitute.For<ISettingProvider>();
+            var lazyServiceProvider = Substitute.For<IAbpLazyServiceProvider>();
             var expectedFinancialAnalysis = 1;
             var expectedEconomicImpact = 2;
             var expectedInclusiveGrowth = 3;
@@ -51,6 +56,10 @@ namespace Unity.GrantManager.Components
                 AIScoresheetAnswers = null
             }));
 
+            applicationFormRepository.GetAsync(Arg.Any<Guid>()).Returns(Task.FromResult(new ApplicationForm()));
+            settingProvider.GetOrNullAsync(Arg.Any<string>()).Returns(Task.FromResult<string?>(null));
+            lazyServiceProvider.LazyGetRequiredService(typeof(ISettingProvider)).Returns(settingProvider);
+
             instanceRepository.GetByCorrelationAsync(assessmentId).Returns(Task.FromResult<ScoresheetInstance?>(null));
             featureChecker.IsEnabledAsync("Unity.AI.Scoring").Returns(Task.FromResult(true));
             permissionChecker.IsGrantedAsync(Arg.Any<string>()).Returns(Task.FromResult(true));
@@ -69,10 +78,12 @@ namespace Unity.GrantManager.Components
                 scoresheetRepository,
                 instanceRepository,
                 applicationRepository,
+                applicationFormRepository,
                 featureChecker,
                 permissionChecker)
             {
-                ViewComponentContext = viewComponentContext
+                ViewComponentContext = viewComponentContext,
+                LazyServiceProvider = lazyServiceProvider
             };
 
             //Act

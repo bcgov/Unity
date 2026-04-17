@@ -10,7 +10,7 @@ using Volo.Abp.Features;
 
 namespace Unity.GrantManager.GrantApplications;
 
-[Authorize(AIPermissions.Analysis.ViewScoringResult)]
+[Authorize(AIPermissions.Analysis.GenerateScoring)]
 public class ApplicationScoringAppService(
     IApplicationAIGenerationQueue aiGenerationQueue,
     IFeatureChecker featureChecker)

@@ -15,11 +15,13 @@ using Unity.Flex.Worksheets;
 using Unity.Flex;
 using Unity.Flex.Scoresheets.Enums;
 using Unity.AI.Models;
+using Unity.AI.Settings;
 using Unity.GrantManager.Applications;
 using System.Text.Json;
 using Unity.AI.Permissions;
 using Volo.Abp.Authorization.Permissions;
 using Volo.Abp.Features;
+using Volo.Abp.Settings;
 
 namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentScoresWidget
 {
@@ -32,6 +34,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentScoresWidget
         IScoresheetRepository scoresheetRepository,
         IScoresheetInstanceRepository scoresheetInstanceRepository,
         IApplicationRepository applicationRepository,
+        IApplicationFormRepository applicationFormRepository,
         IFeatureChecker featureChecker,
         IPermissionChecker permissionChecker) : AbpViewComponent
     {
@@ -44,7 +47,10 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentScoresWidget
 
             var assessment = await assessmentRepository.GetAsync(assessmentId);
             var application = await applicationRepository.GetAsync(assessment.ApplicationId);
+            var applicationForm = await applicationFormRepository.GetAsync(application.ApplicationFormId);
             var scoresheetInstance = await scoresheetInstanceRepository.GetByCorrelationAsync(assessment.Id);
+            var settingProvider = LazyServiceProvider.LazyGetRequiredService<ISettingProvider>();
+            var tenantManualEnabled = await settingProvider.GetAsync<bool>(AISettings.ManualGenerationEnabled, defaultValue: false);
 
             // Parse AI scoresheet answers if available
             Dictionary<string, JsonElement>? aiAnswers = null;
@@ -100,7 +106,9 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentScoresWidget
                 CurrentUserId = currentUserId,
                 AssessorId = assessment.AssessorId,
                 IsAIScoringEnabled = await featureChecker.IsEnabledAsync("Unity.AI.Scoring") &&
-                    await permissionChecker.IsGrantedAsync(AIPermissions.Analysis.ViewScoringResult),
+                    tenantManualEnabled &&
+                    applicationForm.ManuallyInitiateAIAnalysis &&
+                    await permissionChecker.IsGrantedAsync(AIPermissions.Analysis.GenerateScoring),
                 IsAiAssessment = assessment.IsAiAssessment,
             };
 
