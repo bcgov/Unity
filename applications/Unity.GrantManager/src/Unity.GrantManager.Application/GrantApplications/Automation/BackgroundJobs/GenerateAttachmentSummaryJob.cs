@@ -1,12 +1,12 @@
 using Microsoft.Extensions.Logging;
 using System.Threading.Tasks;
-using Unity.AI.Operations;
+using Unity.GrantManager.Attachments;
 using Volo.Abp.BackgroundJobs;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.MultiTenancy;
 namespace Unity.GrantManager.GrantApplications.Automation.BackgroundJobs;
 public class GenerateAttachmentSummaryJob(
-    IAttachmentSummaryService attachmentSummaryService,
+    IAttachmentSummaryAppService attachmentSummaryService,
     ICurrentTenant currentTenant,
     ILogger<GenerateAttachmentSummaryJob> logger) : AsyncBackgroundJob<GenerateAttachmentSummaryBackgroundJobArgs>, ITransientDependency
 {
@@ -17,7 +17,8 @@ public class GenerateAttachmentSummaryJob(
             logger.LogInformation(
                 "Executing AI attachment summary job for {AttachmentCount} attachment(s).",
                 args.AttachmentIds.Count);
-            await attachmentSummaryService.GenerateAndSaveAsync(args.AttachmentIds, args.PromptVersion);
+            var results = await attachmentSummaryService.GenerateAttachmentSummariesAsync(args.AttachmentIds, args.PromptVersion);
+            logger.LogInformation("Completed AI attachment summaries for {CompletedCount} attachment(s).", results.Count);
         }
     }
 }

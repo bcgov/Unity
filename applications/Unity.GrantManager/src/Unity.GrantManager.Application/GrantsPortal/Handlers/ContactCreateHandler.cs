@@ -26,7 +26,7 @@ public class ContactCreateHandler(
         var contactId = Guid.Parse(payload.ContactId ?? throw new ArgumentException("contactId is required"));
         var profileId = Guid.Parse(payload.ProfileId ?? throw new ArgumentException("profileId is required"));
         var innerData = payload.Data?.ToObject<ContactCreateData>()
-                        ?? throw new ArgumentException("Contact data is required");        
+                        ?? throw new ArgumentException("Contact data is required");
 
         // Idempotency: if the contact already exists, treat as success
         var existing = await contactRepository.FindAsync(contactId);
@@ -83,28 +83,5 @@ public class ContactCreateHandler(
 
         logger.LogInformation("Contact {ContactId} created successfully", contactId);
         return "Contact created successfully";
-    }   
-
-    /// <summary>
-    /// Normalizes a raw OIDC subject by stripping the IDP suffix (after @) and uppercasing.
-    /// This matches the format stored in ApplicationFormSubmission.OidcSub.
-    /// </summary>
-    internal static string? NormalizeOidcSub(string? subject)
-    {
-        if (string.IsNullOrWhiteSpace(subject))
-        {
-            return null;
-        }
-
-        var atIndex = subject.IndexOf('@');
-
-        if (atIndex == 0)
-        {
-            return null;
-        }
-
-        return atIndex > 0
-            ? subject[..atIndex].ToUpperInvariant()
-            : subject.ToUpperInvariant();
     }
 }

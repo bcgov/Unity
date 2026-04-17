@@ -18,6 +18,9 @@
         };
     };
 
+    const enableEmailDelay = $('#EmailHistoryTable').data('enable-email-delay') === true
+        || $('#EmailHistoryTable').data('enable-email-delay') === 'true';
+
     let emailHistoryDataTable = $('#EmailHistoryTable').DataTable(
         abp.libs.datatables.normalizeConfiguration({
             serverSide: false,
@@ -74,10 +77,21 @@
                     title: 'Sent By',
                     data: 'sentBy',
                     className: 'data-table-header',
-                    width: '16%',
+                    width: enableEmailDelay ? '10%' : '16%',
                     render: function (data) {
                         return data ? data.name + ' ' + data.surname : '—';
                     },
+                },
+                {
+                    title: 'Scheduled Send',
+                    data: 'sendOnDateTime',
+                    className: 'data-table-header text-center',
+                    width: '10%',
+                    visible: enableEmailDelay,
+                    render: function (data, type) {
+                        if (!data) return '—';
+                        return DateUtils.formatUtcToBcPacificDateTime(data, type) || '—';
+                    }
                 },
                 {
                     title: 'To Address',

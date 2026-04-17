@@ -50,6 +50,7 @@ public class UnityThemeUX2GlobalScriptContributor : BundleContributor
         context.Files.Add("/themes/ux2/plugins/scrollResize.js");
         context.Files.Add("/themes/ux2/plugins/colvisAlpha.js");
         context.Files.Add("/themes/ux2/table-utils.js");
+        context.Files.Add("/themes/ux2/json-editor.js");
         context.Files.Add("/js/DateUtils.js");
     }
 }

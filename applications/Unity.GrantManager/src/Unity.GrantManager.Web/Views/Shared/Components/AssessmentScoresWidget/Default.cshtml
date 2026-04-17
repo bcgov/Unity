@@ -26,20 +26,20 @@
                 <div class="d-flex justify-content-end flex-wrap gap-2 scoresheet-top-btn-group">
                     @if (Model.IsAIScoringEnabled && Model.IsAiAssessment)
                     {
-                        <button type="button" class="btn unt-btn-outline-primary btn-outline-primary" id="regenerateAiScoresheetBtn" onclick="queueApplicationScoring()">
+                        <button type="button" class="btn unt-btn-outline-primary btn-outline-primary" id="regenerateAiScoresheetBtn">
                             <span class="ai-button-content">
                                 <i class="unt-icon-sm fa-solid fa-wand-sparkles"></i>
                                 <span>Generate</span>
                             </span>
                         </button>
                     }
-                    <button type="button" class="btn unt-btn-outline-primary btn-outline-primary" onclick="expandAllAccordions('assessment-scoresheet')">
+                    <button type="button" class="btn unt-btn-outline-primary btn-outline-primary" id="btn-expand-all">
                         <span class="ai-button-content">
                             <i class="unt-icon-sm fa-solid fa-angles-down"></i>
                             <span>Expand All</span>
                         </span>
                     </button>
-                    <button type="button" class="btn unt-btn-outline-primary btn-outline-primary" onclick="collapseAllAccordions('assessment-scoresheet')">
+                    <button type="button" class="btn unt-btn-outline-primary btn-outline-primary" id="btn-collapse-all">
                         <span class="ai-button-content">
                             <i class="unt-icon-sm fa-solid fa-angles-up"></i>
                             <span>Collapse All</span>
@@ -190,8 +190,8 @@
                                             </div>
                                         </div>
                                         <div class="btn-group mx-3 py-2">
-                                            <button type="button" class="btn unt-btn-primary btn-primary mx-1 mb-2" disabled form="section-form-@sec.Id" id="scoresheet-section-save-@sec.Id" onclick="saveScoresSection('section-form-@sec.Id', '@sec.Id')">Save Changes</button>
-                                            <button type="button" class="btn unt-btn-link btn-link mx-2 mb-2" disabled form="section-form-@sec.Id" id="scoresheet-section-discard-@sec.Id" onclick="discardChangesScoresSection('section-form-@sec.Id', '@sec.Id')">Discard Changes</button>
+                                            <button type="button" class="btn unt-btn-primary btn-primary mx-1 mb-2" disabled form="section-form-@sec.Id" id="scoresheet-section-save-@sec.Id" data-section-id="@sec.Id" data-form-id="section-form-@sec.Id">Save Changes</button>
+                                            <button type="button" class="btn unt-btn-link btn-link mx-2 mb-2" disabled form="section-form-@sec.Id" id="scoresheet-section-discard-@sec.Id" data-section-id="@sec.Id" data-form-id="section-form-@sec.Id">Discard Changes</button>
                                         </div>
                                     </div>
                                 </form>
@@ -237,7 +237,7 @@ else
                         </div>
 
                         <div class="scores-block-score">
-                            <label class="form-label" for="CleanGrowth">Clean Growth</label>
+                            <label class="form-label" for="cleanGrowth">Clean Growth</label>
                             <input type="number" class="form-control" disabled="@Model.IsDisabled()" name="CleanGrowth" id="cleanGrowth" onkeyup="enableSaveButton(this)" onchange="enableSaveButton(this)" min="0" max="99" onkeydown="return positiveIntegersOnly(event);" value="@Model.CleanGrowth" />
                         </div>
                     </div>
@@ -247,7 +247,7 @@ else
                     <input type="number" size="18" class="form-control" disabled="disabled" name="SubTotal" id="subTotal" value="@Model.ScoreTotal()" min="0" max="2147483647" />
                 </div>
                 <div class="scores-block-save">
-                    <abp-button text="Save" type="button" id="saveAssessmentScoresBtn" disabled="true" onclick="saveAssessmentScores()" icon-type="Other" icon="fl fl-save" button-type="Light" />
+                    <abp-button text="Save" type="button" id="saveAssessmentScoresBtn" disabled="true" icon-type="Other" icon="fl fl-save" button-type="Light" />
                 </div>
             </div>
         </div>

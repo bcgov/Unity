@@ -14,7 +14,6 @@
 @using Volo.Abp.Authorization.Permissions
 @using Volo.Abp.Features
 @using Volo.Abp.MultiTenancy
-@using Volo.Abp.Settings
 @* #pragma warning restore S1128 *@
 
 
@@ -24,19 +23,17 @@
 @inject IFeatureChecker FeatureChecker
 @inject IPermissionChecker PermissionChecker
 @inject ICurrentTenant CurrentTenant
-@inject ISettingProvider SettingProvider
 
 @{
     PageLayout.Content.Title = L["Grants"].Value;
     var notificationsFeatureEnabled = await FeatureChecker.IsEnabledAsync("Unity.Notifications");
     var readEmailGranted = await PermissionChecker.IsGrantedAsync("Notifications.Email");
     var aiAttachmentSummariesEnabled = await FeatureChecker.IsEnabledAsync("Unity.AI.AttachmentSummaries")
-        && await PermissionChecker.IsGrantedAsync(AIPermissions.AttachmentSummary.AttachmentSummaryDefault);
+        && await PermissionChecker.IsGrantedAsync(AIPermissions.Analysis.ViewAttachmentSummary);
     var aiApplicationAnalysisEnabled = await FeatureChecker.IsEnabledAsync("Unity.AI.ApplicationAnalysis")
-        && await PermissionChecker.IsGrantedAsync(AIPermissions.ApplicationAnalysis.ApplicationAnalysisDefault);
+        && await PermissionChecker.IsGrantedAsync(AIPermissions.Analysis.ViewApplicationAnalysis);
     var aiScoringEnabled = await FeatureChecker.IsEnabledAsync("Unity.AI.Scoring")
-        && await PermissionChecker.IsGrantedAsync(AIPermissions.ScoringAssistant.ScoringAssistantDefault)
-        && await SettingProvider.GetAsync<bool>(Unity.AI.Settings.AISettings.ScoringAssistantEnabled, defaultValue: false);
+        && await PermissionChecker.IsGrantedAsync(AIPermissions.Analysis.ViewScoringResult);
     var flexFeatureEnabled = await FeatureChecker.IsEnabledAsync("Unity.Flex");
 }
 @section styles
@@ -269,12 +266,12 @@
                     <button class="nav-link" id="links-tab" data-bs-toggle="tab" data-bs-target="#links" type="button" role="tab" aria-controls="links" aria-selected="false"><i class="fl fl-link" aria-hidden="true"></i> (<span id="application_links_count">0</span>)</button>
                 </li>
                 <li class="nav-item">
-                    <button class="nav-link" id="history-tab" data-bs-toggle="tab" data-bs-target="#history" type="button" role="tab" aria-controls="history" aria-selected="false"><i class="fl fl-history" aria-hidden="true"></i> </button>
+                    <button class="nav-link" id="history-tab" data-bs-toggle="tab" data-bs-target="#history" type="button" role="tab" aria-controls="history" aria-selected="false"><i class="fl fl-history" aria-hidden="true"></i></button>
                 </li>
             @if (aiApplicationAnalysisEnabled)
             {
                 <li class="nav-item">
-                    <button class="nav-link" id="ai-analysis-tab" data-bs-toggle="tab" data-bs-target="#ai-analysis" type="button" role="tab" aria-controls="ai-analysis" aria-selected="false"><span class="ai-analysis-tab-icon-wrap"><i class="fl fl-review-user" aria-hidden="true"></i><span class="ai-analysis-tab-indicator" id="ai_analysis_status" style="display:none;"></span></span></button>
+                    <button class="nav-link" id="ai-analysis-tab" data-bs-toggle="tab" data-bs-target="#ai-analysis" type="button" role="tab" aria-controls="ai-analysis" aria-selected="false" title="Application Analysis"><i class="fa fa-wand-sparkles" aria-hidden="true"></i></button>
                 </li>
             }
             @if (Model.IsDevPromptControlsEnabled)
@@ -417,7 +414,7 @@
                 {
                 <div class="tab-pane fade" id="ai-analysis" role="tabpanel" aria-labelledby="ai-analysis-tab">
                     <div class="d-flex justify-content-between align-items-center px-3 pt-4 pb-2">
-                        <h6 class="fw-bold m-0">AI Application Analysis</h6>
+                        <h6 class="fw-bold m-0">Application Analysis</h6>
                         <button type="button" class="btn unt-btn-outline-primary btn-outline-primary" id="regenerateApplicationAnalysis">
                             <span class="ai-button-content">
                                 <i class="unt-icon-sm fa-solid fa-wand-sparkles"></i>
@@ -428,15 +425,33 @@
                     <div class="ai-analysis-container">
                         @* Default message when no analysis data is available *@
                         <div class="ai-analysis-no-data px-3 py-4" id="aiAnalysisNoData">
-                            <div class="text-center text-muted">
-                                <i class="fl fl-review-user fa-2x mb-3 opacity-50"></i>
-                                <h6 class="mb-2">No AI Analysis Available</h6>
-                                <p class="small mb-0">AI analysis results will appear here when available.</p>
-                            </div>
+                        <div class="text-center text-muted">
+                            <i class="fl fl-review-user fa-2x mb-3 opacity-50"></i>
+                            <h6 class="mb-2">No AI Analysis Available</h6>
+                            <p class="small mb-0">AI analysis results will appear here when available.</p>
                         </div>
-                        <div class="ai-analysis-sections px-3 pb-3" id="aiAnalysisSections">
-                            @* Analysis sections will be dynamically generated here *@
-                        </div>
+                    </div>
+                    <div class="d-none" id="aiAnalysisLabels"
+                         data-errors="Errors"
+                         data-warnings="Warnings"
+                         data-summaries="Summaries"
+                         data-recommendation="Recommendation"
+                         data-recommendations="Recommendations"
+                         data-proceed="Proceed"
+                         data-hold="Hold"
+                         data-no-errors="No errors"
+                         data-no-warnings="No warnings"
+                         data-show-dismissed="Show dismissed items"
+                         data-hide-dismissed="Hide dismissed items"
+                         data-dismiss="Dismiss"
+                         data-restore="Restore"
+                         data-dismiss-title="Dismiss this item"
+                         data-restore-title="Restore this item"
+                         data-collapse-title="Collapse section"
+                         data-expand-title="Expand section"></div>
+                    <div class="ai-analysis-sections px-3 pb-3" id="aiAnalysisSections">
+                        @* Analysis sections will be dynamically generated here *@
+                    </div>
                     </div>
 
                     @* Hidden HTML templates for AI analysis items *@
@@ -444,11 +459,15 @@
                         <div class="ai-analysis-section" data-template="section">
                             <div class="ai-analysis-section-header">
                                 <div class="ai-analysis-section-title-row">
-                                    <i class="ai-analysis-section-icon fl" data-element="icon"></i>
                                     <span class="ai-analysis-section-title" data-element="title"></span>
+                                    <span data-element="status-chip" style="display:none;"></span>
                                 </div>
-                                <span data-element="status-chip" style="display:none;"></span>
-                                <button type="button" class="ai-analysis-section-toggle" data-element="hidden-toggle" style="display:none;"></button>
+                                <div class="ai-analysis-section-actions">
+                                    <button type="button" class="ai-analysis-section-toggle" data-element="hidden-toggle" style="display:none;"></button>
+                                    <button type="button" class="ai-analysis-collapse-toggle" data-element="collapse-toggle" aria-expanded="true">
+                                        <i class="fa fa-chevron-down" aria-hidden="true"></i>
+                                    </button>
+                                </div>
                             </div>
                             <div class="ai-analysis-section-body">
                                 <div data-element="items"></div>
@@ -458,18 +477,18 @@
                         <div class="ai-analysis-detail-item" data-template="active-item">
                             <div class="ai-analysis-detail-header">
                                 <div class="ai-analysis-detail-category" data-element="category"></div>
-                                <button type="button" class="ai-analysis-action-btn" data-element="hide-btn" title="Hide this item">
-                                    Hide
+                                <button type="button" class="ai-analysis-action-btn" data-element="dismiss-btn">
+                                    <span data-element="dismiss-text"></span>
                                 </button>
                             </div>
                             <div class="ai-analysis-detail-message" data-element="message"></div>
                         </div>
 
-                        <div class="ai-analysis-detail-item hidden-item" data-template="hidden-item">
+                        <div class="ai-analysis-detail-item dismissed-item" data-template="dismissed-item">
                             <div class="ai-analysis-detail-header">
                                 <div class="ai-analysis-detail-category" data-element="category"></div>
-                                <button type="button" class="ai-analysis-action-btn" data-element="show-btn" title="Show this item">
-                                    Show
+                                <button type="button" class="ai-analysis-action-btn" data-element="restore-btn">
+                                    <span data-element="restore-text"></span>
                                 </button>
                             </div>
                             <div class="ai-analysis-detail-message" data-element="message"></div>

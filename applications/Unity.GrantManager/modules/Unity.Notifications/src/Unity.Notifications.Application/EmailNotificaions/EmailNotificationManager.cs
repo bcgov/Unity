@@ -31,42 +31,44 @@ namespace Unity.Notifications.EmailNotifications
         EmailAttachmentService emailAttachmentService,
         ISettingProvider settingProvider) : DomainService, IEmailNotificationManager
     {
-        public async Task<EmailLog?> CreateEmailLogAsync(string emailTo, string body, string subject, Guid applicationId, string? emailFrom, string? emailTemplateName, string? emailCC = null, string? emailBCC = null)
+        public async Task<EmailLog?> CreateEmailLogAsync(EmailMessageParams email, Guid applicationId)
         {
-            return await CreateEmailLogAsync(emailTo, body, subject, applicationId, emailFrom, EmailStatus.Initialized, emailTemplateName, emailCC, emailBCC);
+            return await CreateEmailLogAsync(email, applicationId, EmailStatus.Initialized);
         }
 
         [RemoteService(false)]
-        public async Task<EmailLog?> CreateEmailLogAsync(string emailTo, string body, string subject, Guid applicationId, string? emailFrom, string? status, string? emailTemplateName, string? emailCC = null, string? emailBCC = null)
+        public async Task<EmailLog?> CreateEmailLogAsync(EmailMessageParams email, Guid applicationId, string? status)
         {
-            if (string.IsNullOrEmpty(emailTo))
+            if (string.IsNullOrEmpty(email.EmailTo))
             {
                 return null;
             }
-            var emailObject = await GetEmailObjectAsync(emailTo, body, subject, emailFrom, "html", emailTemplateName, emailCC, emailBCC);
+            var emailObject = await GetEmailObjectAsync(email, "html");
             EmailLog emailLog = new();
             emailLog = UpdateMappedEmailLog(emailLog, emailObject);
             emailLog.ApplicationId = applicationId;
             emailLog.Status = status ?? EmailStatus.Initialized;
+            emailLog.SendOnDateTime = email.SendOnDateTime;
 
             // When being called here the current tenant is in context - verified by looking at the tenant id
             EmailLog loggedEmail = await emailLogsRepository.InsertAsync(emailLog, autoSave: true);
             return loggedEmail;
         }
 
-        public async Task<EmailLog?> UpdateEmailLogAsync(Guid emailId, string emailTo, string body, string subject, Guid applicationId, string? emailFrom, string? status, string? emailTemplateName, string? emailCC = null, string? emailBCC = null)
+        public async Task<EmailLog?> UpdateEmailLogAsync(Guid emailId, EmailMessageParams email, Guid applicationId, string? status)
         {
-            if (string.IsNullOrEmpty(emailTo))
+            if (string.IsNullOrEmpty(email.EmailTo))
             {
                 return null;
             }
 
-            var emailObject = await GetEmailObjectAsync(emailTo, body, subject, emailFrom, "html", emailTemplateName, emailCC, emailBCC);
+            var emailObject = await GetEmailObjectAsync(email, "html");
             EmailLog emailLog = await emailLogsRepository.GetAsync(emailId);
             emailLog = UpdateMappedEmailLog(emailLog, emailObject);
             emailLog.ApplicationId = applicationId;
             emailLog.Id = emailId;
             emailLog.Status = status ?? EmailStatus.Initialized;
+            emailLog.SendOnDateTime = email.SendOnDateTime;
 
             // When being called here the current tenant is in context - verified by looking at the tenant id
             EmailLog loggedEmail = await emailLogsRepository.UpdateAsync(emailLog, autoSave: true);
@@ -131,11 +133,11 @@ namespace Unity.Notifications.EmailNotifications
         /// <param name="emailCC">CC email addresses</param>
         /// <param name="emailBCC">BCC email addresses</param>
         /// <returns>HttpResponseMessage indicating the result of the operation</returns>
-        public async Task<HttpResponseMessage> SendEmailAsync(string emailTo, string body, string subject, string? emailFrom, string? emailBodyType, string? emailTemplateName, string? emailCC = null, string? emailBCC = null)
+        public async Task<HttpResponseMessage> SendEmailAsync(EmailMessageParams email, string? emailBodyType = null)
         {
             try
             {
-                if (string.IsNullOrEmpty(emailTo))
+                if (string.IsNullOrEmpty(email.EmailTo))
                 {
                     Logger.LogError("EmailNotificationManager->SendEmailAsync: The 'emailTo' parameter is null or empty.");
                     return new HttpResponseMessage(HttpStatusCode.BadRequest)
@@ -145,8 +147,7 @@ namespace Unity.Notifications.EmailNotifications
                 }
 
                 // Send the email using the CHES client service
-                var emailObject = await GetEmailObjectAsync(
-                    emailTo, body, subject, emailFrom, emailBodyType, emailTemplateName, emailCC, emailBCC, excludeTemplate: true);
+                var emailObject = await GetEmailObjectAsync(email, emailBodyType, excludeTemplate: true);
 
                 var response = await chesClientService.SendAsync(emailObject);
 
@@ -173,15 +174,6 @@ namespace Unity.Notifications.EmailNotifications
         {
             try
             {
-                if (emailLog == null)
-                {
-                    Logger.LogError("EmailNotificationManager->SendEmailAsync: The 'emailLog' parameter is null.");
-                    return new HttpResponseMessage(HttpStatusCode.BadRequest)
-                    {
-                        Content = new StringContent("'emailLog' cannot be null.")
-                    };
-                }
-
                 if (string.IsNullOrEmpty(emailLog.ToAddress))
                 {
                     Logger.LogError("EmailNotificationManager->SendEmailAsync: The 'emailLog.ToAddress' parameter is null or empty.");
@@ -201,7 +193,7 @@ namespace Unity.Notifications.EmailNotifications
             }
             catch (Exception ex)
             {
-                Logger.LogError(ex, "EmailNotificationManager->SendEmailAsync: Exception occurred while sending email for EmailLog {EmailId}.", emailLog?.Id);
+                Logger.LogError(ex, "EmailNotificationManager->SendEmailAsync: Exception occurred while sending email for EmailLog {EmailId}.", emailLog.Id);
                 return new HttpResponseMessage(HttpStatusCode.InternalServerError)
                 {
                     Content = new StringContent($"An exception occurred while sending the email: {ex.Message}")
@@ -237,22 +229,16 @@ namespace Unity.Notifications.EmailNotifications
             var allEmailLogs = await emailLogsRepository.GetListAsync();
             var emailLogs = allEmailLogs.Where(filter.Compile()).ToList();
 
-            // Ensure we're returning 0 if no logs are found
-            return emailLogs?.Count ?? 0;
+            return emailLogs.Count;
         }
 
         public async Task<dynamic> BuildEmailObjectWithAttachmentsAsync(EmailLog emailLog)
         {
             // Get base email object (without attachments)
             var emailObject = await GetEmailObjectAsync(
-                emailLog.ToAddress,
-                emailLog.Body,
-                emailLog.Subject,
-                emailLog.FromAddress,
+                new EmailMessageParams(emailLog.ToAddress, emailLog.Body, emailLog.Subject,
+                    emailLog.FromAddress, emailLog.TemplateName, emailLog.CC, emailLog.BCC),
                 emailLog.BodyType,
-                emailLog.TemplateName,
-                emailLog.CC,
-                emailLog.BCC,
                 excludeTemplate: true);
 
             // Retrieve attachments from S3
@@ -281,35 +267,35 @@ namespace Unity.Notifications.EmailNotifications
                 emailObjectDictionary["attachments"] = attachmentList.ToArray();
             }
 
+            if (emailLog.SendOnDateTime.HasValue)
+            {
+                var emailObjectDictionary = (IDictionary<string, object?>)emailObject;
+                emailObjectDictionary["delayTS"] = new DateTimeOffset(emailLog.SendOnDateTime.Value, TimeSpan.Zero).ToUnixTimeSeconds();
+            }
+
             return emailObject;
         }
 
         protected virtual async Task<dynamic> GetEmailObjectAsync(
-                                                    string emailTo,
-                                                    string body,
-                                                    string subject,
-                                                    string? emailFrom,
-                                                    string? emailBodyType,
-                                                    string? emailTemplateName,
-                                                    string? emailCC = null,
-                                                    string? emailBCC = null,
-                                                    bool excludeTemplate = false)
+            EmailMessageParams email,
+            string? emailBodyType = null,
+            bool excludeTemplate = false)
         {
-            var toList = emailTo.ParseEmailList() ?? [];
-            var ccList = emailCC.ParseEmailList();
-            var bccList = emailBCC.ParseEmailList();
+            var toList = email.EmailTo.ParseEmailList() ?? [];
+            var ccList = email.EmailCC.ParseEmailList();
+            var bccList = email.EmailBCC.ParseEmailList();
 
             var defaultFromAddress = await settingProvider.GetOrNullAsync(NotificationsSettings.Mailing.DefaultFromAddress);
 
             dynamic emailObject = new ExpandoObject();
             var emailObjectDictionary = (IDictionary<string, object?>)emailObject;
 
-            emailObjectDictionary["body"] = body;
+            emailObjectDictionary["body"] = email.Body;
             emailObjectDictionary["bodyType"] = emailBodyType ?? "text";
             emailObjectDictionary["encoding"] = "utf-8";
-            emailObjectDictionary["from"] = emailFrom ?? defaultFromAddress ?? "NoReply@gov.bc.ca";
+            emailObjectDictionary["from"] = email.EmailFrom ?? defaultFromAddress ?? "NoReply@gov.bc.ca";
             emailObjectDictionary["priority"] = "normal";
-            emailObjectDictionary["subject"] = subject;
+            emailObjectDictionary["subject"] = email.Subject;
             emailObjectDictionary["tag"] = "tag";
             emailObjectDictionary["to"] = toList;
 
@@ -323,11 +309,17 @@ namespace Unity.Notifications.EmailNotifications
                 emailObjectDictionary["bcc"] = bccList;
             }
 
+            // delayTS: desired UTC send time as Unix seconds; 0 = send immediately.
+            if (email.SendOnDateTime.HasValue)
+            {
+                emailObjectDictionary["delayTS"] = new DateTimeOffset(email.SendOnDateTime.Value, TimeSpan.Zero).ToUnixTimeSeconds();
+            }
+
             // templateName is not part of the CHES MessageObject schema
             // store it on the EmailLog but don't send it to the API.
             if (!excludeTemplate)
             {
-                emailObjectDictionary["templateName"] = emailTemplateName;
+                emailObjectDictionary["templateName"] = email.EmailTemplateName;
             }
 
             return emailObject;

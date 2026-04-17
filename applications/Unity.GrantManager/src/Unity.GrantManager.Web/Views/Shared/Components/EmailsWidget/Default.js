@@ -26,7 +26,16 @@
         inputOriginalEmailBody: $($('#OriginalDraftEmailBody')[0]),
         emailSpinner: $('#spinner-modal'),
         confirmationModal: $('#confirmation-modal'),
-        alertEmailReadonly: $('#email-alert-readonly')
+        alertEmailReadonly: $('#email-alert-readonly'),
+        inputSendOnDateTime: $('#SendOnDateTime'),          // hidden field — stores UTC ISO
+        delayDateTimeValidation: $('#delay-datetime-validation'),
+        sendOnDisplay: $('#send-on-display'),
+        btnClearSchedule: $('#btn-clear-schedule'),
+        scheduleModal: $('#schedule-send-modal'),
+        scheduleModalBackdrop: $('#schedule-send-modal-backdrop'),
+        scheduleModalValidation: $('#schedule-modal-validation'),
+        sendOnDateTimePicker: $('#SendOnDateTimePicker'),   // datetime-local inside modal
+        delayDaysHelper: $('#DelayDaysHelper')
     };
 
     let defaultValues = {
@@ -64,6 +73,8 @@
         UIElements.inputEmailFrom.on('input', handleDraftChange);
         UIElements.inputEmailSubject.on('input', handleDraftChange);
         UIElements.inputEmailBody.on('input', handleDraftChange);
+
+        bindDelayModeEvents();
 
         $('.details-scrollable').on('scroll.emailWidget', function () {
             $('.tox-toolbar__overflow').hide();
@@ -121,12 +132,148 @@
         e.currentTarget.value = trimmedString;
     }
 
+    function bindDelayModeEvents() {
+        // Open schedule modal
+        $(document).on('click', '#btn-open-schedule-modal', function () {
+            openScheduleModal();
+        });
+
+        // Close on Cancel or backdrop click
+        $(document).on('click', '#btn-schedule-cancel, #schedule-send-modal-backdrop', function () {
+            closeScheduleModal();
+        });
+        // Escape key
+        $(document).on('keydown.scheduleModal', function (e) {
+            if (e.key === 'Escape') closeScheduleModal();
+        });
+
+        // Shortcut chip buttons — set picker to now + N days in BC PST
+        $(document).on('click', '.delay-shortcut', function () {
+            const days = parseInt($(this).data('days'), 10);
+            if (!isNaN(days) && days > 0) {
+                const targetUtcMs = Date.now() + days * 24 * 60 * 60 * 1000;
+                UIElements.sendOnDateTimePicker.val(DateUtils.utcMsToBcPstDatetimeLocal(targetUtcMs));
+                UIElements.delayDaysHelper.val(days);
+                UIElements.scheduleModalValidation.hide();
+            }
+        });
+
+        // Manual days helper — sets the datetime picker
+        UIElements.delayDaysHelper.on('input', function () {
+            const days = parseInt(this.value, 10);
+            if (!isNaN(days) && days > 0) {
+                const targetUtcMs = Date.now() + days * 24 * 60 * 60 * 1000;
+                UIElements.sendOnDateTimePicker.val(DateUtils.utcMsToBcPstDatetimeLocal(targetUtcMs));
+                UIElements.scheduleModalValidation.hide();
+            } else if (this.value === '') {
+                UIElements.sendOnDateTimePicker.val('');
+            }
+        });
+
+        // Live validation in the modal when picker changes
+        UIElements.sendOnDateTimePicker.on('change', function () {
+            UIElements.scheduleModalValidation.hide();
+            const utcIso = DateUtils.bcPstInputToUtcIso(this.value);
+            if (this.value && (!utcIso || new Date(utcIso) <= new Date())) {
+                UIElements.scheduleModalValidation.text('Please select a future date and time.').show();
+            }
+            // Back-calculate whole days from now and update the days helper
+            if (utcIso) {
+                const diffDays = Math.round((new Date(utcIso) - Date.now()) / 86400000);
+                if (diffDays > 0) {
+                    UIElements.delayDaysHelper.val(diffDays);
+                }
+            }
+        });
+
+        // Confirm button — validate and commit to hidden field
+        $(document).on('click', '#btn-schedule-confirm', function () {
+            const pickerVal = UIElements.sendOnDateTimePicker.val();
+            if (!pickerVal) {
+                UIElements.scheduleModalValidation.text('Please select a date and time.').show();
+                return;
+            }
+            const utcIso = DateUtils.bcPstInputToUtcIso(pickerVal);
+            if (!utcIso || new Date(utcIso) <= new Date()) {
+                UIElements.scheduleModalValidation.text('Please select a future date and time.').show();
+                return;
+            }
+            // Commit value
+            UIElements.inputSendOnDateTime.val(utcIso);
+            // Show summary next to the button (format as BC PST for display)
+            UIElements.sendOnDisplay.text(DateUtils.formatUtcToBcPacificDateTime(utcIso) || pickerVal);
+            UIElements.btnClearSchedule.show();
+            UIElements.delayDateTimeValidation.hide();
+            closeScheduleModal();
+        });
+
+        // OK button next to the picker — commits the value without needing Enter
+        $(document).on('click', '#btn-picker-ok', function () {
+            UIElements.sendOnDateTimePicker.trigger('change').trigger('blur');
+        });
+
+        // Show OK button when calendar is opened (click); hide when it closes (blur)
+        UIElements.sendOnDateTimePicker.on('click', function () {
+            $('#btn-picker-ok').show();
+        });
+        UIElements.sendOnDateTimePicker.on('blur', function () {
+            // Delay so a click on OK registers before the button disappears
+            setTimeout(function () { $('#btn-picker-ok').hide(); }, 200);
+        });
+
+        // Clear button (outside modal)
+        $(document).on('click', '#btn-clear-schedule', function () {
+            clearScheduleValue();
+        });
+    }
+
+    function openScheduleModal() {
+        // Pre-populate picker if a value is already set
+        const existing = UIElements.inputSendOnDateTime.val();
+        if (existing) {
+            UIElements.sendOnDateTimePicker.val(DateUtils.utcMsToBcPstDatetimeLocal(new Date(existing).getTime()));
+        } else {
+            UIElements.sendOnDateTimePicker.val('');
+            UIElements.delayDaysHelper.val('');
+        }
+        // Set min to current BC PST time so past dates are unselectable in the picker
+        UIElements.sendOnDateTimePicker.attr('min', DateUtils.utcMsToBcPstDatetimeLocal(Date.now()));
+        UIElements.scheduleModalValidation.hide();
+        UIElements.scheduleModalBackdrop.show();
+        UIElements.scheduleModal
+            .attr('role', 'dialog')
+            .attr('aria-modal', 'true')
+            .attr('aria-labelledby', 'schedule-modal-title')
+            .show();
+        UIElements.sendOnDateTimePicker.focus();
+    }
+
+    function closeScheduleModal() {
+        UIElements.scheduleModal
+            .removeAttr('role')
+            .removeAttr('aria-modal')
+            .removeAttr('aria-labelledby')
+            .hide();
+        UIElements.scheduleModalBackdrop.hide();
+    }
+
+    function clearScheduleValue() {
+        UIElements.inputSendOnDateTime.val('');
+        UIElements.sendOnDisplay.text('');
+        UIElements.btnClearSchedule.hide();
+        UIElements.delayDateTimeValidation.hide();
+        UIElements.sendOnDateTimePicker.val('');
+        UIElements.delayDaysHelper.val('');
+    }
+
     function closeEmailFormUI() {
         $('#modal-content, #modal-background').removeClass('active');
         UIElements.emailForm.removeClass('active');
         UIElements.btnNewEmail.removeClass('hide');
         UIElements.alertEmailReadonly.removeClass('hide');
         UIElements.emailForm.trigger("reset");
+        clearScheduleValue();
+        closeScheduleModal();
         $('#email-attachments-section').hide();
         enableEmail();
         UIElements.btnSave.hide();
@@ -279,13 +426,18 @@
         UIElements.emailSpinner.show();
         let templateName = '';
         if (isNewEmailDraft) {
-            templateName = $("#template option:selected").text();
+            templateName = $("#EmailTemplate option:selected").text();
             if (!templateName || templateName === '' || templateName === 'Please select') {
                 templateName = "No Template Selected";
             }
         } else {
-            templateName = $('#templateText').val();
+            templateName = $('#EmailTemplateName').val();
         }
+
+        const rawDateTime = UIElements.inputSendOnDateTime.length ? UIElements.inputSendOnDateTime.val() : '';
+        // Hidden field already holds the UTC ISO string set when the modal was confirmed.
+        const sendOnDateTime = rawDateTime || null;
+
         unity.grantManager.emails.email
             .create({
                 emailId: UIElements.inputEmailId[0].value,
@@ -298,6 +450,7 @@
                 emailSubject: UIElements.inputEmailSubject[0].value,
                 currentUserId: decodeURIComponent(abp.currentUser.id),
                 emailTemplateName: templateName,
+                sendOnDateTime: sendOnDateTime,
             })
             .then(function () {
                 isNewEmailDraft = false; newDraftId = null;
@@ -326,12 +479,12 @@
         if (validateEmailForm(e)) {
             let templateName = '';
             if (isNewEmailDraft) {
-                templateName = $("#template option:selected").text();
+                templateName = $("#EmailTemplate option:selected").text();
                 if (!templateName || templateName === '' || templateName === 'Please select') {
                     templateName = "No Template Selected";
                 }
             } else {
-                templateName = $('#templateText').val();
+                templateName = $('#EmailTemplateName').val();
             }
 
             unity.grantManager.emails.email
@@ -346,6 +499,7 @@
                     emailSubject: UIElements.inputEmailSubject[0].value,
                     currentUserId: decodeURIComponent(abp.currentUser.id),
                     emailTemplateName: templateName,
+                    sendOnDateTime: UIElements.inputSendOnDateTime.val() || null,
                 })
                 .then(function () {
                     isNewEmailDraft = false; newDraftId = null;
@@ -464,8 +618,18 @@
             showConfirmation(); // Show confirmation if the form is valid
             return true; // Return true to indicate success
         }
-        // If form is not valid, do not show confirmation
-        return false; // Return false if validation or other conditions fail
+        // Collect validation error messages and show as toast
+        const validator = UIElements.emailForm.validate();
+        const errors = validator.errorList.map(function (err) { return err.message; });
+        // Also include any email-field span errors
+        UIElements.emailForm.find('.field-validation-error').each(function () {
+            const msg = $(this).text().trim();
+            if (msg && !errors.includes(msg)) errors.push(msg);
+        });
+        if (errors.length > 0) {
+            toastr.error(errors.join('<br>'), 'Please fix the following errors', { escapeHtml: false });
+        }
+        return false;
     }
 
     function handleDraftChange() {
@@ -490,7 +654,7 @@
     }
    
  
-    $('#template').on('change', async function () {
+    $('#EmailTemplate').on('change', async function () {
         console.log(this.value);
 
         try {
@@ -656,8 +820,8 @@
         console.log("data", data)
         $('#templateListContainer').hide();
         $('#templateTextContainer').show();
-        $('#templateText').val(data.templateName);
-        $('#templateText').prop('disabled', true);
+        $('#EmailTemplateName').val(data.templateName);
+        $('#EmailTemplateName').prop('disabled', true);
         UIElements.inputEmailId.val(data.id);
         UIElements.inputOriginalEmailTo.val(data.toAddress);
         UIElements.inputOriginalEmailCC.val(data.cc ? data.cc.replace(/,/g, '; ') : '');
@@ -936,7 +1100,7 @@
                         const pct = Math.round((e.loaded / e.total) * 100);
                         $('#attachment-upload-progress-bar')
                             .css('width', pct + '%')
-                            .attr('aria-valuenow', pct)
+                            .attr('value', pct)
                             .text(pct + '%');
                     }
                 });

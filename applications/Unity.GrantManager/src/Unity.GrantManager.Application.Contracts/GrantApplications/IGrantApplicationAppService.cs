@@ -19,8 +19,8 @@ public interface IGrantApplicationAppService
     Task<GrantApplicationDto> GetAsync(Guid id);
     Task<GrantApplicationDto> TriggerAction(Guid applicationId, GrantApplicationAction triggerAction);
     Task<Guid?> GetAccountCodingIdFromFormIdAsync(Guid formId);
-    Task<string> HideAIAnalysisItemAsync(Guid applicationId, string itemId);
-    Task<string> ShowAIAnalysisItemAsync(Guid applicationId, string itemId);
+    Task<string> DismissAIAnalysisItemAsync(Guid applicationId, string itemId);
+    Task<string> RestoreAIAnalysisItemAsync(Guid applicationId, string itemId);
     Task<PagedResultDto<GrantApplicationDto>> GetListAsync(GrantApplicationListInputDto input);
     Task<bool> IsApplicantRedStopAsync(Guid applicationId);
 }

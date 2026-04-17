@@ -118,11 +118,12 @@ namespace Unity.GrantManager.HealthChecks.BackgroundWorkers
             </html>";
 
             await _emailNotificationService.SendEmailNotification(
-                "grantmanagementsupport@gov.bc.ca",
-                htmlBody,
-                subject,
-                "NoReply@gov.bc.ca", "html",
-                "");
+                new EmailMessageParams(
+                    "grantmanagementsupport@gov.bc.ca",
+                    htmlBody,
+                    subject,
+                    "NoReply@gov.bc.ca",
+                    ""), "html");
 
             Logger.LogInformation("Missing Alerts Sent...");
 

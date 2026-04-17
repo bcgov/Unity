@@ -48,20 +48,20 @@ public class EmailNotificationService(
         return await emailNotificationManager.GetPendingEmailsCountAsync();
     }
 
-    public async Task<EmailLog?> UpdateEmailLog(Guid emailId, string emailTo, string body, string subject, Guid applicationId, string? emailFrom, string? status, string? emailTemplateName, string? emailCC = null, string? emailBCC = null)
+    public async Task<EmailLog?> UpdateEmailLog(Guid emailId, EmailMessageParams email, Guid applicationId, string? status)
     {
-        return await emailNotificationManager.UpdateEmailLogAsync(emailId, emailTo, body, subject, applicationId, emailFrom, status, emailTemplateName, emailCC, emailBCC);
+        return await emailNotificationManager.UpdateEmailLogAsync(emailId, email, applicationId, status);
     }
 
-    public async Task<EmailLog?> InitializeEmailLog(string emailTo, string body, string subject, Guid applicationId, string? emailFrom, string? emailTemplateName, string? emailCC = null, string? emailBCC = null)
+    public async Task<EmailLog?> InitializeEmailLog(EmailMessageParams email, Guid applicationId)
     {
-        return await emailNotificationManager.CreateEmailLogAsync(emailTo, body, subject, applicationId, emailFrom, emailTemplateName, emailCC, emailBCC);
+        return await emailNotificationManager.CreateEmailLogAsync(email, applicationId);
     }
 
     [RemoteService(false)]
-    public async Task<EmailLog?> InitializeEmailLog(string emailTo, string body, string subject, Guid applicationId, string? emailFrom, string? status, string? emailTemplateName, string? emailCC = null, string? emailBCC = null)
+    public async Task<EmailLog?> InitializeEmailLog(EmailMessageParams email, Guid applicationId, string? status)
     {
-        return await emailNotificationManager.CreateEmailLogAsync(emailTo, body, subject, applicationId, emailFrom, status, emailTemplateName, emailCC, emailBCC);
+        return await emailNotificationManager.CreateEmailLogAsync(email, applicationId, status);
     }
 
     protected virtual async Task NotifyTeamsChannel(string chesEmailError)
@@ -139,7 +139,8 @@ public class EmailNotificationService(
                 foreach (var email in input.MentionNamesEmail)
                 {
                     var toEmail = email;
-                    res = await emailNotificationManager.SendEmailAsync(toEmail, htmlBody, subject, fromEmail, "html", input.EmailTemplateName);
+                    res = await emailNotificationManager.SendEmailAsync(
+                        new EmailMessageParams(toEmail, htmlBody, subject, fromEmail, input.EmailTemplateName), "html");
                 }
             }
             else
@@ -174,9 +175,9 @@ public class EmailNotificationService(
     /// <param name="emailCC">CC email addresses</param>
     /// <param name="emailBCC">BCC email addresses</param>
     /// <returns>HttpResponseMessage indicating the result of the operation</returns>
-    public async Task<HttpResponseMessage> SendEmailNotification(string emailTo, string body, string subject, string? emailFrom, string? emailBodyType, string? emailTemplateName, string? emailCC = null, string? emailBCC = null)
+    public async Task<HttpResponseMessage> SendEmailNotification(EmailMessageParams email, string? emailBodyType = null)
     {
-        return await emailNotificationManager.SendEmailAsync(emailTo, body, subject, emailFrom, emailBodyType, emailTemplateName, emailCC, emailBCC);
+        return await emailNotificationManager.SendEmailAsync(email, emailBodyType);
     }
 
     /// <summary>
@@ -243,6 +244,7 @@ public class EmailNotificationService(
     {
         await UpdateTenantSettings(NotificationsSettings.Mailing.DefaultFromAddress, settingsDto.DefaultFromAddress);
         await UpdateTenantSettings(NotificationsSettings.Mailing.EmailMaxRetryAttempts, settingsDto.MaximumRetryAttempts);
+        await settingManager.SetForCurrentTenantAsync(NotificationsSettings.Mailing.EnableEmailDelay, settingsDto.EnableEmailDelay ? "true" : "false");
     }
 
     private async Task UpdateTenantSettings(string settingKey, string valueString)
