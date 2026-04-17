@@ -18,7 +18,8 @@ namespace Unity.GrantManager.ApplicantProfile
     /// Addresses are resolved via both the ApplicationId and ApplicantId
     /// relationships, with duplicates removed. Addresses linked via
     /// ApplicationId are always read-only. Addresses linked via ApplicantId
-    /// are editable only when that set resolves to a single ApplicantId.
+    /// are editable only when they have no ApplicationId and the subject's
+    /// form submissions resolve to a single ApplicantId.
     /// </summary>
     [ExposeServices(typeof(IApplicantProfileDataProvider))]
     public class AddressInfoDataProvider(
@@ -56,7 +57,14 @@ namespace Unity.GrantManager.ApplicantProfile
                     from submission in matchingSubmissions
                     join address in addressesQuery on submission.ApplicationId equals address.ApplicationId
                     join application in applicationsQuery on address.ApplicationId equals application.Id
-                    select new { address, address.CreationTime, application.ReferenceNo, IsFromApplicantPath = false, address.ApplicantId };
+                    select new 
+                    { 
+                        address, 
+                        address.CreationTime, 
+                        application.ReferenceNo, 
+                        IsFromApplicantPath = false, 
+                        address.ApplicantId 
+                    };
 
                 // Addresses linked via ApplicantId — conditionally editable
                 var byApplicantId =
@@ -64,8 +72,15 @@ namespace Unity.GrantManager.ApplicantProfile
                     join address in addressesQuery on submission.ApplicantId equals address.ApplicantId
                     join application in applicationsQuery on address.ApplicationId equals application.Id into apps
                     from application in apps.DefaultIfEmpty()
-                    select new { address, address.CreationTime, ReferenceNo = application != null ? application.ReferenceNo : null, IsFromApplicantPath = true, address.ApplicantId };
-
+                    select new 
+                    { 
+                        address, 
+                        address.CreationTime, 
+                        ReferenceNo = application != null ? application.ReferenceNo : null, 
+                        IsFromApplicantPath = true, 
+                        address.ApplicantId 
+                    };
+                
                 var results = await byApplicationId
                     .Concat(byApplicantId)
                     .ToListAsync();
@@ -76,13 +91,13 @@ namespace Unity.GrantManager.ApplicantProfile
                     .Select(g => g.OrderBy(r => r.IsFromApplicantPath).First())
                     .ToList();
 
-                // Addresses from the ApplicantId path are editable only when
-                // that path resolves to a single ApplicantId
-                var applicantPathEditable = results
-                    .Where(r => r.IsFromApplicantPath && r.ApplicantId != null)
-                    .Select(r => r.ApplicantId)
+                // Determine editability from submissions, not addresses
+                var distinctApplicantIds = await matchingSubmissions
+                    .Select(s => s.ApplicantId)
                     .Distinct()
-                    .Count() <= 1;
+                    .ToListAsync();
+
+                var distinctApplicants = distinctApplicantIds.Count > 1;
 
                 var addressDtos = deduplicated.Select(r => new AddressInfoItemDto
                 {
@@ -96,7 +111,7 @@ namespace Unity.GrantManager.ApplicantProfile
                     PostalCode = r.address.Postal ?? string.Empty,
                     Country = r.address.Country ?? string.Empty,
                     IsPrimary = r.address.HasProperty(AddressExtraPropertyNames.IsPrimary) && r.address.GetProperty<bool>(AddressExtraPropertyNames.IsPrimary),
-                    IsEditable = r.IsFromApplicantPath && applicantPathEditable,
+                    IsEditable = r.IsFromApplicantPath && !distinctApplicants,
                     ReferenceNo = r.ReferenceNo
                 }).ToList();
 
