@@ -71,9 +71,24 @@ public class ContactEditHandler(
         var targetLink = contactLinks.FirstOrDefault(cl => cl.ContactId == contactId);
         if (targetLink != null)
         {
-            targetLink.IsPrimary = data.IsPrimary;
-            targetLink.Role = data.Role;
-            await contactLinkRepository.UpdateAsync(targetLink);
+            var hasChanges = false;
+
+            if (targetLink.IsPrimary != data.IsPrimary)
+            {
+                targetLink.IsPrimary = data.IsPrimary;
+                hasChanges = true;
+            }
+
+            if (data.Role is not null && targetLink.Role != data.Role)
+            {
+                targetLink.Role = data.Role;
+                hasChanges = true;
+            }
+
+            if (hasChanges)
+            {
+                await contactLinkRepository.UpdateAsync(targetLink);
+            }
         }
     }
 
