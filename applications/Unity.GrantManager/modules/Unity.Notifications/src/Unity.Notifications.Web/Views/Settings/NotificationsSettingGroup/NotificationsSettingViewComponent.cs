@@ -24,7 +24,10 @@ public class NotificationsSettingViewComponent(ISettingProvider settingProvider)
         var model = new NotificationsSettingViewModel
         {
             DefaultFromAddress = await settingProvider.GetOrNullAsync(Notifications.Settings.NotificationsSettings.Mailing.DefaultFromAddress) ?? "",
-            MaximumRetryAttempts = maximumRetryAttempts
+            MaximumRetryAttempts = maximumRetryAttempts,
+            EnableEmailDelay = string.Equals(
+                await settingProvider.GetOrNullAsync(Notifications.Settings.NotificationsSettings.Mailing.EnableEmailDelay),
+                "true", System.StringComparison.OrdinalIgnoreCase)
         };
 
         return View("~/Views/Settings/NotificationsSettingGroup/Default.cshtml", model);

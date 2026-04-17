@@ -25,6 +25,11 @@ namespace Unity.Notifications.Events
         public string? EmailTemplateName { get; set; } = string.Empty;
         public List<EmailAttachmentData>? EmailAttachments { get; set; }
         public List<Guid>? PaymentRequestIds { get; set; }
+
+        /// <summary>
+        /// Optional specific UTC date/time to send the email.
+        /// </summary>
+        public DateTime? SendOnDateTime { get; set; }
     }
 
     public class EmailAttachmentData

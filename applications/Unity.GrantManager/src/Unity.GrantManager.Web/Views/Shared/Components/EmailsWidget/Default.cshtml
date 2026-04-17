@@ -79,12 +79,12 @@
 
             <abp-row class="m-0 p-0">
                 <abp-column id="templateListContainer" size="_10" class="px-2">
-                    <abp-select asp-for="@Model.EmailTemplate" asp-items="@Model.TemplatesList" id="template">
+                    <abp-select asp-for="@Model.EmailTemplate" asp-items="@Model.TemplatesList" id="EmailTemplate">
                         <option value="">Please select</option>
                     </abp-select>
                 </abp-column>
                 <abp-column id="templateTextContainer" size="_10" class="px-1">
-                    <abp-input id="templateText" asp-for="@Model.EmailTemplateName"></abp-input>
+                    <abp-input id="EmailTemplateName" asp-for="@Model.EmailTemplateName"></abp-input>
                 </abp-column>
             </abp-row>
             <abp-row class="m-0 p-0">
@@ -112,6 +112,29 @@
                     <abp-input asp-for="@Model.EmailSubject" class="email-input" />
                 </abp-column>
             </abp-row>
+            @if (Model.EnableEmailDelay)
+            {
+                <abp-row class="m-0 p-0 mb-3">
+                    <abp-column size="_10" class="px-1">
+                        <label class="form-label" for="btn-clear-schedule">
+                            Send Date &amp; Time
+                            <span class="text-muted fw-normal ms-1 send-date-hint">( leave blank to send immediately )</span>
+                        </label>
+                        <div class="px-1 d-flex align-items-center gap-2 flex-wrap">
+                            <button type="button" id="btn-open-schedule-modal" class="btn btn-outline-secondary btn-sm">
+                                <i class="fa fa-calendar me-1"></i>Schedule Send
+                            </button>
+                            <span id="send-on-display" class="text-muted"></span>
+                            <button type="button" id="btn-clear-schedule" class="btn btn-light">
+                                Clear
+                            </button>
+                        </div>
+                        <div id="delay-datetime-validation" class="text-danger mt-1"></div>
+                        <!-- Hidden field carries the UTC ISO value submitted to the API -->
+                        <input id="SendOnDateTime" name="SendOnDateTime" type="hidden" />
+                    </abp-column>
+                </abp-row>
+            }
             <abp-row class="m-0 p-0">
                 <abp-column size="_10" class="px-1">
                     <abp-input asp-for="@Model.EmailBody" class="email-input" />
@@ -127,13 +150,11 @@
                                class="attachments-table nowrap"></abp-table>
                     <div id="attachment-upload-progress" style="display:none" class="mt-2 mb-1">
                         <div class="progress">
-                            <div id="attachment-upload-progress-bar"
+                            <progress id="attachment-upload-progress-bar"
                                  class="progress-bar progress-bar-striped progress-bar-animated"
-                                 role="progressbar"
                                  style="width:0%"
-                                 aria-valuenow="0"
-                                 aria-valuemin="0"
-                                 aria-valuemax="100">0%</div>
+                                 value="0"
+                                 max="100">0%</progress>
                         </div>
                     </div>
                     <div id="email-attachment-size-error" class="alert alert-danger mt-2" style="display:none">
@@ -188,4 +209,40 @@
         </abp-column>
     </abp-row>
 </form>
+
+<!-- Schedule Send Modal -->
+<div id="schedule-send-modal-backdrop"></div>
+<div id="schedule-send-modal">
+    <h5 id="schedule-modal-title" class="mb-3">Schedule Send Date &amp; Time</h5>
+
+    <div class="mb-3 d-flex flex-wrap gap-1">
+        <button type="button" class="btn btn-sm btn-outline-secondary delay-shortcut" data-days="1">+1 day</button>
+        <button type="button" class="btn btn-sm btn-outline-secondary delay-shortcut" data-days="3">+3 days</button>
+        <button type="button" class="btn btn-sm btn-outline-secondary delay-shortcut" data-days="7">+1 week</button>
+        <button type="button" class="btn btn-sm btn-outline-secondary delay-shortcut" data-days="14">+2 weeks</button>
+        <button type="button" class="btn btn-sm btn-outline-secondary delay-shortcut" data-days="30">+1 month</button>
+    </div>
+
+    <div class="d-flex align-items-center gap-2 mb-3">
+        <label class="mb-0 text-muted schedule-modal-label" for="DelayDaysHelper">Or delay by</label>
+        <input id="DelayDaysHelper" type="number" class="form-control form-control-sm" min="1" max="365" placeholder="days">
+        <span class="text-muted" style="font-size:0.9em;">days</span>
+    </div>
+
+    <div class="mb-1">
+        <label for="SendOnDateTimePicker" class="form-label mb-1 schedule-modal-label">Date &amp; Time (BC PST)</label>
+        <div class="input-group">
+            <input id="SendOnDateTimePicker" type="datetime-local" class="form-control" />
+            <button type="button" id="btn-picker-ok" class="input-group-text">OK</button>
+        </div>
+        <small class="text-muted">Must be a future date and time.</small>
+    </div>
+    <div id="schedule-modal-validation" class="text-danger mt-1"></div>
+
+    <div class="d-flex justify-content-end gap-2 mt-4">
+        <button type="button" id="btn-schedule-cancel" class="btn btn-secondary btn-sm">Cancel</button>
+        <button type="button" id="btn-schedule-confirm" class="btn btn-primary btn-sm">Confirm</button>
+    </div>
+</div>
+
 </div>

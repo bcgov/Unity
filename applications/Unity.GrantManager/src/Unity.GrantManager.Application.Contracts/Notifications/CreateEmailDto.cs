@@ -27,5 +27,10 @@ namespace Unity.GrantManager.Emails
         public Guid EmailId { get; set; } = Guid.Empty;
         public Guid CurrentUserId { get; set; }
         public string EmailTemplateName { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Optional specific UTC date/time to send the email. Leave null to send immediately.
+        /// </summary>
+        public DateTime? SendOnDateTime { get; set; }
     }
 }
