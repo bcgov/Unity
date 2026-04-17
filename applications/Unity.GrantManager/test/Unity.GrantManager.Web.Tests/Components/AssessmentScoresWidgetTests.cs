@@ -5,13 +5,16 @@ using NSubstitute;
 using Shouldly;
 using System;
 using System.Threading.Tasks;
+using Unity.AI.Permissions;
 using Unity.Flex.Domain.ScoresheetInstances;
 using Unity.Flex.Domain.Scoresheets;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Assessments;
 using Unity.GrantManager.Web.Views.Shared.Components.AssessmentScoresWidget;
 using Volo.Abp.Authorization.Permissions;
+using Volo.Abp.DependencyInjection;
 using Volo.Abp.Features;
+using Volo.Abp.Settings;
 using Xunit;
 
 namespace Unity.GrantManager.Components
@@ -27,8 +30,11 @@ namespace Unity.GrantManager.Components
             var scoresheetRepository = Substitute.For<IScoresheetRepository>();
             var instanceRepository = Substitute.For<IScoresheetInstanceRepository>();
             var applicationRepository = Substitute.For<IApplicationRepository>();
+            var applicationFormRepository = Substitute.For<IApplicationFormRepository>();
             var featureChecker = Substitute.For<IFeatureChecker>();
             var permissionChecker = Substitute.For<IPermissionChecker>();
+            var settingProvider = Substitute.For<ISettingProvider>();
+            var lazyServiceProvider = Substitute.For<IAbpLazyServiceProvider>();
             var expectedFinancialAnalysis = 1;
             var expectedEconomicImpact = 2;
             var expectedInclusiveGrowth = 3;
@@ -51,6 +57,10 @@ namespace Unity.GrantManager.Components
                 AIScoresheetAnswers = null
             }));
 
+            applicationFormRepository.GetAsync(Arg.Any<Guid>()).Returns(Task.FromResult(new ApplicationForm()));
+            settingProvider.GetOrNullAsync(Arg.Any<string>()).Returns(Task.FromResult<string?>("false"));
+            lazyServiceProvider.LazyGetRequiredService<ISettingProvider>().Returns(settingProvider);
+
             instanceRepository.GetByCorrelationAsync(assessmentId).Returns(Task.FromResult<ScoresheetInstance?>(null));
             featureChecker.IsEnabledAsync("Unity.AI.Scoring").Returns(Task.FromResult(true));
             permissionChecker.IsGrantedAsync(Arg.Any<string>()).Returns(Task.FromResult(true));
@@ -69,10 +79,12 @@ namespace Unity.GrantManager.Components
                 scoresheetRepository,
                 instanceRepository,
                 applicationRepository,
+                applicationFormRepository,
                 featureChecker,
                 permissionChecker)
             {
-                ViewComponentContext = viewComponentContext
+                ViewComponentContext = viewComponentContext,
+                LazyServiceProvider = lazyServiceProvider
             };
 
             //Act
@@ -86,6 +98,89 @@ namespace Unity.GrantManager.Components
             resultModel!.EconomicImpact.ShouldBe(expectedEconomicImpact);
             resultModel!.InclusiveGrowth.ShouldBe(expectedInclusiveGrowth);
             resultModel!.CleanGrowth.ShouldBe(expectedCleanGrowth);
+        }
+
+        [Fact]
+        public async Task Should_ShowGenerateButton_When_AllGuardsPassed()
+        {
+            var model = await InvokeWithGuards(featureEnabled: true, tenantManualEnabled: true, formManualEnabled: true, permissionGranted: true);
+            model!.IsAIScoringEnabled.ShouldBeTrue();
+        }
+
+        [Fact]
+        public async Task Should_HideGenerateButton_When_TenantManualDisabled()
+        {
+            var model = await InvokeWithGuards(featureEnabled: true, tenantManualEnabled: false, formManualEnabled: true, permissionGranted: true);
+            model!.IsAIScoringEnabled.ShouldBeFalse();
+        }
+
+        [Fact]
+        public async Task Should_HideGenerateButton_When_FormManuallyInitiateDisabled()
+        {
+            var model = await InvokeWithGuards(featureEnabled: true, tenantManualEnabled: true, formManualEnabled: false, permissionGranted: true);
+            model!.IsAIScoringEnabled.ShouldBeFalse();
+        }
+
+        [Fact]
+        public async Task Should_HideGenerateButton_When_UserLacksGeneratePermission()
+        {
+            var model = await InvokeWithGuards(featureEnabled: true, tenantManualEnabled: true, formManualEnabled: true, permissionGranted: false);
+            model!.IsAIScoringEnabled.ShouldBeFalse();
+        }
+
+        private static async Task<AssessmentScoresWidgetViewModel?> InvokeWithGuards(
+            bool featureEnabled, bool tenantManualEnabled, bool formManualEnabled, bool permissionGranted)
+        {
+            var assessmentId = Guid.NewGuid();
+            var applicationId = Guid.NewGuid();
+
+            var assessmentRepository = Substitute.For<IAssessmentRepository>();
+            var applicationRepository = Substitute.For<IApplicationRepository>();
+            var applicationFormRepository = Substitute.For<IApplicationFormRepository>();
+            var featureChecker = Substitute.For<IFeatureChecker>();
+            var permissionChecker = Substitute.For<IPermissionChecker>();
+            var settingProvider = Substitute.For<ISettingProvider>();
+            var lazyServiceProvider = Substitute.For<IAbpLazyServiceProvider>();
+
+            assessmentRepository.GetAsync(assessmentId).Returns(Task.FromResult(
+                new Assessment(id: assessmentId, applicationId: applicationId, assessorId: Guid.NewGuid())));
+
+            applicationRepository.GetAsync(applicationId).Returns(Task.FromResult(new Application()));
+
+            applicationFormRepository.GetAsync(Arg.Any<Guid>()).Returns(Task.FromResult(
+                new ApplicationForm { ManuallyInitiateAIAnalysis = formManualEnabled }));
+
+            settingProvider.GetOrNullAsync(Arg.Any<string>())
+                .Returns(Task.FromResult<string?>(tenantManualEnabled ? "true" : "false"));
+            lazyServiceProvider.LazyGetRequiredService<ISettingProvider>().Returns(settingProvider);
+
+            featureChecker.IsEnabledAsync("Unity.AI.Scoring").Returns(Task.FromResult(featureEnabled));
+            permissionChecker.IsGrantedAsync(AIPermissions.Analysis.GenerateScoring)
+                .Returns(Task.FromResult(permissionGranted));
+
+            var instanceRepository = Substitute.For<IScoresheetInstanceRepository>();
+            instanceRepository.GetByCorrelationAsync(assessmentId).Returns(Task.FromResult<ScoresheetInstance?>(null));
+
+            var viewComponentContext = new ViewComponentContext
+            {
+                ViewContext = new ViewContext { HttpContext = new DefaultHttpContext() }
+            };
+
+            var component = new AssessmentScoresWidgetViewComponent(
+                assessmentRepository,
+                Substitute.For<IScoresheetRepository>(),
+                instanceRepository,
+                applicationRepository,
+                applicationFormRepository,
+                featureChecker,
+                permissionChecker)
+            {
+                ViewComponentContext = viewComponentContext,
+                LazyServiceProvider = lazyServiceProvider
+            };
+
+            var result = await component.InvokeAsync(assessmentId, Guid.NewGuid()) as ViewViewComponentResult;
+            return result!.ViewData!.Model as AssessmentScoresWidgetViewModel;
         }
     }
 }
