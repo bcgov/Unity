@@ -307,7 +307,7 @@ function buildAnalysisSections(analysisData) {
             }),
             createAnalysisSection({
                 title: labels.recommendation,
-                sectionClass: 'recommendations',
+                sectionClass: 'recommendation',
                 itemType: 'recommendation',
                 statusText: recommendationStatusText,
                 statusClass: decision ? decision.toLowerCase() : '',
