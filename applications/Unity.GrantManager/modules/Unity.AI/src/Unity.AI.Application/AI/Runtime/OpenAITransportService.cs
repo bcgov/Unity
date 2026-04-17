@@ -6,7 +6,6 @@ using System.Net.Http;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
-using Unity.AI.Models;
 using Volo.Abp.DependencyInjection;
 
 namespace Unity.AI.Runtime;
