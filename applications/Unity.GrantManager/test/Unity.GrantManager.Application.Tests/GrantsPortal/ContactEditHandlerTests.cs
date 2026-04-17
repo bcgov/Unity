@@ -313,5 +313,91 @@ public class ContactEditHandlerTests
             .UpdateAsync(Arg.Any<ContactLink>(), Arg.Any<bool>(), Arg.Any<CancellationToken>());
     }
 
+    [Fact]
+    public async Task HandleAsync_WhenRoleIsNull_ShouldPreserveExistingRole()
+    {
+        // Arrange
+        var contactId = Guid.NewGuid();
+        var applicantId = Guid.NewGuid();
+
+        _contactRepository.GetAsync(contactId, Arg.Any<bool>(), Arg.Any<CancellationToken>())
+            .Returns(WithId(new Contact { Name = "Old" }, contactId));
+
+        var link = WithId(new ContactLink
+        {
+            ContactId = contactId,
+            RelatedEntityId = applicantId,
+            RelatedEntityType = "Applicant",
+            IsPrimary = false,
+            IsActive = true,
+            Role = "Existing Role"
+        }, Guid.NewGuid());
+
+        _contactLinkRepository
+            .GetListAsync(Arg.Any<Expression<Func<ContactLink, bool>>>(), Arg.Any<bool>(), Arg.Any<CancellationToken>())
+            .Returns(new List<ContactLink> { link });
+
+        _contactLinkRepository.UpdateAsync(Arg.Any<ContactLink>(), Arg.Any<bool>(), Arg.Any<CancellationToken>())
+            .Returns(ci => ci.ArgAt<ContactLink>(0));
+
+        var payload = CreatePayload(contactId: contactId, data: JObject.FromObject(new
+        {
+            name = "Updated",
+            email = "updated@example.com",
+            isPrimary = false,
+            applicantId
+            // role intentionally omitted
+        }));
+
+        // Act
+        await _handler.HandleAsync(payload);
+
+        // Assert
+        link.Role.ShouldBe("Existing Role");
+    }
+
+    [Fact]
+    public async Task HandleAsync_WhenRoleIsProvided_ShouldUpdateRole()
+    {
+        // Arrange
+        var contactId = Guid.NewGuid();
+        var applicantId = Guid.NewGuid();
+
+        _contactRepository.GetAsync(contactId, Arg.Any<bool>(), Arg.Any<CancellationToken>())
+            .Returns(WithId(new Contact { Name = "Old" }, contactId));
+
+        var link = WithId(new ContactLink
+        {
+            ContactId = contactId,
+            RelatedEntityId = applicantId,
+            RelatedEntityType = "Applicant",
+            IsPrimary = false,
+            IsActive = true,
+            Role = "Old Role"
+        }, Guid.NewGuid());
+
+        _contactLinkRepository
+            .GetListAsync(Arg.Any<Expression<Func<ContactLink, bool>>>(), Arg.Any<bool>(), Arg.Any<CancellationToken>())
+            .Returns(new List<ContactLink> { link });
+
+        _contactLinkRepository.UpdateAsync(Arg.Any<ContactLink>(), Arg.Any<bool>(), Arg.Any<CancellationToken>())
+            .Returns(ci => ci.ArgAt<ContactLink>(0));
+
+        var payload = CreatePayload(contactId: contactId, data: JObject.FromObject(new
+        {
+            name = "Updated",
+            email = "updated@example.com",
+            isPrimary = false,
+            role = "New Role",
+            applicantId
+        }));
+
+        // Act
+        await _handler.HandleAsync(payload);
+
+        // Assert
+        link.Role.ShouldBe("New Role");
+    }
+
     #endregion
 }
