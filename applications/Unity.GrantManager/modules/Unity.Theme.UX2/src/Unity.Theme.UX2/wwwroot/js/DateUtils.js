@@ -53,7 +53,7 @@ const DateUtils = (function () {
      */
     function formatUtcToBcPacificDate(dateUtc, type, options) {
         if (type === 'sort' || type === 'type') {
-            return dateUtc ? new Date(dateUtc).getTime() : 0;
+            return dateUtc ? String(new Date(dateUtc).getTime()) : '0';
         }
         if (!dateUtc) return '';
         return new Date(dateUtc).toLocaleDateString(abp.localization.currentCulture.name, {
@@ -73,7 +73,7 @@ const DateUtils = (function () {
      */
     function formatUtcToBcPacificDateTime(dateUtc, type) {
         if (type === 'sort' || type === 'type') {
-            return dateUtc ? new Date(dateUtc).getTime() : 0;
+            return dateUtc ? String(new Date(dateUtc).getTime()) : '0';
         }
         if (!dateUtc) return '';
         const formatted = new Date(dateUtc).toLocaleString(abp.localization.currentCulture.name, {
@@ -95,7 +95,7 @@ const DateUtils = (function () {
      */
     function formatUtcToBcMountainDateTime(dateUtc, type) {
         if (type === 'sort' || type === 'type') {
-            return dateUtc ? new Date(dateUtc).getTime() : 0;
+            return dateUtc ? String(new Date(dateUtc).getTime()) : '0';
         }
         if (!dateUtc) return '';
         // America/Edmonton follows MST/MDT -- DST applies in NE BC.
