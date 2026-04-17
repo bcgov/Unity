@@ -10,17 +10,34 @@ namespace Unity.GrantManager.Migrations.HostMigrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.Sql($"UPDATE public.\"PermissionGrants\" SET \"Name\" = 'AI.Analysis.ViewApplicationAnalysis' WHERE \"Name\" = 'AI.ApplicationAnalysis';");
-            migrationBuilder.Sql($"UPDATE public.\"PermissionGrants\" SET \"Name\" = 'AI.Analysis.ViewAttachmentSummary' WHERE \"Name\" = 'AI.AttachmentSummary';");
-            migrationBuilder.Sql($"UPDATE public.\"PermissionGrants\" SET \"Name\" = 'AI.Analysis.ViewScoringResult' WHERE \"Name\" = 'AI.ScoringAssistant';");
+            RenamePermissionGrant(migrationBuilder, "AI.ApplicationAnalysis", "AI.Analysis.ViewApplicationAnalysis");
+            RenamePermissionGrant(migrationBuilder, "AI.AttachmentSummary", "AI.Analysis.ViewAttachmentSummary");
+            RenamePermissionGrant(migrationBuilder, "AI.ScoringAssistant", "AI.Analysis.ViewScoringResult");
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.Sql($"UPDATE public.\"PermissionGrants\" SET \"Name\" = 'AI.ApplicationAnalysis' WHERE \"Name\" = 'AI.Analysis.ViewApplicationAnalysis';");
-            migrationBuilder.Sql($"UPDATE public.\"PermissionGrants\" SET \"Name\" = 'AI.AttachmentSummary' WHERE \"Name\" = 'AI.Analysis.ViewAttachmentSummary';");
-            migrationBuilder.Sql($"UPDATE public.\"PermissionGrants\" SET \"Name\" = 'AI.ScoringAssistant' WHERE \"Name\" = 'AI.Analysis.ViewScoringResult';");
+            RenamePermissionGrant(migrationBuilder, "AI.Analysis.ViewApplicationAnalysis", "AI.ApplicationAnalysis");
+            RenamePermissionGrant(migrationBuilder, "AI.Analysis.ViewAttachmentSummary", "AI.AttachmentSummary");
+            RenamePermissionGrant(migrationBuilder, "AI.Analysis.ViewScoringResult", "AI.ScoringAssistant");
+        }
+
+        private static void RenamePermissionGrant(MigrationBuilder migrationBuilder, string fromName, string toName)
+        {
+            migrationBuilder.Sql($@"
+DELETE FROM public.""PermissionGrants"" target
+USING public.""PermissionGrants"" source
+WHERE target.""Name"" = '{toName}'
+  AND source.""Name"" = '{fromName}'
+  AND target.""TenantId"" IS NOT DISTINCT FROM source.""TenantId""
+  AND target.""ProviderName"" IS NOT DISTINCT FROM source.""ProviderName""
+  AND target.""ProviderKey"" IS NOT DISTINCT FROM source.""ProviderKey"";
+
+UPDATE public.""PermissionGrants""
+SET ""Name"" = '{toName}'
+WHERE ""Name"" = '{fromName}';
+");
         }
     }
 }

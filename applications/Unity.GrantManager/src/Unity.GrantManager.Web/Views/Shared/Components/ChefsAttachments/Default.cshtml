@@ -1,15 +1,15 @@
-﻿@using Microsoft.Extensions.Localization
+@using Microsoft.Extensions.Localization
 @using Unity.GrantManager.Localization
 
 @inject IStringLocalizer<GrantManagerResource> L
 <div class="attachments__title-button-split">
     <div class="submission-title">
-        <h6 class="fw-bold px-3 pt-4 pb-2 m-0">Submission Attachments</h6>
+        <h6 class="fw-bold px-3 m-0">Submission Attachments</h6>
     </div>
     <div class="submission-button-section me-3">
         @if (ViewBag.IsAIAttachmentSummariesGenerateEnabled)
         {
-            <button type="button" class="btn unt-btn-outline-primary btn-outline-primary me-2" id="generateAiSummaries" title="Generate AI Summaries">
+            <button type="button" class="btn unt-btn-outline-primary btn-outline-primary" id="generateAiSummaries" title="Generate AI Summaries">
                 <span class="ai-button-content">
                     <i class="unt-icon-sm fa-solid fa-wand-magic-sparkles"></i>
                     <span>Generate Summary</span>
@@ -25,22 +25,16 @@
                 </span>
             </button>
         }
-        <button type="button" class="btn unt-btn-outline-primary btn-outline-primary me-2" id="btn-toggle-filter-submissions" title="Filter">
+        <button type="button" class="btn unt-btn-outline-primary btn-outline-primary" id="btn-toggle-filter-submissions" title="Filter">
             <span>Filter</span>
         </button>
-        <button type="button" class="btn unt-btn-outline-primary btn-outline-primary me-2" id="downloadAll">
+        <button type="button" class="btn unt-btn-outline-primary btn-outline-primary" id="downloadSelected">
             <span class="ai-button-content">
                 <i class="unt-icon-sm fl fl-download"></i>
                 <span>Download All</span>
             </span>
         </button>
         <button type="button" class="btn unt-btn-outline-primary btn-outline-primary me-2" id="resyncSubmissionAttachments" abp-tooltip="@L["ApplicationList:ResyncSubmissionAttachmentsButton"].Value"><i class="unt-icon-sm fl fl-synch"></i></button>
-        @* <abp-button id="resyncSubmissionAttachments"
-                        icon-type="Other"
-                        size="Large"
-                        icon="fl fl-synch"
-                        abp-tooltip="@L["ApplicationList:ResyncSubmissionAttachmentsButton"].Value"
-                        button-type="Light" /> *@
     </div>
 </div>
 <div class="px-3">

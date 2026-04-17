@@ -1,6 +1,6 @@
 namespace Unity.AI.Runtime
 {
-    internal sealed record AIProviderResult(
+    public sealed record AIProviderResult(
         string Content,
         string RawResponse = "",
         string? Model = null,

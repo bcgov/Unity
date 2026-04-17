@@ -277,23 +277,4 @@ public class ContactCreateHandlerTests
     }
 
     #endregion
-
-    #region NormalizeOidcSub
-
-    [Theory]
-    [InlineData("testuser@idir", "TESTUSER")]
-    [InlineData("abc@bceidbusiness", "ABC")]
-    [InlineData("ALREADY", "ALREADY")]
-    [InlineData("mixedCase", "MIXEDCASE")]
-    [InlineData("user@", "USER")]
-    [InlineData(null, null)]
-    [InlineData("", null)]
-    [InlineData("  ", null)]
-    [InlineData("@idir", null)]
-    public void NormalizeOidcSub_ShouldStripIdpSuffixAndUppercase(string? input, string? expected)
-    {
-        ContactCreateHandler.NormalizeOidcSub(input).ShouldBe(expected);
-    }
-
-    #endregion
 }

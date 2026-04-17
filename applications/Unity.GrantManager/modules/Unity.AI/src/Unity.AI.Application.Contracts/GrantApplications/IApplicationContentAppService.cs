@@ -6,5 +6,5 @@ namespace Unity.GrantManager.GrantApplications;
 
 public interface IApplicationContentAppService : IApplicationService
 {
-    Task<string> GenerateContentAsync(Guid applicationId, string? promptVersion = null);
+    Task<ApplicationContentResultDto> GenerateContentAsync(Guid applicationId, string? promptVersion = null);
 }

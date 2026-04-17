@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.Extensions.Logging;
 using System;
 using System.Threading.Tasks;
 using Unity.AI;
@@ -7,6 +6,7 @@ using Unity.AI.Automation;
 using Unity.AI.Permissions;
 using Volo.Abp;
 using Volo.Abp.Features;
+using Volo.Abp.MultiTenancy;
 
 namespace Unity.GrantManager.GrantApplications;
 
@@ -15,30 +15,26 @@ namespace Unity.GrantManager.GrantApplications;
 [Authorize(AIPermissions.Analysis.ViewScoringResult)]
 public class ApplicationContentAppService(
     IApplicationAIGenerationQueue aiGenerationQueue,
-    IFeatureChecker featureChecker)
+    IFeatureChecker featureChecker,
+    ICurrentTenant currentTenant)
     : AIAppService, IApplicationContentAppService
 {
-    public async Task<string> GenerateContentAsync(Guid applicationId, string? promptVersion = null)
+    public async Task<ApplicationContentResultDto> GenerateContentAsync(Guid applicationId, string? promptVersion = null)
     {
-        try
+        var attachmentSummariesEnabled = await featureChecker.IsEnabledAsync("Unity.AI.AttachmentSummaries");
+        var applicationAnalysisEnabled = await featureChecker.IsEnabledAsync("Unity.AI.ApplicationAnalysis");
+        var scoringEnabled = await featureChecker.IsEnabledAsync("Unity.AI.Scoring");
+
+        if (!attachmentSummariesEnabled || !applicationAnalysisEnabled || !scoringEnabled)
         {
-            var attachmentSummariesEnabled = await featureChecker.IsEnabledAsync("Unity.AI.AttachmentSummaries");
-            var applicationAnalysisEnabled = await featureChecker.IsEnabledAsync("Unity.AI.ApplicationAnalysis");
-            var scoringEnabled = await featureChecker.IsEnabledAsync("Unity.AI.Scoring");
-
-            if (!attachmentSummariesEnabled || !applicationAnalysisEnabled || !scoringEnabled)
-            {
-                throw new UserFriendlyException("AI generate all is not enabled.");
-            }
-
-            await aiGenerationQueue.QueueApplicationPipelineAsync(applicationId, CurrentTenant.Id, promptVersion);
-
-            return "{}";
+            throw new UserFriendlyException("AI generate all is not enabled.");
         }
-        catch (Exception ex)
+
+        await aiGenerationQueue.QueueApplicationPipelineAsync(applicationId, currentTenant.Id, promptVersion);
+
+        return new ApplicationContentResultDto
         {
-            Logger.LogError(ex, "Error queueing full AI content pipeline for application {ApplicationId}", applicationId);
-            throw new UserFriendlyException("Failed to queue AI generate all. Please try again.");
-        }
+            Completed = true
+        };
     }
 }
