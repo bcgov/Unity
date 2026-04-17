@@ -279,11 +279,12 @@ function buildAnalysisSections(analysisData) {
     const warnings = normalizeFindings(analysisData.warnings, 'warning');
     const summaries = normalizeFindings(analysisData.summaries, 'summary');
     const recommendations = normalizeFindings(analysisData.recommendations, 'recommendation');
-    const recommendationStatusText = decision === 'PROCEED'
-        ? labels.proceed
-        : decision === 'HOLD'
-            ? labels.hold
-            : '';
+    let recommendationStatusText = '';
+    if (decision === 'PROCEED') {
+        recommendationStatusText = labels.proceed;
+    } else if (decision === 'HOLD') {
+        recommendationStatusText = labels.hold;
+    }
 
     return {
         sections: [
