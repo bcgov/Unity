@@ -97,11 +97,9 @@ public class ApplicationAIGenerationQueue(
         using (await requestLock.AcquireAsync())
         {
             var query = await generationRequestRepository.GetQueryableAsync();
-            var existingRequests = query.Where(x =>
-                x.RequestKey == requestKey
-                && (x.Status == AIGenerationRequestStatus.Queued || x.Status == AIGenerationRequestStatus.Running));
-
-            var existing = existingRequests
+            var existing = query
+                .Where(x => x.RequestKey == requestKey
+                    && (x.Status == AIGenerationRequestStatus.Queued || x.Status == AIGenerationRequestStatus.Running))
                 .OrderByDescending(x => x.CreationTime)
                 .ThenByDescending(x => x.Id)
                 .FirstOrDefault();
