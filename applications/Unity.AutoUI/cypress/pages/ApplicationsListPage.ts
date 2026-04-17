@@ -37,9 +37,8 @@ export class ApplicationsListPage extends ApplicationsPage {
   private readonly extendedActionBar = {
     customButtons: "#app_custom_buttons",
     dynamicButtonContainer: "#dynamicButtonContainerId",
-    // Export can be rendered as button/span or anchor depending on DataTables build.
     exportButton:
-      "#dynamicButtonContainerId .dt-buttons button, #dynamicButtonContainerId .dt-buttons a, #dynamicButtonContainerId .dt-buttons span",
+      "#dynamicButtonContainerId .dt-buttons button, #dynamicButtonContainerId .dt-buttons button span",
     saveViewButton: "button.grp-savedStates",
   };
 
@@ -103,8 +102,11 @@ export class ApplicationsListPage extends ApplicationsPage {
       | "alltime"
       | "custom",
   ): this {
+    this.waitForNoBlockingOverlay();
     cy.get(this.dateFilters.quickDateRange, { timeout: this.STANDARD_TIMEOUT })
+      .scrollIntoView()
       .should("be.visible")
+      .and("not.be.disabled")
       .select(range);
     return this;
   }
@@ -150,11 +152,13 @@ export class ApplicationsListPage extends ApplicationsPage {
     cy.get(this.dateFilters.submittedFromDate, {
       timeout: this.STANDARD_TIMEOUT,
     })
-      .click({ force: true })
-      .clear({ force: true })
-      .type(date, { force: true })
-      .trigger("change", { force: true })
-      .blur({ force: true })
+      .scrollIntoView()
+      .should("be.visible")
+      .click()
+      .clear()
+      .type(date)
+      .trigger("change")
+      .blur()
       .should("have.value", date);
     return this;
   }
@@ -164,11 +168,13 @@ export class ApplicationsListPage extends ApplicationsPage {
    */
   setSubmittedToDate(date: string): this {
     cy.get(this.dateFilters.submittedToDate, { timeout: this.STANDARD_TIMEOUT })
-      .click({ force: true })
-      .clear({ force: true })
-      .type(date, { force: true })
-      .trigger("change", { force: true })
-      .blur({ force: true })
+      .scrollIntoView()
+      .should("be.visible")
+      .click()
+      .clear()
+      .type(date)
+      .trigger("change")
+      .blur()
       .should("have.value", date);
     return this;
   }
@@ -213,9 +219,12 @@ export class ApplicationsListPage extends ApplicationsPage {
    * Select a row by matching text content
    */
   selectRowByText(text: string): this {
+    this.waitForNoBlockingOverlay();
     cy.contains("tr", text, { timeout: this.STANDARD_TIMEOUT })
+      .scrollIntoView()
       .find(".checkbox-select")
-      .click({ force: true });
+      .should("be.visible")
+      .click();
     return this;
   }
 
@@ -225,7 +234,8 @@ export class ApplicationsListPage extends ApplicationsPage {
   clickOpenButton(): this {
     cy.get("#externalLink", { timeout: this.STANDARD_TIMEOUT })
       .should("exist")
-      .click({ force: true });
+      .should("be.visible")
+      .click();
     return this;
   }
 
@@ -242,16 +252,60 @@ export class ApplicationsListPage extends ApplicationsPage {
   }
 
   /**
+   * Dispatch a native mouse click sequence against the current target cell.
+   * This avoids Cypress holding a stale DOM reference while DataTables redraws.
+   */
+  private clickRowCellNative(rowIndex: number, withCtrl = false): this {
+    this.waitForNoBlockingOverlay();
+
+    cy.window({ log: false }).then((win: Cypress.AUTWindow) => {
+      cy.get(this.scrollTable.tableRows, {
+        timeout: this.STANDARD_TIMEOUT,
+      })
+        .should("have.length.greaterThan", rowIndex)
+        .eq(rowIndex)
+        .should("exist")
+        .then(($row: JQuery<HTMLElement>) => {
+          const $cell = $row.find("td").not(":has(a)").first();
+
+          expect(
+            $cell.length,
+            `row ${rowIndex} should contain at least one non-link cell`,
+          ).to.be.greaterThan(0);
+
+          const cell = $cell[0] as HTMLElement;
+
+          cell.scrollIntoView({
+            block: "center",
+            inline: "nearest",
+          });
+
+          const eventInit: MouseEventInit = {
+            bubbles: true,
+            cancelable: true,
+            view: win,
+            ctrlKey: withCtrl,
+            metaKey: withCtrl,
+            button: 0,
+            buttons: 1,
+          };
+
+          cell.dispatchEvent(new win.MouseEvent("mouseover", eventInit));
+          cell.dispatchEvent(new win.MouseEvent("mousemove", eventInit));
+          cell.dispatchEvent(new win.MouseEvent("mousedown", eventInit));
+          cell.dispatchEvent(new win.MouseEvent("mouseup", eventInit));
+          cell.dispatchEvent(new win.MouseEvent("click", eventInit));
+        });
+    });
+
+    return this;
+  }
+
+  /**
    * Select a row by index (clicks on a non-link cell)
    */
   selectRowByIndex(rowIndex: number, withCtrl = false): this {
-    cy.get(this.scrollTable.tableRows, { timeout: this.STANDARD_TIMEOUT })
-      .eq(rowIndex)
-      .find("td")
-      .not(":has(a)")
-      .first()
-      .click({ force: true, ctrlKey: withCtrl });
-    return this;
+    return this.clickRowCellNative(rowIndex, withCtrl);
   }
 
   /**
@@ -324,10 +378,11 @@ export class ApplicationsListPage extends ApplicationsPage {
    * Click the Payment button (extended with visibility checks)
    */
   clickPaymentButtonWithWait(): this {
+    this.waitForNoBlockingOverlay();
     cy.get("#applicationPaymentRequest", { timeout: this.BUTTON_TIMEOUT })
       .should("be.visible")
       .and("not.be.disabled")
-      .click({ force: true });
+      .click();
     return this;
   }
 
@@ -338,7 +393,9 @@ export class ApplicationsListPage extends ApplicationsPage {
     cy.contains(this.extendedActionBar.exportButton, "Export", {
       timeout: this.STANDARD_TIMEOUT,
       matchCase: false,
-    }).should("be.visible");
+    })
+      .scrollIntoView()
+      .should("be.visible");
     return this;
   }
 
@@ -359,10 +416,12 @@ export class ApplicationsListPage extends ApplicationsPage {
    */
   verifyColumnsButtonVisible(): this {
     cy.contains(
-      "#dynamicButtonContainerId .dt-buttons button, #dynamicButtonContainerId .dt-buttons a, #dynamicButtonContainerId .dt-buttons span",
+      "#dynamicButtonContainerId .dt-buttons button, #dynamicButtonContainerId .dt-buttons button span",
       "Columns",
-      { timeout: this.STANDARD_TIMEOUT },
-    ).should("be.visible");
+      { timeout: this.STANDARD_TIMEOUT, matchCase: false },
+    )
+      .scrollIntoView()
+      .should("be.visible");
     return this;
   }
 
@@ -387,6 +446,9 @@ export class ApplicationsListPage extends ApplicationsPage {
     cy.get(this.paymentModal.modal, { timeout: this.STANDARD_TIMEOUT })
       .should("be.visible")
       .and("have.class", "show");
+    cy.get(this.paymentModal.backdrop, {
+      timeout: this.STANDARD_TIMEOUT,
+    }).should("exist");
     return this;
   }
 
@@ -405,7 +467,6 @@ export class ApplicationsListPage extends ApplicationsPage {
     cy.get(this.paymentModal.backdrop, {
       timeout: this.STANDARD_TIMEOUT,
     }).should("not.exist");
-
     return this;
   }
 
@@ -413,58 +474,71 @@ export class ApplicationsListPage extends ApplicationsPage {
    * Close payment modal using multiple strategies
    */
   closePaymentModal(): this {
-    // Attempt ESC key
-    cy.get("body").type("{esc}", { force: true });
-
-    // Click backdrop if present (check existence first to avoid timeout)
     cy.get("body").then(($body: JQuery<HTMLBodyElement>) => {
-      if ($body.find(this.paymentModal.backdrop).length > 0) {
-        cy.get(this.paymentModal.backdrop).click("topLeft", { force: true });
+      if ($body.find(`${this.paymentModal.modal}.show`).length === 0) {
+        return;
       }
-    });
 
-    // Try Cancel button if available (check existence first to avoid timeout)
-    cy.get("body").then(($body: JQuery<HTMLBodyElement>) => {
       const $cancelBtn = $body
         .find(this.paymentModal.cancelButton)
         .filter((_: number, el: HTMLElement) =>
           (el.textContent || "").includes("Cancel"),
         );
+
       if ($cancelBtn.length > 0) {
         cy.wrap($cancelBtn.first()).scrollIntoView().click({ force: true });
-      } else {
-        cy.log("Cancel button not present, proceeding to hard-close fallback");
       }
     });
 
-    // Hard close fallback using jQuery
-    cy.window().then((win: Cypress.AUTWindow) => {
-      try {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const windowWithModal = win as any;
-        if (typeof windowWithModal.closePaymentModal === "function") {
-          windowWithModal.closePaymentModal();
-        }
-      } catch {
-        /* ignore */
-      }
-
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const $ = (win as any).jQuery || (win as any).$;
-      if ($) {
-        try {
-          $("#payment-modal")
-            .removeClass("show")
-            .attr("aria-hidden", "true")
-            .css("display", "none");
-          $(".modal-backdrop").remove();
-          $("body").removeClass("modal-open").css("overflow", "");
-        } catch {
-          /* ignore */
-        }
+    cy.get("body").then(($body: JQuery<HTMLBodyElement>) => {
+      if ($body.find(`${this.paymentModal.modal}.show`).length > 0) {
+        cy.get("body").type("{esc}", { force: true });
       }
     });
-    return this;
+
+    cy.get("body").then(($body: JQuery<HTMLBodyElement>) => {
+      if (
+        $body.find(`${this.paymentModal.modal}.show`).length > 0 &&
+        $body.find(this.paymentModal.backdrop).length > 0
+      ) {
+        cy.get(this.paymentModal.backdrop).first().click("topLeft", {
+          force: true,
+        });
+      }
+    });
+
+    cy.get("body").then(($body: JQuery<HTMLBodyElement>) => {
+      if ($body.find(`${this.paymentModal.modal}.show`).length > 0) {
+        cy.window().then((win: Cypress.AUTWindow) => {
+          try {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const windowWithModal = win as any;
+            if (typeof windowWithModal.closePaymentModal === "function") {
+              windowWithModal.closePaymentModal();
+            }
+          } catch {
+            /* ignore */
+          }
+
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const $ = (win as any).jQuery || (win as any).$;
+          if ($) {
+            try {
+              $(this.paymentModal.modal)
+                .removeClass("show")
+                .attr("aria-hidden", "true")
+                .css("display", "none");
+              $(this.paymentModal.backdrop).remove();
+              $("body").removeClass("modal-open").css("overflow", "");
+            } catch {
+              /* ignore */
+            }
+          }
+        });
+      }
+    });
+
+    return this.verifyPaymentModalClosed();
   }
 
   /**
@@ -477,13 +551,16 @@ export class ApplicationsListPage extends ApplicationsPage {
         expect(isHidden, "payment-modal hidden or not shown").to.eq(true);
       },
     );
+
     cy.get(this.paymentModal.backdrop, {
+      timeout: this.STANDARD_TIMEOUT,
+    }).should("not.exist");
+
+    cy.get(this.blockingUi.bootstrapModal, {
       timeout: this.STANDARD_TIMEOUT,
     }).should("not.exist");
     return this;
   }
-
-  // ============ Columns Menu Methods ============
 
   /**
    * Close any open dropdowns or modals
@@ -509,8 +586,8 @@ export class ApplicationsListPage extends ApplicationsPage {
     cy.contains(this.saveView.resetOption, "Reset to Default View", {
       timeout: this.STANDARD_TIMEOUT,
     })
-      .should("exist")
-      .click({ force: true });
+      .should("be.visible")
+      .click();
 
     // Wait for table to rebuild
     cy.get(this.scrollTable.columnTitles, {
@@ -524,10 +601,11 @@ export class ApplicationsListPage extends ApplicationsPage {
    */
   openColumnsMenu(): this {
     cy.contains(
-      "#dynamicButtonContainerId .dt-buttons button, #dynamicButtonContainerId .dt-buttons a, #dynamicButtonContainerId .dt-buttons span",
-      /^Columns$/i,
-      { timeout: this.STANDARD_TIMEOUT },
+      "#dynamicButtonContainerId .dt-buttons button, #dynamicButtonContainerId .dt-buttons button span",
+      "Columns",
+      { timeout: this.STANDARD_TIMEOUT, matchCase: false },
     )
+      .scrollIntoView()
       .should("be.visible")
       .click();
 
@@ -546,9 +624,16 @@ export class ApplicationsListPage extends ApplicationsPage {
       timeout: this.STANDARD_TIMEOUT,
       matchCase: false,
     })
-      .should("exist")
       .scrollIntoView()
-      .click({ force: true });
+      .should("exist")
+      .then(($item) => {
+        if (Cypress.dom.isVisible($item)) {
+          cy.wrap($item).click();
+        } else {
+          // Some dropdown items are clipped by overflow containers; native click still triggers menu toggle reliably.
+          ($item[0] as HTMLElement).click();
+        }
+      });
     return this;
   }
 

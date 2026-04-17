@@ -628,8 +628,7 @@ export class ApplicationDetailsPage extends BasePage {
 
       if ($body.find(".modal.show .btn-close").length > 0) {
         cy.get(".modal.show .btn-close").first().click({ force: true });
-        cy.get(".swal2-container")
-          .should("not.exist");
+        cy.get(".swal2-container").should("not.exist");
         cy.wait(500);
       }
     });
