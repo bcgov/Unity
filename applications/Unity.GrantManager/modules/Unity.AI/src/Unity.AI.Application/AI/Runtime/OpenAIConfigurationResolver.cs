@@ -5,7 +5,7 @@ using Volo.Abp.DependencyInjection;
 
 namespace Unity.AI.Runtime;
 
-internal class OpenAIConfigurationResolver(IConfiguration configuration) : IOpenAIConfigurationResolver, ITransientDependency
+public class OpenAIConfigurationResolver(IConfiguration configuration) : ITransientDependency
 {
     private const string DefaultMaxTokensParameterName = "max_completion_tokens";
     private const string LegacyMaxTokensParameterName = "max_tokens";

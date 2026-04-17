@@ -11,13 +11,13 @@ using Volo.Abp.DependencyInjection;
 
 namespace Unity.AI.Runtime;
 
-internal class OpenAITransportService(
+public class OpenAITransportService(
     HttpClient httpClient,
-    IOpenAIConfigurationResolver configurationResolver,
-    ILogger<OpenAITransportService> logger) : IOpenAITransportService, ITransientDependency
+    OpenAIConfigurationResolver configurationResolver,
+    ILogger<OpenAITransportService> logger) : ITransientDependency
 {
     private readonly HttpClient _httpClient = httpClient;
-    private readonly IOpenAIConfigurationResolver _configurationResolver = configurationResolver;
+    private readonly OpenAIConfigurationResolver _configurationResolver = configurationResolver;
     private readonly ILogger<OpenAITransportService> _logger = logger;
 
     public async Task<AIOperationResult> GenerateSummaryAsync(

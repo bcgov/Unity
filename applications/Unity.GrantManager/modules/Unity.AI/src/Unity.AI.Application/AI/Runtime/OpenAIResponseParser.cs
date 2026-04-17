@@ -9,7 +9,7 @@ using Volo.Abp.DependencyInjection;
 
 namespace Unity.AI.Runtime;
 
-internal class OpenAIResponseParser : IOpenAIResponseParser, ITransientDependency
+public class OpenAIResponseParser : ITransientDependency
 {
     public ApplicationAnalysisResponse ParseApplicationAnalysisResponse(string raw)
     {

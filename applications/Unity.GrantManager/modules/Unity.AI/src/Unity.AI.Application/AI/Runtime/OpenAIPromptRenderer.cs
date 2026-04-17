@@ -8,7 +8,7 @@ using Volo.Abp.DependencyInjection;
 
 namespace Unity.AI.Runtime;
 
-internal class OpenAIPromptRenderer : IOpenAIPromptRenderer, ITransientDependency
+public class OpenAIPromptRenderer : ITransientDependency
 {
     private const string PromptVersionV0 = "v0";
     private const string PromptVersionV1 = "v1";

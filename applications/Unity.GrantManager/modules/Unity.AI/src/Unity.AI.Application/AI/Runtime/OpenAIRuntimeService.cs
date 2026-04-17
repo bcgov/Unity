@@ -24,14 +24,13 @@ namespace Unity.AI.Runtime
     [ExposeServices(typeof(IAIService))]
     public class OpenAIRuntimeService : IAIService, ITransientDependency
     {
-        private readonly HttpClient _httpClient;
         private readonly IConfiguration _configuration;
         private readonly ILogger<OpenAIRuntimeService> _logger;
         private readonly ITextExtractionService _textExtractionService;
-        private readonly IOpenAITransportService _openAITransportService;
-        private readonly IOpenAIResponseParser _openAIResponseParser;
-        private readonly IOpenAIPromptRenderer _openAIPromptRenderer;
-        private readonly IOpenAIConfigurationResolver _openAIConfigurationResolver;
+        private readonly OpenAITransportService _openAITransportService;
+        private readonly OpenAIResponseParser _openAIResponseParser;
+        private readonly OpenAIPromptRenderer _openAIPromptRenderer;
+        private readonly OpenAIConfigurationResolver _openAIConfigurationResolver;
         private readonly ICurrentTenant _currentTenant;
         private readonly IHostEnvironment _hostEnvironment;
         private const string ApplicationAnalysisPromptType = AIPromptTypes.ApplicationAnalysis;
@@ -81,14 +80,13 @@ namespace Unity.AI.Runtime
             IConfiguration configuration,
             ILogger<OpenAIRuntimeService> logger,
             ITextExtractionService textExtractionService,
-            IOpenAITransportService openAITransportService,
-            IOpenAIResponseParser openAIResponseParser,
-            IOpenAIPromptRenderer openAIPromptRenderer,
-            IOpenAIConfigurationResolver openAIConfigurationResolver,
+            OpenAITransportService openAITransportService,
+            OpenAIResponseParser openAIResponseParser,
+            OpenAIPromptRenderer openAIPromptRenderer,
+            OpenAIConfigurationResolver openAIConfigurationResolver,
             ICurrentTenant currentTenant,
             IHostEnvironment hostEnvironment)
         {
-            _httpClient = httpClient;
             _configuration = configuration;
             _logger = logger;
             _textExtractionService = textExtractionService;
