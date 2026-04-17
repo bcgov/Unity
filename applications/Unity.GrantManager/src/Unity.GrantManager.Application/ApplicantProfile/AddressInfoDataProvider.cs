@@ -91,13 +91,13 @@ namespace Unity.GrantManager.ApplicantProfile
                     .Select(g => g.OrderBy(r => r.IsFromApplicantPath).First())
                     .ToList();
 
-                var distinctApplicantIds = deduplicated
-                    .Where(r => r.ApplicantId != null)
-                    .Select(r => r.ApplicantId)
+                // Determine editability from submissions, not addresses
+                var distinctApplicantIds = await matchingSubmissions
+                    .Select(s => s.ApplicantId)
                     .Distinct()
-                    .ToList();
+                    .ToListAsync();
 
-                var distinctApplicants = distinctApplicantIds.Count > 1;               
+                var distinctApplicants = distinctApplicantIds.Count > 1;
 
                 var addressDtos = deduplicated.Select(r => new AddressInfoItemDto
                 {
