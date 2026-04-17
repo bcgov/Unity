@@ -31,6 +31,7 @@ namespace Unity.AI.Runtime
         private readonly IOpenAITransportService _openAITransportService;
         private readonly IOpenAIResponseParser _openAIResponseParser;
         private readonly IOpenAIPromptRenderer _openAIPromptRenderer;
+        private readonly IOpenAIConfigurationResolver _openAIConfigurationResolver;
         private readonly ICurrentTenant _currentTenant;
         private readonly IHostEnvironment _hostEnvironment;
         private const string ApplicationAnalysisPromptType = AIPromptTypes.ApplicationAnalysis;
@@ -49,19 +50,14 @@ namespace Unity.AI.Runtime
         private const string AIServiceTemporarilyUnavailableMessage = "AI request failed - service temporarily unavailable.";
         private const string AIRequestFailedRetryMessage = "AI request failed - please try again later.";
         private const int MaxAiAttempts = 3;
-        private const string DefaultMaxTokensParameterName = "max_completion_tokens";
-        private const string LegacyMaxTokensParameterName = "max_tokens";
-        private const string DefaultProviderName = "OpenAI";
-        private const string OpenAiApiKeyEnvironmentVariableName = "AZURE_OPENAI_API_KEY";
-        private const string OpenAiEndpointEnvironmentVariableName = "AZURE_OPENAI_ENDPOINT";
         private const int DefaultCompletionTokens = 2000;
         private const int DefaultAttachmentSummaryCompletionTokens = 2000;
         private const int DefaultApplicationAnalysisCompletionTokens = 4000;
         private const int DefaultApplicationScoringCompletionTokens = 8000;
 
-        private int AttachmentSummaryCompletionTokens => ResolveCompletionTokens(AttachmentSummaryPromptType, DefaultAttachmentSummaryCompletionTokens);
-        private int ApplicationAnalysisCompletionTokens => ResolveCompletionTokens(ApplicationAnalysisPromptType, DefaultApplicationAnalysisCompletionTokens);
-        private int ApplicationScoringCompletionTokens => ResolveCompletionTokens(ApplicationScoringPromptType, DefaultApplicationScoringCompletionTokens);
+        private int AttachmentSummaryCompletionTokens => _openAIConfigurationResolver.ResolveCompletionTokens(AttachmentSummaryPromptType, DefaultAttachmentSummaryCompletionTokens);
+        private int ApplicationAnalysisCompletionTokens => _openAIConfigurationResolver.ResolveCompletionTokens(ApplicationAnalysisPromptType, DefaultApplicationAnalysisCompletionTokens);
+        private int ApplicationScoringCompletionTokens => _openAIConfigurationResolver.ResolveCompletionTokens(ApplicationScoringPromptType, DefaultApplicationScoringCompletionTokens);
         private readonly string MissingApiKeyMessage = "OpenAI API key is not configured";
 
         // Optional local debugging sink for prompt payload logs to a local file.
@@ -88,6 +84,7 @@ namespace Unity.AI.Runtime
             IOpenAITransportService openAITransportService,
             IOpenAIResponseParser openAIResponseParser,
             IOpenAIPromptRenderer openAIPromptRenderer,
+            IOpenAIConfigurationResolver openAIConfigurationResolver,
             ICurrentTenant currentTenant,
             IHostEnvironment hostEnvironment)
         {
@@ -98,13 +95,14 @@ namespace Unity.AI.Runtime
             _openAITransportService = openAITransportService;
             _openAIResponseParser = openAIResponseParser;
             _openAIPromptRenderer = openAIPromptRenderer;
+            _openAIConfigurationResolver = openAIConfigurationResolver;
             _currentTenant = currentTenant;
             _hostEnvironment = hostEnvironment;
         }
 
         public Task<bool> IsAvailableAsync()
         {
-            if (string.IsNullOrEmpty(ResolveApiKey()))
+            if (string.IsNullOrEmpty(_openAIConfigurationResolver.ResolveApiKey()))
             {
                 _logger.LogWarning("Error: {Message}", MissingApiKeyMessage);
                 return Task.FromResult(false);
@@ -247,7 +245,7 @@ namespace Unity.AI.Runtime
             var attachmentSummaries = request.Attachments
                 .Select(a => $"{a.Name}: {a.Summary}")
                 .ToList();
-            if (string.IsNullOrEmpty(ResolveApiKey(ApplicationScoringPromptType)))
+            if (string.IsNullOrEmpty(_openAIConfigurationResolver.ResolveApiKey(ApplicationScoringPromptType)))
             {
                 _logger.LogWarning("{Message}", MissingApiKeyMessage);
                 return new ApplicationScoringResponse();
@@ -508,28 +506,6 @@ namespace Unity.AI.Runtime
                 : null;
         }
 
-        private static string ResolveMaxTokensParameterName(string? configuredParameterName)
-        {
-            if (string.Equals(configuredParameterName, LegacyMaxTokensParameterName, StringComparison.Ordinal))
-            {
-                return LegacyMaxTokensParameterName;
-            }
-
-            return DefaultMaxTokensParameterName;
-        }
-
-        private int ResolveCompletionTokens(string operationName, int defaultValue)
-        {
-            var configuredValue = _configuration.GetValue<int?>($"Azure:Operations:{operationName}:MaxCompletionTokens");
-            if (configuredValue is > 0)
-            {
-                return configuredValue.Value;
-            }
-
-            var defaultConfiguredValue = _configuration.GetValue<int?>("Azure:Operations:Defaults:MaxCompletionTokens");
-            return defaultConfiguredValue is > 0 ? defaultConfiguredValue.Value : defaultValue;
-        }
-
         private string? ResolvePromptVersionSetting(string operationName)
         {
             var operationPromptVersion = _configuration[$"Azure:Operations:{operationName}:PromptVersion"];
@@ -545,145 +521,6 @@ namespace Unity.AI.Runtime
             }
 
             return _configuration["Azure:OpenAI:PromptVersion"];
-        }
-
-        private string ResolveProviderName(string? operationName = null)
-        {
-            if (!string.IsNullOrWhiteSpace(operationName))
-            {
-                var configuredProvider = _configuration[$"Azure:Operations:{operationName}:Provider"];
-                if (!string.IsNullOrWhiteSpace(configuredProvider))
-                {
-                    return configuredProvider.Trim();
-                }
-            }
-
-            var defaultProvider = _configuration["Azure:Operations:Defaults:Provider"];
-            return string.IsNullOrWhiteSpace(defaultProvider) ? DefaultProviderName : defaultProvider.Trim();
-        }
-
-        private string? ResolveApiKey(string? operationName = null)
-        {
-            var providerName = ResolveProviderName(operationName);
-            if (string.Equals(providerName, DefaultProviderName, StringComparison.Ordinal))
-            {
-                var injectedApiKey = _configuration[OpenAiApiKeyEnvironmentVariableName];
-                if (!string.IsNullOrWhiteSpace(injectedApiKey))
-                {
-                    return injectedApiKey;
-                }
-            }
-
-            return _configuration[$"Azure:{providerName}:ApiKey"];
-        }
-
-        private string ResolveMaxTokensParameterNameForOperation(string? operationName = null)
-        {
-            var providerName = ResolveProviderName(operationName);
-            var profileName = ResolveProfileName(operationName);
-            var profileParameterName = ResolveProfileSetting(providerName, profileName, "MaxTokensParameter");
-            return ResolveMaxTokensParameterName(profileParameterName);
-        }
-
-        private double? ResolveConfiguredTemperature(string? operationName = null)
-        {
-            var providerName = ResolveProviderName(operationName);
-            var profileName = ResolveProfileName(operationName);
-            var profileTemperature = ResolveProfileSetting(providerName, profileName, "Temperature");
-            if (profileTemperature != null
-                && double.TryParse(profileTemperature, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var parsedTemperature))
-            {
-                return parsedTemperature;
-            }
-
-            return null;
-        }
-
-        private string ResolveApiUrl(string? operationName)
-        {
-            var providerName = ResolveProviderName(operationName);
-            var profileName = ResolveProfileName(operationName);
-            var profileApiUrl = ResolveProfileSetting(providerName, profileName, "ApiUrl");
-            var injectedEndpoint = ResolveInjectedEndpoint(providerName);
-            var legacyOpenAiApiUrl = _configuration["Azure:OpenAI:ApiUrl"];
-
-            if (!string.IsNullOrWhiteSpace(injectedEndpoint) && !string.IsNullOrWhiteSpace(profileApiUrl))
-            {
-                return CombineEndpointAndPath(injectedEndpoint, profileApiUrl);
-            }
-
-            if (!string.IsNullOrWhiteSpace(profileApiUrl))
-            {
-                return profileApiUrl;
-            }
-
-            if (!string.IsNullOrWhiteSpace(legacyOpenAiApiUrl))
-            {
-                return legacyOpenAiApiUrl;
-            }
-
-            throw new InvalidOperationException($"AI API URL is not configured for provider '{providerName}'.");
-        }
-
-        private string? ResolveInjectedEndpoint(string providerName)
-        {
-            if (!string.Equals(providerName, DefaultProviderName, StringComparison.Ordinal))
-            {
-                return _configuration[$"Azure:{providerName}:Endpoint"];
-            }
-
-            var injectedEndpoint = _configuration[OpenAiEndpointEnvironmentVariableName];
-            if (!string.IsNullOrWhiteSpace(injectedEndpoint))
-            {
-                return injectedEndpoint;
-            }
-
-            return _configuration["Azure:OpenAI:Endpoint"];
-        }
-
-        private string? ResolveProfileName(string? operationName)
-        {
-            if (!string.IsNullOrWhiteSpace(operationName))
-            {
-                var operationProfile = _configuration[$"Azure:Operations:{operationName}:Profile"];
-                if (!string.IsNullOrWhiteSpace(operationProfile))
-                {
-                    return operationProfile.Trim();
-                }
-            }
-
-            var defaultProfile = _configuration["Azure:Operations:Defaults:Profile"];
-            return string.IsNullOrWhiteSpace(defaultProfile) ? null : defaultProfile.Trim();
-        }
-
-        private string? ResolveProfileSetting(string providerName, string? profileName, string settingName)
-        {
-            if (string.IsNullOrWhiteSpace(profileName))
-            {
-                return null;
-            }
-
-            var profileSetting = _configuration[$"Azure:{providerName}:Profiles:{profileName}:{settingName}"];
-            return string.IsNullOrWhiteSpace(profileSetting) ? null : profileSetting;
-        }
-
-        private static string CombineEndpointAndPath(string endpoint, string profilePath)
-        {
-            const char UrlPathSeparator = '/';
-
-            if (Uri.TryCreate(profilePath, UriKind.Absolute, out var absoluteUri))
-            {
-                return absoluteUri.ToString();
-            }
-
-            var trimmedEndpoint = endpoint.Trim().TrimEnd(UrlPathSeparator);
-            var trimmedPath = profilePath.Trim();
-            if (!trimmedPath.StartsWith(UrlPathSeparator))
-            {
-                trimmedPath = string.Concat(UrlPathSeparator, trimmedPath);
-            }
-
-            return trimmedEndpoint + trimmedPath;
         }
 
         private async Task LogPromptInputAsync(string promptType, string promptVersion, string? systemPrompt, string userPrompt)
