@@ -64,6 +64,11 @@ export class ApplicationsListPage extends ApplicationsPage {
     cancelButton: "#payment-modal .modal-footer button",
   };
 
+  private readonly blockingUi = {
+    bootstrapModal: ".modal.show",
+    swalContainer: ".swal2-container",
+  };
+
   // Grant program selectors
   private readonly grantProgram = {
     userInitials: ".unity-user-initials",
@@ -382,6 +387,25 @@ export class ApplicationsListPage extends ApplicationsPage {
     cy.get(this.paymentModal.modal, { timeout: this.STANDARD_TIMEOUT })
       .should("be.visible")
       .and("have.class", "show");
+    return this;
+  }
+
+  /**
+   * Wait for blocking modal overlays to clear before interacting with list controls.
+   */
+  waitForNoBlockingOverlay(): this {
+    cy.get(this.blockingUi.swalContainer, {
+      timeout: this.STANDARD_TIMEOUT,
+    }).should("not.exist");
+
+    cy.get(this.blockingUi.bootstrapModal, {
+      timeout: this.STANDARD_TIMEOUT,
+    }).should("not.exist");
+
+    cy.get(this.paymentModal.backdrop, {
+      timeout: this.STANDARD_TIMEOUT,
+    }).should("not.exist");
+
     return this;
   }
 
