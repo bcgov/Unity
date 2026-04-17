@@ -6,6 +6,9 @@ import { LoginPage } from "../pages/LoginPage";
 import { NavigationPage } from "../pages/NavigationPage";
 import { DashboardPage } from "../pages/DashboardPage";
 import { ApplicationDetailsPage } from "../pages/ApplicationDetailsPage";
+import { ApplicationsListPage } from "../pages/ApplicationsListPage";
+import { ReviewAssessmentPage } from "../pages/ReviewAssessmentPage";
+import { ApplicationDetailsRightTabPage } from "../pages/ApplicationDetailsRightTabPage";
 import {
   ApplicationsPage,
   RolesPage,
@@ -52,7 +55,37 @@ export class PageFactory {
   static getApplicationDetailsPage(): ApplicationDetailsPage {
     return this.getInstance(
       "ApplicationDetailsPage",
-      () => new ApplicationDetailsPage()
+      () => new ApplicationDetailsPage(),
+    );
+  }
+
+  /**
+   * Get or create ApplicationsListPage instance
+   */
+  static getApplicationsListPage(): ApplicationsListPage {
+    return this.getInstance(
+      "ApplicationsListPage",
+      () => new ApplicationsListPage(),
+    );
+  }
+
+  /**
+   * Get or create ReviewAssessmentPage instance
+   */
+  static getReviewAssessmentPage(): ReviewAssessmentPage {
+    return this.getInstance(
+      "ReviewAssessmentPage",
+      () => new ReviewAssessmentPage(),
+    );
+  }
+
+  /**
+   * Get or create ApplicationDetailsRightTabPage instance
+   */
+  static getApplicationDetailsRightTabPage(): ApplicationDetailsRightTabPage {
+    return this.getInstance(
+      "ApplicationDetailsRightTabPage",
+      () => new ApplicationDetailsRightTabPage(),
     );
   }
 
@@ -125,6 +158,12 @@ export const DashboardPageInstance = () => PageFactory.getDashboardPage();
 export const ApplicationsPageInstance = () => PageFactory.getApplicationsPage();
 export const ApplicationDetailsPageInstance = () =>
   PageFactory.getApplicationDetailsPage();
+export const ApplicationsListPageInstance = () =>
+  PageFactory.getApplicationsListPage();
+export const ReviewAssessmentPageInstance = () =>
+  PageFactory.getReviewAssessmentPage();
+export const ApplicationDetailsRightTabPageInstance = () =>
+  PageFactory.getApplicationDetailsRightTabPage();
 export const RolesPageInstance = () => PageFactory.getRolesPage();
 export const UsersPageInstance = () => PageFactory.getUsersPage();
 export const IntakesPageInstance = () => PageFactory.getIntakesPage();

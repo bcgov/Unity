@@ -110,11 +110,19 @@ export class ApplicationDetailsPage extends BasePage {
     super();
   }
 
+  private activateTab(tabSelector: string): void {
+    cy.get(tabSelector, { timeout: 20000 })
+      .scrollIntoView()
+      .should("be.visible")
+      .click({ force: true })
+      .should("have.class", "active");
+  }
+
   /**
    * Navigate to Submission tab
    */
   goToSubmissionTab(): this {
-    this.clickElement(this.tabs.submission);
+    this.activateTab(this.tabs.submission);
     return this;
   }
 
@@ -123,7 +131,7 @@ export class ApplicationDetailsPage extends BasePage {
    */
   goToReviewAssessmentTab(): this {
     this.dismissErrorModalIfPresent();
-    this.clickElement(this.tabs.reviewAssessment);
+    this.activateTab(this.tabs.reviewAssessment);
     return this;
   }
 
@@ -131,7 +139,7 @@ export class ApplicationDetailsPage extends BasePage {
    * Navigate to Project Info tab
    */
   goToProjectInfoTab(): this {
-    this.clickElement(this.tabs.projectInfo);
+    this.activateTab(this.tabs.projectInfo);
     return this;
   }
 
@@ -139,7 +147,7 @@ export class ApplicationDetailsPage extends BasePage {
    * Navigate to Applicant Info tab
    */
   goToApplicantInfoTab(): this {
-    this.clickElement(this.tabs.applicantInfo);
+    this.activateTab(this.tabs.applicantInfo);
     return this;
   }
 
@@ -147,7 +155,7 @@ export class ApplicationDetailsPage extends BasePage {
    * Navigate to Funding Agreement tab
    */
   goToFundingAgreementTab(): this {
-    this.clickElement(this.tabs.fundingAgreement);
+    this.activateTab(this.tabs.fundingAgreement);
     return this;
   }
 
@@ -155,7 +163,7 @@ export class ApplicationDetailsPage extends BasePage {
    * Navigate to Payment Info tab
    */
   goToPaymentInfoTab(): this {
-    this.clickElement(this.tabs.paymentInfo);
+    this.activateTab(this.tabs.paymentInfo);
     return this;
   }
 
@@ -434,15 +442,13 @@ export class ApplicationDetailsPage extends BasePage {
    * Open the Status Actions dropdown
    */
   openStatusActionsDropdown(): void {
-    cy.get(this.statusActions.dropdownMenu).then(($menu) => {
-      if (!$menu.is(":visible")) {
-        cy.get(this.statusActions.dropdownToggle, { timeout: 20000 })
-          .should("exist")
-          .scrollIntoView()
-          .click({ force: true });
-      }
-    });
-    cy.get(this.statusActions.dropdownMenu, { timeout: 10000 }).should(
+    this.dismissErrorModalIfPresent();
+    cy.get(this.statusActions.dropdownToggle, { timeout: 20000 })
+      .scrollIntoView()
+      .should("be.visible")
+      .and("not.contain.text", "Processing...")
+      .click({ force: true });
+    cy.get(this.statusActions.dropdownMenu, { timeout: 20000 }).should(
       "be.visible",
     );
   }
@@ -565,7 +571,18 @@ export class ApplicationDetailsPage extends BasePage {
    * Wait for confirm action modal to appear (SweetAlert2)
    */
   waitForConfirmModal(): this {
-    cy.get(this.confirmModal.modal, { timeout: 20000 }).should("be.visible");
+    cy.get("body").then(($body) => {
+      if ($body.find(this.confirmModal.modal).length > 0) {
+        cy.get(this.confirmModal.modal, { timeout: 20000 }).should(
+          "be.visible",
+        );
+        return;
+      }
+
+      cy.contains(".modal.show .modal-content", "Confirm Action", {
+        timeout: 20000,
+      }).should("be.visible");
+    });
     return this;
   }
 
@@ -573,10 +590,26 @@ export class ApplicationDetailsPage extends BasePage {
    * Click Confirm button in the modal (SweetAlert2)
    */
   clickConfirm(): this {
-    cy.get(this.confirmModal.modal, { timeout: 20000 })
-      .find(this.confirmModal.confirmButton)
-      .should("be.visible")
-      .click({ force: true });
+    cy.get("body").then(($body) => {
+      if ($body.find(this.confirmModal.modal).length > 0) {
+        cy.get(this.confirmModal.modal, { timeout: 20000 })
+          .find(this.confirmModal.confirmButton)
+          .should("be.visible")
+          .click({ force: true });
+        cy.get(this.confirmModal.modal, { timeout: 20000 }).should("not.exist");
+        cy.get(".swal2-container", { timeout: 20000 }).should("not.exist");
+        return;
+      }
+
+      cy.get(".modal.show", { timeout: 20000 })
+        .contains("button", /^Confirm$/i, { timeout: 20000 })
+        .should("be.visible")
+        .click({ force: true });
+      cy.contains(".modal.show .modal-content", "Confirm Action", {
+        timeout: 20000,
+      }).should("not.exist");
+      cy.get(".modal-backdrop", { timeout: 20000 }).should("not.exist");
+    });
     return this;
   }
 
@@ -603,7 +636,7 @@ export class ApplicationDetailsPage extends BasePage {
           .find(".swal2-confirm")
           .first()
           .click({ force: true });
-        cy.wait(500);
+        cy.get(".swal2-container", { timeout: 20000 }).should("not.exist");
       }
     });
     return this;
