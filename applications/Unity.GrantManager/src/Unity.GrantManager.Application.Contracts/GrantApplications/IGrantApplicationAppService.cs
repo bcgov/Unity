@@ -19,6 +19,10 @@ public interface IGrantApplicationAppService
     Task<GrantApplicationDto> GetAsync(Guid id);
     Task<GrantApplicationDto> TriggerAction(Guid applicationId, GrantApplicationAction triggerAction);
     Task<AIGenerationRequestDto> QueueAIGenerationAsync(Guid applicationId, string? promptVersion = null);
+    Task<AIGenerationRequestDto> QueueApplicationAnalysisAsync(Guid applicationId, string? promptVersion = null);
+    Task<AIGenerationRequestDto> QueueAttachmentSummaryAsync(Guid applicationId, string? promptVersion = null);
+    Task<AIGenerationRequestDto> QueueAttachmentSummariesAsync(Guid applicationId, List<Guid> attachmentIds, string? promptVersion = null);
+    Task<AIGenerationRequestDto> QueueApplicationScoringAsync(Guid applicationId, string? promptVersion = null);
     Task<AIGenerationRequestDto?> GetAIGenerationStatusAsync(Guid applicationId, string operationType, string? promptVersion = null);
     Task<AIGenerationRequestDto> QueueAIPipelineAsync(Guid applicationId, string? promptVersion = null);
     Task<Guid?> GetAccountCodingIdFromFormIdAsync(Guid formId);

@@ -456,23 +456,89 @@ function unityWorkflowButtonAction(e, dt, button, config) {
 }
 
 function generateAiButtonAction(e, dt, button, config) {
-    const $btn = $(this.node());
+    const $button = button?.node ? $(button.node) : null;
     const promptVersion = globalThis.getSelectedPromptVersion?.() || null;
+    const aiGenerationPollIntervalMs = 15000;
+    let aiGenerationPollTimeoutId = null;
 
-    this.disable();
-    $btn.html('<span class="ai-button-content"><span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span><span>Queueing...</span></span>');
+    if ($button?.length) {
+        $button.prop('disabled', true);
+        $button.html('<span class="ai-button-content"><i class="unt-icon-sm fa-solid fa-wand-sparkles"></i><span>Generating...</span></span>');
+        globalThis.AIGenerationButtonState?.setGenerating($button);
+    }
 
-    unity.grantManager.grantApplications.applicationScoring.generateApplicationScoring(pageApplicationId, promptVersion)
-        .done(function () {
-            abp.notify.success('AI scoring queued. Refresh later to see updated results.');
+    const stopPolling = function () {
+        if (aiGenerationPollTimeoutId) {
+            clearTimeout(aiGenerationPollTimeoutId);
+            aiGenerationPollTimeoutId = null;
+        }
+    };
+
+    const poll = function () {
+        unity.grantManager.grantApplications.grantApplication
+            .getAIGenerationStatus(pageApplicationId, 'application-scoring', promptVersion)
+            .done(function (request) {
+                const status = request?.status;
+
+                if (status === 'Failed') {
+                    stopPolling();
+                    abp.message.error(request?.failureReason || 'AI scoring failed.');
+                    if ($button?.length) {
+                        globalThis.AIGenerationButtonState?.restore($button);
+                        $button.prop('disabled', false);
+                        $button.html(generateAiButtonText(null, null, null));
+                    }
+                    return;
+                }
+
+                if (!request || request.isActive === false || status === 'Completed') {
+                    stopPolling();
+                    setReviewListAiButtonCompleted($button);
+                    refreshReviewListAfterAiScoring();
+                    return;
+                }
+
+                aiGenerationPollTimeoutId = setTimeout(poll, aiGenerationPollIntervalMs);
+            })
+            .fail(function () {
+                aiGenerationPollTimeoutId = setTimeout(poll, aiGenerationPollIntervalMs);
+            });
+    };
+
+    unity.grantManager.grantApplications.grantApplication.queueApplicationScoring(pageApplicationId, promptVersion)
+        .done(function (request) {
+            if (request?.status === 'Completed') {
+                setReviewListAiButtonCompleted($button);
+                refreshReviewListAfterAiScoring();
+                return;
+            }
+
+            aiGenerationPollTimeoutId = setTimeout(poll, 500);
         })
         .fail(function () {
+            stopPolling();
             abp.message.error('Failed to queue AI scoring. Please try again.');
+            if ($button?.length) {
+                globalThis.AIGenerationButtonState?.restore($button);
+                $button.prop('disabled', false);
+                $button.html(generateAiButtonText(null, null, null));
+            }
         })
-        .always(() => {
-            this.enable();
-            $btn.html(generateAiButtonText(null, null, null));
-        });
+        ;
+}
+
+function setReviewListAiButtonCompleted($button) {
+    if (!$button?.length) {
+        return;
+    }
+
+    globalThis.AIGenerationButtonState?.setCompleted($button);
+    $button.html('<span class="ai-button-content"><i class="unt-icon-sm fa-solid fa-wand-sparkles"></i><span>Completed</span></span>').prop('disabled', true);
+}
+
+function refreshReviewListAfterAiScoring() {
+    PubSub.publish('refresh_review_list', pageApplicationId);
+    PubSub.publish('refresh_assessment_scores', null);
 }
 
 function executeAssessmentAction(assessmentId, triggerAction) {

@@ -11,23 +11,23 @@ using Volo.Abp.MultiTenancy;
 
 namespace Unity.GrantManager.GrantApplications.Automation.BackgroundJobs;
 
-public class GenerateApplicationAnalysisJob(
-    IApplicationAnalysisService applicationAnalysisService,
+public class GenerateAttachmentSummaryJob(
+    IAttachmentSummaryService attachmentSummaryService,
     IRepository<AIGenerationRequest, Guid> generationRequestRepository,
     ICurrentTenant currentTenant,
-    ILogger<GenerateApplicationAnalysisJob> logger) : AsyncBackgroundJob<GenerateApplicationAnalysisBackgroundJobArgs>, ITransientDependency
+    ILogger<GenerateAttachmentSummaryJob> logger) : AsyncBackgroundJob<GenerateAttachmentSummaryBackgroundJobArgs>, ITransientDependency
 {
-    public override async Task ExecuteAsync(GenerateApplicationAnalysisBackgroundJobArgs args)
+    public override async Task ExecuteAsync(GenerateAttachmentSummaryBackgroundJobArgs args)
     {
         using (currentTenant.Change(args.TenantId))
         {
             await MarkRunningAsync(args.RequestKey);
             try
             {
-                logger.LogInformation("Executing AI application analysis job for application {ApplicationId}.", args.ApplicationId);
-                await applicationAnalysisService.RegenerateAndSaveAsync(args.ApplicationId, args.PromptVersion);
-                logger.LogInformation("Completed AI application analysis job for application {ApplicationId}.", args.ApplicationId);
-
+                logger.LogInformation(
+                    "Executing AI attachment summary job for {AttachmentCount} attachment(s).",
+                    args.AttachmentIds.Count);
+                await attachmentSummaryService.GenerateAndSaveAsync(args.AttachmentIds, args.PromptVersion);
                 await MarkCompletedAsync(args.RequestKey);
             }
             catch (Exception ex)

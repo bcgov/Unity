@@ -82,9 +82,8 @@ public class GenerateApplicationScoringJob(
 
     private async Task<AIGenerationRequest?> GetRequestAsync(string requestKey)
     {
-        var query = await generationRequestRepository.GetQueryableAsync();
-        return query
-            .Where(x => x.RequestKey == requestKey)
+        var requests = await generationRequestRepository.GetListAsync(x => x.RequestKey == requestKey);
+        return requests
             .OrderByDescending(x => x.CreationTime)
             .ThenByDescending(x => x.Id)
             .FirstOrDefault();

@@ -151,9 +151,11 @@ public class RunApplicationAIPipelineJob(
 
     private async Task<AIGenerationRequest?> GetRequestAsync(string requestKey, Guid applicationId)
     {
-        var query = await generationRequestRepository.GetQueryableAsync();
-        return query
-            .Where(x => x.RequestKey == requestKey && x.ApplicationId == applicationId)
+        var requests = await generationRequestRepository.GetListAsync(x =>
+            x.RequestKey == requestKey &&
+            x.ApplicationId == applicationId);
+
+        return requests
             .OrderByDescending(x => x.CreationTime)
             .ThenByDescending(x => x.Id)
             .FirstOrDefault();

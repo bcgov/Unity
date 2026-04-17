@@ -187,41 +187,24 @@ $(function () {
 
             const existingHTML = $activeButton.html();
 
-            // Call the backend API
-            $.ajax({
-                url:
-                    '/api/app/attachment-summary/generate-attachment-summaries' +
-                    '?promptVersion=' +
-                    encodeURIComponent(promptVersion || ''),
-                data: JSON.stringify(attachmentIds),
-                contentType: 'application/json',
-                type: 'POST',
-                beforeSend: function () {
-                    $activeButton
-                        .html(
-                            '<span class="ai-button-content"><span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span><span>Queueing...</span></span>'
-                        )
-                        .prop('disabled', true);
-                },
-                success: function (summaries) {
-                    abp.notify.success(
-                        'AI summaries queued for ' +
-                            summaries.length +
-                            ' attachment(s). Refresh later to see updated results.'
-                    );
+            $activeButton
+                .html(
+                    '<span class="ai-button-content"><span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span><span>Queueing...</span></span>'
+                )
+                .prop('disabled', true);
 
+            unity.grantManager.grantApplications.grantApplication
+                .queueAttachmentSummaries(applicationId, attachmentIds, promptVersion)
+                .done(function () {
+                    $activeButton.html('<span class="ai-button-content"><span>Completed</span></span>').prop('disabled', true);
                     resetAttachmentSelectionState();
-
+                })
+                .fail(function (error) {
+                    console.error('Error queueing AI summaries:', error);
+                    abp.message.error('An error occurred while queueing AI summaries. Please try again.');
                     $activeButton.html(existingHTML).prop('disabled', false);
-                },
-                error: function (error) {
-                    console.error('Error generating AI summaries:', error);
-                    abp.notify.error(
-                        'An error occurred while queueing AI summaries. Please try again.'
-                    );
-                    $activeButton.html(existingHTML).prop('disabled', false);
-                },
-            });
+                })
+                ;
         });
     }
 

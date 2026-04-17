@@ -597,16 +597,14 @@ function queueApplicationScoring(triggerButton = null) {
         .prop('disabled', true);
 
     unity.grantManager.grantApplications.applicationScoring
-        .generateApplicationScoring(applicationId, promptVersion)
+        .queueApplicationScoring(applicationId, promptVersion)
         .done(function () {
-            abp.notify.success('AI scoring queued. Refresh later to see updated results.');
+            $button.html('<span class="ai-button-content"><span>Completed</span></span>').prop('disabled', true);
         })
         .fail(function () {
             abp.message.error(
                 'Failed to queue AI scoring. Please try again.'
             );
-        })
-        .always(function () {
             $button.html(existingHtml).prop('disabled', false);
         });
 }

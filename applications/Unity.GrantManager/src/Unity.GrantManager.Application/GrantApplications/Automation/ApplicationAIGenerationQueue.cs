@@ -1,14 +1,13 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
-using Medallion.Threading;
 using Unity.AI.Automation;
 using Unity.GrantManager.GrantApplications;
 using Unity.GrantManager.GrantApplications.Automation.BackgroundJobs;
+using Medallion.Threading;
+using Volo.Abp.Domain.Repositories;
 using Volo.Abp.BackgroundJobs;
 using Volo.Abp.DependencyInjection;
-using Volo.Abp.DistributedLocking;
-using Volo.Abp.Domain.Repositories;
 
 namespace Unity.GrantManager.GrantApplications.Automation;
 
@@ -97,9 +96,11 @@ public class ApplicationAIGenerationQueue(
         using (await requestLock.AcquireAsync())
         {
             var query = await generationRequestRepository.GetQueryableAsync();
-            var existing = query
-                .Where(x => x.RequestKey == requestKey
-                    && (x.Status == AIGenerationRequestStatus.Queued || x.Status == AIGenerationRequestStatus.Running))
+            var existingRequests = query.Where(x =>
+                x.RequestKey == requestKey
+                && (x.Status == AIGenerationRequestStatus.Queued || x.Status == AIGenerationRequestStatus.Running));
+
+            var existing = existingRequests
                 .OrderByDescending(x => x.CreationTime)
                 .ThenByDescending(x => x.Id)
                 .FirstOrDefault();

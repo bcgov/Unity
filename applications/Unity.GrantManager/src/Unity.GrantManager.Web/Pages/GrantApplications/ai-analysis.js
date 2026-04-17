@@ -417,6 +417,8 @@ globalThis.queueApplicationAnalysis = function(triggerButton = null) {
     const existingHtml = $button.html();
     const promptVersion = globalThis.getSelectedPromptVersion?.() || null;
     const aiAnalysisPollIntervalMs = 15000;
+    const aiAnalysisMaxPollFailures = 3;
+    const aiAnalysisMaxQueueWaitMs = 120000;
 
     if (!applicationId || $button.prop('disabled')) {
         return;
@@ -427,6 +429,8 @@ globalThis.queueApplicationAnalysis = function(triggerButton = null) {
         .prop('disabled', true);
 
     let aiAnalysisPollTimeoutId = null;
+    let aiAnalysisPollFailures = 0;
+    let aiAnalysisQueuedAt = Date.now();
     const stopAIAnalysisPolling = function() {
         if (aiAnalysisPollTimeoutId) {
             clearTimeout(aiAnalysisPollTimeoutId);
@@ -438,8 +442,8 @@ globalThis.queueApplicationAnalysis = function(triggerButton = null) {
         unity.grantManager.grantApplications.grantApplication
             .getAIGenerationStatus(applicationId, 'application-analysis', promptVersion)
             .done(function(request) {
+                aiAnalysisPollFailures = 0;
                 const statusText = request?.status ?? 'Queued';
-                updateAnalysisTabStatus(statusText);
 
                 if (statusText === 'Failed') {
                     stopAIAnalysisPolling();
@@ -449,32 +453,47 @@ globalThis.queueApplicationAnalysis = function(triggerButton = null) {
                     return;
                 }
 
+                if (Date.now() - aiAnalysisQueuedAt > aiAnalysisMaxQueueWaitMs) {
+                    stopAIAnalysisPolling();
+                    $button.html(existingHtml).prop('disabled', false);
+                    abp.message.error('AI analysis is still queued. Please try again later.');
+                    return;
+                }
+
                 if (!request || request.isActive === false || statusText === 'Completed') {
                     stopAIAnalysisPolling();
                     loadAIAnalysis();
-                    $button.html(existingHtml).prop('disabled', false);
-                    if (statusText === 'Completed') {
-                        abp.notify.success('AI analysis completed.');
-                    }
+                    $button.html('<span class="ai-button-content"><span>Completed</span></span>').prop('disabled', true);
                     return;
                 }
 
                 aiAnalysisPollTimeoutId = setTimeout(poll, aiAnalysisPollIntervalMs);
             })
-            .fail(function() {
+            .fail(function(error) {
+                console.warn('Failed to poll AI analysis status.', error);
+                aiAnalysisPollFailures += 1;
+
+                if (aiAnalysisPollFailures > aiAnalysisMaxPollFailures) {
+                    stopAIAnalysisPolling();
+                    $button.html(existingHtml).prop('disabled', false);
+                    abp.message.error('Unable to load AI analysis status. Please try again.');
+                    return;
+                }
+
                 aiAnalysisPollTimeoutId = setTimeout(poll, aiAnalysisPollIntervalMs);
             });
     };
 
-    unity.grantManager.grantApplications.applicationAnalysis
-        .generateApplicationAnalysis(applicationId, promptVersion)
-        .then(function() {
-            updateAnalysisTabStatus('Queued');
-            abp.notify.success('AI analysis queued. Refresh later to see updated results.');
+    unity.grantManager.grantApplications.grantApplication
+        .queueApplicationAnalysis(applicationId, promptVersion)
+        .done(function(request) {
+            aiAnalysisPollFailures = 0;
+            setAiGenerationStatus(formatAiGenerationStatus(request?.status) || 'Queued');
             stopAIAnalysisPolling();
             aiAnalysisPollTimeoutId = setTimeout(poll, 500);
         })
-        .catch(function() {
+        .fail(function(error) {
+            console.error('Failed to queue AI analysis.', error);
             stopAIAnalysisPolling();
             $button.html(existingHtml).prop('disabled', false);
             abp.message.error('Failed to queue AI analysis. Please try again.');
