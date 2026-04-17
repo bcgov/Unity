@@ -1,5 +1,4 @@
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Concurrent;
@@ -32,7 +31,6 @@ namespace Unity.AI.Runtime
         private readonly OpenAIPromptRenderer _openAIPromptRenderer;
         private readonly OpenAIConfigurationResolver _openAIConfigurationResolver;
         private readonly ICurrentTenant _currentTenant;
-        private readonly IHostEnvironment _hostEnvironment;
         private const string ApplicationAnalysisPromptType = AIPromptTypes.ApplicationAnalysis;
         private const string AttachmentSummaryPromptType = AIPromptTypes.AttachmentSummary;
         private const string ApplicationScoringPromptType = AIPromptTypes.ApplicationScoring;
@@ -84,8 +82,7 @@ namespace Unity.AI.Runtime
             OpenAIResponseParser openAIResponseParser,
             OpenAIPromptRenderer openAIPromptRenderer,
             OpenAIConfigurationResolver openAIConfigurationResolver,
-            ICurrentTenant currentTenant,
-            IHostEnvironment hostEnvironment)
+            ICurrentTenant currentTenant)
         {
             _configuration = configuration;
             _logger = logger;
@@ -95,7 +92,6 @@ namespace Unity.AI.Runtime
             _openAIPromptRenderer = openAIPromptRenderer;
             _openAIConfigurationResolver = openAIConfigurationResolver;
             _currentTenant = currentTenant;
-            _hostEnvironment = hostEnvironment;
         }
 
         public Task<bool> IsAvailableAsync()
@@ -474,7 +470,7 @@ namespace Unity.AI.Runtime
                     response.PromptTokens,
                     response.CompletionTokens,
                     response.TotalTokens,
-                    _hostEnvironment.EnvironmentName,
+                    ResolveEnvironmentName(),
                     _currentTenant.Id,
                     success ? "success" : "failed",
                     promptVersion,
@@ -502,6 +498,13 @@ namespace Unity.AI.Runtime
                 && property.TryGetInt32(out var value)
                 ? value
                 : null;
+        }
+
+        private static string ResolveEnvironmentName()
+        {
+            return Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT")
+                ?? Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT")
+                ?? "Unknown";
         }
 
         private string? ResolvePromptVersionSetting(string operationName)
