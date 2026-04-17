@@ -19,21 +19,14 @@ const DateUtils = (function () {
      * @param {string|Date} dateUtc - The UTC date to format
      * @param {string} type - The type of formatting (for DataTables compatibility)
      * @param {object} options - Additional formatting options
-     * @returns {string|number|null} Formatted date string or timestamp for sorting, null if input is invalid
+     * @returns {string} Formatted date string, or numeric timestamp string for sorting, empty string if input is invalid
      */
     function formatUtcDateToLocal(dateUtc, type, options) {
-        if (!dateUtc) {
-            return null;
-        }
-
-        const date = new Date(dateUtc);
-
-        // Required for DataTables sorting & filtering
         if (type === 'sort' || type === 'type') {
-            return date.getTime();
+            return dateUtc ? String(new Date(dateUtc).getTime()) : '0';
         }
-
-        return date.toLocaleDateString(
+        if (!dateUtc) return '';
+        return new Date(dateUtc).toLocaleDateString(
             abp.localization.currentCulture.name,
             {
                 year: 'numeric',
@@ -53,7 +46,7 @@ const DateUtils = (function () {
      */
     function formatUtcToBcPacificDate(dateUtc, type, options) {
         if (type === 'sort' || type === 'type') {
-            return dateUtc ? new Date(dateUtc).getTime() : 0;
+            return dateUtc ? String(new Date(dateUtc).getTime()) : '0';
         }
         if (!dateUtc) return '';
         return new Date(dateUtc).toLocaleDateString(abp.localization.currentCulture.name, {
@@ -73,7 +66,7 @@ const DateUtils = (function () {
      */
     function formatUtcToBcPacificDateTime(dateUtc, type) {
         if (type === 'sort' || type === 'type') {
-            return dateUtc ? new Date(dateUtc).getTime() : 0;
+            return dateUtc ? String(new Date(dateUtc).getTime()) : '0';
         }
         if (!dateUtc) return '';
         const formatted = new Date(dateUtc).toLocaleString(abp.localization.currentCulture.name, {
@@ -95,7 +88,7 @@ const DateUtils = (function () {
      */
     function formatUtcToBcMountainDateTime(dateUtc, type) {
         if (type === 'sort' || type === 'type') {
-            return dateUtc ? new Date(dateUtc).getTime() : 0;
+            return dateUtc ? String(new Date(dateUtc).getTime()) : '0';
         }
         if (!dateUtc) return '';
         // America/Edmonton follows MST/MDT -- DST applies in NE BC.
@@ -116,14 +109,14 @@ const DateUtils = (function () {
      * Use this instead of new Date(localString).toISOString() which relies on the
      * browser's potentially incorrect DST-adjusted timezone offset.
      * @param {string} localDatetimeString - Value from a datetime-local input
-     * @returns {string|null} UTC ISO 8601 string, or null if input is empty/invalid
+     * @returns {string} UTC ISO 8601 string, or empty string if input is empty/invalid
      */
     function bcPstInputToUtcIso(localDatetimeString) {
-        if (!localDatetimeString) return null;
+        if (!localDatetimeString) return '';
         // Append the BC PST fixed offset so Date parses it as UTC-8, not browser-local.
         const withOffset = localDatetimeString + '-08:00';
         const date = new Date(withOffset);
-        return Number.isNaN(date.getTime()) ? null : date.toISOString();
+        return Number.isNaN(date.getTime()) ? '' : date.toISOString();
     }
 
     /**
