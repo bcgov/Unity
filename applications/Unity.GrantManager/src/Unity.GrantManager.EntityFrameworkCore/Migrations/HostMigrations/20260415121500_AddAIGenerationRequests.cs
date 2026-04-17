@@ -10,7 +10,8 @@ public partial class AddAIGenerationRequests : Migration
     protected override void Up(MigrationBuilder migrationBuilder)
     {
         migrationBuilder.CreateTable(
-            name: "AIGenerationRequests",
+            name: "AIRequests",
+            schema: "AI",
             columns: table => new
             {
                 Id = table.Column<Guid>(type: "uuid", nullable: false),
@@ -36,23 +37,26 @@ public partial class AddAIGenerationRequests : Migration
             },
             constraints: table =>
             {
-                table.PrimaryKey("PK_AIGenerationRequests", x => x.Id);
+                table.PrimaryKey("PK_AIRequests", x => x.Id);
             });
 
         migrationBuilder.CreateIndex(
-            name: "IX_AIGenerationRequests_ApplicationId_OperationType_Status",
-            table: "AIGenerationRequests",
+            name: "IX_AIRequests_ApplicationId_OperationType_Status",
+            schema: "AI",
+            table: "AIRequests",
             columns: new[] { "ApplicationId", "OperationType", "Status" });
 
         migrationBuilder.CreateIndex(
-            name: "IX_AIGenerationRequests_RequestKey",
-            table: "AIGenerationRequests",
+            name: "IX_AIRequests_RequestKey",
+            schema: "AI",
+            table: "AIRequests",
             column: "RequestKey");
     }
 
     protected override void Down(MigrationBuilder migrationBuilder)
     {
         migrationBuilder.DropTable(
-            name: "AIGenerationRequests");
+            name: "AIRequests",
+            schema: "AI");
     }
 }

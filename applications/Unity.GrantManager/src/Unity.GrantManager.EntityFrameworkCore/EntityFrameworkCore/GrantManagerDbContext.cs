@@ -240,7 +240,7 @@ public class GrantManagerDbContext :
 
         modelBuilder.Entity<AIGenerationRequest>(b =>
         {
-            b.ToTable(GrantManagerConsts.DbTablePrefix + "AIGenerationRequests", GrantManagerConsts.DbSchema);
+            b.ToTable(GrantManagerConsts.DbTablePrefix + "AIRequests", AIDbProperties.DbSchema);
             b.ConfigureByConvention();
             b.Property(x => x.OperationType).IsRequired().HasMaxLength(64);
             b.Property(x => x.RequestKey).IsRequired().HasMaxLength(256);

@@ -1362,7 +1362,7 @@ namespace Unity.GrantManager.Migrations.HostMigrations
 
                     b.HasIndex("RequestKey");
 
-                    b.ToTable("AIGenerationRequests", (string)null);
+                    b.ToTable("AIRequests", "AI");
                 });
 
             modelBuilder.Entity("Unity.GrantManager.Tokens.TenantToken", b =>

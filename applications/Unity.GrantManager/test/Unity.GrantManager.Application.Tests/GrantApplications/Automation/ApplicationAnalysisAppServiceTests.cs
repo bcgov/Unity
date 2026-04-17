@@ -2,9 +2,10 @@ using NSubstitute;
 using Shouldly;
 using System;
 using System.Threading.Tasks;
-using Unity.AI.Operations;
+using Unity.AI.Automation;
 using Unity.GrantManager.GrantApplications;
 using Volo.Abp.Features;
+using Volo.Abp.MultiTenancy;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -18,14 +19,16 @@ public class ApplicationAnalysisAppServiceTests(ITestOutputHelper outputHelper) 
         var featureChecker = Substitute.For<IFeatureChecker>();
         featureChecker.IsEnabledAsync("Unity.AI.ApplicationAnalysis").Returns(true);
 
-        var analysisService = Substitute.For<IApplicationAnalysisService>();
-        analysisService.RegenerateAndSaveAsync(Arg.Any<Guid>(), Arg.Any<string?>()).Returns("analysis");
+        var queue = Substitute.For<IApplicationAIGenerationQueue>();
+        var currentTenant = Substitute.For<ICurrentTenant>();
+        currentTenant.Id.Returns(Guid.NewGuid());
 
-        var service = new ApplicationAnalysisAppService(analysisService, featureChecker);
+        var service = new ApplicationAnalysisAppService(queue, featureChecker, currentTenant);
 
         var result = await service.GenerateApplicationAnalysisAsync(Guid.NewGuid());
 
         result.ShouldNotBeNull();
-        result.Completed.ShouldBeTrue();
+        result.Completed.ShouldBeFalse();
+        await queue.Received(1).QueueApplicationAnalysisAsync(Arg.Any<Guid>(), currentTenant.Id, Arg.Any<string?>());
     }
 }
