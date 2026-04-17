@@ -1,6 +1,6 @@
 namespace Unity.AI.Runtime
 {
-    internal sealed record AIProviderResponseMetadata(
+    public sealed record AIProviderResponseMetadata(
         string? Model,
         string? FinishReason,
         int? PromptTokens,
