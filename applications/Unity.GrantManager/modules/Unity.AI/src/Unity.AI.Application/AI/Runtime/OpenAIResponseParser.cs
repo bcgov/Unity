@@ -19,9 +19,9 @@ public class OpenAIResponseParser : ITransientDependency
             return response;
         }
 
-        if (TryGetStringProperty(root, AIJsonKeys.Rating, out var rating))
+        if (TryGetStringProperty(root, AIJsonKeys.Decision, out var decision))
         {
-            response.Rating = rating;
+            response.Decision = decision.Trim().ToUpperInvariant();
         }
 
         if (TryGetArrayProperty(root, AIJsonKeys.Errors, out var errorsArray))
@@ -39,14 +39,9 @@ public class OpenAIResponseParser : ITransientDependency
             response.Summaries = ParseFindings(summariesArray).ToList();
         }
 
-        if (TryGetArrayProperty(root, AIJsonKeys.NextSteps, out var nextStepsArray))
+        if (TryGetArrayProperty(root, AIJsonKeys.Recommendations, out var recommendationsArray))
         {
-            response.NextSteps = ParseFindings(nextStepsArray).ToList();
-        }
-
-        if (TryGetObjectProperty(root, AIJsonKeys.Recommendation, out var recommendation))
-        {
-            response.Recommendation = ParseRecommendation(recommendation);
+            response.Recommendations = ParseFindings(recommendationsArray).ToList();
         }
 
         return response;
@@ -69,7 +64,7 @@ public class OpenAIResponseParser : ITransientDependency
                     if (outputPropertyName == AIJsonKeys.Errors ||
                         outputPropertyName == AIJsonKeys.Warnings ||
                         outputPropertyName == AIJsonKeys.Summaries ||
-                        outputPropertyName == AIJsonKeys.NextSteps)
+                        outputPropertyName == AIJsonKeys.Recommendations)
                     {
                         writer.WritePropertyName(outputPropertyName);
                         writer.WriteStartArray();
@@ -171,9 +166,10 @@ public class OpenAIResponseParser : ITransientDependency
                 id = idProp.GetString() ?? id;
             }
 
-            var hidden = item.TryGetProperty(AIJsonKeys.Hidden, out var hiddenProp) &&
-                (hiddenProp.ValueKind == JsonValueKind.True || hiddenProp.ValueKind == JsonValueKind.False) &&
-                hiddenProp.GetBoolean();
+            var dismissed = item.TryGetProperty(AIJsonKeys.Dismissed, out var dismissedProp) &&
+                (dismissedProp.ValueKind == JsonValueKind.True || dismissedProp.ValueKind == JsonValueKind.False) &&
+                dismissedProp.GetBoolean();
+
             string? title = null;
             if (item.TryGetProperty(AIJsonKeys.Title, out var titleProp) && titleProp.ValueKind == JsonValueKind.String)
             {
@@ -189,39 +185,11 @@ public class OpenAIResponseParser : ITransientDependency
             yield return new ApplicationAnalysisFinding
             {
                 Id = id,
-                Hidden = hidden,
+                Dismissed = dismissed,
                 Title = title,
                 Detail = detail
             };
         }
-    }
-
-    private static ApplicationAnalysisRecommendation? ParseRecommendation(JsonElement recommendation)
-    {
-        string? decision = null;
-        if (recommendation.TryGetProperty(AIJsonKeys.Decision, out var decisionProp) &&
-            decisionProp.ValueKind == JsonValueKind.String)
-        {
-            decision = decisionProp.GetString();
-        }
-
-        string? rationale = null;
-        if (recommendation.TryGetProperty(AIJsonKeys.Rationale, out var rationaleProp) &&
-            rationaleProp.ValueKind == JsonValueKind.String)
-        {
-            rationale = rationaleProp.GetString();
-        }
-
-        if (string.IsNullOrWhiteSpace(decision) && string.IsNullOrWhiteSpace(rationale))
-        {
-            return null;
-        }
-
-        return new ApplicationAnalysisRecommendation
-        {
-            Decision = decision,
-            Rationale = rationale
-        };
     }
 
     private static bool TryParseJsonObjectFromResponse(string response, out JsonElement objectElement)
@@ -266,18 +234,6 @@ public class OpenAIResponseParser : ITransientDependency
     {
         value = default;
         if (!element.TryGetProperty(propertyName, out var prop) || prop.ValueKind != JsonValueKind.Array)
-        {
-            return false;
-        }
-
-        value = prop.Clone();
-        return true;
-    }
-
-    private static bool TryGetObjectProperty(JsonElement element, string propertyName, out JsonElement value)
-    {
-        value = default;
-        if (!element.TryGetProperty(propertyName, out var prop) || prop.ValueKind != JsonValueKind.Object)
         {
             return false;
         }
