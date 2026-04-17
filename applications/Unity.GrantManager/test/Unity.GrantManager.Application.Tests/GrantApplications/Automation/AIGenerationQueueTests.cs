@@ -98,6 +98,205 @@ public class AIGenerationQueueTests(ITestOutputHelper outputHelper) : GrantManag
             r.Status == AIGenerationRequestStatus.Queued), Arg.Any<bool>(), Arg.Any<CancellationToken>());
     }
 
+    [Fact]
+    public async Task QueueApplicationAnalysisAsync_Should_Not_Enqueue_When_An_Active_Request_Already_Exists()
+    {
+        var tenantId = Guid.NewGuid();
+        var applicationId = Guid.NewGuid();
+        var promptVersion = "v1";
+        var requestKey = AIGenerationRequestKeyHelper.BuildRequestKey(tenantId, applicationId, AIGenerationRequestKeyHelper.ApplicationAnalysisOperationType, promptVersion);
+        var request = new AIGenerationRequest(
+            Guid.NewGuid(),
+            tenantId,
+            AIGenerationRequestKeyHelper.ApplicationAnalysisOperationType,
+            applicationId,
+            null,
+            promptVersion,
+            requestKey);
+
+        var repository = Substitute.For<IRepository<AIGenerationRequest, Guid>>();
+        repository.GetQueryableAsync().Returns(Task.FromResult<IQueryable<AIGenerationRequest>>(new[] { request }.AsQueryable()));
+
+        var backgroundJobManager = Substitute.For<IBackgroundJobManager>();
+        var queue = new ApplicationAIGenerationQueue(backgroundJobManager, repository, new TestDistributedLockProvider());
+
+        await queue.QueueApplicationAnalysisAsync(applicationId, tenantId, promptVersion);
+
+        await backgroundJobManager.DidNotReceive().EnqueueAsync(Arg.Any<GenerateApplicationAnalysisBackgroundJobArgs>());
+        await repository.DidNotReceive().InsertAsync(Arg.Any<AIGenerationRequest>(), Arg.Any<bool>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task QueueApplicationAnalysisAsync_Should_Enqueue_New_Request_When_None_Exists()
+    {
+        var applicationId = Guid.NewGuid();
+        var tenantId = Guid.NewGuid();
+        var promptVersion = "v1";
+        var repository = Substitute.For<IRepository<AIGenerationRequest, Guid>>();
+        repository.GetQueryableAsync().Returns(Task.FromResult<IQueryable<AIGenerationRequest>>(Array.Empty<AIGenerationRequest>().AsQueryable()));
+        repository.InsertAsync(Arg.Any<AIGenerationRequest>(), Arg.Any<bool>(), Arg.Any<CancellationToken>())
+            .Returns(callInfo => Task.FromResult(callInfo.Arg<AIGenerationRequest>()));
+
+        GenerateApplicationAnalysisBackgroundJobArgs? capturedArgs = null;
+        var backgroundJobManager = Substitute.For<IBackgroundJobManager>();
+        backgroundJobManager.EnqueueAsync<GenerateApplicationAnalysisBackgroundJobArgs>(
+                Arg.Any<GenerateApplicationAnalysisBackgroundJobArgs>(),
+                Arg.Any<BackgroundJobPriority>(),
+                Arg.Any<TimeSpan?>())
+            .Returns(callInfo =>
+            {
+                capturedArgs = callInfo.Arg<GenerateApplicationAnalysisBackgroundJobArgs>();
+                return Task.FromResult(string.Empty);
+            });
+
+        var queue = new ApplicationAIGenerationQueue(backgroundJobManager, repository, new TestDistributedLockProvider());
+
+        await queue.QueueApplicationAnalysisAsync(applicationId, tenantId, promptVersion);
+
+        capturedArgs.ShouldNotBeNull();
+        capturedArgs!.ApplicationId.ShouldBe(applicationId);
+        capturedArgs.TenantId.ShouldBe(tenantId);
+        capturedArgs.PromptVersion.ShouldBe(promptVersion);
+        capturedArgs.RequestKey.ShouldBe(AIGenerationRequestKeyHelper.BuildRequestKey(tenantId, applicationId, AIGenerationRequestKeyHelper.ApplicationAnalysisOperationType, promptVersion));
+        await repository.Received(1).InsertAsync(Arg.Is<AIGenerationRequest>(r =>
+            r.ApplicationId == applicationId &&
+            r.TenantId == tenantId &&
+            r.OperationType == AIGenerationRequestKeyHelper.ApplicationAnalysisOperationType &&
+            r.RequestKey == capturedArgs.RequestKey &&
+            r.Status == AIGenerationRequestStatus.Queued), Arg.Any<bool>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task QueueAttachmentSummariesAsync_Should_Not_Enqueue_When_An_Active_Request_Already_Exists()
+    {
+        var tenantId = Guid.NewGuid();
+        var attachmentId = Guid.NewGuid();
+        var promptVersion = "v1";
+        var requestKey = AIGenerationRequestKeyHelper.BuildRequestKey(tenantId, attachmentId, AIGenerationRequestKeyHelper.AttachmentSummaryOperationType, promptVersion);
+        var request = new AIGenerationRequest(
+            Guid.NewGuid(),
+            tenantId,
+            AIGenerationRequestKeyHelper.AttachmentSummaryOperationType,
+            null,
+            attachmentId,
+            promptVersion,
+            requestKey);
+
+        var repository = Substitute.For<IRepository<AIGenerationRequest, Guid>>();
+        repository.GetQueryableAsync().Returns(Task.FromResult<IQueryable<AIGenerationRequest>>(new[] { request }.AsQueryable()));
+
+        var backgroundJobManager = Substitute.For<IBackgroundJobManager>();
+        var queue = new ApplicationAIGenerationQueue(backgroundJobManager, repository, new TestDistributedLockProvider());
+
+        await queue.QueueAttachmentSummariesAsync(new[] { attachmentId }, tenantId, promptVersion);
+
+        await backgroundJobManager.DidNotReceive().EnqueueAsync(Arg.Any<GenerateAttachmentSummaryBackgroundJobArgs>());
+        await repository.DidNotReceive().InsertAsync(Arg.Any<AIGenerationRequest>(), Arg.Any<bool>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task QueueAttachmentSummariesAsync_Should_Enqueue_New_Request_When_None_Exists()
+    {
+        var attachmentId = Guid.NewGuid();
+        var tenantId = Guid.NewGuid();
+        var promptVersion = "v1";
+        var repository = Substitute.For<IRepository<AIGenerationRequest, Guid>>();
+        repository.GetQueryableAsync().Returns(Task.FromResult<IQueryable<AIGenerationRequest>>(Array.Empty<AIGenerationRequest>().AsQueryable()));
+        repository.InsertAsync(Arg.Any<AIGenerationRequest>(), Arg.Any<bool>(), Arg.Any<CancellationToken>())
+            .Returns(callInfo => Task.FromResult(callInfo.Arg<AIGenerationRequest>()));
+
+        GenerateAttachmentSummaryBackgroundJobArgs? capturedArgs = null;
+        var backgroundJobManager = Substitute.For<IBackgroundJobManager>();
+        backgroundJobManager.EnqueueAsync<GenerateAttachmentSummaryBackgroundJobArgs>(
+                Arg.Any<GenerateAttachmentSummaryBackgroundJobArgs>(),
+                Arg.Any<BackgroundJobPriority>(),
+                Arg.Any<TimeSpan?>())
+            .Returns(callInfo =>
+            {
+                capturedArgs = callInfo.Arg<GenerateAttachmentSummaryBackgroundJobArgs>();
+                return Task.FromResult(string.Empty);
+            });
+
+        var queue = new ApplicationAIGenerationQueue(backgroundJobManager, repository, new TestDistributedLockProvider());
+
+        await queue.QueueAttachmentSummariesAsync(new[] { attachmentId }, tenantId, promptVersion);
+
+        capturedArgs.ShouldNotBeNull();
+        capturedArgs!.AttachmentIds.ShouldContain(attachmentId);
+        capturedArgs.TenantId.ShouldBe(tenantId);
+        capturedArgs.PromptVersion.ShouldBe(promptVersion);
+        capturedArgs.RequestKey.ShouldBe(AIGenerationRequestKeyHelper.BuildRequestKey(tenantId, attachmentId, AIGenerationRequestKeyHelper.AttachmentSummaryOperationType, promptVersion));
+        await repository.Received(1).InsertAsync(Arg.Any<AIGenerationRequest>(), Arg.Any<bool>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task QueueApplicationScoringAsync_Should_Not_Enqueue_When_An_Active_Request_Already_Exists()
+    {
+        var tenantId = Guid.NewGuid();
+        var applicationId = Guid.NewGuid();
+        var promptVersion = "v1";
+        var requestKey = AIGenerationRequestKeyHelper.BuildRequestKey(tenantId, applicationId, AIGenerationRequestKeyHelper.ApplicationScoringOperationType, promptVersion);
+        var request = new AIGenerationRequest(
+            Guid.NewGuid(),
+            tenantId,
+            AIGenerationRequestKeyHelper.ApplicationScoringOperationType,
+            applicationId,
+            null,
+            promptVersion,
+            requestKey);
+
+        var repository = Substitute.For<IRepository<AIGenerationRequest, Guid>>();
+        repository.GetQueryableAsync().Returns(Task.FromResult<IQueryable<AIGenerationRequest>>(new[] { request }.AsQueryable()));
+
+        var backgroundJobManager = Substitute.For<IBackgroundJobManager>();
+        var queue = new ApplicationAIGenerationQueue(backgroundJobManager, repository, new TestDistributedLockProvider());
+
+        await queue.QueueApplicationScoringAsync(applicationId, tenantId, promptVersion);
+
+        await backgroundJobManager.DidNotReceive().EnqueueAsync(Arg.Any<GenerateApplicationScoringBackgroundJobArgs>());
+        await repository.DidNotReceive().InsertAsync(Arg.Any<AIGenerationRequest>(), Arg.Any<bool>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task QueueApplicationScoringAsync_Should_Enqueue_New_Request_When_None_Exists()
+    {
+        var applicationId = Guid.NewGuid();
+        var tenantId = Guid.NewGuid();
+        var promptVersion = "v1";
+        var repository = Substitute.For<IRepository<AIGenerationRequest, Guid>>();
+        repository.GetQueryableAsync().Returns(Task.FromResult<IQueryable<AIGenerationRequest>>(Array.Empty<AIGenerationRequest>().AsQueryable()));
+        repository.InsertAsync(Arg.Any<AIGenerationRequest>(), Arg.Any<bool>(), Arg.Any<CancellationToken>())
+            .Returns(callInfo => Task.FromResult(callInfo.Arg<AIGenerationRequest>()));
+
+        GenerateApplicationScoringBackgroundJobArgs? capturedArgs = null;
+        var backgroundJobManager = Substitute.For<IBackgroundJobManager>();
+        backgroundJobManager.EnqueueAsync<GenerateApplicationScoringBackgroundJobArgs>(
+                Arg.Any<GenerateApplicationScoringBackgroundJobArgs>(),
+                Arg.Any<BackgroundJobPriority>(),
+                Arg.Any<TimeSpan?>())
+            .Returns(callInfo =>
+            {
+                capturedArgs = callInfo.Arg<GenerateApplicationScoringBackgroundJobArgs>();
+                return Task.FromResult(string.Empty);
+            });
+
+        var queue = new ApplicationAIGenerationQueue(backgroundJobManager, repository, new TestDistributedLockProvider());
+
+        await queue.QueueApplicationScoringAsync(applicationId, tenantId, promptVersion);
+
+        capturedArgs.ShouldNotBeNull();
+        capturedArgs!.ApplicationId.ShouldBe(applicationId);
+        capturedArgs.TenantId.ShouldBe(tenantId);
+        capturedArgs.PromptVersion.ShouldBe(promptVersion);
+        capturedArgs.RequestKey.ShouldBe(AIGenerationRequestKeyHelper.BuildRequestKey(tenantId, applicationId, AIGenerationRequestKeyHelper.ApplicationScoringOperationType, promptVersion));
+        await repository.Received(1).InsertAsync(Arg.Is<AIGenerationRequest>(r =>
+            r.ApplicationId == applicationId &&
+            r.TenantId == tenantId &&
+            r.OperationType == AIGenerationRequestKeyHelper.ApplicationScoringOperationType &&
+            r.RequestKey == capturedArgs.RequestKey &&
+            r.Status == AIGenerationRequestStatus.Queued), Arg.Any<bool>(), Arg.Any<CancellationToken>());
+    }
+
     private sealed class TestDistributedLockProvider : IDistributedLockProvider
     {
         public IDistributedLock CreateLock(string name) => new TestDistributedLock(name);
