@@ -11,7 +11,6 @@ using Unity.GrantManager.GrantApplications.Automation.Events;
 using Volo.Abp.EventBus.Local;
 using Volo.Abp.Features;
 using Volo.Abp.MultiTenancy;
-using Volo.Abp.Settings;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -19,31 +18,9 @@ namespace Unity.GrantManager.GrantApplications.Automation;
 
 public class RunApplicationAIPipelineJobTests(ITestOutputHelper outputHelper) : GrantManagerApplicationTestBase(outputHelper)
 {
-    private static AIIntakePipelineGuardServices BuildGuardServices(bool automaticEnabled = true, bool formEnabled = true)
-    {
-        var settingProvider = Substitute.For<ISettingProvider>();
-        settingProvider.GetOrNullAsync(Arg.Any<string>())
-            .Returns(Task.FromResult<string?>(automaticEnabled ? "true" : "false"));
-
-        var formId = Guid.NewGuid();
-        var applicationForm = new Applications.ApplicationForm { AutomaticallyGenerateAIAnalysis = formEnabled };
-        var application = new Applications.Application { ApplicationFormId = formId };
-
-        var applicationRepo = Substitute.For<IApplicationRepository>();
-        applicationRepo.GetAsync(Arg.Any<Guid>(), Arg.Any<bool>(), Arg.Any<System.Threading.CancellationToken>())
-            .Returns(Task.FromResult(application));
-
-        var applicationFormRepo = Substitute.For<IApplicationFormRepository>();
-        applicationFormRepo.GetAsync(Arg.Any<Guid>(), Arg.Any<bool>(), Arg.Any<System.Threading.CancellationToken>())
-            .Returns(Task.FromResult(applicationForm));
-
-        return new AIIntakePipelineGuardServices(settingProvider, applicationRepo, applicationFormRepo);
-    }
-
     private static RunApplicationAIPipelineJob BuildJob(
         IFeatureChecker featureChecker,
-        IApplicationScoringAppService? scoringService = null,
-        AIIntakePipelineGuardServices? guardServices = null)
+        IApplicationScoringAppService? scoringService = null)
     {
         var attachmentService = Substitute.For<IAttachmentSummaryAppService>();
         attachmentService.GenerateAttachmentSummariesAsync(Arg.Any<List<Guid>>(), Arg.Any<string?>())
@@ -61,7 +38,6 @@ public class RunApplicationAIPipelineJobTests(ITestOutputHelper outputHelper) : 
             featureChecker,
             Substitute.For<ILocalEventBus>(),
             Substitute.For<ICurrentTenant>(),
-            guardServices ?? BuildGuardServices(),
             NullLogger<RunApplicationAIPipelineJob>.Instance);
     }
 
@@ -124,7 +100,6 @@ public class RunApplicationAIPipelineJobTests(ITestOutputHelper outputHelper) : 
             featureChecker,
             eventBus,
             Substitute.For<ICurrentTenant>(),
-            BuildGuardServices(),
             NullLogger<RunApplicationAIPipelineJob>.Instance);
 
         await job.ExecuteAsync(new RunApplicationAIPipelineJobArgs { ApplicationId = Guid.NewGuid() });

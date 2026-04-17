@@ -3,7 +3,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Unity.AI.Settings;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Attachments;
 using Unity.GrantManager.GrantApplications;
@@ -13,7 +12,6 @@ using Volo.Abp.DependencyInjection;
 using Volo.Abp.EventBus.Local;
 using Volo.Abp.Features;
 using Volo.Abp.MultiTenancy;
-using Volo.Abp.Settings;
 
 namespace Unity.GrantManager.GrantApplications.Automation.BackgroundJobs;
 
@@ -25,30 +23,12 @@ public class RunApplicationAIPipelineJob(
     IFeatureChecker featureChecker,
     ILocalEventBus localEventBus,
     ICurrentTenant currentTenant,
-    AIIntakePipelineGuardServices guardServices,
     ILogger<RunApplicationAIPipelineJob> logger) : AsyncBackgroundJob<RunApplicationAIPipelineJobArgs>, ITransientDependency
 {
     public override async Task ExecuteAsync(RunApplicationAIPipelineJobArgs args)
     {
         using (currentTenant.Change(args.TenantId))
         {
-            var automaticGenerationEnabled = await guardServices.SettingProvider.GetAsync<bool>(AISettings.AutomaticGenerationEnabled, defaultValue: false);
-
-            if (!automaticGenerationEnabled)
-            {
-                logger.LogDebug("Automatic AI generation is disabled at tenant level, skipping intake pipeline for application {ApplicationId}.", args.ApplicationId);
-                return;
-            }
-
-            var application = await guardServices.Application.GetAsync(args.ApplicationId);
-            var applicationForm = await guardServices.ApplicationForm.GetAsync(application.ApplicationFormId);
-
-            if (!applicationForm.AutomaticallyGenerateAIAnalysis)
-            {
-                logger.LogDebug("Automatic AI analysis is disabled at form level for application {ApplicationId}, skipping intake pipeline.", args.ApplicationId);
-                return;
-            }
-
             var attachmentSummariesEnabled = await featureChecker.IsEnabledAsync("Unity.AI.AttachmentSummaries");
             var applicationAnalysisEnabled = await featureChecker.IsEnabledAsync("Unity.AI.ApplicationAnalysis");
             var scoringEnabled = await featureChecker.IsEnabledAsync("Unity.AI.Scoring");
