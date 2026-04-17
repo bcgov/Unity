@@ -57,7 +57,7 @@ Analyze this grant application comprehensively across all five rubric categories
 
 OUTPUT
 {
-  "rating": "<HIGH|MEDIUM|LOW>",
+  "decision": "<PROCEED|HOLD>",
   "warnings": [
     {
       "title": "<string>",
@@ -76,23 +76,18 @@ OUTPUT
       "detail": "<string>"
     }
   ],
-  "nextSteps": [
+  "recommendations": [
     {
       "title": "<string>",
       "detail": "<string>"
     }
-  ],
-  "recommendation": {
-    "decision": "<PROCEED|HOLD>",
-    "rationale": "<string>"
-  }
+  ]
 }
 
 Important:
 - Use only APPLICATION CONTENT, ATTACHMENT SUMMARIES, FORM FIELD CONFIGURATION, and EVALUATION RUBRIC as evidence.
+- decision must be PROCEED or HOLD.
 - Use summaries for overall application quality/readiness synthesis.
-- Use nextSteps for reviewer-facing follow-up actions or considerations before scoring or decision-making.
-- recommendation.decision must be PROCEED or HOLD.
-- recommendation.rationale must explain the high-level recommendation in 1-2 complete sentences using provided evidence.
+- Use recommendations for reviewer-facing follow-up actions or considerations before scoring or decision-making.
 - Use "title" and "detail" keys for all finding objects.
 - Return valid plain JSON only in the exact OUTPUT shape.

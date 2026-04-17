@@ -6,6 +6,6 @@ namespace Unity.GrantManager.GrantApplications
 {
     public interface IApplicationScoringAppService : IApplicationService
     {
-        Task<string> GenerateApplicationScoringAsync(Guid applicationId, string? promptVersion = null);
+        Task<ApplicationScoringResultDto> GenerateApplicationScoringAsync(Guid applicationId, string? promptVersion = null);
     }
 }

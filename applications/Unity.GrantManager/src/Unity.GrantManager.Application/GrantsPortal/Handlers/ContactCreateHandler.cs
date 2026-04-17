@@ -26,7 +26,7 @@ public class ContactCreateHandler(
         var contactId = Guid.Parse(payload.ContactId ?? throw new ArgumentException("contactId is required"));
         var profileId = Guid.Parse(payload.ProfileId ?? throw new ArgumentException("profileId is required"));
         var innerData = payload.Data?.ToObject<ContactCreateData>()
-                        ?? throw new ArgumentException("Contact data is required");        
+                        ?? throw new ArgumentException("Contact data is required");
 
         // Idempotency: if the contact already exists, treat as success
         var existing = await contactRepository.FindAsync(contactId);

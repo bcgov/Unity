@@ -1,5 +1,5 @@
 {
-  "rating": "<HIGH|MEDIUM|LOW>",
+  "decision": "<PROCEED|HOLD>",
   "errors": [
     {
       "title": "<string>",
@@ -18,14 +18,10 @@
       "detail": "<string>"
     }
   ],
-  "nextSteps": [
+  "recommendations": [
     {
       "title": "<string>",
       "detail": "<string>"
     }
-  ],
-  "recommendation": {
-    "decision": "<PROCEED|HOLD>",
-    "rationale": "<string>"
-  }
+  ]
 }

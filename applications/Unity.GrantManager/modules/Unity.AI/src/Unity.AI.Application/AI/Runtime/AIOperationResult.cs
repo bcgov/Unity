@@ -1,6 +1,6 @@
 namespace Unity.AI.Runtime
 {
-    internal enum AIOperationOutcome
+    public enum AIOperationOutcome
     {
         Success,
         TransientFailure,
@@ -8,7 +8,7 @@ namespace Unity.AI.Runtime
         InvalidOutput
     }
 
-    internal sealed record AIOperationResult(
+    public sealed record AIOperationResult(
         AIOperationOutcome Outcome,
         AIProviderResult Response)
     {
