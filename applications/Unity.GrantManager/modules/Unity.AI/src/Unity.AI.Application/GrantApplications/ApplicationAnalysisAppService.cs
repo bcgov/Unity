@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.Extensions.Logging;
 using System;
 using System.Threading.Tasks;
 using Unity.AI;
