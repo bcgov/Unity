@@ -663,7 +663,7 @@ form label.error {
     margin-bottom: 6px;
 }
 
-.ai-analysis-detail-item.hidden-item {
+.ai-analysis-detail-item.dismissed-item {
     opacity: 0.6;
 }
 

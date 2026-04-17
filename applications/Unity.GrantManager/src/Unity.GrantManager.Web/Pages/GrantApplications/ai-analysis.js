@@ -109,7 +109,7 @@ function normalizeFindings(items, fallbackType) {
 
 function createFindingItem(item, type, hidden) {
     const labels = getAnalysisLabels();
-    const templateName = hidden ? 'hidden-item' : 'active-item';
+    const templateName = hidden ? 'dismissed-item' : 'active-item';
     const actionKey = hidden ? 'restore-btn' : 'dismiss-btn';
     const $item = createItemFromTemplate(templateName, {
         category: item.title,
@@ -233,7 +233,7 @@ function configureDismissedItemsToggle($items, $toggle, section, isDismissedVisi
         .on('click', function() {
             const shouldShow = dismissedSectionVisibility[section.itemType] !== true;
             dismissedSectionVisibility[section.itemType] = shouldShow;
-            $items.find('.hidden-item').toggle(shouldShow);
+            $items.find('.dismissed-item').toggle(shouldShow);
             updateVisibleItemLayout($items);
             $toggle.text(shouldShow ? labels.hideDismissed : labels.showDismissed);
         });
