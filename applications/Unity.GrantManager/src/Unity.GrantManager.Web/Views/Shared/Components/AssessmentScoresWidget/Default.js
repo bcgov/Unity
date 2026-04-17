@@ -607,3 +607,27 @@ function queueApplicationScoring(triggerButton = null) {
             $button.html(existingHtml).prop('disabled', false);
         });
 }
+
+$(function () {
+    // Static buttons
+    $(document).on('click', '#regenerateAiScoresheetBtn', function () {
+        queueApplicationScoring();
+    });
+    $(document).on('click', '#btn-expand-all', function () {
+        expandAllAccordions('assessment-scoresheet');
+    });
+    $(document).on('click', '#btn-collapse-all', function () {
+        collapseAllAccordions('assessment-scoresheet');
+    });
+    $(document).on('click', '#saveAssessmentScoresBtn', function () {
+        saveAssessmentScores();
+    });
+
+    // Dynamically-generated section buttons (event delegation)
+    $(document).on('click', '[id^="scoresheet-section-save-"]', function () {
+        saveScoresSection($(this).data('form-id'), $(this).data('section-id'));
+    });
+    $(document).on('click', '[id^="scoresheet-section-discard-"]', function () {
+        discardChangesScoresSection($(this).data('form-id'), $(this).data('section-id'));
+    });
+});
