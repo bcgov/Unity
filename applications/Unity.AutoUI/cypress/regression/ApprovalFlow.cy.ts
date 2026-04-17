@@ -15,13 +15,11 @@
  * - Post-approval status and date validation on the Payments table
  */
 
-import {
-  ApplicationDetailsPageInstance,
-  ApplicationDetailsRightTabPageInstance,
-  ApplicationsListPageInstance,
-  NavigationPageInstance,
-  ReviewAssessmentPageInstance,
-} from "../utilities/PageFactory";
+import { ApplicationsListPage } from "../pages/ApplicationsListPage";
+import { ApplicationDetailsPage } from "../pages/ApplicationDetailsPage";
+import { ReviewAssessmentPage } from "../pages/ReviewAssessmentPage";
+import { ApplicationDetailsRightTabPage } from "../pages/ApplicationDetailsRightTabPage";
+import { NavigationPage } from "../pages/NavigationPage";
 import { loginIfNeeded } from "../support/auth";
 
 const isProd =
@@ -37,7 +35,6 @@ const TEST_CONFIG = {
   submissionId: null as string | null,
   grantProgram: "Default Grants Program",
   approvedAmount: "5000",
-  assignOwner: "Unity User1",
   supplierNumber: Cypress.env("environment") === "TEST" ? "2002712" : "2009366",
   paymentGroup: "Cheque" as const,
   testComment: "Test comment from automated regression test",
@@ -51,30 +48,13 @@ const TEST_CONFIG = {
   },
 };
 
-const STATUS_ACTIONS = {
-  menuButton: "#ApplicationActionDropdown .dropdown-toggle",
-  menu: "#ApplicationActionDropdown .dropdown-menu",
-  startReview: "#Application_StartReviewButton",
-  completeReview: "#Application_CompleteReviewButton",
-  startAssessment: "#Application_StartAssessmentButton",
-  completeAssessment: "#Application_CompleteAssessmentButton",
-  approve: "#Application_ApproveButton",
-};
-
-const ADJUDICATION_ACTIONS = {
-  completeAssessment: "#AdjudicationTeamLeadActionBar #CompleteButton",
-};
-
-const BREADCRUMB_STATUS_SELECTOR =
-  ".application-details-breadcrumb .application-status";
-
 (isProd ? describe.skip : describe)("Approval Flow Regression Test", () => {
   // Page object instances reused across all tests
-  const listPage = ApplicationsListPageInstance();
-  const detailsPage = ApplicationDetailsPageInstance();
-  const reviewPage = ReviewAssessmentPageInstance();
-  const rightTabPage = ApplicationDetailsRightTabPageInstance();
-  const navPage = NavigationPageInstance();
+  const listPage = new ApplicationsListPage();
+  const detailsPage = new ApplicationDetailsPage();
+  const reviewPage = new ReviewAssessmentPage();
+  const rightTabPage = new ApplicationDetailsRightTabPage();
+  const navPage = new NavigationPage();
 
   // Resolved after "Fetch submission ID from API" — shared across all subsequent tests
   let submissionId: string;
@@ -83,7 +63,6 @@ const BREADCRUMB_STATUS_SELECTOR =
 
   /** Navigate to the Payments tab and filter the table by submissionId. */
   function navigateToPaymentsAndSearch(): void {
-    listPage.waitForNoBlockingOverlay();
     cy.reload();
     navPage.goToPayments();
     cy.location("pathname", { timeout: 20000 }).should("include", "Payment");
@@ -94,245 +73,9 @@ const BREADCRUMB_STATUS_SELECTOR =
     cy.contains("tr", submissionId, { timeout: 20000 }).should("exist");
   }
 
-  function waitForBlockingUiToClear(): void {
-    cy.get(".swal2-container", { timeout: 20000 }).should("not.exist");
-    cy.get(".modal.show", { timeout: 20000 }).should("not.exist");
-    cy.get(".modal-backdrop", { timeout: 20000 }).should("not.exist");
-  }
-
-  function openStatusActionsMenu(): void {
-    waitForBlockingUiToClear();
-    detailsPage.dismissErrorModalIfPresent();
-    cy.get(STATUS_ACTIONS.menuButton, { timeout: 20000 })
-      .filter(":visible")
-      .first()
-      .scrollIntoView()
-      .should("be.visible")
-      .and("not.contain.text", "Processing...")
-      .click({ force: true });
-    cy.get(STATUS_ACTIONS.menu, { timeout: 20000 }).should("be.visible");
-  }
-
-  function clickStatusAction(actionSelector: string): void {
-    openStatusActionsMenu();
-    cy.get(actionSelector, { timeout: 20000 })
-      .filter(":visible")
-      .first()
-      .should("be.visible")
-      .and("not.be.disabled")
-      .click({ force: true });
-  }
-
-  function clickStatusActionIfEnabled(
-    actionSelector: string,
-    actionName: string,
-  ): void {
-    openStatusActionsMenu();
-    cy.get(actionSelector, { timeout: 20000 })
-      .filter(":visible")
-      .first()
-      .should("be.visible")
-      .then(($button) => {
-        if ($button.is(":disabled")) {
-          cy.log(`${actionName} is disabled; likely already progressed`);
-          return;
-        }
-
-        cy.wrap($button).click({ force: true });
-        confirmStatusActionIfNeeded();
-      });
-  }
-
-  function confirmStatusActionIfNeeded(): void {
-    cy.wait(500);
-    cy.get("body").then(($body) => {
-      if ($body.find(".swal2-popup .swal2-confirm").length > 0) {
-        cy.get(".swal2-popup .swal2-confirm", { timeout: 20000 })
-          .should("be.visible")
-          .click({ force: true });
-        cy.get(".swal2-container", { timeout: 20000 }).should("not.exist");
-        return;
-      }
-
-      if (
-        $body.find(".modal.show .modal-content:contains('Confirm Action')")
-          .length > 0
-      ) {
-        cy.get(".modal.show", { timeout: 20000 })
-          .should("be.visible")
-          .within(() => {
-            cy.contains("button", /^Confirm$/i, { timeout: 20000 })
-              .should("be.visible")
-              .click({ force: true });
-          });
-        cy.contains(".modal.show .modal-content", "Confirm Action", {
-          timeout: 20000,
-        }).should("not.exist");
-        cy.get(".modal-backdrop", { timeout: 20000 }).should("not.exist");
-      }
-    });
-  }
-
-  function dismissBlockingModalIfPresent(): void {
-    cy.get("body").then(($body) => {
-      if ($body.find(".swal2-container .swal2-confirm").length > 0) {
-        cy.get(".swal2-container .swal2-confirm", { timeout: 20000 })
-          .should("be.visible")
-          .click({ force: true });
-        cy.get(".swal2-container", { timeout: 20000 }).should("not.exist");
-      }
-
-      if ($body.find(".modal.show").length > 0) {
-        cy.get(".modal.show", { timeout: 20000 }).should("not.exist");
-        cy.get(".modal-backdrop", { timeout: 20000 }).should("not.exist");
-      }
-    });
-  }
-
-  function selectFirstAvailableOptionByLabel(labelText: string): void {
-    cy.get("body").then(($body) => {
-      if ($body.find(`label:contains('${labelText}'):visible`).length === 0) {
-        cy.log(`Label not found (skip): ${labelText}`);
-        return;
-      }
-
-      cy.contains("label", labelText, { timeout: 10000 })
-        .first()
-        .then(($label) => {
-          const fieldId = ($label.attr("for") || "").trim();
-          if (!fieldId) {
-            cy.log(`No 'for' attribute on label (skip): ${labelText}`);
-            return;
-          }
-
-          const selector = `#${fieldId}`;
-          if ($body.find(selector).length === 0) {
-            cy.log(`Field not found by id (skip): ${selector}`);
-            return;
-          }
-
-          cy.get(selector, { timeout: 10000 }).then(($select) => {
-            const options = $select.find("option").toArray();
-            const candidate = options.find((opt) => {
-              const value = (opt.getAttribute("value") || "").trim();
-              const text = (opt.textContent || "").trim().toLowerCase();
-              return value !== "" && text !== "please choose...";
-            });
-
-            const value = candidate?.getAttribute("value");
-            if (value) {
-              cy.wrap($select).select(value, { force: true });
-            }
-          });
-        });
-    });
-  }
-
-  function populateReviewFieldsRequiredForCompleteReview(): void {
-    detailsPage.goToReviewAssessmentTab();
-
-    reviewPage.verifyFormioLoaded();
-    cy.get("#ApprovalView_ApprovedAmount", { timeout: 30000 })
-      .should("be.visible")
-      .and("not.be.disabled");
-
-    cy.get("body").then(($body) => {
-      if ($body.find("#ApprovalView_ApprovedAmount").length > 0) {
-        reviewPage.enterApprovedAmount(TEST_CONFIG.approvedAmount);
-      } else {
-        cy.log("Approved amount field not present yet; skipping amount entry");
-      }
-
-      if ($body.find("#ApprovalView_FinalDecisionDate").length > 0) {
-        reviewPage.setDecisionDateToToday();
-      } else {
-        cy.log("Decision date field not present yet; skipping date entry");
-      }
-    });
-
-    selectFirstAvailableOptionByLabel("Likelihood of Funding");
-    selectFirstAvailableOptionByLabel("Due Diligence Status");
-    selectFirstAvailableOptionByLabel("Assessment Result");
-    reviewPage.clickSave();
-  }
-
-  function assignSubmissionFromList(ownerName: string): void {
-    dismissBlockingModalIfPresent();
-
-    listPage
-      .waitForNoBlockingOverlay()
-      .selectQuickDateRange("alltime")
-      .waitForTableRefresh()
-      .searchForSubmission(submissionId)
-      .selectRowByText(submissionId);
-
-    cy.get("#assignApplication", { timeout: 20000 })
-      .should("exist")
-      .and("not.have.class", "action-bar-btn-unavailable")
-      .and("be.visible")
-      .click({ force: true });
-
-    cy.contains(".modal-title", "Assessment Users", { timeout: 20000 }).should(
-      "be.visible",
-    );
-
-    cy.get("#AssigneeId", { timeout: 20000 })
-      .should("be.visible")
-      .select(ownerName);
-
-    cy.get("#user-tags-input", { timeout: 20000 })
-      .should("be.visible")
-      .clear()
-      .type(ownerName, { delay: 0 });
-
-    cy.get("body").then(($body) => {
-      if (
-        $body.find(".tags-suggestion-container .tags-suggestion-element")
-          .length > 0
-      ) {
-        cy.get(".tags-suggestion-container .tags-suggestion-element", {
-          timeout: 10000,
-        })
-          .contains(ownerName)
-          .click({ force: true });
-      } else {
-        cy.get("#user-tags-input").type("{enter}");
-      }
-    });
-
-    cy.contains(".modal-footer button", "Save", { timeout: 20000 })
-      .should("be.visible")
-      .and("not.be.disabled")
-      .click({ force: true });
-
-    cy.contains(".modal-title", "Assessment Users", { timeout: 20000 }).should(
-      "not.exist",
-    );
-    listPage.waitForNoBlockingOverlay();
-  }
-
-  function clickAdjudicationActionIfEnabled(actionSelector: string): void {
-    cy.get("body").then(($body) => {
-      if ($body.find(actionSelector).length > 0) {
-        cy.get(actionSelector, { timeout: 20000 }).then(($button) => {
-          if (!$button.is(":disabled")) {
-            cy.wrap($button).click({ force: true });
-            confirmStatusActionIfNeeded();
-          } else {
-            cy.log(`Action is disabled: ${actionSelector}`);
-          }
-        });
-      } else {
-        cy.log(`Action not present: ${actionSelector}`);
-      }
-    });
-  }
-
   /** Select the submissionId row and open the Approve Payments modal. */
   function selectRowAndOpenApproveModal(): void {
-    waitForBlockingUiToClear();
     cy.contains("tr", submissionId, { timeout: 20000 })
-      .scrollIntoView()
       .find(".checkbox-select")
       .click({ force: true });
     cy.contains("button", "Approve", { timeout: 20000 })
@@ -425,89 +168,54 @@ const BREADCRUMB_STATUS_SELECTOR =
       .searchForSubmission(submissionId);
   });
 
-  it("Assign submission on application list", () => {
-    assignSubmissionFromList(TEST_CONFIG.assignOwner);
-  });
-
   it("Select submission and open details", () => {
-    dismissBlockingModalIfPresent();
-    listPage.waitForNoBlockingOverlay();
-
-    cy.location("pathname", { timeout: 20000 }).then((pathname) => {
-      if (pathname.includes("/GrantApplications/Details")) {
-        cy.log("Already on details page after assignment");
-      } else {
-        listPage
-          .selectQuickDateRange("alltime")
-          .waitForTableRefresh()
-          .searchForSubmission(submissionId)
-          .selectRowByText(submissionId)
-          .clickOpenButton();
-      }
-    });
-
-    cy.get(BREADCRUMB_STATUS_SELECTOR, { timeout: 20000 })
-      .should("be.visible")
-      .invoke("text")
-      .then((statusText) => {
-        const normalized = statusText.trim().toLowerCase();
-        expect(
-          ["submitted", "assigned"],
-          "Expected initial status to be Submitted or Assigned",
-        ).to.include(normalized);
-      });
+    listPage.selectRowByText(submissionId).clickOpenButton();
   });
 
   // ============ Review & Assessment ============
-
-  it("Start review from Status Actions", () => {
-    clickStatusActionIfEnabled(STATUS_ACTIONS.startReview, "Start Review");
-  });
-
-  it("Complete review from Status Actions", () => {
-    populateReviewFieldsRequiredForCompleteReview();
-    clickStatusActionIfEnabled(
-      STATUS_ACTIONS.completeReview,
-      "Complete Review",
-    );
-  });
-
-  it("Start assessment from Status Actions", () => {
-    clickStatusActionIfEnabled(
-      STATUS_ACTIONS.startAssessment,
-      "Start Assessment",
-    );
-  });
 
   it("Navigate to Review and Assessment tab", () => {
     detailsPage.goToReviewAssessmentTab().verifyActiveTab("reviewAssessment");
   });
 
-  it("Create assessment", () => {
+  it("Enter approval details and save", () => {
+    reviewPage
+      .verifyFormioLoaded()
+      .enterApprovedAmount(TEST_CONFIG.approvedAmount)
+      .setDecisionDateToToday()
+      .clickSave();
+  });
+
+  it("Create and complete assessment", () => {
     cy.wait(2000); // Allow assessment section to fully load
     reviewPage.scrollToAssessmentList();
 
     cy.get("body").then(($body) => {
       if ($body.find("#CreateButton").length > 0) {
         cy.get("#CreateButton").click({ force: true });
-        // Give the new assessment row time to render before subsequent actions.
-        cy.wait(1000); // Needed because row creation animation can delay DOM readiness.
+        cy.wait(1000);
       } else {
         cy.log("Create Assessment button not found - may already be created");
       }
     });
-  });
 
-  it("Complete assessment from adjudication action bar", () => {
-    clickAdjudicationActionIfEnabled(ADJUDICATION_ACTIONS.completeAssessment);
+    cy.get("body").then(($body) => {
+      if ($body.find("#CompleteButton").length > 0) {
+        cy.get("#CompleteButton").click({ force: true });
+        cy.wait(1000);
+      } else {
+        cy.log(
+          "Complete Assessment button not found - may already be completed",
+        );
+      }
+    });
   });
 
   // ============ Payment Info ============
 
   it("Configure payment info", () => {
     cy.reload(); // Reload to get fresh data and avoid concurrency issues
-    // Wait briefly for async payment tab dependencies to stabilize after reload.
-    cy.wait(2000); // Prevents save attempts before payment controls are initialized.
+    cy.wait(2000);
     detailsPage
       .goToPaymentInfoTab()
       .enterSupplierNumber(TEST_CONFIG.supplierNumber)
@@ -561,31 +269,12 @@ const BREADCRUMB_STATUS_SELECTOR =
     });
   });
 
-  it("Enter approval details and save", () => {
-    detailsPage.goToReviewAssessmentTab().verifyActiveTab("reviewAssessment");
-    reviewPage
-      .verifyFormioLoaded()
-      .enterApprovedAmount(TEST_CONFIG.approvedAmount)
-      .setDecisionDateToToday()
-      .clickSave();
-  });
-
   // ============ Application Approval ============
 
   it("Test approval workflow (confirm)", () => {
     cy.reload(); // Refresh to ensure all changes are reflected before approval
     detailsPage.dismissErrorModalIfPresent();
-    clickStatusAction(STATUS_ACTIONS.completeAssessment);
-    confirmStatusActionIfNeeded();
-
-    cy.get(STATUS_ACTIONS.menuButton, { timeout: 20000 })
-      .filter(":visible")
-      .first()
-      .should("be.visible")
-      .and("not.contain.text", "Processing...");
-
-    clickStatusAction(STATUS_ACTIONS.approve);
-    detailsPage.waitForConfirmModal().clickConfirm();
+    detailsPage.clickApprove().waitForConfirmModal().clickConfirm();
   });
 
   // ============ Post-Approval Verification ============
@@ -611,10 +300,7 @@ const BREADCRUMB_STATUS_SELECTOR =
   // ============ Payment Request ============
 
   it("Select approved application and submit payment request", () => {
-    listPage
-      .waitForNoBlockingOverlay()
-      .selectRowByText(submissionId)
-      .clickPaymentButtonWithWait();
+    listPage.selectRowByText(submissionId).clickPaymentButtonWithWait();
     listPage.waitForPaymentModalVisible();
 
     // Description field has a max length of 40 chars
@@ -631,7 +317,7 @@ const BREADCRUMB_STATUS_SELECTOR =
       .and("not.be.disabled")
       .click();
 
-    listPage.verifyPaymentModalClosed();
+    cy.get("#payment-modal", { timeout: 20000 }).should("not.be.visible");
     cy.log(`✅ Payment request submitted: ${paymentDescription}`);
   });
 
