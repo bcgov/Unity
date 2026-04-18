@@ -4,7 +4,9 @@ using System.Threading.Tasks;
 using Unity.AI;
 using Unity.AI.Operations;
 using Unity.AI.Permissions;
+using Unity.GrantManager.GrantApplications.Automation.Events;
 using Volo.Abp;
+using Volo.Abp.EventBus.Local;
 using Volo.Abp.Features;
 
 namespace Unity.GrantManager.GrantApplications;
@@ -12,10 +14,11 @@ namespace Unity.GrantManager.GrantApplications;
 [Authorize(AIPermissions.Analysis.GenerateScoring)]
 public class ApplicationScoringAppService(
     IApplicationScoringService applicationScoringService,
-    IFeatureChecker featureChecker)
+    IFeatureChecker featureChecker,
+    ILocalEventBus localEventBus)
     : AIAppService, IApplicationScoringAppService
 {
-    public async Task<ApplicationScoringResultDto> GenerateApplicationScoringAsync(Guid applicationId, string? promptVersion = null)
+    public virtual async Task<ApplicationScoringResultDto> GenerateApplicationScoringAsync(Guid applicationId, string? promptVersion = null)
     {
         if (!await featureChecker.IsEnabledAsync("Unity.AI.Scoring"))
         {
@@ -23,6 +26,26 @@ public class ApplicationScoringAppService(
         }
 
         await applicationScoringService.RegenerateAndSaveAsync(applicationId, promptVersion);
+
+        if (UnitOfWorkManager.Current != null)
+        {
+            var capturedId = applicationId;
+            UnitOfWorkManager.Current.OnCompleted(async () =>
+            {
+                await localEventBus.PublishAsync(new ApplicationAIScoringGeneratedEvent
+                {
+                    ApplicationId = capturedId
+                });
+            });
+        }
+        else
+        {
+            await localEventBus.PublishAsync(new ApplicationAIScoringGeneratedEvent
+            {
+                ApplicationId = applicationId
+            });
+        }
+
         return new ApplicationScoringResultDto
         {
             Completed = true
