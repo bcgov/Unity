@@ -208,6 +208,12 @@ $(function () {
                 .html(
                     '<span class="ai-button-content"><span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span><span>Generating...</span></span>'
                 )
+                .css({
+                    'background-color': '#f1f3f5',
+                    'border-color': '#adb5bd',
+                    color: '#495057',
+                    opacity: '1',
+                })
                 .prop('disabled', true);
             globalThis.AIGenerationButtonState?.setGenerating($activeButton);
 
@@ -541,3 +547,4 @@ function showChefsAPIAccessError() {
         },
     });
 }
+

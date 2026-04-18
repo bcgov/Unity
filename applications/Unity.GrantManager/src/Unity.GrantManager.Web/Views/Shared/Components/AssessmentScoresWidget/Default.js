@@ -585,6 +585,27 @@ function queueApplicationScoring(triggerButton = null) {
     const $button = triggerButton ? $(triggerButton) : $('#regenerateAiScoresheetBtn');
     const existingHtml = $button.html();
     const promptVersion = globalThis.getSelectedPromptVersion?.() || null;
+    const aiGenerationPollIntervalMs = 15000;
+    let aiGenerationPollTimeoutId = null;
+
+    function markCompletedButton($targetButton) {
+        $targetButton
+            .css({
+                'border-color': '#2e7d32',
+                color: '#2e7d32',
+                opacity: '1',
+            })
+            .addClass('disabled');
+    }
+
+    function restoreButtonStyle($targetButton) {
+        $targetButton.css({
+            'background-color': '',
+            'border-color': '',
+            color: '',
+            opacity: '',
+        }).removeClass('disabled');
+    }
 
     if (!applicationId || $button.prop('disabled')) {
         return;
@@ -592,19 +613,69 @@ function queueApplicationScoring(triggerButton = null) {
 
     $button
         .html(
-            '<span class="ai-button-content"><span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span><span>Queueing...</span></span>'
+            '<span class="ai-button-content"><span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span><span>Generating...</span></span>'
         )
+        .css({
+            'background-color': '#f1f3f5',
+            'border-color': '#adb5bd',
+            color: '#495057',
+            opacity: '1',
+        })
         .prop('disabled', true);
+
+    const stopPolling = function () {
+        if (aiGenerationPollTimeoutId) {
+            clearTimeout(aiGenerationPollTimeoutId);
+            aiGenerationPollTimeoutId = null;
+        }
+    };
+
+    const poll = function () {
+        unity.grantManager.grantApplications.grantApplication
+            .getAIGenerationStatus(applicationId, 'application-scoring', promptVersion)
+            .done(function (request) {
+                const status = request?.status;
+
+                if (status === 'Failed') {
+                    stopPolling();
+                    abp.message.error(request?.failureReason || 'AI scoring failed.');
+                    restoreButtonStyle($button);
+                    $button.html(existingHtml).prop('disabled', false);
+                    return;
+                }
+
+                if (!request || request.isActive === false || status === 'Completed') {
+                    stopPolling();
+                    markCompletedButton($button);
+                    $button.html('<span class="ai-button-content"><span>Completed</span></span>').prop('disabled', true);
+                    PubSub.publish('refresh_assessment_scores', null);
+                    return;
+                }
+
+                aiGenerationPollTimeoutId = setTimeout(poll, aiGenerationPollIntervalMs);
+            })
+            .fail(function () {
+                aiGenerationPollTimeoutId = setTimeout(poll, aiGenerationPollIntervalMs);
+            });
+    };
 
     unity.grantManager.grantApplications.applicationScoring
         .queueApplicationScoring(applicationId, promptVersion)
-        .done(function () {
-            $button.html('<span class="ai-button-content"><span>Completed</span></span>').prop('disabled', true);
+        .done(function (request) {
+            if (request?.status === 'Completed') {
+                $button.html('<span class="ai-button-content"><span>Completed</span></span>').prop('disabled', true);
+                PubSub.publish('refresh_assessment_scores', null);
+                return;
+            }
+
+            aiGenerationPollTimeoutId = setTimeout(poll, 500);
         })
         .fail(function () {
+            stopPolling();
             abp.message.error(
                 'Failed to queue AI scoring. Please try again.'
             );
+            restoreButtonStyle($button);
             $button.html(existingHtml).prop('disabled', false);
         });
 }

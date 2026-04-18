@@ -47,7 +47,6 @@ public class GrantApplicationAppService(
     IApplicationFormSubmissionRepository applicationFormSubmissionRepository,
     IApplicantRepository applicantRepository,
     IApplicationFormRepository applicationFormRepository,
-    IApplicationChefsFileAttachmentRepository applicationChefsFileAttachmentRepository,
     IApplicantAgentRepository applicantAgentRepository,
     IApplicantAddressRepository applicantAddressRepository,
     IApplicantSupplierAppService applicantSupplierService,

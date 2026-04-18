@@ -175,10 +175,6 @@ $(function () {
         $(selector).text(value ? `(${value})` : '');
     }
 
-    function setAiGenerationStatus(value) {
-        $('#aiGenerationStatus').text(value ? `(${value})` : '');
-    }
-
     function formatAiGenerationStatus(status) {
         if (status === null || status === undefined || status === '') {
             return '';
@@ -200,6 +196,25 @@ $(function () {
             default:
                 return String(status);
         }
+    }
+
+    function markCompletedButton($button) {
+        $button
+            .css({
+                'border-color': '#2e7d32',
+                color: '#2e7d32',
+                opacity: '1',
+            })
+            .addClass('disabled');
+    }
+
+    function restoreButtonStyle($button) {
+        $button.css({
+            'background-color': '',
+            'border-color': '',
+            color: '',
+            opacity: '',
+        }).removeClass('disabled');
     }
 
     function getScoresheetSchemaJson() {
@@ -394,23 +409,21 @@ $(function () {
                 .getAIGenerationStatus(applicationId, operationType, promptVersion)
                 .done(function(request) {
                     const statusText = formatAiGenerationStatus(request?.status);
-                    setAiGenerationStatus(statusText);
-
-                    if (statusText === 'Failed') {
-                        stopAIGenerationPolling();
-                        setAiGenerationStatus('Failed');
-                        loadDevAiOutputs();
-                        restoreButton.html('<span class="ai-button-content"><span>Completed</span></span>').prop('disabled', true);
-                        abp.message.error(request?.failureReason || 'AI generate all failed.');
-                        return;
-                    }
+                if (statusText === 'Failed') {
+                    stopAIGenerationPolling();
+                    loadDevAiOutputs();
+                    restoreButtonStyle(restoreButton);
+                    restoreButton.html('<span class="ai-button-content"><span>Completed</span></span>').prop('disabled', true);
+                    abp.message.error(request?.failureReason || 'AI generate all failed.');
+                    return;
+                }
 
                 if (!request || request.isActive === false || statusText === 'Completed') {
                     stopAIGenerationPolling();
-                    setAiGenerationStatus('');
                     setDevAiOutputTimestamp('#analysisAiOutputTimestamp', request?.completedAt || request?.startedAt || null);
                     setDevAiOutputTimestamp('#scoringAiOutputTimestamp', request?.completedAt || request?.startedAt || null);
                     loadDevAiOutputs();
+                    markCompletedButton(restoreButton);
                     restoreButton.html('<span class="ai-button-content"><span>Completed</span></span>').prop('disabled', true);
                     return;
                 }
@@ -429,8 +442,6 @@ $(function () {
     function queueAIGenerationOperation(queueAction, operationType, queuedMessage, failureMessage, restoreButton, originalHtml) {
         queueAction()
             .done(function(request) {
-                const statusText = formatAiGenerationStatus(request?.status);
-                setAiGenerationStatus(statusText || 'Queued');
                 pollAIGenerationStatus(
                     $('#DetailsViewApplicationId').val(),
                     operationType,
@@ -440,7 +451,6 @@ $(function () {
                 );
             })
             .fail(function() {
-                setAiGenerationStatus('');
                 abp.message.error(failureMessage);
                 restoreButton.html('<span class="ai-button-content"><span>Completed</span></span>').prop('disabled', true);
             });
@@ -457,9 +467,14 @@ $(function () {
         }
 
         $button
-            .html('<span class="ai-button-content"><span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span><span>Queueing...</span></span>')
+            .html('<span class="ai-button-content"><span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span><span>Generating...</span></span>')
+            .css({
+                'background-color': '#f1f3f5',
+                'border-color': '#adb5bd',
+                color: '#495057',
+                opacity: '1',
+            })
             .prop('disabled', true);
-        setAiGenerationStatus('Queueing');
 
         queueAIGenerationOperation(
             () => unity.grantManager.grantApplications.grantApplication.queueAttachmentSummary(applicationId, promptVersion),
@@ -482,9 +497,14 @@ $(function () {
         }
 
         $button
-            .html('<span class="ai-button-content"><span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span><span>Queueing...</span></span>')
+            .html('<span class="ai-button-content"><span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span><span>Generating...</span></span>')
+            .css({
+                'background-color': '#f1f3f5',
+                'border-color': '#adb5bd',
+                color: '#495057',
+                opacity: '1',
+            })
             .prop('disabled', true);
-        setAiGenerationStatus('Queueing');
 
         queueAIGenerationOperation(
             () => unity.grantManager.grantApplications.grantApplication.queueApplicationScoring(applicationId, promptVersion),
@@ -509,20 +529,23 @@ $(function () {
         }
 
         $button
-            .html('<span class="ai-button-content"><span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span><span>Queueing...</span></span>')
+            .html('<span class="ai-button-content"><span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span><span>Generating...</span></span>')
+            .css({
+                'background-color': '#f1f3f5',
+                'border-color': '#adb5bd',
+                color: '#495057',
+                opacity: '1',
+            })
             .prop('disabled', true);
-        setAiGenerationStatus('Queueing');
 
         unity.grantManager.grantApplications.grantApplication
                 .queueAIPipeline(applicationId, promptVersion)
                 .done(function(request) {
-                    const statusText = formatAiGenerationStatus(request?.status);
-                    setAiGenerationStatus(statusText || 'Queued');
                     pollAIGenerationStatus(applicationId, 'pipeline', promptVersion, $button, existingHtml);
                 })
             .fail(function() {
-                setAiGenerationStatus('');
                 abp.message.error('Failed to queue AI generate all. Please try again.');
+                restoreButtonStyle($button);
                 $button.html(existingHtml).prop('disabled', false);
             })
             ;
