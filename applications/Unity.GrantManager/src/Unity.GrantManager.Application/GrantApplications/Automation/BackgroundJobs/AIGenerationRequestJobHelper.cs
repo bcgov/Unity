@@ -7,7 +7,7 @@ using Volo.Abp.Domain.Repositories;
 
 namespace Unity.GrantManager.GrantApplications.Automation.BackgroundJobs;
 
-public static class AIGenerationRequestJobBase
+public static class AIGenerationRequestJobHelper
 {
     public static async Task MarkRunningAsync(
         IRepository<AIGenerationRequest, Guid> generationRequestRepository,

@@ -20,19 +20,19 @@ public class GenerateAttachmentSummaryJob(
     {
         using (currentTenant.Change(args.TenantId))
         {
-            var request = await AIGenerationRequestJobBase.GetLatestRequestAsync(generationRequestRepository, x => x.RequestKey == args.RequestKey);
-            await AIGenerationRequestJobBase.MarkRunningAsync(generationRequestRepository, request);
+            var request = await AIGenerationRequestJobHelper.GetLatestRequestAsync(generationRequestRepository, x => x.RequestKey == args.RequestKey);
+            await AIGenerationRequestJobHelper.MarkRunningAsync(generationRequestRepository, request);
             try
             {
                 logger.LogInformation(
                     "Executing AI attachment summary job for application {ApplicationId}.",
                     args.ApplicationId);
                 await attachmentSummaryService.GenerateForApplicationAsync(args.ApplicationId, args.PromptVersion);
-                await AIGenerationRequestJobBase.MarkCompletedAsync(generationRequestRepository, request);
+                await AIGenerationRequestJobHelper.MarkCompletedAsync(generationRequestRepository, request);
             }
             catch (Exception ex)
             {
-                await AIGenerationRequestJobBase.MarkFailedAsync(generationRequestRepository, request, ex.Message);
+                await AIGenerationRequestJobHelper.MarkFailedAsync(generationRequestRepository, request, ex.Message);
                 throw;
             }
         }

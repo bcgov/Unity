@@ -588,25 +588,6 @@ function queueApplicationScoring(triggerButton = null) {
     const aiGenerationPollIntervalMs = 15000;
     let aiGenerationPollTimeoutId = null;
 
-    function markCompletedButton($targetButton) {
-        $targetButton
-            .css({
-                'border-color': '#2e7d32',
-                color: '#2e7d32',
-                opacity: '1',
-            })
-            .addClass('disabled');
-    }
-
-    function restoreButtonStyle($targetButton) {
-        $targetButton.css({
-            'background-color': '',
-            'border-color': '',
-            color: '',
-            opacity: '',
-        }).removeClass('disabled');
-    }
-
     if (!applicationId || $button.prop('disabled')) {
         return;
     }
@@ -615,13 +596,8 @@ function queueApplicationScoring(triggerButton = null) {
         .html(
             '<span class="ai-button-content"><span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span><span>Generating...</span></span>'
         )
-        .css({
-            'background-color': '#f1f3f5',
-            'border-color': '#adb5bd',
-            color: '#495057',
-            opacity: '1',
-        })
         .prop('disabled', true);
+    globalThis.AIGenerationButtonState?.setGenerating($button);
 
     const stopPolling = function () {
         if (aiGenerationPollTimeoutId) {
@@ -639,14 +615,14 @@ function queueApplicationScoring(triggerButton = null) {
                 if (status === 'Failed') {
                     stopPolling();
                     abp.message.error(request?.failureReason || 'AI scoring failed.');
-                    restoreButtonStyle($button);
+                    globalThis.AIGenerationButtonState?.restore($button);
                     $button.html(existingHtml).prop('disabled', false);
                     return;
                 }
 
                 if (!request || request.isActive === false || status === 'Completed') {
                     stopPolling();
-                    markCompletedButton($button);
+                    globalThis.AIGenerationButtonState?.setCompleted($button);
                     $button.html('<span class="ai-button-content"><span>Completed</span></span>').prop('disabled', true);
                     PubSub.publish('refresh_assessment_scores', null);
                     return;
@@ -675,7 +651,7 @@ function queueApplicationScoring(triggerButton = null) {
             abp.message.error(
                 'Failed to queue AI scoring. Please try again.'
             );
-            restoreButtonStyle($button);
+            globalThis.AIGenerationButtonState?.restore($button);
             $button.html(existingHtml).prop('disabled', false);
         });
 }

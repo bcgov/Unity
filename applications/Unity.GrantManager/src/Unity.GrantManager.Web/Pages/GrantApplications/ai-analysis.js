@@ -411,40 +411,6 @@ function tryParseRawAnalysis(analysisJson) {
     }
 }
 
-function formatAiGenerationStatus(status) {
-    switch (status) {
-        case 'Queued':
-            return 'Queued';
-        case 'Running':
-            return 'Generating';
-        case 'Completed':
-            return 'Completed';
-        case 'Failed':
-            return 'Failed';
-        default:
-            return '';
-    }
-}
-
-function markCompletedButton($button) {
-    $button
-        .css({
-            'border-color': '#2e7d32',
-            color: '#2e7d32',
-            opacity: '1',
-        })
-        .addClass('disabled');
-}
-
-function restoreButtonStyle($button) {
-    $button.css({
-        'background-color': '',
-        'border-color': '',
-        color: '',
-        opacity: '',
-    }).removeClass('disabled');
-}
-
 globalThis.queueApplicationAnalysis = function(triggerButton = null) {
     const applicationId = $('#DetailsViewApplicationId').val();
     const $button = triggerButton ? $(triggerButton) : $('#regenerateApplicationAnalysis');
@@ -460,14 +426,8 @@ globalThis.queueApplicationAnalysis = function(triggerButton = null) {
 
     $button
         .html('<span class="ai-button-content"><span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span><span>Generating...</span></span>')
-        .css({
-            'background-color': '#f1f3f5',
-            'border-color': '#adb5bd',
-            color: '#495057',
-            opacity: '1',
-        })
         .prop('disabled', true);
-    setAIGenerationStatus('Generating');
+    globalThis.AIGenerationButtonState?.setGenerating($button);
 
     let aiAnalysisPollTimeoutId = null;
     let aiAnalysisPollFailures = 0;
@@ -481,36 +441,40 @@ globalThis.queueApplicationAnalysis = function(triggerButton = null) {
 
     const poll = function() {
         unity.grantManager.grantApplications.grantApplication
-            .getAIGenerationStatus(applicationId, 'application-analysis', promptVersion)
-            .done(function(request) {
-                aiAnalysisPollFailures = 0;
-                const statusText = request?.status ?? 'Queued';
+                .getAIGenerationStatus(applicationId, 'application-analysis', promptVersion)
+                .done(function(request) {
+                    aiAnalysisPollFailures = 0;
+                    const statusText = request?.status === 0 ? 'Queued'
+                        : request?.status === 1 ? 'Running'
+                        : request?.status === 2 ? 'Completed'
+                        : request?.status === 3 ? 'Failed'
+                        : request?.status ?? '';
 
-                if (statusText === 'Failed') {
-                    stopAIAnalysisPolling();
-                    loadAIAnalysis();
-                    restoreButtonStyle($button);
-                    $button.html(existingHtml).prop('disabled', false);
-                    abp.message.error(request?.failureReason || 'AI analysis failed.');
-                    return;
-                }
+                    if (statusText === 'Failed') {
+                        stopAIAnalysisPolling();
+                        loadAIAnalysis();
+                        globalThis.AIGenerationButtonState?.restore($button);
+                        $button.html(existingHtml).prop('disabled', false);
+                        abp.message.error(request?.failureReason || 'AI analysis failed.');
+                        return;
+                    }
 
-                if (Date.now() - aiAnalysisQueuedAt > aiAnalysisMaxQueueWaitMs) {
-                    stopAIAnalysisPolling();
-                    $button.html(existingHtml).prop('disabled', false);
-                    abp.message.error('AI analysis is still queued. Please try again later.');
-                    return;
-                }
+                    if (Date.now() - aiAnalysisQueuedAt > aiAnalysisMaxQueueWaitMs) {
+                        stopAIAnalysisPolling();
+                        $button.html(existingHtml).prop('disabled', false);
+                        abp.message.error('AI analysis is still queued. Please try again later.');
+                        return;
+                    }
 
-                if (!request || request.isActive === false || statusText === 'Completed') {
-                    stopAIAnalysisPolling();
-                    loadAIAnalysis();
-                    markCompletedButton($button);
-                    $button.html('<span class="ai-button-content"><span>Completed</span></span>').prop('disabled', true);
-                    return;
-                }
+                    if (!request || request.isActive === false || statusText === 'Completed') {
+                        stopAIAnalysisPolling();
+                        loadAIAnalysis();
+                        globalThis.AIGenerationButtonState?.setCompleted($button);
+                        $button.html('<span class="ai-button-content"><span>Completed</span></span>').prop('disabled', true);
+                        return;
+                    }
 
-                aiAnalysisPollTimeoutId = setTimeout(poll, aiAnalysisPollIntervalMs);
+                    aiAnalysisPollTimeoutId = setTimeout(poll, aiAnalysisPollIntervalMs);
             })
         .fail(function(error) {
             console.warn('Failed to poll AI analysis status.', error);
@@ -531,21 +495,16 @@ globalThis.queueApplicationAnalysis = function(triggerButton = null) {
         .queueApplicationAnalysis(applicationId, promptVersion)
         .done(function(request) {
             aiAnalysisPollFailures = 0;
-            setAIGenerationStatus(formatAiGenerationStatus(request?.status) || 'Queued');
             stopAIAnalysisPolling();
             aiAnalysisPollTimeoutId = setTimeout(poll, 500);
         })
         .fail(function(error) {
             console.error('Failed to queue AI analysis.', error);
             stopAIAnalysisPolling();
-            restoreButtonStyle($button);
+            globalThis.AIGenerationButtonState?.restore($button);
             $button.html(existingHtml).prop('disabled', false);
             abp.message.error('Failed to queue AI analysis. Please try again.');
         });
-}
-
-function setAIGenerationStatus(value) {
-    $('#aiGenerationStatus').text(value ? `(${value})` : '');
 }
 
 function loadAIAnalysis() {
