@@ -6,5 +6,5 @@ namespace Unity.GrantManager.GrantApplications;
 
 public interface IAIGenerationStatusAppService : IApplicationService
 {
-    Task<AIGenerationRequestDto?> GetLatestAsync(Guid applicationId, string operationType, string? promptVersion = null);
+    Task<AIGenerationRequestDto?> GetLatestAsync(Guid applicationId, string operationType, string? promptVersion = null, Guid? tenantId = null);
 }

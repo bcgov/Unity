@@ -167,18 +167,18 @@ public class AIGenerationQueueTests(ITestOutputHelper outputHelper) : GrantManag
     }
 
     [Fact]
-    public async Task QueueAttachmentSummariesAsync_Should_Not_Enqueue_When_An_Active_Request_Already_Exists()
+    public async Task QueueAttachmentSummaryAsync_Should_Not_Enqueue_When_An_Active_Request_Already_Exists()
     {
         var tenantId = Guid.NewGuid();
-        var attachmentId = Guid.NewGuid();
+        var applicationId = Guid.NewGuid();
         var promptVersion = "v1";
-        var requestKey = AIGenerationRequestKeyHelper.BuildRequestKey(tenantId, attachmentId, AIGenerationRequestKeyHelper.AttachmentSummaryOperationType, promptVersion);
+        var requestKey = AIGenerationRequestKeyHelper.BuildRequestKey(tenantId, applicationId, AIGenerationRequestKeyHelper.AttachmentSummaryOperationType, promptVersion);
         var request = new AIGenerationRequest(
             Guid.NewGuid(),
             tenantId,
             AIGenerationRequestKeyHelper.AttachmentSummaryOperationType,
+            applicationId,
             null,
-            attachmentId,
             promptVersion,
             requestKey);
 
@@ -188,17 +188,17 @@ public class AIGenerationQueueTests(ITestOutputHelper outputHelper) : GrantManag
         var backgroundJobManager = Substitute.For<IBackgroundJobManager>();
         var queue = new ApplicationAIGenerationQueue(backgroundJobManager, repository, new TestDistributedLockProvider());
 
-        await queue.QueueAttachmentSummariesAsync(new[] { attachmentId }, tenantId, promptVersion);
+        await queue.QueueAttachmentSummaryAsync(applicationId, tenantId, promptVersion);
 
         await backgroundJobManager.DidNotReceive().EnqueueAsync(Arg.Any<GenerateAttachmentSummaryBackgroundJobArgs>());
         await repository.DidNotReceive().InsertAsync(Arg.Any<AIGenerationRequest>(), Arg.Any<bool>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
-    public async Task QueueAttachmentSummariesAsync_Should_Enqueue_New_Request_When_None_Exists()
+    public async Task QueueAttachmentSummaryAsync_Should_Enqueue_New_Request_When_None_Exists()
     {
-        var attachmentId = Guid.NewGuid();
         var tenantId = Guid.NewGuid();
+        var applicationId = Guid.NewGuid();
         var promptVersion = "v1";
         var repository = Substitute.For<IRepository<AIGenerationRequest, Guid>>();
         repository.GetQueryableAsync().Returns(Task.FromResult<IQueryable<AIGenerationRequest>>(Array.Empty<AIGenerationRequest>().AsQueryable()));
@@ -219,14 +219,20 @@ public class AIGenerationQueueTests(ITestOutputHelper outputHelper) : GrantManag
 
         var queue = new ApplicationAIGenerationQueue(backgroundJobManager, repository, new TestDistributedLockProvider());
 
-        await queue.QueueAttachmentSummariesAsync(new[] { attachmentId }, tenantId, promptVersion);
+        await queue.QueueAttachmentSummaryAsync(applicationId, tenantId, promptVersion);
 
         capturedArgs.ShouldNotBeNull();
-        capturedArgs!.AttachmentIds.ShouldContain(attachmentId);
+        capturedArgs!.ApplicationId.ShouldBe(applicationId);
         capturedArgs.TenantId.ShouldBe(tenantId);
         capturedArgs.PromptVersion.ShouldBe(promptVersion);
-        capturedArgs.RequestKey.ShouldBe(AIGenerationRequestKeyHelper.BuildRequestKey(tenantId, attachmentId, AIGenerationRequestKeyHelper.AttachmentSummaryOperationType, promptVersion));
-        await repository.Received(1).InsertAsync(Arg.Any<AIGenerationRequest>(), Arg.Any<bool>(), Arg.Any<CancellationToken>());
+        capturedArgs.RequestKey.ShouldBe(AIGenerationRequestKeyHelper.BuildRequestKey(tenantId, applicationId, AIGenerationRequestKeyHelper.AttachmentSummaryOperationType, promptVersion));
+        await repository.Received(1).InsertAsync(Arg.Is<AIGenerationRequest>(r =>
+            r.ApplicationId == applicationId &&
+            r.AttachmentId == null &&
+            r.TenantId == tenantId &&
+            r.OperationType == AIGenerationRequestKeyHelper.AttachmentSummaryOperationType &&
+            r.RequestKey == capturedArgs.RequestKey &&
+            r.Status == AIGenerationRequestStatus.Queued), Arg.Any<bool>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]

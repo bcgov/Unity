@@ -44,7 +44,9 @@ public class RunApplicationAIPipelineJob(
             {
                 try
                 {
-                    var request = await GetRequestAsync(requestKey, args.ApplicationId);
+                    var request = await AIGenerationRequestJobBase.GetLatestRequestAsync(generationRequestRepository, x =>
+                        x.RequestKey == requestKey &&
+                        x.ApplicationId == args.ApplicationId);
 
                     if (request != null && request.Status == AIGenerationRequestStatus.Completed)
                     {
@@ -52,11 +54,7 @@ public class RunApplicationAIPipelineJob(
                         return;
                     }
 
-                    if (request != null)
-                    {
-                        request.MarkRunning(DateTime.UtcNow);
-                        await generationRequestRepository.UpdateAsync(request, autoSave: true);
-                    }
+                    await AIGenerationRequestJobBase.MarkRunningAsync(generationRequestRepository, request);
 
                     var application = await applicationRepository.GetAsync(args.ApplicationId);
                     var applicationForm = await applicationFormRepository.GetAsync(application.ApplicationFormId);
@@ -64,7 +62,7 @@ public class RunApplicationAIPipelineJob(
                     if (!applicationForm.AutomaticallyGenerateAIAnalysis)
                     {
                         logger.LogDebug("Automatic AI analysis is disabled at form level for application {ApplicationId}, skipping intake pipeline.", args.ApplicationId);
-                        await MarkCompletedAsync(requestKey, args.ApplicationId);
+                        await AIGenerationRequestJobBase.MarkCompletedAsync(generationRequestRepository, request);
                         return;
                     }
 
@@ -74,14 +72,14 @@ public class RunApplicationAIPipelineJob(
                     if (!attachmentSummariesEnabled && !applicationAnalysisEnabled && !scoringEnabled)
                     {
                         logger.LogDebug("All AI features are disabled, skipping queued AI generation for application {ApplicationId}.", args.ApplicationId);
-                        await MarkCompletedAsync(requestKey, args.ApplicationId);
+                        await AIGenerationRequestJobBase.MarkCompletedAsync(generationRequestRepository, request);
                         return;
                     }
 
                     if (!await aiService.IsAvailableAsync())
                     {
                         logger.LogWarning("AI service is not available, skipping queued AI generation for application {ApplicationId}.", args.ApplicationId);
-                        await MarkFailedAsync(requestKey, args.ApplicationId, "AI service is not available.");
+                        await AIGenerationRequestJobBase.MarkFailedAsync(generationRequestRepository, request, "AI service is not available.");
                         return;
                     }
 
@@ -128,60 +126,27 @@ public class RunApplicationAIPipelineJob(
 
                     if (scoringException != null)
                     {
-                        await MarkFailedAsync(requestKey, args.ApplicationId, scoringException.Message);
+                        await AIGenerationRequestJobBase.MarkFailedAsync(generationRequestRepository, request, scoringException.Message);
                         throw scoringException;
                     }
 
                     if (analysisException != null)
                     {
-                        await MarkFailedAsync(requestKey, args.ApplicationId, analysisException.Message);
+                        await AIGenerationRequestJobBase.MarkFailedAsync(generationRequestRepository, request, analysisException.Message);
                         throw analysisException;
                     }
 
-                    await MarkCompletedAsync(requestKey, args.ApplicationId);
+                    await AIGenerationRequestJobBase.MarkCompletedAsync(generationRequestRepository, request);
                 }
                 catch (Exception ex)
                 {
-                    await MarkFailedAsync(requestKey, args.ApplicationId, ex.Message);
+                    var request = await AIGenerationRequestJobBase.GetLatestRequestAsync(generationRequestRepository, x =>
+                        x.RequestKey == requestKey &&
+                        x.ApplicationId == args.ApplicationId);
+                    await AIGenerationRequestJobBase.MarkFailedAsync(generationRequestRepository, request, ex.Message);
                     throw;
                 }
             }
         }
-    }
-
-    private async Task<AIGenerationRequest?> GetRequestAsync(string requestKey, Guid applicationId)
-    {
-        var requests = await generationRequestRepository.GetListAsync(x =>
-            x.RequestKey == requestKey &&
-            x.ApplicationId == applicationId);
-
-        return requests
-            .OrderByDescending(x => x.CreationTime)
-            .ThenByDescending(x => x.Id)
-            .FirstOrDefault();
-    }
-
-    private async Task MarkCompletedAsync(string requestKey, Guid applicationId)
-    {
-        var request = await GetRequestAsync(requestKey, applicationId);
-        if (request == null)
-        {
-            return;
-        }
-
-        request.MarkCompleted(DateTime.UtcNow);
-        await generationRequestRepository.UpdateAsync(request, autoSave: true);
-    }
-
-    private async Task MarkFailedAsync(string requestKey, Guid applicationId, string? failureReason)
-    {
-        var request = await GetRequestAsync(requestKey, applicationId);
-        if (request == null)
-        {
-            return;
-        }
-
-        request.MarkFailed(DateTime.UtcNow, failureReason);
-        await generationRequestRepository.UpdateAsync(request, autoSave: true);
     }
 }

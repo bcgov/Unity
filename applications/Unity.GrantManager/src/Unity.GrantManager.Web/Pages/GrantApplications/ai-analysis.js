@@ -488,7 +488,7 @@ globalThis.queueApplicationAnalysis = function(triggerButton = null) {
         .queueApplicationAnalysis(applicationId, promptVersion)
         .done(function(request) {
             aiAnalysisPollFailures = 0;
-            setAiGenerationStatus(formatAiGenerationStatus(request?.status) || 'Queued');
+            setAIGenerationStatus(formatAiGenerationStatus(request?.status) || 'Queued');
             stopAIAnalysisPolling();
             aiAnalysisPollTimeoutId = setTimeout(poll, 500);
         })
@@ -498,6 +498,10 @@ globalThis.queueApplicationAnalysis = function(triggerButton = null) {
             $button.html(existingHtml).prop('disabled', false);
             abp.message.error('Failed to queue AI analysis. Please try again.');
         });
+}
+
+function setAIGenerationStatus(value) {
+    $('#aiGenerationStatus').text(value ? `(${value})` : '');
 }
 
 function loadAIAnalysis() {

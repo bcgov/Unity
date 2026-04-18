@@ -1,20 +1,20 @@
 // Note: File depends on Unity.GrantManager.Web\Views\Shared\Components\_Shared\Attachments.js
 $(function () {
-    globalThis.queueAttachmentSummary = function(triggerButton = null) {
+    globalThis.queueAttachmentSummary = function (triggerButton = null) {
         $('#generateAiSummaries')
             .data('trigger-button', triggerButton || null)
             .trigger('click');
     };
 
-    const downloadAll = $('#downloadSelected');
+    const downloadAll = $('#downloadAll');
     const dt = $('#ChefsAttachmentsTable');
     let chefsDataTable;
-    let selectedAtttachments = [];
+    const aiSummaryPollIntervalMs = 15000;
+    let aiSummaryPollTimeoutId = null;
     const nullPlaceholder = '—';
 
     let inputAction = function (requestData, dataTableSettings) {
-        const urlParams = new URL(window.location.toLocaleString())
-            .searchParams;
+        const urlParams = new URL(window.location.toLocaleString()).searchParams;
         const applicationId = urlParams.get('ApplicationId');
         return applicationId;
     };
@@ -31,15 +31,8 @@ $(function () {
                 });
             }, 10);
 
-            if (result.length === 0 || selectedAtttachments.length === 0) {
-                $(downloadAll).prop('disabled', true);
+            $(downloadAll).prop('disabled', result.length === 0);
 
-                if (document.getElementById('generateAiSummaries')) {
-                    $generateAISummariesButton.prop('disabled', true);
-                }
-            }
-
-            // Check if any attachments have AI summaries and enable/disable toggle button
             const hasAISummaries = result.some(
                 (item) => item.aiSummary && item.aiSummary.trim() !== ''
             );
@@ -49,7 +42,7 @@ $(function () {
                 if (!hasAISummaries) {
                     $toggleButton.attr('title', 'No AI summaries available');
                 } else {
-                    $toggleButton.attr('title', 'Toggle AI Summaries');
+                    $toggleButton.attr('title', 'Show AI Summaries');
                 }
             }
         }
@@ -60,11 +53,23 @@ $(function () {
 
     function getColumns() {
         return [
-            getSelectColumn('Select Attachment', 'rowCount', 'chefs-files'),
+            getChefsIconColumn(),
             getChefsFileNameColumn(),
             getChefsLabelColumn(),
             getChefsFileDownloadColumn(),
         ];
+    }
+
+    function getChefsIconColumn() {
+        return {
+            title: '<i class="fl fl-paperclip"></i>',
+            width: '40px',
+            className: 'text-center',
+            render: function () {
+                return '<i class="fl fl-paperclip"></i>';
+            },
+            orderable: false,
+        };
     }
 
     function getChefsFileNameColumn() {
@@ -91,8 +96,6 @@ $(function () {
         };
     }
 
-
-
     let formatItems = function (items) {
         const newData = items.map((item, index) => {
             return {
@@ -115,10 +118,6 @@ $(function () {
             scrollCollapse: false,
             processing: true,
             autoWidth: true,
-            select: {
-                style: 'multiple',
-                selector: 'td:not(:nth-child(4))',
-            },
             ajax: abp.libs.datatables.createAjax(
                 unity.grantManager.attachments.attachment
                     .getApplicationChefsFileAttachments,
@@ -152,59 +151,87 @@ $(function () {
         chefsDataTable.ajax.reload();
     });
 
-    //Generate AI summaries for attachments
+    // Generate AI summaries for the current application attachments.
     const $generateAISummariesButton = $('#generateAiSummaries');
     if ($generateAISummariesButton.length > 0) {
-        function resetAttachmentSelectionState() {
-            selectedAtttachments = [];
-            $('.select-all-chefs-files').prop('checked', false);
-            chefsDataTable.$('.chkbox').prop('checked', false);
-            $(downloadAll).prop('disabled', true);
-            $generateAISummariesButton.prop('disabled', true);
-        }
-
         $generateAISummariesButton.on('click', function () {
             const $button = $(this);
             const triggerButton = $button.data('trigger-button');
             const $activeButton = triggerButton ? $(triggerButton) : $button;
-            const rowsToProcess = triggerButton
-                ? chefsDataTable.rows().data()
-                : chefsDataTable.rows({ selected: true }).data();
+            const applicationId = new URL(window.location.toLocaleString()).searchParams.get('ApplicationId');
             const promptVersion = globalThis.getSelectedPromptVersion?.() || null;
 
             $button.removeData('trigger-button');
 
-            if (rowsToProcess.length === 0) {
-                abp.message.warn(
-                    triggerButton
-                        ? 'No attachments were found to generate summaries for.'
-                        : 'Please select at least one attachment to generate summaries.'
-                );
+            if (!applicationId) {
+                abp.message.warn('No application was found for attachment summary generation.');
                 return;
             }
 
-            const attachmentIds = rowsToProcess.toArray().map((row) => row.id);
-
             const existingHTML = $activeButton.html();
+            const stopPolling = function () {
+                if (aiSummaryPollTimeoutId) {
+                    clearTimeout(aiSummaryPollTimeoutId);
+                    aiSummaryPollTimeoutId = null;
+                }
+            };
+            const poll = function () {
+                unity.grantManager.grantApplications.grantApplication
+                    .getAIGenerationStatus(applicationId, 'attachment-summary', promptVersion)
+                    .done(function (request) {
+                        const status = request?.status;
+
+                        if (status === 'Failed') {
+                            stopPolling();
+                            abp.message.error(request?.failureReason || 'AI attachment summary generation failed.');
+                            globalThis.AIGenerationButtonState?.restore($activeButton);
+                            $activeButton.html(existingHTML).prop('disabled', false);
+                            return;
+                        }
+
+                        if (!request || request.isActive === false || status === 'Completed') {
+                            stopPolling();
+                            globalThis.AIGenerationButtonState?.setCompleted($activeButton);
+                            $activeButton.html('<span class="ai-button-content"><span>Completed</span></span>').prop('disabled', true);
+                            chefsDataTable.ajax.reload();
+                            return;
+                        }
+
+                        aiSummaryPollTimeoutId = setTimeout(poll, aiSummaryPollIntervalMs);
+                    })
+                    .fail(function () {
+                        aiSummaryPollTimeoutId = setTimeout(poll, aiSummaryPollIntervalMs);
+                    });
+            };
 
             $activeButton
                 .html(
-                    '<span class="ai-button-content"><span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span><span>Queueing...</span></span>'
+                    '<span class="ai-button-content"><span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span><span>Generating...</span></span>'
                 )
                 .prop('disabled', true);
+            globalThis.AIGenerationButtonState?.setGenerating($activeButton);
 
             unity.grantManager.grantApplications.grantApplication
-                .queueAttachmentSummaries(applicationId, attachmentIds, promptVersion)
-                .done(function () {
-                    $activeButton.html('<span class="ai-button-content"><span>Completed</span></span>').prop('disabled', true);
-                    resetAttachmentSelectionState();
+                .queueAttachmentSummary(applicationId, promptVersion)
+                .done(function (request) {
+                    if (request?.status === 'Completed') {
+                        $activeButton.html('<span class="ai-button-content"><span>Completed</span></span>').prop('disabled', true);
+                        chefsDataTable.ajax.reload();
+                        return;
+                    }
+
+                    aiSummaryPollTimeoutId = setTimeout(poll, 500);
                 })
                 .fail(function (error) {
+                    if (aiSummaryPollTimeoutId) {
+                        clearTimeout(aiSummaryPollTimeoutId);
+                        aiSummaryPollTimeoutId = null;
+                    }
                     console.error('Error queueing AI summaries:', error);
                     abp.message.error('An error occurred while queueing AI summaries. Please try again.');
+                    globalThis.AIGenerationButtonState?.restore($activeButton);
                     $activeButton.html(existingHTML).prop('disabled', false);
-                })
-                ;
+                });
         });
     }
 
@@ -218,28 +245,24 @@ $(function () {
             const $icon = $button.find('i');
             const $label = $button.find('.toggle-ai-summaries-label');
 
-            // Don't do anything if button is disabled
             if ($button.prop('disabled')) {
                 return;
             }
 
             if (allAISummariesExpanded) {
-                // Collapse all
                 chefsDataTable.rows().every(function () {
                     const row = this;
                     if (row.child.isShown()) {
                         const $childRow = $(row.child());
                         const $summaryRow = $childRow.find('.ai-summary-row');
 
-                        // Add fade-out class to the summary row
                         $summaryRow.removeClass('fade-in').addClass('fade-out');
 
-                        // Wait for animation to complete before hiding
                         setTimeout(function () {
                             row.child.hide();
                             $(row.node()).removeClass('shown');
                             $summaryRow.removeClass('fade-out');
-                        }, 500); // Match animation duration
+                        }, 500);
                     }
                 });
                 $icon.removeClass('fa-chevron-up').addClass('fa-chevron-down');
@@ -247,26 +270,19 @@ $(function () {
                 $button.attr('title', 'Show AI Summaries');
                 allAISummariesExpanded = false;
             } else {
-                // Expand all
                 chefsDataTable.rows().every(function () {
                     const row = this;
                     const rowData = row.data();
 
-                    // Only expand if there's an AI summary
                     if (rowData.aiSummary && rowData.aiSummary.trim() !== '') {
-                        // Create the summary HTML
                         const summaryHtml = formatAISummary(rowData);
 
-                        // Show the child row
                         row.child(summaryHtml).show();
                         $(row.node()).addClass('shown');
 
-                        // Add fade-in animation after DOM is ready
                         setTimeout(function () {
                             const $childRow = $(row.child());
-                            $childRow
-                                .find('.ai-summary-row')
-                                .addClass('fade-in');
+                            $childRow.find('.ai-summary-row').addClass('fade-in');
                         }, 10);
                     }
                 });
@@ -278,7 +294,6 @@ $(function () {
         });
     }
 
-    // Reset AI summary expansion state when table is reloaded
     chefsDataTable.on('draw.dt', function () {
         if (allAISummariesExpanded) {
             const $button = $('#toggleAllAISummaries');
@@ -305,78 +320,6 @@ $(function () {
         );
     }
 
-    chefsDataTable.on('select', function (e, dt, type, indexes) {
-        if (indexes?.length) {
-            indexes.forEach((index) => {
-                $(chefsDataTable.row(index).node()).find('.chkbox').prop('checked', true);
-                if (chefsDataTable.$('.chkbox:checked').length == chefsDataTable.$('.chkbox').length) {
-                    $('.select-all-chefs-files').prop('checked', true);
-                }
-                selectAttachment(type, index, 'select_chefs_file');
-            });
-        }
-    });
-
-    chefsDataTable.on('deselect', function (e, dt, type, indexes) {
-        if (indexes?.length) {
-            indexes.forEach((index) => {
-                $(chefsDataTable.row(index).node()).find('.chkbox').prop('checked', false);
-                if (chefsDataTable.$('.chkbox:checked').length != chefsDataTable.$('.chkbox').length) {
-                    $('.select-all-chefs-files').prop('checked', false);
-                }
-                selectAttachment(type, index, 'deselect_chefs_file');
-            });
-        }
-    });
-
-    function selectAttachment(type, indexes, action) {
-        if (type === 'row') {
-            let data = chefsDataTable.row(indexes).data();
-            PubSub.publish(action, data);
-
-            if (action == 'select_chefs_file') {
-                const found = selectedAtttachments.some(
-                    (item) => item.chefsFileId === data.chefsFileId
-                );
-                if (!found) {
-                    selectedAtttachments.push({
-                        FormSubmissionId: data.chefsSubmissionId,
-                        ChefsFileId: data.chefsFileId,
-                        Filename: data.fileName,
-                    });
-                }
-            } else if (action == 'deselect_chefs_file') {
-                const filtedItems = selectedAtttachments.filter(
-                    (item) => item.ChefsFileId !== data.chefsFileId
-                );
-                selectedAtttachments = filtedItems;
-            }
-
-            if (selectedAtttachments.length > 0) {
-                $(downloadAll).prop('disabled', false);
-            } else {
-                $(downloadAll).prop('disabled', true);
-            }
-
-            if (
-                document.getElementById('generateAiSummaries') &&
-                selectedAtttachments.length > 0
-            ) {
-                $generateAISummariesButton.prop('disabled', false);
-            } else {
-                $generateAISummariesButton.prop('disabled', true);
-            }
-        }
-    }
-
-    $('.select-all-chefs-files').on('click', function () {
-        if ($(this).is(':checked')) {
-            chefsDataTable.rows({ page: 'current' }).select();
-        } else {
-            chefsDataTable.rows({ page: 'current' }).deselect();
-        }
-    });
-
     $('#resyncSubmissionAttachments').on('click', function () {
         let applicationId = document.getElementById(
             'AssessmentResultViewApplicationId'
@@ -385,9 +328,7 @@ $(function () {
             unity.grantManager.attachments.attachment
                 .resyncSubmissionAttachments(applicationId)
                 .done(function () {
-                    abp.notify.success(
-                        'Submission Attachment/s has been resynced.'
-                    );
+                    abp.notify.success('Submission Attachment/s has been resynced.');
                     chefsDataTable.ajax.reload();
                     chefsDataTable.columns.adjust();
                 });
@@ -406,17 +347,19 @@ $(function () {
         const _this = $(this);
         const existingHTML = _this.html();
         const zip = new JSZip();
-        const tempFiles = selectedAtttachments;
+        const tempFiles = chefsDataTable.rows({ search: 'applied' }).data().toArray().map((row) => ({
+            FormSubmissionId: row.chefsSubmissionId,
+            ChefsFileId: row.chefsFileId,
+            Filename: row.fileName,
+        }));
 
         if (tempFiles.length > 0) {
-            //Calls an endpoint
             $.ajax({
                 url: '/api/app/attachment/chefs/download-all',
                 data: JSON.stringify(tempFiles),
                 contentType: 'application/json',
                 type: 'POST',
                 beforeSend: function () {
-                    //Add loading spinner
                     $(_this)
                         .html(
                             '<div class="spinner-loading"><span class="spinner-border spinner-border-sm mr-2" role="status" aria-hidden="true"></span> Downloading...</div>'
@@ -430,9 +373,7 @@ $(function () {
                         });
                     });
 
-                    zip.generateAsync({ type: 'blob' }).then(function (
-                        content
-                    ) {
+                    zip.generateAsync({ type: 'blob' }).then(function (content) {
                         const link = document.createElement('a');
                         link.href = URL.createObjectURL(content);
                         link.download = `${refNo}-All_Attachments.zip`;
@@ -443,7 +384,6 @@ $(function () {
                         '',
                         'The files have been downloaded successfully.'
                     );
-                    //show original HTML and enable
                     $(_this).html(existingHTML).prop('disabled', false);
                 },
                 error: function (error) {
@@ -472,35 +412,35 @@ function getChefsFileDownloadColumn() {
         className: 'text-nowrap',
         render: function (data, type, full, meta) {
             let submissionId = encodeURIComponent(full.chefsSubmissionId);
-            let fileId       = encodeURIComponent(data);
-            let fileName     = full.fileName;
-            let displayName  = full.displayName || full.fileName;
+            let fileId = encodeURIComponent(data);
+            let fileName = full.fileName;
+            let displayName = full.displayName || full.fileName;
             let html =
                 '<div class="dropdown" style="float:right;">' +
-                    '<button class="btn btn-light dropbtn" type="button">' +
-                        '<i class="fl fl-attachment-more"></i>' +
-                    '</button>' +
-                    '<div class="dropdown-content">' +
-                        '<button class="btn fullWidth" style="margin:10px" type="button"' +
-                            ' chefs-submission-id="' + escapeHtmlAttribute(submissionId) + '"' +
-                            ' chefs-data="' + escapeHtmlAttribute(fileId) + '"' +
-                            ' chefs-file-name="' + escapeHtmlAttribute(fileName) + '"' +
-                            ' chefs-display-name="' + escapeHtmlAttribute(displayName) + '"' +
-                            ' onclick="previewChefsFile(event)">' +
-                            '<i class="fa fa-eye"></i><span>Preview Attachment</span>' +
-                        '</button>' +
-                        '<button class="btn fullWidth" style="margin:10px" type="button"' +
-                            ' chefs-submission-id="' + escapeHtmlAttribute(submissionId) + '"' +
-                            ' chefs-data="' + escapeHtmlAttribute(fileId) + '"' +
-                            ' chefs-file-name="' + escapeHtmlAttribute(fileName) + '"' +
-                            ' onclick="downloadChefsFile(event)">' +
-                            '<i class="fl fl-download"></i><span>Download Attachment</span>' +
-                        '</button>' +
-                        '<button class="btn fullWidth" style="margin:10px" type="button"' +
-                            ' onclick="updateAttachmentMetadata(\'CHEFS\',\'' + full.id + '\')">' +
-                            '<i class="fl fl-edit"></i><span>Edit Attachment</span>' +
-                        '</button>' +
-                    '</div>' +
+                '<button class="btn btn-light dropbtn" type="button">' +
+                '<i class="fl fl-attachment-more"></i>' +
+                '</button>' +
+                '<div class="dropdown-content">' +
+                '<button class="btn fullWidth" style="margin:10px" type="button"' +
+                ' chefs-submission-id="' + escapeHtmlAttribute(submissionId) + '"' +
+                ' chefs-data="' + escapeHtmlAttribute(fileId) + '"' +
+                ' chefs-file-name="' + escapeHtmlAttribute(fileName) + '"' +
+                ' chefs-display-name="' + escapeHtmlAttribute(displayName) + '"' +
+                ' onclick="previewChefsFile(event)">' +
+                '<i class="fa fa-eye"></i><span>Preview Attachment</span>' +
+                '</button>' +
+                '<button class="btn fullWidth" style="margin:10px" type="button"' +
+                ' chefs-submission-id="' + escapeHtmlAttribute(submissionId) + '"' +
+                ' chefs-data="' + escapeHtmlAttribute(fileId) + '"' +
+                ' chefs-file-name="' + escapeHtmlAttribute(fileName) + '"' +
+                ' onclick="downloadChefsFile(event)">' +
+                '<i class="fl fl-download"></i><span>Download Attachment</span>' +
+                '</button>' +
+                '<button class="btn fullWidth" style="margin:10px" type="button"' +
+                ' onclick="updateAttachmentMetadata(\'CHEFS\',\'' + full.id + '\')">' +
+                '<i class="fl fl-edit"></i><span>Edit Attachment</span>' +
+                '</button>' +
+                '</div>' +
                 '</div>';
             return html;
         },
@@ -526,7 +466,6 @@ function downloadChefsFile(event) {
         chefsFileName,
     });
 
-    //Calls an endpoint
     $.ajax({
         url:
             '/api/app/attachment/chefs/' +
@@ -537,7 +476,6 @@ function downloadChefsFile(event) {
             chefsFileName,
         type: 'GET',
         success: function (data) {
-            // Download file by navigating to the endpoint
             const downloadUrl =
                 '/api/app/attachment/chefs/' +
                 encodeURIComponent(chefsSubmissionId) +
@@ -546,7 +484,6 @@ function downloadChefsFile(event) {
                 '/' +
                 encodeURIComponent(chefsFileName);
 
-            // Create a temporary link and trigger download
             const link = document.createElement('a');
             link.href = downloadUrl;
             link.download = chefsFileName;
@@ -554,10 +491,7 @@ function downloadChefsFile(event) {
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
-            abp.notify.success(
-                '',
-                'The file has been downloaded successfully.'
-            );
+            abp.notify.success('', 'The file has been downloaded successfully.');
         },
         error: function (error) {
             console.log('Error downloading CHEFS file:', error);

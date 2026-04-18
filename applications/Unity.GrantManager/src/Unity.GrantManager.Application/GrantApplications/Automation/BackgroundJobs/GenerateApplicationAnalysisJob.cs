@@ -1,6 +1,5 @@
 using Microsoft.Extensions.Logging;
 using System;
-using System.Linq;
 using System.Threading.Tasks;
 using Unity.AI.Operations;
 using Unity.GrantManager.GrantApplications;
@@ -21,65 +20,21 @@ public class GenerateApplicationAnalysisJob(
     {
         using (currentTenant.Change(args.TenantId))
         {
-            await MarkRunningAsync(args.RequestKey);
+            var request = await AIGenerationRequestJobBase.GetLatestRequestAsync(generationRequestRepository, x => x.RequestKey == args.RequestKey);
+            await AIGenerationRequestJobBase.MarkRunningAsync(generationRequestRepository, request);
             try
             {
                 logger.LogInformation("Executing AI application analysis job for application {ApplicationId}.", args.ApplicationId);
                 await applicationAnalysisService.RegenerateAndSaveAsync(args.ApplicationId, args.PromptVersion);
                 logger.LogInformation("Completed AI application analysis job for application {ApplicationId}.", args.ApplicationId);
 
-                await MarkCompletedAsync(args.RequestKey);
+                await AIGenerationRequestJobBase.MarkCompletedAsync(generationRequestRepository, request);
             }
             catch (Exception ex)
             {
-                await MarkFailedAsync(args.RequestKey, ex.Message);
+                await AIGenerationRequestJobBase.MarkFailedAsync(generationRequestRepository, request, ex.Message);
                 throw;
             }
         }
-    }
-
-    private async Task MarkRunningAsync(string requestKey)
-    {
-        var request = await GetRequestAsync(requestKey);
-        if (request == null)
-        {
-            return;
-        }
-
-        request.MarkRunning(DateTime.UtcNow);
-        await generationRequestRepository.UpdateAsync(request, autoSave: true);
-    }
-
-    private async Task MarkCompletedAsync(string requestKey)
-    {
-        var request = await GetRequestAsync(requestKey);
-        if (request == null)
-        {
-            return;
-        }
-
-        request.MarkCompleted(DateTime.UtcNow);
-        await generationRequestRepository.UpdateAsync(request, autoSave: true);
-    }
-
-    private async Task MarkFailedAsync(string requestKey, string? failureReason)
-    {
-        var request = await GetRequestAsync(requestKey);
-        if (request == null)
-        {
-            return;
-        }
-
-        request.MarkFailed(DateTime.UtcNow, failureReason);
-        await generationRequestRepository.UpdateAsync(request, autoSave: true);
-    }
-
-    private async Task<AIGenerationRequest?> GetRequestAsync(string requestKey)
-    {
-        var requests = await generationRequestRepository.GetListAsync(x => x.RequestKey == requestKey);
-        return requests
-            .OrderByDescending(x => x.CreationTime)
-            .ThenByDescending(x => x.Id)
-            .FirstOrDefault();
     }
 }

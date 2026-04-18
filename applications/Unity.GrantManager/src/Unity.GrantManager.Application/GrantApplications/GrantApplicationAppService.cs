@@ -1050,7 +1050,8 @@ public class GrantApplicationAppService(
         var request = await aiGenerationStatusAppService.GetLatestAsync(
             applicationId,
             AIGenerationRequestKeyHelper.ApplicationAnalysisOperationType,
-            promptVersion);
+            promptVersion,
+            CurrentTenant.Id);
 
         return request ?? throw new UserFriendlyException("Unable to queue AI analysis request.");
     }
@@ -1058,36 +1059,13 @@ public class GrantApplicationAppService(
     public async Task<AIGenerationRequestDto> QueueAttachmentSummaryAsync(Guid applicationId, string? promptVersion = null)
     {
         await EnsureAttachmentSummariesEnabledAsync();
-        var attachmentIds = await applicationChefsFileAttachmentRepository.GetListAsync(applicationId);
-        if (attachmentIds.Count == 0)
-        {
-            throw new UserFriendlyException("No attachments are available to summarize for this application.");
-        }
-
-        await aiGenerationQueue.QueueAttachmentSummariesAsync(applicationId, attachmentIds.Select(a => a.Id).ToList(), CurrentTenant.Id, promptVersion);
+        await aiGenerationQueue.QueueAttachmentSummaryAsync(applicationId, CurrentTenant.Id, promptVersion);
 
         var request = await aiGenerationStatusAppService.GetLatestAsync(
             applicationId,
             AIGenerationRequestKeyHelper.AttachmentSummaryOperationType,
-            promptVersion);
-
-        return request ?? throw new UserFriendlyException("Unable to queue AI attachment summary request.");
-    }
-
-    public async Task<AIGenerationRequestDto> QueueAttachmentSummariesAsync(Guid applicationId, List<Guid> attachmentIds, string? promptVersion = null)
-    {
-        await EnsureAttachmentSummariesEnabledAsync();
-        if (attachmentIds.Count == 0)
-        {
-            throw new UserFriendlyException("No attachments are available to summarize for this application.");
-        }
-
-        await aiGenerationQueue.QueueAttachmentSummariesAsync(applicationId, attachmentIds, CurrentTenant.Id, promptVersion);
-
-        var request = await aiGenerationStatusAppService.GetLatestAsync(
-            applicationId,
-            AIGenerationRequestKeyHelper.AttachmentSummaryOperationType,
-            promptVersion);
+            promptVersion,
+            CurrentTenant.Id);
 
         return request ?? throw new UserFriendlyException("Unable to queue AI attachment summary request.");
     }
@@ -1100,14 +1078,15 @@ public class GrantApplicationAppService(
         var request = await aiGenerationStatusAppService.GetLatestAsync(
             applicationId,
             AIGenerationRequestKeyHelper.ApplicationScoringOperationType,
-            promptVersion);
+            promptVersion,
+            CurrentTenant.Id);
 
         return request ?? throw new UserFriendlyException("Unable to queue AI scoring request.");
     }
 
     public async Task<AIGenerationRequestDto?> GetAIGenerationStatusAsync(Guid applicationId, string operationType, string? promptVersion = null)
     {
-        return await aiGenerationStatusAppService.GetLatestAsync(applicationId, operationType, promptVersion);
+        return await aiGenerationStatusAppService.GetLatestAsync(applicationId, operationType, promptVersion, CurrentTenant.Id);
     }
 
     public async Task<AIGenerationRequestDto> QueueAIPipelineAsync(Guid applicationId, string? promptVersion = null)
@@ -1120,7 +1099,8 @@ public class GrantApplicationAppService(
         var request = await aiGenerationStatusAppService.GetLatestAsync(
             applicationId,
             AIGenerationRequestKeyHelper.PipelineOperationType,
-            promptVersion);
+            promptVersion,
+            CurrentTenant.Id);
 
         return request ?? throw new UserFriendlyException("Unable to queue AI generation request.");
     }
