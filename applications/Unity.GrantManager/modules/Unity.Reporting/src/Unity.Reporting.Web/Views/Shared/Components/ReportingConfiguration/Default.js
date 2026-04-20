@@ -805,9 +805,6 @@ $(function () {
                 const path = $input.data('path');
                 const value = $input.val().trim();
 
-                $input.removeClass('is-valid is-invalid');
-                $input.siblings('.invalid-feedback, .valid-feedback').remove();
-
                 validateColumnNameInput($input, value, path);
             });
 
