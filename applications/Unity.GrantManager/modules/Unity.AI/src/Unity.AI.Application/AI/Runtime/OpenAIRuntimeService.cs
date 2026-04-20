@@ -4,7 +4,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Net;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Unity.AI.Extraction;
@@ -13,7 +12,6 @@ using Unity.AI.Prompts;
 using Unity.AI.Requests;
 using Unity.AI.Responses;
 using Volo.Abp.DependencyInjection;
-using Volo.Abp.MultiTenancy;
 
 namespace Unity.AI.Runtime
 {
@@ -25,7 +23,6 @@ namespace Unity.AI.Runtime
         private readonly ITextExtractionService _textExtractionService;
         private readonly OpenAITransportService _openAITransportService;
         private readonly OpenAIConfigurationResolver _openAIConfigurationResolver;
-        private readonly ICurrentTenant _currentTenant;
         private const string ApplicationAnalysisPromptType = AIPromptTypes.ApplicationAnalysis;
         private const string AttachmentSummaryPromptType = AIPromptTypes.AttachmentSummary;
         private const string ApplicationScoringPromptType = AIPromptTypes.ApplicationScoring;
@@ -56,15 +53,13 @@ namespace Unity.AI.Runtime
             ILogger<OpenAIRuntimeService> logger,
             ITextExtractionService textExtractionService,
             OpenAITransportService openAITransportService,
-            OpenAIConfigurationResolver openAIConfigurationResolver,
-            ICurrentTenant currentTenant)
+            OpenAIConfigurationResolver openAIConfigurationResolver)
         {
             _configuration = configuration;
             _logger = logger;
             _textExtractionService = textExtractionService;
             _openAITransportService = openAITransportService;
             _openAIConfigurationResolver = openAIConfigurationResolver;
-            _currentTenant = currentTenant;
         }
 
         public Task<bool> IsAvailableAsync()
@@ -333,58 +328,6 @@ namespace Unity.AI.Runtime
             };
         }
 
-        private static AIProviderResponseMetadata? TryExtractProviderMetadata(string? responseContent)
-        {
-            if (string.IsNullOrWhiteSpace(responseContent))
-            {
-                return null;
-            }
-
-            try
-            {
-                using var jsonDoc = JsonDocument.Parse(responseContent);
-                var root = jsonDoc.RootElement;
-                var model = root.TryGetProperty("model", out var modelProp) && modelProp.ValueKind == JsonValueKind.String
-                    ? modelProp.GetString()
-                    : null;
-
-                string? finishReason = null;
-                if (root.TryGetProperty("choices", out var choices)
-                    && choices.ValueKind == JsonValueKind.Array
-                    && choices.GetArrayLength() > 0)
-                {
-                    var firstChoice = choices[0];
-                    if (firstChoice.TryGetProperty("finish_reason", out var finishReasonProp) && finishReasonProp.ValueKind == JsonValueKind.String)
-                    {
-                        finishReason = finishReasonProp.GetString();
-                    }
-                }
-
-                int? promptTokens = null;
-                int? completionTokens = null;
-                int? totalTokens = null;
-                int? reasoningTokens = null;
-                if (root.TryGetProperty("usage", out var usage) && usage.ValueKind == JsonValueKind.Object)
-                {
-                    promptTokens = TryGetInt32(usage, "prompt_tokens");
-                    completionTokens = TryGetInt32(usage, "completion_tokens");
-                    totalTokens = TryGetInt32(usage, "total_tokens");
-
-                    if (usage.TryGetProperty("completion_tokens_details", out var completionTokenDetails)
-                        && completionTokenDetails.ValueKind == JsonValueKind.Object)
-                    {
-                        reasoningTokens = TryGetInt32(completionTokenDetails, "reasoning_tokens");
-                    }
-                }
-
-                return new AIProviderResponseMetadata(model, finishReason, promptTokens, completionTokens, totalTokens, reasoningTokens);
-            }
-            catch (JsonException)
-            {
-                return null;
-            }
-        }
-
         private static int? TryGetInt32(JsonElement element, string propertyName)
         {
             return element.TryGetProperty(propertyName, out var property)
@@ -392,13 +335,6 @@ namespace Unity.AI.Runtime
                 && property.TryGetInt32(out var value)
                 ? value
                 : null;
-        }
-
-        private static string ResolveEnvironmentName()
-        {
-            return Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT")
-                ?? Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT")
-                ?? "Unknown";
         }
 
         private string? ResolvePromptVersionSetting(string operationName)
