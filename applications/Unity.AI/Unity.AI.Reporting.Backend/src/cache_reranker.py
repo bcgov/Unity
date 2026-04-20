@@ -112,28 +112,36 @@ class FuzzyMatcher:
 fuzzy_matcher = FuzzyMatcher()
 
 
-_SCORER_SYSTEM = "You are a query equivalence scorer. Reply with a single integer from 0 to 10 and nothing else."
+_SCORER_SYSTEM = (
+    "You are a strict query equivalence scorer for an analytical SQL cache system. "
+    "Your job is to detect any difference that would cause a different SQL query to be required. "
+    "When in doubt, score lower — a false cache hit returns wrong data. "
+    "Reply with a single integer from 0 to 10 and nothing else."
+)
 
 _SCORER_PROMPT = """\
 Rate the semantic equivalence of these two analytical questions on a scale of 0 to 10.
+Two questions are equivalent only if the SAME SQL query would correctly answer both.
 
 Q1: {q1}
 Q2: {q2}
 
 Scoring guide:
-  10 — Identical intent; the same SQL would correctly answer both.
-   8-9 — Same intent, trivially different phrasing only (synonyms, word order).
-   5-7 — Overlapping topic but differ in at least one of: filters, time range,
-          grouping dimension, or aggregation function.
-   2-4 — Related subject area but clearly different questions.
+  10 — Identical intent; the same SQL correctly answers both.
+   8-9 — Same intent; only trivial phrasing differences (synonyms, word order, punctuation).
+          No difference in time range, filters, aggregation, grouping, or entities.
+   5-7 — Same topic; differ in grouping dimension only (e.g. by region vs by sector),
+          while time range, filters, and aggregation are identical.
+   2-4 — Differ in time range, filter value, aggregation function, metric, or named entity —
+          these require different SQL and produce different results.
    0-1 — Unrelated or contradictory.
 
-Penalise for ANY difference in:
-- Filters (WHERE clauses, included/excluded categories)
-- Aggregation (SUM vs COUNT, row-level vs aggregate)
-- Grouping dimension (GROUP BY fields)
-- Time range (this year, last month, fiscal year, YTD)
-- Named entities (specific programs, regions, columns)
+Hard ceiling rules — score MUST NOT exceed:
+- Time range differs (e.g. "last year" vs "this year", Q1 vs Q2, 2023 vs 2024, YTD vs full year): 4
+- Filter value differs (e.g. region A vs B, approved vs pending, one program vs another): 4
+- Aggregation function differs (e.g. COUNT vs SUM, average vs total): 4
+- Measured column differs (e.g. approved amount vs requested amount): 4
+- Grouping dimension differs (e.g. by region vs by sector): 5
 
 Reply with exactly one integer, no punctuation, no explanation.\
 """

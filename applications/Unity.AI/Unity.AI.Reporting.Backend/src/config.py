@@ -92,7 +92,7 @@ class AppConfig:
     semantic_cache_borderline_low: float = 0.85
     semantic_cache_top_k: int = 5
     llm_judge_enabled: bool = False
-    llm_judge_score_threshold: float = 7.0
+    llm_judge_score_threshold: float = 8.0
 
 
 class Config:
@@ -143,7 +143,7 @@ class Config:
             semantic_cache_borderline_low=float(os.getenv("SEMANTIC_CACHE_BORDERLINE_LOW", "0.85")),
             semantic_cache_top_k=int(os.getenv("SEMANTIC_CACHE_TOP_K", "5")),
             llm_judge_enabled=os.getenv("LLM_JUDGE_ENABLED", "false").lower() == "true",
-            llm_judge_score_threshold=float(os.getenv("LLM_JUDGE_SCORE_THRESHOLD", "7.0")),
+            llm_judge_score_threshold=float(os.getenv("LLM_JUDGE_SCORE_THRESHOLD", "8.0")),
         )
         
         # Tenant configuration - extensible for different use cases
