@@ -73,7 +73,7 @@ Generates queries for root-level field extraction:
 
 ### Simple Field Types
 - **Text**: Direct string extraction
-- **Currency**: Validates numeric format, converts to DECIMAL(10,2)
+- **Currency**: Strips thousands-separator commas and surrounding whitespace (e.g. `1,470.07` → `1470.07`), validates numeric format, converts to DECIMAL(18,2)
 - **Number**: Validates numeric format, converts to NUMERIC
 - **Date**: Validates and converts to TIMESTAMP
 
@@ -130,7 +130,7 @@ The final output is a UNION query combining:
 ## Data Type Mapping
 | Field Type | SQL Type | NULL Type |
 |------------|----------|-----------|
-| Currency | DECIMAL(10,2) | NULL::DECIMAL(10,2) |
+| Currency | DECIMAL(18,2) | NULL::DECIMAL(18,2) |
 | Number | NUMERIC | NULL::NUMERIC |
 | Date | TIMESTAMP | NULL::TIMESTAMP |
 | Checkbox | BOOLEAN | NULL::BOOLEAN |
@@ -191,8 +191,5 @@ SELECT "Reporting".get_worksheet_data('correlation-id', 'report-map-id');
 - **v1.2**: Added checkbox group support
 - **v1.3**: Fixed radio field handling to return text values
 - **v1.4**: Enhanced error handling and NULL type consistency
-
-## Related Documentation
-- [Worksheet Schema Parser](./worksheet_field_schema_parser.md)
-- [Report Column Mapping](./report_column_mapping.md)
-- [Field Type Definitions](./field_type_definitions.md)
+- **v1.5**: Increased currency precision from `DECIMAL(10,2)` to `DECIMAL(18,2)` (tenant migration `20251125234153_UpdateViewGenCurrencyPrecision`)
+- **v1.6**: Locale-formatted currency values are normalized by stripping commas and whitespace before numeric validation, so values such as `1,470.07` are persisted instead of becoming `NULL`. Paired with the `WorksheetFieldSchemaParser` mixed-DataGrid fix, which now emits mapping rows for statically-defined columns on mixed (dynamic + static) grids so the SQL function actually receives mappings to project. Deployed via tenant migration `20260416000001_UpdateWorksheetViewGenCurrencyCommaFix`.

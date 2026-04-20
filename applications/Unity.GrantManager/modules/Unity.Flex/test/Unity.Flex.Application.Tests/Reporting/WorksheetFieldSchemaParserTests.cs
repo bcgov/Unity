@@ -226,7 +226,7 @@ namespace Unity.Flex.Reporting
         }
 
         [Fact]
-        public async Task ParseDataGridField_DynamicWithFormSchema_ShouldSkipDefinedColumnsWhenChefsExtracted()
+        public async Task ParseDataGridField_DynamicWithFormSchema_ShouldMergeDefinedColumnsWithChefsExtracted()
         {
             // Arrange
             using var uow = _unitOfWorkManager.Begin();
@@ -238,7 +238,7 @@ namespace Unity.Flex.Reporting
             await _worksheetRepository.InsertAsync(worksheet, true);
             await uow.SaveChangesAsync();
 
-            // Definition has both dynamic=true AND static columns defined
+            // Definition has both dynamic=true AND static columns defined (mixed grid scenario)
             var field = new CustomField(Guid.NewGuid(), "testDataGrid", "TestWorksheet", "Test DataGrid",
                 CustomFieldType.DataGrid,
                 @"{""dynamic"": true, ""columns"": [{""name"": ""staticCol"", ""type"": ""Text""}], ""summaryOption"": ""None""}");
@@ -264,16 +264,19 @@ namespace Unity.Flex.Reporting
             // Act
             var result = WorksheetFieldSchemaParser.ParseField(field, worksheet, formSchema, submissionHeaderMapping);
 
-            // Assert — CHEFS extraction succeeded, so static columns should be skipped to avoid duplicates
+            // Assert — CHEFS only returns dynamic columns; statically-defined columns must still be emitted
             result.ShouldNotBeNull();
-            result.Count.ShouldBe(1);
-            result.ShouldNotContain(c => c.Key == "staticCol");
+            result.Count.ShouldBe(2);
             result.ShouldNotContain(c => c.Key == "dynamic_columns");
 
-            var dynamicCol = result.First();
-            dynamicCol.Key.ShouldBe("dynamicCol");
+            var dynamicCol = result.FirstOrDefault(c => c.Key == "dynamicCol");
+            dynamicCol.ShouldNotBeNull();
             dynamicCol.Label.ShouldBe("Dynamic Column");
             dynamicCol.Type.ShouldBe("Text");
+
+            var staticCol = result.FirstOrDefault(c => c.Key == "staticCol");
+            staticCol.ShouldNotBeNull();
+            staticCol.Type.ShouldBe("Text");
         }
 
         [Fact]
@@ -310,6 +313,44 @@ namespace Unity.Flex.Reporting
 
             result.ShouldContain(c => c.Key == "dynamic_columns");
             result.ShouldContain(c => c.Key == "col1");
+        }
+
+        [Fact]
+        public async Task ParseDataGridField_DynamicOnlyWithNoHeaderMapping_ShouldReturnOnlyPlaceholder()
+        {
+            // Arrange
+            using var uow = _unitOfWorkManager.Begin();
+
+            var worksheet = new Worksheet(Guid.NewGuid(), "TestWorksheet", "Test Worksheet");
+            var section = new WorksheetSection(Guid.NewGuid(), "TestSection");
+            worksheet.Sections.Add(section);
+
+            await _worksheetRepository.InsertAsync(worksheet, true);
+            await uow.SaveChangesAsync();
+
+            // Purely dynamic grid: dynamic=true and no static columns defined
+            var field = new CustomField(Guid.NewGuid(), "testDataGrid", "TestWorksheet", "Test DataGrid",
+                CustomFieldType.DataGrid,
+                @"{""dynamic"": true, ""columns"": [], ""summaryOption"": ""None""}");
+            section.AddField(field);
+            await uow.SaveChangesAsync();
+
+            worksheet = await _worksheetRepository.GetAsync(worksheet.Id);
+
+            // Header mapping does NOT contain an entry for this field, so CHEFS extraction cannot resolve
+            var submissionHeaderMapping = @"{""unrelated_key.DataGrid"": ""someGrid""}";
+            var formSchema = @"{ ""components"": [] }";
+
+            // Act
+            var result = WorksheetFieldSchemaParser.ParseField(field, worksheet, formSchema, submissionHeaderMapping);
+
+            // Assert — dynamic-only with no CHEFS resolution should yield exactly the placeholder
+            result.ShouldNotBeNull();
+            result.Count.ShouldBe(1);
+
+            var placeholder = result.First();
+            placeholder.Key.ShouldBe("dynamic_columns");
+            placeholder.Type.ShouldBe("Dynamic");
         }
 
         [Fact]
