@@ -36,8 +36,8 @@ def normalize_query(text: str) -> str:
     every word carries semantic weight (e.g. 'not', 'by', 'excluding').
     """
     text = text.strip().lower()
-    text = re.sub(r'\s+', ' ', text)            # collapse multiple spaces
-    text = re.sub(r'[?!.]+$', '', text).strip() # strip trailing punctuation
+    text = re.sub(r'\s+', ' ', text)              # collapse multiple spaces
+    text = re.sub(r'[?!.]{1,10}$', '', text).strip() # strip trailing punctuation
     for pattern, replacement in _ABBREVIATIONS:
         text = pattern.sub(replacement, text)
     return text
@@ -198,7 +198,7 @@ class LLMJudge:
                 reasoning_tokens = usage.get("completion_tokens_details", {}).get("reasoning_tokens", 0)
                 if finish_reason == "content_filter":
                     logger.warning(
-                        f"[llm_judge] content_filter triggered — defaulting score=0"
+                        "[llm_judge] content_filter triggered — defaulting score=0"
                     )
                     return 0, tokens
                 score = self._parse_score(text)
