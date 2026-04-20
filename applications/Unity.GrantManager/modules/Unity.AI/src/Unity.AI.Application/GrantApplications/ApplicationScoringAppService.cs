@@ -51,4 +51,13 @@ public class ApplicationScoringAppService(
             Completed = true
         };
     }
+
+    // Internal-only: no HTTP endpoint, no auth check — safe for background job callers
+    [AllowAnonymous]
+    [RemoteService(IsEnabled = false)]
+    public virtual async Task<ApplicationScoringResultDto> GenerateApplicationScoringForPipelineAsync(Guid applicationId, string? promptVersion = null)
+    {
+        await applicationScoringService.RegenerateAndSaveAsync(applicationId, promptVersion);
+        return new ApplicationScoringResultDto { Completed = true };
+    }
 }
