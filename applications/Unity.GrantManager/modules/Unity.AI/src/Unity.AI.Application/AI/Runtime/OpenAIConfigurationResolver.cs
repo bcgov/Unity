@@ -10,8 +10,8 @@ public class OpenAIConfigurationResolver(IConfiguration configuration) : ITransi
     private const string DefaultMaxTokensParameterName = "max_completion_tokens";
     private const string LegacyMaxTokensParameterName = "max_tokens";
     private const string DefaultProviderName = "OpenAI";
-    private const string OpenAiApiKeyEnvironmentVariableName = "AZURE_OPENAI_API_KEY";
-    private const string OpenAiEndpointEnvironmentVariableName = "AZURE_OPENAI_ENDPOINT";
+    private const string OpenAiApiKeyEnvironmentVariableName = "AZURE__OPENAI__APIKEY";
+    private const string OpenAiEndpointEnvironmentVariableName = "AZURE__OPENAI__ENDPOINT";
 
     private readonly IConfiguration _configuration = configuration;
 
