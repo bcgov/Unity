@@ -391,7 +391,7 @@ def _build_viz_settings(visualization_options: list) -> dict:
     return {}
 
 
-async def _fuzzy_cache_lookup(tenant_id, db_id, schema_types, collection_name, normalized_query):
+def _fuzzy_cache_lookup(tenant_id, db_id, schema_types, collection_name, normalized_query):
     """Layer 1.5: rapidfuzz match against recent normalized queries."""
     recent = cache_repository.get_recent_normalized_queries(
         tenant_id, db_id, schema_types, collection_name, config.app.fuzzy_match_limit
@@ -498,7 +498,7 @@ async def _semantic_cache_lookup(tenant_id, db_id, schema_types, collection_name
         return cache_hit, None
 
     if config.app.fuzzy_match_enabled:
-        cache_hit = await _fuzzy_cache_lookup(tenant_id, db_id, schema_types, collection_name, normalized_query)
+        cache_hit = _fuzzy_cache_lookup(tenant_id, db_id, schema_types, collection_name, normalized_query)
         if cache_hit:
             return cache_hit, None
 
@@ -588,6 +588,102 @@ async def _store_query_cache(tenant_id, db_id, schema_types, collection_name,
         logger.warning(f"Cache store failed (non-fatal): {cache_err}")
 
 
+async def _try_serve_from_cache(tenant_id, db_id, schema_types, collection_name,
+                                collection_id, normalized_query):
+    """Run all cache layers; return (response_or_None, query_embedding_or_None)."""
+    cache_hit, query_embedding = await _semantic_cache_lookup(
+        tenant_id, db_id, schema_types, collection_name, normalized_query
+    )
+    if not cache_hit:
+        return None, query_embedding
+    return await _serve_cache_hit(cache_hit, db_id, collection_id, tenant_id), query_embedding
+
+
+async def _async_ask(data, user_data):
+    """Core logic for /api/ask, extracted to module level to avoid nesting penalties."""
+    question = data.get("question")
+    conversation = data.get("conversation", [])
+    is_retry = bool(data.get("is_retry", False))
+    retry_error_type = data.get("retry_error_type") or None
+    retry_error_detail = data.get("retry_error_detail") or None
+    tenant_id = user_data["tenant"]
+
+    if not question:
+        return abort(400, "question is required")
+
+    tenant_config = config.get_tenant_config(tenant_id)
+    db_id = tenant_config["db_id"]
+    collection_id = tenant_config["collection_id"]
+    schema_types = tenant_config.get("schema_types", ["public"])
+    collection_name = config.app.collection_name
+
+    logger.info(f"Request - Tenant: {tenant_id}, DB: {db_id}, Collection: {collection_id}")
+
+    past_questions = chat_manager.extract_past_questions(conversation)
+    logger.debug(f"Extracted {len(past_questions)} past questions")
+
+    normalized_query = cache_reranker.normalize_query(question)
+    query_embedding = None
+
+    # ── Semantic cache lookup ────────────────────────────────────────────────
+    if config.app.semantic_cache_enabled and not is_retry:
+        response, query_embedding = await _try_serve_from_cache(
+            tenant_id, db_id, schema_types, collection_name, collection_id, normalized_query
+        )
+        if response is not None:
+            return response
+        logger.info(
+            f"[cache:miss] tenant={tenant_id} db={db_id} query=\"{normalized_query[:80]}\""
+        )
+    # ── End cache lookup ─────────────────────────────────────────────────────
+
+    logger.info("Starting SQL generation...")
+    try:
+        sql, metadata, sql_tokens, error_detail = await sql_generator.generate_sql(
+            question, past_questions, db_id, tenant_id=tenant_id,
+            is_retry=is_retry, retry_error_type=retry_error_type,
+            retry_error_detail=retry_error_detail
+        )
+    except Exception as e:
+        return _classify_sql_generation_error(e)
+
+    logger.info(f"SQL generation completed. SQL exists: {bool(sql)}, Metadata exists: {bool(metadata)}")
+    logger.debug(f"SQL generation tokens: {sql_tokens}")
+
+    if not sql or not metadata:
+        logger.warning("SQL generation failed - returning fail response")
+        return _error_response("ai_failure", "I couldn't generate a report from that question.", 422)
+
+    logger.debug(f"SQL: {sql}")
+    logger.debug(f"Metadata: {metadata}")
+    logger.info(f"Creating Metabase card with SQL length: {len(sql)}")
+
+    card_id = metabase_client.create_card(
+        sql, db_id, collection_id, metadata['title'],
+        tenant_id=tenant_id,
+        visualization_settings=_build_viz_settings(metadata.get("visualization_options", [])),
+    )
+    logger.info(f"Card created successfully with ID: {card_id}")
+
+    # ── Store result in semantic cache ───────────────────────────────────────
+    if config.app.semantic_cache_enabled and not error_detail:
+        await _store_query_cache(
+            tenant_id, db_id, schema_types, collection_name,
+            question, normalized_query, query_embedding, sql, metadata, sql_tokens
+        )
+    # ── End cache store ──────────────────────────────────────────────────────
+
+    return {
+        "card_id": card_id,
+        "x_field": metadata.get('x_axis', []),
+        "y_field": metadata.get('y_axis', []),
+        "title": metadata.get("title", "Untitled"),
+        "visualization_options": metadata.get('visualization_options', []),
+        "SQL": sql,
+        "tokens": sql_tokens,
+    }, 200
+
+
 @app.route("/api/ask", methods=["POST"])
 @require_auth
 def ask():
@@ -597,94 +693,8 @@ def ask():
     """
     data = request.get_json()
     user_data = get_user_from_token()
-
-    async def async_ask():
-        question = data.get("question")
-        conversation = data.get("conversation", [])
-        is_retry = bool(data.get("is_retry", False))
-        retry_error_type = data.get("retry_error_type") or None
-        retry_error_detail = data.get("retry_error_detail") or None
-        tenant_id = user_data["tenant"]
-
-        if not question:
-            return abort(400, "question is required")
-
-        tenant_config = config.get_tenant_config(tenant_id)
-        db_id = tenant_config["db_id"]
-        collection_id = tenant_config["collection_id"]
-        schema_types = tenant_config.get("schema_types", ["public"])
-        collection_name = config.app.collection_name
-
-        logger.info(f"Request - Tenant: {tenant_id}, DB: {db_id}, Collection: {collection_id}")
-
-        past_questions = chat_manager.extract_past_questions(conversation)
-        logger.debug(f"Extracted {len(past_questions)} past questions")
-
-        normalized_query = cache_reranker.normalize_query(question)
-        query_embedding = None
-
-        # ── Semantic cache lookup ────────────────────────────────────────────
-        if config.app.semantic_cache_enabled and not is_retry:
-            cache_hit, query_embedding = await _semantic_cache_lookup(
-                tenant_id, db_id, schema_types, collection_name, normalized_query
-            )
-            if cache_hit:
-                response = await _serve_cache_hit(cache_hit, db_id, collection_id, tenant_id)
-                if response is not None:
-                    return response
-            logger.info(
-                f"[cache:miss] tenant={tenant_id} db={db_id} query=\"{normalized_query[:80]}\""
-            )
-        # ── End cache lookup ─────────────────────────────────────────────────
-
-        logger.info("Starting SQL generation...")
-        try:
-            sql, metadata, sql_tokens, error_detail = await sql_generator.generate_sql(
-                question, past_questions, db_id, tenant_id=tenant_id,
-                is_retry=is_retry, retry_error_type=retry_error_type,
-                retry_error_detail=retry_error_detail
-            )
-        except Exception as e:
-            return _classify_sql_generation_error(e)
-
-        logger.info(f"SQL generation completed. SQL exists: {bool(sql)}, Metadata exists: {bool(metadata)}")
-        logger.debug(f"SQL generation tokens: {sql_tokens}")
-
-        if not sql or not metadata:
-            logger.warning("SQL generation failed - returning fail response")
-            return _error_response("ai_failure", "I couldn't generate a report from that question.", 422)
-
-        logger.debug(f"SQL: {sql}")
-        logger.debug(f"Metadata: {metadata}")
-        logger.info(f"Creating Metabase card with SQL length: {len(sql)}")
-
-        card_id = metabase_client.create_card(
-            sql, db_id, collection_id, metadata['title'],
-            tenant_id=tenant_id,
-            visualization_settings=_build_viz_settings(metadata.get("visualization_options", [])),
-        )
-        logger.info(f"Card created successfully with ID: {card_id}")
-
-        # ── Store result in semantic cache ───────────────────────────────────
-        if config.app.semantic_cache_enabled and not error_detail:
-            await _store_query_cache(
-                tenant_id, db_id, schema_types, collection_name,
-                question, normalized_query, query_embedding, sql, metadata, sql_tokens
-            )
-        # ── End cache store ──────────────────────────────────────────────────
-
-        return {
-            "card_id": card_id,
-            "x_field": metadata.get('x_axis', []),
-            "y_field": metadata.get('y_axis', []),
-            "title": metadata.get("title", "Untitled"),
-            "visualization_options": metadata.get('visualization_options', []),
-            "SQL": sql,
-            "tokens": sql_tokens,
-        }, 200
-
     try:
-        return asyncio.run(async_ask())
+        return asyncio.run(_async_ask(data, user_data))
     except Exception as e:
         logger.error(f"Error in /api/ask: {e}", exc_info=True)
         return _error_response(
