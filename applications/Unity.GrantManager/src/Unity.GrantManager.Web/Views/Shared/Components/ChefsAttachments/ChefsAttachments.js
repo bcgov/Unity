@@ -347,7 +347,7 @@ $(function () {
         const _this = $(this);
         const existingHTML = _this.html();
         const zip = new JSZip();
-        const tempFiles = chefsDataTable.rows({ search: 'applied' }).data().toArray().map((row) => ({
+        const tempFiles = chefsDataTable.rows().data().toArray().map((row) => ({
             FormSubmissionId: row.chefsSubmissionId,
             ChefsFileId: row.chefsFileId,
             Filename: row.fileName,
