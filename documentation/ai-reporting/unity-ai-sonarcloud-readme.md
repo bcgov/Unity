@@ -190,6 +190,7 @@ on:
    - Uses `SonarSource/sonarqube-scan-action@v7`
    - Requires `SONAR_TOKEN` secret
    - Automatic PR decoration enabled
+   - Version handling: Uses `UAI_BUILD_VERSION` variable if set, otherwise removes version property
 
 #### Required GitHub Secrets
 
@@ -198,7 +199,7 @@ on:
 
 #### Required GitHub Environment Variables
 
-- **`UAI_BUILD_VERSION`:** Project version set at runtime (fallback: `0.1.0`)
+- **`UAI_BUILD_VERSION`:** Project version set at runtime (optional - if not set, SonarCloud will use automatic versioning)
 
 ---
 
