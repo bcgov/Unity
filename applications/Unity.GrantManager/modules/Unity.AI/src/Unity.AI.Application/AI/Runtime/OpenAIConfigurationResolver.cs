@@ -10,8 +10,6 @@ public class OpenAIConfigurationResolver(IConfiguration configuration) : ITransi
     private const string DefaultMaxTokensParameterName = "max_completion_tokens";
     private const string LegacyMaxTokensParameterName = "max_tokens";
     private const string DefaultProviderName = "OpenAI";
-    private const string OpenAiApiKeyEnvironmentVariableName = "AZURE__OPENAI__APIKEY";
-    private const string OpenAiEndpointEnvironmentVariableName = "AZURE__OPENAI__ENDPOINT";
 
     private readonly IConfiguration _configuration = configuration;
 
@@ -33,15 +31,6 @@ public class OpenAIConfigurationResolver(IConfiguration configuration) : ITransi
     public string ResolveApiKey(string? operationName = null)
     {
         var providerName = ResolveProviderName(operationName);
-        if (string.Equals(providerName, DefaultProviderName, StringComparison.Ordinal))
-        {
-            var injectedApiKey = _configuration[OpenAiApiKeyEnvironmentVariableName];
-            if (!string.IsNullOrWhiteSpace(injectedApiKey))
-            {
-                return injectedApiKey;
-            }
-        }
-
         return _configuration[$"Azure:{providerName}:ApiKey"] ?? string.Empty;
     }
 
@@ -117,18 +106,7 @@ public class OpenAIConfigurationResolver(IConfiguration configuration) : ITransi
 
     private string? ResolveInjectedEndpoint(string providerName)
     {
-        if (!string.Equals(providerName, DefaultProviderName, StringComparison.Ordinal))
-        {
-            return _configuration[$"Azure:{providerName}:Endpoint"];
-        }
-
-        var injectedEndpoint = _configuration[OpenAiEndpointEnvironmentVariableName];
-        if (!string.IsNullOrWhiteSpace(injectedEndpoint))
-        {
-            return injectedEndpoint;
-        }
-
-        return _configuration["Azure:OpenAI:Endpoint"];
+        return _configuration[$"Azure:{providerName}:Endpoint"];
     }
 
     private string? ResolveProfileName(string? operationName)
