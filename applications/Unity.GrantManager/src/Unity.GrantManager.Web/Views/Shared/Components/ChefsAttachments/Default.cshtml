@@ -7,24 +7,6 @@
         <h6 class="fw-bold px-3 m-0">Submission Attachments</h6>
     </div>
     <div class="submission-button-section me-3">
-        @if (ViewBag.IsAIAttachmentSummariesGenerateEnabled)
-        {
-            <button type="button" class="btn unt-btn-outline-primary btn-outline-primary" id="generateAiSummaries" title="Generate AI Summaries">
-                <span class="ai-button-content">
-                    <i class="unt-icon-sm fa-solid fa-wand-magic-sparkles"></i>
-                    <span>Generate Summary</span>
-                </span>
-            </button>
-        }
-        @if (ViewBag.IsAIAttachmentSummariesEnabled)
-        {
-            <button type="button" class="btn unt-btn-outline-primary btn-outline-primary me-2" id="toggleAllAISummaries" title="Toggle AI Summaries">
-                <span class="ai-button-content">
-                    <i class="unt-icon-sm fa-solid fa-chevron-down"></i>
-                    <span class="toggle-ai-summaries-label">Show Summaries</span>
-                </span>
-            </button>
-        }
         <button type="button" class="btn unt-btn-outline-primary btn-outline-primary" id="btn-toggle-filter-submissions" title="Filter">
             <span>Filter</span>
         </button>
@@ -34,7 +16,27 @@
                 <span>Download All</span>
             </span>
         </button>
-        <button type="button" class="btn unt-btn-outline-primary btn-outline-primary me-2" id="resyncSubmissionAttachments" abp-tooltip="@L["ApplicationList:ResyncSubmissionAttachmentsButton"].Value"><i class="unt-icon-sm fl fl-synch"></i></button>
+        <button type="button" class="btn unt-btn-outline-primary btn-outline-primary me-2" id="resyncSubmissionAttachments" abp-tooltip="@L["ApplicationList:ResyncSubmissionAttachmentsButton"].Value">
+            <i class="unt-icon-sm fl fl-synch"></i>
+        </button>
+        @if (ViewBag.IsAIAttachmentSummariesGenerateEnabled)
+        {
+            <button type="button" class="btn unt-btn-outline-primary btn-outline-primary" id="generateAiSummaries" title="Generate AI Summaries">
+                <span class="ai-button-content">
+                    <i class="unt-icon-sm fa-solid fa-wand-magic-sparkles"></i>
+                    <span>Generate Summaries</span>
+                </span>
+            </button>
+        }
+        @if (ViewBag.IsAIAttachmentSummariesEnabled)
+        {
+            <button type="button" class="btn unt-btn-outline-primary btn-outline-primary me-2" id="toggleAllAISummaries" title="Show AI Summaries">
+                <span class="ai-button-content">
+                    <i class="unt-icon-sm fa-solid fa-chevron-down"></i>
+                    <span class="toggle-ai-summaries-label">Show Summaries</span>
+                </span>
+            </button>
+        }
     </div>
 </div>
 <div class="px-3">
