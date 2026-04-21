@@ -8,14 +8,11 @@ This document provides a guide for the Unity-AI SonarCloud, including setup, per
 
 1. [Overview](#overview)
 2. [Initial Setup & Login](#initial-setup--login)
-3. [User Permissions & Groups](#user-permissions--groups)
-4. [Project Configuration](#project-configuration)
-5. [IDE Integration](#ide-integration)
-6. [CI/CD Integration](#cicd-integration)
-7. [Branch & Pull Request Analysis](#branch--pull-request-analysis)
-8. [Developer Workflow](#developer-workflow)
-9. [Migration Checklist](#migration-checklist)
-10. [Troubleshooting](#troubleshooting)
+3. [Project Configuration](#project-configuration)
+4. [IDE Integration](#ide-integration)
+5. [CI/CD Integration](#cicd-integration)
+6. [Branch & Pull Request Analysis](#branch--pull-request-analysis)
+7. [Support Contacts](#support-contacts)
 
 ---
 
@@ -193,6 +190,7 @@ on:
    - Uses `SonarSource/sonarqube-scan-action@v7`
    - Requires `SONAR_TOKEN` secret
    - Automatic PR decoration enabled
+   - Version handling: Uses `UAI_BUILD_VERSION` variable if set, otherwise removes version property
 
 #### Required GitHub Secrets
 
@@ -201,7 +199,7 @@ on:
 
 #### Required GitHub Environment Variables
 
-- **`UAI_BUILD_VERSION`:** Project version set at runtime (fallback: `0.1.0`)
+- **`UAI_BUILD_VERSION`:** Project version set at runtime (optional - if not set, SonarCloud will use automatic versioning)
 
 ---
 
@@ -245,7 +243,7 @@ on:
 
 Check SonarCloud project → Quality Gates → View conditions
 
-### Support Contacts
+## Support Contacts
 
 **SonarCloud Administration:**
 
