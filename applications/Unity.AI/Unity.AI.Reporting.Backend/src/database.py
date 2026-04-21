@@ -77,9 +77,31 @@ class DatabaseManager:
                     CREATE INDEX IF NOT EXISTS idx_feedback_status ON feedback(status);
                 """)
                 
-                # You can add more tables here for extensibility
-                # For example: user_preferences, query_history, etc.
-                
+                # Semantic query cache table
+                cur.execute("""
+                    CREATE TABLE IF NOT EXISTS query_cache (
+                        cache_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                        tenant_id TEXT NOT NULL,
+                        db_id INTEGER NOT NULL,
+                        schema_fingerprint TEXT NOT NULL,
+                        query_text TEXT NOT NULL,
+                        normalized_query TEXT NOT NULL,
+                        query_embedding vector(3072) NOT NULL,
+                        response_payload JSONB NOT NULL,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        accessed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        access_count INTEGER DEFAULT 1
+                    );
+
+                    CREATE UNIQUE INDEX IF NOT EXISTS idx_query_cache_exact
+                        ON query_cache(tenant_id, db_id, schema_fingerprint, normalized_query);
+                    CREATE INDEX IF NOT EXISTS idx_query_cache_tenant_db
+                        ON query_cache(tenant_id, db_id, schema_fingerprint);
+                """)
+
+                # ivfflat index requires rows to exist first — created separately via evict_old
+                # or on first similarity search. Skip here to avoid error on empty table.
+
                 conn.commit()
     
     def purge_embeddings(self, db_id: Optional[int] = None, collection_name: str = "embedded_schema"):
@@ -393,7 +415,195 @@ class FeedbackRepository:
                 return feedback_list
 
 
+class CacheRepository:
+    """Repository for semantic query cache"""
+
+    def __init__(self, db_manager: DatabaseManager):
+        self.db = db_manager
+
+    @staticmethod
+    def build_fingerprint(db_id: int, schema_types: list, collection_name: str) -> str:
+        """Build a schema fingerprint string for cache scoping."""
+        return f"{db_id}:{':'.join(sorted(schema_types))}:{collection_name}"
+
+    def find_exact(self, tenant_id: str, db_id: int, schema_types: list,
+                   collection_name: str, normalized_query: str) -> Optional[Dict[str, Any]]:
+        """Layer 1: exact normalized-query match — no embedding cost."""
+        fp = self.build_fingerprint(db_id, schema_types, collection_name)
+        with self.db.get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    SELECT cache_id, response_payload
+                    FROM query_cache
+                    WHERE tenant_id = %s
+                      AND db_id = %s
+                      AND schema_fingerprint = %s
+                      AND normalized_query = %s
+                    LIMIT 1
+                """, (tenant_id, db_id, fp, normalized_query))
+                row = cur.fetchone()
+                if row:
+                    return {
+                        "cache_id": str(row[0]),
+                        "response_payload": row[1],
+                        "similarity": 1.0
+                    }
+        return None
+
+    def find_similar(self, tenant_id: str, db_id: int, schema_types: list,
+                     collection_name: str, embedding: list,
+                     threshold: float) -> Optional[Dict[str, Any]]:
+        """Layer 2: cosine similarity search via pgvector."""
+        fp = self.build_fingerprint(db_id, schema_types, collection_name)
+        embedding_str = "[" + ",".join(str(v) for v in embedding) + "]"
+        with self.db.get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute("SET hnsw.ef_search = 64")
+                cur.execute("""
+                    SELECT cache_id, response_payload,
+                           1 - (query_embedding <=> %s::vector) AS similarity
+                    FROM query_cache
+                    WHERE tenant_id = %s
+                      AND db_id = %s
+                      AND schema_fingerprint = %s
+                      AND 1 - (query_embedding <=> %s::vector) >= %s
+                    ORDER BY query_embedding <=> %s::vector
+                    LIMIT 1
+                """, (embedding_str, tenant_id, db_id, fp,
+                      embedding_str, threshold, embedding_str))
+                row = cur.fetchone()
+                if row:
+                    return {
+                        "cache_id": str(row[0]),
+                        "response_payload": row[1],
+                        "similarity": float(row[2])
+                    }
+        return None
+
+    def find_similar_topk(
+        self, tenant_id: str, db_id: int, schema_types: list,
+        collection_name: str, embedding: list,
+        threshold: float, k: int = 5
+    ) -> list:
+        """Top-K cosine similarity search with floor = threshold.
+        Returns list sorted by similarity DESC (closest first).
+        Each dict: cache_id, response_payload, query_text, similarity."""
+        fp = self.build_fingerprint(db_id, schema_types, collection_name)
+        embedding_str = "[" + ",".join(str(v) for v in embedding) + "]"
+        with self.db.get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute("SET hnsw.ef_search = 64")
+                cur.execute("""
+                    SELECT cache_id, response_payload, query_text,
+                           1 - (query_embedding <=> %s::vector) AS similarity
+                    FROM query_cache
+                    WHERE tenant_id = %s
+                      AND db_id = %s
+                      AND schema_fingerprint = %s
+                      AND 1 - (query_embedding <=> %s::vector) >= %s
+                    ORDER BY query_embedding <=> %s::vector
+                    LIMIT %s
+                """, (embedding_str, tenant_id, db_id, fp,
+                      embedding_str, threshold, embedding_str, k))
+                return [
+                    {
+                        "cache_id": str(row[0]),
+                        "response_payload": row[1],
+                        "query_text": row[2],
+                        "similarity": float(row[3]),
+                    }
+                    for row in cur.fetchall()
+                ]
+
+    def get_recent_normalized_queries(
+        self, tenant_id: str, db_id: int, schema_types: list,
+        collection_name: str, limit: int = 200
+    ) -> list:
+        """Fetch recent normalized queries for fuzzy matching.
+        Returns list of {"normalized_query": str, "cache_id": str} ordered by accessed_at DESC."""
+        fp = self.build_fingerprint(db_id, schema_types, collection_name)
+        with self.db.get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    SELECT normalized_query, cache_id
+                    FROM query_cache
+                    WHERE tenant_id = %s
+                      AND db_id = %s
+                      AND schema_fingerprint = %s
+                    ORDER BY accessed_at DESC
+                    LIMIT %s
+                """, (tenant_id, db_id, fp, limit))
+                return [
+                    {"normalized_query": row[0], "cache_id": str(row[1])}
+                    for row in cur.fetchall()
+                ]
+
+    def save(self, tenant_id: str, db_id: int, schema_types: list, collection_name: str,
+             query_text: str, normalized_query: str, embedding: list,
+             response_payload: Dict[str, Any]):
+        """Store a new cache entry, updating if the normalized query already exists."""
+        fp = self.build_fingerprint(db_id, schema_types, collection_name)
+        embedding_str = "[" + ",".join(str(v) for v in embedding) + "]"
+        with self.db.get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    INSERT INTO query_cache
+                        (tenant_id, db_id, schema_fingerprint, query_text, normalized_query,
+                         query_embedding, response_payload)
+                    VALUES (%s, %s, %s, %s, %s, %s::vector, %s)
+                    ON CONFLICT (tenant_id, db_id, schema_fingerprint, normalized_query)
+                    DO UPDATE SET
+                        response_payload = EXCLUDED.response_payload,
+                        query_embedding  = EXCLUDED.query_embedding,
+                        accessed_at      = NOW(),
+                        access_count     = query_cache.access_count + 1
+                """, (tenant_id, db_id, fp, query_text, normalized_query,
+                      embedding_str, json.dumps(response_payload)))
+                conn.commit()
+
+    def touch(self, cache_id: str):
+        """Update access timestamp and increment hit counter."""
+        with self.db.get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    UPDATE query_cache
+                    SET accessed_at  = NOW(),
+                        access_count = access_count + 1
+                    WHERE cache_id = %s
+                """, (cache_id,))
+                conn.commit()
+
+    def evict_old(self, days: int = 30) -> int:
+        """Delete cache entries older than `days` days. Returns count deleted."""
+        with self.db.get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    DELETE FROM query_cache
+                    WHERE accessed_at < NOW() - %s * INTERVAL '1 day'
+                """, (days,))
+                deleted = cur.rowcount
+                conn.commit()
+                return deleted
+
+    def ensure_hnsw_index(self):
+        """Create the hnsw index once the table has rows. hnsw supports up to 16000 dimensions,
+        unlike ivfflat which caps at 2000 — required for text-embedding-3-large (3072-d)."""
+        with self.db.get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute("SELECT COUNT(*) FROM query_cache")
+                count = cur.fetchone()[0]
+                if count > 0:
+                    cur.execute("""
+                        CREATE INDEX IF NOT EXISTS idx_query_cache_embedding
+                            ON query_cache
+                            USING hnsw (query_embedding vector_cosine_ops)
+                            WITH (m = 16, ef_construction = 64)
+                    """)
+                    conn.commit()
+
+
 # Global instances
 db_manager = DatabaseManager()
 chat_repository = ChatRepository(db_manager)
 feedback_repository = FeedbackRepository(db_manager)
+cache_repository = CacheRepository(db_manager)

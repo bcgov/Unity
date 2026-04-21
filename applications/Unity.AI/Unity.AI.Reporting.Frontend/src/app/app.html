@@ -96,6 +96,23 @@
                       @if (turn.sql_explanation_visible) {
                         <app-sql-explanation [explanation]="turn.embed.sql_explanation"></app-sql-explanation>
                       }
+                      @if (turn.embed.cache_hit_type === 'llm_judge_hit') {
+                        <div class="cache-badge">
+                          Based on a similar previous question.
+                          @if (turn.embed.cache_original_query) {
+                            <span class="cache-badge-hint">Previous question: "{{ turn.embed.cache_original_query }}"</span>
+                          } @else {
+                            <span class="cache-badge-hint">Check if this matches what you meant.</span>
+                          }
+                          <button
+                            class="cache-fresh-btn"
+                            [disabled]="isLoading"
+                            aria-label="Get fresh answer — generate a new answer for this question"
+                            (click)="getFreshAnswer(turn)">
+                            Get fresh answer
+                          </button>
+                        </div>
+                      }
                       <div class="metabase-view-container">
                         <button class="metabase-view-btn" (click)="redirectToMB(turn)" title="View in Metabase">
                           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">

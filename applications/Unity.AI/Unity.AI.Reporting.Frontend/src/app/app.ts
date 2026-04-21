@@ -1,6 +1,7 @@
 import { Component, ViewChild, ElementRef, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { FormsModule } from '@angular/forms';
+import { DecimalPipe } from '@angular/common';
 import { SafeResourceUrl, DomSanitizer, SafeHtml } from '@angular/platform-browser';
 
 import { Embed } from './embed';
@@ -18,7 +19,7 @@ import { environment } from '../environments/environment';
 
 @Component({
   selector: 'app-root',
-  imports: [FormsModule, SqlExplanationComponent, SidebarComponent, ToastComponent],
+  imports: [FormsModule, DecimalPipe, SqlExplanationComponent, SidebarComponent, ToastComponent],
   templateUrl: './app.html',
   styleUrls: ['./app.css']
 })
@@ -420,6 +421,18 @@ export class App implements OnInit, OnDestroy {
     this.question = turn.question;
     this.conversation = this.conversation.filter(t => t !== turn);
     this.askQuestion(nextRetryCount, errorType, turn.errorDetail);
+  }
+
+  getFreshAnswer(turn: Turn): void {
+    if (this.isLoading) return;
+    // Resubmit the question with retry_count=1 so the backend skips the semantic cache (is_retry=true).
+    this.question = turn.question;
+    this.conversation = this.conversation.filter(t => t !== turn);
+    this.askQuestion(1);
+  }
+
+  get isLoading(): boolean {
+    return this.conversation.some(t => t.safeUrl === 'loading');
   }
 
   toggleSidebar(): void {

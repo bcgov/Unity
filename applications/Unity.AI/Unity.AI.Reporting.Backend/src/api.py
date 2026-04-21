@@ -4,15 +4,18 @@ API module with Flask routes for the application.
 from flask import Flask, request, abort, jsonify
 from flask_cors import CORS
 import asyncio
+import aiohttp
 import logging
 import datetime
 from config import config
-from database import db_manager, chat_repository, feedback_repository
+from database import db_manager, chat_repository, feedback_repository, cache_repository
 from metabase import metabase_client
 from chat import chat_manager
 from sql_generator import sql_generator
 from auth import require_auth, get_user_from_token
+from embeddings import embedding_manager
 from static_routes import add_static_routes
+import cache_reranker
 import os
 import re
 
@@ -381,6 +384,306 @@ def get_feedback_for_admin():
         logger.error(f"Error retrieving feedback: {e}", exc_info=True)
         return jsonify({"error": "Failed to retrieve feedback"}), 500
 
+def _build_viz_settings(visualization_options: list) -> dict:
+    """Return Metabase visualization settings dict for the given options list."""
+    if "map" in visualization_options:
+        return {"map.region": os.getenv("MB_MAP_REGION_UUID", "1c5d50ee-4389-4593-37c1-fa8d4687ff4c")}
+    return {}
+
+
+def _fuzzy_cache_lookup(tenant_id, db_id, schema_types, collection_name, normalized_query):
+    """Layer 1.5: rapidfuzz match against recent normalized queries."""
+    recent = cache_repository.get_recent_normalized_queries(
+        tenant_id, db_id, schema_types, collection_name, config.app.fuzzy_match_limit
+    )
+    fuzzy_match = cache_reranker.fuzzy_matcher.find_best(
+        normalized_query, recent, config.app.fuzzy_match_threshold
+    )
+    if not fuzzy_match:
+        return None
+    cache_hit = cache_repository.find_exact(
+        tenant_id, db_id, schema_types, collection_name, fuzzy_match["normalized_query"]
+    )
+    if cache_hit:
+        cache_hit["hit_type_override"] = "fuzzy_hit"
+        logger.info(
+            f"[cache:fuzzy_hit] tenant={tenant_id} db={db_id} score={fuzzy_match['score']:.1f}"
+        )
+    return cache_hit
+
+
+async def _llm_judge_lookup(tenant_id, db_id, normalized_query, borderline):
+    """Run LLM judge over borderline candidates in parallel; return the best hit or None."""
+    borderline_sims = ', '.join(f"{c['similarity']:.4f}" for c in borderline)
+    logger.info(
+        f"[cache:borderline] tenant={tenant_id} db={db_id} "
+        f"count={len(borderline)} similarities=[{borderline_sims}]"
+    )
+    async with aiohttp.ClientSession() as judge_session:
+        results = await asyncio.gather(*[
+            cache_reranker.llm_judge.score_candidate(
+                normalized_query, candidate["query_text"], judge_session, config.ai
+            )
+            for candidate in borderline
+        ])
+
+    best_candidate, best_score = None, -1  # sentinel; valid scores are 0..10
+    for candidate, (score, judge_tokens) in zip(borderline, results):
+        logger.info(
+            f"[cache:llm_judge] tenant={tenant_id} db={db_id} "
+            f"similarity={candidate['similarity']:.4f} score={score} tokens={judge_tokens}"
+        )
+        is_better_score = score > best_score
+        is_tiebreak = (score == best_score and best_candidate is not None
+                       and candidate["similarity"] > best_candidate["similarity"])
+        if is_better_score or is_tiebreak:
+            best_score, best_candidate = score, candidate
+
+    if best_candidate is not None and best_score >= config.app.llm_judge_score_threshold:
+        best_candidate["hit_type_override"] = "llm_judge_hit"
+        logger.info(
+            f"[cache:llm_judge_selected] tenant={tenant_id} db={db_id} "
+            f"score={best_score} similarity={best_candidate['similarity']:.4f} "
+            f"threshold={config.app.llm_judge_score_threshold}"
+        )
+        return best_candidate
+
+    logger.info(
+        f"[cache:llm_judge_miss] tenant={tenant_id} db={db_id} "
+        f"best_score={best_score} threshold={config.app.llm_judge_score_threshold}"
+    )
+    return None
+
+
+async def _embedding_cache_lookup(tenant_id, db_id, schema_types, collection_name, normalized_query):
+    """Layer 2: dense embedding top-K search with optional LLM judge for borderline zone.
+
+    Returns (cache_hit_or_None, query_embedding).
+    """
+    loop = asyncio.get_event_loop()
+    query_embedding = await loop.run_in_executor(
+        None, embedding_manager.embed_query, normalized_query
+    )
+    candidates = cache_repository.find_similar_topk(
+        tenant_id, db_id, schema_types, collection_name,
+        query_embedding,
+        threshold=config.app.semantic_cache_borderline_low,
+        k=config.app.semantic_cache_top_k,
+    )
+    if candidates:
+        candidate_sims = ', '.join(f"{c['similarity']:.4f}" for c in candidates)
+        logger.info(
+            f"[cache:candidates] tenant={tenant_id} db={db_id} "
+            f"count={len(candidates)} similarities=[{candidate_sims}]"
+        )
+
+    if candidates and candidates[0]["similarity"] >= config.app.semantic_cache_threshold:
+        return candidates[0], query_embedding
+
+    if candidates and config.app.llm_judge_enabled:
+        borderline = [c for c in candidates if c["similarity"] < config.app.semantic_cache_threshold]
+        if borderline:
+            cache_hit = await _llm_judge_lookup(tenant_id, db_id, normalized_query, borderline)
+            return cache_hit, query_embedding
+
+    return None, query_embedding
+
+
+async def _semantic_cache_lookup(tenant_id, db_id, schema_types, collection_name, normalized_query):
+    """Orchestrate all three cache layers; return (cache_hit_or_None, query_embedding_or_None)."""
+    cache_hit = cache_repository.find_exact(
+        tenant_id, db_id, schema_types, collection_name, normalized_query
+    )
+    if cache_hit:
+        return cache_hit, None
+
+    if config.app.fuzzy_match_enabled:
+        cache_hit = _fuzzy_cache_lookup(tenant_id, db_id, schema_types, collection_name, normalized_query)
+        if cache_hit:
+            return cache_hit, None
+
+    return await _embedding_cache_lookup(tenant_id, db_id, schema_types, collection_name, normalized_query)
+
+
+async def _serve_cache_hit(cache_hit, db_id, collection_id, tenant_id):
+    """Validate cached SQL and build the cache-hit response. Returns None if SQL is no longer valid."""
+    cached = cache_hit["response_payload"]
+    try:
+        loop = asyncio.get_event_loop()
+        is_valid, _ = await loop.run_in_executor(
+            None, lambda: metabase_client.validate_sql(cached["sql"], db_id, tenant_id)
+        )
+    except Exception:
+        is_valid = False
+
+    if not is_valid:
+        logger.info(
+            f"[cache:rejected] tenant={tenant_id} db={db_id} "
+            f"similarity={cache_hit['similarity']:.4f} reason=sql_validation_failed"
+        )
+        return None
+
+    hit_type = cache_hit.get("hit_type_override") or (
+        "exact_hit" if cache_hit["similarity"] >= 1.0 else "semantic_hit"
+    )
+    tokens_saved = cached.get("tokens", {}).get("total_tokens", 0)
+    card_id = metabase_client.create_card(
+        cached["sql"], db_id, collection_id, cached["title"],
+        tenant_id=tenant_id,
+        visualization_settings=_build_viz_settings(cached.get("visualization_options", [])),
+    )
+    cache_repository.touch(cache_hit["cache_id"])
+
+    if hit_type == "semantic_hit":
+        logger.info(
+            f"[cache:semantic_hit] tenant={tenant_id} db={db_id} "
+            f"similarity={cache_hit['similarity']:.4f} "
+            f"threshold={config.app.semantic_cache_threshold} tokens_saved={tokens_saved}"
+        )
+    else:
+        logger.info(
+            f"[cache:{hit_type}] tenant={tenant_id} db={db_id} "
+            f"similarity={cache_hit['similarity']:.4f} tokens_saved={tokens_saved}"
+        )
+
+    return jsonify({
+        "card_id": card_id,
+        "x_field": cached.get("x_field", []),
+        "y_field": cached.get("y_field", []),
+        "title": cached["title"],
+        "visualization_options": cached.get("visualization_options", []),
+        "SQL": cached["sql"],
+        "tokens": {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0},
+        "from_cache": True,
+        "cache_similarity": round(cache_hit["similarity"], 4),
+        "cache_hit_type": hit_type,
+        "cache_original_query": cache_hit.get("query_text", "") if hit_type == "llm_judge_hit" else None,
+    }), 200
+
+
+async def _store_query_cache(tenant_id, db_id, schema_types, collection_name,
+                             question, normalized_query, query_embedding, sql, metadata, sql_tokens):
+    """Persist a successful SQL generation result to the semantic cache (non-fatal)."""
+    try:
+        if query_embedding is None:
+            loop = asyncio.get_event_loop()
+            query_embedding = await loop.run_in_executor(
+                None, embedding_manager.embed_query, normalized_query
+            )
+        cache_repository.save(
+            tenant_id, db_id, schema_types, collection_name,
+            question, normalized_query, query_embedding,
+            {
+                "sql": sql,
+                "title": metadata.get("title", "Untitled"),
+                "x_field": metadata.get("x_axis", []),
+                "y_field": metadata.get("y_axis", []),
+                "visualization_options": metadata.get("visualization_options", []),
+                "tokens": sql_tokens,
+            },
+        )
+        cache_repository.ensure_hnsw_index()
+        logger.info(f"Cache stored: tenant={tenant_id} tokens={sql_tokens.get('total_tokens', 0)}")
+    except Exception as cache_err:
+        logger.warning(f"Cache store failed (non-fatal): {cache_err}")
+
+
+async def _try_serve_from_cache(tenant_id, db_id, schema_types, collection_name,
+                                collection_id, normalized_query):
+    """Run all cache layers; return (response_or_None, query_embedding_or_None)."""
+    cache_hit, query_embedding = await _semantic_cache_lookup(
+        tenant_id, db_id, schema_types, collection_name, normalized_query
+    )
+    if not cache_hit:
+        return None, query_embedding
+    return await _serve_cache_hit(cache_hit, db_id, collection_id, tenant_id), query_embedding
+
+
+async def _async_ask(data, user_data):
+    """Core logic for /api/ask, extracted to module level to avoid nesting penalties."""
+    question = data.get("question")
+    conversation = data.get("conversation", [])
+    is_retry = bool(data.get("is_retry", False))
+    retry_error_type = data.get("retry_error_type") or None
+    retry_error_detail = data.get("retry_error_detail") or None
+    tenant_id = user_data["tenant"]
+
+    if not question:
+        return abort(400, "question is required")
+
+    tenant_config = config.get_tenant_config(tenant_id)
+    db_id = tenant_config["db_id"]
+    collection_id = tenant_config["collection_id"]
+    schema_types = tenant_config.get("schema_types", ["public"])
+    collection_name = config.app.collection_name
+
+    logger.info(f"Request - Tenant: {tenant_id}, DB: {db_id}, Collection: {collection_id}")
+
+    past_questions = chat_manager.extract_past_questions(conversation)
+    logger.debug(f"Extracted {len(past_questions)} past questions")
+
+    normalized_query = cache_reranker.normalize_query(question)
+    query_embedding = None
+
+    # ── Semantic cache lookup ────────────────────────────────────────────────
+    if config.app.semantic_cache_enabled and not is_retry:
+        response, query_embedding = await _try_serve_from_cache(
+            tenant_id, db_id, schema_types, collection_name, collection_id, normalized_query
+        )
+        if response is not None:
+            return response
+        logger.info(
+            f"[cache:miss] tenant={tenant_id} db={db_id} query=\"{normalized_query[:80]}\""
+        )
+    # ── End cache lookup ─────────────────────────────────────────────────────
+
+    logger.info("Starting SQL generation...")
+    try:
+        sql, metadata, sql_tokens, error_detail = await sql_generator.generate_sql(
+            question, past_questions, db_id, tenant_id=tenant_id,
+            is_retry=is_retry, retry_error_type=retry_error_type,
+            retry_error_detail=retry_error_detail
+        )
+    except Exception as e:
+        return _classify_sql_generation_error(e)
+
+    logger.info(f"SQL generation completed. SQL exists: {bool(sql)}, Metadata exists: {bool(metadata)}")
+    logger.debug(f"SQL generation tokens: {sql_tokens}")
+
+    if not sql or not metadata:
+        logger.warning("SQL generation failed - returning fail response")
+        return _error_response("ai_failure", "I couldn't generate a report from that question.", 422)
+
+    logger.debug(f"SQL: {sql}")
+    logger.debug(f"Metadata: {metadata}")
+    logger.info(f"Creating Metabase card with SQL length: {len(sql)}")
+
+    card_id = metabase_client.create_card(
+        sql, db_id, collection_id, metadata['title'],
+        tenant_id=tenant_id,
+        visualization_settings=_build_viz_settings(metadata.get("visualization_options", [])),
+    )
+    logger.info(f"Card created successfully with ID: {card_id}")
+
+    # ── Store result in semantic cache ───────────────────────────────────────
+    if config.app.semantic_cache_enabled and not error_detail:
+        await _store_query_cache(
+            tenant_id, db_id, schema_types, collection_name,
+            question, normalized_query, query_embedding, sql, metadata, sql_tokens
+        )
+    # ── End cache store ──────────────────────────────────────────────────────
+
+    return {
+        "card_id": card_id,
+        "x_field": metadata.get('x_axis', []),
+        "y_field": metadata.get('y_axis', []),
+        "title": metadata.get("title", "Untitled"),
+        "visualization_options": metadata.get('visualization_options', []),
+        "SQL": sql,
+        "tokens": sql_tokens,
+    }, 200
+
+
 @app.route("/api/ask", methods=["POST"])
 @require_auth
 def ask():
@@ -390,84 +693,8 @@ def ask():
     """
     data = request.get_json()
     user_data = get_user_from_token()
-    
-    async def async_ask():
-        question = data.get("question")
-        conversation = data.get("conversation", [])
-        is_retry = bool(data.get("is_retry", False))
-        retry_error_type = data.get("retry_error_type") or None
-        retry_error_detail = data.get("retry_error_detail") or None
-        
-        # Extract user context from JWT token
-        tenant_id = user_data["tenant"]
-        
-        if not question:
-            return abort(400, "question is required")
-        
-        # Get tenant configuration
-        tenant_config = config.get_tenant_config(tenant_id)
-        db_id = tenant_config["db_id"]
-        collection_id = tenant_config["collection_id"]
-
-        logger.info(f"Request - Tenant: {tenant_id}, DB: {db_id}, Collection: {collection_id}")
-
-        # Extract past questions from conversation
-        past_questions = chat_manager.extract_past_questions(conversation)
-        logger.debug(f"Extracted {len(past_questions)} past questions")
-
-        # Generate SQL from natural language
-        logger.info("Starting SQL generation...")
-        try:
-            sql, metadata, sql_tokens, error_detail = await sql_generator.generate_sql(
-                question, past_questions, db_id, tenant_id=tenant_id,
-                is_retry=is_retry, retry_error_type=retry_error_type,
-                retry_error_detail=retry_error_detail
-            )
-        except Exception as e:
-            return _classify_sql_generation_error(e)
-
-        logger.info(f"SQL generation completed. SQL exists: {bool(sql)}, Metadata exists: {bool(metadata)}")
-        logger.debug(f"SQL generation tokens: {sql_tokens}")
-
-        if not sql or not metadata:
-            logger.warning("SQL generation failed - returning fail response")
-            return _error_response(
-                "ai_failure",
-                "I couldn't generate a report from that question.",
-                422
-            )
-
-        logger.debug(f"SQL: {sql}")
-        logger.debug(f"Metadata: {metadata}")
-        logger.info("About to create Metabase card...")
-        logger.debug(f"Metabase client type: {type(metabase_client)}")
-
-        # Create Metabase card
-        logger.info(f"Creating Metabase card with SQL length: {len(sql)}")
-        logger.debug("Calling metabase_client.create_card...")
-        initial_viz_settings = {}
-        if "map" in metadata.get("visualization_options", []):
-            initial_viz_settings["map.region"] = os.getenv("MB_MAP_REGION_UUID", "1c5d50ee-4389-4593-37c1-fa8d4687ff4c")
-
-        card_id = metabase_client.create_card(
-            sql, db_id, collection_id, metadata['title'],
-            tenant_id=tenant_id,
-            visualization_settings=initial_viz_settings
-        )
-        logger.info(f"Card created successfully with ID: {card_id}")
-
-        return {
-            "card_id": card_id,
-            "x_field": metadata.get('x_axis', []),
-            "y_field": metadata.get('y_axis', []),
-            "title": metadata.get("title", "Untitled"),
-            "visualization_options": metadata.get('visualization_options', []),
-            "SQL": sql,
-            "tokens": sql_tokens  # Include token usage from SQL generation
-        }, 200
-    
     try:
-        return asyncio.run(async_ask())
+        return asyncio.run(_async_ask(data, user_data))
     except Exception as e:
         logger.error(f"Error in /api/ask: {e}", exc_info=True)
         return _error_response(

@@ -7,7 +7,7 @@ import logging
 import os
 from typing import Optional
 from config import config
-from database import db_manager
+from database import db_manager, cache_repository
 from embeddings import embedding_manager
 from api import app
 
@@ -68,6 +68,14 @@ def embed_all_tenants():
             logger.error(f"Failed to embed db_id={db_id}: {e}", exc_info=True)
 
     logger.info("Finished embedding all tenant databases.")
+
+    # Evict stale cache entries (older than 30 days) after re-embedding
+    try:
+        deleted = cache_repository.evict_old(days=30)
+        if deleted:
+            logger.info(f"Evicted {deleted} stale semantic cache entries")
+    except Exception as e:
+        logger.warning(f"Cache eviction failed (non-fatal): {e}")
 
 
 def run_server():
