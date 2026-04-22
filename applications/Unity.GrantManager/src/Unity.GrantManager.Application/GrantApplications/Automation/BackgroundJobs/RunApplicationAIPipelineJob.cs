@@ -43,7 +43,7 @@ public class RunApplicationAIPipelineJob(
 
             if (attachmentSummariesEnabled)
             {
-                var attachmentResults = await attachmentSummaryAppService.GenerateAttachmentSummariesAsync(
+                var attachmentResults = await attachmentSummaryAppService.GenerateAttachmentSummariesForPipelineAsync(
                     await GetAttachmentIdsAsync(args.ApplicationId),
                     args.PromptVersion);
 
@@ -57,7 +57,7 @@ public class RunApplicationAIPipelineJob(
             {
                 try
                 {
-                    var analysisResult = await applicationAnalysisAppService.GenerateApplicationAnalysisAsync(args.ApplicationId, args.PromptVersion);
+                    var analysisResult = await applicationAnalysisAppService.GenerateApplicationAnalysisForPipelineAsync(args.ApplicationId, args.PromptVersion);
                     if (analysisResult.Completed)
                     {
                         logger.LogInformation("Completed AI application analysis stage for application {ApplicationId}.", args.ApplicationId);
@@ -74,7 +74,7 @@ public class RunApplicationAIPipelineJob(
             {
                 try
                 {
-                    var result = await applicationScoringAppService.GenerateApplicationScoringAsync(args.ApplicationId, args.PromptVersion);
+                    var result = await applicationScoringAppService.GenerateApplicationScoringForPipelineAsync(args.ApplicationId, args.PromptVersion);
                     if (result.Completed)
                     {
                         await localEventBus.PublishAsync(new ApplicationAIScoringGeneratedEvent
