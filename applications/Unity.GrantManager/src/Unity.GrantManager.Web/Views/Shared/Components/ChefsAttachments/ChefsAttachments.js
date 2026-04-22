@@ -233,9 +233,7 @@ $(function () {
         $toggleAllAISummariesButton.on('click', function () {
             const $button = $(this);
             const $icon = $button.find('i');
-            const $text = $button.contents().filter(function () {
-                return this.nodeType === 3;
-            });
+            const $label = $button.find('.toggle-ai-summaries-label');
 
             // Don't do anything if button is disabled
             if ($button.prop('disabled')) {
@@ -262,7 +260,7 @@ $(function () {
                     }
                 });
                 $icon.removeClass('fa-chevron-up').addClass('fa-chevron-down');
-                $text.replaceWith('Show Summaries');
+                $label.text('Show Summaries');
                 $button.attr('title', 'Show AI Summaries');
                 allAISummariesExpanded = false;
             } else {
@@ -290,7 +288,7 @@ $(function () {
                     }
                 });
                 $icon.removeClass('fa-chevron-down').addClass('fa-chevron-up');
-                $text.replaceWith('Hide Summaries');
+                $label.text('Hide Summaries');
                 $button.attr('title', 'Hide AI Summaries');
                 allAISummariesExpanded = true;
             }
@@ -302,11 +300,9 @@ $(function () {
         if (allAISummariesExpanded) {
             const $button = $('#toggleAllAISummaries');
             const $icon = $button.find('i');
-            const $text = $button.contents().filter(function () {
-                return this.nodeType === 3;
-            });
+            const $label = $button.find('.toggle-ai-summaries-label');
             $icon.removeClass('fa-chevron-up').addClass('fa-chevron-down');
-            $text.replaceWith('Show Summaries');
+            $label.text('Show Summaries');
             $button.attr('title', 'Show AI Summaries');
             allAISummariesExpanded = false;
         }

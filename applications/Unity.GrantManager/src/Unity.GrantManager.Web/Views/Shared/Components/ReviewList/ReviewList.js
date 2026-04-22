@@ -456,13 +456,11 @@ function unityWorkflowButtonAction(e, dt, button, config) {
 }
 
 function generateAiButtonAction(e, dt, button, config) {
-    const triggerButton = button?.node ? $(button.node) : null;
+    const $btn = $(this.node());
     const promptVersion = globalThis.getSelectedPromptVersion?.() || null;
 
-    if (triggerButton?.length) {
-        triggerButton.prop('disabled', true);
-        triggerButton.html('<span class="ai-button-content"><i class="unt-icon-sm fa-solid fa-wand-sparkles"></i><span>Queueing...</span></span>');
-    }
+    this.disable();
+    $btn.html('<span class="ai-button-content"><span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span><span>Queueing...</span></span>');
 
     unity.grantManager.grantApplications.applicationScoring.generateApplicationScoring(pageApplicationId, promptVersion)
         .done(function () {
@@ -471,11 +469,9 @@ function generateAiButtonAction(e, dt, button, config) {
         .fail(function () {
             abp.message.error('Failed to queue AI scoring. Please try again.');
         })
-        .always(function () {
-            if (triggerButton?.length) {
-                triggerButton.prop('disabled', false);
-                triggerButton.html(generateAiButtonText(null, null, null));
-            }
+        .always(() => {
+            this.enable();
+            $btn.html(generateAiButtonText(null, null, null));
         });
 }
 
