@@ -90,6 +90,7 @@ abp.widgets.ProjectInfo = function ($wrapper) {
                     data: modifiedFieldData
                 };
                 
+                self.zoneForm.setSaving(true);
                 try {
                     unity.grantManager.grantApplications.grantApplication
                         .updatePartialProjectInfo(applicationId, projectInfoSubmission)
@@ -98,11 +99,14 @@ abp.widgets.ProjectInfo = function ($wrapper) {
                             self.zoneForm.resetTracking();
                             PubSub.publish('project_info_saved', projectInfoObj);
                             PubSub.publish('refresh_detail_panel_summary');
+                        })
+                        .fail(function () {
+                            self.zoneForm.setSaving(false);
                         });
                 }
                 catch (error) {
                     console.log(error);
-                    self.zoneForm.resetTracking();
+                    self.zoneForm.setSaving(false);
                 }
             });
 

@@ -23,6 +23,7 @@ $(function () {
             return;
         }
 
+        zoneForm.setSaving(true);
         unity.grantManager.applicantProfile.applicantHistory
             .saveNotes(applicantId, {
                 fundingHistoryComments: $('#FundingHistoryComments').val(),
@@ -35,6 +36,7 @@ $(function () {
             })
             .fail(function () {
                 abp.notify.error('Failed to save history notes.');
+                zoneForm.setSaving(false);
             });
     });
 
