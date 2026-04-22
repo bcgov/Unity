@@ -1,7 +1,6 @@
 using Microsoft.Extensions.Logging;
 using System;
 using System.Threading.Tasks;
-using Unity.AI.Operations;
 using Unity.GrantManager.GrantApplications;
 using Volo.Abp.BackgroundJobs;
 using Volo.Abp.DependencyInjection;
@@ -11,7 +10,7 @@ using Volo.Abp.MultiTenancy;
 namespace Unity.GrantManager.GrantApplications.Automation.BackgroundJobs;
 
 public class GenerateApplicationScoringJob(
-    IApplicationScoringService applicationScoringService,
+    IApplicationScoringAppService applicationScoringAppService,
     IRepository<AIGenerationRequest, Guid> generationRequestRepository,
     ICurrentTenant currentTenant,
     ILogger<GenerateApplicationScoringJob> logger) : AsyncBackgroundJob<GenerateApplicationScoringBackgroundJobArgs>, ITransientDependency
@@ -25,7 +24,8 @@ public class GenerateApplicationScoringJob(
             try
             {
                 logger.LogInformation("Executing AI application scoring job for application {ApplicationId}.", args.ApplicationId);
-                await applicationScoringService.RegenerateAndSaveAsync(args.ApplicationId, args.PromptVersion);
+                await applicationScoringAppService.GenerateApplicationScoringAsync(args.ApplicationId, args.PromptVersion);
+                logger.LogInformation("Completed AI application scoring job for application {ApplicationId}.", args.ApplicationId);
                 await AIGenerationRequestJobHelper.MarkCompletedAsync(generationRequestRepository, request);
             }
             catch (Exception ex)
