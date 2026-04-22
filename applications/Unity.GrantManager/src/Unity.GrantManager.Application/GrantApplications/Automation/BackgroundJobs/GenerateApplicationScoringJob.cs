@@ -3,18 +3,15 @@ using System;
 using System.Threading.Tasks;
 using Unity.AI.Operations;
 using Unity.GrantManager.GrantApplications;
-using Unity.GrantManager.GrantApplications.Automation.Events;
 using Volo.Abp.BackgroundJobs;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Repositories;
-using Volo.Abp.EventBus.Local;
 using Volo.Abp.MultiTenancy;
 
 namespace Unity.GrantManager.GrantApplications.Automation.BackgroundJobs;
 
 public class GenerateApplicationScoringJob(
     IApplicationScoringService applicationScoringService,
-    ILocalEventBus localEventBus,
     IRepository<AIGenerationRequest, Guid> generationRequestRepository,
     ICurrentTenant currentTenant,
     ILogger<GenerateApplicationScoringJob> logger) : AsyncBackgroundJob<GenerateApplicationScoringBackgroundJobArgs>, ITransientDependency
@@ -29,11 +26,6 @@ public class GenerateApplicationScoringJob(
             {
                 logger.LogInformation("Executing AI application scoring job for application {ApplicationId}.", args.ApplicationId);
                 await applicationScoringService.RegenerateAndSaveAsync(args.ApplicationId, args.PromptVersion);
-                await localEventBus.PublishAsync(new ApplicationAIScoringGeneratedEvent
-                {
-                    ApplicationId = args.ApplicationId
-                });
-
                 await AIGenerationRequestJobHelper.MarkCompletedAsync(generationRequestRepository, request);
             }
             catch (Exception ex)

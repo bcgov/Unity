@@ -7,6 +7,8 @@ public static class AIGenerationRequestKeyHelper
     public const string AttachmentSummaryOperationType = "attachment-summary";
     public const string ApplicationAnalysisOperationType = "application-analysis";
     public const string ApplicationScoringOperationType = "application-scoring";
+    public const string PipelineOperationType = "pipeline";
+
     public static string BuildRequestKey(Guid? tenantId, Guid applicationId, string operationType)
     {
         var normalizedTenantId = tenantId?.ToString("D") ?? "host";

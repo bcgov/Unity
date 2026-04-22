@@ -53,20 +53,7 @@ public class QueueApplicationAIPipelineOnProcessHandler(
 
         try
         {
-            if (attachmentSummariesEnabled)
-            {
-                await aiGenerationQueue.QueueAttachmentSummaryAsync(eventData.Application.Id, eventData.Application.TenantId);
-            }
-
-            if (applicationAnalysisEnabled)
-            {
-                await aiGenerationQueue.QueueApplicationAnalysisAsync(eventData.Application.Id, eventData.Application.TenantId);
-            }
-
-            if (scoringEnabled)
-            {
-                await aiGenerationQueue.QueueApplicationScoringAsync(eventData.Application.Id, eventData.Application.TenantId);
-            }
+            await aiGenerationQueue.QueueAllAIStagesAsync(eventData.Application.Id, eventData.Application.TenantId);
 
             logger.LogInformation("Queued AI pipeline for application {ApplicationId}.", eventData.Application.Id);
         }

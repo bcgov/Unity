@@ -20,7 +20,7 @@ namespace Unity.GrantManager.GrantApplications.Automation;
 public class AIGenerationQueueTests(ITestOutputHelper outputHelper) : GrantManagerApplicationTestBase(outputHelper)
 {
     [Fact]
-    public async Task QueueAllAIStagesAsync_Should_Enqueue_All_Stage_Jobs_When_None_Exists()
+    public async Task QueueAllAIStagesAsync_Should_Enqueue_Pipeline_Job_When_None_Exists()
     {
         var applicationId = Guid.NewGuid();
         var tenantId = Guid.NewGuid();
@@ -29,31 +29,34 @@ public class AIGenerationQueueTests(ITestOutputHelper outputHelper) : GrantManag
         repository.InsertAsync(Arg.Any<AIGenerationRequest>(), Arg.Any<bool>(), Arg.Any<CancellationToken>())
             .Returns(callInfo => Task.FromResult(callInfo.Arg<AIGenerationRequest>()));
 
+        RunApplicationAIPipelineJobArgs? capturedArgs = null;
         var backgroundJobManager = Substitute.For<IBackgroundJobManager>();
-        backgroundJobManager.EnqueueAsync<GenerateAttachmentSummaryBackgroundJobArgs>(
-                Arg.Any<GenerateAttachmentSummaryBackgroundJobArgs>(),
+        backgroundJobManager.EnqueueAsync<RunApplicationAIPipelineJobArgs>(
+                Arg.Any<RunApplicationAIPipelineJobArgs>(),
                 Arg.Any<BackgroundJobPriority>(),
                 Arg.Any<TimeSpan?>())
-            .Returns(Task.FromResult(string.Empty));
-        backgroundJobManager.EnqueueAsync<GenerateApplicationAnalysisBackgroundJobArgs>(
-                Arg.Any<GenerateApplicationAnalysisBackgroundJobArgs>(),
-                Arg.Any<BackgroundJobPriority>(),
-                Arg.Any<TimeSpan?>())
-            .Returns(Task.FromResult(string.Empty));
-        backgroundJobManager.EnqueueAsync<GenerateApplicationScoringBackgroundJobArgs>(
-                Arg.Any<GenerateApplicationScoringBackgroundJobArgs>(),
-                Arg.Any<BackgroundJobPriority>(),
-                Arg.Any<TimeSpan?>())
-            .Returns(Task.FromResult(string.Empty));
+            .Returns(callInfo =>
+            {
+                capturedArgs = callInfo.Arg<RunApplicationAIPipelineJobArgs>();
+                return Task.FromResult(string.Empty);
+            });
 
         var queue = new ApplicationAIGenerationQueue(backgroundJobManager, repository, new TestDistributedLockProvider());
 
         await queue.QueueAllAIStagesAsync(applicationId, tenantId, "v1");
 
-        await backgroundJobManager.Received(1).EnqueueAsync(Arg.Any<GenerateAttachmentSummaryBackgroundJobArgs>(), Arg.Any<BackgroundJobPriority>(), Arg.Any<TimeSpan?>());
-        await backgroundJobManager.Received(1).EnqueueAsync(Arg.Any<GenerateApplicationAnalysisBackgroundJobArgs>(), Arg.Any<BackgroundJobPriority>(), Arg.Any<TimeSpan?>());
-        await backgroundJobManager.Received(1).EnqueueAsync(Arg.Any<GenerateApplicationScoringBackgroundJobArgs>(), Arg.Any<BackgroundJobPriority>(), Arg.Any<TimeSpan?>());
-        await repository.Received(3).InsertAsync(Arg.Any<AIGenerationRequest>(), Arg.Any<bool>(), Arg.Any<CancellationToken>());
+        capturedArgs.ShouldNotBeNull();
+        capturedArgs!.ApplicationId.ShouldBe(applicationId);
+        capturedArgs.TenantId.ShouldBe(tenantId);
+        capturedArgs.PromptVersion.ShouldBe("v1");
+        capturedArgs.RequestKey.ShouldBe(AIGenerationRequestKeyHelper.BuildRequestKey(tenantId, applicationId, AIGenerationRequestKeyHelper.PipelineOperationType));
+        await backgroundJobManager.Received(1).EnqueueAsync(Arg.Any<RunApplicationAIPipelineJobArgs>(), Arg.Any<BackgroundJobPriority>(), Arg.Any<TimeSpan?>());
+        await repository.Received(1).InsertAsync(Arg.Is<AIGenerationRequest>(r =>
+            r.ApplicationId == applicationId &&
+            r.TenantId == tenantId &&
+            r.OperationType == AIGenerationRequestKeyHelper.PipelineOperationType &&
+            r.RequestKey == capturedArgs.RequestKey &&
+            r.Status == AIGenerationRequestStatus.Queued), Arg.Any<bool>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]

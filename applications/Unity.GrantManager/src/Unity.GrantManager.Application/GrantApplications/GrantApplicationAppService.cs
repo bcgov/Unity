@@ -1094,7 +1094,7 @@ public class GrantApplicationAppService(
 
         var request = await aiGenerationStatusAppService.GetLatestAsync(
             applicationId,
-            AIGenerationRequestKeyHelper.ApplicationScoringOperationType,
+            AIGenerationRequestKeyHelper.PipelineOperationType,
             CurrentTenant.Id);
 
         return request ?? throw new UserFriendlyException("Unable to queue AI generation request.");

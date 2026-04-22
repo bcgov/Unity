@@ -79,9 +79,22 @@ public class ApplicationAIGenerationQueue(
 
     public async Task QueueAllAIStagesAsync(Guid applicationId, Guid? tenantId, string? promptVersion = null)
     {
-        await QueueAttachmentSummaryAsync(applicationId, tenantId, promptVersion);
-        await QueueApplicationAnalysisAsync(applicationId, tenantId, promptVersion);
-        await QueueApplicationScoringAsync(applicationId, tenantId, promptVersion);
+        var requestKey = AIGenerationRequestKeyHelper.BuildRequestKey(tenantId, applicationId, AIGenerationRequestKeyHelper.PipelineOperationType);
+        await EnsureRequestAndEnqueueAsync(
+            requestKey,
+            tenantId,
+            AIGenerationRequestKeyHelper.PipelineOperationType,
+            applicationId,
+            () =>
+            {
+                return backgroundJobManager.EnqueueAsync(new RunApplicationAIPipelineJobArgs
+                {
+                    ApplicationId = applicationId,
+                    PromptVersion = promptVersion,
+                    TenantId = tenantId,
+                    RequestKey = requestKey
+                });
+            });
     }
 
     private async Task EnsureRequestAndEnqueueAsync(
