@@ -15,13 +15,22 @@ public class ApplicationAnalysisAppService(
     IFeatureChecker featureChecker)
     : AIAppService, IApplicationAnalysisAppService
 {
-    public async Task<ApplicationAnalysisResultDto> GenerateApplicationAnalysisAsync(Guid applicationId, string? promptVersion = null)
+    public virtual async Task<ApplicationAnalysisResultDto> GenerateApplicationAnalysisAsync(Guid applicationId, string? promptVersion = null)
     {
         if (!await featureChecker.IsEnabledAsync("Unity.AI.ApplicationAnalysis"))
         {
             throw new UserFriendlyException("AI application analysis is not enabled.");
         }
 
+        await applicationAnalysisService.RegenerateAndSaveAsync(applicationId, promptVersion);
+        return new ApplicationAnalysisResultDto { Completed = true };
+    }
+
+    // Internal-only: no HTTP endpoint, no auth check — safe for background job callers
+    [AllowAnonymous]
+    [RemoteService(IsEnabled = false)]
+    public virtual async Task<ApplicationAnalysisResultDto> GenerateApplicationAnalysisForPipelineAsync(Guid applicationId, string? promptVersion = null)
+    {
         await applicationAnalysisService.RegenerateAndSaveAsync(applicationId, promptVersion);
         return new ApplicationAnalysisResultDto { Completed = true };
     }
