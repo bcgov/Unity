@@ -112,7 +112,7 @@ public class UnityZoneTagHelperService : AbpTagHelperService<UnityZoneTagHelper>
 
     private async Task<bool> CheckPermissionRequirementAsync(string? permissionName)
     {
-        if (string.IsNullOrWhiteSpace(permissionName))
+        if (TagHelper.ZoneType == ZoneRequirementType.ToggleOnly || string.IsNullOrWhiteSpace(permissionName))
             return true;
 
         return await PermissionChecker.IsGrantedAsync(permissionName);
@@ -120,7 +120,7 @@ public class UnityZoneTagHelperService : AbpTagHelperService<UnityZoneTagHelper>
 
     private async Task<bool> CheckZoneRequirementAsync()
     {
-        if (string.IsNullOrWhiteSpace(TagHelper.ZoneRequirement) || TagHelper.FormId == Guid.Empty)
+        if (TagHelper.ZoneType == ZoneRequirementType.PermissionOnly || string.IsNullOrWhiteSpace(TagHelper.ZoneRequirement) || TagHelper.FormId == Guid.Empty)
             return true;
 
         return await ZoneChecker.IsEnabledAsync(TagHelper.ZoneRequirement, TagHelper.FormId);

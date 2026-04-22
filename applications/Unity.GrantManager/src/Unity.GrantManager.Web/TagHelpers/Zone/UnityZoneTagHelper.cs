@@ -29,4 +29,7 @@ public class UnityZoneTagHelper(UnityZoneTagHelperService tagHelperService)
 
     [HtmlAttributeName("editable-if")]
     public bool? UpdateCondition { get; set; }
+
+    [HtmlAttributeName("zone-type")] // Allows bypass of zone toggle conditions for permission only zones
+    public ZoneRequirementType ZoneType { get; set; } = ZoneRequirementType.Full;
 }
