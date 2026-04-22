@@ -666,9 +666,6 @@ namespace Unity.GrantManager.Migrations.HostMigrations
                     b.Property<Guid?>("ApplicationId")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid?>("AttachmentId")
-                        .HasColumnType("uuid");
-
                     b.Property<DateTime?>("CompletedAt")
                         .HasColumnType("timestamp without time zone");
 
@@ -720,10 +717,6 @@ namespace Unity.GrantManager.Migrations.HostMigrations
 
                     b.Property<string>("OperationType")
                         .IsRequired()
-                        .HasMaxLength(64)
-                        .HasColumnType("character varying(64)");
-
-                    b.Property<string>("PromptVersion")
                         .HasMaxLength(64)
                         .HasColumnType("character varying(64)");
 

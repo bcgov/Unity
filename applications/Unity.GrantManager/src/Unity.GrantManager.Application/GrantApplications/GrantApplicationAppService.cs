@@ -1049,7 +1049,6 @@ public class GrantApplicationAppService(
         var request = await aiGenerationStatusAppService.GetLatestAsync(
             applicationId,
             AIGenerationRequestKeyHelper.ApplicationAnalysisOperationType,
-            promptVersion,
             CurrentTenant.Id);
 
         return request ?? throw new UserFriendlyException("Unable to queue AI analysis request.");
@@ -1063,7 +1062,6 @@ public class GrantApplicationAppService(
         var request = await aiGenerationStatusAppService.GetLatestAsync(
             applicationId,
             AIGenerationRequestKeyHelper.AttachmentSummaryOperationType,
-            promptVersion,
             CurrentTenant.Id);
 
         return request ?? throw new UserFriendlyException("Unable to queue AI attachment summary request.");
@@ -1077,7 +1075,6 @@ public class GrantApplicationAppService(
         var request = await aiGenerationStatusAppService.GetLatestAsync(
             applicationId,
             AIGenerationRequestKeyHelper.ApplicationScoringOperationType,
-            promptVersion,
             CurrentTenant.Id);
 
         return request ?? throw new UserFriendlyException("Unable to queue AI scoring request.");
@@ -1085,20 +1082,19 @@ public class GrantApplicationAppService(
 
     public async Task<AIGenerationRequestDto?> GetAIGenerationStatusAsync(Guid applicationId, string operationType, string? promptVersion = null)
     {
-        return await aiGenerationStatusAppService.GetLatestAsync(applicationId, operationType, promptVersion, CurrentTenant.Id);
+        return await aiGenerationStatusAppService.GetLatestAsync(applicationId, operationType, CurrentTenant.Id);
     }
 
-    public async Task<AIGenerationRequestDto> QueueAIPipelineAsync(Guid applicationId, string? promptVersion = null)
+    public async Task<AIGenerationRequestDto> QueueAllAIStagesAsync(Guid applicationId, string? promptVersion = null)
     {
         await EnsureAttachmentSummariesEnabledAsync();
         await EnsureAIAnalysisEnabledAsync();
         await EnsureScoringEnabledAsync();
-        await aiGenerationQueue.QueueApplicationPipelineAsync(applicationId, CurrentTenant.Id, promptVersion);
+        await aiGenerationQueue.QueueAllAIStagesAsync(applicationId, CurrentTenant.Id, promptVersion);
 
         var request = await aiGenerationStatusAppService.GetLatestAsync(
             applicationId,
-            AIGenerationRequestKeyHelper.PipelineOperationType,
-            promptVersion,
+            AIGenerationRequestKeyHelper.ApplicationScoringOperationType,
             CurrentTenant.Id);
 
         return request ?? throw new UserFriendlyException("Unable to queue AI generation request.");

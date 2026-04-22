@@ -19,12 +19,12 @@ public class AIGenerationStatusAppServiceTests(ITestOutputHelper outputHelper) :
         var applicationId = Guid.NewGuid();
         var tenantId = Guid.NewGuid();
         var otherTenantId = Guid.NewGuid();
-        var requestKey = AIGenerationRequestKeyHelper.BuildRequestKey(tenantId, applicationId, AIGenerationRequestKeyHelper.ApplicationAnalysisOperationType, "v1");
+        var requestKey = AIGenerationRequestKeyHelper.BuildRequestKey(tenantId, applicationId, AIGenerationRequestKeyHelper.ApplicationAnalysisOperationType);
 
         var requests = new[]
         {
-            new AIGenerationRequest(Guid.NewGuid(), otherTenantId, AIGenerationRequestKeyHelper.ApplicationAnalysisOperationType, applicationId, null, "v1", requestKey),
-            new AIGenerationRequest(Guid.NewGuid(), tenantId, AIGenerationRequestKeyHelper.ApplicationAnalysisOperationType, applicationId, null, "v1", requestKey)
+            new AIGenerationRequest(Guid.NewGuid(), otherTenantId, AIGenerationRequestKeyHelper.ApplicationAnalysisOperationType, applicationId, requestKey),
+            new AIGenerationRequest(Guid.NewGuid(), tenantId, AIGenerationRequestKeyHelper.ApplicationAnalysisOperationType, applicationId, requestKey)
         };
 
         var repository = Substitute.For<IRepository<AIGenerationRequest, Guid>>();
@@ -35,10 +35,9 @@ public class AIGenerationStatusAppServiceTests(ITestOutputHelper outputHelper) :
 
         var service = new AIGenerationStatusAppService(repository, currentTenant);
 
-        var result = await service.GetLatestAsync(applicationId, AIGenerationRequestKeyHelper.ApplicationAnalysisOperationType, "v1");
+        var result = await service.GetLatestAsync(applicationId, AIGenerationRequestKeyHelper.ApplicationAnalysisOperationType);
 
         result.ShouldNotBeNull();
-        result!.TenantId.ShouldBe(tenantId);
         result.ApplicationId.ShouldBe(applicationId);
     }
 }

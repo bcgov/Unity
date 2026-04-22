@@ -484,10 +484,10 @@ $(function () {
             .prop('disabled', true);
         globalThis.AIGenerationButtonState?.setGenerating($button);
 
-        unity.grantManager.grantApplications.grantApplication
-                .queueAIPipeline(applicationId, promptVersion)
+            unity.grantManager.grantApplications.grantApplication
+                .queueAllAIStages(applicationId, promptVersion)
                 .done(function(request) {
-                    pollAIGenerationStatus(applicationId, 'pipeline', promptVersion, $button, existingHtml);
+                    pollAIGenerationStatus(applicationId, 'application-scoring', promptVersion, $button, existingHtml);
                 })
             .fail(function() {
                 abp.message.error('Failed to queue AI generate all. Please try again.');

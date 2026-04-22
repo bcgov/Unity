@@ -244,7 +244,6 @@ public class GrantManagerDbContext :
             b.ConfigureByConvention();
             b.Property(x => x.OperationType).IsRequired().HasMaxLength(64);
             b.Property(x => x.RequestKey).IsRequired().HasMaxLength(256);
-            b.Property(x => x.PromptVersion).HasMaxLength(64);
             b.Property(x => x.FailureReason).HasMaxLength(2000);
             b.Property(x => x.Status).IsRequired().HasConversion<string>().HasMaxLength(20);
             b.HasIndex(x => x.RequestKey);

@@ -22,7 +22,7 @@ public class ApplicationContentAppServiceTests(ITestOutputHelper outputHelper) :
         featureChecker.IsEnabledAsync("Unity.AI.Scoring").Returns(true);
 
         var queue = Substitute.For<IApplicationAIGenerationQueue>();
-        queue.QueueApplicationPipelineAsync(Arg.Any<Guid>(), Arg.Any<Guid?>(), Arg.Any<string?>())
+        queue.QueueAllAIStagesAsync(Arg.Any<Guid>(), Arg.Any<Guid?>(), Arg.Any<string?>())
             .Returns(Task.CompletedTask);
         var currentTenant = Substitute.For<Volo.Abp.MultiTenancy.ICurrentTenant>();
         currentTenant.Id.Returns(Guid.NewGuid());
@@ -33,6 +33,6 @@ public class ApplicationContentAppServiceTests(ITestOutputHelper outputHelper) :
 
         result.ShouldNotBeNull();
         result.Completed.ShouldBeTrue();
-        await queue.Received(1).QueueApplicationPipelineAsync(Arg.Any<Guid>(), Arg.Any<Guid?>(), Arg.Any<string?>());
+        await queue.Received(1).QueueAllAIStagesAsync(Arg.Any<Guid>(), Arg.Any<Guid?>(), Arg.Any<string?>());
     }
 }

@@ -5,7 +5,6 @@ using Unity.GrantManager.GrantApplications;
 using Volo.Abp.Application.Services;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.MultiTenancy;
-using Volo.Abp.Threading;
 
 namespace Unity.GrantManager.GrantApplications;
 
@@ -14,22 +13,33 @@ public class AIGenerationStatusAppService(
     ICurrentTenant currentTenant)
     : ApplicationService, IAIGenerationStatusAppService
 {
-    public virtual async Task<AIGenerationRequestDto?> GetLatestAsync(Guid applicationId, string operationType, string? promptVersion = null, Guid? tenantId = null)
+    public virtual async Task<AIGenerationRequestDto?> GetLatestAsync(Guid applicationId, string operationType, Guid? tenantId = null)
     {
         var query = await generationRequestRepository.GetQueryableAsync();
         var resolvedTenantId = tenantId ?? currentTenant.Id;
 
-        var item = await AsyncExecuter.FirstOrDefaultAsync(
-            query.Where(x =>
-                    x.ApplicationId == applicationId &&
-                    x.OperationType == operationType &&
-                    x.TenantId == resolvedTenantId &&
-                    (promptVersion == null || x.PromptVersion == promptVersion))
-                .OrderByDescending(x => x.CreationTime)
-                .ThenByDescending(x => x.Id));
+        var item = query
+            .Where(x =>
+                x.ApplicationId == applicationId &&
+                x.OperationType == operationType &&
+                x.TenantId == resolvedTenantId)
+            .OrderByDescending(x => x.CreationTime)
+            .ThenByDescending(x => x.Id)
+            .FirstOrDefault();
 
         return item == null
             ? null
-            : ObjectMapper.Map<AIGenerationRequest, AIGenerationRequestDto>(item);
+            : new AIGenerationRequestDto
+            {
+                Id = item.Id,
+                ApplicationId = item.ApplicationId,
+                OperationType = item.OperationType,
+                RequestKey = item.RequestKey,
+                Status = item.Status,
+                StartedAt = item.StartedAt,
+                CompletedAt = item.CompletedAt,
+                FailureReason = item.FailureReason,
+                IsActive = item.IsActive
+            };
     }
 }
