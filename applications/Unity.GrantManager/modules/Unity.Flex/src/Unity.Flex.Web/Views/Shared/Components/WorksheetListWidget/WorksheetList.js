@@ -143,7 +143,7 @@ $(function () {
 
     function updatePreview() {
         let worksheets = $('button.accordion-button[aria-expanded=true]');
-        const previewPane = $('#preview');
+        const previewPane = $('#worksheet-preview').length ? $('#worksheet-preview') : $('#preview');
 
         if (worksheets?.length > 0) {
             let worksheetId = worksheets[0].dataset.worksheetId;
@@ -158,7 +158,7 @@ $(function () {
                 .then(response => response.text())
                 .then(data => {
                     previewPane.html(data);
-                    $("#preview :input").prop("readonly", true);
+                    previewPane.find(':input').prop('readonly', true);
                     PubSub.publish('worksheet_preview_datagrid_refresh');
                 })
                 .catch(error => {
