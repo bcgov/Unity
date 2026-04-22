@@ -12,6 +12,7 @@ namespace Unity.GrantManager.GrantApplications;
 
 [Authorize(AIPermissions.Analysis.GenerateApplicationAnalysis)]
 public class ApplicationAnalysisAppService(
+    Unity.AI.Operations.IApplicationAnalysisService applicationAnalysisService,
     IApplicationAIGenerationQueue aiGenerationQueue,
     IFeatureChecker featureChecker,
     ICurrentTenant currentTenant)
