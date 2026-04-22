@@ -140,6 +140,7 @@ $(function () {
                 }
             };
 
+            zoneForm.setSaving(true);
             unity.grantManager.applicants.applicant
                 .updateApplicantContactAddresses(applicantId, payload)
                 .done(function () {
@@ -149,6 +150,7 @@ $(function () {
                 })
                 .fail(function () {
                     abp.notify.error('Failed to update contact.');
+                    zoneForm.setSaving(false);
                 });
         });
     }

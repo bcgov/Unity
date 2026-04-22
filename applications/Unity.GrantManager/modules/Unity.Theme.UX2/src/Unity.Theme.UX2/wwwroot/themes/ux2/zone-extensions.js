@@ -268,6 +268,14 @@ class UnityChangeTrackingForm {
         this.saveButton.prop('disabled', this.modifiedFields.size === 0);
     }
 
+    setSaving(isSaving) {
+        if (isSaving) {
+            this.saveButton.prop('disabled', true);
+        } else {
+            this.updateSaveButtonState();
+        }
+    }
+
     /**
      * Reset tracking without changing values
      */

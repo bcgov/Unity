@@ -1305,6 +1305,9 @@ function updateCustomForm(
         .update(customFormUpdate)
         .done(function () {
             abp.notify.success('Information has been updated.');
+        })
+        .fail(function () {
+            $(`#${saveId}`).prop('disabled', false);
         });
 }
 

@@ -34,6 +34,8 @@ function saveScoresSection(formId, sectionId) {
     };
 
     //Calls an enpoint and disabled buttons
+    secSaveButton.disabled = true;
+    secDiscardButton.disabled = true;
     unity.grantManager.assessments.assessment
         .saveScoresheetSectionAnswers(data)
         .done(function () {
@@ -52,14 +54,15 @@ function saveScoresSection(formId, sectionId) {
                 }
             }
 
-            secSaveButton.disabled = true;
-            secDiscardButton.disabled = true;
-
             updateSubtotal();
             PubSub.publish(
                 'refresh_review_list_without_sidepanel',
                 assessmentId
             );
+        })
+        .fail(function () {
+            secSaveButton.disabled = false;
+            secDiscardButton.disabled = false;
         });
 }
 
