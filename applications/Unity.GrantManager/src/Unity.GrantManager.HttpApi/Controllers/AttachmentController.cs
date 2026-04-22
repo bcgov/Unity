@@ -17,9 +17,36 @@ using Volo.Abp.Validation;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Unity.GrantManager.Models;
+using System.Threading;
 
 namespace Unity.GrantManager.Controllers
 {
+    internal static class LibreOfficeInstallationCache
+    {
+        private static int _hasCachedValue;
+        private static bool _isInstalled;
+        private static readonly object SyncRoot = new();
+
+        public static bool IsInstalled(Func<bool> installationCheck)
+        {
+            if (Volatile.Read(ref _hasCachedValue) == 1)
+            {
+                return _isInstalled;
+            }
+
+            lock (SyncRoot)
+            {
+                if (_hasCachedValue == 0)
+                {
+                    _isInstalled = installationCheck();
+                    Volatile.Write(ref _hasCachedValue, 1);
+                }
+            }
+
+            return _isInstalled;
+        }
+    }
+
     [Route("api/app/attachment")]
     public class AttachmentController : AbpController
     {
@@ -28,24 +55,81 @@ namespace Unity.GrantManager.Controllers
         private readonly ISubmissionAppService _submissionAppService;
         private readonly IEmailLogAttachmentUploadService _emailLogAttachmentUploadService;
         private readonly ICurrentTenant _currentTenant;
+        private readonly ILibreOfficeConversionService _libreOfficeConversionService;
+        private readonly IAttachmentPreviewAppService _attachmentPreviewAppService;
         private ILogger logger => LazyServiceProvider.LazyGetService<ILogger>(provider => LoggerFactory?.CreateLogger(GetType().FullName!) ?? NullLogger.Instance);
         private const string badRequestFileMsg = "File name must be provided.";
         private const string NotFoundFileMsg = "File not found.";
         private const string errorFileMsg = "An error occurred while downloading the file.";
         private const string chefsApiAccessError = "You do not have access to this resource";
+        private const string fileProvidedError = "At least one file must be provided.";
+        private const string libreOfficeNotInstalledMsg = "LibreOffice is not installed on the server. File preview is unavailable.";
+        private const string ErrorCodeKey = "ErrorCode";
+        private const string PdfContentType = "application/pdf";
 
         public AttachmentController(
             IFileAppService fileAppService,
             IConfiguration configuration,
             ISubmissionAppService submissionAppService,
             IEmailLogAttachmentUploadService emailLogAttachmentUploadService,
-            ICurrentTenant currentTenant)
+            ICurrentTenant currentTenant,
+            ILibreOfficeConversionService libreOfficeConversionService,
+            IAttachmentPreviewAppService attachmentPreviewAppService)
         {
             _fileAppService = fileAppService;
             _configuration = configuration;
             _submissionAppService = submissionAppService;
             _emailLogAttachmentUploadService = emailLogAttachmentUploadService;
             _currentTenant = currentTenant;
+            _libreOfficeConversionService = libreOfficeConversionService;
+            _attachmentPreviewAppService = attachmentPreviewAppService;
+        }
+
+        [HttpGet("applicant/{applicantId}/download/{fileName}")]
+        public async Task<IActionResult> DownloadApplicantAttachment(string applicantId, string fileName)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            if (string.IsNullOrWhiteSpace(applicantId))
+            {
+                return BadRequest("Applicant ID must be provided.");
+            }
+
+            if (string.IsNullOrWhiteSpace(fileName))
+            {
+                return BadRequest(badRequestFileMsg);
+            }
+
+            var folder = _configuration["S3:ApplicantS3Folder"] ?? throw new AbpValidationException("Missing server configuration: S3:ApplicantS3Folder");
+
+            if (!folder.EndsWith('/'))
+            {
+                folder += "/";
+            }
+
+            folder += applicantId;
+            var key = folder + "/" + fileName;
+
+            try
+            {
+                var fileDto = await _fileAppService.GetBlobAsync(new GetBlobRequestDto { S3ObjectKey = key, Name = fileName });
+
+                if (fileDto == null || fileDto.Content == null)
+                {
+                    return NotFound(NotFoundFileMsg);
+                }
+
+                return File(fileDto.Content, fileDto.ContentType, fileDto.Name);
+            }
+            catch (Exception ex)
+            {
+                string ExceptionMessage = ex.Message;
+                logger.LogError(ex, "AttachmentController->DownloadApplicantAttachment: {ExceptionMessage}", ExceptionMessage);
+                return StatusCode(500, errorFileMsg);
+            }
         }
 
         [HttpGet("application/{applicationId}/download/{fileName}")]
@@ -170,7 +254,7 @@ namespace Unity.GrantManager.Controllers
             {
                 string ExceptionMessage = ex.Message;
                 logger.LogError(ex, "AttachmentController->DownloadChefsAttachment: {ExceptionMessage}", ExceptionMessage);
-                var errorCode = ex.Data.Contains("ErrorCode") ? Convert.ToInt32(ex.Data["ErrorCode"]) : 500;
+                var errorCode = ex.Data.Contains(ErrorCodeKey) ? Convert.ToInt32(ex.Data[ErrorCodeKey]) : 500;
                 return StatusCode(errorCode, ExceptionMessage);
             }
         }
@@ -225,6 +309,108 @@ namespace Unity.GrantManager.Controllers
             return Ok(files);
         }
 
+        [HttpGet("application/{applicationId}/preview-pdf/{fileName}")]
+        public async Task<IActionResult> PreviewApplicationAttachment(string applicationId, string fileName)
+        {
+            if (!ModelState.IsValid) return BadRequest(ModelState);
+            if (string.IsNullOrWhiteSpace(applicationId)) return BadRequest("Application ID must be provided.");
+            if (!Guid.TryParse(applicationId, out var parsedApplicationId)) return BadRequest("Application ID must be a valid GUID.");
+            if (string.IsNullOrWhiteSpace(fileName)) return BadRequest(badRequestFileMsg);
+            if (!LibreOfficeInstallationCache.IsInstalled(() => _libreOfficeConversionService.IsInstalled())) return StatusCode(503, new { error = libreOfficeNotInstalledMsg });
+            try
+            {
+                var blob = await _attachmentPreviewAppService.GetOrCreatePreviewPdfAsync(AttachmentType.APPLICATION, parsedApplicationId, fileName);
+                if (blob?.Content == null) return NotFound(NotFoundFileMsg);
+                return File(blob.Content, PdfContentType);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "AttachmentController->PreviewApplicationAttachment: {Message}", ex.Message);
+                return StatusCode(500, errorFileMsg);
+            }
+        }
+
+        [HttpGet("assessment/{assessmentId}/preview-pdf/{fileName}")]
+        public async Task<IActionResult> PreviewAssessmentAttachment(string assessmentId, string fileName)
+        {
+            if (!ModelState.IsValid) return BadRequest(ModelState);
+            if (string.IsNullOrWhiteSpace(assessmentId)) return BadRequest("Assessment ID must be provided.");
+            if (!Guid.TryParse(assessmentId, out var parsedAssessmentId)) return BadRequest("Assessment ID must be a valid GUID.");
+            if (string.IsNullOrWhiteSpace(fileName)) return BadRequest(badRequestFileMsg);
+            if (!LibreOfficeInstallationCache.IsInstalled(() => _libreOfficeConversionService.IsInstalled())) return StatusCode(503, new { error = libreOfficeNotInstalledMsg });
+            try
+            {
+                var blob = await _attachmentPreviewAppService.GetOrCreatePreviewPdfAsync(AttachmentType.ASSESSMENT, parsedAssessmentId, fileName);
+                if (blob?.Content == null) return NotFound(NotFoundFileMsg);
+                return File(blob.Content, PdfContentType);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "AttachmentController->PreviewAssessmentAttachment: {Message}", ex.Message);
+                return StatusCode(500, errorFileMsg);
+            }
+        }
+
+        [HttpGet("applicant/{applicantId}/preview-pdf/{fileName}")]
+        public async Task<IActionResult> PreviewApplicantAttachment(string applicantId, string fileName)
+        {
+            if (!ModelState.IsValid) return BadRequest(ModelState);
+            if (string.IsNullOrWhiteSpace(applicantId)) return BadRequest("Applicant ID must be provided.");
+            if (string.IsNullOrWhiteSpace(fileName)) return BadRequest(badRequestFileMsg);
+            if (!_libreOfficeConversionService.IsInstalled()) return StatusCode(503, new { error = libreOfficeNotInstalledMsg });
+            try
+            {
+                var blob = await _attachmentPreviewAppService.GetOrCreatePreviewPdfAsync(AttachmentType.APPLICANT, Guid.Parse(applicantId), fileName);
+                if (blob?.Content == null) return NotFound(NotFoundFileMsg);
+                return File(blob.Content, PdfContentType);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "AttachmentController->PreviewApplicantAttachment: {Message}", ex.Message);
+                return StatusCode(500, errorFileMsg);
+            }
+        }
+
+        [HttpGet("chefs/{formSubmissionId}/preview-pdf/{chefsFileId}/{fileName}")]
+        public async Task<IActionResult> PreviewChefsAttachment(Guid formSubmissionId, Guid chefsFileId, string fileName)
+        {
+            if (!ModelState.IsValid) return BadRequest(ModelState);
+            if (string.IsNullOrWhiteSpace(fileName)) return BadRequest(badRequestFileMsg);
+            if (!_libreOfficeConversionService.IsInstalled()) return StatusCode(503, new { error = libreOfficeNotInstalledMsg });
+            try
+            {
+                var chefsBlob = await _submissionAppService.GetChefsFileAttachment(formSubmissionId, chefsFileId, fileName);
+                if (chefsBlob?.Content == null) return NotFound(NotFoundFileMsg);
+                var blob = await _attachmentPreviewAppService.GetOrCreateChefsPreviewPdfAsync(formSubmissionId, chefsFileId, fileName, chefsBlob.Content);
+                if (blob?.Content == null) return NotFound(NotFoundFileMsg);
+                return File(blob.Content, PdfContentType);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "AttachmentController->PreviewChefsAttachment: {Message}", ex.Message);
+                var errorCode = ex.Data.Contains(ErrorCodeKey) ? Convert.ToInt32(ex.Data[ErrorCodeKey]) : 500;
+                return StatusCode(errorCode, errorFileMsg);
+            }
+        }
+
+        [HttpPost("applicant/{applicantId}/upload")]
+#pragma warning disable IDE0060 // Remove unused parameter
+        public async Task<IActionResult> UploadApplicantAttachments(Guid applicantId, IList<IFormFile> files, string userId, string userName)
+#pragma warning restore IDE0060 // Remove unused parameter
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            if (files == null || files.Count == 0)
+            {
+                return BadRequest(fileProvidedError);
+            }
+
+            return await UploadFiles(files);
+        }
+
         [HttpPost("assessment/{assessmentId}/upload")]
 #pragma warning disable IDE0060 // Remove unused parameter
         public async Task<IActionResult> UploadAssessmentAttachments(Guid assessmentId, IList<IFormFile> files)
@@ -237,7 +423,7 @@ namespace Unity.GrantManager.Controllers
 
             if (files == null || files.Count == 0)
             {
-                return BadRequest("At least one file must be provided.");
+                return BadRequest(fileProvidedError);
             }
 
             return await UploadFiles(files);
@@ -255,7 +441,7 @@ namespace Unity.GrantManager.Controllers
 
             if (files == null || files.Count == 0)
             {
-                return BadRequest("At least one file must be provided.");
+                return BadRequest(fileProvidedError);
             }
 
             return await UploadFiles(files);
@@ -271,7 +457,7 @@ namespace Unity.GrantManager.Controllers
 
             if (files == null || files.Count == 0)
             {
-                return BadRequest("At least one file must be provided.");
+                return BadRequest(fileProvidedError);
             }
 
             List<ValidationResult> invalidFileTypes = GetInvalidFileTypes(files);

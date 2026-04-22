@@ -235,7 +235,7 @@ public class AIPromptDataSeeder(
 
         OUTPUT
         {
-          "rating": "<HIGH|MEDIUM|LOW>",
+          "decision": "<PROCEED|HOLD>",
           "warnings": [
             {
               "title": "<string>",
@@ -254,24 +254,19 @@ public class AIPromptDataSeeder(
               "detail": "<string>"
             }
           ],
-          "nextSteps": [
+          "recommendations": [
             {
               "title": "<string>",
               "detail": "<string>"
             }
-          ],
-          "recommendation": {
-            "decision": "<PROCEED|HOLD>",
-            "rationale": "<string>"
-          }
+          ]
         }
 
         Important:
         - Use only APPLICATION CONTENT, ATTACHMENT SUMMARIES, FORM FIELD CONFIGURATION, and EVALUATION RUBRIC as evidence.
+        - decision must be PROCEED or HOLD.
         - Use summaries for overall application quality/readiness synthesis.
-        - Use nextSteps for reviewer-facing follow-up actions or considerations before scoring or decision-making.
-        - recommendation.decision must be PROCEED or HOLD.
-        - recommendation.rationale must explain the high-level recommendation in 1-2 complete sentences using provided evidence.
+        - Use recommendations for reviewer-facing follow-up actions or considerations before scoring or decision-making.
         - Use "title" and "detail" keys for all finding objects.
         - Return valid plain JSON only in the exact OUTPUT shape.
         """;
@@ -306,8 +301,8 @@ public class AIPromptDataSeeder(
         SCORE
         {{SCORE}}
 
-        OUTPUT
-        {{OUTPUT}}
+        RESPONSE
+        {{RESPONSE}}
 
         RULES
         {{RULES}}
@@ -333,7 +328,7 @@ public class AIPromptDataSeeder(
     // ── v1/analysis.output.txt ───────────────────────────────────────────────
     private const string AnalysisOutput = """
         {
-          "rating": "<HIGH|MEDIUM|LOW>",
+          "decision": "<PROCEED|HOLD>",
           "errors": [
             {
               "title": "<string>",
@@ -352,16 +347,12 @@ public class AIPromptDataSeeder(
               "detail": "<string>"
             }
           ],
-          "nextSteps": [
+          "recommendations": [
             {
               "title": "<string>",
               "detail": "<string>"
             }
-          ],
-          "recommendation": {
-            "decision": "<PROCEED|HOLD>",
-            "rationale": "<string>"
-          }
+          ]
         }
         """;
 
@@ -388,20 +379,16 @@ public class AIPromptDataSeeder(
         - Use 3-6 words for title.
         - Summary titles should name the specific substantive reviewer conclusion, strength, or risk, not a generic evaluation label or abstract category.
         - Each detail must be 1-2 complete sentences.
-        - Summaries and nextSteps must be concrete, distinct, reviewer-relevant, and specific to this application's evidence.
+        - Summaries and recommendations must be concrete, distinct, reviewer-relevant, and specific to this application's evidence.
         - Avoid generic praise, checklist language, and repeated conclusions across lists.
         - Do not use a summary merely to say that supporting documents were provided; summarize the specific substantive evidence they add, or omit the finding.
         - If no findings exist, return empty arrays.
-        - Rating must be HIGH, MEDIUM, or LOW.
+        - Decision must be PROCEED or HOLD.
         - Use summaries for overall application quality/readiness synthesis.
-        - Use nextSteps for concrete reviewer-facing next actions based on the provided evidence.
-        - nextSteps may include proceeding with the normal review process when the application appears ready for that step.
-        - When evidence shows a meaningful gap, inconsistency, or uncertainty, use nextSteps for specific follow-up or verification actions.
+        - Use recommendations for concrete reviewer-facing next actions based on the provided evidence.
+        - Recommendations may include proceeding with the normal review process when the application appears ready for that step.
+        - When evidence shows a meaningful gap, inconsistency, or uncertainty, use recommendations for specific follow-up or verification actions.
         - Return an empty array only when no concrete next action would help the reviewer.
-        - recommendation.decision must be PROCEED or HOLD.
-        - Use HOLD only when provided evidence shows a material eligibility, feasibility, budget, or readiness concern that would reasonably block scoring or decision-making.
-        - recommendation.rationale must explain the high-level recommendation in 1-2 complete sentences using provided evidence.
-        - recommendation.rationale should name the 1-3 strongest evidence-based reasons for the recommendation.
         """;
 
     // ── v0/attachment.system.txt ─────────────────────────────────────────────
@@ -441,8 +428,8 @@ public class AIPromptDataSeeder(
         ATTACHMENT
         {{ATTACHMENT}}
 
-        OUTPUT
-        {{OUTPUT}}
+        RESPONSE
+        {{RESPONSE}}
 
         RULES
         {{RULES}}
@@ -552,9 +539,6 @@ public class AIPromptDataSeeder(
 
         RESPONSE
         {{RESPONSE}}
-
-        OUTPUT
-        {{OUTPUT}}
 
         RULES
         {{RULES}}

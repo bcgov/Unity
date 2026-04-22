@@ -36,7 +36,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantBreadcrumbWidg
                     UnityApplicantId = applicant.UnityApplicantId ?? "N/A",
                     ApplicantName = !string.IsNullOrEmpty(applicant.ApplicantName) 
                             ? applicant.ApplicantName 
-                            : "Unknown Applicant",
+                            : "Applicant Name",
                     Status = applicant.Status ?? "Active"
                 };
 

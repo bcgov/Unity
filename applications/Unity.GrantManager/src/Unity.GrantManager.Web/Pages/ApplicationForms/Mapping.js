@@ -256,15 +256,22 @@
                     url: `/api/app/form/${chefsFormId}/version/${chefsFormVersionId}`,
                     type: "POST",
                     success: function (data) {
-                        let availableChefsFields = JSON.parse(data.availableChefsFields)
+                        let formVersion = data.formVersion;
+                        let updatedApplicationFormName = data.updatedFormName;
+                        let updatedNameMessage = updatedApplicationFormName ? 'Form name updated to ' + updatedApplicationFormName : 'Form name is unchanged';
+                        if (updatedApplicationFormName) {
+                            document.getElementById('applicationFormName').textContent = updatedApplicationFormName;                            
+                        }
+
+                        let availableChefsFields = JSON.parse(formVersion.availableChefsFields)
                         document.getElementById('availableChefsFields').value = JSON.stringify(availableChefsFields);
                         initializeIntakeMap(availableChefsFields);
 
                         abp.notify.success(
                             '',
-                            'Synchronized Successful'
+                            'Synchronized Successful' + updatedNameMessage 
                         );
-                        navigateToVersion(data.chefsFormVersionGuid);
+                        navigateToVersion(formVersion.chefsFormVersionGuid);
                     },
                     error: function () {
                         abp.notify.error(
@@ -617,4 +624,48 @@
             UIElements.refreshAvailableWorksheetsHidden.val(data.chefsFormVersionId);
         }
     );
+
+    // AI Configuration tab
+    const btnSaveAIConfig = document.getElementById('btn-save-ai-config');
+    const btnCancelAIConfig = document.getElementById('btn-cancel-ai-config');
+
+    if (btnSaveAIConfig) {
+        const aiFormId = document.getElementById('applicationFormId').value;
+        const automaticCheckbox = document.getElementById('AutomaticallyGenerateAIAnalysis');
+        const manualCheckbox = document.getElementById('ManuallyInitiateAIAnalysis');
+
+        let lastSavedAIValues = {
+            automaticallyGenerateAIAnalysis: automaticCheckbox ? automaticCheckbox.checked : false,
+            manuallyInitiateAIAnalysis: manualCheckbox ? manualCheckbox.checked : false
+        };
+
+        btnSaveAIConfig.addEventListener('click', function () {
+            abp.ajax({
+                url: `/api/app/application-form/${aiFormId}/ai-config`,
+                type: 'PATCH',
+                data: JSON.stringify({
+                    automaticallyGenerateAIAnalysis: automaticCheckbox ? automaticCheckbox.checked : false,
+                    manuallyInitiateAIAnalysis: manualCheckbox ? manualCheckbox.checked : false
+                }),
+                contentType: 'application/json'
+            })
+            .done(function () {
+                lastSavedAIValues = {
+                    automaticallyGenerateAIAnalysis: automaticCheckbox ? automaticCheckbox.checked : false,
+                    manuallyInitiateAIAnalysis: manualCheckbox ? manualCheckbox.checked : false
+                };
+                abp.notify.success('AI configuration saved successfully.');
+            })
+            .fail(function () {
+                abp.notify.error('Failed to save AI configuration.');
+            });
+        });
+
+        if (btnCancelAIConfig) {
+            btnCancelAIConfig.addEventListener('click', function () {
+                if (automaticCheckbox) automaticCheckbox.checked = lastSavedAIValues.automaticallyGenerateAIAnalysis;
+                if (manualCheckbox) manualCheckbox.checked = lastSavedAIValues.manuallyInitiateAIAnalysis;
+            });
+        }
+    }
 });

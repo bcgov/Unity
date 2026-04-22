@@ -1,0 +1,87 @@
+@page
+@using Microsoft.AspNetCore.Authorization
+@using Unity.GrantManager.Web.Menus
+@using Unity.GrantManager.Localization
+@using Microsoft.AspNetCore.Mvc.Localization
+@using Volo.Abp.AspNetCore.Mvc.UI.Layout
+@using Unity.GrantManager.Web.Pages.UnityAdmin
+@model IndexModel
+@inject IHtmlLocalizer<GrantManagerResource> L
+@inject IAuthorizationService Authorization
+@inject IPageLayout PageLayout
+@{
+    PageLayout.Content.MenuItemName = GrantManagerMenus.UnityAdmin;
+    ViewBag.PageTitle = "Unity Admin";
+}
+@section styles {
+    <abp-style-bundle name="@typeof(IndexModel).FullName">
+        <abp-style src="/Pages/UnityAdmin/Index.css" />
+    </abp-style-bundle>
+}
+@section scripts {
+    <abp-script-bundle name="@typeof(IndexModel).FullName">
+        <abp-script src="/themes/ux2/plugins/filterRow.js" />
+        <abp-script src="/Pages/UnityAdmin/Index.js" />
+    </abp-script-bundle>
+}
+
+<div id="UnityAdminSideMenu" class="side-menu">
+    <ul>
+        <li id="reconciliation-report-menu-item" class="nav-item btn btn-nav active">
+            Reconciliation Report
+        </li>
+    </ul>
+</div>
+
+<div id="reconciliation-report-div" class="input-area card mb-3 reconciliation-report">
+    <div class="container-fluid px-0">
+        <div class="unity-page-titlebar">
+            <h4>Reconciliation</h4>
+        </div>
+        <div class="reconciliation-filter-row">
+            <div class="reconciliation-filter-inputs gap-3 px-1">
+                <div>
+                    <label class="form-label" for="search"></label>
+                    <input type="search" id="search" placeholder="Search" class="tbl-search">
+                </div>
+                <div>
+                    <label class="form-label" for="ReconciliationTenantFilter">Tenant: <span class="text-danger">*</span></label>
+                    <select class="form-control" id="ReconciliationTenantFilter" required>
+                        @foreach (var tenant in Model.Tenants)
+                        {
+                            <option value="@tenant" selected="@(tenant == Model.CurrentSelectedTenant ? "selected" : null)">@tenant</option>
+                        }
+                    </select>
+                </div>
+                <div>
+                    <label class="form-label" for="quickDateRange">Quick Date Range</label>
+                    <select id="quickDateRange" class="form-control quick-date-input">
+                        <option value="today">Today</option>
+                        <option value="last7days">Last 7 days</option>
+                        <option value="last30days">Last 30 days</option>
+                        <option value="last3months">Last 3 months</option>
+                        <option value="last6months" selected>Last 6 months</option>
+                        <option value="alltime">All time</option>
+                        <option value="custom">Custom Ranges</option>
+                    </select>
+                </div>
+                <div id="customDateInputs" class="custom-date-range-container-div" style="display:none;">
+                    <div class="date-input-filter-div px-1">
+                        <label class="form-label" for="submittedFromDate">Submission Date From</label>
+                        <input abp-data-datepicker="false" type="date" id="submittedFromDate" name="SubmittedFromDate" value="" class="form-control input-sm date-input-filter" min="1900-01-01">
+                    </div>
+                    <div class="date-input-filter-div px-1">
+                        <label class="form-label" for="submittedToDate">Submission Date To</label>
+                        <input abp-data-datepicker="false" type="date" id="submittedToDate" name="SubmittedToDate" value="" class="form-control input-sm date-input-filter" min="1900-01-01">
+                    </div>
+                </div>
+            </div>
+            <div class="reconciliation-filter-buttons d-flex align-items-end ms-auto">
+                <button id="btn-toggle-filter" type="button" class="custom-table-btn flex-none btn btn-secondary">Filter</button>
+            </div>
+        </div>
+        <div class="application-scrollable-content p-3">
+            <abp-table id="ReconciliationTable"></abp-table>
+        </div>
+    </div>
+</div>

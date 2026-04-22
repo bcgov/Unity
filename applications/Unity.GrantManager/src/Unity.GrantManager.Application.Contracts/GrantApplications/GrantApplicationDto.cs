@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using Unity.GrantManager.AI.Responses;
+using Unity.AI.Responses;
 using Unity.GrantManager.ApplicationForms;
 using Volo.Abp.Application.Dtos;
 

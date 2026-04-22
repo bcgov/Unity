@@ -1,13 +1,11 @@
 .report-config-content {
-    height: calc(97vh - 400px);
-    overflow: scroll;
-    overflow-x: hidden;
+    overflow: visible;
 }
 
 .provider-toggle-section {
     border-bottom: 1px solid #dee2e6;
-    padding-bottom: 1rem;
-    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    margin-bottom: 0.5rem;
 }
 
     .provider-toggle-section .btn-group {
@@ -17,8 +15,8 @@
 
         .provider-toggle-section .btn-group .btn {
             flex: none;
-            min-width: 120px;
-            padding: 0.5rem 1rem;
+            min-width: 100px;
+            padding: 0.375rem 0.75rem;
             font-weight: 500;
             transition: all 0.15s ease-in-out;
         }
@@ -70,7 +68,7 @@
 
 .report-config-content .action-bar {
     flex-shrink: 0;
-    margin-bottom: 1rem;
+    margin-bottom: 0.5rem;
 }
 
 .report-config-footer {
@@ -160,6 +158,17 @@
 .report-config-controls {
     display: flex !important;
     justify-content: space-between;
+    align-items: flex-end;
+}
+
+/* Compact the version selector form-group within controls */
+.report-config-controls .form-group {
+    margin-bottom: 0;
+}
+
+/* Reduce tab pane padding when reporting config is active */
+#nav-reporting-configuration.tab-pane {
+    padding: 0.5rem 0;
 }
 
 .report-config-btn-height-fix {

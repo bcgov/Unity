@@ -247,10 +247,9 @@ $(function () {
             let fieldId = $element[0].id;
             let table = $(this).DataTable({
                 paging: false,
-                bInfo: false,
-                searching: true,
-                serverside: false,
+                searching: true,                
                 info: false,
+                autoWidth: false,
                 lengthChange: false,
                 deferRender: false, // Required for DOM manipulation in addNewRow and configureTable
                 layout: {

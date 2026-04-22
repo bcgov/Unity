@@ -1,6 +1,4 @@
 name: Dev - Build & Push docker images
-permissions:
-  contents: read
 
 on:
   push:
@@ -42,6 +40,8 @@ jobs:
   Setup:
     runs-on: ubuntu-latest
     environment: dev
+    permissions:
+      contents: read
     steps:
     - name: Get variables
       run: |
@@ -61,6 +61,8 @@ jobs:
     needs: [Setup]
     runs-on: ubuntu-latest
     environment: dev
+    permissions:
+      contents: read
     steps:
     - name: Checkout repository
       uses: actions/checkout@v6
@@ -111,6 +113,8 @@ jobs:
     needs: [Setup,Branch,PushVariables]
     runs-on: ubuntu-latest
     environment: dev
+    permissions:
+      contents: read
     steps:
     - uses: actions/checkout@v6
     - name: Build Docker images
@@ -125,10 +129,10 @@ jobs:
         echo "$JFROG_PASSWORD" | docker login -u "$JFROG_USERNAME" --password-stdin $JFROG_SERVICE
     - name: Push application images to Artifactory container registry
       run: |
-        docker tag unity-grantmanager-dbmigrator $JFROG_SERVICE/$JFROG_REPO_PATH/unity-grantmanager-dbmigrator
-        docker push $JFROG_SERVICE/$JFROG_REPO_PATH/unity-grantmanager-dbmigrator
-        docker tag unity-grantmanager-web $JFROG_SERVICE/$JFROG_REPO_PATH/unity-grantmanager-web
-        docker push $JFROG_SERVICE/$JFROG_REPO_PATH/unity-grantmanager-web
+        docker tag unity-grantmanager-dbmigrator $JFROG_SERVICE/$JFROG_REPO_PATH/unity-grantmanager-dbmigrator:latest
+        docker push $JFROG_SERVICE/$JFROG_REPO_PATH/unity-grantmanager-dbmigrator:latest
+        docker tag unity-grantmanager-web $JFROG_SERVICE/$JFROG_REPO_PATH/unity-grantmanager-web:latest
+        docker push $JFROG_SERVICE/$JFROG_REPO_PATH/unity-grantmanager-web:latest
     - name: Disconnect docker from JFrog Artifactory
       run: |
         docker logout

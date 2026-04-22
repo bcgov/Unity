@@ -1,7 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
+using System;
 using System.Threading.Tasks;
 using Unity.AI.Permissions;
 using Unity.AI.Settings;
+using Unity.GrantManager.Applications;
 using Volo.Abp.Authorization.Permissions;
 using Volo.Abp.AspNetCore.Mvc;
 using Volo.Abp.AspNetCore.Mvc.UI.Widgets;
@@ -22,15 +24,22 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ReviewList
     public class ReviewList(
         IFeatureChecker featureChecker,
         IPermissionChecker permissionChecker,
-        ISettingProvider settingProvider) : AbpViewComponent
+        IApplicationFormRepository applicationFormRepository) : AbpViewComponent
     {
-        public async Task<IViewComponentResult> InvokeAsync()
+        public async Task<IViewComponentResult> InvokeAsync(Guid applicationFormId)
         {
             var scoringFeatureEnabled = await featureChecker.IsEnabledAsync("Unity.AI.Scoring");
+
+            var settingProvider = LazyServiceProvider.LazyGetRequiredService<ISettingProvider>();
+            var tenantManualEnabled = await settingProvider.GetAsync<bool>(AISettings.ManualGenerationEnabled, defaultValue: false);
+
+            var applicationForm = await applicationFormRepository.GetAsync(applicationFormId);
+
             ViewBag.IsAIScoringEnabled =
                 scoringFeatureEnabled &&
-                await permissionChecker.IsGrantedAsync(AIPermissions.ScoringAssistant.ScoringAssistantDefault) &&
-                await settingProvider.GetAsync<bool>(AISettings.ScoringAssistantEnabled, defaultValue: false);
+                tenantManualEnabled &&
+                applicationForm.ManuallyInitiateAIAnalysis &&
+                await permissionChecker.IsGrantedAsync(AIPermissions.Analysis.GenerateScoring);
 
             return View();
         }

@@ -1,0 +1,27 @@
+{
+  "decision": "<PROCEED|HOLD>",
+  "errors": [
+    {
+      "title": "<string>",
+      "detail": "<string>"
+    }
+  ],
+  "warnings": [
+    {
+      "title": "<string>",
+      "detail": "<string>"
+    }
+  ],
+  "summaries": [
+    {
+      "title": "<string>",
+      "detail": "<string>"
+    }
+  ],
+  "recommendations": [
+    {
+      "title": "<string>",
+      "detail": "<string>"
+    }
+  ]
+}

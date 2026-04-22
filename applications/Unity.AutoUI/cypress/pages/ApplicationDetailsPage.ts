@@ -110,11 +110,19 @@ export class ApplicationDetailsPage extends BasePage {
     super();
   }
 
+  private activateTab(tabSelector: string): void {
+    cy.get(tabSelector, { timeout: 20000 })
+      .scrollIntoView()
+      .should("be.visible")
+      .click({ force: true })
+      .should("have.class", "active");
+  }
+
   /**
    * Navigate to Submission tab
    */
   goToSubmissionTab(): this {
-    this.clickElement(this.tabs.submission);
+    this.activateTab(this.tabs.submission);
     return this;
   }
 
@@ -123,7 +131,7 @@ export class ApplicationDetailsPage extends BasePage {
    */
   goToReviewAssessmentTab(): this {
     this.dismissErrorModalIfPresent();
-    this.clickElement(this.tabs.reviewAssessment);
+    this.activateTab(this.tabs.reviewAssessment);
     return this;
   }
 
@@ -131,7 +139,7 @@ export class ApplicationDetailsPage extends BasePage {
    * Navigate to Project Info tab
    */
   goToProjectInfoTab(): this {
-    this.clickElement(this.tabs.projectInfo);
+    this.activateTab(this.tabs.projectInfo);
     return this;
   }
 
@@ -139,7 +147,7 @@ export class ApplicationDetailsPage extends BasePage {
    * Navigate to Applicant Info tab
    */
   goToApplicantInfoTab(): this {
-    this.clickElement(this.tabs.applicantInfo);
+    this.activateTab(this.tabs.applicantInfo);
     return this;
   }
 
@@ -147,7 +155,7 @@ export class ApplicationDetailsPage extends BasePage {
    * Navigate to Funding Agreement tab
    */
   goToFundingAgreementTab(): this {
-    this.clickElement(this.tabs.fundingAgreement);
+    this.activateTab(this.tabs.fundingAgreement);
     return this;
   }
 
@@ -155,7 +163,7 @@ export class ApplicationDetailsPage extends BasePage {
    * Navigate to Payment Info tab
    */
   goToPaymentInfoTab(): this {
-    this.clickElement(this.tabs.paymentInfo);
+    this.activateTab(this.tabs.paymentInfo);
     return this;
   }
 
@@ -597,12 +605,30 @@ export class ApplicationDetailsPage extends BasePage {
    */
   dismissErrorModalIfPresent(): this {
     cy.get("body").then(($body) => {
-      // Only dismiss if it is specifically an error modal (swal2-error icon)
-      if ($body.find(".swal2-container .swal2-icon.swal2-error").length > 0) {
-        cy.get(".swal2-container")
-          .find(".swal2-confirm")
-          .first()
-          .click({ force: true });
+      const hasSwalError =
+        $body.find(".swal2-container .swal2-icon.swal2-error").length > 0;
+      const hasTokenErrorText =
+        $body.text().includes("GetAuthTokenAsync") ||
+        $body.text().includes("Error retrieving Token");
+
+      if (hasSwalError || hasTokenErrorText) {
+        if ($body.find(".swal2-container .swal2-confirm").length > 0) {
+          cy.get(".swal2-container")
+            .find(".swal2-confirm")
+            .first()
+            .click({ force: true });
+        } else if ($body.find(".modal.show button").length > 0) {
+          cy.get(".modal.show")
+            .contains("button", /^ok$/i)
+            .click({ force: true });
+        }
+
+        cy.wait(500);
+      }
+
+      if ($body.find(".modal.show .btn-close").length > 0) {
+        cy.get(".modal.show .btn-close").first().click({ force: true });
+        cy.get(".swal2-container").should("not.exist");
         cy.wait(500);
       }
     });

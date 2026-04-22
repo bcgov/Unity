@@ -21,6 +21,7 @@ public class AttachmentAppService(
     IApplicationAttachmentRepository applicationAttachmentRepository,
     IApplicationChefsFileAttachmentRepository applicationChefsFileAttachmentRepository,
     IAssessmentAttachmentRepository assessmentAttachmentRepository,
+    IApplicantAttachmentRepository applicantAttachmentRepository,
     IIntakeFormSubmissionManager intakeFormSubmissionManager,
     IPersonRepository personUserRepository) : ApplicationService, IAttachmentAppService
 {
@@ -54,6 +55,11 @@ public class AttachmentAppService(
             }).ToList();
     }
 
+    public async Task<IList<UnityAttachmentDto>> GetApplicantAsync(Guid applicantId)
+    {
+        return await GetAttachmentsAsync(new AttachmentParametersDto(AttachmentType.APPLICANT, applicantId));
+    }
+
     public async Task<List<ApplicationChefsFileAttachment>> GetApplicationChefsFileAttachmentsAsync(Guid applicationId)
     {
         return await applicationChefsFileAttachmentRepository.GetListAsync(applicationId);
@@ -79,6 +85,9 @@ public class AttachmentAppService(
             AttachmentType.ASSESSMENT => await GetAttachmentsInternalAsync(
                 assessmentAttachmentRepository,
                 attachment => attachment.AssessmentId == attachmentParametersDto.AttachedResourceId),
+            AttachmentType.APPLICANT => await GetAttachmentsInternalAsync(
+                applicantAttachmentRepository,
+                attachment => attachment.ApplicantId == attachmentParametersDto.AttachedResourceId),
             _ => throw new ArgumentException("Attachment type is not supported", nameof(attachmentParametersDto)),
         };
     }
@@ -117,6 +126,8 @@ public class AttachmentAppService(
                 attachmentId, assessmentAttachmentRepository),
             AttachmentType.CHEFS => await GetMetadataInternalAsync(
                 attachmentId, applicationChefsFileAttachmentRepository),
+            AttachmentType.APPLICANT => await GetMetadataInternalAsync(
+                attachmentId, applicantAttachmentRepository),
             _ => throw new ArgumentException("Invalid attachment type", nameof(attachmentType)),
         };
     }
@@ -152,6 +163,10 @@ public class AttachmentAppService(
                 updateAttachment,
                 applicationChefsFileAttachmentRepository,
                 AttachmentType.CHEFS),
+            AttachmentType.APPLICANT => await UpdateMetadataInternalAsync(
+                updateAttachment,
+                applicantAttachmentRepository,
+                AttachmentType.APPLICANT),
             _ => throw new ArgumentException("Invalid attachment type", nameof(updateAttachment)),
         };
     }

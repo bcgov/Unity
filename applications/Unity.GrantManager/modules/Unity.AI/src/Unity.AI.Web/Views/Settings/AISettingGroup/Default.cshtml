@@ -12,16 +12,34 @@
             <form id="AISettingsForm">
                 <abp-row>
                     <abp-column size-md="_12" class="mx-2">
+                        <div class="form-check form-switch mb-3">
+                            <input class="form-check-input"
+                                   type="checkbox"
+                                   id="AutomaticGenerationEnabled"
+                                   name="AutomaticGenerationEnabled"
+                                   value="true"
+                                   @(Model.AutomaticGenerationEnabled ? "checked" : "") />
+                            <label class="form-check-label fw-bold" for="AutomaticGenerationEnabled">
+                                Automatically Generate AI Analysis
+                            </label>
+                            <div class="text-muted small">
+                                When enabled, AI analysis runs automatically on new application intake (subject to form-level AI configuration).
+                            </div>
+                        </div>
+
                         <div class="form-check form-switch">
                             <input class="form-check-input"
                                    type="checkbox"
-                                   id="ScoringAssistantEnabled"
-                                   name="ScoringAssistantEnabled"
+                                   id="ManualGenerationEnabled"
+                                   name="ManualGenerationEnabled"
                                    value="true"
-                                   @(Model.ScoringAssistantEnabled ? "checked" : "") />
-                            <label class="form-check-label fw-bold" for="ScoringAssistantEnabled">
-                                AI Scoring Assistant
+                                   @(Model.ManualGenerationEnabled ? "checked" : "") />
+                            <label class="form-check-label fw-bold" for="ManualGenerationEnabled">
+                                Manually Initiate AI Analysis
                             </label>
+                            <div class="text-muted small">
+                                When enabled, users with appropriate permissions can manually generate or regenerate AI analysis.
+                            </div>
                         </div>
                     </abp-column>
                 </abp-row>

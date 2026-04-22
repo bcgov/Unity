@@ -32,6 +32,7 @@
     'use strict';
 
     let DataTable = $.fn.dataTable;
+    let _filterRowInstanceCount = 0;
 
     // Ensure DataTable is loaded
     if (!DataTable) {
@@ -55,7 +56,7 @@
 
         this.s = {
             dt: new DataTable.Api(settings),
-            namespace: '.dtFilterRow',
+            namespace: '.dtFilterRow' + (++_filterRowInstanceCount),
             filterData: {},
             opts: $.extend({}, DataTable.FilterRow.defaults, opts)
         };
@@ -89,8 +90,7 @@
          * @private
          */
         _constructor: function () {
-            let that = this;
-            let dt = this.s.dt;
+            const dt = this.s.dt;
 
             // Create the filter row
             this._buildFilterRow();
@@ -104,20 +104,24 @@
             this._restoreFilterState();
 
             // Listen for column visibility and reorder events
-            dt.on('column-reorder' + this.s.namespace, function () {
-                that._rebuildFilterRow();
+            dt.on('column-reorder' + this.s.namespace, () => {
+                this._rebuildFilterRow();
             });
 
-            dt.on('column-visibility' + this.s.namespace, function () {
-                that._rebuildFilterRow();
+            dt.on('column-visibility' + this.s.namespace, () => {
+                this._rebuildFilterRow();
+            });
+
+            // Update button state whenever the global search changes
+            dt.on('search' + this.s.namespace, () => {
+                this._updateButtonState();
             });
 
             // Listen for destroy event to cleanup
-            dt.on('destroy' + this.s.namespace, function () {
-                that._destroy();
+            dt.on('destroy' + this.s.namespace, () => {
+                this._destroy();
             });
 
-            // Show filter row if autoShow is enabled
             if (this.s.opts.autoShow) {
                 this.dom.filterRow.show();
             }
@@ -131,26 +135,29 @@
          * @private
          */
         _buildFilterRow: function () {
-            let dt = this.s.dt;
-            let that = this;
-            let filterRow = $('<tr class="tr-toggle-filter" id="tr-filter">').hide();
+            const dt = this.s.dt;
+            const namespace = this.s.namespace;
+            const opts = this.s.opts;
+            const filterData = this.s.filterData;
+            const updateButtonState = this._updateButtonState.bind(this);
+            const filterRow = $('<tr class="tr-toggle-filter" id="tr-filter">').hide();
 
             dt.columns().every(function () {
-                let column = this;
+                const column = this;
                 // Only create filter cells for visible columns
                 if (column.visible()) {
-                    let title = $(column.header()).text();
-                    let colName = dt.settings()[0].aoColumns[column.index()].name || title;
+                    const title = $(column.header()).text();
+                    const colName = dt.settings()[0].aoColumns[column.index()].name || title;
 
                     if (title && title !== 'Actions' && title !== 'Action' && title !== 'Default') {
-                        let placeholder = that.s.opts.placeholderPrefix ?
-                            that.s.opts.placeholderPrefix + ' ' + title :
-                            title;
 
-                        // Get filter value by column name (not title) for persistence across reorders
-                        let filterValue = that.s.filterData[colName] || column.search() || '';
+                        const placeholder = opts.placeholderPrefix
+                            ? opts.placeholderPrefix + ' ' + title
+                            : title;
 
-                        let input = $('<input>', {
+                        const filterValue = filterData[colName] || column.search() || '';
+
+                        const input = $('<input>', {
                             type: 'text',
                             class: 'form-control input-sm custom-filter-input',
                             placeholder: placeholder,
@@ -158,7 +165,7 @@
                             'data-column-name': colName
                         });
 
-                        let cell = $('<td>').append(input);
+                        const cell = $('<td>').append(input);
 
                         // Apply search value if it differs from current column search
                         if (column.search() !== filterValue) {
@@ -166,29 +173,26 @@
                         }
 
                         // Bind keyup event for filtering
-                        input.on('keyup' + that.s.namespace, function () {
-                            let val = this.value;
+                        input.on('keyup' + namespace, function () {
+                            const val = this.value;
+
                             if (column.search() !== val) {
                                 column.search(val).draw();
                                 // Store by column name for persistence
-                                that.s.filterData[colName] = val;
-                                that._updateButtonState();
+                                filterData[colName] = val;
+                                updateButtonState();
                             }
                         });
 
                         filterRow.append(cell);
                     } else {
-                        // Empty cell for action columns
                         filterRow.append($('<td>'));
                     }
                 }
-                // Skip hidden columns - don't add any td element
             });
 
-            // Remove existing filter row if present
             dt.table().header().parentNode.querySelector('.tr-toggle-filter')?.remove();
 
-            // Append to table header
             $(dt.table().header()).after(filterRow);
             this.dom.filterRow = filterRow;
         },
@@ -198,23 +202,23 @@
          * @private
          */
         _rebuildFilterRow: function () {
-            let dt = this.s.dt;
-            let that = this;
-            
             // Preserve current filter values before rebuilding
-            this.dom.filterRow?.find('.custom-filter-input').each(function() {
-                let colName = $(this).data('column-name');
-                let val = $(this).val();
+            this.dom.filterRow?.find('.custom-filter-input').each((_, el) => {
+                const colName = $(el).data('column-name');
+                const val = $(el).val();
                 if (colName && val) {
-                    that.s.filterData[colName] = val;
+                    this.s.filterData[colName] = val;
                 }
             });
-            
-            let wasVisible = this.dom.filterRow?.is(':visible');
+
+            const wasVisible = this.dom.filterRow?.is(':visible');
+
             this._buildFilterRow();
+
             if (wasVisible) {
                 this.dom.filterRow.show();
             }
+
             this._updateButtonState();
         },
 
@@ -223,17 +227,14 @@
          * @private
          */
         _initializePopover: function () {
-            let that = this;
-            let btnSelector = '#' + this.s.opts.buttonId;
-            let $btn = $(btnSelector);
+            const btnSelector = '#' + this.s.opts.buttonId;
+            const $btn = $(btnSelector);
 
-            if (!$btn.length) {
-                return; // Button not found, skip popover
-            }
+            if (!$btn.length) return;
 
             this.dom.button = $btn;
 
-            $btn.on('click' + this.s.namespace, function () {
+            $btn.on('click' + this.s.namespace, () => {
                 $btn.popover('toggle');
             });
 
@@ -247,58 +248,65 @@
                         <div class="popover-body"></div>
                     </div>
                 `,
-                content: function () {
-                    let isChecked = that.dom.filterRow.is(':visible');
+                content: () => {
+                    const isChecked = this.dom.filterRow.is(':visible');
+
                     return `
                         <div class="form-check form-switch">
                             <input class="form-check-input" type="checkbox" id="showFilter" ${isChecked ? 'checked' : ''}>
-                            <label class="form-check-label" for="showFilter">Show Filter Row</label>
+                            <label class="form-check-label">Show Filter Row</label>
                         </div>
-                        <abp-button id="btnClearFilter" class="btn btn-primary" text="Clear Filter" type="button">CLEAR FILTER</abp-button>
+                        <button id="btnClearFilter" class="btn btn-primary" type="button">
+                            CLEAR FILTERS
+                        </button>
                     `;
                 },
                 placement: this.s.opts.popoverPlacement
             });
 
-            // Handle popover shown event
-            $btn.on('shown.bs.popover' + this.s.namespace, function () {
-                let $popover = $('.popover.custom-popover');
+            $btn.on('shown.bs.popover' + this.s.namespace, () => {
 
-                // Toggle filter row visibility
-                $popover.find('#showFilter').on('click', function () {
-                    that.dom.filterRow.toggle();
-                    that.s.dt.trigger('filterRow-visibility', [that.dom.filterRow.is(':visible')]);
-                });
+                const popoverId = $btn.attr('aria-describedby');
+                const $popover = popoverId ? $('#' + popoverId) : $('.popover.custom-popover');
 
-                // Clear all filters
-                $popover.find('#btnClearFilter').on('click', function () {
-                    that.clearFilters();
-                    $btn.popover('hide');
-                });
+                $popover.find('#showFilter')
+                    .off('click' + this.s.namespace)
+                    .on('click' + this.s.namespace, () => {
+                        this.dom.filterRow.toggle();
+                        this.s.dt.trigger('filterRow-visibility', [
+                            this.dom.filterRow.is(':visible')
+                        ]);
+                    });
 
-                // Close popover on outside click/hover
-                $(document).on('click.popover' + that.s.namespace, function (e) {
-                    if (!$(e.target).closest(btnSelector).length &&
-                        !$(e.target).closest('.popover').length) {
+                $popover.find('#btnClearFilter')
+                    .off('click' + this.s.namespace)
+                    .on('click' + this.s.namespace, () => {
+                        this.clearFilters();
                         $btn.popover('hide');
-                    }
-                });
+                    });
 
-                $(document).on('mouseenter.popover' + that.s.namespace, function (e) {
-                    if (!$(e.target).closest(btnSelector).length &&
-                        !$(e.target).closest('.popover').length) {
-                        $btn.popover('hide');
-                    }
-                });
+                // ✅ FIXED OUTSIDE CLICK
+                $(document)
+                    .off('mousedown' + this.s.namespace)
+                    .on('mousedown' + this.s.namespace, (e) => {
+
+                        const $popoverEl = $('.popover.custom-popover');
+                        if (!$popoverEl.is(':visible')) return;
+
+                        const $target = $(e.target);
+
+                        const insidePopover = $target.closest('.popover.custom-popover').length > 0;
+                        const insideButton = $target.closest(btnSelector).length > 0;
+
+                        if (!insidePopover && !insideButton) {
+                            $btn.popover('hide');
+                        }
+                    });
             });
 
             // Cleanup popover events on hide
-            $btn.on('hide.bs.popover' + this.s.namespace, function () {
-                let $popover = $('.popover.custom-popover');
-                $popover.find('#showFilter').off('click');
-                $popover.find('#btnClearFilter').off('click');
-                $(document).off('click.popover' + that.s.namespace);
-                $(document).off('mouseenter.popover' + that.s.namespace);
+            $btn.on('hide.bs.popover' + this.s.namespace, () => {
+                $(document).off('mousedown' + this.s.namespace);
             });
         },
 
@@ -308,30 +316,20 @@
          */
         _updateButtonState: function () {
             let dt = this.s.dt;
-            let hasFilters = false;
+            let hasFilters = dt.search() !== '';
 
-            // Check column filters
-            dt.columns().every(function () {
-                if (this.search()) {
-                    hasFilters = true;
-                    return false;
-                }
-            });
-
-            // Check global search
-            let externalSearchId = dt.init().externalSearchInputId;
-            if (externalSearchId) {
-                let searchVal = $(externalSearchId).val();
-                if (searchVal && searchVal !== '') {
-                    hasFilters = true;
-                }
+            if (!hasFilters) {
+                dt.columns().every(function () {
+                    if (this.search()) {
+                        hasFilters = true;
+                        return false;
+                    }
+                });
             }
 
-            // Update button text
             if (this.dom.button) {
-                this.dom.button.text(hasFilters ?
-                    this.s.opts.buttonTextActive :
-                    this.s.opts.buttonText
+                this.dom.button.text(
+                    hasFilters ? this.s.opts.buttonTextActive : this.s.opts.buttonText
                 );
             }
         },
@@ -341,20 +339,20 @@
          * @private
          */
         _restoreFilterState: function () {
-            let dt = this.s.dt;
-            let that = this;
+            const dt = this.s.dt;
+            const filterData = this.s.filterData;
             let needsRedraw = false;
 
             dt.columns().every(function (i) {
-                let column = this;
-                let colName = dt.settings()[0].aoColumns[i].name;
-                let title = $(column.header()).text();
-                let searchVal = column.search();
+                const column = this;
+                const colName = dt.settings()[0].aoColumns[i].name;
+                const title = $(column.header()).text();
+                const searchVal = column.search();
 
-                // Store by column name (preferred) or fallback to title
-                let key = colName || title;
+                const key = colName || title;
+
                 if (searchVal) {
-                    that.s.filterData[key] = searchVal;
+                    filterData[key] = searchVal;
                     needsRedraw = true;
                 }
             });
@@ -385,32 +383,25 @@
             let externalSearchId = dtInit.externalSearchInputId;
             let initialSortOrder = (dtInit && dtInit.order) ? dtInit.order : [];
 
-            // Clear external search
             if (externalSearchId) {
                 $(externalSearchId).val('');
             }
 
-            // Clear the search input field
-            $('#search').val('');
+            this.dom.filterRow.find('.custom-filter-input').val('');
 
-            // Clear custom filter inputs
-            $('.custom-filter-input').val('');
-
-            // Clear DataTable searches
             dt.search('').columns().search('');
+            dt.order(initialSortOrder).draw();
 
-            // Clear order
-            dt.order(initialSortOrder);
+            let $quickDateRange = $('#quickDateRange');
+            if ($quickDateRange.length) {
+                let defaultVal = $quickDateRange.find('option[selected]').val();
+                if (defaultVal) {
+                    $quickDateRange.val(defaultVal).trigger('change');
+                }
+            }
 
-            // If we want to reset quick date range dropdown to default (last 6 months) and trigger change
-            // The change event handler will reload the table, so would need to remove ajax.reload() here
-            $('#quickDateRange').val($('#quickDateRange option[selected]').val()).trigger('change');
-
-            // Update button state
-            this._updateButtonState();
-
-            // Clear internal filter data
             this.s.filterData = {};
+            this._updateButtonState();
         },
 
         /**
@@ -462,12 +453,7 @@
                 }
             }
 
-            // Remove filter row from DOM
-            if (this.dom.filterRow) {
-                this.dom.filterRow.remove();
-            }
-
-            // Remove reference from settings
+            this.dom.filterRow?.remove();
             dt.settings()[0]._filterRow = null;
         }
     };
@@ -491,4 +477,22 @@
     });
 
     return DataTable.FilterRow;
+
 })(jQuery);
+
+
+$(document).on('mousedown', function (e) {
+    const $popover = $('.popover.custom-popover');
+    if (!$popover.is(':visible')) return;
+
+    const $target = $(e.target);
+    const popoverId = $popover.attr('id');
+    const $trigger = $('[aria-describedby="' + popoverId + '"]');
+
+    const insidePopover = $target.closest('.popover.custom-popover').length > 0;
+    const insideButton = $trigger.length > 0 && $target.closest($trigger).length > 0;
+
+    if (!insidePopover && !insideButton) {
+        $trigger.popover('hide');
+    }
+});

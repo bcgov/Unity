@@ -42,6 +42,10 @@
             {
                 <abp-dropdown-item href="/GrantPrograms">Switch Grant Programs</abp-dropdown-item>
             }
+            @if (CurrentTenant.Id != null)
+            {
+                <abp-dropdown-item href="/ApplicantPortalSettings">Applicant Portal Configuration</abp-dropdown-item>
+            }
             @if (await FeatureChecker.IsEnabledAsync("Unity.Payments") && isAuthorizedForPaymentConfiguration)
             {
                 <abp-dropdown-item href="/PaymentConfigurations">Payments Configuration</abp-dropdown-item>
@@ -50,6 +54,10 @@
             {
                 <abp-dropdown-item href="/ScoresheetConfiguration">Scoresheets Configuration</abp-dropdown-item>
                 <abp-dropdown-item href="/WorksheetConfiguration">Custom Fields Configuration</abp-dropdown-item>
+            }
+            @if (CurrentUser.IsInRole("ITOperations"))
+            {
+                <abp-dropdown-item href="/UnityAdmin">Unity Admin</abp-dropdown-item>
             }
             @if (CurrentUser.IsInRole("system_admin") && await FeatureChecker.IsEnabledAsync("SettingManagement.Enable"))
             {

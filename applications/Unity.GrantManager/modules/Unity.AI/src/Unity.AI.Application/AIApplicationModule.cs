@@ -1,11 +1,13 @@
 using Microsoft.Extensions.DependencyInjection;
+using Unity.Flex;
+using Unity.GrantManager;
+using Volo.Abp.Application;
+using Volo.Abp.AspNetCore.Mvc;
 using Volo.Abp.AutoMapper;
 using Volo.Abp.Modularity;
-using Volo.Abp.Application;
 using Volo.Abp.MultiTenancy;
-using Volo.Abp.VirtualFileSystem;
-using Volo.Abp.AspNetCore.Mvc;
 using Volo.Abp.TenantManagement;
+using Volo.Abp.VirtualFileSystem;
 
 namespace Unity.AI;
 
@@ -13,7 +15,9 @@ namespace Unity.AI;
     typeof(AIApplicationContractsModule),
     typeof(AbpDddApplicationModule),
     typeof(AbpAutoMapperModule),
-    typeof(AbpTenantManagementDomainModule)
+    typeof(AbpTenantManagementDomainModule),
+    typeof(FlexApplicationModule),
+    typeof(GrantManagerDomainModule)
     )]
 public class AIApplicationModule : AbpModule
 {

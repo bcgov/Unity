@@ -12,6 +12,7 @@ public class UnityThemeUX2GlobalStyleContributor : BundleContributor
         context.Files.Add("/themes/ux2/fluenticons.min.css");
         context.Files.Add("/themes/ux2/layout.css");
         context.Files.Add("/themes/ux2/unity-styles.css");
+        context.Files.Add("/themes/ux2/json-editor.css");
 
         context.Files.AddIfNotContains("/libs/datatables.net-bs5/css/dataTables.bootstrap5.min.css");
         context.Files.AddIfNotContains("/libs/datatables.net-buttons-bs5/css/buttons.bootstrap5.min.css");

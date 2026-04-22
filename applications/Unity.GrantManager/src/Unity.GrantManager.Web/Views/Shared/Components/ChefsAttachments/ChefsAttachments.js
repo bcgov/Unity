@@ -6,7 +6,7 @@ $(function () {
             .trigger('click');
     };
 
-    const downloadAll = $('#downloadAll');
+    const downloadAll = $('#downloadSelected');
     const dt = $('#ChefsAttachmentsTable');
     let chefsDataTable;
     let selectedAtttachments = [];
@@ -86,57 +86,12 @@ $(function () {
             className: 'data-table-header text-break',
             width: '35%',
             render: function (data) {
-                let $cellWrapper = $('<div>').addClass(
-                    'd-flex align-items-center'
-                );
-                let $textWrapper = $('<div>')
-                    .addClass('w-100')
-                    .append(data ?? nullPlaceholder);
-                let $buttonWrapper = $('<div>').addClass('flex-shrink-1');
-
-                let $editButton = $('<button>')
-                    .addClass('btn btn-sm edit-button px-0 float-end')
-                    .attr({
-                        'aria-label': 'Edit',
-                        title: 'Edit',
-                    })
-                    .append($('<i>').addClass('fl fl-edit'));
-
-                $cellWrapper.append($textWrapper);
-                $buttonWrapper.append($editButton);
-                $cellWrapper.append($buttonWrapper);
-
-                return $cellWrapper.prop('outerHTML');
+                return data ?? nullPlaceholder;
             },
         };
     }
 
-    function getChefsFileDownloadColumn() {
-        return {
-            title: '',
-            name: 'chefsFileDownload',
-            data: 'chefsFileId',
-            width: '150px',
-            className: 'text-nowrap',
-            render: function (data, type, full, meta) {
-                let html =
-                    '<button class="btn px-2" name="chefs-download-btn" type="button"' +
-                    ' chefs-submission-id=' +
-                    encodeURIComponent(full.chefsSubmissionId) +
-                    ' chefs-data=' +
-                    encodeURIComponent(data) +
-                    ' chefs-file-name=' +
-                    encodeURIComponent(full.fileName) +
-                    ' onclick="downloadChefsFile(event)">' +
-                    '<i class="fl fl-download"></i>' +
-                    '<span>Download</span>' +
-                    '</button>';
-                return html;
-            },
-            orderable: false,
-            index: 2,
-        };
-    }
+
 
     let formatItems = function (items) {
         const newData = items.map((item, index) => {
@@ -197,22 +152,13 @@ $(function () {
         chefsDataTable.ajax.reload();
     });
 
-    chefsDataTable.on(
-        'click',
-        'td button.edit-button',
-        function (event, dt, type, indexes) {
-            event.stopPropagation();
-            let rowData = chefsDataTable.row(event.target.closest('tr')).data();
-            updateAttachmentMetadata('CHEFS', rowData.id);
-        }
-    );
     //Generate AI summaries for attachments
     const $generateAISummariesButton = $('#generateAiSummaries');
     if ($generateAISummariesButton.length > 0) {
         function resetAttachmentSelectionState() {
             selectedAtttachments = [];
             $('.select-all-chefs-files').prop('checked', false);
-            $('.chkbox').prop('checked', false);
+            chefsDataTable.$('.chkbox').prop('checked', false);
             $(downloadAll).prop('disabled', true);
             $generateAISummariesButton.prop('disabled', true);
         }
@@ -383,8 +329,8 @@ $(function () {
     chefsDataTable.on('select', function (e, dt, type, indexes) {
         if (indexes?.length) {
             indexes.forEach((index) => {
-                $('#row_' + index).prop('checked', true);
-                if ($('.chkbox:checked').length == $('.chkbox').length) {
+                $(chefsDataTable.row(index).node()).find('.chkbox').prop('checked', true);
+                if (chefsDataTable.$('.chkbox:checked').length == chefsDataTable.$('.chkbox').length) {
                     $('.select-all-chefs-files').prop('checked', true);
                 }
                 selectAttachment(type, index, 'select_chefs_file');
@@ -395,8 +341,8 @@ $(function () {
     chefsDataTable.on('deselect', function (e, dt, type, indexes) {
         if (indexes?.length) {
             indexes.forEach((index) => {
-                $('#row_' + index).prop('checked', false);
-                if ($('.chkbox:checked').length != $('.chkbox').length) {
+                $(chefsDataTable.row(index).node()).find('.chkbox').prop('checked', false);
+                if (chefsDataTable.$('.chkbox:checked').length != chefsDataTable.$('.chkbox').length) {
                     $('.select-all-chefs-files').prop('checked', false);
                 }
                 selectAttachment(type, index, 'deselect_chefs_file');
@@ -538,6 +484,52 @@ $(function () {
     });
 });
 
+function getChefsFileDownloadColumn() {
+    return {
+        title: '',
+        name: 'chefsFileDownload',
+        data: 'chefsFileId',
+        width: '60px',
+        className: 'text-nowrap',
+        render: function (data, type, full, meta) {
+            let submissionId = encodeURIComponent(full.chefsSubmissionId);
+            let fileId       = encodeURIComponent(data);
+            let fileName     = full.fileName;
+            let displayName  = full.displayName || full.fileName;
+            let html =
+                '<div class="dropdown" style="float:right;">' +
+                    '<button class="btn btn-light dropbtn" type="button">' +
+                        '<i class="fl fl-attachment-more"></i>' +
+                    '</button>' +
+                    '<div class="dropdown-content">' +
+                        '<button class="btn fullWidth" style="margin:10px" type="button"' +
+                            ' chefs-submission-id="' + escapeHtmlAttribute(submissionId) + '"' +
+                            ' chefs-data="' + escapeHtmlAttribute(fileId) + '"' +
+                            ' chefs-file-name="' + escapeHtmlAttribute(fileName) + '"' +
+                            ' chefs-display-name="' + escapeHtmlAttribute(displayName) + '"' +
+                            ' onclick="previewChefsFile(event)">' +
+                            '<i class="fa fa-eye"></i><span>Preview Attachment</span>' +
+                        '</button>' +
+                        '<button class="btn fullWidth" style="margin:10px" type="button"' +
+                            ' chefs-submission-id="' + escapeHtmlAttribute(submissionId) + '"' +
+                            ' chefs-data="' + escapeHtmlAttribute(fileId) + '"' +
+                            ' chefs-file-name="' + escapeHtmlAttribute(fileName) + '"' +
+                            ' onclick="downloadChefsFile(event)">' +
+                            '<i class="fl fl-download"></i><span>Download Attachment</span>' +
+                        '</button>' +
+                        '<button class="btn fullWidth" style="margin:10px" type="button"' +
+                            ' onclick="updateAttachmentMetadata(\'CHEFS\',\'' + full.id + '\')">' +
+                            '<i class="fl fl-edit"></i><span>Edit Attachment</span>' +
+                        '</button>' +
+                    '</div>' +
+                '</div>';
+            return html;
+        },
+        orderable: false,
+        index: 2,
+    };
+}
+
 function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
@@ -600,6 +592,25 @@ function downloadChefsFile(event) {
                 );
             }
         },
+    });
+}
+
+function previewChefsFile(event) {
+    const button = event.currentTarget;
+    const chefsFileId = button.getAttribute('chefs-data');
+    const chefsSubmissionId = button.getAttribute('chefs-submission-id');
+    const chefsFileName = button.getAttribute('chefs-file-name');
+    const chefsDisplayName = button.getAttribute('chefs-display-name');
+
+    let previewModal = new abp.ModalManager({
+        viewUrl: '../Attachments/PreviewAttachmentModal'
+    });
+    previewModal.open({
+        attachmentType: 'chefs',
+        ownerId: chefsSubmissionId,
+        chefsFileId: chefsFileId,
+        fileName: chefsFileName,
+        displayName: chefsDisplayName
     });
 }
 

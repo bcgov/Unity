@@ -1,9 +1,5 @@
 name: Dev - Branch Protection - CI & Unit Tests
 
-permissions:
-  contents: read
-  pull-requests: write
-
 on:
   pull_request:
     branches:
@@ -15,6 +11,8 @@ jobs:
   # ---------------------------------------------------------------------
   check-dev-branch:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     outputs:
       branch-allowed: ${{ steps.branch-check.outputs.allowed }}
     steps:
@@ -41,6 +39,8 @@ jobs:
     needs: check-dev-branch
     if: needs.check-dev-branch.outputs.branch-allowed == 'true'
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     outputs:
       matrix: ${{ steps.discover.outputs.matrix }}
     steps:
@@ -60,6 +60,8 @@ jobs:
   test-project:
     needs: discover-test-projects
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
 
     strategy:
       fail-fast: false
@@ -69,7 +71,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@v5
         with:
           dotnet-version: "9.0.x"
 
@@ -85,7 +87,7 @@ jobs:
             --logger "trx;LogFileName=${NAME}.trx" \
             --results-directory TestResults
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         with:
           name: test-output-${{ strategy.job-index }}
           path: TestResults/
@@ -96,6 +98,9 @@ jobs:
   aggregate-results:
     needs: test-project
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
     steps:
       - uses: actions/download-artifact@v4
         with:
@@ -133,7 +138,7 @@ jobs:
           echo "failed=$FAILED" >> $GITHUB_OUTPUT
           echo "skipped=$SKIPPED" >> $GITHUB_OUTPUT
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         with:
           name: merged-test-results
           path: merged/

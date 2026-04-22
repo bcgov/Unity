@@ -9,6 +9,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.CommentsWidget
 {
     [ApiExplorerSettings(IgnoreApi = true)]
     [Route("GrantApplications/Widgets/Comments")]
+    [Route("GrantApplicants/Widgets/Comments")]
     public class CommentsWidgetController : AbpController
     {
         protected ILogger logger => LazyServiceProvider.LazyGetService<ILogger>(provider => LoggerFactory?.CreateLogger(GetType().FullName!) ?? NullLogger.Instance);

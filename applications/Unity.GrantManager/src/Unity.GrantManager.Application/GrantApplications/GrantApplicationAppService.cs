@@ -14,8 +14,8 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using Unity.Flex.WorksheetInstances;
 using Unity.Flex.Worksheets;
-using Unity.GrantManager.AI.Models;
-using Unity.GrantManager.AI.Responses;
+using Unity.AI.Models;
+using Unity.AI.Responses;
 using Unity.GrantManager.Applicants;
 using Unity.GrantManager.ApplicationForms;
 using Unity.GrantManager.Applications;
@@ -1045,6 +1045,7 @@ public class GrantApplicationAppService(
                         Id = applications.Id,
                         ProjectName = applications.ProjectName,
                         ReferenceNo = applications.ReferenceNo,
+                        UnityApplicationId = applications.UnityApplicationId ?? string.Empty,
                         ApplicantName = applicant != null ? (applicant.ApplicantName ?? GrantManagerConsts.UnknownValue) : GrantManagerConsts.UnknownValue,
                         OrganizationName = applicant != null ? (applicant.OrgName ?? string.Empty) : string.Empty,
                         UnityApplicantId = applicant != null ? (applicant.UnityApplicantId ?? string.Empty) : string.Empty
@@ -1071,17 +1072,17 @@ public class GrantApplicationAppService(
         return result;
     }
 
-    public async Task<string> HideAIAnalysisItemAsync(Guid applicationId, string itemId)
+    public async Task<string> DismissAIAnalysisItemAsync(Guid applicationId, string itemId)
     {
-        return await UpdateAIAnalysisItemVisibilityStateAsync(applicationId, itemId, isHidden: true);
+        return await UpdateAIAnalysisItemDismissedStateAsync(applicationId, itemId, isDismissed: true);
     }
 
-    public async Task<string> ShowAIAnalysisItemAsync(Guid applicationId, string itemId)
+    public async Task<string> RestoreAIAnalysisItemAsync(Guid applicationId, string itemId)
     {
-        return await UpdateAIAnalysisItemVisibilityStateAsync(applicationId, itemId, isHidden: false);
+        return await UpdateAIAnalysisItemDismissedStateAsync(applicationId, itemId, isDismissed: false);
     }
 
-    private async Task<string> UpdateAIAnalysisItemVisibilityStateAsync(Guid applicationId, string itemId, bool isHidden)
+    private async Task<string> UpdateAIAnalysisItemDismissedStateAsync(Guid applicationId, string itemId, bool isDismissed)
     {
         if (string.IsNullOrWhiteSpace(itemId))
         {
@@ -1097,24 +1098,24 @@ public class GrantApplicationAppService(
 
         try
         {
-            var updatedAnalysis = SetAnalysisItemHiddenState(application.AIAnalysis, itemId, isHidden);
+            var updatedAnalysis = SetAnalysisItemDismissedState(application.AIAnalysis, itemId, isDismissed);
             application.AIAnalysis = updatedAnalysis;
             await applicationRepository.UpdateAsync(application);
             return updatedAnalysis;
         }
         catch (Exception ex)
         {
-            var action = isHidden ? "hiding" : "showing";
-            var userMessage = isHidden
-                ? "Failed to hide the AI item. Please try again."
-                : "Failed to show the AI item. Please try again.";
+            var action = isDismissed ? "dismissing" : "restoring";
+            var userMessage = isDismissed
+                ? "Failed to dismiss the AI item. Please try again."
+                : "Failed to restore the AI item. Please try again.";
 
             Logger.LogError(ex, "Error {Action} AI analysis item {ItemId} for application {ApplicationId}", action, itemId, applicationId);
             throw new UserFriendlyException(userMessage);
         }
     }
 
-    private static string SetAnalysisItemHiddenState(string analysisJson, string itemId, bool isHidden)
+    private static string SetAnalysisItemDismissedState(string analysisJson, string itemId, bool isDismissed)
     {
         if (string.IsNullOrWhiteSpace(analysisJson))
         {
@@ -1129,10 +1130,10 @@ public class GrantApplicationAppService(
                 return analysisJson;
             }
 
-            UpdateFindingHiddenState(analysis.Errors, itemId, isHidden);
-            UpdateFindingHiddenState(analysis.Warnings, itemId, isHidden);
-            UpdateFindingHiddenState(analysis.Summaries, itemId, isHidden);
-            UpdateFindingHiddenState(analysis.NextSteps, itemId, isHidden);
+            UpdateFindingDismissedState(analysis.Errors, itemId, isDismissed);
+            UpdateFindingDismissedState(analysis.Warnings, itemId, isDismissed);
+            UpdateFindingDismissedState(analysis.Summaries, itemId, isDismissed);
+            UpdateFindingDismissedState(analysis.Recommendations, itemId, isDismissed);
 
             return System.Text.Json.JsonSerializer.Serialize(analysis, AiAnalysisWriteOptions);
         }
@@ -1142,7 +1143,7 @@ public class GrantApplicationAppService(
         }
     }
 
-    private static void UpdateFindingHiddenState(IEnumerable<ApplicationAnalysisFinding> findings, string itemId, bool isHidden)
+    private static void UpdateFindingDismissedState(IEnumerable<ApplicationAnalysisFinding> findings, string itemId, bool isDismissed)
     {
         foreach (var finding in findings)
         {
@@ -1151,7 +1152,7 @@ public class GrantApplicationAppService(
                 continue;
             }
 
-            finding.Hidden = isHidden;
+            finding.Dismissed = isDismissed;
             return;
         }
     }

@@ -4,14 +4,13 @@ using NSubstitute;
 using Shouldly;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
-using Unity.GrantManager.Applications;
 using Unity.GrantManager.Contacts;
 using Unity.GrantManager.GrantsPortal.Handlers;
 using Unity.GrantManager.GrantsPortal.Messages;
-using Volo.Abp.Data;
 using Volo.Abp.Domain.Entities;
 using Xunit;
 
@@ -21,36 +20,28 @@ public class ContactCreateHandlerTests
 {
     private readonly IContactRepository _contactRepository;
     private readonly IContactLinkRepository _contactLinkRepository;
-    private readonly IApplicationFormSubmissionRepository _submissionRepository;
-    private readonly IApplicantAgentRepository _agentRepository;
     private readonly ContactCreateHandler _handler;
 
     public ContactCreateHandlerTests()
     {
         _contactRepository = Substitute.For<IContactRepository>();
         _contactLinkRepository = Substitute.For<IContactLinkRepository>();
-        _submissionRepository = Substitute.For<IApplicationFormSubmissionRepository>();
-        _agentRepository = Substitute.For<IApplicantAgentRepository>();
 
-        // Default: no existing contact, no submissions, no agents
+        // Default: no existing contact
         _contactRepository.FindAsync(Arg.Any<Guid>(), Arg.Any<bool>(), Arg.Any<CancellationToken>())
             .Returns((Contact?)null);
         _contactRepository.InsertAsync(Arg.Any<Contact>(), Arg.Any<bool>(), Arg.Any<CancellationToken>())
             .Returns(ci => ci.ArgAt<Contact>(0));
         _contactLinkRepository.InsertAsync(Arg.Any<ContactLink>(), Arg.Any<bool>(), Arg.Any<CancellationToken>())
             .Returns(ci => ci.ArgAt<ContactLink>(0));
-        _submissionRepository
-            .GetListAsync(Arg.Any<Expression<Func<ApplicationFormSubmission, bool>>>(), Arg.Any<bool>(), Arg.Any<CancellationToken>())
-            .Returns(new List<ApplicationFormSubmission>());
-        _agentRepository
-            .GetListAsync(Arg.Any<Expression<Func<ApplicantAgent, bool>>>(), Arg.Any<bool>(), Arg.Any<CancellationToken>())
-            .Returns(new List<ApplicantAgent>());
+        _contactLinkRepository.GetListAsync(Arg.Any<Expression<Func<ContactLink, bool>>>(), Arg.Any<bool>(), Arg.Any<CancellationToken>())
+            .Returns(new List<ContactLink>());
+        _contactLinkRepository.UpdateAsync(Arg.Any<ContactLink>(), Arg.Any<bool>(), Arg.Any<CancellationToken>())
+            .Returns(ci => ci.ArgAt<ContactLink>(0));
 
         _handler = new ContactCreateHandler(
             _contactRepository,
             _contactLinkRepository,
-            _submissionRepository,
-            _agentRepository,
             NullLogger<ContactCreateHandler>.Instance);
     }
 
@@ -64,23 +55,26 @@ public class ContactCreateHandlerTests
         Guid? contactId = null,
         string? profileId = null,
         string? subject = null,
+        Guid? applicantId = null,
         JObject? data = null)
     {
         contactId ??= Guid.NewGuid();
         profileId ??= Guid.NewGuid().ToString();
+        applicantId ??= Guid.NewGuid();
 
         data ??= JObject.FromObject(new
         {
             name = "Jane Doe",
             email = "jane@example.com",
             title = "Director",
-            contactType = "ApplicantProfile",
+            contactType = "Applicant",
             homePhoneNumber = "111-1111",
             mobilePhoneNumber = "222-2222",
             workPhoneNumber = "333-3333",
             workPhoneExtension = "101",
             role = "Primary Contact",
-            isPrimary = true
+            isPrimary = true,
+            applicantId = applicantId.Value
         });
 
         return new PluginDataPayload
@@ -143,8 +137,8 @@ public class ContactCreateHandlerTests
     public async Task HandleAsync_ShouldSetContactLinkFields()
     {
         // Arrange
-        var profileId = Guid.NewGuid().ToString();
         var contactId = Guid.NewGuid();
+        var applicantId = Guid.NewGuid();
         ContactLink? savedLink = null;
 
         _contactLinkRepository.InsertAsync(Arg.Any<ContactLink>(), Arg.Any<bool>(), Arg.Any<CancellationToken>())
@@ -154,7 +148,7 @@ public class ContactCreateHandlerTests
                 return savedLink;
             });
 
-        var payload = CreatePayload(contactId: contactId, profileId: profileId);
+        var payload = CreatePayload(contactId: contactId, applicantId: applicantId);
 
         // Act
         await _handler.HandleAsync(payload);
@@ -162,11 +156,75 @@ public class ContactCreateHandlerTests
         // Assert
         savedLink.ShouldNotBeNull();
         savedLink.ContactId.ShouldBe(contactId);
-        savedLink.RelatedEntityType.ShouldBe("ApplicantProfile");
-        savedLink.RelatedEntityId.ShouldBe(Guid.Parse(profileId));
+        savedLink.RelatedEntityType.ShouldBe("Applicant");
+        savedLink.RelatedEntityId.ShouldBe(applicantId);
         savedLink.Role.ShouldBe("Primary Contact");
         savedLink.IsPrimary.ShouldBeTrue();
         savedLink.IsActive.ShouldBeTrue();
+    }
+
+    [Fact]
+    public async Task HandleAsync_WhenIsPrimary_ShouldDemoteExistingPrimaryLinks()
+    {
+        // Arrange
+        var contactId = Guid.NewGuid();
+        var applicantId = Guid.NewGuid();
+
+        var existingPrimary = WithId(new ContactLink
+        {
+            ContactId = Guid.NewGuid(),
+            RelatedEntityId = applicantId,
+            RelatedEntityType = "Applicant",
+            IsPrimary = true,
+            IsActive = true
+        }, Guid.NewGuid());
+
+        _contactLinkRepository
+            .GetListAsync(Arg.Any<Expression<Func<ContactLink, bool>>>(), Arg.Any<bool>(), Arg.Any<CancellationToken>())
+            .Returns(new List<ContactLink> { existingPrimary });
+
+        var payload = CreatePayload(contactId: contactId, applicantId: applicantId);
+
+        // Act
+        var result = await _handler.HandleAsync(payload);
+
+        // Assert
+        result.ShouldBe("Contact created successfully");
+        existingPrimary.IsPrimary.ShouldBeFalse();
+        await _contactLinkRepository.Received(1).UpdateAsync(Arg.Any<ContactLink>(), Arg.Any<bool>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task HandleAsync_WhenNotPrimary_ShouldNotDemoteExistingLinks()
+    {
+        // Arrange
+        var contactId = Guid.NewGuid();
+        var applicantId = Guid.NewGuid();
+
+        var data = JObject.FromObject(new
+        {
+            name = "Jane Doe",
+            email = "jane@example.com",
+            title = "Director",
+            contactType = "Applicant",
+            homePhoneNumber = "111-1111",
+            mobilePhoneNumber = "222-2222",
+            workPhoneNumber = "333-3333",
+            workPhoneExtension = "101",
+            role = "Secondary Contact",
+            isPrimary = false,
+            applicantId = applicantId
+        });
+
+        var payload = CreatePayload(contactId: contactId, applicantId: applicantId, data: data);
+
+        // Act
+        var result = await _handler.HandleAsync(payload);
+
+        // Assert
+        result.ShouldBe("Contact created successfully");
+        await _contactLinkRepository.DidNotReceive().GetListAsync(Arg.Any<Expression<Func<ContactLink, bool>>>(), Arg.Any<bool>(), Arg.Any<CancellationToken>());
+        await _contactLinkRepository.DidNotReceive().UpdateAsync(Arg.Any<ContactLink>(), Arg.Any<bool>(), Arg.Any<CancellationToken>());
     }
 
     #endregion
@@ -216,223 +274,6 @@ public class ContactCreateHandlerTests
 
         // Act & Assert
         await Should.ThrowAsync<ArgumentException>(() => _handler.HandleAsync(payload));
-    }
-
-    #endregion
-
-    #region Applicant agent ID lookup
-
-    [Fact]
-    public async Task HandleAsync_WhenSubmissionsExistWithAgents_ShouldSetApplicantAgentIds()
-    {
-        // Arrange — subject arrives as raw IDP value; OidcSub is stored normalized
-        var rawSubject = "testuser@idir";
-        var normalizedSub = "TESTUSER";
-        var applicationId = Guid.NewGuid();
-        var agentId = Guid.NewGuid();
-
-        var submission = new ApplicationFormSubmission
-        {
-            OidcSub = normalizedSub,
-            ApplicationId = applicationId,
-            ApplicantId = Guid.NewGuid(),
-            ApplicationFormId = Guid.NewGuid(),
-            ChefsSubmissionGuid = Guid.NewGuid().ToString()
-        };
-
-        var agent = WithId(new ApplicantAgent { ApplicationId = applicationId }, agentId);
-
-        _submissionRepository
-            .GetListAsync(Arg.Any<Expression<Func<ApplicationFormSubmission, bool>>>(), Arg.Any<bool>(), Arg.Any<CancellationToken>())
-            .Returns([submission]);
-        _agentRepository
-            .GetListAsync(Arg.Any<Expression<Func<ApplicantAgent, bool>>>(), Arg.Any<bool>(), Arg.Any<CancellationToken>())
-            .Returns([agent]);
-
-        Contact? savedContact = null;
-        _contactRepository.InsertAsync(Arg.Any<Contact>(), Arg.Any<bool>(), Arg.Any<CancellationToken>())
-            .Returns(ci =>
-            {
-                savedContact = ci.ArgAt<Contact>(0);
-                return savedContact;
-            });
-
-        var payload = CreatePayload(subject: rawSubject);
-
-        // Act
-        await _handler.HandleAsync(payload);
-
-        // Assert
-        savedContact.ShouldNotBeNull();
-        savedContact.ExtraProperties.ShouldContainKey("applicantAgentIds");
-        var agentIds = (List<string>)savedContact.ExtraProperties["applicantAgentIds"]!;
-        agentIds.ShouldContain(agentId.ToString());
-    }
-
-    [Fact]
-    public async Task HandleAsync_WhenMultipleSubmissionsAndAgents_ShouldSetDistinctAgentIds()
-    {
-        // Arrange
-        var rawSubject = "multiuser@idir";
-        var normalizedSub = "MULTIUSER";
-        var appId1 = Guid.NewGuid();
-        var appId2 = Guid.NewGuid();
-        var agentId1 = Guid.NewGuid();
-        var agentId2 = Guid.NewGuid();
-
-        var submissions = new List<ApplicationFormSubmission>
-        {
-            new()
-            {
-                OidcSub = normalizedSub,
-                ApplicationId = appId1,
-                ApplicantId = Guid.NewGuid(),
-                ApplicationFormId = Guid.NewGuid(),
-                ChefsSubmissionGuid = Guid.NewGuid().ToString()
-            },
-            new()
-            {
-                OidcSub = normalizedSub,
-                ApplicationId = appId2,
-                ApplicantId = Guid.NewGuid(),
-                ApplicationFormId = Guid.NewGuid(),
-                ChefsSubmissionGuid = Guid.NewGuid().ToString()
-            }
-        };
-
-        var agents = new List<ApplicantAgent>
-        {
-            WithId(new ApplicantAgent { ApplicationId = appId1 }, agentId1),
-            WithId(new ApplicantAgent { ApplicationId = appId2 }, agentId2)
-        };
-
-        _submissionRepository
-            .GetListAsync(Arg.Any<Expression<Func<ApplicationFormSubmission, bool>>>(), Arg.Any<bool>(), Arg.Any<CancellationToken>())
-            .Returns(submissions);
-        _agentRepository
-            .GetListAsync(Arg.Any<Expression<Func<ApplicantAgent, bool>>>(), Arg.Any<bool>(), Arg.Any<CancellationToken>())
-            .Returns(agents);
-
-        Contact? savedContact = null;
-        _contactRepository.InsertAsync(Arg.Any<Contact>(), Arg.Any<bool>(), Arg.Any<CancellationToken>())
-            .Returns(ci =>
-            {
-                savedContact = ci.ArgAt<Contact>(0);
-                return savedContact;
-            });
-
-        var payload = CreatePayload(subject: rawSubject);
-
-        // Act
-        await _handler.HandleAsync(payload);
-
-        // Assert
-        savedContact.ShouldNotBeNull();
-        savedContact.ExtraProperties.ShouldContainKey("applicantAgentIds");
-        var agentIds = (List<string>)savedContact.ExtraProperties["applicantAgentIds"]!;
-        agentIds.Count.ShouldBe(2);
-        agentIds.ShouldContain(agentId1.ToString());
-        agentIds.ShouldContain(agentId2.ToString());
-    }
-
-    [Fact]
-    public async Task HandleAsync_WhenNoSubmissions_ShouldNotSetApplicantAgentIds()
-    {
-        // Arrange — default mock returns empty submissions
-        Contact? savedContact = null;
-        _contactRepository.InsertAsync(Arg.Any<Contact>(), Arg.Any<bool>(), Arg.Any<CancellationToken>())
-            .Returns(ci =>
-            {
-                savedContact = ci.ArgAt<Contact>(0);
-                return savedContact;
-            });
-
-        var payload = CreatePayload();
-
-        // Act
-        await _handler.HandleAsync(payload);
-
-        // Assert
-        savedContact.ShouldNotBeNull();
-        savedContact.ExtraProperties.ShouldNotContainKey("applicantAgentIds");
-    }
-
-    [Fact]
-    public async Task HandleAsync_WhenSubmissionsExistButNoAgents_ShouldNotSetApplicantAgentIds()
-    {
-        // Arrange
-        var submission = new ApplicationFormSubmission
-        {
-            OidcSub = "SOMEUSER",
-            ApplicationId = Guid.NewGuid(),
-            ApplicantId = Guid.NewGuid(),
-            ApplicationFormId = Guid.NewGuid(),
-            ChefsSubmissionGuid = Guid.NewGuid().ToString()
-        };
-
-        _submissionRepository
-            .GetListAsync(Arg.Any<Expression<Func<ApplicationFormSubmission, bool>>>(), Arg.Any<bool>(), Arg.Any<CancellationToken>())
-            .Returns(new List<ApplicationFormSubmission> { submission });
-        // agents remain empty (default mock)
-
-        Contact? savedContact = null;
-        _contactRepository.InsertAsync(Arg.Any<Contact>(), Arg.Any<bool>(), Arg.Any<CancellationToken>())
-            .Returns(ci =>
-            {
-                savedContact = ci.ArgAt<Contact>(0);
-                return savedContact;
-            });
-
-        var payload = CreatePayload(subject: "someuser@idir");
-
-        // Act
-        await _handler.HandleAsync(payload);
-
-        // Assert
-        savedContact.ShouldNotBeNull();
-        savedContact.ExtraProperties.ShouldNotContainKey("applicantAgentIds");
-    }
-
-    [Fact]
-    public async Task HandleAsync_WhenSubjectIsNull_ShouldNotSetApplicantAgentIds()
-    {
-        // Arrange — subject not provided
-        Contact? savedContact = null;
-        _contactRepository.InsertAsync(Arg.Any<Contact>(), Arg.Any<bool>(), Arg.Any<CancellationToken>())
-            .Returns(ci =>
-            {
-                savedContact = ci.ArgAt<Contact>(0);
-                return savedContact;
-            });
-
-        var payload = CreatePayload();
-        payload.Subject = null;
-
-        // Act
-        await _handler.HandleAsync(payload);
-
-        // Assert
-        savedContact.ShouldNotBeNull();
-        savedContact.ExtraProperties.ShouldNotContainKey("applicantAgentIds");
-    }
-
-    #endregion
-
-    #region NormalizeOidcSub
-
-    [Theory]
-    [InlineData("testuser@idir", "TESTUSER")]
-    [InlineData("abc@bceidbusiness", "ABC")]
-    [InlineData("ALREADY", "ALREADY")]
-    [InlineData("mixedCase", "MIXEDCASE")]
-    [InlineData("user@", "USER")]
-    [InlineData(null, null)]
-    [InlineData("", null)]
-    [InlineData("  ", null)]
-    [InlineData("@idir", null)]
-    public void NormalizeOidcSub_ShouldStripIdpSuffixAndUppercase(string? input, string? expected)
-    {
-        ContactCreateHandler.NormalizeOidcSub(input).ShouldBe(expected);
     }
 
     #endregion

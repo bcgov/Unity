@@ -9,6 +9,7 @@ public interface IAttachmentAppService : IApplicationService
 {
     Task<IList<ApplicationAttachmentDto>> GetApplicationAsync(Guid applicationId);
     Task<IList<AssessmentAttachmentDto>> GetAssessmentAsync(Guid assessmentId);
+    Task<IList<UnityAttachmentDto>> GetApplicantAsync(Guid applicantId);
     Task ResyncSubmissionAttachmentsAsync(Guid applicationId);
     Task<IList<UnityAttachmentDto>> GetAttachmentsAsync(AttachmentParametersDto attachmentParametersDto);
     Task<AttachmentMetadataDto> GetAttachmentMetadataAsync(AttachmentType attachmentType, Guid attachmentId);

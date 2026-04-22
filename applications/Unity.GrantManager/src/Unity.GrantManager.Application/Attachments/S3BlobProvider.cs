@@ -21,14 +21,16 @@ public partial class S3BlobProvider : BlobProviderBase, ITransientDependency
 {
     private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly IApplicationAttachmentRepository _applicationAttachmentRepository;
-    private readonly IAssessmentAttachmentRepository _assessmentAttachmentRepository;    
+    private readonly IAssessmentAttachmentRepository _assessmentAttachmentRepository;
+    private readonly IApplicantAttachmentRepository _applicantAttachmentRepository;
     private readonly AmazonS3Client _amazonS3Client;
 
-    public S3BlobProvider(IHttpContextAccessor httpContextAccessor, IApplicationAttachmentRepository attachmentRepository, IAssessmentAttachmentRepository assessmentAttachmentRepository, IConfiguration configuration)
+    public S3BlobProvider(IHttpContextAccessor httpContextAccessor, IApplicationAttachmentRepository attachmentRepository, IAssessmentAttachmentRepository assessmentAttachmentRepository, IApplicantAttachmentRepository applicantAttachmentRepository, IConfiguration configuration)
     {
         _httpContextAccessor = httpContextAccessor;
         _applicationAttachmentRepository = attachmentRepository;
         _assessmentAttachmentRepository = assessmentAttachmentRepository;
+        _applicantAttachmentRepository = applicantAttachmentRepository;
 
         AmazonS3Config s3config = new()
         {
@@ -63,6 +65,19 @@ public partial class S3BlobProvider : BlobProviderBase, ITransientDependency
         };
         
         await _amazonS3Client.DeleteObjectAsync(deleteObjectRequest);
+
+        // Also delete the cached preview PDF if one was generated (S3 DeleteObject is idempotent)
+        var lastSlash = s3ObjectKey.LastIndexOf('/');
+        if (lastSlash >= 0)
+        {
+            var previewKey = s3ObjectKey[..lastSlash] + "/preview/" + s3ObjectKey[(lastSlash + 1)..] + ".pdf";
+            await _amazonS3Client.DeleteObjectAsync(new DeleteObjectRequest
+            {
+                BucketName = config.Bucket,
+                Key = EscapeKeyFileName(previewKey)
+            });
+        }
+
         if (attachmentType == "Application")
         {
             if (attachmentTypeId.IsNullOrEmpty())
@@ -87,6 +102,19 @@ public partial class S3BlobProvider : BlobProviderBase, ITransientDependency
             if (attachment != null)
             {
                 await _assessmentAttachmentRepository.DeleteAsync(attachment);
+            }
+        }
+        else if (attachmentType == "Applicant")
+        {
+            if (attachmentTypeId.IsNullOrEmpty())
+            {
+                throw new AbpValidationException("Missing ApplicantId");
+            }
+            IQueryable<ApplicantAttachment> queryableAttachment = _applicantAttachmentRepository.GetQueryableAsync().Result;
+            ApplicantAttachment? attachment = queryableAttachment.FirstOrDefault(a => a.S3ObjectKey.Equals(s3ObjectKey) && a.ApplicantId.Equals(new Guid(attachmentTypeId.ToString())));
+            if (attachment != null)
+            {
+                await _applicantAttachmentRepository.DeleteAsync(attachment);
             }
         }
         else
@@ -146,30 +174,34 @@ public partial class S3BlobProvider : BlobProviderBase, ITransientDependency
         var httpContext = _httpContextAccessor.HttpContext ?? throw new InvalidOperationException("No active HttpContext.");
         var queryParams = httpContext.Request?.Query ?? throw new InvalidOperationException("No query parameters in the current request.");
         var routeData = _httpContextAccessor.HttpContext.GetRouteData();
-        var assessmentId = routeData.Values["assessmentId"];
         
+        var assessmentId = routeData.Values["assessmentId"];
+        var applicationId = routeData.Values["applicationId"];
+        var applicantId = routeData.Values["applicantId"];
+        queryParams.TryGetValue("userId", out StringValues currentUserId);
         if (assessmentId != null)
         {            
-            queryParams.TryGetValue("userId", out StringValues currentUserId);            
-#pragma warning disable CS8604 // Possible null reference argument.
+                        
+            #pragma warning disable CS8604 // Possible null reference argument.
             await UploadAssessmentAttachment(args, assessmentId.ToString(), currentUserId.ToString());
-#pragma warning restore CS8604 // Possible null reference argument.
+            #pragma warning restore CS8604 // Possible null reference argument.
+        }
+        else if(applicationId != null)
+        {             
+            #pragma warning disable CS8604 // Possible null reference argument.
+            await UploadApplicationAttachment(args, applicationId.ToString(), currentUserId.ToString());
+            #pragma warning restore CS8604 // Possible null reference argument.
+        }
+        else if (applicantId != null)
+        {
+            #pragma warning disable CS8604 // Possible null reference argument.
+            await UploadApplicantAttachment(args, applicantId.ToString(), currentUserId.ToString());
+            #pragma warning restore CS8604 // Possible null reference argument.
         }
         else
         {
-            var applicationId = routeData.Values["applicationId"];
-            if(applicationId != null)
-            {
-                queryParams.TryGetValue("userId", out StringValues currentUserId);                
-#pragma warning disable CS8604 // Possible null reference argument.
-                await UploadApplicationAttachment(args, applicationId.ToString(), currentUserId.ToString());
-#pragma warning restore CS8604 // Possible null reference argument.
-            }
-            else
-            {
-                throw new AbpValidationException("Missing parameter: applicationId/assessmentId");
-            }
-        }       
+            throw new AbpValidationException("Missing parameter: applicationId/assessmentId/applicantId");
+        }     
     }    
     
     private async Task UploadAssessmentAttachment(BlobProviderSaveArgs args, string assessmentId, string currentUserId)
@@ -243,6 +275,43 @@ public partial class S3BlobProvider : BlobProviderBase, ITransientDependency
             attachment.FileName = args.BlobName;            
             attachment.Time = DateTime.UtcNow;
             await _applicationAttachmentRepository.UpdateAsync(attachment);
+        }
+    }
+
+    private async Task UploadApplicantAttachment(BlobProviderSaveArgs args, string applicantId, string currentUserId)
+    {
+        var config = args.Configuration.GetS3BlobProviderConfiguration();
+        var bucket = config.Bucket;
+        var folder = args.Configuration.GetS3BlobProviderConfiguration().ApplicantS3Folder;
+        if (!folder.EndsWith('/'))
+        {
+            folder += "/";
+        }
+        folder += applicantId;
+        var key = folder + "/" + args.BlobName;
+        var escapedKey = folder + "/" + Uri.EscapeDataString(args.BlobName);
+        var mimeType = GetMimeType(args.BlobName);
+        await UploadToS3(args, bucket, escapedKey, mimeType);
+        IQueryable<ApplicantAttachment> queryableAttachment = _applicantAttachmentRepository.GetQueryableAsync().Result;
+        ApplicantAttachment? attachment = queryableAttachment.FirstOrDefault(a => a.S3ObjectKey.Equals(key) && a.ApplicantId.Equals(new Guid(applicantId)));
+        if (attachment == null)
+        {
+            await _applicantAttachmentRepository.InsertAsync(
+                new ApplicantAttachment
+                {
+                    ApplicantId = new Guid(applicantId),
+                    S3ObjectKey = key,
+                    UserId = new Guid(currentUserId),
+                    FileName = args.BlobName,
+                    Time = DateTime.UtcNow,
+                });
+        }
+        else
+        {
+            attachment.UserId = new Guid(currentUserId);
+            attachment.FileName = args.BlobName;
+            attachment.Time = DateTime.UtcNow;
+            await _applicantAttachmentRepository.UpdateAsync(attachment);
         }
     }
 

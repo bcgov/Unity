@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -105,7 +105,7 @@ public class SubmissionAppService(
         // Check and decode the file name if it is URL encoded
         if (!string.IsNullOrEmpty(name) && name.Contains('%'))
         {
-            name = Uri.UnescapeDataString(name); 
+            name = Uri.UnescapeDataString(name);
         }
 
         return new BlobDto { Name = name, Content = contentBytes, ContentType = contentType };
@@ -141,7 +141,7 @@ public class SubmissionAppService(
         return applicationFormSubmissionData;
     }
 
-    public async Task<PagedResultDto<FormSubmissionSummaryDto>> GetSubmissionsList(bool allSubmissions)
+    public async Task<PagedResultDto<FormSubmissionSummaryDto>> GetSubmissionsListAsync(GetSubmissionsListInput input)
     {
         var chefsSubmissions = new List<FormSubmissionSummaryDto>();
         var serializerOptions = CreateJsonSerializerOptions();
@@ -149,19 +149,49 @@ public class SubmissionAppService(
         var unityRefNos = new HashSet<string>();
         var checkedForms = new HashSet<string>();
 
+        if (!string.IsNullOrWhiteSpace(input.TenantName))
+        {
+            tenants = tenants
+                .Where(t => string.Equals(t.Name, input.TenantName, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+        }
+
         foreach (var tenant in tenants)
         {
             using (CurrentTenant.Change(tenant.Id))
             {
+                //This could be overloaded to include the input.DateFrom, and input.DateTo when calling applicationRepository,
+                //the problem is we need to use all forms returned from app repository to search Chefs via IDs.
+                //so date filtering at the moment occurs post-processing
                 await ProcessTenantSubmissions(tenant, chefsSubmissions, serializerOptions, checkedForms, unityRefNos);
             }
         }
 
-        UpdateSubmissionsWithUnityFlags(chefsSubmissions, unityRefNos);
-
-        if (!allSubmissions)
+        foreach (var submission in chefsSubmissions)
         {
-            chefsSubmissions.RemoveAll(s => unityRefNos.Contains(s.ConfirmationId.ToString()));
+            submission.inUnity = unityRefNos.Contains(submission.ConfirmationId.ToString());
+        }
+
+        if (input.DateFrom.HasValue || input.DateTo.HasValue)
+        {
+            DateTime? exclusiveUpperBoundForDateTo = null;
+            if (input.DateTo.HasValue && input.DateTo.Value.TimeOfDay == TimeSpan.Zero)
+            {
+                // Inclusive end-of-day
+                exclusiveUpperBoundForDateTo = input.DateTo.Value.Date.AddDays(1);
+            }
+            chefsSubmissions.RemoveAll(submission =>
+                (input.DateFrom.HasValue && submission.CreatedAt < input.DateFrom.Value) ||
+                (input.DateTo.HasValue && (
+                    exclusiveUpperBoundForDateTo.HasValue
+                        ? submission.CreatedAt >= exclusiveUpperBoundForDateTo.Value
+                        : submission.CreatedAt > input.DateTo.Value
+                )));
+        }
+
+        if (!input.ReturnAllSubmissions)
+        {
+            chefsSubmissions.RemoveAll(submission => submission.inUnity);
         }
 
         return new PagedResultDto<FormSubmissionSummaryDto>(chefsSubmissions.Count, chefsSubmissions);
@@ -244,14 +274,6 @@ public class SubmissionAppService(
         catch (Exception ex)
         {
             Logger.LogError(ex, "GetSubmissionsList Exception: {Message}", ex.Message);
-        }
-    }
-
-    private static void UpdateSubmissionsWithUnityFlags(List<FormSubmissionSummaryDto> chefsSubmissions, HashSet<string> unityRefNos)
-    {
-        foreach (var submission in chefsSubmissions)
-        {
-            submission.inUnity = unityRefNos.Contains(submission.ConfirmationId.ToString());
         }
     }
 }

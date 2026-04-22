@@ -10,6 +10,7 @@ using Volo.Abp.AspNetCore.Mvc;
 using Volo.Abp.Domain.Entities;
 using Microsoft.Extensions.Logging;
 using Unity.GrantManager.Integrations.Chefs;
+using Newtonsoft.Json.Linq;
 
 namespace Unity.GrantManager.Controllers
 {
@@ -51,14 +52,16 @@ namespace Unity.GrantManager.Controllers
                     throw new BusinessException("Application Form API Key is Required");
                 }
 
+                // Check if the application form name is current
+                var updatedApplicationFormName = await SyncApplicationFormNameAsync(formId, applicationForm);
+
                 var chefsFormVersion = await _formsApiService.GetFormDataAsync(formId, formVersionId)
                     ?? throw new BusinessException("Chefs Form Version data could not be retrieved.");
-
 
                 var result = await _applicationFormVersionAppService
                     .UpdateOrCreateApplicationFormVersion(formId, formVersionId, applicationForm.Id, chefsFormVersion);
 
-                return Ok(result);
+                return Ok(new { formVersion = result, updatedFormName = updatedApplicationFormName });
             }
             catch (EntityNotFoundException ex)
             {
@@ -76,6 +79,25 @@ namespace Unity.GrantManager.Controllers
             }
         }
 
+
+        private async Task<string?> SyncApplicationFormNameAsync(string formId, ApplicationForm applicationForm)
+        {
+            var chefsForm = await _formsApiService.GetForm(
+                Guid.Parse(formId),
+                formId,
+                applicationForm.ApiKey!) ?? throw new BusinessException("Unable to retrieve Chefs Form.");
+
+            if (chefsForm is not JObject formObject)
+                return null;
+
+            var formName = formObject.SelectToken("name")?.ToString();
+            if (string.IsNullOrWhiteSpace(formName) || formName == applicationForm.ApplicationFormName)
+                return null;
+
+            applicationForm.ApplicationFormName = formName;
+            await _applicationFormRepository.UpdateAsync(applicationForm);
+            return formName;
+        }
 
         public class ApplicationSubmission
         {

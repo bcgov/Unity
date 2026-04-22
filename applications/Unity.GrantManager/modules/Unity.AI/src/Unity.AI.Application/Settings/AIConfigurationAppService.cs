@@ -7,37 +7,38 @@ using Volo.Abp.SettingManagement;
 
 namespace Unity.AI.Settings;
 
-public class AIConfigurationAppService : AIAppService, IAIConfigurationAppService
+public class AIConfigurationAppService(
+    ISettingProvider settingProvider,
+    ISettingManager settingManager,
+    ICurrentTenant currentTenant) : AIAppService, IAIConfigurationAppService
 {
-    private readonly ISettingProvider _settingProvider;
-    private readonly ISettingManager _settingManager;
-    private readonly ICurrentTenant _currentTenant;
+    private readonly ISettingProvider _settingProvider = settingProvider;
+    private readonly ISettingManager _settingManager = settingManager;
+    private readonly ICurrentTenant _currentTenant = currentTenant;
 
-    public AIConfigurationAppService(
-        ISettingProvider settingProvider,
-        ISettingManager settingManager,
-        ICurrentTenant currentTenant)
+    public virtual async Task<AITenantConfigurationDto> GetTenantConfigurationAsync()
     {
-        _settingProvider = settingProvider;
-        _settingManager = settingManager;
-        _currentTenant = currentTenant;
-    }
-
-    public virtual async Task<AIScoringSettingsDto> GetScoringSettingsAsync()
-    {
-        return new AIScoringSettingsDto
+        return new AITenantConfigurationDto
         {
-            ScoringAssistantEnabled = await _settingProvider.GetAsync<bool>(
-                AISettings.ScoringAssistantEnabled, defaultValue: false)
+            AutomaticGenerationEnabled = await _settingProvider.GetAsync<bool>(
+                AISettings.AutomaticGenerationEnabled, defaultValue: false),
+            ManualGenerationEnabled = await _settingProvider.GetAsync<bool>(
+                AISettings.ManualGenerationEnabled, defaultValue: false)
         };
     }
 
     [Authorize(AIPermissions.Configuration.ConfigureAI)]
-    public virtual async Task UpdateScoringSettingsAsync(UpdateAIScoringSettingsDto input)
+    public virtual async Task UpdateTenantConfigurationAsync(UpdateAITenantConfigurationDto input)
     {
         await _settingManager.SetAsync(
-            AISettings.ScoringAssistantEnabled,
-            input.ScoringAssistantEnabled.ToString().ToLowerInvariant(),
+            AISettings.AutomaticGenerationEnabled,
+            input.AutomaticGenerationEnabled.ToString().ToLowerInvariant(),
+            TenantSettingValueProvider.ProviderName,
+            _currentTenant.Id?.ToString());
+
+        await _settingManager.SetAsync(
+            AISettings.ManualGenerationEnabled,
+            input.ManualGenerationEnabled.ToString().ToLowerInvariant(),
             TenantSettingValueProvider.ProviderName,
             _currentTenant.Id?.ToString());
     }

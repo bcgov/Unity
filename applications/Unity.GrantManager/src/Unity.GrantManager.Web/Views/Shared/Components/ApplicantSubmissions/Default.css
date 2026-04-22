@@ -133,8 +133,8 @@
     overflow: visible !important;
 }
 
-/* Scroll body - dynamic height based on viewport that adapts to browser size */
-.applicant-submissions-widget .dt-scroll-body {
+/* Scroll body fallback before ScrollResize measures the real space */
+.applicant-submissions-widget .dt-container:not(.dt-scroll-resize) .dt-scroll-body {
     max-height: calc(100vh - 480px) !important;
     overflow-y: auto !important;
     overflow-x: auto !important;
