@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Unity.GrantManager.EntityFrameworkCore;
@@ -12,9 +13,11 @@ using Volo.Abp.EntityFrameworkCore;
 namespace Unity.GrantManager.Migrations.TenantMigrations
 {
     [DbContext(typeof(GrantTenantDbContext))]
-    partial class GrantTenantDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260423214720_Add_Applications_Performance_Indexes")]
+    partial class Add_Applications_Performance_Indexes
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -909,8 +912,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
 
                     b.HasIndex("ApplicantName");
 
-                    b.HasIndex("TenantId");
-
                     b.ToTable("Applicants", (string)null);
                 });
 
@@ -1784,9 +1785,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.HasIndex("IntakeId");
 
                     b.HasIndex("ParentFormId");
-
-                    b.HasIndex("TenantId", "IsDeleted")
-                        .HasFilter("\"IsDeleted\" = false");
 
                     b.ToTable("ApplicationForms", (string)null);
                 });
@@ -2872,8 +2870,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.HasKey("Id");
 
                     b.HasIndex("OidcSub");
-
-                    b.HasIndex("TenantId");
 
                     b.ToTable("Persons", (string)null);
                 });
