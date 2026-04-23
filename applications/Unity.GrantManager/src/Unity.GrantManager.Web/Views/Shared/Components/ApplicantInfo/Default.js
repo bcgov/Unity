@@ -90,6 +90,7 @@ abp.widgets.ApplicantInfo = function ($wrapper) {
 
                 let applicationId = document.getElementById('ApplicantInfo_ApplicationId').value;
                 let applicantInfoSubmission = self.getPartialUpdate();
+                self.zoneForm.setSaving(true);
                 try {
                     unity.grantManager.grantApplications.applicationApplicant
                         .updatePartialApplicantInfo(applicationId, applicantInfoSubmission)
@@ -102,10 +103,12 @@ abp.widgets.ApplicantInfo = function ($wrapper) {
                         .fail(function (error) {
                             abp.notify.error('Failed to update Applicant Info.');
                             console.log(error);
+                            self.zoneForm.setSaving(false);
                         });
                 } catch (error) {
                     abp.notify.error('An unexpected error occurred.');
                     console.log(error);
+                    self.zoneForm.setSaving(false);
                 }
             });
         },
