@@ -7,7 +7,7 @@
         <h6 class="fw-bold px-3 m-0">Submission Attachments</h6>
     </div>
     <div class="submission-button-section me-3">
-        @if (ViewBag.IsAIAttachmentSummariesGenerateEnabled)
+        @if (ViewBag.IsAIAttachmentSummariesGenerateEnabled == true)
         {
             <button type="button" class="btn unt-btn-outline-primary btn-outline-primary" id="generateAiSummaries" title="Generate AI Summaries">
                 <span class="ai-button-content">
@@ -16,7 +16,7 @@
                 </span>
             </button>
         }
-        @if (ViewBag.IsAIAttachmentSummariesEnabled)
+        @if (ViewBag.IsAIAttachmentSummariesEnabled == true)
         {
             <button type="button" class="btn unt-btn-outline-primary btn-outline-primary me-2" id="toggleAllAISummaries" title="Toggle AI Summaries">
                 <span class="ai-button-content">
