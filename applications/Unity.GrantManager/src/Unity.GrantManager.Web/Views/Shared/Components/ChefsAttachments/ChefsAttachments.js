@@ -6,7 +6,7 @@ $(function () {
             .trigger('click');
     };
 
-    const downloadAll = $('#downloadAll');
+    const downloadAll = $('#downloadSelected');
     const dt = $('#ChefsAttachmentsTable');
     let chefsDataTable;
     let selectedAtttachments = [];
@@ -158,7 +158,7 @@ $(function () {
         function resetAttachmentSelectionState() {
             selectedAtttachments = [];
             $('.select-all-chefs-files').prop('checked', false);
-            $('.chkbox').prop('checked', false);
+            chefsDataTable.$('.chkbox').prop('checked', false);
             $(downloadAll).prop('disabled', true);
             $generateAISummariesButton.prop('disabled', true);
         }
@@ -233,9 +233,7 @@ $(function () {
         $toggleAllAISummariesButton.on('click', function () {
             const $button = $(this);
             const $icon = $button.find('i');
-            const $text = $button.contents().filter(function () {
-                return this.nodeType === 3;
-            });
+            const $label = $button.find('.toggle-ai-summaries-label');
 
             // Don't do anything if button is disabled
             if ($button.prop('disabled')) {
@@ -262,7 +260,7 @@ $(function () {
                     }
                 });
                 $icon.removeClass('fa-chevron-up').addClass('fa-chevron-down');
-                $text.replaceWith('Show Summaries');
+                $label.text('Show Summaries');
                 $button.attr('title', 'Show AI Summaries');
                 allAISummariesExpanded = false;
             } else {
@@ -290,7 +288,7 @@ $(function () {
                     }
                 });
                 $icon.removeClass('fa-chevron-down').addClass('fa-chevron-up');
-                $text.replaceWith('Hide Summaries');
+                $label.text('Hide Summaries');
                 $button.attr('title', 'Hide AI Summaries');
                 allAISummariesExpanded = true;
             }
@@ -302,11 +300,9 @@ $(function () {
         if (allAISummariesExpanded) {
             const $button = $('#toggleAllAISummaries');
             const $icon = $button.find('i');
-            const $text = $button.contents().filter(function () {
-                return this.nodeType === 3;
-            });
+            const $label = $button.find('.toggle-ai-summaries-label');
             $icon.removeClass('fa-chevron-up').addClass('fa-chevron-down');
-            $text.replaceWith('Show Summaries');
+            $label.text('Show Summaries');
             $button.attr('title', 'Show AI Summaries');
             allAISummariesExpanded = false;
         }
@@ -329,8 +325,8 @@ $(function () {
     chefsDataTable.on('select', function (e, dt, type, indexes) {
         if (indexes?.length) {
             indexes.forEach((index) => {
-                $('#row_' + index).prop('checked', true);
-                if ($('.chkbox:checked').length == $('.chkbox').length) {
+                $(chefsDataTable.row(index).node()).find('.chkbox').prop('checked', true);
+                if (chefsDataTable.$('.chkbox:checked').length == chefsDataTable.$('.chkbox').length) {
                     $('.select-all-chefs-files').prop('checked', true);
                 }
                 selectAttachment(type, index, 'select_chefs_file');
@@ -341,8 +337,8 @@ $(function () {
     chefsDataTable.on('deselect', function (e, dt, type, indexes) {
         if (indexes?.length) {
             indexes.forEach((index) => {
-                $('#row_' + index).prop('checked', false);
-                if ($('.chkbox:checked').length != $('.chkbox').length) {
+                $(chefsDataTable.row(index).node()).find('.chkbox').prop('checked', false);
+                if (chefsDataTable.$('.chkbox:checked').length != chefsDataTable.$('.chkbox').length) {
                     $('.select-all-chefs-files').prop('checked', false);
                 }
                 selectAttachment(type, index, 'deselect_chefs_file');

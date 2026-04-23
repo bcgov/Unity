@@ -18,6 +18,7 @@
     "Menu:TenantManagement": "Tenants",
     "Menu:EndpointManagement": "Endpoints",
     "Menu:Applicants": "Applicants",
+    "Menu:ConfigurationManagement": "Configuration Management",
     "Welcome": "Welcome",
     "LongWelcomeMessage": "Welcome to Unity Grant Manager",
 
