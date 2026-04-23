@@ -219,6 +219,7 @@
     "Unity.GrantManager.ApplicationManagement.Applicant.Summary": "Applicant Info",
     "Unity.GrantManager.ApplicationManagement.Applicant.Summary.Update": "Edit Applicant Info",
     "Unity.GrantManager.ApplicationManagement.Applicant.Contact": "Contact Info",
+    "Unity.GrantManager.ApplicationManagement.Applicant.Contact.Create": "Create Contact Info",
     "Unity.GrantManager.ApplicationManagement.Applicant.Contact.Update": "Edit Contact Info",
     "Unity.GrantManager.ApplicationManagement.Applicant.Authority": "Signing Authority",
     "Unity.GrantManager.ApplicationManagement.Applicant.Authority.Update": "Edit Signing Authority",
