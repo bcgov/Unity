@@ -232,3 +232,13 @@
 
     <!-- Toast notifications -->
     <app-toast></app-toast>
+
+<app-alert
+  [isVisible]="showDeleteQuestionAlert"
+  title="Delete Question"
+  message="Are you sure you want to delete this question? This action cannot be undone."
+  confirmText="Delete"
+  cancelText="Cancel"
+  (confirm)="confirmDeleteQuestion()"
+  (cancel)="cancelDeleteQuestion()">
+</app-alert>
