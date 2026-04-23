@@ -139,18 +139,8 @@ public class OpenAIConfigurationResolver(IConfiguration configuration) : ITransi
     {
         const char UrlPathSeparator = '/';
 
-        if (Uri.TryCreate(profilePath, UriKind.Absolute, out var absoluteUri))
-        {
-            return absoluteUri.ToString();
-        }
-
-        var trimmedEndpoint = endpoint.Trim().TrimEnd(UrlPathSeparator);
-        var trimmedPath = profilePath.Trim();
-        if (!trimmedPath.StartsWith(UrlPathSeparator))
-        {
-            trimmedPath = string.Concat(UrlPathSeparator, trimmedPath);
-        }
-
-        return trimmedEndpoint + trimmedPath;
+        return endpoint.Trim().TrimEnd(UrlPathSeparator)
+            + UrlPathSeparator
+            + profilePath.Trim().TrimStart(UrlPathSeparator);
     }
 }
