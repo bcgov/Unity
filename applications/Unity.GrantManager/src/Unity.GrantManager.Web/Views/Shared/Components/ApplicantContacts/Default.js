@@ -15,7 +15,7 @@ $(function () {
         return localizedTexts[key] || fallback;
     }
 
-    function format(template, value) {
+    function format(template, value) { // NOSONAR - intentionally scoped here; helper is only used within this widget scenario and should remain inside the closure
         return (template || '').replace('{0}', value);
     }
 
@@ -89,11 +89,16 @@ $(function () {
 
     function renderActions(data, type, row) {
         if (row.contactType !== 'Applicant') {
-            const message = row.contactType === 'Application'
-                ? t('sourceInfoApplication', 'Sourced from the Application submission. Managed on the Application Details form and cannot be edited here.')
-                : row.contactType === 'ApplicantAgent'
-                    ? t('sourceInfoApplicantAgent', 'Sourced from the Applicant Agent on the CHEFS submission. Captured at intake and cannot be edited here.')
-                    : format(t('sourceInfoGeneric', 'Sourced from {0} and cannot be edited here.'), row.contactType || 'another record');
+            let sourceInfoMessage;
+            if (row.contactType === 'Application') {
+                sourceInfoMessage = t('sourceInfoApplication', 'Sourced from the Application submission. Managed on the Application Details form and cannot be edited here.');
+            } else if (row.contactType === 'ApplicantAgent') {
+                sourceInfoMessage = t('sourceInfoApplicantAgent', 'Sourced from the Applicant Agent on the CHEFS submission. Captured at intake and cannot be edited here.');
+            } else {
+                sourceInfoMessage = format(t('sourceInfoGeneric', 'Sourced from {0} and cannot be edited here.'), row.contactType || 'another record');
+            }
+
+            const message = sourceInfoMessage;
             const escaped = $('<div/>').text(message).html();
             return `<span class="applicant-contact-source-info"
                           data-bs-toggle="tooltip"
