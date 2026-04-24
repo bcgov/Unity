@@ -16,6 +16,7 @@ namespace Unity.Flex.Domain.Worksheets
         public virtual string Title { get; private set; } = string.Empty;
         public virtual uint Version { get; private set; } = 1;
         public virtual bool Published { get; private set; } = false;
+        public virtual bool IsArchived { get; private set; } = false;
 
         public Guid? TenantId { get; set; }
 
@@ -61,9 +62,10 @@ namespace Unity.Flex.Domain.Worksheets
             return this;
         }
 
-        public Worksheet UpdateSection(WorksheetSection section, string name)
+        public Worksheet UpdateSection(WorksheetSection section, string name, string? definition = null)
         {
             section.SetName(name);
+            section.SetDefinition(definition);
             return this;
         }
 
@@ -85,6 +87,12 @@ namespace Unity.Flex.Domain.Worksheets
         public Worksheet SetPublished(bool published)
         {
             Published = published;
+            return this;
+        }
+
+        public Worksheet SetArchived(bool archived)
+        {
+            IsArchived = archived;
             return this;
         }
 

@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Unity.GrantManager.EntityFrameworkCore;
@@ -12,9 +13,11 @@ using Volo.Abp.EntityFrameworkCore;
 namespace Unity.GrantManager.Migrations.TenantMigrations
 {
     [DbContext(typeof(GrantTenantDbContext))]
-    partial class GrantTenantDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260414100000_AddIsArchivedToWorksheets")]
+    partial class AddIsArchivedToWorksheets
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1666,9 +1669,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<DateTime?>("AttemptedConnectionDate")
                         .HasColumnType("timestamp without time zone");
 
-                    b.Property<bool>("AutomaticallyGenerateAIAnalysis")
-                        .HasColumnType("boolean");
-
                     b.Property<string>("AvailableChefsFields")
                         .HasColumnType("text");
 
@@ -1740,9 +1740,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<Guid?>("LastModifierId")
                         .HasColumnType("uuid")
                         .HasColumnName("LastModifierId");
-
-                    b.Property<bool>("ManuallyInitiateAIAnalysis")
-                        .HasColumnType("boolean");
 
                     b.Property<Guid?>("ParentFormId")
                         .HasColumnType("uuid");

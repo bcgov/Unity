@@ -11,7 +11,7 @@ $(function () {
     makeSectionsAndFieldsSortable();
 
     function bindActionButtons() {
-        let addWorksheetButton = $("#add_worksheet_btn");
+        let addWorksheetButton = $(".worksheet-add-btn");
 
         if (addWorksheetButton) {
             addWorksheetButton.on("click", function (_) {
@@ -200,3 +200,118 @@ $(function () {
         }
     );
 });
+
+function makeSectionsAndFieldsSortable() {
+    makeCustomFieldsSortable();
+    makeSectionsSortable();
+}
+
+function makeCustomFieldsSortable() {
+    document.querySelectorAll('.custom-fields-wrapper').forEach(function (div) {
+        const wrapper = div.closest('.sections-wrapper-outer');
+        const isArchived = wrapper?.dataset.isArchived === 'true';
+        _ = new Sortable(div, {
+            animation: 150,
+            disabled: isArchived,
+            onEnd: function (evt) {
+                updateCustomFieldsSequence(evt);
+            },
+            ghostClass: 'blue-background',
+            onMove: function (_) {
+                return true;
+            }
+        });
+    });
+}
+
+function makeSectionsSortable() {
+    document.querySelectorAll('.sections-wrapper-outer').forEach(function (div) {
+        const isArchived = div.dataset.isArchived === 'true';
+        _ = new Sortable(div, {
+            animation: 150,
+            disabled: isArchived,
+            onEnd: function (evt) {
+                updateSectionSequence(evt);
+            },
+            ghostClass: 'blue-background',
+            onMove: function (_) {
+                return true;
+            }
+        });
+    });
+}
+
+function updateCustomFieldsSequence(evt) {
+    let sectionId = evt.target.dataset.sectionId;
+    let oldIndex = evt.oldIndex;
+    let newIndex = evt.newIndex;
+
+    unity.flex.worksheets.worksheetSection
+        .resequenceCustomFields(sectionId, oldIndex, newIndex, {})
+        .done(function () {
+            updatePreview();
+            abp.notify.success(
+                'Custom fields order updated.'
+            );
+        });
+}
+
+function updateSectionSequence(evt) {
+    let worksheetId = evt.target.dataset.worksheetId;
+    let oldIndex = evt.oldIndex;
+    let newIndex = evt.newIndex;
+
+    unity.flex.worksheets.worksheet
+        .resequenceSections(worksheetId, oldIndex, newIndex, {})
+        .done(function () {
+            updatePreview();
+            abp.notify.success(
+                'Sections fields order updated.'
+            );
+        });
+}
+
+function refreshWorksheetListWidget() {
+    const url = `../Flex/Widgets/WorksheetList/Refresh`;
+    fetch(url)
+        .then(response => response.text())
+        .then(data => {
+            document.getElementById('worksheet-info-widget-list').innerHTML = data;
+            setTimeout(() => {
+                PubSub.publish('worksheet_list_refreshed');
+            }, 100);
+        })
+        .catch(error => {
+            console.error('Error refreshing worksheet-info-list-widget:', error);
+        });
+}
+
+function updatePreview() {
+    let worksheets = $('button.accordion-button[aria-expanded=true]');
+    const previewPane = $('#preview');
+
+    if (worksheets?.length > 0) {
+        let worksheetId = worksheets[0].dataset.worksheetId;
+        const url = `../Flex/Widgets/WorksheetInstance/Refresh?`
+            + `instanceCorrelationId=00000000-0000-0000-0000-000000000000&`
+            + `instanceCorrelationProvider=Preview&`
+            + `sheetCorrelationId=00000000-0000-0000-0000-000000000000&`
+            + `sheetCorrelationProvider=Preview&`
+            + `uiAnchor=Preview&`
+            + `worksheetId=${worksheetId}`;
+        fetch(url)
+            .then(response => response.text())
+            .then(data => {
+                previewPane.html(data);
+                $('#preview :input').prop('readonly', true);
+                PubSub.publish('worksheet_preview_datagrid_refresh');
+            })
+            .catch(error => {
+                console.error('Error generating preview:', error);
+            });
+    } else {
+        previewPane?.html('<p>No sections to display.</p>');
+    }
+
+    $('.preview-scrollable').first().scrollTop(0);
+}
