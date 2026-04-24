@@ -733,22 +733,21 @@ public class PaymentRequestRepository_Tests : PaymentsApplicationTestBase
 
     [Fact]
     [Trait("Category", "Integration")]
-    public async Task GetPaymentPendingListByCorrelationIdAsync_Should_Not_Return_L3Pending()
+    public async Task GetPaymentPendingListByCorrelationIdAsync_Should_Return_L3Pending()
     {
-        // Arrange - The method only returns L1 and L2 pending
+        // Arrange
         var correlationId = Guid.NewGuid();
         var siteId = await CreateSupplierAndSiteAsync();
 
         using var uow = _unitOfWorkManager.Begin();
-        await InsertPaymentRequestAsync(siteId, correlationId, 1000m, PaymentRequestStatus.L3Pending);
-        await InsertPaymentRequestAsync(siteId, correlationId, 2000m, PaymentRequestStatus.L1Pending);
+        await InsertPaymentRequestAsync(siteId, correlationId, 1000m, PaymentRequestStatus.L3Pending);        
 
         // Act
         var payments = await _paymentRequestRepository.GetPaymentPendingListByCorrelationIdAsync(correlationId);
 
         // Assert
         payments.Count.ShouldBe(1);
-        payments[0].Status.ShouldBe(PaymentRequestStatus.L1Pending);
+        payments[0].Status.ShouldBe(PaymentRequestStatus.L3Pending);
     }
 
     [Fact]
