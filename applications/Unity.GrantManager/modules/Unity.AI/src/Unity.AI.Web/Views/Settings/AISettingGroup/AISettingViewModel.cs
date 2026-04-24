@@ -2,5 +2,6 @@ namespace Unity.AI.Web.Views.Settings.AISettingGroup;
 
 public class AISettingViewModel
 {
-    public bool ScoringAssistantEnabled { get; set; }
+    public bool AutomaticGenerationEnabled { get; set; }
+    public bool ManualGenerationEnabled { get; set; }
 }

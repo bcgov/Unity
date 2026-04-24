@@ -1,13 +1,29 @@
-﻿function generateAttachmentButtonContent(data, type, full, meta, attachmentType) {
+﻿function escapeHtmlAttribute(value) {
+    return String(value ?? '')
+        .replaceAll('&', '&amp;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#39;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;');
+}
+
+function generateAttachmentButtonContent(data, type, full, meta, attachmentType) {
     let ownerId = getAttachmentOwnerId(attachmentType);
     let downloadUrl = `/api/app/attachment/${attachmentType}/${encodeURIComponent(ownerId)}/download/${encodeURIComponent(full.fileName)}`;
     let isCreator = abp.currentUser.id == full.creatorId;
+    let escapedAttachmentType = escapeHtmlAttribute(attachmentType);
+    let escapedOwnerId = escapeHtmlAttribute(ownerId);
+    let escapedFileName = escapeHtmlAttribute(full.fileName);
+    let escapedDisplayName = escapeHtmlAttribute(full.displayName || full.fileName);
     let html = `
         <div class="dropdown" style="float:right;">
             <button class="btn btn-light dropbtn" type="button">
                 <i class="fl fl-attachment-more"></i>
             </button>
             <div class="dropdown-content">
+                <button class="btn fullWidth js-preview-attachment" style="margin:10px" type="button" data-attachment-type="${escapedAttachmentType}" data-owner-id="${escapedOwnerId}" data-file-name="${escapedFileName}" data-display-name="${escapedDisplayName}">
+                    <i class="fa fa-eye"></i><span>Preview Attachment</span>
+                </button>
                 <a href="${downloadUrl}" target="_blank" download="${data}" class="fullwidth">
                     <button class="btn fullWidth" style="margin:10px" type="button">
                         <i class="fl fl-download"></i><span>Download Attachment</span>
@@ -25,6 +41,27 @@
 
     return html;
 }
+
+function previewAttachment(attachmentType, ownerId, fileName, displayName) {
+    let previewModal = new abp.ModalManager({
+        viewUrl: '../Attachments/PreviewAttachmentModal'
+    });
+    previewModal.open({
+        attachmentType: attachmentType,
+        ownerId: ownerId,
+        fileName: fileName,
+        displayName: displayName
+    });
+}
+
+$(document).on('click', '.js-preview-attachment', function () {
+    previewAttachment(
+        $(this).attr('data-attachment-type'),
+        $(this).attr('data-owner-id'),
+        $(this).attr('data-file-name'),
+        $(this).attr('data-display-name')
+    );
+});
 
 function getAttachmentOwnerId(attachmentType) {
     switch (attachmentType) {
@@ -77,6 +114,19 @@ function updateAttachmentMetadata(attachmentType, attachmentId) {
         attachmentId: attachmentId
     });
 }
+
+$(document).on('mouseenter', '.attachments-table .dropdown', function () {
+    const rect = this.getBoundingClientRect();
+    const $content = $(this).find('.dropdown-content');
+    $content.css({ visibility: 'hidden', display: 'block', top: '', bottom: '' });
+    const dropdownHeight = $content.outerHeight();
+    $content.css({ visibility: '', display: '' });
+    if (rect.bottom + dropdownHeight > window.innerHeight) {
+        $content.css({ bottom: (window.innerHeight - rect.top) + 'px', top: '' });
+    } else {
+        $content.css({ top: rect.bottom + 'px', bottom: '' });
+    }
+});
 
 function refreshAttachmentWidget(attachmentType) {
     switch (attachmentType) {

@@ -21,20 +21,39 @@ public class AIPermissionDefinitionProvider : PermissionDefinitionProvider
                 L("Permission:AI.Reporting"))
                 .RequireFeatures("Unity.AIReporting");                
 
-            aiPermissionsGroup.AddPermission(
-                AIPermissions.ApplicationAnalysis.ApplicationAnalysisDefault,
-                L("Permission:AI.ApplicationAnalysis"))
-                 .RequireFeatures("Unity.AI.ApplicationAnalysis");
+            var analysisParent = aiPermissionsGroup.AddPermission(
+                AIPermissions.Analysis.AnalysisDefault,
+                L("Permission:AI.Analysis"));
 
-            aiPermissionsGroup.AddPermission(
-                AIPermissions.AttachmentSummary.AttachmentSummaryDefault ,
-                L("Permission:AI.AttachmentSummary"))
-                 .RequireFeatures("Unity.AI.AttachmentSummaries");
+            var viewApplicationAnalysis = analysisParent.AddChild(
+                AIPermissions.Analysis.ViewApplicationAnalysis,
+                L("Permission:AI.Analysis.ViewApplicationAnalysis"))
+                .RequireFeatures("Unity.AI.ApplicationAnalysis");
 
-            aiPermissionsGroup.AddPermission(
-                AIPermissions.ScoringAssistant.ScoringAssistantDefault,
-                L("Permission:AI.ScoringAssistant"))
-                 .RequireFeatures("Unity.AI.Scoring");
+            viewApplicationAnalysis.AddChild(
+                AIPermissions.Analysis.GenerateApplicationAnalysis,
+                L("Permission:AI.Analysis.GenerateApplicationAnalysis"))
+                .RequireFeatures("Unity.AI.ApplicationAnalysis");
+
+            var viewAttachmentSummary = analysisParent.AddChild(
+                AIPermissions.Analysis.ViewAttachmentSummary,
+                L("Permission:AI.Analysis.ViewAttachmentSummary"))
+                .RequireFeatures("Unity.AI.AttachmentSummaries");
+
+            viewAttachmentSummary.AddChild(
+                AIPermissions.Analysis.GenerateAttachmentSummaries,
+                L("Permission:AI.Analysis.GenerateAttachmentSummaries"))
+                .RequireFeatures("Unity.AI.AttachmentSummaries");
+
+            var viewScoringResult = analysisParent.AddChild(
+                AIPermissions.Analysis.ViewScoringResult,
+                L("Permission:AI.Analysis.ViewScoringResult"))
+                .RequireFeatures("Unity.AI.Scoring");
+
+            viewScoringResult.AddChild(
+                AIPermissions.Analysis.GenerateScoring,
+                L("Permission:AI.Analysis.GenerateScoring"))
+                .RequireFeatures("Unity.AI.Scoring");
 
             var settingManagement = context.GetGroup(SettingManagementPermissions.GroupName);
             settingManagement.AddPermission(

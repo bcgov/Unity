@@ -26,11 +26,11 @@ public class CreateAIAssessmentOnScoringGeneratedHandler(
             logger.LogWarning("Event data or application ID is null in CreateAIAssessmentOnScoringGeneratedHandler.");
             return;
         }
-        if (!await featureChecker.IsEnabledAsync("Unity.AI.Scoring"))
+        if (!await settingProvider.GetAsync<bool>(AISettings.AutomaticGenerationEnabled, defaultValue: false))
         {
             return;
         }
-        if (!await settingProvider.GetAsync<bool>(AISettings.ScoringAssistantEnabled, defaultValue: false))
+        if (!await featureChecker.IsEnabledAsync("Unity.AI.Scoring"))
         {
             return;
         }

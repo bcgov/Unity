@@ -1,38 +1,63 @@
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.Extensions.Logging;
 using System;
 using System.Threading.Tasks;
 using Unity.AI;
-using Unity.AI.Automation;
+using Unity.AI.Operations;
 using Unity.AI.Permissions;
+using Unity.GrantManager.GrantApplications.Automation.Events;
 using Volo.Abp;
+using Volo.Abp.EventBus.Local;
 using Volo.Abp.Features;
 
 namespace Unity.GrantManager.GrantApplications;
 
-[Authorize(AIPermissions.ScoringAssistant.ScoringAssistantDefault)]
+[Authorize(AIPermissions.Analysis.GenerateScoring)]
 public class ApplicationScoringAppService(
-    IApplicationAIGenerationQueue aiGenerationQueue,
-    IFeatureChecker featureChecker)
+    IApplicationScoringService applicationScoringService,
+    IFeatureChecker featureChecker,
+    ILocalEventBus localEventBus)
     : AIAppService, IApplicationScoringAppService
 {
-    public async Task<string> GenerateApplicationScoringAsync(Guid applicationId, string? promptVersion = null)
+    public virtual async Task<ApplicationScoringResultDto> GenerateApplicationScoringAsync(Guid applicationId, string? promptVersion = null)
     {
-        try
+        if (!await featureChecker.IsEnabledAsync("Unity.AI.Scoring"))
         {
-            if (!await featureChecker.IsEnabledAsync("Unity.AI.Scoring"))
+            throw new UserFriendlyException("AI scoring is not enabled.");
+        }
+
+        await applicationScoringService.RegenerateAndSaveAsync(applicationId, promptVersion);
+
+        if (UnitOfWorkManager.Current != null)
+        {
+            var capturedId = applicationId;
+            UnitOfWorkManager.Current.OnCompleted(async () =>
             {
-                throw new UserFriendlyException("AI scoring is not enabled.");
-            }
-
-            await aiGenerationQueue.QueueApplicationScoringAsync(applicationId, CurrentTenant.Id, promptVersion);
-
-            return "{}";
+                await localEventBus.PublishAsync(new ApplicationAIScoringGeneratedEvent
+                {
+                    ApplicationId = capturedId
+                });
+            });
         }
-        catch (Exception ex)
+        else
         {
-            Logger.LogError(ex, "Error queueing AI application scoring generation for application {ApplicationId}", applicationId);
-            throw new UserFriendlyException("Failed to queue AI application scoring generation. Please try again.");
+            await localEventBus.PublishAsync(new ApplicationAIScoringGeneratedEvent
+            {
+                ApplicationId = applicationId
+            });
         }
+
+        return new ApplicationScoringResultDto
+        {
+            Completed = true
+        };
+    }
+
+    // Internal-only: no HTTP endpoint, no auth check — safe for background job callers
+    [AllowAnonymous]
+    [RemoteService(IsEnabled = false)]
+    public virtual async Task<ApplicationScoringResultDto> GenerateApplicationScoringForPipelineAsync(Guid applicationId, string? promptVersion = null)
+    {
+        await applicationScoringService.RegenerateAndSaveAsync(applicationId, promptVersion);
+        return new ApplicationScoringResultDto { Completed = true };
     }
 }

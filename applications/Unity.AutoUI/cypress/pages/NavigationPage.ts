@@ -31,6 +31,7 @@ export class NavigationPage extends BasePage {
    * Verify current tenant name
    */
   verifyCurrentTenant(tenantName: string): void {
+    this.clickUserMenu();
     cy.get(this.tenantDropdown).should("contain", tenantName);
   }
 
@@ -99,6 +100,13 @@ export class NavigationPage extends BasePage {
         });
       });
     });
+  }
+
+  /**
+   * Switch to the default grant program if available for the current session
+   */
+  switchToDefaultGrantsProgramIfAvailable(): void {
+    this.switchToTenantIfAvailable("Default Grants Program");
   }
 
   /**

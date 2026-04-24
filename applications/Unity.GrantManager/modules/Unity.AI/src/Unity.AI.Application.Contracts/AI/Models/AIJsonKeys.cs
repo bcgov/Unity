@@ -2,14 +2,12 @@ namespace Unity.AI.Models
 {
     public static class AIJsonKeys
     {
-        public const string Rating = "rating";
         public const string Errors = "errors";
         public const string Warnings = "warnings";
         public const string Summaries = "summaries";
-        public const string NextSteps = "nextSteps";
-        public const string Hidden = "hidden";
-        public const string Recommendation = "recommendation";
+        public const string Recommendations = "recommendations";
         public const string Decision = "decision";
+        public const string Dismissed = "dismissed";
 
         public const string Id = "id";
         public const string Title = "title";

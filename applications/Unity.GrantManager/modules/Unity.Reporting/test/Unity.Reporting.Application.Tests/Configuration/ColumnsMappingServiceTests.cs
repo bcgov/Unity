@@ -748,5 +748,392 @@ namespace Unity.Reporting.Application.Tests.Configuration
         }
 
         #endregion
+
+        #region Column Name Source by Provider Tests
+
+        // Helper method to call internal GetDefaultColumnNameSource method via reflection
+        private static string CallGetDefaultColumnNameSource(FieldPathTypeDto field, string correlationProvider)
+        {
+            var type = typeof(ReportMappingUtils);
+            var method = type.GetMethod("GetDefaultColumnNameSource", BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Public);
+            return (string)method!.Invoke(null, [field, correlationProvider])!;
+        }
+
+        // Helper method to call internal CreateNewMap method via reflection
+        private static ReportColumnsMap CallCreateNewMap(UpsertReportColumnsMapDto dto, FieldPathMetaMapDto fieldsMap)
+        {
+            var type = typeof(ReportMappingUtils);
+            var method = type.GetMethod("CreateNewMap", BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Public);
+            return (ReportColumnsMap)method!.Invoke(null, [dto, fieldsMap])!;
+        }
+
+        // Helper method to call internal UpdateExistingMap method via reflection
+        private static ReportColumnsMap CallUpdateExistingMap(UpsertReportColumnsMapDto dto, ReportColumnsMap existing, FieldPathMetaMapDto fieldsMap)
+        {
+            var type = typeof(ReportMappingUtils);
+            var method = type.GetMethod("UpdateExistingMap", BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Public);
+            return (ReportColumnsMap)method!.Invoke(null, [dto, existing, fieldsMap])!;
+        }
+
+        [Fact]
+        public void GetDefaultColumnNameSource_Should_Return_Key_For_FormVersion_Provider()
+        {
+            // Arrange
+            var field = new FieldPathTypeDto
+            {
+                Key = "firstName",
+                Label = "First Name"
+            };
+
+            // Act
+            var result = CallGetDefaultColumnNameSource(field, "formversion");
+
+            // Assert
+            result.ShouldBe("firstName");
+        }
+
+        [Fact]
+        public void GetDefaultColumnNameSource_Should_Return_Label_For_Worksheet_Provider()
+        {
+            // Arrange
+            var field = new FieldPathTypeDto
+            {
+                Key = "firstName",
+                Label = "First Name"
+            };
+
+            // Act
+            var result = CallGetDefaultColumnNameSource(field, "worksheet");
+
+            // Assert
+            result.ShouldBe("First Name");
+        }
+
+        [Fact]
+        public void GetDefaultColumnNameSource_Should_Return_Label_For_Scoresheet_Provider()
+        {
+            // Arrange
+            var field = new FieldPathTypeDto
+            {
+                Key = "score1",
+                Label = "Score One"
+            };
+
+            // Act
+            var result = CallGetDefaultColumnNameSource(field, "scoresheet");
+
+            // Assert
+            result.ShouldBe("Score One");
+        }
+
+        [Fact]
+        public void GetDefaultColumnNameSource_Should_Be_Case_Insensitive_For_FormVersion()
+        {
+            // Arrange
+            var field = new FieldPathTypeDto
+            {
+                Key = "myKey",
+                Label = "My Label"
+            };
+
+            // Act
+            var result = CallGetDefaultColumnNameSource(field, "FormVersion");
+
+            // Assert
+            result.ShouldBe("myKey");
+        }
+
+        [Fact]
+        public void GetDefaultColumnNameSource_Should_Return_Empty_When_Key_Is_Null_For_FormVersion()
+        {
+            // Arrange
+            var field = new FieldPathTypeDto
+            {
+                Key = null!,
+                Label = "Some Label"
+            };
+
+            // Act
+            var result = CallGetDefaultColumnNameSource(field, "formversion");
+
+            // Assert
+            result.ShouldBe(string.Empty);
+        }
+
+        [Fact]
+        public void GetDefaultColumnNameSource_Should_Return_Empty_When_Label_Is_Null_For_Worksheet()
+        {
+            // Arrange
+            var field = new FieldPathTypeDto
+            {
+                Key = "someKey",
+                Label = null
+            };
+
+            // Act
+            var result = CallGetDefaultColumnNameSource(field, "worksheet");
+
+            // Assert
+            result.ShouldBe(string.Empty);
+        }
+
+        [Fact]
+        public void CreateNewMap_Should_Use_Key_For_FormVersion_Auto_Generated_ColumnNames()
+        {
+            // Arrange
+            var dto = new UpsertReportColumnsMapDto
+            {
+                CorrelationId = Guid.NewGuid(),
+                CorrelationProvider = "formversion",
+                Mapping = new UpsertColumnMappingDto { Rows = [] }
+            };
+
+            var fieldsMap = new FieldPathMetaMapDto
+            {
+                Fields =
+                [
+                    new FieldPathTypeDto
+                    {
+                        Id = "1",
+                        Key = "firstName",
+                        Label = "First Name",
+                        Type = "textfield",
+                        Path = "firstName",
+                        DataPath = "firstName",
+                        TypePath = "textfield"
+                    },
+                    new FieldPathTypeDto
+                    {
+                        Id = "2",
+                        Key = "emailAddress",
+                        Label = "Email Address",
+                        Type = "email",
+                        Path = "emailAddress",
+                        DataPath = "emailAddress",
+                        TypePath = "email"
+                    }
+                ]
+            };
+
+            // Act
+            var result = CallCreateNewMap(dto, fieldsMap);
+
+            // Assert
+            result.ShouldNotBeNull();
+            var mapping = System.Text.Json.JsonSerializer.Deserialize<Mapping>(result.Mapping)!;
+
+            // Column names should be derived from Key (not Label)
+            mapping.Rows[0].ColumnName.ShouldBe("firstname");
+            mapping.Rows[1].ColumnName.ShouldBe("emailaddress");
+        }
+
+        [Fact]
+        public void CreateNewMap_Should_Use_Label_For_Worksheet_Auto_Generated_ColumnNames()
+        {
+            // Arrange
+            var dto = new UpsertReportColumnsMapDto
+            {
+                CorrelationId = Guid.NewGuid(),
+                CorrelationProvider = "worksheet",
+                Mapping = new UpsertColumnMappingDto { Rows = [] }
+            };
+
+            var fieldsMap = new FieldPathMetaMapDto
+            {
+                Fields =
+                [
+                    new FieldPathTypeDto
+                    {
+                        Id = "1",
+                        Key = "firstName",
+                        Label = "First Name",
+                        Type = "textfield",
+                        Path = "ws1->firstName",
+                        DataPath = "ws1->firstName",
+                        TypePath = "textfield"
+                    }
+                ]
+            };
+
+            // Act
+            var result = CallCreateNewMap(dto, fieldsMap);
+
+            // Assert
+            result.ShouldNotBeNull();
+            var mapping = System.Text.Json.JsonSerializer.Deserialize<Mapping>(result.Mapping)!;
+
+            // Column name should be derived from Label (not Key) for worksheet
+            mapping.Rows[0].ColumnName.ShouldBe("first_name");
+        }
+
+        [Fact]
+        public void UpdateExistingMap_Should_Use_Key_For_FormVersion_New_Field_ColumnNames()
+        {
+            // Arrange
+            var existingMapping = new Mapping
+            {
+                Rows =
+                [
+                    new MapRow
+                    {
+                        PropertyName = "firstName",
+                        ColumnName = "existing_col",
+                        Path = "firstName",
+                        DataPath = "firstName",
+                        Label = "First Name",
+                        Type = "textfield",
+                        TypePath = "textfield",
+                        Id = "1"
+                    }
+                ]
+            };
+
+            var existing = new ReportColumnsMap
+            {
+                CorrelationId = Guid.NewGuid(),
+                CorrelationProvider = "formversion",
+                Mapping = System.Text.Json.JsonSerializer.Serialize(existingMapping)
+            };
+
+            var dto = new UpsertReportColumnsMapDto
+            {
+                CorrelationId = existing.CorrelationId,
+                CorrelationProvider = "formversion",
+                Mapping = new UpsertColumnMappingDto
+                {
+                    Rows =
+                    [
+                        new UpsertMapRowDto { PropertyName = "firstName", ColumnName = "existing_col", Path = "firstName" }
+                    ]
+                }
+            };
+
+            var fieldsMap = new FieldPathMetaMapDto
+            {
+                Fields =
+                [
+                    new FieldPathTypeDto
+                    {
+                        Id = "1",
+                        Key = "firstName",
+                        Label = "First Name",
+                        Type = "textfield",
+                        Path = "firstName",
+                        DataPath = "firstName",
+                        TypePath = "textfield"
+                    },
+                    // New field discovered
+                    new FieldPathTypeDto
+                    {
+                        Id = "2",
+                        Key = "lastName",
+                        Label = "Last Name",
+                        Type = "textfield",
+                        Path = "lastName",
+                        DataPath = "lastName",
+                        TypePath = "textfield"
+                    }
+                ]
+            };
+
+            // Act
+            var result = CallUpdateExistingMap(dto, existing, fieldsMap);
+
+            // Assert
+            result.ShouldNotBeNull();
+            var mapping = System.Text.Json.JsonSerializer.Deserialize<Mapping>(result.Mapping)!;
+
+            // Existing field should keep its column name
+            mapping.Rows[0].ColumnName.ShouldBe("existing_col");
+
+            // New field should be auto-generated from Key (not Label) for formversion
+            mapping.Rows[1].ColumnName.ShouldBe("lastname");
+        }
+
+        [Fact]
+        public void UpdateExistingMap_Should_Use_Label_For_Worksheet_New_Field_ColumnNames()
+        {
+            // Arrange
+            var existingMapping = new Mapping
+            {
+                Rows =
+                [
+                    new MapRow
+                    {
+                        PropertyName = "score1",
+                        ColumnName = "existing_score",
+                        Path = "ws1->score1",
+                        DataPath = "ws1->score1",
+                        Label = "Score 1",
+                        Type = "number",
+                        TypePath = "number",
+                        Id = "1"
+                    }
+                ]
+            };
+
+            var existing = new ReportColumnsMap
+            {
+                CorrelationId = Guid.NewGuid(),
+                CorrelationProvider = "worksheet",
+                Mapping = System.Text.Json.JsonSerializer.Serialize(existingMapping)
+            };
+
+            var dto = new UpsertReportColumnsMapDto
+            {
+                CorrelationId = existing.CorrelationId,
+                CorrelationProvider = "worksheet",
+                Mapping = new UpsertColumnMappingDto
+                {
+                    Rows =
+                    [
+                        new UpsertMapRowDto { PropertyName = "score1", ColumnName = "existing_score", Path = "ws1->score1" }
+                    ]
+                }
+            };
+
+            var fieldsMap = new FieldPathMetaMapDto
+            {
+                Fields =
+                [
+                    new FieldPathTypeDto
+                    {
+                        Id = "1",
+                        Key = "score1",
+                        Label = "Score 1",
+                        Type = "number",
+                        Path = "ws1->score1",
+                        DataPath = "ws1->score1",
+                        TypePath = "number"
+                    },
+                    // New field discovered
+                    new FieldPathTypeDto
+                    {
+                        Id = "2",
+                        Key = "totalScore",
+                        Label = "Total Score",
+                        Type = "number",
+                        Path = "ws1->totalScore",
+                        DataPath = "ws1->totalScore",
+                        TypePath = "number"
+                    }
+                ]
+            };
+
+            // Act
+            var result = CallUpdateExistingMap(dto, existing, fieldsMap);
+
+            // Assert
+            result.ShouldNotBeNull();
+            var mapping = System.Text.Json.JsonSerializer.Deserialize<Mapping>(result.Mapping)!;
+
+            // Existing field should keep its column name
+            mapping.Rows[0].ColumnName.ShouldBe("existing_score");
+
+            // New field should be auto-generated from Label (not Key) for worksheet
+            mapping.Rows[1].ColumnName.ShouldBe("total_score");
+        }
+
+        #endregion
     }
 }

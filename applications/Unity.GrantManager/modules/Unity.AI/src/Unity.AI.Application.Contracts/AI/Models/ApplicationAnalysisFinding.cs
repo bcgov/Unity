@@ -7,8 +7,8 @@ namespace Unity.AI.Models
         [JsonPropertyName(AIJsonKeys.Id)]
         public string? Id { get; set; }
 
-        [JsonPropertyName(AIJsonKeys.Hidden)]
-        public bool Hidden { get; set; }
+        [JsonPropertyName(AIJsonKeys.Dismissed)]
+        public bool Dismissed { get; set; }
 
         [JsonPropertyName(AIJsonKeys.Title)]
         public string? Title { get; set; }

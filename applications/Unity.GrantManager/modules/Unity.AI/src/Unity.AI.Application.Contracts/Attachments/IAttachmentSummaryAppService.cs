@@ -7,6 +7,7 @@ namespace Unity.GrantManager.Attachments;
 
 public interface IAttachmentSummaryAppService : IApplicationService
 {
-    Task<string> GenerateAttachmentSummaryAsync(Guid attachmentId, string? promptVersion = null);
-    Task<List<string>> GenerateAttachmentSummariesAsync(List<Guid> attachmentIds, string? promptVersion = null);
+    Task<AttachmentSummaryResultDto> GenerateAttachmentSummaryAsync(Guid attachmentId, string? promptVersion = null);
+    Task<List<AttachmentSummaryResultDto>> GenerateAttachmentSummariesAsync(List<Guid> attachmentIds, string? promptVersion = null);
+    Task<List<AttachmentSummaryResultDto>> GenerateAttachmentSummariesForPipelineAsync(List<Guid> attachmentIds, string? promptVersion = null);
 }

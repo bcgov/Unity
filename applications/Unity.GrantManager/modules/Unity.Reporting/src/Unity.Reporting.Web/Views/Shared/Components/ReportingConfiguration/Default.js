@@ -440,7 +440,7 @@ $(function () {
 
     // Helper function to process detected changes alert (module-level to reduce nesting)
     function processDetectedChanges(detectedChanges) {
-        if (detectedChanges && detectedChanges.trim() !== '') {
+        if (detectedChanges?.trim() !== '') {
             setTimeout(function () {
                 displayDetectedChangesAlert(detectedChanges);
             }, 100);
@@ -467,6 +467,18 @@ $(function () {
         };
     }
 
+    // Helper function to get the default column name source based on the current provider.
+    // Mirrors the server-side ReportMappingUtils.GetDefaultColumnNameSource() logic exactly:
+    //   - formversion: use Key only (CHEFS Property Name), no fallback to Label
+    //   - worksheet/scoresheet: use Label only, no fallback to Key
+    // No cross-field fallback ensures the client and server produce identical defaults.
+    function getDefaultColumnNameSource(field) {
+        if (currentProvider === 'formversion') {
+            return field.key || '';
+        }
+        return field.label || '';
+    }
+
     // Helper function to transform fields metadata (module-level to reduce nesting)
     function transformFieldsMetadata(fieldsMetadata) {
         const items = fieldsMetadata.fields.map(field => ({
@@ -475,7 +487,7 @@ $(function () {
             type: field.type,
             path: field.path,
             dataPath: field.dataPath,
-            columnName: field.label || field.key,
+            columnName: getDefaultColumnNameSource(field),
             typePath: field.typePath
         }));
 
@@ -670,10 +682,7 @@ $(function () {
             dynamicButtonContainerId: 'reportConfigDynamicButtons',
             useNullPlaceholder: true,
             externalSearchId: 'search-report-config',
-            // Enable scrolling - let CSS handle the height
-            scrollY: true,
-            scrollCollapse: true,
-            responsive: true
+            fixedHeaders: true
         });
 
         // Add event handler for when DataTable completes drawing
@@ -688,33 +697,7 @@ $(function () {
             // Check for dynamic columns placeholder and update warning
             const hasDynamicColumns = checkForDynamicColumnsInTable();
             updateDynamicColumnsWarning(hasDynamicColumns);
-
-            // Force column adjustment after draw if tab is visible
-            setTimeout(function () {
-                if (isReportingTabVisible()) {
-                    forceTableColumnAdjustment();
-                }
-            }, 50);
         });
-
-        // Add event handler for when DataTable data is loaded
-        dataTable.on('xhr.dt', function () {
-            // Force layout adjustment after data is loaded
-            setTimeout(function () {
-                if (isReportingTabVisible()) {
-                    adjustTableLayout();
-                    forceTableColumnAdjustment();
-                }
-            }, 100);
-        });
-
-        // Initial adjustment with longer delay to ensure DOM is ready
-        setTimeout(function () {
-            if (isReportingTabVisible()) {
-                adjustTableLayout();
-                forceTableColumnAdjustment();
-            }
-        }, 500);
 
         // Track changes on column name inputs with validation
         $('#ReportConfigurationTable').on('input', '.column-name-input', function () {
@@ -809,16 +792,20 @@ $(function () {
 
                     if (newValue !== oldValue) {
                         $input.val(newValue);
-
-                        // Clear any previous validation state
-                        $input.removeClass('is-valid is-invalid');
-                        $input.siblings('.invalid-feedback, .valid-feedback').remove();
-
-                        // Validate the new value
-                        validateColumnNameInput($input, newValue, path);
                         updatedCount++;
                     }
                 }
+            });
+
+            // Re-validate every input — uniqueness is a cross-row property, so rows whose
+            // value did not change can still transition from invalid to valid (and vice versa)
+            // once the rest of the table has been rewritten.
+            $('#ReportConfigurationTable .column-name-input').each(function () {
+                const $input = $(this);
+                const path = $input.data('path');
+                const value = $input.val().trim();
+
+                validateColumnNameInput($input, value, path);
             });
 
             if (updatedCount > 0) {
@@ -849,38 +836,6 @@ $(function () {
     function isReportingTabVisible() {
         const reportingPanel = document.querySelector('#nav-reporting-configuration');
         return reportingPanel?.classList.contains('show', 'active');
-    }
-
-    // Enhanced function to force table column adjustment
-    function forceTableColumnAdjustment() {
-        if (!dataTable) return;
-
-        try {
-            // Multiple approaches to ensure columns are properly sized
-            // 1. Force recalc of column widths
-            dataTable.columns.adjust();
-
-            // 2. Trigger responsive recalc if responsive is enabled
-            if (dataTable.responsive) {
-                dataTable.responsive.recalc();
-            }
-
-            // 3. Force a layout recalculation by temporarily changing display
-            const wrapper = $('#ReportConfigurationTable_wrapper');
-            if (wrapper.length) {
-                // Force browser reflow                
-                wrapper.hide();
-                wrapper.show();
-
-                // Final column adjustment after showing
-                setTimeout(function () {
-                    dataTable.columns.adjust();
-                }, 10);
-            }
-
-        } catch (error) {
-            console.warn('Error during force column adjustment:', error);
-        }
     }
 
     // Column name sanitization function
@@ -914,8 +869,8 @@ $(function () {
             errors.push(`Column name exceeds maximum length of ${COLUMN_VALIDATION.MAX_LENGTH} characters`);
         }
 
-        // Check format (should be alphanumeric + underscores, not starting with number)
-        if (!/^[a-z_][a-z0-9_]*$/i.test(name)) {
+        // Check format (alphanumeric + underscores, not starting with number)
+        if (!/^[a-zA-Z_]\w*$/.test(name)) {
             errors.push('Column name must start with a letter or underscore and contain only letters, numbers, and underscores');
         }
 
@@ -1014,14 +969,14 @@ $(function () {
     function sanitizeSqlNames(name) {
         if (!name || typeof name !== 'string') return '';
 
-        // Convert to lowercase and trim
-        let sanitized = name.toLowerCase().trim();
+        // Trim whitespace
+        let sanitized = name.trim();
 
         // Replace multiple spaces/hyphens with single underscore
-        sanitized = sanitized.replace(/[\s-]+/g, '_');
+        sanitized = sanitized.replaceAll(/[\s-]+/g, '_');
 
         // Remove all non-alphanumeric characters except underscores
-        sanitized = sanitized.replace(/[^a-z0-9_]/g, '');
+        sanitized = sanitized.replaceAll(/\W/g, '');
 
         // Remove leading/trailing underscores safely without vulnerable regex
         while (sanitized.startsWith('_')) {
@@ -1046,7 +1001,7 @@ $(function () {
 
     // View name sanitization function
     function sanitizeViewName(name) {
-        let sanitized = sanitizeSqlNames(name);
+        let sanitized = sanitizeSqlNames(name).toLowerCase();
 
         // Truncate to max length
         if (sanitized.length > VIEW_NAME_VALIDATION.MAX_LENGTH) {
@@ -1081,7 +1036,7 @@ $(function () {
         }
 
         // Check format (should be alphanumeric + underscores, not starting with number)
-        if (!/^[a-z_][a-z0-9_]*$/i.test(name)) {
+        if (!/^[a-zA-Z_]\w*$/.test(name)) {
             errors.push('View name must start with a letter or underscore and contain only letters, numbers, and underscores');
         }
 
@@ -1238,6 +1193,36 @@ $(function () {
             return;
         }
 
+        // Check if a view has been generated and warn the user
+        const viewStatus = ($('#reportingViewStatus').val() || '').toUpperCase();
+        const hasGeneratedView = viewStatus === 'SUCCESS' ||
+            $('.view-status-compact').find('.fl-checkmark').length > 0;
+
+        if (hasGeneratedView) {
+            Swal.fire({
+                title: 'Existing View Detected',
+                text: 'A database view has already been generated. These mapping changes will only take effect after you delete and re-create the view.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Save Anyway',
+                cancelButtonText: 'Cancel',
+                customClass: {
+                    confirmButton: 'btn btn-primary',
+                    cancelButton: 'btn btn-secondary'
+                }
+            }).then(function (result) {
+                if (result.isConfirmed) {
+                    performSave(correlationId);
+                }
+            });
+            return;
+        }
+
+        performSave(correlationId);
+    });
+
+    // Extracted save logic into a reusable function
+    function performSave(correlationId) {
         // Disable all control buttons during save
         setControlButtonsLoadingState(true);
 
@@ -1302,7 +1287,7 @@ $(function () {
             // Re-enable all control buttons after save completes (success or error)
             setControlButtonsLoadingState(false);
         });
-    });
+    }
 
     // Helper function to update view name validation UI (module-level to reduce nesting)
     function updateViewNameValidationUI(isValid, errors, $viewNameInput, $confirmButton, $feedback) {
@@ -1573,7 +1558,7 @@ $(function () {
                     try {
                         const errorResponse = JSON.parse(xhr.responseText);
                         if (errorResponse?.error?.message) {
-                            errorMessage = errorResponse.error.message;
+                            errorMessage = errorResponse?.error?.message;
                         } else if (typeof errorResponse === 'string') {
                             errorMessage = errorResponse;
                         } else {
@@ -1595,9 +1580,9 @@ $(function () {
                     try {
                         const parsedError = JSON.parse(xhr.responseText);
                         if (parsedError?.error?.message) {
-                            errorMessage = parsedError.error.message;
-                        } else if (parsedError.message) {
-                            errorMessage = parsedError.message;
+                            errorMessage = parsedError?.error?.message;
+                        } else if (parsedError?.message) {
+                            errorMessage = parsedError?.message;
                         } else {
                             errorMessage = xhr.responseText;
                         }
@@ -1636,7 +1621,7 @@ $(function () {
             const viewName = result.viewName;
             const $deleteViewListItem = $('#deleteViewListItem');
             
-            if (viewName && viewName.trim() !== '') {
+            if (viewName?.trim()) {
                 // Update the view name in the list item and show it
                 $deleteViewListItem.html(`The associated database view (${viewName})`);
                 $deleteViewListItem.show();
@@ -1718,6 +1703,9 @@ $(function () {
                 dataTable.ajax.reload();
             }
 
+            // Clear the cached view status after deletion
+            $('#reportingViewStatus').val('');
+
             // Refresh view status widget
             refreshViewStatusWidget(correlationId, getCorrelationProvider());
 
@@ -1734,7 +1722,7 @@ $(function () {
             } else if (xhr.status === 400) {
                 const errorResponse = JSON.parse(xhr.responseText);
                 if (errorResponse?.error?.message) {
-                    errorMessage = errorResponse.error.message;
+                    errorMessage = errorResponse?.error?.message;
                 } else if (typeof errorResponse === 'string') {
                     errorMessage = errorResponse;
                 } else {
@@ -1751,9 +1739,9 @@ $(function () {
             } else if (xhr.responseText) {
                 const parsedError = JSON.parse(xhr.responseText);
                 if (parsedError?.error?.message) {
-                    errorMessage = parsedError.error.message;
-                } else if (parsedError.message) {
-                    errorMessage = parsedError.message;
+                    errorMessage = parsedError?.error?.message;
+                } else if (parsedError?.message) {
+                    errorMessage = parsedError?.message;
                 } else {
                     errorMessage = xhr.responseText;
                 }
@@ -1820,79 +1808,253 @@ $(function () {
     // Initialize the delete button functionality
     updateCheckConfigurationExistsCallbacks();
 
+    // ======================================================================
+    // JSON Export / Import / Edit
+    // ======================================================================
+
+    /**
+     * Builds the [{propertyName, path, columnName}] array from the current
+     * DataTable state.  This is what gets exported / shown in the editor.
+     */
+    function buildJsonMapping() {
+        return getCurrentTableData().map(function (row) {
+            return {
+                propertyName: row.propertyName,
+                path: row.path || '',
+                columnName: row.columnName
+            };
+        });
+    }
+
+    /**
+     * Creates a composite lookup key from propertyName and path.
+     * @param {string} propertyName
+     * @param {string} path
+     * @returns {string}
+     */
+    function compositeKey(propertyName, path) {
+        return (propertyName || '') + '|||' + (path || '');
+    }
+
+    function applyJsonMappingToTable(mappingArray) {
+        if (!dataTable) return { appliedCount: 0, unmatchedItems: [] };
+
+        // Build a lookup: (propertyName + path) → columnName
+        const lookup = {};
+        mappingArray.forEach(function (item) {
+            const key = compositeKey(item.propertyName, item.path);
+            lookup[key] = item.columnName;
+        });
+
+        let appliedCount = 0;
+        const matchedKeys = new Set();
+
+        dataTable.rows().every(function () {
+            const rowData = this.data();
+            const node = this.node();
+            const $input = $(node).find('.column-name-input');
+            if (!$input.length) return;
+
+            const key = compositeKey(rowData.key, rowData.path);
+            if (key in lookup) {
+                matchedKeys.add(key);
+                const newValue = sanitizeColumnName(lookup[key] || '');
+                if ($input.val() !== newValue) {
+                    $input.val(newValue);
+                    validateColumnNameInput($input, newValue, $input.data('path'));
+                    appliedCount++;
+                }
+            }
+        });
+
+        // Identify items from the import that did not match any table row
+        const unmatchedItems = mappingArray.filter(function (item) {
+            const key = compositeKey(item.propertyName, item.path);
+            return !matchedKeys.has(key);
+        });
+
+        if (appliedCount > 0) {
+            markAsChanged();
+        }
+
+        return { appliedCount: appliedCount, unmatchedItems: unmatchedItems };
+    }
+
+    // Shared validators for the JSON editor and file import
+    const mappingValidators = [
+        {
+            name: 'isArray',
+            message: 'JSON must be an array of objects.',
+            validate: function (data) { return Array.isArray(data); }
+        },
+        {
+            name: 'uniquePropertyNames',
+            message: 'Duplicate propertyName+path combinations detected. Rows sharing the same combination will all receive the last columnName value when applied — use inline table editing for those rows instead.',
+            severity: 'warning',
+            validate: function (data) {
+                if (!Array.isArray(data)) return true;
+                const keys = data.map(function (r) { return compositeKey(r.propertyName, r.path); });
+                return new Set(keys).size === keys.length;
+            }
+        },
+        {
+            name: 'uniqueColumnNames',
+            message: 'Duplicate columnName values found. Each columnName must be unique.',
+            validate: function (data) {
+                if (!Array.isArray(data)) return true;
+                const cols = data.filter(function (r) { return r.columnName; })
+                              .map(function (r) { return r.columnName.toLowerCase(); });
+                return new Set(cols).size === cols.length;
+            }
+        },
+        {
+            name: 'columnNameFormat',
+            message: 'One or more column names contain invalid characters. Use only letters, numbers, and underscores.',
+            validate: function (data) {
+                if (!Array.isArray(data)) return true;
+                return data.every(function (r) {
+                    if (!r.columnName) return true; // empty is allowed
+                    return /^[a-zA-Z_]\w*$/.test(r.columnName);
+                });
+            }
+        },
+        {
+            name: 'columnNameLength',
+            message: 'One or more column names exceed the maximum length of ' + COLUMN_VALIDATION.MAX_LENGTH + ' characters.',
+            validate: function (data) {
+                if (!Array.isArray(data)) return true;
+                return data.every(function (r) {
+                    if (!r.columnName) return true;
+                    return r.columnName.length <= COLUMN_VALIDATION.MAX_LENGTH;
+                });
+            }
+        },
+        {
+            name: 'reservedWords',
+            message: 'One or more column names use a PostgreSQL reserved word.',
+            validate: function (data) {
+                if (!Array.isArray(data)) return true;
+                return data.every(function (r) {
+                    if (!r.columnName) return true;
+                    return !COLUMN_VALIDATION.RESERVED_WORDS.includes(r.columnName.toLowerCase());
+                });
+            }
+        }
+    ];
+
+    // Create the editor instance (lazy – modal built on first use)
+    const mappingEditor = new UnityJsonEditor({
+        title: 'Edit Column Mapping',
+        requiredFields: ['propertyName', 'path', 'columnName'],
+        validators: mappingValidators,
+        onSave: function (data, warnings) {
+            const result = applyJsonMappingToTable(data);
+            const msg = result.appliedCount + ' column mapping(s) updated. Remember to Save to persist changes.';
+            const allWarnings = (warnings || []).slice();
+            if (result.unmatchedItems.length > 0) {
+                const unmatchedNames = result.unmatchedItems.map(function (item) {
+                    return item.propertyName + (item.path ? ' (' + item.path + ')' : '');
+                });
+                allWarnings.push({ message: result.unmatchedItems.length + ' item(s) could not be matched and were ignored: ' + unmatchedNames.join(', ') });
+            }
+            if (allWarnings.length > 0) {
+                abp.message.warn(msg + '\n\n\u26A0 ' + allWarnings.map(function (w) { return w.message; }).join('\n'));
+            } else {
+                abp.message.success(msg);
+            }
+        }
+    });
+
+    // --- Export ---
+    $('#btn-export-json-mapping').on('click', function (e) {
+        e.preventDefault();
+        if (!dataTable) {
+            abp.message.warn('No mapping data loaded.');
+            return;
+        }
+
+        const mapping = buildJsonMapping();
+        if (mapping.length === 0) {
+            abp.message.warn('No mapping data to export.');
+            return;
+        }
+
+        const provider = getCorrelationProvider();
+        const correlationId = getCurrentCorrelationId();
+        const filename = 'column-mapping-' + provider + '-' + (correlationId || 'new') + '.json';
+        UnityJsonEditor.exportToFile(mapping, filename);
+    });
+
+    // --- Import ---
+    $('#btn-import-json-mapping').on('click', function (e) {
+        e.preventDefault();
+        if (!dataTable) {
+            abp.message.warn('No mapping data loaded. Please load a configuration first.');
+            return;
+        }
+
+        let importWarnings = [];
+        UnityJsonEditor.importFromFile({
+            validators: mappingValidators.concat([
+                {
+                    name: 'hasRequiredFields',
+                    message: 'Each item must have "propertyName" and "columnName" fields.',
+                    validate: function (data) {
+                        if (!Array.isArray(data)) return false;
+                        return data.every(function (r) {
+                            return r !== null && typeof r === 'object' &&
+                                'propertyName' in r && 'columnName' in r;
+                        });
+                    }
+                }
+            ]),
+            onWarning: function (warnings) {
+                importWarnings = warnings;
+            }
+        }).then(function (data) {
+            const result = applyJsonMappingToTable(data);
+            const msg = result.appliedCount + ' column mapping(s) imported. Remember to Save to persist changes.';
+            const allWarnings = importWarnings.slice();
+            if (result.unmatchedItems.length > 0) {
+                const unmatchedNames = result.unmatchedItems.map(function (item) {
+                    return item.propertyName + (item.path ? ' (' + item.path + ')' : '');
+                });
+                allWarnings.push({ message: result.unmatchedItems.length + ' item(s) could not be matched and were ignored: ' + unmatchedNames.join(', ') });
+            }
+            if (allWarnings.length > 0) {
+                abp.message.warn(msg + '\n\n\u26A0 ' + allWarnings.map(function (w) { return w.message; }).join('\n'));
+            } else {
+                abp.message.success(msg);
+            }
+        }).catch(function (err) {
+            abp.message.error(err.message || 'Failed to import file.');
+        });
+    });
+
+    // --- Edit JSON ---
+    $('#btn-edit-json-mapping').on('click', function (e) {
+        e.preventDefault();
+        if (!dataTable) {
+            abp.message.warn('No mapping data loaded. Please load a configuration first.');
+            return;
+        }
+
+        const mapping = buildJsonMapping();
+        mappingEditor.open(mapping);
+    });
+
     // Initialize version selector visibility based on provider
     updateVersionSelectorVisibility();
 
-    // Function to adjust table layout dynamically
-    function adjustTableLayout() {
-        if (dataTable && dataTable.settings().length > 0) {
-            try {
-                const container = $('.report-config-table-container');
-                const containerHeight = container.height();
-
-                if (containerHeight > 100) { // Only adjust if container has reasonable height
-                    // Calculate available height for the table body
-                    // Updated for DataTables v2 class names
-                    const wrapper = $('#ReportConfigurationTable_wrapper');
-                    const header = wrapper.find('.dt-scroll-head');
-                    const info = wrapper.find('.dt-info');
-                    const paginate = wrapper.find('.dt-paging');
-
-                    const headerHeight = header.length ? header.outerHeight(true) : 0;
-                    const infoHeight = info.length ? info.outerHeight(true) : 0;
-                    const paginateHeight = paginate.length ? paginate.outerHeight(true) : 0;
-                    const padding = 20; // Extra padding
-
-                    const availableHeight = containerHeight - headerHeight - infoHeight - paginateHeight - padding;
-                    const minHeight = 200; // Minimum table body height
-
-                    const scrollBodyHeight = Math.max(minHeight, availableHeight);
-
-                    // Apply the calculated height
-                    wrapper.find('.dt-scroll-body').css({
-                        'max-height': scrollBodyHeight + 'px',
-                        'height': scrollBodyHeight + 'px'
-                    });
-                }
-            } catch (error) {
-                console.warn('Error adjusting table layout:', error);
-            }
-        }
-    }
-
-    // Function to handle tab visibility changes with improved column adjustment
+    // Function to handle tab visibility changes
+    // When the tab becomes visible, recalculate column widths and trigger
+    // ScrollResize to set the correct scroll body height.
     function handleTabVisibilityChange() {
-        // Check if the reporting configuration tab is now visible
-        if (isReportingTabVisible()) {
-            // Progressive approach with multiple attempts
-            const adjustmentSequence = [
-                { delay: 50, action: 'initial' },
-                { delay: 150, action: 'layout' },
-                { delay: 300, action: 'columns' },
-                { delay: 500, action: 'final' }
-            ];
-
-            adjustmentSequence.forEach(step => {
-                setTimeout(() => {
-                    if (dataTable && isReportingTabVisible()) {
-                        switch (step.action) {
-                            case 'initial':
-                                dataTable.columns.adjust();
-                                break;
-                            case 'layout':
-                                adjustTableLayout();
-                                break;
-                            case 'columns':
-                                forceTableColumnAdjustment();
-                                break;
-                            case 'final':
-                                dataTable.columns.adjust();
-                                dataTable.draw(false);
-                                break;
-                        }
-                    }
-                }, step.delay);
-            });
+        if (isReportingTabVisible() && dataTable) {
+            setTimeout(function () {
+                dataTable.columns.adjust();
+                dataTable.draw(false);
+            }, 50);
         }
     }
 
@@ -1916,17 +2078,6 @@ $(function () {
         setTimeout(() => {
             handleTabVisibilityChange();
         }, 150);
-    });
-
-    // Also handle window resize events
-    $(window).on('resize', function () {
-        if (isReportingTabVisible()) {
-            adjustTableLayout();
-            // Add column adjustment on resize
-            setTimeout(function () {
-                forceTableColumnAdjustment();
-            }, 100);
-        }
     });
 
     // Add intersection observer for visibility detection (fallback)
@@ -1971,4 +2122,11 @@ $(function () {
             });
         }
     }
+
+    // Keep the hidden view-status field in sync when async generation completes
+    PubSub.subscribe('view_generation_completed', function (msg, data) {
+        if (data?.finalStatus) {
+            $('#reportingViewStatus').val(data.finalStatus);
+        }
+    });
 });

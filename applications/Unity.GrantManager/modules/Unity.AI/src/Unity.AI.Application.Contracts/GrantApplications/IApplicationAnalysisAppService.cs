@@ -6,6 +6,7 @@ namespace Unity.GrantManager.GrantApplications
 {
     public interface IApplicationAnalysisAppService : IApplicationService
     {
-        Task<string> GenerateApplicationAnalysisAsync(Guid applicationId, string? promptVersion = null);
+        Task<ApplicationAnalysisResultDto> GenerateApplicationAnalysisAsync(Guid applicationId, string? promptVersion = null);
+        Task<ApplicationAnalysisResultDto> GenerateApplicationAnalysisForPipelineAsync(Guid applicationId, string? promptVersion = null);
     }
 }

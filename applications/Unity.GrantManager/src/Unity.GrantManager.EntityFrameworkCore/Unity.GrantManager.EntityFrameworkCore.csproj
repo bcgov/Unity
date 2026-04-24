@@ -16,6 +16,9 @@
 	  <None Remove="Scripts\get_scoresheet_data.sql" />
 	  <None Remove="Scripts\generate_scoresheet_view.sql" />
 	  <None Remove="Scripts\calculate_scoresheet_total_score.sql" />
+	  <None Remove="Scripts\safe_to_timestamp.sql" />
+	  <None Remove="Scripts\safe_to_date.sql" />
+	  <None Remove="Scripts\safe_to_jsonb.sql" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -35,7 +38,16 @@
 	    <CopyToOutputDirectory>Never</CopyToOutputDirectory>
 	  </EmbeddedResource>
 	  <EmbeddedResource Include="Scripts\calculate_scoresheet_total_score.sql">
-	    <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+		<CopyToOutputDirectory>Never</CopyToOutputDirectory>
+	  </EmbeddedResource>
+	  <EmbeddedResource Include="Scripts\safe_to_timestamp.sql">
+		<CopyToOutputDirectory>Never</CopyToOutputDirectory>
+	  </EmbeddedResource>
+	  <EmbeddedResource Include="Scripts\safe_to_date.sql">
+		<CopyToOutputDirectory>Never</CopyToOutputDirectory>
+	  </EmbeddedResource>
+	  <EmbeddedResource Include="Scripts\safe_to_jsonb.sql">
+		<CopyToOutputDirectory>Never</CopyToOutputDirectory>
 	  </EmbeddedResource>
 	</ItemGroup>
 

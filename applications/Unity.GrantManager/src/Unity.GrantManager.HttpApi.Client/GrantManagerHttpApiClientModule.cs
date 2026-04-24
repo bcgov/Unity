@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
+using Unity.AI;
 using Volo.Abp.FeatureManagement;
 using Volo.Abp.Identity;
 using Volo.Abp.Modularity;
@@ -19,7 +20,8 @@ namespace Unity.GrantManager;
     typeof(UnityTenantManagementHttpApiClientModule),
     typeof(AbpFeatureManagementHttpApiClientModule),
     typeof(AbpSettingManagementHttpApiClientModule),
-    typeof(NotificationsHttpApiClientModule)
+    typeof(NotificationsHttpApiClientModule),
+    typeof(AIApplicationContractsModule)
 )]
 public class GrantManagerHttpApiClientModule : AbpModule
 {
@@ -30,6 +32,10 @@ public class GrantManagerHttpApiClientModule : AbpModule
         context.Services.AddHttpClientProxies(
             typeof(GrantManagerApplicationContractsModule).Assembly,
             RemoteServiceName
+        );
+        context.Services.AddHttpClientProxies(
+            typeof(AIApplicationContractsModule).Assembly,
+            AIRemoteServiceConsts.RemoteServiceName
         );
 
         // Register Geocoder API client

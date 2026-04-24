@@ -18,8 +18,10 @@ public class AISettingViewComponent(ISettingProvider settingProvider) : AbpViewC
     {
         var model = new AISettingViewModel
         {
-            ScoringAssistantEnabled = await settingProvider.GetAsync<bool>(
-                AISettings.ScoringAssistantEnabled, defaultValue: false)
+            AutomaticGenerationEnabled = await settingProvider.GetAsync<bool>(
+                AISettings.AutomaticGenerationEnabled, defaultValue: false),
+            ManualGenerationEnabled = await settingProvider.GetAsync<bool>(
+                AISettings.ManualGenerationEnabled, defaultValue: false)
         };
 
         return View("~/Views/Settings/AISettingGroup/Default.cshtml", model);
