@@ -270,7 +270,7 @@ namespace Unity.Notifications.EmailNotifications
             if (emailLog.SendOnDateTime.HasValue)
             {
                 var emailObjectDictionary = (IDictionary<string, object?>)emailObject;
-                emailObjectDictionary["delayTS"] = new DateTimeOffset(emailLog.SendOnDateTime.Value, TimeSpan.Zero).ToUnixTimeSeconds();
+                emailObjectDictionary["delayTS"] = new DateTimeOffset(emailLog.SendOnDateTime.Value, TimeSpan.Zero).ToUnixTimeMilliseconds();
             }
 
             return emailObject;
@@ -309,10 +309,10 @@ namespace Unity.Notifications.EmailNotifications
                 emailObjectDictionary["bcc"] = bccList;
             }
 
-            // delayTS: desired UTC send time as Unix seconds; 0 = send immediately.
+            // delayTS: desired UTC send time as Unix milliseconds; 0 = send immediately.
             if (email.SendOnDateTime.HasValue)
             {
-                emailObjectDictionary["delayTS"] = new DateTimeOffset(email.SendOnDateTime.Value, TimeSpan.Zero).ToUnixTimeSeconds();
+                emailObjectDictionary["delayTS"] = new DateTimeOffset(email.SendOnDateTime.Value, TimeSpan.Zero).ToUnixTimeMilliseconds();
             }
 
             // templateName is not part of the CHES MessageObject schema
