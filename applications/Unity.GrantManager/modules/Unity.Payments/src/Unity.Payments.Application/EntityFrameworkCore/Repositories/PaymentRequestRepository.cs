@@ -95,7 +95,7 @@ namespace Unity.Payments.Repositories
         {
             var dbSet = await GetDbSetAsync();
             return await dbSet.Where(p => p.CorrelationId.Equals(correlationId))
-                        .Where(p => p.Status == PaymentRequestStatus.L1Pending || p.Status == PaymentRequestStatus.L2Pending)
+                        .Where(p => p.Status == PaymentRequestStatus.L1Pending || p.Status == PaymentRequestStatus.L2Pending || p.Status == PaymentRequestStatus.L3Pending)
                         .IncludeDetails()
                         .ToListAsync();
         }
@@ -110,7 +110,7 @@ namespace Unity.Payments.Repositories
 
             var dbSet = await GetDbSetAsync();
             return await dbSet.Where(p => idList.Contains(p.CorrelationId))
-                        .Where(p => p.Status == PaymentRequestStatus.L1Pending || p.Status == PaymentRequestStatus.L2Pending)
+                        .Where(p => p.Status == PaymentRequestStatus.L1Pending || p.Status == PaymentRequestStatus.L2Pending || p.Status == PaymentRequestStatus.L3Pending)
                         .IncludeDetails()
                         .ToListAsync();
         }
