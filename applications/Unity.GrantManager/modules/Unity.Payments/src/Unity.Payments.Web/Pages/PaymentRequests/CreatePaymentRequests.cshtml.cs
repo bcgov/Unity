@@ -144,7 +144,7 @@ namespace Unity.Payments.Web.Pages.Payments
                 var supplier = await GetSupplierByApplicationAync(application);
                 string supplierNumber = supplier?.Number?? string.Empty;
 
-                Guid siteId = application.Applicant.SiteId;
+                Guid siteId = application.DefaultSiteId ?? Guid.Empty;
                 Site? site = null;
                 if(siteId != Guid.Empty) {
                     site = await siteRepository.GetAsync(siteId);

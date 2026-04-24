@@ -100,6 +100,21 @@ namespace Unity.Payments.Repositories
                         .ToListAsync();
         }
 
+        public async Task<List<PaymentRequest>> GetPaymentPendingListByCorrelationIdsAsync(IEnumerable<Guid> correlationIds)
+        {
+            var idList = correlationIds?.ToList() ?? new List<Guid>();
+            if (idList.Count == 0)
+            {
+                return new List<PaymentRequest>();
+            }
+
+            var dbSet = await GetDbSetAsync();
+            return await dbSet.Where(p => idList.Contains(p.CorrelationId))
+                        .Where(p => p.Status == PaymentRequestStatus.L1Pending || p.Status == PaymentRequestStatus.L2Pending)
+                        .IncludeDetails()
+                        .ToListAsync();
+        }
+
         /// <summary>
         /// Asynchronously retrieves payment rollup information for each specified correlation ID.
         /// </summary>

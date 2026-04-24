@@ -21,22 +21,25 @@ namespace Unity.Payments.Web.Views.Shared.Components.SupplierInfo
         StyleTypes = [typeof(SupplierInfosWidgetStyleBundleContributor)],
         AutoInitialize = true)]
     public class SupplierInfoViewComponent(IApplicantSupplierAppService applicantSupplierService,
-                                           IApplicantRepository applicantRepository,
+                                           IApplicationRepository applicationRepository,
                                            IPermissionChecker permissionChecker,
                                            IFeatureChecker featureChecker) : AbpViewComponent
     {
 
-        public async Task<IViewComponentResult> InvokeAsync(Guid applicantId)
+        public async Task<IViewComponentResult> InvokeAsync(Guid applicantId, Guid applicationId)
         {
 
             if (await featureChecker.IsEnabledAsync("Unity.Payments"))
             {
                 SupplierDto? supplier = await GetSupplierByApplicantIdAsync(applicantId);
-                Applicant? applicant = await applicantRepository.GetAsync(applicantId);
+                Application? application = applicationId != Guid.Empty
+                    ? await applicationRepository.GetAsync(applicationId)
+                    : null;
                 return View(new SupplierInfoViewModel()
                 {
                     ApplicantId = applicantId,
-                    SiteId = applicant?.SiteId ?? Guid.Empty,
+                    ApplicationId = applicationId,
+                    SiteId = application?.DefaultSiteId ?? Guid.Empty,
                     SupplierCorrelationId = applicantId,
                     SupplierCorrelationProvider = CorrelationConsts.Applicant,
                     SupplierId = supplier?.Id ?? Guid.Empty,
