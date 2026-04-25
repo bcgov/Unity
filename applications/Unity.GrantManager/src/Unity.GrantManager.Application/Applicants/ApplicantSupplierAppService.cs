@@ -7,7 +7,6 @@ using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Payments;
 using Unity.Modules.Shared;
-using Unity.Modules.Shared.Correlation;
 using Unity.Payments.Domain.Suppliers;
 using Unity.Payments.Integrations.Cas;
 using Unity.Payments.PaymentRequests;
@@ -80,14 +79,11 @@ public class ApplicantSupplierAppService(ISiteRepository siteRepository,
             await applicantRepository.EnsureExistsAsync(applicantId);
 
             var applicant = await applicantRepository.GetAsync(applicantId);
-            var supplierId = applicant.SupplierId;
-
-            // Clear the applicant-level supplier reference first.
             applicant.SupplierId = null;
             await applicantRepository.UpdateAsync(applicant);
 
-            // Cascade: clear DefaultSiteId on every application of this applicant.
-            // Sites belong to the cleared supplier, so the references are no longer valid.
+            // Cascade: clear DefaultSiteId on every application — sites belong to the
+            // cleared supplier so their references are no longer valid.
             var applications = await applicationRepository
                 .GetListAsync(a => a.ApplicantId == applicantId);
             foreach (var application in applications)
@@ -95,29 +91,6 @@ public class ApplicantSupplierAppService(ISiteRepository siteRepository,
                 application.DefaultSiteId = null;
                 await applicationRepository.UpdateAsync(application);
             }
-
-            if (supplierId.HasValue)
-            {
-                await supplierAppService.ClearCorrelationAsync(supplierId.Value);
-            }
-            else
-            {
-                // Handle existing data where SupplierId was already cleared
-                // but the supplier's correlation was never removed
-                var supplier = await supplierAppService.GetByCorrelationAsync(
-                    new GetSupplierByCorrelationDto()
-                    {
-                        CorrelationId = applicantId,
-                        CorrelationProvider = CorrelationConsts.Applicant,
-                        IncludeDetails = false
-                    });
-
-                if (supplier != null)
-                {
-                    await supplierAppService.ClearCorrelationAsync(supplier.Id);
-                }
-            }
-
         }
     }
 
@@ -171,22 +144,8 @@ public class ApplicantSupplierAppService(ISiteRepository siteRepository,
 
     public async Task<SupplierDto?> GetSupplierByApplicantIdAsync(Guid applicantId)
     {
-
         Applicant applicant = await applicantRepository.GetAsync(applicantId);
-
-        //If SupplierId is available, use it to get the supplier
-        if (applicant.SupplierId.HasValue)
-        {
-            Guid supplierId = applicant.SupplierId.Value;
-            return await supplierAppService.GetAsync(supplierId);
-        }
-
-        // If no SupplierId, fetch the supplier using the correlation
-        return await supplierAppService.GetByCorrelationAsync(new GetSupplierByCorrelationDto()
-        {
-            CorrelationId = applicantId,
-            CorrelationProvider = CorrelationConsts.Applicant,
-            IncludeDetails = true
-        });
+        if (!applicant.SupplierId.HasValue) return null;
+        return await supplierAppService.GetAsync(applicant.SupplierId.Value);
     }
 }

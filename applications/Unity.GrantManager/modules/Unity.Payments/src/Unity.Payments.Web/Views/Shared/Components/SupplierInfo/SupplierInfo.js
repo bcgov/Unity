@@ -251,7 +251,6 @@ $(function () {
 
         // Clear hidden fields
         $('#SupplierId').val('');
-        $('#SupplierCorrelationId').val('');
 
         // Hide error message
         supplierOrgInfoErrorDiv.addClass('hidden');

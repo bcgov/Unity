@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using Unity.GrantManager.Applicants;
 using Unity.GrantManager.Applications;
 using Unity.Modules.Shared;
-using Unity.Modules.Shared.Correlation;
 using Unity.Payments.Suppliers;
 using Volo.Abp.AspNetCore.Mvc;
 using Volo.Abp.AspNetCore.Mvc.UI.Bundling;
@@ -40,8 +39,6 @@ namespace Unity.Payments.Web.Views.Shared.Components.SupplierInfo
                     ApplicantId = applicantId,
                     ApplicationId = applicationId,
                     SiteId = application?.DefaultSiteId ?? Guid.Empty,
-                    SupplierCorrelationId = applicantId,
-                    SupplierCorrelationProvider = CorrelationConsts.Applicant,
                     SupplierId = supplier?.Id ?? Guid.Empty,
                     SupplierNumber = supplier?.Number?.ToString(),
                     SupplierName = supplier?.Name?.ToString(),

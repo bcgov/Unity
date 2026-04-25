@@ -3,7 +3,6 @@ using System;
 using System.ComponentModel;
 using System.Linq;
 using System.Threading.Tasks;
-using Unity.Modules.Shared.Correlation;
 using Unity.Payments.Codes;
 using Unity.Payments.Domain.Suppliers;
 using Unity.Payments.Enums;
@@ -779,8 +778,7 @@ public class PaymentRequestRepository_Tests : PaymentsApplicationTestBase
     {
         using var uow = _unitOfWorkManager.Begin();
         var siteId = Guid.NewGuid();
-        var supplier = new Supplier(Guid.NewGuid(), "TestSupplier", "SUP-001",
-            new Correlation(Guid.NewGuid(), "Test"));
+        var supplier = new Supplier(Guid.NewGuid(), "TestSupplier", "SUP-001");
         supplier.AddSite(new Site(siteId, "001", PaymentGroup.EFT));
         await _supplierRepository.InsertAsync(supplier, true);
         await uow.CompleteAsync();
