@@ -59,74 +59,7 @@ $(function () {
 
     cloneWorksheetModal.onResult(function (result, response) {
         PubSub.publish('refresh_worksheet_list');
-    });
-
-
-    function makeSectionsAndFieldsSortable() {
-        makeCustomFieldsSortable();
-        makeSectionsSortable();
-    }
-
-    function makeCustomFieldsSortable() {
-        document.querySelectorAll('.custom-fields-wrapper').forEach(function (div) {
-            _ = new Sortable(div, {
-                animation: 150,
-                onEnd: function (evt) {
-                    updateCustomFieldsSequence(evt);
-                },
-                ghostClass: 'blue-background',
-                onMove: function (_) {
-                    return true;
-                }
-            });
-        });
-    }
-
-    function makeSectionsSortable() {
-        document.querySelectorAll('.sections-wrapper-outer').forEach(function (div) {
-            _ = new Sortable(div, {
-                animation: 150,
-                onEnd: function (evt) {
-                    updateSectionSequence(evt);
-                },
-                ghostClass: 'blue-background',
-                onMove: function (_) {
-                    return true;
-                }
-            });
-        });
-    }
-
-    function updatePreview() {
-        let worksheets = $('button.accordion-button[aria-expanded=true]');
-        const previewPane = $('#worksheet-preview').length ? $('#worksheet-preview') : $('#preview');
-
-        if (worksheets?.length > 0) {
-            let worksheetId = worksheets[0].dataset.worksheetId;
-            const url = `../Flex/Widgets/WorksheetInstance/Refresh?`
-                + `instanceCorrelationId=00000000-0000-0000-0000-000000000000&`
-                + `instanceCorrelationProvider=Preview&`
-                + `sheetCorrelationId=00000000-0000-0000-0000-000000000000&`
-                + `sheetCorrelationProvider=Preview&`
-                + `uiAnchor=Preview&`
-                + `worksheetId=${worksheetId}`;
-            fetch(url)
-                .then(response => response.text())
-                .then(data => {
-                    previewPane.html(data);
-                    previewPane.find(':input').prop('readonly', true);
-                    PubSub.publish('worksheet_preview_datagrid_refresh');
-                })
-                .catch(error => {
-                    console.error('Error generating preview:', error);
-                });
-
-        } else {
-            previewPane?.html('<p>No sections to display.</p>');
-        }
-
-        $('.preview-scrollable').first().scrollTop(0);
-    }
+    });   
 
     PubSub.subscribe(
         'refresh_worksheet_list',
