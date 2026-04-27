@@ -18,7 +18,6 @@ module.exports = {
         '@node_modules/datatables.net-staterestore/': '@libs/datatables.net-staterestore/',
         '@node_modules/datatables.net-staterestore-dt/': '@libs/datatables.net-staterestore-dt/',
 
-        '@node_modules/jspdf/dist/': '@libs/jspdf/dist',
         '@node_modules/html2canvas/dist/': '@libs/html2canvas/dist',
         '@node_modules/sweetalert2/src/': '@libs/sweetalert2/src',
         '@node_modules/jquery-maskmoney/': '@libs/jquery-maskmoney',
