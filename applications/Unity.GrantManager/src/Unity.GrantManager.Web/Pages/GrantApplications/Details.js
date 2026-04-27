@@ -369,9 +369,9 @@ $(function () {
                     const statusText = globalThis.AIGenerationButtonState?.resolveStatus(request?.status) ?? '';
                 if (statusText === 'Failed') {
                     stopAIGenerationPolling();
-                    loadDevAiOutputs();
                     globalThis.AIGenerationButtonState?.restore(restoreButton);
-                    restoreButton.html('<span class="ai-button-content"><span>Completed</span></span>').prop('disabled', true);
+                    restoreButton.html(originalHtml).prop('disabled', false);
+                    loadDevAiOutputs();
                     abp.message.error(request?.failureReason || 'AI generate all failed.');
                     return;
                 }
@@ -411,7 +411,7 @@ $(function () {
             .fail(function() {
                 abp.message.error(failureMessage);
                 globalThis.AIGenerationButtonState?.restore(restoreButton);
-                restoreButton.html('<span class="ai-button-content"><span>Completed</span></span>').prop('disabled', true);
+                restoreButton.html(originalHtml).prop('disabled', false);
             });
     }
 

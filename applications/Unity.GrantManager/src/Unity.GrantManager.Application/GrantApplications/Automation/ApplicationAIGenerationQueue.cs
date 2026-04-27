@@ -5,6 +5,7 @@ using Unity.AI.Automation;
 using Unity.GrantManager.GrantApplications;
 using Unity.GrantManager.GrantApplications.Automation.BackgroundJobs;
 using Medallion.Threading;
+using Microsoft.Extensions.Logging;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.BackgroundJobs;
 using Volo.Abp.DependencyInjection;
@@ -14,7 +15,8 @@ namespace Unity.GrantManager.GrantApplications.Automation;
 public class ApplicationAIGenerationQueue(
     IBackgroundJobManager backgroundJobManager,
     IRepository<AIGenerationRequest, Guid> generationRequestRepository,
-    IDistributedLockProvider distributedLockProvider)
+    IDistributedLockProvider distributedLockProvider,
+    ILogger<ApplicationAIGenerationQueue> logger)
     : IApplicationAIGenerationQueue, ITransientDependency
 {
     public async Task QueueAttachmentSummaryAsync(Guid applicationId, Guid? tenantId, string? promptVersion = null)
@@ -131,7 +133,31 @@ public class ApplicationAIGenerationQueue(
                 requestKey);
 
             await generationRequestRepository.InsertAsync(request, autoSave: true);
-            await enqueue();
+
+            try
+            {
+                await enqueue();
+            }
+            catch (Exception ex)
+            {
+                await MarkFailedBestEffortAsync(request, ex);
+                throw;
+            }
+        }
+    }
+
+    private async Task MarkFailedBestEffortAsync(AIGenerationRequest request, Exception exception)
+    {
+        try
+        {
+            await AIGenerationRequestJobHelper.MarkFailedAsync(generationRequestRepository, request, exception.Message);
+        }
+        catch (Exception markException)
+        {
+            logger.LogError(
+                markException,
+                "Failed to mark AI generation request {RequestId} as failed after enqueue failure.",
+                request.Id);
         }
     }
 }

@@ -478,7 +478,7 @@ function generateAiButtonAction(e, dt, button, config) {
         unity.grantManager.grantApplications.grantApplication
             .getAIGenerationStatus(pageApplicationId, 'application-scoring', promptVersion)
             .done(function (request) {
-                const status = request?.status;
+                const status = globalThis.AIGenerationButtonState?.resolveStatus(request?.status) ?? '';
 
                 if (status === 'Failed') {
                     stopPolling();
@@ -507,7 +507,9 @@ function generateAiButtonAction(e, dt, button, config) {
 
     unity.grantManager.grantApplications.grantApplication.queueApplicationScoring(pageApplicationId, promptVersion)
         .done(function (request) {
-            if (request?.status === 'Completed') {
+            const status = globalThis.AIGenerationButtonState?.resolveStatus(request?.status) ?? '';
+
+            if (status === 'Completed') {
                 setReviewListAiButtonCompleted($button);
                 refreshReviewListAfterAiScoring();
                 return;

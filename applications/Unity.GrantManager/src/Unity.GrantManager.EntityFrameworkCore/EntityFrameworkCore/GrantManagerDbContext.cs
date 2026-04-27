@@ -247,7 +247,7 @@ public class GrantManagerDbContext :
             b.Property(x => x.FailureReason).HasMaxLength(2000);
             b.Property(x => x.Status).IsRequired();
             b.HasIndex(x => x.RequestKey);
-            b.HasIndex(x => new { x.ApplicationId, x.OperationType, x.Status });
+            b.HasIndex(x => new { x.TenantId, x.ApplicationId, x.OperationType, x.Status });
         });
 
 

@@ -1041,6 +1041,7 @@ public class GrantApplicationAppService(
         return await QueueApplicationAnalysisAsync(applicationId, promptVersion);
     }
 
+    [Authorize(AIPermissions.Analysis.GenerateApplicationAnalysis)]
     public async Task<AIGenerationRequestDto> QueueApplicationAnalysisAsync(Guid applicationId, string? promptVersion = null)
     {
         await EnsureAIAnalysisEnabledAsync();
@@ -1054,6 +1055,7 @@ public class GrantApplicationAppService(
         return request ?? throw new UserFriendlyException("Unable to queue AI analysis request.");
     }
 
+    [Authorize(AIPermissions.Analysis.GenerateAttachmentSummaries)]
     public async Task<AIGenerationRequestDto> QueueAttachmentSummaryAsync(Guid applicationId, string? promptVersion = null)
     {
         await EnsureAttachmentSummariesEnabledAsync();
@@ -1067,6 +1069,7 @@ public class GrantApplicationAppService(
         return request ?? throw new UserFriendlyException("Unable to queue AI attachment summary request.");
     }
 
+    [Authorize(AIPermissions.Analysis.GenerateScoring)]
     public async Task<AIGenerationRequestDto> QueueApplicationScoringAsync(Guid applicationId, string? promptVersion = null)
     {
         await EnsureScoringEnabledAsync();
@@ -1082,9 +1085,13 @@ public class GrantApplicationAppService(
 
     public async Task<AIGenerationRequestDto?> GetAIGenerationStatusAsync(Guid applicationId, string operationType, string? promptVersion = null)
     {
+        await EnsureAIGenerationStatusAccessAsync(operationType);
         return await aiGenerationStatusAppService.GetLatestAsync(applicationId, operationType, CurrentTenant.Id);
     }
 
+    [Authorize(AIPermissions.Analysis.GenerateApplicationAnalysis)]
+    [Authorize(AIPermissions.Analysis.GenerateAttachmentSummaries)]
+    [Authorize(AIPermissions.Analysis.GenerateScoring)]
     public async Task<AIGenerationRequestDto> QueueAllAIStagesAsync(Guid applicationId, string? promptVersion = null)
     {
         await EnsureAttachmentSummariesEnabledAsync();
@@ -1098,6 +1105,29 @@ public class GrantApplicationAppService(
             CurrentTenant.Id);
 
         return request ?? throw new UserFriendlyException("Unable to queue AI generation request.");
+    }
+
+    private async Task EnsureAIGenerationStatusAccessAsync(string operationType)
+    {
+        switch (operationType)
+        {
+            case AIGenerationRequestKeyHelper.ApplicationAnalysisOperationType:
+                await AuthorizationService.CheckAsync(AIPermissions.Analysis.ViewApplicationAnalysis);
+                return;
+            case AIGenerationRequestKeyHelper.AttachmentSummaryOperationType:
+                await AuthorizationService.CheckAsync(AIPermissions.Analysis.ViewAttachmentSummary);
+                return;
+            case AIGenerationRequestKeyHelper.ApplicationScoringOperationType:
+                await AuthorizationService.CheckAsync(AIPermissions.Analysis.ViewScoringResult);
+                return;
+            case AIGenerationRequestKeyHelper.PipelineOperationType:
+                await AuthorizationService.CheckAsync(AIPermissions.Analysis.ViewApplicationAnalysis);
+                await AuthorizationService.CheckAsync(AIPermissions.Analysis.ViewAttachmentSummary);
+                await AuthorizationService.CheckAsync(AIPermissions.Analysis.ViewScoringResult);
+                return;
+            default:
+                throw new UserFriendlyException("Unknown AI generation operation type.");
+        }
     }
 
     private async Task EnsureAttachmentSummariesEnabledAsync()

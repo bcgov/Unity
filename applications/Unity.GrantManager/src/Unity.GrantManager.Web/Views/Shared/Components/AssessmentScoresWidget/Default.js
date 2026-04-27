@@ -610,7 +610,7 @@ function queueApplicationScoring(triggerButton = null) {
         unity.grantManager.grantApplications.grantApplication
             .getAIGenerationStatus(applicationId, 'application-scoring', promptVersion)
             .done(function (request) {
-                const status = request?.status;
+                const status = globalThis.AIGenerationButtonState?.resolveStatus(request?.status) ?? '';
 
                 if (status === 'Failed') {
                     stopPolling();
@@ -638,7 +638,9 @@ function queueApplicationScoring(triggerButton = null) {
     unity.grantManager.grantApplications.applicationScoring
         .queueApplicationScoring(applicationId, promptVersion)
         .done(function (request) {
-            if (request?.status === 'Completed') {
+            const status = globalThis.AIGenerationButtonState?.resolveStatus(request?.status) ?? '';
+
+            if (status === 'Completed') {
                 $button.html('<span class="ai-button-content"><span>Completed</span></span>').prop('disabled', true);
                 PubSub.publish('refresh_assessment_scores', null);
                 return;

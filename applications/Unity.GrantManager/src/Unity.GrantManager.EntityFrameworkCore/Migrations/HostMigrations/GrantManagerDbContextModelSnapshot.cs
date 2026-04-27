@@ -739,7 +739,7 @@ namespace Unity.GrantManager.Migrations.HostMigrations
 
                     b.HasIndex("RequestKey");
 
-                    b.HasIndex("ApplicationId", "OperationType", "Status");
+                    b.HasIndex("TenantId", "ApplicationId", "OperationType", "Status");
 
                     b.ToTable("AIRequests", "AI");
                 });

@@ -39,10 +39,10 @@ public partial class AddAIRequestTable : Migration
             });
 
         migrationBuilder.CreateIndex(
-            name: "IX_AIRequests_ApplicationId_OperationType_Status",
+            name: "IX_AIRequests_TenantId_ApplicationId_OperationType_Status",
             schema: "AI",
             table: "AIRequests",
-            columns: new[] { "ApplicationId", "OperationType", "Status" });
+            columns: new[] { "TenantId", "ApplicationId", "OperationType", "Status" });
 
         migrationBuilder.CreateIndex(
             name: "IX_AIRequests_RequestKey",

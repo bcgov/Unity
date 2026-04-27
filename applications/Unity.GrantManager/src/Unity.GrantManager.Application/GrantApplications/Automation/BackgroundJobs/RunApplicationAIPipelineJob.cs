@@ -29,6 +29,11 @@ public class RunApplicationAIPipelineJob(
 {
     public override async Task ExecuteAsync(RunApplicationAIPipelineJobArgs args)
     {
+        if (string.IsNullOrWhiteSpace(args.RequestKey))
+        {
+            throw new ArgumentException("RequestKey is required.", nameof(args.RequestKey));
+        }
+
         using (currentTenant.Change(args.TenantId))
         {
             var request = await AIGenerationRequestJobHelper.GetLatestRequestAsync(
@@ -101,13 +106,11 @@ public class RunApplicationAIPipelineJob(
 
                 if (scoringException != null)
                 {
-                    await AIGenerationRequestJobHelper.MarkFailedAsync(generationRequestRepository, request, scoringException.Message);
                     throw scoringException;
                 }
 
                 if (analysisException != null)
                 {
-                    await AIGenerationRequestJobHelper.MarkFailedAsync(generationRequestRepository, request, analysisException.Message);
                     throw analysisException;
                 }
 

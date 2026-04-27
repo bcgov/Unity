@@ -53,8 +53,9 @@ public static class AIGenerationRequestJobHelper
         IRepository<AIGenerationRequest, Guid> generationRequestRepository,
         Expression<Func<AIGenerationRequest, bool>> predicate)
     {
-        var requests = await generationRequestRepository.GetListAsync(predicate);
-        return requests
+        var query = await generationRequestRepository.GetQueryableAsync();
+        return query
+            .Where(predicate)
             .OrderByDescending(x => x.CreationTime)
             .ThenByDescending(x => x.Id)
             .FirstOrDefault();
