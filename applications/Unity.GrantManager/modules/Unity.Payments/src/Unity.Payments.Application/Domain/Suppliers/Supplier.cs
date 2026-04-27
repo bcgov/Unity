@@ -2,14 +2,13 @@
 using System.Collections.ObjectModel;
 using System.Linq;
 using Unity.Payments.Enums;
-using Unity.Modules.Shared.Correlation;
 using Volo.Abp.Domain.Entities.Auditing;
 using Volo.Abp.MultiTenancy;
 using Unity.Payments.Domain.Suppliers.ValueObjects;
 
 namespace Unity.Payments.Domain.Suppliers
 {
-    public class Supplier : FullAuditedAggregateRoot<Guid>, IMultiTenant, ICorrelationEntity
+    public class Supplier : FullAuditedAggregateRoot<Guid>, IMultiTenant
     {
         public Guid? TenantId { get; set; }
         public virtual string? Name { get; set; } = string.Empty;
@@ -30,10 +29,6 @@ namespace Unity.Payments.Domain.Suppliers
         public virtual string? Province { get; private set; }
         public virtual string? PostalCode { get; private set; }
 
-        // External Correlation
-        public virtual string CorrelationProvider { get; set; } = string.Empty;
-        public virtual Guid CorrelationId { get; set; }
-
         protected Supplier()
         {
             /* This constructor is for ORMs to be used while getting the entity from the database. */
@@ -43,14 +38,11 @@ namespace Unity.Payments.Domain.Suppliers
         public Supplier(Guid id,
             string? name,
             string? number,
-            Correlation correlation,
             MailingAddress? mailingAddress = default)
            : base(id)
         {
             Name = name;
             Number = number;
-            CorrelationId = correlation.CorrelationId;
-            CorrelationProvider = correlation.CorrelationProvider;
             Sites = [];
             MailingAddress = mailingAddress?.AddressLine;
             City = mailingAddress?.City;
@@ -60,7 +52,6 @@ namespace Unity.Payments.Domain.Suppliers
 
         public Supplier(Guid id,
             SupplierBasicInfo basicInfo,
-            Correlation correlation,
             ProviderInfo? providerInfo = default,
             SupplierStatus? supplierStatus = default,
             CasMetadata? casMetadata = default,
@@ -76,8 +67,6 @@ namespace Unity.Payments.Domain.Suppliers
             SupplierProtected = supplierStatus?.SupplierProtected ?? SupplierProtected;
             StandardIndustryClassification = supplierStatus?.StandardIndustryClassification ?? StandardIndustryClassification;
             LastUpdatedInCAS = casMetadata?.LastUpdatedInCAS ?? LastUpdatedInCAS;
-            CorrelationId = correlation.CorrelationId;
-            CorrelationProvider = correlation.CorrelationProvider;
             Sites = [];
             MailingAddress = mailingAddress?.AddressLine;
             City = mailingAddress?.City;

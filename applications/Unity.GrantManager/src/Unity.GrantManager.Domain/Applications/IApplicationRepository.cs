@@ -29,5 +29,8 @@ namespace Unity.GrantManager.Applications
 
         // Get applications by applicant ID
         Task<List<Application>> GetByApplicantIdAsync(Guid applicantId);
+
+        // Get applications whose DefaultSiteId matches the given site id
+        Task<List<Application>> GetApplicationsBySiteIdAsync(Guid siteId);
     }
 }

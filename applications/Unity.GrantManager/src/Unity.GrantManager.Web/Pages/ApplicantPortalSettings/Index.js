@@ -11,8 +11,11 @@
 
     let portalStatusTable = new DataTable("#PortalStatusTable", {
         paging: false,
-        ordering: false,
-        info: false
+        info: false,
+        order: {
+            idx: 0,
+            dir: 'asc'
+        }
     });
 
     // Capture original values after DataTable initialization
