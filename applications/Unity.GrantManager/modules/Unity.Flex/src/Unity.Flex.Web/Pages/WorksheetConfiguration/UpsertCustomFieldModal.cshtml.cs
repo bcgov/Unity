@@ -5,8 +5,10 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.Threading.Tasks;
+using Unity.Flex;
 using Unity.Flex.Web.Views.Shared.Components.CustomFieldDefinitionWidget;
 using Unity.Flex.Worksheets;
+using Unity.Flex.Worksheets.Definitions;
 using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Form;
 
 namespace Unity.Flex.Web.Pages.WorksheetConfiguration;
@@ -52,6 +54,34 @@ public class UpsertCustomFieldModalModel(ICustomFieldAppService customFieldAppSe
     [BindProperty]
     public bool IsDelete { get; set; }
 
+    [BindProperty]
+    [DisplayName("Is Hidden")]
+    public bool IsHidden { get; set; }
+
+    [BindProperty]
+    [DisplayName("Hide Label")]
+    public bool HideLabel { get; set; }
+
+    [BindProperty]
+    [DisplayName("Is Disabled")]
+    public bool IsDisabled { get; set; }
+
+    [BindProperty]
+    public string LabelPosition { get; set; } = "Top";
+
+    [BindProperty]
+    public string? LabelStyle { get; set; }
+
+    [BindProperty]
+    public string? LabelCssClass { get; set; }
+
+    [BindProperty]
+    [DisplayName("Security Classification")]
+    public string? SecurityClassification { get; set; }
+
+    [BindProperty]
+    public string? Placeholder { get; set; }
+
     [SelectItems(nameof(FieldTypes))]
     [Required]
     [BindProperty]
@@ -77,6 +107,19 @@ public class UpsertCustomFieldModalModel(ICustomFieldAppService customFieldAppSe
             Published = worksheet.Published;
             FieldType = customField.Type.ToString();
             Definition = customField.Definition;
+
+            if (customField.Definition != null)
+            {
+                var existingDef = customField.Definition.ConvertDefinition(customField.Type);
+                IsHidden = existingDef?.IsHidden ?? false;
+                HideLabel = existingDef?.HideLabel ?? false;
+                IsDisabled = existingDef?.IsDisabled ?? false;
+                LabelPosition = existingDef?.LabelPosition ?? "Top";
+                LabelStyle = existingDef?.LabelStyle;
+                LabelCssClass = existingDef?.LabelCssClass;
+                SecurityClassification = existingDef?.SecurityClassification;
+                Placeholder = existingDef?.Placeholder;
+            }
         }
     }
 
@@ -135,9 +178,39 @@ public class UpsertCustomFieldModalModel(ICustomFieldAppService customFieldAppSe
 
     private object? ExtractDefinition()
     {
-        var fieldType = Enum.TryParse(FieldType, out CustomFieldType type);
-        if (!fieldType) return null;
-        return CustomFieldDefinitionWidget.ParseFormValues(type, Request.Form);
+        if (!Enum.TryParse(FieldType, out CustomFieldType type)) return null;
+
+        var definition = CustomFieldDefinitionWidget.ParseFormValues(type, Request.Form);
+
+        // Types with a definition editor: ParseFormValues already built the typed object.
+        if (definition is CustomFieldDefinition def)
+        {
+            ApplyFieldOptions(def);
+            return definition;
+        }
+
+        // Types without a definition editor (Date, Checkbox, YesNo, Email, Phone…):
+        // rehydrate the existing definition JSON so we preserve Required, then apply options.
+        var existingDef = (Definition ?? "{}").ConvertDefinition(type);
+        if (existingDef != null)
+        {
+            ApplyFieldOptions(existingDef);
+            return existingDef;
+        }
+
+        return definition;
+    }
+
+    private void ApplyFieldOptions(CustomFieldDefinition def)
+    {
+        def.IsHidden = IsHidden;
+        def.HideLabel = HideLabel;
+        def.IsDisabled = IsDisabled;
+        def.LabelPosition = LabelPosition;
+        def.LabelStyle = string.IsNullOrWhiteSpace(LabelStyle) ? null : LabelStyle.Trim();
+        def.LabelCssClass = string.IsNullOrWhiteSpace(LabelCssClass) ? null : LabelCssClass.Trim();
+        def.SecurityClassification = string.IsNullOrEmpty(SecurityClassification) ? null : SecurityClassification;
+        def.Placeholder = string.IsNullOrWhiteSpace(Placeholder) ? null : Placeholder.Trim();
     }
 
     private OkObjectResult MapModalResponse(CustomFieldDto customFieldDto)

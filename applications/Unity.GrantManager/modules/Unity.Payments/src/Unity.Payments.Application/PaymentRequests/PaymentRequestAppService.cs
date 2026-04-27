@@ -331,6 +331,11 @@ namespace Unity.Payments.PaymentRequests
             return await paymentRequestQueryManager.GetPaymentPendingListByCorrelationIdAsync(applicationId);
         }
 
+        public async Task<List<PaymentRequestDto>> GetPaymentPendingListByCorrelationIdsAsync(IEnumerable<Guid> correlationIds)
+        {
+            return await paymentRequestQueryManager.GetPaymentPendingListByCorrelationIdsAsync(correlationIds);
+        }
+
         /// <summary>
         /// Retrieves the payment rollup for the specified application, including any linked child
         /// applications.

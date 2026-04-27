@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using System.Linq;
+using System.Text.Json;
 using Unity.Flex.Domain.ScoresheetInstances;
 using Unity.Flex.Domain.Scoresheets;
 using Unity.Flex.Domain.WorksheetInstances;
@@ -21,7 +22,9 @@ public class FlexApplicationAutoMapperProfile : Profile
             .ForMember(dest => dest.TotalFields, opt => opt.MapFrom(s => s.Sections.SelectMany(s => s.Fields).Count()));
 
         CreateMap<WorksheetLink, WorksheetLinkDto>();
-        CreateMap<WorksheetSection, WorksheetSectionDto>();
+        CreateMap<WorksheetSection, WorksheetSectionDto>()
+            .ForMember(dest => dest.FieldWidth, opt => opt.MapFrom(src =>
+                ParseFieldWidth(src.Definition)));
         CreateMap<WorksheetInstance, WorksheetInstanceDto>();
         CreateMap<CustomFieldValue, CustomFieldValueDto>().ReverseMap();
         CreateMap<CustomField, CustomFieldDto>();
@@ -45,5 +48,18 @@ public class FlexApplicationAutoMapperProfile : Profile
             .ForMember(dest => dest.Sections, opt => opt.MapFrom(src => src.Sections));
         CreateMap<ScoresheetInstance, ScoresheetInstanceDto>();
         CreateMap<Answer, AnswerDto>();
+    }
+
+    private static int? ParseFieldWidth(string? definition)
+    {
+        if (string.IsNullOrEmpty(definition)) return null;
+        try
+        {
+            using var doc = JsonDocument.Parse(definition);
+            if (doc.RootElement.TryGetProperty("fieldWidth", out var prop) && prop.TryGetInt32(out var value))
+                return value > 0 ? value : null;
+        }
+        catch { /* malformed JSON — fall through */ }
+        return null;
     }
 }

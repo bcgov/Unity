@@ -3,8 +3,60 @@
     flex-wrap: nowrap;
 }
 
-.worksheet-configuration-container > div {
-    overflow-y: scroll;
+#worksheet-left-col {
+    overflow: hidden;
+}
+
+.worksheet-left-header {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background-color: var(--bs-card-bg, #fff);
+    padding: 1rem 1rem 0;
+    border-bottom: 1px solid var(--bs-border-color, #dee2e6);
+    padding-bottom: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.worksheet-left-body {
+    overflow-y: auto;
+    flex: 1 1 auto;
+    padding: 0 1rem;
+}
+
+
+.column-resizer {
+    width: 6px;
+    cursor: col-resize;
+    background-color: #dee2e6;
+    flex-shrink: 0;
+    transition: background-color 0.15s;
+    border-radius: 3px;
+}
+
+.column-resizer:hover,
+.column-resizer.dragging {
+    background-color: var(--bs-accordion-active-bg);
+}
+
+.worksheet-filters {
+    flex-wrap: nowrap;
+}
+
+#worksheet-accordion {
+    padding-top: 1px;
+}
+
+.btn-label-position {
+    border: 2px solid #acb2b7;
+    background-color: transparent;
+    color: inherit;
+}
+
+.btn-check:checked + .btn-label-position {
+    background-color:  #acb2b7;
+    border: 2px solid var(--bc-colors-blue-primary);
+    color: inherit;
 }
 
 .worksheet-scrollable-content {
@@ -36,4 +88,33 @@
 .sticky-preview {
     position: sticky;
     top: 0;
+}
+
+/* Custom field modal section headings */
+.cf-section-heading {
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--bs-secondary-color, #6c757d);
+    padding-bottom: 0.35rem;
+    border-bottom: 1px solid var(--bs-border-color, #dee2e6);
+    margin-top: 1.25rem;
+    margin-bottom: 0.75rem;
+}
+
+.cf-section-heading:first-child {
+    margin-top: 0;
+}
+
+/* Tab error indicator badge */
+.tab-error-badge {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: var(--bs-danger, #dc3545);
+    margin-left: 6px;
+    vertical-align: middle;
+    flex-shrink: 0;
 }
