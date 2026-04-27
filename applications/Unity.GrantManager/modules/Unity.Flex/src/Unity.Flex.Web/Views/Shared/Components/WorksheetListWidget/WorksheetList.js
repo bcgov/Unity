@@ -61,20 +61,6 @@ $(function () {
         PubSub.publish('refresh_worksheet_list');
     });
 
-    function refreshWorksheetListWidget() {
-        const url = `../Flex/Widgets/WorksheetList/Refresh`;
-        fetch(url)
-            .then(response => response.text())
-            .then(data => {
-                document.getElementById('worksheet-info-widget-list').innerHTML = data;
-                setTimeout(() => {
-                    PubSub.publish('worksheet_list_refreshed');
-                }, 100);
-            })
-            .catch(error => {
-                console.error('Error refreshing worksheet-info-list-widget:', error);
-            });
-    }
 
     function makeSectionsAndFieldsSortable() {
         makeCustomFieldsSortable();
@@ -109,36 +95,6 @@ $(function () {
                 }
             });
         });
-    }
-
-    function updateCustomFieldsSequence(evt) {
-        let sectionId = evt.target.dataset.sectionId;
-        let oldIndex = evt.oldIndex;
-        let newIndex = evt.newIndex;
-
-        unity.flex.worksheets.worksheetSection
-            .resequenceCustomFields(sectionId, oldIndex, newIndex, {})
-            .done(function () {
-                updatePreview();
-                abp.notify.success(
-                    'Custom fields order updated.'
-                );
-            });
-    }
-
-    function updateSectionSequence(evt) {
-        let worksheetId = evt.target.dataset.worksheetId;
-        let oldIndex = evt.oldIndex;
-        let newIndex = evt.newIndex;
-
-        unity.flex.worksheets.worksheet
-            .resequenceSections(worksheetId, oldIndex, newIndex, {})
-            .done(function () {
-                updatePreview();
-                abp.notify.success(
-                    'Sections fields order updated.'
-                );
-            });
     }
 
     function updatePreview() {

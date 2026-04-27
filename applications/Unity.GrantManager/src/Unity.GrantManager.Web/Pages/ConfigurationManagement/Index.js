@@ -32,7 +32,6 @@
     }
 
     const splitRestoreMap = {
-        'custom-fields-div': initResizableSplit('worksheet-split-container', 'worksheet-left', 'worksheet-divider', 'worksheet-right', 'worksheetSplitWidth'),
         'scoresheets-div': initResizableSplit('scoresheet-split-container', 'scoresheet-left', 'scoresheet-divider', 'scoresheet-right', 'scoresheetSplitWidth')
     };
 
