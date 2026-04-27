@@ -205,10 +205,10 @@
   dependencies:
     resize-observer-polyfill "^1.5.1"
 
-"@formio/choices.js@10.2.0":
-  version "10.2.0"
-  resolved "https://registry.npmjs.org/@formio/choices.js/-/choices.js-10.2.0.tgz"
-  integrity sha512-dEF+es4yj3pstKHif7Ck14vQCZdN+b1Afojl0ufTmKw5WIjqas1KXEIBBgtsg4eY6bxqFkgEjtxsK4ecvEeZsA==
+"@formio/choices.js@10.2.1":
+  version "10.2.1"
+  resolved "https://registry.yarnpkg.com/@formio/choices.js/-/choices.js-10.2.1.tgz#d0f5c032d94f33152b6036f6a5bb42fcc4684e31"
+  integrity sha512-NCE5u7jG3XGokJP16MyAbVSUptKu/mpJYAxd4PPIoLiO/l9Do5uoOQ0MgNb9qG9qABJiOX+qNRE8q8RybY/SwQ==
   dependencies:
     deepmerge "^4.2.2"
     fuse.js "^6.6.2"
@@ -219,10 +219,10 @@
   resolved "https://registry.npmjs.org/@formio/semantic/-/semantic-2.6.1.tgz"
   integrity sha512-obp1BT5UnzD+uYBbqmnsTfO2hGxI2A2iR/cj3P5JUFLYSBpnr3TS2ShQ7Ee5GCRRtJPu0JnljuJj+YSKLCMuhg==
 
-"@formio/text-mask-addons@^3.8.0-formio.2":
-  version "3.8.0-formio.2"
-  resolved "https://registry.npmjs.org/@formio/text-mask-addons/-/text-mask-addons-3.8.0-formio.2.tgz"
-  integrity sha512-H4Sm+1Sx59jbrlKxtKbzethhp5OIcP8Oi4JBpsvH/SB8P/KCRmtjKbN5ACqURnXmYtBHLJC6Yr9KZibOVRGxpA==
+"@formio/text-mask-addons@^3.8.0-formio.4":
+  version "3.8.0-formio.4"
+  resolved "https://registry.yarnpkg.com/@formio/text-mask-addons/-/text-mask-addons-3.8.0-formio.4.tgz#f3ce4bf978c6c5e8f671641d96f6fd116f7c92a3"
+  integrity sha512-vhkeIyuL+1rtC9S4IW8O3JCwroPtvJrkrcMO4wyELNqMIgQRKbiyBAitZfUP4tY04xdB5lxAinbzdwb+NMdX6w==
 
 "@formio/vanilla-text-mask@^5.1.1-formio.1":
   version "5.1.1-formio.1"
@@ -632,15 +632,15 @@ fetch-ponyfill@^7.1.0:
   dependencies:
     node-fetch "~2.6.1"
 
-formiojs@4.17.4:
-  version "4.17.4"
-  resolved "https://registry.npmjs.org/formiojs/-/formiojs-4.17.4.tgz"
-  integrity sha512-1wUWPLKTJ6/FWa5jCtw5YfsUzgr85TYh8aMhXUWxxRNBtYxZMLg4RcFsArqDJP9Lfh9z4N8p/sLSaOik6iu7kA==
+formiojs@4.21.7:
+  version "4.21.7"
+  resolved "https://registry.yarnpkg.com/formiojs/-/formiojs-4.21.7.tgz#112f229abb8b33259644ed17d132d59041fef9f1"
+  integrity sha512-DDXPhXABxdEbpyfv0C8SAS6zt92luGFXqe0usPHxSHvlP960GQkhS//WV7TAMrRsjj1WTIqqv3XZha8qTknG3Q==
   dependencies:
     "@formio/bootstrap3" "2.12.4-rc.1"
-    "@formio/choices.js" "10.2.0"
+    "@formio/choices.js" "10.2.1"
     "@formio/semantic" "2.6.1"
-    "@formio/text-mask-addons" "^3.8.0-formio.2"
+    "@formio/text-mask-addons" "^3.8.0-formio.4"
     "@formio/vanilla-text-mask" "^5.1.1-formio.1"
     abortcontroller-polyfill "^1.7.5"
     autocompleter "^7.0.1"
@@ -660,6 +660,7 @@ formiojs@4.17.4:
     fetch-ponyfill "^7.1.0"
     i18next "22.4.12"
     idb "^7.1.1"
+    inputmask "^5.0.9"
     ismobilejs "^1.1.1"
     json-logic-js "^2.0.2"
     jstimezonedetect "^1.0.7"
@@ -721,6 +722,11 @@ inherits@~2.0.3:
   version "2.0.4"
   resolved "https://registry.npmjs.org/inherits/-/inherits-2.0.4.tgz"
   integrity sha512-k/vGaX4/Yla3WzyMCvTQOXYeIHvqOKtnqBduzTHpzpQZzAskKMhZ2K+EnBiSM9zGSoIFeMpXKxa4dYeZIQqewQ==
+
+inputmask@^5.0.9:
+  version "5.0.9"
+  resolved "https://registry.yarnpkg.com/inputmask/-/inputmask-5.0.9.tgz#7bf4e83f5e199c88c0edf28545dc23fa208ef4be"
+  integrity sha512-s0lUfqcEbel+EQXtehXqwCJGShutgieOaIImFKC/r4reYNvX3foyrChl6LOEvaEgxEbesePIrw1Zi2jhZaDZbQ==
 
 is-array@^1.0.1:
   version "1.0.1"

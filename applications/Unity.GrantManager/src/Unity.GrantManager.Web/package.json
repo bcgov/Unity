@@ -18,7 +18,7 @@
     "datatables.net-staterestore-dt": "~1.4.2",
     "dompurify": "~3.4.1",
     "echarts": "~6.0.0",
-    "formiojs": "4.17.4",
+    "formiojs": "4.21.7",
     "handlebars": "~4.7.9",
     "html2canvas": "~1.4.1",
     "jquery-maskmoney": "~3.0.2",
