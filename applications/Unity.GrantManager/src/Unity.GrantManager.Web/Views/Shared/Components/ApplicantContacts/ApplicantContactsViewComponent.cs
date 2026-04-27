@@ -3,13 +3,12 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Unity.GrantManager.Applications;
+using Unity.GrantManager.ApplicantProfile;
 using Unity.Modules.Shared;
 using Volo.Abp.AspNetCore.Mvc;
 using Volo.Abp.AspNetCore.Mvc.UI.Bundling;
 using Volo.Abp.AspNetCore.Mvc.UI.Widgets;
 using Volo.Abp.Authorization.Permissions;
-using Volo.Abp.Domain.Repositories;
 
 namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantContacts
 {
@@ -18,22 +17,10 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantContacts
         ScriptTypes = new[] { typeof(ApplicantContactsScriptBundleContributor) },
         StyleTypes = new[] { typeof(ApplicantContactsStyleBundleContributor) },
         AutoInitialize = true)]
-    public class ApplicantContactsViewComponent : AbpViewComponent
+    public class ApplicantContactsViewComponent(
+        IApplicantContactQueryService applicantContactQueryService,
+        IPermissionChecker permissionChecker) : AbpViewComponent
     {
-        private readonly IApplicantAgentRepository _applicantAgentRepository;
-        private readonly IPermissionChecker _permissionChecker;
-        private readonly IRepository<Application, Guid> _applicationRepository;
-
-        public ApplicantContactsViewComponent(
-            IApplicantAgentRepository applicantAgentRepository,
-            IPermissionChecker permissionChecker,
-            IRepository<Application, Guid> applicationRepository)
-        {
-            _applicantAgentRepository = applicantAgentRepository;
-            _permissionChecker = permissionChecker;
-            _applicationRepository = applicationRepository;
-        }
-
         public async Task<IViewComponentResult> InvokeAsync(Guid applicantId)
         {
             if (applicantId == Guid.Empty)
@@ -41,58 +28,31 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantContacts
                 return View(new ApplicantContactsViewModel { ApplicantId = applicantId });
             }
 
-            var agents = await _applicantAgentRepository.GetListByApplicantIdAsync(applicantId);
+            var aggregated = await applicantContactQueryService.GetByApplicantIdAsync(applicantId);
 
-            var orderedAgents = agents
-                .OrderByDescending(a => a.LastModificationTime ?? a.CreationTime)
+            var contacts = aggregated.Contacts
+                .OrderByDescending(c => c.IsPrimary)
+                .ThenByDescending(c => c.CreationTime)
                 .ToList();
-
-            var appIds = new HashSet<Guid>(
-                orderedAgents.Where(a => a.ApplicationId.HasValue).Select(a => a.ApplicationId!.Value));
-
-            var appRefMap = new Dictionary<Guid, string>();
-            if (appIds.Count > 0)
-            {
-                var apps = await _applicationRepository.GetListAsync(a => appIds.Contains(a.Id));
-                foreach (var app in apps)
-                {
-                    appRefMap[app.Id] = app.ReferenceNo;
-                }
-            }
 
             var viewModel = new ApplicantContactsViewModel
             {
                 ApplicantId = applicantId,
-                CanEditContact = await _permissionChecker.IsGrantedAsync(UnitySelector.Applicant.Contact.Update),
-                Contacts = orderedAgents
-                    .Select((agent, index) => new ApplicantContactItemDto
-                    {
-                        Id = agent.Id,
-                        Name = agent.Name ?? string.Empty,
-                        Email = agent.Email ?? string.Empty,
-                        Phone = !string.IsNullOrWhiteSpace(agent.Phone)
-                            ? agent.Phone!
-                            : agent.Phone2 ?? string.Empty,
-                        Title = agent.Title ?? string.Empty,
-                        Type = index == 0 ? "Primary" : "",
-                        CreationTime = agent.CreationTime,
-                        ApplicationId = agent.ApplicationId,
-                        ReferenceNo = agent.ApplicationId.HasValue ? appRefMap.GetValueOrDefault(agent.ApplicationId.Value, string.Empty) : string.Empty
-                    })
-                    .ToList()
+                CanEditContact = await permissionChecker.IsGrantedAsync(UnitySelector.Applicant.Contact.Update),
+                Contacts = contacts
             };
 
-            var primaryContact = orderedAgents.FirstOrDefault();
-            if (primaryContact != null)
+            var primary = contacts.FirstOrDefault(c => c.IsPrimary);
+            if (primary != null)
             {
-                viewModel.PrimaryContact = new ApplicantPrimaryContactViewModel
+                viewModel.PrimaryContact = new ApplicantPrimaryContactDisplayModel
                 {
-                    Id = primaryContact.Id,
-                    FullName = primaryContact.Name ?? string.Empty,
-                    Title = primaryContact.Title ?? string.Empty,
-                    Email = primaryContact.Email ?? string.Empty,
-                    BusinessPhone = primaryContact.Phone ?? string.Empty,
-                    CellPhone = primaryContact.Phone2 ?? string.Empty
+                    ContactId = primary.ContactId,
+                    FullName = primary.Name ?? string.Empty,
+                    Title = primary.Title ?? string.Empty,
+                    Email = primary.Email ?? string.Empty,
+                    WorkPhone = primary.WorkPhoneNumber ?? string.Empty,
+                    MobilePhone = primary.MobilePhoneNumber ?? string.Empty
                 };
             }
 

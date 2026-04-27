@@ -7,11 +7,11 @@ namespace Unity.GrantManager.ApplicantProfile;
 
 /// <summary>
 /// Provides applicant-profile-specific contact retrieval operations.
-/// This service aggregates contacts from three sources: profile-linked contacts,
+/// This query service aggregates contacts from three sources: profile-linked contacts,
 /// application-level contacts matched by OIDC subject, and applicant agent
 /// contacts derived from the submission login token.
 /// </summary>
-public interface IApplicantProfileContactService
+public interface IApplicantContactQueryService
 {
     /// <summary>
     /// Retrieves contacts linked to the applicant profile by resolving applicant IDs from
@@ -39,4 +39,17 @@ public interface IApplicantProfileContactService
     /// <param name="subject">The OIDC subject identifier (e.g. "user@idir").</param>
     /// <returns>A list of <see cref="ContactInfoItemDto"/> with <c>IsEditable</c> set to <c>false</c>.</returns>
     Task<List<ContactInfoItemDto>> GetApplicantAgentContactsBySubjectAsync(string subject);
+
+    /// <summary>
+    /// Retrieves the aggregated contact info for the specified applicant, combining
+    /// applicant-linked contacts (<see cref="Contacts.ContactLink"/> with
+    /// <c>RelatedEntityType = "Applicant"</c>), application contacts, and applicant agent contacts
+    /// for every application owned by the applicant. Applicant-linked contacts are marked editable;
+    /// application and agent contacts are always read-only. The primary flag is resolved either from
+    /// an explicit <c>IsPrimary</c> contact link or, if none exists, by falling back to the most
+    /// recently created contact.
+    /// </summary>
+    /// <param name="applicantId">The unique identifier of the applicant.</param>
+    /// <returns>A populated <see cref="ApplicantContactInfoDto"/>.</returns>
+    Task<ApplicantContactInfoDto> GetByApplicantIdAsync(Guid applicantId);
 }
