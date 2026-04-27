@@ -12,6 +12,35 @@ public static partial class UnitySelector
     public static string[] GetAll() => ReflectionHelper.GetPublicConstantsRecursively(typeof(UnitySelector));
     public static string ElementId(this string value) => value.Replace('.', '_');
 
+    public static partial class ApplicantManagement
+    {
+        public const string Default = "Unity.GrantManager.ApplicantManagement";
+
+        public static partial class Summary // Also known as Applicant Info
+        {
+            public const string Default = "Unity.GrantManager.ApplicantManagement.Applicant.Summary";
+            public const string Create  = "Unity.GrantManager.ApplicantManagement.Applicant.Summary.Create";
+            public const string Update  = "Unity.GrantManager.ApplicantManagement.Applicant.Summary.Update";
+            public const string Delete  = "Unity.GrantManager.ApplicantManagement.Applicant.Summary.Delete";
+        }
+
+        public static partial class Contact
+        {
+            public const string Default = "Unity.GrantManager.ApplicantManagement.Applicant.Contact";
+            public const string Create  = "Unity.GrantManager.ApplicantManagement.Applicant.Contact.Create";
+            public const string Update  = "Unity.GrantManager.ApplicantManagement.Applicant.Contact.Update";
+            public const string Delete  = "Unity.GrantManager.ApplicantManagement.Applicant.Contact.Delete";
+        }
+
+        public static partial class Location // Also known as address
+        {
+            public const string Default = "Unity.GrantManager.ApplicantManagement.Applicant.Location";
+            public const string Create  = "Unity.GrantManager.ApplicantManagement.Applicant.Location.Create";
+            public const string Update  = "Unity.GrantManager.ApplicantManagement.Applicant.Location.Update";
+            public const string Delete  = "Unity.GrantManager.ApplicantManagement.Applicant.Location.Delete";
+        }
+    }
+
     public static partial class Applicant
     {
         public const string Default = "Unity.GrantManager.ApplicationManagement.Applicant";
@@ -23,6 +52,7 @@ public static partial class UnitySelector
             public const string Update  = "Unity.GrantManager.ApplicationManagement.Applicant.Authority.Update";
             public const string Delete  = "Unity.GrantManager.ApplicationManagement.Applicant.Authority.Delete";
         }
+
         public static partial class Contact
         {
             public const string Default = "Unity.GrantManager.ApplicationManagement.Applicant.Contact";
@@ -30,6 +60,7 @@ public static partial class UnitySelector
             public const string Update  = "Unity.GrantManager.ApplicationManagement.Applicant.Contact.Update";
             public const string Delete  = "Unity.GrantManager.ApplicationManagement.Applicant.Contact.Delete";
         }
+
         public static partial class AdditionalContact
         {
             public const string Default = "Unity.GrantManager.ApplicationManagement.Applicant.AdditionalContact";

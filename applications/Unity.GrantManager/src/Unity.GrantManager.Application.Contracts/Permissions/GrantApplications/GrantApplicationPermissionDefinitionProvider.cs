@@ -114,7 +114,10 @@ namespace Unity.GrantManager.Permissions.GrantApplications
             //-- TAG ASSIGNMENT
             var tagsPermissionsGroup = context.AddGroup("Tags", L("Permission:Tags"));
             tagsPermissionsGroup.AddPermission(UnitySelector.Application.Tags.Create, L(UnitySelector.Application.Tags.Create));
-            tagsPermissionsGroup.AddPermission(UnitySelector.Application.Tags.Delete, L(UnitySelector.Application.Tags.Delete));           
+            tagsPermissionsGroup.AddPermission(UnitySelector.Application.Tags.Delete, L(UnitySelector.Application.Tags.Delete));
+
+            //-- GRANT APPLICANT MANAGEMENT PERMISSIONS
+            context.AddGrantApplicantManagement_Permissions();
         }
 
         private static LocalizableString L(string name)
@@ -189,6 +192,44 @@ namespace Unity.GrantManager.Permissions.GrantApplications
         public static PermissionDefinition AddUnityChild(this PermissionDefinition parent, string name)
         {
             return parent.AddChild(name, LocalizableString.Create<GrantManagerResource>(name));
+        }
+
+        public static void AddGrantApplicantManagement_Permissions(this IPermissionDefinitionContext context)
+        {
+            #region GRANT APPLICANT MANAGEMENT GRANULAR PERMISSIONS
+            var group = context.AddGroup(UnitySelector.ApplicantManagement.Default, L("Permission:GrantApplicantManagement"));
+
+            var upx_ApplicantInfo = group.AddPermission(UnitySelector.ApplicantManagement.ApplicantInfo.Default, L(UnitySelector.ApplicantManagement.ApplicantInfo.Default));
+            upx_ApplicantInfo.AddUnityChild(UnitySelector.ApplicantManagement.ApplicantInfo.EditApplicantInfo);
+            upx_ApplicantInfo.AddUnityChild(UnitySelector.ApplicantManagement.ApplicantInfo.EditRedStop);
+            upx_ApplicantInfo.AddUnityChild(UnitySelector.ApplicantManagement.ApplicantInfo.EditOrganizationInfo);
+
+            var upx_Contacts = group.AddPermission(UnitySelector.ApplicantManagement.Contacts.Default, L(UnitySelector.ApplicantManagement.Contacts.Default));
+            upx_Contacts.AddUnityChild(UnitySelector.ApplicantManagement.Contacts.EditContacts);
+
+            var upx_Addresses = group.AddPermission(UnitySelector.ApplicantManagement.Addresses.Default, L(UnitySelector.ApplicantManagement.Addresses.Default));
+            upx_Addresses.AddUnityChild(UnitySelector.ApplicantManagement.Addresses.EditAddresses);
+
+            var upx_Submissions = group.AddPermission(UnitySelector.ApplicantManagement.Submissions.Default, L(UnitySelector.ApplicantManagement.Submissions.Default));
+            upx_Submissions.AddUnityChild(UnitySelector.ApplicantManagement.Submissions.AssignApplicant);
+
+            var upx_Payments = group.AddPermission(UnitySelector.ApplicantManagement.Payments.Default, L(UnitySelector.ApplicantManagement.Payments.Default));
+            upx_Payments.AddUnityChild(UnitySelector.ApplicantManagement.Payments.EditSupplierInfo);
+
+            var upx_History = group.AddPermission(UnitySelector.ApplicantManagement.History.Default, L(UnitySelector.ApplicantManagement.History.Default));
+            upx_History.AddUnityChild(UnitySelector.ApplicantManagement.History.EditFundingHistory);
+            upx_History.AddUnityChild(UnitySelector.ApplicantManagement.History.EditAuditHistory);
+            upx_History.AddUnityChild(UnitySelector.ApplicantManagement.History.EditIssueHistory);
+
+            var upx_Comments = group.AddPermission(UnitySelector.ApplicantManagement.Comments.Default, L(UnitySelector.ApplicantManagement.Comments.Default));
+            upx_Comments.AddUnityChild(UnitySelector.ApplicantManagement.Comments.AddApplicantComment);
+
+            var upx_Attachments = group.AddPermission(UnitySelector.ApplicantManagement.Attachments.Default, L(UnitySelector.ApplicantManagement.Attachments.Default));
+            upx_Attachments.AddUnityChild(UnitySelector.ApplicantManagement.Attachments.Upload);
+            upx_Attachments.AddUnityChild(UnitySelector.ApplicantManagement.Attachments.EditLabel);
+
+            group.AddPermission(UnitySelector.ApplicantManagement.Merge.Default, L(UnitySelector.ApplicantManagement.Merge.Default));
+            #endregion
         }
 
         private static LocalizableString L(string name)
