@@ -99,14 +99,14 @@ function makeCustomFieldsSortable() {
     document.querySelectorAll('.custom-fields-wrapper').forEach(function (div) {
         const wrapper = div.closest('.sections-wrapper-outer');
         const isArchived = wrapper?.dataset.isArchived === 'true';
-        _ = new Sortable(div, {
+        new Sortable(div, {
             animation: 150,
             disabled: isArchived,
             onEnd: function (evt) {
                 updateCustomFieldsSequence(evt);
             },
             ghostClass: 'blue-background',
-            onMove: function (_) {
+            onMove: function () {
                 return true;
             }
         });
@@ -116,14 +116,14 @@ function makeCustomFieldsSortable() {
 function makeSectionsSortable() {
     document.querySelectorAll('.sections-wrapper-outer').forEach(function (div) {
         const isArchived = div.dataset.isArchived === 'true';
-        _ = new Sortable(div, {
+        new Sortable(div, {
             animation: 150,
             disabled: isArchived,
             onEnd: function (evt) {
                 updateSectionSequence(evt);
             },
             ghostClass: 'blue-background',
-            onMove: function (_) {
+            onMove: function () {
                 return true;
             }
         });

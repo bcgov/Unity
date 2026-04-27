@@ -46,18 +46,16 @@
                 var fieldDef = field.Definition?.ConvertDefinition(field.Type);
                 var fieldInputId = $"{field.Name}.{Model.ModelName}.{field.Id}.{Model.WorksheetId}";
                 var labelPositionClass = fieldDef?.LabelPosition == "Left" ? "label-left" : "label-top";
-                var fieldStyleAttr = !string.IsNullOrEmpty(fieldDef?.Style) ? $" style=\"{fieldDef.Style}\"" : "";
                 var fieldExtraCssClass = !string.IsNullOrEmpty(fieldDef?.CssClass) ? $" {fieldDef.CssClass}" : "";
-                var labelStyleAttr = !string.IsNullOrEmpty(fieldDef?.LabelStyle) ? $" style=\"{fieldDef.LabelStyle}\"" : "";
 
                 <div class="worksheet_field worksheet_field_@Model.UiAnchor @labelPositionClass@fieldExtraCssClass"
                      @Html.Raw(fieldDef?.IsHidden == true ? "hidden" : "")
                      @Html.Raw(fieldWidthStyle)
-                     @Html.Raw(fieldStyleAttr)>
+                     style="@fieldDef?.Style">
 
                     @if (fieldDef?.HideLabel != true)
                     {
-                        <label class="field-label mb-1@(!string.IsNullOrEmpty(fieldDef?.LabelCssClass) ? $" {fieldDef.LabelCssClass}" : "")" for="@fieldInputId" @Html.Raw(labelStyleAttr)>@field.Label</label>
+                        <label class="field-label mb-1@(!string.IsNullOrEmpty(fieldDef?.LabelCssClass) ? $" {fieldDef.LabelCssClass}" : "")" for="@fieldInputId" style="@fieldDef?.LabelStyle">@field.Label</label>
                     }
 
                     <div class="field-content">
