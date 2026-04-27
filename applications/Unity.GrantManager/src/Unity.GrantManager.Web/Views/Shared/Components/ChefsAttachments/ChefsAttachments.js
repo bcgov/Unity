@@ -14,7 +14,7 @@ $(function () {
     const nullPlaceholder = '—';
 
     let inputAction = function (requestData, dataTableSettings) {
-        const urlParams = new URL(window.location.toLocaleString()).searchParams;
+        const urlParams = new URL(globalThis.location.toLocaleString()).searchParams;
         const applicationId = urlParams.get('ApplicationId');
         return applicationId;
     };
@@ -58,18 +58,6 @@ $(function () {
             getChefsLabelColumn(),
             getChefsFileDownloadColumn(),
         ];
-    }
-
-    function getChefsIconColumn() {
-        return {
-            title: '<i class="fl fl-paperclip"></i>',
-            width: '40px',
-            className: 'text-center',
-            render: function () {
-                return '<i class="fl fl-paperclip"></i>';
-            },
-            orderable: false,
-        };
     }
 
     function getChefsFileNameColumn() {
@@ -153,12 +141,18 @@ $(function () {
 
     // Generate AI summaries for the current application attachments.
     const $generateAISummariesButton = $('#generateAiSummaries');
+    const stopPolling = function () {
+        if (aiSummaryPollTimeoutId) {
+            clearTimeout(aiSummaryPollTimeoutId);
+            aiSummaryPollTimeoutId = null;
+        }
+    };
     if ($generateAISummariesButton.length > 0) {
         $generateAISummariesButton.on('click', function () {
             const $button = $(this);
             const triggerButton = $button.data('trigger-button');
             const $activeButton = triggerButton ? $(triggerButton) : $button;
-            const applicationId = new URL(window.location.toLocaleString()).searchParams.get('ApplicationId');
+            const applicationId = new URL(globalThis.location.toLocaleString()).searchParams.get('ApplicationId');
             const promptVersion = globalThis.getSelectedPromptVersion?.() || null;
 
             $button.removeData('trigger-button');
@@ -169,12 +163,6 @@ $(function () {
             }
 
             const existingHTML = $activeButton.html();
-            const stopPolling = function () {
-                if (aiSummaryPollTimeoutId) {
-                    clearTimeout(aiSummaryPollTimeoutId);
-                    aiSummaryPollTimeoutId = null;
-                }
-            };
             const poll = function () {
                 unity.grantManager.grantApplications.grantApplication
                     .getAIGenerationStatus(applicationId, 'attachment-summary', promptVersion)
@@ -402,6 +390,18 @@ $(function () {
         }
     });
 });
+
+function getChefsIconColumn() {
+    return {
+        title: '<i class="fl fl-paperclip"></i>',
+        width: '40px',
+        className: 'text-center',
+        render: function () {
+            return '<i class="fl fl-paperclip"></i>';
+        },
+        orderable: false,
+    };
+}
 
 function getChefsFileDownloadColumn() {
     return {
