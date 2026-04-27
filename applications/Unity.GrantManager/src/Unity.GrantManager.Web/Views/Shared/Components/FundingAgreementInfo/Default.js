@@ -49,6 +49,7 @@
     }
 
     function updateFundingAgreementInfo(applicationId, fundingAgreementInfoObj) {
+        $('#saveFundingAgreementInfoBtn').prop('disabled', true);
         try {
             unity.grantManager.grantApplications.grantApplication
                 .updateFundingAgreementInfo(applicationId, fundingAgreementInfoObj)
@@ -59,6 +60,9 @@
                     $('#saveFundingAgreementInfoBtn').prop('disabled', true);
                     PubSub.publish('funding_agreement_info_saved', fundingAgreementInfoObj);
                     PubSub.publish('refresh_detail_panel_summary');
+                })
+                .fail(function () {
+                    $('#saveFundingAgreementInfoBtn').prop('disabled', false);
                 });
         }
         catch (error) {

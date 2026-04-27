@@ -14,6 +14,7 @@ using Volo.Abp.EventBus;
 namespace Unity.GrantManager.Handlers
 {
     public class SupplierCreatedHandler(IApplicantAppService applicantsService,
+                                        IApplicationRepository applicationRepository,
                                         ISiteAppService siteAppService,
                                         IPaymentRequestAppService paymentRequestAppService) :
                                         ILocalEventHandler<ApplicantSupplierEto>, ITransientDependency
@@ -32,14 +33,14 @@ namespace Unity.GrantManager.Handlers
                 if (existingSitesDictionary == null) continue;
                 Guid siteId = existingSitesDictionary[siteNumber].Id;
                 // First check if the site is being used
-                // Get all Applicants with the site id
-                List<Applicant> applicants = existingSitesDictionary != null
-                    ? await applicantsService.GetApplicantsBySiteIdAsync(siteId)
-                    : new List<Applicant>();
+                // Get all Applications referencing this site via DefaultSiteId
+                List<Application> applications = existingSitesDictionary != null
+                    ? await applicationRepository.GetApplicationsBySiteIdAsync(siteId)
+                    : new List<Application>();
 
-                if (applicants.Count > 0)
+                if (applications.Count > 0)
                 {
-                    // The site should be deleted but is associate with an applicant as the default site
+                    // The site should be deleted but is referenced by at least one application as the default site
                     // Mark the site as should be deleted MarkDeletedInUse
                     await siteAppService.MarkDeletedInUseAsync(siteId);
                     continue;

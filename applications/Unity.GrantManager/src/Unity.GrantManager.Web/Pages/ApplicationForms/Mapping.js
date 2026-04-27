@@ -136,6 +136,7 @@
             let jsonText = $('#jsonText').val();
             $.parseJSON(jsonText);
             let mappingJsonStr = jsonText.replace(/\s+/g, ' ').replace(/(\r\n|\n|\r)/gm, "");
+            UIElements.btnSaveMapping.prop('disabled', true);
             handleSaveMapping($.parseJSON(mappingJsonStr));
             handleCancelMapping();
 
@@ -150,6 +151,7 @@
 
         }
         catch (err) {
+            UIElements.btnSaveMapping.prop('disabled', false);
             abp.notify.error(
                 '',
                 'The JSON is not valid:' + err
@@ -313,6 +315,7 @@
         formData["availableChefsFields"] = document.getElementById('availableChefsFields').value;
         formData["ChefsApplicationFormGuid"] = document.getElementById('applicationFormId').value;
 
+        UIElements.btnSave.prop('disabled', true);
         $.ajax(
             {
                 url: "/api/app/application-form-version/" + formVersionId,
@@ -332,6 +335,9 @@
                         data.responseText,
                         'Mapping Not Saved Successful'
                     );
+                },
+                complete: function () {
+                    UIElements.btnSave.prop('disabled', false);
                 }
             }
         );
@@ -640,6 +646,7 @@
         };
 
         btnSaveAIConfig.addEventListener('click', function () {
+            btnSaveAIConfig.disabled = true;
             abp.ajax({
                 url: `/api/app/application-form/${aiFormId}/ai-config`,
                 type: 'PATCH',
@@ -658,6 +665,9 @@
             })
             .fail(function () {
                 abp.notify.error('Failed to save AI configuration.');
+            })
+            .always(function () {
+                btnSaveAIConfig.disabled = false;
             });
         });
 

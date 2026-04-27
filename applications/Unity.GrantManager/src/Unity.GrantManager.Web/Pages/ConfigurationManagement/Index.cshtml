@@ -1,0 +1,255 @@
+﻿@page
+@using Microsoft.AspNetCore.Mvc.Localization
+@using Unity.Flex.Web.Views.Shared.Components.WorksheetConfiguration
+@using Unity.GrantManager.Localization
+@using Unity.GrantManager.Web.Pages.ConfigurationManagement
+@using Volo.Abp.AspNetCore.Mvc.UI.Layout
+@model IndexModel
+
+@inject IHtmlLocalizer<GrantManagerResource> L
+@inject IPageLayout PageLayout
+
+@{
+    PageLayout.Content.MenuItemName = Unity.GrantManager.Web.Menus.GrantManagerMenus.ConfigurationManagement;
+    ViewBag.PageTitle = "Configuration Management";
+}
+
+@section styles {
+    <abp-style-bundle name="@typeof(IndexModel).FullName">
+        <abp-style src="/Pages/ConfigurationManagement/Index.css" />
+        @if (Model.ShowPayments)
+        {
+            <abp-style src="/Pages/ConfigurationManagement/PaymentConfigurations.css" />
+        }
+        @if (Model.ShowNotifications)
+        {
+            <abp-style src="/Views/Settings/NotificationsSettingGroup/Default.css" />
+        }
+    </abp-style-bundle>
+}
+
+@section scripts {
+    <abp-script-bundle name="@typeof(IndexModel).FullName">
+        <abp-script src="/Pages/ConfigurationManagement/Index.js" />
+        @if (Model.ShowPayments)
+        {
+            <abp-script src="/Pages/ConfigurationManagement/PaymentConfigurations.js" />
+        }
+        <abp-script src="/Pages/ConfigurationManagement/ScoresheetConfiguration.js" />
+        <abp-script src="/libs/sortablejs/Sortable.js" />
+        @if (Model.ShowNotifications)
+        {
+            <abp-script src="/Views/Settings/NotificationsSettingGroup/Default.js" />
+            <abp-script src="/Views/Settings/NotificationsSettingGroup/InternalEmailGroups.js" />
+        }
+        @if (Model.ShowTags)
+        {
+            <abp-script src="/Views/Settings/TagManagement/TagManagement.js" />
+        }
+        @if (Model.ShowAI)
+        {
+            <abp-script src="/Views/Settings/AISettingGroup/Default.js" />
+        }
+    </abp-script-bundle>
+}
+
+<div class="config-page-layout">
+    <!-- Side Menu -->
+    <div id="ConfigurationManagementSideMenu" class="side-menu">
+        <ul>
+            @if (Model.ShowNotifications)
+            {
+                <li id="notifications-menu-item" class="nav-item btn btn-nav" data-target="notifications-div">
+                    Notifications
+                </li>
+            }
+            @if (Model.ShowPayments)
+            {
+                <li id="payments-menu-item" class="nav-item btn btn-nav" data-target="payments-div">
+                    Payments
+                </li>
+            }
+            @if (Model.ShowCustomFields)
+            {
+                <li id="custom-fields-menu-item" class="nav-item btn btn-nav" data-target="custom-fields-div">
+                    Custom Fields
+                </li>
+            }
+            @if (Model.ShowScoresheets)
+            {
+                <li id="scoresheets-menu-item" class="nav-item btn btn-nav" data-target="scoresheets-div">
+                    Scoresheets
+                </li>
+            }
+            @if (Model.ShowTags)
+            {
+                <li id="tags-menu-item" class="nav-item btn btn-nav" data-target="tags-div">
+                    Tags
+                </li>
+            }
+            @if (Model.ShowAI)
+            {
+                <li id="ai-menu-item" class="nav-item btn btn-nav" data-target="ai-div">
+                    AI
+                </li>
+            }
+        </ul>
+    </div>
+    <!-- Main Content -->
+    <div class="config-content">
+        <!-- Notifications -->
+        @if (Model.ShowNotifications)
+        {
+            <div id="notifications-div" class="config-section input-area card mb-3 config-management hide">
+                @await Component.InvokeAsync(typeof(Unity.Notifications.Web.Views.Settings.NotificationsSettingGroup.NotificationsSettingViewComponent))
+            </div>
+        }
+
+        <!-- Payments -->
+        @if (Model.ShowPayments)
+        {
+            <div id="payments-div" class="config-section input-area card mb-3 config-management hide">
+                <input type="hidden" id="AccountCodingId" value="@Model.AccountCodingId" />
+
+                <div class="container-fluid px-0">
+                    <div class="unity-page-titlebar">
+                        <h4 class="m-0">Payments</h4>
+                    </div>
+
+                    <nav aria-label="Payment Tabs">
+                        <div class="nav nav-tabs" id="payments-nav-tab" role="tablist">
+                            @if (Model.ShowPaymentAccountCoding)
+                            {
+                                <button class="nav-link" id="nav-account-coding-tab" data-bs-toggle="tab" data-bs-target="#nav-account-coding" type="button" role="tab">
+                                    Account Coding
+                                </button>
+                            }
+                            @if (Model.ShowPaymentSettings)
+                            {
+                                <button class="nav-link" id="nav-payment-settings-tab" data-bs-toggle="tab" data-bs-target="#nav-payment-settings" type="button" role="tab">
+                                    Payment Settings
+                                </button>
+                            }
+                        </div>
+                    </nav>
+
+                    <div class="tab-content unt-tab-content" id="payments-nav-tabContent">
+
+                        <!-- Account Coding Tab -->
+                        @if (Model.ShowPaymentAccountCoding)
+                        {
+                            <div class="tab-pane fade" id="nav-account-coding" role="tabpanel" aria-labelledby="nav-account-coding-tab">
+                                <div class="action-bar p-2 filter-search-action-bar">
+                                    <div class="unity-page-titlebar">
+                                        <h4>Account Codes</h4>
+                                    </div>
+                                    <div class="filter-search-action-bar_search-wrapper">
+                                        <input type="search" id="search-data-table" placeholder="Search" class="tbl-search">
+                                    </div>
+                                    <div class="btn-group" id="app_custom_buttons"></div>
+                                    <div id="dynamicButtonContainerId" class="dynamic-buttons-div button-gap-1"></div>
+                                </div>
+                                <div class="p-3 pt-0">
+                                    <abp-table id="AccountCodesDataTable"></abp-table>
+                                </div>
+                            </div>
+                        }
+
+                        <!-- Payment Settings Tab -->
+                        @if (Model.ShowPaymentSettings)
+                        {
+                            <div class="tab-pane fade" id="nav-payment-settings" role="tabpanel" aria-labelledby="nav-payment-settings-tab">
+                                <abp-row>
+                                    <abp-column size="_12" class="p-3">
+                                        <h4>Payment Settings</h4>
+                                    </abp-column>
+                                </abp-row>
+                                <abp-row>
+                                    <abp-column size="_12" class="p-3">
+                                        <span class="form-label">Payment ID Prefix</span>
+                                        <input id="payment-id-prefix-original" type="hidden" value="@Model.PaymentIdPrefix">
+                                        <input id="payment-id-prefix" maxlength="5" type="text" value="@Model.PaymentIdPrefix" class="valid form-control">
+                                    </abp-column>
+                                </abp-row>
+                                <div class="d-flex p-2">
+                                    <abp-button id="PaymentPrefixSaveButton"
+                                                text="Save Changes"
+                                                button-type="Primary" class="me-2"
+                                                type="submit" />
+                                    <abp-button id="PaymentPrefixDiscardButton"
+                                                text="Discard Changes"
+                                                button-type="Light" class="me-2"
+                                                disabled="true" />
+                                </div>
+                                <hr />
+                                <abp-row>
+                                    <abp-column size="_12" class="p-3">
+                                        <h4>Level 2 Approval Threshold</h4>
+                                        <label class="display-input-label" for="paymentSettingsDynamicButtonContainerId">
+                                            Please Note the following table is generated from Users created with the Role of l2_approver
+                                        </label>
+                                    </abp-column>
+                                </abp-row>
+                                <div class="btn-group" id="app_custom_buttons">
+                                    <div id="paymentSettingsDynamicButtonContainerId" class="dynamic-buttons-div button-gap-1"></div>
+                                </div>
+                                <div class="p-3 pt-0">
+                                    <abp-table id="PaymentSettingsDataTable" />
+                                </div>
+                            </div>
+                        }
+
+                    </div>
+                </div>
+            </div>
+        }
+
+        <!-- Custom Fields (Worksheets) -->
+        @if (Model.ShowCustomFields)
+        {
+            <div id="custom-fields-div" class="config-section input-area card mb-3 config-management hide">
+                @await Component.InvokeAsync(typeof(WorksheetConfigurationViewComponent))
+            </div>
+        }
+
+        <!-- Scoresheets -->
+        @if (Model.ShowScoresheets)
+        {
+            <div id="scoresheets-div" class="config-section input-area card mb-3 config-management hide">
+                <div class="config-split-container" id="scoresheet-split-container">
+                    <div class="config-split-left" id="scoresheet-left">
+                        <div id="scoresheet-info-widget">
+                            @await Component.InvokeAsync("Scoresheet")
+                        </div>
+                    </div>
+                    <div class="config-split-divider" id="scoresheet-divider"></div>
+                    <div class="config-split-right" id="scoresheet-right">
+                        <abp-card class="right-card">
+                            <abp-card-body>
+                                <h4><b>Preview</b></h4>
+                                <div id="scoresheet-preview">
+                                </div>
+                            </abp-card-body>
+                        </abp-card>
+                    </div>
+                </div>
+            </div>
+        }
+
+        <!-- Tags -->
+        @if (Model.ShowTags)
+        {
+            <div id="tags-div" class="config-section input-area card mb-3 config-management hide">
+                @await Component.InvokeAsync(typeof(Unity.GrantManager.Web.Views.Settings.TagManagement.TagManagementViewComponent))
+            </div>
+        }
+
+        <!-- AI -->
+        @if (Model.ShowAI)
+        {
+            <div id="ai-div" class="config-section input-area card mb-3 config-management hide">
+                @await Component.InvokeAsync(typeof(Unity.AI.Web.Views.Settings.AISettingGroup.AISettingViewComponent))
+            </div>
+        }
+    </div>
+</div>

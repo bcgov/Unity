@@ -62,12 +62,15 @@ jobs:
         run: |
           VERSION="${{ vars.UGM_BUILD_VERSION }}"
           echo "Debug: UGM_BUILD_VERSION variable value: '$VERSION'"
-          if [ -z "$VERSION" ]; then
-            echo "BUILD_VERSION=1.0.0-dev" >> $GITHUB_ENV
-            echo "Using fallback version: 1.0.0-dev (UGM_BUILD_VERSION variable not set)"
-          else
+          if [ -n "$VERSION" ]; then
             echo "BUILD_VERSION=$VERSION" >> $GITHUB_ENV
             echo "Using project version: $VERSION"
+            # Replace ${BUILD_VERSION} with actual value
+            sed -i "s/\${BUILD_VERSION}/$VERSION/g" applications/Unity.GrantManager/sonar-project.properties
+          else
+            echo "UGM_BUILD_VERSION variable not set - removing sonar.projectVersion property"
+            # Remove the projectVersion line entirely if no version is available
+            sed -i "/sonar.projectVersion=/d" applications/Unity.GrantManager/sonar-project.properties
           fi
 
       - name: Restore dependencies
@@ -77,6 +80,12 @@ jobs:
       - name: Build solution
         working-directory: ./applications/Unity.GrantManager
         run: dotnet build Unity.GrantManager.sln --no-restore
+
+      - name: SonarCloud sonar.projectVersion
+        run: |
+          echo "BUILD_VERSION environment variable: $BUILD_VERSION"
+          echo "Updated sonar-project.properties:"
+          cat applications/Unity.GrantManager/sonar-project.properties | grep "sonar.projectVersion" || echo "No projectVersion set"
 
       - name: SonarCloud Scan
         uses: SonarSource/sonarqube-scan-action@v7

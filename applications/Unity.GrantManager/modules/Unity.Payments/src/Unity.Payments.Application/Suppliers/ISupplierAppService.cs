@@ -8,7 +8,6 @@ namespace Unity.Payments.Suppliers
     public interface ISupplierAppService : IApplicationService
     {
         Task<SupplierDto?> GetAsync(Guid id);
-        Task<SupplierDto?> GetByCorrelationAsync(GetSupplierByCorrelationDto requestDto);
         Task<SupplierDto?> GetBySupplierNumberAsync(string? supplierNumber);
         Task<SupplierDto> CreateAsync(CreateSupplierDto createSupplierDto);
         Task<SupplierDto> UpdateAsync(Guid id, UpdateSupplierDto updateSupplierDto);
@@ -16,6 +15,5 @@ namespace Unity.Payments.Suppliers
         Task<SiteDto> UpdateSiteAsync(Guid id, Guid siteId, UpdateSiteDto updateSiteDto);
         Task<dynamic> GetSitesBySupplierNumberAsync(string? supplierNumber, Guid applicantId, Guid? applicationId = null);
         SiteDto GetSiteDtoFromSiteEto(SiteEto siteEto, Guid supplierId, PaymentGroup? defaultPaymentGroup = null);
-        Task ClearCorrelationAsync(Guid supplierId);
     }
 }

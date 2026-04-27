@@ -11,6 +11,7 @@ using Unity.Flex.Web.Views.Shared.Components.CheckboxGroupDefinitionWidget;
 using Unity.Flex.Web.Views.Shared.Components.SelectListDefinitionWidget;
 using Unity.Flex.Web.Views.Shared.Components.DataGridDefinitionWidget;
 using Unity.Flex.Web.Views.Shared.Components.DataGridWidget;
+using Unity.Flex.Web.Views.Shared.Components.WorksheetInstanceWidget;
 
 namespace Unity.Flex.Web.Views.Shared.Components.WorksheetList;
 
@@ -27,6 +28,7 @@ namespace Unity.Flex.Web.Views.Shared.Components.WorksheetList;
     StyleTypes = [
         typeof(WorksheetListWidgetStyleBundleContributor),
         typeof(WorksheetWidgetStyleBundleContributor),
+        typeof(WorksheetInstanceWidgetStyleBundleContributor),
         typeof(CheckboxGroupDefinitionWidgetStyleBundleContributor),
         typeof(SelectListDefinitionWidgetStyleBundleContributor),
         typeof(DataGridDefinitionWidgetStyleBundleContributor),

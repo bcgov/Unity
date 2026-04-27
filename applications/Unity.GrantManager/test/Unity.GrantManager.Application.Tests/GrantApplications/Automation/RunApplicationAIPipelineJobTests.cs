@@ -23,11 +23,11 @@ public class RunApplicationAIPipelineJobTests(ITestOutputHelper outputHelper) : 
         IApplicationScoringAppService? scoringService = null)
     {
         var attachmentService = Substitute.For<IAttachmentSummaryAppService>();
-        attachmentService.GenerateAttachmentSummariesAsync(Arg.Any<List<Guid>>(), Arg.Any<string?>())
+        attachmentService.GenerateAttachmentSummariesForPipelineAsync(Arg.Any<List<Guid>>(), Arg.Any<string?>())
             .Returns(Task.FromResult(new List<AttachmentSummaryResultDto>()));
 
         var analysisService = Substitute.For<IApplicationAnalysisAppService>();
-        analysisService.GenerateApplicationAnalysisAsync(Arg.Any<Guid>(), Arg.Any<string?>())
+        analysisService.GenerateApplicationAnalysisForPipelineAsync(Arg.Any<Guid>(), Arg.Any<string?>())
             .Returns(Task.FromResult(new ApplicationAnalysisResultDto { Completed = true }));
 
         return new RunApplicationAIPipelineJob(
@@ -50,14 +50,14 @@ public class RunApplicationAIPipelineJobTests(ITestOutputHelper outputHelper) : 
         featureChecker.IsEnabledAsync("Unity.AI.ApplicationAnalysis").Returns(false);
 
         var scoringService = Substitute.For<IApplicationScoringAppService>();
-        scoringService.GenerateApplicationScoringAsync(Arg.Any<Guid>(), Arg.Any<string?>())
+        scoringService.GenerateApplicationScoringForPipelineAsync(Arg.Any<Guid>(), Arg.Any<string?>())
             .Returns(Task.FromResult(new ApplicationScoringResultDto { Completed = true }));
 
         var job = BuildJob(featureChecker, scoringService);
 
         await job.ExecuteAsync(new RunApplicationAIPipelineJobArgs { ApplicationId = Guid.NewGuid() });
 
-        await scoringService.DidNotReceive().GenerateApplicationScoringAsync(Arg.Any<Guid>(), Arg.Any<string?>());
+        await scoringService.DidNotReceive().GenerateApplicationScoringForPipelineAsync(Arg.Any<Guid>(), Arg.Any<string?>());
     }
 
     [Fact]
@@ -69,14 +69,14 @@ public class RunApplicationAIPipelineJobTests(ITestOutputHelper outputHelper) : 
         featureChecker.IsEnabledAsync("Unity.AI.ApplicationAnalysis").Returns(false);
 
         var scoringService = Substitute.For<IApplicationScoringAppService>();
-        scoringService.GenerateApplicationScoringAsync(Arg.Any<Guid>(), Arg.Any<string?>())
+        scoringService.GenerateApplicationScoringForPipelineAsync(Arg.Any<Guid>(), Arg.Any<string?>())
             .Returns(Task.FromResult(new ApplicationScoringResultDto { Completed = true }));
 
         var job = BuildJob(featureChecker, scoringService);
 
         await job.ExecuteAsync(new RunApplicationAIPipelineJobArgs { ApplicationId = Guid.NewGuid() });
 
-        await scoringService.Received(1).GenerateApplicationScoringAsync(Arg.Any<Guid>(), Arg.Any<string?>());
+        await scoringService.Received(1).GenerateApplicationScoringForPipelineAsync(Arg.Any<Guid>(), Arg.Any<string?>());
     }
 
     [Fact]
@@ -88,7 +88,7 @@ public class RunApplicationAIPipelineJobTests(ITestOutputHelper outputHelper) : 
         featureChecker.IsEnabledAsync("Unity.AI.ApplicationAnalysis").Returns(false);
 
         var scoringService = Substitute.For<IApplicationScoringAppService>();
-        scoringService.GenerateApplicationScoringAsync(Arg.Any<Guid>(), Arg.Any<string?>())
+        scoringService.GenerateApplicationScoringForPipelineAsync(Arg.Any<Guid>(), Arg.Any<string?>())
             .Returns(Task.FromResult(new ApplicationScoringResultDto { Completed = true }));
 
         var eventBus = Substitute.For<ILocalEventBus>();

@@ -122,6 +122,8 @@ public class Application : FullAuditedAggregateRoot<Guid>, IMultiTenant
 
     public Guid? TenantId { get; set; }
 
+    public Guid? DefaultSiteId { get; set; }
+
     public Guid? OwnerId { get; set; }
     // Navigation Property - Application Status
     public virtual Person? Owner { get; set; }

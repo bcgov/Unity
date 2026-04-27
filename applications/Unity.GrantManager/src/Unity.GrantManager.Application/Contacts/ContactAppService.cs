@@ -20,7 +20,8 @@ namespace Unity.GrantManager.Contacts;
 [ExposeServices(typeof(ContactAppService), typeof(IContactAppService))]
 public class ContactAppService(
     IContactRepository contactRepository,
-    IContactLinkRepository contactLinkRepository)
+    IContactLinkRepository contactLinkRepository,
+    IContactManager contactManager)
     : GrantManagerAppService, IContactAppService
 {
     /// <inheritdoc />
@@ -53,33 +54,60 @@ public class ContactAppService(
     /// <inheritdoc />
     public async Task<ContactDto> CreateContactAsync(CreateContactLinkDto input)
     {
-        var contact = await contactRepository.InsertAsync(new Contact
-        {
-            Name = input.Name,
-            Title = input.Title,
-            Email = input.Email,
-            HomePhoneNumber = input.HomePhoneNumber,
-            MobilePhoneNumber = input.MobilePhoneNumber,
-            WorkPhoneNumber = input.WorkPhoneNumber,
-            WorkPhoneExtension = input.WorkPhoneExtension
-        }, autoSave: true);
+        ArgumentNullException.ThrowIfNull(input);
 
-        if (input.IsPrimary)
-        {
-            await ClearPrimaryAsync(input.RelatedEntityType, input.RelatedEntityId);
-        }
+        var (contact, link) = await contactManager.CreateAsync(
+            input.RelatedEntityType,
+            input.RelatedEntityId,
+            ToContactInput(input),
+            input.Role,
+            input.IsPrimary);
 
-        await contactLinkRepository.InsertAsync(new ContactLink
-        {
-            ContactId = contact.Id,
-            RelatedEntityType = input.RelatedEntityType,
-            RelatedEntityId = input.RelatedEntityId,
-            Role = input.Role,
-            IsPrimary = input.IsPrimary,
-            IsActive = true
-        }, autoSave: true);
+        return MapToDto(contact, link);
+    }
 
-        return new ContactDto
+    /// <inheritdoc />
+    public async Task<ContactDto> UpdateContactAsync(string entityType, Guid entityId, Guid contactId, UpdateContactDto input)
+    {
+        ArgumentNullException.ThrowIfNull(input);
+
+        var (contact, link) = await contactManager.UpdateAsync(
+            entityType,
+            entityId,
+            contactId,
+            ToContactInput(input),
+            input.Role,
+            input.IsPrimary);
+
+        return MapToDto(contact, link);
+    }
+
+    /// <inheritdoc />
+    public Task SetPrimaryContactAsync(string entityType, Guid entityId, Guid contactId)
+    {
+        return contactManager.SetPrimaryAsync(entityType, entityId, contactId);
+    }
+
+    private static ContactInput ToContactInput(CreateContactLinkDto input) =>
+        new(input.Name,
+            input.Title,
+            input.Email,
+            input.HomePhoneNumber,
+            input.MobilePhoneNumber,
+            input.WorkPhoneNumber,
+            input.WorkPhoneExtension);
+
+    private static ContactInput ToContactInput(UpdateContactDto input) =>
+        new(input.Name,
+            input.Title,
+            input.Email,
+            input.HomePhoneNumber,
+            input.MobilePhoneNumber,
+            input.WorkPhoneNumber,
+            input.WorkPhoneExtension);
+
+    private static ContactDto MapToDto(Contact contact, ContactLink link) =>
+        new()
         {
             ContactId = contact.Id,
             Name = contact.Name,
@@ -89,47 +117,7 @@ public class ContactAppService(
             MobilePhoneNumber = contact.MobilePhoneNumber,
             WorkPhoneNumber = contact.WorkPhoneNumber,
             WorkPhoneExtension = contact.WorkPhoneExtension,
-            Role = input.Role,
-            IsPrimary = input.IsPrimary
+            Role = link.Role,
+            IsPrimary = link.IsPrimary
         };
-    }
-
-    /// <inheritdoc />
-    public async Task SetPrimaryContactAsync(string entityType, Guid entityId, Guid contactId)
-    {
-        await ClearPrimaryAsync(entityType, entityId);
-
-        var contactLinksQuery = await contactLinkRepository.GetQueryableAsync();
-        var link = await contactLinksQuery
-            .Where(l => l.RelatedEntityType == entityType
-                        && l.RelatedEntityId == entityId
-                        && l.ContactId == contactId
-                        && l.IsActive)
-            .FirstOrDefaultAsync() ?? throw new BusinessException("Contacts:ContactLinkNotFound")
-                .WithData("contactId", contactId)
-                .WithData("entityType", entityType)
-                .WithData("entityId", entityId);
-        link.IsPrimary = true;
-        await contactLinkRepository.UpdateAsync(link, autoSave: true);
-    }
-
-    /// <summary>
-    /// Clears the primary flag on all active contact links for the specified entity.
-    /// </summary>
-    private async Task ClearPrimaryAsync(string entityType, Guid entityId)
-    {
-        var contactLinksQuery = await contactLinkRepository.GetQueryableAsync();
-        var currentPrimaryLinks = await contactLinksQuery
-            .Where(l => l.RelatedEntityType == entityType
-                        && l.RelatedEntityId == entityId
-                        && l.IsPrimary
-                        && l.IsActive)
-            .ToListAsync();
-
-        foreach (var existing in currentPrimaryLinks)
-        {
-            existing.IsPrimary = false;
-            await contactLinkRepository.UpdateAsync(existing, autoSave: true);
-        }
-    }
 }
