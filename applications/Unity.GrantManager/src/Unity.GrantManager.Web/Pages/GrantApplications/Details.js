@@ -366,11 +366,7 @@ $(function () {
             unity.grantManager.grantApplications.grantApplication
                 .getAIGenerationStatus(applicationId, operationType, promptVersion)
                 .done(function(request) {
-                    const statusText = request?.status === 0 ? 'Queued'
-                        : request?.status === 1 ? 'Running'
-                        : request?.status === 2 ? 'Completed'
-                        : request?.status === 3 ? 'Failed'
-                        : request?.status ?? '';
+                    const statusText = globalThis.AIGenerationButtonState?.resolveStatus(request?.status) ?? '';
                 if (statusText === 'Failed') {
                     stopAIGenerationPolling();
                     loadDevAiOutputs();

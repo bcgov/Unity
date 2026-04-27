@@ -179,7 +179,7 @@ $(function () {
                 unity.grantManager.grantApplications.grantApplication
                     .getAIGenerationStatus(applicationId, 'attachment-summary', promptVersion)
                     .done(function (request) {
-                        const status = request?.status;
+                        const status = globalThis.AIGenerationButtonState?.resolveStatus(request?.status) ?? '';
 
                         if (status === 'Failed') {
                             stopPolling();
@@ -214,7 +214,7 @@ $(function () {
             unity.grantManager.grantApplications.grantApplication
                 .queueAttachmentSummary(applicationId, promptVersion)
                 .done(function (request) {
-                    if (request?.status === 'Completed') {
+                    if ((globalThis.AIGenerationButtonState?.resolveStatus(request?.status) ?? '') === 'Completed') {
                         $activeButton.html('<span class="ai-button-content"><span>Completed</span></span>').prop('disabled', true);
                         chefsDataTable.ajax.reload();
                         return;

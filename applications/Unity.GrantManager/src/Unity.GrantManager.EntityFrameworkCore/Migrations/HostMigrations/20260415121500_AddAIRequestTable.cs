@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace Unity.GrantManager.Migrations.HostMigrations;
 
-public partial class AddAIGenerationRequests : Migration
+public partial class AddAIRequestTable : Migration
 {
     protected override void Up(MigrationBuilder migrationBuilder)
     {
@@ -19,7 +19,7 @@ public partial class AddAIGenerationRequests : Migration
                 ApplicationId = table.Column<Guid>(type: "uuid", nullable: true),
                 OperationType = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: false),
                 RequestKey = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: false),
-                Status = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
+                Status = table.Column<int>(type: "integer", nullable: false),
                 StartedAt = table.Column<DateTime>(type: "timestamp without time zone", nullable: true),
                 CompletedAt = table.Column<DateTime>(type: "timestamp without time zone", nullable: true),
                 FailureReason = table.Column<string>(type: "character varying(2000)", maxLength: 2000, nullable: true),

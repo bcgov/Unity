@@ -17,6 +17,20 @@
     }
 
     global.AIGenerationButtonState = {
+        resolveStatus(status) {
+            switch (Number(status)) {
+                case 0:
+                    return 'Queued';
+                case 1:
+                    return 'Running';
+                case 2:
+                    return 'Completed';
+                case 3:
+                    return 'Failed';
+                default:
+                    return '';
+            }
+        },
         setGenerating($button) {
             applyStyles($button, generatingStyles);
         },

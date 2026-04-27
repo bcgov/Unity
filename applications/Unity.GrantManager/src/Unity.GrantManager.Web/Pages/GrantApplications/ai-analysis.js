@@ -418,7 +418,6 @@ globalThis.queueApplicationAnalysis = function(triggerButton = null) {
     const promptVersion = globalThis.getSelectedPromptVersion?.() || null;
     const aiAnalysisPollIntervalMs = 15000;
     const aiAnalysisMaxPollFailures = 3;
-    const aiAnalysisMaxQueueWaitMs = 120000;
 
     if (!applicationId || $button.prop('disabled')) {
         return;
@@ -431,7 +430,6 @@ globalThis.queueApplicationAnalysis = function(triggerButton = null) {
 
     let aiAnalysisPollTimeoutId = null;
     let aiAnalysisPollFailures = 0;
-    let aiAnalysisQueuedAt = Date.now();
     const stopAIAnalysisPolling = function() {
         if (aiAnalysisPollTimeoutId) {
             clearTimeout(aiAnalysisPollTimeoutId);
@@ -442,13 +440,9 @@ globalThis.queueApplicationAnalysis = function(triggerButton = null) {
     const poll = function() {
         unity.grantManager.grantApplications.grantApplication
                 .getAIGenerationStatus(applicationId, 'application-analysis', promptVersion)
-                .done(function(request) {
+            .done(function(request) {
                     aiAnalysisPollFailures = 0;
-                    const statusText = request?.status === 0 ? 'Queued'
-                        : request?.status === 1 ? 'Running'
-                        : request?.status === 2 ? 'Completed'
-                        : request?.status === 3 ? 'Failed'
-                        : request?.status ?? '';
+                    const statusText = globalThis.AIGenerationButtonState?.resolveStatus(request?.status) ?? '';
 
                     if (statusText === 'Failed') {
                         stopAIAnalysisPolling();
@@ -456,13 +450,6 @@ globalThis.queueApplicationAnalysis = function(triggerButton = null) {
                         globalThis.AIGenerationButtonState?.restore($button);
                         $button.html(existingHtml).prop('disabled', false);
                         abp.message.error(request?.failureReason || 'AI analysis failed.');
-                        return;
-                    }
-
-                    if (Date.now() - aiAnalysisQueuedAt > aiAnalysisMaxQueueWaitMs) {
-                        stopAIAnalysisPolling();
-                        $button.html(existingHtml).prop('disabled', false);
-                        abp.message.error('AI analysis is still queued. Please try again later.');
                         return;
                     }
 

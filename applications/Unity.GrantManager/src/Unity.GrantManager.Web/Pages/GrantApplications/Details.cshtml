@@ -49,6 +49,16 @@
         && tenantManualEnabled
         && formManualEnabled
         && await PermissionChecker.IsGrantedAsync(AIPermissions.Analysis.GenerateApplicationAnalysis);
+
+    var aiAttachmentSummariesEnabled = await FeatureChecker.IsEnabledAsync("Unity.AI.AttachmentSummaries")
+        && tenantManualEnabled
+        && formManualEnabled
+        && await PermissionChecker.IsGrantedAsync(AIPermissions.Analysis.GenerateAttachmentSummaries);
+
+    var aiScoringEnabled = await FeatureChecker.IsEnabledAsync("Unity.AI.Scoring")
+        && tenantManualEnabled
+        && formManualEnabled
+        && await PermissionChecker.IsGrantedAsync(AIPermissions.Analysis.GenerateScoring);
 }
 @section styles
 {
@@ -431,7 +441,7 @@
                         <h6 class="fw-bold m-0">Application Analysis</h6>
                         @if (aiApplicationAnalysisGenerateEnabled)
                         {
-                            <button type="button" class="btn unt-btn-outline-primary btn-outline-primary" id="regenerateApplicationAnalysis">
+                            <button type="button" class="btn unt-btn-outline-primary btn-outline-primary ai-generate-btn" id="regenerateApplicationAnalysis">
                                 <span class="ai-button-content">
                                     <i class="unt-icon-sm fa-solid fa-wand-sparkles"></i>
                                     <span>Generate</span>
@@ -535,7 +545,7 @@
                                     </select>
                                     @if (aiAttachmentSummariesEnabled && aiApplicationAnalysisEnabled && aiScoringEnabled)
                                     {
-                                        <button type="button" class="btn unt-btn-outline-primary btn-outline-primary btn-sm" id="generateAllAiDevToolsBtn">
+                                        <button type="button" class="btn unt-btn-outline-primary btn-outline-primary btn-sm ai-generate-btn" id="generateAllAiDevToolsBtn">
                                             <span class="ai-button-content">
                                                 <i class="unt-icon-sm fa-solid fa-wand-sparkles"></i>
                                                 <span>Generate All</span>
@@ -550,7 +560,7 @@
                             <div class="dev-prompt-section">
                                 <div class="dev-prompt-section-header">
                                     <h6 class="fw-bold m-0">Attachment Summary <span class="ai-dev-output-timestamp" id="attachmentAiOutputTimestamp"></span></h6>
-                                    <button type="button" class="btn unt-btn-outline-primary btn-outline-primary btn-sm" onclick="queueAttachmentSummary(this)">
+                                    <button type="button" class="btn unt-btn-outline-primary btn-outline-primary btn-sm ai-generate-btn" onclick="queueAttachmentSummary(this)">
                                         <span class="ai-button-content">
                                             <i class="unt-icon-sm fa-solid fa-wand-sparkles"></i>
                                             <span>Generate</span>
@@ -570,7 +580,7 @@
                             <div class="dev-prompt-section">
                                 <div class="dev-prompt-section-header">
                                     <h6 class="fw-bold m-0">Application Analysis <span class="ai-dev-output-timestamp" id="analysisAiOutputTimestamp"></span></h6>
-                                    <button type="button" class="btn unt-btn-outline-primary btn-outline-primary btn-sm" onclick="queueApplicationAnalysis(this)">
+                                    <button type="button" class="btn unt-btn-outline-primary btn-outline-primary btn-sm ai-generate-btn" onclick="queueApplicationAnalysis(this)">
                                         <span class="ai-button-content">
                                             <i class="unt-icon-sm fa-solid fa-wand-sparkles"></i>
                                             <span>Generate</span>
@@ -590,7 +600,7 @@
                             <div class="dev-prompt-section">
                                 <div class="dev-prompt-section-header">
                                     <h6 class="fw-bold m-0">Application Scoring <span class="ai-dev-output-timestamp" id="scoringAiOutputTimestamp"></span></h6>
-                                    <button type="button" class="btn unt-btn-outline-primary btn-outline-primary btn-sm" onclick="queueApplicationScoring(this)">
+                                    <button type="button" class="btn unt-btn-outline-primary btn-outline-primary btn-sm ai-generate-btn" onclick="queueApplicationScoring(this)">
                                         <span class="ai-button-content">
                                             <i class="unt-icon-sm fa-solid fa-wand-sparkles"></i>
                                             <span>Generate</span>

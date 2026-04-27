@@ -13,8 +13,8 @@ using Volo.Abp.EntityFrameworkCore;
 namespace Unity.GrantManager.Migrations.HostMigrations
 {
     [DbContext(typeof(GrantManagerDbContext))]
-    [Migration("20260415121500_AddAIGenerationRequests")]
-    partial class AddAIGenerationRequests
+    [Migration("20260415121500_AddAIRequestTable")]
+    partial class AddAIRequestTable
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
