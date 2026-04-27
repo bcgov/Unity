@@ -80,18 +80,28 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
         Applicant? applicant = await applicantRepository.GetAsync(applicantSupplierEto.ApplicantId);
         ArgumentNullException.ThrowIfNull(applicant);
         applicant.SupplierId = applicantSupplierEto.SupplierId;
-        applicant.SiteId = null; // Reset site id to null
-        // lookup sites if there is only one then set it as default
+        await applicantRepository.UpdateAsync(applicant);
+
+        // Per-application cascade: if the new supplier has exactly one site,
+        // auto-pick it for every application of this applicant; otherwise clear
+        // DefaultSiteId so users repick per application on the Payment Info tab.
+        Guid? newDefaultSiteId = null;
         if (applicant.SupplierId != null)
         {
             List<Site> sites = await siteAppService.GetSitesBySupplierIdAsync(applicant.SupplierId.Value);
             if (sites.Count == 1)
             {
-                applicant.SiteId = sites.FirstOrDefault()?.Id;
+                newDefaultSiteId = sites[0].Id;
             }
         }
 
-        await applicantRepository.UpdateAsync(applicant);
+        var applications = await applicationRepository.GetListAsync(a => a.ApplicantId == applicant.Id);
+        foreach (var application in applications)
+        {
+            application.DefaultSiteId = newDefaultSiteId;
+            await applicationRepository.UpdateAsync(application);
+        }
+
         return applicant;
     }
 
@@ -548,11 +558,6 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
         }
     }
 
-    public async Task<List<Applicant>> GetApplicantsBySiteIdAsync(Guid siteId)
-    {
-        List<Applicant> applicants = await applicantRepository.GetApplicantsBySiteIdAsync(siteId);
-        return applicants;
-    }
     [RemoteService(true)]
     public async Task<JsonDocument> GetApplicantLookUpAutocompleteQueryAsync(string? applicantLookUpQuery)
     {
@@ -744,7 +749,6 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
                     ? applicant.StartedOperatingDate.Value.ToDateTime(TimeOnly.MinValue) 
                     : null,
                 SupplierId = applicant.SupplierId?.ToString(),
-                SiteId = applicant.SiteId,
                 MatchPercentage = applicant.MatchPercentage,
                 IsDuplicated = applicant.IsDuplicated,
                 CreationTime = applicant.CreationTime,

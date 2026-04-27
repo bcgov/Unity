@@ -9,6 +9,8 @@ namespace Unity.Flex.Worksheets
     {
         public string Name { get; set; } = string.Empty;
         public uint Order { get; set; }
+        public int? FieldWidth { get; set; }
+        public string? Definition { get; set; }
         public List<CustomFieldDto> Fields { get; set; } = [];
     }
 }

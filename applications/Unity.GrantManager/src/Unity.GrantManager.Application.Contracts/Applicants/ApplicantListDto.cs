@@ -29,7 +29,6 @@ public class ApplicantListDto : AuditedEntityDto<Guid>
     public int? FiscalDay { get; set; }
     public DateTime? StartedOperatingDate { get; set; }
     public string? SupplierId { get; set; }
-    public Guid? SiteId { get; set; }
     public decimal? MatchPercentage { get; set; }
     public bool IsDuplicated { get; set; }
 }
