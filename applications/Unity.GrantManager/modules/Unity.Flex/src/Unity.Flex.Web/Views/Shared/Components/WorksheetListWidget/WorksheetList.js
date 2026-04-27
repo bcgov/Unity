@@ -95,11 +95,16 @@ function makeSectionsAndFieldsSortable() {
     makeSectionsSortable();
 }
 
+let customFieldSortables = [];
+let sectionSortables = [];
+
 function makeCustomFieldsSortable() {
+    customFieldSortables.forEach(s => s.destroy());
+    customFieldSortables = [];
     document.querySelectorAll('.custom-fields-wrapper').forEach(function (div) {
         const wrapper = div.closest('.sections-wrapper-outer');
         const isArchived = wrapper?.dataset.isArchived === 'true';
-        new Sortable(div, {
+        customFieldSortables.push(new Sortable(div, {
             animation: 150,
             disabled: isArchived,
             onEnd: function (evt) {
@@ -109,14 +114,16 @@ function makeCustomFieldsSortable() {
             onMove: function () {
                 return true;
             }
-        });
+        }));
     });
 }
 
 function makeSectionsSortable() {
+    sectionSortables.forEach(s => s.destroy());
+    sectionSortables = [];
     document.querySelectorAll('.sections-wrapper-outer').forEach(function (div) {
         const isArchived = div.dataset.isArchived === 'true';
-        new Sortable(div, {
+        sectionSortables.push(new Sortable(div, {
             animation: 150,
             disabled: isArchived,
             onEnd: function (evt) {
@@ -126,7 +133,7 @@ function makeSectionsSortable() {
             onMove: function () {
                 return true;
             }
-        });
+        }));
     });
 }
 
