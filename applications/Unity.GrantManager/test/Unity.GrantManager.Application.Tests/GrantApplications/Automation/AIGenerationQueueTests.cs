@@ -1,4 +1,5 @@
 using Medallion.Threading;
+using Microsoft.Extensions.Logging;
 using NSubstitute;
 using Shouldly;
 using System;
@@ -41,7 +42,7 @@ public class AIGenerationQueueTests(ITestOutputHelper outputHelper) : GrantManag
                 return Task.FromResult(string.Empty);
             });
 
-        var queue = new ApplicationAIGenerationQueue(backgroundJobManager, repository, new TestDistributedLockProvider());
+        var queue = CreateQueue(backgroundJobManager, repository);
 
         await queue.QueueAllAIStagesAsync(applicationId, tenantId, "v1");
 
@@ -77,7 +78,7 @@ public class AIGenerationQueueTests(ITestOutputHelper outputHelper) : GrantManag
         repository.GetQueryableAsync().Returns(Task.FromResult<IQueryable<AIGenerationRequest>>(new[] { request }.AsQueryable()));
 
         var backgroundJobManager = Substitute.For<IBackgroundJobManager>();
-        var queue = new ApplicationAIGenerationQueue(backgroundJobManager, repository, new TestDistributedLockProvider());
+        var queue = CreateQueue(backgroundJobManager, repository);
 
         await queue.QueueApplicationAnalysisAsync(applicationId, tenantId, promptVersion);
 
@@ -108,7 +109,7 @@ public class AIGenerationQueueTests(ITestOutputHelper outputHelper) : GrantManag
                 return Task.FromResult(string.Empty);
             });
 
-        var queue = new ApplicationAIGenerationQueue(backgroundJobManager, repository, new TestDistributedLockProvider());
+        var queue = CreateQueue(backgroundJobManager, repository);
 
         await queue.QueueApplicationAnalysisAsync(applicationId, tenantId, promptVersion);
 
@@ -143,7 +144,7 @@ public class AIGenerationQueueTests(ITestOutputHelper outputHelper) : GrantManag
         repository.GetQueryableAsync().Returns(Task.FromResult<IQueryable<AIGenerationRequest>>(new[] { request }.AsQueryable()));
 
         var backgroundJobManager = Substitute.For<IBackgroundJobManager>();
-        var queue = new ApplicationAIGenerationQueue(backgroundJobManager, repository, new TestDistributedLockProvider());
+        var queue = CreateQueue(backgroundJobManager, repository);
 
         await queue.QueueAttachmentSummaryAsync(applicationId, tenantId, promptVersion);
 
@@ -174,7 +175,7 @@ public class AIGenerationQueueTests(ITestOutputHelper outputHelper) : GrantManag
                 return Task.FromResult(string.Empty);
             });
 
-        var queue = new ApplicationAIGenerationQueue(backgroundJobManager, repository, new TestDistributedLockProvider());
+        var queue = CreateQueue(backgroundJobManager, repository);
 
         await queue.QueueAttachmentSummaryAsync(applicationId, tenantId, promptVersion);
 
@@ -209,7 +210,7 @@ public class AIGenerationQueueTests(ITestOutputHelper outputHelper) : GrantManag
         repository.GetQueryableAsync().Returns(Task.FromResult<IQueryable<AIGenerationRequest>>(new[] { request }.AsQueryable()));
 
         var backgroundJobManager = Substitute.For<IBackgroundJobManager>();
-        var queue = new ApplicationAIGenerationQueue(backgroundJobManager, repository, new TestDistributedLockProvider());
+        var queue = CreateQueue(backgroundJobManager, repository);
 
         await queue.QueueApplicationScoringAsync(applicationId, tenantId, promptVersion);
 
@@ -240,7 +241,7 @@ public class AIGenerationQueueTests(ITestOutputHelper outputHelper) : GrantManag
                 return Task.FromResult(string.Empty);
             });
 
-        var queue = new ApplicationAIGenerationQueue(backgroundJobManager, repository, new TestDistributedLockProvider());
+        var queue = CreateQueue(backgroundJobManager, repository);
 
         await queue.QueueApplicationScoringAsync(applicationId, tenantId, promptVersion);
 
@@ -292,5 +293,16 @@ public class AIGenerationQueueTests(ITestOutputHelper outputHelper) : GrantManag
             Dispose();
             return ValueTask.CompletedTask;
         }
+    }
+
+    private static ApplicationAIGenerationQueue CreateQueue(
+        IBackgroundJobManager backgroundJobManager,
+        IRepository<AIGenerationRequest, Guid> repository)
+    {
+        return new ApplicationAIGenerationQueue(
+            backgroundJobManager,
+            repository,
+            new TestDistributedLockProvider(),
+            Substitute.For<ILogger<ApplicationAIGenerationQueue>>());
     }
 }

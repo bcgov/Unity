@@ -104,12 +104,8 @@ public class RunApplicationAIPipelineJobTests(ITestOutputHelper outputHelper) : 
         requests = requestList;
         var repository = Substitute.For<IRepository<AIGenerationRequest, Guid>>();
 
-        repository.GetListAsync(Arg.Any<System.Linq.Expressions.Expression<Func<AIGenerationRequest, bool>>>())
-            .Returns(callInfo =>
-            {
-                var predicate = callInfo.Arg<System.Linq.Expressions.Expression<Func<AIGenerationRequest, bool>>>().Compile();
-                return Task.FromResult(requestList.Where(predicate).ToList());
-            });
+        repository.GetQueryableAsync()
+            .Returns(Task.FromResult<IQueryable<AIGenerationRequest>>(requestList.AsQueryable()));
         repository.UpdateAsync(Arg.Any<AIGenerationRequest>(), Arg.Any<bool>(), Arg.Any<CancellationToken>())
             .Returns(callInfo => Task.FromResult(callInfo.Arg<AIGenerationRequest>()));
 
