@@ -35,7 +35,9 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
                                  IOrgBookService orgBookService,
                                  IApplicantAgentRepository applicantAgentRepository,
                                  IApplicationRepository applicationRepository) : GrantManagerAppService, IApplicantAppService
-{   
+{
+    private const string ApplicantIdDataKey = "ApplicantId";
+
     protected new ILogger Logger => LazyServiceProvider.LazyGetService<ILogger>(provider => LoggerFactory?.CreateLogger(GetType().FullName!) ?? NullLogger.Instance);
 
     [RemoteService(false)]
@@ -276,8 +278,7 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
         {
             case "Contact":
                 await UpdateLinkedContactAsync(applicantId, input);
-                break;
-            case "Agent":
+                break;            
             default:
                 await UpdateAgentContactAsync(applicantId, input);
                 break;
@@ -290,7 +291,7 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
         if (applicantAgent.ApplicantId != applicantId)
         {
             throw new BusinessException("Unity:Applicant:ContactNotFound")
-                .WithData("ApplicantId", applicantId)
+                .WithData(ApplicantIdDataKey, applicantId)
                 .WithData("ContactId", input.Id);
         }
 
@@ -318,7 +319,7 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
         if (link == null)
         {
             throw new BusinessException("Unity:Applicant:ContactNotFound")
-                .WithData("ApplicantId", applicantId)
+                .WithData(ApplicantIdDataKey, applicantId)
                 .WithData("ContactId", input.Id);
         }
 
@@ -345,14 +346,14 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
         if (applicantAddress.ApplicantId != applicantId)
         {
             throw new BusinessException("Unity:Applicant:AddressNotFound")
-                .WithData("ApplicantId", applicantId)
+                .WithData(ApplicantIdDataKey, applicantId)
                 .WithData("AddressId", input.Id);
         }
 
         if (applicantAddress.AddressType != expectedType)
         {
             throw new BusinessException("Unity:Applicant:AddressTypeMismatch")
-                .WithData("ApplicantId", applicantId)
+                .WithData(ApplicantIdDataKey, applicantId)
                 .WithData("AddressId", input.Id)
                 .WithData("ExpectedType", expectedType.ToString());
         }
