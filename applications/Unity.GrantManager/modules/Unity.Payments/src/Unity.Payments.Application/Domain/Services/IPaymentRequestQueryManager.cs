@@ -35,6 +35,7 @@ namespace Unity.Payments.Domain.Services
 
         // Pending Payments
         Task<List<PaymentRequestDto>> GetPaymentPendingListByCorrelationIdAsync(Guid applicationId);
+        Task<List<PaymentRequestDto>> GetPaymentPendingListByCorrelationIdsAsync(IEnumerable<Guid> correlationIds);
 
         // Payment Rollups (paid + pending aggregation)
         Task<ApplicationPaymentRollupDto> GetApplicationPaymentRollupAsync(Guid applicationId, List<Guid> childApplicationIds);

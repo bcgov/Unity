@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Unity.GrantManager.EntityFrameworkCore;
@@ -12,9 +13,11 @@ using Volo.Abp.EntityFrameworkCore;
 namespace Unity.GrantManager.Migrations.TenantMigrations
 {
     [DbContext(typeof(GrantTenantDbContext))]
-    partial class GrantTenantDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260424031702_AddApplicationDefaultSiteIdAndCopyFromApplicant")]
+    partial class AddApplicationDefaultSiteIdAndCopyFromApplicant
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -4226,6 +4229,13 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .HasMaxLength(40)
                         .HasColumnType("character varying(40)")
                         .HasColumnName("ConcurrencyStamp");
+
+                    b.Property<Guid>("CorrelationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("CorrelationProvider")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.Property<DateTime>("CreationTime")
                         .HasColumnType("timestamp without time zone")
