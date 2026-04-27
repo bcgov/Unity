@@ -700,6 +700,11 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<bool>("Published")
                         .HasColumnType("boolean");
 
+                    b.Property<bool>("IsArchived")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
                     b.Property<string>("ReportColumns")
                         .IsRequired()
                         .HasColumnType("text");
@@ -770,6 +775,9 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
 
                     b.Property<long>("Order")
                         .HasColumnType("bigint");
+
+                    b.Property<string>("Definition")
+                        .HasColumnType("jsonb");
 
                     b.Property<Guid?>("TenantId")
                         .HasColumnType("uuid")
@@ -882,9 +890,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
 
                     b.Property<string>("SectorSubSectorIndustryDesc")
                         .HasColumnType("text");
-
-                    b.Property<Guid?>("SiteId")
-                        .HasColumnType("uuid");
 
                     b.Property<DateOnly?>("StartedOperatingDate")
                         .HasColumnType("date");
@@ -1234,6 +1239,9 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
 
                     b.Property<string>("DeclineRational")
                         .HasColumnType("text");
+
+                    b.Property<Guid?>("DefaultSiteId")
+                        .HasColumnType("uuid");
 
                     b.Property<Guid?>("DeleterId")
                         .HasColumnType("uuid")
@@ -4226,13 +4234,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .HasMaxLength(40)
                         .HasColumnType("character varying(40)")
                         .HasColumnName("ConcurrencyStamp");
-
-                    b.Property<Guid>("CorrelationId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("CorrelationProvider")
-                        .IsRequired()
-                        .HasColumnType("text");
 
                     b.Property<DateTime>("CreationTime")
                         .HasColumnType("timestamp without time zone")

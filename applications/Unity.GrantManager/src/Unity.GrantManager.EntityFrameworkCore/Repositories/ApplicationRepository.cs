@@ -197,6 +197,14 @@ public class ApplicationRepository
             .ToListAsync();
     }
 
+    public async Task<List<Application>> GetApplicationsBySiteIdAsync(Guid siteId)
+    {
+        return await (await GetQueryableAsync())
+            .AsNoTracking()
+            .Where(a => a.DefaultSiteId == siteId)
+            .ToListAsync();
+    }
+
     private static IQueryable<Application> ApplySorting(
         IQueryable<Application> query,
         string? sorting)

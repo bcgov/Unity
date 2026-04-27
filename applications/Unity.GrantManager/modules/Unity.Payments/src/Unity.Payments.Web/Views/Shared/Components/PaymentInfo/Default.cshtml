@@ -73,7 +73,7 @@
         @* Zone Section : Payment.Supplier *@
         @if (await PermissionChecker.IsGrantedAsync(UnitySelector.Payment.Supplier.Default))
         {
-            @await Component.InvokeAsync("SupplierInfo", new { applicantId = Model.ApplicantId })
+            @await Component.InvokeAsync("SupplierInfo", new { applicantId = Model.ApplicantId, applicationId = Model.ApplicationId })
         }
 
         @* Zone Section : Payment.Worksheet *@

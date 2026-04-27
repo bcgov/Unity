@@ -639,11 +639,8 @@ public class GrantApplicationAppService(
         var application = await applicationRepository.GetAsync(applicationId);
         if (await FeatureChecker.IsEnabledAsync(PaymentConsts.UnityPaymentsFeature) && application != null)
         {
-            var pendingPayments = await paymentRequestService.GetPaymentPendingListByCorrelationIdAsync(applicationId);
-            if (pendingPayments != null && pendingPayments.Count > 0)
-            {
-                throw new UserFriendlyException("There are outstanding payment requests with the current Supplier. Please decline or approve the outstanding payments before changing the Supplier Number");
-            }
+            await applicantSupplierService.EnsureNoPendingPaymentsForApplicantAsync(application.ApplicantId);
+
             // Handle both clearing (null/empty) and updating supplier number
             if (string.IsNullOrWhiteSpace(supplierNumber))
             {

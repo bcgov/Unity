@@ -9,3 +9,58 @@
 .custom-currency-input {
     text-align: right;
 }
+
+/* Field label position */
+.worksheet_field {
+    display: flex;
+}
+
+.worksheet_field.label-top {
+    flex-direction: column;
+}
+
+.worksheet_field.label-top .field-label {
+    margin-bottom: 0.25rem;
+}
+
+.worksheet_field.label-top .field-content {
+    width: 100%;
+}
+
+.worksheet_field.label-left {
+    flex-direction: row;
+    align-items: center;
+}
+
+.worksheet_field.label-left .field-label {
+    flex: 0 0 30%;
+    margin-right: 3%;
+}
+
+.worksheet_field.label-left .field-content {
+    flex: 1;
+}
+
+/* Collapsible sections */
+.section-collapse-toggle {
+    line-height: 1;
+    color: inherit;
+    opacity: 0.6;
+}
+
+.section-collapse-toggle:hover {
+    opacity: 1;
+}
+
+.section-collapse-toggle .section-chevron {
+    transition: transform 0.2s ease;
+    display: inline-block;
+}
+
+.section-collapse-toggle[aria-expanded="false"] .section-chevron {
+    transform: rotate(180deg);
+}
+
+.worksheet_section_label {
+    cursor: default;
+}

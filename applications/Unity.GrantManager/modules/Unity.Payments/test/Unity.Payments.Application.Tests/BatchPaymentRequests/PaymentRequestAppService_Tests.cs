@@ -36,7 +36,6 @@ public class PaymentRequestAppService_Tests : PaymentsApplicationTestBase
         var newSupplier = new Supplier(Guid.NewGuid(),
             "Supplier",
             "123",
-            new Modules.Shared.Correlation.Correlation(Guid.NewGuid(), "Test"),
             new MailingAddress(
             "Address1",
             "City",
@@ -86,7 +85,7 @@ public class PaymentRequestAppService_Tests : PaymentsApplicationTestBase
     {
         // Arrange
         using var uow = _unitOfWorkManager.Begin();
-        var supplier = new Supplier(Guid.NewGuid(), "supp", "123", new Modules.Shared.Correlation.Correlation(Guid.NewGuid(), "A"));
+        var supplier = new Supplier(Guid.NewGuid(), "supp", "123");
         supplier.AddSite(new Site(Guid.NewGuid(), "123", PaymentGroup.EFT));
         var addedSupplier = await _supplierRepository.InsertAsync(supplier);
         CreatePaymentRequestDto paymentRequestDto = new()
@@ -121,7 +120,7 @@ public class PaymentRequestAppService_Tests : PaymentsApplicationTestBase
     {
         // Arrange
         using var uow = _unitOfWorkManager.Begin();
-        var supplier = new Supplier(Guid.NewGuid(), "supp", "123", new Modules.Shared.Correlation.Correlation(Guid.NewGuid(), "A"));
+        var supplier = new Supplier(Guid.NewGuid(), "supp", "123");
         supplier.AddSite(new Site(Guid.NewGuid(), "123", PaymentGroup.EFT));
         var addedSupplier = await _supplierRepository.InsertAsync(supplier);
         CreatePaymentRequestDto paymentRequestDto = new()
