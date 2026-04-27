@@ -17,8 +17,6 @@ module.exports = {
         '@node_modules/datatables.net-colreorder-bs5/': '@libs/datatables.net-colreorder-bs5/',
         '@node_modules/datatables.net-staterestore/': '@libs/datatables.net-staterestore/',
         '@node_modules/datatables.net-staterestore-dt/': '@libs/datatables.net-staterestore-dt/',
-
-        '@node_modules/html2canvas/dist/': '@libs/html2canvas/dist',
         '@node_modules/sweetalert2/src/': '@libs/sweetalert2/src',
         '@node_modules/jquery-maskmoney/': '@libs/jquery-maskmoney',
         '@node_modules/datatables.net-fixedheader/js': '@libs/datatables.net-fixedheader/js/',
