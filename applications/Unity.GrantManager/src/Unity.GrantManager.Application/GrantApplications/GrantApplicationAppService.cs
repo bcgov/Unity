@@ -27,6 +27,7 @@ using Unity.Modules.Shared;
 using Unity.Modules.Shared.Correlation;
 using Unity.Payments.PaymentRequests;
 using Unity.AI.Automation;
+using Unity.AI.Permissions;
 using Volo.Abp;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Authorization;
