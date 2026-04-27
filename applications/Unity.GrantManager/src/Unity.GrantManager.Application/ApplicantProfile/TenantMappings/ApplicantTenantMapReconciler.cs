@@ -51,9 +51,11 @@ public class ApplicantTenantMapReconciler(
 
                     foreach (var oidcSub in distinctOidcSubs)
                     {
-                        var subUsername = oidcSub.Contains('@')
-                            ? oidcSub[..oidcSub.IndexOf('@')].ToUpperInvariant()
-                            : oidcSub.ToUpperInvariant();
+                        var subUsername = SubjectNormalizer.Normalize(oidcSub);
+                        if (subUsername is null)
+                        {
+                            continue;
+                        }
 
                         desiredMappings.Add((subUsername, tenant.Id, tenant.Name));
                     }

@@ -67,18 +67,6 @@ public class ContactManager(
         ArgumentException.ThrowIfNullOrWhiteSpace(entityType);
         ArgumentNullException.ThrowIfNull(input);
 
-        var contact = await contactRepository.GetAsync(contactId);
-
-        contact.Name = input.Name;
-        contact.Title = input.Title;
-        contact.Email = input.Email;
-        contact.HomePhoneNumber = input.HomePhoneNumber;
-        contact.MobilePhoneNumber = input.MobilePhoneNumber;
-        contact.WorkPhoneNumber = input.WorkPhoneNumber;
-        contact.WorkPhoneExtension = input.WorkPhoneExtension;
-
-        await contactRepository.UpdateAsync(contact, autoSave: true);
-
         var contactLinksQuery = await contactLinkRepository.GetQueryableAsync();
         var links = await AsyncExecuter.ToListAsync(contactLinksQuery
             .Where(l => l.RelatedEntityType == entityType
@@ -91,12 +79,24 @@ public class ContactManager(
                 .WithData("entityType", entityType)
                 .WithData("entityId", entityId);
 
+        var contact = await contactRepository.GetAsync(contactId);
+
+        contact.Name = input.Name;
+        contact.Title = input.Title;
+        contact.Email = input.Email;
+        contact.HomePhoneNumber = input.HomePhoneNumber;
+        contact.MobilePhoneNumber = input.MobilePhoneNumber;
+        contact.WorkPhoneNumber = input.WorkPhoneNumber;
+        contact.WorkPhoneExtension = input.WorkPhoneExtension;
+
+        await contactRepository.UpdateAsync(contact);
+
         if (isPrimary)
         {
             foreach (var stale in links.Where(l => l.IsPrimary && l.ContactId != contactId))
             {
                 stale.IsPrimary = false;
-                await contactLinkRepository.UpdateAsync(stale, autoSave: true);
+                await contactLinkRepository.UpdateAsync(stale);
             }
         }
 
@@ -113,7 +113,7 @@ public class ContactManager(
         }
         if (linkChanged)
         {
-            await contactLinkRepository.UpdateAsync(targetLink, autoSave: true);
+            await contactLinkRepository.UpdateAsync(targetLink);
         }
 
         return (contact, targetLink);

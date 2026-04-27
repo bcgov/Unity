@@ -19,6 +19,18 @@ $(function () {
         return (template || '').replace('{0}', value);
     }
 
+    function escapeHtml(value) {
+        return $('<div/>').text(value || '').html();
+    }
+
+    function renderEscapedText(value, type) {
+        if (type !== 'display') {
+            return value;
+        }
+
+        return escapeHtml(value);
+    }
+
     function ensureEditContactModal() {
         if (editContactModal) {
             return editContactModal;
@@ -64,11 +76,18 @@ $(function () {
         const appId = pickCaseInsensitive(row, ['applicationId']);
         const refNo = data || pickCaseInsensitive(row, ['referenceNo']);
         const hasAppId = !!appId && appId !== '00000000-0000-0000-0000-000000000000';
-        if (!hasAppId) {
-            return t('nullPlaceholder', '—');
+        const plainTextLabel = refNo || t('nullPlaceholder', '—');
+
+        if (type !== 'display') {
+            return plainTextLabel;
         }
-        const label = refNo || t('view', 'View');
-        return `<a href="/GrantApplications/Details?ApplicationId=${appId}">${label}</a>`;
+
+        if (!hasAppId) {
+            return plainTextLabel;
+        }
+
+        const label = escapeHtml(refNo || t('view', 'View'));
+        return `<a href="/GrantApplications/Details?ApplicationId=${encodeURIComponent(appId)}">${label}</a>`;
     }
 
     function renderPrimaryBadge(row) { // NOSONAR - intentionally scoped here; closure context is needed for widget encapsulation
@@ -206,7 +225,7 @@ $(function () {
                             if (type !== 'display') {
                                 return name;
                             }
-                            return renderPrimaryBadge(row) + name;
+                            return renderPrimaryBadge(row) + escapeHtml(name);
                         },
                         targets: 0
                     },
@@ -214,14 +233,14 @@ $(function () {
                         title: t('columnType', 'Type'),
                         data: 'role',
                         width: '13%',
-                        render: (data) => roleLabelMap[data] || data || t('nullPlaceholder', '—'),
+                        render: (data, type) => renderEscapedText(roleLabelMap[data] || data || t('nullPlaceholder', '—'), type),
                         targets: 1
                     },
                     {
                         title: t('columnEmail', 'Email'),
                         data: 'email',
                         width: '22%',
-                        render: (data) => data || t('nullPlaceholder', '—'),
+                        render: (data, type) => renderEscapedText(data || t('nullPlaceholder', '—'), type),
                         targets: 2
                     },
                     {
@@ -229,8 +248,8 @@ $(function () {
                         data: null,
                         width: '13%',
                         render: (data, type, row) => {
-                            const phone = row.workPhoneNumber || row.mobilePhoneNumber;
-                            return phone || t('nullPlaceholder', '—');
+                            const phone = row.workPhoneNumber || row.mobilePhoneNumber || t('nullPlaceholder', '—');
+                            return renderEscapedText(phone, type);
                         },
                         targets: 3
                     },
@@ -238,7 +257,7 @@ $(function () {
                         title: t('columnTitle', 'Title'),
                         data: 'title',
                         width: '18%',
-                        render: (data) => data || t('nullPlaceholder', '—'),
+                        render: (data, type) => renderEscapedText(data || t('nullPlaceholder', '—'), type),
                         targets: 4
                     },
                     {
