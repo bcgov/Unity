@@ -1,5 +1,6 @@
 @using Unity.GrantManager.Permissions
 @using Unity.GrantManager.Web.Views.Shared.Components.ApplicantOrganizationInfo
+@using Unity.Modules.Shared
 @using Volo.Abp.Authorization.Permissions
 
 @inject IPermissionChecker PermissionChecker
@@ -8,7 +9,7 @@
 
 @{
     Layout = null;
-    bool canEditRedStop = await PermissionChecker.IsGrantedAsync(GrantApplicationPermissions.Applicants.EditRedStop);
+    bool canEditRedStop = await PermissionChecker.IsGrantedAsync(UnitySelector.ApplicantManagement.ApplicantInfo.EditRedStop);
 }
 
 <div id="ApplicantOrganizationInfo_SectorData" style="display:none;">

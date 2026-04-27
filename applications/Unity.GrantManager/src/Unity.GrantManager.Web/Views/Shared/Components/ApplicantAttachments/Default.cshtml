@@ -14,6 +14,8 @@
         data-resize-aware="true" 
         class="attachments-table"></abp-table>
 </div>
+<zone id="@Unity.Modules.Shared.UnitySelector.ApplicantManagement.Attachments.Default" zone-type="PermissionOnly"
+    permission-requirement="@Unity.Modules.Shared.UnitySelector.ApplicantManagement.Attachments.Upload">
 <div class="d-flex justify-content-end m-3">
     <form id="form" name="form" action="/uploader" enctype="multipart/form-data" method="post">
         <input id="applicant_attachment_upload" name="applicant_attachment_upload" type="file" size="1" multiple onchange="uploadApplicantFiles('applicant_attachment_upload');" style="display: none" />
@@ -24,3 +26,4 @@
                     button-type="Light" />
     </form>
 </div>
+</zone>

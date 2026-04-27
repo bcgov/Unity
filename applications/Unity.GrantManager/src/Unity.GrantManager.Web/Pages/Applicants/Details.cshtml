@@ -2,6 +2,7 @@
 @using Microsoft.Extensions.Localization
 @using Unity.GrantManager.Localization
 @using Unity.GrantManager.Web.Pages.Applicants
+@using Unity.Modules.Shared
 @using Volo.Abp.AspNetCore.Mvc.UI.Layout
 
 @model DetailsModel
@@ -48,43 +49,61 @@
             <abp-tabs name="detailsTab" id="detailsTab" class="nav-justified">
                 
                 @*-------- Organization Info Section ---------*@
-                <abp-tab name="nav-organization-info" active="true" title="Applicant Info">
-                    <div class="w-100 px-2" id="OrganizationInfoWidget">
-                        @await Component.InvokeAsync("ApplicantOrganizationInfo", new { applicantId = Model.ApplicantId })
-                    </div>
-                </abp-tab>
+                <zone id="@UnitySelector.ApplicantManagement.ApplicantInfo.Default" zone-type="PermissionOnly"
+                    permission-requirement="@UnitySelector.ApplicantManagement.ApplicantInfo.Default">
+                    <abp-tab name="nav-organization-info" active="true" title="Applicant Info">
+                        <div class="w-100 px-2" id="OrganizationInfoWidget">
+                            @await Component.InvokeAsync("ApplicantOrganizationInfo", new { applicantId = Model.ApplicantId })
+                        </div>
+                    </abp-tab>
+                </zone>
                 @*-------- Organization Info Section END ---------*@
 
                 @*-------- Contacts Section ---------*@
-                <abp-tab name="nav-contacts" title="Contacts">
-                    <div class="w-100 px-2" id="ContactsWidget">
-                        @await Component.InvokeAsync("ApplicantContacts", new { applicantId = Model.ApplicantId })
-                    </div>
-                </abp-tab>
+                <zone id="@UnitySelector.ApplicantManagement.Contacts.Default" zone-type="PermissionOnly"
+                    permission-requirement="@UnitySelector.ApplicantManagement.Contacts.Default">
+                    <abp-tab name="nav-contacts" title="Contacts">
+                        <div class="w-100 px-2" id="ContactsWidget">
+                            @await Component.InvokeAsync("ApplicantContacts", new { applicantId = Model.ApplicantId })
+                        </div>
+                    </abp-tab>
+                </zone>
                 @*-------- Contacts Section END ---------*@
 
                 @*-------- Addresses Section ---------*@
-                <abp-tab name="nav-addresses" title="Addresses">
-                    <div class="w-100 px-2" id="AddressesWidget">
-                        @await Component.InvokeAsync("ApplicantAddresses", new { applicantId = Model.ApplicantId })
-                    </div>
-                </abp-tab>
+                <zone id="@UnitySelector.ApplicantManagement.Addresses.Default"
+                    permission-requirement="@UnitySelector.ApplicantManagement.Addresses.Default"
+                    zone-type="PermissionOnly">
+                    <abp-tab name="nav-addresses" title="Addresses">
+                        <div class="w-100 px-2" id="AddressesWidget">
+                            @await Component.InvokeAsync("ApplicantAddresses", new { applicantId = Model.ApplicantId })
+                        </div>
+                    </abp-tab>
+                </zone>
                 @*-------- Addresses Section END ---------*@
 
+
                 @*-------- Submissions Section ---------*@
-                <abp-tab name="nav-submissions" title="Submissions">
-                    <div class="w-100 px-2" id="SubmissionsWidget">
-                        @await Component.InvokeAsync("ApplicantSubmissions", new { applicantId = Model.ApplicantId })
-                    </div>
-                </abp-tab>
+                <zone id="@UnitySelector.ApplicantManagement.Submissions.Default"
+                    permission-requirement="@UnitySelector.ApplicantManagement.Submissions.Default"
+                    zone-type="PermissionOnly">
+                    <abp-tab name="nav-submissions" title="Submissions">
+                        <div class="w-100 px-2" id="SubmissionsWidget">
+                            @await Component.InvokeAsync("ApplicantSubmissions", new { applicantId = Model.ApplicantId })
+                        </div>
+                    </abp-tab>
+                </zone>
                 @*-------- Submissions Section END ---------*@
 
                 @*-------- History Section ---------*@
-                <abp-tab name="nav-history" title="History">
-                    <div class="w-100 px-2" id="HistoryWidget">
-                        @await Component.InvokeAsync("ApplicantHistory", new { applicantId = Model.ApplicantId })
-                    </div>
-                </abp-tab>
+                <zone id="@UnitySelector.ApplicantManagement.History.Default" zone-type="PermissionOnly"
+                    permission-requirement="@UnitySelector.ApplicantManagement.History.Default">
+                    <abp-tab name="nav-history" title="History">
+                        <div class="w-100 px-2" id="HistoryWidget">
+                            @await Component.InvokeAsync("ApplicantHistory", new { applicantId = Model.ApplicantId })
+                        </div>
+                    </abp-tab>
+                </zone>
                 @*-------- History Section END ---------*@
 
             </abp-tabs>
@@ -144,13 +163,16 @@
 
                 @*-------- Comments Tab Section ---------*@
                 <div class="tab-pane fade" id="comments" role="tabpanel" aria-labelledby="comments-tab">
-                    <h6 class="fw-bold px-3 pt-4 pb-2 m-0">Comments</h6>
-                    <div class="px-3 pb-2" id="applicantCommentsWidget">
-                        @await Component.InvokeAsync("CommentsWidget", new {
-                                ownerId = Model.ApplicantId,
-                                commentType = Unity.GrantManager.Comments.CommentType.ApplicantComment,
-                                currentUserId = Model.CurrentUserId })
-                    </div>
+                    <zone id="@UnitySelector.ApplicantManagement.Comments.Default" zone-type="PermissionOnly"
+                        permission-requirement="@UnitySelector.ApplicantManagement.Comments.Default">
+                        <h6 class="fw-bold px-3 pt-4 pb-2 m-0">Comments</h6>
+                        <div class="px-3 pb-2" id="applicantCommentsWidget">
+                            @await Component.InvokeAsync("CommentsWidget", new {
+                                    ownerId = Model.ApplicantId,
+                                    commentType = Unity.GrantManager.Comments.CommentType.ApplicantComment,
+                                    currentUserId = Model.CurrentUserId })
+                        </div>
+                    </zone>
                 </div>
                 @*-------- Comments Tab Section END ---------*@
 
@@ -167,7 +189,10 @@
 
                 @*-------- Attachments Tab Section ---------*@
                 <div class="tab-pane fade" id="attachments" role="tabpanel" aria-labelledby="attachments-tab">
-                    @await Component.InvokeAsync("ApplicantAttachments")
+                    <zone id="@UnitySelector.ApplicantManagement.Attachments.Default" zone-type="PermissionOnly"
+                        permission-requirement="@UnitySelector.ApplicantManagement.Attachments.Default">
+                        @await Component.InvokeAsync("ApplicantAttachments")
+                    </zone>
                 </div>
                 @*-------- Attachments Tab Section END ---------*@
 

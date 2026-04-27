@@ -63,7 +63,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantContacts
             var viewModel = new ApplicantContactsViewModel
             {
                 ApplicantId = applicantId,
-                CanEditContact = await _permissionChecker.IsGrantedAsync(UnitySelector.Applicant.Contact.Update),
+                CanEditContact = await _permissionChecker.IsGrantedAsync(UnitySelector.ApplicantManagement.Contacts.EditContacts),
                 Contacts = orderedAgents
                     .Select((agent, index) => new ApplicantContactItemDto
                     {

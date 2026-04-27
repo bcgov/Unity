@@ -64,7 +64,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantAddresses
             var viewModel = new ApplicantAddressesViewModel
             {
                 ApplicantId = applicantId,
-                CanEditAddress = await _permissionChecker.IsGrantedAsync(UnitySelector.Applicant.Location.Update),
+                CanEditAddress = await _permissionChecker.IsGrantedAsync(UnitySelector.ApplicantManagement.Addresses.EditAddresses),
                 Addresses = orderedAddresses
                     .Select(a => new ApplicantAddressItemDto
                     {

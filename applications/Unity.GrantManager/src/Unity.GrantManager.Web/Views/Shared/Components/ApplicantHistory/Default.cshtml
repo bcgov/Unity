@@ -1,4 +1,5 @@
 @using Unity.GrantManager.Web.Views.Shared.Components.ApplicantHistory
+@using Unity.Modules.Shared
 
 @model ApplicantHistoryViewModel
 
@@ -22,6 +23,8 @@
         <input type="hidden" id="ApplicantHistory_ApplicantId" value="@Model.ApplicantId" />
 
         @* ── Funding History ── *@
+        <zone-fieldset id="@UnitySelector.ApplicantManagement.History.FundingHistory.Update"
+                       update-permission-requirement="@UnitySelector.ApplicantManagement.History.EditFundingHistory">
         <section class="history-section">
             <div class="pb-1 pt-2">
                 <h6 class="fw-bold mb-0">Funding History</h6>
@@ -45,8 +48,11 @@
                           rows="4">@Model.FundingHistoryComments</textarea>
             </div>
         </section>
+        </zone-fieldset>
 
         @* ── Issue Tracking ── *@
+        <zone-fieldset id="@UnitySelector.ApplicantManagement.History.IssueHistory.Update"
+                       update-permission-requirement="@UnitySelector.ApplicantManagement.History.EditIssueHistory">
         <section class="history-section">
             <div class="pb-1 pt-2">
                 <h6 class="fw-bold mb-0">Issue Tracking</h6>
@@ -70,8 +76,11 @@
                           rows="4">@Model.IssueTrackingComments</textarea>
             </div>
         </section>
+        </zone-fieldset>
 
         @* ── Audit History ── *@
+        <zone-fieldset id="@UnitySelector.ApplicantManagement.History.AuditHistory.Update"
+                       update-permission-requirement="@UnitySelector.ApplicantManagement.History.EditAuditHistory">
         <section class="history-section">
             <div class="pb-1 pt-2">
                 <h6 class="fw-bold mb-0">Audit History</h6>
@@ -92,5 +101,6 @@
                           rows="4">@Model.AuditComments</textarea>
             </div>
         </section>
+        </zone-fieldset>
     </form>
 </div>
