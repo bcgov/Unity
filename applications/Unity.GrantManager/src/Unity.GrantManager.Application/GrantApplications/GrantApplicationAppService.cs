@@ -26,12 +26,15 @@ using Unity.GrantManager.Payments;
 using Unity.Modules.Shared;
 using Unity.Modules.Shared.Correlation;
 using Unity.Payments.PaymentRequests;
+using Unity.AI.Automation;
+using Unity.AI.Permissions;
 using Volo.Abp;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Authorization;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Entities;
 using Volo.Abp.Domain.Repositories;
+using Volo.Abp.Features;
 
 namespace Unity.GrantManager.GrantApplications;
 
@@ -48,7 +51,10 @@ public class GrantApplicationAppService(
     IApplicantAgentRepository applicantAgentRepository,
     IApplicantAddressRepository applicantAddressRepository,
     IApplicantSupplierAppService applicantSupplierService,
-    IPaymentRequestAppService paymentRequestService)
+    IPaymentRequestAppService paymentRequestService,
+    IApplicationAIGenerationQueue aiGenerationQueue,
+    IAIGenerationStatusAppService aiGenerationStatusAppService,
+    IFeatureChecker featureChecker)
     : GrantManagerAppService, IGrantApplicationAppService
 {
     private static readonly JsonSerializerOptions AiAnalysisReadOptions = new()
@@ -1025,6 +1031,125 @@ public class GrantApplicationAppService(
         );
 
         return ObjectMapper.Map<Application, GrantApplicationDto>(application);
+    }
+
+    public async Task<AIGenerationRequestDto> QueueAIGenerationAsync(Guid applicationId, string? promptVersion = null)
+    {
+        await EnsureAIAnalysisEnabledAsync();
+        return await QueueApplicationAnalysisAsync(applicationId, promptVersion);
+    }
+
+    [Authorize(AIPermissions.Analysis.GenerateApplicationAnalysis)]
+    public async Task<AIGenerationRequestDto> QueueApplicationAnalysisAsync(Guid applicationId, string? promptVersion = null)
+    {
+        await EnsureAIAnalysisEnabledAsync();
+        await aiGenerationQueue.QueueApplicationAnalysisAsync(applicationId, CurrentTenant.Id, promptVersion);
+
+        var request = await aiGenerationStatusAppService.GetLatestAsync(
+            applicationId,
+            AIGenerationRequestKeyHelper.ApplicationAnalysisOperationType,
+            CurrentTenant.Id);
+
+        return request ?? throw new UserFriendlyException("Unable to queue AI analysis request.");
+    }
+
+    [Authorize(AIPermissions.Analysis.GenerateAttachmentSummaries)]
+    public async Task<AIGenerationRequestDto> QueueAttachmentSummaryAsync(Guid applicationId, string? promptVersion = null)
+    {
+        await EnsureAttachmentSummariesEnabledAsync();
+        await aiGenerationQueue.QueueAttachmentSummaryAsync(applicationId, CurrentTenant.Id, promptVersion);
+
+        var request = await aiGenerationStatusAppService.GetLatestAsync(
+            applicationId,
+            AIGenerationRequestKeyHelper.AttachmentSummaryOperationType,
+            CurrentTenant.Id);
+
+        return request ?? throw new UserFriendlyException("Unable to queue AI attachment summary request.");
+    }
+
+    [Authorize(AIPermissions.Analysis.GenerateScoring)]
+    public async Task<AIGenerationRequestDto> QueueApplicationScoringAsync(Guid applicationId, string? promptVersion = null)
+    {
+        await EnsureScoringEnabledAsync();
+        await aiGenerationQueue.QueueApplicationScoringAsync(applicationId, CurrentTenant.Id, promptVersion);
+
+        var request = await aiGenerationStatusAppService.GetLatestAsync(
+            applicationId,
+            AIGenerationRequestKeyHelper.ApplicationScoringOperationType,
+            CurrentTenant.Id);
+
+        return request ?? throw new UserFriendlyException("Unable to queue AI scoring request.");
+    }
+
+    public async Task<AIGenerationRequestDto?> GetAIGenerationStatusAsync(Guid applicationId, string operationType, string? promptVersion = null)
+    {
+        await EnsureAIGenerationStatusAccessAsync(operationType);
+        return await aiGenerationStatusAppService.GetLatestAsync(applicationId, operationType, CurrentTenant.Id);
+    }
+
+    [Authorize(AIPermissions.Analysis.GenerateApplicationAnalysis)]
+    [Authorize(AIPermissions.Analysis.GenerateAttachmentSummaries)]
+    [Authorize(AIPermissions.Analysis.GenerateScoring)]
+    public async Task<AIGenerationRequestDto> QueueAllAIStagesAsync(Guid applicationId, string? promptVersion = null)
+    {
+        await EnsureAttachmentSummariesEnabledAsync();
+        await EnsureAIAnalysisEnabledAsync();
+        await EnsureScoringEnabledAsync();
+        await aiGenerationQueue.QueueAllAIStagesAsync(applicationId, CurrentTenant.Id, promptVersion);
+
+        var request = await aiGenerationStatusAppService.GetLatestAsync(
+            applicationId,
+            AIGenerationRequestKeyHelper.PipelineOperationType,
+            CurrentTenant.Id);
+
+        return request ?? throw new UserFriendlyException("Unable to queue AI generation request.");
+    }
+
+    private async Task EnsureAIGenerationStatusAccessAsync(string operationType)
+    {
+        switch (operationType)
+        {
+            case AIGenerationRequestKeyHelper.ApplicationAnalysisOperationType:
+                await AuthorizationService.CheckAsync(AIPermissions.Analysis.ViewApplicationAnalysis);
+                return;
+            case AIGenerationRequestKeyHelper.AttachmentSummaryOperationType:
+                await AuthorizationService.CheckAsync(AIPermissions.Analysis.ViewAttachmentSummary);
+                return;
+            case AIGenerationRequestKeyHelper.ApplicationScoringOperationType:
+                await AuthorizationService.CheckAsync(AIPermissions.Analysis.ViewScoringResult);
+                return;
+            case AIGenerationRequestKeyHelper.PipelineOperationType:
+                await AuthorizationService.CheckAsync(AIPermissions.Analysis.ViewApplicationAnalysis);
+                await AuthorizationService.CheckAsync(AIPermissions.Analysis.ViewAttachmentSummary);
+                await AuthorizationService.CheckAsync(AIPermissions.Analysis.ViewScoringResult);
+                return;
+            default:
+                throw new UserFriendlyException("Unknown AI generation operation type.");
+        }
+    }
+
+    private async Task EnsureAttachmentSummariesEnabledAsync()
+    {
+        if (!await featureChecker.IsEnabledAsync("Unity.AI.AttachmentSummaries"))
+        {
+            throw new UserFriendlyException("AI attachment summaries are not enabled.");
+        }
+    }
+
+    private async Task EnsureAIAnalysisEnabledAsync()
+    {
+        if (!await featureChecker.IsEnabledAsync("Unity.AI.ApplicationAnalysis"))
+        {
+            throw new UserFriendlyException("AI application analysis is not enabled.");
+        }
+    }
+
+    private async Task EnsureScoringEnabledAsync()
+    {
+        if (!await featureChecker.IsEnabledAsync("Unity.AI.Scoring"))
+        {
+            throw new UserFriendlyException("AI scoring is not enabled.");
+        }
     }
     #endregion APPLICATION WORKFLOW
 
