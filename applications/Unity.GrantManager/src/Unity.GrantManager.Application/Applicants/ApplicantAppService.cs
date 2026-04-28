@@ -22,6 +22,7 @@ using Unity.Payments.Integrations.Cas;
 using Unity.Payments.Suppliers;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Application.Dtos;
+using Volo.Abp.Domain.Repositories;
 
 namespace Unity.GrantManager.Applicants;
 
@@ -34,7 +35,8 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
                                  IApplicantAddressRepository addressRepository,
                                  IOrgBookService orgBookService,
                                  IApplicantAgentRepository applicantAgentRepository,
-                                 IApplicationRepository applicationRepository) : GrantManagerAppService, IApplicantAppService
+                                 IApplicationRepository applicationRepository,
+                                 IRepository<Supplier, Guid> supplierRepository) : GrantManagerAppService, IApplicantAppService
 {   
     protected new ILogger Logger => LazyServiceProvider.LazyGetService<ILogger>(provider => LoggerFactory?.CreateLogger(GetType().FullName!) ?? NullLogger.Instance);
 
@@ -678,37 +680,58 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
         // Execute query
         var applicants = await query.ToListAsync();
 
+        // Batch-load supplier data for all applicants in one query
+        var supplierIds = applicants
+            .Where(a => a.SupplierId.HasValue)
+            .Select(a => a.SupplierId!.Value)
+            .Distinct()
+            .ToList();
+
+        Dictionary<Guid, Supplier> supplierMap = new();
+        if (supplierIds.Count > 0)
+        {
+            var suppliers = await supplierRepository.GetListAsync(s => supplierIds.Contains(s.Id));
+            supplierMap = suppliers.ToDictionary(s => s.Id);
+        }
+
         // Map to DTOs
-        var items = applicants.Select(applicant => new ApplicantListDto
+        var items = applicants.Select(applicant =>
             {
-                Id = applicant.Id,
-                ApplicantName = applicant.ApplicantName,
-                UnityApplicantId = applicant.UnityApplicantId,
-                OrgName = applicant.OrgName,
-                OrgNumber = applicant.OrgNumber,
-                OrgStatus = applicant.OrgStatus,
-                OrganizationType = applicant.OrganizationType,
-                Status = applicant.Status,
-                RedStop = applicant.RedStop,
-                NonRegisteredBusinessName = applicant.NonRegisteredBusinessName,
-                NonRegOrgName = applicant.NonRegOrgName,
-                OrganizationSize = applicant.OrganizationSize,
-                Sector = applicant.Sector,
-                SubSector = applicant.SubSector,
-                ApproxNumberOfEmployees = applicant.ApproxNumberOfEmployees,
-                IndigenousOrgInd = applicant.IndigenousOrgInd,
-                SectorSubSectorIndustryDesc = applicant.SectorSubSectorIndustryDesc,
-                FiscalMonth = applicant.FiscalMonth,
-                BusinessNumber = applicant.BusinessNumber,
-                FiscalDay = applicant.FiscalDay,
-                StartedOperatingDate = applicant.StartedOperatingDate.HasValue 
-                    ? applicant.StartedOperatingDate.Value.ToDateTime(TimeOnly.MinValue) 
-                    : null,
-                SupplierId = applicant.SupplierId?.ToString(),
-                MatchPercentage = applicant.MatchPercentage,
-                IsDuplicated = applicant.IsDuplicated,
-                CreationTime = applicant.CreationTime,
-                LastModificationTime = applicant.LastModificationTime
+                supplierMap.TryGetValue(applicant.SupplierId ?? Guid.Empty, out var supplier);
+                return new ApplicantListDto
+                {
+                    Id = applicant.Id,
+                    ApplicantName = applicant.ApplicantName,
+                    UnityApplicantId = applicant.UnityApplicantId,
+                    OrgName = applicant.OrgName,
+                    OrgNumber = applicant.OrgNumber,
+                    OrgStatus = applicant.OrgStatus,
+                    OrganizationType = applicant.OrganizationType,
+                    Status = applicant.Status,
+                    RedStop = applicant.RedStop,
+                    NonRegisteredBusinessName = applicant.NonRegisteredBusinessName,
+                    NonRegOrgName = applicant.NonRegOrgName,
+                    OrganizationSize = applicant.OrganizationSize,
+                    Sector = applicant.Sector,
+                    SubSector = applicant.SubSector,
+                    ApproxNumberOfEmployees = applicant.ApproxNumberOfEmployees,
+                    IndigenousOrgInd = applicant.IndigenousOrgInd,
+                    SectorSubSectorIndustryDesc = applicant.SectorSubSectorIndustryDesc,
+                    FiscalMonth = applicant.FiscalMonth,
+                    BusinessNumber = applicant.BusinessNumber,
+                    FiscalDay = applicant.FiscalDay,
+                    StartedOperatingDate = applicant.StartedOperatingDate.HasValue
+                        ? applicant.StartedOperatingDate.Value.ToDateTime(TimeOnly.MinValue)
+                        : null,
+                    SupplierId = applicant.SupplierId?.ToString(),
+                    SupplierNumber = supplier?.Number,
+                    SupplierName = supplier?.Name,
+                    SupplierStatus = supplier?.Status,
+                    MatchPercentage = applicant.MatchPercentage,
+                    IsDuplicated = applicant.IsDuplicated,
+                    CreationTime = applicant.CreationTime,
+                    LastModificationTime = applicant.LastModificationTime
+                };
             }).ToList();
 
         return new PagedResultDto<ApplicantListDto>(totalCount, items);

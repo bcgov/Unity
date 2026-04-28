@@ -3,7 +3,9 @@
     let _applicantA = null;
     let _applicantB = null;
 
-    // Field definitions — label matches ApplicantInfo localization, key is ApplicantListDto camelCase
+    // Field definitions — label matches ApplicantInfo localization, key is ApplicantListDto camelCase.
+    // key: null means the field is handled separately (not part of UpdateApplicantSummaryDto).
+    // format: fn(applicant) overrides the plain key lookup for display.
     // The Principal Record row (merge_ApplicantId) is static HTML; these are the dynamic field rows.
     const MERGE_FIELDS = [
         { label: 'Applicant Id',                          key: 'unityApplicantId',            radioName: 'merge_UnityApplicantId' },
@@ -20,6 +22,8 @@
         { label: 'Other Sector/Sub/Industry Description', key: 'sectorSubSectorIndustryDesc', radioName: 'merge_SectorSubSectorIndustryDesc' },
         { label: 'Fiscal Year End Day',                   key: 'fiscalDay',                   radioName: 'merge_FiscalDay' },
         { label: 'Fiscal Year End Month',                 key: 'fiscalMonth',                 radioName: 'merge_FiscalMonth' },
+        { label: 'Supplier',                              key: null,                          radioName: 'merge_SupplierId',
+          format: a => [a.supplierNumber, a.supplierName, a.supplierStatus].filter(Boolean).join(' – ') || '(None)' },
     ];
 
     function openListMergeModal(a, b) {
@@ -49,19 +53,21 @@
         // Build dynamic field rows
         const $tbody = $('#listMergeTableBody').empty();
         MERGE_FIELDS.forEach(f => {
-            const aVal = a[f.key] ?? '';
-            const bVal = b[f.key] ?? '';
+            const aVal = f.format ? f.format(a) : (a[f.key] ?? '');
+            const bVal = f.format ? f.format(b) : (b[f.key] ?? '');
             $tbody.append(`
                 <tr>
                     <td>${f.label}</td>
                     <td>
                         <label class="d-flex align-items-center w-100 mb-0">
-                            <input type="radio" name="${f.radioName}" value="a" checked class="me-2"><span>${aVal}</span>
+                            <input type="radio" name="${f.radioName}" value="a" checked class="me-2">
+                            <span style="overflow-wrap:break-word;word-break:break-word;">${aVal}</span>
                         </label>
                     </td>
                     <td>
                         <label class="d-flex align-items-center w-100 mb-0">
-                            <input type="radio" name="${f.radioName}" value="b" class="me-2"><span>${bVal}</span>
+                            <input type="radio" name="${f.radioName}" value="b" class="me-2">
+                            <span style="overflow-wrap:break-word;word-break:break-word;">${bVal}</span>
                         </label>
                     </td>
                 </tr>`);
@@ -88,9 +94,27 @@
         });
 
         // Step navigation
-        $('#listMergeNextBtn').on('click', () => {
+        $('#listMergeNextBtn').on('click', async () => {
             $('#listMergeStep1').addClass('d-none');
             $('#listMergeStep2').removeClass('d-none');
+            $('#listMergeMergeBtn').prop('disabled', true);
+
+            const principalChoice = $('input[name="merge_ApplicantId"]:checked').val();
+            const principal = principalChoice === 'a' ? _applicantA : _applicantB;
+            const nonPrincipal = principalChoice === 'a' ? _applicantB : _applicantA;
+
+            try {
+                const hasPending = await $.ajax({
+                    url: '/api/app/applicant-supplier/has-pending-payments-for-merge',
+                    method: 'GET',
+                    data: { principalId: principal.id, nonPrincipalId: nonPrincipal.id }
+                });
+                $('#listMergePendingWarning').toggleClass('d-none', !hasPending);
+                $('#listMergeMergeBtn').prop('disabled', !!hasPending);
+            } catch (err) {
+                console.warn('Pending payment check failed:', err);
+                abp.notify.error('Unable to verify payment status. Please go back and try again.');
+            }
         });
         $('#listMergeBackBtn').on('click', () => {
             $('#listMergeStep2').addClass('d-none');
@@ -107,9 +131,11 @@
             const principal = principalChoice === 'a' ? a : b;
             const nonPrincipal = principalChoice === 'a' ? b : a;
 
-            // Build merged field values from dynamic radio selections
+            // Build merged field values from dynamic radio selections.
+            // Skip fields with key: null (handled separately, e.g. Supplier).
             const merged = {};
             MERGE_FIELDS.forEach(f => {
+                if (f.key === null) return;
                 const choice = $(`input[name="${f.radioName}"]:checked`).val();
                 merged[f.key] = choice === 'a' ? a[f.key] : b[f.key];
             });
@@ -169,6 +195,20 @@
                         modifiedFields: modifiedFields,
                         data: summaryData
                     });
+            }).then(() => {
+                // Step 4: apply supplier selection and null all DefaultSiteId
+                const supplierSide = $('input[name="merge_SupplierId"]:checked').val();
+                const selectedSupplierId = supplierSide === 'a' ? (a.supplierId || null) : (b.supplierId || null);
+                return $.ajax({
+                    url: '/api/app/applicant-supplier/handle-supplier-after-merge',
+                    method: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({
+                        principalId: principal.id,
+                        nonPrincipalId: nonPrincipal.id,
+                        selectedSupplierId: selectedSupplierId
+                    })
+                });
             }).then(() => {
                 $('#applicantListMergeModal').modal('hide');
                 PubSub.publish('deselect_applicant', 'reset_data');

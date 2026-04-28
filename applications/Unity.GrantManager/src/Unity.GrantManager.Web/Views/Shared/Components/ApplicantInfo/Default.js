@@ -293,7 +293,15 @@ function getExistingApplicantData() {
         SectorSubSectorIndustryDesc: getVal('ApplicantSummary_SectorSubSectorIndustryDesc'),
         FiscalDay: getVal('ApplicantSummary_FiscalDay'),
         FiscalMonth: getVal('ApplicantSummary_FiscalMonth'),
-        IsDuplicated: $activeWidget.find('#ApplicantSummary_IsDuplicated').val() === 'True'
+        IsDuplicated: $activeWidget.find('#ApplicantSummary_IsDuplicated').val() === 'True',
+        // Supplier fields live in the SupplierInfo widget (sibling of ApplicantInfo),
+        // so they must be read with document-level selectors, not $activeWidget.find().
+        // SupplierInfoViewModel.SupplierId is Guid (not Guid?), so the hidden input renders
+        // Guid.Empty ("00000000-...") when no supplier is linked — treat that as null.
+        SupplierId: (function () { const v = $('#SupplierId').val(); return v && v !== '00000000-0000-0000-0000-000000000000' ? v : null; })(),
+        SupplierNumber: $('#SupplierNumber').val() || '',
+        SupplierName: $('#SupplierName').val() || '',
+        SupplierStatus: $('#Status').val() || ''
     };
 }
 
@@ -316,7 +324,11 @@ function createNewApplicantDataObject(selectedData) {
         SectorSubSectorIndustryDesc: selectedData.SectorSubSectorIndustryDesc || '',
         FiscalDay: selectedData.FiscalDay || '',
         FiscalMonth: selectedData.FiscalMonth || '',
-        IsDuplicated: selectedData.IsDuplicated
+        IsDuplicated: selectedData.IsDuplicated,
+        SupplierId: selectedData.SupplierId || null,
+        SupplierNumber: selectedData.SupplierNumber || '',
+        SupplierName: selectedData.SupplierName || '',
+        SupplierStatus: selectedData.SupplierStatus || ''
     };
 }
 
@@ -345,6 +357,11 @@ function populateMergeModal(existing, newData) {
         $(`#new_${key}`).text(newData[key]);
         $(`input[name="merge_${key}"][value="existing"]`).prop('checked', true);
     }
+
+    const existingSupplier = [existing.SupplierNumber, existing.SupplierName, existing.SupplierStatus].filter(Boolean).join(' – ') || '(None)';
+    const newSupplier = [newData.SupplierNumber, newData.SupplierName, newData.SupplierStatus].filter(Boolean).join(' – ') || '(None)';
+    $('#existing_SupplierDisplay').text(existingSupplier);
+    $('#new_SupplierDisplay').text(newSupplier);
 
     $('#mergeApplicantsStep1').show();
     $('#mergeApplicantsStep2').hide();
@@ -406,13 +423,44 @@ async function executeMerge(existing, newData) {
     ApplicantInfoObj.ApplicantId = principalApplicantId;
 
     await handleApplicantMerge(applicationId, principalApplicantId, nonPrincipalApplicantId, ApplicantInfoObj);
+
+    const supplierSide = $('input[name="merge_SupplierId"]:checked').val();
+    const selectedSupplierId = supplierSide === 'existing' ? (existing.SupplierId || null) : (newData.SupplierId || null);
+    await $.ajax({
+        url: '/api/app/applicant-supplier/handle-supplier-after-merge',
+        method: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({
+            principalId: principalApplicantId,
+            nonPrincipalId: nonPrincipalApplicantId,
+            selectedSupplierId: selectedSupplierId
+        })
+    });
 }
 
 // Helper function to setup merge modal handlers
 function setupMergeModalHandlers(existing, newData) {
-    $('#mergeApplicantsNextBtn').off('click').on('click', function () {
+    $('#mergeApplicantsNextBtn').off('click').on('click', async function () {
         $('#mergeApplicantsStep1').hide();
         $('#mergeApplicantsStep2').show();
+        $('#mergeApplicantsMergeBtn').prop('disabled', true);
+
+        const selectedPrincipal = $('input[name="merge_ApplicantId"]:checked').val();
+        const principalId = selectedPrincipal === 'existing' ? existing.ApplicantId : newData.ApplicantId;
+        const nonPrincipalId = selectedPrincipal === 'existing' ? newData.ApplicantId : existing.ApplicantId;
+
+        try {
+            const hasPending = await $.ajax({
+                url: '/api/app/applicant-supplier/has-pending-payments-for-merge',
+                method: 'GET',
+                data: { principalId: principalId, nonPrincipalId: nonPrincipalId }
+            });
+            $('#mergeApplicantsPendingWarning').toggleClass('d-none', !hasPending);
+            $('#mergeApplicantsMergeBtn').prop('disabled', !!hasPending);
+        } catch (err) {
+            console.warn('Pending payment check failed:', err);
+            abp.notify.error('Unable to verify payment status. Please go back and try again.');
+        }
     });
 
     $('#mergeApplicantsBackBtn').off('click').on('click', function () {
@@ -490,7 +538,11 @@ function initializeApplicantLookup() {
                         FiscalDay: item.FiscalDay,
                         FiscalMonth: item.FiscalMonth,
                         UnityApplicantId: item.UnityApplicantId,
-                        IsDuplicated: item.IsDuplicated ?? false
+                        IsDuplicated: item.IsDuplicated ?? false,
+                        SupplierId: item.SupplierId || null,
+                        SupplierNumber: item.SupplierNumber || '',
+                        SupplierName: item.SupplierName || '',
+                        SupplierStatus: item.SupplierStatus || ''
                     };
                 });
                 return {
