@@ -1,92 +1,112 @@
+@using Microsoft.Extensions.Localization
+@using Unity.GrantManager.Localization
 @using Unity.GrantManager.Web.Views.Shared.Components.ApplicantContacts
 
+@inject IStringLocalizer<GrantManagerResource> L
 @model ApplicantContactsViewModel
 
 @{
     Layout = null;
-    var canEditPrimaryContact = Model.PrimaryContact.IsEditable && Model.CanEditContact;
+    var primary = Model.PrimaryContact;
+    const string placeholder = "—";
+    var localizedTexts = new Dictionary<string, string>
+    {
+        ["nullPlaceholder"] = placeholder,
+        ["primaryExplicitTooltip"] = L["ApplicantContacts:PrimaryExplicitTooltip"],
+        ["primaryInferredTooltip"] = L["ApplicantContacts:PrimaryInferredTooltip"],
+        ["sourceInfoApplication"] = L["ApplicantContacts:SourceInfoApplication"],
+        ["sourceInfoApplicantAgent"] = L["ApplicantContacts:SourceInfoApplicantAgent"],
+        ["sourceInfoGeneric"] = L["ApplicantContacts:SourceInfoGeneric"],
+        ["primaryContactVisuallyHidden"] = L["ApplicantContacts:PrimaryContact"],
+        ["edit"] = L["Common:Command:Edit"],
+        ["setAsPrimary"] = L["ApplicantContact:SetAsPrimary"],
+        ["view"] = L["ApplicantContacts:View"],
+        ["contactSaved"] = L["ApplicantContacts:ContactSaved"],
+        ["contactSetPrimary"] = L["ApplicantContacts:ContactSetPrimary"],
+        ["serviceUnavailable"] = L["ApplicantContacts:ServiceUnavailable"],
+        ["setPrimaryFailed"] = L["ApplicantContacts:SetPrimaryFailed"],
+        ["columnName"] = L["ApplicantContacts:ColumnName"],
+        ["columnType"] = L["ApplicationContact:Type"],
+        ["columnEmail"] = L["ApplicationContact:Email"],
+        ["columnPhone"] = L["ApplicantContacts:ColumnPhone"],
+        ["columnTitle"] = L["ApplicationContact:Title"],
+        ["columnSubmission"] = L["ApplicantContacts:ColumnSubmission"],
+        ["columnActions"] = string.Empty
+    };
 }
 
-<div class="applicant-contacts-widget applicant-info-container px-1 pb-2 mb-4">
+<div class="applicant-contacts-widget applicant-info-container px-1 pb-2 mb-4"
+     data-applicant-id="@Model.ApplicantId"
+     data-can-edit="@Model.CanEditContact.ToString().ToLowerInvariant()">
     @if (Model.ApplicantId == Guid.Empty)
     {
         <div class="alert alert-warning m-3">
-            Applicant information not found.
+            @L["ApplicantContacts:ApplicantNotFound"]
         </div>
     }
     else
     {
-        <form id="ApplicantContactsForm" autocomplete="off" class="applicant-organization-info">
-            <input type="hidden" id="ApplicantContacts_ApplicantId" value="@Model.ApplicantId" />
-            <input type="hidden" id="ApplicantContacts_PrimaryContactId" value="@Model.PrimaryContact.Id" />
-
-            @if (Model.CanSave)
-            {
-                <div class="save-button-container">
-                    <abp-button text="Save"
-                                id="saveApplicantContactsBtn"
-                                class="floating-save-btn"
-                                icon-type="Other"
-                                icon="fl fl-save"
-                                button-type="Primary"
-                                disabled="true" />
-                </div>
-            }
-
-            <section class="primary-section mt-3">
-                <div class="primary-section__title fw-bold">Primary Contact</div>
-                <div class="primary-section__body">
-                    <div class="row g-3">
+        <div class="applicant-contacts-info">
+        <section class="primary-section mt-3">
+            <div class="primary-section__header d-flex align-items-center justify-content-between">
+                <div class="primary-section__title fw-bold">@L["ApplicantContacts:PrimaryContact"]</div>
+            </div>
+            <div class="primary-section__body">
+                @if (primary is null)
+                {
+                    <div class="text-muted mt-2 small">@L["ApplicantContacts:NoPrimaryContact"]</div>
+                }
+                else
+                {
+                    <div class="row g-3 mb-0 primary-readonly">
                         <div class="col-md-4">
-                            <abp-input asp-for="PrimaryContact.FullName"
-                                       id="PrimaryContact_FullName"
-                                       disabled="@(!canEditPrimaryContact)" />
+                            <label class="form-label" for="primaryContact_FullName">@L["ApplicationContact:FullName"]</label>
+                            <input type="text" id="primaryContact_FullName" class="form-control" value="@(string.IsNullOrWhiteSpace(primary.FullName) ? placeholder : primary.FullName)" disabled />
                         </div>
                         <div class="col-md-4">
-                            <abp-input asp-for="PrimaryContact.Title"
-                                       id="PrimaryContact_Title"
-                                       disabled="@(!canEditPrimaryContact)" />
+                            <label class="form-label" for="primaryContact_Title">@L["ApplicationContact:Title"]</label>
+                            <input type="text" id="primaryContact_Title" class="form-control" value="@(string.IsNullOrWhiteSpace(primary.Title) ? placeholder : primary.Title)" disabled />
                         </div>
                         <div class="col-md-4">
-                            <abp-input asp-for="PrimaryContact.Email"
-                                       type="email"
-                                       id="PrimaryContact_Email"
-                                       disabled="@(!canEditPrimaryContact)" />
+                            <label class="form-label" for="primaryContact_Email">@L["ApplicationContact:Email"]</label>
+                            <input type="text" id="primaryContact_Email" class="form-control" value="@(string.IsNullOrWhiteSpace(primary.Email) ? placeholder : primary.Email)" disabled />
                         </div>
                         <div class="col-md-4">
-                            <abp-input asp-for="PrimaryContact.BusinessPhone"
-                                       id="PrimaryContact_BusinessPhone"
-                                       disabled="@(!canEditPrimaryContact)" />
+                            <label class="form-label" for="primaryContact_WorkPhone">@L["ApplicationContact:WorkPhone"]</label>
+                            <input type="text" id="primaryContact_WorkPhone" class="form-control" value="@(string.IsNullOrWhiteSpace(primary.WorkPhone) ? placeholder : primary.WorkPhone)" disabled />
                         </div>
                         <div class="col-md-4">
-                            <abp-input asp-for="PrimaryContact.CellPhone"
-                                       id="PrimaryContact_CellPhone"
-                                       disabled="@(!canEditPrimaryContact)" />
+                            <label class="form-label" for="primaryContact_MobilePhone">@L["ApplicationContact:MobilePhone"]</label>
+                            <input type="text" id="primaryContact_MobilePhone" class="form-control" value="@(string.IsNullOrWhiteSpace(primary.MobilePhone) ? placeholder : primary.MobilePhone)" disabled />
                         </div>
                     </div>
-                    @if (!Model.PrimaryContact.IsEditable)
-                    {
-                        <div class="text-muted mt-3 small">No primary contact on record.</div>
-                    }
-                </div>
-            </section>
-
-            <div class="table-card mt-3">
-                <div class="table-card__header">
-                    <h6 class="fw-bold mb-0">Contacts</h6>
-                </div>
-                <div class="table-card__body">
-                    <abp-table id="ApplicantContactsTable"
-                               hoverable-rows="true"
-                               data-resize-aware="true"
-                               class="contacts-table">
-                    </abp-table>
-                </div>
+                }
             </div>
-        </form>
+        </section>
+
+        <div class="table-card mt-3">
+            <div class="table-card__header">
+                <h6 class="fw-bold mb-0">@L["ApplicantContacts:ContactsTitle"]</h6>
+            </div>
+            <div class="table-card__body">
+                <abp-table id="ApplicantContactsTable"
+                           hoverable-rows="true"
+                           data-resize-aware="true"
+                           class="contacts-table">
+                </abp-table>
+            </div>
+        </div>
+        </div>
     }
 </div>
 
 <input type="hidden"
        id="ApplicantContacts_Data"
        value='@Json.Serialize(Model.Contacts)' />
+<input type="hidden"
+       id="ApplicantContacts_RoleOptions"
+       value='@Json.Serialize(Model.RoleOptions)' />
+<input type="hidden"
+       id="ApplicantContacts_Texts"
+       value='@Json.Serialize(localizedTexts)' />
+

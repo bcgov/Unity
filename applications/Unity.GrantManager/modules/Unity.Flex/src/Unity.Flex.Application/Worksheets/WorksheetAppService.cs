@@ -124,6 +124,13 @@ namespace Unity.Flex.Worksheets
             return await Task.FromResult(true);
         }
 
+        public virtual async Task<bool> ArchiveAsync(Guid id, bool archive)
+        {
+            var worksheet = await worksheetRepository.GetAsync(id);
+            _ = worksheet.SetArchived(archive);
+            return await Task.FromResult(true);
+        }
+
         [Authorize(FlexPermissions.Worksheets.Delete)]
         public virtual async Task DeleteAsync(Guid id)
         {

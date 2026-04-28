@@ -700,6 +700,11 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<bool>("Published")
                         .HasColumnType("boolean");
 
+                    b.Property<bool>("IsArchived")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
                     b.Property<string>("ReportColumns")
                         .IsRequired()
                         .HasColumnType("text");
@@ -770,6 +775,9 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
 
                     b.Property<long>("Order")
                         .HasColumnType("bigint");
+
+                    b.Property<string>("Definition")
+                        .HasColumnType("jsonb");
 
                     b.Property<Guid?>("TenantId")
                         .HasColumnType("uuid")

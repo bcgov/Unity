@@ -37,7 +37,10 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
                                  IApplicantAgentRepository applicantAgentRepository,
                                  IApplicationRepository applicationRepository,
                                  IRepository<Supplier, Guid> supplierRepository) : GrantManagerAppService, IApplicantAppService
-{   
+{                                   
+
+    private const string ApplicantIdDataKey = "ApplicantId";
+
     protected new ILogger Logger => LazyServiceProvider.LazyGetService<ILogger>(provider => LoggerFactory?.CreateLogger(GetType().FullName!) ?? NullLogger.Instance);
 
     [RemoteService(false)]
@@ -274,11 +277,24 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
             throw new ArgumentException("Contact identifier is required.", nameof(input));
         }
 
+        switch (input.Source)
+        {
+            case "Contact":
+                await UpdateLinkedContactAsync(applicantId, input);
+                break;            
+            default:
+                await UpdateAgentContactAsync(applicantId, input);
+                break;
+        }
+    }
+
+    private async Task UpdateAgentContactAsync(Guid applicantId, UpdatePrimaryContactDto input)
+    {
         var applicantAgent = await applicantAgentRepository.GetAsync(input.Id);
         if (applicantAgent.ApplicantId != applicantId)
         {
             throw new BusinessException("Unity:Applicant:ContactNotFound")
-                .WithData("ApplicantId", applicantId)
+                .WithData(ApplicantIdDataKey, applicantId)
                 .WithData("ContactId", input.Id);
         }
 
@@ -289,6 +305,36 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
         applicantAgent.Phone2 = input.CellPhone?.Trim() ?? string.Empty;
 
         await applicantAgentRepository.UpdateAsync(applicantAgent);
+    }
+
+    private async Task UpdateLinkedContactAsync(Guid applicantId, UpdatePrimaryContactDto input)
+    {
+        var contactRepository = LazyServiceProvider.LazyGetRequiredService<Contacts.IContactRepository>();
+        var contactLinkRepository = LazyServiceProvider.LazyGetRequiredService<Contacts.IContactLinkRepository>();
+
+        var linkQuery = await contactLinkRepository.GetQueryableAsync();
+        var link = await linkQuery.FirstOrDefaultAsync(l =>
+            l.ContactId == input.Id
+            && l.RelatedEntityType == "Applicant"
+            && l.RelatedEntityId == applicantId
+            && l.IsActive);
+
+        if (link == null)
+        {
+            throw new BusinessException("Unity:Applicant:ContactNotFound")
+                .WithData(ApplicantIdDataKey, applicantId)
+                .WithData("ContactId", input.Id);
+        }
+
+        var contact = await contactRepository.GetAsync(input.Id);
+
+        contact.Name = input.FullName?.Trim() ?? string.Empty;
+        contact.Title = input.Title?.Trim();
+        contact.Email = input.Email?.Trim();
+        contact.WorkPhoneNumber = input.BusinessPhone?.Trim();
+        contact.MobilePhoneNumber = input.CellPhone?.Trim();
+
+        await contactRepository.UpdateAsync(contact);
     }
 
     private async Task UpdatePrimaryAddressAsync(Guid applicantId, UpdatePrimaryApplicantAddressDto input, GrantApplications.AddressType expectedType)
@@ -303,14 +349,14 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
         if (applicantAddress.ApplicantId != applicantId)
         {
             throw new BusinessException("Unity:Applicant:AddressNotFound")
-                .WithData("ApplicantId", applicantId)
+                .WithData(ApplicantIdDataKey, applicantId)
                 .WithData("AddressId", input.Id);
         }
 
         if (applicantAddress.AddressType != expectedType)
         {
             throw new BusinessException("Unity:Applicant:AddressTypeMismatch")
-                .WithData("ApplicantId", applicantId)
+                .WithData(ApplicantIdDataKey, applicantId)
                 .WithData("AddressId", input.Id)
                 .WithData("ExpectedType", expectedType.ToString());
         }
