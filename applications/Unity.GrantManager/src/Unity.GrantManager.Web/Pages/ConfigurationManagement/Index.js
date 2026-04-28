@@ -1,6 +1,7 @@
 ﻿$(function () {
     const menuItems = $('#ConfigurationManagementSideMenu .nav-item');
     const configSections = $('.config-section');
+    const ACTIVE_MENU_KEY = 'ConfigurationManagement_ActiveMenu';
 
     init();
 
@@ -12,11 +13,13 @@
             adjustDataTables();
         });
 
-        // Auto-select the first visible menu item
-        const firstMenuItem = menuItems.first();
-        if (firstMenuItem.length) {
-            firstMenuItem.addClass('active');
-            const targetId = firstMenuItem.data('target');
+        // Restore the last active menu item from localStorage, fallback to first
+        const savedMenuId = localStorage.getItem(ACTIVE_MENU_KEY);
+        const savedMenuItem = savedMenuId ? menuItems.filter('#' + savedMenuId) : $();
+        const activeMenuItem = (savedMenuItem.length ? savedMenuItem : menuItems.first());
+        if (activeMenuItem.length) {
+            activeMenuItem.addClass('active');
+            const targetId = activeMenuItem.data('target');
             $('#' + targetId).removeClass('hide');
         }
 
@@ -38,6 +41,9 @@
     function menuItemClick(e) {
         const clickedItem = $(e.currentTarget);
         const targetId = clickedItem.data('target');
+
+        // Persist selection
+        localStorage.setItem(ACTIVE_MENU_KEY, clickedItem.attr('id'));
 
         // Update active menu item
         menuItems.removeClass('active');
