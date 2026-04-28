@@ -4,70 +4,48 @@
 const AnalyticsUtils = (function () {
     'use strict';
 
+    const DIMENSION_TENANT_NAME = 1;
+    const DIMENSION_USER_NAME = 2;
+
     /**
-     * Initialises Matomo analytics tracking.
-     * Disables tracking cookies (GDPR), sets the authenticated user ID when
-     * available, sets custom dimensions, then queues a page view and loads
-     * the Matomo script async.
+     * Safely gets the current tenant name from ABP.
      *
-     * @param {string} url - The base URL of the Matomo instance (no trailing slash).
-     * @param {string|number} siteId - The Matomo site ID.
+     * @returns {string|null} Tenant name or null if unavailable.
      */
-    function initMatomo(url, siteId) {
-        console.debug('[Analytics] initMatomo called — url:', url, '| siteId:', siteId);
-
-        if (!url || !siteId) {
-            console.warn('[Analytics] initMatomo aborted: url or siteId is missing.');
-            return;
-        }
-
-        var _paq = window._paq = window._paq || [];
-
-        // GDPR: avoid storing tracking cookies
-        _paq.push(['disableCookies']);
-
-        // IMPORTANT:
-        // Tracker URL + Site ID should be set before tracking calls
-        _paq.push(['setTrackerUrl', url + '/matomo.php']);
-        _paq.push(['setSiteId', String(siteId)]);
-
-        // Identify authenticated user if available
-        if (window.abp && abp.currentUser && abp.currentUser.id) {
-            _paq.push(['setUserId', abp.currentUser.id]);
-        }
-
-        /**
-         * Custom Dimensions
-         * Dimension 1 = Tenant Name
-         * Dimension 2 = User Name
-         *
-         * These MUST be set BEFORE trackPageView()
-         */
-
-        // Safe tenant lookup
-        var tenantName =
-            window.abp &&
+    function getTenantName() {
+        return globalThis.abp &&
             abp.currentTenant &&
             abp.currentTenant.name
-                ? abp.currentTenant.name
-                : null;
+            ? abp.currentTenant.name
+            : null;
+    }
 
-        if (tenantName) {
-            _paq.push(['setCustomDimension', 1, tenantName]);
-        } else {
-            console.warn('[Analytics] tenantName is not defined. Custom Dimension 1 not set.');
-        }
+    /**
+     * Safely gets the current authenticated user ID from ABP.
+     *
+     * @returns {string|null} User ID or null if unavailable.
+     */
+    function getUserId() {
+        return globalThis.abp &&
+            abp.currentUser &&
+            abp.currentUser.id
+            ? String(abp.currentUser.id)
+            : null;
+    }
 
-        // Safe user name lookup
-        var firstName =
-            window.abp &&
+    /**
+     * Safely builds the current user's full name from ABP.
+     *
+     * @returns {string|null} Full user name or null if unavailable.
+     */
+    function getUserName() {
+        const firstName = globalThis.abp &&
             abp.currentUser &&
             abp.currentUser.name
-                ? abp.currentUser.name
-                : '';
+            ? abp.currentUser.name
+            : '';
 
-        var lastName =
-            window.abp &&
+        const lastName = globalThis.abp &&
             abp.currentUser &&
             (
                 abp.currentUser.surname ||
@@ -75,105 +53,159 @@ const AnalyticsUtils = (function () {
                 ''
             );
 
-        var userName = (firstName + ' ' + lastName).trim();
+        const fullName = `${firstName} ${lastName}`.trim();
 
-        if (userName) {
-            _paq.push(['setCustomDimension', 2, userName]);
+        return fullName || null;
+    }
+
+    /**
+     * Applies common custom dimensions for tenant and user.
+     *
+     * @param {Array} trackerQueue - Matomo tracker queue.
+     */
+    function applyCustomDimensions(trackerQueue) {
+        const tenantName = getTenantName();
+        const userName = getUserName();
+
+        if (tenantName) {
+            trackerQueue.push([
+                'setCustomDimension',
+                DIMENSION_TENANT_NAME,
+                tenantName
+            ]);
         } else {
-            console.warn('[Analytics] userName is not defined. Custom Dimension 2 not set.');
+            console.warn(
+                '[Analytics] Tenant name unavailable. Custom Dimension 1 not set.'
+            );
         }
 
-        /**
-         * Track initial page view
-         * MUST happen after custom dimensions are set
-         */
-        _paq.push(['trackPageView']);
+        if (userName) {
+            trackerQueue.push([
+                'setCustomDimension',
+                DIMENSION_USER_NAME,
+                userName
+            ]);
+        } else {
+            console.warn(
+                '[Analytics] User name unavailable. Custom Dimension 2 not set.'
+            );
+        }
+    }
 
-        // Track outbound links / downloads
-        _paq.push(['enableLinkTracking']);
+    /**
+     * Loads the Matomo tracking script asynchronously.
+     *
+     * @param {string} url - Base Matomo URL.
+     */
+    function loadMatomoScript(url) {
+        const script = document.createElement('script');
 
-        /**
-         * Load Matomo JS tracker
-         */
-        var g = document.createElement('script');
-        g.async = true;
-        g.src = url + '/matomo.js';
+        script.async = true;
+        script.src = `${url}/matomo.js`;
 
-        g.onerror = function () {
-            console.error('[Analytics] Failed to load matomo.js from:', g.src);
+        script.onerror = function () {
+            console.error(
+                '[Analytics] Failed to load matomo.js from:',
+                script.src
+            );
         };
 
-        document.head.appendChild(g);
+        document.head.appendChild(script);
+    }
+
+    /**
+     * Initialises Matomo analytics tracking.
+     * Disables cookies (GDPR), sets user identity,
+     * applies custom dimensions, tracks initial page view,
+     * and enables link tracking.
+     *
+     * @param {string} url - Base Matomo URL (no trailing slash).
+     * @param {string|number} siteId - Matomo site ID.
+     */
+    function initMatomo(url, siteId) {
+        console.debug(
+            '[Analytics] initMatomo called — url:',
+            url,
+            '| siteId:',
+            siteId
+        );
+
+        if (!url || !siteId) {
+            console.warn(
+                '[Analytics] initMatomo aborted: url or siteId is missing.'
+            );
+            return;
+        }
+
+        const trackerQueue = globalThis._paq = globalThis._paq || [];
+
+        trackerQueue.push(
+            ['disableCookies'],
+            ['setTrackerUrl', `${url}/matomo.php`],
+            ['setSiteId', String(siteId)]
+        );
+
+        const userId = getUserId();
+
+        if (userId) {
+            trackerQueue.push(['setUserId', userId]);
+        }
+
+        applyCustomDimensions(trackerQueue);
+
+        /**
+         * Track initial page view after dimensions are set.
+         */
+        trackerQueue.push(['trackPageView']);
+
+        /**
+         * Track outbound links and downloads.
+         */
+        trackerQueue.push(['enableLinkTracking']);
+
+        loadMatomoScript(url);
     }
 
     /**
      * Tracks a virtual page view for AJAX-driven navigation
      * without a full page reload.
      *
-     * If your dimensions are Action-scoped in Matomo,
-     * set them again here before trackPageView().
+     * Re-applies dimensions for Action-scoped dimensions.
      *
-     * @param {string} [url] - Virtual URL (defaults to current URL)
-     * @param {string} [title] - Virtual page title (defaults to document.title)
+     * @param {string} [url] - Virtual URL.
+     * @param {string} [title] - Virtual page title.
      */
     function trackVirtualPageView(url, title) {
-        var _paq = window._paq;
-        if (!_paq) return;
+        const trackerQueue = globalThis._paq;
 
-        // Optional: reset dimensions here if using Action scope
-        var tenantName =
-            window.abp &&
-            abp.currentTenant &&
-            abp.currentTenant.name
-                ? abp.currentTenant.name
-                : null;
-
-        if (tenantName) {
-            _paq.push(['setCustomDimension', 1, tenantName]);
-        }
-
-        var firstName =
-            window.abp &&
-            abp.currentUser &&
-            abp.currentUser.name
-                ? abp.currentUser.name
-                : '';
-
-        var lastName =
-            window.abp &&
-            abp.currentUser &&
-            (
-                abp.currentUser.surname ||
-                abp.currentUser.surName ||
-                ''
-            );
-
-        var userName = (firstName + ' ' + lastName).trim();
-
-        if (userName) {
-            _paq.push(['setCustomDimension', 2, userName]);
-        }
-
-        _paq.push(['setCustomUrl', url || window.location.href]);
-        _paq.push(['setDocumentTitle', title || document.title]);
-        _paq.push(['trackPageView']);
-    }
-
-    /**
-     * Tracks internal site search
-     *
-     * @param {string} keyword - Search term entered by the user
-     * @param {string|false} [category] - Optional category
-     * @param {number|false} [resultCount] - Optional result count
-     */
-    function trackSearch(keyword, category, resultCount) {
-        var _paq = window._paq;
-
-        if (!_paq || !keyword) {
+        if (!trackerQueue) {
             return;
         }
 
-        _paq.push([
+        applyCustomDimensions(trackerQueue);
+
+        trackerQueue.push(
+            ['setCustomUrl', url || globalThis.location.href],
+            ['setDocumentTitle', title || document.title],
+            ['trackPageView']
+        );
+    }
+
+    /**
+     * Tracks internal site search.
+     *
+     * @param {string} keyword - Search term entered by the user.
+     * @param {string|false} [category] - Optional search category.
+     * @param {number|false} [resultCount] - Optional result count.
+     */
+    function trackSearch(keyword, category, resultCount) {
+        const trackerQueue = globalThis._paq;
+
+        if (!trackerQueue || !keyword) {
+            return;
+        }
+
+        trackerQueue.push([
             'trackSiteSearch',
             keyword,
             typeof category === 'string' ? category : false,
@@ -185,8 +217,8 @@ const AnalyticsUtils = (function () {
      * Public API
      */
     return {
-        initMatomo: initMatomo,
-        trackVirtualPageView: trackVirtualPageView,
-        trackSearch: trackSearch
+        initMatomo,
+        trackVirtualPageView,
+        trackSearch
     };
 })();
