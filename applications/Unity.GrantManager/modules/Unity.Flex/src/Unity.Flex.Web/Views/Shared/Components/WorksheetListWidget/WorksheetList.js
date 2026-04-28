@@ -104,7 +104,9 @@ function makeCustomFieldsSortable() {
     document.querySelectorAll('.custom-fields-wrapper').forEach(function (div) {
         const wrapper = div.closest('.sections-wrapper-outer');
         const isArchived = wrapper?.dataset.isArchived === 'true';
+        const worksheetId = wrapper?.dataset.worksheetId;
         customFieldSortables.push(new Sortable(div, {
+            group: `custom-fields-${worksheetId}`,
             animation: 150,
             disabled: isArchived,
             onEnd: function (evt) {
@@ -138,18 +140,36 @@ function makeSectionsSortable() {
 }
 
 function updateCustomFieldsSequence(evt) {
-    let sectionId = evt.target.dataset.sectionId;
-    let oldIndex = evt.oldIndex;
-    let newIndex = evt.newIndex;
+    if (evt.from === evt.to) {
+        // Reorder within the same section
+        const sectionId = evt.from.dataset.sectionId;
+        const oldIndex = evt.oldIndex;
+        const newIndex = evt.newIndex;
 
-    unity.flex.worksheets.worksheetSection
-        .resequenceCustomFields(sectionId, oldIndex, newIndex, {})
-        .done(function () {
-            updatePreview();
-            abp.notify.success(
-                'Custom fields order updated.'
-            );
-        });
+        unity.flex.worksheets.worksheetSection
+            .resequenceCustomFields(sectionId, oldIndex, newIndex, {})
+            .done(function () {
+                updatePreview();
+                abp.notify.success('Custom fields order updated.');
+            });
+    } else {
+        // Move to a different section
+        const fieldId = evt.item.dataset.id;
+        const targetSectionId = evt.to.dataset.sectionId;
+        const newIndex = evt.newIndex;
+
+        unity.flex.worksheets.customField
+            .moveToSection(fieldId, targetSectionId, newIndex, {})
+            .done(function () {
+                updatePreview();
+                abp.notify.success('Field moved to new section.');
+            })
+            .fail(function () {
+                // Revert the DOM move on failure
+                evt.from.insertBefore(evt.item, evt.from.children[evt.oldIndex] || null);
+                abp.notify.error('Failed to move field.');
+            });
+    }
 }
 
 function updateSectionSequence(evt) {

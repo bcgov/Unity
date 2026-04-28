@@ -8,5 +8,6 @@ namespace Unity.Flex.Worksheets
         Task<CustomFieldDto> GetAsync(Guid id);
         Task<CustomFieldDto> EditAsync(Guid id, EditCustomFieldDto dto);
         Task DeleteAsync(Guid id);
+        Task MoveToSectionAsync(Guid fieldId, Guid targetSectionId, uint newIndex);
     }
 }
