@@ -52,7 +52,7 @@ class SQLGenerator:
         
         # Fallback: look for '### SQL:' or plain 'SQL:' header (model sometimes drops ### at high token counts)
         # Reluctant quantifier is intentional: match shortest content up to next section header or end
-        sql_header = re.search(r"(?:###\s*)?SQL:\s*(.+?)(?:\n(?:###\s*)?(?:Metadata:|Reasoning:)|\Z)", text, re.DOTALL) # NOSONAR
+        sql_header = re.search(r"^(?:###\s*)?SQL:\s*(.+?)(?:\n(?:###\s*)?(?:Metadata:|Reasoning:)|\Z)", text, re.DOTALL | re.MULTILINE) # NOSONAR
         if sql_header:
             return sql_header.group(1).strip()
         
