@@ -582,11 +582,17 @@ function initializeApplicantLookup() {
 
     // Attach select2:select event handler
     $lookupSelect.on('select2:select', function (e) {
-        $('#mergeApplicantsMergeBtn').prop('disabled', false);
-
         let existing = getExistingApplicantData();
         let newData = createNewApplicantDataObject(e.params.data);
 
+        if (newData.ApplicantId === existing.ApplicantId) {
+            abp.notify.warn('The selected applicant is the same as the current applicant. Please select a different applicant to merge.');
+            $(this).val(null).trigger('change');
+            $(this).find('option').remove();
+            return;
+        }
+
+        $('#mergeApplicantsMergeBtn').prop('disabled', false);
         populateMergeModal(existing, newData);
         setupMergeModalHandlers(existing, newData);
 

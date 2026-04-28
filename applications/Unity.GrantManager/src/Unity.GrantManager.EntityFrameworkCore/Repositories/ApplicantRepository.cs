@@ -94,7 +94,7 @@ namespace Unity.GrantManager.Repositories
             {
                 var suppliers = await dbContext.Set<Supplier>()
                     .AsNoTracking()
-                    .Where(s => supplierIds.Contains(s.Id))
+                    .Where(s => supplierIds.Contains(s.Id) && !s.IsDeleted)
                     .Select(s => new { s.Id, s.Number, s.Name, s.Status })
                     .ToListAsync();
                 supplierMap = suppliers.ToDictionary(s => s.Id, s => (s.Number, s.Name, s.Status));
