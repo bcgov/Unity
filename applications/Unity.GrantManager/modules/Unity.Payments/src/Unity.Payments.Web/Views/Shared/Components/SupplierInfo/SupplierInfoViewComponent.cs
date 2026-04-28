@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using Unity.GrantManager.Applicants;
 using Unity.GrantManager.Applications;
 using Unity.Modules.Shared;
-using Unity.Modules.Shared.Correlation;
 using Unity.Payments.Suppliers;
 using Volo.Abp.AspNetCore.Mvc;
 using Volo.Abp.AspNetCore.Mvc.UI.Bundling;
@@ -21,24 +20,25 @@ namespace Unity.Payments.Web.Views.Shared.Components.SupplierInfo
         StyleTypes = [typeof(SupplierInfosWidgetStyleBundleContributor)],
         AutoInitialize = true)]
     public class SupplierInfoViewComponent(IApplicantSupplierAppService applicantSupplierService,
-                                           IApplicantRepository applicantRepository,
+                                           IApplicationRepository applicationRepository,
                                            IPermissionChecker permissionChecker,
                                            IFeatureChecker featureChecker) : AbpViewComponent
     {
 
-        public async Task<IViewComponentResult> InvokeAsync(Guid applicantId)
+        public async Task<IViewComponentResult> InvokeAsync(Guid applicantId, Guid applicationId)
         {
 
             if (await featureChecker.IsEnabledAsync("Unity.Payments"))
             {
                 SupplierDto? supplier = await GetSupplierByApplicantIdAsync(applicantId);
-                Applicant? applicant = await applicantRepository.GetAsync(applicantId);
+                Application? application = applicationId != Guid.Empty
+                    ? await applicationRepository.GetAsync(applicationId)
+                    : null;
                 return View(new SupplierInfoViewModel()
                 {
                     ApplicantId = applicantId,
-                    SiteId = applicant?.SiteId ?? Guid.Empty,
-                    SupplierCorrelationId = applicantId,
-                    SupplierCorrelationProvider = CorrelationConsts.Applicant,
+                    ApplicationId = applicationId,
+                    SiteId = application?.DefaultSiteId ?? Guid.Empty,
                     SupplierId = supplier?.Id ?? Guid.Empty,
                     SupplierNumber = supplier?.Number?.ToString(),
                     SupplierName = supplier?.Name?.ToString(),

@@ -11,10 +11,6 @@
 @{
     Layout = null;
 }
-@section scripts
-{
-    <abp-script src="/Pages/WorksheetConfiguration/Index.js" />
-}
 <form method="post" asp-page-handler="OnPostAsync" id="customFieldInfo" spellcheck="false">
     <abp-input type="hidden" id="SectionId" asp-for="@Model.SectionId" />
     <abp-input type="hidden" id="WorksheetId" asp-for="@Model.WorksheetId" />
@@ -22,72 +18,112 @@
     <abp-input type="hidden" id="Order" asp-for="@Model.Order" />
     <abp-input type="hidden" id="UpsertAction" asp-for="@Model.UpsertAction" />
     <abp-input type="hidden" id="DeleteAction" asp-for="@Model.IsDelete" />
+    <input type="hidden" id="InitSecurityClassification" value="@Model.SecurityClassification" />
+    <input type="hidden" id="InitFieldType" value="@Model.FieldType" />
     <abp-modal size="Large" id="custom-field-info-modal">
         <abp-modal-header class="custom-field-info-modal-header" title="@Model.UpsertAction"></abp-modal-header>
         <abp-modal-body>
-            <abp-row class="m-0 p-0">
-                <abp-column size="_12" class="px-1">
-                    <abp-input asp-for="@Model.Key" />
-                </abp-column>
-            </abp-row>
-            <abp-row class="m-0 p-0">
-                <abp-column size="_12" class="px-1">
-                    <abp-input asp-for="@Model.Label" />
-                </abp-column>
-            </abp-row>
-            <abp-row class="m-0 p-0">
-                <abp-select id="fieldType" asp-for="@Model.FieldType" asp-items="@Model.FieldTypes"
-                            onchange="typeSelectionChanged(this)">
-                </abp-select>
-            </abp-row>
-            
-            <div id="definition-editor">
-                @await Component.InvokeAsync(typeof(CustomFieldDefinitionWidget), new { type = Model.FieldType, definition = Model.Definition })
+            <div class="nav nav-tabs mb-3" id="customFieldTabs" role="tablist">
+                <button class="nav-link active" id="tab-display" data-bs-toggle="tab" data-bs-target="#pane-display" type="button" role="tab" aria-controls="pane-display" aria-selected="true">Display</button>
+                <button class="nav-link" id="tab-attributes" data-bs-toggle="tab" data-bs-target="#pane-attributes" type="button" role="tab" aria-controls="pane-attributes" aria-selected="false">Attributes</button>
             </div>
+            <div class="tab-content" id="customFieldTabContent">
+                <div class="tab-pane fade show active" id="pane-display" role="tabpanel" aria-labelledby="tab-display">
+                    <abp-row class="m-0 p-0">
+                        <abp-column size="_5" class="px-1">
+                            <abp-input asp-for="@Model.Key" placeholder="e.g. applicantName" />
+                        </abp-column>
+                        <abp-column size="_7" class="px-1">
+                            <abp-input asp-for="@Model.Label" placeholder="e.g. Applicant Name" />
+                        </abp-column>
+                    </abp-row>
+                    <abp-row class="m-0 p-0">
+                        <abp-column size="_12" class="px-1">
+                            <label class="form-label" for="label-position-toggle">Label Position</label>
+                            <fieldset class="btn-group btn-group-sm d-flex" id="label-position-toggle" style="padding-bottom: 5px">
+                                <legend class="visually-hidden">Label position</legend>
+                                <input type="radio" class="btn-check" name="LabelPosition" id="lp-top" value="Top" @(Model.LabelPosition != "Left" ? "checked" : "") />
+                                <label class="btn btn-label-position" for="lp-top">Top</label>
+                                <input type="radio" class="btn-check" name="LabelPosition" id="lp-left" value="Left" @(Model.LabelPosition == "Left" ? "checked" : "") />
+                                <label class="btn btn-label-position" for="lp-left">Left</label>
+                            </fieldset>
+                        </abp-column>
+                    </abp-row>
+                    <abp-row class="m-0 p-0">
+                        <abp-column size="_12" class="px-1">
+                            <abp-select id="fieldType" asp-for="@Model.FieldType" asp-items="@Model.FieldTypes">
+                            </abp-select>
+                        </abp-column>
+                    </abp-row>
+                    <abp-row class="m-0 p-0" id="placeholder-row" style="display:none">
+                        <abp-column size="_12" class="px-1">
+                            <div class="mb-3">
+                            <label class="form-label" for="Placeholder">Placeholder</label>
+                            <input type="text" class="form-control" id="Placeholder" name="Placeholder"
+                                   value="@Model.Placeholder" placeholder="e.g. Enter a value..." />
+                            </div>
+                        </abp-column>
+                    </abp-row>
+                    <div id="definition-editor" class="mt-3">
+                        @await Component.InvokeAsync(typeof(CustomFieldDefinitionWidget), new { type = Model.FieldType, definition = Model.Definition })
+                    </div>
+                </div>
+                <div class="tab-pane fade" id="pane-attributes" role="tabpanel" aria-labelledby="tab-attributes">
 
+                    <p class="cf-section-heading">Security</p>
+                    @{
+                        string? scNone = string.IsNullOrEmpty(Model.SecurityClassification) ? "selected" : null;
+                        string? scA    = Model.SecurityClassification == "ProtectedA" ? "selected" : null;
+                        string? scB    = Model.SecurityClassification == "ProtectedB" ? "selected" : null;
+                        string? scC    = Model.SecurityClassification == "ProtectedC" ? "selected" : null;
+                    }
+                    <div class="mb-4">
+                        <label class="form-label" for="SecurityClassification">Classification Level</label>
+                        <select class="form-select" id="SecurityClassification" name="SecurityClassification">
+                            <option value="" selected="@scNone">&mdash; None &mdash;</option>
+                            <option value="ProtectedA" selected="@scA">Protected A &mdash; Low Sensitivity</option>
+                            <option value="ProtectedB" selected="@scB">Protected B &mdash; Medium Sensitivity</option>
+                            <option value="ProtectedC" selected="@scC">Protected C &mdash; High Sensitivity</option>
+                        </select>
+                        <div id="classificationHint" class="form-text fst-italic mt-1"></div>
+                    </div>
+
+                    <p class="cf-section-heading">Visibility</p>
+                    <div class="border rounded p-3 mb-4">
+                        <div class="form-check mb-2">
+                            <abp-input asp-for="@Model.IsHidden" type="checkbox" class="form-check-input" />
+                        </div>
+                        <div class="form-check mb-2">
+                            <abp-input asp-for="@Model.HideLabel" type="checkbox" class="form-check-input" />
+                        </div>
+                        <div class="form-check mb-0">
+                            <abp-input asp-for="@Model.IsDisabled" type="checkbox" class="form-check-input" />
+                        </div>
+                    </div>
+
+                    <p class="cf-section-heading">Label</p>
+                    <div class="mb-3">
+                        <label class="form-label" for="LabelStyle">Inline Style</label>
+                        <input type="text" class="form-control" id="LabelStyle" name="LabelStyle"
+                               value="@Model.LabelStyle" placeholder="e.g. font-weight: bold; color: #333;" />
+                    </div>
+                    <div class="mb-1">
+                        <label class="form-label" for="LabelCssClass">CSS Class</label>
+                        <input type="text" class="form-control" id="LabelCssClass" name="LabelCssClass"
+                               value="@Model.LabelCssClass" placeholder="e.g. fw-bold text-primary" />
+                    </div>
+
+                </div>
+            </div>
         </abp-modal-body>
         <abp-modal-footer>
-            <button type="submit" class="btn btn-primary" name="saveCustomFieldBtn" value="save">@AbpModalButtons.Save</button>
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">@AbpModalButtons.Cancel</button>
             @if (Model.UpsertAction == WorksheetUpsertAction.Update && !Model.Published)
             {
-                <button type="button" class="btn btn-danger" name="deleteCustomFieldBtn" value="delete" onclick="deleteCustomField()">Delete</button>
+                <button type="button" class="btn btn-danger me-auto" name="deleteCustomFieldBtn" value="delete">Delete</button>
             }
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">@AbpModalButtons.Cancel</button>
+            <button type="submit" class="btn btn-primary" name="saveCustomFieldBtn" value="save">@AbpModalButtons.Save</button>
         </abp-modal-footer>
     </abp-modal>
 </form>
 
-<script>
-    function typeSelectionChanged(event) {
-        let customFieldWidget;
-        if (typeof customFieldWidget === 'undefined') {
-            customFieldWidget = new abp.WidgetManager({
-                wrapper: '#definition-editor',
-                filterCallback: function () {
-                    return {
-                        'type': $('#fieldType').val(),
-                    };
-                },
-            })
-            customFieldWidget.refresh();
-        }
-    }
-
-    function deleteCustomField() {
-        Swal.fire({
-            title: "Delete Custom Field?",
-            text: 'Are you sure you want to delete this custom field?',
-            showCancelButton: true,
-            confirmButtonText: 'Confirm',
-            customClass: {
-                confirmButton: 'btn btn-primary',
-                cancelButton: 'btn btn-secondary'
-            }
-        }).then((result) => {
-            if (result.isConfirmed) {
-                $('#DeleteAction').val(true);
-                $('#customFieldInfo').submit();
-            }
-        });
-    }
-</script>

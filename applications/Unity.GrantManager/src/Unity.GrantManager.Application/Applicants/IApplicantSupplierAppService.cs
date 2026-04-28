@@ -15,4 +15,5 @@ public interface IApplicantSupplierAppService : IApplicationService
     Task ClearApplicantSupplierAsync(Guid applicantId);
     Task UpdateApplicantSupplierNumberAsync(Guid applicantId, string supplierNumber, Guid? applicationId = null);
     Task<dynamic> UpdateAplicantSupplierByBn9Async(Guid applicantId, string bn9);
+    Task EnsureNoPendingPaymentsForApplicantAsync(Guid applicantId);
 }

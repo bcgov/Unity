@@ -24,27 +24,37 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ChefsAttachments
         IApplicationFormRepository applicationFormRepository) : AbpViewComponent
     {
         public async Task<IViewComponentResult> InvokeAsync(Guid applicationFormId)
-        {
-            var featureEnabled = await featureChecker.IsEnabledAsync("Unity.AI.AttachmentSummaries");
+            {
+                // Set safe defaults so the view is never left with null ViewBag values
+                // even if an exception is thrown partway through the checks below.
+                ViewBag.IsAIAttachmentSummariesEnabled = false;
+                ViewBag.IsAIAttachmentSummariesGenerateEnabled = false;
 
-            // View guard — for toggling visibility of existing summaries
-            ViewBag.IsAIAttachmentSummariesEnabled =
-                featureEnabled &&
-                await permissionChecker.IsGrantedAsync(AIPermissions.Analysis.ViewAttachmentSummary);
+                var featureEnabled = await featureChecker.IsEnabledAsync("Unity.AI.AttachmentSummaries");
 
-            // Generate guard — full 3-level chain for the Generate Summary button
-            var settingProvider = LazyServiceProvider.LazyGetRequiredService<ISettingProvider>();
-            var tenantManualEnabled = await settingProvider.GetAsync<bool>(AISettings.ManualGenerationEnabled, defaultValue: false);
-            var applicationForm = await applicationFormRepository.GetAsync(applicationFormId);
+                // View guard — for toggling visibility of existing summaries
+                ViewBag.IsAIAttachmentSummariesEnabled =
+                    featureEnabled &&
+                    await permissionChecker.IsGrantedAsync(AIPermissions.Analysis.ViewAttachmentSummary);
 
-            ViewBag.IsAIAttachmentSummariesGenerateEnabled =
-                featureEnabled &&
-                tenantManualEnabled &&
-                applicationForm.ManuallyInitiateAIAnalysis &&
-                await permissionChecker.IsGrantedAsync(AIPermissions.Analysis.GenerateAttachmentSummaries);
+                if (applicationFormId == Guid.Empty)
+                {
+                    return View();
+                }
 
-            return View();
-        }
+                // Generate guard — full 3-level chain for the Generate Summary button
+                var settingProvider = LazyServiceProvider.LazyGetRequiredService<ISettingProvider>();
+                var tenantManualEnabled = await settingProvider.GetAsync<bool>(AISettings.ManualGenerationEnabled, defaultValue: false);
+                var applicationForm = await applicationFormRepository.GetAsync(applicationFormId);
+
+                ViewBag.IsAIAttachmentSummariesGenerateEnabled =
+                    featureEnabled &&
+                    tenantManualEnabled &&
+                    applicationForm.ManuallyInitiateAIAnalysis &&
+                    await permissionChecker.IsGrantedAsync(AIPermissions.Analysis.GenerateAttachmentSummaries);
+
+                return View();
+            }
     }
 
     public class ChefsAttachmentsStyleBundleContributor : BundleContributor

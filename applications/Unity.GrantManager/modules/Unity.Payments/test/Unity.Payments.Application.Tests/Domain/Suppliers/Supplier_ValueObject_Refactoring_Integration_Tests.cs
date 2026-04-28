@@ -1,6 +1,5 @@
 using System;
 using Shouldly;
-using Unity.Modules.Shared.Correlation;
 using Unity.Payments.Domain.Suppliers;
 using Unity.Payments.Domain.Suppliers.ValueObjects;
 using Xunit;
@@ -34,8 +33,6 @@ public class Supplier_ValueObject_Refactoring_Integration_Tests
         var supplierProtected = "No";
         var standardIndustryClassification = "NAICS789";
         var lastUpdatedInCAS = DateTime.UtcNow;
-        var correlationId = Guid.NewGuid();
-        var correlationProvider = "DemoProvider";
         var mailingAddress = "123 Demo Street";
         var city = "Demo City";
         var province = "BC";
@@ -46,10 +43,9 @@ public class Supplier_ValueObject_Refactoring_Integration_Tests
         var providerInfo = new ProviderInfo(providerId, businessNumber);
         var supplierStatus = new SupplierStatus(status, supplierProtected, standardIndustryClassification);
         var casMetadata = new CasMetadata(lastUpdatedInCAS);
-        var correlation = new Correlation(correlationId, correlationProvider);
         var mailingAddressVO = new MailingAddress(mailingAddress, city, province, postalCode);
 
-        var supplier = new Supplier(id, basicInfo, correlation, providerInfo, supplierStatus, casMetadata, mailingAddressVO);
+        var supplier = new Supplier(id, basicInfo, providerInfo, supplierStatus, casMetadata, mailingAddressVO);
 
         // Assert - Verify all data is correctly set
         supplier.Id.ShouldBe(id);
@@ -62,8 +58,6 @@ public class Supplier_ValueObject_Refactoring_Integration_Tests
         supplier.SupplierProtected.ShouldBe(supplierProtected);
         supplier.StandardIndustryClassification.ShouldBe(standardIndustryClassification);
         supplier.LastUpdatedInCAS.ShouldBe(lastUpdatedInCAS);
-        supplier.CorrelationId.ShouldBe(correlationId);
-        supplier.CorrelationProvider.ShouldBe(correlationProvider);
         supplier.MailingAddress.ShouldBe(mailingAddress);
         supplier.City.ShouldBe(city);
         supplier.Province.ShouldBe(province);
@@ -96,20 +90,17 @@ public class Supplier_ValueObject_Refactoring_Integration_Tests
             SupplierProtected = "No",
             StandardIndustryClassification = "COMP_NAICS",
             LastUpdatedInCAS = DateTime.UtcNow,
-            CorrelationId = Guid.NewGuid(),
-            CorrelationProvider = "CompatTest",
             MailingAddress = "456 Compat Ave",
             City = "Compat City",
             Province = "AB",
             PostalCode = "COMP456"
         };
 
-        // Act - Create using legacy constructor
+        // Act - Create using simple constructor
         var legacySupplier = new Supplier(
             id1,
             testData.Name,
             testData.Number,
-            new Correlation(testData.CorrelationId, testData.CorrelationProvider),
             new MailingAddress(testData.MailingAddress, testData.City, testData.Province, testData.PostalCode));
         
         // Manually set properties that weren't in legacy constructor
@@ -125,7 +116,6 @@ public class Supplier_ValueObject_Refactoring_Integration_Tests
         var newSupplier = new Supplier(
             id2,
             new SupplierBasicInfo(testData.Name, testData.Number, testData.Subcategory),
-            new Correlation(testData.CorrelationId, testData.CorrelationProvider),
             new ProviderInfo(testData.ProviderId, testData.BusinessNumber),
             new SupplierStatus(testData.Status, testData.SupplierProtected, testData.StandardIndustryClassification),
             new CasMetadata(testData.LastUpdatedInCAS),
@@ -141,8 +131,6 @@ public class Supplier_ValueObject_Refactoring_Integration_Tests
         legacySupplier.SupplierProtected.ShouldBe(newSupplier.SupplierProtected);
         legacySupplier.StandardIndustryClassification.ShouldBe(newSupplier.StandardIndustryClassification);
         legacySupplier.LastUpdatedInCAS.ShouldBe(newSupplier.LastUpdatedInCAS);
-        legacySupplier.CorrelationId.ShouldBe(newSupplier.CorrelationId);
-        legacySupplier.CorrelationProvider.ShouldBe(newSupplier.CorrelationProvider);
         legacySupplier.MailingAddress.ShouldBe(newSupplier.MailingAddress);
         legacySupplier.City.ShouldBe(newSupplier.City);
         legacySupplier.Province.ShouldBe(newSupplier.Province);
@@ -168,9 +156,8 @@ public class Supplier_ValueObject_Refactoring_Integration_Tests
         // After: Impossible to swap because each value object has distinct type
         var supplier = new Supplier(
             Guid.NewGuid(),
-            basicInfo,     // Can't pass providerInfo here - compiler error
-            new Correlation(Guid.NewGuid(), "Provider"),
-            providerInfo,  // Can't pass basicInfo here - compiler error
+            basicInfo,
+            providerInfo,
             supplierStatus,
             new CasMetadata(DateTime.UtcNow),
             new MailingAddress("Address", "City", "Province", "PostalCode"));
@@ -190,8 +177,7 @@ public class Supplier_ValueObject_Refactoring_Integration_Tests
         // Arrange
         var supplier = new Supplier(
             Guid.NewGuid(),
-            new SupplierBasicInfo("Original Name", "ORIG001", "Original Category"),
-            new Correlation(Guid.NewGuid(), "Original"));
+            new SupplierBasicInfo("Original Name", "ORIG001", "Original Category"));
 
         // Act - Update using value object methods
         supplier.UpdateBasicInfo(new SupplierBasicInfo("Updated Name", "UPD001", "Updated Category"));
@@ -221,8 +207,7 @@ public class Supplier_ValueObject_Refactoring_Integration_Tests
         // Arrange & Act - Create supplier with only required data
         var supplier = new Supplier(
             Guid.NewGuid(),
-            new SupplierBasicInfo("Minimal Supplier", "MIN001"),
-            new Correlation(Guid.NewGuid(), "MinimalProvider"));
+            new SupplierBasicInfo("Minimal Supplier", "MIN001"));
         // Optional parameters: providerInfo, supplierStatus, casMetadata, mailingAddress all default to null
 
         // Assert - Required data set, optional data has appropriate defaults
@@ -319,8 +304,6 @@ public class Supplier_ValueObject_Refactoring_Integration_Tests
             supplierprotected = "N",
             standardindustryclassification = "CAS_NAICS_456",
             lastupdated = DateTime.UtcNow.AddDays(-1),
-            correlationid = Guid.NewGuid(),
-            correlationprovider = "CAS",
             mailingaddress = "789 CAS Boulevard",
             city = "CAS City",
             province = "BC",
@@ -344,10 +327,6 @@ public class Supplier_ValueObject_Refactoring_Integration_Tests
 
         var casMetadata = new CasMetadata(casSupplierData.lastupdated);
 
-        var correlation = new Correlation(
-            casSupplierData.correlationid,
-            casSupplierData.correlationprovider);
-
         var mailingAddress = new MailingAddress(
             casSupplierData.mailingaddress,
             casSupplierData.city,
@@ -358,7 +337,6 @@ public class Supplier_ValueObject_Refactoring_Integration_Tests
         var supplier = new Supplier(
             Guid.NewGuid(),
             basicInfo,
-            correlation,
             providerInfo,
             supplierStatus,
             casMetadata,
@@ -374,8 +352,6 @@ public class Supplier_ValueObject_Refactoring_Integration_Tests
         supplier.SupplierProtected.ShouldBe(casSupplierData.supplierprotected);
         supplier.StandardIndustryClassification.ShouldBe(casSupplierData.standardindustryclassification);
         supplier.LastUpdatedInCAS.ShouldBe(casSupplierData.lastupdated);
-        supplier.CorrelationId.ShouldBe(casSupplierData.correlationid);
-        supplier.CorrelationProvider.ShouldBe(casSupplierData.correlationprovider);
 
         // Value objects work seamlessly with external integrations ?
     }

@@ -1,6 +1,6 @@
 ﻿@page
 @using Microsoft.AspNetCore.Mvc.Localization
-@using Unity.Flex.Web.Views.Shared.Components.WorksheetList
+@using Unity.Flex.Web.Views.Shared.Components.WorksheetConfiguration
 @using Unity.GrantManager.Localization
 @using Unity.GrantManager.Web.Pages.ConfigurationManagement
 @using Volo.Abp.AspNetCore.Mvc.UI.Layout
@@ -208,25 +208,7 @@
         @if (Model.ShowCustomFields)
         {
             <div id="custom-fields-div" class="config-section input-area card mb-3 config-management hide">
-                <input type="hidden" id="MaxFileSize" value="@Model.MaxFileSize" />
-                <div class="config-split-container" id="worksheet-split-container">
-                    <div class="config-split-left" id="worksheet-left">
-                        <div id="worksheet-info-widget-list">
-                            @await Component.InvokeAsync(typeof(WorksheetListWidget))
-                        </div>
-                    </div>
-                    <div class="config-split-divider" id="worksheet-divider"></div>
-                    <div class="config-split-right preview-scrollable" id="worksheet-right">
-                        <abp-card class="right-card sticky-preview">
-                            <abp-card-body>
-                                <h4><b>Preview</b></h4>
-                                <div id="worksheet-preview">
-                                    <p>No sections to display.</p>
-                                </div>
-                            </abp-card-body>
-                        </abp-card>
-                    </div>
-                </div>
+                @await Component.InvokeAsync(typeof(WorksheetConfigurationViewComponent))
             </div>
         }
 

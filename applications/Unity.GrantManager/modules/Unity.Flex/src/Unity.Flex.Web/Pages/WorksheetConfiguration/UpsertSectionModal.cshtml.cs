@@ -32,6 +32,10 @@ public class UpsertSectionModalModel(IWorksheetAppService worksheetAppService,
     public bool IsDelete { get; set; }
 
     [BindProperty]
+    [Range(0, 100)]
+    public int FieldWidth { get; set; } = 0;
+
+    [BindProperty]
     public bool Published { get; set; }
 
     public async Task OnGetAsync(Guid worksheetId, Guid sectionId, string actionType)
@@ -45,6 +49,7 @@ public class UpsertSectionModalModel(IWorksheetAppService worksheetAppService,
             // Get the section 
             var section = await worksheetSectionAppService.GetAsync(sectionId);
             Name = section.Name;
+            FieldWidth = section.FieldWidth ?? 0;
         }
     }
 
@@ -102,7 +107,8 @@ public class UpsertSectionModalModel(IWorksheetAppService worksheetAppService,
     {
         return await worksheetSectionAppService.EditAsync(SectionId!.Value, new EditSectionDto()
         {
-            Name = Name ?? string.Empty
+            Name = Name ?? string.Empty,
+            FieldWidth = FieldWidth > 0 ? FieldWidth : null
         });
     }
 

@@ -41,6 +41,24 @@
     cursor: grab;
 }
 
+.section-config-collapse-toggle {
+    opacity: 0.5;
+    color: inherit;
+}
+
+.section-config-collapse-toggle:hover {
+    opacity: 1;
+}
+
+.section-config-collapse-toggle .section-chevron {
+    transition: transform 0.2s ease;
+    display: inline-block;
+}
+
+.section-config-collapse-toggle[aria-expanded="false"] .section-chevron {
+    transform: rotate(180deg);
+}
+
 .float-end.worksheet-btn {
     margin-top: -5px;
 }

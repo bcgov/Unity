@@ -1,4 +1,6 @@
 using Riok.Mapperly.Abstractions;
+using Unity.GrantManager.ApplicantProfile;
+using Unity.GrantManager.ApplicantProfile.ProfileData;
 using Unity.GrantManager.ApplicationForms;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Forms;
@@ -6,6 +8,7 @@ using Unity.GrantManager.GrantApplications;
 using Unity.GrantManager.Intakes;
 using Unity.GrantManager.SettingManagement;
 using Unity.GrantManager.Web.Components.ApplicationUiSettingGroup;
+using Unity.GrantManager.Web.Pages.ApplicantContact;
 using Unity.GrantManager.Web.Pages.ApplicationContact;
 using Unity.GrantManager.Web.Pages.ApplicationForms.ViewModels;
 using Unity.GrantManager.Web.Pages.Sites.ViewModels;
@@ -57,3 +60,49 @@ public partial class ApplicantAddressDtoToViewModelMapper : MapperBase<Applicant
 [Mapper] public partial class IntakeDtoToCreateUpdateIntakeDtoMapper : MapperBase<IntakeDto, CreateUpdateIntakeDto> { public override partial CreateUpdateIntakeDto Map(IntakeDto source); public override partial void Map(IntakeDto source, CreateUpdateIntakeDto destination); }
 
 [Mapper] public partial class ApplicationUiSettingsDtoToViewModelMapper : MapperBase<ApplicationUiSettingsDto, ApplicationUiSettingsViewModel> { public override partial ApplicationUiSettingsViewModel Map(ApplicationUiSettingsDto source); public override partial void Map(ApplicationUiSettingsDto source, ApplicationUiSettingsViewModel destination); }
+
+[Mapper]
+public partial class ContactInfoItemDtoToApplicantContactModalViewModelMapper : MapperBase<ContactInfoItemDto, ApplicantContactModalViewModel>
+{
+    [MapProperty(nameof(ContactInfoItemDto.ContactId), nameof(ApplicantContactModalViewModel.Id))]
+    [MapperIgnoreSource(nameof(ContactInfoItemDto.IsEditable))]
+    [MapperIgnoreSource(nameof(ContactInfoItemDto.ApplicationId))]
+    [MapperIgnoreSource(nameof(ContactInfoItemDto.ReferenceNo))]
+    [MapperIgnoreSource(nameof(ContactInfoItemDto.CreationTime))]
+    [MapperIgnoreSource(nameof(ContactInfoItemDto.HomePhoneNumber))]
+    [MapperIgnoreSource(nameof(ContactInfoItemDto.WorkPhoneExtension))]
+    [MapperIgnoreSource(nameof(ContactInfoItemDto.ContactType))]
+    [MapperIgnoreTarget(nameof(ApplicantContactModalViewModel.ApplicantId))]
+    [MapperIgnoreTarget(nameof(ApplicantContactModalViewModel.RoleOptions))]
+    public override partial ApplicantContactModalViewModel Map(ContactInfoItemDto source);
+
+    [MapProperty(nameof(ContactInfoItemDto.ContactId), nameof(ApplicantContactModalViewModel.Id))]
+    [MapperIgnoreSource(nameof(ContactInfoItemDto.IsEditable))]
+    [MapperIgnoreSource(nameof(ContactInfoItemDto.ApplicationId))]
+    [MapperIgnoreSource(nameof(ContactInfoItemDto.ReferenceNo))]
+    [MapperIgnoreSource(nameof(ContactInfoItemDto.CreationTime))]
+    [MapperIgnoreSource(nameof(ContactInfoItemDto.HomePhoneNumber))]
+    [MapperIgnoreSource(nameof(ContactInfoItemDto.WorkPhoneExtension))]
+    [MapperIgnoreSource(nameof(ContactInfoItemDto.ContactType))]
+    [MapperIgnoreTarget(nameof(ApplicantContactModalViewModel.ApplicantId))]
+    [MapperIgnoreTarget(nameof(ApplicantContactModalViewModel.RoleOptions))]
+    public override partial void Map(ContactInfoItemDto source, ApplicantContactModalViewModel destination);
+}
+
+[Mapper]
+public partial class ApplicantContactModalViewModelToUpdateApplicantContactDtoMapper : MapperBase<ApplicantContactModalViewModel, UpdateApplicantContactDto>
+{
+    [MapperIgnoreSource(nameof(ApplicantContactModalViewModel.ApplicantId))]
+    [MapperIgnoreSource(nameof(ApplicantContactModalViewModel.Id))]
+    [MapperIgnoreSource(nameof(ApplicantContactModalViewModel.IsPrimaryInferred))]
+    [MapperIgnoreSource(nameof(ApplicantContactModalViewModel.RoleOptions))]
+    [MapperIgnoreTarget(nameof(UpdateApplicantContactDto.WorkPhoneExtension))]
+    public override partial UpdateApplicantContactDto Map(ApplicantContactModalViewModel source);
+
+    [MapperIgnoreSource(nameof(ApplicantContactModalViewModel.ApplicantId))]
+    [MapperIgnoreSource(nameof(ApplicantContactModalViewModel.Id))]
+    [MapperIgnoreSource(nameof(ApplicantContactModalViewModel.IsPrimaryInferred))]
+    [MapperIgnoreSource(nameof(ApplicantContactModalViewModel.RoleOptions))]
+    [MapperIgnoreTarget(nameof(UpdateApplicantContactDto.WorkPhoneExtension))]
+    public override partial void Map(ApplicantContactModalViewModel source, UpdateApplicantContactDto destination);
+}

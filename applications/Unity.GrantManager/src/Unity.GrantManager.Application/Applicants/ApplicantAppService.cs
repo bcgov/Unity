@@ -35,7 +35,9 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
                                  IOrgBookService orgBookService,
                                  IApplicantAgentRepository applicantAgentRepository,
                                  IApplicationRepository applicationRepository) : GrantManagerAppService, IApplicantAppService
-{   
+{
+    private const string ApplicantIdDataKey = "ApplicantId";
+
     protected new ILogger Logger => LazyServiceProvider.LazyGetService<ILogger>(provider => LoggerFactory?.CreateLogger(GetType().FullName!) ?? NullLogger.Instance);
 
     [RemoteService(false)]
@@ -80,18 +82,28 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
         Applicant? applicant = await applicantRepository.GetAsync(applicantSupplierEto.ApplicantId);
         ArgumentNullException.ThrowIfNull(applicant);
         applicant.SupplierId = applicantSupplierEto.SupplierId;
-        applicant.SiteId = null; // Reset site id to null
-        // lookup sites if there is only one then set it as default
+        await applicantRepository.UpdateAsync(applicant);
+
+        // Per-application cascade: if the new supplier has exactly one site,
+        // auto-pick it for every application of this applicant; otherwise clear
+        // DefaultSiteId so users repick per application on the Payment Info tab.
+        Guid? newDefaultSiteId = null;
         if (applicant.SupplierId != null)
         {
             List<Site> sites = await siteAppService.GetSitesBySupplierIdAsync(applicant.SupplierId.Value);
             if (sites.Count == 1)
             {
-                applicant.SiteId = sites.FirstOrDefault()?.Id;
+                newDefaultSiteId = sites[0].Id;
             }
         }
 
-        await applicantRepository.UpdateAsync(applicant);
+        var applications = await applicationRepository.GetListAsync(a => a.ApplicantId == applicant.Id);
+        foreach (var application in applications)
+        {
+            application.DefaultSiteId = newDefaultSiteId;
+            await applicationRepository.UpdateAsync(application);
+        }
+
         return applicant;
     }
 
@@ -262,11 +274,24 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
             throw new ArgumentException("Contact identifier is required.", nameof(input));
         }
 
+        switch (input.Source)
+        {
+            case "Contact":
+                await UpdateLinkedContactAsync(applicantId, input);
+                break;            
+            default:
+                await UpdateAgentContactAsync(applicantId, input);
+                break;
+        }
+    }
+
+    private async Task UpdateAgentContactAsync(Guid applicantId, UpdatePrimaryContactDto input)
+    {
         var applicantAgent = await applicantAgentRepository.GetAsync(input.Id);
         if (applicantAgent.ApplicantId != applicantId)
         {
             throw new BusinessException("Unity:Applicant:ContactNotFound")
-                .WithData("ApplicantId", applicantId)
+                .WithData(ApplicantIdDataKey, applicantId)
                 .WithData("ContactId", input.Id);
         }
 
@@ -277,6 +302,36 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
         applicantAgent.Phone2 = input.CellPhone?.Trim() ?? string.Empty;
 
         await applicantAgentRepository.UpdateAsync(applicantAgent);
+    }
+
+    private async Task UpdateLinkedContactAsync(Guid applicantId, UpdatePrimaryContactDto input)
+    {
+        var contactRepository = LazyServiceProvider.LazyGetRequiredService<Contacts.IContactRepository>();
+        var contactLinkRepository = LazyServiceProvider.LazyGetRequiredService<Contacts.IContactLinkRepository>();
+
+        var linkQuery = await contactLinkRepository.GetQueryableAsync();
+        var link = await linkQuery.FirstOrDefaultAsync(l =>
+            l.ContactId == input.Id
+            && l.RelatedEntityType == "Applicant"
+            && l.RelatedEntityId == applicantId
+            && l.IsActive);
+
+        if (link == null)
+        {
+            throw new BusinessException("Unity:Applicant:ContactNotFound")
+                .WithData(ApplicantIdDataKey, applicantId)
+                .WithData("ContactId", input.Id);
+        }
+
+        var contact = await contactRepository.GetAsync(input.Id);
+
+        contact.Name = input.FullName?.Trim() ?? string.Empty;
+        contact.Title = input.Title?.Trim();
+        contact.Email = input.Email?.Trim();
+        contact.WorkPhoneNumber = input.BusinessPhone?.Trim();
+        contact.MobilePhoneNumber = input.CellPhone?.Trim();
+
+        await contactRepository.UpdateAsync(contact);
     }
 
     private async Task UpdatePrimaryAddressAsync(Guid applicantId, UpdatePrimaryApplicantAddressDto input, GrantApplications.AddressType expectedType)
@@ -291,14 +346,14 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
         if (applicantAddress.ApplicantId != applicantId)
         {
             throw new BusinessException("Unity:Applicant:AddressNotFound")
-                .WithData("ApplicantId", applicantId)
+                .WithData(ApplicantIdDataKey, applicantId)
                 .WithData("AddressId", input.Id);
         }
 
         if (applicantAddress.AddressType != expectedType)
         {
             throw new BusinessException("Unity:Applicant:AddressTypeMismatch")
-                .WithData("ApplicantId", applicantId)
+                .WithData(ApplicantIdDataKey, applicantId)
                 .WithData("AddressId", input.Id)
                 .WithData("ExpectedType", expectedType.ToString());
         }
@@ -504,11 +559,6 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
         }
     }
 
-    public async Task<List<Applicant>> GetApplicantsBySiteIdAsync(Guid siteId)
-    {
-        List<Applicant> applicants = await applicantRepository.GetApplicantsBySiteIdAsync(siteId);
-        return applicants;
-    }
     [RemoteService(true)]
     public async Task<JsonDocument> GetApplicantLookUpAutocompleteQueryAsync(string? applicantLookUpQuery)
     {
@@ -700,7 +750,6 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
                     ? applicant.StartedOperatingDate.Value.ToDateTime(TimeOnly.MinValue) 
                     : null,
                 SupplierId = applicant.SupplierId?.ToString(),
-                SiteId = applicant.SiteId,
                 MatchPercentage = applicant.MatchPercentage,
                 IsDuplicated = applicant.IsDuplicated,
                 CreationTime = applicant.CreationTime,

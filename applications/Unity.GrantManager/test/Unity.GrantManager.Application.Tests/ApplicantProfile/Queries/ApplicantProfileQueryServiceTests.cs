@@ -8,13 +8,13 @@ using Xunit.Abstractions;
 
 namespace Unity.GrantManager.Applicants
 {
-    public class ApplicantProfileAppServiceTests : GrantManagerApplicationTestBase
+    public class ApplicantProfileQueryServiceTests : GrantManagerApplicationTestBase
     {
-        private readonly ApplicantProfileAppService _service;
+        private readonly ApplicantProfileQueryService _service;
 
-        public ApplicantProfileAppServiceTests(ITestOutputHelper outputHelper) : base(outputHelper)
+        public ApplicantProfileQueryServiceTests(ITestOutputHelper outputHelper) : base(outputHelper)
         {
-            _service = GetRequiredService<ApplicantProfileAppService>();
+            _service = GetRequiredService<ApplicantProfileQueryService>();
         }
 
         private static ApplicantProfileInfoRequest CreateRequest(string key) => new()

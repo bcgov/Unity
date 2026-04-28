@@ -1,0 +1,45 @@
+@page
+@using Microsoft.Extensions.Localization
+@using Unity.GrantManager.Localization
+@using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal
+
+@model Unity.GrantManager.Web.Pages.ApplicantContact.EditModal
+
+@inject IStringLocalizer<GrantManagerResource> L
+@{
+    Layout = null;
+}
+
+<form method="post" asp-page="/ApplicantContact/EditModal">
+    <abp-modal>
+        <abp-modal-header title="@L["ApplicationContact:EditTitle"].Value"></abp-modal-header>
+        <abp-modal-body>
+            <div class="applicant-contact-edit-form">
+                <abp-input type="hidden" asp-for="ContactForm!.ApplicantId" />
+                <abp-input type="hidden" asp-for="ContactForm!.Id" />
+                <abp-input type="hidden" asp-for="ContactForm!.IsPrimaryInferred" />
+
+                <abp-select asp-for="ContactForm!.Role" asp-items="@Model.ContactForm!.RoleOptions"></abp-select>
+                <abp-input asp-for="ContactForm!.Name"></abp-input>
+                <abp-input asp-for="ContactForm!.Title"></abp-input>
+                <abp-input asp-for="ContactForm!.Email"></abp-input>
+                <abp-input asp-for="ContactForm!.MobilePhoneNumber"></abp-input>
+                <abp-input asp-for="ContactForm!.WorkPhoneNumber"></abp-input>
+                <div class="switch-container applicant-contact-primary-toggle">
+                    <div class="px-3 form-check unt-form-switch form-switch">
+                        <abp-input type="checkbox" asp-for="ContactForm!.IsPrimary"></abp-input>
+                    </div>
+                </div>
+
+                @if (Model.ContactForm!.IsPrimary && Model.ContactForm.IsPrimaryInferred)
+                {
+                    <div class="form-text text-muted mt-2">@L["ApplicantContact:PrimaryHint"].Value</div>
+                }
+            </div>
+        </abp-modal-body>
+        <abp-modal-footer>
+            <button class="btn btn-primary" data-busy-text="Saving..." type="submit">Save</button>
+            <button class="btn btn-secondary" data-bs-dismiss="modal" type="button">Cancel</button>
+        </abp-modal-footer>
+    </abp-modal>
+</form>

@@ -30,14 +30,14 @@ namespace Unity.GrantManager.Applicants
         {
             var currentTenant = Substitute.For<ICurrentTenant>();
             currentTenant.Change(Arg.Any<Guid?>()).Returns(Substitute.For<IDisposable>());
-            var applicantProfileContactService = Substitute.For<IApplicantProfileContactService>();
-            applicantProfileContactService.GetApplicantContactsAsync(Arg.Any<string>())
+            var applicantContactQueryService = Substitute.For<IApplicantContactQueryService>();
+            applicantContactQueryService.GetApplicantContactsAsync(Arg.Any<string>())
                 .Returns(Task.FromResult(new List<ContactInfoItemDto>()));
-            applicantProfileContactService.GetApplicationContactsBySubjectAsync(Arg.Any<string>())
+            applicantContactQueryService.GetApplicationContactsBySubjectAsync(Arg.Any<string>())
                 .Returns(Task.FromResult(new List<ContactInfoItemDto>()));
-            applicantProfileContactService.GetApplicantAgentContactsBySubjectAsync(Arg.Any<string>())
+            applicantContactQueryService.GetApplicantAgentContactsBySubjectAsync(Arg.Any<string>())
                 .Returns(Task.FromResult(new List<ContactInfoItemDto>()));
-            return new ContactInfoDataProvider(currentTenant, applicantProfileContactService);
+            return new ContactInfoDataProvider(currentTenant, applicantContactQueryService);
         }
 
         private static AddressInfoDataProvider CreateAddressInfoDataProvider()

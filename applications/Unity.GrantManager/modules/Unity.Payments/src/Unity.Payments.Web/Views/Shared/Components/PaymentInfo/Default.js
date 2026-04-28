@@ -521,7 +521,8 @@ function enablePaymentInfoSaveBtn() {
 
 function refreshSupplierInfoWidget() {
     const applicantId = $('#PaymentInfo_ApplicantId').val();
-    const refreshUrl = `../Payments/Widget/SupplierInfo/Refresh?applicantId=${applicantId}`;
+    const applicationId = $('#PaymentInfoViewApplicationId').val();
+    const refreshUrl = `../Payments/Widget/SupplierInfo/Refresh?applicantId=${applicantId}&applicationId=${applicationId}`;
     fetch(refreshUrl)
         .then((response) => response.text())
         .then((data) => {

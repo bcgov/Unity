@@ -14,23 +14,23 @@ namespace Unity.GrantManager.Contacts
     public class ContactInfoDataProviderTests
     {
         private readonly ICurrentTenant _currentTenant;
-        private readonly IApplicantProfileContactService _applicantProfileContactService;
+        private readonly IApplicantContactQueryService _applicantContactQueryService;
         private readonly ContactInfoDataProvider _provider;
 
         public ContactInfoDataProviderTests()
         {
             _currentTenant = Substitute.For<ICurrentTenant>();
             _currentTenant.Change(Arg.Any<Guid?>()).Returns(Substitute.For<IDisposable>());
-            _applicantProfileContactService = Substitute.For<IApplicantProfileContactService>();
+            _applicantContactQueryService = Substitute.For<IApplicantContactQueryService>();
 
-            _applicantProfileContactService.GetApplicantContactsAsync(Arg.Any<string>())
+            _applicantContactQueryService.GetApplicantContactsAsync(Arg.Any<string>())
                 .Returns([]);
-            _applicantProfileContactService.GetApplicationContactsBySubjectAsync(Arg.Any<string>())
+            _applicantContactQueryService.GetApplicationContactsBySubjectAsync(Arg.Any<string>())
                 .Returns([]);
-            _applicantProfileContactService.GetApplicantAgentContactsBySubjectAsync(Arg.Any<string>())
+            _applicantContactQueryService.GetApplicantAgentContactsBySubjectAsync(Arg.Any<string>())
                 .Returns([]);
 
-            _provider = new ContactInfoDataProvider(_currentTenant, _applicantProfileContactService);
+            _provider = new ContactInfoDataProvider(_currentTenant, _applicantContactQueryService);
         }
 
         private static ApplicantProfileInfoRequest CreateRequest() => new()
@@ -64,7 +64,7 @@ namespace Unity.GrantManager.Contacts
             await _provider.GetDataAsync(request);
 
             // Assert
-            await _applicantProfileContactService.Received(1).GetApplicantContactsAsync("TESTUSER");
+            await _applicantContactQueryService.Received(1).GetApplicantContactsAsync("TESTUSER");
         }
 
         [Fact]
@@ -77,7 +77,7 @@ namespace Unity.GrantManager.Contacts
             await _provider.GetDataAsync(request);
 
             // Assert
-            await _applicantProfileContactService.Received(1).GetApplicationContactsBySubjectAsync("TESTUSER");
+            await _applicantContactQueryService.Received(1).GetApplicationContactsBySubjectAsync("TESTUSER");
         }
 
         [Fact]
@@ -90,7 +90,7 @@ namespace Unity.GrantManager.Contacts
             await _provider.GetDataAsync(request);
 
             // Assert
-            await _applicantProfileContactService.Received(1).GetApplicantAgentContactsBySubjectAsync("TESTUSER");
+            await _applicantContactQueryService.Received(1).GetApplicantAgentContactsBySubjectAsync("TESTUSER");
         }
 
         [Fact]
@@ -111,9 +111,9 @@ namespace Unity.GrantManager.Contacts
             {
                 new() { ContactId = Guid.NewGuid(), Name = "Agent Contact 1", IsEditable = false, ContactType = "ApplicantAgent" }
             };
-            _applicantProfileContactService.GetApplicantContactsAsync("TESTUSER").Returns(applicantContacts);
-            _applicantProfileContactService.GetApplicationContactsBySubjectAsync("TESTUSER").Returns(appContacts);
-            _applicantProfileContactService.GetApplicantAgentContactsBySubjectAsync("TESTUSER").Returns(agentContacts);
+            _applicantContactQueryService.GetApplicantContactsAsync("TESTUSER").Returns(applicantContacts);
+            _applicantContactQueryService.GetApplicationContactsBySubjectAsync("TESTUSER").Returns(appContacts);
+            _applicantContactQueryService.GetApplicantAgentContactsBySubjectAsync("TESTUSER").Returns(agentContacts);
 
             // Act
             var result = await _provider.GetDataAsync(request);
@@ -163,11 +163,11 @@ namespace Unity.GrantManager.Contacts
                 IsEditable = false,
                 ContactType = "ApplicantAgent"
             };
-            _applicantProfileContactService.GetApplicantContactsAsync("TESTUSER")
+            _applicantContactQueryService.GetApplicantContactsAsync("TESTUSER")
                 .Returns(new List<ContactInfoItemDto> { applicantContact });
-            _applicantProfileContactService.GetApplicationContactsBySubjectAsync("TESTUSER")
+            _applicantContactQueryService.GetApplicationContactsBySubjectAsync("TESTUSER")
                 .Returns(new List<ContactInfoItemDto> { appContact });
-            _applicantProfileContactService.GetApplicantAgentContactsBySubjectAsync("TESTUSER")
+            _applicantContactQueryService.GetApplicantAgentContactsBySubjectAsync("TESTUSER")
                 .Returns(new List<ContactInfoItemDto> { agentContact });
 
             // Act
@@ -209,8 +209,8 @@ namespace Unity.GrantManager.Contacts
             await _provider.GetDataAsync(request);
 
             // Assert
-            await _applicantProfileContactService.Received(1).GetApplicationContactsBySubjectAsync("TESTUSER");
-            await _applicantProfileContactService.Received(1).GetApplicantAgentContactsBySubjectAsync("TESTUSER");
+            await _applicantContactQueryService.Received(1).GetApplicationContactsBySubjectAsync("TESTUSER");
+            await _applicantContactQueryService.Received(1).GetApplicantAgentContactsBySubjectAsync("TESTUSER");
         }
 
         [Fact]
@@ -224,7 +224,7 @@ namespace Unity.GrantManager.Contacts
                 new() { ContactId = Guid.NewGuid(), Name = "Newest", IsPrimary = false, CreationTime = new DateTime(2024, 6, 15) },
                 new() { ContactId = Guid.NewGuid(), Name = "Middle", IsPrimary = false, CreationTime = new DateTime(2024, 3, 10) }
             };
-            _applicantProfileContactService.GetApplicantContactsAsync("TESTUSER").Returns(contacts);
+            _applicantContactQueryService.GetApplicantContactsAsync("TESTUSER").Returns(contacts);
 
             // Act
             var result = await _provider.GetDataAsync(request);
@@ -232,7 +232,9 @@ namespace Unity.GrantManager.Contacts
             // Assert
             var dto = result.ShouldBeOfType<ApplicantContactInfoDto>();
             dto.Contacts.Count(c => c.IsPrimary).ShouldBe(1);
-            dto.Contacts.First(c => c.IsPrimary).Name.ShouldBe("Newest");
+            var primary = dto.Contacts.First(c => c.IsPrimary);
+            primary.Name.ShouldBe("Newest");
+            primary.IsPrimaryInferred.ShouldBeTrue();
         }
 
         [Fact]
@@ -242,10 +244,10 @@ namespace Unity.GrantManager.Contacts
             var request = CreateRequest();
             var contacts = new List<ContactInfoItemDto>
             {
-                new() { ContactId = Guid.NewGuid(), Name = "Already Primary", IsPrimary = true, CreationTime = new DateTime(2024, 1, 1) },
+                new() { ContactId = Guid.NewGuid(), Name = "Already Primary", IsPrimary = true, IsPrimaryInferred = false, CreationTime = new DateTime(2024, 1, 1) },
                 new() { ContactId = Guid.NewGuid(), Name = "Newer But Not Primary", IsPrimary = false, CreationTime = new DateTime(2024, 6, 15) }
             };
-            _applicantProfileContactService.GetApplicantContactsAsync("TESTUSER").Returns(contacts);
+            _applicantContactQueryService.GetApplicantContactsAsync("TESTUSER").Returns(contacts);
 
             // Act
             var result = await _provider.GetDataAsync(request);
@@ -253,7 +255,9 @@ namespace Unity.GrantManager.Contacts
             // Assert
             var dto = result.ShouldBeOfType<ApplicantContactInfoDto>();
             dto.Contacts.Count(c => c.IsPrimary).ShouldBe(1);
-            dto.Contacts.First(c => c.IsPrimary).Name.ShouldBe("Already Primary");
+            var primary = dto.Contacts.First(c => c.IsPrimary);
+            primary.Name.ShouldBe("Already Primary");
+            primary.IsPrimaryInferred.ShouldBeFalse();
         }
 
         [Fact]

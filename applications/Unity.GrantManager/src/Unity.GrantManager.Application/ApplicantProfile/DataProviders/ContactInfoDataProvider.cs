@@ -13,7 +13,7 @@ namespace Unity.GrantManager.ApplicantProfile
     [ExposeServices(typeof(IApplicantProfileDataProvider))]
     public class ContactInfoDataProvider(
         ICurrentTenant currentTenant,
-        IApplicantProfileContactService applicantProfileContactService)
+        IApplicantContactQueryService applicantContactQueryService)
         : IApplicantProfileDataProvider, ITransientDependency
     {
         /// <inheritdoc />
@@ -34,13 +34,13 @@ namespace Unity.GrantManager.ApplicantProfile
 
             using (currentTenant.Change(tenantId))
             {
-                var applicantContacts = await applicantProfileContactService.GetApplicantContactsAsync(normalizedSubject);
+                var applicantContacts = await applicantContactQueryService.GetApplicantContactsAsync(normalizedSubject);
                 dto.Contacts.AddRange(applicantContacts);
 
-                var applicationContacts = await applicantProfileContactService.GetApplicationContactsBySubjectAsync(normalizedSubject);
+                var applicationContacts = await applicantContactQueryService.GetApplicationContactsBySubjectAsync(normalizedSubject);
                 dto.Contacts.AddRange(applicationContacts);
 
-                var agentContacts = await applicantProfileContactService.GetApplicantAgentContactsBySubjectAsync(normalizedSubject);
+                var agentContacts = await applicantContactQueryService.GetApplicantAgentContactsBySubjectAsync(normalizedSubject);
                 dto.Contacts.AddRange(agentContacts);
             }
 
@@ -50,6 +50,7 @@ namespace Unity.GrantManager.ApplicantProfile
                     .OrderByDescending(c => c.CreationTime)
                     .First();
                 latest.IsPrimary = true;
+                latest.IsPrimaryInferred = true;
             }
 
             return dto;

@@ -11,7 +11,6 @@ using Unity.Payments.Domain.Suppliers.ValueObjects;
 using Unity.Payments.Enums;
 using Unity.Payments.Integrations.Cas;
 using Volo.Abp.Features;
-using Unity.Modules.Shared.Correlation;
 
 namespace Unity.Payments.Suppliers
 {
@@ -39,8 +38,6 @@ namespace Unity.Payments.Suppliers
             
             var casMetadata = new CasMetadata(createSupplierDto.LastUpdatedInCAS);
             
-            var correlation = new Correlation(createSupplierDto.CorrelationId, createSupplierDto.CorrelationProvider);
-            
             var mailingAddress = new MailingAddress(
                 createSupplierDto.MailingAddress,
                 createSupplierDto.City,
@@ -49,7 +46,6 @@ namespace Unity.Payments.Suppliers
 
             Supplier supplier = new(Guid.NewGuid(),
                 basicInfo,
-                correlation,
                 providerInfo,
                 supplierStatus,
                 casMetadata,
@@ -79,9 +75,6 @@ namespace Unity.Payments.Suppliers
                 updateSupplierDto.StandardIndustryClassification));
             
             supplier.UpdateCasMetadata(new CasMetadata(updateSupplierDto.LastUpdatedInCAS));
-            
-            supplier.CorrelationId = updateSupplierDto.CorrelationId;
-            supplier.CorrelationProvider = updateSupplierDto.CorrelationProvider;
 
             supplier.SetAddress(updateSupplierDto.MailingAddress,
                 updateSupplierDto.City,
@@ -105,15 +98,6 @@ namespace Unity.Payments.Suppliers
                 Logger.LogError(ex, "Error fetching supplier");
                 return null;
             }
-        }
-
-        public virtual async Task<SupplierDto?> GetByCorrelationAsync(GetSupplierByCorrelationDto requestDto)
-        {
-            var result = await supplierRepository.GetByCorrelationAsync(requestDto.CorrelationId, requestDto.CorrelationProvider, requestDto.IncludeDetails);
-
-            if (result == null) return null;
-
-            return ObjectMapper.Map<Supplier, SupplierDto?>(result);
         }
 
         public virtual async Task<SupplierDto?> GetBySupplierNumberAsync(string? supplierNumber)
@@ -275,14 +259,6 @@ namespace Unity.Payments.Suppliers
                     SiteProtected = siteEto.SiteProtected,
                     LastUpdatedInCas = siteEto.LastUpdated
                 };
-        }
-
-        public async Task ClearCorrelationAsync(Guid supplierId)
-        {
-            var supplier = await supplierRepository.GetAsync(supplierId);
-            supplier.CorrelationId = Guid.Empty;
-            supplier.CorrelationProvider = string.Empty;
-            await supplierRepository.UpdateAsync(supplier);
         }
 
         private async Task<PaymentGroup> ResolveDefaultPaymentGroupForApplicantAsync(Guid applicantId, Guid? applicationId = null)

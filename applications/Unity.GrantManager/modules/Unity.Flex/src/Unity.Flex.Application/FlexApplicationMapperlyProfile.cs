@@ -1,5 +1,6 @@
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Text.Json;
 using Riok.Mapperly.Abstractions;
 using Unity.Flex.Domain.ScoresheetInstances;
 using Unity.Flex.Domain.Scoresheets;
@@ -70,8 +71,34 @@ public partial class WorksheetLinkMapper : MapperBase<WorksheetLink, WorksheetLi
 [Mapper]
 public partial class WorksheetSectionMapper : MapperBase<WorksheetSection, WorksheetSectionDto>
 {
-    public override partial WorksheetSectionDto Map(WorksheetSection source);
-    public override partial void Map(WorksheetSection source, WorksheetSectionDto destination);
+    public override WorksheetSectionDto Map(WorksheetSection source)
+    {
+        var destination = MapInternal(source);
+        destination.FieldWidth = ParseFieldWidth(source.Definition);
+        return destination;
+    }
+
+    public override void Map(WorksheetSection source, WorksheetSectionDto destination)
+    {
+        MapInternal(source, destination);
+        destination.FieldWidth = ParseFieldWidth(source.Definition);
+    }
+
+    private partial WorksheetSectionDto MapInternal(WorksheetSection source);
+    private partial void MapInternal(WorksheetSection source, WorksheetSectionDto destination);
+
+    private static int? ParseFieldWidth(string? definition)
+    {
+        if (string.IsNullOrEmpty(definition)) return null;
+        try
+        {
+            using var doc = JsonDocument.Parse(definition);
+            if (doc.RootElement.TryGetProperty("fieldWidth", out var prop) && prop.TryGetInt32(out var value))
+                return value > 0 ? value : null;
+        }
+        catch (JsonException) { /* malformed JSON — fall through */ }
+        return null;
+    }
 }
 
 [Mapper]

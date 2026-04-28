@@ -58,14 +58,6 @@ namespace Unity.GrantManager.Repositories
                 .ToListAsync();
         }
 
-        public async Task<List<Applicant>> GetApplicantsBySiteIdAsync(Guid siteId)
-        {
-            var dbContext = await GetDbContextAsync();
-            return await dbContext.Applicants
-                .Where(x => x.SiteId == siteId)
-                .ToListAsync();
-        }
-
         public async Task<JsonDocument> GetApplicantAutocompleteQueryAsync(string? applicantLookUpQuery)
         {
             if (string.IsNullOrWhiteSpace(applicantLookUpQuery))

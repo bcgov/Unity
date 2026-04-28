@@ -11,7 +11,7 @@ using Xunit;
 
 namespace Unity.GrantManager.Contacts
 {
-    public class ApplicantProfileContactServiceTests
+    public class ApplicantContactQueryServiceSubjectTests
     {
         private readonly IContactRepository _contactRepository;
         private readonly IContactLinkRepository _contactLinkRepository;
@@ -19,9 +19,9 @@ namespace Unity.GrantManager.Contacts
         private readonly IRepository<ApplicationContact, Guid> _applicationContactRepository;
         private readonly IRepository<ApplicantAgent, Guid> _applicantAgentRepository;
         private readonly IRepository<Application, Guid> _applicationRepository;
-        private readonly ApplicantProfileContactService _service;
+        private readonly ApplicantContactQueryService _service;
 
-        public ApplicantProfileContactServiceTests()
+        public ApplicantContactQueryServiceSubjectTests()
         {
             _contactRepository = Substitute.For<IContactRepository>();
             _contactLinkRepository = Substitute.For<IContactLinkRepository>();
@@ -30,7 +30,7 @@ namespace Unity.GrantManager.Contacts
             _applicantAgentRepository = Substitute.For<IRepository<ApplicantAgent, Guid>>();
             _applicationRepository = Substitute.For<IRepository<Application, Guid>>();
 
-            _service = new ApplicantProfileContactService(
+            _service = new ApplicantContactQueryService(
                 _contactRepository,
                 _contactLinkRepository,
                 _submissionRepository,

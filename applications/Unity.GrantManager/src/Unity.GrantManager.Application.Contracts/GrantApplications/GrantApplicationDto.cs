@@ -84,6 +84,7 @@ public class GrantApplicationDto : AuditedEntityDto<Guid>
     public string? UnityApplicationId { get; set; }
     public string? ApplicantElectoralDistrict { get; set; }
     public string? AIAnalysis { get; set; }
+    public Guid? DefaultSiteId { get; set; }
     public ApplicationAnalysisResponse? AIAnalysisData { get; set; }
     public string? AIScoresheetAnswers { get; set; }
 }

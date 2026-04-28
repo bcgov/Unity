@@ -1,0 +1,130 @@
+@using System.Linq;
+@using Unity.Flex.Web.Views.Shared.Components.BCAddressWidget
+@using Unity.Flex.Web.Views.Shared.Components.DataGridWidget
+@using Unity.Flex.Web.Views.Shared.Components.TextAreaWidget
+@using Unity.Flex.Web.Views.Shared.Components.WorksheetInstanceWidget.ViewModels
+@using Unity.Flex.Worksheets
+@using Unity.Flex.Web.Views.Shared.Components.CheckboxWidget
+@using Unity.Flex.Web.Views.Shared.Components.YesNoWidget
+@using Unity.Flex.Web.Views.Shared.Components.CurrencyWidget
+@using Unity.Flex.Web.Views.Shared.Components.DateWidget
+@using Unity.Flex.Web.Views.Shared.Components.RadioWidget
+@using Unity.Flex.Web.Views.Shared.Components.SelectListWidget
+@using Unity.Flex.Web.Views.Shared.Components.CheckboxGroupWidget
+@using Unity.Flex.Web.Views.Shared.Components.DefaultFieldWidget
+@using Unity.Flex
+
+@model WorksheetSectionRenderModel
+
+@foreach (var worksheetSection in Model.Sections)
+{
+    var collapseId = $"section-collapse-{Guid.NewGuid():N}";
+    var fieldWidthStyle = worksheetSection.FieldWidth is > 0
+        ? $"style=\"flex: 0 0 calc({worksheetSection.FieldWidth}% - 8px);\""
+        : "";
+
+    <div class="@($"worksheet_section worksheet_section_{Model.UiAnchor}")">
+
+        <div class="d-flex align-items-center @($"worksheet_section_label worksheet_section_label_{Model.UiAnchor}")">
+            <span class="flex-grow-1">@worksheetSection.Name</span>
+            <button class="btn btn-sm p-0 ms-2 section-collapse-toggle"
+                    type="button"
+                    data-bs-toggle="collapse"
+                    data-bs-target="#@collapseId"
+                    aria-expanded="true"
+                    aria-controls="@collapseId"
+                    aria-label="Toggle section">
+                <i class="fl fl-chevron-up section-chevron"></i>
+            </button>
+        </div>
+
+        <div id="@collapseId" class="collapse show">
+        <div class="@($"worksheet_section_wrapper worksheet_section_wrapper_{Model.UiAnchor}")">
+
+            @foreach (var field in worksheetSection.Fields.OrderBy(s => s.Order))
+            {
+                var fieldDef = field.Definition?.ConvertDefinition(field.Type);
+                var fieldInputId = $"{field.Name}.{Model.ModelName}.{field.Id}.{Model.WorksheetId}";
+                var labelPositionClass = fieldDef?.LabelPosition == "Left" ? "label-left" : "label-top";
+                var fieldExtraCssClass = !string.IsNullOrEmpty(fieldDef?.CssClass) ? $" {fieldDef.CssClass}" : "";
+
+                <div class="worksheet_field worksheet_field_@Model.UiAnchor @labelPositionClass@fieldExtraCssClass"
+                     @Html.Raw(fieldDef?.IsHidden == true ? "hidden" : "")
+                     @Html.Raw(fieldWidthStyle)
+                     style="@fieldDef?.Style">
+
+                    @if (fieldDef?.HideLabel != true)
+                    {
+                        <label class="field-label mb-1@(!string.IsNullOrEmpty(fieldDef?.LabelCssClass) ? $" {fieldDef.LabelCssClass}" : "")" for="@fieldInputId" style="@fieldDef?.LabelStyle">@field.Label</label>
+                    }
+
+                    <div class="field-content">
+                    <fieldset @(fieldDef?.IsDisabled == true ? "disabled" : "") class="p-0 border-0 m-0">
+                        @try
+                        {
+                            @switch (field.Type)
+                            {
+                                case CustomFieldType.YesNo:
+                                    @await Component.InvokeAsync(typeof(YesNoWidget), new { fieldModel = field, modelName = Model.ModelName, worksheetId = Model.WorksheetId })
+                                    break;
+
+                                case CustomFieldType.Checkbox:
+                                    @await Component.InvokeAsync(typeof(CheckboxWidget), new { fieldModel = field, modelName = Model.ModelName, worksheetId = Model.WorksheetId })
+                                    break;
+
+                                case CustomFieldType.Currency:
+                                    @await Component.InvokeAsync(typeof(CurrencyWidget), new { fieldModel = field, modelName = Model.ModelName, worksheetId = Model.WorksheetId })
+                                    break;
+
+                                case CustomFieldType.Date:
+                                    @await Component.InvokeAsync(typeof(DateWidget), new { fieldModel = field, modelName = Model.ModelName, worksheetId = Model.WorksheetId })
+                                    break;
+
+                                case CustomFieldType.Radio:
+                                    @await Component.InvokeAsync(typeof(RadioWidget), new { fieldModel = field, modelName = Model.ModelName, worksheetId = Model.WorksheetId })
+                                    break;
+
+                                case CustomFieldType.SelectList:
+                                    @await Component.InvokeAsync(typeof(SelectListWidget), new { fieldModel = field, modelName = Model.ModelName, worksheetId = Model.WorksheetId })
+                                    break;
+
+                                case CustomFieldType.CheckboxGroup:
+                                    @await Component.InvokeAsync(typeof(CheckboxGroupWidget), new { fieldModel = field, modelName = Model.ModelName, worksheetId = Model.WorksheetId })
+                                    break;
+
+                                case CustomFieldType.BCAddress:
+                                    @await Component.InvokeAsync(typeof(BCAddressWidget), new { fieldModel = field, modelName = Model.ModelName, worksheetId = Model.WorksheetId })
+                                    break;
+
+                                case CustomFieldType.TextArea:
+                                    @await Component.InvokeAsync(typeof(TextAreaWidget), new { fieldModel = field, modelName = Model.ModelName, worksheetId = Model.WorksheetId })
+                                    break;
+
+                                case CustomFieldType.DataGrid:
+                                    @await Component.InvokeAsync(typeof(DataGridWidget), new { fieldModel = field, modelName = Model.ModelName, worksheetInstanceId = Model.WorksheetInstanceId, worksheetId = Model.WorksheetId })
+                                    break;
+
+                                default:
+                                    @await Component.InvokeAsync(typeof(DefaultFieldWidget), new { fieldModel = field, modelName = Model.ModelName, worksheetId = (Guid?)Model.WorksheetId })
+                                    break;
+                            }
+                        }
+                        catch (Exception)
+                        {
+                            <span class="control-render-error">Error rendering component!</span>
+                        }
+                    </fieldset>
+                    </div>
+
+                    <span class="text-danger field-validation-valid"
+                          data-valmsg-for="@fieldInputId"
+                          data-valmsg-replace="true">
+                    </span>
+
+                </div>
+            }
+
+        </div>
+        </div><!-- /.collapse -->
+    </div><!-- /.worksheet_section -->
+}
