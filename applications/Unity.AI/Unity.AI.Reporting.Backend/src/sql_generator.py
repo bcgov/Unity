@@ -37,7 +37,7 @@ class SQLGenerator:
         self.metadata_pattern = re.compile(
             r"""(?:\#\#\#\s*)?Metadata:\s*
                 (?:```json\s*)?
-                (\{.*?})
+                (\{[^}]*})
                 (?:\s*```)?
             """,
             re.IGNORECASE | re.DOTALL | re.VERBOSE
