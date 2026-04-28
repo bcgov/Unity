@@ -238,9 +238,9 @@ public class GrantManagerDbContext :
 
 
         var allEntityTypes = modelBuilder.Model.GetEntityTypes();
-        foreach (var type in allEntityTypes.Where(t => t.ClrType != typeof(ExtraPropertyDictionary)).Select(t => t.ClrType))
+        foreach (var entityType in allEntityTypes.Where(t => t.ClrType != typeof(ExtraPropertyDictionary) && !t.IsOwned()))
         {
-            var entityBuilder = modelBuilder.Entity(type);
+            var entityBuilder = modelBuilder.Entity(entityType.ClrType);
             entityBuilder.TryConfigureExtraProperties();
         }
     }
