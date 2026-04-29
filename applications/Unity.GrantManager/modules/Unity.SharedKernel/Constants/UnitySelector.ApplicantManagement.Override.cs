@@ -8,14 +8,14 @@ public static partial class UnitySelector
         public const string Default = "Unity.GrantManager.ApplicantManagement";
         public const string Merge   = "Unity.GrantManager.ApplicantManagement.Merge";
         
-        public static partial class ApplicantInfo
+        public static partial class Applicant
         {
-            public const string Default              = "Unity.GrantManager.ApplicantManagement.ApplicantInfo";
-            public const string Create               = "Unity.GrantManager.ApplicantManagement.ApplicantInfo.Create";
-            public const string Update               = "Unity.GrantManager.ApplicantManagement.ApplicantInfo.Update";
-            public const string Delete               = "Unity.GrantManager.ApplicantManagement.ApplicantInfo.Delete";
-            public const string EditRedStop          = "Unity.GrantManager.ApplicantManagement.ApplicantInfo.EditRedStop";
-            public const string EditOrganizationInfo = "Unity.GrantManager.ApplicantManagement.ApplicantInfo.EditOrganizationInfo";
+            public const string Default              = "Unity.GrantManager.ApplicantManagement.Applicant";
+            public const string Create               = "Unity.GrantManager.ApplicantManagement.Applicant.Create";
+            public const string Update               = "Unity.GrantManager.ApplicantManagement.Applicant.Update";
+            public const string Delete               = "Unity.GrantManager.ApplicantManagement.Applicant.Delete";
+            public const string EditRedStop          = "Unity.GrantManager.ApplicantManagement.Applicant.EditRedStop";
+            public const string EditOrganizationInfo = "Unity.GrantManager.ApplicantManagement.Applicant.EditOrganizationInfo";
         }
 
         public static partial class Contacts

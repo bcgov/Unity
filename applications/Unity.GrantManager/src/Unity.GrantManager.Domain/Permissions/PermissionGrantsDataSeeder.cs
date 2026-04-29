@@ -99,10 +99,10 @@ namespace Unity.GrantManager.Permissions
 
         public readonly List<string> ApplicantManagement_CommonPermissions = [
             UnitySelector.ApplicantManagement.Default,
-            UnitySelector.ApplicantManagement.ApplicantInfo.Default,
-            UnitySelector.ApplicantManagement.ApplicantInfo.Update,
-            UnitySelector.ApplicantManagement.ApplicantInfo.EditRedStop,
-            UnitySelector.ApplicantManagement.ApplicantInfo.EditOrganizationInfo,
+            UnitySelector.ApplicantManagement.Applicant.Default,
+            UnitySelector.ApplicantManagement.Applicant.Update,
+            UnitySelector.ApplicantManagement.Applicant.EditRedStop,
+            UnitySelector.ApplicantManagement.Applicant.EditOrganizationInfo,
 
             UnitySelector.ApplicantManagement.Contacts.Default,
             UnitySelector.ApplicantManagement.Contacts.Update,
