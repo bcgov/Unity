@@ -100,27 +100,29 @@ namespace Unity.GrantManager.Permissions
         public readonly List<string> ApplicantManagement_CommonPermissions = [
             UnitySelector.ApplicantManagement.Default,
             UnitySelector.ApplicantManagement.ApplicantInfo.Default,
-            UnitySelector.ApplicantManagement.ApplicantInfo.EditApplicantInfo,
+            UnitySelector.ApplicantManagement.ApplicantInfo.Update,
             UnitySelector.ApplicantManagement.ApplicantInfo.EditRedStop,
             UnitySelector.ApplicantManagement.ApplicantInfo.EditOrganizationInfo,
+
             UnitySelector.ApplicantManagement.Contacts.Default,
-            UnitySelector.ApplicantManagement.Contacts.EditContacts,
+            UnitySelector.ApplicantManagement.Contacts.Update,
+            
             UnitySelector.ApplicantManagement.Addresses.Default,
-            UnitySelector.ApplicantManagement.Addresses.EditAddresses,
+            UnitySelector.ApplicantManagement.Addresses.Update,
             UnitySelector.ApplicantManagement.Submissions.Default,
             UnitySelector.ApplicantManagement.Submissions.AssignApplicant,
             UnitySelector.ApplicantManagement.Payments.Default,
             UnitySelector.ApplicantManagement.Payments.EditSupplierInfo,
             UnitySelector.ApplicantManagement.History.Default,
-            UnitySelector.ApplicantManagement.History.EditFundingHistory,
-            UnitySelector.ApplicantManagement.History.EditAuditHistory,
-            UnitySelector.ApplicantManagement.History.EditIssueHistory,
+            UnitySelector.ApplicantManagement.History.FundingHistory.Update,
+            UnitySelector.ApplicantManagement.History.AuditHistory.Update,
+            UnitySelector.ApplicantManagement.History.IssueHistory.Update,
             UnitySelector.ApplicantManagement.Comments.Default,
-            UnitySelector.ApplicantManagement.Comments.AddApplicantComment,
+            UnitySelector.ApplicantManagement.Comments.Create,
             UnitySelector.ApplicantManagement.Attachments.Default,
             UnitySelector.ApplicantManagement.Attachments.Upload,
             UnitySelector.ApplicantManagement.Attachments.EditLabel,
-            UnitySelector.ApplicantManagement.Merge.Default,
+            UnitySelector.ApplicantManagement.Merge,
         ];
 
         public async Task SeedAsync(DataSeedContext context)
@@ -160,7 +162,7 @@ namespace Unity.GrantManager.Permissions
                     .. Notifications_CommonPermissions,
                     .. Dashboard_CommonPermissions,
                     .. Tags_CommonPermissions,
-                    .. ApplicantManagement_CommonPermissions,
+                    // .. ApplicantManagement_CommonPermissions,
                     AIPermissions.Configuration.ConfigureAI,
                     FlexPermissions.Worksheets.Default,
                     FlexPermissions.Worksheets.Delete
@@ -225,7 +227,7 @@ namespace Unity.GrantManager.Permissions
                     .. Notifications_CommonPermissions,
                     .. Dashboard_CommonPermissions,
                     .. Tags_CommonPermissions,
-                    .. ApplicantManagement_CommonPermissions,
+                    //.. ApplicantManagement_CommonPermissions,
 
                     // Role Specific Permissions
                     UnitySelector.Project.Summary.Update.UpdateFinalStateFields,
