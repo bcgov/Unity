@@ -30,7 +30,7 @@
 
     @{
         bool isAuthorizedForTenantSwitch = false;
-        if (CurrentUser.IsAuthenticated && CurrentUser.FindClaims("tenant").Length > 1)
+        if (CurrentUser.IsAuthenticated && CurrentUser.FindClaimValue("has_multiple_tenants") == "true")
             isAuthorizedForTenantSwitch = true;
 
         bool isAuthorizedForPaymentConfiguration = await PermissionChecker.IsGrantedAsync("SettingManagement.ConfigurePayments");

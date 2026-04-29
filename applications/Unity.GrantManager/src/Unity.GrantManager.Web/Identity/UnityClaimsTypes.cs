@@ -17,4 +17,5 @@ public static class UnityClaimsTypes
     public const string Permission = "Permission";
     public const string IdpProvider  = "identity_provider";
     public const string Tenant = "tenant";
+    public const string HasMultipleTenants = "has_multiple_tenants";
 }
