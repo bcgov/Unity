@@ -20,6 +20,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Threading.Tasks;
+using System.Linq;
 using Unity.AspNetCore.Mvc.UI.Theme.UX2;
 using Unity.AspNetCore.Mvc.UI.Theme.UX2.Bundling;
 using Unity.Flex.Web;
@@ -135,6 +136,7 @@ public class GrantManagerWebModule : AbpModule
         var hostingEnvironment = context.Services.GetHostingEnvironment();
         var configuration = context.Services.GetConfiguration();
 
+        // Apply best practices for cookie/session size and TempData
         ConfgureFormsApiAuhentication(context);
         ConfigureAuthentication(context, configuration);
         ConfigurePolicies(context);
@@ -148,6 +150,9 @@ public class GrantManagerWebModule : AbpModule
         ConfigureUtils(context);
         ConfigureDataProtection(context, configuration);
         ConfigureMiniProfiler(context, configuration);
+
+        // Use session-backed TempData provider to avoid large cookies
+        context.Services.AddControllersWithViews().AddSessionStateTempDataProvider();
 
         Configure<AbpAntiForgeryOptions>(options =>
         {
@@ -179,7 +184,6 @@ public class GrantManagerWebModule : AbpModule
                  "ExplictEntityAudit",
                  type =>
                  {
-
                      if (type.Name.Contains("Role", StringComparison.OrdinalIgnoreCase)
                         || type.Name.Contains("User", StringComparison.OrdinalIgnoreCase)
                         || type.Name.Contains("Permission", StringComparison.OrdinalIgnoreCase)
@@ -291,6 +295,32 @@ public class GrantManagerWebModule : AbpModule
             options.ExpireTimeSpan = TimeSpan.FromHours(8);
             options.SlidingExpiration = false;
             options.Events.OnSigningOut = async e => { await Task.CompletedTask; };
+            // Aggressively trim claims before storing in the cookie
+            options.Events.OnSigningIn = context =>
+            {
+                if (context.Principal?.Identity is System.Security.Claims.ClaimsIdentity claimsIdentity)
+                {
+                    // Remove large or unnecessary claims
+                    var claimsToRemove = new List<string>
+                    {
+                        "access_token", // never store access tokens
+                        "refresh_token",
+                        "id_token",
+                        "serialized_user_data",
+                        "large_role_list"
+                    };
+                    foreach (var claimType in claimsToRemove)
+                    {
+                        foreach (var claim in claimsIdentity.FindAll(claimType).ToList())
+                        {
+                            claimsIdentity.RemoveClaim(claim);
+                        }
+                    }
+                    // Optionally, trim role/permission claims if they are too large
+                    // (customize as needed for your app)
+                }
+                return Task.CompletedTask;
+            };
         })
         .AddOpenIdConnect(OpenIdConnectDefaults.AuthenticationScheme, options =>
         {
@@ -302,7 +332,8 @@ public class GrantManagerWebModule : AbpModule
             options.ClientId = configuration["AuthServer:ClientId"];
             options.ClientSecret = configuration["AuthServer:ClientSecret"];
 
-            options.SaveTokens = true;
+            // CRITICAL: Do not store tokens in the cookie
+            options.SaveTokens = false;
             options.GetClaimsFromUserInfoEndpoint = true;
             options.MaxAge = TimeSpan.FromHours(8);
 
