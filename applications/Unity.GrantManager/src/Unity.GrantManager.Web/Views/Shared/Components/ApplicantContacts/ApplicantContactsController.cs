@@ -5,7 +5,6 @@ using Volo.Abp.AspNetCore.Mvc;
 
 namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantContacts
 {
-    [ApiController]
     [Route("Widget/ApplicantContacts")]
     public class ApplicantContactsController : AbpController
     {

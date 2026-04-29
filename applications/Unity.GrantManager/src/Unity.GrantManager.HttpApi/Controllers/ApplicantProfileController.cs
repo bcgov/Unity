@@ -10,7 +10,7 @@ namespace Unity.GrantManager.Controllers
     [ApiController]    
     [Route("api/app/applicant-profiles")]
     [ServiceFilter(typeof(ApiKeyAuthorizationFilter))]
-    public class ApplicantProfileController(IApplicantProfileAppService applicantProfileAppService) : AbpControllerBase
+    public class ApplicantProfileController(IApplicantProfileQueryService applicantProfileService) : AbpControllerBase
     {
 
         /// <summary>
@@ -29,7 +29,7 @@ namespace Unity.GrantManager.Controllers
         [ProducesResponseType(typeof(ApplicantProfileDto), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetApplicantProfileAsync([FromQuery] ApplicantProfileInfoRequest applicantProfileRequest)
         {
-            var profile = await applicantProfileAppService.GetApplicantProfileAsync(applicantProfileRequest);
+            var profile = await applicantProfileService.GetApplicantProfileAsync(applicantProfileRequest);
             return Ok(profile);
         }
 
@@ -37,7 +37,7 @@ namespace Unity.GrantManager.Controllers
         [Route("tenants")]
         public async Task<IActionResult> GetApplicantProfileTenantsAsync([FromQuery] ApplicantProfileRequest applicantProfileRequest)
         {
-            var tenants = await applicantProfileAppService.GetApplicantTenantsAsync(applicantProfileRequest);
+            var tenants = await applicantProfileService.GetApplicantTenantsAsync(applicantProfileRequest);
             return Ok(tenants);
         }
     }

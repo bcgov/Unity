@@ -13,7 +13,7 @@ namespace Unity.GrantManager.Applicants.BackgroundWorkers
     [DisallowConcurrentExecution]
     public class ApplicantTenantMapReconciliationWorker : QuartzBackgroundWorkerBase
     {
-        private readonly IApplicantProfileAppService _applicantProfileAppService;
+        private readonly IApplicantTenantMapReconciler _reconciler;
         private readonly ILogger<ApplicantTenantMapReconciliationWorker> _logger;             
 
         /// <summary>
@@ -23,15 +23,15 @@ namespace Unity.GrantManager.Applicants.BackgroundWorkers
         /// <remarks>The scheduling behavior of the worker is determined by a cron expression retrieved
         /// from application settings. If the setting is unavailable or cannot be read, a default schedule is used.
         /// Logging is performed for any issues encountered during initialization.</remarks>
-        /// <param name="applicantProfileAppService">The service used to access and manage applicant profile data.</param>
+        /// <param name="reconciler">The reconciler used to sync applicant-tenant maps across tenants.</param>
         /// <param name="settingManager">The setting manager used to retrieve configuration values, including the cron expression for scheduling.</param>
         /// <param name="logger">The logger used to record diagnostic and operational information for this worker.</param>
         public ApplicantTenantMapReconciliationWorker(
-            IApplicantProfileAppService applicantProfileAppService,
+            IApplicantTenantMapReconciler reconciler,
             ISettingManager settingManager,
             ILogger<ApplicantTenantMapReconciliationWorker> logger)
         {
-            _applicantProfileAppService = applicantProfileAppService;
+            _reconciler = reconciler;
             _logger = logger;
 
             // 2 AM PST = 10 AM UTC
@@ -93,7 +93,7 @@ namespace Unity.GrantManager.Applicants.BackgroundWorkers
 
             try
             {
-                var (created, updated) = await _applicantProfileAppService.ReconcileApplicantTenantMapsAsync();
+                var (created, updated) = await _reconciler.ReconcileAsync();
                 _logger.LogInformation("ApplicantTenantMapReconciliationWorker completed. Created: {Created}, Updated: {Updated}",
                     created, updated);
             }

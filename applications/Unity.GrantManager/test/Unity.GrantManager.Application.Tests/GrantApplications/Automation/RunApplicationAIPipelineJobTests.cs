@@ -1,13 +1,15 @@
 using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
+using Shouldly;
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Attachments;
-using Unity.GrantManager.GrantApplications;
 using Unity.GrantManager.GrantApplications.Automation.BackgroundJobs;
-using Unity.GrantManager.GrantApplications.Automation.Events;
+using Volo.Abp.Domain.Repositories;
 using Volo.Abp.EventBus.Local;
 using Volo.Abp.Features;
 using Volo.Abp.MultiTenancy;
@@ -18,92 +20,107 @@ namespace Unity.GrantManager.GrantApplications.Automation;
 
 public class RunApplicationAIPipelineJobTests(ITestOutputHelper outputHelper) : GrantManagerApplicationTestBase(outputHelper)
 {
+    [Fact]
+    public async Task ExecuteAsync_Should_Mark_Request_Completed_When_Features_Disabled()
+    {
+        var featureChecker = Substitute.For<IFeatureChecker>();
+        featureChecker.IsEnabledAsync(Arg.Any<string>()).Returns(false);
+
+        var repository = BuildRequestRepository(out var requests);
+        var request = CreateRequest();
+        requests.Add(request);
+
+        var job = BuildJob(featureChecker, repository);
+
+        await job.ExecuteAsync(new RunApplicationAIPipelineJobArgs
+        {
+            ApplicationId = request.ApplicationId!.Value,
+            RequestKey = request.RequestKey,
+            TenantId = request.TenantId
+        });
+
+        request.Status.ShouldBe(AIGenerationRequestStatus.Completed);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_Should_Publish_Event_When_Pipeline_Scoring_Completes()
+    {
+        var featureChecker = Substitute.For<IFeatureChecker>();
+        featureChecker.IsEnabledAsync("Unity.AI.AttachmentSummaries").Returns(false);
+        featureChecker.IsEnabledAsync("Unity.AI.ApplicationAnalysis").Returns(false);
+        featureChecker.IsEnabledAsync("Unity.AI.Scoring").Returns(true);
+
+        var repository = BuildRequestRepository(out var requests);
+        var request = CreateRequest();
+        requests.Add(request);
+
+        var scoringAppService = Substitute.For<IApplicationScoringAppService>();
+        scoringAppService.GenerateApplicationScoringForPipelineAsync(Arg.Any<Guid>(), Arg.Any<string?>())
+            .Returns(new ApplicationScoringResultDto { Completed = true });
+
+        var localEventBus = Substitute.For<ILocalEventBus>();
+
+        var job = BuildJob(
+            featureChecker,
+            repository,
+            localEventBus: localEventBus,
+            applicationScoringAppService: scoringAppService);
+
+        await job.ExecuteAsync(new RunApplicationAIPipelineJobArgs
+        {
+            ApplicationId = request.ApplicationId!.Value,
+            RequestKey = request.RequestKey,
+            TenantId = request.TenantId
+        });
+
+        request.Status.ShouldBe(AIGenerationRequestStatus.Completed);
+        await localEventBus.Received(1).PublishAsync(
+            Arg.Is<Automation.Events.ApplicationAIScoringGeneratedEvent>(x => x.ApplicationId == request.ApplicationId));
+    }
+
     private static RunApplicationAIPipelineJob BuildJob(
         IFeatureChecker featureChecker,
-        IApplicationScoringAppService? scoringService = null)
+        IRepository<AIGenerationRequest, Guid> generationRequestRepository,
+        ILocalEventBus? localEventBus = null,
+        IAttachmentSummaryAppService? attachmentSummaryAppService = null,
+        IApplicationAnalysisAppService? applicationAnalysisAppService = null,
+        IApplicationScoringAppService? applicationScoringAppService = null)
     {
-        var attachmentService = Substitute.For<IAttachmentSummaryAppService>();
-        attachmentService.GenerateAttachmentSummariesForPipelineAsync(Arg.Any<List<Guid>>(), Arg.Any<string?>())
-            .Returns(Task.FromResult(new List<AttachmentSummaryResultDto>()));
-
-        var analysisService = Substitute.For<IApplicationAnalysisAppService>();
-        analysisService.GenerateApplicationAnalysisForPipelineAsync(Arg.Any<Guid>(), Arg.Any<string?>())
-            .Returns(Task.FromResult(new ApplicationAnalysisResultDto { Completed = true }));
-
         return new RunApplicationAIPipelineJob(
             Substitute.For<IApplicationChefsFileAttachmentRepository>(),
-            attachmentService,
-            analysisService,
-            scoringService ?? Substitute.For<IApplicationScoringAppService>(),
+            attachmentSummaryAppService ?? Substitute.For<IAttachmentSummaryAppService>(),
+            applicationAnalysisAppService ?? Substitute.For<IApplicationAnalysisAppService>(),
+            applicationScoringAppService ?? Substitute.For<IApplicationScoringAppService>(),
             featureChecker,
-            Substitute.For<ILocalEventBus>(),
+            localEventBus ?? Substitute.For<ILocalEventBus>(),
+            generationRequestRepository,
             Substitute.For<ICurrentTenant>(),
             NullLogger<RunApplicationAIPipelineJob>.Instance);
     }
 
-    [Fact]
-    public async Task ExecuteAsync_Should_Skip_Scoring_When_Feature_Disabled()
+    private static IRepository<AIGenerationRequest, Guid> BuildRequestRepository(out List<AIGenerationRequest> requests)
     {
-        var featureChecker = Substitute.For<IFeatureChecker>();
-        featureChecker.IsEnabledAsync("Unity.AI.Scoring").Returns(false);
-        featureChecker.IsEnabledAsync("Unity.AI.AttachmentSummaries").Returns(false);
-        featureChecker.IsEnabledAsync("Unity.AI.ApplicationAnalysis").Returns(false);
+        var requestList = new List<AIGenerationRequest>();
+        requests = requestList;
+        var repository = Substitute.For<IRepository<AIGenerationRequest, Guid>>();
 
-        var scoringService = Substitute.For<IApplicationScoringAppService>();
-        scoringService.GenerateApplicationScoringForPipelineAsync(Arg.Any<Guid>(), Arg.Any<string?>())
-            .Returns(Task.FromResult(new ApplicationScoringResultDto { Completed = true }));
+        repository.GetQueryableAsync()
+            .Returns(Task.FromResult<IQueryable<AIGenerationRequest>>(requestList.AsQueryable()));
+        repository.UpdateAsync(Arg.Any<AIGenerationRequest>(), Arg.Any<bool>(), Arg.Any<CancellationToken>())
+            .Returns(callInfo => Task.FromResult(callInfo.Arg<AIGenerationRequest>()));
 
-        var job = BuildJob(featureChecker, scoringService);
-
-        await job.ExecuteAsync(new RunApplicationAIPipelineJobArgs { ApplicationId = Guid.NewGuid() });
-
-        await scoringService.DidNotReceive().GenerateApplicationScoringForPipelineAsync(Arg.Any<Guid>(), Arg.Any<string?>());
+        return repository;
     }
 
-    [Fact]
-    public async Task ExecuteAsync_Should_Run_Scoring_When_Feature_Enabled()
+    private static AIGenerationRequest CreateRequest()
     {
-        var featureChecker = Substitute.For<IFeatureChecker>();
-        featureChecker.IsEnabledAsync("Unity.AI.Scoring").Returns(true);
-        featureChecker.IsEnabledAsync("Unity.AI.AttachmentSummaries").Returns(false);
-        featureChecker.IsEnabledAsync("Unity.AI.ApplicationAnalysis").Returns(false);
-
-        var scoringService = Substitute.For<IApplicationScoringAppService>();
-        scoringService.GenerateApplicationScoringForPipelineAsync(Arg.Any<Guid>(), Arg.Any<string?>())
-            .Returns(Task.FromResult(new ApplicationScoringResultDto { Completed = true }));
-
-        var job = BuildJob(featureChecker, scoringService);
-
-        await job.ExecuteAsync(new RunApplicationAIPipelineJobArgs { ApplicationId = Guid.NewGuid() });
-
-        await scoringService.Received(1).GenerateApplicationScoringForPipelineAsync(Arg.Any<Guid>(), Arg.Any<string?>());
-    }
-
-    [Fact]
-    public async Task ExecuteAsync_Should_Publish_Scoring_Event_When_Scoring_Completes()
-    {
-        var featureChecker = Substitute.For<IFeatureChecker>();
-        featureChecker.IsEnabledAsync("Unity.AI.Scoring").Returns(true);
-        featureChecker.IsEnabledAsync("Unity.AI.AttachmentSummaries").Returns(false);
-        featureChecker.IsEnabledAsync("Unity.AI.ApplicationAnalysis").Returns(false);
-
-        var scoringService = Substitute.For<IApplicationScoringAppService>();
-        scoringService.GenerateApplicationScoringForPipelineAsync(Arg.Any<Guid>(), Arg.Any<string?>())
-            .Returns(Task.FromResult(new ApplicationScoringResultDto { Completed = true }));
-
-        var eventBus = Substitute.For<ILocalEventBus>();
-        var job = new RunApplicationAIPipelineJob(
-            Substitute.For<IApplicationChefsFileAttachmentRepository>(),
-            Substitute.For<IAttachmentSummaryAppService>(),
-            Substitute.For<IApplicationAnalysisAppService>(),
-            scoringService,
-            featureChecker,
-            eventBus,
-            Substitute.For<ICurrentTenant>(),
-            NullLogger<RunApplicationAIPipelineJob>.Instance);
-
-        await job.ExecuteAsync(new RunApplicationAIPipelineJobArgs { ApplicationId = Guid.NewGuid() });
-
-        await eventBus.Received(1).PublishAsync(Arg.Is<ApplicationAIScoringGeneratedEvent>(e => e.ApplicationId != Guid.Empty));
+        var applicationId = Guid.NewGuid();
+        var tenantId = Guid.NewGuid();
+        return new AIGenerationRequest(
+            Guid.NewGuid(),
+            tenantId,
+            AIGenerationRequestKeyHelper.PipelineOperationType,
+            applicationId,
+            AIGenerationRequestKeyHelper.BuildRequestKey(tenantId, applicationId, AIGenerationRequestKeyHelper.PipelineOperationType));
     }
 }

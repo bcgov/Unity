@@ -1,21 +1,22 @@
 using Microsoft.Extensions.Logging;
 using System;
 using System.Threading.Tasks;
+using Unity.AI.Automation;
 using Unity.AI.Settings;
 using Unity.GrantManager.Applications;
-using Unity.GrantManager.GrantApplications.Automation.BackgroundJobs;
 using Unity.GrantManager.Intakes.Events;
-using Volo.Abp.BackgroundJobs;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.EventBus;
+using Volo.Abp.Features;
 using Volo.Abp.Settings;
 
 namespace Unity.GrantManager.GrantApplications.Automation.Handlers;
 
 public class QueueApplicationAIPipelineOnProcessHandler(
-    IBackgroundJobManager backgroundJobManager,
+    IApplicationAIGenerationQueue aiGenerationQueue,
     ISettingProvider settingProvider,
     IApplicationFormRepository applicationFormRepository,
+    IFeatureChecker featureChecker,
     ILogger<QueueApplicationAIPipelineOnProcessHandler> logger) : ILocalEventHandler<ApplicationProcessEvent>, ITransientDependency
 {
     public async Task HandleEventAsync(ApplicationProcessEvent eventData)
@@ -40,13 +41,20 @@ public class QueueApplicationAIPipelineOnProcessHandler(
             return;
         }
 
+        var attachmentSummariesEnabled = await featureChecker.IsEnabledAsync("Unity.AI.AttachmentSummaries");
+        var applicationAnalysisEnabled = await featureChecker.IsEnabledAsync("Unity.AI.ApplicationAnalysis");
+        var scoringEnabled = await featureChecker.IsEnabledAsync("Unity.AI.Scoring");
+
+        if (!attachmentSummariesEnabled && !applicationAnalysisEnabled && !scoringEnabled)
+        {
+            logger.LogDebug("All AI features are disabled, skipping intake pipeline for application {ApplicationId}.", eventData.Application.Id);
+            return;
+        }
+
         try
         {
-            await backgroundJobManager.EnqueueAsync(new RunApplicationAIPipelineJobArgs
-            {
-                ApplicationId = eventData.Application.Id,
-                TenantId = eventData.Application.TenantId
-            });
+            await aiGenerationQueue.QueueAllAIStagesAsync(eventData.Application.Id, eventData.Application.TenantId);
+
             logger.LogInformation("Queued AI pipeline for application {ApplicationId}.", eventData.Application.Id);
         }
         catch (Exception ex)
