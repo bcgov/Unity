@@ -448,7 +448,10 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
                 return applicant;
             JsonElement orgData = results[0];
             await UpdateApplicantOrgNumberAsync(applicant, orgData);
-            await UpdateApplicantNamesAsync(applicant, orgData.GetProperty("names").EnumerateArray());
+            if (orgData.TryGetProperty("names", out JsonElement namesElement) && namesElement.ValueKind == JsonValueKind.Array)
+            {
+                await UpdateApplicantNamesAsync(applicant, namesElement.EnumerateArray());
+            }
         }
         catch (Exception ex)
         {

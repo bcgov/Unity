@@ -13,11 +13,7 @@ const AnalyticsUtils = (function () {
      * @returns {string|null} Tenant name or null if unavailable.
      */
     function getTenantName() {
-        return globalThis.abp &&
-            abp.currentTenant &&
-            abp.currentTenant.name
-            ? abp.currentTenant.name
-            : null;
+        return globalThis.abp?.currentTenant?.name ?? null;
     }
 
     /**
@@ -26,11 +22,7 @@ const AnalyticsUtils = (function () {
      * @returns {string|null} User ID or null if unavailable.
      */
     function getUserId() {
-        return globalThis.abp &&
-            abp.currentUser &&
-            abp.currentUser.id
-            ? String(abp.currentUser.id)
-            : null;
+        return globalThis.abp?.currentUser?.id ? String(globalThis.abp.currentUser.id) : null;
     }
 
     /**
@@ -39,11 +31,7 @@ const AnalyticsUtils = (function () {
      * @returns {string|null} Full user name or null if unavailable.
      */
     function getUserName() {
-        const firstName = globalThis.abp &&
-            abp.currentUser &&
-            abp.currentUser.name
-            ? abp.currentUser.name
-            : '';
+        const firstName = globalThis.abp?.currentUser?.name ?? '';
 
         const lastName = globalThis.abp &&
             abp.currentUser &&
@@ -156,12 +144,10 @@ const AnalyticsUtils = (function () {
         /**
          * Track initial page view after dimensions are set.
          */
-        trackerQueue.push(['trackPageView']);
-
-        /**
-         * Track outbound links and downloads.
-         */
-        trackerQueue.push(['enableLinkTracking']);
+        trackerQueue.push(
+            ['trackPageView'],
+            ['enableLinkTracking']
+        );
 
         loadMatomoScript(url);
     }
