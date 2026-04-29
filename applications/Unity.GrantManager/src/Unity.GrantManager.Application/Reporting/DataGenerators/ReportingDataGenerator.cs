@@ -44,7 +44,7 @@ namespace Unity.GrantManager.Reporting.DataGenerators
                 // Clean up the JSON strings
                 foreach (var key in reportResult.Keys.ToList())
                 {
-                    reportResult[key] = reportResult[key].Select(CleanJsonString).ToList();
+                    reportResult[key] = reportResult[key].Where(x => x != null).Select(CleanJsonString).ToList();
                 }
 
                 // Sort the dictionary by keys alphabetically 
