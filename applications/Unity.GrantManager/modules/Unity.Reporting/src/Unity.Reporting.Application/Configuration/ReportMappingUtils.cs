@@ -275,12 +275,7 @@ namespace Unity.Reporting.Configuration
         private static bool IsValidColumnName(string columnName)
         {
             // Column name should only contain letters, numbers, and underscores
-            foreach (char c in columnName)
-            {
-                if (!char.IsLetterOrDigit(c) && c != '_')
-                    return false;
-            }
-            return true;
+            return columnName.All(c => char.IsLetterOrDigit(c) || c == '_');
         }
 
         /// <summary>
