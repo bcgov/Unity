@@ -223,6 +223,12 @@ namespace Unity.Payments.Domain.Services
             return objectMapper.Map<List<PaymentRequest>, List<PaymentRequestDto>>(payments);
         }
 
+        public async Task<List<PaymentRequestDto>> GetPaymentPendingListByCorrelationIdsAsync(IEnumerable<Guid> correlationIds)
+        {
+            var payments = await paymentRequestRepository.GetPaymentPendingListByCorrelationIdsAsync(correlationIds);
+            return objectMapper.Map<List<PaymentRequest>, List<PaymentRequestDto>>(payments);
+        }
+
         /// <summary>
         /// Retrieves a payment rollup for the specified application and its associated child applications.
         /// </summary>

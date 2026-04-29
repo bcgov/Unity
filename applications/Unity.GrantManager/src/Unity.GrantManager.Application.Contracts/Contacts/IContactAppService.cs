@@ -28,6 +28,19 @@ public interface IContactAppService
     Task<ContactDto> CreateContactAsync(CreateContactLinkDto input);
 
     /// <summary>
+    /// Updates an existing contact and synchronizes the primary / role flags on its link
+    /// to the specified related entity. If <see cref="UpdateContactDto.IsPrimary"/> is <c>true</c>,
+    /// any other active primary links for the same entity are demoted.
+    /// </summary>
+    /// <param name="entityType">The type of the related entity.</param>
+    /// <param name="entityId">The unique identifier of the related entity.</param>
+    /// <param name="contactId">The unique identifier of the contact to update.</param>
+    /// <param name="input">The updated contact details.</param>
+    /// <returns>The updated <see cref="ContactDto"/>.</returns>
+    /// <exception cref="Volo.Abp.BusinessException">Thrown when no active contact link is found for the given parameters.</exception>
+    Task<ContactDto> UpdateContactAsync(string entityType, Guid entityId, Guid contactId, UpdateContactDto input);
+
+    /// <summary>
     /// Sets the specified contact as the primary contact for the given entity.
     /// Only one primary contact is allowed per entity type and entity ID;
     /// any existing primary will be cleared before setting the new one.

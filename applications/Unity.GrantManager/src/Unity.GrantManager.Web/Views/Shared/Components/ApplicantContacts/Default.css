@@ -4,6 +4,76 @@
     position: relative;
 }
 
+.applicant-contact-edit-form > .mb-3,
+.applicant-contact-edit-form > .form-check,
+.applicant-contact-edit-form > .abp-input,
+.applicant-contact-edit-form > .abp-select {
+    width: 100%;
+}
+
+.applicant-contacts-widget .applicant-contacts-info {
+    border-radius: 8px;
+    padding: 0 1rem 1rem 1rem;
+    margin-bottom: 0;
+}
+
+.applicant-contacts-widget .applicant-contact-source-info {
+    display: inline-flex;
+    align-items: center;
+    cursor: help;
+    color: var(--bc-colors-grey-text-300);
+    font-size: 1rem;
+}
+
+.applicant-contacts-widget .applicant-contact-source-info:hover {
+    color: var(--bc-colors-primary);
+}
+
+.applicant-contacts-widget .applicant-contact-primary-badge {
+    display: inline-flex;
+    align-items: center;
+    margin-right: 0.35rem;
+    cursor: help;
+    font-size: 0.95rem;
+    opacity: 0.75;
+}
+
+.applicant-contacts-widget .applicant-contact-primary-badge:hover {
+    opacity: 1;
+}
+
+.applicant-contacts-widget .applicant-contact-edit-btn {
+    border: none;
+    box-shadow: none;
+    outline: none;
+    transition: none;
+}
+
+.applicant-contacts-widget .applicant-contact-edit-btn:hover,
+.applicant-contacts-widget .applicant-contact-edit-btn:focus {
+    border: none;
+    box-shadow: none;
+    outline: none;
+}
+
+.applicant-contacts-widget .applicant-contact-menu-btn {
+    border: none;
+    box-shadow: none;
+    outline: none;
+    transition: none;
+    text-decoration: none;
+    color: var(--bc-colors-grey-text-300);
+}
+
+.applicant-contacts-widget .applicant-contact-menu-btn:hover,
+.applicant-contacts-widget .applicant-contact-menu-btn:focus {
+    border: none;
+    box-shadow: none;
+    outline: none;
+    text-decoration: none;
+    color: var(--bc-colors-primary);
+}
+
 .applicant-contacts-widget .applicant-organization-info {
     border-radius: 8px;
     padding: 0 1rem 1rem 1rem;
@@ -37,6 +107,23 @@
     border-bottom: 1px solid #dee2e6;
 }
 
+.applicant-contacts-widget .primary-section__header {
+    padding: 0 0 0.5rem 0;
+}
+
+.applicant-contacts-widget .primary-readonly dt {
+    font-size: var(--bc-font-size-sm);
+    color: var(--bc-colors-grey-text-300);
+    font-weight: 500;
+    margin-bottom: 0.125rem;
+}
+
+.applicant-contacts-widget .primary-readonly dd {
+    font-size: var(--bc-font-size-base);
+    margin-bottom: 0;
+    word-break: break-word;
+}
+
 .applicant-contacts-widget .table-card {
     background-color: #fff;
     border: 1px solid #e0e6ed;
@@ -56,6 +143,25 @@
 
 .contacts-table {
     width: 100%;
+}
+
+.applicant-contacts-widget #ApplicantContactsTable td:last-child,
+.applicant-contacts-widget #ApplicantContactsTable th:last-child {
+    text-align: center;
+    white-space: nowrap;
+}
+
+.applicant-contacts-widget #ApplicantContactsTable td:last-child .applicant-contact-menu-btn,
+.applicant-contacts-widget #ApplicantContactsTable td:last-child .applicant-contact-source-info,
+.applicant-contacts-widget #ApplicantContactsTable td:last-child .applicant-contact-primary-badge {
+    display: inline-flex;
+    align-items: center;
+    vertical-align: middle;
+    margin-right: 0.25rem;
+}
+
+.applicant-contacts-widget #ApplicantContactsTable td:last-child *:last-child {
+    margin-right: 0;
 }
 
 #ApplicantContactsTable_wrapper {

@@ -5,6 +5,7 @@ using Unity.Flex.Domain.Worksheets;
 using Volo.Abp.Domain.Entities;
 using System.Linq;
 using Unity.Flex.Worksheets.Definitions;
+using Volo.Abp;
 
 namespace Unity.Flex.Worksheets
 {
@@ -38,6 +39,32 @@ namespace Unity.Flex.Worksheets
             var section = worksheet.Sections.FirstOrDefault(s => s.Id == field.SectionId) ?? throw new EntityNotFoundException();
 
             section.RemoveField(field);
+        }
+
+        public async Task MoveToSectionAsync(Guid fieldId, Guid targetSectionId, uint newIndex)
+        {
+            var field = await customFieldRepostitory.GetAsync(fieldId) ?? throw new EntityNotFoundException();
+            if (field.SectionId == targetSectionId) return;
+
+            var worksheet = await worksheetRepository.GetBySectionAsync(field.SectionId, true) ?? throw new EntityNotFoundException();
+            if (worksheet.Published) throw new UserFriendlyException("Cannot move fields in a published worksheet.");
+
+            var sourceSection = worksheet.Sections.FirstOrDefault(s => s.Id == field.SectionId) ?? throw new EntityNotFoundException();
+            var targetSection = worksheet.Sections.FirstOrDefault(s => s.Id == targetSectionId) ?? throw new EntityNotFoundException();
+
+            // Renumber source section, excluding the moving field
+            var sourceFields = sourceSection.Fields.Where(f => f.Id != fieldId).OrderBy(f => f.Order).ToList();
+            for (int i = 0; i < sourceFields.Count; i++)
+                sourceFields[i].SetOrder((uint)(i + 1));
+
+            // Make room in target section at the insertion point
+            uint insertAt = Math.Min(newIndex + 1, (uint)(targetSection.Fields.Count + 1));
+            foreach (var f in targetSection.Fields.Where(f => f.Order >= insertAt))
+                f.SetOrder(f.Order + 1);
+
+            // Update FK directly — EF Core change tracker issues a single UPDATE, avoids orphan-deletion
+            field.SetOrder(insertAt);
+            field.SectionId = targetSectionId;
         }
     }
 }

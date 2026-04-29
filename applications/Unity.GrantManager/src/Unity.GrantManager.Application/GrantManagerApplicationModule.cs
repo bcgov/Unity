@@ -46,6 +46,7 @@ using Unity.GrantManager.GrantsPortal;
 using Unity.GrantManager.GrantsPortal.Configuration;
 using Unity.GrantManager.GrantsPortal.Handlers;
 using Unity.GrantManager.Messaging;
+using Unity.GrantManager.Analytics;
 
 namespace Unity.GrantManager;
 
@@ -134,7 +135,8 @@ public class GrantManagerApplicationModule : AbpModule
         context.Services.AddTransient<IResilientHttpRequest, ResilientHttpRequest>();
         context.Services.AddTransient<IFormsApiService, FormsApiService>();
 
-        context.Services.AddScoped<IGeocoderApiService, GeocoderApiService>();        
+        context.Services.AddScoped<IGeocoderApiService, GeocoderApiService>();    
+        context.Services.AddScoped<IAnalyticsUrlProvider, MatomoUrlProvider>();
         context.Services.AddScoped<GeocoderApiService>();
 
         context.Services.Configure<CasClientOptions>(configuration.GetSection("Payments"));

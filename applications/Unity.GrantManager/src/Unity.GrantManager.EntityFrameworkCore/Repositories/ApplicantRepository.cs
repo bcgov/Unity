@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.EntityFrameworkCore;
+using Unity.Payments.Domain.Suppliers;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Repositories.EntityFrameworkCore;
 using Volo.Abp.EntityFrameworkCore;
@@ -58,14 +59,6 @@ namespace Unity.GrantManager.Repositories
                 .ToListAsync();
         }
 
-        public async Task<List<Applicant>> GetApplicantsBySiteIdAsync(Guid siteId)
-        {
-            var dbContext = await GetDbContextAsync();
-            return await dbContext.Applicants
-                .Where(x => x.SiteId == siteId)
-                .ToListAsync();
-        }
-
         public async Task<JsonDocument> GetApplicantAutocompleteQueryAsync(string? applicantLookUpQuery)
         {
             if (string.IsNullOrWhiteSpace(applicantLookUpQuery))
@@ -81,12 +74,36 @@ namespace Unity.GrantManager.Repositories
             .AsNoTracking()
             .ToListAsync();
 
-            var filteredApplicants = applicants
+            var filtered = applicants
                 .Where(a =>
                     (!string.IsNullOrEmpty(a.ApplicantName) && a.ApplicantName.Contains(searchQuery, StringComparison.OrdinalIgnoreCase)) ||
                     (!string.IsNullOrEmpty(a.UnityApplicantId) && a.UnityApplicantId.Contains(searchQuery, StringComparison.OrdinalIgnoreCase))
                 )
-                .Select(a => new
+                .Take(10)
+                .ToList();
+
+            // Batch-fetch supplier data for the matched applicants
+            var supplierIds = filtered
+                .Where(a => a.SupplierId.HasValue)
+                .Select(a => a.SupplierId!.Value)
+                .Distinct()
+                .ToList();
+
+            Dictionary<Guid, (string? Number, string? Name, string? Status)> supplierMap = new();
+            if (supplierIds.Count > 0)
+            {
+                var suppliers = await dbContext.Set<Supplier>()
+                    .AsNoTracking()
+                    .Where(s => supplierIds.Contains(s.Id) && !s.IsDeleted)
+                    .Select(s => new { s.Id, s.Number, s.Name, s.Status })
+                    .ToListAsync();
+                supplierMap = suppliers.ToDictionary(s => s.Id, s => (s.Number, s.Name, s.Status));
+            }
+
+            var filteredApplicants = filtered.Select(a =>
+            {
+                supplierMap.TryGetValue(a.SupplierId ?? Guid.Empty, out var sup);
+                return new
                 {
                     a.Id,
                     a.ApplicantName,
@@ -105,10 +122,13 @@ namespace Unity.GrantManager.Repositories
                     a.FiscalDay,
                     a.FiscalMonth,
                     a.UnityApplicantId,
-                    a.IsDuplicated
-                })
-                .Take(10)
-                .ToList();
+                    a.IsDuplicated,
+                    SupplierId = a.SupplierId?.ToString(),
+                    SupplierNumber = sup.Number,
+                    SupplierName = sup.Name,
+                    SupplierStatus = sup.Status
+                };
+            });
 
             var json = JsonSerializer.Serialize(filteredApplicants);
             return JsonDocument.Parse(json);

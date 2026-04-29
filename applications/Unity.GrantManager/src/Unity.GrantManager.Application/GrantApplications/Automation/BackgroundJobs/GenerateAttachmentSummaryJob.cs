@@ -1,12 +1,18 @@
 using Microsoft.Extensions.Logging;
+using System;
 using System.Threading.Tasks;
-using Unity.GrantManager.Attachments;
+using Unity.AI.Operations;
+using Unity.GrantManager.GrantApplications;
 using Volo.Abp.BackgroundJobs;
 using Volo.Abp.DependencyInjection;
+using Volo.Abp.Domain.Repositories;
 using Volo.Abp.MultiTenancy;
+
 namespace Unity.GrantManager.GrantApplications.Automation.BackgroundJobs;
+
 public class GenerateAttachmentSummaryJob(
-    IAttachmentSummaryAppService attachmentSummaryService,
+    IAttachmentSummaryService attachmentSummaryService,
+    IRepository<AIGenerationRequest, Guid> generationRequestRepository,
     ICurrentTenant currentTenant,
     ILogger<GenerateAttachmentSummaryJob> logger) : AsyncBackgroundJob<GenerateAttachmentSummaryBackgroundJobArgs>, ITransientDependency
 {
@@ -14,11 +20,21 @@ public class GenerateAttachmentSummaryJob(
     {
         using (currentTenant.Change(args.TenantId))
         {
-            logger.LogInformation(
-                "Executing AI attachment summary job for {AttachmentCount} attachment(s).",
-                args.AttachmentIds.Count);
-            var results = await attachmentSummaryService.GenerateAttachmentSummariesAsync(args.AttachmentIds, args.PromptVersion);
-            logger.LogInformation("Completed AI attachment summaries for {CompletedCount} attachment(s).", results.Count);
+            var request = await AIGenerationRequestJobHelper.GetLatestRequestAsync(generationRequestRepository, x => x.RequestKey == args.RequestKey);
+            await AIGenerationRequestJobHelper.MarkRunningAsync(generationRequestRepository, request);
+            try
+            {
+                logger.LogInformation(
+                    "Executing AI attachment summary job for application {ApplicationId}.",
+                    args.ApplicationId);
+                await attachmentSummaryService.GenerateForApplicationAsync(args.ApplicationId, args.PromptVersion);
+                await AIGenerationRequestJobHelper.MarkCompletedAsync(generationRequestRepository, request);
+            }
+            catch (Exception ex)
+            {
+                await AIGenerationRequestJobHelper.MarkFailedAsync(generationRequestRepository, request, ex.Message);
+                throw;
+            }
         }
     }
 }

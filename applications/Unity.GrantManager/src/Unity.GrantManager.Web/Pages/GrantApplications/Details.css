@@ -69,7 +69,23 @@
 .ai-button-content {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 0.5rem;
+}
+
+.ai-generate-btn {
+    height: 2.25rem;
+    min-width: 8rem;
+}
+
+.ai-generate-btn.btn-sm {
+    height: 2rem;
+    min-width: 7rem;
+}
+
+.ai-generate-btn .spinner-border-sm {
+    width: 0.875rem;
+    height: 0.875rem;
 }
 
 .ai-dev-output {

@@ -792,16 +792,20 @@ $(function () {
 
                     if (newValue !== oldValue) {
                         $input.val(newValue);
-
-                        // Clear any previous validation state
-                        $input.removeClass('is-valid is-invalid');
-                        $input.siblings('.invalid-feedback, .valid-feedback').remove();
-
-                        // Validate the new value
-                        validateColumnNameInput($input, newValue, path);
                         updatedCount++;
                     }
                 }
+            });
+
+            // Re-validate every input — uniqueness is a cross-row property, so rows whose
+            // value did not change can still transition from invalid to valid (and vice versa)
+            // once the rest of the table has been rewritten.
+            $('#ReportConfigurationTable .column-name-input').each(function () {
+                const $input = $(this);
+                const path = $input.data('path');
+                const value = $input.val().trim();
+
+                validateColumnNameInput($input, value, path);
             });
 
             if (updatedCount > 0) {

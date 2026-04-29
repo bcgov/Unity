@@ -1,15 +1,17 @@
 using Microsoft.Extensions.Logging;
+using System;
 using System.Threading.Tasks;
 using Unity.GrantManager.GrantApplications;
-using Unity.GrantManager.GrantApplications.Automation.Events;
 using Volo.Abp.BackgroundJobs;
 using Volo.Abp.DependencyInjection;
-using Volo.Abp.EventBus.Local;
+using Volo.Abp.Domain.Repositories;
 using Volo.Abp.MultiTenancy;
+
 namespace Unity.GrantManager.GrantApplications.Automation.BackgroundJobs;
+
 public class GenerateApplicationScoringJob(
-    IApplicationScoringAppService applicationScoringService,
-    ILocalEventBus localEventBus,
+    IApplicationScoringAppService applicationScoringAppService,
+    IRepository<AIGenerationRequest, Guid> generationRequestRepository,
     ICurrentTenant currentTenant,
     ILogger<GenerateApplicationScoringJob> logger) : AsyncBackgroundJob<GenerateApplicationScoringBackgroundJobArgs>, ITransientDependency
 {
@@ -17,14 +19,19 @@ public class GenerateApplicationScoringJob(
     {
         using (currentTenant.Change(args.TenantId))
         {
-            logger.LogInformation("Executing AI application scoring job for application {ApplicationId}.", args.ApplicationId);
-            var result = await applicationScoringService.GenerateApplicationScoringAsync(args.ApplicationId, args.PromptVersion);
-            if (result.Completed)
+            var request = await AIGenerationRequestJobHelper.GetLatestRequestAsync(generationRequestRepository, x => x.RequestKey == args.RequestKey);
+            await AIGenerationRequestJobHelper.MarkRunningAsync(generationRequestRepository, request);
+            try
             {
-                await localEventBus.PublishAsync(new ApplicationAIScoringGeneratedEvent
-                {
-                    ApplicationId = args.ApplicationId
-                });
+                logger.LogInformation("Executing AI application scoring job for application {ApplicationId}.", args.ApplicationId);
+                await applicationScoringAppService.GenerateApplicationScoringAsync(args.ApplicationId, args.PromptVersion);
+                logger.LogInformation("Completed AI application scoring job for application {ApplicationId}.", args.ApplicationId);
+                await AIGenerationRequestJobHelper.MarkCompletedAsync(generationRequestRepository, request);
+            }
+            catch (Exception ex)
+            {
+                await AIGenerationRequestJobHelper.MarkFailedAsync(generationRequestRepository, request, ex.Message);
+                throw;
             }
         }
     }

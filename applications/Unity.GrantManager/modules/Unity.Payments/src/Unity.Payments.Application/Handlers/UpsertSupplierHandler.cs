@@ -39,7 +39,7 @@ namespace Unity.Payments.Handlers
                 new ApplicantSupplierEto
                 {
                     SupplierId = supplierDto.Id,
-                    ApplicantId = eventData.CorrelationId,
+                    ApplicantId = eventData.ApplicantId,
                     ExistingSitesDictionary = existingSitesDictionary,
                     SiteEtos = eventData.SiteEtos
                 }
@@ -106,7 +106,7 @@ namespace Unity.Payments.Handlers
             }
             catch (Exception ex)
             {
-                logger.LogWarning(ex, "Unable to resolve default payment group for correlation {CorrelationId}", eventData.CorrelationId);
+                logger.LogWarning(ex, "Unable to resolve default payment group for applicant {ApplicantId}", eventData.ApplicantId);
             }
 
             return fallbackPaymentGroup;
@@ -146,8 +146,6 @@ namespace Unity.Payments.Handlers
                 SupplierProtected = eventData.SupplierProtected,
                 StandardIndustryClassification = eventData.StandardIndustryClassification,
                 LastUpdatedInCAS = eventData.LastUpdatedInCAS,
-                CorrelationId = eventData.CorrelationId,
-                CorrelationProvider = eventData.CorrelationProvider,
             };
         }
 
@@ -164,8 +162,6 @@ namespace Unity.Payments.Handlers
                 SupplierProtected = eventData.SupplierProtected,
                 StandardIndustryClassification = eventData.StandardIndustryClassification,
                 LastUpdatedInCAS = eventData.LastUpdatedInCAS,
-                CorrelationId = eventData.CorrelationId,
-                CorrelationProvider = eventData.CorrelationProvider,
             };
         }
     }
