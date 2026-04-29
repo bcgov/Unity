@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.Extensions.DependencyInjection;
-using OpenIddict.Abstractions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,29 +10,41 @@ using Unity.GrantManager.Web.Identity.LoginHandlers;
 using Unity.Modules.Shared.Permissions;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.SecurityLog;
+using Microsoft.Extensions.Logging;
 
 namespace Unity.GrantManager.Web.Identity
 {
-    internal class IdentityProfileLoginHandler(
-        IUserTenantAppService userTenantsAppService,
-        ISecurityLogManager securityLogManager) : ITransientDependency
+    internal class IdentityProfileLoginHandler : ITransientDependency
     {
+        private readonly ILogger<IdentityProfileLoginHandler> _logger;
+        private readonly IUserTenantAppService _userTenantsAppService;
+        private readonly ISecurityLogManager _securityLogManager;
+
+        internal IdentityProfileLoginHandler(
+            IUserTenantAppService userTenantsAppService,
+            ISecurityLogManager securityLogManager,
+            ILogger<IdentityProfileLoginHandler> logger)
+        {
+            _userTenantsAppService = userTenantsAppService ?? throw new ArgumentNullException(nameof(userTenantsAppService));
+            _securityLogManager = securityLogManager ?? throw new ArgumentNullException(nameof(securityLogManager));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        }
+
         internal async Task HandleAsync(TokenValidatedContext validatedTokenContext)
         {
             var principal = validatedTokenContext.Principal;
-            var subject = validatedTokenContext.SecurityToken?.Subject;
 
+            var subject = principal?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (principal == null || string.IsNullOrWhiteSpace(subject))
             {
                 return;
             }
 
-            // Extract user identifier safely
             var userIdentifier = ExtractUserIdentifier(subject);
 
-            // Fetch tenant accounts once
-            var userTenantAccounts = await userTenantsAppService.GetUserTenantsAsync(userIdentifier) 
-                                     ?? new List<UserTenantAccountDto>();
+            var userTenantAccounts =
+                await _userTenantsAppService.GetUserTenantsAsync(userIdentifier)
+                ?? new List<UserTenantAccountDto>();
 
             var idp = validatedTokenContext.SecurityToken?.Claims
                 .FirstOrDefault(c => c.Type == UnityClaimsTypes.IdpProvider)?.Value;
@@ -43,16 +54,13 @@ namespace Unity.GrantManager.Web.Identity
             if (principal.IsInRole(IdentityConsts.ITAdminRoleName))
             {
                 var adminLoginHandler = validatedTokenContext.HttpContext.RequestServices
-                    .GetService<IdentityProfileLoginAdminHandler>();
+                    .GetRequiredService<IdentityProfileLoginAdminHandler>();
 
-                if (adminLoginHandler == null)
-                {
-                    throw new InvalidOperationException("IdentityProfileLoginAdminHandler is not registered.");
-                }
+                var adminAccount =
+                    await _userTenantsAppService.GetUserAdminAccountAsync(userIdentifier);
 
-                var adminAccount = await userTenantsAppService.GetUserAdminAccountAsync(userIdentifier);
-
-                if (adminAccount != null && userTenantAccounts.All(x => x.TenantId != adminAccount.TenantId))
+                if (adminAccount != null &&
+                    userTenantAccounts.All(x => x.TenantId != adminAccount.TenantId))
                 {
                     userTenantAccounts.Add(adminAccount);
                 }
@@ -65,12 +73,7 @@ namespace Unity.GrantManager.Web.Identity
             else
             {
                 var userLoginHandler = validatedTokenContext.HttpContext.RequestServices
-                    .GetService<IdentityProfileLoginUserHandler>();
-
-                if (userLoginHandler == null)
-                {
-                    throw new InvalidOperationException("IdentityProfileLoginUserHandler is not registered.");
-                }
+                    .GetRequiredService<IdentityProfileLoginUserHandler>();
 
                 signedInTenantAccount = await userLoginHandler.Handle(
                     validatedTokenContext,
@@ -80,20 +83,21 @@ namespace Unity.GrantManager.Web.Identity
 
             if (signedInTenantAccount == null)
             {
-                throw new InvalidOperationException("No tenant account could be resolved during login.");
+                throw new InvalidOperationException(
+                    "No tenant account could be resolved during login.");
             }
 
-            AddTenantClaims(principal, userTenantAccounts);
+            AddTenantClaims(principal, userTenantAccounts, _logger);
 
-            // Create security log safely
-            await securityLogManager.SaveAsync(securityLog =>
+            await _securityLogManager.SaveAsync(securityLog =>
             {
                 securityLog.Identity = subject;
                 securityLog.Action = "Login";
                 securityLog.UserId = signedInTenantAccount.Id;
-                securityLog.UserName = principal.GetClaim(
+                securityLog.UserName = principal.FindFirst(
                     UnityClaimsResolver.ResolveFor(UnityClaimsTypes.PreferredUsername, idp)
-                ) ?? "UNKNOWN";
+                )?.Value ?? "UNKNOWN";
+
                 securityLog.TenantId = signedInTenantAccount.TenantId;
                 securityLog.TenantName = signedInTenantAccount.TenantName;
             });
@@ -102,38 +106,55 @@ namespace Unity.GrantManager.Web.Identity
         private static string ExtractUserIdentifier(string subject)
         {
             var atIndex = subject.IndexOf('@');
-            var identifier = atIndex >= 0 ? subject[..atIndex] : subject;
-            return identifier.ToUpperInvariant();
+            return (atIndex >= 0 ? subject[..atIndex] : subject)
+                .ToUpperInvariant();
         }
 
         private static void AddTenantClaims(
             ClaimsPrincipal claimsPrincipal,
-            IList<UserTenantAccountDto> userTenantAccounts)
+            IList<UserTenantAccountDto> userTenantAccounts,
+            ILogger logger)
         {
-            // Hard safety check: if too many tenants, skip adding claims and log warning (or switch to server-side)
             if (userTenantAccounts.Count > 20)
             {
-                // TODO: log warning or switch to server-side tenant resolution
+                logger.LogWarning(
+                    "Too many tenants in claims: {Count}. Claims not added.",
+                    userTenantAccounts.Count);
+
                 return;
             }
 
-            // Only store active tenant (if available)
-            var activeTenant = userTenantAccounts.FirstOrDefault(x => x?.TenantId != null);
+            var identity = claimsPrincipal.Identity as ClaimsIdentity;
+            if (identity == null)
+            {
+                logger.LogWarning(
+                    "No ClaimsIdentity found. Cannot add tenant claims.");
+                return;
+            }
+
+            var activeTenant =
+                userTenantAccounts.FirstOrDefault(x => x?.TenantId != null);
+
             if (activeTenant != null)
             {
-                claimsPrincipal.AddClaim(UnityClaimsTypes.Tenant, activeTenant.TenantId!.Value.ToString());
+                identity.AddClaim(new Claim(
+                    UnityClaimsTypes.Tenant,
+                    activeTenant.TenantId!.Value.ToString()));
+
                 return;
             }
 
-            // If you must store multiple, compress into a single claim (not ideal)
             var distinctTenants = userTenantAccounts
                 .Where(x => x?.TenantId != null)
                 .Select(x => x.TenantId!.Value.ToString())
                 .Distinct()
                 .ToList();
+
             if (distinctTenants.Count > 0)
             {
-                claimsPrincipal.AddClaim("tenant_ids", string.Join(",", distinctTenants));
+                identity.AddClaim(new Claim(
+                    "tenant_ids",
+                    string.Join(",", distinctTenants)));
             }
         }
     }
