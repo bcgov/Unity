@@ -16,7 +16,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.Sql("DROP EXTENSION IF EXISTS pg_stat_statements;");
         }
     }
 }
