@@ -35,9 +35,9 @@ class SQLGenerator:
         # Regex patterns for extraction
         self.sql_pattern = re.compile(r"```sql\s*(.+?)```", re.I | re.S)
         self.metadata_pattern = re.compile(
-            r"""\#\#\#\s*Metadata:\s*
+            r"""(?:\#\#\#\s*)?Metadata:\s*
                 (?:```json\s*)?
-                (\{.*?})
+                (\{[^}]*})
                 (?:\s*```)?
             """,
             re.IGNORECASE | re.DOTALL | re.VERBOSE
@@ -50,9 +50,9 @@ class SQLGenerator:
         if match:
             return match.group(1).strip()
         
-        # Fallback: look for '### SQL:' header
+        # Fallback: look for '### SQL:' or plain 'SQL:' header (model sometimes drops ### at high token counts)
         # Reluctant quantifier is intentional: match shortest content up to next section header or end
-        sql_header = re.search(r"### SQL:\s*(.+?)(?:\n###|\Z)", text, re.DOTALL) # NOSONAR
+        sql_header = re.search(r"^(?:###\s*)?SQL:\s*(.+?)(?:\n(?:###\s*)?(?:Metadata:|Reasoning:)|\Z)", text, re.DOTALL | re.MULTILINE) # NOSONAR
         if sql_header:
             return sql_header.group(1).strip()
         
