@@ -299,10 +299,13 @@ public class AIGenerationQueueTests(ITestOutputHelper outputHelper) : GrantManag
         IBackgroundJobManager backgroundJobManager,
         IRepository<AIGenerationRequest, Guid> repository)
     {
+        var rateLimiter = Substitute.For<Unity.AI.RateLimit.IAIRateLimiter>();
+        rateLimiter.EnsureAndStampAsync().Returns(Task.CompletedTask);
         return new ApplicationAIGenerationQueue(
             backgroundJobManager,
             repository,
             new TestDistributedLockProvider(),
+            rateLimiter,
             Substitute.For<ILogger<ApplicationAIGenerationQueue>>());
     }
 }

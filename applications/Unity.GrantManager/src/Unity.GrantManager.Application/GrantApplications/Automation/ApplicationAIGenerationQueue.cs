@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Unity.AI.Automation;
+using Unity.AI.RateLimit;
 using Unity.GrantManager.GrantApplications;
 using Unity.GrantManager.GrantApplications.Automation.BackgroundJobs;
 using Medallion.Threading;
@@ -16,6 +17,7 @@ public class ApplicationAIGenerationQueue(
     IBackgroundJobManager backgroundJobManager,
     IRepository<AIGenerationRequest, Guid> generationRequestRepository,
     IDistributedLockProvider distributedLockProvider,
+    IAIRateLimiter aiRateLimiter,
     ILogger<ApplicationAIGenerationQueue> logger)
     : IApplicationAIGenerationQueue, ITransientDependency
 {
@@ -106,6 +108,10 @@ public class ApplicationAIGenerationQueue(
         Guid? applicationId,
         Func<Task> enqueue)
     {
+        // Single chokepoint for all AI generate flows (manual + auto).
+        // The limiter is a no-op for system/background callers without an authenticated user.
+        await aiRateLimiter.EnsureAndStampAsync();
+
         var requestLock = distributedLockProvider.CreateLock($"ai-generation:{requestKey}");
 
         using (await requestLock.AcquireAsync())
