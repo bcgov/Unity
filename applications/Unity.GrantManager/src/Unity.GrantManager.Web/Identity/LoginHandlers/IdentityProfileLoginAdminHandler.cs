@@ -1,13 +1,10 @@
 ﻿using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using System;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Unity.GrantManager.Identity;
-using Unity.Modules.Shared.Permissions;
-using Unity.TenantManagement;
 using Volo.Abp;
 using Volo.Abp.Data;
 using Volo.Abp.Identity;
@@ -16,18 +13,6 @@ namespace Unity.GrantManager.Web.Identity.LoginHandlers
 {
     internal class IdentityProfileLoginAdminHandler : IdentityProfileLoginBase
     {
-        internal readonly ImmutableArray<string> _adminPermissions = ImmutableArray.Create(
-            TenantManagementPermissions.Tenants.Default,
-            TenantManagementPermissions.Tenants.Create,
-            TenantManagementPermissions.Tenants.Update,
-            TenantManagementPermissions.Tenants.Delete,
-            TenantManagementPermissions.Tenants.ManageFeatures,
-            TenantManagementPermissions.Tenants.ManageConnectionStrings,
-            IdentityPermissions.Users.Create,
-            IdentityPermissions.UserLookup.Default,
-            IdentityConsts.ITAdminPermissionName
-        );
-     
         internal async Task<UserTenantAccountDto> Handle(TokenValidatedContext validatedTokenContext,
            IList<UserTenantAccountDto> userTenantAccounts,
            string? idp)
@@ -43,7 +28,6 @@ namespace Unity.GrantManager.Web.Identity.LoginHandlers
                 userTenantAccount = userTenantAccounts.First(s => s.TenantId == null);
             }
 
-            AssignAdminHostPermissions(validatedTokenContext.Principal!);
             AssignDefaultClaims(validatedTokenContext.Principal!, userTenantAccount.DisplayName ?? string.Empty, userTenantAccount.Id);
             return userTenantAccount;
         }
@@ -61,11 +45,6 @@ namespace Unity.GrantManager.Web.Identity.LoginHandlers
             }
 
             return false;
-        }
-
-        private void AssignAdminHostPermissions(ClaimsPrincipal claimsPrincipal)
-        {
-            claimsPrincipal.AddPermissions(_adminPermissions);
         }
 
         private async Task<UserTenantAccountDto> CreateAdminAccountAsync(TokenValidatedContext validatedTokenContext, string? idp)

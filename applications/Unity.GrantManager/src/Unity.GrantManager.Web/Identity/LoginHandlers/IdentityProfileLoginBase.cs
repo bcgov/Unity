@@ -7,7 +7,7 @@ using System.Linq;
 using Volo.Abp.MultiTenancy;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Identity;
-using Volo.Abp.PermissionManagement;
+using Volo.Abp.Security.Claims;
 using Microsoft.Extensions.Configuration;
 using Volo.Abp.TenantManagement;
 
@@ -19,7 +19,6 @@ namespace Unity.GrantManager.Web.Identity.LoginHandlers
         protected ICurrentTenant CurrentTenant => LazyServiceProvider.LazyGetRequiredService<ICurrentTenant>();
         protected IdentityUserManager IdentityUserManager => LazyServiceProvider.LazyGetRequiredService<IdentityUserManager>();
         protected IdentityRoleManager IdentityRoleManager => LazyServiceProvider.LazyGetRequiredService<IdentityRoleManager>();
-        protected PermissionManager PermissionManager => LazyServiceProvider.LazyGetRequiredService<PermissionManager>();
         protected IIdentityUserRepository IdentityUserRepository => LazyServiceProvider.LazyGetRequiredService<IIdentityUserRepository>();
         protected IConfiguration Configuration => LazyServiceProvider.LazyGetRequiredService<IConfiguration>();
         protected IUserImportAppService UserImportAppService => LazyServiceProvider.LazyGetRequiredService<IUserImportAppService>();
@@ -29,7 +28,7 @@ namespace Unity.GrantManager.Web.Identity.LoginHandlers
         protected static void AssignDefaultClaims(ClaimsPrincipal claimsPrinicipal, string displayName, Guid userId)
         {
             claimsPrinicipal.AddClaim("DisplayName", displayName);
-            claimsPrinicipal.AddClaim("UserId", userId.ToString());
+            claimsPrinicipal.AddClaim(AbpClaimTypes.UserId, userId.ToString());
             claimsPrinicipal.AddClaim("Badge", Utils.CreateUserBadge(displayName));
         }
 

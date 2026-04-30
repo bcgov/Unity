@@ -75,7 +75,7 @@ namespace Unity.GrantManager.Web.Identity
             var userClaims = _principalAccessor.Principal?.Claims;
             if (userClaims != null && userClaims.Any())
             {
-                var userId = userClaims.FirstOrDefault(s => s.Type == "UserId");
+                var userId = userClaims.FirstOrDefault(s => s.Type == AbpClaimTypes.UserId);
                 if (userId != null)
                 {
                     return Guid.Parse(userId.Value);
