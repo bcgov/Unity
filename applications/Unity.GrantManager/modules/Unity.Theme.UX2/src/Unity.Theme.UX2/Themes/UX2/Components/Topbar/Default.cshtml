@@ -33,7 +33,6 @@
         if (CurrentUser.IsAuthenticated && CurrentUser.FindClaimValue("has_multiple_tenants") == "true")
             isAuthorizedForTenantSwitch = true;
 
-        bool isAuthorizedForPaymentConfiguration = await PermissionChecker.IsGrantedAsync("SettingManagement.ConfigurePayments");
     }
     <abp-dropdown id="user-dropdown">
         <abp-dropdown-button class="btn-dropdown" text="@CurrentTenant.Name" />
