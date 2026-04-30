@@ -58,7 +58,5 @@ public class GrantManagerEntityFrameworkCoreModule : AbpModule
              * See also GrantManagerMigrationsDbContextFactory for EF Core tooling. */
             options.UseNpgsql();
         });
-        // Pre-warm the EF Core query pipeline after startup
-        context.Services.AddHostedService<GrantManagerDbWarmupService>();
     }
 }
