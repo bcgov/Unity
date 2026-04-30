@@ -1,3 +1,4 @@
+using System.Linq;
 using Microsoft.AspNetCore.Authorization;
 using System.Threading.Tasks;
 using Volo.Abp.Authorization.Permissions;
@@ -28,13 +29,11 @@ public class PermissionOrAuthorizationHandler : AuthorizationHandler<PermissionO
         AuthorizationHandlerContext context,
         PermissionOrRequirement requirement)
     {
-        foreach (var permission in requirement.Permissions)
+        var result = await _permissionChecker.IsGrantedAsync(context.User, requirement.Permissions);
+
+        if (result.Result.Any(r => r.Value == PermissionGrantResult.Granted))
         {
-            if (await _permissionChecker.IsGrantedAsync(context.User, permission))
-            {
-                context.Succeed(requirement);
-                return;
-            }
+            context.Succeed(requirement);
         }
     }
 }
