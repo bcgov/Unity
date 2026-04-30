@@ -67,6 +67,7 @@ namespace Unity.GrantManager.EntityFrameworkCore
                     GrantManagerConsts.DbSchema);
                 b.ConfigureByConvention();
                 b.HasIndex(x => x.OidcSub);
+                b.HasIndex(x => x.TenantId);
             });
 
             modelBuilder.Entity<Applicant>(b =>
@@ -79,6 +80,7 @@ namespace Unity.GrantManager.EntityFrameworkCore
                     .HasMaxLength(600);
 
                 b.HasIndex(x => x.ApplicantName);
+                b.HasIndex(x => x.TenantId);
 
                 b.HasMany<ApplicantAddress>()
                     .WithOne(s => s.Applicant)
@@ -110,6 +112,8 @@ namespace Unity.GrantManager.EntityFrameworkCore
                     .HasForeignKey(x => x.ParentFormId)
                     .IsRequired(false)
                     .OnDelete(DeleteBehavior.NoAction);
+
+                b.HasIndex(x => new { x.TenantId, x.IsDeleted }).HasFilter("\"IsDeleted\" = false");
             });
 
             modelBuilder.Entity<ApplicationFormVersion>(b =>
@@ -155,6 +159,9 @@ namespace Unity.GrantManager.EntityFrameworkCore
                     .WithMany(s => s.Applications)
                     .HasForeignKey(x => x.ApplicationStatusId)
                     .IsRequired();
+
+                b.HasIndex(x => new { x.TenantId, x.SubmissionDate }).HasFilter("\"IsDeleted\" = false");
+                b.HasIndex(x => x.ReferenceNo);
             });
 
             modelBuilder.Entity<ApplicantAddress>(b =>
@@ -180,6 +187,7 @@ namespace Unity.GrantManager.EntityFrameworkCore
 
                 b.ConfigureByConvention(); //auto configure for the base class props
                 b.HasOne<Applicant>().WithMany().HasForeignKey(x => x.ApplicantId).IsRequired();
+                b.HasIndex(x => new { x.TenantId, x.ApplicationId });
             });
 
             modelBuilder.Entity<ApplicantComment>(b =>
@@ -285,6 +293,7 @@ namespace Unity.GrantManager.EntityFrameworkCore
                     GrantManagerConsts.DbSchema);
 
                 b.ConfigureByConvention();
+                b.HasIndex(x => new { x.TenantId, x.ApplicationId });
             });
 
             modelBuilder.Entity<ApplicationTags>(b =>
@@ -297,8 +306,7 @@ namespace Unity.GrantManager.EntityFrameworkCore
                  .HasForeignKey(x => x.TagId)
                  .IsRequired()
                  .OnDelete(DeleteBehavior.NoAction);
-
-
+                b.HasIndex(x => new { x.TenantId, x.ApplicationId });
             });
 
             modelBuilder.Entity<ApplicationContact>(b =>
@@ -326,7 +334,7 @@ namespace Unity.GrantManager.EntityFrameworkCore
                     .IsRequired()
                     .HasDefaultValue(ApplicationLinkType.Related)
                     .HasConversion(new EnumToStringConverter<ApplicationLinkType>());
-
+                b.HasIndex(x => new { x.TenantId, x.ApplicationId });
             });
 
             modelBuilder.Entity<Tag>(b =>

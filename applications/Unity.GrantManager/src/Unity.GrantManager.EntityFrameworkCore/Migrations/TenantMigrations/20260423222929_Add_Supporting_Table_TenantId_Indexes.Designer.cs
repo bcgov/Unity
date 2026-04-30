@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Unity.GrantManager.EntityFrameworkCore;
@@ -12,9 +13,11 @@ using Volo.Abp.EntityFrameworkCore;
 namespace Unity.GrantManager.Migrations.TenantMigrations
 {
     [DbContext(typeof(GrantTenantDbContext))]
-    partial class GrantTenantDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260423222929_Add_Supporting_Table_TenantId_Indexes")]
+    partial class Add_Supporting_Table_TenantId_Indexes
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -700,11 +703,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<bool>("Published")
                         .HasColumnType("boolean");
 
-                    b.Property<bool>("IsArchived")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(false);
-
                     b.Property<string>("ReportColumns")
                         .IsRequired()
                         .HasColumnType("text");
@@ -775,9 +773,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
 
                     b.Property<long>("Order")
                         .HasColumnType("bigint");
-
-                    b.Property<string>("Definition")
-                        .HasColumnType("jsonb");
 
                     b.Property<Guid?>("TenantId")
                         .HasColumnType("uuid")
@@ -890,6 +885,9 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
 
                     b.Property<string>("SectorSubSectorIndustryDesc")
                         .HasColumnType("text");
+
+                    b.Property<Guid?>("SiteId")
+                        .HasColumnType("uuid");
 
                     b.Property<DateOnly?>("StartedOperatingDate")
                         .HasColumnType("date");
@@ -1243,9 +1241,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
 
                     b.Property<string>("DeclineRational")
                         .HasColumnType("text");
-
-                    b.Property<Guid?>("DefaultSiteId")
-                        .HasColumnType("uuid");
 
                     b.Property<Guid?>("DeleterId")
                         .HasColumnType("uuid")
@@ -4254,6 +4249,13 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .HasMaxLength(40)
                         .HasColumnType("character varying(40)")
                         .HasColumnName("ConcurrencyStamp");
+
+                    b.Property<Guid>("CorrelationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("CorrelationProvider")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.Property<DateTime>("CreationTime")
                         .HasColumnType("timestamp without time zone")

@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Unity.GrantManager.EntityFrameworkCore;
@@ -12,9 +13,11 @@ using Volo.Abp.EntityFrameworkCore;
 namespace Unity.GrantManager.Migrations.TenantMigrations
 {
     [DbContext(typeof(GrantTenantDbContext))]
-    partial class GrantTenantDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260423214720_Add_Applications_Performance_Indexes")]
+    partial class Add_Applications_Performance_Indexes
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -700,11 +703,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<bool>("Published")
                         .HasColumnType("boolean");
 
-                    b.Property<bool>("IsArchived")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(false);
-
                     b.Property<string>("ReportColumns")
                         .IsRequired()
                         .HasColumnType("text");
@@ -775,9 +773,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
 
                     b.Property<long>("Order")
                         .HasColumnType("bigint");
-
-                    b.Property<string>("Definition")
-                        .HasColumnType("jsonb");
 
                     b.Property<Guid?>("TenantId")
                         .HasColumnType("uuid")
@@ -891,6 +886,9 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<string>("SectorSubSectorIndustryDesc")
                         .HasColumnType("text");
 
+                    b.Property<Guid?>("SiteId")
+                        .HasColumnType("uuid");
+
                     b.Property<DateOnly?>("StartedOperatingDate")
                         .HasColumnType("date");
 
@@ -913,8 +911,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.HasKey("Id");
 
                     b.HasIndex("ApplicantName");
-
-                    b.HasIndex("TenantId");
 
                     b.ToTable("Applicants", (string)null);
                 });
@@ -1243,9 +1239,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
 
                     b.Property<string>("DeclineRational")
                         .HasColumnType("text");
-
-                    b.Property<Guid?>("DefaultSiteId")
-                        .HasColumnType("uuid");
 
                     b.Property<Guid?>("DeleterId")
                         .HasColumnType("uuid")
@@ -1792,9 +1785,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.HasIndex("IntakeId");
 
                     b.HasIndex("ParentFormId");
-
-                    b.HasIndex("TenantId", "IsDeleted")
-                        .HasFilter("\"IsDeleted\" = false");
 
                     b.ToTable("ApplicationForms", (string)null);
                 });
@@ -2880,8 +2870,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.HasKey("Id");
 
                     b.HasIndex("OidcSub");
-
-                    b.HasIndex("TenantId");
 
                     b.ToTable("Persons", (string)null);
                 });
@@ -4254,6 +4242,13 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .HasMaxLength(40)
                         .HasColumnType("character varying(40)")
                         .HasColumnName("ConcurrencyStamp");
+
+                    b.Property<Guid>("CorrelationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("CorrelationProvider")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.Property<DateTime>("CreationTime")
                         .HasColumnType("timestamp without time zone")
