@@ -12,7 +12,6 @@ using Unity.Flex.Scoresheets;
 using Unity.Flex.Scoresheets.Enums;
 using Unity.Flex.Scoresheets.Events;
 using Unity.Flex.Worksheets.Definitions;
-using Unity.GrantManager.Applications;
 using Unity.GrantManager.Comments;
 using Unity.GrantManager.Exceptions;
 using Unity.GrantManager.Workflow;
