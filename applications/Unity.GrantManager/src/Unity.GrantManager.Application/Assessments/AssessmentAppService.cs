@@ -23,7 +23,6 @@ using Volo.Abp.Domain.Repositories;
 using Volo.Abp.EventBus.Local;
 using Volo.Abp.Features;
 using Volo.Abp.Identity.Integration;
-using Volo.Abp.Settings;
 using Volo.Abp.Users;
 using Volo.Abp.Validation;
 
