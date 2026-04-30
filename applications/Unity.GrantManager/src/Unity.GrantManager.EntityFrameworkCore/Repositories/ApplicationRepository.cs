@@ -90,15 +90,7 @@ public class ApplicationRepository
         "assignees"
     };
 
-    /// <summary>
-    /// Base query with conditional includes driven by <paramref name="requestedFields"/>.
-    /// Applicant, ApplicationForm, and ApplicationStatus are always joined because
-    /// their getters throw <see cref="InvalidOperationException"/> when the backing
-    /// field is null. The remaining five navigations are only joined when a visible
-    /// column requires them.
-    /// When <paramref name="requestedFields"/> is <c>null</c> or empty every navigation
-    /// is included (backward-compatible behaviour).
-    /// </summary>
+
     private async Task<IQueryable<Application>> BuildBaseQueryAsync()
     {
         return (await GetQueryableAsync())
@@ -187,7 +179,7 @@ public class ApplicationRepository
         return await query.LongCountAsync();
     }
 
-    public async Task<List<Application>> WithFullDetailsAsync(
+    public async Task<List<Application>> WithFullDetailsAsync( 
         int skipCount,
         int maxResultCount,
         string? sorting = null,
@@ -242,14 +234,15 @@ public class ApplicationRepository
             ? new HashSet<string>(requestedFields, StringComparer.OrdinalIgnoreCase)
             : null; // null = all fields included
 
-        var query = (await GetQueryableAsync()).AsNoTracking();
-
-        // Check for required links
         bool includeTags = fields == null || fields.Overlaps(TagFields);
         bool includeAssignees = fields == null || fields.Overlaps(AssignmentFields);
         bool includeLinks = fields == null || fields.Overlaps(ApplicationLinkFields);
         bool includeApplicantAgent = fields == null || fields.Overlaps(ApplicantAgentFields);
         bool includeOwner = fields == null || fields.Overlaps(OwnerFields);
+
+        // Sorting is omitted: the DataTable operates in client-side mode and re-sorts locally.
+        // skipCount/maxResultCount are not applied while the DataTable is in client-side mode.
+        var query = (await GetQueryableAsync()).AsNoTracking();
 
         var (fromUtc, toUtc) = ConvertToUtcRange(submittedFromDate, submittedToDate);
         if (fromUtc.HasValue)
@@ -269,70 +262,61 @@ public class ApplicationRepository
                 a.ReferenceNo.Contains(searchTerm));
         }
 
-        query = ApplySorting(query, sorting);
-
-        return await query
-            .Skip(skipCount)
-            .Take(maxResultCount)
-            .Select(a => new ApplicationListRecord
+        // Base query — always-required navigations only (ApplicationStatus, ApplicationForm, Applicant).
+        var baseData = await query
+            .Select(a => new
             {
-                Id = a.Id,
-                ProjectName = a.ProjectName,
-                ReferenceNo = a.ReferenceNo,
-                RequestedAmount = a.RequestedAmount,
-                TotalProjectBudget = a.TotalProjectBudget,
-                EconomicRegion = a.EconomicRegion,
-                City = a.City,
-                ProposalDate = a.ProposalDate,
-                SubmissionDate = a.SubmissionDate,
-                FinalDecisionDate = a.FinalDecisionDate,
-                DueDate = a.DueDate,
-                NotificationDate = a.NotificationDate,
-                ProjectSummary = a.ProjectSummary,
-                TotalScore = a.TotalScore,
-                RecommendedAmount = a.RecommendedAmount,
-                ApprovedAmount = a.ApprovedAmount,
-                LikelihoodOfFunding = a.LikelihoodOfFunding,
-                DueDiligenceStatus = a.DueDiligenceStatus,
-                SubStatus = a.SubStatus,
-                DeclineRational = a.DeclineRational,
-                Notes = a.Notes,
-                AssessmentResultStatus = a.AssessmentResultStatus,
-                AssessmentResultDate = a.AssessmentResultDate,
-                ProjectStartDate = a.ProjectStartDate,
-                ProjectEndDate = a.ProjectEndDate,
-                PercentageTotalProjectBudget = a.PercentageTotalProjectBudget,
-                ProjectFundingTotal = a.ProjectFundingTotal,
-                Community = a.Community,
-                CommunityPopulation = a.CommunityPopulation,
-                Acquisition = a.Acquisition,
-                Forestry = a.Forestry,
-                ForestryFocus = a.ForestryFocus,
-                ElectoralDistrict = a.ElectoralDistrict,
-                ApplicantElectoralDistrict = a.ApplicantElectoralDistrict,
-                Place = a.Place,
-                RegionalDistrict = a.RegionalDistrict,
-                OwnerId = a.OwnerId,
-                DefaultSiteId = a.DefaultSiteId,
-                SigningAuthorityFullName = a.SigningAuthorityFullName,
-                SigningAuthorityTitle = a.SigningAuthorityTitle,
-                SigningAuthorityEmail = a.SigningAuthorityEmail,
-                SigningAuthorityBusinessPhone = a.SigningAuthorityBusinessPhone,
-                SigningAuthorityCellPhone = a.SigningAuthorityCellPhone,
-                ContractNumber = a.ContractNumber,
-                ContractExecutionDate = a.ContractExecutionDate,
-                RiskRanking = a.RiskRanking,
-                UnityApplicationId = a.UnityApplicationId,
-
-                // ApplicationStatus
-                Status = a.ApplicationStatus.InternalStatus,
-
-                // ApplicationForm
-                Category = a.ApplicationForm.Category ?? string.Empty,
-
-                // Applicant
-                ApplicantId = a.ApplicantId,
-                ApplicantName = a.Applicant.ApplicantName,
+                a.Id,
+                a.ProjectName,
+                a.ReferenceNo,
+                a.RequestedAmount,
+                a.TotalProjectBudget,
+                a.EconomicRegion,
+                a.City,
+                a.ProposalDate,
+                a.SubmissionDate,
+                a.FinalDecisionDate,
+                a.DueDate,
+                a.NotificationDate,
+                a.ProjectSummary,
+                a.TotalScore,
+                a.RecommendedAmount,
+                a.ApprovedAmount,
+                a.LikelihoodOfFunding,
+                a.DueDiligenceStatus,
+                a.SubStatus,
+                a.DeclineRational,
+                a.Notes,
+                a.AssessmentResultStatus,
+                a.AssessmentResultDate,
+                a.ProjectStartDate,
+                a.ProjectEndDate,
+                a.PercentageTotalProjectBudget,
+                a.ProjectFundingTotal,
+                a.Community,
+                a.CommunityPopulation,
+                a.Acquisition,
+                a.Forestry,
+                a.ForestryFocus,
+                a.ElectoralDistrict,
+                a.ApplicantElectoralDistrict,
+                a.Place,
+                a.RegionalDistrict,
+                a.OwnerId,
+                a.DefaultSiteId,
+                a.SigningAuthorityFullName,
+                a.SigningAuthorityTitle,
+                a.SigningAuthorityEmail,
+                a.SigningAuthorityBusinessPhone,
+                a.SigningAuthorityCellPhone,
+                a.ContractNumber,
+                a.ContractExecutionDate,
+                a.RiskRanking,
+                a.UnityApplicationId,         
+                Status = a.ApplicationStatus.InternalStatus, // ApplicationStatus (always joined)
+                Category = a.ApplicationForm.Category ?? string.Empty, // ApplicationForm (always joined)          
+                a.ApplicantId, 
+                ApplicantName = a.Applicant.ApplicantName, // Applicant (always joined)
                 ApplicantSupplierId = a.Applicant.SupplierId,
                 ApplicantSector = a.Applicant.Sector,
                 ApplicantSubSector = a.Applicant.SubSector,
@@ -349,49 +333,203 @@ public class ApplicationRepository
                 ApplicantFiscalDay = a.Applicant.FiscalDay,
                 ApplicantFiscalMonth = a.Applicant.FiscalMonth,
                 ApplicantUnityApplicantId = a.Applicant.UnityApplicantId,
+            })
+            .ToListAsync();
 
-                // ApplicantAgent (left-joined)
-                ContactFullName = includeApplicantAgent && a.ApplicantAgent != null ? a.ApplicantAgent.Name : null,
-                ContactTitle = includeApplicantAgent && a.ApplicantAgent != null ? a.ApplicantAgent.Title : null,
-                ContactEmail = includeApplicantAgent && a.ApplicantAgent != null ? a.ApplicantAgent.Email : null,
-                ContactBusinessPhone = includeApplicantAgent && a.ApplicantAgent != null ? a.ApplicantAgent.Phone : null,
-                ContactCellPhone = includeApplicantAgent && a.ApplicantAgent != null ? a.ApplicantAgent.Phone2 : null,
+        if (baseData.Count == 0)
+        {
+            return [];
+        }
 
-                // Owner (left-joined)
-                OwnerPersonId = includeOwner && a.Owner != null ? a.Owner.Id : (Guid?)null,
-                OwnerFullName = includeOwner && a.Owner != null ? a.Owner.FullName : null,
+        // Conditionally join ApplicantAgent
+        var agentMap = new Dictionary<Guid, (string? Name, string? Title, string? Email, string? Phone, string? Phone2)>();
+        if (includeApplicantAgent)
+        {
+            var agentData = await query
+                .Where(a => a.ApplicantAgent != null)
+                .Select(a => new
+                {
+                    a.Id,
+                    a.ApplicantAgent!.Name,
+                    a.ApplicantAgent.Title,
+                    a.ApplicantAgent.Email,
+                    Phone = a.ApplicantAgent.Phone,
+                    Phone2 = a.ApplicantAgent.Phone2,
+                })
+                .ToListAsync();
 
-                // Collections projected as correlated subqueries — skipped when column not visible
-                Tags = includeTags && a.ApplicationTags != null
-                    ? a.ApplicationTags.Select(t => new ApplicationTagListItem
-                    {
-                        Id = t.Id,
-                        ApplicationId = t.ApplicationId,
-                        TagName = t.Tag != null ? t.Tag.Name : null
-                    }).ToList()
-                    : new List<ApplicationTagListItem>(),
+            agentMap = agentData.ToDictionary(
+                x => x.Id,
+                x => ((string?)x.Name, x.Title, x.Email, x.Phone, x.Phone2));
+        }
 
-                Assignments = includeAssignees && a.ApplicationAssignments != null
-                    ? a.ApplicationAssignments.Select(aa => new ApplicationAssignmentListItem
-                    {
-                        Id = aa.Id,
-                        ApplicationId = aa.ApplicationId,
-                        AssigneeId = aa.AssigneeId,
-                        AssigneeName = aa.Assignee != null ? aa.Assignee.FullName : string.Empty,
-                        Duty = aa.Duty
-                    }).ToList()
-                    : new List<ApplicationAssignmentListItem>(),
+        // Conditionally join Owner
+        var ownerMap = new Dictionary<Guid, (Guid PersonId, string? FullName)>();
+        if (includeOwner)
+        {
+            var ownerData = await query
+                .Where(a => a.Owner != null)
+                .Select(a => new { a.Id, OwnerId = a.Owner!.Id, OwnerFullName = a.Owner.FullName })
+                .ToListAsync();
 
-                Links = includeLinks && a.ApplicationLinks != null
-                    ? a.ApplicationLinks.Select(l => new ApplicationLinkListItem
-                    {
-                        Id = l.Id,
-                        ApplicationId = l.ApplicationId,
-                        LinkedApplicationId = l.LinkedApplicationId,
-                        LinkType = l.LinkType
-                    }).ToList()
-                    : new List<ApplicationLinkListItem>()
-            }).ToListAsync();
+            ownerMap = ownerData.ToDictionary(
+                x => x.Id,
+                x => (x.OwnerId, (string?)x.OwnerFullName));
+        }
+
+        var dbContext = await GetDbContextAsync();
+
+        // matchingIds is kept as IQueryable<Guid> so EF Core translates it as a SQL subquery
+        // (WHERE ApplicationId IN (SELECT Id FROM Applications WHERE ...)) rather than
+        // binding thousands of individual GUID parameters.
+        var matchingIds = query.Select(a => a.Id);
+
+        // Conditionally join Tags
+        var tagsLookup = Enumerable.Empty<ApplicationTagListItem>().ToLookup(t => Guid.Empty);
+        if (includeTags)
+        {
+            var tags = await dbContext.Set<ApplicationTags>()
+                .AsNoTracking()
+                .Where(t => matchingIds.Contains(t.ApplicationId))
+                .Select(t => new ApplicationTagListItem
+                {
+                    Id = t.Id,
+                    ApplicationId = t.ApplicationId,
+                    TagName = t.Tag != null ? t.Tag.Name : null,
+                })
+                .ToListAsync();
+
+            tagsLookup = tags.ToLookup(t => t.ApplicationId);
+        }
+
+        // Conditionally join Assignments
+        var assignmentsLookup = Enumerable.Empty<ApplicationAssignmentListItem>().ToLookup(aa => Guid.Empty);
+        if (includeAssignees)
+        {
+            var assignments = await dbContext.Set<ApplicationAssignment>()
+                .AsNoTracking()
+                .Where(aa => matchingIds.Contains(aa.ApplicationId))
+                .Select(aa => new ApplicationAssignmentListItem
+                {
+                    Id = aa.Id,
+                    ApplicationId = aa.ApplicationId,
+                    AssigneeId = aa.AssigneeId,
+                    AssigneeName = aa.Assignee != null ? aa.Assignee.FullName : string.Empty,
+                    Duty = aa.Duty,
+                })
+                .ToListAsync();
+
+            assignmentsLookup = assignments.ToLookup(aa => aa.ApplicationId);
+        }
+
+        // Conditionally join Links
+        var linksLookup = Enumerable.Empty<ApplicationLinkListItem>().ToLookup(l => Guid.Empty);
+        if (includeLinks)
+        {
+            var links = await dbContext.Set<ApplicationLink>()
+                .AsNoTracking()
+                .Where(l => matchingIds.Contains(l.ApplicationId))
+                .Select(l => new ApplicationLinkListItem
+                {
+                    Id = l.Id,
+                    ApplicationId = l.ApplicationId,
+                    LinkedApplicationId = l.LinkedApplicationId,
+                    LinkType = l.LinkType,
+                })
+                .ToListAsync();
+
+            linksLookup = links.ToLookup(l => l.ApplicationId);
+        }
+
+        return baseData
+            .Select(a =>
+            {
+                agentMap.TryGetValue(a.Id, out var agent);
+                ownerMap.TryGetValue(a.Id, out var owner);
+                var hasOwner = includeOwner && ownerMap.ContainsKey(a.Id);
+
+                return new ApplicationListRecord
+                {
+                    Id = a.Id,
+                    ProjectName = a.ProjectName,
+                    ReferenceNo = a.ReferenceNo,
+                    RequestedAmount = a.RequestedAmount,
+                    TotalProjectBudget = a.TotalProjectBudget,
+                    EconomicRegion = a.EconomicRegion,
+                    City = a.City,
+                    ProposalDate = a.ProposalDate,
+                    SubmissionDate = a.SubmissionDate,
+                    FinalDecisionDate = a.FinalDecisionDate,
+                    DueDate = a.DueDate,
+                    NotificationDate = a.NotificationDate,
+                    ProjectSummary = a.ProjectSummary,
+                    TotalScore = a.TotalScore,
+                    RecommendedAmount = a.RecommendedAmount,
+                    ApprovedAmount = a.ApprovedAmount,
+                    LikelihoodOfFunding = a.LikelihoodOfFunding,
+                    DueDiligenceStatus = a.DueDiligenceStatus,
+                    SubStatus = a.SubStatus,
+                    DeclineRational = a.DeclineRational,
+                    Notes = a.Notes,
+                    AssessmentResultStatus = a.AssessmentResultStatus,
+                    AssessmentResultDate = a.AssessmentResultDate,
+                    ProjectStartDate = a.ProjectStartDate,
+                    ProjectEndDate = a.ProjectEndDate,
+                    PercentageTotalProjectBudget = a.PercentageTotalProjectBudget,
+                    ProjectFundingTotal = a.ProjectFundingTotal,
+                    Community = a.Community,
+                    CommunityPopulation = a.CommunityPopulation,
+                    Acquisition = a.Acquisition,
+                    Forestry = a.Forestry,
+                    ForestryFocus = a.ForestryFocus,
+                    ElectoralDistrict = a.ElectoralDistrict,
+                    ApplicantElectoralDistrict = a.ApplicantElectoralDistrict,
+                    Place = a.Place,
+                    RegionalDistrict = a.RegionalDistrict,
+                    OwnerId = a.OwnerId,
+                    DefaultSiteId = a.DefaultSiteId,
+                    SigningAuthorityFullName = a.SigningAuthorityFullName,
+                    SigningAuthorityTitle = a.SigningAuthorityTitle,
+                    SigningAuthorityEmail = a.SigningAuthorityEmail,
+                    SigningAuthorityBusinessPhone = a.SigningAuthorityBusinessPhone,
+                    SigningAuthorityCellPhone = a.SigningAuthorityCellPhone,
+                    ContractNumber = a.ContractNumber,
+                    ContractExecutionDate = a.ContractExecutionDate,
+                    RiskRanking = a.RiskRanking,
+                    UnityApplicationId = a.UnityApplicationId,
+                    Status = a.Status,
+                    Category = a.Category,
+                    ApplicantId = a.ApplicantId,
+                    ApplicantName = a.ApplicantName,
+                    ApplicantSupplierId = a.ApplicantSupplierId,
+                    ApplicantSector = a.ApplicantSector,
+                    ApplicantSubSector = a.ApplicantSubSector,
+                    ApplicantOrgName = a.ApplicantOrgName,
+                    ApplicantNonRegOrgName = a.ApplicantNonRegOrgName,
+                    ApplicantOrganizationType = a.ApplicantOrganizationType,
+                    ApplicantOrgNumber = a.ApplicantOrgNumber,
+                    ApplicantOrgStatus = a.ApplicantOrgStatus,
+                    ApplicantBusinessNumber = a.ApplicantBusinessNumber,
+                    ApplicantOrganizationSize = a.ApplicantOrganizationSize,
+                    ApplicantSectorSubSectorIndustryDesc = a.ApplicantSectorSubSectorIndustryDesc,
+                    ApplicantRedStop = a.ApplicantRedStop,
+                    ApplicantIndigenousOrgInd = a.ApplicantIndigenousOrgInd,
+                    ApplicantFiscalDay = a.ApplicantFiscalDay,
+                    ApplicantFiscalMonth = a.ApplicantFiscalMonth,
+                    ApplicantUnityApplicantId = a.ApplicantUnityApplicantId,
+                    ContactFullName = includeApplicantAgent ? agent.Name : null,
+                    ContactTitle = includeApplicantAgent ? agent.Title : null,
+                    ContactEmail = includeApplicantAgent ? agent.Email : null,
+                    ContactBusinessPhone = includeApplicantAgent ? agent.Phone : null,
+                    ContactCellPhone = includeApplicantAgent ? agent.Phone2 : null,
+                    OwnerPersonId = hasOwner ? owner.PersonId : (Guid?)null,
+                    OwnerFullName = hasOwner ? owner.FullName : null,
+                    Tags = includeTags ? tagsLookup[a.Id].ToList() : [],
+                    Assignments = includeAssignees ? assignmentsLookup[a.Id].ToList() : [],
+                    Links = includeLinks ? linksLookup[a.Id].ToList() : [],
+                };
+            })
+            .ToList();
     }
 
     public async Task<List<Application>> GetApplicationsBySiteIdAsync(Guid siteId)

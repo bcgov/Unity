@@ -10,7 +10,6 @@ namespace Unity.GrantManager.Applications;
 /// </summary>
 public class ApplicationListRecord
 {
-    public string? AiAnalysis { get; init; } = string.Empty;
     public Guid Id { get; init; }
     public string ProjectName { get; init; } = string.Empty;
     public string ReferenceNo { get; init; } = string.Empty;

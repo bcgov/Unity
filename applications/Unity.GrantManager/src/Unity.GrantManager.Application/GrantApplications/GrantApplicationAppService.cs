@@ -22,8 +22,8 @@ using Unity.GrantManager.Applications;
 using Unity.GrantManager.Events;
 using Unity.GrantManager.Flex;
 using Unity.GrantManager.Identity;
-using Unity.GrantManager.Payments;
 using Unity.GrantManager.GlobalTag;
+using Unity.GrantManager.Payments;
 using Unity.Modules.Shared;
 using Unity.Modules.Shared.Correlation;
 using Unity.Payments.PaymentRequests;
@@ -70,56 +70,177 @@ public class GrantApplicationAppService(
 
     public async Task<PagedResultDto<GrantApplicationDto>> GetListAsync(GrantApplicationListInputDto input)
     {
-        // 1. Fetch applications with filters + paging in DB
-        var applications = await applicationRepository.WithFullDetailsAsync(
+        var listRecords = await applicationRepository.GetApplicationListRecordsAsync(
             input.SkipCount,
             input.MaxResultCount,
             input.Sorting,
             input.SubmittedFromDate,
-            input.SubmittedToDate
+            input.SubmittedToDate,
+            requestedFields: input.RequestedFields
         );
 
-        var applicationIds = applications.Select(a => a.Id).ToList();
+        var applicationIds = listRecords.Select(r => r.Id).ToList();
 
-        // 2. Fetch payment rollup batch if feature enabled
-        bool paymentsFeatureEnabled = await FeatureChecker.IsEnabledAsync(PaymentConsts.UnityPaymentsFeature);
+
+        // Fetch payment rollup batch only when the feature is enabled AND at least one
+        // payment column is visible. The two payment column sNames are "totalPaidAmount"
+        // and "paymentInfo"; null RequestedFields means all columns are requested.
+        bool paymentColumnsRequested = input.RequestedFields == null || input.RequestedFields.Any(f => 
+                f.Equals("totalPaidAmount", StringComparison.OrdinalIgnoreCase)
+             || f.Equals("paymentInfo", StringComparison.OrdinalIgnoreCase));
+
+
+        bool paymentsFeatureEnabled = false; 
+        if (paymentColumnsRequested) // Only even check if a column is requested.
+        {
+            paymentsFeatureEnabled = await FeatureChecker.IsEnabledAsync(PaymentConsts.UnityPaymentsFeature);
+        }
 
         Dictionary<Guid, ApplicationPaymentRollupDto> paymentRollupBatch = [];
 
-        if (paymentsFeatureEnabled && applicationIds.Count > 0)
+        if (paymentColumnsRequested && paymentsFeatureEnabled && applicationIds.Count > 0)
         {
             paymentRollupBatch = await paymentRequestService.GetApplicationPaymentRollupBatchAsync(applicationIds);
         }
 
-        // 3. Map applications to DTOs
-        var appDtos = applications.Select(app =>
+        var appDtos = listRecords.Select(rec =>
         {
-            var appDto = ObjectMapper.Map<Application, GrantApplicationDto>(app);
+            var appDto = new GrantApplicationDto
+            {
+                Id = rec.Id,
+                ProjectName = rec.ProjectName,
+                ReferenceNo = rec.ReferenceNo,
+                RequestedAmount = rec.RequestedAmount,
+                TotalProjectBudget = rec.TotalProjectBudget,
+                EconomicRegion = rec.EconomicRegion ?? string.Empty,
+                City = rec.City ?? string.Empty,
+                ProposalDate = rec.ProposalDate ?? default,
+                SubmissionDate = rec.SubmissionDate,
+                FinalDecisionDate = rec.FinalDecisionDate,
+                DueDate = rec.DueDate,
+                NotificationDate = rec.NotificationDate,
+                ProjectSummary = rec.ProjectSummary ?? string.Empty,
+                TotalScore = rec.TotalScore ?? 0,
+                RecommendedAmount = rec.RecommendedAmount,
+                ApprovedAmount = rec.ApprovedAmount,
+                LikelihoodOfFunding = rec.LikelihoodOfFunding ?? string.Empty,
+                DueDiligenceStatus = rec.DueDiligenceStatus ?? string.Empty,
+                SubStatus = rec.SubStatus ?? string.Empty,
+                SubStatusDisplayValue = MapSubstatusDisplayValue(rec.SubStatus ?? string.Empty),
+                DeclineRational = MapDeclineRationalDisplayValue(rec.DeclineRational ?? string.Empty),
+                Notes = rec.Notes ?? string.Empty,
+                AssessmentResultStatus = rec.AssessmentResultStatus ?? string.Empty,
+                AssessmentResultDate = rec.AssessmentResultDate ?? default,
+                ProjectStartDate = rec.ProjectStartDate,
+                ProjectEndDate = rec.ProjectEndDate,
+                PercentageTotalProjectBudget = rec.PercentageTotalProjectBudget,
+                ProjectFundingTotal = rec.ProjectFundingTotal,
+                Community = rec.Community,
+                CommunityPopulation = rec.CommunityPopulation,
+                Acquisition = rec.Acquisition,
+                Forestry = rec.Forestry,
+                ForestryFocus = rec.ForestryFocus,
+                ElectoralDistrict = rec.ElectoralDistrict,
+                ApplicantElectoralDistrict = rec.ApplicantElectoralDistrict,
+                Place = rec.Place,
+                RegionalDistrict = rec.RegionalDistrict,
+                OwnerId = rec.OwnerId,
+                DefaultSiteId = rec.DefaultSiteId,
+                SigningAuthorityFullName = rec.SigningAuthorityFullName,
+                SigningAuthorityTitle = rec.SigningAuthorityTitle,
+                SigningAuthorityEmail = rec.SigningAuthorityEmail,
+                SigningAuthorityBusinessPhone = rec.SigningAuthorityBusinessPhone,
+                SigningAuthorityCellPhone = rec.SigningAuthorityCellPhone,
+                ContractNumber = rec.ContractNumber,
+                ContractExecutionDate = rec.ContractExecutionDate,
+                RiskRanking = rec.RiskRanking,
+                UnityApplicationId = rec.UnityApplicationId,
 
-            appDto.Status = app.ApplicationStatus.InternalStatus;
-            appDto.Applicant = ObjectMapper.Map<Applicant, GrantApplicationApplicantDto>(app.Applicant);
-            appDto.Category = app.ApplicationForm.Category ?? string.Empty;
-            appDto.Owner = BuildApplicationOwner(app.Owner);
-            appDto.OrganizationName = app.Applicant?.OrgName ?? string.Empty;
-            appDto.ApplicationTag = ObjectMapper.Map<List<ApplicationTags>, List<ApplicationTagsDto>>(app.ApplicationTags?.ToList() ?? []);
-            appDto.NonRegOrgName = app.Applicant?.NonRegOrgName ?? string.Empty;
-            appDto.OrganizationType = app.Applicant?.OrganizationType ?? string.Empty;
-            appDto.Assignees = BuildApplicationAssignees(app.ApplicationAssignments);
-            appDto.SubStatusDisplayValue = MapSubstatusDisplayValue(appDto.SubStatus);
-            appDto.DeclineRational = MapDeclineRationalDisplayValue(appDto.DeclineRational);
-            appDto.ContactFullName = app.ApplicantAgent?.Name;
-            appDto.ContactEmail = app.ApplicantAgent?.Email;
-            appDto.ContactTitle = app.ApplicantAgent?.Title;
-            appDto.ContactBusinessPhone = app.ApplicantAgent?.Phone;
-            appDto.ContactCellPhone = app.ApplicantAgent?.Phone2;
-            appDto.ApplicationLinks = ObjectMapper.Map<List<ApplicationLink>, List<ApplicationLinksDto>>(app.ApplicationLinks?.ToList() ?? []);
+                // From ApplicationStatus
+                Status = rec.Status,
+
+                // From ApplicationForm
+                Category = rec.Category,
+
+                // From Applicant — both the nested DTO and the flattened top-level properties
+                Applicant = new GrantApplicationApplicantDto
+                {
+                    Id = rec.ApplicantId,
+                    ApplicantName = rec.ApplicantName ?? string.Empty,
+                    SupplierId = rec.ApplicantSupplierId ?? Guid.Empty,
+                    Sector = rec.ApplicantSector ?? string.Empty,
+                    SubSector = rec.ApplicantSubSector ?? string.Empty,
+                    OrgNumber = rec.ApplicantOrgNumber ?? string.Empty,
+                    OrgName = rec.ApplicantOrgName ?? string.Empty,
+                    OrgStatus = rec.ApplicantOrgStatus ?? string.Empty,
+                    BusinessNumber = rec.ApplicantBusinessNumber ?? string.Empty,
+                    OrganizationType = rec.ApplicantOrganizationType ?? string.Empty,
+                    OrganizationSize = rec.ApplicantOrganizationSize ?? string.Empty,
+                    SectorSubSectorIndustryDesc = rec.ApplicantSectorSubSectorIndustryDesc ?? string.Empty,
+                    RedStop = rec.ApplicantRedStop ?? false,
+                    IndigenousOrgInd = rec.ApplicantIndigenousOrgInd ?? string.Empty,
+                    UnityApplicantId = rec.ApplicantUnityApplicantId ?? string.Empty,
+                    FiscalDay = rec.ApplicantFiscalDay?.ToString() ?? string.Empty,
+                    FiscalMonth = rec.ApplicantFiscalMonth ?? string.Empty
+                },
+                OrganizationName = rec.ApplicantOrgName ?? string.Empty,
+                NonRegOrgName = rec.ApplicantNonRegOrgName ?? string.Empty,
+                OrganizationType = rec.ApplicantOrganizationType ?? string.Empty,
+                OrgStatus = rec.ApplicantOrgStatus,
+                BusinessNumber = rec.ApplicantBusinessNumber,
+                OrgNumber = rec.ApplicantOrgNumber,
+                OrganizationSize = rec.ApplicantOrganizationSize,
+                SectorSubSectorIndustryDesc = rec.ApplicantSectorSubSectorIndustryDesc,
+                Sector = rec.ApplicantSector,
+                SubSector = rec.ApplicantSubSector,
+
+                // From ApplicantAgent
+                ContactFullName = rec.ContactFullName,
+                ContactTitle = rec.ContactTitle,
+                ContactEmail = rec.ContactEmail,
+                ContactBusinessPhone = rec.ContactBusinessPhone,
+                ContactCellPhone = rec.ContactCellPhone,
+
+                // From Owner
+                Owner = rec.OwnerPersonId.HasValue
+                    ? new GrantApplicationAssigneeDto { Id = rec.OwnerPersonId.Value, FullName = rec.OwnerFullName ?? string.Empty }
+                    : new GrantApplicationAssigneeDto(),
+
+                // Collections
+                ApplicationTag = rec.Tags
+                    .Select(t => new ApplicationTagsDto
+                    {
+                        Id = t.Id,
+                        ApplicationId = t.ApplicationId,
+                        Tag = t.TagName != null ? new TagDto { Name = t.TagName } : null
+                    }).ToList(),
+
+                Assignees = rec.Assignments
+                    .Select(a => new GrantApplicationAssigneeDto
+                    {
+                        Id = a.Id,
+                        ApplicationId = a.ApplicationId,
+                        AssigneeId = a.AssigneeId,
+                        FullName = a.AssigneeName,
+                        Duty = a.Duty
+                    }).ToList(),
+
+                ApplicationLinks = rec.Links
+                    .Select(l => new ApplicationLinksDto
+                    {
+                        Id = l.Id,
+                        ApplicationId = l.ApplicationId,
+                        LinkedApplicationId = l.LinkedApplicationId,
+                        LinkType = l.LinkType
+                    }).ToList()
+            };
 
             if (paymentsFeatureEnabled && paymentRollupBatch.Count > 0)
             {
-                paymentRollupBatch.TryGetValue(app.Id, out var rollup);
+                paymentRollupBatch.TryGetValue(rec.Id, out var rollup);
                 appDto.PaymentInfo = new PaymentInfoDto
                 {
-                    ApprovedAmount = app.ApprovedAmount,
+                    ApprovedAmount = rec.ApprovedAmount,
                     TotalPaid = rollup?.TotalPaid ?? 0
                 };
             }
@@ -127,11 +248,15 @@ public class GrantApplicationAppService(
 
         }).ToList();
 
-        // 4. Get total count using same filters
-        var totalCount = await applicationRepository.GetCountAsync(
-            input.SubmittedFromDate,
-            input.SubmittedToDate
-        );
+        #pragma warning disable S125
+        //Code is temporarily commented out as this will be the way to get the accurate count
+        //once the core GrantApplications data table is moved server side from client side.
+        //Until then, since it is client side and always requests all records at once to be
+        //loaded, an extra round-trip to the database for a query is uncessary. 
+
+        //var totalCount = await applicationRepository.GetCountAsync(input.SubmittedFromDate,input.SubmittedToDate);
+        #pragma warning restore S125
+        var totalCount = appDtos.Count;
 
         return new PagedResultDto<GrantApplicationDto>(totalCount, appDtos);
     }
