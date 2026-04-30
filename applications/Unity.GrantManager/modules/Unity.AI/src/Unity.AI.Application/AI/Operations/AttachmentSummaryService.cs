@@ -16,6 +16,7 @@ public class AttachmentSummaryService(
     IChefsFileAttachmentStreamProvider chefsFileAttachmentStreamProvider,
     ITextExtractionService textExtractionService,
     IAIService aiService,
+    AIExecutionModeResolver executionModeResolver,
     ILogger<AttachmentSummaryService> logger) : IAttachmentSummaryService, ITransientDependency
 {
     private const string SummaryGenerationFailedMessage = "AI summary generation failed.";
@@ -44,22 +45,28 @@ public class AttachmentSummaryService(
 
     public async Task<List<string>> GenerateAndSaveAsync(IEnumerable<Guid> attachmentIds, string? promptVersion = null)
     {
-        var summaries = new List<string>();
+        var ids = attachmentIds as IReadOnlyCollection<Guid> ?? attachmentIds.ToList();
+        var mode = executionModeResolver.ResolveMode(AIExecutionModeResolver.AttachmentSummariesFlow);
+        var batchSize = executionModeResolver.ResolveBatchSize();
 
-        foreach (var attachmentId in attachmentIds)
+        return await AIExecutionStrategy.RunAsync(
+            ids,
+            mode,
+            batchSize,
+            id => GenerateOrFallbackAsync(id, promptVersion));
+    }
+
+    private async Task<string> GenerateOrFallbackAsync(Guid attachmentId, string? promptVersion)
+    {
+        try
         {
-            try
-            {
-                summaries.Add(await GenerateAndSaveAsync(attachmentId, promptVersion));
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "Error generating AI summary for attachment {AttachmentId}", attachmentId);
-                summaries.Add(SummaryGenerationFailedMessage);
-            }
+            return await GenerateAndSaveAsync(attachmentId, promptVersion);
         }
-
-        return summaries;
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error generating AI summary for attachment {AttachmentId}", attachmentId);
+            return SummaryGenerationFailedMessage;
+        }
     }
 
     public async Task<List<string>> GenerateForApplicationAsync(Guid applicationId, string? promptVersion = null)

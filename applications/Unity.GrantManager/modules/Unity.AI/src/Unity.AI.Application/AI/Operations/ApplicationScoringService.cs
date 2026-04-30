@@ -21,6 +21,7 @@ namespace Unity.AI.Operations
         IApplicationChefsFileAttachmentRepository applicationChefsFileAttachmentRepository,
         IScoresheetRepository scoresheetRepository,
         IAIService aiService,
+        AIExecutionModeResolver executionModeResolver,
         ILogger<ApplicationScoringService> logger) : IApplicationScoringService, ITransientDependency
     {
         private readonly JsonSerializerOptions _jsonOptions = new()
@@ -63,49 +64,22 @@ namespace Unity.AI.Operations
             var formSchema = await GetFormSchemaAsync(formSubmission?.ApplicationFormVersionId);
             var promptData = PromptDataPayloadBuilder.BuildPromptDataPayload(application, formSubmission, formSchema, logger);
 
+            var sections = scoresheet.Sections.OrderBy(s => s.Order).ToList();
+            var mode = executionModeResolver.ResolveMode(AIExecutionModeResolver.ScoresheetFlow);
+            var batchSize = executionModeResolver.ResolveBatchSize();
+
+            var perSectionResults = await AIExecutionStrategy.RunAsync(
+                sections,
+                mode,
+                batchSize,
+                section => ProcessSectionAsync(applicationId, section, promptData, attachmentSummaries, promptVersion));
+
             var allSectionResults = new Dictionary<string, object>();
-            foreach (var section in scoresheet.Sections.OrderBy(s => s.Order))
+            foreach (var sectionResult in perSectionResults)
             {
-                try
+                foreach (var kvp in sectionResult)
                 {
-                    var sectionQuestionsData = new List<object>();
-                    foreach (var field in section.Fields.OrderBy(f => f.Order))
-                    {
-                        var options = ExtractSelectListOptions(field);
-                        sectionQuestionsData.Add(new
-                        {
-                            id = field.Id.ToString(),
-                            question = field.Label,
-                            description = field.Description,
-                            type = field.Type.ToString(),
-                            options,
-                            allowed_answers = ExtractSelectListOptionNumbers(options)
-                        });
-                    }
-
-                    var applicationScoringRequest = new ApplicationScoringRequest
-                    {
-                        Data = promptData,
-                        Attachments = attachmentSummaries,
-                        SectionName = section.Name,
-                        SectionSchema = JsonSerializer.SerializeToElement(sectionQuestionsData, _jsonOptions),
-                        PromptVersion = promptVersion,
-                    };
-                    var applicationScoringResponse = await aiService.GenerateApplicationScoringAsync(applicationScoringRequest);
-
-                    if (applicationScoringResponse.Answers.Count > 0)
-                    {
-                        var sectionJson = JsonSerializer.Serialize(applicationScoringResponse.Answers, _jsonOptions);
-                        using var sectionDoc = JsonDocument.Parse(sectionJson);
-                        foreach (var property in sectionDoc.RootElement.EnumerateObject())
-                        {
-                            allSectionResults[property.Name] = property.Value.Clone();
-                        }
-                    }
-                }
-                catch (Exception ex)
-                {
-                    logger.LogError(ex, "Error processing AI application scoring section {SectionName} for application {ApplicationId}", section.Name, applicationId);
+                    allSectionResults[kvp.Key] = kvp.Value;
                 }
             }
 
@@ -114,6 +88,58 @@ namespace Unity.AI.Operations
             application.AIScoresheetAnswers = validatedJson;
             await applicationRepository.UpdateAsync(application);
             return validatedJson;
+        }
+
+        private async Task<Dictionary<string, object>> ProcessSectionAsync(
+            Guid applicationId,
+            ScoresheetSection section,
+            JsonElement promptData,
+            List<AIAttachmentItem> attachmentSummaries,
+            string? promptVersion)
+        {
+            var sectionResults = new Dictionary<string, object>();
+            try
+            {
+                var sectionQuestionsData = new List<object>();
+                foreach (var field in section.Fields.OrderBy(f => f.Order))
+                {
+                    var options = ExtractSelectListOptions(field);
+                    sectionQuestionsData.Add(new
+                    {
+                        id = field.Id.ToString(),
+                        question = field.Label,
+                        description = field.Description,
+                        type = field.Type.ToString(),
+                        options,
+                        allowed_answers = ExtractSelectListOptionNumbers(options)
+                    });
+                }
+
+                var applicationScoringRequest = new ApplicationScoringRequest
+                {
+                    Data = promptData,
+                    Attachments = attachmentSummaries,
+                    SectionName = section.Name,
+                    SectionSchema = JsonSerializer.SerializeToElement(sectionQuestionsData, _jsonOptions),
+                    PromptVersion = promptVersion,
+                };
+                var applicationScoringResponse = await aiService.GenerateApplicationScoringAsync(applicationScoringRequest);
+
+                if (applicationScoringResponse.Answers.Count > 0)
+                {
+                    var sectionJson = JsonSerializer.Serialize(applicationScoringResponse.Answers, _jsonOptions);
+                    using var sectionDoc = JsonDocument.Parse(sectionJson);
+                    foreach (var property in sectionDoc.RootElement.EnumerateObject())
+                    {
+                        sectionResults[property.Name] = property.Value.Clone();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Error processing AI application scoring section {SectionName} for application {ApplicationId}", section.Name, applicationId);
+            }
+            return sectionResults;
         }
 
         private async Task<string?> GetFormSchemaAsync(Guid? formVersionId)
