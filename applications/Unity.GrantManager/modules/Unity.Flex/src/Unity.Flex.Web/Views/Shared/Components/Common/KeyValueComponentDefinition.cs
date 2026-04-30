@@ -68,12 +68,9 @@ namespace Unity.Flex.Web.Views.Shared.Components.Common
 
         protected static void ValidateValuesFormat(StringValues values, KeyValueType type)
         {
-            foreach (var key in values)
+            foreach (var key in values.Where(k => !IsValidInput(k ?? string.Empty)))
             {
-                if (!IsValidInput(key ?? string.Empty))
-                {
-                    throw new UserFriendlyException($"The following characters are allowed for {type}: " + validInputPattern);
-                }
+                throw new UserFriendlyException($"The following characters are allowed for {type}: " + validInputPattern);
             }
         }
 

@@ -12,6 +12,8 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantContacts
         [Route("Refresh")]
         public async Task<IActionResult> Refresh(Guid applicantId)
         {
+            if (!ModelState.IsValid) return BadRequest();
+
             await Task.CompletedTask;
 
             return ViewComponent("ApplicantContacts", new { applicantId });
