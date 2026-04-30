@@ -141,7 +141,8 @@ public class ApplicationRepository
         DateTime? submittedFromDate,
         DateTime? submittedToDate)
     {
-        var query = await BuildBaseQueryAsync();
+        // Dont use full query, run basic to just get count.
+        var query = (await GetQueryableAsync()).AsNoTracking();
         var (fromUtc, toUtc) = ConvertToUtcRange(
             submittedFromDate,
             submittedToDate);

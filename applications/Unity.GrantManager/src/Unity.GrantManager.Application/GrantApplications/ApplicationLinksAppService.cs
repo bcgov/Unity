@@ -139,6 +139,7 @@ public class ApplicationLinksAppService : CrudAppService<
     /// application IDs linked to that parent. The dictionary will be empty if no child applications are found.</returns>
     public async Task<Dictionary<Guid, List<Guid>>> GetChildApplicationIdsByParentIdsAsync(List<Guid> parentApplicationIds)
     {
+        // OPERATION CANCELLED.
         var links = await ApplicationLinksRepository
             .GetListAsync(al => parentApplicationIds.Contains(al.ApplicationId)
                              && al.LinkType == ApplicationLinkType.Child);

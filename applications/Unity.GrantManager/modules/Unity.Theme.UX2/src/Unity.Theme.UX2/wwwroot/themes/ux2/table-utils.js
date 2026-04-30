@@ -317,9 +317,10 @@ function initializeDataTable(options) {
             const settings = api.settings()[0];
             if (!settings._columnsAdjusted) {
                 try {
-                    $(api.table().container()).addClass('dt-loading');
-                    api.columns.adjust();
-                    settings._columnsAdjusted = true;
+                $(api.table().container()).addClass('dt-loading');
+                // Removed extra columns.adjust() the table has no data 
+                // yet so measuring column widths is wasteful.initComplete handles
+                settings._columnsAdjusted = true;
                 } catch (e) { console.warn('Pre-draw column adjustment failed:', e); }
             }
             return true;
@@ -628,14 +629,12 @@ function setupExternalSearch(iDt, externalSearchId) {
  * @param {DataTable.Api} api - DataTable API instance
  */
 function adjustColumnsWithRetry(api) {
-    const adjustColumns = () => {
+    setTimeout(() => {
         try {
             api.columns.adjust();
             setTimeout(() => api.draw('page'), 50);
         } catch (e) { console.warn('Initial column adjustment failed:', e); }
-    };
-    setTimeout(adjustColumns, 0);
-    setTimeout(adjustColumns, 100);
+    }, 100);
 }
 
 /**
