@@ -4,6 +4,7 @@ using Unity.AI.Permissions;
 using Unity.GrantManager.Localization;
 using Unity.GrantManager.Permissions;
 using Unity.Identity.Web.Navigation;
+using Unity.Modules.Shared;
 using Unity.Modules.Shared.Permissions;
 using Unity.TenantManagement;
 using Unity.TenantManagement.Web.Navigation;
@@ -49,7 +50,7 @@ public class GrantManagerMenuContributor : IMenuContributor
                 "~/GrantApplicants",
                 icon: "fl fl-other-user",
                 order: 2,
-                requiredPermissionName: GrantApplicationPermissions.Applicants.ViewList
+                requiredPermissionName: UnitySelector.ApplicantManagement.Default
             )
         );
 

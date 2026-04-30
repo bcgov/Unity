@@ -2,6 +2,7 @@
 @using Microsoft.AspNetCore.Authorization;
 @using Microsoft.Extensions.Localization;
 @using Unity.GrantManager.Permissions
+@using Unity.Modules.Shared
 @using Volo.Abp.Authorization.Permissions;
 
 @inject IStringLocalizer<GrantManagerResource> L
@@ -14,7 +15,7 @@
     </div>
 
     <div class="btn-group" id="app_custom_buttons">
-        @if (await PermissionChecker.IsGrantedAsync(GrantApplicationPermissions.Applicants.ViewList))
+        @if (await PermissionChecker.IsGrantedAsync(UnitySelector.ApplicantManagement.Default))
         {
             <abp-button id="openApplicant"
                         text="@L["ApplicationList:OpenButton"].Value"
@@ -22,7 +23,7 @@
                         class="custom-table-btn flex-none btn btn-secondary action-bar-btn-unavailable"
                         button-type="Secondary" />
         }
-        @if (await PermissionChecker.IsGrantedAsync(GrantApplicationPermissions.Applicants.Edit))
+        @if (await PermissionChecker.IsGrantedAsync(UnitySelector.ApplicantManagement.Merge))
         {
             <abp-button id="mergeApplicants"
                         text="Merge"

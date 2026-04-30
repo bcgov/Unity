@@ -1,9 +1,9 @@
 using Microsoft.AspNetCore.Authorization;
-using Unity.GrantManager.Permissions;
+using Unity.Modules.Shared;
 
 namespace Unity.GrantManager.Web.Pages.Applicants;
 
-[Authorize(GrantApplicationPermissions.Applicants.ViewList)]
+[Authorize(UnitySelector.ApplicantManagement.Default)]
 public class IndexModel : GrantManagerPageModel
 {
     public IndexModel()
