@@ -23,7 +23,8 @@ namespace Unity.GrantManager.Migrations.HostMigrations
                 AND NOT EXISTS (
                     SELECT 1 FROM public.""FeatureValues"" e2
                     WHERE e2.""Name"" = 'Unity.AI.Analysis'
-                      AND e2.""ProviderKey"" = ""FeatureValues"".""ProviderKey""
+                      AND e2.""ProviderName"" IS NOT DISTINCT FROM ""FeatureValues"".""ProviderName""
+                      AND e2.""ProviderKey"" IS NOT DISTINCT FROM ""FeatureValues"".""ProviderKey""
                 )
                 GROUP BY ""ProviderName"", ""ProviderKey"";
             ");
