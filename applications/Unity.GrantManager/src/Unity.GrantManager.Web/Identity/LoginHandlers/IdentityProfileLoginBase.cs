@@ -29,6 +29,7 @@ namespace Unity.GrantManager.Web.Identity.LoginHandlers
         {
             claimsPrinicipal.AddClaim("DisplayName", displayName);
             claimsPrinicipal.AddClaim(AbpClaimTypes.UserId, userId.ToString());
+            claimsPrinicipal.AddClaim("UserId", userId.ToString()); // Legacy claim for backward compatibility
             claimsPrinicipal.AddClaim("Badge", Utils.CreateUserBadge(displayName));
         }
 

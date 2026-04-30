@@ -8,6 +8,7 @@ using Unity.Modules.Shared;
 using Volo.Abp;
 using Volo.Abp.Authorization.Permissions;
 using Volo.Abp.DependencyInjection;
+using Volo.Abp.Security.Claims;
 
 namespace Unity.GrantManager.Assessments;
 public class AssessmentAuthorizationHandler : AuthorizationHandler<OperationAuthorizationRequirement, Assessment>, ISingletonDependency
@@ -81,7 +82,8 @@ public class AssessmentAuthorizationHandler : AuthorizationHandler<OperationAuth
     {
         Check.NotNull(principal, nameof(principal));
 
-        var userIdOrNull = principal.Claims?.FirstOrDefault(c => c.Type == "UserId");
+        var userIdOrNull = principal.Claims?.FirstOrDefault(c => c.Type == AbpClaimTypes.UserId)
+            ?? principal.Claims?.FirstOrDefault(c => c.Type == "UserId");
         if (userIdOrNull == null || userIdOrNull.Value.IsNullOrWhiteSpace())
         {
             return null;
