@@ -30,7 +30,7 @@ public class ApplicationContentAppService(
             throw new UserFriendlyException("AI generate all is not enabled.");
         }
 
-        await aiGenerationQueue.QueueApplicationPipelineAsync(applicationId, currentTenant.Id, promptVersion);
+        await aiGenerationQueue.QueueAllAIStagesAsync(applicationId, currentTenant.Id, promptVersion);
 
         return new ApplicationContentResultDto
         {

@@ -28,30 +28,27 @@ namespace Unity.Flex.Web.Views.Shared.Components.QuestionSelectListDefinitionWid
             var seenKeys = new HashSet<string>();
             var counter = 1;
 
-            foreach (var key in form.Keys)
+            var optionKeys = form.Keys.Where(key => key.StartsWith("Options[") && key.EndsWith("].Text"));
+            foreach (var key in optionKeys)
             {
-                if (key.StartsWith("Options[") && key.EndsWith("].Text"))
+                var index = key.Split('[')[1].Split(']')[0];
+                var optionKey = form[key].ToString() ?? string.Empty;
+                var scoreKey = $"Options[{index}].Score";
+                var optionScore = form[scoreKey].ToString() ?? string.Empty;
+
+                // Ensure optionKey is unique and not empty
+                if (!seenKeys.Contains(optionKey) && !string.IsNullOrEmpty(optionKey))
                 {
-                    var index = key.Split('[')[1].Split(']')[0];
+                    seenKeys.Add(optionKey);
 
-                    var optionKey = form[key].ToString() ?? string.Empty;
-                    var scoreKey = $"Options[{index}].Score";
-                    var optionScore = form[scoreKey].ToString() ?? string.Empty;
-
-                    // Ensure optionKey is unique and not empty
-                    if (!seenKeys.Contains(optionKey) && !string.IsNullOrEmpty(optionKey))
+                    var questionOption = new QuestionSelectListOption
                     {
-                        seenKeys.Add(optionKey);
+                        Key = "key" + counter++,
+                        NumericValue = long.TryParse(optionScore, out var score) ? score : 0,
+                        Value = optionKey
+                    };
 
-                        var questionOption = new QuestionSelectListOption
-                        {
-                            Key = "key" + counter++,
-                            NumericValue = long.TryParse(optionScore, out var score) ? score : 0,
-                            Value = optionKey
-                        };
-
-                        options.Add(questionOption);
-                    }
+                    options.Add(questionOption);
                 }
             }
 

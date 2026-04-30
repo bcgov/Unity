@@ -1,18 +1,20 @@
-﻿@using System.Reflection
+﻿@using Unity.GrantManager.Analytics;
+@using System.Reflection;
 @using Unity.AspNetCore.Mvc.UI.Theme.UX2.Bundling;
 @using Unity.AspNetCore.Mvc.UI.Theme.UX2.Themes.UX2.Components.ContentTitle;
 @using Unity.AspNetCore.Mvc.UI.Theme.UX2.Themes.UX2.Components.MainNavbar;
 
 @using Volo.Abp.AspNetCore.Mvc.AntiForgery;
-@using Volo.Abp.AspNetCore.Mvc.UI.Components.LayoutHook
-@using Volo.Abp.AspNetCore.Mvc.UI.Layout
-@using Volo.Abp.AspNetCore.Mvc.UI.Theming
-@using Volo.Abp.AspNetCore.Mvc.UI.Widgets.Components.WidgetScripts
-@using Volo.Abp.AspNetCore.Mvc.UI.Widgets.Components.WidgetStyles
-@using Volo.Abp.Localization
-@using Volo.Abp.Ui.Branding
-@using Volo.Abp.Ui.LayoutHooks
+@using Volo.Abp.AspNetCore.Mvc.UI.Components.LayoutHook;
+@using Volo.Abp.AspNetCore.Mvc.UI.Layout;
+@using Volo.Abp.AspNetCore.Mvc.UI.Theming;
+@using Volo.Abp.AspNetCore.Mvc.UI.Widgets.Components.WidgetScripts;
+@using Volo.Abp.AspNetCore.Mvc.UI.Widgets.Components.WidgetStyles;
+@using Volo.Abp.Localization;
+@using Volo.Abp.Ui.Branding;
+@using Volo.Abp.Ui.LayoutHooks;
 
+@inject Unity.GrantManager.Analytics.IAnalyticsUrlProvider AnalyticsUrlProvider
 @inject IBrandingProvider BrandingProvider
 @inject IPageLayout PageLayout
 @inject IAbpAntiForgeryManager AbpAntiForgeryManager
@@ -116,6 +118,19 @@
     @await Component.InvokeAsync(typeof(WidgetScriptsViewComponent))
 
     @await RenderSectionAsync("scripts", false)
+
+    @{
+        string matomoUrl = await AnalyticsUrlProvider.GetMatomoUrlAsync();
+    }
+    <script>
+        window.MATOMO_URL = '@matomoUrl';
+        // [Analytics] Matomo URL exposed to JS: '@(string.IsNullOrEmpty(matomoUrl) ? "(empty — feature disabled or URL not seeded)" : matomoUrl)'
+        (function() {
+            if (window.MATOMO_URL && window.MATOMO_URL.length > 0) {
+                AnalyticsUtils.initMatomo(window.MATOMO_URL, 1);
+            }
+        })();
+    </script>
 
     @await Component.InvokeLayoutHookAsync(LayoutHooks.Body.Last, StandardLayouts.Application)
 </body>

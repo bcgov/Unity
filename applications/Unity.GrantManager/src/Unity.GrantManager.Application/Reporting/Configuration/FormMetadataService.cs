@@ -224,19 +224,9 @@ namespace Unity.GrantManager.Reporting.Configuration
             var pathSegments = workingPath.Split(separator, StringSplitOptions.RemoveEmptyEntries);
             var keySegments = component.TypePath.Split(separator, StringSplitOptions.RemoveEmptyEntries);
 
-            var dataPathSegments = new List<string>();
-            var index = 0;
-
-            // Process each segment to determine if it should be included in the data path
-            foreach (var segment in pathSegments)
-            {
-                // Always include segments that don't look like container segments
-                if (!IsContainerSegment(keySegments[index]))
-                {
-                    dataPathSegments.Add(segment);
-                }
-                index++;
-            }
+            var dataPathSegments = pathSegments
+                .Where((segment, index) => !IsContainerSegment(keySegments[index]))
+                .ToList();
 
             // Reconstruct the data path
             var dataPath = string.Join("->", dataPathSegments);

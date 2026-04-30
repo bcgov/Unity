@@ -302,7 +302,7 @@ public class GrantManagerWebModule : AbpModule
             options.ClientId = configuration["AuthServer:ClientId"];
             options.ClientSecret = configuration["AuthServer:ClientSecret"];
 
-            options.SaveTokens = true;
+            options.SaveTokens = false;
             options.GetClaimsFromUserInfoEndpoint = true;
             options.MaxAge = TimeSpan.FromHours(8);
 

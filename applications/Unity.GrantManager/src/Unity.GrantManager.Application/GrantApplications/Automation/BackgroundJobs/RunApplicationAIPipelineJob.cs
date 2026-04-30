@@ -9,6 +9,7 @@ using Unity.GrantManager.GrantApplications;
 using Unity.GrantManager.GrantApplications.Automation.Events;
 using Volo.Abp.BackgroundJobs;
 using Volo.Abp.DependencyInjection;
+using Volo.Abp.Domain.Repositories;
 using Volo.Abp.EventBus.Local;
 using Volo.Abp.Features;
 using Volo.Abp.MultiTenancy;
@@ -22,82 +23,103 @@ public class RunApplicationAIPipelineJob(
     IApplicationScoringAppService applicationScoringAppService,
     IFeatureChecker featureChecker,
     ILocalEventBus localEventBus,
+    IRepository<AIGenerationRequest, Guid> generationRequestRepository,
     ICurrentTenant currentTenant,
     ILogger<RunApplicationAIPipelineJob> logger) : AsyncBackgroundJob<RunApplicationAIPipelineJobArgs>, ITransientDependency
 {
     public override async Task ExecuteAsync(RunApplicationAIPipelineJobArgs args)
     {
+        if (string.IsNullOrWhiteSpace(args.RequestKey))
+        {
+            throw new ArgumentException("RequestKey is required.", nameof(args));
+        }
+
         using (currentTenant.Change(args.TenantId))
         {
-            var attachmentSummariesEnabled = await featureChecker.IsEnabledAsync("Unity.AI.AttachmentSummaries");
-            var applicationAnalysisEnabled = await featureChecker.IsEnabledAsync("Unity.AI.ApplicationAnalysis");
-            var scoringEnabled = await featureChecker.IsEnabledAsync("Unity.AI.Scoring");
+            var request = await AIGenerationRequestJobHelper.GetLatestRequestAsync(
+                generationRequestRepository,
+                x => x.RequestKey == args.RequestKey);
 
-            if (!attachmentSummariesEnabled && !applicationAnalysisEnabled && !scoringEnabled)
+            await AIGenerationRequestJobHelper.MarkRunningAsync(generationRequestRepository, request);
+
+            try
             {
-                logger.LogDebug("All AI features are disabled, skipping queued AI generation for application {ApplicationId}.", args.ApplicationId);
-                return;
-            }
+                var attachmentSummariesEnabled = await featureChecker.IsEnabledAsync("Unity.AI.AttachmentSummaries");
+                var applicationAnalysisEnabled = await featureChecker.IsEnabledAsync("Unity.AI.ApplicationAnalysis");
+                var scoringEnabled = await featureChecker.IsEnabledAsync("Unity.AI.Scoring");
 
-            logger.LogInformation("Executing queued AI content pipeline for application {ApplicationId}.", args.ApplicationId);
-
-            if (attachmentSummariesEnabled)
-            {
-                var attachmentResults = await attachmentSummaryAppService.GenerateAttachmentSummariesForPipelineAsync(
-                    await GetAttachmentIdsAsync(args.ApplicationId),
-                    args.PromptVersion);
-
-                logger.LogInformation("Completed AI attachment summaries for application {ApplicationId} with {AttachmentCount} result(s).", args.ApplicationId, attachmentResults.Count);
-            }
-
-            Exception? analysisException = null;
-            Exception? scoringException = null;
-
-            if (applicationAnalysisEnabled)
-            {
-                try
+                if (!attachmentSummariesEnabled && !applicationAnalysisEnabled && !scoringEnabled)
                 {
-                    var analysisResult = await applicationAnalysisAppService.GenerateApplicationAnalysisForPipelineAsync(args.ApplicationId, args.PromptVersion);
-                    if (analysisResult.Completed)
-                    {
-                        logger.LogInformation("Completed AI application analysis stage for application {ApplicationId}.", args.ApplicationId);
-                    }
+                    logger.LogDebug("All AI features are disabled, skipping queued AI generation for application {ApplicationId}.", args.ApplicationId);
+                    await AIGenerationRequestJobHelper.MarkCompletedAsync(generationRequestRepository, request);
+                    return;
                 }
-                catch (Exception ex)
-                {
-                    analysisException = ex;
-                    logger.LogError(ex, "Error executing AI application analysis stage for application {ApplicationId}.", args.ApplicationId);
-                }
-            }
 
-            if (scoringEnabled)
-            {
-                try
+                logger.LogInformation("Executing queued AI content pipeline for application {ApplicationId}.", args.ApplicationId);
+
+                if (attachmentSummariesEnabled)
                 {
-                    var result = await applicationScoringAppService.GenerateApplicationScoringForPipelineAsync(args.ApplicationId, args.PromptVersion);
-                    if (result.Completed)
+                    var attachmentIds = await GetAttachmentIdsAsync(args.ApplicationId);
+                    var attachmentResults = await attachmentSummaryAppService.GenerateAttachmentSummariesForPipelineAsync(attachmentIds, args.PromptVersion);
+                    logger.LogInformation("Completed AI attachment summaries for application {ApplicationId} with {AttachmentCount} result(s).", args.ApplicationId, attachmentResults.Count);
+                }
+
+                Exception? analysisException = null;
+                Exception? scoringException = null;
+
+                if (applicationAnalysisEnabled)
+                {
+                    try
                     {
-                        await localEventBus.PublishAsync(new ApplicationAIScoringGeneratedEvent
+                        var analysisResult = await applicationAnalysisAppService.GenerateApplicationAnalysisForPipelineAsync(args.ApplicationId, args.PromptVersion);
+                        if (analysisResult.Completed)
                         {
-                            ApplicationId = args.ApplicationId
-                        });
+                            logger.LogInformation("Completed AI application analysis stage for application {ApplicationId}.", args.ApplicationId);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        analysisException = ex;
+                        logger.LogError(ex, "Error executing AI application analysis stage for application {ApplicationId}.", args.ApplicationId);
                     }
                 }
-                catch (Exception ex)
+
+                if (scoringEnabled)
                 {
-                    scoringException = ex;
-                    logger.LogError(ex, "Error executing AI application scoring stage for application {ApplicationId}.", args.ApplicationId);
+                    try
+                    {
+                        var result = await applicationScoringAppService.GenerateApplicationScoringForPipelineAsync(args.ApplicationId, args.PromptVersion);
+                        if (result.Completed)
+                        {
+                            await localEventBus.PublishAsync(new ApplicationAIScoringGeneratedEvent
+                            {
+                                ApplicationId = args.ApplicationId
+                            });
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        scoringException = ex;
+                        logger.LogError(ex, "Error executing AI application scoring stage for application {ApplicationId}.", args.ApplicationId);
+                    }
                 }
-            }
 
-            if (scoringException != null)
-            {
-                throw scoringException;
-            }
+                if (scoringException != null)
+                {
+                    throw scoringException;
+                }
 
-            if (analysisException != null)
+                if (analysisException != null)
+                {
+                    throw analysisException;
+                }
+
+                await AIGenerationRequestJobHelper.MarkCompletedAsync(generationRequestRepository, request);
+            }
+            catch (Exception ex)
             {
-                throw analysisException;
+                await AIGenerationRequestJobHelper.MarkFailedAsync(generationRequestRepository, request, ex.Message);
+                throw;
             }
         }
     }
