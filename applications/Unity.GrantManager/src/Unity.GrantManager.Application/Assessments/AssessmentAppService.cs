@@ -12,7 +12,6 @@ using Unity.Flex.Scoresheets;
 using Unity.Flex.Scoresheets.Enums;
 using Unity.Flex.Scoresheets.Events;
 using Unity.Flex.Worksheets.Definitions;
-using Unity.GrantManager.Applications;
 using Unity.GrantManager.Comments;
 using Unity.GrantManager.Exceptions;
 using Unity.GrantManager.Workflow;
@@ -24,7 +23,6 @@ using Volo.Abp.Domain.Repositories;
 using Volo.Abp.EventBus.Local;
 using Volo.Abp.Features;
 using Volo.Abp.Identity.Integration;
-using Volo.Abp.Settings;
 using Volo.Abp.Users;
 using Volo.Abp.Validation;
 
