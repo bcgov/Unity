@@ -1,7 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.Extensions.DependencyInjection;
 using OpenIddict.Abstractions;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
