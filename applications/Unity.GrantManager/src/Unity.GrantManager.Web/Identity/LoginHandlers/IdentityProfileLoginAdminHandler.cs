@@ -5,9 +5,11 @@ using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Unity.GrantManager.Identity;
+using Unity.Modules.Shared.Permissions;
 using Volo.Abp;
 using Volo.Abp.Data;
 using Volo.Abp.Identity;
+using Volo.Abp.Security.Claims;
 
 namespace Unity.GrantManager.Web.Identity.LoginHandlers
 {
@@ -29,6 +31,7 @@ namespace Unity.GrantManager.Web.Identity.LoginHandlers
             }
 
             AssignDefaultClaims(validatedTokenContext.Principal!, userTenantAccount.DisplayName ?? string.Empty, userTenantAccount.Id);
+            (validatedTokenContext.Principal!.Identity as ClaimsIdentity)?.AddClaim(new Claim(AbpClaimTypes.Role, IdentityConsts.ITAdminRoleName));
             return userTenantAccount;
         }
 
