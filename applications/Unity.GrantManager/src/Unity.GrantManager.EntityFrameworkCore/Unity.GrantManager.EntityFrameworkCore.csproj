@@ -65,7 +65,6 @@
 		</PackageReference>
 		<PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="10.0.3" />
 		<PackageReference Include="Npgsql" Version="10.0.2" />
-		<PackageReference Include="System.Text.Json" Version="10.0.3" />
 		<PackageReference Include="Volo.Abp.EntityFrameworkCore.PostgreSql" Version="10.3.0" />
 		<PackageReference Include="Volo.Abp.PermissionManagement.EntityFrameworkCore" Version="10.3.0" />
 		<PackageReference Include="Volo.Abp.SettingManagement.EntityFrameworkCore" Version="10.3.0" />

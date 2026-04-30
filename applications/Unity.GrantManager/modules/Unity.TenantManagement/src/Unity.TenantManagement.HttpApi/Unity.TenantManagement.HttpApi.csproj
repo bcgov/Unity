@@ -16,8 +16,6 @@
 
     <PackageReference Include="Microsoft.Extensions.Options" Version="10.0.3" />
 
-    <PackageReference Include="System.Text.Json" Version="10.0.3" />
-
     <PackageReference Include="Volo.Abp.AspNetCore.Mvc" Version="10.3.0" />
     <PackageReference Include="Volo.Abp.FeatureManagement.HttpApi" Version="10.3.0" />
   </ItemGroup>
