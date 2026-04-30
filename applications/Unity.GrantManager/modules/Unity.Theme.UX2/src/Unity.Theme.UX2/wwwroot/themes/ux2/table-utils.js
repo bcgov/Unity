@@ -318,8 +318,8 @@ function initializeDataTable(options) {
             if (!settings._columnsAdjusted) {
                 try {
                 $(api.table().container()).addClass('dt-loading');
-                // Removed extra columns.adjust() the table has no data 
-                // yet so measuring column widths is wasteful.initComplete handles
+                // Removed extra columns.adjust() because the table has no data yet,
+                // so measuring column widths is wasteful. initComplete handles this.
                 settings._columnsAdjusted = true;
                 } catch (e) { console.warn('Pre-draw column adjustment failed:', e); }
             }
