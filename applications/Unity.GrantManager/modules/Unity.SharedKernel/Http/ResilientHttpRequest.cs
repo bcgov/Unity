@@ -113,10 +113,11 @@ namespace Unity.Modules.Shared.Http
             object? body = null,
             string? authToken = null,
             (string username, string password)? basicAuth = null,
+            HttpCompletionOption completionOption = HttpCompletionOption.ResponseContentRead,
             CancellationToken cancellationToken = default)
         {
             return await SendWithClientAsync(
-                _httpClient, httpVerb, resource, body, authToken, basicAuth, cancellationToken);
+                _httpClient, httpVerb, resource, body, authToken, basicAuth, completionOption, cancellationToken);
         }
 
 
@@ -137,7 +138,7 @@ namespace Unity.Modules.Shared.Http
             EnsureMutualTlsClient(certPath, certPassword);
 
             return SendWithClientAsync(
-                _mtlsClient!, httpVerb, resource, body, authToken, basicAuth, cancellationToken);
+                _mtlsClient!, httpVerb, resource, body, authToken, basicAuth, HttpCompletionOption.ResponseContentRead, cancellationToken);
         }
 
 
@@ -191,6 +192,7 @@ namespace Unity.Modules.Shared.Http
             object? body,
             string? authToken,
             (string username, string password)? basicAuth,
+            HttpCompletionOption completionOption,
             CancellationToken cancellationToken)
         {
             // Build final URL
@@ -208,7 +210,7 @@ namespace Unity.Modules.Shared.Http
                 using var requestMessage =
                     BuildRequestMessage(httpVerb, fullUrl, body, authToken, basicAuth);
 
-                return await client.SendAsync(requestMessage, ct)
+                return await client.SendAsync(requestMessage, completionOption, ct)
                                    .ConfigureAwait(false);
 
             }, cancellationToken);
