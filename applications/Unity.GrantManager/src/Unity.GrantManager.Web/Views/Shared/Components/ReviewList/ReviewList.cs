@@ -15,6 +15,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ReviewList
     [Widget(
         ScriptFiles = new[]
         {
+            "/Pages/GrantApplications/ai-generation-button-state.js",
             "/Views/Shared/Components/ReviewList/ReviewList.js"
         },
         StyleFiles = new[]

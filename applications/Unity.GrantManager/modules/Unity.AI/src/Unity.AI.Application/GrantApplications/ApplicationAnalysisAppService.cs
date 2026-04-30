@@ -2,17 +2,20 @@ using Microsoft.AspNetCore.Authorization;
 using System;
 using System.Threading.Tasks;
 using Unity.AI;
-using Unity.AI.Operations;
+using Unity.AI.Automation;
 using Unity.AI.Permissions;
 using Volo.Abp;
 using Volo.Abp.Features;
+using Volo.Abp.MultiTenancy;
 
 namespace Unity.GrantManager.GrantApplications;
 
 [Authorize(AIPermissions.Analysis.GenerateApplicationAnalysis)]
 public class ApplicationAnalysisAppService(
-    IApplicationAnalysisService applicationAnalysisService,
-    IFeatureChecker featureChecker)
+    Unity.AI.Operations.IApplicationAnalysisService applicationAnalysisService,
+    IApplicationAIGenerationQueue aiGenerationQueue,
+    IFeatureChecker featureChecker,
+    ICurrentTenant currentTenant)
     : AIAppService, IApplicationAnalysisAppService
 {
     public virtual async Task<ApplicationAnalysisResultDto> GenerateApplicationAnalysisAsync(Guid applicationId, string? promptVersion = null)
@@ -22,8 +25,8 @@ public class ApplicationAnalysisAppService(
             throw new UserFriendlyException("AI application analysis is not enabled.");
         }
 
-        await applicationAnalysisService.RegenerateAndSaveAsync(applicationId, promptVersion);
-        return new ApplicationAnalysisResultDto { Completed = true };
+        await aiGenerationQueue.QueueApplicationAnalysisAsync(applicationId, currentTenant.Id, promptVersion);
+        return new ApplicationAnalysisResultDto { Completed = false };
     }
 
     // Internal-only: no HTTP endpoint, no auth check — safe for background job callers

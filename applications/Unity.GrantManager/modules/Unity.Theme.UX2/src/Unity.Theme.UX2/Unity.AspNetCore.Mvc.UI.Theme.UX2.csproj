@@ -21,11 +21,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content Remove="C:\Users\AndreGoncalves\.nuget\packages\volo.abp.aspnetcore.mvc.ui.multitenancy\8.1.0\contentFiles\any\net8.0\Volo.Abp.AspNetCore.Mvc.UI.MultiTenancy.abppkg.analyze.json" />
-    <Content Remove="C:\Users\AndreGoncalves\.nuget\packages\volo.abp.aspnetcore.mvc.ui.theme.shared\8.1.0\contentFiles\any\net8.0\Volo.Abp.AspNetCore.Mvc.UI.Theme.Shared.abppkg.analyze.json" />
-  </ItemGroup>
-
-  <ItemGroup>
     <PackageReference Include="HtmlSanitizer" Version="9.0.892" />
     <PackageReference Include="Markdig.Signed" Version="0.44.0" />
     <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="9.0.5" />
@@ -43,5 +38,8 @@
       <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
     </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\..\src\Unity.GrantManager.Application.Contracts\Unity.GrantManager.Application.Contracts.csproj" />
   </ItemGroup>
 </Project>

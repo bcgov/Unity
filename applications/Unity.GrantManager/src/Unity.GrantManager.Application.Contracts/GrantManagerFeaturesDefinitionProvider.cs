@@ -62,6 +62,12 @@ namespace Unity.GrantManager
                     displayName: LocalizableString
                                     .Create<GrantManagerResource>("AI Scoring"),
                 valueType: new ToggleStringValueType());
+
+            myGroup.AddFeature("Unity.Analytics",
+                defaultValue: defaultValue,
+                    displayName: LocalizableString
+                                    .Create<GrantManagerResource>("Analytics"),
+                valueType: new ToggleStringValueType());
         }
     }
 }
