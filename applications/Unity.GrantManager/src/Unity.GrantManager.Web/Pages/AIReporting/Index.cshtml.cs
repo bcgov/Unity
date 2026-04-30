@@ -1,16 +1,16 @@
-using Microsoft.AspNetCore.Mvc.RazorPages;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Mvc.RazorPages;
 using Unity.GrantManager.Integrations;
 
 namespace Unity.GrantManager.Web.Pages.AIReporting
 {
     public class IndexModel(IEndpointManagementAppService endpointManagementAppService) : PageModel
     {
-        public string ReportingAiUrl { get; set; } = string.Empty;
+        public string ReportingAiApiBaseUrl { get; private set; } = string.Empty;
 
         public async Task OnGetAsync()
         {
-            ReportingAiUrl = await endpointManagementAppService.GetUgmUrlByKeyNameAsync(DynamicUrlKeyNames.REPORTING_AI);
+            ReportingAiApiBaseUrl = await endpointManagementAppService.GetUgmUrlByKeyNameAsync(DynamicUrlKeyNames.REPORTING_AI);
         }
     }
 }
