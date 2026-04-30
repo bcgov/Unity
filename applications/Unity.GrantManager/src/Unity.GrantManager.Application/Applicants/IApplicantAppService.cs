@@ -2,6 +2,7 @@
 using System;
 using System.Text.Json;
 using System.Threading.Tasks;
+using Unity.GrantManager.Applications;
 using Unity.GrantManager.GrantApplications;
 using Unity.GrantManager.Intakes;
 using Unity.Modules.Shared;

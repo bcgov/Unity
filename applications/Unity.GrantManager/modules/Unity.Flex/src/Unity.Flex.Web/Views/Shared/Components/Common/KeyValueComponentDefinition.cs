@@ -30,14 +30,17 @@ namespace Unity.Flex.Web.Views.Shared.Components.Common
 
         protected static void ValidateKeysFormat(StringValues keys)
         {
-            foreach (var key in keys.Where(k => string.IsNullOrWhiteSpace(k)))
+            foreach (var key in keys)
             {
-                throw new UserFriendlyException("There are empty Keys captured which are required");
-            }
+                if (string.IsNullOrWhiteSpace(key))
+                {
+                    throw new UserFriendlyException("There are empty Keys captured which are required");
+                }
 
-            foreach (var key in keys.Where(k => !string.IsNullOrWhiteSpace(k) && !IsValidInput(k)))
-            {
-                throw new UserFriendlyException("The following characters are allowed for Keys: " + validInputPattern);
+                if (!IsValidInput(key))
+                {
+                    throw new UserFriendlyException("The following characters are allowed for Keys: " + validInputPattern);
+                }
             }
         }
 
