@@ -188,7 +188,7 @@ namespace Unity.Payments.Integrations.Cas
                 SupplierSiteCode = GetJsonProperty("suppliersitecode", site),
                 AddressLine1 = GetJsonProperty("addressline1", site),
                 AddressLine2 = GetJsonProperty("addressline2", site),
-                AddressLine3 = GetJsonProperty("addressline2", site),
+                AddressLine3 = GetJsonProperty("addressline3", site),
                 City = GetJsonProperty("city", site),
                 Province = GetJsonProperty("province", site),
                 Country = GetJsonProperty("country", site),
