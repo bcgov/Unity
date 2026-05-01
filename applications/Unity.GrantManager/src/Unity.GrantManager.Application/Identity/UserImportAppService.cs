@@ -169,6 +169,13 @@ namespace Unity.GrantManager.Identity
             return users.GroupBy(u => u.UserGuid).Select(g => g.First()).ToList();
         }
 
+        [Authorize(IdentityPermissions.Users.Update)]
+        public async Task SetUserRolesAsync(Guid userId, string[] roleNames)
+        {
+            var user = await _identityUserRepository.GetAsync(userId);
+            await _userManager.SetRolesAsync(user, roleNames);
+        }
+
         private async Task<IdentityUser?> CreateNewIdentityUserAsync(Guid newUserId, string? username, string? firstName, string? lastName, string? emailAddress)
         {
             if (string.IsNullOrWhiteSpace(emailAddress)) emailAddress = null;
