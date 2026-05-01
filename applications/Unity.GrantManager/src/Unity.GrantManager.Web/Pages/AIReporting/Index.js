@@ -52,13 +52,13 @@
 
     const notify = abp.notify;
 
-    // Fresh turn (matches Turn interface from reference)
+    // Fresh turn
     const createTurn = (question, retryCount = 0) => ({
         id: newTurnId(),
         question,
         embed: null,
         safeUrl: 'loading',                // 'loading' | 'failure' | null (success)
-        iframeLoaded: false,
+        loaded: false,
         sqlPanelOpen: false,
         sql_explanation_visible: false,
         sql_explanation_text: '',          // local rendered text (typewriter)
@@ -308,7 +308,7 @@
             question:                t.question,
             embed:                   t.embed,
             safeUrl:                 t.safeUrl,
-            iframeLoaded:            t.iframeLoaded,
+            loaded:                  t.loaded,
             sqlPanelOpen:            t.sqlPanelOpen,
             sql_explanation_visible: t.sql_explanation_visible,
             errorType:               t.errorType,
@@ -337,7 +337,7 @@
                 question: r.question || '',
                 embed: r.embed || null,
                 safeUrl: r.safeUrl ?? null,
-                iframeLoaded: true,
+                loaded: true,
                 sqlPanelOpen: r.sqlPanelOpen ?? false,
                 sql_explanation_visible: r.sql_explanation_visible ?? false,
                 sql_explanation_text: r.embed?.sql_explanation || '',
@@ -413,7 +413,7 @@
                 cache_original_query:   result?.cache_original_query || null,
             };
             t.safeUrl      = null;
-            t.iframeLoaded = true;
+            t.loaded = true;
             updateBubble(t.id);
             syncControls();
             await saveChat();
@@ -421,7 +421,7 @@
             console.error('Failed to process question:', err);
             const t = findTurn(turn.id);
             if (!t) return;
-            t.iframeLoaded = true;
+            t.loaded = true;
             t.safeUrl      = 'failure';
             t.errorDetail  = err?.errorDetail ?? null;
 
