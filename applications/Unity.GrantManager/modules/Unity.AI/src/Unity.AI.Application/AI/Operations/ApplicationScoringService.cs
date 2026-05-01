@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
 using Unity.Flex.Domain.Scoresheets;
 using Unity.AI.Models;
@@ -25,7 +26,7 @@ namespace Unity.AI.Operations
         AIExecutionModeResolver executionModeResolver,
         ILogger<ApplicationScoringService> logger) : IApplicationScoringService, ITransientDependency
     {
-        public async Task<string> RegenerateAndSaveAsync(Guid applicationId, string? promptVersion = null)
+        public async Task<string> RegenerateAndSaveAsync(Guid applicationId, string? promptVersion = null, CancellationToken cancellationToken = default)
         {
             var application = await applicationRepository.GetAsync(applicationId);
             var applicationForm = await applicationFormRepository.GetAsync(application.ApplicationFormId);
@@ -60,8 +61,8 @@ namespace Unity.AI.Operations
             var perSectionResults = await AIExecutionStrategy.RunAsync(
                 sections,
                 mode,
-                section => ProcessSectionAsync(applicationId, section, promptData, attachmentSummaries, promptVersion),
-                batch => ProcessSectionsAsync(applicationId, batch, promptData, attachmentSummaries, promptVersion));
+                section => ProcessSectionAsync(applicationId, section, promptData, attachmentSummaries, promptVersion, cancellationToken),
+                batch => ProcessSectionsAsync(applicationId, batch, promptData, attachmentSummaries, promptVersion, cancellationToken));
 
             var allSectionResults = new Dictionary<string, object>();
             foreach (var sectionResult in perSectionResults)
@@ -84,7 +85,8 @@ namespace Unity.AI.Operations
             ScoresheetSection section,
             JsonElement promptData,
             List<AIAttachmentItem> attachmentSummaries,
-            string? promptVersion)
+            string? promptVersion,
+            CancellationToken cancellationToken)
         {
             var sectionResults = new Dictionary<string, object>();
             try
@@ -97,12 +99,16 @@ namespace Unity.AI.Operations
                     SectionSchema = JsonSerializer.SerializeToElement(BuildSectionQuestionsData(section), AIJsonDefaults.IndentedCamelCase),
                     PromptVersion = promptVersion,
                 };
-                var applicationScoringResponse = await aiService.GenerateApplicationScoringAsync(applicationScoringRequest);
+                var applicationScoringResponse = await aiService.GenerateApplicationScoringAsync(applicationScoringRequest, cancellationToken);
 
                 if (applicationScoringResponse.Answers.Count > 0)
                 {
                     CopyAnswers(applicationScoringResponse.Answers, sectionResults);
                 }
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
             }
             catch (Exception ex)
             {
@@ -116,7 +122,8 @@ namespace Unity.AI.Operations
             IReadOnlyCollection<ScoresheetSection> sections,
             JsonElement promptData,
             List<AIAttachmentItem> attachmentSummaries,
-            string? promptVersion)
+            string? promptVersion,
+            CancellationToken cancellationToken)
         {
             var sectionResults = new Dictionary<string, object>();
             try
@@ -134,12 +141,16 @@ namespace Unity.AI.Operations
                     SectionSchema = JsonSerializer.SerializeToElement(questions, AIJsonDefaults.IndentedCamelCase),
                     PromptVersion = promptVersion,
                 };
-                var applicationScoringResponse = await aiService.GenerateApplicationScoringAsync(applicationScoringRequest);
+                var applicationScoringResponse = await aiService.GenerateApplicationScoringAsync(applicationScoringRequest, cancellationToken);
 
                 if (applicationScoringResponse.Answers.Count > 0)
                 {
                     CopyAnswers(applicationScoringResponse.Answers, sectionResults);
                 }
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
             }
             catch (Exception ex)
             {
