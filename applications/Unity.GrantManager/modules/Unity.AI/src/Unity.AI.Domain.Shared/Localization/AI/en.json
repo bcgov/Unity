@@ -18,6 +18,11 @@
     "Setting:AI.AutomaticGenerationEnabled": "Automatically Generate AI Analysis",
     "Setting:AI.ManualGenerationEnabled": "Manually Initiate AI Analysis",
 
+    "AI:AttachmentSummariesDisabled": "AI attachment summaries are not enabled.",
+    "AI:ApplicationAnalysisDisabled": "AI application analysis is not enabled.",
+    "AI:ScoringDisabled": "AI scoring is not enabled.",
+    "AI:GenerateAllDisabled": "AI generation is not enabled.",
+
     "AIPrompts": "AI Prompts",
     "AIPrompt": "AI Prompt",
     "AIPromptVersion": "Prompt Version",
