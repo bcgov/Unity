@@ -23,7 +23,8 @@ public class AIPermissionDefinitionProvider : PermissionDefinitionProvider
 
             var analysisParent = aiPermissionsGroup.AddPermission(
                 AIPermissions.Analysis.AnalysisDefault,
-                L("Permission:AI.Analysis"));
+                L("Permission:AI.Analysis"))
+                .RequireFeatures("Unity.AI.Analysis");
 
             var viewApplicationAnalysis = analysisParent.AddChild(
                 AIPermissions.Analysis.ViewApplicationAnalysis,
