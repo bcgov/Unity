@@ -8,6 +8,7 @@ using Unity.Flex.Domain.Scoresheets;
 using Unity.AI.Models;
 using Unity.AI.Prompts;
 using Unity.AI.Requests;
+using Unity.AI.Runtime;
 using Unity.GrantManager.Applications;
 using Volo.Abp.DependencyInjection;
 
@@ -24,17 +25,6 @@ namespace Unity.AI.Operations
         AIExecutionModeResolver executionModeResolver,
         ILogger<ApplicationScoringService> logger) : IApplicationScoringService, ITransientDependency
     {
-        private readonly JsonSerializerOptions _jsonOptions = new()
-        {
-            WriteIndented = true,
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-        };
-
-        private readonly JsonSerializerOptions _jsonOptionsIndented = new()
-        {
-            WriteIndented = true
-        };
-
         public async Task<string> RegenerateAndSaveAsync(Guid applicationId, string? promptVersion = null)
         {
             var application = await applicationRepository.GetAsync(applicationId);
@@ -82,7 +72,7 @@ namespace Unity.AI.Operations
                 }
             }
 
-            var combinedResults = JsonSerializer.Serialize(allSectionResults, _jsonOptionsIndented);
+            var combinedResults = JsonSerializer.Serialize(allSectionResults, AIJsonDefaults.Indented);
             var validatedJson = ValidateApplicationScoringJson(combinedResults);
             application.AIScoresheetAnswers = validatedJson;
             await applicationRepository.UpdateAsync(application);
@@ -104,7 +94,7 @@ namespace Unity.AI.Operations
                     Data = promptData,
                     Attachments = attachmentSummaries,
                     SectionName = section.Name,
-                    SectionSchema = JsonSerializer.SerializeToElement(BuildSectionQuestionsData(section), _jsonOptions),
+                    SectionSchema = JsonSerializer.SerializeToElement(BuildSectionQuestionsData(section), AIJsonDefaults.IndentedCamelCase),
                     PromptVersion = promptVersion,
                 };
                 var applicationScoringResponse = await aiService.GenerateApplicationScoringAsync(applicationScoringRequest);
@@ -141,7 +131,7 @@ namespace Unity.AI.Operations
                     Data = promptData,
                     Attachments = attachmentSummaries,
                     SectionName = "All Sections",
-                    SectionSchema = JsonSerializer.SerializeToElement(questions, _jsonOptions),
+                    SectionSchema = JsonSerializer.SerializeToElement(questions, AIJsonDefaults.IndentedCamelCase),
                     PromptVersion = promptVersion,
                 };
                 var applicationScoringResponse = await aiService.GenerateApplicationScoringAsync(applicationScoringRequest);
@@ -182,7 +172,7 @@ namespace Unity.AI.Operations
 
         private void CopyAnswers(Dictionary<string, ApplicationScoringAnswer> answers, Dictionary<string, object> results)
         {
-            var answersJson = JsonSerializer.Serialize(answers, _jsonOptions);
+            var answersJson = JsonSerializer.Serialize(answers, AIJsonDefaults.IndentedCamelCase);
             using var answersDoc = JsonDocument.Parse(answersJson);
             foreach (var property in answersDoc.RootElement.EnumerateObject())
             {

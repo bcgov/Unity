@@ -44,7 +44,7 @@ namespace Unity.AI.Runtime
         private const string PromptLogDirectoryName = "logs";
         private static readonly string PromptLogFileName = $"ai-prompts-{DateTime.UtcNow:yyyyMMdd-HHmmss}-{Environment.ProcessId}.log";
 
-        private static readonly JsonSerializerOptions JsonLogOptions = new() { WriteIndented = true };
+
 
         public OpenAIRuntimeService(
             IConfiguration configuration,
@@ -86,8 +86,8 @@ namespace Unity.AI.Runtime
         {
             ArgumentNullException.ThrowIfNull(request);
             var promptVersion = OpenAIPromptRenderer.ResolvePromptVersion(request.PromptVersion ?? ResolvePromptVersionSetting(ApplicationAnalysisPromptType));
-            var data = JsonSerializer.Serialize(request.Data, JsonLogOptions);
-            var schema = JsonSerializer.Serialize(request.Schema, JsonLogOptions);
+            var data = JsonSerializer.Serialize(request.Data, AIJsonDefaults.Indented);
+            var schema = JsonSerializer.Serialize(request.Schema, AIJsonDefaults.Indented);
 
             var attachmentsPayload = request.Attachments
                 .Select(a => new
@@ -97,7 +97,7 @@ namespace Unity.AI.Runtime
                 })
                 .Cast<object>();
 
-            var attachments = JsonSerializer.Serialize(attachmentsPayload, JsonLogOptions);
+            var attachments = JsonSerializer.Serialize(attachmentsPayload, AIJsonDefaults.Indented);
             var systemPrompt = OpenAIPromptRenderer.BuildApplicationAnalysisSystemPrompt(promptVersion);
             var applicationAnalysisContent = OpenAIPromptRenderer.BuildApplicationAnalysisUserPrompt(
                 promptVersion,
@@ -152,7 +152,7 @@ namespace Unity.AI.Runtime
                     contentType,
                     text = attachmentText
                 };
-                var attachment = JsonSerializer.Serialize(attachmentPayload, JsonLogOptions);
+                var attachment = JsonSerializer.Serialize(attachmentPayload, AIJsonDefaults.Indented);
                 var contentToAnalyze = OpenAIPromptRenderer.BuildAttachmentSummaryUserPrompt(promptVersion, attachment);
 
                 await LogPromptInputAsync(AttachmentSummaryPromptType, promptVersion, prompt, contentToAnalyze);
@@ -195,8 +195,8 @@ namespace Unity.AI.Runtime
         {
             ArgumentNullException.ThrowIfNull(request);
             var promptVersion = OpenAIPromptRenderer.ResolvePromptVersion(request.PromptVersion ?? ResolvePromptVersionSetting(ApplicationScoringPromptType));
-            var dataJson = JsonSerializer.Serialize(request.Data, JsonLogOptions);
-            var sectionJson = JsonSerializer.Serialize(request.SectionSchema, JsonLogOptions);
+            var dataJson = JsonSerializer.Serialize(request.Data, AIJsonDefaults.Indented);
+            var sectionJson = JsonSerializer.Serialize(request.SectionSchema, AIJsonDefaults.Indented);
 
             var attachmentSummaries = request.Attachments
                 .Select(a => $"{a.Name}: {a.Summary}")
@@ -410,7 +410,7 @@ namespace Unity.AI.Runtime
 
             if (TryParseJsonObjectFromResponse(output, out var jsonObject))
             {
-                return JsonSerializer.Serialize(jsonObject, JsonLogOptions);
+                return JsonSerializer.Serialize(jsonObject, AIJsonDefaults.Indented);
             }
 
             return output.Trim();
@@ -500,7 +500,7 @@ namespace Unity.AI.Runtime
         {
             if (TryParseJsonObjectFromResponse(content, out var contentObject))
             {
-                return JsonSerializer.Serialize(contentObject, JsonLogOptions);
+                return JsonSerializer.Serialize(contentObject, AIJsonDefaults.Indented);
             }
 
             return content.Trim();
