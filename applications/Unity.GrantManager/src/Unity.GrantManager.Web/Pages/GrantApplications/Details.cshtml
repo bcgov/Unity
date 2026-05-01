@@ -298,10 +298,10 @@
                     <button class="nav-link" id="ai-analysis-tab" data-bs-toggle="tab" data-bs-target="#ai-analysis" type="button" role="tab" aria-controls="ai-analysis" aria-selected="false" title="Application Analysis"><i class="fa fa-wand-sparkles" aria-hidden="true"></i></button>
                 </li>
             }
-            @if (Model.IsDevPromptControlsEnabled)
+            @if (Model.CanViewPromptTools)
             {
                 <li class="nav-item ms-auto">
-                    <button class="nav-link" id="dev-tools-tab" data-bs-toggle="tab" data-bs-target="#dev-tools" type="button" role="tab" aria-controls="dev-tools" aria-selected="false">Dev</button>
+                    <button class="nav-link" id="prompt-tools-tab" data-bs-toggle="tab" data-bs-target="#prompt-tools" type="button" role="tab" aria-controls="prompt-tools" aria-selected="false">Prompt Tools</button>
                 </li>
             }
             </ul>
@@ -524,14 +524,14 @@
                 </div>
                 }
                 @*-------- AI Analysis Tab Section END ---------*@
-                @if (Model.IsDevPromptControlsEnabled)
+                @if (Model.CanViewPromptTools)
                 {
-                    <div class="tab-pane fade" id="dev-tools" role="tabpanel" aria-labelledby="dev-tools-tab">
-                        <div class="dev-tools-header px-3 pt-4 pb-3">
-                            <h6 class="fw-bold m-0">AI Dev Tools</h6>
-                            <div class="dev-prompt-toolbar-row">
-                                <div class="dev-prompt-toolbar-inline">
-                                    <select id="devPromptVersion" class="form-select form-select-sm">
+                    <div class="tab-pane fade" id="prompt-tools" role="tabpanel" aria-labelledby="prompt-tools-tab">
+                        <div class="prompt-tools-header px-3 pt-4 pb-3">
+                            <h6 class="fw-bold m-0">Prompt Tools</h6>
+                            <div class="prompt-tools-toolbar-row">
+                                <div class="prompt-tools-toolbar-inline">
+                                    <select id="promptVersion" class="form-select form-select-sm">
                                         @if (Model.DefaultPromptVersion == "v0")
                                         {
                                             <option value="v0" selected>v0</option>
@@ -543,23 +543,14 @@
                                             <option value="v0">v0</option>
                                         }
                                     </select>
-                                    @if (aiAttachmentSummariesEnabled && aiApplicationAnalysisEnabled && aiScoringEnabled)
-                                    {
-                                        <button type="button" class="btn unt-btn-outline-primary btn-outline-primary btn-sm ai-generate-btn" id="generateAllAiDevToolsBtn">
-                                            <span class="ai-button-content">
-                                                <i class="unt-icon-sm fa-solid fa-wand-sparkles"></i>
-                                                <span>Generate All</span>
-                                            </span>
-                                        </button>
-                                    }
                                 </div>
                             </div>
                         </div>
                         <div class="px-3 pb-3">
 
-                            <div class="dev-prompt-section">
-                                <div class="dev-prompt-section-header">
-                                    <h6 class="fw-bold m-0">Attachment Summary <span class="ai-dev-output-timestamp" id="attachmentAiOutputTimestamp"></span></h6>
+                            <div class="prompt-tools-section">
+                                <div class="prompt-tools-section-header">
+                                    <h6 class="fw-bold m-0">Attachment Summary <span class="prompt-tools-output-timestamp" id="attachmentOutputTimestamp"></span></h6>
                                     <button type="button" class="btn unt-btn-outline-primary btn-outline-primary btn-sm ai-generate-btn" onclick="queueAttachmentSummary(this)">
                                         <span class="ai-button-content">
                                             <i class="unt-icon-sm fa-solid fa-wand-sparkles"></i>
@@ -567,19 +558,19 @@
                                         </span>
                                     </button>
                                 </div>
-                                <div class="ai-dev-output-container">
-                                    <div class="ai-dev-output-actions">
-                                        <button type="button" class="btn btn-icon ai-dev-output-copy-btn" data-target="#attachmentAiOutput" title="Copy" aria-label="Copy">
+                                <div class="prompt-tools-output-container">
+                                    <div class="prompt-tools-output-actions">
+                                        <button type="button" class="btn btn-icon prompt-tools-output-copy-btn" data-target="#attachmentOutput" title="Copy" aria-label="Copy">
                                             <i class="fl fl-copy" aria-hidden="true"></i>
                                         </button>
                                     </div>
-                                    <textarea class="form-control form-control-sm ai-dev-output" id="attachmentAiOutput" readonly spellcheck="false"></textarea>
+                                    <textarea class="form-control form-control-sm prompt-tools-output" id="attachmentOutput" readonly spellcheck="false"></textarea>
                                 </div>
                             </div>
 
-                            <div class="dev-prompt-section">
-                                <div class="dev-prompt-section-header">
-                                    <h6 class="fw-bold m-0">Application Analysis <span class="ai-dev-output-timestamp" id="analysisAiOutputTimestamp"></span></h6>
+                            <div class="prompt-tools-section">
+                                <div class="prompt-tools-section-header">
+                                    <h6 class="fw-bold m-0">Application Analysis <span class="prompt-tools-output-timestamp" id="analysisOutputTimestamp"></span></h6>
                                     <button type="button" class="btn unt-btn-outline-primary btn-outline-primary btn-sm ai-generate-btn" onclick="queueApplicationAnalysis(this)">
                                         <span class="ai-button-content">
                                             <i class="unt-icon-sm fa-solid fa-wand-sparkles"></i>
@@ -587,19 +578,19 @@
                                         </span>
                                     </button>
                                 </div>
-                                <div class="ai-dev-output-container">
-                                    <div class="ai-dev-output-actions">
-                                        <button type="button" class="btn btn-icon ai-dev-output-copy-btn" data-target="#analysisAiOutput" title="Copy" aria-label="Copy">
+                                <div class="prompt-tools-output-container">
+                                    <div class="prompt-tools-output-actions">
+                                        <button type="button" class="btn btn-icon prompt-tools-output-copy-btn" data-target="#analysisOutput" title="Copy" aria-label="Copy">
                                             <i class="fl fl-copy" aria-hidden="true"></i>
                                         </button>
                                     </div>
-                                    <textarea class="form-control form-control-sm ai-dev-output" id="analysisAiOutput" readonly spellcheck="false"></textarea>
+                                    <textarea class="form-control form-control-sm prompt-tools-output" id="analysisOutput" readonly spellcheck="false"></textarea>
                                 </div>
                             </div>
 
-                            <div class="dev-prompt-section">
-                                <div class="dev-prompt-section-header">
-                                    <h6 class="fw-bold m-0">Application Scoring <span class="ai-dev-output-timestamp" id="scoringAiOutputTimestamp"></span></h6>
+                            <div class="prompt-tools-section">
+                                <div class="prompt-tools-section-header">
+                                    <h6 class="fw-bold m-0">Application Scoring <span class="prompt-tools-output-timestamp" id="scoringOutputTimestamp"></span></h6>
                                     <button type="button" class="btn unt-btn-outline-primary btn-outline-primary btn-sm ai-generate-btn" onclick="queueApplicationScoring(this)">
                                         <span class="ai-button-content">
                                             <i class="unt-icon-sm fa-solid fa-wand-sparkles"></i>
@@ -607,13 +598,13 @@
                                         </span>
                                     </button>
                                 </div>
-                                <div class="ai-dev-output-container">
-                                    <div class="ai-dev-output-actions">
-                                        <button type="button" class="btn btn-icon ai-dev-output-copy-btn" data-target="#scoringAiOutput" title="Copy" aria-label="Copy">
+                                <div class="prompt-tools-output-container">
+                                    <div class="prompt-tools-output-actions">
+                                        <button type="button" class="btn btn-icon prompt-tools-output-copy-btn" data-target="#scoringOutput" title="Copy" aria-label="Copy">
                                             <i class="fl fl-copy" aria-hidden="true"></i>
                                         </button>
                                     </div>
-                                    <textarea class="form-control form-control-sm ai-dev-output" id="scoringAiOutput" readonly spellcheck="false"></textarea>
+                                    <textarea class="form-control form-control-sm prompt-tools-output" id="scoringOutput" readonly spellcheck="false"></textarea>
                                 </div>
                             </div>
                         </div>

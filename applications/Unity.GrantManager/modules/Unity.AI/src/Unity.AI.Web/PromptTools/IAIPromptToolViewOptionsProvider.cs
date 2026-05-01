@@ -1,7 +1,9 @@
+using System.Threading.Tasks;
+
 namespace Unity.AI.Web.PromptTools;
 
-public interface IAIPromptToolViewOptionsProvider
+public interface IAIPromptToolAccessProvider
 {
-    bool IsDevPromptControlsEnabled { get; }
+    Task<bool> CanViewPromptToolsAsync();
     string DefaultPromptVersion { get; }
 }

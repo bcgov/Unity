@@ -1,16 +1,31 @@
-using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Configuration;
-using System;
+using System.Threading.Tasks;
+using Unity.Modules.Shared.Permissions;
 using Volo.Abp.DependencyInjection;
+using Volo.Abp.Security.Claims;
 
 namespace Unity.AI.Web.PromptTools;
 
-public class AIPromptToolViewOptionsProvider(
-    IWebHostEnvironment webHostEnvironment,
-    IConfiguration configuration) : IAIPromptToolViewOptionsProvider, ITransientDependency
+public class AIPromptToolAccessProvider(
+    IAuthorizationService authorizationService,
+    ICurrentPrincipalAccessor currentPrincipalAccessor,
+    IConfiguration configuration) : IAIPromptToolAccessProvider, ITransientDependency
 {
-    public bool IsDevPromptControlsEnabled =>
-        string.Equals(webHostEnvironment.EnvironmentName, "Development", StringComparison.OrdinalIgnoreCase);
+    public async Task<bool> CanViewPromptToolsAsync()
+    {
+        var principal = currentPrincipalAccessor.Principal;
+        if (principal?.Identity?.IsAuthenticated != true)
+        {
+            return false;
+        }
+
+        var authorizationResult = await authorizationService.AuthorizeAsync(
+            principal,
+            IdentityConsts.ITOperationsPolicyName);
+
+        return authorizationResult.Succeeded;
+    }
 
     public string DefaultPromptVersion
     {
