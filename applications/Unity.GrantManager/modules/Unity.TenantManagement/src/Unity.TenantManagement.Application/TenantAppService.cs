@@ -27,6 +27,10 @@ public class TenantAppService(
     IUnitOfWorkManager unitOfWorkManager,
     ITenantConnectionStringBuilder tenantConnectionStringBuilder) : TenantManagementAppServiceBase, ITenantAppService
 {
+    private const string ExtraPropDivision = "Division";
+    private const string ExtraPropBranch = "Branch";
+    private const string ExtraPropDescription = "Description";
+    private const string ExtraPropCasClientCode = "CasClientCode";
 
     public virtual async Task<TenantDto> GetAsync(Guid id)
     {
@@ -48,7 +52,7 @@ public class TenantAppService(
 
         var extraPropertySortFields = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
-            "Division", "Branch", "Description", "CasClientCode"
+            ExtraPropDivision, ExtraPropBranch, ExtraPropDescription, ExtraPropCasClientCode
         };
 
         var dbSortFields = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
@@ -91,10 +95,10 @@ public class TenantAppService(
             var filter = input.Filter.Trim();
             result = result.Where(t =>
                 (t.Name != null && t.Name.Contains(filter, StringComparison.OrdinalIgnoreCase)) ||
-                MatchesExtraProperty(t, "Division", filter) ||
-                MatchesExtraProperty(t, "Branch", filter) ||
-                MatchesExtraProperty(t, "Description", filter) ||
-                MatchesExtraProperty(t, "CasClientCode", filter));
+                MatchesExtraProperty(t, ExtraPropDivision, filter) ||
+                MatchesExtraProperty(t, ExtraPropBranch, filter) ||
+                MatchesExtraProperty(t, ExtraPropDescription, filter) ||
+                MatchesExtraProperty(t, ExtraPropCasClientCode, filter));
         }
 
         // Apply ExtraProperties sort
@@ -142,10 +146,10 @@ public class TenantAppService(
                     tenantConnectionStringBuilder.Build(tenant.Name)));
 
             // Set ExtraProperties from input
-            tenant.ExtraProperties["Division"] = input.Division ?? string.Empty;
-            tenant.ExtraProperties["Branch"] = input.Branch ?? string.Empty;
-            tenant.ExtraProperties["Description"] = input.Description ?? string.Empty;
-            tenant.ExtraProperties["CasClientCode"] = input.CasClientCode ?? string.Empty;
+            tenant.ExtraProperties[ExtraPropDivision] = input.Division ?? string.Empty;
+            tenant.ExtraProperties[ExtraPropBranch] = input.Branch ?? string.Empty;
+            tenant.ExtraProperties[ExtraPropDescription] = input.Description ?? string.Empty;
+            tenant.ExtraProperties[ExtraPropCasClientCode] = input.CasClientCode ?? string.Empty;
 
             await tenantRepository.InsertAsync(tenant);
 
@@ -178,10 +182,10 @@ public class TenantAppService(
         tenant.SetConcurrencyStampIfNotNull(input.ConcurrencyStamp);
         
         // Update ExtraProperties from input
-        tenant.ExtraProperties["Division"] = input.Division ?? string.Empty;
-        tenant.ExtraProperties["Branch"] = input.Branch ?? string.Empty;
-        tenant.ExtraProperties["Description"] = input.Description ?? string.Empty;
-        tenant.ExtraProperties["CasClientCode"] = input.CasClientCode ?? string.Empty;
+        tenant.ExtraProperties[ExtraPropDivision] = input.Division ?? string.Empty;
+        tenant.ExtraProperties[ExtraPropBranch] = input.Branch ?? string.Empty;
+        tenant.ExtraProperties[ExtraPropDescription] = input.Description ?? string.Empty;
+        tenant.ExtraProperties[ExtraPropCasClientCode] = input.CasClientCode ?? string.Empty;
 
         await tenantRepository.UpdateAsync(tenant);
 
