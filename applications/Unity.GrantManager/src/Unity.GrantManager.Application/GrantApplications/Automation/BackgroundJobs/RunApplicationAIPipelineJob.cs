@@ -31,7 +31,7 @@ public class RunApplicationAIPipelineJob(
     {
         if (string.IsNullOrWhiteSpace(args.RequestKey))
         {
-            throw new ArgumentException("RequestKey is required.", nameof(args.RequestKey));
+            throw new ArgumentException("RequestKey is required.", nameof(args));
         }
 
         using (currentTenant.Change(args.TenantId))
