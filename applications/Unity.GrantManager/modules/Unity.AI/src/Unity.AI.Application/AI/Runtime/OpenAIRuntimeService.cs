@@ -24,11 +24,7 @@ namespace Unity.AI.Runtime
         private const string ApplicationAnalysisPromptType = AIPromptTypes.ApplicationAnalysis;
         private const string AttachmentSummaryPromptType = AIPromptTypes.AttachmentSummary;
         private const string ApplicationScoringPromptType = AIPromptTypes.ApplicationScoring;
-        private const string AIServiceNotConfiguredMessage = "AI service not available - service not configured.";
-        private const string AIServiceTemporarilyUnavailableMessage = "AI request failed - service temporarily unavailable.";
-        private const string AIRequestFailedRetryMessage = "AI request failed - please try again later.";
         private const int MaxAiAttempts = 3;
-        private const int DefaultCompletionTokens = 2000;
         private const int DefaultAttachmentSummaryCompletionTokens = 2000;
         private const int DefaultApplicationAnalysisCompletionTokens = 4000;
         private const int DefaultApplicationScoringCompletionTokens = 8000;
@@ -67,19 +63,6 @@ namespace Unity.AI.Runtime
             }
 
             return Task.FromResult(true);
-        }
-
-        public async Task<AICompletionResponse> GenerateCompletionAsync(AICompletionRequest request)
-        {
-            var result = await GenerateWithRetryAsync(
-                () => _openAITransportService.GenerateSummaryAsync(
-                request?.UserPrompt ?? string.Empty,
-                null,
-                request?.MaxTokens ?? DefaultCompletionTokens,
-                request?.Temperature),
-                AIProviderPayloadValidator.IsValidAttachmentSummaryText,
-                "completion");
-            return new AICompletionResponse { Content = ResolveNarrativeContent(result) };
         }
 
         public async Task<ApplicationAnalysisResponse> GenerateApplicationAnalysisAsync(ApplicationAnalysisRequest request)
@@ -309,17 +292,6 @@ namespace Unity.AI.Runtime
                 operationName,
                 lastResult.Outcome);
             return lastResult;
-        }
-
-        private static string ResolveNarrativeContent(AIOperationResult result)
-        {
-            return result.Outcome switch
-            {
-                AIOperationOutcome.Success => result.Content,
-                AIOperationOutcome.PermanentFailure => AIServiceNotConfiguredMessage,
-                AIOperationOutcome.TransientFailure => AIServiceTemporarilyUnavailableMessage,
-                _ => AIRequestFailedRetryMessage
-            };
         }
 
         private static int? TryGetInt32(JsonElement element, string propertyName)
