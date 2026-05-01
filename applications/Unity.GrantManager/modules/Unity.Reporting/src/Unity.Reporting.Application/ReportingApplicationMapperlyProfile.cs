@@ -9,8 +9,10 @@ namespace Unity.Reporting;
 [Mapper]
 public partial class ReportColumnsMapToReportColumnsMapDtoMapper : MapperBase<ReportColumnsMap, ReportColumnsMapDto>
 {
+    [MapperIgnoreTarget(nameof(ReportColumnsMapDto.DetectedChanges))]
     public override partial ReportColumnsMapDto Map(ReportColumnsMap source);
 
+    [MapperIgnoreTarget(nameof(ReportColumnsMapDto.DetectedChanges))]
     public override partial void Map(ReportColumnsMap source, ReportColumnsMapDto destination);
 
     [UserMapping]

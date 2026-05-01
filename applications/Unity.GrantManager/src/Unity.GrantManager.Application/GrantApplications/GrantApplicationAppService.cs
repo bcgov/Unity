@@ -107,8 +107,8 @@ public class GrantApplicationAppService(
             appDto.NonRegOrgName = app.Applicant?.NonRegOrgName ?? string.Empty;
             appDto.OrganizationType = app.Applicant?.OrganizationType ?? string.Empty;
             appDto.Assignees = BuildApplicationAssignees(app.ApplicationAssignments);
-            appDto.SubStatusDisplayValue = MapSubstatusDisplayValue(appDto.SubStatus);
-            appDto.DeclineRational = MapDeclineRationalDisplayValue(appDto.DeclineRational);
+            appDto.SubStatusDisplayValue = MapSubstatusDisplayValue(appDto.SubStatus ?? string.Empty);
+            appDto.DeclineRational = MapDeclineRationalDisplayValue(appDto.DeclineRational ?? string.Empty);
             appDto.ContactFullName = app.ApplicantAgent?.Name;
             appDto.ContactEmail = app.ApplicantAgent?.Email;
             appDto.ContactTitle = app.ApplicantAgent?.Title;

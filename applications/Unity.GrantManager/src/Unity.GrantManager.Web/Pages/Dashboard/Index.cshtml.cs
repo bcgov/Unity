@@ -96,13 +96,13 @@ public class IndexModel : GrantManagerPageModel
             if (intakeR.Count == 0) return;
 
             IntakeOptionsList = intakeR.DistinctBy(s => s.IntakeId).Select(intake => new SelectListItem { Value = intake.IntakeId.ToString(), Text = intake.IntakeName }).ToList();
-            var latestIntakeId = intakeR.OrderByDescending(intake => intake.IntakeCreationTime).FirstOrDefault()?.IntakeId;
+            var latestIntakeId = intakeR.OrderByDescending(intake => intake.IntakeCreationTime).First()?.IntakeId;
             IntakeIds = [latestIntakeId ?? Guid.Empty];
 
             foreach (var intake in intakeR)
             {
                 List<string> categoryList = [.. intakeR.Where(s => !string.IsNullOrWhiteSpace(s.Category) && s.IntakeId == intake.IntakeId)
-                    .Select(s => s.Category)
+                    .Select(s => s.Category!)
                     .Distinct()
                     .OrderBy(c => c)];
 

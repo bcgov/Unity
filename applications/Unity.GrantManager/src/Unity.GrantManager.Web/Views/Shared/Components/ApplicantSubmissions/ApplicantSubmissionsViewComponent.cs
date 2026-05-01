@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using StackExchange.Redis;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -70,8 +71,8 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantSubmissions
                 // Map related entities
                 dto.Status = app.ApplicationStatus?.InternalStatus ?? string.Empty;
                 dto.Category = app.ApplicationForm?.Category ?? string.Empty;
-                dto.SubStatusDisplayValue = MapSubstatusDisplayValue(dto.SubStatus);
-                dto.DeclineRational = MapDeclineRationalDisplayValue(dto.DeclineRational);
+                dto.SubStatusDisplayValue = MapSubstatusDisplayValue(dto.SubStatus ?? string.Empty);
+                dto.DeclineRational = MapDeclineRationalDisplayValue(dto.DeclineRational ?? string.Empty);
                 dto.Applicant = app.Applicant != null
                     ? _objectMapper.Map<Applicant, GrantApplicationApplicantDto>(app.Applicant)
                     : new GrantApplicationApplicantDto();

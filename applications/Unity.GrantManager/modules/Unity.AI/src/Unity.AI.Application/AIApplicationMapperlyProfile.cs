@@ -21,8 +21,22 @@ public partial class CreateUpdateAIPromptDtoToAIPromptMapper : MapperBase<Create
     private static AIPrompt CreateAIPrompt() =>
         (AIPrompt)RuntimeHelpers.GetUninitializedObject(typeof(AIPrompt));
 
+    [MapperIgnoreTarget(nameof(AIPrompt.Versions))]
+    [MapperIgnoreTarget(nameof(AIPrompt.TenantId))]
+    [MapperIgnoreTarget(nameof(AIPrompt.ConcurrencyStamp))]
+    [MapperIgnoreTarget(nameof(AIPrompt.CreationTime))]
+    [MapperIgnoreTarget(nameof(AIPrompt.CreatorId))]
+    [MapperIgnoreTarget(nameof(AIPrompt.LastModificationTime))]
+    [MapperIgnoreTarget(nameof(AIPrompt.LastModifierId))]
     public override partial AIPrompt Map(CreateUpdateAIPromptDto source);
 
+    [MapperIgnoreTarget(nameof(AIPrompt.Versions))]
+    [MapperIgnoreTarget(nameof(AIPrompt.TenantId))]
+    [MapperIgnoreTarget(nameof(AIPrompt.ConcurrencyStamp))]
+    [MapperIgnoreTarget(nameof(AIPrompt.CreationTime))]
+    [MapperIgnoreTarget(nameof(AIPrompt.CreatorId))]
+    [MapperIgnoreTarget(nameof(AIPrompt.LastModificationTime))]
+    [MapperIgnoreTarget(nameof(AIPrompt.LastModifierId))]
     public override partial void Map(CreateUpdateAIPromptDto source, AIPrompt destination);
 }
 
@@ -41,7 +55,21 @@ public partial class CreateUpdateAIPromptVersionDtoToAIPromptVersionMapper : Map
     private static AIPromptVersion CreateAIPromptVersion() =>
         (AIPromptVersion)RuntimeHelpers.GetUninitializedObject(typeof(AIPromptVersion));
 
+    [MapperIgnoreTarget(nameof(AIPromptVersion.Prompt))]
+    [MapperIgnoreTarget(nameof(AIPromptVersion.TenantId))]
+    [MapperIgnoreTarget(nameof(AIPromptVersion.ConcurrencyStamp))]
+    [MapperIgnoreTarget(nameof(AIPromptVersion.CreationTime))]
+    [MapperIgnoreTarget(nameof(AIPromptVersion.CreatorId))]
+    [MapperIgnoreTarget(nameof(AIPromptVersion.LastModificationTime))]
+    [MapperIgnoreTarget(nameof(AIPromptVersion.LastModifierId))]
     public override partial AIPromptVersion Map(CreateUpdateAIPromptVersionDto source);
 
+    [MapperIgnoreTarget(nameof(AIPromptVersion.Prompt))]
+    [MapperIgnoreTarget(nameof(AIPromptVersion.TenantId))]
+    [MapperIgnoreTarget(nameof(AIPromptVersion.ConcurrencyStamp))]
+    [MapperIgnoreTarget(nameof(AIPromptVersion.CreationTime))]
+    [MapperIgnoreTarget(nameof(AIPromptVersion.CreatorId))]
+    [MapperIgnoreTarget(nameof(AIPromptVersion.LastModificationTime))]
+    [MapperIgnoreTarget(nameof(AIPromptVersion.LastModifierId))]
     public override partial void Map(CreateUpdateAIPromptVersionDto source, AIPromptVersion destination);
 }

@@ -18,7 +18,7 @@ using Volo.Abp.Users;
 
 namespace Unity.Payments;
 
-[Mapper]
+[Mapper(AllowNullPropertyAssignment = true)]
 public partial class PaymentRequestToPaymentRequestDtoMapper : MapperBase<PaymentRequest, PaymentRequestDto>
 {
     [MapperIgnoreTarget(nameof(PaymentRequestDto.ErrorSummary))]
@@ -30,6 +30,9 @@ public partial class PaymentRequestToPaymentRequestDtoMapper : MapperBase<Paymen
     [MapperIgnoreTarget(nameof(PaymentRequestDto.AccountCodingDisplay))]
     [MapperIgnoreTarget(nameof(PaymentRequestDto.CreatorUser))]
     public override partial void Map(PaymentRequest source, PaymentRequestDto destination);
+
+    [MapperIgnoreTarget(nameof(ExpenseApprovalDto.DecisionUser))]
+    private partial ExpenseApprovalDto MapExpenseApproval(ExpenseApproval source);
 }
 
 [Mapper]
@@ -37,6 +40,9 @@ public partial class PaymentRequestToPaymentDetailsDtoMapper : MapperBase<Paymen
 {
     public override partial PaymentDetailsDto Map(PaymentRequest source);
     public override partial void Map(PaymentRequest source, PaymentDetailsDto destination);
+
+    [MapperIgnoreTarget(nameof(ExpenseApprovalDto.DecisionUser))]
+    private partial ExpenseApprovalDto MapExpenseApproval(ExpenseApproval source);
 }
 
 [Mapper]
@@ -127,7 +133,26 @@ public partial class PaymentThresholdToPaymentThresholdDtoMapper : MapperBase<Pa
 [Mapper]
 public partial class UpdatePaymentThresholdDtoToPaymentThresholdMapper : MapperBase<UpdatePaymentThresholdDto, PaymentThreshold>
 {
+    [MapperIgnoreTarget(nameof(PaymentThreshold.TenantId))]
+    [MapperIgnoreTarget(nameof(PaymentThreshold.IsDeleted))]
+    [MapperIgnoreTarget(nameof(PaymentThreshold.DeleterId))]
+    [MapperIgnoreTarget(nameof(PaymentThreshold.DeletionTime))]
+    [MapperIgnoreTarget(nameof(PaymentThreshold.LastModificationTime))]
+    [MapperIgnoreTarget(nameof(PaymentThreshold.LastModifierId))]
+    [MapperIgnoreTarget(nameof(PaymentThreshold.CreationTime))]
+    [MapperIgnoreTarget(nameof(PaymentThreshold.CreatorId))]
+    [MapperIgnoreTarget(nameof(PaymentThreshold.ConcurrencyStamp))]
     public override partial PaymentThreshold Map(UpdatePaymentThresholdDto source);
+
+    [MapperIgnoreTarget(nameof(PaymentThreshold.TenantId))]
+    [MapperIgnoreTarget(nameof(PaymentThreshold.IsDeleted))]
+    [MapperIgnoreTarget(nameof(PaymentThreshold.DeleterId))]
+    [MapperIgnoreTarget(nameof(PaymentThreshold.DeletionTime))]
+    [MapperIgnoreTarget(nameof(PaymentThreshold.LastModificationTime))]
+    [MapperIgnoreTarget(nameof(PaymentThreshold.LastModifierId))]
+    [MapperIgnoreTarget(nameof(PaymentThreshold.CreationTime))]
+    [MapperIgnoreTarget(nameof(PaymentThreshold.CreatorId))]
+    [MapperIgnoreTarget(nameof(PaymentThreshold.ConcurrencyStamp))]
     public override partial void Map(UpdatePaymentThresholdDto source, PaymentThreshold destination);
 }
 

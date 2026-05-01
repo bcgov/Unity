@@ -66,6 +66,10 @@ public partial class WorksheetLinkMapper : MapperBase<WorksheetLink, WorksheetLi
 {
     public override partial WorksheetLinkDto Map(WorksheetLink source);
     public override partial void Map(WorksheetLink source, WorksheetLinkDto destination);
+
+    [MapperIgnoreTarget(nameof(WorksheetBasicDto.TotalFields))]
+    [MapperIgnoreTarget(nameof(WorksheetBasicDto.TotalSections))]
+    private partial WorksheetBasicDto MapWorksheetBasicDto(Worksheet source);
 }
 
 [Mapper]
@@ -84,7 +88,10 @@ public partial class WorksheetSectionMapper : MapperBase<WorksheetSection, Works
         destination.FieldWidth = ParseFieldWidth(source.Definition);
     }
 
+    [MapperIgnoreTarget(nameof(WorksheetSectionDto.FieldWidth))]
     private partial WorksheetSectionDto MapInternal(WorksheetSection source);
+
+    [MapperIgnoreTarget(nameof(WorksheetSectionDto.FieldWidth))]
     private partial void MapInternal(WorksheetSection source, WorksheetSectionDto destination);
 
     private static int? ParseFieldWidth(string? definition)
@@ -117,7 +124,14 @@ public partial class CustomFieldValueMapper : TwoWayMapperBase<CustomFieldValue,
 
     public override partial CustomFieldValueDto Map(CustomFieldValue source);
     public override partial void Map(CustomFieldValue source, CustomFieldValueDto destination);
+    [MapperIgnoreTarget(nameof(CustomFieldValue.TenantId))]
+    [MapperIgnoreTarget(nameof(CustomFieldValue.LastModificationTime))]
+    [MapperIgnoreTarget(nameof(CustomFieldValue.LastModifierId))]
     public override partial CustomFieldValue ReverseMap(CustomFieldValueDto source);
+
+    [MapperIgnoreTarget(nameof(CustomFieldValue.TenantId))]
+    [MapperIgnoreTarget(nameof(CustomFieldValue.LastModificationTime))]
+    [MapperIgnoreTarget(nameof(CustomFieldValue.LastModifierId))]
     public override partial void ReverseMap(CustomFieldValueDto source, CustomFieldValue destination);
 }
 
@@ -161,6 +175,13 @@ public partial class ScoresheetSectionMapper : MapperBase<ScoresheetSection, Sco
 
     [MapperIgnoreTarget(nameof(ScoresheetSectionDto.ExtraProperties))]
     public override partial void Map(ScoresheetSection source, ScoresheetSectionDto destination);
+
+    [MapperIgnoreTarget(nameof(QuestionDto.ExtraProperties))]
+    [MapperIgnoreTarget(nameof(QuestionDto.Answer))]
+    [MapperIgnoreTarget(nameof(QuestionDto.IsHumanConfirmed))]
+    [MapperIgnoreTarget(nameof(QuestionDto.AICitation))]
+    [MapperIgnoreTarget(nameof(QuestionDto.AIConfidence))]
+    private partial QuestionDto MapQuestion(Question source);
 }
 
 [Mapper]
@@ -168,6 +189,16 @@ public partial class ScoresheetMapper : MapperBase<Scoresheet, ScoresheetDto>
 {
     public override partial ScoresheetDto Map(Scoresheet source);
     public override partial void Map(Scoresheet source, ScoresheetDto destination);
+
+    [MapperIgnoreTarget(nameof(ScoresheetSectionDto.ExtraProperties))]
+    private partial ScoresheetSectionDto MapSection(ScoresheetSection source);
+
+    [MapperIgnoreTarget(nameof(QuestionDto.ExtraProperties))]
+    [MapperIgnoreTarget(nameof(QuestionDto.Answer))]
+    [MapperIgnoreTarget(nameof(QuestionDto.IsHumanConfirmed))]
+    [MapperIgnoreTarget(nameof(QuestionDto.AICitation))]
+    [MapperIgnoreTarget(nameof(QuestionDto.AIConfidence))]
+    private partial QuestionDto MapQuestion(Question source);
 }
 
 [Mapper]

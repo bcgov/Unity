@@ -9,10 +9,16 @@ namespace Unity.Notifications;
 [Mapper]
 public partial class EmailLogToEmailHistoryDtoMapper : MapperBase<EmailLog, EmailHistoryDto>
 {
+    [MapProperty(nameof(EmailLog.CC), nameof(EmailHistoryDto.Cc))]
+    [MapProperty(nameof(EmailLog.BCC), nameof(EmailHistoryDto.Bcc))]
     [MapperIgnoreTarget(nameof(EmailHistoryDto.SentBy))]
+    [MapperIgnoreTarget(nameof(EmailHistoryDto.ExtraProperties))]
     public override partial EmailHistoryDto Map(EmailLog source);
 
+    [MapProperty(nameof(EmailLog.CC), nameof(EmailHistoryDto.Cc))]
+    [MapProperty(nameof(EmailLog.BCC), nameof(EmailHistoryDto.Bcc))]
     [MapperIgnoreTarget(nameof(EmailHistoryDto.SentBy))]
+    [MapperIgnoreTarget(nameof(EmailHistoryDto.ExtraProperties))]
     public override partial void Map(EmailLog source, EmailHistoryDto destination);
 }
 

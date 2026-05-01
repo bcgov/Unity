@@ -76,7 +76,6 @@
     <PackageReference Include="Volo.Abp.Mapperly" Version="10.3.0" />
     <PackageReference Include="Volo.Abp.SettingManagement.Web" Version="10.3.0" />
     <PackageReference Include="Volo.Abp.Swashbuckle" Version="10.3.0" />
-    <PackageReference Include="Volo.Abp.TenantManagement.Web" Version="10.3.0" />
   </ItemGroup>
 
   <!-- Static Assets Copy -->
