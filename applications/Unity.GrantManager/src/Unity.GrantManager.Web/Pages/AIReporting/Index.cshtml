@@ -4,24 +4,29 @@
 @using Volo.Abp.Features
 @inject IFeatureChecker FeatureChecker
 
+@{
+    var canViewAiReporting = await FeatureChecker.IsEnabledAsync("Unity.AIReporting")
+        || User.IsInRole(IdentityConsts.ITAdminRoleName);
+}
+
 @section styles {
-    @if (await FeatureChecker.IsEnabledAsync("Unity.AIReporting") || User.IsInRole(IdentityConsts.ITAdminRoleName))
+    @if (canViewAiReporting)
     {
         <abp-style src="/Pages/AIReporting/Index.css" />
     }
 }
 
 @section scripts {
-    @if (await FeatureChecker.IsEnabledAsync("Unity.AIReporting") || User.IsInRole(IdentityConsts.ITAdminRoleName))
+    @if (canViewAiReporting)
     {
         <script>
-            window.reportingAiApiBaseUrl = '@Model.ReportingAiApiBaseUrl';
+            window.reportingAiApiBaseUrl = @Json.Serialize(Model.ReportingAiApiBaseUrl);
         </script>
         <abp-script src="/Pages/AIReporting/Index.js" />
     }
 }
 
-@if (await FeatureChecker.IsEnabledAsync("Unity.AIReporting") || User.IsInRole(IdentityConsts.ITAdminRoleName))
+@if (canViewAiReporting)
 {
 <div id="ai-reporting-root" class="outer-container">
 

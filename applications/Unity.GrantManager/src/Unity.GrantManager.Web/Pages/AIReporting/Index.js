@@ -23,7 +23,14 @@
     const btnExplain       = document.getElementById('btn-explain');
     const btnDeleteQ       = document.getElementById('btn-delete-question');
 
-    const apiBase = (window.reportingAiApiBaseUrl || '').replace(/\/+$/, '') + '/api';
+    const notify = abp.notify;
+    const reportingAiApiBaseUrl = (window.reportingAiApiBaseUrl || '').trim();
+    if (!reportingAiApiBaseUrl) {
+        notify.error('AI Reporting is not configured.');
+        return;
+    }
+
+    const apiBase = reportingAiApiBaseUrl.replace(/\/+$/, '') + '/api';
     const MAX_RETRIES = 2;
 
     // ─── State ──────────────────────────────────────────────────────────────
@@ -49,8 +56,6 @@
 
     const isLoading = () => state.conversation.some(t => t.safeUrl === 'loading');
     const findTurn  = (id) => state.conversation.find(t => t.id === id);
-
-    const notify = abp.notify;
 
     // Fresh turn
     const createTurn = (question, retryCount = 0) => ({
