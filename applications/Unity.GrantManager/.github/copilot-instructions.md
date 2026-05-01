@@ -7,7 +7,7 @@
 
 Unity Grant Manager is a **grant management portal** for the Province of British Columbia, built on **ABP Framework 9.1.3** with **.NET 9.0**, targeting **PostgreSQL 17**. The UI uses **Razor Pages** with a custom ABP theme (Unity.Theme.UX2). The architecture follows ABP's **Domain-Driven Design (DDD)** layered module pattern.
 
-**Key stack:** .NET 9 · ABP 9.1.3 · EF Core 9.0 · PostgreSQL 17 · Redis · RabbitMQ · xUnit · Shouldly · NSubstitute · AutoMapper · Cypress (E2E)
+**Key stack:** .NET 9 · ABP 9.1.3 · EF Core 9.0 · PostgreSQL 17 · Redis · RabbitMQ · xUnit · Shouldly · NSubstitute · Mapperly · Cypress (E2E)
 
 ## Repository Layout
 
@@ -20,7 +20,7 @@ NuGet.Config                              ← NuGet package sources
 docker-compose.yml                        ← Docker dev environment
 src/
   Unity.GrantManager.Web/                 ← Razor Pages web app (entry point)
-  Unity.GrantManager.Application/         ← App services, AutoMapper profiles
+  Unity.GrantManager.Application/         ← App services, Mapperly mappers
   Unity.GrantManager.Application.Contracts/ ← DTOs, interfaces
   Unity.GrantManager.Domain/              ← Entities, repositories, domain services
   Unity.GrantManager.Domain.Shared/       ← Enums, constants, localization (en.json)
@@ -135,8 +135,8 @@ Preferred code-usage boundaries (guidance for new code):
 - All methods `async`, end with `Async`.
 - Accept/return **DTOs only**, never entities. Define DTOs in `*.Application.Contracts`.
 - Make all public methods `virtual` for extensibility.
-- This project uses **AutoMapper** (not Mapperly). Mapping profiles are `*AutoMapperProfile.cs` inheriting `Profile`.
-- `ObjectMapper.Map<>()` is used for DTO mapping, not Mapperly partials.
+- This project uses **Mapperly** (not AutoMapper). Mapper classes are `*MapperlyProfile.cs` decorated with `[Mapper]` and inheriting `MapperBase<TSource, TDest>` or `TwoWayMapperBase<T1, T2>`.
+- `ObjectMapper.Map<>()` is used for DTO mapping at call sites; Mapperly generates the implementation via source generation.
 
 ### EF Core
 
@@ -178,7 +178,7 @@ Use the ABP workflow agents in `.github/agents/` to accelerate planning, develop
 
 - `feature-planner`: Convert a feature request or bug into a layered ABP implementation plan.
 - `ddd-modeler`: Design or review aggregates, invariants, repositories, and domain managers.
-- `application-service-designer`: Define app service contracts, DTOs, authorization, and AutoMapper changes.
+- `application-service-designer`: Define app service contracts, DTOs, authorization, and Mapperly mapper changes.
 - `efcore-migration-planner`: Plan host vs tenant EF Core model updates and migration steps safely.
 - `permissions-localization-auditor`: Audit diffs for permission coverage, localization keys, and hardcoded text.
 - `test-strategy`: Build risk-based unit/integration test plans for ABP features.

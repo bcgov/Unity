@@ -21,4 +21,4 @@ Pick the agent that matches your workflow stage and provide:
 2. Target module(s) and files.
 3. Constraints (tenant scope, security, deadline, non-functional requirements).
 
-Each agent enforces ABP layering, AutoMapper usage, localization, and test conventions from repository instructions and skills.
+Each agent enforces ABP layering, Mapperly usage, localization, and test conventions from repository instructions and skills.

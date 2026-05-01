@@ -29,7 +29,7 @@ These properties are pre-injected in `ApplicationService`, `DomainService`, and 
 | `CurrentUser` | Access authenticated user (Id, Name, Email, Roles) |
 | `CurrentTenant` | Access current tenant context (Id, Name) |
 | `L` / `L["Key"]` | Localization shortcut |
-| `ObjectMapper` | AutoMapper-based mapping |
+| `ObjectMapper` | Mapperly-based mapping |
 | `Logger` | Structured logging via `ILogger<T>` |
 | `AuthorizationService` | Programmatic authorization checks |
 | `UnitOfWorkManager` | Manual unit-of-work control |
@@ -57,8 +57,8 @@ These properties are pre-injected in `ApplicationService`, `DomainService`, and 
 - All methods `async`, name ends with `Async`.
 - Accept/return DTOs only, never entities. Define DTOs in `*.Application.Contracts`.
 - Make all public methods `virtual`.
-- Use **AutoMapper** (`ObjectMapper.Map<>()`) for DTO mapping. Do NOT use Mapperly.
-- Mapping profiles: `*AutoMapperProfile.cs` inheriting `Profile`.
+- Use **Mapperly** (`ObjectMapper.Map<>()`) for DTO mapping. Do NOT use AutoMapper.
+- Mapper classes: `*MapperlyProfile.cs` decorated with `[Mapper]`, inheriting `MapperBase<TSource, TDest>` or `TwoWayMapperBase<T1, T2>`.
 
 ## Code Style
 
@@ -85,8 +85,8 @@ These properties are pre-injected in `ApplicationService`, `DomainService`, and 
 ## DTOs vs Entities
 
 - Application services MUST accept and return DTOs only, never entities
-- Use `ObjectMapper` (AutoMapper) to map between entities and DTOs
-- Define mapping profiles in `*AutoMapperProfile` class in Application project
+- Use `ObjectMapper` (Mapperly) to map between entities and DTOs
+- Define mappers in `*MapperlyProfile` class in Application project
 
 ## Authorization
 

@@ -1,3 +1,4 @@
+using System;
 using Riok.Mapperly.Abstractions;
 using Unity.GrantManager.ApplicantProfile;
 using Unity.GrantManager.ApplicantProfile.ProfileData;
@@ -115,6 +116,9 @@ public partial class ApplicationToGrantApplicationDtoWebMapper : MapperBase<Appl
 
     [MapperIgnoreTarget(nameof(GrantApplicationApplicantDto.SiteId))]
     [MapperIgnoreTarget(nameof(GrantApplicationApplicantDto.ElectoralDistrict))]
+    [MapPropertyFromSource(nameof(GrantApplicationApplicantDto.FiscalDay), Use = nameof(ResolveApplicantFiscalDay))]
+    [MapPropertyFromSource(nameof(GrantApplicationApplicantDto.SupplierId), Use = nameof(ResolveApplicantSupplierId))]
+    [MapPropertyFromSource(nameof(GrantApplicationApplicantDto.RedStop), Use = nameof(ResolveApplicantRedStop))]
     private partial GrantApplicationApplicantDto ToDto(Applicant source);
 
     [MapperIgnoreTarget(nameof(ApplicationFormDto.ChefsFormVersionGuid))]
@@ -127,6 +131,10 @@ public partial class ApplicationToGrantApplicationDtoWebMapper : MapperBase<Appl
     [MapperIgnoreTarget(nameof(GrantApplicationAssigneeDto.Duty))]
     [MapperIgnoreTarget(nameof(GrantApplicationAssigneeDto.Email))]
     private partial GrantApplicationAssigneeDto ToDto(Person source);
+
+    private static string ResolveApplicantFiscalDay(Applicant src) => src.FiscalDay?.ToString() ?? string.Empty;
+    private static Guid ResolveApplicantSupplierId(Applicant src) => src.SupplierId ?? Guid.Empty;
+    private static bool ResolveApplicantRedStop(Applicant src) => src.RedStop ?? false;
 }
 
 [Mapper(AllowNullPropertyAssignment = true)]

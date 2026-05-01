@@ -278,9 +278,9 @@ namespace Unity.Payments.Web.Pages.Payments
 
         private async Task<SupplierDto?> GetSupplierByApplicationAync(GrantApplicationDto application)
         {
-            if (application.Applicant.SupplierId.HasValue && application.Applicant.SupplierId.Value != Guid.Empty)
+            if (application.Applicant.SupplierId != Guid.Empty)
             {
-                return await iSupplierAppService.GetAsync(application.Applicant.SupplierId.Value);
+                return await iSupplierAppService.GetAsync(application.Applicant.SupplierId);
             }
 
             return null;

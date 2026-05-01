@@ -34,7 +34,7 @@ For each changed file in the PR:
 
 ### Step 3: ABP Architecture
 - Layer boundaries (Domain → Application → Web)
-- Repository/DTO/AutoMapper conventions
+- Repository/DTO/Mapperly conventions
 - Permissions and localization keys
 - EF migrations (if schema changes)
 
@@ -131,7 +131,7 @@ When invoked:
 - ✅ Build/tests pass (backend unit tests)
 - ✅ **Cypress E2E tests pass** (frontend integration tests)
 - ✅ ABP conventions followed
-- ✅ AutoMapper/localization/permissions configured
+- ✅ Mapperly/localization/permissions configured
 
 ## Tool Usage
 

@@ -174,6 +174,8 @@ public partial class ApplicationToGrantApplicationDtoMapper : MapperBase<Applica
     [MapperIgnoreTarget(nameof(GrantApplicationApplicantDto.SiteId))]
     [MapperIgnoreTarget(nameof(GrantApplicationApplicantDto.ElectoralDistrict))]
     [MapPropertyFromSource(nameof(GrantApplicationApplicantDto.FiscalDay), Use = nameof(ResolveFiscalDay))]
+    [MapPropertyFromSource(nameof(GrantApplicationApplicantDto.SupplierId), Use = nameof(ResolveApplicantSupplierId))]
+    [MapPropertyFromSource(nameof(GrantApplicationApplicantDto.RedStop), Use = nameof(ResolveApplicantRedStop))]
     private partial GrantApplicationApplicantDto ToDto(Applicant source);
 
     [MapperIgnoreTarget(nameof(ApplicationFormDto.ChefsFormVersionGuid))]
@@ -181,7 +183,9 @@ public partial class ApplicationToGrantApplicationDtoMapper : MapperBase<Applica
     [MapperIgnoreTarget(nameof(ApplicationFormDto.ApiToken))]
     private partial ApplicationFormDto ToDto(ApplicationForm source);
 
-    private static string? ResolveFiscalDay(Applicant src) => src.FiscalDay?.ToString();
+    private static string ResolveFiscalDay(Applicant src) => src.FiscalDay?.ToString() ?? string.Empty;
+    private static Guid ResolveApplicantSupplierId(Applicant src) => src.SupplierId ?? Guid.Empty;
+    private static bool ResolveApplicantRedStop(Applicant src) => src.RedStop ?? false;
 }
 [Mapper]
 public partial class ApplicationAssignmentToGrantApplicationAssigneeDtoMapper : MapperBase<ApplicationAssignment, GrantApplicationAssigneeDto>
@@ -533,20 +537,26 @@ public partial class ApplicationActionResultItemToDtoMapper : MapperBase<Applica
 [Mapper] public partial class RegionalDistrictToDtoMapper : MapperBase<RegionalDistrict, RegionalDistrictDto> { public override partial RegionalDistrictDto Map(RegionalDistrict source); public override partial void Map(RegionalDistrict source, RegionalDistrictDto destination); }
 [Mapper] public partial class ApplicationTagsToDtoMapper : MapperBase<ApplicationTags, ApplicationTagsDto> { public override partial ApplicationTagsDto Map(ApplicationTags source); public override partial void Map(ApplicationTags source, ApplicationTagsDto destination); }
 [Mapper] public partial class AIGenerationRequestToDtoMapper : MapperBase<AIGenerationRequest, AIGenerationRequestDto> { public override partial AIGenerationRequestDto Map(AIGenerationRequest source); public override partial void Map(AIGenerationRequest source, AIGenerationRequestDto destination); }
-[Mapper]
+[Mapper(AllowNullPropertyAssignment = true)]
 public partial class ApplicantToGrantApplicationApplicantDtoMapper : MapperBase<Applicant, GrantApplicationApplicantDto>
 {
     [MapperIgnoreTarget(nameof(GrantApplicationApplicantDto.SiteId))]
     [MapperIgnoreTarget(nameof(GrantApplicationApplicantDto.ElectoralDistrict))]
     [MapPropertyFromSource(nameof(GrantApplicationApplicantDto.FiscalDay), Use = nameof(ResolveFiscalDay))]
+    [MapPropertyFromSource(nameof(GrantApplicationApplicantDto.SupplierId), Use = nameof(ResolveSupplierId))]
+    [MapPropertyFromSource(nameof(GrantApplicationApplicantDto.RedStop), Use = nameof(ResolveRedStop))]
     public override partial GrantApplicationApplicantDto Map(Applicant source);
 
     [MapperIgnoreTarget(nameof(GrantApplicationApplicantDto.SiteId))]
     [MapperIgnoreTarget(nameof(GrantApplicationApplicantDto.ElectoralDistrict))]
     [MapPropertyFromSource(nameof(GrantApplicationApplicantDto.FiscalDay), Use = nameof(ResolveFiscalDay))]
+    [MapPropertyFromSource(nameof(GrantApplicationApplicantDto.SupplierId), Use = nameof(ResolveSupplierId))]
+    [MapPropertyFromSource(nameof(GrantApplicationApplicantDto.RedStop), Use = nameof(ResolveRedStop))]
     public override partial void Map(Applicant source, GrantApplicationApplicantDto destination);
 
-    private static string? ResolveFiscalDay(Applicant src) => src.FiscalDay?.ToString();
+    private static string ResolveFiscalDay(Applicant src) => src.FiscalDay?.ToString() ?? string.Empty;
+    private static Guid ResolveSupplierId(Applicant src) => src.SupplierId ?? Guid.Empty;
+    private static bool ResolveRedStop(Applicant src) => src.RedStop ?? false;
 }
 [Mapper] public partial class ApplicationContactToDtoMapper : MapperBase<ApplicationContact, ApplicationContactDto> { public override partial ApplicationContactDto Map(ApplicationContact source); public override partial void Map(ApplicationContact source, ApplicationContactDto destination); }
 [Mapper]
