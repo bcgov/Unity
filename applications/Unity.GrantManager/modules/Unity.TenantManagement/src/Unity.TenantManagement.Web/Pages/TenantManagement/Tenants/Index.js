@@ -92,6 +92,7 @@
                 [
                     {
                         title: l("Actions"),
+                        orderable: false,
                         rowAction: {
                             items: abp.ui.extensions.entityActions.get('tenantManagement.tenant').actions.toArray()
                         }

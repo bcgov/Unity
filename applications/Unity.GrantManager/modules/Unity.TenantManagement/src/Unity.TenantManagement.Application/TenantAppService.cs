@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Unity.TenantManagement.Abstractions;
@@ -41,18 +42,89 @@ public class TenantAppService(
             input.Sorting = nameof(Tenant.Name);
         }
 
-        var count = await tenantRepository.GetCountAsync(input.Filter);
-        var list = await tenantRepository.GetListAsync(
-            input.Sorting,
-            input.MaxResultCount,
-            input.SkipCount,
-            input.Filter
-        );
+        var sortParts = input.Sorting.Trim().Split(' ');
+        var sortField = sortParts[0].Trim();
+        var sortDescending = sortParts.Length > 1 && sortParts[1].Trim().Equals("DESC", StringComparison.OrdinalIgnoreCase);
+
+        var extraPropertySortFields = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "Division", "Branch", "Description", "CasClientCode"
+        };
+
+        var dbSortFields = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            nameof(Tenant.Id),
+            nameof(Tenant.Name),
+            nameof(Tenant.NormalizedName),
+            nameof(Tenant.CreationTime),
+            nameof(Tenant.LastModificationTime)
+        };
+
+        bool sortInMemory = extraPropertySortFields.Contains(sortField);
+        bool hasFilter = !input.Filter.IsNullOrWhiteSpace();
+
+        // Use fast DB path when sorting and filtering on native fields only
+        if (!sortInMemory && !hasFilter)
+        {
+            var count = await tenantRepository.GetCountAsync(input.Filter);
+            var list = await tenantRepository.GetListAsync(
+                input.Sorting,
+                input.MaxResultCount,
+                input.SkipCount,
+                input.Filter
+            );
+            return new PagedResultDto<TenantDto>(
+                count,
+                ObjectMapper.Map<List<Tenant>, List<TenantDto>>(list)
+            );
+        }
+
+        // In-memory path: needed when filtering on ExtraProperties or sorting on ExtraProperties
+        var dbSorting = dbSortFields.Contains(sortField) ? input.Sorting : nameof(Tenant.Name);
+        var allTenants = await tenantRepository.GetListAsync(dbSorting, int.MaxValue, 0, null);
+
+        IEnumerable<Tenant> result = allTenants;
+
+        // Apply ExtraProperties filter
+        if (hasFilter)
+        {
+            var filter = input.Filter.Trim();
+            result = result.Where(t =>
+                (t.Name != null && t.Name.Contains(filter, StringComparison.OrdinalIgnoreCase)) ||
+                MatchesExtraProperty(t, "Division", filter) ||
+                MatchesExtraProperty(t, "Branch", filter) ||
+                MatchesExtraProperty(t, "Description", filter) ||
+                MatchesExtraProperty(t, "CasClientCode", filter));
+        }
+
+        // Apply ExtraProperties sort
+        if (sortInMemory)
+        {
+            result = sortDescending
+                ? result.OrderByDescending(t => GetExtraPropertyValue(t, sortField))
+                : result.OrderBy(t => GetExtraPropertyValue(t, sortField));
+        }
+
+        var resultList = result.ToList();
+        var paged = resultList.Skip(input.SkipCount).Take(input.MaxResultCount).ToList();
 
         return new PagedResultDto<TenantDto>(
-            count,
-            ObjectMapper.Map<List<Tenant>, List<TenantDto>>(list)
+            resultList.Count,
+            ObjectMapper.Map<List<Tenant>, List<TenantDto>>(paged)
         );
+    }
+
+    private static bool MatchesExtraProperty(Tenant tenant, string key, string filter)
+    {
+        return tenant.ExtraProperties.TryGetValue(key, out var value)
+            && value?.ToString()?.Contains(filter, StringComparison.OrdinalIgnoreCase) == true;
+    }
+
+    private static string GetExtraPropertyValue(Tenant tenant, string key)
+    {
+        var entry = tenant.ExtraProperties
+            .FirstOrDefault(kv => kv.Key.Equals(key, StringComparison.OrdinalIgnoreCase));
+        return entry.Value?.ToString() ?? string.Empty;
     }
 
     [Authorize(TenantManagementPermissions.Tenants.Create)]
