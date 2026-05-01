@@ -146,10 +146,10 @@ public class TenantAppService(
                     tenantConnectionStringBuilder.Build(tenant.Name)));
 
             // Set ExtraProperties from input
-            tenant.ExtraProperties["Division"] = input.Division ?? string.Empty;
-            tenant.ExtraProperties["Branch"] = input.Branch ?? string.Empty;
-            tenant.ExtraProperties["Description"] = input.Description ?? string.Empty;
-            tenant.ExtraProperties["CasClientCode"] = input.CasClientCode ?? string.Empty;
+            tenant.ExtraProperties[ExtraPropDivision] = input.Division ?? string.Empty;
+            tenant.ExtraProperties[ExtraPropBranch] = input.Branch ?? string.Empty;
+            tenant.ExtraProperties[ExtraPropDescription] = input.Description ?? string.Empty;
+            tenant.ExtraProperties[ExtraPropCasClientCode] = input.CasClientCode ?? string.Empty;
 
             await tenantRepository.InsertAsync(tenant);
 
@@ -182,10 +182,10 @@ public class TenantAppService(
         tenant.SetConcurrencyStampIfNotNull(input.ConcurrencyStamp);
         
         // Update ExtraProperties from input
-        tenant.ExtraProperties["Division"] = input.Division ?? string.Empty;
-        tenant.ExtraProperties["Branch"] = input.Branch ?? string.Empty;
-        tenant.ExtraProperties["Description"] = input.Description ?? string.Empty;
-        tenant.ExtraProperties["CasClientCode"] = input.CasClientCode ?? string.Empty;
+        tenant.ExtraProperties[ExtraPropDivision] = input.Division ?? string.Empty;
+        tenant.ExtraProperties[ExtraPropBranch] = input.Branch ?? string.Empty;
+        tenant.ExtraProperties[ExtraPropDescription] = input.Description ?? string.Empty;
+        tenant.ExtraProperties[ExtraPropCasClientCode] = input.CasClientCode ?? string.Empty;
 
         await tenantRepository.UpdateAsync(tenant);
 
