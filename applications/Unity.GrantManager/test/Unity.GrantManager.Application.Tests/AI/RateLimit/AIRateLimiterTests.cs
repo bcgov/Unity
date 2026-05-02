@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Medallion.Threading;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
@@ -33,7 +35,7 @@ public class AIRateLimiterTests
             }).Build();
     }
 
-    private AIRateLimiter NewLimiter() => new(_cache, _currentUser, _configuration);
+    private AIRateLimiter NewLimiter() => new(_cache, _currentUser, _configuration, new TestDistributedLockProvider());
 
     [Fact]
     public async Task GetStateAsync_Returns_Zero_When_NoCooldown()
@@ -88,6 +90,18 @@ public class AIRateLimiterTests
     }
 
     [Fact]
+    public async Task ConcurrentCalls_ForSameUser_OnlyAllowOneThrough()
+    {
+        var limiter = NewLimiter();
+
+        var results = await Task.WhenAll(
+            TryEnsureAndStampAsync(limiter),
+            TryEnsureAndStampAsync(limiter));
+
+        results.Count(x => x).ShouldBe(1);
+    }
+
+    [Fact]
     public async Task ExpiredCooldown_AllowsNewStamp()
     {
         var config = new ConfigurationBuilder()
@@ -95,10 +109,68 @@ public class AIRateLimiterTests
             {
                 ["AI:RateLimit:CooldownSeconds"] = "1"
             }).Build();
-        var limiter = new AIRateLimiter(_cache, _currentUser, config);
+        var limiter = new AIRateLimiter(_cache, _currentUser, config, new TestDistributedLockProvider());
 
         await limiter.EnsureAndStampAsync();
         await Task.Delay(TimeSpan.FromSeconds(1.2), CancellationToken.None);
         await limiter.EnsureAndStampAsync(); // Should not throw.
+    }
+
+    private static async Task<bool> TryEnsureAndStampAsync(AIRateLimiter limiter)
+    {
+        try
+        {
+            await limiter.EnsureAndStampAsync();
+            return true;
+        }
+        catch (UserFriendlyException)
+        {
+            return false;
+        }
+    }
+
+    private sealed class TestDistributedLockProvider : IDistributedLockProvider
+    {
+        public IDistributedLock CreateLock(string name) => new TestDistributedLock(name);
+    }
+
+    private sealed class TestDistributedLock(string name) : IDistributedLock
+    {
+        private static readonly SemaphoreSlim Gate = new(1, 1);
+
+        public string Name => name;
+
+        public IDistributedSynchronizationHandle Acquire(TimeSpan? timeout = null, CancellationToken cancellationToken = default)
+        {
+            Gate.Wait(cancellationToken);
+            return new TestDistributedSynchronizationHandle(Gate);
+        }
+
+        public async ValueTask<IDistributedSynchronizationHandle> AcquireAsync(TimeSpan? timeout = null, CancellationToken cancellationToken = default)
+        {
+            await Gate.WaitAsync(cancellationToken);
+            return new TestDistributedSynchronizationHandle(Gate);
+        }
+
+        public IDistributedSynchronizationHandle? TryAcquire(TimeSpan timeout = default, CancellationToken cancellationToken = default) =>
+            Gate.Wait(timeout, cancellationToken) ? new TestDistributedSynchronizationHandle(Gate) : null;
+
+        public async ValueTask<IDistributedSynchronizationHandle?> TryAcquireAsync(TimeSpan timeout = default, CancellationToken cancellationToken = default) =>
+            await Gate.WaitAsync(timeout, cancellationToken)
+                ? new TestDistributedSynchronizationHandle(Gate)
+                : null;
+    }
+
+    private sealed class TestDistributedSynchronizationHandle(SemaphoreSlim gate) : IDistributedSynchronizationHandle
+    {
+        public CancellationToken HandleLostToken => CancellationToken.None;
+
+        public void Dispose() => gate.Release();
+
+        public ValueTask DisposeAsync()
+        {
+            Dispose();
+            return ValueTask.CompletedTask;
+        }
     }
 }

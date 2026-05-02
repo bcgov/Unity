@@ -1,4 +1,4 @@
-/* AB#32300 — per-user 60s cooldown for AI Generate buttons.
+/* AB#32290 — per-user 60s cooldown for AI Generate buttons.
  * Server stamps the cooldown; this module only mirrors that state in the UI.
  * Strategy: on load, fetch the user's remaining seconds and disable every
  * .ai-generate-btn with a countdown. After any generate click resolves we
@@ -34,6 +34,10 @@
     }
 
     function disable(btn, seconds) {
+        if (btn.getAttribute('data-ai-generating') === '1') {
+            return;
+        }
+
         rememberLabel(btn);
         btn.setAttribute(ATTR_COOLDOWN, '1');
         btn.setAttribute('disabled', 'disabled');
@@ -95,6 +99,8 @@
             // Best-effort; the server is the source of truth.
         }
     }
+
+    globalThis.refreshAIRateLimitState = fetchState;
 
     document.addEventListener('click', (e) => {
         const btn = e.target.closest(BUTTON_SELECTOR);

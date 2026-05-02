@@ -1,6 +1,7 @@
 using System;
 using System.Globalization;
 using System.Threading.Tasks;
+using Medallion.Threading;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Configuration;
 using Volo.Abp;
@@ -18,9 +19,11 @@ namespace Unity.AI.RateLimit;
 public class AIRateLimiter(
     IDistributedCache cache,
     ICurrentUser currentUser,
-    IConfiguration configuration) : IAIRateLimiter, ITransientDependency
+    IConfiguration configuration,
+    IDistributedLockProvider distributedLockProvider) : IAIRateLimiter, ITransientDependency
 {
     private const string KeyPrefix = "AI:Cooldown:";
+    private const string LockPrefix = "AI:CooldownLock:";
     private const int DefaultCooldownSeconds = 60;
 
     private int CooldownSeconds =>
@@ -34,14 +37,18 @@ public class AIRateLimiter(
             return;
         }
 
-        var remaining = await GetRemainingSecondsAsync(userId);
-        if (remaining > 0)
+        var userLock = distributedLockProvider.CreateLock(LockPrefix + userId);
+        using (await userLock.AcquireAsync())
         {
-            throw new UserFriendlyException(
-                $"AI generation is rate limited. Try again in {remaining} second{(remaining == 1 ? "" : "s")}.");
-        }
+            var remaining = await GetRemainingSecondsAsync(userId);
+            if (remaining > 0)
+            {
+                throw new UserFriendlyException(
+                    $"AI generation is rate limited. Try again in {remaining} second{(remaining == 1 ? "" : "s")}.");
+            }
 
-        await StampAsync(userId, CooldownSeconds);
+            await StampAsync(userId, CooldownSeconds);
+        }
     }
 
     public virtual async Task<AIRateLimitStateDto> GetStateAsync()

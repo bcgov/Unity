@@ -78,12 +78,15 @@ public class AIGenerationQueueTests(ITestOutputHelper outputHelper) : GrantManag
         repository.GetQueryableAsync().Returns(Task.FromResult<IQueryable<AIGenerationRequest>>(new[] { request }.AsQueryable()));
 
         var backgroundJobManager = Substitute.For<IBackgroundJobManager>();
-        var queue = CreateQueue(backgroundJobManager, repository);
+        var rateLimiter = Substitute.For<Unity.AI.RateLimit.IAIRateLimiter>();
+        rateLimiter.EnsureAndStampAsync().Returns(Task.CompletedTask);
+        var queue = CreateQueue(backgroundJobManager, repository, rateLimiter);
 
         await queue.QueueApplicationAnalysisAsync(applicationId, tenantId, promptVersion);
 
         await backgroundJobManager.DidNotReceive().EnqueueAsync(Arg.Any<GenerateApplicationAnalysisBackgroundJobArgs>());
         await repository.DidNotReceive().InsertAsync(Arg.Any<AIGenerationRequest>(), Arg.Any<bool>(), Arg.Any<CancellationToken>());
+        await rateLimiter.DidNotReceive().EnsureAndStampAsync();
     }
 
     [Fact]
@@ -297,9 +300,10 @@ public class AIGenerationQueueTests(ITestOutputHelper outputHelper) : GrantManag
 
     private static ApplicationAIGenerationQueue CreateQueue(
         IBackgroundJobManager backgroundJobManager,
-        IRepository<AIGenerationRequest, Guid> repository)
+        IRepository<AIGenerationRequest, Guid> repository,
+        Unity.AI.RateLimit.IAIRateLimiter? rateLimiter = null)
     {
-        var rateLimiter = Substitute.For<Unity.AI.RateLimit.IAIRateLimiter>();
+        rateLimiter ??= Substitute.For<Unity.AI.RateLimit.IAIRateLimiter>();
         rateLimiter.EnsureAndStampAsync().Returns(Task.CompletedTask);
         return new ApplicationAIGenerationQueue(
             backgroundJobManager,

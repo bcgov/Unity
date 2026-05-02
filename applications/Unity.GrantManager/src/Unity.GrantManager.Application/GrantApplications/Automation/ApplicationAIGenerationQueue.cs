@@ -108,10 +108,6 @@ public class ApplicationAIGenerationQueue(
         Guid? applicationId,
         Func<Task> enqueue)
     {
-        // Single chokepoint for all AI generate flows (manual + auto).
-        // The limiter is a no-op for system/background callers without an authenticated user.
-        await aiRateLimiter.EnsureAndStampAsync();
-
         var requestLock = distributedLockProvider.CreateLock($"ai-generation:{requestKey}");
 
         using (await requestLock.AcquireAsync())
@@ -130,6 +126,10 @@ public class ApplicationAIGenerationQueue(
             {
                 return;
             }
+
+            // Single chokepoint for all AI generate flows (manual + auto).
+            // The limiter is a no-op for system/background callers without an authenticated user.
+            await aiRateLimiter.EnsureAndStampAsync();
 
             var request = new AIGenerationRequest(
                 Guid.NewGuid(),
