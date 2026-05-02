@@ -8,7 +8,7 @@ $(function () {
     const formatter = createNumberFormatter();
 
     const l = abp.localization.getResource('GrantManager');
-    toastr.options.positionClass = 'toast-top-center';
+    if (window.toastr) { toastr.options.positionClass = 'toast-top-center'; }
 
     const UIElements = {
         accountCodingDT: $('#AccountCodesDataTable'),
