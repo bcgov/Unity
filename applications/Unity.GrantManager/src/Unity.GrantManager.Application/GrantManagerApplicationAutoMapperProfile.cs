@@ -113,6 +113,10 @@ public class GrantManagerApplicationAutoMapperProfile : Profile
         CreateMap<CreateUpdateAuditHistoryDto, AuditHistory>();
         CreateMap<AuditHistoryDto, AuditHistory>();
 
+        CreateMap<ReportsHistory, ReportsHistoryDto>();
+        CreateMap<CreateUpdateReportsHistoryDto, ReportsHistory>();
+        CreateMap<ReportsHistoryDto, ReportsHistory>();
+
         //-- PROJECT INFO
         CreateMap<UpdateProjectInfoDto, Application>()
             .IgnoreNullAndDefaultValues();
