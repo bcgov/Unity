@@ -5,9 +5,9 @@
 
 ## Project Overview
 
-Unity Grant Manager is a **grant management portal** for the Province of British Columbia, built on **ABP Framework 9.1.3** with **.NET 9.0**, targeting **PostgreSQL 17**. The UI uses **Razor Pages** with a custom ABP theme (Unity.Theme.UX2). The architecture follows ABP's **Domain-Driven Design (DDD)** layered module pattern.
+Unity Grant Manager is a **grant management portal** for the Province of British Columbia, built on **ABP Framework 10.3** with **.NET 10.0**, targeting **PostgreSQL 17**. The UI uses **Razor Pages** with a custom ABP theme (Unity.Theme.UX2). The architecture follows ABP's **Domain-Driven Design (DDD)** layered module pattern.
 
-**Key stack:** .NET 9 · ABP 9.1.3 · EF Core 9.0 · PostgreSQL 17 · Redis · RabbitMQ · xUnit · Shouldly · NSubstitute · Mapperly · Cypress (E2E)
+**Key stack:** .NET 10 · ABP 10.3 · EF Core 10.0 · PostgreSQL 17 · Redis · RabbitMQ · xUnit · Shouldly · NSubstitute · Mapperly · Cypress (E2E)
 
 ## Repository Layout
 
@@ -93,7 +93,7 @@ Every PR triggers branch-specific GitHub Actions workflows (in the repo root `.g
 
 1. **Validate source branch** — PRs to `dev` must come from `feature/*`, `hotfix/*`, `bugfix/*`, `test`, or `main`. PRs to `main` must come from `test` or `hotfix/*` only.
 2. **Discover test projects** — Finds all `*Tests.csproj` files automatically.
-3. **Run tests in parallel matrix** — Each test project runs independently with `dotnet test` using .NET 9.0.x.
+3. **Run tests in parallel matrix** — Each test project runs independently with `dotnet test` using .NET 10.0.x.
 4. **Aggregate results** — Posts pass/fail badge as PR comment.
 
 Always ensure `dotnet build` and `dotnet test` pass before submitting changes.
