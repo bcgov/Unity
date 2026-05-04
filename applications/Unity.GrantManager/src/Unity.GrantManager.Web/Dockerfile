@@ -39,7 +39,7 @@ WORKDIR "/src/src/Unity.GrantManager.Web"
 
 RUN dotnet tool install -g Volo.Abp.Cli --version 10.3.0
 ENV PATH="${PATH}:/root/.dotnet/tools"
-RUN dotnet dev-certs https --trust
+#RUN dotnet dev-certs https --trust
 RUN abp install-libs
 
 FROM build AS publish
@@ -54,7 +54,7 @@ RUN dotnet publish "Unity.GrantManager.Web.csproj" \
 
 FROM base AS final
 WORKDIR /app
-COPY --from=build /root/.dotnet/corefx/cryptography/x509stores/my/* /root/.dotnet/corefx/cryptography/x509stores/my/
+# COPY --from=build /root/.dotnet/corefx/cryptography/x509stores/my/* /root/.dotnet/corefx/cryptography/x509stores/my/
 # CAS Dev/Test Certs changed - again Sept 17
 
 COPY ["/src/Unity.GrantManager.Web/certs/cas2024inter.crt", "/usr/local/share/ca-certificates/cas2024inter.crt"]
