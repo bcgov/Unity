@@ -124,15 +124,24 @@ public partial class CustomFieldValueMapper : TwoWayMapperBase<CustomFieldValue,
 
     public override partial CustomFieldValueDto Map(CustomFieldValue source);
     public override partial void Map(CustomFieldValue source, CustomFieldValueDto destination);
+
+    // CustomFieldValue uses private setters on all business properties (DDD encapsulation);
+    // the reverse mapping is a no-op by design — only Id is copied via the factory object.
+#pragma warning disable RMG066
     [MapperIgnoreTarget(nameof(CustomFieldValue.TenantId))]
     [MapperIgnoreTarget(nameof(CustomFieldValue.LastModificationTime))]
     [MapperIgnoreTarget(nameof(CustomFieldValue.LastModifierId))]
+    [MapperIgnoreTarget(nameof(CustomFieldValue.CreationTime))]
+    [MapperIgnoreTarget(nameof(CustomFieldValue.CreatorId))]
     public override partial CustomFieldValue ReverseMap(CustomFieldValueDto source);
 
     [MapperIgnoreTarget(nameof(CustomFieldValue.TenantId))]
     [MapperIgnoreTarget(nameof(CustomFieldValue.LastModificationTime))]
     [MapperIgnoreTarget(nameof(CustomFieldValue.LastModifierId))]
+    [MapperIgnoreTarget(nameof(CustomFieldValue.CreationTime))]
+    [MapperIgnoreTarget(nameof(CustomFieldValue.CreatorId))]
     public override partial void ReverseMap(CustomFieldValueDto source, CustomFieldValue destination);
+#pragma warning restore RMG066
 }
 
 [Mapper]
