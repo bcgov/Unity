@@ -61,6 +61,9 @@ RUN pip install --no-cache-dir -r requirements.txt gunicorn && \
     chown appuser:appuser /entrypoint.sh && \
     chown -R appuser:appuser /app
 
+# Ensure Python output is unbuffered so logs stream in real-time
+ENV PYTHONUNBUFFERED=1
+
 # Expose port 8080
 EXPOSE 8080
 

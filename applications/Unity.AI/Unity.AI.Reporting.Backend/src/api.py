@@ -12,6 +12,7 @@ from database import db_manager, chat_repository, feedback_repository, cache_rep
 from metabase import metabase_client
 from chat import chat_manager
 from sql_generator import sql_generator
+from model_generator import data_model_generator
 from auth import require_auth, get_user_from_token
 from embeddings import embedding_manager
 from static_routes import add_static_routes
@@ -700,6 +701,114 @@ def ask():
         return _error_response(
             "server_error",
             "Something went wrong on our end. Please try again.",
+            500,
+            detail=str(e)
+        )
+
+
+@app.route("/api/data-models/views", methods=["POST"])
+@require_auth
+def get_data_model_views():
+    """Discover available worksheet/scoresheet views for the tenant."""
+    user_data = get_user_from_token()
+    tenant_id = user_data["tenant"]
+
+    tenant_config = config.get_tenant_config(tenant_id)
+    db_id = tenant_config["db_id"]
+
+    logger.info(f"Data model views request - Tenant: {tenant_id}, DB: {db_id}")
+
+    try:
+        views = data_model_generator.discover_views(db_id, tenant_id)
+        return jsonify({"views": views}), 200
+    except Exception as e:
+        logger.error(f"Error in /api/data-models/views: {e}", exc_info=True)
+        return _error_response(
+            "server_error",
+            "Failed to discover available views. Please try again.",
+            500,
+            detail=str(e)
+        )
+
+
+@app.route("/api/data-models/preview", methods=["POST"])
+@require_auth
+def preview_data_models():
+    """Generate an AI model proposal for a selected view."""
+    user_data = get_user_from_token()
+    tenant_id = user_data["tenant"]
+
+    tenant_config = config.get_tenant_config(tenant_id)
+    db_id = tenant_config["db_id"]
+
+    body = request.get_json(silent=True) or {}
+    view_name = body.get("view_name", "").strip()
+
+    if not view_name:
+        return jsonify({"error": "view_name is required"}), 400
+
+    logger.info(f"Data model preview request - Tenant: {tenant_id}, View: {view_name}")
+
+    try:
+        proposal = asyncio.run(
+            data_model_generator.preview_model(view_name, db_id, tenant_id)
+        )
+        return jsonify({"proposal": proposal}), 200
+    except Exception as e:
+        logger.error(f"Error in /api/data-models/preview: {e}", exc_info=True)
+        return _error_response(
+            "server_error",
+            "Failed to generate data model proposal. Please try again.",
+            500,
+            detail=str(e)
+        )
+
+
+@app.route("/api/data-models/create", methods=["POST"])
+@require_auth
+def create_data_models():
+    """Step 2: Create user-approved data models in Metabase."""
+    user_data = get_user_from_token()
+    tenant_id = user_data["tenant"]
+
+    tenant_config = config.get_tenant_config(tenant_id)
+    db_id = tenant_config["db_id"]
+    collection_id = tenant_config["collection_id"]
+
+    body = request.get_json(silent=True) or {}
+    definitions = body.get("models", [])
+
+    if not isinstance(definitions, list) or not definitions:
+        return jsonify({"error": "models array is required"}), 400
+
+    # Validate each entry has required string fields
+    for defn in definitions:
+        if not isinstance(defn, dict):
+            return jsonify({"error": "Each model must be an object"}), 400
+        if not all(isinstance(defn.get(k), str) for k in ("name", "description", "sql")):
+            return jsonify({"error": "Each model requires name, description, sql"}), 400
+
+    logger.info(
+        f"Data model create request - Tenant: {tenant_id}, count: {len(definitions)}"
+    )
+
+    try:
+        result = data_model_generator.create_models(
+            definitions, db_id, collection_id, tenant_id
+        )
+        metabase_base = config.metabase.url
+        return jsonify({
+            "models": [
+                {**m, "metabase_url": f"{metabase_base}/model/{m['card_id']}"}
+                for m in result["created"]
+            ],
+            "errors": result["errors"],
+        }), 200
+    except Exception as e:
+        logger.error(f"Error in /api/data-models/create: {e}", exc_info=True)
+        return _error_response(
+            "server_error",
+            "Failed to create data models. Please try again.",
             500,
             detail=str(e)
         )

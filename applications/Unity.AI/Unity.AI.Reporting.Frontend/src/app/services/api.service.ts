@@ -142,6 +142,19 @@ export class ApiService {
     });
   }
 
+  // Data model methods
+  getDataModelViews<T>(): Observable<T> {
+    return this.post<T>('/data-models/views', {});
+  }
+
+  previewDataModel<T>(viewName: string): Observable<T> {
+    return this.post<T>('/data-models/preview', { view_name: viewName });
+  }
+
+  createDataModels<T>(models: { name: string; description: string; sql: string }[]): Observable<T> {
+    return this.post<T>('/data-models/create', { models });
+  }
+
   // Chat-related methods
   getChats<T>(): Observable<T> {
     return this.post<T>('/chats', {});

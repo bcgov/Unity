@@ -50,6 +50,15 @@
       </svg>
     </button>
     -->
+    <button class="footer-btn models-btn" title="Generate Data Models"
+            [disabled]="modelsModalStep !== 'idle'"
+            (click)="openDataModelsModal()">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+        <ellipse cx="8" cy="3.5" rx="6" ry="2"/>
+        <path d="M2 3.5v4c0 1.1 2.7 2 6 2s6-.9 6-2v-4"/>
+        <path d="M2 7.5v4c0 1.1 2.7 2 6 2s6-.9 6-2v-4"/>
+      </svg>
+    </button>
     <button class="footer-btn info-btn" title="Information" (click)="openInfoModal()">
       <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
         <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451-.081.082-.381 2.29-.287zM8 5.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2z"/>
@@ -137,6 +146,181 @@
       <div class="info-modal-footer">
         <button class="info-btn-close" (click)="closeInfoModal()">Got it</button>
       </div>
+    </div>
+  </div>
+}
+
+<!-- Data Model Generation Modal -->
+@if (modelsModalStep !== 'idle') {
+  <div class="models-modal-overlay">
+    <div class="models-modal" (click)="$event.stopPropagation()">
+
+      @if (modelsModalStep === 'loading-views') {
+        <div class="models-modal-header">
+          <h3>Loading Views...</h3>
+        </div>
+        <div class="models-modal-body models-loading">
+          <div class="models-spinner"></div>
+          <p>Discovering available worksheet views...</p>
+        </div>
+      }
+
+      @if (modelsModalStep === 'pick-view') {
+        <div class="models-modal-header">
+          <h3>Select a View</h3>
+          <button class="models-modal-close" (click)="closeModelsModal()">×</button>
+        </div>
+        <div class="models-modal-body">
+          <p class="models-hint">Choose a worksheet or scoresheet view to build a data model from:</p>
+          @if (availableViews.length === 0) {
+            <div class="models-empty">
+              No worksheet views found. Ensure your database has Reporting views with data.
+            </div>
+          }
+          <ul class="view-picker-list">
+            @for (view of availableViews; track view.view_name) {
+              <li
+                class="view-picker-item"
+                [class.selected]="selectedView?.view_name === view.view_name"
+                (click)="selectView(view)">
+                <div class="view-picker-name">{{ view.view_name }}</div>
+                <div class="view-picker-meta">
+                  <span>{{ view.column_count }} columns</span>
+                  @if (view.has_labels) {
+                    <span class="view-label-badge">Labels ✓</span>
+                  }
+                </div>
+              </li>
+            }
+          </ul>
+        </div>
+        <div class="models-modal-footer">
+          <button class="models-btn-secondary" (click)="closeModelsModal()">Cancel</button>
+          <button class="models-btn-primary"
+                  [disabled]="!selectedView"
+                  (click)="generateModelForView()">
+            Generate Model →
+          </button>
+        </div>
+      }
+
+      @if (modelsModalStep === 'generating') {
+        <div class="models-modal-header">
+          <h3>Generating Model...</h3>
+        </div>
+        <div class="models-modal-body models-loading">
+          <div class="models-spinner"></div>
+          <p>AI is building a data model from <strong>{{ selectedView?.view_name }}</strong>...</p>
+        </div>
+      }
+
+      @if (modelsModalStep === 'review') {
+        <div class="models-modal-header">
+          <h3>Review Proposed Model</h3>
+          <button class="models-modal-close" (click)="closeModelsModal()">×</button>
+        </div>
+        <div class="models-modal-body">
+          @if (modelProposal) {
+            <div class="proposal-detail">
+              <h4 class="proposal-name">{{ modelProposal.name }}</h4>
+              <p class="proposal-description">{{ modelProposal.description }}</p>
+              <div class="proposal-source">Source: <code>{{ modelProposal.source_view }}</code></div>
+
+              @if (modelProposal.columns.length > 0) {
+                <details class="proposal-columns">
+                  <summary>Included columns ({{ modelProposal.columns.length }})</summary>
+                  <ul>
+                    @for (col of modelProposal.columns; track col) {
+                      <li>{{ col }}</li>
+                    }
+                  </ul>
+                </details>
+              }
+
+              @if (modelProposal.excluded_columns.length > 0) {
+                <details class="proposal-columns excluded">
+                  <summary>Excluded columns ({{ modelProposal.excluded_columns.length }})</summary>
+                  <ul>
+                    @for (col of modelProposal.excluded_columns; track col) {
+                      <li>{{ col }}</li>
+                    }
+                  </ul>
+                </details>
+              }
+
+              <button type="button" class="btn-link" (click)="toggleProposalSql()">
+                {{ modelProposal.sqlExpanded ? 'Hide SQL ▲' : 'Show SQL ▼' }}
+              </button>
+              @if (modelProposal.sqlExpanded) {
+                <pre class="sql-preview">{{ modelProposal.sql }}</pre>
+              }
+
+              @if (!modelProposal.valid && modelProposal.error) {
+                <div class="error-hint">⚠️ SQL validation failed: {{ modelProposal.error }}</div>
+              }
+            </div>
+          }
+        </div>
+        <div class="models-modal-footer">
+          <button class="models-btn-secondary" (click)="generateModelForView()">Regenerate</button>
+          <button class="models-btn-secondary" (click)="closeModelsModal()">Cancel</button>
+          <button class="models-btn-primary"
+                  [disabled]="!modelProposal?.valid"
+                  (click)="createModel()">
+            Create in Metabase →
+          </button>
+        </div>
+      }
+
+      @if (modelsModalStep === 'creating') {
+        <div class="models-modal-header">
+          <h3>Creating Model...</h3>
+        </div>
+        <div class="models-modal-body models-loading">
+          <div class="models-spinner"></div>
+          <p>Publishing to Metabase...</p>
+        </div>
+      }
+
+      @if (modelsModalStep === 'done') {
+        <div class="models-modal-header">
+          <h3>Results</h3>
+          <button class="models-modal-close" (click)="closeModelsModal()">×</button>
+        </div>
+        <div class="models-modal-body">
+          @if (createdModels.length > 0) {
+            <h4 class="results-section-title">✓ Created</h4>
+            <ul class="model-created-list">
+              @for (model of createdModels; track model.card_id) {
+                <li>
+                  <strong>{{ model.name }}</strong>
+                  <p>{{ model.description }}</p>
+                  <a [href]="model.metabase_url" target="_blank" rel="noopener noreferrer">
+                    View in Metabase →
+                  </a>
+                </li>
+              }
+            </ul>
+          }
+          @if (modelErrors.length > 0) {
+            <h4 class="results-section-title results-section-errors">✗ Failed</h4>
+            <ul class="model-errors-list">
+              @for (err of modelErrors; track err.name) {
+                <li>
+                  <strong>{{ err.name }}</strong>: {{ err.error }}
+                </li>
+              }
+            </ul>
+          }
+          @if (createdModels.length === 0 && modelErrors.length === 0) {
+            <div class="models-empty">No models were created.</div>
+          }
+        </div>
+        <div class="models-modal-footer">
+          <button class="models-btn-primary" (click)="closeModelsModal()">Done</button>
+        </div>
+      }
+
     </div>
   </div>
 }

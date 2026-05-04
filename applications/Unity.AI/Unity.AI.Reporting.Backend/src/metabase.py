@@ -191,6 +191,65 @@ class MetabaseClient:
 
         return card_id
     
+    def create_model(self, sql: str, db_id: int, collection_id: int,
+                     name: str, description: str,
+                     tenant_id: Optional[str] = None) -> int:
+        """
+        Create a Metabase model card (type='model').
+
+        Models are first-class data sources in Metabase that other questions
+        can build on. The payload mirrors create_card() but sets type='model'.
+        """
+        headers = self._get_headers(tenant_id)
+        url = f"{self.config.url}/api/card"
+        payload = {
+            "name": name,
+            "description": description,
+            "type": "model",
+            "visualization_settings": {},
+            "collection_id": collection_id,
+            "dataset_query": {
+                "database": db_id,
+                "native": {"query": sql},
+                "type": "native"
+            },
+            "display": "table"
+        }
+
+        try:
+            r = requests.post(url, headers=headers, json=payload, timeout=30)
+        except requests.exceptions.Timeout:
+            logger.error("Metabase create_model request timed out after 30 seconds")
+            raise requests.exceptions.Timeout("Metabase API request timed out")
+        except requests.exceptions.ConnectionError as e:
+            logger.error(f"Connection error to Metabase: {e}", exc_info=True)
+            raise
+
+        if r.status_code != 200:
+            logger.error(f"Metabase create_model error - Status: {r.status_code}, Response: {r.text}")
+            raise requests.exceptions.HTTPError(f"HTTP {r.status_code}: {r.text}", response=r)
+
+        try:
+            card_id = r.json()["id"]
+            logger.info(f"Model created successfully with ID: {card_id} (name='{name}')")
+            return card_id
+        except Exception as e:
+            logger.error(f"Error parsing Metabase create_model response: {e}", exc_info=True)
+            raise ValueError(f"Error parsing Metabase response: {e}")
+
+    def get_all_card_names(self, tenant_id: Optional[str] = None) -> set:
+        """Get all card/model names from Metabase (used for duplicate detection)."""
+        headers = self._get_headers(tenant_id)
+        try:
+            r = requests.get(f"{self.config.url}/api/card", headers=headers)
+            if r.status_code != 200:
+                raise requests.exceptions.HTTPError(f"HTTP {r.status_code}: {r.text}", response=r)
+            cards = r.json()
+            return {card.get("name", "") for card in cards if card.get("name")}
+        except Exception as e:
+            logger.error(f"Error getting card names from Metabase: {e}", exc_info=True)
+            return set()
+
     def update_card_visualization(self, card_id: int, display_mode: str,
                                  x_fields: List[str], y_fields: List[str],
                                  tenant_id: Optional[str] = None):
