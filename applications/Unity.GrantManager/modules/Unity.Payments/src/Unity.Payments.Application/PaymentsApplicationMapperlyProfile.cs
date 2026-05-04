@@ -84,8 +84,13 @@ public class CreateUpdateAccountCodingDtoToAccountCodingMapper : MapperBase<Crea
 
     public override void Map(CreateUpdateAccountCodingDto source, AccountCoding destination)
     {
-        // Mutating an existing AccountCoding aggregate is not supported via the
-        // Create factory; consumers should use Map(source) to obtain a new instance.
+        destination.Update(
+            source.MinistryClient!,
+            source.Responsibility!,
+            source.ServiceLine!,
+            source.Stob!,
+            source.ProjectNumber!,
+            source.Description);
     }
 }
 
