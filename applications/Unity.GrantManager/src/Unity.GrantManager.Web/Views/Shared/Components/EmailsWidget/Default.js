@@ -78,7 +78,7 @@
         defaultValues.emailFrom = UIElements.inputOriginalEmailFrom.val();
         defaultValues.emailCC = UIElements.inputOriginalEmailCC.val() || '';
         defaultValues.emailBCC = UIElements.inputOriginalEmailBCC.val() || '';
-        toastr.options.positionClass = 'toast-top-center';
+        if (window.toastr) { toastr.options.positionClass = 'toast-top-center'; }
         initTemplateDetails();
         $('#templateTextContainer').hide();
         UIElements.btnSave.hide();

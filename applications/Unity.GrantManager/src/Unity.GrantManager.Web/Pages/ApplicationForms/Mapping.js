@@ -8,7 +8,7 @@
     let worksheetMapColumn = document.querySelector('#worksheet-map-available-fields-column');
     let excludedIntakeMappings = ['ConfirmationId', 'SubmissionId', 'SubmissionDate'];
     let dataTable;
-    toastr.options.positionClass = 'toast-top-center';
+    if (window.toastr) { toastr.options.positionClass = 'toast-top-center'; }
 
     let allowableTypes = ['textarea',
         'orgbook',
@@ -77,7 +77,7 @@
     function init() {
         bindUIEvents();
         dataTable = initializeDataTable();
-        let availableChefsFields = JSON.parse(availableChefFieldsString)
+        let availableChefsFields = availableChefFieldsString ? JSON.parse(availableChefFieldsString) : []
         initializeIntakeMap(availableChefsFields);
         bindExistingMaps();
         setupTooltips();
@@ -346,7 +346,7 @@
     function handleReset() {
         $(intakeMapColumn).empty();
         $(worksheetMapColumn).empty();
-        let availableChefsFields = JSON.parse(availableChefFieldsString)
+        let availableChefsFields = availableChefFieldsString ? JSON.parse(availableChefFieldsString) : []
         initializeIntakeMap(availableChefsFields);
         bindExistingMaps();
     }

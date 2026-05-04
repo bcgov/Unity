@@ -11,6 +11,7 @@ using System.ComponentModel;
 using Volo.Abp.Validation;
 using Volo.Abp;
 using Volo.Abp.Data;
+using Unity.GrantManager.Identity;
 
 namespace Unity.Identity.Web.Pages.Identity.Users;
 
@@ -25,15 +26,21 @@ public class EditModalModel : IdentityPageModel
     public DetailViewModel Detail { get; set; }
 
     protected IIdentityUserAppService IdentityUserAppService { get; }
+    protected IIdentityRoleAppService IdentityRoleAppService { get; }
+    protected IUserImportAppService UserImportAppService { get; }
 
     public bool IsEditCurrentUser { get; set; }
 
     private readonly IDataFilter _dataFilter;
 
     public EditModalModel(IIdentityUserAppService identityUserAppService,
+        IIdentityRoleAppService identityRoleAppService,
+        IUserImportAppService userImportAppService,
         IDataFilter dataFilter)
     {
         IdentityUserAppService = identityUserAppService;
+        IdentityRoleAppService = identityRoleAppService;
+        UserImportAppService = userImportAppService;
         _dataFilter = dataFilter;
     }
 
@@ -41,7 +48,7 @@ public class EditModalModel : IdentityPageModel
     {
         var user = await IdentityUserAppService.GetAsync(id);
         UserInfo = ObjectMapper.Map<IdentityUserDto, UserInfoViewModel>(user);
-        Roles = ObjectMapper.Map<IReadOnlyList<IdentityRoleDto>, AssignedRoleViewModel[]>((await IdentityUserAppService.GetAssignableRolesAsync()).Items);
+        Roles = ObjectMapper.Map<IReadOnlyList<IdentityRoleDto>, AssignedRoleViewModel[]>((await IdentityRoleAppService.GetAllListAsync()).Items);
         IsEditCurrentUser = CurrentUser.Id == id;
 
         var userRoleNames = (await IdentityUserAppService.GetRolesAsync(UserInfo.Id)).Items.Select(r => r.Name).ToList();
@@ -76,9 +83,8 @@ public class EditModalModel : IdentityPageModel
     {
         ValidateModel();
 
-        var input = ObjectMapper.Map<UserInfoViewModel, IdentityUserUpdateDto>(UserInfo);
-        input.RoleNames = Roles.Where(r => r.IsAssigned).Select(r => r.Name).ToArray();
-        await IdentityUserAppService.UpdateRolesAsync(UserInfo.Id, new IdentityUserUpdateRolesDto() { RoleNames = input.RoleNames });
+        var roleNames = Roles.Where(r => r.IsAssigned).Select(r => r.Name).ToArray();
+        await UserImportAppService.SetUserRolesAsync(UserInfo.Id, roleNames);
 
         return NoContent();
     }

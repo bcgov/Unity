@@ -38,4 +38,4 @@ Evaluate if a branch is ready for PR against ABP architecture, policy, and CI ex
 - Follow `.github/copilot-instructions.md`.
 - Require `dotnet build Unity.GrantManager.sln --no-restore` and `dotnet test Unity.GrantManager.sln --no-build` readiness.
 - Enforce ABP module layering rules from `.github/skills/unity-module-structure/SKILL.md`.
-- Enforce AutoMapper, localization, and permissions conventions.
+- Enforce Mapperly, localization, and permissions conventions.

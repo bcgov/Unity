@@ -1,4 +1,4 @@
-using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi;
 using Swashbuckle.AspNetCore.SwaggerGen;
 using System.Collections.Generic;
 using Unity.GrantManager.ApplicantProfile.ProfileData;
@@ -7,9 +7,14 @@ namespace Unity.GrantManager.Swagger
 {
     public class ApplicantProfileDataSchemaFilter : ISchemaFilter
     {
-        public void Apply(OpenApiSchema schema, SchemaFilterContext context)
+        public void Apply(IOpenApiSchema schema, SchemaFilterContext context)
         {
             if (context.Type != typeof(ApplicantProfileDataDto))
+                return;
+
+            // OpenAPI.NET v2 exposes IOpenApiSchema (read-only) in filter signatures,
+            // but the underlying instance is OpenApiSchema. Cast to mutate.
+            if (schema is not OpenApiSchema mutableSchema)
                 return;
 
             var subTypes = new Dictionary<string, System.Type>
@@ -21,18 +26,18 @@ namespace Unity.GrantManager.Swagger
                 ["PAYMENTINFO"] = typeof(ApplicantPaymentInfoDto)
             };
 
-            var oneOfSchemas = new List<OpenApiSchema>();
+            var oneOfSchemas = new List<IOpenApiSchema>();
             foreach (var (_, subType) in subTypes)
             {
                 var subSchema = context.SchemaGenerator.GenerateSchema(subType, context.SchemaRepository);
                 oneOfSchemas.Add(subSchema);
             }
 
-            schema.OneOf = oneOfSchemas;
-            schema.Discriminator = new OpenApiDiscriminator
+            mutableSchema.OneOf = oneOfSchemas;
+            mutableSchema.Discriminator = new OpenApiDiscriminator
             {
                 PropertyName = "dataType",
-                Mapping = new Dictionary<string, string>()
+                Mapping = new Dictionary<string, OpenApiSchemaReference>()
             };
 
             foreach (var (discriminatorValue, subType) in subTypes)
@@ -40,10 +45,10 @@ namespace Unity.GrantManager.Swagger
                 var schemaId = context.SchemaRepository.Schemas.ContainsKey(subType.FullName!)
                     ? subType.FullName!
                     : subType.Name;
-                schema.Discriminator.Mapping[discriminatorValue] = $"#/components/schemas/{schemaId}";
+                mutableSchema.Discriminator.Mapping[discriminatorValue] = new OpenApiSchemaReference(schemaId);
             }
 
-            schema.Description = "Polymorphic data payload. The shape depends on the 'dataType' discriminator (key parameter).";
+            mutableSchema.Description = "Polymorphic data payload. The shape depends on the 'dataType' discriminator (key parameter).";
         }
     }
 }
