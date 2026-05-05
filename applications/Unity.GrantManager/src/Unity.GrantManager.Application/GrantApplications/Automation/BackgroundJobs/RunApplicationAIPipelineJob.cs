@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Unity.AI.RateLimit;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Attachments;
 using Unity.GrantManager.GrantApplications;
@@ -27,6 +28,7 @@ public class RunApplicationAIPipelineJob(
     IRepository<AIGenerationRequest, Guid> generationRequestRepository,
     ICurrentTenant currentTenant,
     IUnitOfWorkManager unitOfWorkManager,
+    IAIRateLimiter aiRateLimiter,
     ILogger<RunApplicationAIPipelineJob> logger) : AsyncBackgroundJob<RunApplicationAIPipelineJobArgs>, ITransientDependency
 {
     public override async Task ExecuteAsync(RunApplicationAIPipelineJobArgs args)
@@ -49,7 +51,8 @@ public class RunApplicationAIPipelineJob(
                 if (!attachmentSummariesEnabled && !applicationAnalysisEnabled && !scoringEnabled)
                 {
                     logger.LogDebug("All AI features are disabled, skipping queued AI generation for application {ApplicationId}.", args.ApplicationId);
-                    await AIGenerationRequestJobHelper.MarkCompletedInNewUowAsync(unitOfWorkManager, generationRequestRepository, args.RequestKey);
+                    var creatorId = await AIGenerationRequestJobHelper.MarkCompletedInNewUowAsync(unitOfWorkManager, generationRequestRepository, args.RequestKey);
+                    await aiRateLimiter.StampAsync(creatorId);
                     return;
                 }
 
@@ -112,7 +115,8 @@ public class RunApplicationAIPipelineJob(
                     throw analysisException;
                 }
 
-                await AIGenerationRequestJobHelper.MarkCompletedInNewUowAsync(unitOfWorkManager, generationRequestRepository, args.RequestKey);
+                var completedCreatorId = await AIGenerationRequestJobHelper.MarkCompletedInNewUowAsync(unitOfWorkManager, generationRequestRepository, args.RequestKey);
+                await aiRateLimiter.StampAsync(completedCreatorId);
             }
             catch (Exception ex)
             {

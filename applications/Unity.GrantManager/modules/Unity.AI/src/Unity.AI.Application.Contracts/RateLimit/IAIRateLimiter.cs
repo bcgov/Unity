@@ -1,4 +1,5 @@
 using System.Threading.Tasks;
+using System;
 
 namespace Unity.AI.RateLimit;
 
@@ -6,9 +7,19 @@ public interface IAIRateLimiter
 {
     /// <summary>
     /// Throws <see cref="Volo.Abp.UserFriendlyException"/> if the current user is still
-    /// inside their AI generate cooldown window, otherwise stamps a fresh cooldown.
+    /// inside their AI generate cooldown window.
     /// </summary>
-    Task EnsureAndStampAsync();
+    Task EnsureAsync();
+
+    /// <summary>
+    /// Starts a fresh cooldown for the current user. No-op for callers without a user.
+    /// </summary>
+    Task StampAsync();
+
+    /// <summary>
+    /// Starts a fresh cooldown for the supplied user. No-op when userId is null.
+    /// </summary>
+    Task StampAsync(Guid? userId);
 
     /// <summary>
     /// Returns the remaining cooldown for the current user. RetryAfterSeconds is 0 when

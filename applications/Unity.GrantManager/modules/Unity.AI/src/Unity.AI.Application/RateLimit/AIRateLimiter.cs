@@ -29,7 +29,7 @@ public class AIRateLimiter(
     private int CooldownSeconds =>
         configuration.GetValue<int?>("AI:RateLimit:CooldownSeconds") ?? DefaultCooldownSeconds;
 
-    public virtual async Task EnsureAndStampAsync()
+    public virtual async Task EnsureAsync()
     {
         if (currentUser.Id is not Guid userId)
         {
@@ -46,8 +46,19 @@ public class AIRateLimiter(
                 throw new UserFriendlyException(
                     $"AI generation is rate limited. Try again in {remaining} second{(remaining == 1 ? "" : "s")}.");
             }
+        }
+    }
 
-            await StampAsync(userId, CooldownSeconds);
+    public virtual async Task StampAsync()
+    {
+        await StampAsync(currentUser.Id);
+    }
+
+    public virtual async Task StampAsync(Guid? userId)
+    {
+        if (userId is Guid resolvedUserId)
+        {
+            await StampAsync(resolvedUserId, CooldownSeconds);
         }
     }
 

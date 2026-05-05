@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Medallion.Threading;
@@ -45,20 +44,29 @@ public class AIRateLimiterTests
     }
 
     [Fact]
-    public async Task EnsureAndStampAsync_FirstCall_Stamps_AndAllowsThrough()
+    public async Task EnsureAsync_AllowsThrough_When_NoCooldown()
     {
-        await NewLimiter().EnsureAndStampAsync();
+        await NewLimiter().EnsureAsync();
         var state = await NewLimiter().GetStateAsync();
+        state.RetryAfterSeconds.ShouldBe(0);
+    }
+
+    [Fact]
+    public async Task StampAsync_Starts_Cooldown()
+    {
+        var limiter = NewLimiter();
+        await limiter.StampAsync();
+        var state = await limiter.GetStateAsync();
         state.RetryAfterSeconds.ShouldBeInRange(1, 60);
     }
 
     [Fact]
-    public async Task EnsureAndStampAsync_SecondCall_Throws_WithRemainingSecondsMessage()
+    public async Task EnsureAsync_Throws_When_Cooldown_Exists()
     {
         var limiter = NewLimiter();
-        await limiter.EnsureAndStampAsync();
+        await limiter.StampAsync();
 
-        var ex = await Should.ThrowAsync<UserFriendlyException>(() => limiter.EnsureAndStampAsync());
+        var ex = await Should.ThrowAsync<UserFriendlyException>(() => limiter.EnsureAsync());
         ex.Message.ShouldContain("rate limited");
         ex.Message.ShouldMatch(@"\d+ second");
     }
@@ -72,10 +80,10 @@ public class AIRateLimiterTests
     }
 
     [Fact]
-    public async Task EnsureAndStampAsync_IsNoOp_For_AnonymousUser()
+    public async Task EnsureAsync_IsNoOp_For_AnonymousUser()
     {
         _currentUser.Id.Returns((Guid?)null);
-        await NewLimiter().EnsureAndStampAsync(); // Should not throw.
+        await NewLimiter().EnsureAsync(); // Should not throw.
         var state = await NewLimiter().GetStateAsync();
         state.RetryAfterSeconds.ShouldBe(0);
     }
@@ -83,22 +91,24 @@ public class AIRateLimiterTests
     [Fact]
     public async Task DifferentUsers_Have_IndependentCooldowns()
     {
-        await NewLimiter().EnsureAndStampAsync();
+        await NewLimiter().StampAsync();
 
         _currentUser.Id.Returns(Guid.NewGuid());
-        await NewLimiter().EnsureAndStampAsync(); // Should not throw.
+        await NewLimiter().EnsureAsync(); // Should not throw.
     }
 
     [Fact]
-    public async Task ConcurrentCalls_ForSameUser_OnlyAllowOneThrough()
+    public async Task StampAsync_ForSuppliedUser_Starts_Cooldown_ForThatUser()
     {
-        var limiter = NewLimiter();
+        var otherUserId = Guid.NewGuid();
 
-        var results = await Task.WhenAll(
-            TryEnsureAndStampAsync(limiter),
-            TryEnsureAndStampAsync(limiter));
+        await NewLimiter().StampAsync(otherUserId);
 
-        results.Count(x => x).ShouldBe(1);
+        await NewLimiter().EnsureAsync(); // Current user should not be blocked.
+
+        _currentUser.Id.Returns(otherUserId);
+        var ex = await Should.ThrowAsync<UserFriendlyException>(() => NewLimiter().EnsureAsync());
+        ex.Message.ShouldContain("rate limited");
     }
 
     [Fact]
@@ -111,22 +121,9 @@ public class AIRateLimiterTests
             }).Build();
         var limiter = new AIRateLimiter(_cache, _currentUser, config, new TestDistributedLockProvider());
 
-        await limiter.EnsureAndStampAsync();
+        await limiter.StampAsync();
         await Task.Delay(TimeSpan.FromSeconds(1.2), CancellationToken.None);
-        await limiter.EnsureAndStampAsync(); // Should not throw.
-    }
-
-    private static async Task<bool> TryEnsureAndStampAsync(AIRateLimiter limiter)
-    {
-        try
-        {
-            await limiter.EnsureAndStampAsync();
-            return true;
-        }
-        catch (UserFriendlyException)
-        {
-            return false;
-        }
+        await limiter.EnsureAsync(); // Should not throw.
     }
 
     private sealed class TestDistributedLockProvider : IDistributedLockProvider

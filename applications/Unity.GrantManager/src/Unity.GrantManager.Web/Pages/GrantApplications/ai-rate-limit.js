@@ -82,10 +82,10 @@
         }, 1000);
     }
 
-    async function fetchState() {
+    async function fetchState(force = false) {
         // Throttle to once per second to avoid hammering on chained clicks.
         const now = Date.now();
-        if (now - lastFetchAt < 1000) return;
+        if (!force && now - lastFetchAt < 1000) return;
         lastFetchAt = now;
         try {
             const res = await fetch('/api/app/ai-rate-limit/state', {
@@ -100,7 +100,7 @@
         }
     }
 
-    globalThis.refreshAIRateLimitState = fetchState;
+    globalThis.refreshAIRateLimitState = () => fetchState(true);
 
     document.addEventListener('click', (e) => {
         const btn = e.target.closest(BUTTON_SELECTOR);

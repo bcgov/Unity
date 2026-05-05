@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Attachments;
 using Unity.GrantManager.GrantApplications.Automation.BackgroundJobs;
+using Unity.AI.RateLimit;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.EventBus.Local;
 using Volo.Abp.Features;
@@ -97,6 +98,7 @@ public class RunApplicationAIPipelineJobTests(ITestOutputHelper outputHelper) : 
             generationRequestRepository,
             Substitute.For<ICurrentTenant>(),
             GetRequiredService<IUnitOfWorkManager>(),
+            Substitute.For<IAIRateLimiter>(),
             NullLogger<RunApplicationAIPipelineJob>.Instance);
     }
 

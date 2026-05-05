@@ -2,6 +2,7 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Threading.Tasks;
 using Unity.AI.Operations;
+using Unity.AI.RateLimit;
 using Unity.GrantManager.GrantApplications;
 using Volo.Abp.BackgroundJobs;
 using Volo.Abp.DependencyInjection;
@@ -16,6 +17,7 @@ public class GenerateAttachmentSummaryJob(
     IRepository<AIGenerationRequest, Guid> generationRequestRepository,
     ICurrentTenant currentTenant,
     IUnitOfWorkManager unitOfWorkManager,
+    IAIRateLimiter aiRateLimiter,
     ILogger<GenerateAttachmentSummaryJob> logger) : AsyncBackgroundJob<GenerateAttachmentSummaryBackgroundJobArgs>, ITransientDependency
 {
     public override async Task ExecuteAsync(GenerateAttachmentSummaryBackgroundJobArgs args)
@@ -29,7 +31,9 @@ public class GenerateAttachmentSummaryJob(
                     "Executing AI attachment summary job for application {ApplicationId}.",
                     args.ApplicationId);
                 await attachmentSummaryService.GenerateForApplicationAsync(args.ApplicationId, args.PromptVersion);
-                await AIGenerationRequestJobHelper.MarkCompletedInNewUowAsync(unitOfWorkManager, generationRequestRepository, args.RequestKey);
+
+                var creatorId = await AIGenerationRequestJobHelper.MarkCompletedInNewUowAsync(unitOfWorkManager, generationRequestRepository, args.RequestKey);
+                await aiRateLimiter.StampAsync(creatorId);
             }
             catch (Exception ex)
             {

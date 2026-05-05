@@ -129,7 +129,7 @@ public class ApplicationAIGenerationQueue(
 
             // Single chokepoint for all AI generate flows (manual + auto).
             // The limiter is a no-op for system/background callers without an authenticated user.
-            await aiRateLimiter.EnsureAndStampAsync();
+            await aiRateLimiter.EnsureAsync();
 
             var request = new AIGenerationRequest(
                 Guid.NewGuid(),
