@@ -7,6 +7,7 @@ using Volo.Abp.BackgroundJobs;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.MultiTenancy;
+using Volo.Abp.Uow;
 
 namespace Unity.GrantManager.GrantApplications.Automation.BackgroundJobs;
 
@@ -14,11 +15,13 @@ public class GenerateAttachmentSummaryJob(
     IAttachmentSummaryService attachmentSummaryService,
     IRepository<AIGenerationRequest, Guid> generationRequestRepository,
     ICurrentTenant currentTenant,
+    IUnitOfWorkManager unitOfWorkManager,
     ILogger<GenerateAttachmentSummaryJob> logger) : AsyncBackgroundJob<GenerateAttachmentSummaryBackgroundJobArgs>, ITransientDependency
 {
     public override async Task ExecuteAsync(GenerateAttachmentSummaryBackgroundJobArgs args)
     {
         using (currentTenant.Change(args.TenantId))
+        using (var uow = unitOfWorkManager.Begin(requiresNew: true, isTransactional: false))
         {
             var request = await AIGenerationRequestJobHelper.GetLatestRequestAsync(generationRequestRepository, x => x.RequestKey == args.RequestKey);
             await AIGenerationRequestJobHelper.MarkRunningAsync(generationRequestRepository, request);
@@ -33,8 +36,11 @@ public class GenerateAttachmentSummaryJob(
             catch (Exception ex)
             {
                 await AIGenerationRequestJobHelper.MarkFailedAsync(generationRequestRepository, request, ex.Message);
+                await uow.CompleteAsync();
                 throw;
             }
+
+            await uow.CompleteAsync();
         }
     }
 }

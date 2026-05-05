@@ -13,6 +13,7 @@ using Volo.Abp.Domain.Repositories;
 using Volo.Abp.EventBus.Local;
 using Volo.Abp.Features;
 using Volo.Abp.MultiTenancy;
+using Volo.Abp.Uow;
 
 namespace Unity.GrantManager.GrantApplications.Automation.BackgroundJobs;
 
@@ -25,6 +26,7 @@ public class RunApplicationAIPipelineJob(
     ILocalEventBus localEventBus,
     IRepository<AIGenerationRequest, Guid> generationRequestRepository,
     ICurrentTenant currentTenant,
+    IUnitOfWorkManager unitOfWorkManager,
     ILogger<RunApplicationAIPipelineJob> logger) : AsyncBackgroundJob<RunApplicationAIPipelineJobArgs>, ITransientDependency
 {
     public override async Task ExecuteAsync(RunApplicationAIPipelineJobArgs args)
@@ -35,6 +37,7 @@ public class RunApplicationAIPipelineJob(
         }
 
         using (currentTenant.Change(args.TenantId))
+        using (var uow = unitOfWorkManager.Begin(requiresNew: true, isTransactional: false))
         {
             var request = await AIGenerationRequestJobHelper.GetLatestRequestAsync(
                 generationRequestRepository,
@@ -52,6 +55,7 @@ public class RunApplicationAIPipelineJob(
                 {
                     logger.LogDebug("All AI features are disabled, skipping queued AI generation for application {ApplicationId}.", args.ApplicationId);
                     await AIGenerationRequestJobHelper.MarkCompletedAsync(generationRequestRepository, request);
+                    await uow.CompleteAsync();
                     return;
                 }
 
@@ -115,10 +119,12 @@ public class RunApplicationAIPipelineJob(
                 }
 
                 await AIGenerationRequestJobHelper.MarkCompletedAsync(generationRequestRepository, request);
+                await uow.CompleteAsync();
             }
             catch (Exception ex)
             {
                 await AIGenerationRequestJobHelper.MarkFailedAsync(generationRequestRepository, request, ex.Message);
+                await uow.CompleteAsync();
                 throw;
             }
         }
