@@ -37,13 +37,8 @@ public class RunApplicationAIPipelineJob(
         }
 
         using (currentTenant.Change(args.TenantId))
-        using (var uow = unitOfWorkManager.Begin(requiresNew: true, isTransactional: false))
         {
-            var request = await AIGenerationRequestJobHelper.GetLatestRequestAsync(
-                generationRequestRepository,
-                x => x.RequestKey == args.RequestKey);
-
-            await AIGenerationRequestJobHelper.MarkRunningAsync(generationRequestRepository, request);
+            await AIGenerationRequestJobHelper.MarkRunningInNewUowAsync(unitOfWorkManager, generationRequestRepository, args.RequestKey);
 
             try
             {
@@ -54,8 +49,7 @@ public class RunApplicationAIPipelineJob(
                 if (!attachmentSummariesEnabled && !applicationAnalysisEnabled && !scoringEnabled)
                 {
                     logger.LogDebug("All AI features are disabled, skipping queued AI generation for application {ApplicationId}.", args.ApplicationId);
-                    await AIGenerationRequestJobHelper.MarkCompletedAsync(generationRequestRepository, request);
-                    await uow.CompleteAsync();
+                    await AIGenerationRequestJobHelper.MarkCompletedInNewUowAsync(unitOfWorkManager, generationRequestRepository, args.RequestKey);
                     return;
                 }
 
@@ -118,13 +112,11 @@ public class RunApplicationAIPipelineJob(
                     throw analysisException;
                 }
 
-                await AIGenerationRequestJobHelper.MarkCompletedAsync(generationRequestRepository, request);
-                await uow.CompleteAsync();
+                await AIGenerationRequestJobHelper.MarkCompletedInNewUowAsync(unitOfWorkManager, generationRequestRepository, args.RequestKey);
             }
             catch (Exception ex)
             {
-                await AIGenerationRequestJobHelper.MarkFailedAsync(generationRequestRepository, request, ex.Message);
-                await uow.CompleteAsync();
+                await AIGenerationRequestJobHelper.MarkFailedInNewUowAsync(unitOfWorkManager, generationRequestRepository, args.RequestKey, ex.Message);
                 throw;
             }
         }
