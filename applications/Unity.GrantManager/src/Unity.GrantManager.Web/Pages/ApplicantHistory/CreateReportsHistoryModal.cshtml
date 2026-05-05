@@ -1,0 +1,79 @@
+@page
+@using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal
+@model Unity.GrantManager.Web.Pages.ApplicantHistory.CreateReportsHistoryModal
+@{
+    Layout = null;
+}
+
+<form method="post" asp-page="/ApplicantHistory/CreateReportsHistoryModal" id="CreateReportsHistoryForm">
+    <abp-modal>
+        <abp-modal-header title="Add Reports History Record"></abp-modal-header>
+        <abp-modal-body>
+            <input type="hidden" asp-for="ReportsHistoryForm.ApplicantId" />
+
+            <div class="mb-3">
+                <label class="form-label" for="ReportsHistoryForm_FiscalYear">Fiscal Year # <span class="text-danger">*</span></label>
+                <input type="text" id="ReportsHistoryForm_FiscalYear" name="ReportsHistoryForm.FiscalYear"
+                       class="form-control" value="@Model.ReportsHistoryForm?.FiscalYear" />
+                <div class="invalid-feedback">Fiscal Year is required.</div>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label" for="ReportsHistoryForm_ReportDate">Report Date</label>
+                <input type="date" id="ReportsHistoryForm_ReportDate" name="ReportsHistoryForm.ReportDate"
+                       class="form-control"
+                       value="@(Model.ReportsHistoryForm?.ReportDate?.ToString("yyyy-MM-dd"))"
+                       data-datepicker="false" />
+            </div>
+
+            <div class="mb-3">
+                <div class="switch-container">
+                    <div class="form-check unt-form-switch form-switch">
+                        <input class="form-check-input" type="checkbox" id="ReportsHistoryForm_Outstanding"
+                               name="ReportsHistoryForm.Outstanding" value="true"
+                               @(Model.ReportsHistoryForm?.Outstanding == true ? "checked" : "") />
+                        <label class="form-check-label" for="ReportsHistoryForm_Outstanding">Outstanding</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <div class="switch-container">
+                    <div class="form-check unt-form-switch form-switch">
+                        <input class="form-check-input" type="checkbox" id="ReportsHistoryForm_IncompleteReport"
+                               name="ReportsHistoryForm.IncompleteReport" value="true"
+                               @(Model.ReportsHistoryForm?.IncompleteReport == true ? "checked" : "") />
+                        <label class="form-check-label" for="ReportsHistoryForm_IncompleteReport">Incomplete Report</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label" for="ReportsHistoryForm_Note">Note</label>
+                <input type="text" id="ReportsHistoryForm_Note" name="ReportsHistoryForm.Note"
+                       class="form-control" value="@Model.ReportsHistoryForm?.Note" />
+            </div>
+        </abp-modal-body>
+        <abp-modal-footer>
+            <button class="btn btn-primary" data-busy-text="Saving..." type="submit">Save</button>
+            <button class="btn btn-secondary" data-bs-dismiss="modal" type="button">Cancel</button>
+        </abp-modal-footer>
+    </abp-modal>
+</form>
+
+<script defer>
+    (function () {
+        if (window.jQuery) {
+            var $fiscalYear = $('#ReportsHistoryForm_FiscalYear');
+
+            $fiscalYear.on('input', function () { $(this).removeClass('is-invalid'); });
+
+            $('#CreateReportsHistoryForm').on('submit', function (e) {
+                if ($fiscalYear.val().trim() === '') {
+                    $fiscalYear.addClass('is-invalid');
+                    e.preventDefault();
+                }
+            });
+        }
+    })();
+</script>
