@@ -4,6 +4,7 @@ using System.Linq.Expressions;
 using System.Threading.Tasks;
 using Unity.GrantManager.GrantApplications;
 using Volo.Abp.Domain.Repositories;
+using Volo.Abp.Uow;
 
 namespace Unity.GrantManager.GrantApplications.Automation.BackgroundJobs;
 
@@ -47,6 +48,40 @@ public static class AIGenerationRequestJobHelper
 
         request.MarkFailed(DateTime.UtcNow, failureReason);
         await generationRequestRepository.UpdateAsync(request, autoSave: true);
+    }
+
+    public static async Task MarkRunningInNewUowAsync(
+        IUnitOfWorkManager unitOfWorkManager,
+        IRepository<AIGenerationRequest, Guid> generationRequestRepository,
+        string requestKey)
+    {
+        using var uow = unitOfWorkManager.Begin(requiresNew: true, isTransactional: false);
+        var request = await GetLatestRequestAsync(generationRequestRepository, x => x.RequestKey == requestKey);
+        await MarkRunningAsync(generationRequestRepository, request);
+        await uow.CompleteAsync();
+    }
+
+    public static async Task MarkCompletedInNewUowAsync(
+        IUnitOfWorkManager unitOfWorkManager,
+        IRepository<AIGenerationRequest, Guid> generationRequestRepository,
+        string requestKey)
+    {
+        using var uow = unitOfWorkManager.Begin(requiresNew: true, isTransactional: false);
+        var request = await GetLatestRequestAsync(generationRequestRepository, x => x.RequestKey == requestKey);
+        await MarkCompletedAsync(generationRequestRepository, request);
+        await uow.CompleteAsync();
+    }
+
+    public static async Task MarkFailedInNewUowAsync(
+        IUnitOfWorkManager unitOfWorkManager,
+        IRepository<AIGenerationRequest, Guid> generationRequestRepository,
+        string requestKey,
+        string? failureReason)
+    {
+        using var uow = unitOfWorkManager.Begin(requiresNew: true, isTransactional: false);
+        var request = await GetLatestRequestAsync(generationRequestRepository, x => x.RequestKey == requestKey);
+        await MarkFailedAsync(generationRequestRepository, request, failureReason);
+        await uow.CompleteAsync();
     }
 
     public static async Task<AIGenerationRequest?> GetLatestRequestAsync(
