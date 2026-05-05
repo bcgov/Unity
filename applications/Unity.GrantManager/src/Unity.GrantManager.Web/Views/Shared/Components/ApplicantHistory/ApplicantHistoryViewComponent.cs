@@ -37,7 +37,8 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantHistory
                 ApplicantId = applicantId,
                 FundingHistoryComments = applicant.FundingHistoryComments,
                 IssueTrackingComments = applicant.IssueTrackingComments,
-                AuditComments = applicant.AuditComments
+                AuditComments = applicant.AuditComments,
+                ReportsComments = applicant.ReportsComments
             };
 
             return View(viewModel);
