@@ -73,7 +73,7 @@ namespace Unity.Modules.Shared.Integrations
             client.DefaultRequestHeaders.ConnectionClose = true;
 
             HttpResponseMessage response = await client.SendAsync(requestMessage);
-            var responseBody = response.Content.ReadAsStringAsync();
+            var responseBody = await response.Content.ReadAsStringAsync();
             string responseMessage = response.RequestMessage != null ? response.RequestMessage.ToString() : "";
 
             if (response.Content == null)
@@ -91,7 +91,7 @@ namespace Unity.Modules.Shared.Integrations
                 }
             }
 
-            var tokenResponse = JsonSerializer.Deserialize<TokenValidationResponse>(responseBody.Result)
+            var tokenResponse = JsonSerializer.Deserialize<TokenValidationResponse>(responseBody)
                 ?? throw new UserFriendlyException($"Error deserializing token response {response.StatusCode} {responseMessage}");
 
             int expiresInSeconds = tokenResponse.ExpiresIn - ONE_MINUTE_SECONDS;
