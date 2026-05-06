@@ -65,8 +65,8 @@
         safeUrl: 'loading',                // 'loading' | 'failure' | null (success)
         loaded: false,
         sqlPanelOpen: false,
-        sql_explanation_visible: false,
-        sql_explanation_text: '',          // local rendered text (typewriter)
+        sqlExplanationVisible: false,
+        sqlExplanationText: '',            // local rendered text (typewriter)
         sqlExplanationStreaming: false,
         errorType: null,
         errorMessage: null,
@@ -172,11 +172,11 @@
         const embed = turn.embed || {};
 
         // SQL explanation typewriter bubble
-        const showCursor = turn.sqlExplanationStreaming || (!turn.sql_explanation_text && turn.sql_explanation_visible);
-        const explanationHtml = turn.sql_explanation_visible
+        const showCursor = turn.sqlExplanationStreaming || (!turn.sqlExplanationText && turn.sqlExplanationVisible);
+        const explanationHtml = turn.sqlExplanationVisible
             ? `<div class="sql-explanation-bubble">
                    <div class="bubble-content">
-                       <span>${escapeHtml(turn.sql_explanation_text || '')}</span>
+                       <span>${escapeHtml(turn.sqlExplanationText || '')}</span>
                        ${showCursor ? '<span class="cursor">█</span>' : ''}
                    </div>
                    <div class="bubble-tail"></div>
@@ -315,7 +315,7 @@
             safeUrl:                 t.safeUrl,
             loaded:                  t.loaded,
             sqlPanelOpen:            t.sqlPanelOpen,
-            sql_explanation_visible: t.sql_explanation_visible,
+            sql_explanation_visible: t.sqlExplanationVisible,
             errorType:               t.errorType,
             errorMessage:            t.errorMessage,
             errorDetail:             t.errorDetail,
@@ -344,8 +344,8 @@
                 safeUrl: r.safeUrl ?? null,
                 loaded: true,
                 sqlPanelOpen: r.sqlPanelOpen ?? false,
-                sql_explanation_visible: r.sql_explanation_visible ?? false,
-                sql_explanation_text: r.embed?.sql_explanation || '',
+                sqlExplanationVisible: r.sql_explanation_visible ?? false,
+                sqlExplanationText: r.embed?.sql_explanation || '',
                 sqlExplanationStreaming: false,
                 errorType: r.errorType ?? null,
                 errorMessage: r.errorMessage ?? null,
@@ -503,17 +503,17 @@
         const turn = findTurn(turnId);
         if (!turn) return;
         turn.sqlExplanationStreaming = true;
-        turn.sql_explanation_text = '';
+        turn.sqlExplanationText = '';
         let i = 0;
         const interval = setInterval(() => {
             const t = findTurn(turnId);
-            if (!t || !t.sql_explanation_visible) {
+            if (!t || !t.sqlExplanationVisible) {
                 clearInterval(interval);
                 if (t) t.sqlExplanationStreaming = false;
                 return;
             }
             if (i < text.length) {
-                t.sql_explanation_text += text[i++];
+                t.sqlExplanationText += text[i++];
                 updateBubble(turnId);
             } else {
                 t.sqlExplanationStreaming = false;
@@ -528,14 +528,14 @@
         if (!turn?.embed?.SQL) return;
 
         // Toggle visibility (matches reference)
-        turn.sql_explanation_visible = !turn.sql_explanation_visible;
+        turn.sqlExplanationVisible = !turn.sqlExplanationVisible;
         updateBubble(turnId);
 
-        if (turn.sql_explanation_visible && !turn.embed.sql_explanation) {
+        if (turn.sqlExplanationVisible && !turn.embed.sql_explanation) {
             try {
                 const res = await api.explainSql(turn.embed.SQL);
                 const t = findTurn(turnId);
-                if (!t || !t.sql_explanation_visible) return;
+                if (!t || !t.sqlExplanationVisible) return;
                 t.embed.sql_explanation = res?.explanation || '';
                 if (t.embed.tokens && res?.tokens) {
                     t.embed.tokens.prompt_tokens     += res.tokens.prompt_tokens     || 0;
@@ -554,13 +554,13 @@
                 const t = findTurn(turnId);
                 if (t) {
                     t.embed.sql_explanation = 'Unable to generate explanation at this time.';
-                    t.sql_explanation_text  = t.embed.sql_explanation;
+                    t.sqlExplanationText = t.embed.sql_explanation;
                     updateBubble(turnId);
                 }
             }
-        } else if (turn.sql_explanation_visible && turn.embed.sql_explanation && !turn.sql_explanation_text) {
+        } else if (turn.sqlExplanationVisible && turn.embed.sql_explanation && !turn.sqlExplanationText) {
             // Already have the text from a saved chat — render it directly without streaming.
-            turn.sql_explanation_text = turn.embed.sql_explanation;
+            turn.sqlExplanationText = turn.embed.sql_explanation;
             updateBubble(turnId);
         }
 
@@ -669,7 +669,7 @@
     const currentTurn = () => state.conversation[state.currentTurnIndex] || null;
 
     // ─── Event delegation ───────────────────────────────────────────────────
-    document.body.addEventListener('click', async (event) => {
+    root.addEventListener('click', async (event) => {
         const actionEl = event.target.closest('[data-action]');
         if (!actionEl) return;
         const action = actionEl.getAttribute('data-action');

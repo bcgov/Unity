@@ -51,14 +51,14 @@
         </div>
     </aside>
 
-    <div class="container">
+    <div class="ai-reporting-container">
 
         <section id="empty-state" class="empty-chat-container">
             <div class="welcome-content">
                 <h1 class="welcome-title">What would you like to know?</h1>
                 <div class="ask-row-container welcome-ask-row">
                     <div class="ask-row">
-                        <input type="text" id="question-input-empty" placeholder="Type a prompt to generate a report..." />
+                        <input type="text" id="question-input-empty" aria-label="Type a prompt to generate a report" placeholder="Type a prompt to generate a report..." />
                         <button type="button" class="ask-question-btn" data-action="ask" aria-label="Generate report">
                             <svg width="20" height="20" viewBox="0 0 48 48" fill="none" aria-hidden="true">
                                 <path d="M24 6L24 42" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
@@ -75,7 +75,7 @@
 
             <div class="ask-row-container">
                 <div class="ask-row">
-                    <input type="text" id="question-input-active" placeholder="Refine the report..." />
+                    <input type="text" id="question-input-active" aria-label="Refine the report prompt" placeholder="Refine the report..." />
                 </div>
                 <div class="ask-row-bottom">
                     <div class="bottom-left-controls">
