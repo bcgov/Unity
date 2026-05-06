@@ -46,14 +46,30 @@ public class AttachmentSummaryService(
     public async Task<List<string>> GenerateAndSaveAsync(IEnumerable<Guid> attachmentIds, string? promptVersion = null)
     {
         var ids = attachmentIds as IReadOnlyCollection<Guid> ?? attachmentIds.ToList();
-        var mode = executionModeResolver.ResolveMode(AIExecutionModeResolver.AttachmentSummariesFlow);
-        var batchSize = executionModeResolver.ResolveBatchSize();
+        var mode = executionModeResolver.ResolveMode(AIExecutionModeResolver.AttachmentSummaryOperation);
+        if (mode == AIExecutionMode.Batch)
+        {
+            logger.LogWarning(
+                "AI attachment summary batch mode is not supported by the single-attachment AI contract. Falling back to sequential execution.");
+            mode = AIExecutionMode.Sequential;
+        }
 
         return await AIExecutionStrategy.RunAsync(
             ids,
             mode,
-            batchSize,
-            id => GenerateOrFallbackAsync(id, promptVersion));
+            id => GenerateOrFallbackAsync(id, promptVersion),
+            batch => GenerateSequentiallyAsync(batch, promptVersion));
+    }
+
+    private async Task<List<string>> GenerateSequentiallyAsync(IReadOnlyCollection<Guid> attachmentIds, string? promptVersion)
+    {
+        var summaries = new List<string>(attachmentIds.Count);
+        foreach (var attachmentId in attachmentIds)
+        {
+            summaries.Add(await GenerateOrFallbackAsync(attachmentId, promptVersion));
+        }
+
+        return summaries;
     }
 
     private async Task<string> GenerateOrFallbackAsync(Guid attachmentId, string? promptVersion)

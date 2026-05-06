@@ -12,6 +12,6 @@ public enum AIExecutionMode
     /// <summary>All items started concurrently and awaited together.</summary>
     Parallel,
 
-    /// <summary>Items processed in fixed-size batches, each batch run in parallel.</summary>
+    /// <summary>All items sent through one batch operation.</summary>
     Batch
 }

@@ -65,14 +65,13 @@ namespace Unity.AI.Operations
             var promptData = PromptDataPayloadBuilder.BuildPromptDataPayload(application, formSubmission, formSchema, logger);
 
             var sections = scoresheet.Sections.OrderBy(s => s.Order).ToList();
-            var mode = executionModeResolver.ResolveMode(AIExecutionModeResolver.ScoresheetFlow);
-            var batchSize = executionModeResolver.ResolveBatchSize();
+            var mode = executionModeResolver.ResolveMode(AIExecutionModeResolver.ApplicationScoringOperation);
 
             var perSectionResults = await AIExecutionStrategy.RunAsync(
                 sections,
                 mode,
-                batchSize,
-                section => ProcessSectionAsync(applicationId, section, promptData, attachmentSummaries, promptVersion));
+                section => ProcessSectionAsync(applicationId, section, promptData, attachmentSummaries, promptVersion),
+                batch => ProcessSectionsAsync(applicationId, batch, promptData, attachmentSummaries, promptVersion));
 
             var allSectionResults = new Dictionary<string, object>();
             foreach (var sectionResult in perSectionResults)
@@ -100,27 +99,12 @@ namespace Unity.AI.Operations
             var sectionResults = new Dictionary<string, object>();
             try
             {
-                var sectionQuestionsData = new List<object>();
-                foreach (var field in section.Fields.OrderBy(f => f.Order))
-                {
-                    var options = ExtractSelectListOptions(field);
-                    sectionQuestionsData.Add(new
-                    {
-                        id = field.Id.ToString(),
-                        question = field.Label,
-                        description = field.Description,
-                        type = field.Type.ToString(),
-                        options,
-                        allowed_answers = ExtractSelectListOptionNumbers(options)
-                    });
-                }
-
                 var applicationScoringRequest = new ApplicationScoringRequest
                 {
                     Data = promptData,
                     Attachments = attachmentSummaries,
                     SectionName = section.Name,
-                    SectionSchema = JsonSerializer.SerializeToElement(sectionQuestionsData, _jsonOptions),
+                    SectionSchema = JsonSerializer.SerializeToElement(BuildSectionQuestionsData(section), _jsonOptions),
                     PromptVersion = promptVersion,
                 };
                 var applicationScoringResponse = await aiService.GenerateApplicationScoringAsync(applicationScoringRequest);
@@ -140,6 +124,70 @@ namespace Unity.AI.Operations
                 logger.LogError(ex, "Error processing AI application scoring section {SectionName} for application {ApplicationId}", section.Name, applicationId);
             }
             return sectionResults;
+        }
+
+        private async Task<List<Dictionary<string, object>>> ProcessSectionsAsync(
+            Guid applicationId,
+            IReadOnlyCollection<ScoresheetSection> sections,
+            JsonElement promptData,
+            List<AIAttachmentItem> attachmentSummaries,
+            string? promptVersion)
+        {
+            var sectionResults = new Dictionary<string, object>();
+            try
+            {
+                var questions = sections
+                    .OrderBy(s => s.Order)
+                    .SelectMany(BuildSectionQuestionsData)
+                    .ToList();
+
+                var applicationScoringRequest = new ApplicationScoringRequest
+                {
+                    Data = promptData,
+                    Attachments = attachmentSummaries,
+                    SectionName = "All Sections",
+                    SectionSchema = JsonSerializer.SerializeToElement(questions, _jsonOptions),
+                    PromptVersion = promptVersion,
+                };
+                var applicationScoringResponse = await aiService.GenerateApplicationScoringAsync(applicationScoringRequest);
+
+                if (applicationScoringResponse.Answers.Count > 0)
+                {
+                    var sectionJson = JsonSerializer.Serialize(applicationScoringResponse.Answers, _jsonOptions);
+                    using var sectionDoc = JsonDocument.Parse(sectionJson);
+                    foreach (var property in sectionDoc.RootElement.EnumerateObject())
+                    {
+                        sectionResults[property.Name] = property.Value.Clone();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Error processing AI application scoring batch for application {ApplicationId}", applicationId);
+            }
+
+            return [sectionResults];
+        }
+
+        private static List<object> BuildSectionQuestionsData(ScoresheetSection section)
+        {
+            var sectionQuestionsData = new List<object>();
+            foreach (var field in section.Fields.OrderBy(f => f.Order))
+            {
+                var options = ExtractSelectListOptions(field);
+                sectionQuestionsData.Add(new
+                {
+                    id = field.Id.ToString(),
+                    section = section.Name,
+                    question = field.Label,
+                    description = field.Description,
+                    type = field.Type.ToString(),
+                    options,
+                    allowed_answers = ExtractSelectListOptionNumbers(options)
+                });
+            }
+
+            return sectionQuestionsData;
         }
 
         private async Task<string?> GetFormSchemaAsync(Guid? formVersionId)

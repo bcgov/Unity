@@ -1,38 +1,33 @@
 using Microsoft.Extensions.Configuration;
+using Unity.AI.Prompts;
 using Volo.Abp.DependencyInjection;
 
 namespace Unity.AI.Operations;
 
 /// <summary>
-/// Resolves the configured <see cref="AIExecutionMode"/> and batch size for a given flow.
-/// Configuration keys (all optional, default = Sequential / batch size 5):
-///   Azure:AIExecutionModes:{flowKey}  - "Sequential" | "Parallel" | "Batch" (case-insensitive)
-///   Azure:AIExecutionModes:BatchSize  - positive int, used only by Batch mode
+/// Resolves the configured <see cref="AIExecutionMode"/> for an AI operation.
+/// Configuration keys (all optional, default = Sequential):
+///   Azure:Operations:{operationName}:ExecutionMode - "Sequential" | "Parallel" | "Batch" (case-insensitive)
+///   Azure:Operations:Defaults:ExecutionMode        - default when operation override is absent
 /// </summary>
 public class AIExecutionModeResolver(IConfiguration configuration) : ITransientDependency
 {
-    public const string AttachmentSummariesFlow = "AttachmentSummaries";
-    public const string ScoresheetFlow = "Scoresheet";
+    public const string AttachmentSummaryOperation = AIPromptTypes.AttachmentSummary;
+    public const string ApplicationScoringOperation = AIPromptTypes.ApplicationScoring;
 
-    private const string ModeKeyPrefix = "Azure:AIExecutionModes:";
-    private const string BatchSizeKey = "Azure:AIExecutionModes:BatchSize";
-    private const int DefaultBatchSize = 5;
-
-    public AIExecutionMode ResolveMode(string flowKey)
+    public AIExecutionMode ResolveMode(string operationName)
     {
-        var configured = configuration[ModeKeyPrefix + flowKey];
+        var configured = configuration[$"Azure:Operations:{operationName}:ExecutionMode"];
+        if (string.IsNullOrWhiteSpace(configured))
+        {
+            configured = configuration["Azure:Operations:Defaults:ExecutionMode"];
+        }
+
         return configured?.Trim().ToLowerInvariant() switch
         {
             "parallel" => AIExecutionMode.Parallel,
             "batch" => AIExecutionMode.Batch,
             _ => AIExecutionMode.Sequential
         };
-    }
-
-    public int ResolveBatchSize()
-    {
-        return int.TryParse(configuration[BatchSizeKey], out var size) && size > 0
-            ? size
-            : DefaultBatchSize;
     }
 }
