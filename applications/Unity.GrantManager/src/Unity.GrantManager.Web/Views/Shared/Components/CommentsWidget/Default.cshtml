@@ -15,114 +15,112 @@
 }
 <div id="comments-div-@(Model.OwnerId)" class="mt-2 comments-container"
     data-ownerId="@Model.OwnerId"
-    data-type="@Model.CommentType" 
-    data-count="@Model.Comments.Count" 
+    data-type="@Model.CommentType"
+    data-count="@Model.Comments.Count"
     data-counttag="application_comments_count">
     @foreach (CommentDto comment in Model.Comments.Where(c => c != null))
     {
         <div class="mb-2 comment-read-mode">
-                <div class="unity-comment-block read-mode @(comment.IsPinned ? "pinned-comment" : "")" data-id="@comment.Id">
-
-                    <div class="d-flex justify-content-between">
-                        @if (comment.IsPinned && comment.PinDateTime != null)
-                        {
-                            <div class="fw-bold commenter-name icon-link">
-                                <i class="fl fl-pin pinned-icon" title="Pinned on @comment.PinDateTime?.ToString("yyyy-MM-dd h:mm tt")"></i>
-                                Pinned Message
-                            </div>
-                        } else
-                        {
-                            <div class="fw-bold commenter-name icon-link">
-                                @comment.Commenter
-                            </div>
-                        }
-                        <div class="comment-edit-btn-wrapper">
-                            @if (Model.CurrentUserId == comment.CommenterId || Model.CanPinComments)
-                            {
-                                <div class="dropdown">
-                                    <button class="btn btn-link comment-dropdown-toggle" type="button" id="commentDropdown@(comment.Id)" data-bs-toggle="dropdown" aria-expanded="false">
-                                        <svg aria-hidden="true" focusable="false" class="kebab-horizontal" viewBox="0 0 16 16" width="16" height="16" fill="currentColor" display="inline-block" overflow="visible" style="vertical-align: text-bottom;">
-                                            <path d="M8 9a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3ZM1.5 9a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Zm13 0a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z"></path>
-                                        </svg>
-                                    </button>
-                                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="commentDropdown@(comment.Id)">
-                                        @if (Model.CurrentUserId == comment.CommenterId)
-                                        {
-                                            <li>
-                                                <a class="dropdown-item edit-button" href="#" 
-                                                   data-id="@comment.Id"
-                                                   data-ownerid="@Model.OwnerId"
-                                                   data-type="@Model.CommentType">
-                                                    <i class="fl fl-edit me-2"></i> Edit
-                                                </a>
-                                            </li>
-                                        }
-                                        @if (Model.CanPinComments)
-                                        {
-                                            @if (comment.IsPinned)
-                                            {
-                                                <li>
-                                                    <a class="dropdown-item unpin-button" 
-                                                       href="#"
-                                                       data-id="@comment.Id" 
-                                                       data-ownerid="@Model.OwnerId" 
-                                                       data-type="@Model.CommentType">
-                                                        <i class="fl fl-pin-slash me-2"></i>Unpin
-                                                    </a>
-                                                </li>
-                                            }
-                                            else
-                                            {
-                                                <li>
-                                                    <a class="dropdown-item pin-button" 
-                                                       href="#"
-                                                       data-id="@comment.Id" 
-                                                       data-ownerid="@Model.OwnerId" 
-                                                       data-type="@Model.CommentType">
-                                                        <i class="fl fl-pin me-2"></i>Pin
-                                                    </a>
-                                                </li>
-                                            }
-                                        }
-                                    </ul>
-                                </div>
-                            }
-                        </div>
-                    </div>
+            <div class="unity-comment-block read-mode @(comment.IsPinned ? "pinned-comment" : "")" data-id="@comment.Id">
+                <div class="d-flex justify-content-between">
                     @if (comment.IsPinned && comment.PinDateTime != null)
                     {
-                        <div class="d-flex justify-content-between">
-                            <div class="fw-bold commenter-name">
-                                @comment.Commenter
-                            </div>
+                        <div class="fw-bold commenter-name icon-link">
+                            <i class="fl fl-pin pinned-icon" title="Pinned on @comment.PinDateTime?.ToString("yyyy-MM-dd h:mm tt")"></i>
+                            Pinned Message
                         </div>
-                    }
-                    <div class="comment-lbl" data-id="@comment.Id">
-                        <div>
-                            @* XSS Protection is provided by the MarkdownRenderer *@
-                            @Html.Raw(comment.Comment)
-                        </div>
-                    </div>
-                    @if (@comment.LastModificationTime != null)
-                    {
-                        <div class="commented-time mt-3 fw-bold">@L["ApplicationDetails:Comments.Modified"].Value @comment.LastModificationTime?.ToString("yyyy-MM-dd h:mm tt")</div>
                     }
                     else
                     {
-                        <div class="commented-time mt-3 fw-bold">@L["ApplicationDetails:Comments.Created"].Value @comment.CreationTime.ToString("yyyy-MM-dd h:mm tt")</div>
+                        <div class="fw-bold commenter-name icon-link">
+                            @comment.Commenter
+                        </div>
                     }
-
-                </div>
-
-                <div class="single-comment edit-mode" data-id="@comment.Id" style="display: none;">
-                    <textarea rows="6" maxlength="@MaxCharCount" class="form-control comment-input-multiple comment-with-mention" placeholder="Update the comment" data-id="@comment.Id" id="@comment.Id">@comment.Comment</textarea>
-                    <div class="comment-button-container">
-                        <i class="fl fl-cross edit-comment-cancel-button comment-btn" data-id="@comment.Id" data-ownerId="@Model.OwnerId" data-type="@Model.CommentType"></i>
-                        <i class="fl fl-tick edit-comment-save-button comment-btn" data-id="@comment.Id" data-ownerId="@Model.OwnerId" data-type="@Model.CommentType"></i>
+                    <div class="comment-edit-btn-wrapper">
+                        @if (Model.CurrentUserId == comment.CommenterId || Model.CanPinComments)
+                        {
+                            <div class="dropdown">
+                                <button class="btn btn-link comment-dropdown-toggle" type="button" id="commentDropdown@(comment.Id)" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <svg aria-hidden="true" focusable="false" class="kebab-horizontal" viewBox="0 0 16 16" width="16" height="16" fill="currentColor" display="inline-block" overflow="visible" style="vertical-align: text-bottom;">
+                                        <path d="M8 9a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3ZM1.5 9a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Zm13 0a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z"></path>
+                                    </svg>
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="commentDropdown@(comment.Id)">
+                                    @if (Model.CurrentUserId == comment.CommenterId)
+                                    {
+                                        <li>
+                                            <a class="dropdown-item edit-button" href="#"
+                                               data-id="@comment.Id"
+                                               data-ownerid="@Model.OwnerId"
+                                               data-type="@Model.CommentType">
+                                                <i class="fl fl-edit me-2"></i> Edit
+                                            </a>
+                                        </li>
+                                    }
+                                    @if (Model.CanPinComments)
+                                    {
+                                        @if (comment.IsPinned)
+                                        {
+                                            <li>
+                                                <a class="dropdown-item unpin-button"
+                                                   href="#"
+                                                   data-id="@comment.Id"
+                                                   data-ownerid="@Model.OwnerId"
+                                                   data-type="@Model.CommentType">
+                                                    <i class="fl fl-pin-slash me-2"></i>Unpin
+                                                </a>
+                                            </li>
+                                        }
+                                        else
+                                        {
+                                            <li>
+                                                <a class="dropdown-item pin-button"
+                                                   href="#"
+                                                   data-id="@comment.Id"
+                                                   data-ownerid="@Model.OwnerId"
+                                                   data-type="@Model.CommentType">
+                                                    <i class="fl fl-pin me-2"></i>Pin
+                                                </a>
+                                            </li>
+                                        }
+                                    }
+                                </ul>
+                            </div>
+                        }
                     </div>
                 </div>
+                @if (comment.IsPinned && comment.PinDateTime != null)
+                {
+                    <div class="d-flex justify-content-between">
+                        <div class="fw-bold commenter-name">
+                            @comment.Commenter
+                        </div>
+                    </div>
+                }
+                <div class="comment-lbl" data-id="@comment.Id">
+                    <div>
+                        @* XSS Protection is provided by the MarkdownRenderer *@
+                        @Html.Raw(comment.Comment)
+                    </div>
+                </div>
+                @if (comment.LastModificationTime != null)
+                {
+                    <div class="commented-time mt-3 fw-bold">@L["ApplicationDetails:Comments.Modified"].Value @comment.LastModificationTime?.ToString("yyyy-MM-dd h:mm tt")</div>
+                }
+                else
+                {
+                    <div class="commented-time mt-3 fw-bold">@L["ApplicationDetails:Comments.Created"].Value @comment.CreationTime.ToString("yyyy-MM-dd h:mm tt")</div>
+                }
             </div>
-        }
+
+            <div class="single-comment edit-mode" data-id="@comment.Id" style="display: none;">
+                <textarea rows="6" maxlength="@MaxCharCount" class="form-control comment-input-multiple comment-with-mention" placeholder="Update the comment" data-id="@comment.Id" id="@comment.Id">@comment.Comment</textarea>
+                <div class="comment-button-container">
+                    <i class="fl fl-cross edit-comment-cancel-button comment-btn" data-id="@comment.Id" data-ownerId="@Model.OwnerId" data-type="@Model.CommentType"></i>
+                    <i class="fl fl-tick edit-comment-save-button comment-btn" data-id="@comment.Id" data-ownerId="@Model.OwnerId" data-type="@Model.CommentType"></i>
+                </div>
+            </div>
+        </div>
     }
 </div>
 <div class="row">
