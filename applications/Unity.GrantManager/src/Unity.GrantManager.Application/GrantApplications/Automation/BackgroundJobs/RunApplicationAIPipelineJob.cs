@@ -13,6 +13,7 @@ using Volo.Abp.Domain.Repositories;
 using Volo.Abp.EventBus.Local;
 using Volo.Abp.Features;
 using Volo.Abp.MultiTenancy;
+using Volo.Abp.Uow;
 
 namespace Unity.GrantManager.GrantApplications.Automation.BackgroundJobs;
 
@@ -25,22 +26,19 @@ public class RunApplicationAIPipelineJob(
     ILocalEventBus localEventBus,
     IRepository<AIGenerationRequest, Guid> generationRequestRepository,
     ICurrentTenant currentTenant,
+    IUnitOfWorkManager unitOfWorkManager,
     ILogger<RunApplicationAIPipelineJob> logger) : AsyncBackgroundJob<RunApplicationAIPipelineJobArgs>, ITransientDependency
 {
     public override async Task ExecuteAsync(RunApplicationAIPipelineJobArgs args)
     {
         if (string.IsNullOrWhiteSpace(args.RequestKey))
         {
-            throw new ArgumentException("RequestKey is required.", nameof(args.RequestKey));
+            throw new ArgumentException("RequestKey is required.", nameof(args));
         }
 
         using (currentTenant.Change(args.TenantId))
         {
-            var request = await AIGenerationRequestJobHelper.GetLatestRequestAsync(
-                generationRequestRepository,
-                x => x.RequestKey == args.RequestKey);
-
-            await AIGenerationRequestJobHelper.MarkRunningAsync(generationRequestRepository, request);
+            await AIGenerationRequestJobHelper.MarkRunningInNewUowAsync(unitOfWorkManager, generationRequestRepository, args.RequestKey);
 
             try
             {
@@ -51,7 +49,7 @@ public class RunApplicationAIPipelineJob(
                 if (!attachmentSummariesEnabled && !applicationAnalysisEnabled && !scoringEnabled)
                 {
                     logger.LogDebug("All AI features are disabled, skipping queued AI generation for application {ApplicationId}.", args.ApplicationId);
-                    await AIGenerationRequestJobHelper.MarkCompletedAsync(generationRequestRepository, request);
+                    await AIGenerationRequestJobHelper.MarkCompletedInNewUowAsync(unitOfWorkManager, generationRequestRepository, args.RequestKey);
                     return;
                 }
 
@@ -114,11 +112,11 @@ public class RunApplicationAIPipelineJob(
                     throw analysisException;
                 }
 
-                await AIGenerationRequestJobHelper.MarkCompletedAsync(generationRequestRepository, request);
+                await AIGenerationRequestJobHelper.MarkCompletedInNewUowAsync(unitOfWorkManager, generationRequestRepository, args.RequestKey);
             }
             catch (Exception ex)
             {
-                await AIGenerationRequestJobHelper.MarkFailedAsync(generationRequestRepository, request, ex.Message);
+                await AIGenerationRequestJobHelper.MarkFailedInNewUowAsync(unitOfWorkManager, generationRequestRepository, args.RequestKey, ex.Message);
                 throw;
             }
         }

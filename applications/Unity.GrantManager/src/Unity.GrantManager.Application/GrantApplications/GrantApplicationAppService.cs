@@ -39,6 +39,8 @@ using Volo.Abp.Features;
 
 namespace Unity.GrantManager.GrantApplications;
 
+// Suppress S107: Methods should not have too many parameters
+#pragma warning disable S107 // Methods should not have too many parameters
 [Authorize]
 [Dependency(ReplaceServices = true)]
 [ExposeServices(typeof(GrantApplicationAppService), typeof(IGrantApplicationAppService))]
@@ -57,6 +59,7 @@ public class GrantApplicationAppService(
     IAIGenerationStatusAppService aiGenerationStatusAppService,
     IFeatureChecker featureChecker)
     : GrantManagerAppService, IGrantApplicationAppService
+#pragma warning restore S107 // Methods should not have too many parameters
 {
     private static readonly JsonSerializerOptions AiAnalysisReadOptions = new()
     {

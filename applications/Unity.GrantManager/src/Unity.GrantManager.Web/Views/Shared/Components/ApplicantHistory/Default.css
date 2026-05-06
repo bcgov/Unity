@@ -53,7 +53,8 @@
 /* Prevent wrapper and dt-container from generating their own scrollbars */
 #FundingHistoryTable_wrapper,
 #IssueTrackingTable_wrapper,
-#AuditHistoryTable_wrapper {
+#AuditHistoryTable_wrapper,
+#ReportsHistoryTable_wrapper {
     overflow: visible !important;
 }
 
@@ -64,7 +65,8 @@
 /* Scroll body — vertical scrollbar when many records */
 #FundingHistoryTable_wrapper .dt-scroll-body,
 #IssueTrackingTable_wrapper .dt-scroll-body,
-#AuditHistoryTable_wrapper .dt-scroll-body {
+#AuditHistoryTable_wrapper .dt-scroll-body,
+#ReportsHistoryTable_wrapper .dt-scroll-body {
     max-height: clamp(180px, calc(100vh - 540px), 350px) !important;
     overflow-y: auto !important;
     overflow-x: auto !important;

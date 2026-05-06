@@ -148,4 +148,57 @@ public class ApplicantSupplierAppService(ISiteRepository siteRepository,
         if (!applicant.SupplierId.HasValue) return null;
         return await supplierAppService.GetAsync(applicant.SupplierId.Value);
     }
+
+    [HttpGet("api/app/applicant-supplier/has-pending-payments-for-merge")]
+    public async Task<bool> HasPendingPaymentsForMergeAsync(Guid principalId, Guid nonPrincipalId)
+    {
+        if (!await FeatureChecker.IsEnabledAsync(PaymentConsts.UnityPaymentsFeature))
+        {
+            return false;
+        }
+
+        var principalAppIds = (await applicationRepository
+            .GetListAsync(a => a.ApplicantId == principalId))
+            .Select(a => a.Id)
+            .ToList();
+
+        var nonPrincipalAppIds = (await applicationRepository
+            .GetListAsync(a => a.ApplicantId == nonPrincipalId))
+            .Select(a => a.Id)
+            .ToList();
+
+        var allAppIds = principalAppIds.Concat(nonPrincipalAppIds).ToList();
+        if (allAppIds.Count == 0) return false;
+
+        var pendingPayments = await paymentRequestService
+            .GetPaymentPendingListByCorrelationIdsAsync(allAppIds);
+
+        return pendingPayments != null && pendingPayments.Count > 0;
+    }
+
+    [HttpPost("api/app/applicant-supplier/handle-supplier-after-merge")]
+    [Authorize(UnitySelector.Payment.Supplier.Update)]
+    public async Task HandleSupplierAfterMergeAsync(HandleSupplierAfterMergeDto dto)
+    {
+        await EnsureNoPendingPaymentsForApplicantAsync(dto.PrincipalId);
+        await EnsureNoPendingPaymentsForApplicantAsync(dto.NonPrincipalId);
+
+        var principal = await applicantRepository.GetAsync(dto.PrincipalId);
+        principal.SupplierId = dto.SelectedSupplierId;
+        await applicantRepository.UpdateAsync(principal);
+
+        var nonPrincipal = await applicantRepository.GetAsync(dto.NonPrincipalId);
+        nonPrincipal.SupplierId = dto.SelectedSupplierId;
+        await applicantRepository.UpdateAsync(nonPrincipal);
+
+        // Null DefaultSiteId on all applications now belonging to the principal
+        // (both transferred and pre-existing). Staff re-set per application.
+        var applications = await applicationRepository
+            .GetListAsync(a => a.ApplicantId == dto.PrincipalId);
+        foreach (var application in applications)
+        {
+            application.DefaultSiteId = null;
+            await applicationRepository.UpdateAsync(application);
+        }
+    }
 }

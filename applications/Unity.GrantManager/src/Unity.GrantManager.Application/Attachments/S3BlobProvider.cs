@@ -84,7 +84,7 @@ public partial class S3BlobProvider : BlobProviderBase, ITransientDependency
             {
                 throw new AbpValidationException("Missing ApplicationId");
             }
-            IQueryable<ApplicationAttachment> queryableAttachment = _applicationAttachmentRepository.GetQueryableAsync().Result;
+            IQueryable<ApplicationAttachment> queryableAttachment = await _applicationAttachmentRepository.GetQueryableAsync();
             ApplicationAttachment? attachment = queryableAttachment.FirstOrDefault(a => a.S3ObjectKey.Equals(s3ObjectKey) && a.ApplicationId.Equals(new Guid(attachmentTypeId.ToString())));
             if (attachment != null)
             {
@@ -97,7 +97,7 @@ public partial class S3BlobProvider : BlobProviderBase, ITransientDependency
             {
                 throw new AbpValidationException("Missing AssessmentId");
             }
-            IQueryable<AssessmentAttachment> queryableAttachment = _assessmentAttachmentRepository.GetQueryableAsync().Result;
+            IQueryable<AssessmentAttachment> queryableAttachment = await _assessmentAttachmentRepository.GetQueryableAsync();
             AssessmentAttachment? attachment = queryableAttachment.FirstOrDefault(a => a.S3ObjectKey.Equals(s3ObjectKey) && a.AssessmentId.Equals(new Guid(attachmentTypeId.ToString())));
             if (attachment != null)
             {
@@ -110,7 +110,7 @@ public partial class S3BlobProvider : BlobProviderBase, ITransientDependency
             {
                 throw new AbpValidationException("Missing ApplicantId");
             }
-            IQueryable<ApplicantAttachment> queryableAttachment = _applicantAttachmentRepository.GetQueryableAsync().Result;
+            IQueryable<ApplicantAttachment> queryableAttachment = await _applicantAttachmentRepository.GetQueryableAsync();
             ApplicantAttachment? attachment = queryableAttachment.FirstOrDefault(a => a.S3ObjectKey.Equals(s3ObjectKey) && a.ApplicantId.Equals(new Guid(attachmentTypeId.ToString())));
             if (attachment != null)
             {
