@@ -7,11 +7,11 @@ namespace Unity.AI.Requests
         [JsonPropertyName("fileName")]
         public string FileName { get; set; } = string.Empty;
 
-        [JsonPropertyName("fileContent")]
-        public byte[] FileContent { get; set; } = System.Array.Empty<byte>();
-
         [JsonPropertyName("contentType")]
         public string ContentType { get; set; } = "application/octet-stream";
+
+        [JsonPropertyName("extractedText")]
+        public string? ExtractedText { get; set; }
 
         [JsonPropertyName("promptVersion")]
         public string? PromptVersion { get; set; }
