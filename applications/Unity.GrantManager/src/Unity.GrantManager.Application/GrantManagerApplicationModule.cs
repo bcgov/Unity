@@ -1,3 +1,4 @@
+using Amazon.S3;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -47,6 +48,7 @@ using Unity.GrantManager.GrantsPortal.Configuration;
 using Unity.GrantManager.GrantsPortal.Handlers;
 using Unity.GrantManager.Messaging;
 using Unity.GrantManager.Analytics;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace Unity.GrantManager;
 
@@ -129,6 +131,18 @@ public class GrantManagerApplicationModule : AbpModule
         Configure<AbpAutoMapperOptions>(options =>
         {
             options.AddMaps<GrantManagerApplicationModule>();
+        });
+
+        context.Services.TryAddSingleton<IAmazonS3>(_ =>
+        {
+            var s3Config = new AmazonS3Config
+            {
+                RegionEndpoint = null,
+                ServiceURL = configuration["S3:Endpoint"],
+                AllowAutoRedirect = true,
+                ForcePathStyle = true
+            };
+            return new AmazonS3Client(configuration["S3:AccessKeyId"], configuration["S3:SecretAccessKey"], s3Config);
         });
 
         context.Services.AddSingleton<IAuthorizationHandler, AssessmentAuthorizationHandler>();
