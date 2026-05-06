@@ -6,7 +6,6 @@ using System.IO;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
-using Unity.AI.Extraction;
 using Unity.AI.Models;
 using Unity.AI.Prompts;
 using Unity.AI.Requests;
@@ -20,7 +19,6 @@ namespace Unity.AI.Runtime
     {
         private readonly IConfiguration _configuration;
         private readonly ILogger<OpenAIRuntimeService> _logger;
-        private readonly ITextExtractionService _textExtractionService;
         private readonly OpenAITransportService _openAITransportService;
         private readonly OpenAIConfigurationResolver _openAIConfigurationResolver;
         private const string ApplicationAnalysisPromptType = AIPromptTypes.ApplicationAnalysis;
@@ -51,13 +49,11 @@ namespace Unity.AI.Runtime
         public OpenAIRuntimeService(
             IConfiguration configuration,
             ILogger<OpenAIRuntimeService> logger,
-            ITextExtractionService textExtractionService,
             OpenAITransportService openAITransportService,
             OpenAIConfigurationResolver openAIConfigurationResolver)
         {
             _configuration = configuration;
             _logger = logger;
-            _textExtractionService = textExtractionService;
             _openAITransportService = openAITransportService;
             _openAIConfigurationResolver = openAIConfigurationResolver;
         }
@@ -132,19 +128,18 @@ namespace Unity.AI.Runtime
         {
             ArgumentNullException.ThrowIfNull(request);
             var fileName = request.FileName ?? string.Empty;
-            var fileContent = request.FileContent ?? Array.Empty<byte>();
             var contentType = request.ContentType ?? "application/octet-stream";
             var promptVersion = OpenAIPromptRenderer.ResolvePromptVersion(request.PromptVersion ?? ResolvePromptVersionSetting(AttachmentSummaryPromptType));
 
             try
             {
-                var extractedText = await _textExtractionService.ExtractTextAsync(fileName, fileContent, contentType);
+                var extractedText = request.ExtractedText;
                 var prompt = OpenAIPromptRenderer.BuildAttachmentSummarySystemPrompt(promptVersion);
 
                 var attachmentText = string.IsNullOrWhiteSpace(extractedText) ? null : extractedText;
                 if (attachmentText != null)
                 {
-                    _logger.LogDebug("Extracted {TextLength} characters from {FileName}", extractedText.Length, fileName);
+                    _logger.LogDebug("Received {TextLength} extracted characters for {FileName}", attachmentText.Length, fileName);
                 }
                 else
                 {
@@ -155,21 +150,20 @@ namespace Unity.AI.Runtime
                 {
                     name = fileName,
                     contentType,
-                    sizeBytes = fileContent.Length,
                     text = attachmentText
                 };
                 var attachment = JsonSerializer.Serialize(attachmentPayload, JsonLogOptions);
                 var contentToAnalyze = OpenAIPromptRenderer.BuildAttachmentSummaryUserPrompt(promptVersion, attachment);
 
                 await LogPromptInputAsync(AttachmentSummaryPromptType, promptVersion, prompt, contentToAnalyze);
-            var result = await GenerateWithRetryAsync(
-                () => _openAITransportService.GenerateSummaryAsync(
-                    contentToAnalyze,
-                    prompt,
-                    AttachmentSummaryCompletionTokens,
-                    operationName: AttachmentSummaryPromptType,
-                    promptVersion: promptVersion,
-                    fileName: fileName),
+                var result = await GenerateWithRetryAsync(
+                    () => _openAITransportService.GenerateSummaryAsync(
+                        contentToAnalyze,
+                        prompt,
+                        AttachmentSummaryCompletionTokens,
+                        operationName: AttachmentSummaryPromptType,
+                        promptVersion: promptVersion,
+                        fileName: fileName),
                     AIProviderPayloadValidator.IsValidAttachmentSummaryText,
                     "attachment summary");
                 await LogPromptOutputAsync(AttachmentSummaryPromptType, promptVersion, result.CaptureOutput);

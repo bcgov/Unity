@@ -26,30 +26,17 @@ namespace Unity.AI.Extraction
         private const int MaxDocxTableCellsPerRow = 50;
         private const int MaxPowerPointSlides = 200;
         private readonly ILogger<TextExtractionService> _logger;
-        private readonly Dictionary<string, Func<string, byte[], string>> _extractorsByExtension;
 
         public TextExtractionService(ILogger<TextExtractionService> logger)
         {
             _logger = logger;
-            _extractorsByExtension = new Dictionary<string, Func<string, byte[], string>>(StringComparer.OrdinalIgnoreCase)
-            {
-                [".txt"] = (_, content) => ExtractTextFromTextFile(content),
-                [".csv"] = (_, content) => ExtractTextFromTextFile(content),
-                [".json"] = (_, content) => ExtractTextFromTextFile(content),
-                [".xml"] = (_, content) => ExtractTextFromTextFile(content),
-                [".pdf"] = ExtractTextFromPdfFile,
-                [".docx"] = ExtractTextFromWordDocx,
-                [".xls"] = ExtractTextFromExcelFile,
-                [".xlsx"] = ExtractTextFromExcelFile,
-                [".pptx"] = ExtractTextFromPowerPointFile
-            };
         }
 
-        public Task<string> ExtractTextAsync(string fileName, byte[] fileContent, string contentType)
+        public Task<string> ExtractTextAsync(string fileName, Stream fileContent, string contentType)
         {
-            if (fileContent == null || fileContent.Length == 0)
+            if (fileContent == null)
             {
-                _logger.LogDebug("File content is empty for {FileName}", fileName);
+                _logger.LogDebug("File content stream is null for {FileName}", fileName);
                 return Task.FromResult(string.Empty);
             }
 
@@ -64,48 +51,23 @@ namespace Unity.AI.Extraction
                     return Task.FromResult(string.Empty);
                 }
 
-                if (_extractorsByExtension.TryGetValue(extension, out var extractor))
+                var rawText = extension switch
                 {
-                    var rawText = extractor(fileName, fileContent);
-                    return Task.FromResult(NormalizeAndLimitText(rawText, fileName));
+                    ".txt" or ".csv" or ".json" or ".xml" => ExtractTextFromTextFile(fileContent),
+                    ".pdf" => ExtractTextFromPdfFile(fileName, fileContent),
+                    ".docx" => ExtractTextFromWordDocx(fileName, fileContent),
+                    ".xls" or ".xlsx" => ExtractTextFromExcelFile(fileName, fileContent),
+                    ".pptx" => ExtractTextFromPowerPointFile(fileName, fileContent),
+                    _ => ExtractByContentType(fileName, fileContent, normalizedContentType)
+                };
+
+                if (string.IsNullOrEmpty(rawText))
+                {
+                    _logger.LogDebug("No text extraction available for content type {ContentType} with extension {Extension}",
+                        contentType, extension);
                 }
 
-                if (normalizedContentType.Contains("text/"))
-                {
-                    var rawText = ExtractTextFromTextFile(fileContent);
-                    return Task.FromResult(NormalizeAndLimitText(rawText, fileName));
-                }
-
-                if (normalizedContentType.Contains("pdf"))
-                {
-                    var rawText = ExtractTextFromPdfFile(fileName, fileContent);
-                    return Task.FromResult(NormalizeAndLimitText(rawText, fileName));
-                }
-
-                if (normalizedContentType.Contains("word") ||
-                    normalizedContentType.Contains("msword") ||
-                    normalizedContentType.Contains("officedocument.wordprocessingml"))
-                {
-                    var rawText = ExtractTextFromWordDocx(fileName, fileContent);
-                    return Task.FromResult(NormalizeAndLimitText(rawText, fileName));
-                }
-
-                if (normalizedContentType.Contains("excel") || normalizedContentType.Contains("spreadsheet"))
-                {
-                    var rawText = ExtractTextFromExcelFile(fileName, fileContent);
-                    return Task.FromResult(NormalizeAndLimitText(rawText, fileName));
-                }
-
-                if (normalizedContentType.Contains("presentation") ||
-                    normalizedContentType.Contains("powerpoint"))
-                {
-                    var rawText = ExtractTextFromPowerPointFile(fileName, fileContent);
-                    return Task.FromResult(NormalizeAndLimitText(rawText, fileName));
-                }
-
-                _logger.LogDebug("No text extraction available for content type {ContentType} with extension {Extension}",
-                    contentType, extension);
-                return Task.FromResult(string.Empty);
+                return Task.FromResult(NormalizeAndLimitText(rawText, fileName));
             }
             catch (Exception ex)
             {
@@ -114,25 +76,64 @@ namespace Unity.AI.Extraction
             }
         }
 
-        private string ExtractTextFromTextFile(byte[] fileContent)
+        private string ExtractByContentType(string fileName, Stream fileContent, string normalizedContentType)
+        {
+            if (normalizedContentType.Contains("text/"))
+            {
+                return ExtractTextFromTextFile(fileContent);
+            }
+            if (normalizedContentType.Contains("pdf"))
+            {
+                return ExtractTextFromPdfFile(fileName, fileContent);
+            }
+            if (normalizedContentType.Contains("word") ||
+                normalizedContentType.Contains("msword") ||
+                normalizedContentType.Contains("officedocument.wordprocessingml"))
+            {
+                return ExtractTextFromWordDocx(fileName, fileContent);
+            }
+            if (normalizedContentType.Contains("excel") || normalizedContentType.Contains("spreadsheet"))
+            {
+                return ExtractTextFromExcelFile(fileName, fileContent);
+            }
+            if (normalizedContentType.Contains("presentation") || normalizedContentType.Contains("powerpoint"))
+            {
+                return ExtractTextFromPowerPointFile(fileName, fileContent);
+            }
+            return string.Empty;
+        }
+
+        private static void RewindIfPossible(Stream stream)
+        {
+            if (stream.CanSeek)
+            {
+                stream.Position = 0;
+            }
+        }
+
+        private string ExtractTextFromTextFile(Stream fileContent)
         {
             try
             {
-                var text = Encoding.UTF8.GetString(fileContent);
-
-                if (text.Contains('\uFFFD'))
+                RewindIfPossible(fileContent);
+                using var reader = new StreamReader(fileContent, Encoding.UTF8, detectEncodingFromByteOrderMarks: true, bufferSize: 4096, leaveOpen: true);
+                var buffer = new char[Math.Min(MaxExtractedTextLength, 8192)];
+                var builder = new StringBuilder(capacity: Math.Min(MaxExtractedTextLength, 8192));
+                int read;
+                while ((read = reader.Read(buffer, 0, buffer.Length)) > 0)
                 {
-                    text = Encoding.ASCII.GetString(fileContent);
+                    var remaining = MaxExtractedTextLength - builder.Length;
+                    if (remaining <= 0) break;
+                    builder.Append(buffer, 0, Math.Min(read, remaining));
+                    if (builder.Length >= MaxExtractedTextLength)
+                    {
+                        _logger.LogDebug("Truncated text content to {MaxLength} characters", MaxExtractedTextLength);
+                        break;
+                    }
                 }
 
-                if (text.Length > MaxExtractedTextLength)
-                {
-                    text = text.Substring(0, MaxExtractedTextLength);
-                    _logger.LogDebug("Truncated text content to {MaxLength} characters", MaxExtractedTextLength);
-                }
-
-                _logger.LogDebug("Extracted {CharacterCount} characters from text-based content.", text.Length);
-                return text;
+                _logger.LogDebug("Extracted {CharacterCount} characters from text-based content.", builder.Length);
+                return builder.ToString();
             }
             catch (Exception ex)
             {
@@ -141,12 +142,12 @@ namespace Unity.AI.Extraction
             }
         }
 
-        private string ExtractTextFromPdfFile(string fileName, byte[] fileContent)
+        private string ExtractTextFromPdfFile(string fileName, Stream fileContent)
         {
             try
             {
-                using var stream = new MemoryStream(fileContent, writable: false);
-                using var document = PdfDocument.Open(stream);
+                RewindIfPossible(fileContent);
+                using var document = PdfDocument.Open(fileContent);
                 var builder = new StringBuilder();
                 var processedPageCount = 0;
                 var pageTexts = document.GetPages()
@@ -177,12 +178,12 @@ namespace Unity.AI.Extraction
             }
         }
 
-        private string ExtractTextFromWordDocx(string fileName, byte[] fileContent)
+        private string ExtractTextFromWordDocx(string fileName, Stream fileContent)
         {
             try
             {
-                using var stream = new MemoryStream(fileContent, writable: false);
-                using var document = new XWPFDocument(stream);
+                RewindIfPossible(fileContent);
+                using var document = new XWPFDocument(fileContent);
                 var builder = new StringBuilder();
                 var processedParagraphCount = AppendDocxParagraphText(document, builder);
                 var processedTableRowCount = AppendDocxTableText(document, builder);
@@ -268,12 +269,12 @@ namespace Unity.AI.Extraction
             return processedTableRowCount;
         }
 
-        private string ExtractTextFromExcelFile(string fileName, byte[] fileContent)
+        private string ExtractTextFromExcelFile(string fileName, Stream fileContent)
         {
             try
             {
-                using var stream = new MemoryStream(fileContent, writable: false);
-                using var workbook = WorkbookFactory.Create(stream);
+                RewindIfPossible(fileContent);
+                using var workbook = WorkbookFactory.Create(fileContent);
                 var builder = new StringBuilder();
                 var sheetCount = Math.Min(workbook.NumberOfSheets, MaxExcelSheets);
                 var processedSheetCount = 0;
@@ -314,12 +315,12 @@ namespace Unity.AI.Extraction
             }
         }
 
-        private string ExtractTextFromPowerPointFile(string fileName, byte[] fileContent)
+        private string ExtractTextFromPowerPointFile(string fileName, Stream fileContent)
         {
             try
             {
-                using var stream = new MemoryStream(fileContent, writable: false);
-                using var archive = new ZipArchive(stream, ZipArchiveMode.Read, leaveOpen: false);
+                RewindIfPossible(fileContent);
+                using var archive = new ZipArchive(fileContent, ZipArchiveMode.Read, leaveOpen: true);
                 var builder = new StringBuilder();
                 var slideEntries = GetOrderedPowerPointSlideEntries(archive)
                     .Take(MaxPowerPointSlides);

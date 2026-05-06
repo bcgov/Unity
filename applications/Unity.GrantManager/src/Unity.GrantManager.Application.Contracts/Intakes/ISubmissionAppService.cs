@@ -33,4 +33,5 @@ public interface ISubmissionAppService : IApplicationService
     /// <param name="name">File name of the chefs attachment</param>
     /// <returns>BlobDto</returns>
     Task<BlobDto> GetChefsFileAttachment(Guid? formSubmissionId, Guid? chefsFileAttachmentId, string name);
+
 }
