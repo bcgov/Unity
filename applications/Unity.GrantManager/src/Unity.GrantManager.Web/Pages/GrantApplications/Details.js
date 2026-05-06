@@ -35,6 +35,17 @@ function formatOutputBody(title, sections) {
     return `${title}\n\n${content}`;
 }
 
+function getAIGenerationFailureMessage(operationType) {
+    switch (operationType) {
+        case 'attachment-summary':
+            return 'AI attachment summary failed.';
+        case 'application-scoring':
+            return 'AI application scoring failed.';
+        default:
+            return 'AI operation failed.';
+    }
+}
+
 function unwrapWhenResult(result) {
     if (
         Array.isArray(result) &&
@@ -183,17 +194,6 @@ $(function () {
 
     function hasPromptTools() {
         return $('#prompt-tools').length > 0 && $('#promptVersion').length > 0;
-    }
-
-    function getAIGenerationFailureMessage(operationType) {
-        switch (operationType) {
-            case 'attachment-summary':
-                return 'AI attachment summary failed.';
-            case 'application-scoring':
-                return 'AI application scoring failed.';
-            default:
-                return 'AI operation failed.';
-        }
     }
 
     function getPromptDataPayload() {
