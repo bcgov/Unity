@@ -111,12 +111,7 @@ namespace Unity.AI.Operations
 
                 if (applicationScoringResponse.Answers.Count > 0)
                 {
-                    var sectionJson = JsonSerializer.Serialize(applicationScoringResponse.Answers, _jsonOptions);
-                    using var sectionDoc = JsonDocument.Parse(sectionJson);
-                    foreach (var property in sectionDoc.RootElement.EnumerateObject())
-                    {
-                        sectionResults[property.Name] = property.Value.Clone();
-                    }
+                    CopyAnswers(applicationScoringResponse.Answers, sectionResults);
                 }
             }
             catch (Exception ex)
@@ -153,12 +148,7 @@ namespace Unity.AI.Operations
 
                 if (applicationScoringResponse.Answers.Count > 0)
                 {
-                    var sectionJson = JsonSerializer.Serialize(applicationScoringResponse.Answers, _jsonOptions);
-                    using var sectionDoc = JsonDocument.Parse(sectionJson);
-                    foreach (var property in sectionDoc.RootElement.EnumerateObject())
-                    {
-                        sectionResults[property.Name] = property.Value.Clone();
-                    }
+                    CopyAnswers(applicationScoringResponse.Answers, sectionResults);
                 }
             }
             catch (Exception ex)
@@ -188,6 +178,16 @@ namespace Unity.AI.Operations
             }
 
             return sectionQuestionsData;
+        }
+
+        private void CopyAnswers(Dictionary<string, ApplicationScoringAnswer> answers, Dictionary<string, object> results)
+        {
+            var answersJson = JsonSerializer.Serialize(answers, _jsonOptions);
+            using var answersDoc = JsonDocument.Parse(answersJson);
+            foreach (var property in answersDoc.RootElement.EnumerateObject())
+            {
+                results[property.Name] = property.Value.Clone();
+            }
         }
 
         private async Task<string?> GetFormSchemaAsync(Guid? formVersionId)
