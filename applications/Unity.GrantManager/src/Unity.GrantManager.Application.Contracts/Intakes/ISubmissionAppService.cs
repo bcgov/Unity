@@ -34,9 +34,4 @@ public interface ISubmissionAppService : IApplicationService
     /// <returns>BlobDto</returns>
     Task<BlobDto> GetChefsFileAttachment(Guid? formSubmissionId, Guid? chefsFileAttachmentId, string name);
 
-    /// <summary>
-    /// Get a CHEFS file attachment as a Stream backed by a temp file (deleted on close).
-    /// Avoids buffering the full file in managed memory.
-    /// </summary>
-    Task<ChefsFileAttachmentStream> GetChefsFileAttachmentStream(Guid? formSubmissionId, Guid? chefsFileAttachmentId, string name);
 }

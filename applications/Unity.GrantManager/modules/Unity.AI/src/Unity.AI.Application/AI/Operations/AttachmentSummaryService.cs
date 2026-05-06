@@ -13,7 +13,7 @@ namespace Unity.AI.Operations;
 
 public class AttachmentSummaryService(
     IApplicationChefsFileAttachmentRepository applicationChefsFileAttachmentRepository,
-    ISubmissionAppService submissionAppService,
+    IChefsFileAttachmentStreamProvider chefsFileAttachmentStreamProvider,
     ITextExtractionService textExtractionService,
     IAIService aiService,
     ILogger<AttachmentSummaryService> logger) : IAttachmentSummaryService, ITransientDependency
@@ -84,7 +84,7 @@ public class AttachmentSummaryService(
 
         try
         {
-            var stream = await submissionAppService.GetChefsFileAttachmentStream(submissionId, fileId, fileName);
+            var stream = await chefsFileAttachmentStreamProvider.OpenAsync(submissionId, fileId, fileName);
             return stream ?? ChefsFileAttachmentStream.Empty;
         }
         catch (Exception ex)
