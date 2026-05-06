@@ -328,7 +328,7 @@ export class ApplicationDetailsPage extends BasePage {
       .clear({ force: true })
       .type(supplierNumber, { force: true })
       .trigger("change")
-      .blur();
+      .blur({ force: true });
     return this;
   }
 
@@ -344,11 +344,30 @@ export class ApplicationDetailsPage extends BasePage {
    * Click Payment Info Save button
    */
   clickPaymentInfoSave(): this {
-    cy.get("#nav-payment-info", { timeout: 20000 })
-      .contains("button", "Save")
+    cy.intercept("PUT", "**/api/app/grant-application/supplier-number/**").as("saveSupplierNumber");
+    cy.get("#savePaymentInfoBtn", { timeout: 20000 })
+      .should("be.visible")
       .click({ force: true });
-    // Wait briefly for save to process
-    cy.wait(1000);
+    cy.wait("@saveSupplierNumber");
+    return this;
+  }
+
+  /**
+   * Click the Refresh Site List button and dismiss the "Action Complete" confirmation modal.
+   * Must be on the Payment Info tab before calling.
+   */
+  clickRefreshSiteList(): this {
+    cy.contains("Refresh Site List", { timeout: 20000 })
+      .should("be.visible")
+      .click({ force: true });
+
+    // Dismiss the "Action Complete" modal that always appears after refresh
+    cy.contains("button", "Ok", { timeout: 20000 })
+      .should("be.visible")
+      .click({ force: true });
+
+    // Wait for the modal to be gone before checking the table
+    cy.contains("Action Complete").should("not.exist");
     return this;
   }
 
