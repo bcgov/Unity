@@ -35,6 +35,17 @@ function formatOutputBody(title, sections) {
     return `${title}\n\n${content}`;
 }
 
+function getAIGenerationFailureMessage(operationType) {
+    switch (operationType) {
+        case 'attachment-summary':
+            return 'AI attachment summary failed.';
+        case 'application-scoring':
+            return 'AI application scoring failed.';
+        default:
+            return 'AI operation failed.';
+    }
+}
+
 function unwrapWhenResult(result) {
     if (
         Array.isArray(result) &&
@@ -164,14 +175,14 @@ $(function () {
     ]);
 
     globalThis.getSelectedPromptVersion = function() {
-        return $('#devPromptVersion').val() || null;
+        return $('#promptVersion').val() || null;
     };
 
-    function setDevAiOutput(selector, value) {
+    function setPromptToolsOutput(selector, value) {
         $(selector).val(value || '');
     }
 
-    function setDevAiOutputTimestamp(selector, value) {
+    function setPromptToolsTimestamp(selector, value) {
         $(selector).text(value ? `(${value})` : '');
     }
 
@@ -179,6 +190,10 @@ $(function () {
         return $('#ApplicationScoresheetSchemaJson').val() ||
             $('#AssessmentScoresheetSchemaJson').val() ||
             '';
+    }
+
+    function hasPromptTools() {
+        return $('#prompt-tools').length > 0 && $('#promptVersion').length > 0;
     }
 
     function getPromptDataPayload() {
@@ -267,7 +282,7 @@ $(function () {
     function formatAttachmentAiOutput(attachments) {
         const attachmentBody = formatAttachmentSummaryBody(attachments);
         if (!attachmentBody) {
-            setDevAiOutputTimestamp('#attachmentAiOutputTimestamp', '');
+            setPromptToolsTimestamp('#attachmentOutputTimestamp', '');
             return '';
         }
 
@@ -284,20 +299,24 @@ $(function () {
             .sort()
             .at(-1);
 
-        setDevAiOutputTimestamp('#attachmentAiOutputTimestamp', formatTimestamp(latestTimestamp));
+        setPromptToolsTimestamp('#attachmentOutputTimestamp', formatTimestamp(latestTimestamp));
         return attachmentBody;
     }
 
-    function loadDevAiOutputs() {
+    function loadPromptToolsOutputs() {
+        if (!hasPromptTools()) {
+            return;
+        }
+
         const applicationId = $('#DetailsViewApplicationId').val();
 
         if (!applicationId) {
-            setDevAiOutput('#analysisAiOutput', '');
-            setDevAiOutput('#scoringAiOutput', '');
-            setDevAiOutput('#attachmentAiOutput', '');
-            setDevAiOutputTimestamp('#analysisAiOutputTimestamp', '');
-            setDevAiOutputTimestamp('#scoringAiOutputTimestamp', '');
-            setDevAiOutputTimestamp('#attachmentAiOutputTimestamp', '');
+            setPromptToolsOutput('#analysisOutput', '');
+            setPromptToolsOutput('#scoringOutput', '');
+            setPromptToolsOutput('#attachmentOutput', '');
+            setPromptToolsTimestamp('#analysisOutputTimestamp', '');
+            setPromptToolsTimestamp('#scoringOutputTimestamp', '');
+            setPromptToolsTimestamp('#attachmentOutputTimestamp', '');
             return;
         }
 
@@ -311,10 +330,10 @@ $(function () {
                 const updatedAt = application?.lastModificationTime || application?.creationTime || null;
                 const formattedUpdatedAt = formatTimestamp(updatedAt);
                 const attachmentSection = formatSectionBody('ATTACHMENTS', formatAttachmentSummaryJson(attachments));
-                setDevAiOutputTimestamp('#analysisAiOutputTimestamp', formattedUpdatedAt);
-                setDevAiOutputTimestamp('#scoringAiOutputTimestamp', formattedUpdatedAt);
-                setDevAiOutput(
-                    '#analysisAiOutput',
+                setPromptToolsTimestamp('#analysisOutputTimestamp', formattedUpdatedAt);
+                setPromptToolsTimestamp('#scoringOutputTimestamp', formattedUpdatedAt);
+                setPromptToolsOutput(
+                    '#analysisOutput',
                     formatOutputBody('APPLICATION ANALYSIS', [
                         formatSectionBody('DATA', getPromptDataPayload()),
                         attachmentSection,
@@ -324,8 +343,8 @@ $(function () {
                         )
                     ])
                 );
-                setDevAiOutput(
-                    '#scoringAiOutput',
+                setPromptToolsOutput(
+                    '#scoringOutput',
                     formatOutputBody('APPLICATION SCORING', [
                         formatSectionBody('SCORESHEET', formatJsonOrRaw(getScoresheetSchemaJson())),
                         formatSectionBody('DATA', getPromptDataPayload()),
@@ -336,18 +355,18 @@ $(function () {
                         )
                     ])
                 );
-                setDevAiOutput(
-                    '#attachmentAiOutput',
+                setPromptToolsOutput(
+                    '#attachmentOutput',
                     formatOutputBody('ATTACHMENT SUMMARY', [formatAttachmentAiOutput(attachments)])
                 );
             })
             .fail(function() {
-                setDevAiOutput('#analysisAiOutput', '');
-                setDevAiOutput('#scoringAiOutput', '');
-                setDevAiOutput('#attachmentAiOutput', '');
-                setDevAiOutputTimestamp('#analysisAiOutputTimestamp', '');
-                setDevAiOutputTimestamp('#scoringAiOutputTimestamp', '');
-                setDevAiOutputTimestamp('#attachmentAiOutputTimestamp', '');
+                setPromptToolsOutput('#analysisOutput', '');
+                setPromptToolsOutput('#scoringOutput', '');
+                setPromptToolsOutput('#attachmentOutput', '');
+                setPromptToolsTimestamp('#analysisOutputTimestamp', '');
+                setPromptToolsTimestamp('#scoringOutputTimestamp', '');
+                setPromptToolsTimestamp('#attachmentOutputTimestamp', '');
             });
     }
 
@@ -367,24 +386,25 @@ $(function () {
                 .getAIGenerationStatus(applicationId, operationType, promptVersion)
                 .done(function(request) {
                     const statusText = globalThis.AIGenerationButtonState?.resolveStatus(request?.status) ?? '';
-                if (statusText === 'Failed') {
-                    stopAIGenerationPolling();
-                    globalThis.AIGenerationButtonState?.restore(restoreButton);
-                    restoreButton.html(originalHtml).prop('disabled', false);
-                    loadDevAiOutputs();
-                    abp.message.error(request?.failureReason || 'AI generate all failed.');
-                    return;
-                }
 
-                if (!request || request.isActive === false || statusText === 'Completed') {
-                    stopAIGenerationPolling();
-                    setDevAiOutputTimestamp('#analysisAiOutputTimestamp', request?.completedAt || request?.startedAt || null);
-                    setDevAiOutputTimestamp('#scoringAiOutputTimestamp', request?.completedAt || request?.startedAt || null);
-                    loadDevAiOutputs();
-                    globalThis.AIGenerationButtonState?.setCompleted(restoreButton);
-                    restoreButton.html('<span class="ai-button-content"><span>Completed</span></span>').prop('disabled', true);
-                    return;
-                }
+                    if (statusText === 'Failed') {
+                        stopAIGenerationPolling();
+                        globalThis.AIGenerationButtonState?.restore(restoreButton);
+                        restoreButton.html(originalHtml).prop('disabled', false);
+                        loadPromptToolsOutputs();
+                        abp.message.error(request?.failureReason || getAIGenerationFailureMessage(operationType));
+                        return;
+                    }
+
+                    if (!request || request.isActive === false || statusText === 'Completed') {
+                        stopAIGenerationPolling();
+                        setPromptToolsTimestamp('#analysisOutputTimestamp', request?.completedAt || request?.startedAt || null);
+                        setPromptToolsTimestamp('#scoringOutputTimestamp', request?.completedAt || request?.startedAt || null);
+                        loadPromptToolsOutputs();
+                        globalThis.AIGenerationButtonState?.setCompleted(restoreButton);
+                        restoreButton.html('<span class="ai-button-content"><span>Completed</span></span>').prop('disabled', true);
+                        return;
+                    }
 
                     aiGenerationPollTimeoutId = setTimeout(poll, aiGenerationPollIntervalMs);
                 })
@@ -463,41 +483,9 @@ $(function () {
         );
     };
 
-    globalThis.refreshDevAiOutputs = loadDevAiOutputs;
+    globalThis.refreshPromptToolsOutputs = loadPromptToolsOutputs;
 
-    globalThis.generateAllAIDevOutputs = function(triggerButton = null) {
-        const $button = triggerButton ? $(triggerButton) : $('#generateAllAiDevToolsBtn');
-        const existingHtml = $button.html();
-        const applicationId = $('#DetailsViewApplicationId').val();
-        const promptVersion = globalThis.getSelectedPromptVersion?.() || null;
-
-        if (!applicationId || $button.prop('disabled')) {
-            return;
-        }
-
-        $button
-            .html('<span class="ai-button-content"><span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span><span>Generating...</span></span>')
-            .prop('disabled', true);
-        globalThis.AIGenerationButtonState?.setGenerating($button);
-
-            unity.grantManager.grantApplications.grantApplication
-                .queueAllAIStages(applicationId, promptVersion)
-                .done(function(request) {
-                    pollAIGenerationStatus(applicationId, 'pipeline', promptVersion, $button, existingHtml);
-                })
-            .fail(function() {
-                abp.message.error('Failed to queue AI generate all. Please try again.');
-                globalThis.AIGenerationButtonState?.restore($button);
-                $button.html(existingHtml).prop('disabled', false);
-            })
-            ;
-    };
-
-    $('#generateAllAiDevToolsBtn').on('click', function() {
-        globalThis.generateAllAIDevOutputs(this);
-    });
-
-    $(document).on('click', '.ai-dev-output-copy-btn', async function () {
+    $(document).on('click', '.prompt-tools-output-copy-btn', async function () {
         const targetSelector = $(this).data('target');
         const text = $(targetSelector).val();
 
@@ -543,7 +531,7 @@ $(function () {
         updateLinksCounters();
         renderSubmission();
         loadAIAnalysis();
-        loadDevAiOutputs();
+        loadPromptToolsOutputs();
         applyTabHeightOffset();
     }
 
@@ -831,11 +819,11 @@ $(function () {
     PubSub.subscribe('refresh_assessment_scores', (msg, data) => {
         assessmentScoresWidgetManager.refresh();
         updateSubtotal();
-        loadDevAiOutputs();
+        loadPromptToolsOutputs();
     });
 
     PubSub.subscribe('refresh_chefs_attachment_list', () => {
-        loadDevAiOutputs();
+        loadPromptToolsOutputs();
     });
 
     PubSub.subscribe('select_application_review', (msg, data) => {
