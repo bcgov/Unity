@@ -2,9 +2,11 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Threading.Tasks;
 using Unity.GrantManager.GrantApplications;
+using Unity.GrantManager.GrantApplications.Automation.Events;
 using Volo.Abp.BackgroundJobs;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Repositories;
+using Volo.Abp.EventBus.Local;
 using Volo.Abp.MultiTenancy;
 using Volo.Abp.Uow;
 
@@ -15,6 +17,7 @@ public class GenerateApplicationScoringJob(
     IRepository<AIGenerationRequest, Guid> generationRequestRepository,
     ICurrentTenant currentTenant,
     IUnitOfWorkManager unitOfWorkManager,
+    ILocalEventBus localEventBus,
     ILogger<GenerateApplicationScoringJob> logger) : AsyncBackgroundJob<GenerateApplicationScoringBackgroundJobArgs>, ITransientDependency
 {
     public override async Task ExecuteAsync(GenerateApplicationScoringBackgroundJobArgs args)
@@ -25,7 +28,14 @@ public class GenerateApplicationScoringJob(
             try
             {
                 logger.LogInformation("Executing AI application scoring job for application {ApplicationId}.", args.ApplicationId);
-                await applicationScoringAppService.GenerateApplicationScoringAsync(args.ApplicationId, args.PromptVersion);
+                var result = await applicationScoringAppService.GenerateApplicationScoringForPipelineAsync(args.ApplicationId, args.PromptVersion);
+                if (result.Completed)
+                {
+                    await localEventBus.PublishAsync(new ApplicationAIScoringGeneratedEvent
+                    {
+                        ApplicationId = args.ApplicationId
+                    });
+                }
                 logger.LogInformation("Completed AI application scoring job for application {ApplicationId}.", args.ApplicationId);
                 await AIGenerationRequestJobHelper.MarkCompletedInNewUowAsync(unitOfWorkManager, generationRequestRepository, args.RequestKey);
             }
