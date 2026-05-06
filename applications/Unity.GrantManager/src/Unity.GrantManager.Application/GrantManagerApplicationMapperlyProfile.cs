@@ -540,6 +540,7 @@ public partial class ApplicationActionResultItemToDtoMapper : MapperBase<Applica
 [Mapper(AllowNullPropertyAssignment = true)]
 public partial class ApplicantToGrantApplicationApplicantDtoMapper : MapperBase<Applicant, GrantApplicationApplicantDto>
 {
+    [MapProperty(nameof(Applicant.Id), nameof(GrantApplicationApplicantDto.Id))]
     [MapperIgnoreTarget(nameof(GrantApplicationApplicantDto.SiteId))]
     [MapperIgnoreTarget(nameof(GrantApplicationApplicantDto.ElectoralDistrict))]
     [MapPropertyFromSource(nameof(GrantApplicationApplicantDto.FiscalDay), Use = nameof(ResolveFiscalDay))]
@@ -547,6 +548,7 @@ public partial class ApplicantToGrantApplicationApplicantDtoMapper : MapperBase<
     [MapPropertyFromSource(nameof(GrantApplicationApplicantDto.RedStop), Use = nameof(ResolveRedStop))]
     public override partial GrantApplicationApplicantDto Map(Applicant source);
 
+    [MapProperty(nameof(Applicant.Id), nameof(GrantApplicationApplicantDto.Id))]
     [MapperIgnoreTarget(nameof(GrantApplicationApplicantDto.SiteId))]
     [MapperIgnoreTarget(nameof(GrantApplicationApplicantDto.ElectoralDistrict))]
     [MapPropertyFromSource(nameof(GrantApplicationApplicantDto.FiscalDay), Use = nameof(ResolveFiscalDay))]
