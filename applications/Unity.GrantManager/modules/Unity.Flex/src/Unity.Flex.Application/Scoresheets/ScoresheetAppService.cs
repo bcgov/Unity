@@ -3,6 +3,7 @@ using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Unity.Flex.Domain.Scoresheets;
 using Unity.Flex.Domain.Settings;
@@ -25,8 +26,8 @@ namespace Unity.Flex.Scoresheets
         IReportingFieldsGeneratorService<Scoresheet> reportingFieldsGeneratorService,
         IFeatureChecker featureChecker) : FlexAppService, IScoresheetAppService
     {
-        private readonly static object _sectionLockObject = new();
-        private readonly static object _questionLockObject = new();
+        private static readonly SemaphoreSlim _sectionLock = new SemaphoreSlim(1, 1);
+        private static readonly SemaphoreSlim _questionLock = new SemaphoreSlim(1, 1);
 
         public async Task<List<ScoresheetDto>> GetListAsync()
         {
@@ -55,15 +56,20 @@ namespace Unity.Flex.Scoresheets
         {
             await ValidateChangeableScoresheet(scoresheetId);
 
-            lock (_questionLockObject)
+            await _questionLock.WaitAsync();
+            try
             {
-                ScoresheetSection highestOrderSection = sectionRepository.GetSectionWithHighestOrderAsync(scoresheetId, true).Result ?? throw new AbpValidationException("Scoresheet has no section.");
+                ScoresheetSection highestOrderSection = await sectionRepository.GetSectionWithHighestOrderAsync(scoresheetId, true) ?? throw new AbpValidationException("Scoresheet has no section.");
                 uint highestOrder = (highestOrderSection.Fields != null && highestOrderSection.Fields.Count > 0) ? highestOrderSection.Fields.Max(q => q.Order) : 0;
                 var order = highestOrder + 1;
                 var newQuestion = new Question(Guid.NewGuid(), dto.Name.Trim(), dto.Label, (QuestionType)dto.QuestionType, order, dto.Description, highestOrderSection.Id, dto.Definition);
                 highestOrderSection.AddQuestion(newQuestion);
-                _ = sectionRepository.UpdateAsync(highestOrderSection).Result;
+                await sectionRepository.UpdateAsync(highestOrderSection);
                 return ObjectMapper.Map<Question, QuestionDto>(newQuestion);
+            }
+            finally
+            {
+                _questionLock.Release();
             }
         }
 
@@ -71,15 +77,20 @@ namespace Unity.Flex.Scoresheets
         {
             await ValidateChangeableScoresheet(scoresheetId);
 
-            lock (_sectionLockObject)
+            await _sectionLock.WaitAsync();
+            try
             {
-                ScoresheetSection? highestOrderSection = sectionRepository.GetSectionWithHighestOrderAsync(scoresheetId, true).Result;
+                ScoresheetSection? highestOrderSection = await sectionRepository.GetSectionWithHighestOrderAsync(scoresheetId, true);
                 var order = highestOrderSection == null ? 0 : highestOrderSection.Order + 1;
-                var scoresheet = scoresheetRepository.GetAsync(scoresheetId, true).Result;
+                var scoresheet = await scoresheetRepository.GetAsync(scoresheetId, true);
                 ScoresheetSection newSection = new(Guid.NewGuid(), dto.Name.Trim(), order);
                 _ = scoresheet.AddSection(newSection);
-                _ = scoresheetRepository.UpdateAsync(scoresheet).Result;
+                await scoresheetRepository.UpdateAsync(scoresheet);
                 return ObjectMapper.Map<ScoresheetSection, ScoresheetSectionDto>(newSection);
+            }
+            finally
+            {
+                _sectionLock.Release();
             }
         }
 

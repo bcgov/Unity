@@ -182,7 +182,7 @@ public class EmailConsumer(
         {
             response.StatusCode,
             Headers = response.Headers?.ToString(),
-            Body = response.Content != null ? response.Content.ReadAsStringAsync().Result : null
+            Body = response.Content != null ? await response.Content.ReadAsStringAsync() : null
         });
 
         log.ChesHttpStatusCode = response.StatusCode.ToString("D");

@@ -1,5 +1,5 @@
 const l = abp.localization.getResource('GrantManager');
-const pageApplicationId = decodeURIComponent(document.querySelector("#DetailsViewApplicationId").value);
+const pageApplicationId = decodeURIComponent(document.querySelector("#DetailsViewApplicationId")?.value ?? '');
 const isAiScoringEnabled = document.querySelector("#ReviewListAIScoringEnabled")?.value === 'True';
 const canUseAiScoring = isAiScoringEnabled;
 
@@ -367,7 +367,7 @@ function renderApproval(data) {
     }
 }
 async function getActionButtonConfigMap() {
-    let applicationId = document.getElementById('DetailsViewApplicationId').value;
+    let applicationId = document.getElementById('DetailsViewApplicationId')?.value;
     let applicationStatus = await unity.grantManager.grantApplications.grantApplication.getApplicationStatus(applicationId).then(data => {
         return data;
     });

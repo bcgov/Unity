@@ -679,6 +679,9 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .HasColumnType("text")
                         .HasColumnName("ExtraProperties");
 
+                    b.Property<bool>("IsArchived")
+                        .HasColumnType("boolean");
+
                     b.Property<bool>("IsDeleted")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
@@ -699,11 +702,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
 
                     b.Property<bool>("Published")
                         .HasColumnType("boolean");
-
-                    b.Property<bool>("IsArchived")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(false);
 
                     b.Property<string>("ReportColumns")
                         .IsRequired()
@@ -747,6 +745,9 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .HasColumnType("uuid")
                         .HasColumnName("CreatorId");
 
+                    b.Property<string>("Definition")
+                        .HasColumnType("jsonb");
+
                     b.Property<Guid?>("DeleterId")
                         .HasColumnType("uuid")
                         .HasColumnName("DeleterId");
@@ -775,9 +776,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
 
                     b.Property<long>("Order")
                         .HasColumnType("bigint");
-
-                    b.Property<string>("Definition")
-                        .HasColumnType("jsonb");
 
                     b.Property<Guid?>("TenantId")
                         .HasColumnType("uuid")
@@ -884,6 +882,9 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
 
                     b.Property<bool?>("RedStop")
                         .HasColumnType("boolean");
+
+                    b.Property<string>("ReportsComments")
+                        .HasColumnType("text");
 
                     b.Property<string>("Sector")
                         .HasColumnType("text");
@@ -2362,6 +2363,68 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.HasIndex("ApplicantId");
 
                     b.ToTable("IssueTrackings", (string)null);
+                });
+
+            modelBuilder.Entity("Unity.GrantManager.Applications.ReportsHistory", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("ApplicantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("ConcurrencyStamp");
+
+                    b.Property<DateTime>("CreationTime")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("CreationTime");
+
+                    b.Property<Guid?>("CreatorId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("CreatorId");
+
+                    b.Property<string>("ExtraProperties")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("ExtraProperties");
+
+                    b.Property<string>("FiscalYear")
+                        .HasColumnType("text");
+
+                    b.Property<bool?>("IncompleteReport")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime?>("LastModificationTime")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("LastModificationTime");
+
+                    b.Property<Guid?>("LastModifierId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("LastModifierId");
+
+                    b.Property<string>("Note")
+                        .HasColumnType("text");
+
+                    b.Property<bool?>("Outstanding")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime?>("ReportDate")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<Guid?>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("TenantId");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ApplicantId");
+
+                    b.ToTable("ReportsHistories", (string)null);
                 });
 
             modelBuilder.Entity("Unity.GrantManager.Assessments.Assessment", b =>
@@ -4670,6 +4733,13 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                 });
 
             modelBuilder.Entity("Unity.GrantManager.Applications.IssueTracking", b =>
+                {
+                    b.HasOne("Unity.GrantManager.Applications.Applicant", null)
+                        .WithMany()
+                        .HasForeignKey("ApplicantId");
+                });
+
+            modelBuilder.Entity("Unity.GrantManager.Applications.ReportsHistory", b =>
                 {
                     b.HasOne("Unity.GrantManager.Applications.Applicant", null)
                         .WithMany()
