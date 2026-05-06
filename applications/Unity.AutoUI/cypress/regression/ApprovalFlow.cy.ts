@@ -252,6 +252,17 @@ const APPLICATIONS_PATH = "GrantApplications";
       }
 
       if ($body.find(".modal.show").length > 0) {
+        // Actively close the modal — a leftover from a retry can keep it open indefinitely.
+        // Try the modal's own close button first; fall back to Escape so Bootstrap
+        // can run its hide animation before we assert the element is gone.
+        const $closeBtn = $body.find(
+          ".modal.show .btn-close, .modal.show [data-bs-dismiss='modal'], .modal.show button.close",
+        );
+        if ($closeBtn.length > 0) {
+          cy.wrap($closeBtn.first()).click({ force: true });
+        } else {
+          cy.get("body").type("{esc}", { force: true });
+        }
         cy.get(".modal.show", { timeout: 20000 }).should("not.exist");
         cy.get(".modal-backdrop", { timeout: 20000 }).should("not.exist");
       }

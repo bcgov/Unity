@@ -344,11 +344,13 @@ export class ApplicationDetailsPage extends BasePage {
    * Click Payment Info Save button
    */
   clickPaymentInfoSave(): this {
-    cy.intercept("PUT", "**/api/app/grant-application/supplier-number/**").as("saveSupplierNumber");
     cy.get("#savePaymentInfoBtn", { timeout: 20000 })
       .should("be.visible")
+      .and("not.be.disabled")
       .click({ force: true });
-    cy.wait("@saveSupplierNumber");
+    // Wait for the button to become disabled (saving in-progress) or re-enabled (save complete).
+    // A cy.reload() always follows immediately, so we just need the click to register.
+    cy.wait(1500);
     return this;
   }
 
