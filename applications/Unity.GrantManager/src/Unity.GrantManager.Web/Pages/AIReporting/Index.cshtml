@@ -1,23 +1,15 @@
 @page
 @model Unity.GrantManager.Web.Pages.AIReporting.IndexModel
-@using Unity.Modules.Shared.Permissions
-@using Volo.Abp.Features
-@inject IFeatureChecker FeatureChecker
-
-@{
-    var canViewAiReporting = await FeatureChecker.IsEnabledAsync("Unity.AIReporting")
-        || User.IsInRole(IdentityConsts.ITAdminRoleName);
-}
 
 @section styles {
-    @if (canViewAiReporting)
+    @if (Model.CanViewAiReporting)
     {
         <abp-style src="/Pages/AIReporting/Index.css" />
     }
 }
 
 @section scripts {
-    @if (canViewAiReporting)
+    @if (Model.CanViewAiReporting)
     {
         <script>
             window.reportingAiApiBaseUrl = @Json.Serialize(Model.ReportingAiApiBaseUrl);
@@ -26,7 +18,7 @@
     }
 }
 
-@if (canViewAiReporting)
+@if (Model.CanViewAiReporting)
 {
 <div id="ai-reporting-root" class="outer-container">
 
