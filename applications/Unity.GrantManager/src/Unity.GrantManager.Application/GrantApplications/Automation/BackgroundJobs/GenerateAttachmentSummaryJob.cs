@@ -32,8 +32,8 @@ public class GenerateAttachmentSummaryJob(
                     args.ApplicationId);
                 await attachmentSummaryService.GenerateForApplicationAsync(args.ApplicationId, args.PromptVersion);
 
-                var creatorId = await AIGenerationRequestJobHelper.MarkCompletedInNewUowAndGetCreatorIdAsync(unitOfWorkManager, generationRequestRepository, args.RequestKey);
-                await aiRateLimiter.StampAsync(creatorId);
+                await AIGenerationRequestJobHelper.MarkCompletedInNewUowAsync(unitOfWorkManager, generationRequestRepository, args.RequestKey);
+                await aiRateLimiter.StampAsync(args.RequestedByUserId);
             }
             catch (Exception ex)
             {

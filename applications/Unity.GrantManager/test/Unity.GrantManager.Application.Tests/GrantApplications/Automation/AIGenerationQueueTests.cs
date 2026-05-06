@@ -13,6 +13,7 @@ using Unity.GrantManager.GrantApplications.Automation.BackgroundJobs;
 using Volo.Abp.BackgroundJobs;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.DistributedLocking;
+using Volo.Abp.Users;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -50,6 +51,7 @@ public class AIGenerationQueueTests(ITestOutputHelper outputHelper) : GrantManag
         capturedArgs!.ApplicationId.ShouldBe(applicationId);
         capturedArgs.TenantId.ShouldBe(tenantId);
         capturedArgs.PromptVersion.ShouldBe("v1");
+        capturedArgs.RequestedByUserId.ShouldBe(CreateQueueCurrentUserId);
         capturedArgs.RequestKey.ShouldBe(AIGenerationRequestKeyHelper.BuildRequestKey(tenantId, applicationId, AIGenerationRequestKeyHelper.PipelineOperationType));
         await backgroundJobManager.Received(1).EnqueueAsync(Arg.Any<RunApplicationAIPipelineJobArgs>(), Arg.Any<BackgroundJobPriority>(), Arg.Any<TimeSpan?>());
         await repository.Received(1).InsertAsync(Arg.Is<AIGenerationRequest>(r =>
@@ -120,6 +122,7 @@ public class AIGenerationQueueTests(ITestOutputHelper outputHelper) : GrantManag
         capturedArgs!.ApplicationId.ShouldBe(applicationId);
         capturedArgs.TenantId.ShouldBe(tenantId);
         capturedArgs.PromptVersion.ShouldBe(promptVersion);
+        capturedArgs.RequestedByUserId.ShouldBe(CreateQueueCurrentUserId);
         capturedArgs.RequestKey.ShouldBe(AIGenerationRequestKeyHelper.BuildRequestKey(tenantId, applicationId, AIGenerationRequestKeyHelper.ApplicationAnalysisOperationType));
         await repository.Received(1).InsertAsync(Arg.Is<AIGenerationRequest>(r =>
             r.ApplicationId == applicationId &&
@@ -186,6 +189,7 @@ public class AIGenerationQueueTests(ITestOutputHelper outputHelper) : GrantManag
         capturedArgs!.ApplicationId.ShouldBe(applicationId);
         capturedArgs.TenantId.ShouldBe(tenantId);
         capturedArgs.PromptVersion.ShouldBe(promptVersion);
+        capturedArgs.RequestedByUserId.ShouldBe(CreateQueueCurrentUserId);
         capturedArgs.RequestKey.ShouldBe(AIGenerationRequestKeyHelper.BuildRequestKey(tenantId, applicationId, AIGenerationRequestKeyHelper.AttachmentSummaryOperationType));
         await repository.Received(1).InsertAsync(Arg.Is<AIGenerationRequest>(r =>
             r.ApplicationId == applicationId &&
@@ -252,6 +256,7 @@ public class AIGenerationQueueTests(ITestOutputHelper outputHelper) : GrantManag
         capturedArgs!.ApplicationId.ShouldBe(applicationId);
         capturedArgs.TenantId.ShouldBe(tenantId);
         capturedArgs.PromptVersion.ShouldBe(promptVersion);
+        capturedArgs.RequestedByUserId.ShouldBe(CreateQueueCurrentUserId);
         capturedArgs.RequestKey.ShouldBe(AIGenerationRequestKeyHelper.BuildRequestKey(tenantId, applicationId, AIGenerationRequestKeyHelper.ApplicationScoringOperationType));
         await repository.Received(1).InsertAsync(Arg.Is<AIGenerationRequest>(r =>
             r.ApplicationId == applicationId &&
@@ -310,6 +315,16 @@ public class AIGenerationQueueTests(ITestOutputHelper outputHelper) : GrantManag
             repository,
             new TestDistributedLockProvider(),
             rateLimiter,
+            CreateCurrentUser(),
             Substitute.For<ILogger<ApplicationAIGenerationQueue>>());
+    }
+
+    private static readonly Guid CreateQueueCurrentUserId = Guid.NewGuid();
+
+    private static ICurrentUser CreateCurrentUser()
+    {
+        var currentUser = Substitute.For<ICurrentUser>();
+        currentUser.Id.Returns(CreateQueueCurrentUserId);
+        return currentUser;
     }
 }

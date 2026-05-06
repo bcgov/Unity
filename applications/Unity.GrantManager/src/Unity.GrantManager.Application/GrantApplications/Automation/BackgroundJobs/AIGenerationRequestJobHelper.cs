@@ -61,7 +61,7 @@ public static class AIGenerationRequestJobHelper
         await uow.CompleteAsync();
     }
 
-    public static async Task<Guid?> MarkCompletedInNewUowAndGetCreatorIdAsync(
+    public static async Task MarkCompletedInNewUowAsync(
         IUnitOfWorkManager unitOfWorkManager,
         IRepository<AIGenerationRequest, Guid> generationRequestRepository,
         string requestKey)
@@ -70,7 +70,6 @@ public static class AIGenerationRequestJobHelper
         var request = await GetLatestRequestAsync(generationRequestRepository, x => x.RequestKey == requestKey);
         await MarkCompletedAsync(generationRequestRepository, request);
         await uow.CompleteAsync();
-        return request?.CreatorId;
     }
 
     public static async Task MarkFailedInNewUowAsync(

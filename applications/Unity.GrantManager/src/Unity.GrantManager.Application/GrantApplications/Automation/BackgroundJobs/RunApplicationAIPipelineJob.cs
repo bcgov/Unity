@@ -51,8 +51,8 @@ public class RunApplicationAIPipelineJob(
                 if (!attachmentSummariesEnabled && !applicationAnalysisEnabled && !scoringEnabled)
                 {
                     logger.LogDebug("All AI features are disabled, skipping queued AI generation for application {ApplicationId}.", args.ApplicationId);
-                    var creatorId = await AIGenerationRequestJobHelper.MarkCompletedInNewUowAndGetCreatorIdAsync(unitOfWorkManager, generationRequestRepository, args.RequestKey);
-                    await aiRateLimiter.StampAsync(creatorId);
+                    await AIGenerationRequestJobHelper.MarkCompletedInNewUowAsync(unitOfWorkManager, generationRequestRepository, args.RequestKey);
+                    await aiRateLimiter.StampAsync(args.RequestedByUserId);
                     return;
                 }
 
@@ -115,8 +115,8 @@ public class RunApplicationAIPipelineJob(
                     throw analysisException;
                 }
 
-                var completedCreatorId = await AIGenerationRequestJobHelper.MarkCompletedInNewUowAndGetCreatorIdAsync(unitOfWorkManager, generationRequestRepository, args.RequestKey);
-                await aiRateLimiter.StampAsync(completedCreatorId);
+                await AIGenerationRequestJobHelper.MarkCompletedInNewUowAsync(unitOfWorkManager, generationRequestRepository, args.RequestKey);
+                await aiRateLimiter.StampAsync(args.RequestedByUserId);
             }
             catch (Exception ex)
             {

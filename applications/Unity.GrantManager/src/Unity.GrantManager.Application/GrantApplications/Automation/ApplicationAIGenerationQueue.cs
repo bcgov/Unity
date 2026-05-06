@@ -10,6 +10,7 @@ using Microsoft.Extensions.Logging;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.BackgroundJobs;
 using Volo.Abp.DependencyInjection;
+using Volo.Abp.Users;
 
 namespace Unity.GrantManager.GrantApplications.Automation;
 
@@ -18,6 +19,7 @@ public class ApplicationAIGenerationQueue(
     IRepository<AIGenerationRequest, Guid> generationRequestRepository,
     IDistributedLockProvider distributedLockProvider,
     IAIRateLimiter aiRateLimiter,
+    ICurrentUser currentUser,
     ILogger<ApplicationAIGenerationQueue> logger)
     : IApplicationAIGenerationQueue, ITransientDependency
 {
@@ -35,6 +37,7 @@ public class ApplicationAIGenerationQueue(
                 {
                     ApplicationId = applicationId,
                     PromptVersion = promptVersion,
+                    RequestedByUserId = currentUser.Id,
                     TenantId = tenantId,
                     RequestKey = requestKey
                 });
@@ -55,6 +58,7 @@ public class ApplicationAIGenerationQueue(
                 {
                     ApplicationId = applicationId,
                     PromptVersion = promptVersion,
+                    RequestedByUserId = currentUser.Id,
                     TenantId = tenantId,
                     RequestKey = requestKey
                 });
@@ -75,6 +79,7 @@ public class ApplicationAIGenerationQueue(
                 {
                     ApplicationId = applicationId,
                     PromptVersion = promptVersion,
+                    RequestedByUserId = currentUser.Id,
                     TenantId = tenantId,
                     RequestKey = requestKey
                 });
@@ -95,6 +100,7 @@ public class ApplicationAIGenerationQueue(
                 {
                     ApplicationId = applicationId,
                     PromptVersion = promptVersion,
+                    RequestedByUserId = currentUser.Id,
                     TenantId = tenantId,
                     RequestKey = requestKey
                 });

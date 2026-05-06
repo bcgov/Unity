@@ -33,11 +33,13 @@ public class RunApplicationAIPipelineJobTests(ITestOutputHelper outputHelper) : 
         requests.Add(request);
 
         var job = BuildJob(featureChecker, repository);
+        var requestedByUserId = Guid.NewGuid();
 
         await job.ExecuteAsync(new RunApplicationAIPipelineJobArgs
         {
             ApplicationId = request.ApplicationId!.Value,
             RequestKey = request.RequestKey,
+            RequestedByUserId = requestedByUserId,
             TenantId = request.TenantId
         });
 
@@ -61,21 +63,26 @@ public class RunApplicationAIPipelineJobTests(ITestOutputHelper outputHelper) : 
             .Returns(new ApplicationScoringResultDto { Completed = true });
 
         var localEventBus = Substitute.For<ILocalEventBus>();
+        var rateLimiter = Substitute.For<IAIRateLimiter>();
+        var requestedByUserId = Guid.NewGuid();
 
         var job = BuildJob(
             featureChecker,
             repository,
             localEventBus: localEventBus,
+            rateLimiter: rateLimiter,
             applicationScoringAppService: scoringAppService);
 
         await job.ExecuteAsync(new RunApplicationAIPipelineJobArgs
         {
             ApplicationId = request.ApplicationId!.Value,
             RequestKey = request.RequestKey,
+            RequestedByUserId = requestedByUserId,
             TenantId = request.TenantId
         });
 
         request.Status.ShouldBe(AIGenerationRequestStatus.Completed);
+        await rateLimiter.Received(1).StampAsync(requestedByUserId);
         await localEventBus.Received(1).PublishAsync(
             Arg.Is<Automation.Events.ApplicationAIScoringGeneratedEvent>(x => x.ApplicationId == request.ApplicationId));
     }
@@ -86,7 +93,8 @@ public class RunApplicationAIPipelineJobTests(ITestOutputHelper outputHelper) : 
         ILocalEventBus? localEventBus = null,
         IAttachmentSummaryAppService? attachmentSummaryAppService = null,
         IApplicationAnalysisAppService? applicationAnalysisAppService = null,
-        IApplicationScoringAppService? applicationScoringAppService = null)
+        IApplicationScoringAppService? applicationScoringAppService = null,
+        IAIRateLimiter? rateLimiter = null)
     {
         return new RunApplicationAIPipelineJob(
             Substitute.For<IApplicationChefsFileAttachmentRepository>(),
@@ -98,7 +106,7 @@ public class RunApplicationAIPipelineJobTests(ITestOutputHelper outputHelper) : 
             generationRequestRepository,
             Substitute.For<ICurrentTenant>(),
             GetRequiredService<IUnitOfWorkManager>(),
-            Substitute.For<IAIRateLimiter>(),
+            rateLimiter ?? Substitute.For<IAIRateLimiter>(),
             NullLogger<RunApplicationAIPipelineJob>.Instance);
     }
 

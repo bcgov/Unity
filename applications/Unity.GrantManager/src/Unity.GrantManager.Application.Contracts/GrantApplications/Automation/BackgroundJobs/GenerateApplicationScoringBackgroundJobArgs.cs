@@ -4,6 +4,7 @@ public class GenerateApplicationScoringBackgroundJobArgs
 {
     public Guid ApplicationId { get; set; }
     public Guid? TenantId { get; set; }
+    public Guid? RequestedByUserId { get; set; }
     public string? PromptVersion { get; set; }
     public string RequestKey { get; set; } = string.Empty;
 }
