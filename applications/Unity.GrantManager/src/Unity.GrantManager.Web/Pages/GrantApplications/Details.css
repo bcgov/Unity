@@ -825,16 +825,13 @@ form label.error {
     display: flex;
     align-items: center;
     gap: 0.5rem 0.75rem;
+    margin-left: auto;
 }
 
 .prompt-tools-header select,
 .prompt-tools-header .form-select {
     width: auto;
     white-space: nowrap;
-}
-
-.prompt-tools-header .prompt-tools-toolbar-row {
-    margin-left: auto;
 }
 
 .prompt-tools-section {
