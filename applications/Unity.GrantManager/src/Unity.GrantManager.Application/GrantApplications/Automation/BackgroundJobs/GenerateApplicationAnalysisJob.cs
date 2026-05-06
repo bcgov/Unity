@@ -31,7 +31,7 @@ public class GenerateApplicationAnalysisJob(
                 await applicationAnalysisService.RegenerateAndSaveAsync(args.ApplicationId, args.PromptVersion);
                 logger.LogInformation("Completed AI application analysis job for application {ApplicationId}.", args.ApplicationId);
 
-                var creatorId = await AIGenerationRequestJobHelper.MarkCompletedInNewUowAsync(unitOfWorkManager, generationRequestRepository, args.RequestKey);
+                var creatorId = await AIGenerationRequestJobHelper.MarkCompletedInNewUowAndGetCreatorIdAsync(unitOfWorkManager, generationRequestRepository, args.RequestKey);
                 await aiRateLimiter.StampAsync(creatorId);
             }
             catch (Exception ex)

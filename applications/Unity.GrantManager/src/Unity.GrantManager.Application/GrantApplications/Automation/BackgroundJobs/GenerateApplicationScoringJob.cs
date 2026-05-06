@@ -40,7 +40,7 @@ public class GenerateApplicationScoringJob(
                 }
                 logger.LogInformation("Completed AI application scoring job for application {ApplicationId}.", args.ApplicationId);
 
-                var creatorId = await AIGenerationRequestJobHelper.MarkCompletedInNewUowAsync(unitOfWorkManager, generationRequestRepository, args.RequestKey);
+                var creatorId = await AIGenerationRequestJobHelper.MarkCompletedInNewUowAndGetCreatorIdAsync(unitOfWorkManager, generationRequestRepository, args.RequestKey);
                 await aiRateLimiter.StampAsync(creatorId);
             }
             catch (Exception ex)

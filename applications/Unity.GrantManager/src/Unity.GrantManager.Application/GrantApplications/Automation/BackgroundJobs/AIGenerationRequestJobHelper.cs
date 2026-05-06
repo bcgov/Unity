@@ -61,7 +61,7 @@ public static class AIGenerationRequestJobHelper
         await uow.CompleteAsync();
     }
 
-    public static async Task<Guid?> MarkCompletedInNewUowAsync(
+    public static async Task<Guid?> MarkCompletedInNewUowAndGetCreatorIdAsync(
         IUnitOfWorkManager unitOfWorkManager,
         IRepository<AIGenerationRequest, Guid> generationRequestRepository,
         string requestKey)
