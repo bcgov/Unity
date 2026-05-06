@@ -819,11 +819,11 @@ $(function () {
     PubSub.subscribe('refresh_assessment_scores', (msg, data) => {
         assessmentScoresWidgetManager.refresh();
         updateSubtotal();
-            loadPromptToolsOutputs();
+        loadPromptToolsOutputs();
     });
 
     PubSub.subscribe('refresh_chefs_attachment_list', () => {
-        loadDevAiOutputs();
+        loadPromptToolsOutputs();
     });
 
     PubSub.subscribe('select_application_review', (msg, data) => {
