@@ -743,16 +743,30 @@ def preview_data_models():
 
     body = request.get_json(silent=True) or {}
     view_name = body.get("view_name", "").strip()
+    view_names = body.get("view_names", [])
 
-    if not view_name:
-        return jsonify({"error": "view_name is required"}), 400
+    # Accept either view_names (multi) or view_name (single, backward-compat)
+    if view_names and isinstance(view_names, list):
+        view_names = [v.strip() for v in view_names if isinstance(v, str) and v.strip()]
+    elif view_name:
+        view_names = [view_name]
+    else:
+        return jsonify({"error": "view_name or view_names is required"}), 400
 
-    logger.info(f"Data model preview request - Tenant: {tenant_id}, View: {view_name}")
+    if not view_names:
+        return jsonify({"error": "At least one view name is required"}), 400
+
+    logger.info(f"Data model preview request - Tenant: {tenant_id}, Views: {view_names}")
 
     try:
-        proposal = asyncio.run(
-            data_model_generator.preview_model(view_name, db_id, tenant_id)
-        )
+        if len(view_names) == 1:
+            proposal = asyncio.run(
+                data_model_generator.preview_model(view_names[0], db_id, tenant_id)
+            )
+        else:
+            proposal = asyncio.run(
+                data_model_generator.preview_combined_model(view_names, db_id, tenant_id)
+            )
         return jsonify({"proposal": proposal}), 200
     except Exception as e:
         logger.error(f"Error in /api/data-models/preview: {e}", exc_info=True)
@@ -811,6 +825,113 @@ def create_data_models():
             "Failed to create data models. Please try again.",
             500,
             detail=str(e)
+        )
+
+
+@app.route("/api/data-models/list", methods=["POST"])
+@require_auth
+def list_data_models():
+    """List existing model cards in the tenant's collection."""
+    user_data = get_user_from_token()
+    tenant_id = user_data["tenant"]
+
+    tenant_config = config.get_tenant_config(tenant_id)
+    collection_id = tenant_config["collection_id"]
+
+    try:
+        models = data_model_generator.discover_existing_models(collection_id, tenant_id)
+        return jsonify({"models": models}), 200
+    except Exception as e:
+        logger.error(f"Error in /api/data-models/list: {e}", exc_info=True)
+        return _error_response(
+            "server_error", "Failed to list existing models.", 500, detail=str(e)
+        )
+
+
+@app.route("/api/data-models/detail", methods=["POST"])
+@require_auth
+def data_model_detail():
+    """Fetch full detail (SQL + columns) for one model card."""
+    user_data = get_user_from_token()
+    tenant_id = user_data["tenant"]
+
+    body = request.get_json(silent=True) or {}
+    card_id = body.get("card_id")
+    if card_id is not None:
+        try:
+            card_id = int(card_id)
+        except (ValueError, TypeError):
+            return jsonify({"error": "card_id must be a valid integer"}), 400
+    else:
+        return jsonify({"error": "card_id is required"}), 400
+
+    try:
+        card = metabase_client.get_card(card_id, tenant_id)
+        sql = card.get("dataset_query", {}).get("native", {}).get("query", "")
+        columns = re.findall(r'AS\s+"([^"]+)"', sql)
+        if not columns:
+            columns = [
+                col.get("display_name", col.get("name", ""))
+                for col in card.get("result_metadata", [])
+            ]
+        return jsonify({
+            "card_id": card_id,
+            "name": card.get("name", ""),
+            "description": card.get("description") or "",
+            "sql": sql,
+            "columns": columns,
+        }), 200
+    except Exception as e:
+        logger.error(f"Error in /api/data-models/detail: {e}", exc_info=True)
+        return _error_response(
+            "server_error", "Failed to fetch model detail.", 500, detail=str(e)
+        )
+
+
+@app.route("/api/data-models/modify-preview", methods=["POST"])
+@require_auth
+def modify_data_model_preview():
+    """Generate a modified-variant preview from an existing model."""
+    user_data = get_user_from_token()
+    tenant_id = user_data["tenant"]
+
+    tenant_config = config.get_tenant_config(tenant_id)
+    db_id = tenant_config["db_id"]
+    collection_id = tenant_config["collection_id"]
+
+    body = request.get_json(silent=True) or {}
+    logger.debug("modify-preview request body: card_id=%s (type=%s), prompt_len=%d, view_names=%s",
+                 body.get("card_id"), type(body.get("card_id")).__name__,
+                 len(body.get("prompt", "")), body.get("view_names", []))
+    card_id = body.get("card_id")
+    prompt = body.get("prompt", "").strip()
+    view_names = body.get("view_names", [])
+
+    # Accept card_id as int or numeric string
+    if card_id is not None:
+        try:
+            card_id = int(card_id)
+        except (ValueError, TypeError):
+            return jsonify({"error": "card_id must be a valid integer"}), 400
+    else:
+        return jsonify({"error": "card_id is required"}), 400
+
+    if not prompt and not view_names:
+        return jsonify({"error": "At least one of prompt or view_names is required"}), 400
+
+    try:
+        result = asyncio.run(
+            data_model_generator.preview_model_modification(
+                card_id, prompt, view_names, db_id, collection_id, tenant_id
+            )
+        )
+        return jsonify({"proposal": result}), 200
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+    except Exception as e:
+        logger.error(f"Error in /api/data-models/modify-preview: {e}", exc_info=True)
+        return _error_response(
+            "server_error", "Failed to generate modified model.", 500, detail=str(e)
         )
 
 

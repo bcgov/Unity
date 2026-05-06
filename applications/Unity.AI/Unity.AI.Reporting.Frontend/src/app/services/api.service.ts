@@ -151,8 +151,26 @@ export class ApiService {
     return this.post<T>('/data-models/preview', { view_name: viewName });
   }
 
+  previewCombinedModel<T>(viewNames: string[]): Observable<T> {
+    return this.post<T>('/data-models/preview', { view_names: viewNames });
+  }
+
   createDataModels<T>(models: { name: string; description: string; sql: string }[]): Observable<T> {
     return this.post<T>('/data-models/create', { models });
+  }
+
+  listDataModels<T>(): Observable<T> {
+    return this.post<T>('/data-models/list', {});
+  }
+
+  getDataModelDetail<T>(cardId: number): Observable<T> {
+    return this.post<T>('/data-models/detail', { card_id: cardId });
+  }
+
+  modifyDataModelPreview<T>(cardId: number, prompt: string, viewNames: string[]): Observable<T> {
+    return this.post<T>('/data-models/modify-preview', {
+      card_id: cardId, prompt, view_names: viewNames
+    });
   }
 
   // Chat-related methods

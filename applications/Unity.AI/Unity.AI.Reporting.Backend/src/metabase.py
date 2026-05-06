@@ -322,6 +322,54 @@ class MetabaseClient:
         existing_cards = self.get_all_cards(tenant_id)
         return card_id in existing_cards
 
+    def get_card(self, card_id: int, tenant_id: Optional[str] = None) -> Dict[str, Any]:
+        """Get full card detail including dataset_query."""
+        headers = self._get_headers(tenant_id)
+        r = requests.get(
+            f"{self.config.url}/api/card/{card_id}",
+            headers=headers,
+            timeout=15
+        )
+        r.raise_for_status()
+        return r.json()
+
+    def get_native_query(self, dataset_query: Dict[str, Any],
+                         tenant_id: Optional[str] = None) -> Optional[str]:
+        """Convert a structured (GUI) dataset_query to native SQL via Metabase API.
+        Returns the SQL string, or None if conversion fails."""
+        headers = self._get_headers(tenant_id)
+        try:
+            r = requests.post(
+                f"{self.config.url}/api/dataset/native",
+                headers=headers,
+                json={"query": dataset_query},
+                timeout=15
+            )
+            if r.status_code == 200:
+                result = r.json()
+                return result.get("query") or None
+        except Exception as e:
+            logger.debug(f"Failed to convert structured query to native SQL: {e}")
+        return None
+
+    def get_collection_models(self, collection_id: int, tenant_id: Optional[str] = None) -> List[Dict[str, Any]]:
+        """Get all model-type cards in a given collection (filtered client-side since
+        Metabase's server-side filters vary by version)."""
+        headers = self._get_headers(tenant_id)
+        r = requests.get(
+            f"{self.config.url}/api/card",
+            headers=headers,
+            timeout=30
+        )
+        r.raise_for_status()
+        cards = r.json()
+        return [
+            c for c in cards
+            if c.get("type") == "model"
+            and c.get("collection_id") == collection_id
+            and not c.get("archived", False)
+        ]
+
 
 # Global client instance
 metabase_client = MetabaseClient()

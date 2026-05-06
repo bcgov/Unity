@@ -18,8 +18,12 @@ export interface Chat {
 
 export interface ViewInfo {
   view_name: string;
+  display_name: string;
   column_count: number;
   has_labels: boolean;
+  source_type?: 'form_view' | 'worksheet_view' | 'scoresheet_view' | 'other_view';
+  form_group?: string;
+  version?: string;
 }
 
 export interface ModelProposal {
@@ -46,7 +50,20 @@ export interface ModelError {
   error: string;
 }
 
-export type ModelsModalStep = 'idle' | 'loading-views' | 'pick-view' | 'generating' | 'review' | 'creating' | 'done';
+export interface ExistingModelSummary {
+  card_id: number;
+  name: string;
+  description: string;
+}
+
+export interface ExistingModelDetail extends ExistingModelSummary {
+  sql: string;
+  columns: string[];
+}
+
+export type ModelsModalStep = 'idle' | 'pick-mode' | 'loading-views' | 'pick-view'
+  | 'loading-models' | 'pick-existing-model' | 'edit-existing'
+  | 'generating' | 'review' | 'creating' | 'done';
 
 @Component({
   selector: 'app-sidebar',
@@ -80,10 +97,22 @@ export class SidebarComponent {
   // Data model generation modal state
   modelsModalStep: ModelsModalStep = 'idle';
   availableViews: ViewInfo[] = [];
-  selectedView: ViewInfo | null = null;
+  selectedViews: ViewInfo[] = [];
+  activeViewTab: 'form_view' | 'worksheet_view' | 'scoresheet_view' | 'other_view' = 'form_view';
   modelProposal: ModelProposal | null = null;
   createdModels: CreatedModel[] = [];
   modelErrors: ModelError[] = [];
+  existingModels: ExistingModelSummary[] = [];
+  selectedExistingModel: ExistingModelDetail | null = null;
+  existingSqlExpanded: boolean = false;
+  editPrompt: string = '';
+  editAdditionalViews: ViewInfo[] = [];
+
+  get formViews(): ViewInfo[] { return this.availableViews.filter(v => v.source_type === 'form_view'); }
+  get worksheetViews(): ViewInfo[] { return this.availableViews.filter(v => v.source_type === 'worksheet_view'); }
+  get scoresheetViews(): ViewInfo[] { return this.availableViews.filter(v => v.source_type === 'scoresheet_view'); }
+  get otherViews(): ViewInfo[] { return this.availableViews.filter(v => v.source_type === 'other_view'); }
+  get tabViews(): ViewInfo[] { return this.availableViews.filter(v => v.source_type === this.activeViewTab); }
 
   constructor(
     private readonly apiService: ApiService,
@@ -266,12 +295,21 @@ export class SidebarComponent {
   // ----- Data model generation -----
 
   async openDataModelsModal(): Promise<void> {
-    this.modelsModalStep = 'loading-views';
+    this.modelsModalStep = 'pick-mode';
     this.availableViews = [];
-    this.selectedView = null;
+    this.selectedViews = [];
     this.modelProposal = null;
     this.createdModels = [];
     this.modelErrors = [];
+    this.existingModels = [];
+    this.selectedExistingModel = null;
+    this.editPrompt = '';
+    this.editAdditionalViews = [];
+    this.cdr.markForCheck();
+  }
+
+  async chooseModeCreate(): Promise<void> {
+    this.modelsModalStep = 'loading-views';
     this.cdr.markForCheck();
 
     try {
@@ -279,6 +317,10 @@ export class SidebarComponent {
         this.apiService.getDataModelViews<{ views: ViewInfo[] }>()
       );
       this.availableViews = response.views || [];
+      if (this.formViews.length > 0) this.activeViewTab = 'form_view';
+      else if (this.worksheetViews.length > 0) this.activeViewTab = 'worksheet_view';
+      else if (this.scoresheetViews.length > 0) this.activeViewTab = 'scoresheet_view';
+      else this.activeViewTab = 'other_view';
       this.modelsModalStep = 'pick-view';
     } catch (error) {
       this.logger.error('Failed to load views:', error);
@@ -289,27 +331,60 @@ export class SidebarComponent {
     }
   }
 
+  async chooseModeModify(): Promise<void> {
+    this.modelsModalStep = 'loading-models';
+    this.cdr.markForCheck();
+
+    try {
+      const response = await firstValueFrom(
+        this.apiService.listDataModels<{ models: ExistingModelSummary[] }>()
+      );
+      this.existingModels = response.models || [];
+      this.modelsModalStep = 'pick-existing-model';
+    } catch (error) {
+      this.logger.error('Failed to load existing models:', error);
+      this.toastService.error('Failed to load existing models. Please try again.');
+      this.modelsModalStep = 'idle';
+    } finally {
+      this.cdr.markForCheck();
+    }
+  }
+
   selectView(view: ViewInfo): void {
-    this.selectedView = view;
+    const idx = this.selectedViews.findIndex(v => v.view_name === view.view_name);
+    if (idx >= 0) {
+      this.selectedViews.splice(idx, 1);
+    } else {
+      this.selectedViews.push(view);
+    }
+  }
+
+  isViewSelected(view: ViewInfo): boolean {
+    return this.selectedViews.some(v => v.view_name === view.view_name);
+  }
+
+  get generateButtonLabel(): string {
+    const n = this.selectedViews.length;
+    if (n === 0) return 'Generate Model →';
+    if (n === 1) return 'Generate Model →';
+    return `Generate Combined Model (${n}) →`;
   }
 
   async generateModelForView(): Promise<void> {
-    if (!this.selectedView) return;
+    if (this.selectedViews.length === 0) return;
 
     this.modelsModalStep = 'generating';
     this.modelProposal = null;
     this.cdr.markForCheck();
 
     try {
-      const response = await firstValueFrom(
-        this.apiService.previewDataModel<{
-          proposal: Omit<ModelProposal, 'sqlExpanded'>;
-        }>(this.selectedView.view_name)
-      );
-      this.modelProposal = {
-        ...response.proposal,
-        sqlExpanded: false,
-      };
+      type PreviewResponse = { proposal: Omit<ModelProposal, 'sqlExpanded'> };
+      const viewNames = this.selectedViews.map(v => v.view_name);
+      const obs = viewNames.length === 1
+        ? this.apiService.previewDataModel<PreviewResponse>(viewNames[0])
+        : this.apiService.previewCombinedModel<PreviewResponse>(viewNames);
+      const response = await firstValueFrom(obs);
+      this.modelProposal = { ...response.proposal, sqlExpanded: false };
       this.modelsModalStep = 'review';
     } catch (error) {
       this.logger.error('Failed to generate model:', error);
@@ -359,13 +434,108 @@ export class SidebarComponent {
     }
   }
 
+  /** Re-run the right preview path for whichever flow produced the current proposal. */
+  regenerateProposal(): void {
+    if (this.selectedExistingModel) {
+      void this.generateModifiedModel();
+    } else {
+      void this.generateModelForView();
+    }
+  }
+
+  async selectExistingModel(summary: ExistingModelSummary): Promise<void> {
+    this.modelsModalStep = 'loading-views';
+    this.cdr.markForCheck();
+
+    try {
+      // Fetch detail and views in parallel
+      const [detail, viewsResponse] = await Promise.all([
+        firstValueFrom(
+          this.apiService.getDataModelDetail<ExistingModelDetail>(summary.card_id)
+        ),
+        this.availableViews.length > 0
+          ? Promise.resolve({ views: this.availableViews })
+          : firstValueFrom(
+              this.apiService.getDataModelViews<{ views: ViewInfo[] }>()
+            ),
+      ]);
+
+      this.selectedExistingModel = detail;
+      this.existingSqlExpanded = false;
+      this.availableViews = viewsResponse.views || [];
+      if (this.formViews.length > 0) this.activeViewTab = 'form_view';
+      else if (this.worksheetViews.length > 0) this.activeViewTab = 'worksheet_view';
+      else if (this.scoresheetViews.length > 0) this.activeViewTab = 'scoresheet_view';
+      else this.activeViewTab = 'other_view';
+      this.editPrompt = '';
+      this.editAdditionalViews = [];
+      this.modelsModalStep = 'edit-existing';
+    } catch (error) {
+      this.logger.error('Failed to load model detail:', error);
+      this.toastService.error('Failed to load model detail. Please try again.');
+      this.modelsModalStep = 'pick-existing-model';
+    } finally {
+      this.cdr.markForCheck();
+    }
+  }
+
+  isEditAdditionalViewSelected(view: ViewInfo): boolean {
+    return this.editAdditionalViews.some(v => v.view_name === view.view_name);
+  }
+
+  toggleEditAdditionalView(view: ViewInfo): void {
+    const idx = this.editAdditionalViews.findIndex(v => v.view_name === view.view_name);
+    if (idx >= 0) {
+      this.editAdditionalViews.splice(idx, 1);
+    } else {
+      this.editAdditionalViews.push(view);
+    }
+  }
+
+  get canGenerateModified(): boolean {
+    return !!(this.editPrompt.trim() || this.editAdditionalViews.length > 0);
+  }
+
+  async generateModifiedModel(): Promise<void> {
+    if (!this.selectedExistingModel || !this.canGenerateModified) return;
+
+    this.modelsModalStep = 'generating';
+    this.modelProposal = null;
+    this.cdr.markForCheck();
+
+    try {
+      type PreviewResponse = { proposal: Omit<ModelProposal, 'sqlExpanded'> };
+      const response = await firstValueFrom(
+        this.apiService.modifyDataModelPreview<PreviewResponse>(
+          this.selectedExistingModel.card_id,
+          this.editPrompt.trim(),
+          this.editAdditionalViews.map(v => v.view_name)
+        )
+      );
+      this.modelProposal = { ...response.proposal, sqlExpanded: false };
+      this.modelsModalStep = 'review';
+    } catch (error) {
+      this.logger.error('Failed to generate modified model:', error);
+      this.toastService.error('Failed to generate modified model. Please try again.');
+      this.modelsModalStep = 'edit-existing';
+    } finally {
+      this.cdr.markForCheck();
+    }
+  }
+
   closeModelsModal(): void {
     this.modelsModalStep = 'idle';
     this.availableViews = [];
-    this.selectedView = null;
+    this.selectedViews = [];
+    this.activeViewTab = 'form_view';
     this.modelProposal = null;
     this.createdModels = [];
     this.modelErrors = [];
+    this.existingModels = [];
+    this.selectedExistingModel = null;
+    this.existingSqlExpanded = false;
+    this.editPrompt = '';
+    this.editAdditionalViews = [];
   }
 
   private extractConversationContext(): any {

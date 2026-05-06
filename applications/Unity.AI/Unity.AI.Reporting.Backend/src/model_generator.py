@@ -120,6 +120,31 @@ COLUMN SAMPLES (name | sample1 | sample2):
 
 Output ONLY the improved SQL — no markdown fences, no explanation."""
 
+MODIFY_PROMPT = """You are modifying an existing data model SQL query.
+
+CURRENT SQL:
+{current_sql}
+
+CURRENT COLUMNS (preserve unless user explicitly asks to remove them):
+{current_columns}
+
+USER'S CHANGE REQUEST:
+{user_prompt}
+
+ADDITIONAL VIEW SQL TO INTEGRATE (wrap each as a named CTE and LEFT JOIN to the
+existing SQL via "ReferenceNo"; if a view has no "ReferenceNo" column, omit it):
+{additional_views_text}
+
+RULES:
+- Keep all existing columns from CURRENT SQL unless the user explicitly asked to drop them
+- Use PostgreSQL double-quoted identifiers
+- When integrating additional views, wrap them as named CTEs (view_a, view_b, ...) and
+  LEFT JOIN on "ReferenceNo" — never CROSS JOIN
+- If the user prompt asks for a computed column, add it at the end of the SELECT list
+- Do not invent table or column names not present in CURRENT SQL or ADDITIONAL VIEW SQL
+
+Output ONLY the rewritten SQL — no markdown fences, no explanation."""
+
 # Regex for parsing form view table names
 FORM_VERSION_RE = re.compile(r'^Form-(.+?)(?:\s+Alternate)?-V(\d+)$')
 
@@ -136,10 +161,20 @@ class DataModelGenerator:
     # CorrelationId intentionally NOT in JUNK_COLUMNS — used as FK for JOINs
     JUNK_PATTERNS = {"password", "ssn", "sin", "secret", "token"}
 
+    # Reporting-schema system/internal tables — never expose for model generation
+    SYSTEM_TABLES = {
+        "ReportColumnsMaps",          # label storage queried by _get_view_labels
+        "ApplicationFormSubmissions",
+        "__EFMigrationsHistory",
+    }
+
     # --- Source type detection ---
 
     def _detect_source_type(self, view_name: str, db_id: int, tenant_id: str) -> str:
         """Determine which pattern applies."""
+        # Block system/internal tables outright — never previewable
+        if view_name in self.SYSTEM_TABLES or view_name.startswith("__"):
+            return "unknown"
         if view_name.startswith("Form-"):
             return "form_view"
         # Check if it's a base name that matches a form group
@@ -151,7 +186,8 @@ class DataModelGenerator:
         name_lower = view_name.lower()
         if "worksheet" in name_lower or "scoresheet" in name_lower:
             return "worksheet_view"
-        return "unknown"
+        # Any other Reporting-schema table — generic SELECT + optional FK JOIN
+        return "other_view"
 
 
     # --- Form version grouping ---
@@ -188,7 +224,9 @@ class DataModelGenerator:
             return f'{col_ref}::BOOLEAN AS "{alias}"'
         elif ft in ("number", "currency", "float", "integer"):
             return (
-                f"CASE WHEN {col_ref} <> '' THEN {col_ref}::FLOAT\n"
+                f"CASE\n"
+                f"  WHEN {col_ref} IS NOT NULL AND TRIM({col_ref}::TEXT) <> ''\n"
+                f"    THEN {col_ref}::FLOAT\n"
                 f'  ELSE 0\n  END AS "{alias}"'
             )
         elif ft == "date":
@@ -204,6 +242,34 @@ class DataModelGenerator:
         """Check if a column's sample value starts with '[\"' (JSON array wrapper)."""
         sample = self._get_sample_value(schema, table, col_name, db_id, tenant_id)
         return bool(sample and sample.startswith('["'))
+
+    def _columns_needing_unwrap(self, schema: str, table: str, columns: list[str],
+                                  db_id: int, tenant_id: str) -> set[str]:
+        """
+        Return the set of column names whose stored values are JSON-array-wrapped
+        (i.e. start with '["'). Detected per-column from raw (un-stripped) samples.
+        """
+        if not columns:
+            return set()
+
+        col_refs = ", ".join(f'"{c}"' for c in columns[:50])
+        sql = f'SELECT {col_refs} FROM "{schema}"."{table}" LIMIT 5'
+        try:
+            result = metabase_client.execute_sql(sql, db_id, tenant_id=tenant_id)
+        except Exception as e:
+            logger.warning(f"Could not detect JSON unwrap for {schema}.{table}: {e}")
+            return set()
+
+        wrapped: set[str] = set()
+        for row in result.get("rows", []):
+            for i, col in enumerate(columns[:50]):
+                if col in wrapped:
+                    continue
+                if i < len(row) and row[i] is not None:
+                    val = str(row[i]).strip()
+                    if val.startswith('["'):
+                        wrapped.add(col)
+        return wrapped
 
     # --- Type inference ---
 
@@ -438,23 +504,23 @@ class DataModelGenerator:
         if not columns:
             return "", []
 
-        # Check if columns need JSON unwrapping (sample from primary table)
-        needs_unwrap = self._needs_unwrap("Reporting", primary_table, columns[0], db_id, tenant_id)
+        # Detect per-column JSON wrapping (one column may be wrapped while another isn't)
+        wrapped_cols = self._columns_needing_unwrap(
+            "Reporting", primary_table, columns, db_id, tenant_id
+        )
 
         # Build UNION ALL CTE parts
         union_parts = []
         for i, table_name in enumerate(versions):
             alias = f"ori{i + 1}"
-            if needs_unwrap:
-                col_exprs = [f'{alias}."Id" AS "Id"', f'{alias}."ApplicationId" AS "ApplicationId"']
-                for col in columns:
+            col_exprs = [f'{alias}."Id" AS "Id"', f'{alias}."ApplicationId" AS "ApplicationId"']
+            for col in columns:
+                if col in wrapped_cols:
                     col_exprs.append(
                         f'CASE WHEN LENGTH({alias}."{col}") > 2 '
                         f'THEN SUBSTRING({alias}."{col}", 3, LENGTH({alias}."{col}") - 4) END AS "{col}"'
                     )
-            else:
-                col_exprs = [f'{alias}."Id" AS "Id"', f'{alias}."ApplicationId" AS "ApplicationId"']
-                for col in columns:
+                else:
                     col_exprs.append(f'{alias}."{col}" AS "{col}"')
 
             select_clause = ",\n".join(col_exprs)
@@ -494,7 +560,7 @@ class DataModelGenerator:
             f'  LEFT JOIN a ON a."Id" = combinedOri."ApplicationId"'
         )
 
-        column_labels = [labels.get(c, {}).get("label", c) for c in columns]
+        column_labels = ["ReferenceNo"] + [labels.get(c, {}).get("label", c) for c in columns]
         return sql, column_labels
 
     def _build_worksheet_view_sql(self, view_name: str, db_id: int,
@@ -524,10 +590,10 @@ class DataModelGenerator:
         else:
             custom_labels = {}
 
-        # Detect FK column for JOIN
+        # Detect FK column for JOIN (check both PascalCase and snake_case)
         fk_column = None
         field_names = {f.get("name", "") for f in target_fields}
-        for candidate in ("ApplicationId", "CorrelationId"):
+        for candidate in ("ApplicationId", "application_id", "CorrelationId", "correlation_id"):
             if candidate in field_names:
                 fk_column = candidate
                 break
@@ -588,6 +654,8 @@ class DataModelGenerator:
             )
 
         column_labels = []
+        if join_condition:
+            column_labels.append("ReferenceNo")
         for col in columns:
             label_info = labels.get(col, {})
             label = label_info.get("label", "") or custom_labels.get(col, "") or col
@@ -622,61 +690,81 @@ class DataModelGenerator:
         """
         Step 0: Discover available Reporting schema views (Worksheet, Scoresheet, Form).
 
+        Form views are grouped by base name — selecting a group runs UNION ALL across
+        all its versions, which is what the SQL builder does anyway.
+
         Returns list of {view_name, display_name, column_count, has_labels, source_type, ...}.
         """
         metadata = metabase_client.get_database_metadata(db_id, tenant_id=tenant_id)
         views = []
+        tables_by_name = {
+            t.get("name"): t for t in metadata.get("tables", [])
+            if t.get("schema") == "Reporting"
+        }
 
-        for table in metadata.get("tables", []):
-            if table.get("schema") != "Reporting":
-                continue
-            name = table.get("name", "")
-
-            # Detect source type by prefix/pattern
-            if name.startswith("Form-"):
-                source_type = "form_view"
-                match = FORM_VERSION_RE.match(name)
-                if match:
-                    display_name = match.group(1)
-                    version = f"V{match.group(2)}"
-                else:
-                    display_name = name.replace("Form-", "")
-                    version = ""
-            elif "worksheet" in name.lower():
-                source_type = "worksheet_view"
-                display_name = name
-                version = ""
-            elif "scoresheet" in name.lower():
-                source_type = "scoresheet_view"
-                display_name = name
-                version = ""
-            else:
+        # First pass: group form versions by base name
+        form_groups = self._group_form_versions(metadata)
+        for base_name, version_tables in form_groups.items():
+            primary = version_tables[0]  # highest version
+            primary_table = tables_by_name.get(primary)
+            if not primary_table:
                 continue
 
-            fields = table.get("fields", [])
+            if not self._has_data("Reporting", primary, db_id, tenant_id):
+                logger.debug("discover_views: skipping form '%s' — no data or query failed", base_name)
+                continue
+
             column_count = sum(
-                1 for f in fields if f.get("name") not in self.JUNK_COLUMNS
+                1 for f in primary_table.get("fields", [])
+                if f.get("name") not in self.JUNK_COLUMNS
             )
+            version_count = len(version_tables)
+            version_label = f"{version_count} version{'s' if version_count != 1 else ''}"
+
+            views.append({
+                "view_name": base_name,
+                "display_name": base_name,
+                "column_count": column_count,
+                "has_labels": self._has_labels(primary, db_id, tenant_id),
+                "source_type": "form_view",
+                "form_group": base_name,
+                "version": version_label,
+            })
+
+        # Second pass: worksheet, scoresheet, and other (one entry per table)
+        for name, table in tables_by_name.items():
+            if not name or FORM_VERSION_RE.match(name) or name.startswith("Form-"):
+                continue
+            # Skip system/internal tables outright
+            if name in self.SYSTEM_TABLES or name.startswith("__"):
+                continue
+
+            name_lower = name.lower()
+            if "worksheet" in name_lower:
+                source_type = "worksheet_view"
+            elif "scoresheet" in name_lower:
+                source_type = "scoresheet_view"
+            else:
+                source_type = "other_view"
 
             if not self._has_data("Reporting", name, db_id, tenant_id):
+                logger.debug("discover_views: skipping '%s' — no data or query failed", name)
                 continue
 
-            has_labels = self._has_labels(name, db_id, tenant_id)
+            column_count = sum(
+                1 for f in table.get("fields", [])
+                if f.get("name") not in self.JUNK_COLUMNS
+            )
 
-            entry = {
+            views.append({
                 "view_name": name,
-                "display_name": display_name,
+                "display_name": name,
                 "column_count": column_count,
-                "has_labels": has_labels,
+                "has_labels": self._has_labels(name, db_id, tenant_id),
                 "source_type": source_type,
-            }
-            if source_type == "form_view":
-                entry["form_group"] = display_name
-                entry["version"] = version
+            })
 
-            views.append(entry)
-
-        views.sort(key=lambda v: v["view_name"])
+        views.sort(key=lambda v: (v["source_type"], v["view_name"]))
         logger.info(f"Discovered {len(views)} views for tenant {tenant_id}")
         return views
 
@@ -700,7 +788,10 @@ class DataModelGenerator:
                 enhanced_sql = await self._ai_enhance_sql(sql, view_name, db_id, tenant_id, primary_table=view_name)
                 if enhanced_sql and self._validate_enhancement(sql, enhanced_sql):
                     sql = enhanced_sql
-        elif source_type == "worksheet_view":
+        elif source_type in ("worksheet_view", "scoresheet_view", "other_view"):
+            # other_view: any non-Form/non-worksheet/non-scoresheet Reporting table.
+            # The worksheet builder is generic — simple SELECT + optional FK JOIN —
+            # and degrades gracefully when no FK is found.
             sql, columns = self._build_worksheet_view_sql(view_name, db_id, tenant_id)
 
             # AI enhancement for worksheet views too
@@ -845,6 +936,291 @@ class DataModelGenerator:
             tenant_id, view_name, is_valid
         )
         return proposal
+
+    async def preview_combined_model(self, view_names: list[str], db_id: int,
+                                     tenant_id: str) -> dict:
+        """
+        Generate a single merged model SQL from 2+ views joined via "ReferenceNo".
+
+        Each view's SQL is wrapped as a named CTE (PostgreSQL supports nested CTEs
+        inside CTE bodies). Secondary views are LEFT JOINed to the primary view
+        on "ReferenceNo". Column aliases are deduplicated.
+        """
+        if len(view_names) < 2:
+            return await self.preview_model(view_names[0], db_id, tenant_id)
+
+        # Build individual SQL for each view: [(view_name, sql, column_labels), ...]
+        built: list[tuple[str, str, list[str]]] = []
+        for vn in view_names:
+            source_type = self._detect_source_type(vn, db_id, tenant_id)
+            if source_type == "form_view":
+                match = FORM_VERSION_RE.match(vn)
+                base_name = match.group(1) if match else vn
+                sql, cols = self._build_form_view_sql(base_name, db_id, tenant_id)
+            else:
+                # worksheet_view, scoresheet_view, other_view — worksheet builder handles all
+                sql, cols = self._build_worksheet_view_sql(vn, db_id, tenant_id)
+
+            if not sql:
+                logger.warning("Could not build SQL for '%s' in combined model — skipping", vn)
+                continue
+            built.append((vn, sql, cols))
+
+        if len(built) < 2:
+            if built:
+                return await self.preview_model(built[0][0], db_id, tenant_id)
+            return {
+                "name": "Combined Model",
+                "description": "Could not build combined model SQL",
+                "sql": "",
+                "valid": False,
+                "error": "No valid SQL could be built for the selected views",
+                "source_view": " + ".join(view_names),
+                "columns": [],
+                "excluded_columns": [],
+            }
+
+        # Primary must have "ReferenceNo" to act as the join anchor
+        primary_vn, _, primary_cols = built[0]
+        primary_has_ref = "referenceno" in {c.lower() for c in primary_cols}
+        if not primary_has_ref:
+            return {
+                "name": "Combined Model",
+                "description": "Could not build combined model SQL",
+                "sql": "",
+                "valid": False,
+                "error": (
+                    f"Primary view '{primary_vn}' has no \"ReferenceNo\" column to join on. "
+                    f"Combine requires views that link to public.Applications."
+                ),
+                "source_view": " + ".join(view_names),
+                "columns": [],
+                "excluded_columns": [],
+            }
+
+        # Filter secondaries to those that share the join key — never CROSS JOIN
+        joinable = [built[0]]
+        skipped: list[str] = []
+        for entry in built[1:]:
+            vn, _, cols = entry
+            if "referenceno" in {c.lower() for c in cols}:
+                joinable.append(entry)
+            else:
+                skipped.append(vn)
+                logger.warning(
+                    "Combined model: skipping '%s' — no \"ReferenceNo\" column to join on", vn
+                )
+
+        if len(joinable) < 2:
+            return {
+                "name": "Combined Model",
+                "description": "Could not build combined model SQL",
+                "sql": "",
+                "valid": False,
+                "error": (
+                    f"None of the secondary views share a \"ReferenceNo\" join key with "
+                    f"'{primary_vn}'. Skipped: {', '.join(skipped)}."
+                ),
+                "source_view": " + ".join(view_names),
+                "columns": [],
+                "excluded_columns": [],
+            }
+
+        # Wrap each as a named CTE
+        cte_parts = [
+            f"view_{i + 1} AS (\n{sql}\n)"
+            for i, (_, sql, _) in enumerate(joinable)
+        ]
+
+        # Build outer SELECT — deduplicate aliases across views
+        used_lower: set[str] = {c.lower() for c in primary_cols}
+        select_exprs = [f'view_1."{col}"' for col in primary_cols]
+
+        for i, (_, _, cols) in enumerate(joinable[1:], start=2):
+            alias = f"view_{i}"
+            for col in cols:
+                if col.lower() not in used_lower:
+                    select_exprs.append(f'{alias}."{col}"')
+                    used_lower.add(col.lower())
+
+        # JOIN secondary CTEs to primary via "ReferenceNo"
+        join_clauses = [
+            f'LEFT JOIN view_{i} ON view_{i}."ReferenceNo" = view_1."ReferenceNo"'
+            for i in range(2, len(joinable) + 1)
+        ]
+
+        combined_sql = (
+            f"WITH\n{',\n'.join(cte_parts)}\n"
+            f"SELECT\n  {',\n  '.join(select_exprs)}\n"
+            f"FROM view_1\n"
+            + "\n".join(join_clauses)
+        )
+
+        # Validate
+        is_valid, error = metabase_client.validate_sql(combined_sql, db_id, tenant_id=tenant_id)
+
+        # AI naming based on combined column set (only views actually joined)
+        all_cols = list({c for _, _, cols in joinable for c in cols})
+        source_label = " + ".join(vn for vn, _, _ in joinable)
+        name, description = await self._generate_name_description(
+            source_label, all_cols, db_id, tenant_id
+        )
+
+        logger.info(
+            "Combined model preview complete - tenant=%s views=%s valid=%s",
+            tenant_id, view_names, is_valid
+        )
+        if skipped:
+            note = f" (skipped — no \"ReferenceNo\" join key: {', '.join(skipped)})"
+            description = (description or "") + note
+
+        return {
+            "name": name,
+            "description": description,
+            "sql": combined_sql,
+            "valid": is_valid,
+            "error": error,
+            "source_view": " + ".join(vn for vn, _, _ in joinable),
+            "columns": all_cols,
+            "excluded_columns": [],
+        }
+
+    # ----- Discover & Modify Existing Models -----
+
+    def discover_existing_models(self, collection_id: int, tenant_id: str) -> list[dict]:
+        """Return lightweight list of existing model cards: [{card_id, name, description}]."""
+        cards = metabase_client.get_collection_models(collection_id, tenant_id)
+        return [
+            {
+                "card_id": c["id"],
+                "name": c.get("name", ""),
+                "description": c.get("description") or "",
+            }
+            for c in cards
+        ]
+
+    async def preview_model_modification(
+        self, card_id: int, prompt: str, additional_view_names: list[str],
+        db_id: int, collection_id: int, tenant_id: str
+    ) -> dict:
+        """
+        Generate a modified variant of an existing model.
+        At least one of prompt or additional_view_names must be non-empty.
+        Returns a ModelProposal dict (same shape as preview_model).
+        """
+        if not prompt and not additional_view_names:
+            raise ValueError("At least one of prompt or additional_view_names is required")
+
+        # 1. Fetch existing card
+        card = metabase_client.get_card(card_id, tenant_id)
+        dataset_query = card.get("dataset_query", {})
+        current_name = card.get("name", "Unnamed Model")
+
+        if dataset_query.get("type") == "native":
+            current_sql = dataset_query.get("native", {}).get("query", "")
+        else:
+            # Structured (GUI) query — ask Metabase to convert to native SQL
+            current_sql = metabase_client.get_native_query(dataset_query, tenant_id) or ""
+
+        if not current_sql:
+            raise ValueError("Could not extract SQL from existing model")
+
+        # Extract current columns from SQL (AS "..." pattern)
+        current_columns = re.findall(r'AS\s+"([^"]+)"', current_sql)
+        if not current_columns:
+            # Fallback: try to get column names from card result_metadata
+            current_columns = [
+                col.get("display_name", col.get("name", ""))
+                for col in card.get("result_metadata", [])
+            ]
+
+        # 2. Build additional view SQL if needed (each builder returns (sql, columns))
+        additional_views_text = "(none)"
+        if additional_view_names:
+            view_sqls: list[str] = []
+            for vn in additional_view_names:
+                source_type = self._detect_source_type(vn, db_id, tenant_id)
+                if source_type == "form_view":
+                    # _build_form_view_sql expects the base name (e.g. "GrantApplication"),
+                    # not the full table name "Form-GrantApplication-V2"
+                    match = FORM_VERSION_RE.match(vn)
+                    base_name = match.group(1) if match else vn
+                    view_sql, _ = self._build_form_view_sql(base_name, db_id, tenant_id)
+                elif source_type in ("worksheet_view", "scoresheet_view", "other_view"):
+                    view_sql, _ = self._build_worksheet_view_sql(vn, db_id, tenant_id)
+                else:
+                    logger.warning("Skipping unknown view '%s' in modification", vn)
+                    continue
+                if view_sql:
+                    view_sqls.append(f"-- View: {vn}\n{view_sql}")
+            if view_sqls:
+                additional_views_text = "\n\n".join(view_sqls)
+
+        # 3. Call AI to rewrite
+        user_prompt = prompt.strip() if prompt else "(none)"
+        modify_request = MODIFY_PROMPT.format(
+            current_sql=current_sql,
+            current_columns=", ".join(current_columns) if current_columns else "(unknown)",
+            user_prompt=user_prompt,
+            additional_views_text=additional_views_text,
+        )
+
+        async with aiohttp.ClientSession() as session:
+            new_sql = await self._post_completion(session, SYSTEM_PROMPT, modify_request)
+        if not new_sql:
+            raise ValueError("AI failed to generate modified SQL")
+
+        # Clean markdown fences
+        new_sql = re.sub(r"^```(?:sql)?\s*", "", new_sql.strip(), flags=re.IGNORECASE)
+        new_sql = re.sub(r"\s*```$", "", new_sql.strip())
+
+        # 4. Validate
+        is_valid, error = metabase_client.validate_sql(new_sql, db_id, tenant_id=tenant_id)
+
+        # Self-heal once on failure — _self_heal takes 5 strings, no DB IDs
+        if not is_valid and error:
+            columns_text = "\n".join(f"  {c}" for c in current_columns)
+            healed = await self._self_heal(
+                new_sql, error, columns_text,
+                "(modification — preserve existing JOIN structure)",
+                "(modification — preserve existing relationships)",
+            )
+            if healed:
+                is_valid, heal_error = metabase_client.validate_sql(
+                    healed, db_id, tenant_id=tenant_id
+                )
+                if is_valid:
+                    new_sql = healed
+                    error = heal_error
+
+        # 5. Generate name (variant)
+        new_name = f"{current_name} v2"
+        # Check for existing vN names
+        existing_names = metabase_client.get_all_card_names(tenant_id)
+        if new_name in existing_names:
+            for n in range(3, 100):
+                candidate = f"{current_name} v{n}"
+                if candidate not in existing_names:
+                    new_name = candidate
+                    break
+
+        # Extract new columns
+        new_columns = re.findall(r'AS\s+"([^"]+)"', new_sql)
+
+        description = f"Modified variant of \"{current_name}\""
+        if prompt:
+            description += f" — {prompt[:100]}"
+
+        return {
+            "name": new_name,
+            "description": description,
+            "sql": new_sql,
+            "valid": is_valid,
+            "error": error,
+            "source_view": current_name,
+            "columns": new_columns,
+            "excluded_columns": [],
+        }
 
     def create_models(self, definitions: list[dict], db_id: int,
                       collection_id: int, tenant_id: str) -> dict:
@@ -1048,15 +1424,16 @@ class DataModelGenerator:
 
     def _find_application_id_column(self, schema: str, view_name: str,
                                      db_id: int, tenant_id: str) -> Optional[str]:
-        """Check if the view has an ApplicationId column by querying it directly."""
-        sql = f'SELECT "ApplicationId" FROM "{schema}"."{view_name}" LIMIT 1'
-        try:
-            result = metabase_client.execute_sql(sql, db_id, tenant_id=tenant_id)
-            if "error" not in result:
-                logger.info(f"Found ApplicationId column in {schema}.{view_name}")
-                return "ApplicationId"
-        except Exception as e:
-            logger.debug(f"ApplicationId not found in {schema}.{view_name}: {e}")
+        """Check if the view has an application ID column by querying it directly."""
+        for col_name in ("ApplicationId", "application_id"):
+            sql = f'SELECT "{col_name}" FROM "{schema}"."{view_name}" LIMIT 1'
+            try:
+                result = metabase_client.execute_sql(sql, db_id, tenant_id=tenant_id)
+                if "error" not in result:
+                    logger.info(f"Found {col_name} column in {schema}.{view_name}")
+                    return col_name
+            except Exception as e:
+                logger.debug(f"{col_name} not found in {schema}.{view_name}: {e}")
         return None
 
     def _get_sample_value(self, schema: str, table: str, column: str,

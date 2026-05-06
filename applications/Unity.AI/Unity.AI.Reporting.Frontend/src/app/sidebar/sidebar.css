@@ -597,6 +597,70 @@
   opacity: 0.75;
 }
 
+/* Mode picker (Create new vs Modify existing) */
+.mode-picker-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 8px; }
+.mode-picker-card {
+  border: 2px solid #dee2e6; border-radius: 10px; padding: 18px 14px;
+  background: #fff; cursor: pointer; text-align: left; font-family: inherit;
+}
+.mode-picker-card:hover { border-color: #007bff; background: #f0f7ff; }
+.mode-picker-icon { font-size: 1.6rem; color: #007bff; margin-bottom: 6px; }
+.mode-picker-title { font-weight: 600; font-size: 0.95rem; color: #212529; margin-bottom: 4px; }
+.mode-picker-desc { font-size: 0.8rem; color: #6c757d; line-height: 1.4; }
+
+/* Edit-existing sections */
+.edit-section { margin-top: 14px; }
+.edit-section-label {
+  display: block; font-size: 0.85rem; font-weight: 600;
+  color: #495057; margin-bottom: 6px;
+}
+.edit-prompt-textarea {
+  width: 100%; padding: 8px 10px; font-size: 0.85rem; font-family: inherit;
+  border: 1px solid #dee2e6; border-radius: 6px; resize: vertical; box-sizing: border-box;
+}
+.edit-prompt-textarea:focus { outline: none; border-color: #007bff; }
+
+/* Editable proposal fields in review step */
+.proposal-edit-label {
+  display: block; font-size: 0.78rem; font-weight: 600;
+  color: #6c757d; margin: 6px 0 4px;
+}
+.proposal-name-input, .proposal-description-input {
+  width: 100%; padding: 6px 10px; font-family: inherit; font-size: 0.9rem;
+  border: 1px solid #dee2e6; border-radius: 6px; box-sizing: border-box; margin-bottom: 6px;
+}
+.proposal-name-input { font-weight: 600; }
+.proposal-name-input:focus, .proposal-description-input:focus { outline: none; border-color: #007bff; }
+
+/* View tabs + multi-select */
+.view-tabs { display: flex; gap: 4px; margin-bottom: 14px; border-bottom: 2px solid #e9ecef; }
+.view-tab-btn {
+  background: transparent; border: none; border-bottom: 2px solid transparent;
+  margin-bottom: -2px; padding: 7px 12px; font-size: 0.82rem; font-weight: 500;
+  color: #6c757d; cursor: pointer; border-radius: 4px 4px 0 0; white-space: nowrap;
+}
+.view-tab-btn:hover:not(:disabled) { color: #495057; background: #f8f9fa; }
+.view-tab-btn.active { color: #007bff; border-bottom-color: #007bff; }
+.view-tab-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.view-picker-row { display: flex; align-items: center; gap: 10px; }
+.view-picker-check {
+  width: 20px; height: 20px; border: 2px solid #dee2e6; border-radius: 4px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.75rem; color: #fff; background: #fff; flex-shrink: 0;
+}
+.view-picker-check.checked { background: #007bff; border-color: #007bff; }
+.view-picker-info { flex: 1; min-width: 0; }
+.view-version-badge {
+  display: inline-block; margin-left: 6px; padding: 1px 6px;
+  background: #e9ecef; color: #495057; border-radius: 10px;
+  font-size: 0.72rem; font-weight: 500; vertical-align: middle;
+}
+.view-selection-summary {
+  margin-top: 10px; padding: 8px 12px; background: #e7f1ff;
+  border: 1px solid #b8d4f8; border-radius: 6px;
+  font-size: 0.82rem; color: #004085; word-break: break-word;
+}
+
 /* View picker list */
 .view-picker-list {
   list-style: none;

@@ -155,6 +155,28 @@
   <div class="models-modal-overlay">
     <div class="models-modal" (click)="$event.stopPropagation()">
 
+      @if (modelsModalStep === 'pick-mode') {
+        <div class="models-modal-header">
+          <h3>Data Models</h3>
+          <button class="models-modal-close" (click)="closeModelsModal()">×</button>
+        </div>
+        <div class="models-modal-body">
+          <p class="models-hint">What would you like to do?</p>
+          <div class="mode-picker-grid">
+            <button class="mode-picker-card" (click)="chooseModeCreate()">
+              <div class="mode-picker-icon">+</div>
+              <div class="mode-picker-title">Create New Model</div>
+              <div class="mode-picker-desc">Build a model from one or more Reporting views.</div>
+            </button>
+            <button class="mode-picker-card" (click)="chooseModeModify()">
+              <div class="mode-picker-icon">✎</div>
+              <div class="mode-picker-title">Modify Existing Model</div>
+              <div class="mode-picker-desc">Pick an existing model, describe changes or add views; saves as a new variant.</div>
+            </button>
+          </div>
+        </div>
+      }
+
       @if (modelsModalStep === 'loading-views') {
         <div class="models-modal-header">
           <h3>Loading Views...</h3>
@@ -165,41 +187,192 @@
         </div>
       }
 
-      @if (modelsModalStep === 'pick-view') {
+      @if (modelsModalStep === 'loading-models') {
         <div class="models-modal-header">
-          <h3>Select a View</h3>
+          <h3>Loading Models...</h3>
+        </div>
+        <div class="models-modal-body models-loading">
+          <div class="models-spinner"></div>
+          <p>Loading existing models...</p>
+        </div>
+      }
+
+      @if (modelsModalStep === 'pick-existing-model') {
+        <div class="models-modal-header">
+          <h3>Select an Existing Model</h3>
           <button class="models-modal-close" (click)="closeModelsModal()">×</button>
         </div>
         <div class="models-modal-body">
-          <p class="models-hint">Choose a worksheet or scoresheet view to build a data model from:</p>
-          @if (availableViews.length === 0) {
-            <div class="models-empty">
-              No worksheet views found. Ensure your database has Reporting views with data.
-            </div>
+          @if (existingModels.length === 0) {
+            <div class="models-empty">No existing models found in this tenant's collection.</div>
           }
           <ul class="view-picker-list">
-            @for (view of availableViews; track view.view_name) {
-              <li
-                class="view-picker-item"
-                [class.selected]="selectedView?.view_name === view.view_name"
-                (click)="selectView(view)">
-                <div class="view-picker-name">{{ view.view_name }}</div>
-                <div class="view-picker-meta">
-                  <span>{{ view.column_count }} columns</span>
-                  @if (view.has_labels) {
-                    <span class="view-label-badge">Labels ✓</span>
-                  }
-                </div>
+            @for (m of existingModels; track m.card_id) {
+              <li class="view-picker-item" (click)="selectExistingModel(m)">
+                <div class="view-picker-name">{{ m.name }}</div>
+                @if (m.description) {
+                  <div class="view-picker-meta"><span>{{ m.description }}</span></div>
+                }
               </li>
             }
           </ul>
         </div>
         <div class="models-modal-footer">
+          <button class="models-btn-secondary" (click)="modelsModalStep = 'pick-mode'">← Back</button>
+        </div>
+      }
+
+      @if (modelsModalStep === 'edit-existing') {
+        <div class="models-modal-header">
+          <h3>Modify Model</h3>
+          <button class="models-modal-close" (click)="closeModelsModal()">×</button>
+        </div>
+        <div class="models-modal-body">
+          @if (selectedExistingModel) {
+            <div class="proposal-detail">
+              <h4 class="proposal-name">{{ selectedExistingModel.name }}</h4>
+              @if (selectedExistingModel.description) {
+                <p class="proposal-description">{{ selectedExistingModel.description }}</p>
+              }
+              <button type="button" class="btn-link" (click)="existingSqlExpanded = !existingSqlExpanded">
+                {{ existingSqlExpanded ? 'Hide current SQL ▲' : 'Show current SQL ▼' }}
+              </button>
+              @if (existingSqlExpanded) {
+                <pre class="sql-preview">{{ selectedExistingModel.sql }}</pre>
+              }
+            </div>
+          }
+
+          <div class="edit-section">
+            <label class="edit-section-label">Describe changes (optional)</label>
+            <textarea class="edit-prompt-textarea" rows="3"
+                      placeholder="e.g. Add a column for total funding by region"
+                      [(ngModel)]="editPrompt"></textarea>
+          </div>
+
+          <div class="edit-section">
+            <label class="edit-section-label">Add views (optional)</label>
+            <div class="view-tabs">
+              <button class="view-tab-btn" [class.active]="activeViewTab === 'form_view'"
+                      [disabled]="formViews.length === 0" (click)="activeViewTab = 'form_view'">
+                Form ({{ formViews.length }})
+              </button>
+              <button class="view-tab-btn" [class.active]="activeViewTab === 'worksheet_view'"
+                      [disabled]="worksheetViews.length === 0" (click)="activeViewTab = 'worksheet_view'">
+                Worksheet ({{ worksheetViews.length }})
+              </button>
+              <button class="view-tab-btn" [class.active]="activeViewTab === 'scoresheet_view'"
+                      [disabled]="scoresheetViews.length === 0" (click)="activeViewTab = 'scoresheet_view'">
+                Scoresheet ({{ scoresheetViews.length }})
+              </button>
+              <button class="view-tab-btn" [class.active]="activeViewTab === 'other_view'"
+                      [disabled]="otherViews.length === 0" (click)="activeViewTab = 'other_view'">
+                Other ({{ otherViews.length }})
+              </button>
+            </div>
+            <ul class="view-picker-list">
+              @for (view of tabViews; track view.view_name) {
+                <li class="view-picker-item"
+                    [class.selected]="isEditAdditionalViewSelected(view)"
+                    (click)="toggleEditAdditionalView(view)">
+                  <div class="view-picker-row">
+                    <div class="view-picker-check" [class.checked]="isEditAdditionalViewSelected(view)">
+                      @if (isEditAdditionalViewSelected(view)) { ✓ }
+                    </div>
+                    <div class="view-picker-info">
+                      <div class="view-picker-name">{{ view.display_name || view.view_name }}</div>
+                    </div>
+                  </div>
+                </li>
+              }
+            </ul>
+          </div>
+        </div>
+        <div class="models-modal-footer">
+          <button class="models-btn-secondary" (click)="modelsModalStep = 'pick-existing-model'">← Back</button>
+          <button class="models-btn-primary"
+                  [disabled]="!canGenerateModified"
+                  (click)="generateModifiedModel()">
+            Generate Modified Model →
+          </button>
+        </div>
+      }
+
+      @if (modelsModalStep === 'pick-view') {
+        <div class="models-modal-header">
+          <h3>Select Views</h3>
+          <button class="models-modal-close" (click)="closeModelsModal()">×</button>
+        </div>
+        <div class="models-modal-body">
+          <div class="view-tabs">
+            <button class="view-tab-btn"
+                    [class.active]="activeViewTab === 'form_view'"
+                    [disabled]="formViews.length === 0"
+                    (click)="activeViewTab = 'form_view'">
+              Form Views ({{ formViews.length }})
+            </button>
+            <button class="view-tab-btn"
+                    [class.active]="activeViewTab === 'worksheet_view'"
+                    [disabled]="worksheetViews.length === 0"
+                    (click)="activeViewTab = 'worksheet_view'">
+              Worksheet Views ({{ worksheetViews.length }})
+            </button>
+            <button class="view-tab-btn"
+                    [class.active]="activeViewTab === 'scoresheet_view'"
+                    [disabled]="scoresheetViews.length === 0"
+                    (click)="activeViewTab = 'scoresheet_view'">
+              Scoresheet Views ({{ scoresheetViews.length }})
+            </button>
+            <button class="view-tab-btn"
+                    [class.active]="activeViewTab === 'other_view'"
+                    [disabled]="otherViews.length === 0"
+                    (click)="activeViewTab = 'other_view'">
+              Other ({{ otherViews.length }})
+            </button>
+          </div>
+          @if (tabViews.length === 0) {
+            <div class="models-empty">No views found in this category.</div>
+          }
+          <ul class="view-picker-list">
+            @for (view of tabViews; track view.view_name) {
+              <li
+                class="view-picker-item"
+                [class.selected]="isViewSelected(view)"
+                (click)="selectView(view)">
+                <div class="view-picker-row">
+                  <div class="view-picker-check" [class.checked]="isViewSelected(view)">
+                    @if (isViewSelected(view)) { ✓ }
+                  </div>
+                  <div class="view-picker-info">
+                    <div class="view-picker-name">
+                      {{ view.display_name || view.view_name }}
+                      @if (view.version) {
+                        <span class="view-version-badge">{{ view.version }}</span>
+                      }
+                    </div>
+                    <div class="view-picker-meta">
+                      <span>{{ view.column_count }} columns</span>
+                      @if (view.has_labels) {
+                        <span class="view-label-badge">Labels ✓</span>
+                      }
+                    </div>
+                  </div>
+                </div>
+              </li>
+            }
+          </ul>
+          @if (selectedViews.length > 0) {
+            <div class="view-selection-summary">
+              Selected: {{ selectedViews.map(v => v.display_name || v.view_name).join(' + ') }}
+            </div>
+          }
+        </div>
+        <div class="models-modal-footer">
           <button class="models-btn-secondary" (click)="closeModelsModal()">Cancel</button>
           <button class="models-btn-primary"
-                  [disabled]="!selectedView"
+                  [disabled]="selectedViews.length === 0"
                   (click)="generateModelForView()">
-            Generate Model →
+            {{ generateButtonLabel }}
           </button>
         </div>
       }
@@ -210,7 +383,7 @@
         </div>
         <div class="models-modal-body models-loading">
           <div class="models-spinner"></div>
-          <p>AI is building a data model from <strong>{{ selectedView?.view_name }}</strong>...</p>
+          <p>AI is building a data model from <strong>{{ selectedViews.map(v => v.display_name || v.view_name).join(' + ') }}</strong>...</p>
         </div>
       }
 
@@ -222,8 +395,10 @@
         <div class="models-modal-body">
           @if (modelProposal) {
             <div class="proposal-detail">
-              <h4 class="proposal-name">{{ modelProposal.name }}</h4>
-              <p class="proposal-description">{{ modelProposal.description }}</p>
+              <label class="proposal-edit-label">Name</label>
+              <input class="proposal-name-input" type="text" [(ngModel)]="modelProposal.name" />
+              <label class="proposal-edit-label">Description</label>
+              <textarea class="proposal-description-input" rows="2" [(ngModel)]="modelProposal.description"></textarea>
               <div class="proposal-source">Source: <code>{{ modelProposal.source_view }}</code></div>
 
               @if (modelProposal.columns.length > 0) {
@@ -262,7 +437,7 @@
           }
         </div>
         <div class="models-modal-footer">
-          <button class="models-btn-secondary" (click)="generateModelForView()">Regenerate</button>
+          <button class="models-btn-secondary" (click)="regenerateProposal()">Regenerate</button>
           <button class="models-btn-secondary" (click)="closeModelsModal()">Cancel</button>
           <button class="models-btn-primary"
                   [disabled]="!modelProposal?.valid"
