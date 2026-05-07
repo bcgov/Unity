@@ -277,7 +277,8 @@ public class GrantManagerWebModule : AbpModule
 
     private static void ConfigurePolicies(ServiceConfigurationContext context)
     {
-        context.Services.AddScoped<Microsoft.AspNetCore.Authorization.IAuthorizationHandler, Unity.GrantManager.Web.Identity.InternalNetworkHandler>();
+        context.Services.AddScoped<Microsoft.AspNetCore.Authorization.IAuthorizationHandler, Unity.GrantManager.Web.Identity.Policy.InternalNetworkHandler>();
+        context.Services.AddSingleton<Middleware.ExceptionNotificationThrottle>();
         PolicyRegistrant.Register(context);
     }
 

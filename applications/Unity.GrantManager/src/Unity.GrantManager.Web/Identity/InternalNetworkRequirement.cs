@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 
-namespace Unity.GrantManager.Web.Identity;
+namespace Unity.GrantManager.Web.Identity.Policy;
 
 /// <summary>
 /// Allows access to /metrics only from loopback or RFC-1918 private addresses.

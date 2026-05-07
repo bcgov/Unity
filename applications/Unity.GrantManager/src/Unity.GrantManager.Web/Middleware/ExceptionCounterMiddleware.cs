@@ -2,14 +2,23 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Prometheus;
 using Unity.GrantManager.Notifications;
 using Unity.Notifications.TeamsNotifications;
 
 namespace Unity.GrantManager.Web.Middleware;
 
-public class ExceptionCounterMiddleware(RequestDelegate next, INotificationsAppService notificationsAppService)
+public class ExceptionCounterMiddleware(
+    RequestDelegate next,
+    ExceptionNotificationThrottle throttle,
+    ILogger<ExceptionCounterMiddleware> logger)
 {
+    // Notify only in these environments; add "Staging" if desired
+    private static readonly HashSet<string> NotifyEnvironments =
+        new(StringComparer.OrdinalIgnoreCase) { "Production" };
+
     private static readonly Counter ExceptionCounter =
         Metrics.CreateCounter(
             "application_exceptions_total",
@@ -28,47 +37,73 @@ public class ExceptionCounterMiddleware(RequestDelegate next, INotificationsAppS
         catch (Exception ex)
         {
             ExceptionCounter.WithLabels(ex.GetType().Name).Inc();
-            ErrorCountingLoggerSink.ErrorCounter.WithLabels("critical", ex.GetType().Name).Inc();
-            await NotifyTeamsAsync(context, ex);
+            ErrorCountingLoggerSink.ErrorCounter.WithLabels("fatal", ex.GetType().Name).Inc();
+
+            QueueTeamsNotification(context, ex);
+
             throw;
         }
     }
 
-    private async Task NotifyTeamsAsync(HttpContext context, Exception ex)
+    private void QueueTeamsNotification(HttpContext context, Exception ex)
     {
-        try
+        string? env = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
+
+        if (!NotifyEnvironments.Contains(env ?? string.Empty))
         {
-            string? env = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
-            string endpoint = $"{context.Request.Method} {context.Request.Path}";
-
-            // Truncate stack trace — Teams message cards have a ~28 KB body limit
-            string stackTrace = ex.StackTrace ?? "(no stack trace)";
-            if (stackTrace.Length > 1500)
-            {
-                stackTrace = stackTrace[..1500] + "\n... (truncated)";
-            }
-
-            string activityTitle = $"[CRITICAL] {ex.GetType().Name}";
-            string activitySubtitle = $"Environment: {env} | {endpoint}";
-
-            var facts = new List<Fact>
-            {
-                new() { Name = "Exception", Value = ex.GetType().FullName ?? ex.GetType().Name },
-                new() { Name = "Message",   Value = ex.Message },
-                new() { Name = "Endpoint",  Value = endpoint },
-                new() { Name = "Stack Trace", Value = stackTrace },
-            };
-
-            if (ex.InnerException is not null)
-            {
-                facts.Add(new Fact { Name = "Inner Exception", Value = ex.InnerException.Message });
-            }
-
-            await notificationsAppService.PostToTeamsAsync(activityTitle, activitySubtitle, facts);
+            return;
         }
-        catch
+
+        if (!throttle.ShouldNotify(ex.GetType().Name))
         {
-            // Never let a Teams notification failure affect request handling
+            return;
         }
+
+        // Capture values from the request context before it is disposed
+        string endpoint = $"{context.Request.Method} {context.Request.Path}";
+        string exTypeName = ex.GetType().FullName ?? ex.GetType().Name;
+        string exMessage = ex.Message;
+        string innerMessage = ex.InnerException?.Message ?? string.Empty;
+        string stackTrace = ex.StackTrace ?? "(no stack trace)";
+        if (stackTrace.Length > 1500)
+        {
+            stackTrace = stackTrace[..1500] + "\n... (truncated)";
+        }
+
+        // Resolve a scoped INotificationsAppService from a fresh DI scope so
+        // we can safely use it after the request scope has ended
+        var scopeFactory = context.RequestServices.GetRequiredService<IServiceScopeFactory>();
+
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                await using var scope = scopeFactory.CreateAsyncScope();
+                var notifications = scope.ServiceProvider.GetRequiredService<INotificationsAppService>();
+
+                string activityTitle = $"[CRITICAL] {ex.GetType().Name}";
+                string activitySubtitle = $"Environment: {env} | {endpoint}";
+
+                var facts = new List<Fact>
+                {
+                    new() { Name = "Exception",    Value = exTypeName },
+                    new() { Name = "Message",      Value = exMessage },
+                    new() { Name = "Endpoint",     Value = endpoint },
+                    new() { Name = "Stack Trace",  Value = stackTrace },
+                };
+
+                if (!string.IsNullOrEmpty(innerMessage))
+                {
+                    facts.Add(new Fact { Name = "Inner Exception", Value = innerMessage });
+                }
+
+                await notifications.PostToTeamsAsync(activityTitle, activitySubtitle, facts);
+            }
+            catch (Exception notifyEx)
+            {
+                logger.LogWarning(notifyEx, "Failed to send Teams exception notification");
+            }
+        });
     }
 }
+

@@ -33,7 +33,7 @@ public class AlertWebhookController(
         try
         {
             var firing = payload.Alerts
-                .Where(a => a is not null && a.Status.Equals("firing", StringComparison.OrdinalIgnoreCase))
+                .Where(a => a is not null && string.Equals(a.Status, "firing", StringComparison.OrdinalIgnoreCase))
                 .ToList();
 
             if (firing.Count == 0)
@@ -89,12 +89,12 @@ public class AlertWebhookController(
         catch (Exception ex)
         {
             logger.LogError(ex, "Failed to forward alert {AlertName} to Teams", 
-                payload.Alerts.FirstOrDefault()?.Labels.GetValueOrDefault("alertname"));
+                payload.Alerts.FirstOrDefault()?.Labels?.GetValueOrDefault("alertname"));
             return StatusCode(500);
         }
     }
 
-    private static int SeverityOrder(string severity) => severity.ToLowerInvariant() switch
+    private static int SeverityOrder(string? severity) => severity?.ToLowerInvariant() switch
     {
         "critical" => 0,
         "error"    => 1,

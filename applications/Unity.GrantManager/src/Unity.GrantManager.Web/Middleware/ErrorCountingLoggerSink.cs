@@ -1,5 +1,3 @@
-using System;
-using Microsoft.Extensions.Logging;
 using Prometheus;
 using Serilog.Core;
 using Serilog.Events;
@@ -8,7 +6,7 @@ namespace Unity.GrantManager.Web.Middleware;
 
 /// <summary>
 /// Shared Prometheus counter for application-level errors.
-/// Labelled by log level ("error" / "critical") and exception type (empty when no exception).
+/// Labelled by log level ("error" / "fatal") and exception type (empty when no exception).
 /// Implemented as a Serilog ILogEventSink so it works alongside UseSerilog().
 /// Register via: .WriteTo.Sink(new ErrorCountingLoggerSink())
 /// </summary>
