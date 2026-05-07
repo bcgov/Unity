@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Logging;
 using System;
@@ -16,7 +17,6 @@ using Volo.Abp.Application.Services;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Features;
 using Volo.Abp.SettingManagement;
-using Volo.Abp.UI.Navigation.Urls;
 using Volo.Abp.Users;
 
 namespace Unity.Notifications.EmailNotifications;
@@ -29,7 +29,7 @@ public class EmailNotificationService(
         IExternalUserLookupServiceProvider externalUserLookupServiceProvider,
         ISettingManager settingManager,
         IFeatureChecker featureChecker,
-        IAppUrlProvider appUrlProvider) : ApplicationService, IEmailNotificationService
+        IHttpContextAccessor httpContextAccessor) : ApplicationService, IEmailNotificationService
 {
 
     public async Task<Guid> InitializeDraftAsync(Guid applicationId)
@@ -72,10 +72,24 @@ public class EmailNotificationService(
         await notificationAppService.PostToTeamsAsync(activityTitle, activitySubtitle);
     }
 
-    public async Task<string> GetBaseUrlAsync()
+    public Task<string> GetBaseUrlAsync()
     {
-        var appUrl = await appUrlProvider.GetUrlAsync(appName: "MVC");
-        return appUrl;
+        var httpContext = httpContextAccessor.HttpContext
+            ?? throw new InvalidOperationException("No active HTTP context available to resolve base URL.");
+
+        var request = httpContext.Request;
+
+        var host = request.Headers["X-Forwarded-Host"].FirstOrDefault()
+                   ?? request.Host.Value;
+
+        var scheme = request.Headers["X-Forwarded-Proto"].FirstOrDefault()
+                     ?? request.Scheme;
+
+        var pathBase = request.Headers["X-Forwarded-Prefix"].FirstOrDefault()
+                       ?? request.PathBase.Value
+                       ?? string.Empty;
+
+        return Task.FromResult($"{scheme}://{host}{pathBase}".TrimEnd('/'));
     }
 
     public async Task<HttpResponseMessage> SendCommentNotification(EmailCommentDto input)

@@ -415,7 +415,6 @@ globalThis.queueApplicationAnalysis = function(triggerButton = null) {
     const applicationId = $('#DetailsViewApplicationId').val();
     const $button = triggerButton ? $(triggerButton) : $('#regenerateApplicationAnalysis');
     const existingHtml = $button.html();
-    const promptVersion = globalThis.getSelectedPromptVersion?.() || null;
     const aiAnalysisPollIntervalMs = 15000;
     const aiAnalysisMaxPollFailures = 3;
 
@@ -439,7 +438,7 @@ globalThis.queueApplicationAnalysis = function(triggerButton = null) {
 
     const poll = function() {
         unity.grantManager.grantApplications.grantApplication
-                .getAIGenerationStatus(applicationId, 'application-analysis', promptVersion)
+                .getAIGenerationStatus(applicationId, 'application-analysis')
             .done(function(request) {
                     aiAnalysisPollFailures = 0;
                     const statusText = globalThis.AIGenerationButtonState?.resolveStatus(request?.status) ?? '';
@@ -479,7 +478,7 @@ globalThis.queueApplicationAnalysis = function(triggerButton = null) {
     };
 
     unity.grantManager.grantApplications.grantApplication
-        .queueApplicationAnalysis(applicationId, promptVersion)
+        .queueApplicationAnalysis(applicationId)
         .done(function(request) {
             aiAnalysisPollFailures = 0;
             stopAIAnalysisPolling();

@@ -13,6 +13,7 @@ using Volo.Abp.Domain.Repositories;
 using Volo.Abp.EventBus.Local;
 using Volo.Abp.Features;
 using Volo.Abp.MultiTenancy;
+using Volo.Abp.Uow;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -78,7 +79,7 @@ public class RunApplicationAIPipelineJobTests(ITestOutputHelper outputHelper) : 
             Arg.Is<Automation.Events.ApplicationAIScoringGeneratedEvent>(x => x.ApplicationId == request.ApplicationId));
     }
 
-    private static RunApplicationAIPipelineJob BuildJob(
+    private RunApplicationAIPipelineJob BuildJob(
         IFeatureChecker featureChecker,
         IRepository<AIGenerationRequest, Guid> generationRequestRepository,
         ILocalEventBus? localEventBus = null,
@@ -95,6 +96,7 @@ public class RunApplicationAIPipelineJobTests(ITestOutputHelper outputHelper) : 
             localEventBus ?? Substitute.For<ILocalEventBus>(),
             generationRequestRepository,
             Substitute.For<ICurrentTenant>(),
+            GetRequiredService<IUnitOfWorkManager>(),
             NullLogger<RunApplicationAIPipelineJob>.Instance);
     }
 

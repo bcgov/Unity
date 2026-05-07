@@ -9,6 +9,7 @@ public class ApplicantHistoryAppService(
     IFundingHistoryRepository fundingHistoryRepository,
     IIssueTrackingRepository issueTrackingRepository,
     IAuditHistoryRepository auditHistoryRepository,
+    IReportsHistoryRepository reportsHistoryRepository,
     IApplicantRepository applicantRepository) : GrantManagerAppService, IApplicantHistoryAppService
 {
     public async Task<List<FundingHistoryDto>> GetFundingHistoryListAsync(Guid applicantId)
@@ -107,12 +108,45 @@ public class ApplicantHistoryAppService(
         await auditHistoryRepository.DeleteAsync(id, autoSave: true);
     }
 
+    public async Task<List<ReportsHistoryDto>> GetReportsHistoryListAsync(Guid applicantId)
+    {
+        var items = await reportsHistoryRepository.GetByApplicantIdAsync(applicantId);
+        return ObjectMapper.Map<List<ReportsHistory>, List<ReportsHistoryDto>>(items);
+    }
+
+    public async Task<ReportsHistoryDto> GetReportsHistoryAsync(Guid id)
+    {
+        var entity = await reportsHistoryRepository.GetAsync(id);
+        return ObjectMapper.Map<ReportsHistory, ReportsHistoryDto>(entity);
+    }
+
+    public async Task<ReportsHistoryDto> CreateReportsHistoryAsync(CreateUpdateReportsHistoryDto input)
+    {
+        var entity = ObjectMapper.Map<CreateUpdateReportsHistoryDto, ReportsHistory>(input);
+        await reportsHistoryRepository.InsertAsync(entity, autoSave: true);
+        return ObjectMapper.Map<ReportsHistory, ReportsHistoryDto>(entity);
+    }
+
+    public async Task<ReportsHistoryDto> UpdateReportsHistoryAsync(Guid id, CreateUpdateReportsHistoryDto input)
+    {
+        var entity = await reportsHistoryRepository.GetAsync(id);
+        ObjectMapper.Map(input, entity);
+        await reportsHistoryRepository.UpdateAsync(entity, autoSave: true);
+        return ObjectMapper.Map<ReportsHistory, ReportsHistoryDto>(entity);
+    }
+
+    public async Task DeleteReportsHistoryAsync(Guid id)
+    {
+        await reportsHistoryRepository.DeleteAsync(id, autoSave: true);
+    }
+
     public async Task SaveNotesAsync(Guid applicantId, SaveApplicantHistoryNotesDto input)
     {
         var applicant = await applicantRepository.GetAsync(applicantId);
         applicant.FundingHistoryComments = input.FundingHistoryComments;
         applicant.IssueTrackingComments = input.IssueTrackingComments;
         applicant.AuditComments = input.AuditComments;
+        applicant.ReportsComments = input.ReportsComments;
         await applicantRepository.UpdateAsync(applicant, autoSave: true);
     }
 }

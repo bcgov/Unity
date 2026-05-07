@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Unity.AI.Extraction;
 using Unity.AI.Requests;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Intakes;
@@ -12,24 +13,26 @@ namespace Unity.AI.Operations;
 
 public class AttachmentSummaryService(
     IApplicationChefsFileAttachmentRepository applicationChefsFileAttachmentRepository,
-    ISubmissionAppService submissionAppService,
+    IChefsFileAttachmentStreamProvider chefsFileAttachmentStreamProvider,
+    ITextExtractionService textExtractionService,
     IAIService aiService,
     ILogger<AttachmentSummaryService> logger) : IAttachmentSummaryService, ITransientDependency
 {
-    private const string DefaultContentType = "application/octet-stream";
     private const string SummaryGenerationFailedMessage = "AI summary generation failed.";
 
     public async Task<string> GenerateAndSaveAsync(Guid attachmentId, string? promptVersion = null)
     {
         var attachment = await applicationChefsFileAttachmentRepository.GetAsync(attachmentId);
         var fileName = string.IsNullOrWhiteSpace(attachment.FileName) ? "unknown" : attachment.FileName;
-        var (fileContent, contentType) = await GetAttachmentContentForSummaryAsync(attachment, fileName);
+
+        await using var attachmentStream = await OpenAttachmentStreamAsync(attachment, fileName);
+        var extractedText = await textExtractionService.ExtractTextAsync(fileName, attachmentStream.Content, attachmentStream.ContentType);
 
         var summaryResponse = await aiService.GenerateAttachmentSummaryAsync(new AttachmentSummaryRequest
         {
             FileName = fileName,
-            FileContent = fileContent,
-            ContentType = contentType,
+            ContentType = attachmentStream.ContentType,
+            ExtractedText = extractedText,
             PromptVersion = promptVersion,
         });
 
@@ -68,7 +71,7 @@ public class AttachmentSummaryService(
         return await GenerateAndSaveAsync(attachmentIds, promptVersion);
     }
 
-    private async Task<(byte[] Content, string ContentType)> GetAttachmentContentForSummaryAsync(ApplicationChefsFileAttachment attachment, string fileName)
+    private async Task<ChefsFileAttachmentStream> OpenAttachmentStreamAsync(ApplicationChefsFileAttachment attachment, string fileName)
     {
         if (!Guid.TryParse(attachment.ChefsSubmissionId, out var submissionId) ||
             !Guid.TryParse(attachment.ChefsFileId, out var fileId))
@@ -76,21 +79,13 @@ public class AttachmentSummaryService(
             logger.LogWarning(
                 "Attachment {AttachmentId} has invalid CHEFS IDs. Falling back to metadata-only summary generation.",
                 attachment.Id);
-            return (Array.Empty<byte>(), DefaultContentType);
+            return ChefsFileAttachmentStream.Empty;
         }
 
         try
         {
-            var fileDto = await submissionAppService.GetChefsFileAttachment(submissionId, fileId, fileName);
-            if (fileDto?.Content == null)
-            {
-                logger.LogWarning(
-                    "Attachment {AttachmentId} has no retrievable content. Falling back to metadata-only summary generation.",
-                    attachment.Id);
-                return (Array.Empty<byte>(), DefaultContentType);
-            }
-
-            return (fileDto.Content, string.IsNullOrWhiteSpace(fileDto.ContentType) ? DefaultContentType : fileDto.ContentType);
+            var stream = await chefsFileAttachmentStreamProvider.OpenAsync(submissionId, fileId, fileName);
+            return stream ?? ChefsFileAttachmentStream.Empty;
         }
         catch (Exception ex)
         {
@@ -98,7 +93,7 @@ public class AttachmentSummaryService(
                 ex,
                 "Failed retrieving CHEFS content for attachment {AttachmentId}. Falling back to metadata-only summary generation.",
                 attachment.Id);
-            return (Array.Empty<byte>(), DefaultContentType);
+            return ChefsFileAttachmentStream.Empty;
         }
     }
 }
