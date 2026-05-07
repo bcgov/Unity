@@ -47,24 +47,35 @@ public interface IGrantAppService : IApplicationService
 - Do NOT use web types (`IFormFile`, `Stream`) — accept `byte[]` from controllers.
 - Do NOT call other app services in the same module. Use domain services or repositories.
 
-## Object Mapping (AutoMapper)
+## Object Mapping (Mapperly)
 
-This project uses **AutoMapper** (not Mapperly). Mapping profiles are defined as:
+This project uses **Mapperly** (not AutoMapper). Mapper classes are defined using `Riok.Mapperly.Abstractions` and `Volo.Abp.Mapperly`:
 
 ```csharp
-public class GrantManagerApplicationAutoMapperProfile : Profile
+using Riok.Mapperly.Abstractions;
+using Volo.Abp.Mapperly;
+
+[Mapper]
+public partial class GrantToGrantDtoMapper : MapperBase<Grant, GrantDto>
 {
-    public GrantManagerApplicationAutoMapperProfile()
-    {
-        CreateMap<Grant, GrantDto>();
-        CreateMap<CreateGrantDto, Grant>();
-    }
+    public override partial GrantDto Map(Grant source);
+    public override partial void Map(Grant source, GrantDto destination);
+}
+
+// For bidirectional mapping:
+[Mapper]
+public partial class ZoneGroupDefinitionMapper : TwoWayMapperBase<ZoneGroupDefinition, ZoneGroupDefinitionDto>
+{
+    public override partial ZoneGroupDefinitionDto Map(ZoneGroupDefinition source);
+    public override partial void Map(ZoneGroupDefinition source, ZoneGroupDefinitionDto destination);
+    public override partial ZoneGroupDefinition ReverseMap(ZoneGroupDefinitionDto source);
+    public override partial void ReverseMap(ZoneGroupDefinitionDto source, ZoneGroupDefinition destination);
 }
 ```
 
-- Profile files follow `*AutoMapperProfile.cs` naming.
-- Each Application and Web project has its own profile.
-- Use `ObjectMapper.Map<TSource, TDest>(source)` in app services.
+- Mapper files follow `*MapperlyProfile.cs` naming; each Application and Web project has its own file.
+- Use `[MapperIgnoreTarget(nameof(...))]` to skip properties, `[MapProperty]` to rename, and `[MapPropertyFromSource]` for custom resolver methods.
+- Call sites still use `ObjectMapper.Map<TSource, TDest>(source)` — Mapperly provides the source-generated implementation.
 
 ## Error Handling
 

@@ -51,6 +51,7 @@ namespace Unity.GrantManager.EntityFrameworkCore
         public DbSet<FundingHistory> FundingHistories { get; set; }
         public DbSet<IssueTracking> IssueTrackings { get; set; }
         public DbSet<AuditHistory> AuditHistories { get; set; }
+        public DbSet<ReportsHistory> ReportsHistories { get; set; }
         #endregion
 
         public GrantTenantDbContext(DbContextOptions<GrantTenantDbContext> options) : base(options)
@@ -391,10 +392,17 @@ namespace Unity.GrantManager.EntityFrameworkCore
                 b.HasOne<Applicant>().WithMany().HasForeignKey(x => x.ApplicantId).IsRequired(false);
             });
 
-            var allEntityTypes = modelBuilder.Model.GetEntityTypes();
-            foreach (var type in allEntityTypes.Where(t => t.ClrType != typeof(ExtraPropertyDictionary)).Select(t => t.ClrType))
+            modelBuilder.Entity<ReportsHistory>(b =>
             {
-                var entityBuilder = modelBuilder.Entity(type);
+                b.ToTable(GrantManagerConsts.TenantTablePrefix + "ReportsHistories", GrantManagerConsts.DbSchema);
+                b.ConfigureByConvention();
+                b.HasOne<Applicant>().WithMany().HasForeignKey(x => x.ApplicantId).IsRequired(false);
+            });
+
+            var allEntityTypes = modelBuilder.Model.GetEntityTypes();
+            foreach (var entityType in allEntityTypes.Where(t => t.ClrType != typeof(ExtraPropertyDictionary) && !t.IsOwned()))
+            {
+                var entityBuilder = modelBuilder.Entity(entityType.ClrType);
                 entityBuilder.TryConfigureExtraProperties();
             }
 

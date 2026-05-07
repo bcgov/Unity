@@ -16,7 +16,6 @@ using Unity.GrantManager.ApplicationForms;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Flex;
 using Unity.GrantManager.GrantApplications;
-using Unity.AI.Web.PromptTools;
 using Unity.GrantManager.Zones;
 using Unity.Modules.Shared.Correlation;
 using Volo.Abp.AspNetCore.Mvc.UI.RazorPages;
@@ -95,12 +94,6 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
         public HashSet<string> ZoneStateSet { get; set; } = [];
 
         [BindProperty(SupportsGet = true)]
-        public bool IsDevPromptControlsEnabled { get; set; }
-
-        [BindProperty(SupportsGet = true)]
-        public string DefaultPromptVersion { get; set; }
-
-        [BindProperty(SupportsGet = true)]
         public string? ApplicationScoresheetSchemaJson { get; set; }
 
         public DetailsModel(
@@ -111,7 +104,6 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
             IFeatureChecker featureChecker,
             ICurrentUser currentUser,
             IConfiguration configuration,
-            IAIPromptToolViewOptionsProvider aiPromptToolViewOptionsProvider,
             IZoneManagementAppService zoneManagementAppService)
         {
             _grantApplicationAppService = grantApplicationAppService;
@@ -127,8 +119,6 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
             MaxFileSize = configuration["S3:MaxFileSize"] ?? "";
             EmailAttachmentMaxFileSize = configuration["S3:EmailAttachmentMaxFileSize"] ?? "20";
             TotalEmailAttachmentMaxFileSize = configuration["S3:EmailAttachmentsTotalMaxFileSize"] ?? "25";
-            IsDevPromptControlsEnabled = aiPromptToolViewOptionsProvider.IsDevPromptControlsEnabled;
-            DefaultPromptVersion = aiPromptToolViewOptionsProvider.DefaultPromptVersion;
         }
 
         public async Task OnGetAsync()

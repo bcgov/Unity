@@ -17,6 +17,7 @@ namespace Unity.Modules.Shared.Http
             object? body = null,
             string? authToken = null,
             (string username, string password)? basicAuth = null,
+            HttpCompletionOption completionOption = HttpCompletionOption.ResponseContentRead,
             CancellationToken cancellationToken = default);
 
         /// <summary>

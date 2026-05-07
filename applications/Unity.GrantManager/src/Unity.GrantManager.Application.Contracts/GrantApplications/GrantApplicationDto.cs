@@ -15,31 +15,31 @@ public class GrantApplicationDto : AuditedEntityDto<Guid>
     public ApplicationFormDto ApplicationForm { get; set; } = new();
     public string ReferenceNo { get; set; } = string.Empty;
     public decimal RequestedAmount { get; set; }
-    public List<GrantApplicationAssigneeDto> Assignees { get; set; } = new();
+    public List<GrantApplicationAssigneeDto> Assignees { get; set; } = [];
     public DateTime SubmissionDate { get; set; }
     public string Status { get; set; } = string.Empty;
     public int Probability { get; set; }
-    public DateTime ProposalDate { get; set; }
-    public List<ApplicationLinksDto> ApplicationLinks { get; set; } = new();
-    public string ApplicationName { get; set; } = string.Empty;
+    public DateTime? ProposalDate { get; set; }
+    public List<ApplicationLinksDto>? ApplicationLinks { get; set; } = [];
+    public string? ApplicationName { get; set; } = string.Empty;
     public string Category { get; set; } = string.Empty;
-    public string EconomicRegion { get; set; } = string.Empty;
-    public string City { get; set; } = string.Empty;
+    public string? EconomicRegion { get; set; } = string.Empty;
+    public string? City { get; set; } = string.Empty;
     public decimal TotalProjectBudget { get; set; }
     public string? Sector { get; set; } = string.Empty;
     public string? SubSector { get; set; } = string.Empty;
-    public string ProjectSummary { get; set; } = string.Empty;
-    public int TotalScore { get; set; } = 0;
+    public string? ProjectSummary { get; set; } = string.Empty;
+    public int? TotalScore { get; set; } = 0;
     public decimal RecommendedAmount { get; set; } = 0;
     public decimal ApprovedAmount { get; set; } = 0;
-    public string LikelihoodOfFunding { get; set; } = string.Empty;
-    public string DueDiligenceStatus { get; set; } = string.Empty;
-    public string SubStatus { get; set; } = string.Empty;
+    public string? LikelihoodOfFunding { get; set; } = string.Empty;
+    public string? DueDiligenceStatus { get; set; } = string.Empty;
+    public string? SubStatus { get; set; } = string.Empty;
     public string SubStatusDisplayValue { get; set; } = string.Empty;
-    public string DeclineRational { get; set; } = string.Empty;
-    public string Notes { get; set; } = string.Empty;
-    public string AssessmentResultStatus { get; set; } = string.Empty;
-    public DateTime AssessmentResultDate { get; set; }
+    public string? DeclineRational { get; set; } = string.Empty;
+    public string? Notes { get; set; } = string.Empty;
+    public string? AssessmentResultStatus { get; set; } = string.Empty;
+    public DateTime? AssessmentResultDate { get; set; }
     public GrantApplicationState StatusCode { get; set; }
     public DateTime? FinalDecisionDate { get; set; }
     public DateTime? DueDate { get; set; }
@@ -65,7 +65,7 @@ public class GrantApplicationDto : AuditedEntityDto<Guid>
     public string? OrganizationName { get; set; }
     public string? NonRegOrgName { get; set; }
     public string? OrganizationType { get; set; }
-    public GrantApplicationAssigneeDto Owner { get; set; } = new();
+    public GrantApplicationAssigneeDto? Owner { get; set; } = new();
     public string? OrgStatus { get; set; } = string.Empty;
     public string? BusinessNumber { get; set; } = string.Empty;
     public string? OrganizationSize { get; set; } = string.Empty;

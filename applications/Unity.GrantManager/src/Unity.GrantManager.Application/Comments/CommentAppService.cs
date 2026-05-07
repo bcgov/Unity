@@ -23,8 +23,8 @@ namespace Unity.GrantManager.Comments
 
         public async Task<IReadOnlyList<CommentDto>> GetListAsync(QueryCommentsByTypeDto dto)
         {
-            return ObjectMapper.Map<IReadOnlyList<CommentListItem>, IReadOnlyList<CommentDto>>
-                (await commentsManager.GetCommentsDisplayListAsync(dto.OwnerId, dto.CommentType));
+            var comments = await commentsManager.GetCommentsDisplayListAsync(dto.OwnerId, dto.CommentType);
+            return ObjectMapper.Map<List<CommentListItem>, List<CommentDto>>([.. comments]);
         }
 
         public async Task<CommentDto> UpdateAsync(UpdateCommentByTypeDto dto)

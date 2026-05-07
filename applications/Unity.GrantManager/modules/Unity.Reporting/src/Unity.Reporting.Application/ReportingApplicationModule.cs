@@ -1,5 +1,5 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
-using Volo.Abp.AutoMapper;
+using Volo.Abp.Mapperly;
 using Volo.Abp.Modularity;
 using Volo.Abp.Application;
 using Volo.Abp.MultiTenancy;
@@ -20,7 +20,7 @@ namespace Unity.Reporting;
     typeof(ReportingApplicationContractsModule),
     typeof(ReportingEntityFrameworkCoreModule),
     typeof(AbpDddApplicationModule),
-    typeof(AbpAutoMapperModule),
+    typeof(AbpMapperlyModule),
     typeof(AbpSettingManagementApplicationModule),
     typeof(AbpTenantManagementDomainModule)
     )]
@@ -46,11 +46,7 @@ public class ReportingApplicationModule : AbpModule
             options.FileSets.AddEmbedded<ReportingApplicationModule>();
         });
 
-        context.Services.AddAutoMapperObjectMapper<ReportingApplicationModule>();
-        Configure<AbpAutoMapperOptions>(options =>
-        {
-            options.AddMaps<ReportingApplicationModule>(validate: true);
-        });
+        context.Services.AddMapperlyObjectMapper<ReportingApplicationModule>();
 
         context.Services.AddHttpClientProxies(
             typeof(ReportingApplicationContractsModule).Assembly,

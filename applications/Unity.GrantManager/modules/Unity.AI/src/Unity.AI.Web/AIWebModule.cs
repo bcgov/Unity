@@ -4,7 +4,7 @@ using Unity.AI.Web.Menus;
 using Unity.AI.Web.Views.Settings;
 using Volo.Abp.AspNetCore.Mvc.Localization;
 using Volo.Abp.AspNetCore.Mvc.UI.Theme.Shared;
-using Volo.Abp.AutoMapper;
+using Volo.Abp.Mapperly;
 using Volo.Abp.Modularity;
 using Volo.Abp.SettingManagement.Web;
 using Volo.Abp.SettingManagement.Web.Pages.SettingManagement;
@@ -16,7 +16,7 @@ namespace Unity.AI.Web;
 [DependsOn(
     typeof(AIApplicationModule),
     typeof(AbpAspNetCoreMvcUiThemeSharedModule),
-    typeof(AbpAutoMapperModule),
+    typeof(AbpMapperlyModule),
     typeof(AbpSettingManagementWebModule)
     )]
 public class AIWebModule : AbpModule
@@ -46,11 +46,7 @@ public class AIWebModule : AbpModule
             options.MenuContributors.Add(new AIMenuContributor());
         });
 
-        context.Services.AddAutoMapperObjectMapper<AIWebModule>();
-        Configure<AbpAutoMapperOptions>(options =>
-        {
-            options.AddMaps<AIWebModule>(validate: true);
-        });
+        context.Services.AddMapperlyObjectMapper<AIWebModule>();
 
         Configure<SettingManagementPageOptions>(options =>
         {

@@ -12,7 +12,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Logging;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using Microsoft.IdentityModel.Tokens;
-using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi;
 using StackExchange.Profiling;
 using StackExchange.Profiling.Storage;
 using System;
@@ -54,7 +54,7 @@ using Volo.Abp.AspNetCore.Mvc.UI.Theme.Shared;
 using Volo.Abp.AspNetCore.Serilog;
 using Volo.Abp.Auditing;
 using Volo.Abp.Autofac;
-using Volo.Abp.AutoMapper;
+using Volo.Abp.Mapperly;
 using Volo.Abp.BlobStoring;
 using Volo.Abp.Identity;
 using Volo.Abp.Localization;
@@ -419,10 +419,8 @@ public class GrantManagerWebModule : AbpModule
 
     private void ConfigureAutoMapper()
     {
-        Configure<AbpAutoMapperOptions>(options =>
-        {
-            options.AddMaps<GrantManagerWebModule>();
-        });
+        // Mapperly mappers in this assembly are auto-discovered by
+        // AbpMapperlyConventionalRegistrar. No explicit registration required.
     }
 
     private void ConfigureVirtualFileSystem(IWebHostEnvironment hostingEnvironment)
@@ -559,8 +557,15 @@ public class GrantManagerWebModule : AbpModule
 
         app.UseAbpRequestLocalization();
 
-        app.UseStatusCodePagesWithReExecute("/Error", "?httpStatusCode={0}");
-        app.UseErrorPage();
+        if (env.IsProduction() || env.IsStaging())
+        {
+            app.UseStatusCodePagesWithReExecute("/Error", "?httpStatusCode={0}");
+            app.UseErrorPage();
+        }
+        else
+        {
+            app.UseDeveloperExceptionPage();
+        }
 
         if (Convert.ToBoolean(configuration["AuthServer:IsBehindTlsTerminationProxy"]))
         {

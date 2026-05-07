@@ -25,5 +25,11 @@ public interface IApplicantHistoryAppService : IApplicationService
     Task<AuditHistoryDto> UpdateAuditHistoryAsync(Guid id, CreateUpdateAuditHistoryDto input);
     Task DeleteAuditHistoryAsync(Guid id);
 
+    Task<List<ReportsHistoryDto>> GetReportsHistoryListAsync(Guid applicantId);
+    Task<ReportsHistoryDto> GetReportsHistoryAsync(Guid id);
+    Task<ReportsHistoryDto> CreateReportsHistoryAsync(CreateUpdateReportsHistoryDto input);
+    Task<ReportsHistoryDto> UpdateReportsHistoryAsync(Guid id, CreateUpdateReportsHistoryDto input);
+    Task DeleteReportsHistoryAsync(Guid id);
+
     Task SaveNotesAsync(Guid applicantId, SaveApplicantHistoryNotesDto input);
 }

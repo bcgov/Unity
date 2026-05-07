@@ -28,7 +28,8 @@ $(function () {
             .saveNotes(applicantId, {
                 fundingHistoryComments: $('#FundingHistoryComments').val(),
                 issueTrackingComments: $('#IssueTrackingComments').val(),
-                auditComments: $('#AuditComments').val()
+                auditComments: $('#AuditComments').val(),
+                reportsComments: $('#ReportsComments').val()
             })
             .done(function () {
                 abp.notify.success('History notes saved.');
@@ -151,6 +152,50 @@ $(function () {
         ].map(function (col, i) { col.index = i; col.targets = [i]; return col; });
     }
 
+    function getReportsHistoryColumns() {
+        return [
+            { title: 'Fiscal Year', data: 'fiscalYear', name: 'fiscalYear', className: 'data-table-header', render: (d) => d ?? nullPlaceholder },
+            {
+                title: 'Report Date', data: 'reportDate', name: 'reportDate', className: 'data-table-header',
+                render: function (d) {
+                    if (!d) return nullPlaceholder;
+                    try {
+                        return luxon.DateTime.fromISO(d, {
+                            locale: abp.localization.currentCulture.name,
+                        }).toUTC().toLocaleString();
+                    } catch (e) { console.warn('Report date parse error:', e); return d; }
+                }
+            },
+            { title: 'Outstanding', data: 'outstanding', name: 'outstanding', className: 'data-table-header', width: '100px', render: (d) => d === true ? 'Yes' : 'No' },
+            { title: 'Incomplete Report', data: 'incompleteReport', name: 'incompleteReport', className: 'data-table-header', width: '130px', render: (d) => d === true ? 'Yes' : 'No' },
+            {
+                title: 'Note', data: 'note', name: 'note', className: 'data-table-header', width: '200px',
+                createdCell: function (td) { $(td).css('min-width', '200px'); },
+                render: (d) => d ?? nullPlaceholder
+            },
+            {
+                title: 'Actions', data: null, name: 'actions', orderable: false, className: 'data-table-header', width: '70px',
+                render: function (data, type, row) {
+                    let $wrapper = $('<div>').addClass('d-flex align-items-center gap-2');
+
+                    let $editBtn = $('<button>')
+                        .addClass('btn btn-sm edit-button px-0 reports-edit-btn')
+                        .attr({ 'aria-label': 'Edit', 'title': 'Edit' })
+                        .append($('<i>').addClass('fl fl-edit'));
+
+                    let $deleteBtn = $('<button>')
+                        .addClass('btn btn-link p-0 reports-delete-btn')
+                        .attr({ 'title': 'Delete Reports History', 'data-id': row.id })
+                        .css({ 'color': '#0066cc', 'text-decoration': 'none' })
+                        .append($('<i>').addClass('fa fa-times'));
+
+                    $wrapper.append($editBtn).append($deleteBtn);
+                    return $wrapper.prop('outerHTML');
+                }
+            }
+        ].map(function (col, i) { col.index = i; col.targets = [i]; return col; });
+    }
+
     // ── Modals ────────────────────────────────────────────────────────────────
 
     const getApplicantId = () => $('#ApplicantHistory_ApplicantId').val();
@@ -163,6 +208,9 @@ $(function () {
 
     const createAuditModal = new abp.ModalManager(abp.appPath + 'ApplicantHistory/CreateAuditHistoryModal');
     const editAuditModal = new abp.ModalManager(abp.appPath + 'ApplicantHistory/EditAuditHistoryModal');
+
+    const createReportsModal = new abp.ModalManager(abp.appPath + 'ApplicantHistory/CreateReportsHistoryModal');
+    const editReportsModal = new abp.ModalManager(abp.appPath + 'ApplicantHistory/EditReportsHistoryModal');
 
     // ── DataTables ────────────────────────────────────────────────────────────
 
@@ -256,6 +304,36 @@ $(function () {
         auditHistoryTable.externalSearch('#audit-history-search', { delay: 300 });
     }
 
+    const reportsHistoryTable = initializeDataTable({
+        dt: $('#ReportsHistoryTable'),
+        defaultVisibleColumns: ['fiscalYear', 'reportDate', 'outstanding', 'incompleteReport', 'note', 'actions'],
+        listColumns: getReportsHistoryColumns(),
+        dataEndpoint: () => unity.grantManager.applicantProfile.applicantHistory.getReportsHistoryList(getApplicantId()),
+        data: () => ({}),
+        responseCallback: function (r) { return { recordsTotal: r.length, recordsFiltered: r.length, data: r }; },
+        actionButtons: [
+            {
+                text: 'ADD',
+                className: 'custom-table-btn flex-none btn btn-secondary',
+                action: function () { createReportsModal.open({ applicantId: getApplicantId() }); }
+            },
+            {
+                extend: 'csv',
+                text: 'Export',
+                className: 'custom-table-btn flex-none btn btn-secondary',
+                exportOptions: { columns: ':visible:not(.notexport)' }
+            }
+        ],
+        serverSideEnabled: false,
+        pagingEnabled: true,
+        dataTableName: 'ReportsHistoryTable',
+        dynamicButtonContainerId: 'reportsHistoryDynamicButtons'
+    });
+
+    if (reportsHistoryTable && typeof reportsHistoryTable.externalSearch === 'function') {
+        reportsHistoryTable.externalSearch('#reports-history-search', { delay: 300 });
+    }
+
     // ── Modal result callbacks ─────────────────────────────────────────────────
 
     createFundingModal.onResult(function () {
@@ -286,6 +364,16 @@ $(function () {
     editAuditModal.onResult(function () {
         auditHistoryTable.ajax.reload();
         abp.notify.success('Audit history record updated.');
+    });
+
+    createReportsModal.onResult(function () {
+        reportsHistoryTable.ajax.reload();
+        abp.notify.success('Reports history record added.');
+    });
+
+    editReportsModal.onResult(function () {
+        reportsHistoryTable.ajax.reload();
+        abp.notify.success('Reports history record updated.');
     });
 
     // ── Edit / Delete — delegated handlers on table containers ────────────────
@@ -368,6 +456,34 @@ $(function () {
                         .catch(function () {
                             abp.notify.error('Failed to delete record.');
                             auditHistoryTable.ajax.reload();
+                        });
+                }
+            }
+        );
+    });
+
+    $('#ReportsHistoryTable').on('click', 'td button.reports-edit-btn', function (event) {
+        event.stopPropagation();
+        let rowData = reportsHistoryTable.row(event.target.closest('tr')).data();
+        editReportsModal.open({ id: rowData.id });
+    });
+
+    $('#ReportsHistoryTable').on('click', '.reports-delete-btn', function (e) {
+        e.preventDefault();
+        let id = $(this).data('id');
+        abp.message.confirm(
+            'Are you sure you want to delete this reports history record?',
+            'Delete Reports History',
+            function (isConfirmed) {
+                if (isConfirmed) {
+                    unity.grantManager.applicantProfile.applicantHistory.deleteReportsHistory(id)
+                        .then(function () {
+                            abp.notify.success('Record deleted.');
+                            reportsHistoryTable.ajax.reload();
+                        })
+                        .catch(function () {
+                            abp.notify.error('Failed to delete record.');
+                            reportsHistoryTable.ajax.reload();
                         });
                 }
             }

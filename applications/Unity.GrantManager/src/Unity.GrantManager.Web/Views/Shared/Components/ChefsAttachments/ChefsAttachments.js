@@ -170,7 +170,6 @@ $(function () {
             const rowsToProcess = triggerButton
                 ? chefsDataTable.rows().data()
                 : chefsDataTable.rows({ selected: true }).data();
-            const promptVersion = globalThis.getSelectedPromptVersion?.() || null;
 
             $button.removeData('trigger-button');
 
@@ -189,10 +188,7 @@ $(function () {
 
             // Call the backend API
             $.ajax({
-                url:
-                    '/api/app/attachment-summary/generate-attachment-summaries' +
-                    '?promptVersion=' +
-                    encodeURIComponent(promptVersion || ''),
+                url: '/api/app/attachment-summary/generate-attachment-summaries',
                 data: JSON.stringify(attachmentIds),
                 contentType: 'application/json',
                 type: 'POST',

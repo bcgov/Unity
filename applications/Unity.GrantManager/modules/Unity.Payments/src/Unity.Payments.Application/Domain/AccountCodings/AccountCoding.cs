@@ -77,6 +77,35 @@ namespace Unity.Payments.Domain.AccountCodings
             return new AccountCoding(ministryClient, responsibility, serviceLine, stob, projectNumber, description);
         }
 
+        public void Update(
+            string ministryClient,
+            string responsibility,
+            string serviceLine,
+            string stob,
+            string projectNumber,
+            string? description = null)
+        {
+            ValidateField(ministryClient, 3, nameof(MinistryClient), false);
+            ValidateField(responsibility, 5, nameof(Responsibility), false);
+            ValidateField(serviceLine, 5, nameof(serviceLine), true);
+            ValidateField(stob, 4, nameof(stob), true);
+            ValidateField(projectNumber, 7, nameof(projectNumber), true);
+
+            if (!string.IsNullOrWhiteSpace(description) && description.Length > 35)
+            {
+                throw new BusinessException(ErrorConsts.InvalidAccountCodingField)
+                    .WithData("field", nameof(Description))
+                    .WithData("length", 35);
+            }
+
+            MinistryClient = ministryClient;
+            Responsibility = responsibility;
+            ServiceLine = serviceLine;
+            Stob = stob;
+            ProjectNumber = projectNumber;
+            Description = description;
+        }
+
         private static void ValidateField(string field, uint length, string fieldName, bool validateAlphanumeric)
         {
 
