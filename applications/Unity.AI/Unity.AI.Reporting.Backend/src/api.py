@@ -867,7 +867,13 @@ def data_model_detail():
 
     try:
         card = metabase_client.get_card(card_id, tenant_id)
-        sql = card.get("dataset_query", {}).get("native", {}).get("query", "")
+        dataset_query = card.get("dataset_query", {})
+        tenant_config = config.get_tenant_config(tenant_id)
+        db_id = tenant_config["db_id"]
+        if dataset_query.get("type") == "native":
+            sql = dataset_query.get("native", {}).get("query", "")
+        else:
+            sql = metabase_client.get_native_query(dataset_query, tenant_id, db_id=db_id) or ""
         columns = re.findall(r'AS\s+"([^"]+)"', sql)
         if not columns:
             columns = [

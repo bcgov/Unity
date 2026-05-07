@@ -1116,14 +1116,20 @@ class DataModelGenerator:
         dataset_query = card.get("dataset_query", {})
         current_name = card.get("name", "Unnamed Model")
 
-        if dataset_query.get("type") == "native":
+        logger.debug(f"Card {card_id} dataset_query keys: {list(dataset_query.keys())}, type={dataset_query.get('type')}, database={dataset_query.get('database')}")
+
+        query_type = dataset_query.get("type", "unknown")
+        if query_type == "native":
             current_sql = dataset_query.get("native", {}).get("query", "")
         else:
-            # Structured (GUI) query — ask Metabase to convert to native SQL
-            current_sql = metabase_client.get_native_query(dataset_query, tenant_id) or ""
+            logger.info(f"Model card_id={card_id} uses structured query (type='{query_type}'), converting to native SQL")
+            current_sql = metabase_client.get_native_query(dataset_query, tenant_id, db_id=db_id) or ""
 
         if not current_sql:
-            raise ValueError("Could not extract SQL from existing model")
+            raise ValueError(
+                f"Could not extract SQL from existing model (query type='{query_type}'). "
+                "Metabase may not support converting this structured query to native SQL."
+            )
 
         # Extract current columns from SQL (AS "..." pattern)
         current_columns = re.findall(r'AS\s+"([^"]+)"', current_sql)

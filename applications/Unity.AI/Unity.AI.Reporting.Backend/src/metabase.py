@@ -334,23 +334,76 @@ class MetabaseClient:
         return r.json()
 
     def get_native_query(self, dataset_query: Dict[str, Any],
-                         tenant_id: Optional[str] = None) -> Optional[str]:
+                         tenant_id: Optional[str] = None,
+                         db_id: Optional[int] = None) -> Optional[str]:
         """Convert a structured (GUI) dataset_query to native SQL via Metabase API.
-        Returns the SQL string, or None if conversion fails."""
+        Returns the SQL string, or None if conversion fails.
+        Handles both legacy MBQL and pMBQL (stages-based, Metabase v49+) formats."""
         headers = self._get_headers(tenant_id)
-        try:
-            r = requests.post(
-                f"{self.config.url}/api/dataset/native",
-                headers=headers,
-                json={"query": dataset_query},
-                timeout=15
-            )
-            if r.status_code == 200:
-                result = r.json()
-                return result.get("query") or None
-        except Exception as e:
-            logger.debug(f"Failed to convert structured query to native SQL: {e}")
+
+        query_payload = self._normalize_to_legacy_mbql(dataset_query, db_id)
+        logger.debug(f"get_native_query normalized payload keys: {list(query_payload.keys())}, database={query_payload.get('database')}, type={query_payload.get('type')}")
+
+        # Try multiple request body formats — Metabase versions differ on expected shape
+        formats_to_try = [
+            # Format 1: dataset_query as direct body (Metabase v49+ expects database at top level)
+            query_payload,
+            # Format 2: wrapped in {"query": ...} (older Metabase versions)
+            {"pretty": True, "query": query_payload},
+        ]
+
+        for body in formats_to_try:
+            try:
+                r = requests.post(
+                    f"{self.config.url}/api/dataset/native",
+                    headers=headers,
+                    json=body,
+                    timeout=15
+                )
+                logger.debug(f"get_native_query response status: {r.status_code} (body top-level keys: {list(body.keys())})")
+                if r.status_code == 200:
+                    result = r.json()
+                    sql = result.get("query") or result.get("native", {}).get("query")
+                    if sql:
+                        return sql
+                    logger.warning(f"get_native_query: no SQL in response keys={list(result.keys())}")
+                    return None
+                else:
+                    logger.debug(f"get_native_query format failed: HTTP {r.status_code} — {r.text[:300]}")
+            except Exception as e:
+                logger.error(f"Failed to convert structured query to native SQL: {e}")
+                return None
+
+        logger.warning("get_native_query: all request formats exhausted")
         return None
+
+    @staticmethod
+    def _normalize_to_legacy_mbql(dataset_query: Dict[str, Any],
+                                   db_id: Optional[int] = None) -> Dict[str, Any]:
+        """Convert pMBQL (stages-based, Metabase v49+) to legacy MBQL format
+        that /api/dataset/native understands.  If already legacy, just ensure
+        required keys are present."""
+        database = dataset_query.get("database") or db_id
+
+        if "stages" in dataset_query:
+            stages = dataset_query["stages"]
+            first_stage = stages[0] if stages else {}
+            clean_stage = {
+                k: v for k, v in first_stage.items()
+                if "/" not in k and "." not in k
+            }
+            return {
+                "database": database,
+                "type": "query",
+                "query": clean_stage,
+            }
+
+        result = dict(dataset_query)
+        if database and "database" not in result:
+            result["database"] = database
+        if "type" not in result:
+            result["type"] = "query"
+        return result
 
     def get_collection_models(self, collection_id: int, tenant_id: Optional[str] = None) -> List[Dict[str, Any]]:
         """Get all model-type cards in a given collection (filtered client-side since
