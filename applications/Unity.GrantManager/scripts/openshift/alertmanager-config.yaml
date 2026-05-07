@@ -1,0 +1,29 @@
+# AlertmanagerConfig CRD — routes fired alerts to the app webhook → Teams
+# Deploy with: oc apply -f scripts/openshift/alertmanager-config.yaml -n d18498-<env>
+#
+# Replaces: scripts/prometheus/alertmanager.yml (docker-compose local only)
+#
+# Prerequisites:
+#   The cluster Alertmanager must have alertmanagerConfigSelector set to pick up this config.
+#   On BC Gov Silver this is typically enabled by default in user namespaces.
+apiVersion: monitoring.coreos.com/v1alpha1
+kind: AlertmanagerConfig
+metadata:
+  name: unity-grantmanager-alerts
+  labels:
+    alertmanagerConfig: unity-grantmanager   # must match Alertmanager's alertmanagerConfigSelector
+spec:
+  route:
+    groupBy: ["alertname", "type"]
+    groupWait: 10s
+    groupInterval: 5m
+    repeatInterval: 1h
+    receiver: unity-webhook
+
+  receivers:
+    - name: unity-webhook
+      webhookConfigs:
+        - url: "https://<your-route-host>/api/monitoring/alert"
+          # Replace <your-route-host> with the OpenShift Route hostname, e.g.:
+          #   unity-grantmanager-web-d18498-test.apps.silver.devops.gov.bc.ca
+          sendResolved: false
