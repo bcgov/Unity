@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
 using Shouldly;
@@ -59,6 +60,7 @@ public class AttachmentSummaryServiceTests : GrantManagerApplicationTestBase
             streamProvider,
             textExtractionService,
             aiService,
+            new AIExecutionModeResolver(new ConfigurationBuilder().Build()),
             NullLogger<AttachmentSummaryService>.Instance);
 
         var result = await service.GenerateAndSaveAsync(attachmentId, "v1");
