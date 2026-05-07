@@ -90,7 +90,7 @@
 }
 
 #ChefsAttachmentsTable td.ai-summary-cell {
-    padding: 0 !important;
+    padding: 0;
 }
 
 #ChefsAttachmentsTable .ai-summary-content {

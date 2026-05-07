@@ -7,12 +7,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Unity.AI.RateLimit;
 using Unity.GrantManager.GrantApplications;
 using Unity.GrantManager.GrantApplications.Automation;
 using Unity.GrantManager.GrantApplications.Automation.BackgroundJobs;
 using Volo.Abp.BackgroundJobs;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.DistributedLocking;
+using Volo.Abp.Users;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -50,6 +52,7 @@ public class AIGenerationQueueTests(ITestOutputHelper outputHelper) : GrantManag
         capturedArgs!.ApplicationId.ShouldBe(applicationId);
         capturedArgs.TenantId.ShouldBe(tenantId);
         capturedArgs.PromptVersion.ShouldBe("v1");
+        capturedArgs.RequestedByUserId.ShouldBe(CreateQueueCurrentUserId);
         capturedArgs.RequestKey.ShouldBe(AIGenerationRequestKeyHelper.BuildRequestKey(tenantId, applicationId, AIGenerationRequestKeyHelper.PipelineOperationType));
         await backgroundJobManager.Received(1).EnqueueAsync(Arg.Any<RunApplicationAIPipelineJobArgs>(), Arg.Any<BackgroundJobPriority>(), Arg.Any<TimeSpan?>());
         await repository.Received(1).InsertAsync(Arg.Is<AIGenerationRequest>(r =>
@@ -78,12 +81,15 @@ public class AIGenerationQueueTests(ITestOutputHelper outputHelper) : GrantManag
         repository.GetQueryableAsync().Returns(Task.FromResult<IQueryable<AIGenerationRequest>>(new[] { request }.AsQueryable()));
 
         var backgroundJobManager = Substitute.For<IBackgroundJobManager>();
-        var queue = CreateQueue(backgroundJobManager, repository);
+        var rateLimiter = Substitute.For<Unity.AI.RateLimit.IAIRateLimiter>();
+        rateLimiter.EnsureAsync().Returns(Task.CompletedTask);
+        var queue = CreateQueue(backgroundJobManager, repository, rateLimiter);
 
         await queue.QueueApplicationAnalysisAsync(applicationId, tenantId, promptVersion);
 
         await backgroundJobManager.DidNotReceive().EnqueueAsync(Arg.Any<GenerateApplicationAnalysisBackgroundJobArgs>());
         await repository.DidNotReceive().InsertAsync(Arg.Any<AIGenerationRequest>(), Arg.Any<bool>(), Arg.Any<CancellationToken>());
+        await rateLimiter.DidNotReceive().EnsureAsync();
     }
 
     [Fact]
@@ -117,6 +123,7 @@ public class AIGenerationQueueTests(ITestOutputHelper outputHelper) : GrantManag
         capturedArgs!.ApplicationId.ShouldBe(applicationId);
         capturedArgs.TenantId.ShouldBe(tenantId);
         capturedArgs.PromptVersion.ShouldBe(promptVersion);
+        capturedArgs.RequestedByUserId.ShouldBe(CreateQueueCurrentUserId);
         capturedArgs.RequestKey.ShouldBe(AIGenerationRequestKeyHelper.BuildRequestKey(tenantId, applicationId, AIGenerationRequestKeyHelper.ApplicationAnalysisOperationType));
         await repository.Received(1).InsertAsync(Arg.Is<AIGenerationRequest>(r =>
             r.ApplicationId == applicationId &&
@@ -124,6 +131,48 @@ public class AIGenerationQueueTests(ITestOutputHelper outputHelper) : GrantManag
             r.OperationType == AIGenerationRequestKeyHelper.ApplicationAnalysisOperationType &&
             r.RequestKey == capturedArgs.RequestKey &&
             r.Status == AIGenerationRequestStatus.Queued), Arg.Any<bool>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task QueueApplicationAnalysisAsync_Should_Check_Rate_Limit_Before_Enqueueing_New_Request()
+    {
+        var applicationId = Guid.NewGuid();
+        var tenantId = Guid.NewGuid();
+        var repository = Substitute.For<IRepository<AIGenerationRequest, Guid>>();
+        repository.GetQueryableAsync().Returns(Task.FromResult<IQueryable<AIGenerationRequest>>(Array.Empty<AIGenerationRequest>().AsQueryable()));
+        repository.InsertAsync(Arg.Any<AIGenerationRequest>(), Arg.Any<bool>(), Arg.Any<CancellationToken>())
+            .Returns(callInfo => Task.FromResult(callInfo.Arg<AIGenerationRequest>()));
+
+        var backgroundJobManager = Substitute.For<IBackgroundJobManager>();
+        var rateLimiter = Substitute.For<IAIRateLimiter>();
+        rateLimiter.EnsureAsync().Returns(Task.CompletedTask);
+        var queue = CreateQueue(backgroundJobManager, repository, rateLimiter);
+
+        await queue.QueueApplicationAnalysisAsync(applicationId, tenantId);
+
+        await rateLimiter.Received(1).EnsureAsync();
+        await repository.Received(1).InsertAsync(Arg.Any<AIGenerationRequest>(), Arg.Any<bool>(), Arg.Any<CancellationToken>());
+        await backgroundJobManager.Received(1).EnqueueAsync(Arg.Any<GenerateApplicationAnalysisBackgroundJobArgs>(), Arg.Any<BackgroundJobPriority>(), Arg.Any<TimeSpan?>());
+    }
+
+    [Fact]
+    public async Task QueueApplicationAnalysisAsync_Should_Not_Insert_Or_Enqueue_When_Rate_Limited()
+    {
+        var applicationId = Guid.NewGuid();
+        var tenantId = Guid.NewGuid();
+        var repository = Substitute.For<IRepository<AIGenerationRequest, Guid>>();
+        repository.GetQueryableAsync().Returns(Task.FromResult<IQueryable<AIGenerationRequest>>(Array.Empty<AIGenerationRequest>().AsQueryable()));
+
+        var backgroundJobManager = Substitute.For<IBackgroundJobManager>();
+        var rateLimiter = Substitute.For<IAIRateLimiter>();
+        rateLimiter.EnsureAsync().Returns<Task>(_ => throw new InvalidOperationException("rate limited"));
+        var queue = CreateQueue(backgroundJobManager, repository, rateLimiter);
+
+        await Should.ThrowAsync<InvalidOperationException>(() => queue.QueueApplicationAnalysisAsync(applicationId, tenantId));
+
+        await rateLimiter.Received(1).EnsureAsync();
+        await repository.DidNotReceive().InsertAsync(Arg.Any<AIGenerationRequest>(), Arg.Any<bool>(), Arg.Any<CancellationToken>());
+        await backgroundJobManager.DidNotReceive().EnqueueAsync(Arg.Any<GenerateApplicationAnalysisBackgroundJobArgs>(), Arg.Any<BackgroundJobPriority>(), Arg.Any<TimeSpan?>());
     }
 
     [Fact]
@@ -183,6 +232,7 @@ public class AIGenerationQueueTests(ITestOutputHelper outputHelper) : GrantManag
         capturedArgs!.ApplicationId.ShouldBe(applicationId);
         capturedArgs.TenantId.ShouldBe(tenantId);
         capturedArgs.PromptVersion.ShouldBe(promptVersion);
+        capturedArgs.RequestedByUserId.ShouldBe(CreateQueueCurrentUserId);
         capturedArgs.RequestKey.ShouldBe(AIGenerationRequestKeyHelper.BuildRequestKey(tenantId, applicationId, AIGenerationRequestKeyHelper.AttachmentSummaryOperationType));
         await repository.Received(1).InsertAsync(Arg.Is<AIGenerationRequest>(r =>
             r.ApplicationId == applicationId &&
@@ -249,6 +299,7 @@ public class AIGenerationQueueTests(ITestOutputHelper outputHelper) : GrantManag
         capturedArgs!.ApplicationId.ShouldBe(applicationId);
         capturedArgs.TenantId.ShouldBe(tenantId);
         capturedArgs.PromptVersion.ShouldBe(promptVersion);
+        capturedArgs.RequestedByUserId.ShouldBe(CreateQueueCurrentUserId);
         capturedArgs.RequestKey.ShouldBe(AIGenerationRequestKeyHelper.BuildRequestKey(tenantId, applicationId, AIGenerationRequestKeyHelper.ApplicationScoringOperationType));
         await repository.Received(1).InsertAsync(Arg.Is<AIGenerationRequest>(r =>
             r.ApplicationId == applicationId &&
@@ -297,12 +348,30 @@ public class AIGenerationQueueTests(ITestOutputHelper outputHelper) : GrantManag
 
     private static ApplicationAIGenerationQueue CreateQueue(
         IBackgroundJobManager backgroundJobManager,
-        IRepository<AIGenerationRequest, Guid> repository)
+        IRepository<AIGenerationRequest, Guid> repository,
+        Unity.AI.RateLimit.IAIRateLimiter? rateLimiter = null)
     {
+        if (rateLimiter == null)
+        {
+            rateLimiter = Substitute.For<Unity.AI.RateLimit.IAIRateLimiter>();
+            rateLimiter.EnsureAsync().Returns(Task.CompletedTask);
+        }
+
         return new ApplicationAIGenerationQueue(
             backgroundJobManager,
             repository,
             new TestDistributedLockProvider(),
+            rateLimiter,
+            CreateCurrentUser(),
             Substitute.For<ILogger<ApplicationAIGenerationQueue>>());
+    }
+
+    private static readonly Guid CreateQueueCurrentUserId = Guid.NewGuid();
+
+    private static ICurrentUser CreateCurrentUser()
+    {
+        var currentUser = Substitute.For<ICurrentUser>();
+        currentUser.Id.Returns(CreateQueueCurrentUserId);
+        return currentUser;
     }
 }

@@ -584,55 +584,21 @@ function queueApplicationScoring(triggerButton = null) {
     const applicationId = $('#DetailsViewApplicationId').val();
     const $button = triggerButton ? $(triggerButton) : $('#regenerateAiScoresheetBtn');
     const existingHtml = $button.html();
-    const aiGenerationPollIntervalMs = 15000;
-    let aiGenerationPollTimeoutId = null;
 
     if (!applicationId || $button.prop('disabled')) {
         return;
     }
 
-    $button
-        .html(
-            '<span class="ai-button-content"><span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span><span>Generating...</span></span>'
-        )
-        .prop('disabled', true);
     globalThis.AIGenerationButtonState?.setGenerating($button);
 
-    const stopPolling = function () {
-        if (aiGenerationPollTimeoutId) {
-            clearTimeout(aiGenerationPollTimeoutId);
-            aiGenerationPollTimeoutId = null;
-        }
-    };
-
-    const poll = function () {
-        unity.grantManager.grantApplications.grantApplication
-            .getAIGenerationStatus(applicationId, 'application-scoring')
-            .done(function (request) {
-                const status = globalThis.AIGenerationButtonState?.resolveStatus(request?.status) ?? '';
-
-                if (status === 'Failed') {
-                    stopPolling();
-                    abp.message.error(request?.failureReason || 'AI scoring failed.');
-                    globalThis.AIGenerationButtonState?.restore($button);
-                    $button.html(existingHtml).prop('disabled', false);
-                    return;
-                }
-
-                if (!request || request.isActive === false || status === 'Completed') {
-                    stopPolling();
-                    globalThis.AIGenerationButtonState?.setCompleted($button);
-                    $button.html('<span class="ai-button-content"><span>Completed</span></span>').prop('disabled', true);
-                    PubSub.publish('refresh_assessment_scores', null);
-                    return;
-                }
-
-                aiGenerationPollTimeoutId = setTimeout(poll, aiGenerationPollIntervalMs);
-            })
-            .fail(function () {
-                aiGenerationPollTimeoutId = setTimeout(poll, aiGenerationPollIntervalMs);
-            });
-    };
+    const monitorScoring = () => globalThis.AIGenerationButtonState.monitor({
+        $button,
+        originalHtml: existingHtml,
+        getStatus: () => unity.grantManager.grantApplications.grantApplication
+            .getAIGenerationStatus(applicationId, 'application-scoring'),
+        onComplete: () => PubSub.publish('refresh_assessment_scores', null),
+        onFailed: (request) => abp.message.error(request?.failureReason || 'AI scoring failed.')
+    });
 
     unity.grantManager.grantApplications.grantApplication
         .queueApplicationScoring(applicationId)
@@ -640,15 +606,16 @@ function queueApplicationScoring(triggerButton = null) {
             const status = globalThis.AIGenerationButtonState?.resolveStatus(request?.status) ?? '';
 
             if (status === 'Completed') {
-                $button.html('<span class="ai-button-content"><span>Completed</span></span>').prop('disabled', true);
+                globalThis.AIGenerationButtonState?.restore($button);
+                $button.html(existingHtml).prop('disabled', false);
                 PubSub.publish('refresh_assessment_scores', null);
+                globalThis.refreshAIRateLimitState?.();
                 return;
             }
 
-            aiGenerationPollTimeoutId = setTimeout(poll, 500);
+            monitorScoring();
         })
         .fail(function () {
-            stopPolling();
             abp.message.error(
                 'Failed to queue AI scoring. Please try again.'
             );
