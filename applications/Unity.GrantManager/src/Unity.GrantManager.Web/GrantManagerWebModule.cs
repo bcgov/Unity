@@ -277,6 +277,7 @@ public class GrantManagerWebModule : AbpModule
 
     private static void ConfigurePolicies(ServiceConfigurationContext context)
     {
+        context.Services.AddScoped<Microsoft.AspNetCore.Authorization.IAuthorizationHandler, Unity.GrantManager.Web.Identity.InternalNetworkHandler>();
         PolicyRegistrant.Register(context);
     }
 
@@ -590,7 +591,6 @@ public class GrantManagerWebModule : AbpModule
         app.UseStaticFiles();
         app.UseRouting();
         app.UseHttpMetrics();
-        app.MapMetrics();
         app.UseAuthentication();
 
         if (MultiTenancyConsts.IsEnabled)
@@ -600,6 +600,7 @@ public class GrantManagerWebModule : AbpModule
 
         app.UseUnitOfWork();
         app.UseAuthorization();
+        app.MapMetrics().RequireAuthorization(Unity.GrantManager.Web.Identity.Policy.PolicyRegistrant.MetricsAccessPolicy);
         if (IsProfilingAllowed(env, configuration))
         {
             app.UseMiniProfiler();

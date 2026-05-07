@@ -33,7 +33,7 @@ public class AlertWebhookController(
         try
         {
             var firing = payload.Alerts
-                .Where(a => a.Status.Equals("firing", StringComparison.OrdinalIgnoreCase))
+                .Where(a => a is not null && a.Status.Equals("firing", StringComparison.OrdinalIgnoreCase))
                 .ToList();
 
             if (firing.Count == 0)
@@ -41,8 +41,10 @@ public class AlertWebhookController(
                 return Ok();
             }
 
-            // Use the first (or most severe) alert as the headline
-            var lead = firing[0];
+            // Pick the most severe alert as the headline (critical > warning > info > unknown)
+            var lead = firing
+                .OrderBy(a => SeverityOrder(a.Labels.GetValueOrDefault("severity", "unknown")))
+                .First();
             string alertName = lead.Labels.GetValueOrDefault("alertname", "Unknown Alert");
             string severity = lead.Labels.GetValueOrDefault("severity", "unknown");
             string summary = lead.Annotations.GetValueOrDefault("summary", alertName);
@@ -91,4 +93,13 @@ public class AlertWebhookController(
             return StatusCode(500);
         }
     }
+
+    private static int SeverityOrder(string severity) => severity.ToLowerInvariant() switch
+    {
+        "critical" => 0,
+        "error"    => 1,
+        "warning"  => 2,
+        "info"     => 3,
+        _          => 4
+    };
 }

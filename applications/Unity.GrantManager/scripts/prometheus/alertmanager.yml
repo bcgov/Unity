@@ -11,5 +11,5 @@ route:
 receivers:
   - name: unity-webhook
     webhook_configs:
-      - url: "http://unity-grantmanager-web:80/api/monitoring/alert"
+      - url: "http://unity-grantmanager-web:8080/api/monitoring/alert"
         send_resolved: false

@@ -26,11 +26,13 @@ public static class Program
             builder.Services.AddOpenTelemetry()
                 .WithTracing(tracing => tracing
                     .AddAspNetCoreInstrumentation()
-                    .AddHttpClientInstrumentation())
+                    .AddHttpClientInstrumentation()
+                    .AddOtlpExporter())
                 .WithMetrics(metrics => metrics
                     .AddAspNetCoreInstrumentation()
                     .AddHttpClientInstrumentation()
-                    .AddRuntimeInstrumentation());
+                    .AddRuntimeInstrumentation()
+                    .AddOtlpExporter());
             builder.Host.AddAppSettingsSecretsJson()
                 .UseAutofac()
                 .UseSerilog((hostingContext, loggerConfiguration) =>

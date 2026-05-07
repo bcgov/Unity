@@ -12,8 +12,14 @@ public class AlertManagerPayload
     [JsonPropertyName("status")]
     public string Status { get; set; } = string.Empty;
 
+    private List<AlertItem> _alerts = [];
+
     [JsonPropertyName("alerts")]
-    public List<AlertItem> Alerts { get; set; } = [];
+    public List<AlertItem> Alerts
+    {
+        get => _alerts;
+        set => _alerts = value ?? [];
+    }
 }
 
 public class AlertItem
@@ -21,11 +27,22 @@ public class AlertItem
     [JsonPropertyName("status")]
     public string Status { get; set; } = string.Empty;
 
+    private Dictionary<string, string> _labels = [];
+    private Dictionary<string, string> _annotations = [];
+
     [JsonPropertyName("labels")]
-    public Dictionary<string, string> Labels { get; set; } = [];
+    public Dictionary<string, string> Labels
+    {
+        get => _labels;
+        set => _labels = value ?? [];
+    }
 
     [JsonPropertyName("annotations")]
-    public Dictionary<string, string> Annotations { get; set; } = [];
+    public Dictionary<string, string> Annotations
+    {
+        get => _annotations;
+        set => _annotations = value ?? [];
+    }
 
     [JsonPropertyName("startsAt")]
     public DateTimeOffset StartsAt { get; set; }

@@ -12,9 +12,7 @@ groups:
           summary: "High exception rate in Unity GrantManager"
           description: >
             Exception type {{ $labels.type }} has fired {{ $value | humanize }} times
-            in the last 5 minutes (namespace: {{ $labels.kubernetes_namespace_name }}).
-
-      # Fire if any new exception type appears (catches regressions)
+            in the last 5 minutes (job: {{ $labels.job }}, instance: {{ $labels.instance }}).
       - alert: NewExceptionType
         expr: |
           increase(application_exceptions_total[10m]) > 0
