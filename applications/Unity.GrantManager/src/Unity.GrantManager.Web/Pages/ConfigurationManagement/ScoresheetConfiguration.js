@@ -1,6 +1,43 @@
 ﻿/* ScoresheetConfiguration JS - local copy for ConfigurationManagement */
 
+globalThis.importScoresheetFile = function (inputId) {
+    let input = document.getElementById(inputId);
+    let file = input.files[0];
+    if (!file) return;
+
+    const maxFileSize = decodeURIComponent($("#MaxFileSize").val());
+    if ((file.size * 0.000001) > maxFileSize) {
+        input.value = null;
+        return abp.notify.error('File size exceeds ' + maxFileSize + 'MB', 'Error');
+    }
+
+    let formData = new FormData();
+    formData.append("file", file);
+
+    $.ajax({
+        url: "/api/app/scoresheet/import",
+        data: formData,
+        processData: false,
+        contentType: false,
+        type: "POST",
+        success: function (data) {
+            abp.notify.success(data.responseText, 'Scoresheet Import Is Successful');
+            PubSub.publish('refresh_scoresheet_list', { scoresheetId: null });
+            input.value = null;
+        },
+        error: function () {
+            abp.notify.error('Import failed.', 'Scoresheet Import Error');
+            input.value = null;
+        }
+    });
+};
+
 (function ($) {
+    $(function () {
+        $('#scoresheet_import_upload_btn').on('click', function () {
+            $('#scoresheet_import_upload').trigger('click');
+        });
+    });
     const scoresheetModal = new abp.ModalManager({
         viewUrl: 'ScoresheetConfiguration/ScoresheetModal'
     });
@@ -45,7 +82,7 @@
     });
 
     // Exposed globally — called from inline onclick attributes in Scoresheet component HTML
-    window.openScoresheetModal = function (scoresheetId, actionType) {
+    globalThis.openScoresheetModal = function (scoresheetId, actionType) {
         scoresheetToEditId = scoresheetId;
         scoresheetModal.open({
             scoresheetId: scoresheetId,
@@ -53,14 +90,14 @@
         });
     };
 
-    window.openCloneScoresheetModal = function (scoresheetId) {
+    globalThis.openCloneScoresheetModal = function (scoresheetId) {
         scoresheetToEditId = scoresheetId;
         cloneScoresheetModal.open({
             scoresheetId: scoresheetId
         });
     };
 
-    window.openPublishScoresheetModal = function (scoresheetId) {
+    globalThis.openPublishScoresheetModal = function (scoresheetId) {
         scoresheetToEditId = scoresheetId;
         publishScoresheetModal.open({
             scoresheetId: scoresheetId
