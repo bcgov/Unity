@@ -47,10 +47,11 @@ public class AttachmentSummaryService(
     {
         var ids = attachmentIds as IReadOnlyCollection<Guid> ?? attachmentIds.ToList();
         var mode = executionModeResolver.ResolveMode(AIExecutionModeResolver.AttachmentSummaryOperation);
-        if (mode == AIExecutionMode.Batch)
+        if (mode != AIExecutionMode.Sequential)
         {
             logger.LogWarning(
-                "AI attachment summary batch mode is not supported by the single-attachment AI contract. Falling back to sequential execution.");
+                "AI attachment summary {ExecutionMode} mode is not supported by the current repository-backed execution path. Falling back to sequential execution.",
+                mode);
             mode = AIExecutionMode.Sequential;
         }
 
