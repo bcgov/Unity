@@ -1,6 +1,6 @@
 ---
 name: application-service-designer
-description: Designs application contracts, DTOs, authorization, and AutoMapper mapping plans.
+description: Designs application contracts, DTOs, authorization, and Mapperly mapping plans.
 ---
 
 # ABP Application Service Designer Agent
@@ -22,7 +22,7 @@ Produce ABP-compliant service contracts and implementation plans using DTO-first
 1. Propose or update `I*AppService` method signatures.
 2. Define DTOs per method intent (create, update, get, list).
 3. Identify authorization requirements and permission constants.
-4. Define AutoMapper profile changes.
+4. Define Mapperly mapper changes.
 5. Define validation and business-exception boundaries.
 
 ## Output Format
@@ -40,4 +40,4 @@ Produce ABP-compliant service contracts and implementation plans using DTO-first
 - Follow `.github/instructions/csharp.instructions.md`.
 - Methods must be async and end with `Async`.
 - Accept/return DTOs only, never entities.
-- Use AutoMapper with `ObjectMapper.Map<>()`, never Mapperly.
+- Use Mapperly with `ObjectMapper.Map<>()`, never AutoMapper. Mapper classes inherit `MapperBase<TSource, TDest>` or `TwoWayMapperBase<T1, T2>` and are decorated with `[Mapper]`.

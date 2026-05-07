@@ -1,7 +1,7 @@
 using Amazon.S3;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Volo.Abp.AutoMapper;
+using Volo.Abp.Mapperly;
 using Volo.Abp.Modularity;
 using Volo.Abp.Application;
 using Volo.Abp.BackgroundJobs;
@@ -21,7 +21,7 @@ namespace Unity.Notifications;
     typeof(NotificationsDomainModule),
     typeof(NotificationsApplicationContractsModule),
     typeof(AbpDddApplicationModule),
-    typeof(AbpAutoMapperModule),
+    typeof(AbpMapperlyModule),
     typeof(AbpBackgroundJobsModule),
     typeof(AbpBackgroundWorkersQuartzModule),
     typeof(AbpHttpClientModule)
@@ -44,13 +44,9 @@ public class NotificationsApplicationModule : AbpModule
             return new AmazonS3Client(configuration["S3:AccessKeyId"], configuration["S3:SecretAccessKey"], s3Config);
         });
 
-        context.Services.AddAutoMapperObjectMapper<NotificationsApplicationModule>();
-        context.Services.AddTransient<IResilientHttpRequest, ResilientHttpRequest>();
+        context.Services.AddMapperlyObjectMapper<NotificationsApplicationModule>();
 
-        Configure<AbpAutoMapperOptions>(options =>
-        {
-            options.AddMaps<NotificationsApplicationModule>(validate: true);
-        });
+        context.Services.AddTransient<IResilientHttpRequest, ResilientHttpRequest>();
 
         context.Services.AddHttpClientProxies(
            typeof(NotificationsApplicationContractsModule).Assembly,

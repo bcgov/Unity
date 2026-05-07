@@ -12,7 +12,7 @@ using Unity.GrantManager.Attachments;
 using Unity.GrantManager.Intake;
 using Unity.GrantManager.Integrations.Css;
 using Unity.TenantManagement;
-using Volo.Abp.AutoMapper;
+using Volo.Abp.Mapperly;
 using Volo.Abp.BlobStoring;
 using Volo.Abp.FeatureManagement;
 using Volo.Abp.Identity;
@@ -128,10 +128,7 @@ public class GrantManagerApplicationModule : AbpModule
             });
         });
 
-        Configure<AbpAutoMapperOptions>(options =>
-        {
-            options.AddMaps<GrantManagerApplicationModule>();
-        });
+        context.Services.AddMapperlyObjectMapper<GrantManagerApplicationModule>();
 
         context.Services.TryAddSingleton<IAmazonS3>(_ =>
         {
