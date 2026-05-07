@@ -1,5 +1,4 @@
 using Amazon.S3;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Volo.Abp.Mapperly;
 using Volo.Abp.Modularity;
