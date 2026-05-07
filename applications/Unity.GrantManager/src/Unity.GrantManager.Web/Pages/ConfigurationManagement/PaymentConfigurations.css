@@ -1,0 +1,92 @@
+﻿/* PaymentConfigurations styles - local copy for ConfigurationManagement */
+
+.readonly {
+    color: var(--bc-colors-grey-text-500);
+    background-color: var(--bc-colors-blue-100, #D8EAFD);
+    width: 332px !important;
+}
+
+.currencyinput {
+    float: left;
+}
+
+.currency {
+    text-align: right;
+    width: 100%;
+    margin-top: -31px;
+}
+
+.dm-approval {
+    width: 100%;
+    max-width: 100%;
+}
+
+.payment-form h4 {
+    padding: 4px;
+    font-weight: 700;
+}
+
+.payment-form .mb-3:nth-child(-n+3) {
+    width: 30%;
+}
+
+.payment-form .mb-3:nth-child(n+4) {
+    width: 45%;
+}
+
+.payment-form .mb-3:nth-child(n+6) {
+    width: 100%;
+}
+
+.submit-section {
+    display: inline-flex;
+    gap: 1rem;
+}
+
+.note {
+    margin-left: 5px;
+}
+
+.payment-prefix {
+    width: 200px;
+    margin-top: -7px;
+}
+
+.field-validation-error {
+    float: inline-start;
+    display: block;
+    max-width: 100%;
+    width: 100%;
+}
+
+#payments-div .modal-dialog {
+    max-width: 850px !important;
+    min-width: 850px !important;
+}
+
+#payments-div input.form-control:focus, #payments-div input.form-control:active, #payments-div textarea.form-control:focus, #payments-div textarea.form-control:active, #payments-div .form-select:focus, #payments-div .form-select:active {
+    font-weight: inherit !important;
+}
+
+#payment-settings-div {
+    width: 750px;
+}
+
+#PaymentThreshold_Threshold {
+    text-align: right;
+}
+
+label.display-input-label {
+    font-size: var(--bc-font-size-sm);
+    color: var(--bc-colors-grey-text-300);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 0;
+}
+
+@media only screen and (max-width: 850px) {
+    .field-validation-error {
+        float: none;
+    }
+}

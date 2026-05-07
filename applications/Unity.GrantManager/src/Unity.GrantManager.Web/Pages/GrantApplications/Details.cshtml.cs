@@ -33,6 +33,7 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
         private readonly IApplicationFormVersionAppService _applicationFormVersionAppService;
         private readonly IScoresheetRepository _scoresheetRepository;
         private readonly IFeatureChecker _featureChecker;
+        private readonly IAIPromptToolAccessProvider _aiPromptToolAccessProvider;
         protected readonly IZoneManagementAppService _zoneManagementAppService;
 
         [BindProperty(SupportsGet = true)]
@@ -95,7 +96,7 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
         public HashSet<string> ZoneStateSet { get; set; } = [];
 
         [BindProperty(SupportsGet = true)]
-        public bool IsDevPromptControlsEnabled { get; set; }
+        public bool CanViewPromptTools { get; set; }
 
         [BindProperty(SupportsGet = true)]
         public string DefaultPromptVersion { get; set; }
@@ -111,7 +112,7 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
             IFeatureChecker featureChecker,
             ICurrentUser currentUser,
             IConfiguration configuration,
-            IAIPromptToolViewOptionsProvider aiPromptToolViewOptionsProvider,
+            IAIPromptToolAccessProvider aiPromptToolAccessProvider,
             IZoneManagementAppService zoneManagementAppService)
         {
             _grantApplicationAppService = grantApplicationAppService;
@@ -120,6 +121,7 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
             _applicationFormVersionAppService = applicationFormVersionAppService;
             _scoresheetRepository = scoresheetRepository;
             _zoneManagementAppService = zoneManagementAppService;
+            _aiPromptToolAccessProvider = aiPromptToolAccessProvider;
 
             CurrentUserId = currentUser.Id;
             CurrentUserName = currentUser.SurName + ", " + currentUser.Name;
@@ -127,12 +129,12 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
             MaxFileSize = configuration["S3:MaxFileSize"] ?? "";
             EmailAttachmentMaxFileSize = configuration["S3:EmailAttachmentMaxFileSize"] ?? "20";
             TotalEmailAttachmentMaxFileSize = configuration["S3:EmailAttachmentsTotalMaxFileSize"] ?? "25";
-            IsDevPromptControlsEnabled = aiPromptToolViewOptionsProvider.IsDevPromptControlsEnabled;
-            DefaultPromptVersion = aiPromptToolViewOptionsProvider.DefaultPromptVersion;
+            DefaultPromptVersion = aiPromptToolAccessProvider.DefaultPromptVersion;
         }
 
         public async Task OnGetAsync()
         {
+            CanViewPromptTools = await _aiPromptToolAccessProvider.CanViewPromptToolsAsync();
             ApplicationFormSubmission applicationFormSubmission = await _grantApplicationAppService.GetFormSubmissionByApplicationId(ApplicationId);
             ZoneStateSet = await _zoneManagementAppService.GetZoneStateSetAsync(applicationFormSubmission.ApplicationFormId);
             

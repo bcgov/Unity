@@ -1,4 +1,5 @@
-﻿@using Microsoft.Extensions.Localization
+﻿@using Unity.AspNetCore.Mvc.UI.Theme.UX2.Analytics
+@using Microsoft.Extensions.Localization
 @using Microsoft.Extensions.Options
 
 @using Unity.AspNetCore.Mvc.UI.Theme.UX2.Bundling
@@ -16,6 +17,7 @@
 @using Volo.Abp.Ui.Branding
 @using Volo.Abp.Ui.LayoutHooks
 
+@inject IServiceProvider ServiceProvider
 @inject IBrandingProvider BrandingProvider
 @inject IOptions<AbpMultiTenancyOptions> MultiTenancyOptions
 @inject ICurrentTenant CurrentTenant
@@ -106,6 +108,15 @@
     @await RenderSectionAsync("scripts", false)
 
     @await Component.InvokeAsync(typeof(WidgetScriptsViewComponent))
+
+    @{
+        AnalyticsUrlProvider analyticsUrlProvider = ServiceProvider.GetService(typeof(AnalyticsUrlProvider)) as AnalyticsUrlProvider;
+        string matomoUrl = analyticsUrlProvider != null ? await analyticsUrlProvider.GetMatomoUrlAsync() : null;
+    }
+    @if (!string.IsNullOrEmpty(matomoUrl))
+    {
+        <script>AnalyticsUtils.initMatomo('@matomoUrl', 1);</script>
+    }
 
     @await Component.InvokeLayoutHookAsync(LayoutHooks.Body.Last, StandardLayouts.Account)
 </body>

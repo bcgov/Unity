@@ -37,6 +37,9 @@ public class NotificationsSettingViewComponent(ISettingProvider settingProvider)
             context
                 .Files
                 .AddIfNotContains("/Views/Settings/NotificationsSettingGroup/Default.js");
+            context
+                .Files
+                .AddIfNotContains("/Views/Settings/NotificationsSettingGroup/InternalEmailGroups.js");
         }
     }
 

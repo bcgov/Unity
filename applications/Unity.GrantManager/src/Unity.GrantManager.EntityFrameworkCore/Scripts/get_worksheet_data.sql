@@ -71,10 +71,10 @@ BEGIN
                         row_number() OVER() as row_num
                     FROM jsonb_array_elements(
                         COALESCE(
-                            (SELECT (v_elem->>''value'')::jsonb->''rows'' 
+                            (SELECT "Reporting".safe_to_jsonb(v_elem->>''value'')->''rows'' 
                              FROM jsonb_array_elements(wi."CurrentValue"->''values'') AS v_elem 
                              WHERE v_elem->>''key'' = %L), 
-                            ''[null]''::jsonb
+                             ''[null]''::jsonb
                         )
                     ) AS row_elem
                 ) AS dg_tbl
@@ -91,7 +91,8 @@ BEGIN
                         WHEN um.worksheet_name = uwd.worksheet_name AND um.datagrid_name = uwd.datagrid_name THEN
                             CASE um.column_type
                                 WHEN 'currency' THEN 
-                                    format('(CASE WHEN ((SELECT cell_elem->>''value'' FROM jsonb_array_elements(dg_tbl.dg_data->''cells'') AS cell_elem WHERE cell_elem->>''key'' = %L)) IS NULL THEN NULL WHEN ((SELECT cell_elem->>''value'' FROM jsonb_array_elements(dg_tbl.dg_data->''cells'') AS cell_elem WHERE cell_elem->>''key'' = %L)) ~ ''^-?[0-9]+\.?[0-9]*$'' THEN ((SELECT cell_elem->>''value'' FROM jsonb_array_elements(dg_tbl.dg_data->''cells'') AS cell_elem WHERE cell_elem->>''key'' = %L))::DECIMAL(18,2) ELSE NULL END) AS %I',
+                                    -- Strip thousands-separator commas and surrounding whitespace before validating/casting (e.g. "1,470.07" -> "1470.07")
+                                    format('(CASE WHEN ((SELECT cell_elem->>''value'' FROM jsonb_array_elements(dg_tbl.dg_data->''cells'') AS cell_elem WHERE cell_elem->>''key'' = %L)) IS NULL THEN NULL WHEN replace(btrim((SELECT cell_elem->>''value'' FROM jsonb_array_elements(dg_tbl.dg_data->''cells'') AS cell_elem WHERE cell_elem->>''key'' = %L)), '','', '''') ~ ''^-?[0-9]+\.?[0-9]*$'' THEN replace(btrim((SELECT cell_elem->>''value'' FROM jsonb_array_elements(dg_tbl.dg_data->''cells'') AS cell_elem WHERE cell_elem->>''key'' = %L)), '','', '''')::DECIMAL(18,2) ELSE NULL END) AS %I',
                                         um.field_name, um.field_name, um.field_name, um.column_name)
                                 WHEN 'number' THEN 
                                     format('(CASE WHEN ((SELECT cell_elem->>''value'' FROM jsonb_array_elements(dg_tbl.dg_data->''cells'') AS cell_elem WHERE cell_elem->>''key'' = %L)) IS NULL THEN NULL WHEN ((SELECT cell_elem->>''value'' FROM jsonb_array_elements(dg_tbl.dg_data->''cells'') AS cell_elem WHERE cell_elem->>''key'' = %L)) ~ ''^-?[0-9]+\.?[0-9]*$'' THEN ((SELECT cell_elem->>''value'' FROM jsonb_array_elements(dg_tbl.dg_data->''cells'') AS cell_elem WHERE cell_elem->>''key'' = %L))::NUMERIC ELSE NULL END) AS %I',
@@ -171,7 +172,8 @@ BEGIN
                         WHEN um.worksheet_name = uwr.worksheet_name AND (um.type_path NOT LIKE '%datagrid%' OR um.type_path IS NULL) THEN
                             CASE um.column_type
                                 WHEN 'currency' THEN 
-                                    format('(CASE WHEN ((SELECT v_elem->>''value'' FROM jsonb_array_elements(wi."CurrentValue"->''values'') AS v_elem WHERE v_elem->>''key'' = %L)) IS NULL THEN NULL WHEN ((SELECT v_elem->>''value'' FROM jsonb_array_elements(wi."CurrentValue"->''values'') AS v_elem WHERE v_elem->>''key'' = %L)) ~ ''^-?[0-9]+\.?[0-9]*$'' THEN ((SELECT v_elem->>''value'' FROM jsonb_array_elements(wi."CurrentValue"->''values'') AS v_elem WHERE v_elem->>''key'' = %L))::DECIMAL(18,2) ELSE NULL END) AS %I',
+                                    -- Strip thousands-separator commas and surrounding whitespace before validating/casting (e.g. "1,470.07" -> "1470.07")
+                                    format('(CASE WHEN ((SELECT v_elem->>''value'' FROM jsonb_array_elements(wi."CurrentValue"->''values'') AS v_elem WHERE v_elem->>''key'' = %L)) IS NULL THEN NULL WHEN replace(btrim((SELECT v_elem->>''value'' FROM jsonb_array_elements(wi."CurrentValue"->''values'') AS v_elem WHERE v_elem->>''key'' = %L)), '','', '''') ~ ''^-?[0-9]+\.?[0-9]*$'' THEN replace(btrim((SELECT v_elem->>''value'' FROM jsonb_array_elements(wi."CurrentValue"->''values'') AS v_elem WHERE v_elem->>''key'' = %L)), '','', '''')::DECIMAL(18,2) ELSE NULL END) AS %I',
                                         COALESCE(um.clean_data_path, um.property_name), 
                                         COALESCE(um.clean_data_path, um.property_name), 
                                         COALESCE(um.clean_data_path, um.property_name), 

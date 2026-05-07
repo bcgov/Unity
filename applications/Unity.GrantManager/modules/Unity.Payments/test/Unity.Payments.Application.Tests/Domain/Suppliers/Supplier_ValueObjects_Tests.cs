@@ -1,7 +1,6 @@
 using System;
 using System.Threading.Tasks;
 using Shouldly;
-using Unity.Modules.Shared.Correlation;
 using Unity.Payments.Domain.Suppliers;
 using Unity.Payments.Domain.Suppliers.ValueObjects;
 using Xunit;
@@ -118,11 +117,10 @@ public class Supplier_ValueObjects_Tests : PaymentsApplicationTestBase
         var providerInfo = new ProviderInfo("PROV123", "BN123456789");
         var supplierStatus = new SupplierStatus("Active", "No", "NAICS123");
         var casMetadata = new CasMetadata(DateTime.UtcNow);
-        var correlation = new Correlation(Guid.NewGuid(), "CAS");
         var mailingAddress = new MailingAddress("123 Main St", "Victoria", "BC", "V8V1A1");
 
         // Act
-        var supplier = new Supplier(id, basicInfo, correlation, providerInfo, supplierStatus, casMetadata, mailingAddress);
+        var supplier = new Supplier(id, basicInfo, providerInfo, supplierStatus, casMetadata, mailingAddress);
 
         // Assert
         supplier.Id.ShouldBe(id);
@@ -135,8 +133,6 @@ public class Supplier_ValueObjects_Tests : PaymentsApplicationTestBase
         supplier.SupplierProtected.ShouldBe(supplierStatus.SupplierProtected);
         supplier.StandardIndustryClassification.ShouldBe(supplierStatus.StandardIndustryClassification);
         supplier.LastUpdatedInCAS.ShouldBe(casMetadata.LastUpdatedInCAS);
-        supplier.CorrelationId.ShouldBe(correlation.CorrelationId);
-        supplier.CorrelationProvider.ShouldBe(correlation.CorrelationProvider);
         supplier.MailingAddress.ShouldBe(mailingAddress.AddressLine);
         supplier.City.ShouldBe(mailingAddress.City);
         supplier.Province.ShouldBe(mailingAddress.Province);
@@ -151,10 +147,9 @@ public class Supplier_ValueObjects_Tests : PaymentsApplicationTestBase
         // Arrange
         var id = Guid.NewGuid();
         var basicInfo = new SupplierBasicInfo("Test Supplier", "SUP001");
-        var correlation = new Correlation(Guid.NewGuid(), "CAS");
 
         // Act
-        var supplier = new Supplier(id, basicInfo, correlation);
+        var supplier = new Supplier(id, basicInfo);
 
         // Assert
         supplier.Id.ShouldBe(id);
@@ -180,10 +175,9 @@ public class Supplier_ValueObjects_Tests : PaymentsApplicationTestBase
         var id = Guid.NewGuid();
         var basicInfo = new SupplierBasicInfo("Test Supplier", "SUP001", "Category");
         var providerInfo = new ProviderInfo("PROV123", null); // Only ProviderId, no BusinessNumber
-        var correlation = new Correlation(Guid.NewGuid(), "CAS");
 
         // Act
-        var supplier = new Supplier(id, basicInfo, correlation, providerInfo: providerInfo);
+        var supplier = new Supplier(id, basicInfo, providerInfo: providerInfo);
 
         // Assert
         supplier.Name.ShouldBe("Test Supplier");
@@ -278,37 +272,29 @@ public class Supplier_ValueObjects_Tests : PaymentsApplicationTestBase
     #region Backward Compatibility Tests
 
     [Fact]
-    public void Supplier_LegacyConstructor_ShouldStillWork()
+    public void Supplier_SimpleConstructor_ShouldSetNameNumberAndAddress()
     {
         // Arrange
         var id = Guid.NewGuid();
-        var name = "Legacy Supplier";
-        var number = "LEG001";
-        var correlation = new Correlation(Guid.NewGuid(), "Legacy");
-        var mailingAddress = new MailingAddress("Legacy Address", "Legacy City", "BC", "L3G4CY");
+        var name = "Simple Supplier";
+        var number = "SIM001";
+        var mailingAddress = new MailingAddress("Simple Address", "Simple City", "BC", "S1M4LE");
 
         // Act
-        var supplier = new Supplier(id, name, number, correlation, mailingAddress);
+        var supplier = new Supplier(id, name, number, mailingAddress);
 
         // Assert
         supplier.Id.ShouldBe(id);
         supplier.Name.ShouldBe(name);
         supplier.Number.ShouldBe(number);
-        supplier.CorrelationId.ShouldBe(correlation.CorrelationId);
-        supplier.CorrelationProvider.ShouldBe(correlation.CorrelationProvider);
         supplier.MailingAddress.ShouldBe(mailingAddress.AddressLine);
         supplier.City.ShouldBe(mailingAddress.City);
         supplier.Province.ShouldBe(mailingAddress.Province);
         supplier.PostalCode.ShouldBe(mailingAddress.PostalCode);
-        
-        // Properties not set in legacy constructor should have default values (string.Empty, not null)
-        supplier.Subcategory.ShouldBe(string.Empty);
         supplier.ProviderId.ShouldBe(string.Empty);
         supplier.BusinessNumber.ShouldBe(string.Empty);
         supplier.Status.ShouldBe(string.Empty);
-        supplier.SupplierProtected.ShouldBe(string.Empty);
-        supplier.StandardIndustryClassification.ShouldBe(string.Empty);
-        supplier.LastUpdatedInCAS.ShouldBeNull(); // This one is nullable DateTime, so remains null
+        supplier.LastUpdatedInCAS.ShouldBeNull();
     }
 
     #endregion
@@ -364,10 +350,9 @@ public class Supplier_ValueObjects_Tests : PaymentsApplicationTestBase
         var providerInfo = new ProviderInfo("PROV123", "BN123456789");
         var supplierStatus = new SupplierStatus("Active", "No", "NAICS123");
         var casMetadata = new CasMetadata(DateTime.UtcNow);
-        var correlation = new Correlation(Guid.NewGuid(), "Test");
         var mailingAddress = new MailingAddress("123 Test St", "Test City", "BC", "T3ST1NG");
 
-        return new Supplier(id, basicInfo, correlation, providerInfo, supplierStatus, casMetadata, mailingAddress);
+        return new Supplier(id, basicInfo, providerInfo, supplierStatus, casMetadata, mailingAddress);
     }
 
     #endregion

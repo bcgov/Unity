@@ -48,4 +48,20 @@ public class AttachmentSummaryAppService(
 
         return results;
     }
+
+    // Internal-only: no HTTP endpoint, no auth check — safe for background job callers
+    [AllowAnonymous]
+    [RemoteService(IsEnabled = false)]
+    public virtual async Task<List<AttachmentSummaryResultDto>> GenerateAttachmentSummariesForPipelineAsync(List<System.Guid> attachmentIds, string? promptVersion = null)
+    {
+        if (attachmentIds.Count == 0) return [];
+
+        var results = new List<AttachmentSummaryResultDto>();
+        foreach (var attachmentId in attachmentIds)
+        {
+            await attachmentSummaryService.GenerateAndSaveAsync(attachmentId, promptVersion);
+            results.Add(new AttachmentSummaryResultDto { Completed = true });
+        }
+        return results;
+    }
 }

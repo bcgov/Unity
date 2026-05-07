@@ -44,3 +44,18 @@
 .hidden-widget {
     display: none;
 }
+
+/* Archived worksheets */
+.worksheet-archived .accordion-button {
+    opacity: 0.55;
+}
+
+.worksheet-archived .accordion-button:hover {
+    opacity: 0.8;
+}
+
+.worksheet-archived-badge {
+    font-size: 0.65rem;
+    vertical-align: middle;
+    letter-spacing: 0.04em;
+}

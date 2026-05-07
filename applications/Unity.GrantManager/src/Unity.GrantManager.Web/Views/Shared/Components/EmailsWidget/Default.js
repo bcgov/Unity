@@ -334,6 +334,7 @@
                 templateName = $('#templateText').val();
             }
 
+            UIElements.btnSave.prop('disabled', true);
             unity.grantManager.emails.email
                 .saveDraft({
                     emailId: UIElements.inputEmailId[0].value,
@@ -353,6 +354,7 @@
                     abp.notify.success('Your email has been saved.');
                     PubSub.publish('refresh_application_emails');
                 }).catch(function () {
+                    UIElements.btnSave.prop('disabled', false);
                     abp.notify.error('An error ocurred your email could not be saved.');
                 });
         } else {

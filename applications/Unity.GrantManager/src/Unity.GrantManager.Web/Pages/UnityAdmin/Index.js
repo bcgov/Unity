@@ -145,7 +145,7 @@ $(function () {
                     },
                     {
                         title: l('Submitter'),
-                        data: 'name',
+                        data: 'createdBy',
                         render: function (data) {
                             return data;
                         }

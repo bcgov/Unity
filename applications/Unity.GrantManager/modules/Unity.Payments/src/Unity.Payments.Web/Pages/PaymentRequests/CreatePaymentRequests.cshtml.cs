@@ -144,7 +144,7 @@ namespace Unity.Payments.Web.Pages.Payments
                 var supplier = await GetSupplierByApplicationAync(application);
                 string supplierNumber = supplier?.Number?? string.Empty;
 
-                Guid siteId = application.Applicant.SiteId;
+                Guid siteId = application.DefaultSiteId ?? Guid.Empty;
                 Site? site = null;
                 if(siteId != Guid.Empty) {
                     site = await siteRepository.GetAsync(siteId);
@@ -278,21 +278,12 @@ namespace Unity.Payments.Web.Pages.Payments
 
         private async Task<SupplierDto?> GetSupplierByApplicationAync(GrantApplicationDto application)
         {
-            if(application.Applicant.SupplierId != Guid.Empty)
+            if (application.Applicant.SupplierId != Guid.Empty)
             {
-                SupplierDto? supplierDto =  await iSupplierAppService.GetAsync(application.Applicant.SupplierId);
-                if (supplierDto != null)
-                {
-                    return supplierDto;
-                }
+                return await iSupplierAppService.GetAsync(application.Applicant.SupplierId);
             }
 
-            return await iSupplierAppService.GetByCorrelationAsync(new GetSupplierByCorrelationDto()
-            {
-                CorrelationId = application.Applicant.Id,
-                CorrelationProvider = GrantManager.Payments.PaymentConsts.ApplicantCorrelationProvider,
-                IncludeDetails = true
-            });
+            return null;
         }
 
         private async Task<(List<string> Errors, string? ParentReferenceNo)> ValidateFormHierarchyAndParentLink(

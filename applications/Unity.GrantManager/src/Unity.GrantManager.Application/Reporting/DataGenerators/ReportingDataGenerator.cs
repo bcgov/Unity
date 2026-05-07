@@ -33,18 +33,15 @@ namespace Unity.GrantManager.Reporting.DataGenerators
                 ScanNode(dataNode, keysToTrack, reportResult);
 
                 // Ensure all keys are present in the result, even if no matches were found
-                foreach (var key in keysToTrack)
+                foreach (var key in keysToTrack.Where(k => !reportResult.ContainsKey(k)))
                 {
-                    if (!reportResult.ContainsKey(key))
-                    {
-                        reportResult[key] = [];
-                    }
+                    reportResult[key] = [];
                 }
 
                 // Clean up the JSON strings
                 foreach (var key in reportResult.Keys.ToList())
                 {
-                    reportResult[key] = reportResult[key].Select(CleanJsonString).ToList();
+                    reportResult[key] = reportResult[key].Where(x => x != null).Select(CleanJsonString).ToList();
                 }
 
                 // Sort the dictionary by keys alphabetically 

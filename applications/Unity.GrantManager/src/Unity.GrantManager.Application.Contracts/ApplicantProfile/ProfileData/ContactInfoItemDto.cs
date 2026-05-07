@@ -15,6 +15,7 @@ namespace Unity.GrantManager.ApplicantProfile.ProfileData
         public string? ContactType { get; set; }
         public string? Role { get; set; }
         public bool IsPrimary { get; set; }
+        public bool IsPrimaryInferred { get; set; }
         public bool IsEditable { get; set; }
         public Guid? ApplicationId { get; set; }
         public string? ReferenceNo { get; set; }

@@ -69,94 +69,21 @@
 .ai-button-content {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 0.5rem;
 }
 
-.ai-dev-output {
-    min-height: 10rem;
-    max-height: 24rem;
-    overflow: auto;
-    resize: vertical;
-    white-space: pre;
-    font-family: Consolas, "Courier New", monospace;
-    line-height: 1.35;
-    padding-top: 0.75rem;
-    padding-right: 2.5rem;
+.ai-generate-btn {
+    height: 2.25rem;
 }
 
-.ai-dev-output-container {
-    position: relative;
-}
-
-.ai-dev-output-actions {
-    position: absolute;
-    top: 0.375rem;
-    right: 0.5rem;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.25rem;
-    z-index: 1;
-    padding: 0 0.25rem;
-    background: #ffffff;
-    border-radius: 999px;
-}
-
-.ai-dev-output-actions .btn-icon {
-    width: 2rem;
+.ai-generate-btn.btn-sm {
     height: 2rem;
-    padding: 0;
-    color: #5c6b7a;
 }
 
-.ai-dev-output-timestamp {
-    font-weight: 400;
-    color: #5c6b7a;
-}
-
-.dev-prompt-section {
-    margin-bottom: 1rem;
-    padding-bottom: 1rem;
-    border-bottom: 1px solid #e7ebef;
-}
-
-.dev-tools-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 1rem;
-    flex-wrap: wrap;
-}
-
-.dev-prompt-toolbar-row {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.75rem;
-}
-
-.dev-prompt-toolbar-inline {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.75rem;
-}
-
-.dev-prompt-toolbar-row .form-select {
-    width: auto;
-    min-width: 5rem;
-}
-
-.dev-prompt-section:last-child {
-    margin-bottom: 0;
-    padding-bottom: 0;
-    border-bottom: 0;
-}
-
-.dev-prompt-section-header {
-    margin-bottom: 0.5rem;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 0.75rem;
-    flex-wrap: wrap;
+.ai-generate-btn .spinner-border-sm {
+    width: 0.875rem;
+    height: 0.875rem;
 }
 
 .left-card {
@@ -796,4 +723,85 @@ form label.error {
     color: #1f2937;
     background-color: #f9fafb;
     border-color: #9ca3af;
+}
+.prompt-tools-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem 1rem;
+    flex-wrap: nowrap;
+}
+
+.prompt-tools-header .prompt-tools-toolbar-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem 0.75rem;
+    margin-left: auto;
+}
+
+.prompt-tools-header select,
+.prompt-tools-header .form-select {
+    width: auto;
+    white-space: nowrap;
+}
+
+.prompt-tools-section {
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #e7ebef;
+}
+
+.prompt-tools-section:last-child {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: 0;
+}
+
+.prompt-tools-section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem 1rem;
+    margin-bottom: 0.5rem;
+}
+
+.prompt-tools-section-header h6 {
+    min-width: 0;
+    flex: 1 1 auto;
+}
+
+.prompt-tools-output-container {
+    position: relative;
+}
+
+.prompt-tools-output-container .prompt-tools-output-actions {
+    position: absolute;
+    top: 0.375rem;
+    right: 0.5rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    z-index: 1;
+    padding: 0 0.25rem;
+    background: #ffffff;
+    border-radius: 999px;
+}
+
+.prompt-tools-output-container .prompt-tools-output {
+    min-height: 10rem;
+    max-height: 24rem;
+    overflow: auto;
+    resize: vertical;
+    white-space: pre;
+    font-family: Consolas, "Courier New", monospace;
+    line-height: 1.35;
+    padding-top: 0.75rem;
+    padding-right: 2.5rem;
+}
+
+.prompt-tools-output-container .prompt-tools-output-copy-btn {
+    width: 2rem;
+    height: 2rem;
+    padding: 0;
+    color: #5c6b7a;
 }

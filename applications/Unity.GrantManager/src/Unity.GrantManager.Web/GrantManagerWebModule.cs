@@ -559,8 +559,15 @@ public class GrantManagerWebModule : AbpModule
 
         app.UseAbpRequestLocalization();
 
-        app.UseStatusCodePagesWithReExecute("/Error", "?httpStatusCode={0}");
-        app.UseErrorPage();
+        if (env.IsProduction() || env.IsStaging())
+        {
+            app.UseStatusCodePagesWithReExecute("/Error", "?httpStatusCode={0}");
+            app.UseErrorPage();
+        }
+        else
+        {
+            app.UseDeveloperExceptionPage();
+        }
 
         if (Convert.ToBoolean(configuration["AuthServer:IsBehindTlsTerminationProxy"]))
         {
