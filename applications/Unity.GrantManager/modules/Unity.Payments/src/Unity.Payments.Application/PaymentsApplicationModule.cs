@@ -1,5 +1,5 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
-using Volo.Abp.AutoMapper;
+using Volo.Abp.Mapperly;
 using Volo.Abp.Modularity;
 using Volo.Abp.Application;
 using Volo.Abp.VirtualFileSystem;
@@ -23,7 +23,7 @@ namespace Unity.Payments;
     typeof(UnityAuditingOverrideModule),
     typeof(AbpVirtualFileSystemModule),
     typeof(AbpDddApplicationModule),
-    typeof(AbpAutoMapperModule),
+    typeof(AbpMapperlyModule),
     typeof(AbpVirtualFileSystemModule),
     typeof(PaymentsApplicationContractsModule),
     typeof(AbpBackgroundJobsModule),
@@ -57,11 +57,7 @@ public class PaymentsApplicationModule : AbpModule
             options.FileSets.AddEmbedded<PaymentsApplicationModule>();
         });
 
-        context.Services.AddAutoMapperObjectMapper<PaymentsApplicationModule>();
-        Configure<AbpAutoMapperOptions>(options =>
-        {
-            options.AddMaps<PaymentsApplicationModule>(validate: true);
-        });
+        context.Services.AddMapperlyObjectMapper<PaymentsApplicationModule>();
 
         context.Services.AddHttpClientProxies(
            typeof(PaymentsApplicationContractsModule).Assembly,

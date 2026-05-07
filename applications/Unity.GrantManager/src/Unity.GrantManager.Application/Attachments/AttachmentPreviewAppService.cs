@@ -10,11 +10,11 @@ using Volo.Abp.DependencyInjection;
 
 namespace Unity.GrantManager.Attachments;
 
-public class AttachmentPreviewAppService : ApplicationService, IAttachmentPreviewAppService, ITransientDependency, IDisposable
+public class AttachmentPreviewAppService : ApplicationService, IAttachmentPreviewAppService, ITransientDependency
 {
     private readonly IFileAppService _fileAppService;
     private readonly ILibreOfficeConversionService _libreOfficeConversionService;
-    private readonly AmazonS3Client _amazonS3Client;
+    private readonly IAmazonS3 _amazonS3Client;
     private readonly string _bucket;
     private readonly string _applicationFolder;
     private readonly string _assessmentFolder;
@@ -23,22 +23,12 @@ public class AttachmentPreviewAppService : ApplicationService, IAttachmentPrevie
     public AttachmentPreviewAppService(
         IFileAppService fileAppService,
         ILibreOfficeConversionService libreOfficeConversionService,
-        IConfiguration configuration)
+        IConfiguration configuration,
+        IAmazonS3 amazonS3Client)
     {
         _fileAppService = fileAppService;
         _libreOfficeConversionService = libreOfficeConversionService;
-
-        var s3Config = new AmazonS3Config
-        {
-            RegionEndpoint = null,
-            ServiceURL = configuration["S3:Endpoint"],
-            AllowAutoRedirect = true,
-            ForcePathStyle = true
-        };
-        _amazonS3Client = new AmazonS3Client(
-            configuration["S3:AccessKeyId"],
-            configuration["S3:SecretAccessKey"],
-            s3Config);
+        _amazonS3Client = amazonS3Client;
 
         _bucket = configuration["S3:Bucket"] ?? throw new InvalidOperationException("Missing server configuration: S3:Bucket");
         _applicationFolder = NormalizeFolder(configuration["S3:ApplicationS3Folder"] ?? throw new InvalidOperationException("Missing server configuration: S3:ApplicationS3Folder"));
@@ -164,18 +154,5 @@ public class AttachmentPreviewAppService : ApplicationService, IAttachmentPrevie
         var lastSlash = s3ObjectKey.LastIndexOf('/');
         if (lastSlash < 0) return Uri.EscapeDataString(s3ObjectKey);
         return s3ObjectKey[..(lastSlash + 1)] + Uri.EscapeDataString(s3ObjectKey[(lastSlash + 1)..]);
-    }
-    public void Dispose()
-    {
-        Dispose(true);
-        GC.SuppressFinalize(this);
-    }
-
-    protected virtual void Dispose(bool disposing)
-    {
-        if (disposing)
-        {
-            _amazonS3Client.Dispose();
-        }
     }
 }

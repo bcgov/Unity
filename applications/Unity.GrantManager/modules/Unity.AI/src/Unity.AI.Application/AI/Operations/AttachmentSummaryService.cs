@@ -16,6 +16,7 @@ public class AttachmentSummaryService(
     IChefsFileAttachmentStreamProvider chefsFileAttachmentStreamProvider,
     ITextExtractionService textExtractionService,
     IAIService aiService,
+    AIExecutionModeResolver executionModeResolver,
     ILogger<AttachmentSummaryService> logger) : IAttachmentSummaryService, ITransientDependency
 {
     private const string SummaryGenerationFailedMessage = "AI summary generation failed.";
@@ -44,22 +45,45 @@ public class AttachmentSummaryService(
 
     public async Task<List<string>> GenerateAndSaveAsync(IEnumerable<Guid> attachmentIds, string? promptVersion = null)
     {
-        var summaries = new List<string>();
+        var ids = attachmentIds as IReadOnlyCollection<Guid> ?? attachmentIds.ToList();
+        var mode = executionModeResolver.ResolveMode(AIExecutionModeResolver.AttachmentSummaryOperation);
+        if (mode != AIExecutionMode.Sequential)
+        {
+            logger.LogWarning(
+                "AI attachment summary {ExecutionMode} mode is not supported by the current repository-backed execution path. Falling back to sequential execution.",
+                mode);
+            mode = AIExecutionMode.Sequential;
+        }
 
+        return await AIExecutionStrategy.RunAsync(
+            ids,
+            mode,
+            id => GenerateOrFallbackAsync(id, promptVersion),
+            batch => GenerateSequentiallyAsync(batch, promptVersion));
+    }
+
+    private async Task<List<string>> GenerateSequentiallyAsync(IReadOnlyCollection<Guid> attachmentIds, string? promptVersion)
+    {
+        var summaries = new List<string>(attachmentIds.Count);
         foreach (var attachmentId in attachmentIds)
         {
-            try
-            {
-                summaries.Add(await GenerateAndSaveAsync(attachmentId, promptVersion));
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "Error generating AI summary for attachment {AttachmentId}", attachmentId);
-                summaries.Add(SummaryGenerationFailedMessage);
-            }
+            summaries.Add(await GenerateOrFallbackAsync(attachmentId, promptVersion));
         }
 
         return summaries;
+    }
+
+    private async Task<string> GenerateOrFallbackAsync(Guid attachmentId, string? promptVersion)
+    {
+        try
+        {
+            return await GenerateAndSaveAsync(attachmentId, promptVersion);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error generating AI summary for attachment {AttachmentId}", attachmentId);
+            return SummaryGenerationFailedMessage;
+        }
     }
 
     public async Task<List<string>> GenerateForApplicationAsync(Guid applicationId, string? promptVersion = null)

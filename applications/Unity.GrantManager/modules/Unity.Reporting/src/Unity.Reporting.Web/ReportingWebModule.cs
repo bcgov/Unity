@@ -3,7 +3,7 @@ using Unity.Reporting.Localization;
 using Unity.Reporting.Web.Menus;
 using Volo.Abp.AspNetCore.Mvc.Localization;
 using Volo.Abp.AspNetCore.Mvc.UI.Theme.Shared;
-using Volo.Abp.AutoMapper;
+using Volo.Abp.Mapperly;
 using Volo.Abp.Modularity;
 using Volo.Abp.SettingManagement.Web;
 using Volo.Abp.UI.Navigation;
@@ -20,7 +20,7 @@ namespace Unity.Reporting.Web;
 [DependsOn(
     typeof(ReportingApplicationContractsModule),
     typeof(AbpAspNetCoreMvcUiThemeSharedModule),
-    typeof(AbpAutoMapperModule),
+    typeof(AbpMapperlyModule),
     typeof(AbpSettingManagementWebModule)
     )]
 public class ReportingWebModule : AbpModule
@@ -62,10 +62,6 @@ public class ReportingWebModule : AbpModule
             options.FileSets.AddEmbedded<ReportingWebModule>();
         });
 
-        context.Services.AddAutoMapperObjectMapper<ReportingWebModule>();
-        Configure<AbpAutoMapperOptions>(options =>
-        {
-            options.AddMaps<ReportingWebModule>(validate: true);
-        });
+        context.Services.AddMapperlyObjectMapper<ReportingWebModule>();
     }
 }

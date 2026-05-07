@@ -245,7 +245,7 @@ formatter.format(amount); // Returns formatted currency string
 3. Create migration
 4. Create DTOs in `*.Application.Contracts`
 5. Create application service in `*.Application`
-6. Add AutoMapper mappings
+6. Add Mapperly mappings
 7. Define permissions
 8. Create MVC controller and views
 
