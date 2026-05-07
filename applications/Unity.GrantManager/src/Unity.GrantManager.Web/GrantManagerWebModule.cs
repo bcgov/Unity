@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.CookiePolicy;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -149,6 +150,22 @@ public class GrantManagerWebModule : AbpModule
         ConfigureUtils(context);
         ConfigureDataProtection(context, configuration);
         ConfigureMiniProfiler(context, configuration);
+
+        // Trust X-Forwarded-For only from internal RFC-1918 proxies (OpenShift HAProxy router).
+        // This ensures RemoteIpAddress reflects the real client IP so the
+        // InternalNetworkHandler correctly blocks external callers reaching /metrics via ingress.
+        context.Services.Configure<ForwardedHeadersOptions>(options =>
+        {
+            options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+            options.ForwardLimit = 1;
+            // Clear defaults and allow the three RFC-1918 blocks plus loopback.
+            options.KnownProxies.Clear();
+            options.KnownIPNetworks.Clear();
+            options.KnownIPNetworks.Add(System.Net.IPNetwork.Parse("127.0.0.0/8"));
+            options.KnownIPNetworks.Add(System.Net.IPNetwork.Parse("10.0.0.0/8"));
+            options.KnownIPNetworks.Add(System.Net.IPNetwork.Parse("172.16.0.0/12"));
+            options.KnownIPNetworks.Add(System.Net.IPNetwork.Parse("192.168.0.0/16"));
+        });
 
         Configure<AbpAntiForgeryOptions>(options =>
         {
@@ -557,6 +574,10 @@ public class GrantManagerWebModule : AbpModule
         {
             IdentityModelEventSource.ShowPII = true;
         }
+
+        // Rewrite RemoteIpAddress from X-Forwarded-For before any IP-based checks run.
+        // Trusted networks are configured in ConfigureServices above.
+        app.UseForwardedHeaders();
 
         app.UseAbpRequestLocalization();
 

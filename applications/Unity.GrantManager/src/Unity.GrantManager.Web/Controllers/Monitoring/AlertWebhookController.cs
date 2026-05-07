@@ -41,7 +41,7 @@ public class AlertWebhookController(
                 return Ok();
             }
 
-            // Pick the most severe alert as the headline (critical > warning > info > unknown)
+            // Pick the most severe alert as the headline (critical > error > warning > info > unknown)
             var lead = firing
                 .OrderBy(a => SeverityOrder(a.Labels.GetValueOrDefault("severity", "unknown")))
                 .First();
