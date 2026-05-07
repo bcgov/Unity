@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Unity.AI.RateLimit;
 using Unity.GrantManager.GrantApplications;
 using Unity.GrantManager.GrantApplications.Automation;
 using Unity.GrantManager.GrantApplications.Automation.BackgroundJobs;
@@ -130,6 +131,48 @@ public class AIGenerationQueueTests(ITestOutputHelper outputHelper) : GrantManag
             r.OperationType == AIGenerationRequestKeyHelper.ApplicationAnalysisOperationType &&
             r.RequestKey == capturedArgs.RequestKey &&
             r.Status == AIGenerationRequestStatus.Queued), Arg.Any<bool>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task QueueApplicationAnalysisAsync_Should_Check_Rate_Limit_Before_Enqueueing_New_Request()
+    {
+        var applicationId = Guid.NewGuid();
+        var tenantId = Guid.NewGuid();
+        var repository = Substitute.For<IRepository<AIGenerationRequest, Guid>>();
+        repository.GetQueryableAsync().Returns(Task.FromResult<IQueryable<AIGenerationRequest>>(Array.Empty<AIGenerationRequest>().AsQueryable()));
+        repository.InsertAsync(Arg.Any<AIGenerationRequest>(), Arg.Any<bool>(), Arg.Any<CancellationToken>())
+            .Returns(callInfo => Task.FromResult(callInfo.Arg<AIGenerationRequest>()));
+
+        var backgroundJobManager = Substitute.For<IBackgroundJobManager>();
+        var rateLimiter = Substitute.For<IAIRateLimiter>();
+        rateLimiter.EnsureAsync().Returns(Task.CompletedTask);
+        var queue = CreateQueue(backgroundJobManager, repository, rateLimiter);
+
+        await queue.QueueApplicationAnalysisAsync(applicationId, tenantId);
+
+        await rateLimiter.Received(1).EnsureAsync();
+        await repository.Received(1).InsertAsync(Arg.Any<AIGenerationRequest>(), Arg.Any<bool>(), Arg.Any<CancellationToken>());
+        await backgroundJobManager.Received(1).EnqueueAsync(Arg.Any<GenerateApplicationAnalysisBackgroundJobArgs>(), Arg.Any<BackgroundJobPriority>(), Arg.Any<TimeSpan?>());
+    }
+
+    [Fact]
+    public async Task QueueApplicationAnalysisAsync_Should_Not_Insert_Or_Enqueue_When_Rate_Limited()
+    {
+        var applicationId = Guid.NewGuid();
+        var tenantId = Guid.NewGuid();
+        var repository = Substitute.For<IRepository<AIGenerationRequest, Guid>>();
+        repository.GetQueryableAsync().Returns(Task.FromResult<IQueryable<AIGenerationRequest>>(Array.Empty<AIGenerationRequest>().AsQueryable()));
+
+        var backgroundJobManager = Substitute.For<IBackgroundJobManager>();
+        var rateLimiter = Substitute.For<IAIRateLimiter>();
+        rateLimiter.EnsureAsync().Returns<Task>(_ => throw new InvalidOperationException("rate limited"));
+        var queue = CreateQueue(backgroundJobManager, repository, rateLimiter);
+
+        await Should.ThrowAsync<InvalidOperationException>(() => queue.QueueApplicationAnalysisAsync(applicationId, tenantId));
+
+        await rateLimiter.Received(1).EnsureAsync();
+        await repository.DidNotReceive().InsertAsync(Arg.Any<AIGenerationRequest>(), Arg.Any<bool>(), Arg.Any<CancellationToken>());
+        await backgroundJobManager.DidNotReceive().EnqueueAsync(Arg.Any<GenerateApplicationAnalysisBackgroundJobArgs>(), Arg.Any<BackgroundJobPriority>(), Arg.Any<TimeSpan?>());
     }
 
     [Fact]
@@ -308,8 +351,12 @@ public class AIGenerationQueueTests(ITestOutputHelper outputHelper) : GrantManag
         IRepository<AIGenerationRequest, Guid> repository,
         Unity.AI.RateLimit.IAIRateLimiter? rateLimiter = null)
     {
-        rateLimiter ??= Substitute.For<Unity.AI.RateLimit.IAIRateLimiter>();
-        rateLimiter.EnsureAsync().Returns(Task.CompletedTask);
+        if (rateLimiter == null)
+        {
+            rateLimiter = Substitute.For<Unity.AI.RateLimit.IAIRateLimiter>();
+            rateLimiter.EnsureAsync().Returns(Task.CompletedTask);
+        }
+
         return new ApplicationAIGenerationQueue(
             backgroundJobManager,
             repository,

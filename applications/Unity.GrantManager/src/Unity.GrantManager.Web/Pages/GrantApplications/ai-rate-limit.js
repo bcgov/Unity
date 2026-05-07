@@ -110,6 +110,6 @@
         setTimeout(fetchState, 250);
     });
 
-    document.addEventListener('DOMContentLoaded', fetchState);
+    document.addEventListener('DOMContentLoaded', () => fetchState());
     if (document.readyState !== 'loading') fetchState();
 })();

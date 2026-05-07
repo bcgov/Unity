@@ -26,8 +26,14 @@ public class AIRateLimiter(
     private const string LockPrefix = "AI:CooldownLock:";
     private const int DefaultCooldownSeconds = 60;
 
-    private int CooldownSeconds =>
-        configuration.GetValue<int?>("AI:RateLimit:CooldownSeconds") ?? DefaultCooldownSeconds;
+    private int CooldownSeconds
+    {
+        get
+        {
+            var configured = configuration.GetValue<int?>("AI:RateLimit:CooldownSeconds");
+            return configured > 0 ? configured.Value : DefaultCooldownSeconds;
+        }
+    }
 
     public virtual async Task EnsureAsync()
     {
@@ -58,7 +64,11 @@ public class AIRateLimiter(
     {
         if (userId is Guid resolvedUserId)
         {
-            await StampAsync(resolvedUserId, CooldownSeconds);
+            var userLock = distributedLockProvider.CreateLock(LockPrefix + resolvedUserId);
+            using (await userLock.AcquireAsync())
+            {
+                await StampAsync(resolvedUserId, CooldownSeconds);
+            }
         }
     }
 
@@ -69,10 +79,14 @@ public class AIRateLimiter(
             return new AIRateLimitStateDto { RetryAfterSeconds = 0 };
         }
 
-        return new AIRateLimitStateDto
+        var userLock = distributedLockProvider.CreateLock(LockPrefix + userId);
+        using (await userLock.AcquireAsync())
         {
-            RetryAfterSeconds = await GetRemainingSecondsAsync(userId)
-        };
+            return new AIRateLimitStateDto
+            {
+                RetryAfterSeconds = await GetRemainingSecondsAsync(userId)
+            };
+        }
     }
 
     private async Task<int> GetRemainingSecondsAsync(Guid userId)

@@ -52,7 +52,7 @@ public class RunApplicationAIPipelineJob(
                 {
                     logger.LogDebug("All AI features are disabled, skipping queued AI generation for application {ApplicationId}.", args.ApplicationId);
                     await AIGenerationRequestJobHelper.MarkCompletedInNewUowAsync(unitOfWorkManager, generationRequestRepository, args.RequestKey);
-                    await aiRateLimiter.StampAsync(args.RequestedByUserId);
+                    await AIGenerationRequestJobHelper.StampRateLimitBestEffortAsync(aiRateLimiter, logger, args.RequestedByUserId, args.ApplicationId, args.RequestKey);
                     return;
                 }
 
@@ -116,7 +116,7 @@ public class RunApplicationAIPipelineJob(
                 }
 
                 await AIGenerationRequestJobHelper.MarkCompletedInNewUowAsync(unitOfWorkManager, generationRequestRepository, args.RequestKey);
-                await aiRateLimiter.StampAsync(args.RequestedByUserId);
+                await AIGenerationRequestJobHelper.StampRateLimitBestEffortAsync(aiRateLimiter, logger, args.RequestedByUserId, args.ApplicationId, args.RequestKey);
             }
             catch (Exception ex)
             {

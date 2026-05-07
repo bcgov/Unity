@@ -33,7 +33,7 @@ public class GenerateAttachmentSummaryJob(
                 await attachmentSummaryService.GenerateForApplicationAsync(args.ApplicationId, args.PromptVersion);
 
                 await AIGenerationRequestJobHelper.MarkCompletedInNewUowAsync(unitOfWorkManager, generationRequestRepository, args.RequestKey);
-                await aiRateLimiter.StampAsync(args.RequestedByUserId);
+                await AIGenerationRequestJobHelper.StampRateLimitBestEffortAsync(aiRateLimiter, logger, args.RequestedByUserId, args.ApplicationId, args.RequestKey);
             }
             catch (Exception ex)
             {
