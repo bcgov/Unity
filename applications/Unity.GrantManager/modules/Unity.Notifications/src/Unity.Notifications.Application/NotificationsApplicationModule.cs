@@ -1,5 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
-using Volo.Abp.AutoMapper;
+using Volo.Abp.Mapperly;
 using Volo.Abp.Modularity;
 using Volo.Abp.Application;
 using Volo.Abp.BackgroundJobs;
@@ -18,7 +18,7 @@ namespace Unity.Notifications;
     typeof(NotificationsDomainModule),
     typeof(NotificationsApplicationContractsModule),
     typeof(AbpDddApplicationModule),
-    typeof(AbpAutoMapperModule),
+    typeof(AbpMapperlyModule),
     typeof(AbpBackgroundJobsModule),
     typeof(AbpBackgroundWorkersQuartzModule),
     typeof(AbpHttpClientModule)
@@ -27,13 +27,8 @@ public class NotificationsApplicationModule : AbpModule
 {
     public override void ConfigureServices(ServiceConfigurationContext context)
     {
-        context.Services.AddAutoMapperObjectMapper<NotificationsApplicationModule>();
+        context.Services.AddMapperlyObjectMapper<NotificationsApplicationModule>();
         context.Services.AddTransient<IResilientHttpRequest, ResilientHttpRequest>();
-
-        Configure<AbpAutoMapperOptions>(options =>
-        {
-            options.AddMaps<NotificationsApplicationModule>(validate: true);
-        });
 
         context.Services.AddHttpClientProxies(
            typeof(NotificationsApplicationContractsModule).Assembly,

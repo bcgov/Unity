@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Volo.Abp.Application.Dtos;
 
 namespace Unity.GrantManager.GrantApplications;

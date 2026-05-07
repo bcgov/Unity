@@ -3,7 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Unity.Flex.Localization;
 using Volo.Abp.AspNetCore.Mvc.Localization;
 using Volo.Abp.AspNetCore.Mvc.UI.Theme.Shared;
-using Volo.Abp.AutoMapper;
+using Volo.Abp.Mapperly;
 using Volo.Abp.Modularity;
 using Volo.Abp.VirtualFileSystem;
 
@@ -12,7 +12,7 @@ namespace Unity.Flex.Web;
 [DependsOn(
     typeof(FlexApplicationContractsModule),
     typeof(AbpAspNetCoreMvcUiThemeSharedModule),
-    typeof(AbpAutoMapperModule)
+    typeof(AbpMapperlyModule)
     )]
 public class FlexWebModule : AbpModule
 {
@@ -38,11 +38,7 @@ public class FlexWebModule : AbpModule
             options.FileSets.AddEmbedded<FlexWebModule>();
         });
 
-        context.Services.AddAutoMapperObjectMapper<FlexWebModule>();
-        Configure<AbpAutoMapperOptions>(options =>
-        {
-            options.AddMaps<FlexWebModule>(validate: true);
-        });
+        context.Services.AddMapperlyObjectMapper<FlexWebModule>();
 
         Configure<RazorPagesOptions>(options =>
         {

@@ -1,5 +1,5 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
-using Volo.Abp.AutoMapper;
+using Volo.Abp.Mapperly;
 using Volo.Abp.Modularity;
 using Volo.Abp.Application;
 using Volo.Abp.Domain;
@@ -13,7 +13,7 @@ namespace Unity.Flex;
 
 [DependsOn(    
     typeof(AbpDddApplicationModule),
-    typeof(AbpAutoMapperModule),
+    typeof(AbpMapperlyModule),
     typeof(AbpValidationModule),
     typeof(AbpDddDomainSharedModule),
     typeof(AbpVirtualFileSystemModule),
@@ -41,11 +41,7 @@ public class FlexApplicationModule : AbpModule
             options.FileSets.AddEmbedded<FlexApplicationModule>();
         });       
 
-        context.Services.AddAutoMapperObjectMapper<FlexApplicationModule>();
-        Configure<AbpAutoMapperOptions>(options =>
-        {
-            options.AddMaps<FlexApplicationModule>(validate: true);
-        });
+        context.Services.AddMapperlyObjectMapper<FlexApplicationModule>();
 
         context.Services.AddHttpClientProxies(
            typeof(FlexApplicationContractsModule).Assembly,

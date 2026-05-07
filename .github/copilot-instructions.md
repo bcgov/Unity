@@ -4,9 +4,9 @@
 
 ## Project Summary
 
-Unity is a **grant management portal** for the Province of British Columbia, built on **ABP Framework 9.1.3** with **.NET 9.0**, targeting **PostgreSQL 17**. The primary application code lives in `applications/Unity.GrantManager/`.
+Unity is a **grant management portal** for the Province of British Columbia, built on **ABP Framework 10.3** with **.NET 10.0**, targeting **PostgreSQL 17**. The primary application code lives in `applications/Unity.GrantManager/`.
 
-**Key stack:** .NET 9 · ABP 9.1.3 · EF Core 9.0 · PostgreSQL 17 · Redis · RabbitMQ · xUnit · Shouldly · NSubstitute · AutoMapper · Cypress (E2E)
+**Key stack:** .NET 10 · ABP 10.3 · EF Core 10.0 · PostgreSQL 17 · Redis · RabbitMQ · xUnit · Shouldly · NSubstitute · Mapperly · Cypress (E2E)
 
 ## Repository Structure
 
@@ -21,7 +21,7 @@ documentation/                     ← Technical docs
 ## Key Conventions
 
 - **ABP Framework** modular monolith with DDD layered architecture
-- **AutoMapper** for DTO mapping (not Mapperly)
+- **Mapperly** for DTO mapping (not AutoMapper)
 - **Razor Pages** UI with custom ABP theme (Unity.Theme.UX2)
 - Multi-tenant architecture with separate host/tenant database contexts
 - `dev` → `test` → `main` branch promotion flow
@@ -39,6 +39,6 @@ All PRs must pass `dotnet build` and `dotnet test` before merge. The CI runs all
 
 ## Do NOT
 
-- Use Mapperly patterns — this project uses AutoMapper
+- Use AutoMapper patterns — this project uses Mapperly
 - Create repositories for child entities — only aggregate roots get repositories
 - Put business logic in application services — use domain entities/services
