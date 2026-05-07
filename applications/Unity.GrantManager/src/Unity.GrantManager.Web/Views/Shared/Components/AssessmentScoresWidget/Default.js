@@ -634,7 +634,7 @@ function queueApplicationScoring(triggerButton = null) {
             });
     };
 
-    unity.grantManager.grantApplications.applicationScoring
+    unity.grantManager.grantApplications.grantApplication
         .queueApplicationScoring(applicationId)
         .done(function (request) {
             const status = globalThis.AIGenerationButtonState?.resolveStatus(request?.status) ?? '';
