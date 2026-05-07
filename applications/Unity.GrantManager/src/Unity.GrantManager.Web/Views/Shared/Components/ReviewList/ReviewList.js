@@ -457,7 +457,6 @@ function unityWorkflowButtonAction(e, dt, button, config) {
 
 function generateAiButtonAction(e, dt, button, config) {
     const $button = button?.node ? $(button.node) : null;
-    const promptVersion = globalThis.getSelectedPromptVersion?.() || null;
     const aiGenerationPollIntervalMs = 15000;
     let aiGenerationPollTimeoutId = null;
 
@@ -476,7 +475,7 @@ function generateAiButtonAction(e, dt, button, config) {
 
     const poll = function () {
         unity.grantManager.grantApplications.grantApplication
-            .getAIGenerationStatus(pageApplicationId, 'application-scoring', promptVersion)
+            .getAIGenerationStatus(pageApplicationId, 'application-scoring')
             .done(function (request) {
                 const status = globalThis.AIGenerationButtonState?.resolveStatus(request?.status) ?? '';
 
@@ -505,7 +504,7 @@ function generateAiButtonAction(e, dt, button, config) {
             });
     };
 
-    unity.grantManager.grantApplications.grantApplication.queueApplicationScoring(pageApplicationId, promptVersion)
+    unity.grantManager.grantApplications.grantApplication.queueApplicationScoring(pageApplicationId)
         .done(function (request) {
             const status = globalThis.AIGenerationButtonState?.resolveStatus(request?.status) ?? '';
 
