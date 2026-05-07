@@ -2,9 +2,12 @@
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Trace;
 using Serilog;
 using System;
 using System.Threading.Tasks;
+using Unity.GrantManager.Web.Middleware;
 
 namespace Unity.GrantManager.Web;
 
@@ -20,12 +23,24 @@ public static class Program
             Console.WriteLine("Starting web host.");
             var builder = WebApplication.CreateBuilder(args);
             builder.Services.AddHttpContextAccessor();
+            builder.Services.AddOpenTelemetry()
+                .WithTracing(tracing => tracing
+                    .AddAspNetCoreInstrumentation()
+                    .AddHttpClientInstrumentation())
+                .WithMetrics(metrics => metrics
+                    .AddAspNetCoreInstrumentation()
+                    .AddHttpClientInstrumentation()
+                    .AddRuntimeInstrumentation());
             builder.Host.AddAppSettingsSecretsJson()
                 .UseAutofac()
                 .UseSerilog((hostingContext, loggerConfiguration) =>
-                loggerConfiguration.ReadFrom.Configuration(hostingContext.Configuration));
+                loggerConfiguration
+                    .ReadFrom.Configuration(hostingContext.Configuration)
+                    .WriteTo.Sink(new ErrorCountingLoggerSink()));
             await builder.AddApplicationAsync<GrantManagerWebModule>();            
             var app = builder.Build();
+
+            app.UseMiddleware<ExceptionCounterMiddleware>();
 
             app.MapHealthChecks("/healthz/live", 
                 new HealthCheckOptions() { Predicate = healthCheck => healthCheck.Tags.Contains("live") }); // Liveness (dumb)

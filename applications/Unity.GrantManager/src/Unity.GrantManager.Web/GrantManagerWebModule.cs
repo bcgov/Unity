@@ -77,6 +77,7 @@ using Unity.Notifications.Web.Bundling;
 using Unity.Reporting.Web;
 using Unity.AI.Web;
 using Unity.GrantManager.Web.Views.Settings;
+using Prometheus;
 
 namespace Unity.GrantManager.Web;
 
@@ -588,6 +589,8 @@ public class GrantManagerWebModule : AbpModule
         app.UseCorrelationId();
         app.UseStaticFiles();
         app.UseRouting();
+        app.UseHttpMetrics();
+        app.MapMetrics();
         app.UseAuthentication();
 
         if (MultiTenancyConsts.IsEnabled)
