@@ -589,6 +589,7 @@ public class GrantManagerWebModule : AbpModule
 
         app.UseCorrelationId();
         app.UseStaticFiles();
+        app.UseMiddleware<Unity.GrantManager.Web.Middleware.ExceptionCounterMiddleware>();
         app.UseRouting();
         app.UseHttpMetrics();
         app.UseAuthentication();
@@ -600,7 +601,10 @@ public class GrantManagerWebModule : AbpModule
 
         app.UseUnitOfWork();
         app.UseAuthorization();
-        app.MapMetrics().RequireAuthorization(Unity.GrantManager.Web.Identity.Policy.PolicyRegistrant.MetricsAccessPolicy);
+        app.UseEndpoints(endpoints =>
+        {
+            endpoints.MapMetrics().RequireAuthorization(Unity.GrantManager.Web.Identity.Policy.PolicyRegistrant.MetricsAccessPolicy);
+        });
         if (IsProfilingAllowed(env, configuration))
         {
             app.UseMiniProfiler();

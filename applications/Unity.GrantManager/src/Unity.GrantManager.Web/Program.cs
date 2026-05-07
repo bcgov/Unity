@@ -42,8 +42,6 @@ public static class Program
             await builder.AddApplicationAsync<GrantManagerWebModule>();            
             var app = builder.Build();
 
-            app.UseMiddleware<ExceptionCounterMiddleware>();
-
             app.MapHealthChecks("/healthz/live", 
                 new HealthCheckOptions() { Predicate = healthCheck => healthCheck.Tags.Contains("live") }); // Liveness (dumb)
             app.MapHealthChecks("/healthz/ready",
