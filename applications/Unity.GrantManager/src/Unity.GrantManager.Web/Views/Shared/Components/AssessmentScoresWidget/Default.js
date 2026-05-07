@@ -584,7 +584,6 @@ function queueApplicationScoring(triggerButton = null) {
     const applicationId = $('#DetailsViewApplicationId').val();
     const $button = triggerButton ? $(triggerButton) : $('#regenerateAiScoresheetBtn');
     const existingHtml = $button.html();
-    const promptVersion = globalThis.getSelectedPromptVersion?.() || null;
     const aiGenerationPollIntervalMs = 15000;
     let aiGenerationPollTimeoutId = null;
 
@@ -608,7 +607,7 @@ function queueApplicationScoring(triggerButton = null) {
 
     const poll = function () {
         unity.grantManager.grantApplications.grantApplication
-            .getAIGenerationStatus(applicationId, 'application-scoring', promptVersion)
+            .getAIGenerationStatus(applicationId, 'application-scoring')
             .done(function (request) {
                 const status = globalThis.AIGenerationButtonState?.resolveStatus(request?.status) ?? '';
 
@@ -636,7 +635,7 @@ function queueApplicationScoring(triggerButton = null) {
     };
 
     unity.grantManager.grantApplications.applicationScoring
-        .queueApplicationScoring(applicationId, promptVersion)
+        .queueApplicationScoring(applicationId)
         .done(function (request) {
             const status = globalThis.AIGenerationButtonState?.resolveStatus(request?.status) ?? '';
 
