@@ -46,14 +46,7 @@ namespace Unity.AI.Operations
             }
 
             var attachments = await applicationChefsFileAttachmentRepository.GetListAsync(a => a.ApplicationId == applicationId);
-            var attachmentSummaries = attachments
-                .Where(a => !string.IsNullOrEmpty(a.AISummary))
-                .Select(a => new AIAttachmentItem
-                {
-                    Name = string.IsNullOrWhiteSpace(a.FileName) ? "attachment" : a.FileName.Trim(),
-                    Summary = a.AISummary!.Trim()
-                })
-                .ToList();
+            var attachmentSummaries = PromptDataPayloadBuilder.BuildAttachmentSummaries(attachments);
 
             var formSubmission = await applicationFormSubmissionRepository.GetByApplicationAsync(applicationId);
             var formSchema = await GetFormSchemaAsync(formSubmission?.ApplicationFormVersionId);
