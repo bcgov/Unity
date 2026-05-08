@@ -269,7 +269,7 @@ namespace Unity.AI.Runtime
 
                 if (lastResult.Outcome == AIOperationOutcome.Success)
                 {
-                    lastResult = lastResult.WithOutcome(AIOperationOutcome.InvalidOutput);
+                    lastResult = lastResult.WithOutcome(AIOperationOutcome.InvalidOutput, AIFailureCategory.InvalidOutput);
                 }
 
                 if (lastResult.Outcome == AIOperationOutcome.PermanentFailure)
@@ -282,26 +282,31 @@ namespace Unity.AI.Runtime
                     if (lastResult.Outcome == AIOperationOutcome.TransientFailure)
                     {
                         _logger.LogWarning(
-                            "AI {OperationName} attempt {Attempt}/{MaxAttempts} failed transiently; retrying",
+                            "AI {OperationName} attempt {Attempt}/{MaxAttempts} failed transiently ({FailureCategory}); retrying",
                             operationName,
                             attempt,
-                            MaxAiAttempts);
+                            MaxAiAttempts,
+                            lastResult.FailureCategory);
                     }
                     else if (lastResult.Outcome == AIOperationOutcome.InvalidOutput)
                     {
                         _logger.LogWarning(
-                            "AI {OperationName} attempt {Attempt}/{MaxAttempts} returned invalid response shape; retrying",
+                            "AI {OperationName} attempt {Attempt}/{MaxAttempts} returned invalid response shape ({FailureCategory}); retrying",
                             operationName,
                             attempt,
-                            MaxAiAttempts);
+                            MaxAiAttempts,
+                            lastResult.FailureCategory);
                     }
                 }
             }
 
             _logger.LogWarning(
-                "AI {OperationName} exhausted retries with outcome {Outcome}; returning last result",
+                "AI {OperationName} exhausted retries with outcome {Outcome} and failure category {FailureCategory}; HTTP status {HttpStatusCode}; model {Model}; returning last result",
                 operationName,
-                lastResult.Outcome);
+                lastResult.Outcome,
+                lastResult.FailureCategory,
+                lastResult.Response.HttpStatusCode,
+                lastResult.Response.Model);
             return lastResult;
         }
 
