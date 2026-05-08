@@ -734,6 +734,41 @@ public partial class AuditHistoryDtoToEntityMapper : MapperBase<AuditHistoryDto,
     public override partial void Map(AuditHistoryDto source, AuditHistory destination);
 }
 
+[Mapper] public partial class ReportsHistoryToDtoMapper : MapperBase<ReportsHistory, ReportsHistoryDto> { public override partial ReportsHistoryDto Map(ReportsHistory source); public override partial void Map(ReportsHistory source, ReportsHistoryDto destination); }
+[Mapper]
+public partial class CreateUpdateReportsHistoryDtoToEntityMapper : MapperBase<CreateUpdateReportsHistoryDto, ReportsHistory>
+{
+    [MapperIgnoreTarget(nameof(ReportsHistory.Id))]
+    [MapperIgnoreTarget(nameof(ReportsHistory.TenantId))]
+    [MapperIgnoreTarget(nameof(ReportsHistory.ConcurrencyStamp))]
+    [MapperIgnoreTarget(nameof(ReportsHistory.CreationTime))]
+    [MapperIgnoreTarget(nameof(ReportsHistory.CreatorId))]
+    [MapperIgnoreTarget(nameof(ReportsHistory.LastModificationTime))]
+    [MapperIgnoreTarget(nameof(ReportsHistory.LastModifierId))]
+    public override partial ReportsHistory Map(CreateUpdateReportsHistoryDto source);
+
+    [MapperIgnoreTarget(nameof(ReportsHistory.Id))]
+    [MapperIgnoreTarget(nameof(ReportsHistory.TenantId))]
+    [MapperIgnoreTarget(nameof(ReportsHistory.ConcurrencyStamp))]
+    [MapperIgnoreTarget(nameof(ReportsHistory.CreationTime))]
+    [MapperIgnoreTarget(nameof(ReportsHistory.CreatorId))]
+    [MapperIgnoreTarget(nameof(ReportsHistory.LastModificationTime))]
+    [MapperIgnoreTarget(nameof(ReportsHistory.LastModifierId))]
+    public override partial void Map(CreateUpdateReportsHistoryDto source, ReportsHistory destination);
+}
+
+[Mapper]
+public partial class ReportsHistoryDtoToEntityMapper : MapperBase<ReportsHistoryDto, ReportsHistory>
+{
+    [MapperIgnoreTarget(nameof(ReportsHistory.TenantId))]
+    [MapperIgnoreTarget(nameof(ReportsHistory.ConcurrencyStamp))]
+    public override partial ReportsHistory Map(ReportsHistoryDto source);
+
+    [MapperIgnoreTarget(nameof(ReportsHistory.TenantId))]
+    [MapperIgnoreTarget(nameof(ReportsHistory.ConcurrencyStamp))]
+    public override partial void Map(ReportsHistoryDto source, ReportsHistory destination);
+}
+
 [Mapper]
 public partial class ApplicationToApplicantInfoDtoMapper : MapperBase<Application, ApplicantInfoDto>
 {

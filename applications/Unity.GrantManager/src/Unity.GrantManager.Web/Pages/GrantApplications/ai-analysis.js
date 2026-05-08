@@ -10,6 +10,10 @@ const dismissedSectionVisibility = {
     recommendation: false
 };
 
+const aiAnalysisPollIntervalMs = 15000;
+const aiAnalysisMaxPollFailures = 3;
+let aiAnalysisMonitor = null;
+
 function getAnalysisLabels() {
     const labels = document.getElementById('aiAnalysisLabels')?.dataset ?? {};
 
@@ -415,82 +419,56 @@ globalThis.queueApplicationAnalysis = function(triggerButton = null) {
     const applicationId = $('#DetailsViewApplicationId').val();
     const $button = triggerButton ? $(triggerButton) : $('#regenerateApplicationAnalysis');
     const existingHtml = $button.html();
-    const aiAnalysisPollIntervalMs = 15000;
-    const aiAnalysisMaxPollFailures = 3;
 
     if (!applicationId || $button.prop('disabled')) {
         return;
     }
 
-    $button
-        .html('<span class="ai-button-content"><span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span><span>Generating...</span></span>')
-        .prop('disabled', true);
     globalThis.AIGenerationButtonState?.setGenerating($button);
-
-    let aiAnalysisPollTimeoutId = null;
-    let aiAnalysisPollFailures = 0;
-    const stopAIAnalysisPolling = function() {
-        if (aiAnalysisPollTimeoutId) {
-            clearTimeout(aiAnalysisPollTimeoutId);
-            aiAnalysisPollTimeoutId = null;
-        }
-    };
-
-    const poll = function() {
-        unity.grantManager.grantApplications.grantApplication
-                .getAIGenerationStatus(applicationId, 'application-analysis')
-            .done(function(request) {
-                    aiAnalysisPollFailures = 0;
-                    const statusText = globalThis.AIGenerationButtonState?.resolveStatus(request?.status) ?? '';
-
-                    if (statusText === 'Failed') {
-                        stopAIAnalysisPolling();
-                        loadAIAnalysis();
-                        globalThis.AIGenerationButtonState?.restore($button);
-                        $button.html(existingHtml).prop('disabled', false);
-                        abp.message.error(request?.failureReason || 'AI analysis failed.');
-                        return;
-                    }
-
-                    if (!request || request.isActive === false || statusText === 'Completed') {
-                        stopAIAnalysisPolling();
-                        loadAIAnalysis();
-                        globalThis.AIGenerationButtonState?.setCompleted($button);
-                        $button.html('<span class="ai-button-content"><span>Completed</span></span>').prop('disabled', true);
-                        return;
-                    }
-
-                    aiAnalysisPollTimeoutId = setTimeout(poll, aiAnalysisPollIntervalMs);
-            })
-        .fail(function(error) {
-            console.warn('Failed to poll AI analysis status.', error);
-            aiAnalysisPollFailures += 1;
-
-                if (aiAnalysisPollFailures > aiAnalysisMaxPollFailures) {
-                    stopAIAnalysisPolling();
-                    $button.html(existingHtml).prop('disabled', false);
-                    abp.message.error('Unable to load AI analysis status. Please try again.');
-                return;
-            }
-
-                aiAnalysisPollTimeoutId = setTimeout(poll, aiAnalysisPollIntervalMs);
-            });
-    };
 
     unity.grantManager.grantApplications.grantApplication
         .queueApplicationAnalysis(applicationId)
         .done(function(request) {
-            aiAnalysisPollFailures = 0;
-            stopAIAnalysisPolling();
-            aiAnalysisPollTimeoutId = setTimeout(poll, 500);
+            const status = globalThis.AIGenerationButtonState?.resolveStatus(request?.status) ?? '';
+
+            if (status === 'Completed') {
+                globalThis.AIGenerationButtonState?.restore($button);
+                $button.html(existingHtml).prop('disabled', false);
+                loadAIAnalysis();
+                globalThis.refreshAIRateLimitState?.();
+                return;
+            }
+
+            monitorAIAnalysisGeneration(applicationId, $button, existingHtml);
         })
         .fail(function(error) {
             console.error('Failed to queue AI analysis.', error);
-            stopAIAnalysisPolling();
+            aiAnalysisMonitor?.stop();
             globalThis.AIGenerationButtonState?.restore($button);
             $button.html(existingHtml).prop('disabled', false);
             abp.message.error('Failed to queue AI analysis. Please try again.');
         });
+}
+
+function monitorAIAnalysisGeneration(applicationId, $button, existingHtml) {
+    aiAnalysisMonitor?.stop();
+    aiAnalysisMonitor = globalThis.AIGenerationButtonState.monitor({
+        $button,
+        originalHtml: existingHtml,
+        intervalMs: aiAnalysisPollIntervalMs,
+        maxFailures: aiAnalysisMaxPollFailures,
+        getStatus: () => unity.grantManager.grantApplications.grantApplication
+            .getAIGenerationStatus(applicationId, 'application-analysis'),
+        onComplete: loadAIAnalysis,
+        onFailed: (request) => {
+            loadAIAnalysis();
+            abp.message.error(request?.failureReason || 'AI analysis failed.');
+        },
+        onPollFailed: (error) => {
+            console.warn('Failed to poll AI analysis status.', error);
+            abp.message.error('Unable to load AI analysis status. Please try again.');
+        }
+    });
 }
 
 function loadAIAnalysis() {
@@ -531,5 +509,22 @@ $(function() {
         $regenerateButton.on('click', function() {
             queueApplicationAnalysis();
         });
+
+        const applicationId = $('#DetailsViewApplicationId').val();
+        if (!applicationId) {
+            return;
+        }
+
+        unity.grantManager.grantApplications.grantApplication
+            .getAIGenerationStatus(applicationId, 'application-analysis')
+            .done(function(request) {
+                if (request?.isActive !== true) {
+                    return;
+                }
+
+                const existingHtml = $regenerateButton.html();
+                globalThis.AIGenerationButtonState?.setGenerating($regenerateButton);
+                monitorAIAnalysisGeneration(applicationId, $regenerateButton, existingHtml);
+            });
     }
 });
