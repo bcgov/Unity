@@ -1,9 +1,11 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -26,14 +28,18 @@ namespace Unity.GrantManager.EntityFrameworkCore;
 ///
 /// These costs are normally deferred to the first HTTP request, causing 6-8 second cold-start
 /// latency for the GrantApplications DataTable. This service fires the most expensive query
-/// shape (WithFullDetailsAsync with typical date filters) shortly after startup so the cache
-/// is warm before any user makes a request.
+/// shape (GetApplicationListRecordsAsync with typical date filters) shortly after startup so the
+/// cache is warm before any user makes a request.
 ///
 /// Warmup is split into two independent phases:
 ///   Phase 1 (model compilation) — always succeeds; no DB connection required.
-///   Phase 2 (per-tenant DB round-trip) — iterates every tenant from the host database and
-///     warms Npgsql's connection pool and PostgreSQL's query plan cache for each, ensuring no
-///     tenant's first user pays the connection-establishment cost.
+///   Phase 2 (per-tenant DB round-trip) — iterates tenants from the host database and warms
+///     Npgsql's connection pool and PostgreSQL's query plan cache for each.
+///
+/// Phase 2 behaviour is configurable via <see cref="DbWarmupOptions"/> (appsettings "DbWarmup" section):
+///   IsPhase2Enabled      — set false to skip Phase 2 entirely (default: true).
+///   MaxTenants           — cap the number of tenants warmed; 0 = unlimited (default: 0).
+///   Phase2TimeoutSeconds — abandon Phase 2 after N seconds; 0 = no timeout (default: 0).
 ///
 /// </summary>
 public class GrantManagerDbWarmupService : BackgroundService
@@ -41,15 +47,18 @@ public class GrantManagerDbWarmupService : BackgroundService
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<GrantManagerDbWarmupService> _logger;
     private readonly IHostApplicationLifetime _hostApplicationLifetime;
+    private readonly DbWarmupOptions _options;
 
     public GrantManagerDbWarmupService(
         IServiceScopeFactory scopeFactory,
         ILogger<GrantManagerDbWarmupService> logger,
-        IHostApplicationLifetime hostApplicationLifetime)
+        IHostApplicationLifetime hostApplicationLifetime,
+        IOptions<DbWarmupOptions> options)
     {
         _scopeFactory = scopeFactory;
         _logger = logger;
         _hostApplicationLifetime = hostApplicationLifetime;
+        _options = options.Value;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -107,6 +116,13 @@ public class GrantManagerDbWarmupService : BackgroundService
         //   - PostgreSQL parses and caches the parameterised execution plan for the query shape
         //   - EFCore's compiled query cache is populated for this tenant
         // Each tenant is isolated in its own scope to prevent UoW state from leaking between tenants.
+        // Uses GetApplicationListRecordsAsync — the same optimized projected query the DataTable endpoint calls.
+        if (!_options.IsPhase2Enabled)
+        {
+            _logger.LogInformation("[DbWarmup] Phase 2 disabled via configuration — skipping per-tenant warmup.");
+            return;
+        }
+
         IReadOnlyList<Tenant> tenants;
 
         using (var tenantListScope = _scopeFactory.CreateScope())
@@ -133,12 +149,43 @@ public class GrantManagerDbWarmupService : BackgroundService
             return;
         }
 
-        _logger.LogInformation("[DbWarmup] Phase 2 — warming {TenantCount} tenant(s).", tenants.Count);
+        // Apply MaxTenants cap
+        var tenantsToWarm = _options.MaxTenants > 0
+            ? tenants.Take(_options.MaxTenants).ToList()
+            : (IReadOnlyList<Tenant>)tenants;
+
+        if (_options.MaxTenants > 0 && tenants.Count > _options.MaxTenants)
+        {
+            _logger.LogInformation(
+                "[DbWarmup] Phase 2 — capped at {MaxTenants} of {TotalTenants} tenant(s) (MaxTenants setting).",
+                _options.MaxTenants, tenants.Count);
+        }
+
+        _logger.LogInformation("[DbWarmup] Phase 2 — warming {TenantCount} tenant(s).", tenantsToWarm.Count);
+
+        // Apply Phase2TimeoutSeconds — link a deadline token with stoppingToken
+        using var phase2Cts = _options.Phase2TimeoutSeconds > 0
+            ? CancellationTokenSource.CreateLinkedTokenSource(stoppingToken)
+            : null;
+        if (phase2Cts != null)
+        {
+            phase2Cts.CancelAfter(TimeSpan.FromSeconds(_options.Phase2TimeoutSeconds));
+            _logger.LogDebug("[DbWarmup] Phase 2 — timeout set to {Seconds}s.", _options.Phase2TimeoutSeconds);
+        }
+        var phase2Token = phase2Cts?.Token ?? stoppingToken;
 
         var warmed = 0;
-        foreach (var tenant in tenants)
+        foreach (var tenant in tenantsToWarm)
         {
-            if (stoppingToken.IsCancellationRequested) return;
+            if (phase2Token.IsCancellationRequested)
+            {
+                // Distinguish between a Phase 2 timeout and a host shutdown
+                if (!stoppingToken.IsCancellationRequested)
+                    _logger.LogInformation(
+                        "[DbWarmup] Phase 2 — timeout reached after {Warmed}/{Total} tenant(s).",
+                        warmed, tenantsToWarm.Count);
+                return;
+            }
 
             using var tenantScope = _scopeFactory.CreateScope();
             var currentTenant = tenantScope.ServiceProvider.GetRequiredService<ICurrentTenant>();
@@ -151,7 +198,7 @@ public class GrantManagerDbWarmupService : BackgroundService
                     using var uow = tenantUowManager.Begin(requiresNew: true, isTransactional: false);
                     var repository = tenantScope.ServiceProvider.GetRequiredService<IApplicationRepository>();
 
-                    await repository.WithFullDetailsAsync(
+                    await repository.GetApplicationListRecordsAsync(
                         skipCount: 0,
                         maxResultCount: 1,
                         sorting: null,
@@ -162,7 +209,7 @@ public class GrantManagerDbWarmupService : BackgroundService
                     warmed++;
                     _logger.LogDebug("[DbWarmup] Tenant '{TenantName}' ({TenantId}) warmed.", tenant.Name, tenant.Id);
                 }
-                catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested) { return; }
+                catch (OperationCanceledException) when (phase2Token.IsCancellationRequested) { return; }
                 catch (Exception ex)
                 {
                     _logger.LogDebug(ex,
@@ -173,6 +220,6 @@ public class GrantManagerDbWarmupService : BackgroundService
             }
         }
 
-        _logger.LogInformation("[DbWarmup] Phase 2 complete — {Warmed}/{Total} tenant(s) warmed.", warmed, tenants.Count);
+        _logger.LogInformation("[DbWarmup] Phase 2 complete — {Warmed}/{Total} tenant(s) warmed.", warmed, tenantsToWarm.Count);
     }
 }
