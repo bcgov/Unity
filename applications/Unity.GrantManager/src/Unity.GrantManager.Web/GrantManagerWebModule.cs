@@ -135,6 +135,9 @@ public class GrantManagerWebModule : AbpModule
         var hostingEnvironment = context.Services.GetHostingEnvironment();
         var configuration = context.Services.GetConfiguration();
 
+        // Pre-warm the EF Core query pipeline after startup (web host only, not DbMigrator)
+        context.Services.AddHostedService<GrantManagerDbWarmupService>();
+
         ConfgureFormsApiAuhentication(context);
         ConfigureAuthentication(context, configuration);
         ConfigurePolicies(context);
