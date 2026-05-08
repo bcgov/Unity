@@ -1,19 +1,22 @@
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.Extensions.Logging;
 using Unity.GrantManager.Integrations;
 using Unity.Modules.Shared.Permissions;
+using Volo.Abp;
 using Volo.Abp.Features;
 
-namespace Unity.GrantManager.Web.Pages.AIReporting
+namespace Unity.AI.Web.Pages.AIReporting
 {
     public class IndexModel(
         IEndpointManagementAppService endpointManagementAppService,
         IFeatureChecker featureChecker,
-        IAuthorizationService authorizationService) : PageModel
+        IAuthorizationService authorizationService,
+        ILogger<IndexModel> logger) : PageModel
     {
         public bool CanViewAiReporting { get; private set; }
-        public string ReportingAiApiBaseUrl { get; private set; } = string.Empty;
+        public string ReportingAiUrl { get; private set; } = string.Empty;
 
         public async Task OnGetAsync()
         {
@@ -25,7 +28,15 @@ namespace Unity.GrantManager.Web.Pages.AIReporting
                 return;
             }
 
-            ReportingAiApiBaseUrl = await endpointManagementAppService.GetUgmUrlByKeyNameAsync(DynamicUrlKeyNames.REPORTING_AI);
+            try
+            {
+                ReportingAiUrl = await endpointManagementAppService.GetUgmUrlByKeyNameAsync(DynamicUrlKeyNames.REPORTING_AI);
+            }
+            catch (UserFriendlyException ex)
+            {
+                logger.LogWarning(ex, "AI Reporting endpoint is not configured.");
+                ReportingAiUrl = string.Empty;
+            }
         }
     }
 }

@@ -1,5 +1,5 @@
 @page
-@model Unity.GrantManager.Web.Pages.AIReporting.IndexModel
+@model Unity.AI.Web.Pages.AIReporting.IndexModel
 
 @section styles {
     @if (Model.CanViewAiReporting)
