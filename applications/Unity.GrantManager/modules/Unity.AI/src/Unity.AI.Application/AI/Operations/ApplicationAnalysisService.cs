@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Unity.AI.Models;
 using Unity.AI.Prompts;
 using Unity.AI.Requests;
+using Unity.AI.Runtime;
 using Unity.GrantManager.Applications;
 using Volo.Abp.DependencyInjection;
 
@@ -21,11 +22,6 @@ namespace Unity.AI.Operations
         IAIService aiService,
         ILogger<ApplicationAnalysisService> logger) : IApplicationAnalysisService, ITransientDependency
     {
-        private readonly JsonSerializerOptions _jsonOptionsIndented = new()
-        {
-            WriteIndented = true
-        };
-
         private const string ComponentsKey = "components";
         private static readonly HashSet<string> ExcludedSchemaKeys = new(StringComparer.OrdinalIgnoreCase)
         {
@@ -62,7 +58,7 @@ namespace Unity.AI.Operations
                 PromptVersion = promptVersion,
             });
 
-            var analysisJson = JsonSerializer.Serialize(analysis, _jsonOptionsIndented);
+            var analysisJson = JsonSerializer.Serialize(analysis, AIJsonDefaults.Indented);
             application.AIAnalysis = analysisJson;
             await applicationRepository.UpdateAsync(application);
             return analysisJson;
