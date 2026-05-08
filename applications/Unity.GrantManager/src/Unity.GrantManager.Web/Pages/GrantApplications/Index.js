@@ -173,7 +173,7 @@ $(function () {
     let formatItems = function (items) {
         // Previously used         
         //     const newData = items.map((item, index) => { return { ...item, rowCount: index }; });
-        //     return newdata;
+        //     return newData;
         // While in clientside mode, we're always retrieving the full dataset. 
         // Can be reverted for server-side
         items.forEach((item, index) => {

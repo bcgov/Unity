@@ -40,19 +40,34 @@ public class GrantManagerDbWarmupService : BackgroundService
 {
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<GrantManagerDbWarmupService> _logger;
+    private readonly IHostApplicationLifetime _hostApplicationLifetime;
 
     public GrantManagerDbWarmupService(
         IServiceScopeFactory scopeFactory,
-        ILogger<GrantManagerDbWarmupService> logger)
+        ILogger<GrantManagerDbWarmupService> logger,
+        IHostApplicationLifetime hostApplicationLifetime)
     {
         _scopeFactory = scopeFactory;
         _logger = logger;
+        _hostApplicationLifetime = hostApplicationLifetime;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        // Allow ABP's OnApplicationInitialization and any module bootstrapping to fully complete before issuing queries. 
-        await Task.Delay(TimeSpan.FromSeconds(2), stoppingToken);
+        // Wait until the host has fully started so ABP module initialization and startup hooks
+        // are complete before issuing any warmup queries.
+        if (!_hostApplicationLifetime.ApplicationStarted.IsCancellationRequested)
+        {
+            var applicationStartedTcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            using var applicationStartedRegistration = _hostApplicationLifetime.ApplicationStarted.Register(
+                static state => ((TaskCompletionSource)state!).TrySetResult(),
+                applicationStartedTcs);
+            using var cancellationRegistration = stoppingToken.Register(
+                static state => ((TaskCompletionSource)state!).TrySetCanceled(),
+                applicationStartedTcs);
+
+            await applicationStartedTcs.Task;
+        }
 
         if (stoppingToken.IsCancellationRequested) return;
 
