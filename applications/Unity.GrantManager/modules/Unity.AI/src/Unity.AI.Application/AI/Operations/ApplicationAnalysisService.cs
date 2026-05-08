@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
 using Unity.AI.Models;
 using Unity.AI.Prompts;
@@ -28,7 +29,7 @@ namespace Unity.AI.Operations
             "applicantAgent"
         };
 
-        public async Task<string> RegenerateAndSaveAsync(Guid applicationId, string? promptVersion = null)
+        public async Task<string> RegenerateAndSaveAsync(Guid applicationId, string? promptVersion = null, CancellationToken cancellationToken = default)
         {
             var application = await applicationRepository.GetAsync(applicationId);
             var formSubmission = await applicationFormSubmissionRepository.GetByApplicationAsync(applicationId);
@@ -56,7 +57,7 @@ namespace Unity.AI.Operations
                 Data = PromptDataPayloadBuilder.BuildPromptDataPayload(application, formSubmission, formSchema, logger),
                 Attachments = attachmentSummaries,
                 PromptVersion = promptVersion,
-            });
+            }, cancellationToken);
 
             var analysisJson = JsonSerializer.Serialize(analysis, AIJsonDefaults.Indented);
             application.AIAnalysis = analysisJson;

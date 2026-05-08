@@ -2,6 +2,7 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Unity.AI.Extraction;
 using Unity.AI.Requests;
@@ -21,13 +22,13 @@ public class AttachmentSummaryService(
 {
     private const string SummaryGenerationFailedMessage = "AI summary generation failed.";
 
-    public async Task<string> GenerateAndSaveAsync(Guid attachmentId, string? promptVersion = null)
+    public async Task<string> GenerateAndSaveAsync(Guid attachmentId, string? promptVersion = null, CancellationToken cancellationToken = default)
     {
         var attachment = await applicationChefsFileAttachmentRepository.GetAsync(attachmentId);
         var fileName = string.IsNullOrWhiteSpace(attachment.FileName) ? "unknown" : attachment.FileName;
 
-        await using var attachmentStream = await OpenAttachmentStreamAsync(attachment, fileName);
-        var extractedText = await textExtractionService.ExtractTextAsync(fileName, attachmentStream.Content, attachmentStream.ContentType);
+        await using var attachmentStream = await OpenAttachmentStreamAsync(attachment, fileName, cancellationToken);
+        var extractedText = await textExtractionService.ExtractTextAsync(fileName, attachmentStream.Content, attachmentStream.ContentType, cancellationToken);
 
         var summaryResponse = await aiService.GenerateAttachmentSummaryAsync(new AttachmentSummaryRequest
         {
@@ -35,7 +36,7 @@ public class AttachmentSummaryService(
             ContentType = attachmentStream.ContentType,
             ExtractedText = extractedText,
             PromptVersion = promptVersion,
-        });
+        }, cancellationToken);
 
         attachment.AISummary = summaryResponse.Summary;
         await applicationChefsFileAttachmentRepository.UpdateAsync(attachment);
@@ -43,7 +44,7 @@ public class AttachmentSummaryService(
         return summaryResponse.Summary;
     }
 
-    public async Task<List<string>> GenerateAndSaveAsync(IEnumerable<Guid> attachmentIds, string? promptVersion = null)
+    public async Task<List<string>> GenerateAndSaveAsync(IEnumerable<Guid> attachmentIds, string? promptVersion = null, CancellationToken cancellationToken = default)
     {
         var ids = attachmentIds as IReadOnlyCollection<Guid> ?? attachmentIds.ToList();
         var mode = executionModeResolver.ResolveMode(AIExecutionModeResolver.AttachmentSummaryOperation);
@@ -58,26 +59,36 @@ public class AttachmentSummaryService(
         return await AIExecutionStrategy.RunAsync(
             ids,
             mode,
-            id => GenerateOrFallbackAsync(id, promptVersion),
-            batch => GenerateSequentiallyAsync(batch, promptVersion));
+            id => GenerateOrFallbackAsync(id, promptVersion, cancellationToken),
+            batch => GenerateSequentiallyAsync(batch, promptVersion, cancellationToken));
     }
 
-    private async Task<List<string>> GenerateSequentiallyAsync(IReadOnlyCollection<Guid> attachmentIds, string? promptVersion)
+    private async Task<List<string>> GenerateSequentiallyAsync(
+        IReadOnlyCollection<Guid> attachmentIds,
+        string? promptVersion,
+        CancellationToken cancellationToken)
     {
         var summaries = new List<string>(attachmentIds.Count);
         foreach (var attachmentId in attachmentIds)
         {
-            summaries.Add(await GenerateOrFallbackAsync(attachmentId, promptVersion));
+            summaries.Add(await GenerateOrFallbackAsync(attachmentId, promptVersion, cancellationToken));
         }
 
         return summaries;
     }
 
-    private async Task<string> GenerateOrFallbackAsync(Guid attachmentId, string? promptVersion)
+    private async Task<string> GenerateOrFallbackAsync(
+        Guid attachmentId,
+        string? promptVersion,
+        CancellationToken cancellationToken)
     {
         try
         {
-            return await GenerateAndSaveAsync(attachmentId, promptVersion);
+            return await GenerateAndSaveAsync(attachmentId, promptVersion, cancellationToken);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
         }
         catch (Exception ex)
         {
@@ -86,16 +97,19 @@ public class AttachmentSummaryService(
         }
     }
 
-    public async Task<List<string>> GenerateForApplicationAsync(Guid applicationId, string? promptVersion = null)
+    public async Task<List<string>> GenerateForApplicationAsync(Guid applicationId, string? promptVersion = null, CancellationToken cancellationToken = default)
     {
         var attachmentIds = (await applicationChefsFileAttachmentRepository.GetListAsync(a => a.ApplicationId == applicationId))
             .Select(a => a.Id)
             .ToList();
 
-        return await GenerateAndSaveAsync(attachmentIds, promptVersion);
+        return await GenerateAndSaveAsync(attachmentIds, promptVersion, cancellationToken);
     }
 
-    private async Task<ChefsFileAttachmentStream> OpenAttachmentStreamAsync(ApplicationChefsFileAttachment attachment, string fileName)
+    private async Task<ChefsFileAttachmentStream> OpenAttachmentStreamAsync(
+        ApplicationChefsFileAttachment attachment,
+        string fileName,
+        CancellationToken cancellationToken)
     {
         if (!Guid.TryParse(attachment.ChefsSubmissionId, out var submissionId) ||
             !Guid.TryParse(attachment.ChefsFileId, out var fileId))
@@ -108,8 +122,13 @@ public class AttachmentSummaryService(
 
         try
         {
+            cancellationToken.ThrowIfCancellationRequested();
             var stream = await chefsFileAttachmentStreamProvider.OpenAsync(submissionId, fileId, fileName);
             return stream ?? ChefsFileAttachmentStream.Empty;
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
         }
         catch (Exception ex)
         {
