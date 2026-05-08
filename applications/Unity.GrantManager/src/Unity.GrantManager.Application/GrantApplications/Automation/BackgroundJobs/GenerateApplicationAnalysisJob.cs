@@ -22,6 +22,15 @@ public class GenerateApplicationAnalysisJob(
 {
     public override async Task ExecuteAsync(GenerateApplicationAnalysisBackgroundJobArgs args)
     {
+        using var logScope = AIGenerationLogScope.Begin(
+            logger,
+            AIGenerationRequestKeyHelper.ApplicationAnalysisOperationType,
+            args.ApplicationId,
+            args.TenantId,
+            args.RequestKey,
+            args.PromptVersion,
+            args.RequestedByUserId);
+
         using (currentTenant.Change(args.TenantId))
         {
             await AIGenerationRequestJobHelper.MarkRunningInNewUowAsync(unitOfWorkManager, generationRequestRepository, args.RequestKey);

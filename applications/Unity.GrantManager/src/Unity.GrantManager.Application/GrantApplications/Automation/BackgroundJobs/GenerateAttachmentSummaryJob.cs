@@ -22,6 +22,15 @@ public class GenerateAttachmentSummaryJob(
 {
     public override async Task ExecuteAsync(GenerateAttachmentSummaryBackgroundJobArgs args)
     {
+        using var logScope = AIGenerationLogScope.Begin(
+            logger,
+            AIGenerationRequestKeyHelper.AttachmentSummaryOperationType,
+            args.ApplicationId,
+            args.TenantId,
+            args.RequestKey,
+            args.PromptVersion,
+            args.RequestedByUserId);
+
         using (currentTenant.Change(args.TenantId))
         {
             await AIGenerationRequestJobHelper.MarkRunningInNewUowAsync(unitOfWorkManager, generationRequestRepository, args.RequestKey);
