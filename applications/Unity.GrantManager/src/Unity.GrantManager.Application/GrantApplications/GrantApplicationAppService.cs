@@ -117,7 +117,7 @@ public class GrantApplicationAppService(
                 TotalProjectBudget = rec.TotalProjectBudget,
                 EconomicRegion = rec.EconomicRegion ?? string.Empty,
                 City = rec.City ?? string.Empty,
-                ProposalDate = rec.ProposalDate ?? default,
+                ProposalDate = rec.ProposalDate,
                 SubmissionDate = rec.SubmissionDate,
                 FinalDecisionDate = rec.FinalDecisionDate,
                 DueDate = rec.DueDate,
@@ -133,7 +133,7 @@ public class GrantApplicationAppService(
                 DeclineRational = MapDeclineRationalDisplayValue(rec.DeclineRational ?? string.Empty),
                 Notes = rec.Notes ?? string.Empty,
                 AssessmentResultStatus = rec.AssessmentResultStatus ?? string.Empty,
-                AssessmentResultDate = rec.AssessmentResultDate ?? default,
+                AssessmentResultDate = rec.AssessmentResultDate,
                 ProjectStartDate = rec.ProjectStartDate,
                 ProjectEndDate = rec.ProjectEndDate,
                 PercentageTotalProjectBudget = rec.PercentageTotalProjectBudget,
@@ -165,7 +165,7 @@ public class GrantApplicationAppService(
                 // From ApplicationForm
                 Category = rec.Category,
 
-                // From Applicant — both the nested DTO and the flattened top-level properties
+                // From Applicant - both the nested DTO and the flattened top-level properties
                 Applicant = new GrantApplicationApplicantDto
                 {
                     Id = rec.ApplicantId,
@@ -255,7 +255,7 @@ public class GrantApplicationAppService(
         //Code is temporarily commented out as this will be the way to get the accurate count
         //once the core GrantApplications data table is moved server side from client side.
         //Until then, since it is client side and always requests all records at once to be
-        //loaded, an extra round-trip to the database for a query is uncessary. 
+        //loaded, an extra round-trip to the database for a query is unnecessary. 
 
         //var totalCount = await applicationRepository.GetCountAsync(input.SubmittedFromDate,input.SubmittedToDate);
 #pragma warning restore S125
