@@ -26,7 +26,7 @@ public class OpenAIPromptRenderer : ITransientDependency
             [PromptVersionV1] = PromptVersionV1
         };
     private static readonly ConcurrentDictionary<string, string> PromptTemplateCache = new(StringComparer.OrdinalIgnoreCase);
-    private static readonly JsonSerializerOptions JsonLogOptions = new() { WriteIndented = true };
+
 
     public static string BuildApplicationAnalysisSystemPrompt(string version)
     {
@@ -111,7 +111,7 @@ public class OpenAIPromptRenderer : ITransientDependency
                 return "{}";
             }
 
-            return JsonSerializer.Serialize(template, JsonLogOptions);
+            return JsonSerializer.Serialize(template, AIJsonDefaults.Indented);
         }
         catch (JsonException)
         {
@@ -125,7 +125,7 @@ public class OpenAIPromptRenderer : ITransientDependency
 
         if (string.IsNullOrWhiteSpace(sectionJson))
         {
-            return JsonSerializer.Serialize(new { name = sectionName, questions = sectionJson }, JsonLogOptions);
+            return JsonSerializer.Serialize(new { name = sectionName, questions = sectionJson }, AIJsonDefaults.Indented);
         }
 
         try
@@ -133,7 +133,7 @@ public class OpenAIPromptRenderer : ITransientDependency
             using var sectionDoc = JsonDocument.Parse(sectionJson);
             if (sectionDoc.RootElement.ValueKind != JsonValueKind.Array)
             {
-                return JsonSerializer.Serialize(new { name = sectionName, questions = sectionDoc.RootElement.Clone() }, JsonLogOptions);
+                return JsonSerializer.Serialize(new { name = sectionName, questions = sectionDoc.RootElement.Clone() }, AIJsonDefaults.Indented);
             }
 
             var aliasedQuestions = new List<Dictionary<string, object?>>();
@@ -174,11 +174,11 @@ public class OpenAIPromptRenderer : ITransientDependency
             }
 
             questionIdAliasMap = aliasMap;
-            return JsonSerializer.Serialize(new { name = sectionName, questions = aliasedQuestions }, JsonLogOptions);
+            return JsonSerializer.Serialize(new { name = sectionName, questions = aliasedQuestions }, AIJsonDefaults.Indented);
         }
         catch (JsonException)
         {
-            return JsonSerializer.Serialize(new { name = sectionName, questions = sectionJson }, JsonLogOptions);
+            return JsonSerializer.Serialize(new { name = sectionName, questions = sectionJson }, AIJsonDefaults.Indented);
         }
     }
 

@@ -2,6 +2,8 @@ using System;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+using Unity.AI.RateLimit;
 using Unity.GrantManager.GrantApplications;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Uow;
@@ -82,6 +84,27 @@ public static class AIGenerationRequestJobHelper
         var request = await GetLatestRequestAsync(generationRequestRepository, x => x.RequestKey == requestKey);
         await MarkFailedAsync(generationRequestRepository, request, failureReason);
         await uow.CompleteAsync();
+    }
+
+    public static async Task StampRateLimitBestEffortAsync(
+        IAIRateLimiter aiRateLimiter,
+        ILogger logger,
+        Guid? requestedByUserId,
+        Guid applicationId,
+        string requestKey)
+    {
+        try
+        {
+            await aiRateLimiter.StampAsync(requestedByUserId);
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(
+                ex,
+                "AI rate-limit cooldown stamp failed after completed AI generation request for application {ApplicationId} and request {RequestKey}.",
+                applicationId,
+                requestKey);
+        }
     }
 
     public static async Task<AIGenerationRequest?> GetLatestRequestAsync(

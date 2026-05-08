@@ -2,28 +2,29 @@ using Microsoft.AspNetCore.Authorization;
 using System;
 using System.Threading.Tasks;
 using Unity.AI;
+using Unity.AI.Features;
+using Unity.AI.Localization;
 using Unity.AI.Operations;
 using Unity.AI.Permissions;
+using Unity.AI.Settings;
 using Unity.GrantManager.GrantApplications.Automation.Events;
 using Volo.Abp;
 using Volo.Abp.EventBus.Local;
-using Volo.Abp.Features;
 
 namespace Unity.GrantManager.GrantApplications;
 
 [Authorize(AIPermissions.Analysis.GenerateScoring)]
 public class ApplicationScoringAppService(
     IApplicationScoringService applicationScoringService,
-    IFeatureChecker featureChecker,
+    AIFeatureGuard featureGuard,
     ILocalEventBus localEventBus)
     : AIAppService, IApplicationScoringAppService
 {
     public virtual async Task<ApplicationScoringResultDto> GenerateApplicationScoringAsync(Guid applicationId, string? promptVersion = null)
     {
-        if (!await featureChecker.IsEnabledAsync("Unity.AI.Scoring"))
-        {
-            throw new UserFriendlyException("AI scoring is not enabled.");
-        }
+        await featureGuard.EnsureEnabledAsync(
+            AIFeatures.Scoring,
+            AILocalizationKeys.ScoringDisabled);
 
         await applicationScoringService.RegenerateAndSaveAsync(applicationId, promptVersion);
 

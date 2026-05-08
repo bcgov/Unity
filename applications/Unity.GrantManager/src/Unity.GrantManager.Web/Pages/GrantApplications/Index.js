@@ -9,6 +9,8 @@ $(function () {
     const l = abp.localization.getResource('GrantManager');
     const defaultQuickDateRange = 'last6months';
     const guidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    const canViewApplicants = abp.auth.isGranted('GrantApplicationManagement.Applicants.ViewList');
+    const dtTextRenderer = $.fn.dataTable.render.text();
 
     let dt = $('#GrantApplicationsTable');
     let dataTable;
@@ -89,6 +91,7 @@ $(function () {
                             }
                         })
                         dt.colReorder.order(orderedIndexes);
+                        dt.columns.adjust();
 
                         if (typeof dt.filterRow === 'function') {
                             const filterRowApi = dt.filterRow();
@@ -168,13 +171,15 @@ $(function () {
     };
 
     let formatItems = function (items) {
-        const newData = items.map((item, index) => {
-            return {
-                ...item,
-                rowCount: index
-            };
+        // Previously used         
+        //     const newData = items.map((item, index) => { return { ...item, rowCount: index }; });
+        //     return newData;
+        // While in clientside mode, we're always retrieving the full dataset. 
+        // Can be reverted for server-side
+        items.forEach((item, index) => {
+            item.rowCount = index;
         });
-        return newData;
+        return items;
     }
 
     init();
@@ -350,12 +355,10 @@ $(function () {
         UIElements.quickDateRange.val('custom');
         localStorage.setItem('GrantApplications_QuickRange', 'custom');
 
-        const dtInstance = $('#GrantApplicationsTable').DataTable();
-
         localStorage.setItem("GrantApplications_FromDate", grantTableFilters.submittedFromDate);
         localStorage.setItem("GrantApplications_ToDate", grantTableFilters.submittedToDate);
 
-        dtInstance.ajax.reload(null, true);
+        dataTable.ajax.reload(null, true);
     }
     function handleQuickDateRangeChange() {
         const selectedRange = $(this).val();
@@ -375,12 +378,13 @@ $(function () {
         setDateRangeLocalStorage(selectedRange, range);
 
         // Reload the table with new filters
-        const dtInstance = $('#GrantApplicationsTable').DataTable();
-        dtInstance.ajax.reload(null, true);
+        dataTable.ajax.reload(null, true);
     }
 
     function initializeDataTableAndEvents() {
         let initialLoad = true;
+        let isRestoringState = false;
+        let refreshDataTimeout = null;
         dataTable = initializeDataTable({
             dt,
             defaultVisibleColumns,
@@ -392,13 +396,37 @@ $(function () {
             },
             dataEndpoint: unity.grantManager.grantApplications.grantApplication.getList,
             data: function () {
+                let requestedFields;
+                if (dataTable) {
+                    try {
+                        const cols = dataTable.settings()[0].aoColumns;
+                        requestedFields = cols
+                            .filter(function (col, idx) { return dataTable.column(idx).visible(); })
+                            .map(function (col) { return col.sName; })
+                            .filter(function (name) { return !!name; });
+                        if (requestedFields.length > 0) {
+                            localStorage.setItem('GrantApplications_RequestedFields', JSON.stringify(requestedFields));
+                        }
+                    } catch { /* DataTable not yet fully initialised */ }
+                }
+                if (!requestedFields || requestedFields.length === 0) {
+                    try {
+                        const saved = localStorage.getItem('GrantApplications_RequestedFields');
+                        if (saved) requestedFields = JSON.parse(saved);
+                    } catch { }
+                }
+                if (!requestedFields || requestedFields.length === 0) {
+                    requestedFields = defaultVisibleColumns;
+                }
                 return {
                     submittedFromDate: grantTableFilters.submittedFromDate,
-                    submittedToDate: grantTableFilters.submittedToDate
+                    submittedToDate: grantTableFilters.submittedToDate,
+                    requestedFields: requestedFields
                 };
             },
             responseCallback,
             actionButtons,
+            deferRender: true,
             serverSideEnabled: false,
             pagingEnabled: true,
             reorderEnabled: true,
@@ -415,20 +443,22 @@ $(function () {
                 };
             },
             onStateLoadParams: function (settings, data) {
-                if (!initialLoad && data?.customFilters) {
-                    // If there is any date change, this will refresh post load 
-                    // to ensure the correct data is shown based on the saved filters.
-                    data.refreshTableWithDates =
-                        data.customFilters.quickDateRange !== UIElements.quickDateRange.val()
-                        || data.customFilters.submittedFromDate !== UIElements.submittedFromInput.val()
-                        || data.customFilters.submittedToDate !== UIElements.submittedToInput.val();
-                    restoreCustomFilters(data.customFilters);
+                if (!initialLoad) {
+                    // Mark that a state restore is in progress so column-visibility.dt
+                    // events during restore don't trigger premature intermediate reloads.
+                    isRestoringState = true;
+                    if (data?.customFilters) {
+                        restoreCustomFilters(data.customFilters);
+                    }
                 }
             },
             onStateLoaded: function (dtApi, data) {
                 // This needs to only reload when clicking on the load state not on initial page load
                 // Otherwise it duplicates the data
-                if (!initialLoad && data?.refreshTableWithDates) {
+                if (!initialLoad) {
+                    // All column-visibility changes are applied by this point.
+                    // Clear the flag and fire a single reload with the correct column set.
+                    isRestoringState = false;
                     dtApi.ajax.reload(null, false);
                 }
                 initialLoad = false; // Reset flag after use
@@ -460,11 +490,31 @@ $(function () {
                 });
             }
         });
+
+        dataTable.on('column-visibility.dt', function (e, settings, columnIdx) {
+            try {
+                const cols = dataTable.settings()[0].aoColumns;
+                const visibleFields = cols
+                    .filter(function (col, idx) { return dataTable.column(idx).visible(); })
+                    .map(function (col) { return col.sName; })
+                    .filter(function (name) { return !!name; });
+                if (visibleFields.length > 0) {
+                    localStorage.setItem('GrantApplications_RequestedFields', JSON.stringify(visibleFields));
+                }
+                // Only debounce on manual. During a saved-view restore, isRestoringState
+                // is true and onStateLoaded fires a single authoritative reload  after all columns are applied
+                if (!isRestoringState && cols[columnIdx]?.refreshData) {
+                    clearTimeout(refreshDataTimeout);
+                    refreshDataTimeout = setTimeout(function () {
+                        dataTable.ajax.reload(null, false);
+                    }, 300);
+                }
+            } catch { }
+        });
     }
 
     $('#search').on('input', function () {
-        let table = $('#GrantApplicationsTable').DataTable();
-        table.search($(this).val()).draw();
+        dataTable.search($(this).val()).draw();
     });
 
     //For savedStates
@@ -574,7 +624,7 @@ $(function () {
             getNonRegisteredOrganizationNameColumn(columnIndex++),
             getUnityApplicationIdColumn(columnIndex++),
             getLinkRelationshipType(columnIndex++),
-        ].map((column) => ({ ...column, targets: [column.index], orderData: [column.index, 0] }))
+        ].map((column) => ({ ...column, targets: [column.index] }))
             .sort((a, b) => a.index - b.index);
         return sortedColumns;
     }
@@ -589,13 +639,13 @@ $(function () {
             render: function(data, type, row) {
                 let applicantName = (typeof data !== 'string' || data.trim() === '') ? 'Applicant Name' : data;
 
-                if (type === 'sort' || type === 'filter') { 
+                if (type !== 'display') {
                     return applicantName;
                 }
 
-                const safeApplicantName = $.fn.dataTable.render.text().display(applicantName);
+                const safeApplicantName = dtTextRenderer.display(applicantName);
 
-                if (type === 'display' && abp.auth.isGranted('GrantApplicationManagement.Applicants.ViewList')) {
+                if (canViewApplicants) {
                     const applicantId = row?.applicant?.id;
                     const isGuid = applicantId && guidPattern.test(applicantId);
 
@@ -618,6 +668,7 @@ $(function () {
             name: 'referenceNo',
             className: 'data-table-header text-nowrap',
             render: function (data, type, row) {
+                if (type !== 'display') return data ?? '';
                 return `<a href="/GrantApplications/Details?ApplicationId=${row.id}">${data}</a>`;
             },
             index: columnIndex
@@ -702,6 +753,7 @@ $(function () {
             data: 'assignees',
             name: 'assignees',
             className: 'dt-editable',
+            refreshData: true,
             render: function (data, type, row) {
                 let displayText = ' ';
 
@@ -711,10 +763,13 @@ $(function () {
                     displayText = getNames(data);
                 }
 
+                if (type !== 'display') return displayText.trim();
+
+                const tooltipText = data?.length ? getNames(data) : '';
                 return `<span class="d-flex align-items-center dt-select-assignees">
                                
                                 <span class="ps-2 flex-fill" data-toggle="tooltip" title="`
-                    + getNames(data) + '">' + displayText + '</span>' +
+                    + tooltipText + '">' + displayText + '</span>' +
                     `</span>`;
             },
             index: columnIndex
@@ -835,10 +890,8 @@ $(function () {
             name: 'projectStartDate',
             data: 'projectStartDate',
             className: 'data-table-header',
-            render: function (data) {
-                return data != null ? luxon.DateTime.fromISO(data, {
-                    locale: abp.localization.currentCulture.name,
-                }).toUTC().toLocaleString() : '';
+            render: function (data, type) {
+                return DateUtils.formatUtcDateToLocal(data, type);
             },
             index: columnIndex
         }
@@ -850,10 +903,8 @@ $(function () {
             name: 'projectEndDate',
             data: 'projectEndDate',
             className: 'data-table-header',
-            render: function (data) {
-                return data != null ? luxon.DateTime.fromISO(data, {
-                    locale: abp.localization.currentCulture.name,
-                }).toUTC().toLocaleString() : '';
+            render: function (data, type) {
+                return DateUtils.formatUtcDateToLocal(data, type);
             },
             index: columnIndex
         }
@@ -1056,12 +1107,12 @@ $(function () {
             name: 'applicationTag',
             data: 'applicationTag',
             className: '',
+            refreshData: true,
             render: function (data) {
-
-                let tagNames = data
-                    .filter(x =>  x?.tag?.name)
-                    .map(x => x.tag.name);
-                return tagNames.join(', ') ?? '';
+                return data
+                    .filter(x => x?.tag?.name)
+                    .map(x => x.tag.name)
+                    .join(', ');
             },
             index: columnIndex
         }
@@ -1117,10 +1168,8 @@ $(function () {
             name: 'dueDate',
             data: 'dueDate',
             className: 'data-table-header',
-            render: function (data) {
-                return data != null ? luxon.DateTime.fromISO(data, {
-                    locale: abp.localization.currentCulture.name,
-                }).toUTC().toLocaleString() : '';
+            render: function (data, type) {
+                return DateUtils.formatUtcDateToLocal(data, type);
             },
             index: columnIndex
         }
@@ -1132,6 +1181,7 @@ $(function () {
             name: 'Owner',
             data: 'owner',
             className: 'data-table-header',
+            refreshData: true,
             render: function (data) {
                 return data != null ? data.fullName : '';
             },
@@ -1145,10 +1195,8 @@ $(function () {
             name: 'finalDecisionDate',
             data: 'finalDecisionDate',
             className: 'data-table-header',
-            render: function (data) {
-                return data != null ? luxon.DateTime.fromISO(data, {
-                    locale: abp.localization.currentCulture.name,
-                }).toUTC().toLocaleString() : '';
+            render: function (data, type) {
+                return DateUtils.formatUtcDateToLocal(data, type);
             },
             index: columnIndex
         }
@@ -1238,7 +1286,11 @@ $(function () {
             name: 'applicationLinks',
             data: 'applicationLinks',
             className: 'data-table-header',
-            render: function (data) {
+            refreshData: true,
+            render: function (data, type) {
+                if (type !== 'display' && type !== 'fullName') {
+                    return (data || []).filter(x => x?.linkType).map(x => x.linkType).join(', ');
+                }
                 const linkNames = Array.from(new Set((data || [])
                     .filter(x => x?.linkType)
                     .map(x => {
@@ -1286,6 +1338,7 @@ $(function () {
             name: 'contactFullName',
             data: 'contactFullName',
             className: 'data-table-header',
+            refreshData: true,
             render: function (data) {
                 return data ?? '';
             },
@@ -1298,6 +1351,7 @@ $(function () {
             name: 'contactTitle',
             data: 'contactTitle',
             className: 'data-table-header',
+            refreshData: true,
             render: function (data) {
                 return data ?? '';
             },
@@ -1310,6 +1364,7 @@ $(function () {
             name: 'contactEmail',
             data: 'contactEmail',
             className: 'data-table-header',
+            refreshData: true,
             render: function (data) {
                 return data ?? '';
             },
@@ -1322,6 +1377,7 @@ $(function () {
             name: 'contactBusinessPhone',
             data: 'contactBusinessPhone',
             className: 'data-table-header',
+            refreshData: true,
             render: function (data) {
                 return data ?? '';
             },
@@ -1334,6 +1390,7 @@ $(function () {
             name: 'contactCellPhone',
             data: 'contactCellPhone',
             className: 'data-table-header',
+            refreshData: true,
             render: function (data) {
                 return data ?? '';
             },
@@ -1447,9 +1504,6 @@ $(function () {
             data: 'notes',
             className: 'data-table-header multi-line',
             width: "20rem",
-            createdCell: function (td) {
-                $(td).css('min-width', '20rem');
-            },
             render: function (data) {
                 return data ?? '';
             },
@@ -1543,50 +1597,47 @@ $(function () {
         return data.duty ? (" [" + data.duty + "]") : '';
     }
 
+    const _companyTypeMap = new Map([
+        ['BC', 'BC Company'],
+        ['CP', 'Cooperative'],
+        ['GP', 'General Partnership'],
+        ['S', 'Society'],
+        ['SP', 'Sole Proprietorship'],
+        ['A', 'Extraprovincial Company'],
+        ['B', 'Extraprovincial'],
+        ['BEN', 'Benefit Company'],
+        ['C', 'Continuation In'],
+        ['CC', 'BC Community Contribution Company'],
+        ['CS', 'Continued In Society'],
+        ['CUL', 'Continuation In as a BC ULC'],
+        ['EPR', 'Extraprovincial Registration'],
+        ['FI', 'Financial Institution'],
+        ['FOR', 'Foreign Registration'],
+        ['LIB', 'Public Library Association'],
+        ['LIC', 'Licensed (Extra-Pro)'],
+        ['LL', 'Limited Liability Partnership'],
+        ['LLC', 'Limited Liability Company'],
+        ['LP', 'Limited Partnership'],
+        ['MF', 'Miscellaneous Firm'],
+        ['PA', 'Private Act'],
+        ['PAR', 'Parish'],
+        ['QA', 'CO 1860'],
+        ['QB', 'CO 1862'],
+        ['QC', 'CO 1878'],
+        ['QD', 'CO 1890'],
+        ['QE', 'CO 1897'],
+        ['REG', 'Registraton (Extra-pro)'],
+        ['ULC', 'BC Unlimited Liability Company'],
+        ['XCP', 'Extraprovincial Cooperative'],
+        ['XL', 'Extrapro Limited Liability Partnership'],
+        ['XP', 'Extraprovincial Limited Partnership'],
+        ['XS', 'Extraprovincial Society']
+    ]);
+
     function getFullType(code) {
-        const companyTypes = [
-            { code: "BC", name: "BC Company" },
-            { code: "CP", name: "Cooperative" },
-            { code: "GP", name: "General Partnership" },
-            { code: "S", name: "Society" },
-            { code: "SP", name: "Sole Proprietorship" },
-            { code: "A", name: "Extraprovincial Company" },
-            { code: "B", name: "Extraprovincial" },
-            { code: "BEN", name: "Benefit Company" },
-            { code: "C", name: "Continuation In" },
-            { code: "CC", name: "BC Community Contribution Company" },
-            { code: "CS", name: "Continued In Society" },
-            { code: "CUL", name: "Continuation In as a BC ULC" },
-            { code: "EPR", name: "Extraprovincial Registration" },
-            { code: "FI", name: "Financial Institution" },
-            { code: "FOR", name: "Foreign Registration" },
-            { code: "LIB", name: "Public Library Association" },
-            { code: "LIC", name: "Licensed (Extra-Pro)" },
-            { code: "LL", name: "Limited Liability Partnership" },
-            { code: "LLC", name: "Limited Liability Company" },
-            { code: "LP", name: "Limited Partnership" },
-            { code: "MF", name: "Miscellaneous Firm" },
-            { code: "PA", name: "Private Act" },
-            { code: "PAR", name: "Parish" },
-            { code: "QA", name: "CO 1860" },
-            { code: "QB", name: "CO 1862" },
-            { code: "QC", name: "CO 1878" },
-            { code: "QD", name: "CO 1890" },
-            { code: "QE", name: "CO 1897" },
-            { code: "REG", name: "Registraton (Extra-pro)" },
-            { code: "ULC", name: "BC Unlimited Liability Company" },
-            { code: "XCP", name: "Extraprovincial Cooperative" },
-            { code: "XL", name: "Extrapro Limited Liability Partnership" },
-            { code: "XP", name: "Extraprovincial Limited Partnership" },
-            { code: "XS", name: "Extraprovincial Society" }
-        ];
-        const match = companyTypes.find(entry => entry.code === code);
-        return match ? match.name : "Unknown";
+        return _companyTypeMap.get(code) ?? 'Unknown';
     }
 
-
-    window.addEventListener('resize', () => {
-    });
 
     PubSub.subscribe(
         'refresh_application_list',
@@ -1598,22 +1649,17 @@ $(function () {
     );
 
     function getNames(data) {
-        let name = '';
-        data.forEach((d, index) => {
-            name = name + (' ' + d.fullName + getDutyText(d));
-            if (index != (data.length - 1)) {
-                name = name + ',';
-            }
-        });
-
-        return name;
+        return data.map(d => d.fullName + getDutyText(d)).join(', ');
     }
+    const _titleCaseCache = new Map();
     function titleCase(str) {
-        str = str.toLowerCase().split(' ');
-        for (let i = 0; i < str.length; i++) {
-            str[i] = str[i].charAt(0).toUpperCase() + str[i].slice(1);
-        }
-        return str.join(' ');
+        //This funciton is currently called by 6 columns, all of which are status types or predetermined values
+        //Caching the results in this case is to improve large data table loads while we're in client side.
+        //Columns: likelihoodOfFunding, assessmentResult, riskRanking, acquisition, fyeMonth, dueDiligenceStatus
+        if (_titleCaseCache.has(str)) return _titleCaseCache.get(str);
+        const result = str.toLowerCase().split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+        _titleCaseCache.set(str, result);
+        return result;
     }
 
     function convertToYesNo(str) {

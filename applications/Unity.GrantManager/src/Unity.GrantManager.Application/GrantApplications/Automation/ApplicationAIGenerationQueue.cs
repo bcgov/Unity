@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Unity.AI.Automation;
+using Unity.AI.RateLimit;
 using Unity.GrantManager.GrantApplications;
 using Unity.GrantManager.GrantApplications.Automation.BackgroundJobs;
 using Medallion.Threading;
@@ -9,6 +10,7 @@ using Microsoft.Extensions.Logging;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.BackgroundJobs;
 using Volo.Abp.DependencyInjection;
+using Volo.Abp.Users;
 
 namespace Unity.GrantManager.GrantApplications.Automation;
 
@@ -16,6 +18,8 @@ public class ApplicationAIGenerationQueue(
     IBackgroundJobManager backgroundJobManager,
     IRepository<AIGenerationRequest, Guid> generationRequestRepository,
     IDistributedLockProvider distributedLockProvider,
+    IAIRateLimiter aiRateLimiter,
+    ICurrentUser currentUser,
     ILogger<ApplicationAIGenerationQueue> logger)
     : IApplicationAIGenerationQueue, ITransientDependency
 {
@@ -33,6 +37,7 @@ public class ApplicationAIGenerationQueue(
                 {
                     ApplicationId = applicationId,
                     PromptVersion = promptVersion,
+                    RequestedByUserId = currentUser.Id,
                     TenantId = tenantId,
                     RequestKey = requestKey
                 });
@@ -53,6 +58,7 @@ public class ApplicationAIGenerationQueue(
                 {
                     ApplicationId = applicationId,
                     PromptVersion = promptVersion,
+                    RequestedByUserId = currentUser.Id,
                     TenantId = tenantId,
                     RequestKey = requestKey
                 });
@@ -73,6 +79,7 @@ public class ApplicationAIGenerationQueue(
                 {
                     ApplicationId = applicationId,
                     PromptVersion = promptVersion,
+                    RequestedByUserId = currentUser.Id,
                     TenantId = tenantId,
                     RequestKey = requestKey
                 });
@@ -93,6 +100,7 @@ public class ApplicationAIGenerationQueue(
                 {
                     ApplicationId = applicationId,
                     PromptVersion = promptVersion,
+                    RequestedByUserId = currentUser.Id,
                     TenantId = tenantId,
                     RequestKey = requestKey
                 });
@@ -124,6 +132,10 @@ public class ApplicationAIGenerationQueue(
             {
                 return;
             }
+
+            // Single chokepoint for all AI generate flows (manual + auto).
+            // The limiter is a no-op for system/background callers without an authenticated user.
+            await aiRateLimiter.EnsureAsync();
 
             var request = new AIGenerationRequest(
                 Guid.NewGuid(),
