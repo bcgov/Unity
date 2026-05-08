@@ -23,11 +23,14 @@ namespace Unity.AI.Operations
         IApplicationChefsFileAttachmentRepository applicationChefsFileAttachmentRepository,
         IScoresheetRepository scoresheetRepository,
         IAIService aiService,
+        IAIGenerationPrerequisiteValidator aiGenerationPrerequisiteValidator,
         AIExecutionModeResolver executionModeResolver,
         ILogger<ApplicationScoringService> logger) : IApplicationScoringService, ITransientDependency
     {
         public async Task<string> RegenerateAndSaveAsync(Guid applicationId, string? promptVersion = null, CancellationToken cancellationToken = default)
         {
+            await aiGenerationPrerequisiteValidator.EnsureApplicationScoringAvailableAsync(applicationId);
+
             var application = await applicationRepository.GetAsync(applicationId);
             var applicationForm = await applicationFormRepository.GetAsync(application.ApplicationFormId);
             if (applicationForm.ScoresheetId == null)

@@ -13,6 +13,7 @@ using Unity.AI.Requests;
 using Unity.AI.Responses;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Intakes;
+using Volo.Abp;
 using Xunit;
 
 namespace Unity.GrantManager.AI.Operations;
@@ -51,11 +52,14 @@ public class AttachmentSummaryServiceTests
         aiService.GenerateAttachmentSummaryAsync(Arg.Do<AttachmentSummaryRequest>(request => capturedRequest = request))
             .Returns(new AttachmentSummaryResponse { Summary = "summary text" });
 
+        var prerequisiteValidator = Substitute.For<IAIGenerationPrerequisiteValidator>();
+
         var service = new AttachmentSummaryService(
             attachmentRepository,
             streamProvider,
             textExtractionService,
             aiService,
+            prerequisiteValidator,
             new AIExecutionModeResolver(new ConfigurationBuilder().Build()),
             NullLogger<AttachmentSummaryService>.Instance);
 
@@ -103,10 +107,34 @@ public class AttachmentSummaryServiceTests
             streamProvider,
             Substitute.For<ITextExtractionService>(),
             Substitute.For<IAIService>(),
+            Substitute.For<IAIGenerationPrerequisiteValidator>(),
             new AIExecutionModeResolver(new ConfigurationBuilder().Build()),
             NullLogger<AttachmentSummaryService>.Instance);
 
         await Should.ThrowAsync<OperationCanceledException>(() =>
             service.GenerateAndSaveAsync(attachmentId, "v1", cancellationTokenSource.Token));
+    }
+
+    [Fact]
+    public async Task GenerateAndSaveAsync_Should_Reject_Empty_Attachment_List()
+    {
+        var attachmentRepository = Substitute.For<IApplicationChefsFileAttachmentRepository>();
+        var streamProvider = Substitute.For<IChefsFileAttachmentStreamProvider>();
+        var textExtractionService = Substitute.For<ITextExtractionService>();
+        var aiService = Substitute.For<IAIService>();
+        var prerequisiteValidator = Substitute.For<IAIGenerationPrerequisiteValidator>();
+
+        var service = new AttachmentSummaryService(
+            attachmentRepository,
+            streamProvider,
+            textExtractionService,
+            aiService,
+            prerequisiteValidator,
+            new AIExecutionModeResolver(new ConfigurationBuilder().Build()),
+            NullLogger<AttachmentSummaryService>.Instance);
+
+        await Should.ThrowAsync<UserFriendlyException>(() => service.GenerateAndSaveAsync([], "v1"));
+
+        await aiService.DidNotReceive().GenerateAttachmentSummaryAsync(Arg.Any<AttachmentSummaryRequest>());
     }
 }
