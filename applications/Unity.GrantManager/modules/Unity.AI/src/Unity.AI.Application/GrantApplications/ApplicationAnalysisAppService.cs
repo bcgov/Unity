@@ -3,9 +3,11 @@ using System;
 using System.Threading.Tasks;
 using Unity.AI;
 using Unity.AI.Automation;
+using Unity.AI.Features;
+using Unity.AI.Localization;
 using Unity.AI.Permissions;
+using Unity.AI.Settings;
 using Volo.Abp;
-using Volo.Abp.Features;
 using Volo.Abp.MultiTenancy;
 
 namespace Unity.GrantManager.GrantApplications;
@@ -14,16 +16,15 @@ namespace Unity.GrantManager.GrantApplications;
 public class ApplicationAnalysisAppService(
     Unity.AI.Operations.IApplicationAnalysisService applicationAnalysisService,
     IApplicationAIGenerationQueue aiGenerationQueue,
-    IFeatureChecker featureChecker,
+    AIFeatureGuard featureGuard,
     ICurrentTenant currentTenant)
     : AIAppService, IApplicationAnalysisAppService
 {
     public virtual async Task<ApplicationAnalysisResultDto> GenerateApplicationAnalysisAsync(Guid applicationId, string? promptVersion = null)
     {
-        if (!await featureChecker.IsEnabledAsync("Unity.AI.ApplicationAnalysis"))
-        {
-            throw new UserFriendlyException("AI application analysis is not enabled.");
-        }
+        await featureGuard.EnsureEnabledAsync(
+            AIFeatures.ApplicationAnalysis,
+            AILocalizationKeys.ApplicationAnalysisDisabled);
 
         await aiGenerationQueue.QueueApplicationAnalysisAsync(applicationId, currentTenant.Id, promptVersion);
         return new ApplicationAnalysisResultDto { Completed = false };
