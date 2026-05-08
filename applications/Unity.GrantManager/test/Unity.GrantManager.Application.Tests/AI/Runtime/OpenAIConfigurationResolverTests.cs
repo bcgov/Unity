@@ -175,4 +175,54 @@ public class OpenAIConfigurationResolverTests
 
         resolver.ResolveConfiguredTemperature().ShouldBeNull();
     }
+
+    [Fact]
+    public void ResolveConfiguredReasoningEffort_Should_Return_ProfileValue()
+    {
+        var configuration = BuildProfileConfiguration("ReasoningEffort", "minimal");
+        var resolver = new OpenAIConfigurationResolver(configuration);
+
+        resolver.ResolveConfiguredReasoningEffort().ShouldBe("minimal");
+    }
+
+    [Fact]
+    public void ResolveConfiguredVerbosity_Should_Return_ProfileValue()
+    {
+        var configuration = BuildProfileConfiguration("Verbosity", "low");
+        var resolver = new OpenAIConfigurationResolver(configuration);
+
+        resolver.ResolveConfiguredVerbosity().ShouldBe("low");
+    }
+
+    [Fact]
+    public void ResolveConfiguredReasoningEffort_Should_ReturnNull_WhenProfileSettingMissing()
+    {
+        var configuration = BuildProfileConfiguration("Temperature", "0.3");
+        var resolver = new OpenAIConfigurationResolver(configuration);
+
+        resolver.ResolveConfiguredReasoningEffort().ShouldBeNull();
+    }
+
+    [Fact]
+    public void ResolveConfiguredVerbosity_Should_RejectUnsupportedValue()
+    {
+        var configuration = BuildProfileConfiguration("Verbosity", "verbose");
+        var resolver = new OpenAIConfigurationResolver(configuration);
+
+        var exception = Should.Throw<System.InvalidOperationException>(() => resolver.ResolveConfiguredVerbosity());
+        exception.Message.ShouldContain("Verbosity");
+        exception.Message.ShouldContain("low, medium, high");
+    }
+
+    private static IConfiguration BuildProfileConfiguration(string settingName, string settingValue)
+    {
+        return new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["Azure:Operations:Defaults:Provider"] = "OpenAI",
+                ["Azure:Operations:Defaults:Profile"] = "Gpt5Mini",
+                [$"Azure:OpenAI:Profiles:Gpt5Mini:{settingName}"] = settingValue
+            })
+            .Build();
+    }
 }
