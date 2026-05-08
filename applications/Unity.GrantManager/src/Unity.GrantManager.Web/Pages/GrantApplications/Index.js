@@ -381,6 +381,8 @@ $(function () {
 
     function initializeDataTableAndEvents() {
         let initialLoad = true;
+        let isRestoringState = false;
+        let refreshDataTimeout = null;
         dataTable = initializeDataTable({
             dt,
             defaultVisibleColumns,
@@ -392,9 +394,32 @@ $(function () {
             },
             dataEndpoint: unity.grantManager.grantApplications.grantApplication.getList,
             data: function () {
+                let requestedFields;
+                if (dataTable) {
+                    try {
+                        const cols = dataTable.settings()[0].aoColumns;
+                        requestedFields = cols
+                            .filter(function (col, idx) { return dataTable.column(idx).visible(); })
+                            .map(function (col) { return col.sName; })
+                            .filter(function (name) { return !!name; });
+                        if (requestedFields.length > 0) {
+                            localStorage.setItem('GrantApplications_RequestedFields', JSON.stringify(requestedFields));
+                        }
+                    } catch { /* DataTable not yet fully initialised */ }
+                }
+                if (!requestedFields || requestedFields.length === 0) {
+                    try {
+                        const saved = localStorage.getItem('GrantApplications_RequestedFields');
+                        if (saved) requestedFields = JSON.parse(saved);
+                    } catch { }
+                }
+                if (!requestedFields || requestedFields.length === 0) {
+                    requestedFields = defaultVisibleColumns;
+                }
                 return {
                     submittedFromDate: grantTableFilters.submittedFromDate,
-                    submittedToDate: grantTableFilters.submittedToDate
+                    submittedToDate: grantTableFilters.submittedToDate,
+                    requestedFields: requestedFields
                 };
             },
             responseCallback,
@@ -415,20 +440,22 @@ $(function () {
                 };
             },
             onStateLoadParams: function (settings, data) {
-                if (!initialLoad && data?.customFilters) {
-                    // If there is any date change, this will refresh post load 
-                    // to ensure the correct data is shown based on the saved filters.
-                    data.refreshTableWithDates =
-                        data.customFilters.quickDateRange !== UIElements.quickDateRange.val()
-                        || data.customFilters.submittedFromDate !== UIElements.submittedFromInput.val()
-                        || data.customFilters.submittedToDate !== UIElements.submittedToInput.val();
-                    restoreCustomFilters(data.customFilters);
+                if (!initialLoad) {
+                    // Mark that a state restore is in progress so column-visibility.dt
+                    // events during restore don't trigger premature intermediate reloads.
+                    isRestoringState = true;
+                    if (data?.customFilters) {
+                        restoreCustomFilters(data.customFilters);
+                    }
                 }
             },
             onStateLoaded: function (dtApi, data) {
                 // This needs to only reload when clicking on the load state not on initial page load
                 // Otherwise it duplicates the data
-                if (!initialLoad && data?.refreshTableWithDates) {
+                if (!initialLoad) {
+                    // All column-visibility changes are applied by this point.
+                    // Clear the flag and fire a single reload with the correct column set.
+                    isRestoringState = false;
                     dtApi.ajax.reload(null, false);
                 }
                 initialLoad = false; // Reset flag after use
@@ -459,6 +486,27 @@ $(function () {
                     }
                 });
             }
+        });
+
+        dataTable.on('column-visibility.dt', function (e, settings, columnIdx) {
+            try {
+                const cols = dataTable.settings()[0].aoColumns;
+                const visibleFields = cols
+                    .filter(function (col, idx) { return dataTable.column(idx).visible(); })
+                    .map(function (col) { return col.sName; })
+                    .filter(function (name) { return !!name; });
+                if (visibleFields.length > 0) {
+                    localStorage.setItem('GrantApplications_RequestedFields', JSON.stringify(visibleFields));
+                }
+                // Only debounce on manual. During a saved-view restore, isRestoringState
+                // is true and onStateLoaded fires a single authoritative reload  after all columns are applied
+                if (!isRestoringState && cols[columnIdx]?.refreshData) {
+                    clearTimeout(refreshDataTimeout);
+                    refreshDataTimeout = setTimeout(function () {
+                        dataTable.ajax.reload(null, false);
+                    }, 300);
+                }
+            } catch { }
         });
     }
 
@@ -702,6 +750,7 @@ $(function () {
             data: 'assignees',
             name: 'assignees',
             className: 'dt-editable',
+            refreshData: true,
             render: function (data, type, row) {
                 let displayText = ' ';
 
@@ -1056,6 +1105,7 @@ $(function () {
             name: 'applicationTag',
             data: 'applicationTag',
             className: '',
+            refreshData: true,
             render: function (data) {
 
                 let tagNames = data
@@ -1132,6 +1182,7 @@ $(function () {
             name: 'Owner',
             data: 'owner',
             className: 'data-table-header',
+            refreshData: true,
             render: function (data) {
                 return data != null ? data.fullName : '';
             },
@@ -1238,6 +1289,7 @@ $(function () {
             name: 'applicationLinks',
             data: 'applicationLinks',
             className: 'data-table-header',
+            refreshData: true,
             render: function (data) {
                 const linkNames = Array.from(new Set((data || [])
                     .filter(x => x?.linkType)
@@ -1286,6 +1338,7 @@ $(function () {
             name: 'contactFullName',
             data: 'contactFullName',
             className: 'data-table-header',
+            refreshData: true,
             render: function (data) {
                 return data ?? '';
             },
@@ -1298,6 +1351,7 @@ $(function () {
             name: 'contactTitle',
             data: 'contactTitle',
             className: 'data-table-header',
+            refreshData: true,
             render: function (data) {
                 return data ?? '';
             },
@@ -1310,6 +1364,7 @@ $(function () {
             name: 'contactEmail',
             data: 'contactEmail',
             className: 'data-table-header',
+            refreshData: true,
             render: function (data) {
                 return data ?? '';
             },
@@ -1322,6 +1377,7 @@ $(function () {
             name: 'contactBusinessPhone',
             data: 'contactBusinessPhone',
             className: 'data-table-header',
+            refreshData: true,
             render: function (data) {
                 return data ?? '';
             },
@@ -1334,6 +1390,7 @@ $(function () {
             name: 'contactCellPhone',
             data: 'contactCellPhone',
             className: 'data-table-header',
+            refreshData: true,
             render: function (data) {
                 return data ?? '';
             },
