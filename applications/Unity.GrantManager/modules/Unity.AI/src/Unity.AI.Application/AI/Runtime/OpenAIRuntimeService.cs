@@ -198,7 +198,7 @@ namespace Unity.AI.Runtime
             {
                 var attachments = attachmentSummaries.Count > 0
                     ? string.Join("\n- ", attachmentSummaries.Select((summary, index) => $"Attachment {index + 1}: {summary}"))
-                    : "No attachments provided.";
+                    : "[]";
 
                 var section = OpenAIPromptRenderer.BuildAliasedApplicationScoringSection(request.SectionName, sectionJson, out var questionIdAliasMap);
                 var response = OpenAIPromptRenderer.BuildApplicationScoringResponseTemplate(section);
