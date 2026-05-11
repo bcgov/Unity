@@ -1,0 +1,22 @@
+﻿.project-info-container .form-label {
+    font-size: var(--bc-font-size-sm);
+    color: var(--bc-colors-grey-text-300);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 0;
+}
+
+.project-info-container .form-select {
+    background-color: transparent;
+    border: var(--bs-border-width) solid var(--bs-border-color);
+}
+
+.project-location {
+    padding-left: 0px;
+    margin-top: 1rem;
+}
+
+.project-info-form {
+    border-bottom: 0.25rem solid var(--bc-colors-white-background);
+}

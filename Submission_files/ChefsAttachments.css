@@ -1,0 +1,116 @@
+#ChefsAttachmentsTable a {
+    text-decoration: none;
+    --bs-btn-active-color: var(--bc-colors-white-primary-500);
+    --bs-btn-active-bg: var(--bc-colors-blue-primary-500);
+}
+
+.attachments__title-button-split {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: stretch;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.submission-title-and-actions {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: nowrap;
+}
+
+.sorting_disabled:before,
+.sorting_disabled:after {
+    content: '' !important;
+}
+
+.submission-title {
+    display: flex;
+    align-items: center;
+    height: 36px;
+    padding-top: 0;
+    flex: 0 0 auto;
+}
+
+.submission-button-section {
+    display: flex;
+    flex: 1 1 auto;
+    flex-wrap: nowrap;
+    align-items: center;
+    align-content: center;
+    justify-content: flex-end;
+    gap: 6px;
+    min-width: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+}
+
+.submission-button-section--top {
+    justify-content: flex-end;
+}
+
+.submission-button-section--bottom {
+    justify-content: flex-end;
+}
+
+.submission-button-section .btn {
+    flex: 0 0 auto;
+    height: 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    white-space: nowrap;
+}
+
+.submission-button-section .btn + .btn {
+    margin-left: 0;
+}
+
+.submission-button-section .button-content {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    white-space: nowrap;
+}
+
+#ChefsAttachmentsTable_paginate {
+    display: block !important;
+    padding-top: 35px;
+}
+
+/* AI Summary Row Styles */
+.ai-summary-row {
+    border-left: 4px solid var(--bc-colors-blue-primary);
+    background: #faf9f8;
+    padding: 10px 15px;
+}
+
+#ChefsAttachmentsTable td.ai-summary-cell {
+    padding: 0;
+}
+
+#ChefsAttachmentsTable .ai-summary-content {
+    color: #292929;
+    padding: 8px 12px;
+}
+
+#ChefsAttachmentsTable .ai-summary-content strong {
+    color: var(--bc-colors-blue-primary);
+    font-weight: 600;
+    font-size: 13px;
+}
+
+#ChefsAttachmentsTable .ai-summary-content p {
+    margin-bottom: 0;
+    color: #495057;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+#ChefsAttachmentsTable tr.shown {
+    background-color: rgba(13, 110, 253, 0.05);
+}

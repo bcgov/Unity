@@ -1,0 +1,726 @@
+﻿.application-details-container {
+    width: 100%;
+}
+
+.card-header {
+    padding-bottom: 1.5rem !important;
+}
+
+.card-title {
+    font-weight: 600 !important;
+}
+
+.card-header:not(.card-body .card-header)::before {
+    content: ' ';
+    display: block;
+    border-bottom: 1px solid #313132;
+    border-right: 1px solid #313132;
+    height: 10px;
+    width: 10px;
+    transform: rotate(45deg);
+    float: right !important;
+    transition: all 0.5s !important;
+}
+
+.card-header:not(.card-body .card-header).custom-active::before {
+    content: ' ';
+    display: block;
+    border-bottom: 1px solid #313132;
+    border-right: 1px solid #313132;
+    height: 10px;
+    width: 10px;
+    transform: rotate(-135deg);
+    float: right !important;
+    transition: all 0.5s !important;
+}
+
+.card-body {
+    transition: height 0.5s;
+    overflow: hidden;
+}
+
+.formio-component label {
+    font-weight: bold !important;
+}
+
+/* Target elements with class names starting with 'same-class' */
+[class^='formio-component-nextTab'] {
+    /* Apply your common CSS styles here */
+    display: none;
+    /* Add more common styles as needed */
+}
+
+/*Targets specific textarea to remove hidden by default*/
+.formio-component-textarea div .card-body {
+    display: inherit !important;
+}
+
+.nav-tabs .nav-item .nav-link.active {
+    color: #003366;
+    border-bottom: 3px solid #003366;
+}
+
+.spinner-loader {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.ai-button-content {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.ai-generate-btn {
+    height: 2.25rem;
+}
+
+.ai-generate-btn.btn-sm {
+    height: 2rem;
+}
+
+.ai-generate-btn .spinner-border-sm {
+    width: 0.875rem;
+    height: 0.875rem;
+}
+
+.left-card {
+    border-right: 1px solid #dddddd;
+}
+
+.add-review-btn {
+    background: #003366;
+    color: #ffffff;
+    border: 0px;
+    border-radius: 3px;
+    font-weight: 400;
+    box-shadow: 0px 2px 4px 0px rgba(0, 0, 0, 0.25);
+    margin: 1rem 2.5rem 1rem 0rem;
+}
+
+.review-heading {
+    margin: 1.5rem 0rem 0rem 0.5rem;
+    color: #003366;
+    font-weight: 700;
+}
+
+.dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.dropdown-menu, .dt-button-collection {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background-color: #fff;
+    box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    min-width: 160px;
+    z-index: 1000;
+}
+
+.dropdown-item {
+    padding: 8px 12px;
+    display: block;
+    color: #333;
+    text-decoration: none;
+    transition: background-color 0.2s ease;
+    cursor: pointer;
+}
+
+.dropdown-item:hover {
+    background-color: #f8f9fa;
+}
+
+.dropdown-item:disabled {
+    cursor: not-allowed;
+}
+
+.adj-act-btn-ctnr {
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    display: flex;
+}
+
+.assessment-action-btn {
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    display: flex;
+    background: #003366;
+    color: #ffffff;
+    border: 0px;
+    border-radius: 3px;
+    font-weight: 400;
+    box-shadow: 0px 2px 4px 0px rgba(0, 0, 0, 0.25) !important;
+    min-width: 10rem;
+    margin-top: 1rem;
+}
+
+.recom-select {
+    background: #003366;
+    color: #ffffff;
+    border: 0px;
+    border-radius: 3px;
+    font-weight: 400;
+    box-shadow: 0px 2px 4px 0px rgba(0, 0, 0, 0.25) !important;
+}
+
+.recom-select:hover {
+    background: #ffffff;
+    color: #333;
+}
+
+.recom-select:disabled {
+    color: #333;
+}
+
+.recom-reset-button {
+    font-size: 0.8rem;
+    color: var(--bc-colors-blue-text-links);
+    border: 2px solid var(--bc-colors-blue-text-links);
+    min-height: 1.4rem;
+}
+
+.recom-reset-button:hover {
+    border-color: var(--bs-btn-color);
+}
+
+.back-button-container {
+    justify-content: left;
+    align-items: start;
+    gap: 8px;
+    display: flex;
+}
+
+.back-btn {
+    color: #003366;
+    margin-bottom: 0px;
+}
+
+.custom-input {
+    margin: 0.2rem 0rem 1rem 0rem;
+}
+
+.comment-message-button-area {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 4px;
+}
+
+.float-inline {
+    float: inline-end;
+    margin-top: 20px;
+    margin-bottom: -30px;
+}
+
+textarea::placeholder {
+    color: #b9b9b9 !important;
+}
+
+#widget {
+    position: relative;
+}
+
+#widget #overlay {
+    position: absolute;
+    top: 0;
+    right: 0;
+    background-color: #ffffff;
+    box-shadow: 1px 1px 1px rgba(0, 0, 0, 0.1);
+}
+
+#widget textarea {
+    border: 1px solid #e7e9ec;
+    resize: vertical;
+}
+
+.fa,
+.fas {
+    padding: 5px;
+}
+
+i.fas:hover {
+    cursor: pointer;
+}
+
+select.selected {
+    border: 1px solid rgba(0, 51, 102, 38%) !important;
+    background-color: #fff !important;
+}
+
+.review-list-heading {
+    margin-left: 0.5rem;
+    margin-top: 0.3rem;
+}
+
+.mb-2.card.border {
+    border-bottom: 1px solid rgba(214, 214, 214, 1);
+}
+
+.card-header.bg-default {
+    background-color: white !important;
+    margin-top: 1.2rem;
+}
+
+#application_attachment_upload_btn {
+    margin-top: 0.8rem;
+}
+
+.details-nav .nav-link {
+    display: flex;
+}
+
+.details-nav .nav-link .fl {
+    margin-right: 4px;
+}
+
+.comments-title {
+    margin: 0.5rem 0rem 0rem 0.4rem;
+}
+
+.pdf-icon {
+    display: block;
+    margin-left: auto;
+    margin-right: 0;
+    padding-top: 0;
+}
+
+.pdf-icon:hover {
+    cursor: pointer;
+    box-shadow: none;
+}
+
+.details-scrollable {
+    overflow-y: scroll;
+    overflow-x: hidden;
+    height: calc(100vh - 276px);
+    margin-right: -6px;
+    position: relative;
+}
+
+#detailsTabContent {
+    overflow-y: scroll;
+    overflow-x: hidden;
+    height: calc(100vh - 300px);
+    z-index: 1;
+}
+
+.formio-component-submit {
+    display: none;
+}
+
+.chefs-attachment a {
+    text-decoration: none;
+    display: block;
+}
+
+.chefs-attachment a:hover {
+    background-color: #f1f1f1;
+}
+
+#formio a {
+    pointer-events: none;
+    cursor: default;
+    text-decoration: none;
+    color: black;
+}
+
+.floating-save-btn {
+    position: absolute;
+    right: 24px;
+    top: 80px;
+    z-index: 999;
+}
+
+#detailsTab .nav-item .nav-link {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.action-bar {
+    display: flex !important;
+}
+
+#DetailsActionBarStart {
+    margin-right: 0.5rem;
+}
+
+div#formio button {
+    display: none;
+}
+
+form label.error {
+    color: #dc3545 !important;
+    font-size: 0.8em;
+}
+
+.input-group-text:has(i.fa-calendar) {
+    display: none !important;
+}
+
+.formio-editor-read-only-content {
+    word-break: normal !important;
+}
+
+.hidden {
+    display: none;
+}
+
+.visible {
+    display: block;
+}
+
+#main-container {
+    display: flex;
+}
+
+#main-left,
+#main-right {
+    width: 50%;
+}
+
+#main-divider {
+    width: 10px;
+    background-color: #ccc;
+    cursor: col-resize;
+    border-radius: 10px;
+}
+
+#main-divider:hover {
+    background-color: #aaa;
+}
+
+#myTab {
+    overflow-x: auto;
+    overflow-y: hidden;
+}
+
+.fade-in-load {
+    opacity: 0;
+    transition: opacity 0.15s ease-in-out;
+}
+
+.fade-in-load.visible {
+    opacity: 1;
+}
+
+/* AI Analysis Tab Styles */
+.ai-analysis-container {
+    padding: 0;
+}
+
+.ai-analysis-status-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    padding: 4px 10px;
+    font-size: 12px;
+    font-weight: 700;
+    width: auto;
+    min-width: 0;
+    border: 1px solid transparent;
+    background-image: none;
+}
+
+.ai-analysis-status-badge.proceed {
+    background-color: #d1e7dd;
+    color: #0f5132;
+}
+
+.ai-analysis-status-badge.hold {
+    background-color: #f8d7da;
+    color: #842029;
+}
+
+.ai-analysis-recommendation-rationale {
+    color: #495057;
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+.ai-analysis-sections {
+    margin-top: 16px;
+}
+
+.ai-analysis-section {
+    border: 1px solid #dce3ec;
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 16px;
+}
+
+.ai-analysis-section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 12px;
+    border-left: 4px solid;
+    min-height: 52px;
+}
+
+.ai-analysis-section.error .ai-analysis-section-header {
+    border-left-color: #dc3545;
+    background-color: #f8d7da;
+}
+
+.ai-analysis-section.warning .ai-analysis-section-header {
+    border-left-color: #ffc107;
+    background-color: #fff3cd;
+}
+
+.ai-analysis-section.summary .ai-analysis-section-header {
+    border-left-color: #0dcaf0;
+    background-color: #cff4fc;
+}
+
+.ai-analysis-section.next-steps .ai-analysis-section-header {
+    border-left-color: #198754;
+    background-color: #d1e7dd;
+}
+
+.ai-analysis-section.recommendation .ai-analysis-section-header {
+    border-left-color: #6c757d;
+    background-color: #f8f9fa;
+}
+
+.ai-analysis-section-title-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.ai-analysis-section-icon {
+    margin-right: 0;
+    font-size: 16px;
+    flex-shrink: 0;
+}
+
+.ai-analysis-section.error .ai-analysis-section-icon {
+    color: #721c24;
+}
+
+.ai-analysis-section.warning .ai-analysis-section-icon {
+    color: #856404;
+}
+
+.ai-analysis-section.summary .ai-analysis-section-icon {
+    color: #055160;
+}
+
+.ai-analysis-section.next-steps .ai-analysis-section-icon {
+    color: #0f5132;
+}
+
+.ai-analysis-section.recommendation .ai-analysis-section-icon {
+    color: #5c6b7a;
+}
+
+.ai-analysis-section-title {
+    font-weight: 650;
+    font-size: 16px;
+    color: #212529;
+}
+
+.ai-analysis-section-body {
+    padding: 12px 14px;
+    background-color: #ffffff;
+    border-top: 1px solid #dee2e6;
+    color: #495057;
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+.ai-analysis-section.compact .ai-analysis-section-body {
+    padding-top: 10px;
+    padding-bottom: 10px;
+}
+
+.ai-analysis-section.header-only .ai-analysis-section-body {
+    display: none;
+}
+
+.ai-analysis-section.collapsed .ai-analysis-section-body {
+    display: none;
+}
+
+.ai-analysis-detail-item {
+    margin-bottom: 16px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.ai-analysis-detail-item:last-child {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: none;
+}
+
+.ai-analysis-detail-item.last-visible {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: none;
+}
+
+.ai-analysis-detail-category {
+    font-weight: 700;
+    color: #212529;
+    margin-bottom: 6px;
+    font-size: 15px;
+}
+
+.ai-analysis-detail-message {
+    color: #495057;
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+.ai-analysis-detail-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.ai-analysis-detail-header .ai-analysis-detail-category {
+    flex: 1;
+    margin-bottom: 6px;
+}
+
+.ai-analysis-detail-item.dismissed-item {
+    opacity: 0.6;
+}
+
+.ai-analysis-section-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 132px;
+    padding: 4px 10px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #4b5563;
+    background-color: #ffffff;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    text-decoration: none;
+}
+
+.ai-analysis-section-toggle:disabled {
+    cursor: default;
+    pointer-events: none;
+    opacity: 1;
+}
+
+.ai-analysis-section-toggle:hover {
+    color: #1f2937;
+    background-color: #f9fafb;
+    border-color: #9ca3af;
+}
+
+.ai-analysis-collapse-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+    color: #4b5563;
+    border-radius: 999px;
+    transition: color 0.2s, background-color 0.2s, border-color 0.2s, transform 0.2s;
+}
+
+.ai-analysis-collapse-toggle:hover {
+    color: #1f2937;
+    background-color: #eef2f6;
+}
+
+.ai-analysis-collapse-toggle:focus,
+.ai-analysis-collapse-toggle:focus-visible {
+    outline: none;
+    box-shadow: none;
+}
+
+.ai-analysis-status-chip {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px 10px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #5c6b7a;
+    background-color: #eef2f6;
+    border: 1px solid #dce3ec;
+    border-radius: 999px;
+}
+
+.ai-analysis-status-chip.proceed {
+    color: #0f5132;
+    background-color: #d1e7dd;
+    border-color: #badbcc;
+}
+
+.ai-analysis-status-chip.hold {
+    color: #842029;
+    background-color: #f8d7da;
+    border-color: #f5c2c7;
+}
+
+#ai-analysis-tab {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+.ai-analysis-tab-icon-wrap {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.ai-analysis-tab-indicator {
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    background-color: #adb5bd;
+    flex-shrink: 0;
+}
+
+.ai-analysis-tab-indicator.proceed {
+    background-color: #198754;
+}
+
+.ai-analysis-tab-indicator.hold {
+    background-color: #dc3545;
+}
+
+.ai-analysis-action-btn {
+    background: #ffffff;
+    border: 1px solid #d1d5db;
+    padding: 4px 10px;
+    cursor: pointer;
+    color: #4b5563;
+    font-size: 13px;
+    font-weight: 600;
+    transition: color 0.2s, background-color 0.2s, border-color 0.2s;
+    border-radius: 6px;
+    flex-shrink: 0;
+    line-height: 1.2;
+}
+
+.ai-analysis-action-btn:hover {
+    color: #1f2937;
+    background-color: #f9fafb;
+    border-color: #9ca3af;
+}

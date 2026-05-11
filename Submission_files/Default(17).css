@@ -1,0 +1,60 @@
+﻿/* Fix for DataTables alignment with scrollX enabled */
+#ApplicationLinksTable_wrapper {
+    width: 100%;
+}
+
+#ApplicationLinksTable_wrapper .dt-scroll {
+    overflow: visible;
+}
+
+#ApplicationLinksTable_wrapper .dt-scroll-head .dt-scroll-headInner,
+#ApplicationLinksTable_wrapper .dt-scroll-head .dt-scroll-headInner table {
+    width: 100% !important;
+}
+
+#ApplicationLinksTable_wrapper .dt-scroll-body {
+    overflow: visible !important;
+}
+
+#ApplicationLinksTable_wrapper .dt-scroll-body table {
+    width: 100% !important;
+}
+
+/* Ensure table uses full width */
+#ApplicationLinksTable {
+    width: 100% !important;
+}
+
+/* Column alignment */
+.links-table th,
+.links-table td {
+    text-align: left;
+    vertical-align: middle;
+}
+
+/* Delete button column */
+.links-table th:last-child,
+.links-table td:last-child {
+    text-align: center;
+    width: 40px !important;
+    min-width: 40px !important;
+    max-width: 40px !important;
+}
+
+/* Delete button styling */
+.links-table .delete-link-btn {
+    font-size: 1.2rem;
+    padding: 0.25rem 0.5rem;
+    text-decoration: none !important;
+}
+
+.links-table .delete-link-btn:hover {
+    opacity: 0.7;
+    text-decoration: none !important;
+}
+
+/* Ensure proper text wrapping in category column */
+.links-table td:first-child {
+    white-space: normal;
+    word-wrap: break-word;
+}

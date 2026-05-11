@@ -1,0 +1,350 @@
+(function(){
+
+$.extend(true, abp, {
+  "localization": {
+    "values": {},
+    "resources": {},
+    "languages": [
+      {
+        "cultureName": "en",
+        "uiCultureName": "en",
+        "displayName": "en",
+        "twoLetterISOLanguageName": "en"
+      }
+    ],
+    "currentCulture": {
+      "displayName": "English (Canada)",
+      "englishName": "English (Canada)",
+      "threeLetterIsoLanguageName": "eng",
+      "twoLetterIsoLanguageName": "en",
+      "isRightToLeft": false,
+      "cultureName": "en-CA",
+      "name": "en-CA",
+      "nativeName": "English (Canada)",
+      "dateTimeFormat": {
+        "calendarAlgorithmType": "SolarCalendar",
+        "dateTimeFormatLong": "dddd, MMMM d, yyyy",
+        "shortDatePattern": "yyyy-MM-dd",
+        "fullDateTimePattern": "dddd, MMMM d, yyyy h:mm:ss tt",
+        "dateSeparator": "-",
+        "shortTimePattern": "h:mm tt",
+        "longTimePattern": "h:mm:ss tt"
+      }
+    },
+    "defaultResourceName": "GrantManager",
+    "languagesMap": {
+      "bootstrap-datepicker": [
+        {
+          "name": "zh-Hans",
+          "value": "zh-CN"
+        },
+        {
+          "name": "zh-Hant",
+          "value": "zh-TW"
+        }
+      ],
+      "moment": [
+        {
+          "name": "zh-Hans",
+          "value": "zh-cn"
+        },
+        {
+          "name": "zh-Hant",
+          "value": "zh-tw"
+        },
+        {
+          "name": "de-DE",
+          "value": "de"
+        }
+      ]
+    },
+    "languageFilesMap": {
+      "bootstrap-datepicker": [
+        {
+          "name": "zh-Hans",
+          "value": "zh-CN"
+        },
+        {
+          "name": "zh-Hant",
+          "value": "zh-TW"
+        }
+      ],
+      "moment": [
+        {
+          "name": "zh-Hans",
+          "value": "zh-cn"
+        },
+        {
+          "name": "zh-Hant",
+          "value": "zh-tw"
+        },
+        {
+          "name": "de-DE",
+          "value": "de"
+        }
+      ],
+      "jquery.timeago": [
+        {
+          "name": "zh-Hans",
+          "value": "zh-CN"
+        },
+        {
+          "name": "zh-Hant",
+          "value": "zh-TW"
+        }
+      ],
+      "jquery-validation": [
+        {
+          "name": "zh-Hans",
+          "value": "zh"
+        },
+        {
+          "name": "zh-Hant",
+          "value": "zh_TW"
+        }
+      ]
+    }
+  },
+  "auth": {
+    "grantedPolicies": {}
+  },
+  "setting": {
+    "values": {
+      "Abp.Localization.DefaultLanguage": "en-CA",
+      "Abp.Timing.TimeZone": "",
+      "Abp.Identity.Password.RequiredLength": "6",
+      "Abp.Identity.Password.RequiredUniqueChars": "1",
+      "Abp.Identity.Password.RequireNonAlphanumeric": "True",
+      "Abp.Identity.Password.RequireLowercase": "True",
+      "Abp.Identity.Password.RequireUppercase": "True",
+      "Abp.Identity.Password.RequireDigit": "True",
+      "Abp.Identity.Password.ForceUsersToPeriodicallyChangePassword": "False",
+      "Abp.Identity.Password.PasswordChangePeriodDays": "0",
+      "Abp.Identity.Password.EnablePreventPasswordReuse": "False",
+      "Abp.Identity.Password.PreventPasswordReuseCount": "6",
+      "Abp.Identity.Lockout.AllowedForNewUsers": "True",
+      "Abp.Identity.Lockout.LockoutDuration": "300",
+      "Abp.Identity.Lockout.MaxFailedAccessAttempts": "5",
+      "Abp.Identity.SignIn.RequireConfirmedEmail": "False",
+      "Abp.Identity.SignIn.EnablePhoneNumberConfirmation": "True",
+      "Abp.Identity.SignIn.RequireEmailVerificationToRegister": "False",
+      "Abp.Identity.SignIn.RequireConfirmedPhoneNumber": "False",
+      "Abp.Identity.User.IsUserNameUpdateEnabled": "True",
+      "Abp.Identity.User.IsEmailUpdateEnabled": "True",
+      "Abp.Identity.OrganizationUnit.MaxUserMembershipCount": "2147483647",
+      "GrantManager.Notifications.Mailing.DefaultFromAddress": "NoReply.Unity@gov.bc.ca",
+      "GrantManager.Notifications.Mailing.EmailMaxRetryAttempts": "3",
+      "GrantManager.Locality.SectorFilter": null,
+      "GrantManager.UI.Tabs.Submission": null,
+      "GrantManager.UI.Tabs.Assessment": null,
+      "GrantManager.UI.Tabs.Project": null,
+      "GrantManager.UI.Tabs.Applicant": null,
+      "GrantManager.UI.Tabs.Payments": null,
+      "GrantManager.UI.Tabs.FundingAgreement": null,
+      "GrantManager.BackgroundJobs.IntakeResync_NumDaysToCheck": null,
+      "GrantManager.BackgroundJobs.IntakeResync_Expression": null,
+      "GrantManager.BackgroundJobs.CasPaymentsReconciliation_ProducerExpression": null,
+      "GrantManager.BackgroundJobs.CasFinancialNotificationSummary_ProducerExpression": null,
+      "GrantManager.BackgroundJobs.DataHealthCheckMonitor_Expression": null,
+      "GrantManager.BackgroundJobs.ApplicantTenantMapReconciliation_Expression": null
+    }
+  },
+  "currentUser": {
+    "isAuthenticated": false,
+    "id": null,
+    "tenantId": null,
+    "impersonatorUserId": null,
+    "impersonatorTenantId": null,
+    "impersonatorUserName": null,
+    "impersonatorTenantName": null,
+    "userName": null,
+    "name": null,
+    "surName": null,
+    "email": null,
+    "emailVerified": false,
+    "phoneNumber": null,
+    "phoneNumberVerified": false,
+    "roles": [],
+    "sessionId": null
+  },
+  "features": {
+    "values": {
+      "SettingManagement.Enable": "true",
+      "SettingManagement.AllowChangingEmailSettings": "false",
+      "Unity.Payments": "false",
+      "Unity.Notifications": "false",
+      "Unity.Flex": "false",
+      "Unity.Reporting": "false",
+      "Unity.AIReporting": "false",
+      "Unity.AI.AttachmentSummaries": "false",
+      "Unity.AI.ApplicationAnalysis": "false",
+      "Unity.AI.Scoring": "false",
+      "Unity.Analytics": "false"
+    }
+  },
+  "globalFeatures": {
+    "enabledFeatures": []
+  },
+  "multiTenancy": {
+    "isEnabled": true,
+    "userSharingStrategy": 0
+  },
+  "currentTenant": {
+    "id": null,
+    "name": null,
+    "isAvailable": false
+  },
+  "timing": {
+    "timeZone": {
+      "iana": {
+        "timeZoneName": null
+      },
+      "windows": {
+        "timeZoneId": null
+      }
+    }
+  },
+  "clock": {
+    "kind": "Utc"
+  },
+  "objectExtensions": {
+    "modules": {
+      "Identity": {
+        "entities": {
+          "User": {
+            "properties": {
+              "OidcSub": {
+                "type": "System.String",
+                "typeSimple": "string",
+                "displayName": null,
+                "api": {
+                  "onGet": {
+                    "isAvailable": true
+                  },
+                  "onCreate": {
+                    "isAvailable": true
+                  },
+                  "onUpdate": {
+                    "isAvailable": true
+                  }
+                },
+                "ui": {
+                  "onTable": {
+                    "isVisible": true
+                  },
+                  "onCreateForm": {
+                    "isVisible": true
+                  },
+                  "onEditForm": {
+                    "isVisible": true
+                  },
+                  "lookup": {
+                    "url": null,
+                    "resultListPropertyName": null,
+                    "displayPropertyName": null,
+                    "valuePropertyName": null,
+                    "filterParamName": null
+                  }
+                },
+                "policy": {
+                  "globalFeatures": {
+                    "features": [],
+                    "requiresAll": false
+                  },
+                  "features": {
+                    "features": [],
+                    "requiresAll": false
+                  },
+                  "permissions": {
+                    "permissionNames": [],
+                    "requiresAll": false
+                  }
+                },
+                "attributes": [
+                  {
+                    "typeSimple": "readOnly",
+                    "config": {
+                      "isReadOnly": true
+                    }
+                  }
+                ],
+                "configuration": {
+                  "AllowUserToEdit": false
+                },
+                "defaultValue": null
+              },
+              "DisplayName": {
+                "type": "System.String",
+                "typeSimple": "string",
+                "displayName": null,
+                "api": {
+                  "onGet": {
+                    "isAvailable": true
+                  },
+                  "onCreate": {
+                    "isAvailable": true
+                  },
+                  "onUpdate": {
+                    "isAvailable": true
+                  }
+                },
+                "ui": {
+                  "onTable": {
+                    "isVisible": true
+                  },
+                  "onCreateForm": {
+                    "isVisible": true
+                  },
+                  "onEditForm": {
+                    "isVisible": true
+                  },
+                  "lookup": {
+                    "url": null,
+                    "resultListPropertyName": null,
+                    "displayPropertyName": null,
+                    "valuePropertyName": null,
+                    "filterParamName": null
+                  }
+                },
+                "policy": {
+                  "globalFeatures": {
+                    "features": [],
+                    "requiresAll": false
+                  },
+                  "features": {
+                    "features": [],
+                    "requiresAll": false
+                  },
+                  "permissions": {
+                    "permissionNames": [],
+                    "requiresAll": false
+                  }
+                },
+                "attributes": [
+                  {
+                    "typeSimple": "readOnly",
+                    "config": {
+                      "isReadOnly": true
+                    }
+                  }
+                ],
+                "configuration": {
+                  "AllowUserToEdit": false
+                },
+                "defaultValue": null
+              }
+            },
+            "configuration": {}
+          }
+        },
+        "configuration": {}
+      }
+    },
+    "enums": {}
+  },
+  "extraProperties": {}
+})
+
+abp.event.trigger('abp.configurationInitialized');
+
+})();
