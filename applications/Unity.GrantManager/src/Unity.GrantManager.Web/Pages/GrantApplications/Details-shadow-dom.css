@@ -39,6 +39,16 @@
     transition: all 0.5s !important;
 }
 
+/* White arrow on dark background card headers */
+.card-header.bg-primary:not(.card-body .card-header)::before,
+.card-header.bg-success:not(.card-body .card-header)::before,
+.card-header.bg-info:not(.card-body .card-header)::before,
+.card-header.bg-warning:not(.card-body .card-header)::before,
+.card-header.bg-danger:not(.card-body .card-header)::before {
+    border-bottom-color: white;
+    border-right-color: white;
+}
+
 /* Accordion body animation */
 .card-body {
     transition: height 0.5s;
