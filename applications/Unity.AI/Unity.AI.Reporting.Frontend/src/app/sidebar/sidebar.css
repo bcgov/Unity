@@ -7,6 +7,21 @@
   width: 220px;
   background: #fff;
   box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+  position: relative;
+}
+
+.resize-handle {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 6px;
+  height: 100%;
+  cursor: col-resize;
+  z-index: 10;
+}
+
+.resize-handle:hover {
+  background: rgba(0, 0, 0, 0.1);
 }
 
 .sidebar-header {
@@ -67,7 +82,7 @@
 }
 
 .chat-item {
-  margin: 6px 12px;
+  margin: 2px 12px;
   padding: 8px 14px;
   cursor: pointer;
   position: relative;
@@ -83,7 +98,7 @@
 .chat-title {
   font-weight: 400;
   color: #333;
-  font-size: 0.9rem;
+  font-size: 0.78rem;
   line-height: 1.4;
   white-space: nowrap;
   overflow: hidden;
