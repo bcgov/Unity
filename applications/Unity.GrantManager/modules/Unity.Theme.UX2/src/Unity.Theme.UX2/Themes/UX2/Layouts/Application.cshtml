@@ -66,7 +66,7 @@
 
     @await Component.InvokeLayoutHookAsync(LayoutHooks.Head.Last, StandardLayouts.Application)
 </head>
-<body class="abp-application-layout @rtl">
+<body class="abp-application-layout @rtl" data-active-nav="@ViewData["ActiveNavHref"]">
     <div id="app-version-id">
         <div>
             UGM @(Assembly

@@ -84,11 +84,34 @@ $(function () {
 });
 
 window.addEventListener('DOMContentLoaded', (event) => {
-    const currentUrl = window.location.pathname;        
-    const currentNav = document.querySelector(`a[href="${currentUrl}"]`);
+    const currentUrl = window.location.pathname;
+
+    // Exact match first
+    let currentNav = document.querySelector(`.unity-navbar-nav a[href="${currentUrl}"]`);
+
+    // Fall back to longest-prefix match (handles detail/sub-pages)
+    if (!currentNav) {
+        let longestMatch = '';
+        document.querySelectorAll('.unity-navbar-nav a[href]').forEach(link => {
+            const href = link.getAttribute('href');
+            if (href && href !== '/' && href !== '#' && currentUrl.startsWith(href) && href.length > longestMatch.length) {
+                longestMatch = href;
+                currentNav = link;
+            }
+        });
+    }
+
+    // Page-level override for pages whose URL shares no prefix with their nav item
+    if (!currentNav) {
+        const activeNavHref = document.body.dataset.activeNav;
+        if (activeNavHref) {
+            currentNav = document.querySelector(`.unity-navbar-nav a[href="${activeNavHref}"]`);
+        }
+    }
+
     if (currentNav) {
         currentNav.parentElement.classList.add('active');
-    }    
+    }
 });
 
 document.addEventListener('DOMContentLoaded', function () {
