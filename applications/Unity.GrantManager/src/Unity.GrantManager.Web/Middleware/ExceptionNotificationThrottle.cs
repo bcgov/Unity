@@ -17,6 +17,9 @@ public sealed class ExceptionNotificationThrottle
     private const int GlobalMaxPerMinute = 5;
 
     private readonly ConcurrentDictionary<string, DateTimeOffset> _lastSent = new();
+
+    // _sentThisMinute and _windowStart are always accessed together under _lock
+    private readonly object _lock = new();
     private int _sentThisMinute;
     private DateTimeOffset _windowStart = DateTimeOffset.UtcNow;
 
@@ -26,33 +29,33 @@ public sealed class ExceptionNotificationThrottle
     /// </summary>
     public bool ShouldNotify(string exceptionTypeName)
     {
-        ResetWindowIfNeeded();
-
-        if (_sentThisMinute >= GlobalMaxPerMinute)
-        {
-            return false;
-        }
-
         var now = DateTimeOffset.UtcNow;
 
+        // Per-type cooldown check — ConcurrentDictionary read is lock-free
         if (_lastSent.TryGetValue(exceptionTypeName, out var last) &&
             now - last < PerTypeCooldown)
         {
             return false;
         }
 
-        _lastSent[exceptionTypeName] = now;
-        Interlocked.Increment(ref _sentThisMinute);
-        return true;
-    }
-
-    private void ResetWindowIfNeeded()
-    {
-        var now = DateTimeOffset.UtcNow;
-        if (now - _windowStart >= TimeSpan.FromMinutes(1))
+        lock (_lock)
         {
-            Interlocked.Exchange(ref _sentThisMinute, 0);
-            _windowStart = now;
+            // Reset the window if a full minute has elapsed
+            if (now - _windowStart >= TimeSpan.FromMinutes(1))
+            {
+                _sentThisMinute = 0;
+                _windowStart = now;
+            }
+
+            if (_sentThisMinute >= GlobalMaxPerMinute)
+            {
+                return false;
+            }
+
+            _sentThisMinute++;
         }
+
+        _lastSent[exceptionTypeName] = now;
+        return true;
     }
 }

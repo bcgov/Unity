@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
@@ -7,6 +8,7 @@ using Microsoft.Extensions.Logging;
 using Prometheus;
 using Unity.GrantManager.Notifications;
 using Unity.Notifications.TeamsNotifications;
+using Volo.Abp.Uow;
 
 namespace Unity.GrantManager.Web.Middleware;
 
@@ -27,6 +29,20 @@ public class ExceptionCounterMiddleware(
             {
                 LabelNames = ["type"]
             });
+
+    // Git SHA baked in at build time via -p:SourceRevisionId=<sha> in the Dockerfile.
+    // Format is "<version>+<sha>" e.g. "1.0.0+a3f8c21"; we extract just the SHA.
+    private static readonly string CommitSha = ParseCommitSha(
+        typeof(ExceptionCounterMiddleware).Assembly
+            .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?
+            .InformationalVersion);
+
+    private static string ParseCommitSha(string? informationalVersion)
+    {
+        if (string.IsNullOrWhiteSpace(informationalVersion)) return "unknown";
+        var plusIndex = informationalVersion.IndexOf('+');
+        return plusIndex >= 0 ? informationalVersion[(plusIndex + 1)..] : informationalVersion;
+    }
 
     public async Task InvokeAsync(HttpContext context)
     {
@@ -79,7 +95,10 @@ public class ExceptionCounterMiddleware(
             try
             {
                 await using var scope = scopeFactory.CreateAsyncScope();
+                var uowManager = scope.ServiceProvider.GetRequiredService<IUnitOfWorkManager>();
                 var notifications = scope.ServiceProvider.GetRequiredService<INotificationsAppService>();
+
+                using var uow = uowManager.Begin(requiresNew: true, isTransactional: false);
 
                 string activityTitle = $"[CRITICAL] {ex.GetType().Name}";
                 string activitySubtitle = $"Environment: {env} | {endpoint}";
@@ -90,6 +109,7 @@ public class ExceptionCounterMiddleware(
                     new() { Name = "Message",      Value = exMessage },
                     new() { Name = "Endpoint",     Value = endpoint },
                     new() { Name = "Stack Trace",  Value = stackTrace },
+                    new() { Name = "Commit",       Value = CommitSha },
                 };
 
                 if (!string.IsNullOrEmpty(innerMessage))
@@ -98,6 +118,7 @@ public class ExceptionCounterMiddleware(
                 }
 
                 await notifications.PostToTeamsAsync(activityTitle, activitySubtitle, facts);
+                await uow.CompleteAsync();
             }
             catch (Exception notifyEx)
             {
