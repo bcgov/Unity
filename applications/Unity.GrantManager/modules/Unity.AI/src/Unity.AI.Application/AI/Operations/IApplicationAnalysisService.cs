@@ -1,10 +1,11 @@
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Unity.AI.Operations
 {
     public interface IApplicationAnalysisService
     {
-        Task<string> RegenerateAndSaveAsync(Guid applicationId, string? promptVersion = null);
+        Task<string> RegenerateAndSaveAsync(Guid applicationId, string? promptVersion = null, CancellationToken cancellationToken = default);
     }
 }

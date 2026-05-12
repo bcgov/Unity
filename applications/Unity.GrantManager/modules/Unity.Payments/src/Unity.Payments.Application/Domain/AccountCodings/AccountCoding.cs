@@ -11,11 +11,11 @@ namespace Unity.Payments.Domain.AccountCodings
     public class AccountCoding : AuditedAggregateRoot<Guid>, IMultiTenant
     {
         public Guid? TenantId { get; set; }
-        public string MinistryClient { get; private set; }
-        public string Responsibility { get; private set; }
-        public string ServiceLine { get; private set; }
-        public string Stob { get; private set; }
-        public string ProjectNumber { get; private set; }
+        public string MinistryClient { get; set; }
+        public string Responsibility { get; set; }
+        public string ServiceLine { get; set; }
+        public string Stob { get; set; }
+        public string ProjectNumber { get; set; }
 
         public string FullAccountCode()
         {

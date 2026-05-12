@@ -19,16 +19,11 @@ namespace Unity.AI.Runtime
                 return false;
             }
 
-            return root.TryGetProperty(AIJsonKeys.Decision, out var decision)
-                   && decision.ValueKind == JsonValueKind.String
-                   && root.TryGetProperty(AIJsonKeys.Errors, out var errors)
-                   && errors.ValueKind == JsonValueKind.Array
-                   && root.TryGetProperty(AIJsonKeys.Warnings, out var warnings)
-                   && warnings.ValueKind == JsonValueKind.Array
-                   && root.TryGetProperty(AIJsonKeys.Summaries, out var summaries)
-                   && summaries.ValueKind == JsonValueKind.Array
-                   && root.TryGetProperty(AIJsonKeys.Recommendations, out var recommendations)
-                   && recommendations.ValueKind == JsonValueKind.Array;
+            return HasStringProperty(root, AIJsonKeys.Decision) &&
+                   HasArrayProperty(root, AIJsonKeys.Errors) &&
+                   HasArrayProperty(root, AIJsonKeys.Warnings) &&
+                   HasArrayProperty(root, AIJsonKeys.Summaries) &&
+                   HasArrayProperty(root, AIJsonKeys.Recommendations);
         }
 
         public static bool IsValidApplicationScoringJson(string response, string sectionJson)
@@ -46,30 +41,58 @@ namespace Unity.AI.Runtime
 
             foreach (var questionId in expectedQuestionIds)
             {
-                if (!root.TryGetProperty(questionId, out var answerObject) || answerObject.ValueKind != JsonValueKind.Object)
+                if (!TryGetRequiredObject(root, questionId, out var answerObject))
                 {
                     return false;
                 }
 
-                if (!answerObject.TryGetProperty(AIJsonKeys.Answer, out var answerValue)
-                    || answerValue.ValueKind == JsonValueKind.Null
-                    || answerValue.ValueKind == JsonValueKind.Object
-                    || answerValue.ValueKind == JsonValueKind.Array)
+                if (!HasPrimitiveProperty(answerObject, AIJsonKeys.Answer))
                 {
                     return false;
                 }
 
-                if (!answerObject.TryGetProperty(AIJsonKeys.Confidence, out var confidenceValue)
-                    || confidenceValue.ValueKind != JsonValueKind.Number
-                    || !confidenceValue.TryGetInt32(out var confidence)
-                    || confidence < 0
-                    || confidence > 100)
+                if (!IsValidConfidenceProperty(answerObject, AIJsonKeys.Confidence))
                 {
                     return false;
                 }
             }
 
             return true;
+        }
+
+        private static bool HasStringProperty(JsonElement element, string name)
+        {
+            return element.TryGetProperty(name, out var property) &&
+                   property.ValueKind == JsonValueKind.String;
+        }
+
+        private static bool HasArrayProperty(JsonElement element, string name)
+        {
+            return element.TryGetProperty(name, out var property) &&
+                   property.ValueKind == JsonValueKind.Array;
+        }
+
+        private static bool TryGetRequiredObject(JsonElement element, string name, out JsonElement value)
+        {
+            return element.TryGetProperty(name, out value) &&
+                   value.ValueKind == JsonValueKind.Object;
+        }
+
+        private static bool HasPrimitiveProperty(JsonElement element, string name)
+        {
+            return element.TryGetProperty(name, out var property) &&
+                   property.ValueKind != JsonValueKind.Null &&
+                   property.ValueKind != JsonValueKind.Object &&
+                   property.ValueKind != JsonValueKind.Array;
+        }
+
+        private static bool IsValidConfidenceProperty(JsonElement element, string name)
+        {
+            return element.TryGetProperty(name, out var property) &&
+                   property.ValueKind == JsonValueKind.Number &&
+                   property.TryGetInt32(out var confidence) &&
+                   confidence >= 0 &&
+                   confidence <= 100;
         }
 
         private static HashSet<string> ExtractQuestionIds(string sectionJson)
@@ -146,6 +169,5 @@ namespace Unity.AI.Runtime
                 return false;
             }
         }
-
     }
 }

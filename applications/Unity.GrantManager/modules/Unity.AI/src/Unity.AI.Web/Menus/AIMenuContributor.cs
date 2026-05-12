@@ -1,5 +1,9 @@
 using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
+using Unity.AI.Localization;
+using Unity.AI.Permissions;
 using Unity.Modules.Shared.Permissions;
+using Volo.Abp.Features;
 using Volo.Abp.UI.Navigation;
 
 namespace Unity.AI.Web.Menus;
@@ -14,8 +18,11 @@ public class AIMenuContributor : IMenuContributor
         }
     }
 
-    private static Task ConfigureMainMenuAsync(MenuConfigurationContext context)
+    private static async Task ConfigureMainMenuAsync(MenuConfigurationContext context)
     {
+        var l = context.GetLocalizer<AIResource>();
+        var featureChecker = context.ServiceProvider.GetRequiredService<IFeatureChecker>();
+
         context.Menu.AddItem(new ApplicationMenuItem(
             name: AIMenus.Prompts,
             displayName: "AI Prompts",
@@ -25,6 +32,16 @@ public class AIMenuContributor : IMenuContributor
             requiredPermissionName: IdentityConsts.ITOperationsPermissionName
         ));
 
-        return Task.CompletedTask;
+        if (await featureChecker.IsEnabledAsync("Unity.AIReporting"))
+        {
+            context.Menu.AddItem(new ApplicationMenuItem(
+                name: AIMenus.Reporting,
+                displayName: l["Menu:AIReporting"],
+                url: "~/AIReporting",
+                icon: "fl fl-view-dashboard",
+                order: 9,
+                requiredPermissionName: AIPermissions.Reporting.ReportingDefault
+            ));
+        }
     }
 }

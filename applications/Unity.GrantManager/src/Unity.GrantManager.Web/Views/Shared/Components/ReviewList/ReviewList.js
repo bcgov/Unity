@@ -4,20 +4,20 @@ const isAiScoringEnabled = document.querySelector("#ReviewListAIScoringEnabled")
 const canUseAiScoring = isAiScoringEnabled;
 
 const actionButtonConfigMap = {
-    Generate: { buttonType: 'generateAiButton', order: 1 },
-    Clone: { buttonType: 'cloneButton', order: 2 },
-    Create: { buttonType: 'createButton', order: 3 },
-    SendBack: { buttonType: 'unityWorkflow', order: 4 },
-    Complete: { buttonType: 'unityWorkflow', order: 5 },
+    Generate: { buttonType: 'generateAiButton', order: 4 },
+    Clone: { buttonType: 'cloneButton', order: 5 },
+    Create: { buttonType: 'createButton', order: 1 },
+    SendBack: { buttonType: 'unityWorkflow', order: 3 },
+    Complete: { buttonType: 'unityWorkflow', order: 2 },
     _Fallback: { buttonType: 'unityWorkflow', order: 100 }
 }
 
 const actionButtonLabelMap = {
     Generate: 'Generate',
     Clone: 'Clone',
-    Create: 'Create',
+    Create: 'Create Assessment',
     SendBack: 'Send Back',
-    Complete: 'Complete'
+    Complete: 'Complete Assessment'
 };
 
 const finalApplicationStates = [
@@ -54,7 +54,7 @@ $(function () {
 
     $.extend(DataTable.ext.buttons, {
         unityWorkflow: {
-            className: 'btn unt-btn-outline-primary btn-outline-primary',
+            className: 'btn btn-light rounded-1',
             enabled: false,
             text: unityWorkflowButtonText,
             action: unityWorkflowButtonAction
