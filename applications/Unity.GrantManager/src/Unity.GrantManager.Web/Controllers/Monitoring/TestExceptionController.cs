@@ -19,7 +19,7 @@ namespace Unity.GrantManager.Web.Controllers.Monitoring;
 /// </summary>
 [ApiController]
 [Route("api/monitoring/test")]
-[Authorize]
+[AllowAnonymous]
 public class TestExceptionController : AbpControllerBase
 {
     // Same SHA parsing as ExceptionCounterMiddleware
