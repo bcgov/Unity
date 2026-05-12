@@ -151,20 +151,44 @@ public class GrantManagerWebModule : AbpModule
         ConfigureDataProtection(context, configuration);
         ConfigureMiniProfiler(context, configuration);
 
-        // Trust X-Forwarded-For only from internal RFC-1918 proxies (OpenShift HAProxy router).
-        // This ensures RemoteIpAddress reflects the real client IP so the
-        // InternalNetworkHandler correctly blocks external callers reaching /metrics via ingress.
+        // Trust forwarded client IP headers only from explicitly configured ingress/router addresses.
+        // This ensures RemoteIpAddress reflects the real client IP only when the request came
+        // through a known proxy, so IP-based checks such as the /metrics policy cannot be spoofed
+        // by arbitrary internal callers.
+        var knownForwardedHeaderProxies = configuration
+            .GetSection("ForwardedHeaders:KnownProxies")
+            .Get<string[]>() ?? Array.Empty<string>();
+        var knownForwardedHeaderNetworks = configuration
+            .GetSection("ForwardedHeaders:KnownNetworks")
+            .Get<string[]>() ?? Array.Empty<string>();
+
         context.Services.Configure<ForwardedHeadersOptions>(options =>
         {
-            options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+            options.ForwardedHeaders = ForwardedHeaders.XForwardedProto;
             options.ForwardLimit = 1;
-            // Clear defaults and allow the three RFC-1918 blocks plus loopback.
             options.KnownProxies.Clear();
             options.KnownIPNetworks.Clear();
-            options.KnownIPNetworks.Add(System.Net.IPNetwork.Parse("127.0.0.0/8"));
-            options.KnownIPNetworks.Add(System.Net.IPNetwork.Parse("10.0.0.0/8"));
-            options.KnownIPNetworks.Add(System.Net.IPNetwork.Parse("172.16.0.0/12"));
-            options.KnownIPNetworks.Add(System.Net.IPNetwork.Parse("192.168.0.0/16"));
+
+            foreach (var proxy in knownForwardedHeaderProxies)
+            {
+                if (!string.IsNullOrWhiteSpace(proxy))
+                {
+                    options.KnownProxies.Add(System.Net.IPAddress.Parse(proxy));
+                }
+            }
+
+            foreach (var network in knownForwardedHeaderNetworks)
+            {
+                if (!string.IsNullOrWhiteSpace(network))
+                {
+                    options.KnownIPNetworks.Add(System.Net.IPNetwork.Parse(network));
+                }
+            }
+
+            if (options.KnownProxies.Count > 0 || options.KnownIPNetworks.Count > 0)
+            {
+                options.ForwardedHeaders |= ForwardedHeaders.XForwardedFor;
+            }
         });
 
         Configure<AbpAntiForgeryOptions>(options =>
