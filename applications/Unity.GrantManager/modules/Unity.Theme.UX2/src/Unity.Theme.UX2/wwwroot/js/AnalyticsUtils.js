@@ -111,12 +111,6 @@ const AnalyticsUtils = (function () {
      * @param {string|number} siteId - Matomo site ID.
      */
     function initMatomo(url, siteId) {
-        console.debug(
-            '[Analytics] initMatomo called — url:',
-            url,
-            '| siteId:',
-            siteId
-        );
 
         if (!url || !siteId) {
             console.warn(
