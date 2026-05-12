@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.CookiePolicy;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -77,6 +78,7 @@ using Unity.Notifications.Web.Bundling;
 using Unity.Reporting.Web;
 using Unity.AI.Web;
 using Unity.GrantManager.Web.Views.Settings;
+using Prometheus;
 
 namespace Unity.GrantManager.Web;
 
@@ -148,6 +150,46 @@ public class GrantManagerWebModule : AbpModule
         ConfigureUtils(context);
         ConfigureDataProtection(context, configuration);
         ConfigureMiniProfiler(context, configuration);
+
+        // Trust forwarded client IP headers only from explicitly configured ingress/router addresses.
+        // This ensures RemoteIpAddress reflects the real client IP only when the request came
+        // through a known proxy, so IP-based checks such as the /metrics policy cannot be spoofed
+        // by arbitrary internal callers.
+        var knownForwardedHeaderProxies = configuration
+            .GetSection("ForwardedHeaders:KnownProxies")
+            .Get<string[]>() ?? Array.Empty<string>();
+        var knownForwardedHeaderNetworks = configuration
+            .GetSection("ForwardedHeaders:KnownNetworks")
+            .Get<string[]>() ?? Array.Empty<string>();
+
+        context.Services.Configure<ForwardedHeadersOptions>(options =>
+        {
+            options.ForwardedHeaders = ForwardedHeaders.XForwardedProto;
+            options.ForwardLimit = 1;
+            options.KnownProxies.Clear();
+            options.KnownIPNetworks.Clear();
+
+            foreach (var proxy in knownForwardedHeaderProxies)
+            {
+                if (!string.IsNullOrWhiteSpace(proxy))
+                {
+                    options.KnownProxies.Add(System.Net.IPAddress.Parse(proxy));
+                }
+            }
+
+            foreach (var network in knownForwardedHeaderNetworks)
+            {
+                if (!string.IsNullOrWhiteSpace(network))
+                {
+                    options.KnownIPNetworks.Add(System.Net.IPNetwork.Parse(network));
+                }
+            }
+
+            if (options.KnownProxies.Count > 0 || options.KnownIPNetworks.Count > 0)
+            {
+                options.ForwardedHeaders |= ForwardedHeaders.XForwardedFor;
+            }
+        });
 
         Configure<AbpAntiForgeryOptions>(options =>
         {
@@ -276,6 +318,8 @@ public class GrantManagerWebModule : AbpModule
 
     private static void ConfigurePolicies(ServiceConfigurationContext context)
     {
+        context.Services.AddScoped<Microsoft.AspNetCore.Authorization.IAuthorizationHandler, Unity.GrantManager.Web.Identity.Policy.InternalNetworkHandler>();
+        context.Services.AddSingleton<Middleware.ExceptionNotificationThrottle>();
         PolicyRegistrant.Register(context);
     }
 
@@ -555,6 +599,10 @@ public class GrantManagerWebModule : AbpModule
             IdentityModelEventSource.ShowPII = true;
         }
 
+        // Rewrite RemoteIpAddress from X-Forwarded-For before any IP-based checks run.
+        // Trusted networks are configured in ConfigureServices above.
+        app.UseForwardedHeaders();
+
         app.UseAbpRequestLocalization();
 
         if (env.IsProduction() || env.IsStaging())
@@ -587,7 +635,9 @@ public class GrantManagerWebModule : AbpModule
 
         app.UseCorrelationId();
         app.UseStaticFiles();
+        app.UseMiddleware<Unity.GrantManager.Web.Middleware.ExceptionCounterMiddleware>();
         app.UseRouting();
+        app.UseHttpMetrics();
         app.UseAuthentication();
 
         if (MultiTenancyConsts.IsEnabled)
@@ -608,7 +658,10 @@ public class GrantManagerWebModule : AbpModule
         });
         app.UseAuditing();
         app.UseAbpSerilogEnrichers();
-        app.UseConfiguredEndpoints();
+        app.UseConfiguredEndpoints(endpoints =>
+        {
+            endpoints.MapMetrics().RequireAuthorization(Unity.GrantManager.Web.Identity.Policy.PolicyRegistrant.MetricsAccessPolicy);
+        });
 
         var supportedCultures = new[]
         {
