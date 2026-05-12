@@ -623,10 +623,6 @@ public class GrantManagerWebModule : AbpModule
 
         app.UseUnitOfWork();
         app.UseAuthorization();
-        app.UseEndpoints(endpoints =>
-        {
-            endpoints.MapMetrics().RequireAuthorization(Unity.GrantManager.Web.Identity.Policy.PolicyRegistrant.MetricsAccessPolicy);
-        });
         if (IsProfilingAllowed(env, configuration))
         {
             app.UseMiniProfiler();
@@ -638,7 +634,10 @@ public class GrantManagerWebModule : AbpModule
         });
         app.UseAuditing();
         app.UseAbpSerilogEnrichers();
-        app.UseConfiguredEndpoints();
+        app.UseConfiguredEndpoints(endpoints =>
+        {
+            endpoints.MapMetrics().RequireAuthorization(Unity.GrantManager.Web.Identity.Policy.PolicyRegistrant.MetricsAccessPolicy);
+        });
 
         var supportedCultures = new[]
         {
