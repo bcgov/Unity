@@ -1,6 +1,5 @@
 using System;
-using System.Collections.Concurrent;
-using System.Threading;
+using System.Collections.Generic;
 
 namespace Unity.GrantManager.Web.Middleware;
 
@@ -16,10 +15,9 @@ public sealed class ExceptionNotificationThrottle
     // Global cap: at most N notifications per rolling minute across all types
     private const int GlobalMaxPerMinute = 5;
 
-    private readonly ConcurrentDictionary<string, DateTimeOffset> _lastSent = new();
-
-    // _sentThisMinute and _windowStart are always accessed together under _lock
+    // All state is accessed exclusively under _lock — no concurrent collections needed
     private readonly object _lock = new();
+    private readonly Dictionary<string, DateTimeOffset> _lastSent = new();
     private int _sentThisMinute;
     private DateTimeOffset _windowStart = DateTimeOffset.UtcNow;
 
@@ -31,20 +29,21 @@ public sealed class ExceptionNotificationThrottle
     {
         var now = DateTimeOffset.UtcNow;
 
-        // Per-type cooldown check — ConcurrentDictionary read is lock-free
-        if (_lastSent.TryGetValue(exceptionTypeName, out var last) &&
-            now - last < PerTypeCooldown)
-        {
-            return false;
-        }
-
         lock (_lock)
         {
-            // Reset the window if a full minute has elapsed
+            // Reset the global window if a full minute has elapsed
             if (now - _windowStart >= TimeSpan.FromMinutes(1))
             {
                 _sentThisMinute = 0;
                 _windowStart = now;
+            }
+
+            // Per-type cooldown check — inside the lock to prevent concurrent
+            // callers with the same exception type both passing the check
+            if (_lastSent.TryGetValue(exceptionTypeName, out var last) &&
+                now - last < PerTypeCooldown)
+            {
+                return false;
             }
 
             if (_sentThisMinute >= GlobalMaxPerMinute)
@@ -53,9 +52,8 @@ public sealed class ExceptionNotificationThrottle
             }
 
             _sentThisMinute++;
+            _lastSent[exceptionTypeName] = now;
+            return true;
         }
-
-        _lastSent[exceptionTypeName] = now;
-        return true;
     }
 }
