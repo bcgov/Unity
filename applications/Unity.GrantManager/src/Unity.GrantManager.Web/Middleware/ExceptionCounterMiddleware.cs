@@ -19,7 +19,7 @@ public class ExceptionCounterMiddleware(
 {
     // Notify only in these environments; add "Staging" if desired
     private static readonly HashSet<string> NotifyEnvironments =
-        new(StringComparer.OrdinalIgnoreCase) { "Production" };
+        new(StringComparer.OrdinalIgnoreCase) { "Production", "Test", "Development" };
 
     private static readonly Counter ExceptionCounter =
         Metrics.CreateCounter(
