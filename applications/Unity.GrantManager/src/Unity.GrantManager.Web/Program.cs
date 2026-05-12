@@ -2,8 +2,6 @@
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using OpenTelemetry.Metrics;
-using OpenTelemetry.Trace;
 using Serilog;
 using System;
 using System.Threading.Tasks;
@@ -23,23 +21,6 @@ public static class Program
             Console.WriteLine("Starting web host.");
             var builder = WebApplication.CreateBuilder(args);
             builder.Services.AddHttpContextAccessor();
-            bool otlpEnabled = !string.IsNullOrWhiteSpace(
-                Environment.GetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT"));
-
-            builder.Services.AddOpenTelemetry()
-                .WithTracing(tracing =>
-                {
-                    tracing.AddAspNetCoreInstrumentation()
-                           .AddHttpClientInstrumentation();
-                    if (otlpEnabled) tracing.AddOtlpExporter();
-                })
-                .WithMetrics(metrics =>
-                {
-                    metrics.AddAspNetCoreInstrumentation()
-                           .AddHttpClientInstrumentation()
-                           .AddRuntimeInstrumentation();
-                    if (otlpEnabled) metrics.AddOtlpExporter();
-                });
             builder.Host.AddAppSettingsSecretsJson()
                 .UseAutofac()
                 .UseSerilog((hostingContext, loggerConfiguration) =>
