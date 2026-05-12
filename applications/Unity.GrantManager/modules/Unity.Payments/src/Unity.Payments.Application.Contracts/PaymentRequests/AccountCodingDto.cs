@@ -6,12 +6,12 @@ namespace Unity.Payments.PaymentRequests
     [Serializable]
     public class AccountCodingDto : AuditedEntityDto<Guid>
     {
-        public string MinistryClient { get; private set; }
-        public string Responsibility { get; private set; }
-        public string ServiceLine { get; private set; }
-        public string Stob { get; private set; }
-        public string ProjectNumber { get; private set; }
-        public string? Description { get; private set; }
+        public string MinistryClient { get; init; }
+        public string Responsibility { get; init; }
+        public string ServiceLine { get; init; }
+        public string Stob { get; init; }
+        public string ProjectNumber { get; init; }
+        public string? Description { get; init; }
         public AccountCodingDto()
         {
             MinistryClient = string.Empty;
