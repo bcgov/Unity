@@ -131,6 +131,10 @@ CURRENT COLUMNS (preserve unless user explicitly asks to remove them):
 USER'S CHANGE REQUEST:
 {user_prompt}
 
+CORE FIELDS TO INCLUDE (from "public"."Applications" — ensure these are present
+in the final SELECT, adding a LEFT JOIN if not already joined):
+{core_fields_text}
+
 ADDITIONAL VIEW SQL TO INTEGRATE (wrap each as a named CTE and LEFT JOIN to the
 existing SQL via "ReferenceNo"; if a view has no "ReferenceNo" column, omit it):
 {additional_views_text}
@@ -142,6 +146,12 @@ RULES:
   LEFT JOIN on "ReferenceNo" — never CROSS JOIN
 - If the user prompt asks for a computed column, add it at the end of the SELECT list
 - Do not invent table or column names not present in CURRENT SQL or ADDITIONAL VIEW SQL
+- For CORE FIELDS TO INCLUDE: ensure each listed column is in the SELECT, using
+  exactly the alias shown after the "→" arrow (do not invent your own alias).
+  If "public"."Applications" is not yet joined, add a LEFT JOIN via
+  "ApplicationId" or "CorrelationId" — never CROSS JOIN
+- Remove any column whose alias ends with "_id" (case-insensitive snake_case suffix);
+  these are internal FK reference columns and should not appear in the final SELECT
 
 Output ONLY the rewritten SQL — no markdown fences, no explanation."""
 
@@ -160,6 +170,35 @@ class DataModelGenerator:
     }
     # CorrelationId intentionally NOT in JUNK_COLUMNS — used as FK for JOINs
     JUNK_PATTERNS = {"password", "ssn", "sin", "secret", "token"}
+
+    # Curated columns from public.Applications that users can opt-in to via the
+    # "Core fields" picker. ReferenceNo is required as JOIN key for combined
+    # multi-view models, so it's the default selection.
+    CORE_FIELDS = [
+        {"name": "ReferenceNo",        "label": "Reference No",         "type": "text",   "default_selected": True},
+        {"name": "ProjectName",        "label": "Project Name",         "type": "text",   "default_selected": False},
+        {"name": "ProjectSummary",     "label": "Project Summary",      "type": "text",   "default_selected": False},
+        {"name": "RequestedAmount",    "label": "Requested Amount",     "type": "number", "default_selected": False},
+        {"name": "TotalProjectBudget", "label": "Total Project Budget", "type": "number", "default_selected": False},
+        {"name": "SubmissionDate",     "label": "Submission Date",      "type": "date",   "default_selected": False},
+        {"name": "ProjectEndDate",     "label": "Project End Date",     "type": "date",   "default_selected": False},
+    ]
+
+    def get_core_fields(self) -> list[dict]:
+        """Return the curated list of public.Applications columns users can include."""
+        return list(self.CORE_FIELDS)
+
+    def _default_core_field_names(self) -> list[str]:
+        return [cf["name"] for cf in self.CORE_FIELDS if cf["default_selected"]]
+
+    def _resolve_core_fields(self, core_fields: Optional[list[str]]) -> list[dict]:
+        """Map requested core-field names to their CORE_FIELDS dicts, preserving order."""
+        if core_fields is None:
+            names = self._default_core_field_names()
+        else:
+            names = core_fields
+        lookup = {cf["name"]: cf for cf in self.CORE_FIELDS}
+        return [lookup[n] for n in names if n in lookup]
 
     # Reporting-schema system/internal tables — never expose for model generation
     SYSTEM_TABLES = {
@@ -460,7 +499,8 @@ class DataModelGenerator:
     # --- Deterministic SQL builders ---
 
     def _build_form_view_sql(self, base_name: str, db_id: int,
-                             tenant_id: str) -> tuple[str, list[str]]:
+                             tenant_id: str,
+                             core_fields: Optional[list[str]] = None) -> tuple[str, list[str]]:
         """
         Build deterministic SQL for Pattern 1 (Form Views).
         Returns (sql, column_list).
@@ -496,6 +536,9 @@ class DataModelGenerator:
         for field in primary_fields:
             col_name = field.get("name", "")
             if col_name in self.JUNK_COLUMNS or col_name == "ApplicationId":
+                continue
+            # Generic FK-style ID filter (e.g. scoresheet_instance_id, assessment_id)
+            if col_name.lower().endswith("_id"):
                 continue
             if any(p in col_name.lower() for p in self.JUNK_PATTERNS):
                 continue
@@ -534,8 +577,18 @@ class DataModelGenerator:
         # Get samples for type inference
         samples = self._get_column_samples("Reporting", primary_table, columns, db_id, tenant_id)
 
+        # Resolve user-selected core fields (defaults to ReferenceNo only)
+        resolved_core_fields = self._resolve_core_fields(core_fields)
+
         # Build final SELECT with type casts
-        final_exprs = ['a."ReferenceNo"']
+        final_exprs = []
+        for cf in resolved_core_fields:
+            if cf["name"] == "ReferenceNo":
+                final_exprs.append('a."ReferenceNo"')
+            else:
+                final_exprs.append(
+                    self._type_cast_expr(f'a."{cf["name"]}"', cf["type"], cf["label"])
+                )
         for col in columns:
             label_info = labels.get(col, {})
             label = label_info.get("label", col)
@@ -548,27 +601,43 @@ class DataModelGenerator:
 
         final_select = ",\n  ".join(final_exprs)
 
-        sql = (
-            f'WITH a AS (\n'
-            f'    SELECT\n      "public"."Applications"."Id",\n'
-            f'      "public"."Applications"."ReferenceNo"\n'
-            f'    FROM\n      "public"."Applications"\n'
-            f'  ),\n'
-            f'  combinedOri AS ({combined_cte})\n'
-            f'  SELECT\n  {final_select}\n'
-            f'  FROM\n  combinedOri\n'
-            f'  LEFT JOIN a ON a."Id" = combinedOri."ApplicationId"'
-        )
+        if resolved_core_fields:
+            # CTE selects only the chosen core-field columns from Applications
+            a_select_cols = ',\n      '.join(
+                f'"public"."Applications"."{cf["name"]}"' for cf in resolved_core_fields
+            )
+            sql = (
+                f'WITH a AS (\n'
+                f'    SELECT\n      "public"."Applications"."Id",\n'
+                f'      {a_select_cols}\n'
+                f'    FROM\n      "public"."Applications"\n'
+                f'  ),\n'
+                f'  combinedOri AS ({combined_cte})\n'
+                f'  SELECT\n  {final_select}\n'
+                f'  FROM\n  combinedOri\n'
+                f'  LEFT JOIN a ON a."Id" = combinedOri."ApplicationId"'
+            )
+        else:
+            # No core fields selected → skip the Applications JOIN entirely
+            sql = (
+                f'WITH combinedOri AS ({combined_cte})\n'
+                f'  SELECT\n  {final_select}\n'
+                f'  FROM\n  combinedOri'
+            )
 
-        column_labels = ["ReferenceNo"] + [labels.get(c, {}).get("label", c) for c in columns]
+        column_labels = [
+            "ReferenceNo" if cf["name"] == "ReferenceNo" else cf["label"]
+            for cf in resolved_core_fields
+        ] + [labels.get(c, {}).get("label", c) for c in columns]
         return sql, column_labels
 
     def _build_worksheet_view_sql(self, view_name: str, db_id: int,
-                                   tenant_id: str) -> tuple[str, list[str]]:
+                                   tenant_id: str,
+                                   core_fields: Optional[list[str]] = None) -> tuple[str, list[str]]:
         """
         Build deterministic SQL for worksheet/scoresheet views.
         Simpler than form views: no UNION ALL, no JSON unwrap.
-        Just SELECT columns with JOIN to Applications for ReferenceNo.
+        Just SELECT columns with optional JOIN to Applications for core fields.
         Returns (sql, column_list).
         """
         metadata = metabase_client.get_database_metadata(db_id, tenant_id=tenant_id)
@@ -615,6 +684,9 @@ class DataModelGenerator:
             col_name = field.get("name", "")
             if col_name in skip_cols:
                 continue
+            # Generic FK-style ID filter (e.g. scoresheet_instance_id, assessment_id)
+            if col_name.lower().endswith("_id"):
+                continue
             if any(p in col_name.lower() for p in self.JUNK_PATTERNS):
                 continue
             columns.append(col_name)
@@ -625,10 +697,20 @@ class DataModelGenerator:
         # Get samples for type inference
         samples = self._get_column_samples("Reporting", view_name, columns, db_id, tenant_id)
 
+        # Resolve user-selected core fields (defaults to ReferenceNo only)
+        resolved_core_fields = self._resolve_core_fields(core_fields) if join_condition else []
+
         # Build SELECT expressions
         select_exprs = []
-        if join_condition:
-            select_exprs.append('a."ReferenceNo"')
+        for cf in resolved_core_fields:
+            if cf["name"] == "ReferenceNo":
+                # Keep the historical un-cast form for ReferenceNo to preserve
+                # the existing column header and avoid unnecessary CASE wrappers.
+                select_exprs.append('a."ReferenceNo"')
+            else:
+                select_exprs.append(
+                    self._type_cast_expr(f'a."{cf["name"]}"', cf["type"], cf["label"])
+                )
 
         for col in columns:
             label_info = labels.get(col, {})
@@ -641,7 +723,8 @@ class DataModelGenerator:
 
         select_clause = ",\n  ".join(select_exprs)
 
-        if join_condition:
+        # Only emit the JOIN when we actually need core fields from Applications
+        if join_condition and resolved_core_fields:
             sql = (
                 f'SELECT\n  {select_clause}\n'
                 f'FROM\n  "Reporting"."{view_name}" AS "t"\n'
@@ -653,9 +736,8 @@ class DataModelGenerator:
                 f'FROM\n  "Reporting"."{view_name}" AS "t"'
             )
 
-        column_labels = []
-        if join_condition:
-            column_labels.append("ReferenceNo")
+        column_labels = [cf["label"] if cf["name"] != "ReferenceNo" else "ReferenceNo"
+                         for cf in resolved_core_fields]
         for col in columns:
             label_info = labels.get(col, {})
             label = label_info.get("label", "") or custom_labels.get(col, "") or col
@@ -769,7 +851,8 @@ class DataModelGenerator:
         return views
 
     async def preview_model(self, view_name: str, db_id: int,
-                            tenant_id: str) -> dict:
+                            tenant_id: str,
+                            core_fields: Optional[list[str]] = None) -> dict:
         """
         Step 1: Generate a model proposal for a selected view.
 
@@ -781,7 +864,7 @@ class DataModelGenerator:
             # Extract base name from full table name if needed
             match = FORM_VERSION_RE.match(view_name)
             base_name = match.group(1) if match else view_name
-            sql, columns = self._build_form_view_sql(base_name, db_id, tenant_id)
+            sql, columns = self._build_form_view_sql(base_name, db_id, tenant_id, core_fields)
 
             # AI enhancement: improve aliases and suggest computed columns
             if sql:
@@ -792,7 +875,7 @@ class DataModelGenerator:
             # other_view: any non-Form/non-worksheet/non-scoresheet Reporting table.
             # The worksheet builder is generic — simple SELECT + optional FK JOIN —
             # and degrades gracefully when no FK is found.
-            sql, columns = self._build_worksheet_view_sql(view_name, db_id, tenant_id)
+            sql, columns = self._build_worksheet_view_sql(view_name, db_id, tenant_id, core_fields)
 
             # AI enhancement for worksheet views too
             if sql:
@@ -938,7 +1021,8 @@ class DataModelGenerator:
         return proposal
 
     async def preview_combined_model(self, view_names: list[str], db_id: int,
-                                     tenant_id: str) -> dict:
+                                     tenant_id: str,
+                                     core_fields: Optional[list[str]] = None) -> dict:
         """
         Generate a single merged model SQL from 2+ views joined via "ReferenceNo".
 
@@ -946,8 +1030,16 @@ class DataModelGenerator:
         inside CTE bodies). Secondary views are LEFT JOINed to the primary view
         on "ReferenceNo". Column aliases are deduplicated.
         """
+        # ReferenceNo is the JOIN key — auto-prepend if caller omitted it
+        if core_fields is None:
+            effective_core_fields = self._default_core_field_names()
+        else:
+            effective_core_fields = list(core_fields)
+            if "ReferenceNo" not in effective_core_fields:
+                effective_core_fields.insert(0, "ReferenceNo")
+
         if len(view_names) < 2:
-            return await self.preview_model(view_names[0], db_id, tenant_id)
+            return await self.preview_model(view_names[0], db_id, tenant_id, effective_core_fields)
 
         # Build individual SQL for each view: [(view_name, sql, column_labels), ...]
         built: list[tuple[str, str, list[str]]] = []
@@ -956,10 +1048,10 @@ class DataModelGenerator:
             if source_type == "form_view":
                 match = FORM_VERSION_RE.match(vn)
                 base_name = match.group(1) if match else vn
-                sql, cols = self._build_form_view_sql(base_name, db_id, tenant_id)
+                sql, cols = self._build_form_view_sql(base_name, db_id, tenant_id, effective_core_fields)
             else:
                 # worksheet_view, scoresheet_view, other_view — worksheet builder handles all
-                sql, cols = self._build_worksheet_view_sql(vn, db_id, tenant_id)
+                sql, cols = self._build_worksheet_view_sql(vn, db_id, tenant_id, effective_core_fields)
 
             if not sql:
                 logger.warning("Could not build SQL for '%s' in combined model — skipping", vn)
@@ -968,7 +1060,7 @@ class DataModelGenerator:
 
         if len(built) < 2:
             if built:
-                return await self.preview_model(built[0][0], db_id, tenant_id)
+                return await self.preview_model(built[0][0], db_id, tenant_id, effective_core_fields)
             return {
                 "name": "Combined Model",
                 "description": "Could not build combined model SQL",
@@ -1101,15 +1193,19 @@ class DataModelGenerator:
 
     async def preview_model_modification(
         self, card_id: int, prompt: str, additional_view_names: list[str],
-        db_id: int, collection_id: int, tenant_id: str
+        db_id: int, collection_id: int, tenant_id: str,
+        core_fields: Optional[list[str]] = None
     ) -> dict:
         """
         Generate a modified variant of an existing model.
-        At least one of prompt or additional_view_names must be non-empty.
+        At least one of prompt, additional_view_names, or core_fields must be non-empty.
         Returns a ModelProposal dict (same shape as preview_model).
         """
-        if not prompt and not additional_view_names:
-            raise ValueError("At least one of prompt or additional_view_names is required")
+        # core_fields is None → not provided; list (even empty) → user-provided intent
+        if not prompt and not additional_view_names and core_fields is None:
+            raise ValueError(
+                "At least one of prompt, additional_view_names, or core_fields is required"
+            )
 
         # 1. Fetch existing card
         card = metabase_client.get_card(card_id, tenant_id)
@@ -1141,6 +1237,19 @@ class DataModelGenerator:
             ]
 
         # 2. Build additional view SQL if needed (each builder returns (sql, columns))
+        # Additional view CTEs must include ReferenceNo as the JOIN key, regardless
+        # of the user's core_fields choice. The AI prompt still receives the literal
+        # user selection — this adjustment is only for the internal view-building plumbing.
+        if additional_view_names:
+            if not core_fields:  # None or []
+                builder_core_fields = self._default_core_field_names()
+            else:
+                builder_core_fields = list(core_fields)
+                if "ReferenceNo" not in builder_core_fields:
+                    builder_core_fields.insert(0, "ReferenceNo")
+        else:
+            builder_core_fields = core_fields
+
         additional_views_text = "(none)"
         if additional_view_names:
             view_sqls: list[str] = []
@@ -1151,9 +1260,13 @@ class DataModelGenerator:
                     # not the full table name "Form-GrantApplication-V2"
                     match = FORM_VERSION_RE.match(vn)
                     base_name = match.group(1) if match else vn
-                    view_sql, _ = self._build_form_view_sql(base_name, db_id, tenant_id)
+                    view_sql, _ = self._build_form_view_sql(
+                        base_name, db_id, tenant_id, builder_core_fields
+                    )
                 elif source_type in ("worksheet_view", "scoresheet_view", "other_view"):
-                    view_sql, _ = self._build_worksheet_view_sql(vn, db_id, tenant_id)
+                    view_sql, _ = self._build_worksheet_view_sql(
+                        vn, db_id, tenant_id, builder_core_fields
+                    )
                 else:
                     logger.warning("Skipping unknown view '%s' in modification", vn)
                     continue
@@ -1162,12 +1275,27 @@ class DataModelGenerator:
             if view_sqls:
                 additional_views_text = "\n\n".join(view_sqls)
 
+        # 2b. Format core fields for the prompt
+        resolved_core_fields = self._resolve_core_fields(core_fields) if core_fields else []
+        if resolved_core_fields:
+            # ReferenceNo uses its column name as the header (no rename) to match the
+            # deterministic builder's output. Other core fields use their label as alias.
+            def _alias_for(cf):
+                return cf["name"] if cf["name"] == "ReferenceNo" else cf["label"]
+            core_fields_text = "\n".join(
+                f'  "{cf["name"]}" → alias "{_alias_for(cf)}" (type: {cf["type"]})'
+                for cf in resolved_core_fields
+            )
+        else:
+            core_fields_text = "(none)"
+
         # 3. Call AI to rewrite
         user_prompt = prompt.strip() if prompt else "(none)"
         modify_request = MODIFY_PROMPT.format(
             current_sql=current_sql,
             current_columns=", ".join(current_columns) if current_columns else "(unknown)",
             user_prompt=user_prompt,
+            core_fields_text=core_fields_text,
             additional_views_text=additional_views_text,
         )
 

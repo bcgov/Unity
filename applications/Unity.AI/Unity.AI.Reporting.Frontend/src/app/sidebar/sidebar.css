@@ -711,6 +711,31 @@
   font-weight: 500;
 }
 
+/* Core fields picker (compact variant of view-picker) */
+.core-fields-list {
+  max-height: 240px;
+  gap: 4px;
+}
+
+.core-field-item {
+  padding: 6px 12px;
+}
+
+.core-field-item.locked {
+  opacity: 0.75;
+  cursor: not-allowed;
+}
+
+.core-field-item.locked:hover {
+  border-color: #dee2e6;
+  background: transparent;
+}
+
+.core-field-item.locked .view-picker-check {
+  background: #6c757d;
+  border-color: #6c757d;
+}
+
 /* Proposal detail (single model review) */
 .proposal-detail {
   padding: 4px 0;

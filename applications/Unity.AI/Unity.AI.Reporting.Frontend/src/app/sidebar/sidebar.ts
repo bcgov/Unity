@@ -26,6 +26,13 @@ export interface ViewInfo {
   version?: string;
 }
 
+export interface CoreField {
+  name: string;
+  label: string;
+  type: 'text' | 'number' | 'date';
+  default_selected: boolean;
+}
+
 export interface ModelProposal {
   name: string;
   description: string;
@@ -107,6 +114,10 @@ export class SidebarComponent {
   existingSqlExpanded: boolean = false;
   editPrompt: string = '';
   editAdditionalViews: ViewInfo[] = [];
+  availableCoreFields: CoreField[] = [];
+  selectedCoreFields: string[] = [];
+  // Snapshot of core fields detected in the existing model when entering edit-existing
+  initialCoreFields: string[] = [];
 
   get formViews(): ViewInfo[] { return this.availableViews.filter(v => v.source_type === 'form_view'); }
   get worksheetViews(): ViewInfo[] { return this.availableViews.filter(v => v.source_type === 'worksheet_view'); }
@@ -305,6 +316,9 @@ export class SidebarComponent {
     this.selectedExistingModel = null;
     this.editPrompt = '';
     this.editAdditionalViews = [];
+    this.availableCoreFields = [];
+    this.selectedCoreFields = [];
+    this.initialCoreFields = [];
     this.cdr.markForCheck();
   }
 
@@ -313,10 +327,15 @@ export class SidebarComponent {
     this.cdr.markForCheck();
 
     try {
-      const response = await firstValueFrom(
-        this.apiService.getDataModelViews<{ views: ViewInfo[] }>()
-      );
-      this.availableViews = response.views || [];
+      const [viewsResponse, coreFieldsResponse] = await Promise.all([
+        firstValueFrom(this.apiService.getDataModelViews<{ views: ViewInfo[] }>()),
+        firstValueFrom(this.apiService.getDataModelCoreFields<{ core_fields: CoreField[] }>()),
+      ]);
+      this.availableViews = viewsResponse.views || [];
+      this.availableCoreFields = coreFieldsResponse.core_fields || [];
+      this.selectedCoreFields = this.availableCoreFields
+        .filter(cf => cf.default_selected)
+        .map(cf => cf.name);
       if (this.formViews.length > 0) this.activeViewTab = 'form_view';
       else if (this.worksheetViews.length > 0) this.activeViewTab = 'worksheet_view';
       else if (this.scoresheetViews.length > 0) this.activeViewTab = 'scoresheet_view';
@@ -329,6 +348,43 @@ export class SidebarComponent {
     } finally {
       this.cdr.markForCheck();
     }
+  }
+
+  toggleCoreField(name: string): void {
+    if (this.isCoreFieldLocked(name)) return;
+    const idx = this.selectedCoreFields.indexOf(name);
+    if (idx >= 0) {
+      this.selectedCoreFields.splice(idx, 1);
+    } else {
+      this.selectedCoreFields.push(name);
+    }
+  }
+
+  isCoreFieldSelected(name: string): boolean {
+    return this.selectedCoreFields.includes(name) || this.isCoreFieldLocked(name);
+  }
+
+  isCoreFieldLocked(name: string): boolean {
+    // ReferenceNo is the JOIN key — lock it when combining (2+ views in create flow,
+    // or any additional view in the modify flow).
+    return name === 'ReferenceNo'
+      && (this.selectedViews.length > 1 || this.editAdditionalViews.length > 0);
+  }
+
+  /** Effective core fields to send to the API (auto-includes ReferenceNo when combining). */
+  private effectiveCoreFields(): string[] {
+    const out = [...this.selectedCoreFields];
+    const combining = this.selectedViews.length > 1 || this.editAdditionalViews.length > 0;
+    if (combining && !out.includes('ReferenceNo')) {
+      out.unshift('ReferenceNo');
+    }
+    return out;
+  }
+
+  private coreFieldsDiffer(): boolean {
+    const a = [...this.selectedCoreFields].sort();
+    const b = [...this.initialCoreFields].sort();
+    return a.length !== b.length || a.some((v, i) => v !== b[i]);
   }
 
   async chooseModeModify(): Promise<void> {
@@ -380,9 +436,10 @@ export class SidebarComponent {
     try {
       type PreviewResponse = { proposal: Omit<ModelProposal, 'sqlExpanded'> };
       const viewNames = this.selectedViews.map(v => v.view_name);
+      const coreFields = this.effectiveCoreFields();
       const obs = viewNames.length === 1
-        ? this.apiService.previewDataModel<PreviewResponse>(viewNames[0])
-        : this.apiService.previewCombinedModel<PreviewResponse>(viewNames);
+        ? this.apiService.previewDataModel<PreviewResponse>(viewNames[0], coreFields)
+        : this.apiService.previewCombinedModel<PreviewResponse>(viewNames, coreFields);
       const response = await firstValueFrom(obs);
       this.modelProposal = { ...response.proposal, sqlExpanded: false };
       this.modelsModalStep = 'review';
@@ -448,8 +505,8 @@ export class SidebarComponent {
     this.cdr.markForCheck();
 
     try {
-      // Fetch detail and views in parallel
-      const [detail, viewsResponse] = await Promise.all([
+      // Fetch detail, views, and core fields metadata in parallel
+      const [detail, viewsResponse, coreFieldsResponse] = await Promise.all([
         firstValueFrom(
           this.apiService.getDataModelDetail<ExistingModelDetail>(summary.card_id)
         ),
@@ -458,11 +515,27 @@ export class SidebarComponent {
           : firstValueFrom(
               this.apiService.getDataModelViews<{ views: ViewInfo[] }>()
             ),
+        this.availableCoreFields.length > 0
+          ? Promise.resolve({ core_fields: this.availableCoreFields })
+          : firstValueFrom(
+              this.apiService.getDataModelCoreFields<{ core_fields: CoreField[] }>()
+            ),
       ]);
 
       this.selectedExistingModel = detail;
       this.existingSqlExpanded = false;
       this.availableViews = viewsResponse.views || [];
+      this.availableCoreFields = coreFieldsResponse.core_fields || [];
+
+      // Detect which core fields are already present in the existing SQL.
+      // Our deterministic builders emit `a."<name>"` for Applications-joined columns.
+      const sql = detail.sql || '';
+      const detected = this.availableCoreFields
+        .filter(cf => new RegExp(`a\\."${cf.name}"`).test(sql))
+        .map(cf => cf.name);
+      this.selectedCoreFields = [...detected];
+      this.initialCoreFields = [...detected];
+
       if (this.formViews.length > 0) this.activeViewTab = 'form_view';
       else if (this.worksheetViews.length > 0) this.activeViewTab = 'worksheet_view';
       else if (this.scoresheetViews.length > 0) this.activeViewTab = 'scoresheet_view';
@@ -493,7 +566,11 @@ export class SidebarComponent {
   }
 
   get canGenerateModified(): boolean {
-    return !!(this.editPrompt.trim() || this.editAdditionalViews.length > 0);
+    return !!(
+      this.editPrompt.trim()
+      || this.editAdditionalViews.length > 0
+      || this.coreFieldsDiffer()
+    );
   }
 
   async generateModifiedModel(): Promise<void> {
@@ -509,7 +586,8 @@ export class SidebarComponent {
         this.apiService.modifyDataModelPreview<PreviewResponse>(
           this.selectedExistingModel.card_id,
           this.editPrompt.trim(),
-          this.editAdditionalViews.map(v => v.view_name)
+          this.editAdditionalViews.map(v => v.view_name),
+          this.effectiveCoreFields(),
         )
       );
       this.modelProposal = { ...response.proposal, sqlExpanded: false };
@@ -536,6 +614,9 @@ export class SidebarComponent {
     this.existingSqlExpanded = false;
     this.editPrompt = '';
     this.editAdditionalViews = [];
+    this.availableCoreFields = [];
+    this.selectedCoreFields = [];
+    this.initialCoreFields = [];
   }
 
   private extractConversationContext(): any {

@@ -731,6 +731,13 @@ def get_data_model_views():
         )
 
 
+@app.route("/api/data-models/core-fields", methods=["POST"])
+@require_auth
+def get_data_model_core_fields():
+    """Return the curated list of public.Applications columns users can opt-in to."""
+    return jsonify({"core_fields": data_model_generator.get_core_fields()}), 200
+
+
 @app.route("/api/data-models/preview", methods=["POST"])
 @require_auth
 def preview_data_models():
@@ -744,6 +751,7 @@ def preview_data_models():
     body = request.get_json(silent=True) or {}
     view_name = body.get("view_name", "").strip()
     view_names = body.get("view_names", [])
+    core_fields_raw = body.get("core_fields")
 
     # Accept either view_names (multi) or view_name (single, backward-compat)
     if view_names and isinstance(view_names, list):
@@ -756,16 +764,28 @@ def preview_data_models():
     if not view_names:
         return jsonify({"error": "At least one view name is required"}), 400
 
-    logger.info(f"Data model preview request - Tenant: {tenant_id}, Views: {view_names}")
+    # core_fields is optional; None falls back to defaults inside the generator
+    core_fields = None
+    if isinstance(core_fields_raw, list):
+        core_fields = [c.strip() for c in core_fields_raw if isinstance(c, str) and c.strip()]
+
+    logger.info(
+        f"Data model preview request - Tenant: {tenant_id}, Views: {view_names}, "
+        f"CoreFields: {core_fields}"
+    )
 
     try:
         if len(view_names) == 1:
             proposal = asyncio.run(
-                data_model_generator.preview_model(view_names[0], db_id, tenant_id)
+                data_model_generator.preview_model(
+                    view_names[0], db_id, tenant_id, core_fields
+                )
             )
         else:
             proposal = asyncio.run(
-                data_model_generator.preview_combined_model(view_names, db_id, tenant_id)
+                data_model_generator.preview_combined_model(
+                    view_names, db_id, tenant_id, core_fields
+                )
             )
         return jsonify({"proposal": proposal}), 200
     except Exception as e:
@@ -906,12 +926,15 @@ def modify_data_model_preview():
     collection_id = tenant_config["collection_id"]
 
     body = request.get_json(silent=True) or {}
-    logger.debug("modify-preview request body: card_id=%s (type=%s), prompt_len=%d, view_names=%s",
-                 body.get("card_id"), type(body.get("card_id")).__name__,
-                 len(body.get("prompt", "")), body.get("view_names", []))
+    logger.debug(
+        "modify-preview request body: card_id=%s (type=%s), prompt_len=%d, view_names=%s, core_fields=%s",
+        body.get("card_id"), type(body.get("card_id")).__name__,
+        len(body.get("prompt", "")), body.get("view_names", []), body.get("core_fields", []),
+    )
     card_id = body.get("card_id")
     prompt = body.get("prompt", "").strip()
     view_names = body.get("view_names", [])
+    core_fields_raw = body.get("core_fields")
 
     # Accept card_id as int or numeric string
     if card_id is not None:
@@ -922,13 +945,23 @@ def modify_data_model_preview():
     else:
         return jsonify({"error": "card_id is required"}), 400
 
-    if not prompt and not view_names:
-        return jsonify({"error": "At least one of prompt or view_names is required"}), 400
+    # Distinguish "key not sent" (None) from "key sent as list" (intent, even if empty).
+    # An empty list is a valid intent signal — the user toggled the picker.
+    core_fields_provided = isinstance(core_fields_raw, list)
+    core_fields = None
+    if core_fields_provided:
+        core_fields = [c.strip() for c in core_fields_raw if isinstance(c, str) and c.strip()]
+
+    if not prompt and not view_names and not core_fields_provided:
+        return jsonify({
+            "error": "At least one of prompt, view_names, or core_fields is required"
+        }), 400
 
     try:
         result = asyncio.run(
             data_model_generator.preview_model_modification(
-                card_id, prompt, view_names, db_id, collection_id, tenant_id
+                card_id, prompt, view_names, db_id, collection_id, tenant_id,
+                core_fields=core_fields,
             )
         )
         return jsonify({"proposal": result}), 200

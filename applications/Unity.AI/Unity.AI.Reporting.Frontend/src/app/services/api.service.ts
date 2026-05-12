@@ -147,12 +147,22 @@ export class ApiService {
     return this.post<T>('/data-models/views', {});
   }
 
-  previewDataModel<T>(viewName: string): Observable<T> {
-    return this.post<T>('/data-models/preview', { view_name: viewName });
+  getDataModelCoreFields<T>(): Observable<T> {
+    return this.post<T>('/data-models/core-fields', {});
   }
 
-  previewCombinedModel<T>(viewNames: string[]): Observable<T> {
-    return this.post<T>('/data-models/preview', { view_names: viewNames });
+  previewDataModel<T>(viewName: string, coreFields?: string[]): Observable<T> {
+    return this.post<T>('/data-models/preview', {
+      view_name: viewName,
+      core_fields: coreFields,
+    });
+  }
+
+  previewCombinedModel<T>(viewNames: string[], coreFields?: string[]): Observable<T> {
+    return this.post<T>('/data-models/preview', {
+      view_names: viewNames,
+      core_fields: coreFields,
+    });
   }
 
   createDataModels<T>(models: { name: string; description: string; sql: string }[]): Observable<T> {
@@ -167,9 +177,17 @@ export class ApiService {
     return this.post<T>('/data-models/detail', { card_id: cardId });
   }
 
-  modifyDataModelPreview<T>(cardId: number, prompt: string, viewNames: string[]): Observable<T> {
+  modifyDataModelPreview<T>(
+    cardId: number,
+    prompt: string,
+    viewNames: string[],
+    coreFields?: string[],
+  ): Observable<T> {
     return this.post<T>('/data-models/modify-preview', {
-      card_id: cardId, prompt, view_names: viewNames
+      card_id: cardId,
+      prompt,
+      view_names: viewNames,
+      core_fields: coreFields,
     });
   }
 

@@ -250,6 +250,32 @@
                       [(ngModel)]="editPrompt"></textarea>
           </div>
 
+          @if (availableCoreFields.length > 0) {
+            <div class="edit-section">
+              <label class="edit-section-label">Core fields (from public.Applications)</label>
+              <ul class="view-picker-list core-fields-list">
+                @for (cf of availableCoreFields; track cf.name) {
+                  <li class="view-picker-item core-field-item"
+                      [class.selected]="isCoreFieldSelected(cf.name)"
+                      [class.locked]="isCoreFieldLocked(cf.name)"
+                      (click)="toggleCoreField(cf.name)">
+                    <div class="view-picker-row">
+                      <div class="view-picker-check" [class.checked]="isCoreFieldSelected(cf.name)">
+                        @if (isCoreFieldSelected(cf.name)) { ✓ }
+                      </div>
+                      <div class="view-picker-info">
+                        <div class="view-picker-name">{{ cf.label }}</div>
+                        @if (isCoreFieldLocked(cf.name)) {
+                          <div class="view-picker-meta">Required when adding views</div>
+                        }
+                      </div>
+                    </div>
+                  </li>
+                }
+              </ul>
+            </div>
+          }
+
           <div class="edit-section">
             <label class="edit-section-label">Add views (optional)</label>
             <div class="view-tabs">
@@ -364,6 +390,31 @@
           @if (selectedViews.length > 0) {
             <div class="view-selection-summary">
               Selected: {{ selectedViews.map(v => v.display_name || v.view_name).join(' + ') }}
+            </div>
+          }
+          @if (availableCoreFields.length > 0) {
+            <div class="edit-section">
+              <label class="edit-section-label">Core fields (from public.Applications)</label>
+              <ul class="view-picker-list core-fields-list">
+                @for (cf of availableCoreFields; track cf.name) {
+                  <li class="view-picker-item core-field-item"
+                      [class.selected]="isCoreFieldSelected(cf.name)"
+                      [class.locked]="isCoreFieldLocked(cf.name)"
+                      (click)="toggleCoreField(cf.name)">
+                    <div class="view-picker-row">
+                      <div class="view-picker-check" [class.checked]="isCoreFieldSelected(cf.name)">
+                        @if (isCoreFieldSelected(cf.name)) { ✓ }
+                      </div>
+                      <div class="view-picker-info">
+                        <div class="view-picker-name">{{ cf.label }}</div>
+                        @if (isCoreFieldLocked(cf.name)) {
+                          <div class="view-picker-meta">Required to combine multiple views</div>
+                        }
+                      </div>
+                    </div>
+                  </li>
+                }
+              </ul>
             </div>
           }
         </div>
