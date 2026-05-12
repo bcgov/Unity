@@ -775,52 +775,64 @@ class DataModelGenerator:
         Form views are grouped by base name — selecting a group runs UNION ALL across
         all its versions, which is what the SQL builder does anyway.
 
-        Returns list of {view_name, display_name, column_count, has_labels, source_type, ...}.
+        All non-system Reporting views are returned; views with no rows are tagged
+        is_empty=True so the UI can label them rather than hide them.
+
+        Returns list of {view_name, display_name, column_count, has_labels,
+        source_type, is_empty, ...}.
         """
         metadata = metabase_client.get_database_metadata(db_id, tenant_id=tenant_id)
-        views = []
         tables_by_name = {
             t.get("name"): t for t in metadata.get("tables", [])
             if t.get("schema") == "Reporting"
         }
 
-        # First pass: group form versions by base name
         form_groups = self._group_form_versions(metadata)
+
+        # Pick the primary (highest-version) physical table for each form group.
+        primary_for_group: dict[str, str] = {}
         for base_name, version_tables in form_groups.items():
-            primary = version_tables[0]  # highest version
-            primary_table = tables_by_name.get(primary)
-            if not primary_table:
-                continue
+            if version_tables and version_tables[0] in tables_by_name:
+                primary_for_group[base_name] = version_tables[0]
 
-            if not self._has_data("Reporting", primary, db_id, tenant_id):
-                logger.debug("discover_views: skipping form '%s' — no data or query failed", base_name)
+        # All non-form, non-system Reporting tables.
+        other_view_names: list[str] = []
+        for name in tables_by_name:
+            if not name or FORM_VERSION_RE.match(name) or name.startswith("Form-"):
                 continue
+            if name in self.SYSTEM_TABLES or name.startswith("__"):
+                continue
+            other_view_names.append(name)
 
+        # Two batched round-trips replace the old 2×N per-view probes.
+        physical_names = list(primary_for_group.values()) + other_view_names
+        has_data_map = self._batch_check_view_data(physical_names, db_id, tenant_id)
+        views_with_labels = self._get_views_with_labels(db_id, tenant_id)
+
+        views: list[dict] = []
+
+        for base_name, primary in primary_for_group.items():
+            primary_table = tables_by_name[primary]
             column_count = sum(
                 1 for f in primary_table.get("fields", [])
                 if f.get("name") not in self.JUNK_COLUMNS
             )
-            version_count = len(version_tables)
+            version_count = len(form_groups[base_name])
             version_label = f"{version_count} version{'s' if version_count != 1 else ''}"
 
             views.append({
                 "view_name": base_name,
                 "display_name": base_name,
                 "column_count": column_count,
-                "has_labels": self._has_labels(primary, db_id, tenant_id),
+                "has_labels": primary in views_with_labels,
                 "source_type": "form_view",
                 "form_group": base_name,
                 "version": version_label,
+                "is_empty": not has_data_map.get(primary, True),
             })
 
-        # Second pass: worksheet, scoresheet, and other (one entry per table)
-        for name, table in tables_by_name.items():
-            if not name or FORM_VERSION_RE.match(name) or name.startswith("Form-"):
-                continue
-            # Skip system/internal tables outright
-            if name in self.SYSTEM_TABLES or name.startswith("__"):
-                continue
-
+        for name in other_view_names:
+            table = tables_by_name[name]
             name_lower = name.lower()
             if "worksheet" in name_lower:
                 source_type = "worksheet_view"
@@ -828,10 +840,6 @@ class DataModelGenerator:
                 source_type = "scoresheet_view"
             else:
                 source_type = "other_view"
-
-            if not self._has_data("Reporting", name, db_id, tenant_id):
-                logger.debug("discover_views: skipping '%s' — no data or query failed", name)
-                continue
 
             column_count = sum(
                 1 for f in table.get("fields", [])
@@ -842,8 +850,9 @@ class DataModelGenerator:
                 "view_name": name,
                 "display_name": name,
                 "column_count": column_count,
-                "has_labels": self._has_labels(name, db_id, tenant_id),
+                "has_labels": name in views_with_labels,
                 "source_type": source_type,
+                "is_empty": not has_data_map.get(name, True),
             })
 
         views.sort(key=lambda v: (v["source_type"], v["view_name"]))
@@ -1510,6 +1519,64 @@ class DataModelGenerator:
         except Exception:
             return False
 
+    _BATCH_DATA_CHECK_SIZE = 100
+
+    def _batch_check_view_data(
+        self, view_names: list[str], db_id: int, tenant_id: str
+    ) -> dict[str, bool]:
+        """One round-trip EXISTS probe across many Reporting views.
+
+        Replaces N sequential _has_data calls. Falls back to assuming each view
+        has data if the batch fails — better to show a stale empty-flag than
+        block discovery.
+        """
+        if not view_names:
+            return {}
+
+        # Names come from Metabase metadata, not user input, but escape defensively.
+        def quote_ident(n: str) -> str:
+            return '"' + n.replace('"', '""') + '"'
+
+        def quote_lit(n: str) -> str:
+            return "'" + n.replace("'", "''") + "'"
+
+        result_map: dict[str, bool] = {}
+        for i in range(0, len(view_names), self._BATCH_DATA_CHECK_SIZE):
+            chunk = view_names[i:i + self._BATCH_DATA_CHECK_SIZE]
+            parts = [
+                f'SELECT {quote_lit(name)} AS view_name, '
+                f'EXISTS (SELECT 1 FROM "Reporting".{quote_ident(name)}) AS has_data'
+                for name in chunk
+            ]
+            sql = "\nUNION ALL\n".join(parts)
+            try:
+                result = metabase_client.execute_sql(sql, db_id, tenant_id=tenant_id)
+                for row in result.get("rows", []):
+                    if row and len(row) >= 2:
+                        result_map[row[0]] = bool(row[1])
+            except Exception as e:
+                logger.warning(
+                    "discover_views: batched data check failed for chunk starting at %d "
+                    "(%s); assuming has_data=True for these",
+                    i, e,
+                )
+                for name in chunk:
+                    result_map.setdefault(name, True)
+
+        return result_map
+
+    def _get_views_with_labels(self, db_id: int, tenant_id: str) -> set[str]:
+        """One round-trip: distinct ViewName values from ReportColumnsMaps."""
+        sql = 'SELECT DISTINCT "ViewName" FROM "Reporting"."ReportColumnsMaps"'
+        try:
+            result = metabase_client.execute_sql(sql, db_id, tenant_id=tenant_id)
+            return {row[0] for row in result.get("rows", []) if row and row[0]}
+        except Exception as e:
+            logger.warning(
+                "discover_views: ReportColumnsMaps query failed (%s); assuming no labels",
+                e,
+            )
+            return set()
 
     def _has_labels(self, view_name: str, db_id: int, tenant_id: str) -> bool:
         """Check if ReportColumnsMaps has entries for this view."""

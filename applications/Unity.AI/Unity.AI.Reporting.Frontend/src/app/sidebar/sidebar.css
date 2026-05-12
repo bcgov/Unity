@@ -711,6 +711,12 @@
   font-weight: 500;
 }
 
+.view-empty-badge {
+  display: inline-block; margin-left: 6px;
+  font-size: 0.75rem; font-weight: 400; color: #868e96;
+  font-style: italic;
+}
+
 /* Core fields picker (compact variant of view-picker) */
 .core-fields-list {
   max-height: 240px;

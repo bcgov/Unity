@@ -24,6 +24,7 @@ export interface ViewInfo {
   source_type?: 'form_view' | 'worksheet_view' | 'scoresheet_view' | 'other_view';
   form_group?: string;
   version?: string;
+  is_empty?: boolean;
 }
 
 export interface CoreField {

@@ -306,7 +306,12 @@
                       @if (isEditAdditionalViewSelected(view)) { ✓ }
                     </div>
                     <div class="view-picker-info">
-                      <div class="view-picker-name">{{ view.display_name || view.view_name }}</div>
+                      <div class="view-picker-name">
+                        {{ view.display_name || view.view_name }}
+                        @if (view.is_empty) {
+                          <span class="view-empty-badge">(no data yet)</span>
+                        }
+                      </div>
                     </div>
                   </div>
                 </li>
@@ -374,6 +379,9 @@
                       {{ view.display_name || view.view_name }}
                       @if (view.version) {
                         <span class="view-version-badge">{{ view.version }}</span>
+                      }
+                      @if (view.is_empty) {
+                        <span class="view-empty-badge">(no data yet)</span>
                       }
                     </div>
                     <div class="view-picker-meta">
