@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Unity.AI.RateLimit;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Attachments;
 using Unity.GrantManager.GrantApplications;
@@ -27,6 +28,7 @@ public class RunApplicationAIPipelineJob(
     IRepository<AIGenerationRequest, Guid> generationRequestRepository,
     ICurrentTenant currentTenant,
     IUnitOfWorkManager unitOfWorkManager,
+    IAIRateLimiter aiRateLimiter,
     ILogger<RunApplicationAIPipelineJob> logger) : AsyncBackgroundJob<RunApplicationAIPipelineJobArgs>, ITransientDependency
 {
     public override async Task ExecuteAsync(RunApplicationAIPipelineJobArgs args)
@@ -50,6 +52,7 @@ public class RunApplicationAIPipelineJob(
                 {
                     logger.LogDebug("All AI features are disabled, skipping queued AI generation for application {ApplicationId}.", args.ApplicationId);
                     await AIGenerationRequestJobHelper.MarkCompletedInNewUowAsync(unitOfWorkManager, generationRequestRepository, args.RequestKey);
+                    await AIGenerationRequestJobHelper.StampRateLimitBestEffortAsync(aiRateLimiter, logger, args.RequestedByUserId, args.ApplicationId, args.RequestKey);
                     return;
                 }
 
@@ -113,6 +116,7 @@ public class RunApplicationAIPipelineJob(
                 }
 
                 await AIGenerationRequestJobHelper.MarkCompletedInNewUowAsync(unitOfWorkManager, generationRequestRepository, args.RequestKey);
+                await AIGenerationRequestJobHelper.StampRateLimitBestEffortAsync(aiRateLimiter, logger, args.RequestedByUserId, args.ApplicationId, args.RequestKey);
             }
             catch (Exception ex)
             {

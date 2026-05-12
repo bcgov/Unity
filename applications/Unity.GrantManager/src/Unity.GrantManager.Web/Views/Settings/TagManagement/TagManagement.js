@@ -166,8 +166,6 @@ $(function () {
         viewUrl: 'Tags/CreateTagsModal'
     });
 
-    abp.log.debug('TagManagement.js initialized!');
-
     abp.modals.RenameTag = function () {
         let formElements = {};
         let initialFormState = {};

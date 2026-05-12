@@ -14,3 +14,9 @@ table.dataTable > tbody > tr.even.selected > * {
     display: inline-flex;
     align-items: center;
 }
+
+#AdjudicationTeamLeadActionBar .btn,
+#ReviewListTable_wrapper .dt-buttons .btn {
+    text-transform: none;
+    background-color: var(--bs-btn-bg) !important;
+}

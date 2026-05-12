@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 using UglyToad.PdfPig;
@@ -32,7 +33,7 @@ namespace Unity.AI.Extraction
             _logger = logger;
         }
 
-        public Task<string> ExtractTextAsync(string fileName, Stream fileContent, string contentType)
+        public Task<string> ExtractTextAsync(string fileName, Stream fileContent, string contentType, CancellationToken cancellationToken = default)
         {
             if (fileContent == null)
             {
@@ -42,6 +43,7 @@ namespace Unity.AI.Extraction
 
             try
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 var normalizedContentType = contentType?.ToLowerInvariant() ?? string.Empty;
                 var extension = Path.GetExtension(fileName)?.ToLowerInvariant() ?? string.Empty;
 
@@ -53,12 +55,12 @@ namespace Unity.AI.Extraction
 
                 var rawText = extension switch
                 {
-                    ".txt" or ".csv" or ".json" or ".xml" => ExtractTextFromTextFile(fileContent),
-                    ".pdf" => ExtractTextFromPdfFile(fileName, fileContent),
-                    ".docx" => ExtractTextFromWordDocx(fileName, fileContent),
-                    ".xls" or ".xlsx" => ExtractTextFromExcelFile(fileName, fileContent),
-                    ".pptx" => ExtractTextFromPowerPointFile(fileName, fileContent),
-                    _ => ExtractByContentType(fileName, fileContent, normalizedContentType)
+                    ".txt" or ".csv" or ".json" or ".xml" => ExtractTextFromTextFile(fileContent, cancellationToken),
+                    ".pdf" => ExtractTextFromPdfFile(fileName, fileContent, cancellationToken),
+                    ".docx" => ExtractTextFromWordDocx(fileName, fileContent, cancellationToken),
+                    ".xls" or ".xlsx" => ExtractTextFromExcelFile(fileName, fileContent, cancellationToken),
+                    ".pptx" => ExtractTextFromPowerPointFile(fileName, fileContent, cancellationToken),
+                    _ => ExtractByContentType(fileName, fileContent, normalizedContentType, cancellationToken)
                 };
 
                 if (string.IsNullOrEmpty(rawText))
@@ -69,6 +71,10 @@ namespace Unity.AI.Extraction
 
                 return Task.FromResult(NormalizeAndLimitText(rawText, fileName));
             }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error extracting text from {FileName}", fileName);
@@ -76,29 +82,33 @@ namespace Unity.AI.Extraction
             }
         }
 
-        private string ExtractByContentType(string fileName, Stream fileContent, string normalizedContentType)
+        private string ExtractByContentType(
+            string fileName,
+            Stream fileContent,
+            string normalizedContentType,
+            CancellationToken cancellationToken)
         {
             if (normalizedContentType.Contains("text/"))
             {
-                return ExtractTextFromTextFile(fileContent);
+                return ExtractTextFromTextFile(fileContent, cancellationToken);
             }
             if (normalizedContentType.Contains("pdf"))
             {
-                return ExtractTextFromPdfFile(fileName, fileContent);
+                return ExtractTextFromPdfFile(fileName, fileContent, cancellationToken);
             }
             if (normalizedContentType.Contains("word") ||
                 normalizedContentType.Contains("msword") ||
                 normalizedContentType.Contains("officedocument.wordprocessingml"))
             {
-                return ExtractTextFromWordDocx(fileName, fileContent);
+                return ExtractTextFromWordDocx(fileName, fileContent, cancellationToken);
             }
             if (normalizedContentType.Contains("excel") || normalizedContentType.Contains("spreadsheet"))
             {
-                return ExtractTextFromExcelFile(fileName, fileContent);
+                return ExtractTextFromExcelFile(fileName, fileContent, cancellationToken);
             }
             if (normalizedContentType.Contains("presentation") || normalizedContentType.Contains("powerpoint"))
             {
-                return ExtractTextFromPowerPointFile(fileName, fileContent);
+                return ExtractTextFromPowerPointFile(fileName, fileContent, cancellationToken);
             }
             return string.Empty;
         }
@@ -111,7 +121,7 @@ namespace Unity.AI.Extraction
             }
         }
 
-        private string ExtractTextFromTextFile(Stream fileContent)
+        private string ExtractTextFromTextFile(Stream fileContent, CancellationToken cancellationToken)
         {
             try
             {
@@ -122,6 +132,7 @@ namespace Unity.AI.Extraction
                 int read;
                 while ((read = reader.Read(buffer, 0, buffer.Length)) > 0)
                 {
+                    cancellationToken.ThrowIfCancellationRequested();
                     var remaining = MaxExtractedTextLength - builder.Length;
                     if (remaining <= 0) break;
                     builder.Append(buffer, 0, Math.Min(read, remaining));
@@ -142,7 +153,7 @@ namespace Unity.AI.Extraction
             }
         }
 
-        private string ExtractTextFromPdfFile(string fileName, Stream fileContent)
+        private string ExtractTextFromPdfFile(string fileName, Stream fileContent, CancellationToken cancellationToken)
         {
             try
             {
@@ -156,6 +167,7 @@ namespace Unity.AI.Extraction
 
                 foreach (var pageText in pageTexts)
                 {
+                    cancellationToken.ThrowIfCancellationRequested();
                     if (builder.Length >= MaxExtractedTextLength)
                     {
                         break;
@@ -178,15 +190,15 @@ namespace Unity.AI.Extraction
             }
         }
 
-        private string ExtractTextFromWordDocx(string fileName, Stream fileContent)
+        private string ExtractTextFromWordDocx(string fileName, Stream fileContent, CancellationToken cancellationToken)
         {
             try
             {
                 RewindIfPossible(fileContent);
                 using var document = new XWPFDocument(fileContent);
                 var builder = new StringBuilder();
-                var processedParagraphCount = AppendDocxParagraphText(document, builder);
-                var processedTableRowCount = AppendDocxTableText(document, builder);
+                var processedParagraphCount = AppendDocxParagraphText(document, builder, cancellationToken);
+                var processedTableRowCount = AppendDocxTableText(document, builder, cancellationToken);
 
                 _logger.LogDebug(
                     "Extracted Word text from {ProcessedParagraphCount} paragraphs and {ProcessedTableRowCount} table rows for {FileName}",
@@ -202,7 +214,10 @@ namespace Unity.AI.Extraction
             }
         }
 
-        private static int AppendDocxParagraphText(XWPFDocument document, StringBuilder builder)
+        private static int AppendDocxParagraphText(
+            XWPFDocument document,
+            StringBuilder builder,
+            CancellationToken cancellationToken)
         {
             var processedParagraphCount = 0;
             var paragraphTexts = document.Paragraphs
@@ -212,6 +227,7 @@ namespace Unity.AI.Extraction
 
             foreach (var paragraphText in paragraphTexts)
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 if (builder.Length >= MaxExtractedTextLength)
                 {
                     break;
@@ -227,7 +243,10 @@ namespace Unity.AI.Extraction
             return processedParagraphCount;
         }
 
-        private static int AppendDocxTableText(XWPFDocument document, StringBuilder builder)
+        private static int AppendDocxTableText(
+            XWPFDocument document,
+            StringBuilder builder,
+            CancellationToken cancellationToken)
         {
             if (builder.Length >= MaxExtractedTextLength)
             {
@@ -237,8 +256,10 @@ namespace Unity.AI.Extraction
             var processedTableRowCount = 0;
             foreach (var table in document.Tables)
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 foreach (var row in table.Rows.Take(MaxDocxTableRows))
                 {
+                    cancellationToken.ThrowIfCancellationRequested();
                     if (builder.Length >= MaxExtractedTextLength)
                     {
                         return processedTableRowCount;
@@ -252,6 +273,7 @@ namespace Unity.AI.Extraction
                     var rowHadValue = false;
                     foreach (var cellText in cellTexts)
                     {
+                        cancellationToken.ThrowIfCancellationRequested();
                         rowHadValue = true;
                         if (TryAppendWithTrailingNewline(builder, cellText))
                         {
@@ -269,7 +291,7 @@ namespace Unity.AI.Extraction
             return processedTableRowCount;
         }
 
-        private string ExtractTextFromExcelFile(string fileName, Stream fileContent)
+        private string ExtractTextFromExcelFile(string fileName, Stream fileContent, CancellationToken cancellationToken)
         {
             try
             {
@@ -282,13 +304,14 @@ namespace Unity.AI.Extraction
 
                 for (var sheetIndex = 0; sheetIndex < sheetCount; sheetIndex++)
                 {
+                    cancellationToken.ThrowIfCancellationRequested();
                     if (builder.Length >= MaxExtractedTextLength)
                     {
                         break;
                     }
 
                     var sheet = workbook.GetSheetAt(sheetIndex);
-                    var (rowsProcessed, limitReached) = TryAppendExcelSheet(sheet, builder);
+                    var (rowsProcessed, limitReached) = TryAppendExcelSheet(sheet, builder, cancellationToken);
                     if (rowsProcessed > 0)
                     {
                         processedSheetCount++;
@@ -315,7 +338,7 @@ namespace Unity.AI.Extraction
             }
         }
 
-        private string ExtractTextFromPowerPointFile(string fileName, Stream fileContent)
+        private string ExtractTextFromPowerPointFile(string fileName, Stream fileContent, CancellationToken cancellationToken)
         {
             try
             {
@@ -328,6 +351,7 @@ namespace Unity.AI.Extraction
 
                 foreach (var slideEntry in slideEntries)
                 {
+                    cancellationToken.ThrowIfCancellationRequested();
                     if (builder.Length >= MaxExtractedTextLength)
                     {
                         break;
@@ -398,7 +422,10 @@ namespace Unity.AI.Extraction
             return orderedEntries;
         }
 
-        private static (int RowsProcessed, bool LimitReached) TryAppendExcelSheet(ISheet? sheet, StringBuilder builder)
+        private static (int RowsProcessed, bool LimitReached) TryAppendExcelSheet(
+            ISheet? sheet,
+            StringBuilder builder,
+            CancellationToken cancellationToken)
         {
             if (sheet == null)
             {
@@ -408,12 +435,13 @@ namespace Unity.AI.Extraction
             var processedRows = 0;
             foreach (IRow row in sheet)
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 if (processedRows >= MaxExcelRowsPerSheet || builder.Length >= MaxExtractedTextLength)
                 {
                     break;
                 }
 
-                var (rowHadValue, limitReached) = TryAppendExcelRow(row, builder);
+                var (rowHadValue, limitReached) = TryAppendExcelRow(row, builder, cancellationToken);
                 if (rowHadValue)
                 {
                     processedRows++;
@@ -428,11 +456,15 @@ namespace Unity.AI.Extraction
             return (processedRows, builder.Length >= MaxExtractedTextLength);
         }
 
-        private static (bool RowHadValue, bool LimitReached) TryAppendExcelRow(IRow row, StringBuilder builder)
+        private static (bool RowHadValue, bool LimitReached) TryAppendExcelRow(
+            IRow row,
+            StringBuilder builder,
+            CancellationToken cancellationToken)
         {
             var rowHasValue = false;
             foreach (var cell in row.Cells.Take(MaxExcelCellsPerRow))
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 var value = GetCellText(cell);
                 if (string.IsNullOrWhiteSpace(value))
                 {

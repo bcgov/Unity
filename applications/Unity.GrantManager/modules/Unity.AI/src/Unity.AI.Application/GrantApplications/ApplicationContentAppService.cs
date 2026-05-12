@@ -3,9 +3,10 @@ using System;
 using System.Threading.Tasks;
 using Unity.AI;
 using Unity.AI.Automation;
+using Unity.AI.Features;
+using Unity.AI.Localization;
 using Unity.AI.Permissions;
-using Volo.Abp;
-using Volo.Abp.Features;
+using Unity.AI.Settings;
 using Volo.Abp.MultiTenancy;
 
 namespace Unity.GrantManager.GrantApplications;
@@ -15,20 +16,15 @@ namespace Unity.GrantManager.GrantApplications;
 [Authorize(AIPermissions.Analysis.ViewScoringResult)]
 public class ApplicationContentAppService(
     IApplicationAIGenerationQueue aiGenerationQueue,
-    IFeatureChecker featureChecker,
+    AIFeatureGuard featureGuard,
     ICurrentTenant currentTenant)
     : AIAppService, IApplicationContentAppService
 {
-    public async Task<ApplicationContentResultDto> GenerateContentAsync(Guid applicationId, string? promptVersion = null)
+    public virtual async Task<ApplicationContentResultDto> GenerateContentAsync(Guid applicationId, string? promptVersion = null)
     {
-        var attachmentSummariesEnabled = await featureChecker.IsEnabledAsync("Unity.AI.AttachmentSummaries");
-        var applicationAnalysisEnabled = await featureChecker.IsEnabledAsync("Unity.AI.ApplicationAnalysis");
-        var scoringEnabled = await featureChecker.IsEnabledAsync("Unity.AI.Scoring");
-
-        if (!attachmentSummariesEnabled || !applicationAnalysisEnabled || !scoringEnabled)
-        {
-            throw new UserFriendlyException("AI generate all is not enabled.");
-        }
+        await featureGuard.EnsureEnabledAsync(AIFeatures.AttachmentSummaries, AILocalizationKeys.GenerateAllDisabled);
+        await featureGuard.EnsureEnabledAsync(AIFeatures.ApplicationAnalysis, AILocalizationKeys.GenerateAllDisabled);
+        await featureGuard.EnsureEnabledAsync(AIFeatures.Scoring, AILocalizationKeys.GenerateAllDisabled);
 
         await aiGenerationQueue.QueueAllAIStagesAsync(applicationId, currentTenant.Id, promptVersion);
 

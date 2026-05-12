@@ -1,13 +1,10 @@
-﻿using Microsoft.Extensions.DependencyInjection;
 using System.Threading.Tasks;
-using Unity.AI.Permissions;
 using Unity.GrantManager.Localization;
 using Unity.GrantManager.Permissions;
 using Unity.Identity.Web.Navigation;
 using Unity.Modules.Shared.Permissions;
 using Unity.TenantManagement;
 using Unity.TenantManagement.Web.Navigation;
-using Volo.Abp.Features;
 using Volo.Abp.Identity;
 using Volo.Abp.UI.Navigation;
 
@@ -29,7 +26,6 @@ public class GrantManagerMenuContributor : IMenuContributor
     private async static Task ConfigureMainMenuAsync(MenuConfigurationContext context)
     {
         var l = context.GetLocalizer<GrantManagerResource>();
-        var featureChecker = context.ServiceProvider.GetRequiredService<IFeatureChecker>();
 
         context.Menu.AddItem(
             new ApplicationMenuItem(
@@ -116,20 +112,6 @@ public class GrantManagerMenuContributor : IMenuContributor
                 requiredPermissionName: IdentityConsts.ITOperationsPermissionName
             )
         );
-
-        if (await featureChecker.IsEnabledAsync("Unity.AIReporting"))
-        {
-            context.Menu.AddItem(
-                new ApplicationMenuItem(
-                    GrantManagerMenus.AIReporting,
-                    l["Menu:AIReporting"],
-                    "~/AIReporting",
-                    icon: "fl fl-view-dashboard",
-                    requiredPermissionName: AIPermissions.Reporting.ReportingDefault,
-                    order: 9
-                )
-            );
-        }
 
         // ********************
         // Admin - Tenant Management 

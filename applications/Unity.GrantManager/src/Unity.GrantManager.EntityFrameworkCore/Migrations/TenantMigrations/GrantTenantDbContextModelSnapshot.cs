@@ -915,6 +915,8 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
 
                     b.HasIndex("ApplicantName");
 
+                    b.HasIndex("TenantId");
+
                     b.ToTable("Applicants", (string)null);
                 });
 
@@ -1102,6 +1104,8 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
 
                     b.HasIndex("ApplicationId")
                         .IsUnique();
+
+                    b.HasIndex("TenantId", "ApplicationId");
 
                     b.ToTable("ApplicantAgents", (string)null);
                 });
@@ -1393,6 +1397,11 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
 
                     b.HasIndex("OwnerId");
 
+                    b.HasIndex("ReferenceNo");
+
+                    b.HasIndex("TenantId", "SubmissionDate")
+                        .HasFilter("\"IsDeleted\" = false");
+
                     b.ToTable("Applications", (string)null);
                 });
 
@@ -1447,6 +1456,8 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.HasIndex("ApplicationId");
 
                     b.HasIndex("AssigneeId");
+
+                    b.HasIndex("TenantId", "ApplicationId");
 
                     b.ToTable("ApplicationAssignments", (string)null);
                 });
@@ -1783,6 +1794,9 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
 
                     b.HasIndex("ParentFormId");
 
+                    b.HasIndex("TenantId", "IsDeleted")
+                        .HasFilter("\"IsDeleted\" = false");
+
                     b.ToTable("ApplicationForms", (string)null);
                 });
 
@@ -1999,6 +2013,8 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
 
                     b.HasIndex("ApplicationId");
 
+                    b.HasIndex("TenantId", "ApplicationId");
+
                     b.ToTable("ApplicationLinks", (string)null);
                 });
 
@@ -2108,6 +2124,8 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.HasIndex("ApplicationId");
 
                     b.HasIndex("TagId");
+
+                    b.HasIndex("TenantId", "ApplicationId");
 
                     b.ToTable("ApplicationTags", (string)null);
                 });
@@ -2925,6 +2943,8 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.HasKey("Id");
 
                     b.HasIndex("OidcSub");
+
+                    b.HasIndex("TenantId");
 
                     b.ToTable("Persons", (string)null);
                 });

@@ -5,6 +5,7 @@ using System.Net;
 using System.Net.Http;
 using System.Text;
 using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
 using Volo.Abp.DependencyInjection;
 
@@ -26,7 +27,8 @@ public class OpenAITransportService(
         double? temperature = null,
         string? operationName = null,
         string? promptVersion = null,
-        string? fileName = null)
+        string? fileName = null,
+        CancellationToken cancellationToken = default)
     {
         var providerName = _configurationResolver.ResolveProviderName(operationName);
         if (!string.Equals(providerName, "OpenAI", StringComparison.Ordinal))
@@ -73,8 +75,8 @@ public class OpenAITransportService(
             };
             request.Headers.TryAddWithoutValidation("Authorization", apiKey);
 
-            var response = await _httpClient.SendAsync(request);
-            var responseContent = await response.Content.ReadAsStringAsync();
+            using var response = await _httpClient.SendAsync(request, cancellationToken);
+            var responseContent = await response.Content.ReadAsStringAsync(cancellationToken);
             var metadata = TryExtractProviderMetadata(responseContent);
             var providerResponse = BuildProviderResponseFromMetadata(
                 string.Empty,
@@ -117,6 +119,10 @@ public class OpenAITransportService(
                 _logger.LogWarning(ex, "AI response payload had an invalid output shape");
                 return AIOperationResult.InvalidOutput(providerResponse);
             }
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
         }
         catch (Exception ex)
         {

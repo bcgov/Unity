@@ -2,11 +2,13 @@ using Microsoft.AspNetCore.Authorization;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Unity.AI;
+using Unity.AI.Features;
+using Unity.AI.Localization;
 using Unity.AI.Operations;
 using Unity.AI.Permissions;
+using Unity.AI.Settings;
 using Volo.Abp;
 using Volo.Abp.DependencyInjection;
-using Volo.Abp.Features;
 
 namespace Unity.GrantManager.Attachments;
 
@@ -14,25 +16,23 @@ namespace Unity.GrantManager.Attachments;
 [ExposeServices(typeof(AttachmentSummaryAppService), typeof(IAttachmentSummaryAppService))]
 public class AttachmentSummaryAppService(
     IAttachmentSummaryService attachmentSummaryService,
-    IFeatureChecker featureChecker) : AIAppService, IAttachmentSummaryAppService
+    AIFeatureGuard featureGuard) : AIAppService, IAttachmentSummaryAppService
 {
-    public async Task<AttachmentSummaryResultDto> GenerateAttachmentSummaryAsync(System.Guid attachmentId, string? promptVersion = null)
+    public virtual async Task<AttachmentSummaryResultDto> GenerateAttachmentSummaryAsync(System.Guid attachmentId, string? promptVersion = null)
     {
-        if (!await featureChecker.IsEnabledAsync("Unity.AI.AttachmentSummaries"))
-        {
-            throw new UserFriendlyException("AI attachment summaries are not enabled.");
-        }
+        await featureGuard.EnsureEnabledAsync(
+            AIFeatures.AttachmentSummaries,
+            AILocalizationKeys.AttachmentSummariesDisabled);
 
         await attachmentSummaryService.GenerateAndSaveAsync(attachmentId, promptVersion);
         return new AttachmentSummaryResultDto { Completed = true };
     }
 
-    public async Task<List<AttachmentSummaryResultDto>> GenerateAttachmentSummariesAsync(List<System.Guid> attachmentIds, string? promptVersion = null)
+    public virtual async Task<List<AttachmentSummaryResultDto>> GenerateAttachmentSummariesAsync(List<System.Guid> attachmentIds, string? promptVersion = null)
     {
-        if (!await featureChecker.IsEnabledAsync("Unity.AI.AttachmentSummaries"))
-        {
-            throw new UserFriendlyException("AI attachment summaries are not enabled.");
-        }
+        await featureGuard.EnsureEnabledAsync(
+            AIFeatures.AttachmentSummaries,
+            AILocalizationKeys.AttachmentSummariesDisabled);
 
         if (attachmentIds.Count == 0)
         {
@@ -54,7 +54,10 @@ public class AttachmentSummaryAppService(
     [RemoteService(IsEnabled = false)]
     public virtual async Task<List<AttachmentSummaryResultDto>> GenerateAttachmentSummariesForPipelineAsync(List<System.Guid> attachmentIds, string? promptVersion = null)
     {
-        if (attachmentIds.Count == 0) return [];
+        if (attachmentIds.Count == 0)
+        {
+            return [];
+        }
 
         var results = new List<AttachmentSummaryResultDto>();
         foreach (var attachmentId in attachmentIds)
@@ -62,6 +65,7 @@ public class AttachmentSummaryAppService(
             await attachmentSummaryService.GenerateAndSaveAsync(attachmentId, promptVersion);
             results.Add(new AttachmentSummaryResultDto { Completed = true });
         }
+
         return results;
     }
 }
