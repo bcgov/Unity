@@ -11,13 +11,13 @@ kind: ServiceMonitor
 metadata:
   name: unity-grantmanager
   labels:
-    app: unity-grantmanager
+    app.kubernetes.io/name: unity-grant-manager
 spec:
   selector:
     matchLabels:
-      app: unity-grantmanager   # must match labels on your OpenShift Service
+      app.kubernetes.io/name: unity-grant-manager   # matches all env Service labels
   endpoints:
-    - port: http               # named port on the Service pointing to 8080
+    - port: 80-tcp             # named port on the Service pointing to 8080
       path: /metrics
       interval: 15s
       scheme: http
