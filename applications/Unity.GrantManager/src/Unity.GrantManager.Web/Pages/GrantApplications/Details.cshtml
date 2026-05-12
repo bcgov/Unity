@@ -76,14 +76,12 @@
 <input type="hidden" id="ApplicationFormSchema" value="@Model.ApplicationFormSchema" />
 <input type="hidden" id="ApplicationScoresheetSchemaJson" value="@Model.ApplicationScoresheetSchemaJson" />
 <input type="hidden" id="ApplicationFormId" value="@Model.ApplicationFormId" />
-<input type="hidden" id="HasRenderedHTML" value="@Model.HasRenderedHTML.ToString()" />
 <input type="hidden" id="CurrentUserId" value="@Model.CurrentUserId" />
 <input type="hidden" id="CurrentUserName" value="@Model.CurrentUserName" />
 <input type="hidden" id="Extensions" value="@Model.Extensions" />
 <input type="hidden" id="MaxFileSize" value="@Model.MaxFileSize" />
 <input type="hidden" id="EmailAttachmentMaxFileSize" value="@Model.EmailAttachmentMaxFileSize" />
 <input type="hidden" id="TotalEmailAttachmentMaxFileSize" value="@Model.TotalEmailAttachmentMaxFileSize" />
-<input type="hidden" id="RenderFormIoToHtml" value="@Model.RenderFormIoToHtml.ToString()" />
 <input type="hidden" id="ApplicationFormVersionId" value="@Model.ApplicationFormVersionId" />
 <input type="hidden" id="AIAnalysisFeatureEnabled" value="@aiApplicationAnalysisEnabled" />
 
@@ -122,7 +120,7 @@
                         <abp-row>
                             <abp-column size="_12">
                                 <abp-button icon="fl fl-pdf" icon-type="Other" id="printPdf" class="pdf-icon"></abp-button>
-                                <div id="formio">@Html.Raw(@Model.ApplicationFormSubmissionHtml)</div>
+                                <div id="formio"></div>
                             </abp-column>
 
                         </abp-row>
