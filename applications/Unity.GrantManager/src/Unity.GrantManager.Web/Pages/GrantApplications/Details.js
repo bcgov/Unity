@@ -4,9 +4,6 @@
  */
 $(function () {
     let selectedReviewDetails = null;
-    let renderFormIoToHtml =
-        document.getElementById('RenderFormIoToHtml').value;
-    let hasRenderedHtml = document.getElementById('HasRenderedHTML').value;
     abp.localization.getResource('GrantManager');
 
     const divider = document.getElementById('main-divider');
@@ -92,24 +89,8 @@ $(function () {
     }
 
     function renderSubmission() {
-        // Initialize shadow DOM first
         const shadowRoot = initializeShadowDOM();
-
-        if (renderFormIoToHtml == 'False' || hasRenderedHtml == 'False') {
-            getSubmission(shadowRoot);
-        } else {
-            $('.spinner-grow').hide();
-
-            // Inject pre-rendered HTML into shadow DOM
-            if (shadowRoot) {
-                const htmlContent = document.getElementById('ApplicationFormSubmissionHtml');
-                if (htmlContent?.value) {
-                    shadowRoot.innerHTML += DOMPurify.sanitize(htmlContent.value);
-                }
-            }
-
-            addEventListeners(shadowRoot);
-        }
+        getSubmission(shadowRoot);
     }
 
 
@@ -171,36 +152,6 @@ $(function () {
         form.refresh();
         form.on('render', () => addEventListeners(shadowRoot));
 
-        waitFor(() => isFormChanging(form)).then(() => {
-            setTimeout(storeRenderedHtml, 2000);
-        });
-    }
-
-    async function storeRenderedHtml() {
-        if (renderFormIoToHtml == 'False') {
-            return;
-        }
-        const formioContainer = document.getElementById('formio');
-        const shadowRoot = formioContainer.shadowRoot;
-        let innerHTML = shadowRoot ? shadowRoot.innerHTML : formioContainer.innerHTML;
-        let submissionId = document.getElementById(
-            'ApplicationFormSubmissionId'
-        ).value;
-        $.ajax({
-            url: '/api/app/submission',
-            data: JSON.stringify({
-                SubmissionId: submissionId,
-                InnerHTML: innerHTML,
-            }),
-            contentType: 'application/json',
-            type: 'POST',
-            success: function (data) {
-                console.log(data);
-            },
-            error: function () {
-                console.log('error');
-            },
-        });
     }
 
     // Wait for the DOM to be fully loaded

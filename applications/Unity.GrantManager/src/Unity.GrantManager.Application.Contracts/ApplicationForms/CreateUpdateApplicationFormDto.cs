@@ -13,6 +13,5 @@ namespace Unity.GrantManager.Forms
         public string? Category { get; set; }
         public int? Version { get; set; }
         public bool Payable {  get; set; }
-        public bool RenderFormIoToHtml {  get; set; }
     }
 }
