@@ -92,17 +92,7 @@
 <script defer>
     (function () {
         if (window.jQuery) {
-            var $currencyInputs = $('#CreateFundingHistoryForm .unity-currency-input');
-            $currencyInputs.maskMoney({ thousands: ',', decimal: '.' });
-            $currencyInputs.each(function () {
-                $(this).maskMoney('mask', this.value);
-            });
-            $currencyInputs.on('blur', function () {
-                if ($(this).val() === '' || $(this).val() === '0') {
-                    $(this).val('0.00');
-                }
-            });
-
+            initCurrencyInputs('#CreateFundingHistoryForm');
         }
     })();
 </script>

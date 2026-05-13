@@ -262,16 +262,7 @@
 <script defer>
     (function () {
         if (window.jQuery) {
-            $('.unity-currency-input').maskMoney();
-
-            // Format existing values from server fields
-            $('.unity-currency-input').each(function () {
-                let $currencyField = $(this);
-                let fieldVal = $currencyField.val();
-                if (fieldVal) {
-                    $currencyField.maskMoney('mask', fieldVal);
-                }
-            });
+            initCurrencyInputs(document);
         }
     })();
 </script>
