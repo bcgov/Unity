@@ -724,3 +724,7 @@ form label.error {
     background-color: #f9fafb;
     border-color: #9ca3af;
 }
+
+.worksheet_AssessmentInfo {
+    padding-left: 0.5rem;
+}
