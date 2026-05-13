@@ -72,8 +72,6 @@ namespace Unity.Payments.Web.Views.Shared.Components.PaymentInfo
             {
                 context.Files
                   .AddIfNotContains("/Views/Shared/Components/PaymentInfo/Default.js");
-                context.Files
-                  .AddIfNotContains("/libs/jquery-maskmoney/dist/jquery.maskMoney.min.js");
             }
         }
     }
