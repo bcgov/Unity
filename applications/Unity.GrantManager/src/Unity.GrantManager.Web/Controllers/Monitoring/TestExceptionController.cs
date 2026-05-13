@@ -4,12 +4,10 @@ using System.Reflection;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Unity.GrantManager.Notifications;
 using Unity.Notifications.TeamsNotifications;
 using Volo.Abp.AspNetCore.Mvc;
-using Volo.Abp.Uow;
 
 namespace Unity.GrantManager.Web.Controllers.Monitoring;
 
@@ -20,7 +18,7 @@ namespace Unity.GrantManager.Web.Controllers.Monitoring;
 [ApiController]
 [Route("api/monitoring/test")]
 [AllowAnonymous]
-public class TestExceptionController : AbpControllerBase
+public class TestExceptionController(INotificationsAppService notifications) : AbpControllerBase
 {
     // Same SHA parsing as ExceptionCounterMiddleware
     private static readonly string CommitSha = ParseCommitSha(
@@ -49,9 +47,7 @@ public class TestExceptionController : AbpControllerBase
 
     /// <summary>
     /// GET /api/monitoring/test/notify
-    /// Directly fires the Teams notification with commit SHA — same path as ExceptionCounterMiddleware.
-    /// ABP catches controller exceptions before they reach the middleware, so this endpoint
-    /// exercises the notification code directly.
+    /// Fires a Teams notification via the same INotificationsAppService used by ExceptionCounterMiddleware.
     /// </summary>
     [HttpGet("notify")]
     public async Task<IActionResult> NotifyTeams()
@@ -59,14 +55,6 @@ public class TestExceptionController : AbpControllerBase
         var ex = new InvalidOperationException("Test exception for Teams notification verification.");
         string env = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Unknown";
         string endpoint = $"{Request.Method} {Request.Path}";
-
-        var scopeFactory = HttpContext.RequestServices.GetRequiredService<IServiceScopeFactory>();
-
-        await using var scope = scopeFactory.CreateAsyncScope();
-        var uowManager = scope.ServiceProvider.GetRequiredService<IUnitOfWorkManager>();
-        var notifications = scope.ServiceProvider.GetRequiredService<INotificationsAppService>();
-
-        using var uow = uowManager.Begin(requiresNew: true, isTransactional: false);
 
         var facts = new List<Fact>
         {
@@ -81,8 +69,6 @@ public class TestExceptionController : AbpControllerBase
             $"[TEST] {ex.GetType().Name}",
             $"Environment: {env} | {endpoint}",
             facts);
-
-        await uow.CompleteAsync();
 
         return Ok(new { notified = true, commitSha = CommitSha, environment = env });
     }
