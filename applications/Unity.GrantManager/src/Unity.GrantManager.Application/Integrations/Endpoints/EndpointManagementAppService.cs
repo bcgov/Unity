@@ -63,6 +63,17 @@ namespace Unity.GrantManager.Integrations.Endpoints
                 });
             }
         }
+        
+        [UnitOfWork]
+        [RemoteService(false)]
+        [AllowAnonymous]
+        public async Task<string> GetGitHubRepoUrlAsync()
+        {
+            var url = await GetUrlByKeyNameInternalAsync(DynamicUrlKeyNames.GITHUB_REPO, tenantSpecific: false);
+            if (string.IsNullOrWhiteSpace(url))
+                throw new UserFriendlyException("GitHub repo URL not configured.");
+            return url!;
+        }
 
         [UnitOfWork]
         [RemoteService(false)]
