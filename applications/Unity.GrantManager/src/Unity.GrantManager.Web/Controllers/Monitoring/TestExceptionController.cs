@@ -34,6 +34,16 @@ public class TestExceptionController(INotificationsAppService notifications) : A
     }
 
     /// <summary>
+    /// GET /api/monitoring/test/throw
+    /// Throws an unhandled exception → ABP catches it → IExceptionSubscriber fires → Teams notification sent.
+    /// </summary>
+    [HttpGet("throw")]
+    public IActionResult ThrowException()
+    {
+        throw new InvalidOperationException("Test exception to verify AbpExceptionNotificationSubscriber and Teams notification.");
+    }
+
+    /// <summary>
     /// GET /api/monitoring/test/log-error
     /// Logs an Error-level Serilog event → increments application_errors_total via ErrorCountingLoggerSink.
     /// </summary>
