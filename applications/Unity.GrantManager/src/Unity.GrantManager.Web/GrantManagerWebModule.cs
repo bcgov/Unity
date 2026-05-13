@@ -320,6 +320,7 @@ public class GrantManagerWebModule : AbpModule
     {
         context.Services.AddScoped<Microsoft.AspNetCore.Authorization.IAuthorizationHandler, Unity.GrantManager.Web.Identity.Policy.InternalNetworkHandler>();
         context.Services.AddSingleton<Middleware.ExceptionNotificationThrottle>();
+        context.Services.AddTransient<Volo.Abp.ExceptionHandling.IExceptionSubscriber, Middleware.AbpExceptionNotificationSubscriber>();
         PolicyRegistrant.Register(context);
     }
 
