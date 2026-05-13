@@ -30,7 +30,7 @@ public class AIRateLimiterTests
         _configuration = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
             {
-                ["AI:RateLimit:CooldownSeconds"] = "60"
+                ["Azure:Generation:CooldownSeconds"] = "60"
             }).Build();
     }
 
@@ -117,13 +117,35 @@ public class AIRateLimiterTests
         var config = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
             {
-                ["AI:RateLimit:CooldownSeconds"] = "1"
+                ["Azure:Generation:CooldownSeconds"] = "1"
             }).Build();
         var limiter = new AIRateLimiter(_cache, _currentUser, config, new TestDistributedLockProvider());
 
         await limiter.StampAsync();
         await Task.Delay(TimeSpan.FromSeconds(1.2), CancellationToken.None);
         await limiter.EnsureAsync(); // Should not throw.
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("0")]
+    [InlineData("-1")]
+    public async Task StampAsync_Throws_When_Cooldown_Config_Is_Missing_Or_Invalid(string? configuredCooldownSeconds)
+    {
+        var values = new Dictionary<string, string?>();
+        if (configuredCooldownSeconds != null)
+        {
+            values["Azure:Generation:CooldownSeconds"] = configuredCooldownSeconds;
+        }
+
+        var config = new ConfigurationBuilder()
+            .AddInMemoryCollection(values)
+            .Build();
+
+        var limiter = new AIRateLimiter(_cache, _currentUser, config, new TestDistributedLockProvider());
+
+        var ex = await Should.ThrowAsync<AbpException>(() => limiter.StampAsync());
+        ex.Message.ShouldContain("Azure:Generation:CooldownSeconds");
     }
 
     private sealed class TestDistributedLockProvider : IDistributedLockProvider
