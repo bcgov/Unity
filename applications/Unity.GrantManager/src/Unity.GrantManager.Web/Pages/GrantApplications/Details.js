@@ -260,19 +260,51 @@ $(function () {
         wrapper: '#assessmentScoresWidgetArea',
         filterCallback: function () {
             return {
-                assessmentId: decodeURIComponent($('#AssessmentId').val()),
+                assessmentId:
+                    selectedReviewDetails?.id ||
+                    decodeURIComponent($('#AssessmentId').val()),
                 currentUserId: decodeURIComponent(abp.currentUser.id),
             };
         },
     });
 
+    let assessmentScoresRefreshToken = 0;
+    function getAssessmentScoresWidgetElement() {
+        return document.getElementById('assessmentScoresWidgetArea');
+    }
+
+    function refreshAssessmentScoresWidget() {
+        const refreshToken = ++assessmentScoresRefreshToken;
+        globalThis.saveAssessmentScoresWidgetState?.(
+            getAssessmentScoresWidgetElement()
+        );
+
+        const refreshResult = assessmentScoresWidgetManager.refresh();
+
+        const afterRefresh = () => {
+            if (refreshToken !== assessmentScoresRefreshToken) {
+                return;
+            }
+
+            updateSubtotal();
+        };
+
+        if (refreshResult && typeof refreshResult.then === 'function') {
+            refreshResult.then(afterRefresh);
+        } else {
+            setTimeout(afterRefresh, 0);
+        }
+    }
+
     PubSub.subscribe('refresh_assessment_scores', (msg, data) => {
-        assessmentScoresWidgetManager.refresh();
-        updateSubtotal();
+        refreshAssessmentScoresWidget();
     });
 
     PubSub.subscribe('select_application_review', (msg, data) => {
         if (data) {
+            globalThis.saveAssessmentScoresWidgetState?.(
+                getAssessmentScoresWidgetElement()
+            );
             selectedReviewDetails = data;
             setDetailsContext('assessment');
             let selectElement = document.getElementById(
@@ -283,8 +315,7 @@ $(function () {
                 review: selectedReviewDetails,
             });
             assessmentUserDetailsWidgetManager.refresh();
-            assessmentScoresWidgetManager.refresh();
-            updateSubtotal();
+            refreshAssessmentScoresWidget();
             checkCurrentUser(data);
         } else {
             setDetailsContext('application');
@@ -292,6 +323,10 @@ $(function () {
     });
 
     PubSub.subscribe('deselect_application_review', (msg, data) => {
+        globalThis.saveAssessmentScoresWidgetState?.(
+            getAssessmentScoresWidgetElement()
+        );
+        assessmentScoresRefreshToken++;
         setDetailsContext('application');
     });
 
