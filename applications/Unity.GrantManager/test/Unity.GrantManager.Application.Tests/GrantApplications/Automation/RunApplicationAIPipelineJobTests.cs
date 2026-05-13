@@ -11,7 +11,6 @@ using Unity.GrantManager.Applications;
 using Unity.GrantManager.Attachments;
 using Unity.GrantManager.GrantApplications.Automation.BackgroundJobs;
 using Unity.AI.RateLimit;
-using Volo.Abp;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.EventBus.Local;
 using Volo.Abp.Features;
@@ -60,9 +59,9 @@ public class RunApplicationAIPipelineJobTests(ITestOutputHelper outputHelper) : 
         var request = CreateRequest();
         requests.Add(request);
 
-        var scoringAppService = Substitute.For<IApplicationScoringAppService>();
-        scoringAppService.GenerateApplicationScoringForPipelineAsync(Arg.Any<Guid>(), Arg.Any<string?>())
-            .Returns(new ApplicationScoringResultDto { Completed = true });
+        var scoringService = Substitute.For<IApplicationScoringService>();
+        scoringService.RegenerateAndSaveAsync(Arg.Any<Guid>(), Arg.Any<string?>())
+            .Returns("{}");
 
         var localEventBus = Substitute.For<ILocalEventBus>();
         var rateLimiter = Substitute.For<IAIRateLimiter>();
@@ -73,7 +72,7 @@ public class RunApplicationAIPipelineJobTests(ITestOutputHelper outputHelper) : 
             repository,
             localEventBus: localEventBus,
             rateLimiter: rateLimiter,
-            applicationScoringAppService: scoringAppService);
+            applicationScoringService: scoringService);
 
         await job.ExecuteAsync(new RunApplicationAIPipelineJobArgs
         {
@@ -101,23 +100,19 @@ public class RunApplicationAIPipelineJobTests(ITestOutputHelper outputHelper) : 
         var request = CreateRequest();
         requests.Add(request);
 
-        var prerequisiteValidator = Substitute.For<IAIGenerationPrerequisiteValidator>();
-        prerequisiteValidator.EnsureAttachmentSummaryAvailableAsync(request.ApplicationId!.Value)
-            .Returns<Task>(_ => throw new UserFriendlyException("No attachments are available to summarize."));
-        prerequisiteValidator.EnsureApplicationAnalysisAvailableAsync(request.ApplicationId.Value)
-            .Returns(Task.CompletedTask);
+        var attachmentSummaryService = Substitute.For<IAttachmentSummaryService>();
+        attachmentSummaryService.GenerateAndSaveAsync(Arg.Any<List<Guid>>(), Arg.Any<string?>())
+            .Returns(new List<AttachmentSummaryResultDto>());
 
-        var attachmentSummaryAppService = Substitute.For<IAttachmentSummaryAppService>();
-        var applicationAnalysisAppService = Substitute.For<IApplicationAnalysisAppService>();
-        applicationAnalysisAppService.GenerateApplicationAnalysisForPipelineAsync(Arg.Any<Guid>(), Arg.Any<string?>())
-            .Returns(new ApplicationAnalysisResultDto { Completed = true });
+        var applicationAnalysisService = Substitute.For<IApplicationAnalysisService>();
+        applicationAnalysisService.RegenerateAndSaveAsync(Arg.Any<Guid>(), Arg.Any<string?>())
+            .Returns("{}");
 
         var job = BuildJob(
             featureChecker,
             repository,
-            attachmentSummaryAppService: attachmentSummaryAppService,
-            applicationAnalysisAppService: applicationAnalysisAppService,
-            prerequisiteValidator: prerequisiteValidator);
+            attachmentSummaryService: attachmentSummaryService,
+            applicationAnalysisService: applicationAnalysisService);
 
         await job.ExecuteAsync(new RunApplicationAIPipelineJobArgs
         {
@@ -128,34 +123,24 @@ public class RunApplicationAIPipelineJobTests(ITestOutputHelper outputHelper) : 
         });
 
         request.Status.ShouldBe(AIGenerationRequestStatus.Completed);
-        await attachmentSummaryAppService.DidNotReceive().GenerateAttachmentSummariesForPipelineAsync(Arg.Any<List<Guid>>(), Arg.Any<string?>());
-        await applicationAnalysisAppService.Received(1).GenerateApplicationAnalysisForPipelineAsync(request.ApplicationId.Value, Arg.Any<string?>());
+        await attachmentSummaryService.Received(1).GenerateAndSaveAsync(Arg.Any<List<Guid>>(), Arg.Any<string?>());
+        await applicationAnalysisService.Received(1).RegenerateAndSaveAsync(request.ApplicationId.Value, Arg.Any<string?>());
     }
 
     private RunApplicationAIPipelineJob BuildJob(
         IFeatureChecker featureChecker,
         IRepository<AIGenerationRequest, Guid> generationRequestRepository,
         ILocalEventBus? localEventBus = null,
-        IAttachmentSummaryAppService? attachmentSummaryAppService = null,
-        IApplicationAnalysisAppService? applicationAnalysisAppService = null,
-        IApplicationScoringAppService? applicationScoringAppService = null,
-        IAIGenerationPrerequisiteValidator? prerequisiteValidator = null,
+        IAttachmentSummaryService? attachmentSummaryService = null,
+        IApplicationAnalysisService? applicationAnalysisService = null,
+        IApplicationScoringService? applicationScoringService = null,
         IAIRateLimiter? rateLimiter = null)
     {
-        if (prerequisiteValidator == null)
-        {
-            prerequisiteValidator = Substitute.For<IAIGenerationPrerequisiteValidator>();
-            prerequisiteValidator.EnsureAttachmentSummaryAvailableAsync(Arg.Any<Guid>()).Returns(Task.CompletedTask);
-            prerequisiteValidator.EnsureApplicationAnalysisAvailableAsync(Arg.Any<Guid>()).Returns(Task.CompletedTask);
-            prerequisiteValidator.EnsureApplicationScoringAvailableAsync(Arg.Any<Guid>()).Returns(Task.CompletedTask);
-        }
-
         return new RunApplicationAIPipelineJob(
             Substitute.For<IApplicationChefsFileAttachmentRepository>(),
-            attachmentSummaryAppService ?? Substitute.For<IAttachmentSummaryAppService>(),
-            applicationAnalysisAppService ?? Substitute.For<IApplicationAnalysisAppService>(),
-            applicationScoringAppService ?? Substitute.For<IApplicationScoringAppService>(),
-            prerequisiteValidator,
+            attachmentSummaryService ?? Substitute.For<IAttachmentSummaryService>(),
+            applicationAnalysisService ?? Substitute.For<IApplicationAnalysisService>(),
+            applicationScoringService ?? Substitute.For<IApplicationScoringService>(),
             featureChecker,
             localEventBus ?? Substitute.For<ILocalEventBus>(),
             generationRequestRepository,

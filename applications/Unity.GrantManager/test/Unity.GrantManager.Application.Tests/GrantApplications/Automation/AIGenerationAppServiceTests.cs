@@ -3,18 +3,21 @@ using NSubstitute;
 using Shouldly;
 using System;
 using System.Threading.Tasks;
+using Unity.AI.Generation;
 using Unity.AI.Localization;
+using Unity.AI.Operations;
 using Unity.AI.Settings;
 using Unity.GrantManager.GrantApplications;
 using Unity.GrantManager.GrantApplications.Automation.BackgroundJobs;
 using Unity.AI.Automation;
+using Volo.Abp.EventBus.Local;
 using Volo.Abp.Features;
 using Xunit;
 using Xunit.Abstractions;
 
 namespace Unity.GrantManager.GrantApplications.Automation;
 
-public class ApplicationContentAppServiceTests(ITestOutputHelper outputHelper) : GrantManagerApplicationTestBase(outputHelper)
+public class AIGenerationAppServiceTests(ITestOutputHelper outputHelper) : GrantManagerApplicationTestBase(outputHelper)
 {
     [Fact]
     public async Task GenerateContentAsync_Should_Return_Completed_Result()
@@ -32,7 +35,13 @@ public class ApplicationContentAppServiceTests(ITestOutputHelper outputHelper) :
         var currentTenant = Substitute.For<Volo.Abp.MultiTenancy.ICurrentTenant>();
         currentTenant.Id.Returns(Guid.NewGuid());
 
-        var service = new ApplicationContentAppService(queue, featureGuard, currentTenant);
+        var service = new AIGenerationAppService(
+            Substitute.For<IAttachmentSummaryService>(),
+            Substitute.For<IApplicationScoringService>(),
+            queue,
+            featureGuard,
+            currentTenant,
+            Substitute.For<ILocalEventBus>());
 
         var result = await service.GenerateContentAsync(Guid.NewGuid());
 

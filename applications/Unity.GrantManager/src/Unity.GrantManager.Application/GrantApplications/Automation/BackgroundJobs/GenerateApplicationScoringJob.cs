@@ -1,8 +1,8 @@
 using Microsoft.Extensions.Logging;
 using System;
 using System.Threading.Tasks;
+using Unity.AI.Operations;
 using Unity.AI.RateLimit;
-using Unity.GrantManager.GrantApplications;
 using Unity.GrantManager.GrantApplications.Automation.Events;
 using Volo.Abp.BackgroundJobs;
 using Volo.Abp.DependencyInjection;
@@ -14,7 +14,7 @@ using Volo.Abp.Uow;
 namespace Unity.GrantManager.GrantApplications.Automation.BackgroundJobs;
 
 public class GenerateApplicationScoringJob(
-    IApplicationScoringAppService applicationScoringAppService,
+    IApplicationScoringService applicationScoringService,
     IRepository<AIGenerationRequest, Guid> generationRequestRepository,
     ICurrentTenant currentTenant,
     IUnitOfWorkManager unitOfWorkManager,
@@ -39,14 +39,11 @@ public class GenerateApplicationScoringJob(
             try
             {
                 logger.LogInformation("Executing AI application scoring job for application {ApplicationId}.", args.ApplicationId);
-                var result = await applicationScoringAppService.GenerateApplicationScoringForPipelineAsync(args.ApplicationId, args.PromptVersion);
-                if (result.Completed)
+                await applicationScoringService.RegenerateAndSaveAsync(args.ApplicationId, args.PromptVersion);
+                await localEventBus.PublishAsync(new ApplicationAIScoringGeneratedEvent
                 {
-                    await localEventBus.PublishAsync(new ApplicationAIScoringGeneratedEvent
-                    {
-                        ApplicationId = args.ApplicationId
-                    });
-                }
+                    ApplicationId = args.ApplicationId
+                });
                 logger.LogInformation("Completed AI application scoring job for application {ApplicationId}.", args.ApplicationId);
 
                 await AIGenerationRequestJobHelper.StampRateLimitBestEffortAsync(aiRateLimiter, logger, args.RequestedByUserId, args.ApplicationId, args.RequestKey);

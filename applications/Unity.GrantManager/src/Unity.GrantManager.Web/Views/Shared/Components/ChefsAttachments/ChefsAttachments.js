@@ -190,49 +190,33 @@ $(function () {
 
             const existingHTML = $activeButton.html();
 
+            $activeButton
+                .html(
+                    '<span class="ai-button-content"><span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span><span>Generating...</span></span>'
+                )
+                .prop('disabled', true);
             globalThis.AIGenerationButtonState?.setGenerating($activeButton);
 
-            const monitorAttachmentSummaries = () => globalThis.AIGenerationButtonState.monitor({
-                $button: $activeButton,
-                originalHtml: existingHTML,
-                getStatus: () => unity.grantManager.grantApplications.grantApplication
-                    .getAIGenerationStatus(getApplicationId(), 'attachment-summary'),
-                onComplete: () => {
+            $.ajax({
+                url: '/api/app/ai/generation/attachment-summary',
+                data: JSON.stringify(summaryAttachmentIds),
+                contentType: 'application/json',
+                type: 'POST',
+                success: function () {
                     resetAttachmentSelection();
                     chefsDataTable.ajax.reload();
                     abp.notify.success('AI summaries generated successfully.');
+                    globalThis.AIGenerationButtonState?.restore($activeButton);
+                    $activeButton.html(existingHTML).prop('disabled', false);
                 },
-                onFailed: (request) => abp.message.error(request?.failureReason || 'AI summary generation failed.')
-            });
-
-            unity.grantManager.grantApplications.grantApplication
-                .queueAttachmentSummary({
-                    applicationId: getApplicationId(),
-                    attachmentIds: summaryAttachmentIds
-                })
-                .done(function (generationStatus) {
-                    const request = generationStatus?.generationRequest;
-                    const status = globalThis.AIGenerationButtonState?.resolveStatus(request?.status) ?? '';
-
-                    if (status === 'Completed') {
-                        resetAttachmentSelection();
-                        chefsDataTable.ajax.reload();
-                        abp.notify.success('AI summaries generated successfully.');
-                        globalThis.AIGenerationButtonState?.restoreForCooldownCheck($activeButton, existingHTML);
-                        globalThis.AIGenerationButtonState?.applyStatusState(generationStatus);
-                        return;
-                    }
-
-                    monitorAttachmentSummaries();
-                })
-                .fail(function (error) {
-                    console.error('Error queueing AI summaries:', error);
-                    abp.message.error('An error occurred while queueing AI summaries. Please try again.');
+                error: function (error) {
+                    console.error('Error generating AI summaries:', error);
+                    abp.message.error('An error occurred while generating AI summaries. Please try again.');
                     globalThis.AIGenerationButtonState?.restore($activeButton);
                     $activeButton.html(existingHTML).prop('disabled', false);
                     setGenerateSummariesEnabled();
-                    globalThis.syncAIRateLimitButtons?.();
-                });
+                },
+            });
         });
     }
 
