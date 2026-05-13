@@ -16,13 +16,13 @@ namespace Unity.GrantManager.Web.Middleware;
 /// Hooks into ABP's exception pipeline via IExceptionSubscriber.
 /// ABP calls this for every exception it handles (controller actions, app services, etc.)
 /// — complementing ExceptionCounterMiddleware which only catches exceptions that bypass ABP.
-/// Registered automatically by ABP's DI scan (ITransientDependency).
+/// Registered explicitly in GrantManagerWebModule.ConfigurePolicies.
 /// </summary>
 public class AbpExceptionNotificationSubscriber(
     ExceptionNotificationThrottle throttle,
     IServiceScopeFactory scopeFactory,
     IHttpContextAccessor httpContextAccessor,
-    ILogger<AbpExceptionNotificationSubscriber> logger) : IExceptionSubscriber, ITransientDependency
+    ILogger<AbpExceptionNotificationSubscriber> logger) : IExceptionSubscriber
 {
     private static readonly HashSet<string> NotifyEnvironments =
         new(StringComparer.OrdinalIgnoreCase) { "Production", "Test", "Development" };
@@ -30,6 +30,8 @@ public class AbpExceptionNotificationSubscriber(
     public Task HandleAsync(ExceptionNotificationContext context)
     {
         var ex = context.Exception;
+
+        logger.LogInformation("AbpExceptionNotificationSubscriber.HandleAsync called for {ExceptionType}", ex.GetType().Name);
 
         // Increment Prometheus counters
         ErrorCountingLoggerSink.ErrorCounter
