@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
@@ -36,6 +37,12 @@ public class ExceptionCounterMiddleware(
         typeof(ExceptionCounterMiddleware).Assembly
             .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?
             .InformationalVersion);
+
+    // Commit author baked in at build time via -p:AssemblyMetadata_CommitAuthor=<author>.
+    internal static readonly string CommitAuthor =
+        typeof(ExceptionCounterMiddleware).Assembly
+            .GetCustomAttributes<AssemblyMetadataAttribute>()
+            .FirstOrDefault(a => a.Key == "CommitAuthor")?.Value ?? "unknown";
 
     private static string ParseCommitSha(string? informationalVersion)
     {
@@ -110,6 +117,7 @@ public class ExceptionCounterMiddleware(
                     new() { Name = "Endpoint",     Value = endpoint },
                     new() { Name = "Stack Trace",  Value = stackTrace },
                     new() { Name = "Commit",       Value = CommitSha },
+                    new() { Name = "Author",       Value = CommitAuthor },
                 };
 
                 if (!string.IsNullOrEmpty(innerMessage))

@@ -1,12 +1,12 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Unity.GrantManager.Notifications;
 using Unity.Notifications.TeamsNotifications;
-using Volo.Abp.DependencyInjection;
 using Volo.Abp.ExceptionHandling;
 using Volo.Abp.Uow;
 
@@ -30,8 +30,6 @@ public class AbpExceptionNotificationSubscriber(
     public Task HandleAsync(ExceptionNotificationContext context)
     {
         var ex = context.Exception;
-
-        logger.LogInformation("AbpExceptionNotificationSubscriber.HandleAsync called for {ExceptionType}", ex.GetType().Name);
 
         // Increment Prometheus counters
         ErrorCountingLoggerSink.ErrorCounter
@@ -78,17 +76,45 @@ public class AbpExceptionNotificationSubscriber(
                 string activityTitle = $"[{env?.ToUpperInvariant()}] {ex.GetType().Name}";
                 string activitySubtitle = $"Environment: {env} | {endpoint}";
 
+                var frame = GetTopFrame(ex);
+                string sourceFile = NormalizeRepoPath(frame?.File ?? "(unknown)");
+                int? sourceLine = frame?.Line;
+
                 var facts = new List<Fact>
                 {
                     new() { Name = "Exception",   Value = exTypeName },
                     new() { Name = "Message",     Value = exMessage },
                     new() { Name = "Endpoint",    Value = endpoint },
                     new() { Name = "Stack Trace", Value = stackTrace },
+                    new() { Name = "Source",      Value = sourceLine.HasValue ? $"{sourceFile}:{sourceLine}" : sourceFile },
                     new() { Name = "Commit",      Value = ExceptionCounterMiddleware.CommitSha },
+                    new() { Name = "Author",      Value = ExceptionCounterMiddleware.CommitAuthor },
                 };
 
                 if (!string.IsNullOrEmpty(innerMessage))
                     facts.Add(new Fact { Name = "Inner Exception", Value = innerMessage });
+
+                if (sourceLine.HasValue)
+                {
+                    try
+                    {
+                        var blameService = scope.ServiceProvider.GetRequiredService<IBlameLookupService>();
+                        var blame = await blameService.GetBlameAsync(sourceFile, sourceLine.Value);
+
+                        if (blame != null)
+                        {
+                            facts.Add(new Fact { Name = "Blame Author", Value = $"{blame.Author} <{blame.Email}>" });
+                            facts.Add(new Fact { Name = "Blame Commit", Value = $"{blame.CommitSha[..Math.Min(7, blame.CommitSha.Length)]} {blame.Message}" });
+
+                            if (blame.PullRequestUrl != null)
+                                facts.Add(new Fact { Name = "Blame PR", Value = $"#{blame.PullRequestNumber} {blame.PullRequestUrl}" });
+                        }
+                    }
+                    catch (Exception blameEx)
+                    {
+                        logger.LogDebug(blameEx, "Blame lookup failed for {File}:{Line}", sourceFile, sourceLine);
+                    }
+                }
 
                 await notifications.PostToTeamsAsync(activityTitle, activitySubtitle, facts);
                 await uow.CompleteAsync();
@@ -98,5 +124,36 @@ public class AbpExceptionNotificationSubscriber(
                 logger.LogWarning(notifyEx, "Failed to send Teams exception notification via IExceptionSubscriber");
             }
         });
+    }
+
+    private static string NormalizeRepoPath(string fullPath)
+    {
+        const string marker = "src/";
+
+        int idx = fullPath.IndexOf(marker, StringComparison.OrdinalIgnoreCase);
+
+        if (idx < 0)
+            return fullPath.Replace("\\", "/");
+
+        return fullPath[(idx + marker.Length)..]
+            .Replace("\\", "/");
+    }
+
+    private static (string? File, int? Line)? GetTopFrame(Exception ex)
+    {
+        var trace = new StackTrace(ex, true);
+
+        foreach (var frame in trace.GetFrames() ?? [])
+        {
+            var file = frame.GetFileName();
+            var line = frame.GetFileLineNumber();
+
+            if (!string.IsNullOrWhiteSpace(file) && line > 0)
+            {
+                return (file, line);
+            }
+        }
+
+        return null;
     }
 }
