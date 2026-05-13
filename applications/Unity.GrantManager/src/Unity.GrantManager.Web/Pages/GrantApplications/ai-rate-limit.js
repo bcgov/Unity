@@ -88,7 +88,7 @@
         if (!force && now - lastFetchAt < 1000) return;
         lastFetchAt = now;
         try {
-            const res = await fetch('/api/app/ai-rate-limit/state', {
+            const res = await fetch('/api/app/ai/rate-limit/state', {
                 credentials: 'same-origin',
                 headers: { Accept: 'application/json' },
             });
