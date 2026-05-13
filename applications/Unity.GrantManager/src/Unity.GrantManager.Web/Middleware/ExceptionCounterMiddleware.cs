@@ -32,7 +32,7 @@ public class ExceptionCounterMiddleware(
 
     // Git SHA baked in at build time via -p:SourceRevisionId=<sha> in the Dockerfile.
     // Format is "<version>+<sha>" e.g. "1.0.0+a3f8c21"; we extract just the SHA.
-    private static readonly string CommitSha = ParseCommitSha(
+    internal static readonly string CommitSha = ParseCommitSha(
         typeof(ExceptionCounterMiddleware).Assembly
             .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?
             .InformationalVersion);
