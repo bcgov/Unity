@@ -207,7 +207,7 @@
 
 "@formio/choices.js@10.2.1":
   version "10.2.1"
-  resolved "https://registry.yarnpkg.com/@formio/choices.js/-/choices.js-10.2.1.tgz#d0f5c032d94f33152b6036f6a5bb42fcc4684e31"
+  resolved "https://registry.npmjs.org/@formio/choices.js/-/choices.js-10.2.1.tgz"
   integrity sha512-NCE5u7jG3XGokJP16MyAbVSUptKu/mpJYAxd4PPIoLiO/l9Do5uoOQ0MgNb9qG9qABJiOX+qNRE8q8RybY/SwQ==
   dependencies:
     deepmerge "^4.2.2"
@@ -221,7 +221,7 @@
 
 "@formio/text-mask-addons@^3.8.0-formio.4":
   version "3.8.0-formio.4"
-  resolved "https://registry.yarnpkg.com/@formio/text-mask-addons/-/text-mask-addons-3.8.0-formio.4.tgz#f3ce4bf978c6c5e8f671641d96f6fd116f7c92a3"
+  resolved "https://registry.npmjs.org/@formio/text-mask-addons/-/text-mask-addons-3.8.0-formio.4.tgz"
   integrity sha512-vhkeIyuL+1rtC9S4IW8O3JCwroPtvJrkrcMO4wyELNqMIgQRKbiyBAitZfUP4tY04xdB5lxAinbzdwb+NMdX6w==
 
 "@formio/vanilla-text-mask@^5.1.1-formio.1":
@@ -290,6 +290,11 @@ autocompleter@^7.0.1:
   version "7.1.0"
   resolved "https://registry.npmjs.org/autocompleter/-/autocompleter-7.1.0.tgz"
   integrity sha512-uCToOnq7eAD/GJAteDbYuQ7ksDtrYWOy5CIAq43wh0dT+5frMpPlyD9tp+y5fz8KIcsP+zR2MjzoTAdW5aJESw==
+
+autonumeric@~4.10.10:
+  version "4.10.10"
+  resolved "https://registry.yarnpkg.com/autonumeric/-/autonumeric-4.10.10.tgz#1420e9c7e9ca4aea14b7eba7583431c2734bbe3b"
+  integrity sha512-fLzZikIpN/hNvQPBrffI2RAw2y4n/dH4RAf4XBOKcuznKyiJmCk1WMRFa99LivRqTN1uYNHdaaCMeYAvNynGmg==
 
 "bootstrap-4@npm:bootstrap@~4.6.2":
   version "4.6.2"
@@ -390,7 +395,7 @@ datatables.net-bs5@^2, datatables.net-bs5@^2.1.8:
 
 datatables.net-bs5@~2.3.8:
   version "2.3.8"
-  resolved "https://registry.yarnpkg.com/datatables.net-bs5/-/datatables.net-bs5-2.3.8.tgz#7266636ff488429988ca664bc8cb0b7c5e48c563"
+  resolved "https://registry.npmjs.org/datatables.net-bs5/-/datatables.net-bs5-2.3.8.tgz"
   integrity sha512-TbFH99QSWm93Kn3teHLFKeyOqYbaiddlHvRFdXUwAvh/fjTMhACWmHG+I43ss8d23OEFHV0WIbN4lpPusZm5zw==
   dependencies:
     datatables.net "2.3.8"
@@ -505,7 +510,7 @@ datatables.net@2.2.1:
 
 datatables.net@2.3.8:
   version "2.3.8"
-  resolved "https://registry.yarnpkg.com/datatables.net/-/datatables.net-2.3.8.tgz#55a8dbe3bd2196951c498ab79bf44602a2bf3229"
+  resolved "https://registry.npmjs.org/datatables.net/-/datatables.net-2.3.8.tgz"
   integrity sha512-uhViowhlDlheAuo5a8TrkQqADsjrtGeOyvrigvr4t0+K3MyAWqClORXWAYIcN9VLX6iIX0C8O9gwJNd01hITRg==
   dependencies:
     jquery ">=1.7"
@@ -562,7 +567,7 @@ dompurify@^3.0.5:
 
 dompurify@~3.4.1:
   version "3.4.1"
-  resolved "https://registry.yarnpkg.com/dompurify/-/dompurify-3.4.1.tgz#521d04483ac12631b2aedf434a5f5390933b8789"
+  resolved "https://registry.npmjs.org/dompurify/-/dompurify-3.4.1.tgz"
   integrity sha512-JahakDAIg1gyOm7dlgWSDjV4n7Ip2PKR55NIT6jrMfIgLFgWo81vdr1/QGqWtFNRqXP9UV71oVePtjqS2ebnPw==
   optionalDependencies:
     "@types/trusted-types" "^2.0.7"
@@ -622,7 +627,7 @@ fetch-ponyfill@^7.1.0:
 
 formiojs@4.21.7:
   version "4.21.7"
-  resolved "https://registry.yarnpkg.com/formiojs/-/formiojs-4.21.7.tgz#112f229abb8b33259644ed17d132d59041fef9f1"
+  resolved "https://registry.npmjs.org/formiojs/-/formiojs-4.21.7.tgz"
   integrity sha512-DDXPhXABxdEbpyfv0C8SAS6zt92luGFXqe0usPHxSHvlP960GQkhS//WV7TAMrRsjj1WTIqqv3XZha8qTknG3Q==
   dependencies:
     "@formio/bootstrap3" "2.12.4-rc.1"
@@ -671,7 +676,7 @@ fuse.js@^6.6.2:
 
 handlebars@~4.7.9:
   version "4.7.9"
-  resolved "https://registry.yarnpkg.com/handlebars/-/handlebars-4.7.9.tgz#6f139082ab58dc4e5a0e51efe7db5ae890d56a0f"
+  resolved "https://registry.npmjs.org/handlebars/-/handlebars-4.7.9.tgz"
   integrity sha512-4E71E0rpOaQuJR2A3xDZ+GM1HyWYv1clR58tC8emQNeQe3RH7MAzSbat+V0wG78LQBo6m6bzSG/L4pBuCsgnUQ==
   dependencies:
     minimist "^1.2.5"
@@ -705,7 +710,7 @@ inherits@~2.0.3:
 
 inputmask@^5.0.9:
   version "5.0.9"
-  resolved "https://registry.yarnpkg.com/inputmask/-/inputmask-5.0.9.tgz#7bf4e83f5e199c88c0edf28545dc23fa208ef4be"
+  resolved "https://registry.npmjs.org/inputmask/-/inputmask-5.0.9.tgz"
   integrity sha512-s0lUfqcEbel+EQXtehXqwCJGShutgieOaIImFKC/r4reYNvX3foyrChl6LOEvaEgxEbesePIrw1Zi2jhZaDZbQ==
 
 is-array@^1.0.1:
@@ -735,13 +740,6 @@ jquery-form@^4.3.0:
   dependencies:
     jquery ">=1.7.2"
 
-jquery-maskmoney@~3.0.2:
-  version "3.0.2"
-  resolved "https://registry.npmjs.org/jquery-maskmoney/-/jquery-maskmoney-3.0.2.tgz"
-  integrity sha512-tmhGSfx3QTwrYcZYgELsr8qgcvRcR72+p6D+YrZrlkUdVE6g9vuRLwbl4FuL5X84KBfWBtoX6k2HawYjv2WVag==
-  dependencies:
-    jquery ">=1.6"
-
 jquery-mousewheel@>=3.0.6:
   version "3.2.2"
   resolved "https://registry.npmjs.org/jquery-mousewheel/-/jquery-mousewheel-3.2.2.tgz"
@@ -762,7 +760,7 @@ jquery-validation@>=1.19, jquery-validation@^1.21.0:
   resolved "https://registry.npmjs.org/jquery-validation/-/jquery-validation-1.21.0.tgz"
   integrity sha512-xNot0rlUIgu7duMcQ5qb6MGkGL/Z1PQaRJQoZAURW9+a/2PGOUxY36o/WyNeP2T9R6jvWB8Z9lUVvvQWI/Zs5w==
 
-jquery@>=1.10, jquery@>=1.12.0, jquery@>=1.2.6, "jquery@>=1.5.0 <4.0", jquery@>=1.6, jquery@>=1.7, jquery@>=1.7.2, "jquery@>=3.4.0 <4.0.0", jquery@^3.6.0, jquery@~3.7.1:
+jquery@>=1.10, jquery@>=1.12.0, jquery@>=1.2.6, "jquery@>=1.5.0 <4.0", jquery@>=1.7, jquery@>=1.7.2, "jquery@>=3.4.0 <4.0.0", jquery@^3.6.0, jquery@~3.7.1:
   version "3.7.1"
   resolved "https://registry.npmjs.org/jquery/-/jquery-3.7.1.tgz"
   integrity sha512-m4avr8yL8kmFN8psrbFFFmB/If14iN5o9nw/NgnnM+kybDJpRsAynV2BsfpTYrTRysYUdADVD7CkUUizgkpLfg==
@@ -1005,7 +1003,7 @@ timeago@^1.6.7:
 
 tinymce@~8.4.0:
   version "8.4.0"
-  resolved "https://registry.yarnpkg.com/tinymce/-/tinymce-8.4.0.tgz#403ea8418b48d6120f373bce2f9e4166bb844006"
+  resolved "https://registry.npmjs.org/tinymce/-/tinymce-8.4.0.tgz"
   integrity sha512-Q/0/iLycB7hgSkOBoRqfceOz/7Obs9zIo0DwTRuvrReLxb6qdz/1vI7aVJMcW2BAuW80QqZiTyYdVM2amBkqIg==
 
 tippy.js@^6.3.7:

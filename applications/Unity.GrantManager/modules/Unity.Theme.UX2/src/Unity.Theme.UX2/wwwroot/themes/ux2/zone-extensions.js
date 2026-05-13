@@ -312,9 +312,11 @@ class UnityChangeTrackingForm {
 
                     // Re-apply any special formatting (like currency masks)
                     if ($el.hasClass('unity-currency-input') ||
-                        $el.hasClass('numeric-mask') ||
-                        $el.hasClass('percentage-mask')) {
-                        $el.maskMoney('mask', this.originalValues[name]);
+                        $el.hasClass('custom-currency-input')) {
+                        const anElement = AutoNumeric.getAutoNumericElement(element);
+                        if (anElement) {
+                            anElement.set(this.originalValues[name]);
+                        }
                     }
                 }
 
@@ -339,6 +341,38 @@ class UnityChangeTrackingForm {
     serializeZoneArray(camelCase = false, includeDisabledFields = false, nested = false) {
         return this.form.serializeZoneFieldsets(camelCase, includeDisabledFields, nested);
     }
+}
+
+const currencyConfiguration = {
+    currencySymbol: AutoNumeric.options.currencySymbol.dollar,
+    decimalCharacterAlternative: AutoNumeric.options.decimalCharacterAlternative.dot,
+    formulaMode: AutoNumeric.options.formulaMode.disabled,
+    historySize: AutoNumeric.options.historySize.small,
+    modifyValueOnWheel: AutoNumeric.options.modifyValueOnWheel.doNothing,
+    outputFormat: AutoNumeric.options.outputFormat.string,
+    overrideMinMaxLimits: AutoNumeric.options.overrideMinMaxLimits.ceiling
+};
+
+/**
+ * Initialize AutoNumeric on currency input elements within a given scope.
+ * Skips elements that are already initialized.
+ * @param {string|HTMLElement|jQuery} [scope=document] - CSS selector, DOM element, or jQuery object to scope the search
+ * @param {object} [configOverrides={}] - AutoNumeric configuration overrides
+ * @returns {AutoNumeric[]} Array of AutoNumeric instances created
+ */
+function initCurrencyInputs(scope, configOverrides = {}) {
+    const container = scope ? (scope instanceof $ ? scope[0] : (typeof scope === 'string' ? document.querySelector(scope) : scope)) : document;
+    const elements = (container || document).querySelectorAll('.unity-currency-input, .custom-currency-input');
+    const config = { ...currencyConfiguration, ...configOverrides };
+    const instances = [];
+
+    elements.forEach(function (el) {
+        if (!AutoNumeric.getAutoNumericElement(el)) {
+            instances.push(new AutoNumeric(el, el.value || null, config));
+        }
+    });
+
+    return instances;
 }
 
 class UnityZoneForm extends UnityChangeTrackingForm {
@@ -366,24 +400,7 @@ class UnityZoneForm extends UnityChangeTrackingForm {
     }
 
     initializeNumericFields() {
-        $('.numeric-mask').maskMoney({ precision: 0 });
-        $('.percentage-mask').maskMoney();
-
-        $('.numeric-mask').each(function () {
-            $(this).maskMoney('mask', this.value);
-        });
-
-        $('.percentage-mask').each(function () {
-            $(this).maskMoney('mask', this.value);
-        });
-
-        $('.remove-leading-zeros').on('input', function () {
-            let inputValue = $(this).val();
-            let newValue = inputValue.replace(/^0+(?!$)/, '');
-            $(this).val(newValue);
-        });
-
-        $('.unity-currency-input').maskMoney();
+        initCurrencyInputs(this.form[0]);
     }
 
     /**
