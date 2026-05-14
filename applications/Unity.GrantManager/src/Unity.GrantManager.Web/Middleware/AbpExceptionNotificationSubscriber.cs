@@ -103,18 +103,18 @@ public class AbpExceptionNotificationSubscriber(
                         
                         if (blame != null)
                         {
+                            logger.LogInformation("[ExceptionNotify] Blame lookup result: Author={Author}, Commit={Commit}, PR={PR}, PRTitle={PRTitle}", blame.Author, blame.CommitSha, blame.PullRequestUrl, blame.PullRequestTitle);
                             facts.Add(new Fact { Name = "Blame Author", Value = $"{blame.Author} <{blame.Email}>" });
-                            facts.Add(new Fact { Name = "Blame Commit", Value = $"{blame.CommitSha[..Math.Min(7, blame.CommitSha.Length)]} {blame.Message}" });
+                            var shortSha = !string.IsNullOrEmpty(blame.CommitSha) && blame.CommitSha.Length > 7 ? blame.CommitSha.Substring(0, 7) : blame.CommitSha;
+                            facts.Add(new Fact { Name = "Blame Commit", Value = $"{shortSha} {blame.Message}" });
 
                             if (blame.PullRequestUrl != null)
                             {
-                                facts.Add(new Fact { Name = "Blame PR", Value = $"#{blame.PullRequestNumber} {blame.PullRequestUrl}" });   
-                            }
-
-                            if (!string.IsNullOrWhiteSpace(blame.PullRequestTitle))
-                            {
-                                // Look at the PR title - detect the AB# Pattern
-                                facts.Add(new Fact { Name = "Blame PR Title", Value = blame.PullRequestTitle });
+                                facts.Add(new Fact { Name = "Blame PR", Value = $"#{blame.PullRequestNumber} {blame.PullRequestUrl}" });
+                                if (!string.IsNullOrWhiteSpace(blame.PullRequestTitle))
+                                {
+                                    facts.Add(new Fact { Name = "Blame PR Title", Value = blame.PullRequestTitle });
+                                }
                             }
                         }
                     }
