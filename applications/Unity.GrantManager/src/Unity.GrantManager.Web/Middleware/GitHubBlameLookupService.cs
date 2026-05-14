@@ -134,18 +134,13 @@ public class GitHubBlameLookupService : IBlameLookupService
         var url = await GetGraphQlUrlAsync();
         if (url == null)
             return null;
-
+        _logger.LogInformation("[BlameLookup] Request payload: {Payload}", payload);
         using var response = await _httpClient.PostAsync(
             url,
             new StringContent(payload, Encoding.UTF8, "application/json"));
-
-        var json = await response.Content.ReadAsStringAsync();
-
-        if (!response.IsSuccessStatusCode)
-        {
-            _logger.LogWarning("[BlameLookup] GitHub error: {Json}", json);
-            return null;
-        }
+        response.EnsureSuccessStatusCode();
+        string json = await response.Content.ReadAsStringAsync();
+        _logger.LogInformation("[BlameLookup] Response body: {Json}", json);
 
         using var doc = JsonDocument.Parse(json);
         var root = doc.RootElement;
@@ -236,8 +231,9 @@ query {{
         using var response = await _httpClient.PostAsync(
             url,
             new StringContent(payload, Encoding.UTF8, "application/json"));
-
-        var json = await response.Content.ReadAsStringAsync();
+        response.EnsureSuccessStatusCode();
+        string json = await response.Content.ReadAsStringAsync();
+        _logger.LogInformation("[BlameLookup] Response body: {Json}", json);
 
         using var doc = JsonDocument.Parse(json);
 
