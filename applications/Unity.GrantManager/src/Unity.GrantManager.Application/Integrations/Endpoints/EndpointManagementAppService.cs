@@ -78,6 +78,18 @@ namespace Unity.GrantManager.Integrations.Endpoints
         [UnitOfWork]
         [RemoteService(false)]
         [AllowAnonymous]
+        public async Task<string> GetGitHubGraphQlUrlAsync()
+        {
+            var url = await GetUrlByKeyNameInternalAsync(DynamicUrlKeyNames.GITHUB_GRAPHQL, tenantSpecific: false);
+            if (string.IsNullOrWhiteSpace(url))
+                throw new UserFriendlyException("GitHub GraphQL URL not configured.");
+            return url!;
+        }
+
+
+        [UnitOfWork]
+        [RemoteService(false)]
+        [AllowAnonymous]
         public async Task<string> GetChefsApiBaseUrlAsync()
         {
             var url = await GetUrlByKeyNameInternalAsync(DynamicUrlKeyNames.INTAKE_API_BASE, tenantSpecific: false);

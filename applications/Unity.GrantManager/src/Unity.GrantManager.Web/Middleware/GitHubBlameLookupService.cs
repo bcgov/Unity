@@ -9,8 +9,6 @@ using Unity.GrantManager.Integrations;
 
 namespace Unity.GrantManager.Web.Middleware;
 
-
-
 public class GitHubBlameLookupService : IBlameLookupService
 {
     private readonly HttpClient _httpClient;
@@ -78,11 +76,13 @@ public class GitHubBlameLookupService : IBlameLookupService
             _branch = branchOverride;
         }
 
-        string token =
-            Environment.GetEnvironmentVariable("GITHUB_TOKEN") ?? "";
-
-        _httpClient.DefaultRequestHeaders.Authorization =
-            new AuthenticationHeaderValue("Bearer", token);
+        // Set Authorization header if UNITY_GITHUB_PAT is present
+        string pat = Environment.GetEnvironmentVariable("UNITY_GITHUB_PAT") ?? string.Empty;
+        if (!string.IsNullOrWhiteSpace(pat))
+        {
+            _httpClient.DefaultRequestHeaders.Authorization =
+                new AuthenticationHeaderValue("Bearer", pat);
+        }
 
         _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd(
             "Unity-GrantManager");
@@ -211,8 +211,22 @@ public class GitHubBlameLookupService : IBlameLookupService
             query
         });
 
+        string? githubGraphQlUrl = null;
+        if (_endpointService != null)
+        {
+            try
+            {
+                githubGraphQlUrl = _endpointService.GetGitHubGraphQlUrlAsync().GetAwaiter().GetResult();
+            }
+            catch { }
+        }
+  
+        if (githubGraphQlUrl == null)        {
+            return null;
+        }
+
         using var response = await _httpClient.PostAsync(
-            "https://api.github.com/graphql",
+            githubGraphQlUrl,
             new StringContent(
                 payload,
                 Encoding.UTF8,
@@ -282,6 +296,7 @@ public class GitHubBlameLookupService : IBlameLookupService
 
             string? prUrl = null;
             int? prNumber = null;
+            string? prTitle = null;
 
             var prs =
                 commit
@@ -291,16 +306,11 @@ public class GitHubBlameLookupService : IBlameLookupService
             if (prs.GetArrayLength() > 0)
             {
                 var pr = prs[0];
-
-                prUrl =
-                    pr.GetProperty("url").GetString();
-
-                if (pr.TryGetProperty(
-                    "number",
-                    out var numberProp))
+                prUrl = pr.GetProperty("url").GetString();
+                prTitle = pr.GetProperty("title").GetString();
+                if (pr.TryGetProperty("number", out var numberProp))
                 {
-                    prNumber =
-                        numberProp.GetInt32();
+                    prNumber = numberProp.GetInt32();
                 }
             }
 
@@ -311,7 +321,8 @@ public class GitHubBlameLookupService : IBlameLookupService
                 Email = email,
                 Message = message,
                 PullRequestUrl = prUrl,
-                PullRequestNumber = prNumber
+                PullRequestNumber = prNumber,
+                PullRequestTitle = prTitle
             };
         }
 

@@ -100,14 +100,22 @@ public class AbpExceptionNotificationSubscriber(
                     {
                         var blameService = scope.ServiceProvider.GetRequiredService<IBlameLookupService>();
                         var blame = await blameService.GetBlameAsync(sourceFile, sourceLine.Value);
-
+                        
                         if (blame != null)
                         {
                             facts.Add(new Fact { Name = "Blame Author", Value = $"{blame.Author} <{blame.Email}>" });
                             facts.Add(new Fact { Name = "Blame Commit", Value = $"{blame.CommitSha[..Math.Min(7, blame.CommitSha.Length)]} {blame.Message}" });
 
                             if (blame.PullRequestUrl != null)
-                                facts.Add(new Fact { Name = "Blame PR", Value = $"#{blame.PullRequestNumber} {blame.PullRequestUrl}" });
+                            {
+                                facts.Add(new Fact { Name = "Blame PR", Value = $"#{blame.PullRequestNumber} {blame.PullRequestUrl}" });   
+                            }
+
+                            if (!string.IsNullOrWhiteSpace(blame.PullRequestTitle))
+                            {
+                                // Look at the PR title - detect the AB# Pattern
+                                facts.Add(new Fact { Name = "Blame PR Title", Value = blame.PullRequestTitle });
+                            }
                         }
                     }
                     catch (Exception blameEx)
