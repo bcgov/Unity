@@ -1272,5 +1272,8 @@ function walkFormComponents(components) {
 }
 
 function patchHtmlElementTags(schema) {
+    if (!schema || !Array.isArray(schema.components)) {
+        return;
+    }
     walkFormComponents(schema.components);
 }
