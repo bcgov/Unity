@@ -122,12 +122,13 @@ public class GitHubBlameLookupService : IBlameLookupService
         if (string.IsNullOrWhiteSpace(owner) || string.IsNullOrWhiteSpace(repo))
             return null;
 
-        var sha = await ResolveBranchShaAsync(owner, repo, branch);
+        // 🔥 FIX: resolve ACTUAL HEAD commit safely (not ambiguous ref target)
+        var sha = await ResolveBranchHeadCommitShaAsync(owner, repo, branch);
+
         if (string.IsNullOrWhiteSpace(sha))
             return null;
 
         var query = BuildBlameQuery(owner, repo, sha, repoPath);
-
         var payload = JsonSerializer.Serialize(new { query });
 
         var url = await GetGraphQlUrlAsync();
@@ -171,7 +172,6 @@ public class GitHubBlameLookupService : IBlameLookupService
                 continue;
 
             var commit = range.GetProperty("commit");
-
             var author = commit.GetProperty("author");
 
             var prs = commit
@@ -207,7 +207,8 @@ public class GitHubBlameLookupService : IBlameLookupService
         return null;
     }
 
-    private async Task<string?> ResolveBranchShaAsync(string owner, string repo, string branch)
+    // 🔥 FIXED: reliable HEAD commit resolution (prevents wrong object types)
+    private async Task<string?> ResolveBranchHeadCommitShaAsync(string owner, string repo, string branch)
     {
         var query = $@"
 query {{
@@ -215,7 +216,11 @@ query {{
     ref(qualifiedName: ""refs/heads/{branch}"") {{
       target {{
         ... on Commit {{
-          oid
+          history(first: 1) {{
+            nodes {{
+              oid
+            }}
+          }}
         }}
       }}
     }}
@@ -236,13 +241,23 @@ query {{
 
         using var doc = JsonDocument.Parse(json);
 
-        return doc.RootElement
-            .GetProperty("data")
-            .GetProperty("repository")
-            .GetProperty("ref")
-            .GetProperty("target")
-            .GetProperty("oid")
-            .GetString();
+        try
+        {
+            return doc.RootElement
+                .GetProperty("data")
+                .GetProperty("repository")
+                .GetProperty("ref")
+                .GetProperty("target")
+                .GetProperty("history")
+                .GetProperty("nodes")[0]
+                .GetProperty("oid")
+                .GetString();
+        }
+        catch
+        {
+            _logger.LogWarning("[BlameLookup] Failed to resolve HEAD commit SHA");
+            return null;
+        }
     }
 
     private async Task<string?> GetGraphQlUrlAsync()
