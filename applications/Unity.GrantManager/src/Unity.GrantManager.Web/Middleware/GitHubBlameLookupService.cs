@@ -207,6 +207,7 @@ public class GitHubBlameLookupService : IBlameLookupService
             repo,
             branch,
             repoPath);
+        _logger.LogInformation("[BlameLookup] Using blame path: {Path}", repoPath);
         _logger.LogInformation("[BlameLookup] Built GraphQL query: {Query}", query);
 
         var payload = JsonSerializer.Serialize(new
