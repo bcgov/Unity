@@ -7,6 +7,9 @@ namespace Unity.AI.Runtime;
 
 public class OpenAIConfigurationResolver(IConfiguration configuration) : ITransientDependency
 {
+    private static readonly string[] SupportedReasoningEfforts = ["minimal", "low", "medium", "high"];
+    private static readonly string[] SupportedVerbosityValues = ["low", "medium", "high"];
+
     private readonly IConfiguration _configuration = configuration;
 
     public string ResolveProviderName(string? operationName = null)
@@ -48,6 +51,16 @@ public class OpenAIConfigurationResolver(IConfiguration configuration) : ITransi
         }
 
         return null;
+    }
+
+    public string? ResolveConfiguredReasoningEffort(string? operationName = null)
+    {
+        return ResolveOptionalProfileValue(operationName, "ReasoningEffort", SupportedReasoningEfforts);
+    }
+
+    public string? ResolveConfiguredVerbosity(string? operationName = null)
+    {
+        return ResolveOptionalProfileValue(operationName, "Verbosity", SupportedVerbosityValues);
     }
 
     public int ResolveCompletionTokens(string operationName)
@@ -127,6 +140,26 @@ public class OpenAIConfigurationResolver(IConfiguration configuration) : ITransi
     private static string ProfileKey(string providerName, string profileName, string settingName)
     {
         return $"Azure:{providerName}:Profiles:{profileName}:{settingName}";
+    }
+
+    private string? ResolveOptionalProfileValue(string? operationName, string settingName, string[] supportedValues)
+    {
+        var providerName = ResolveProviderName(operationName);
+        var profileName = ResolveProfileName(operationName);
+        var configuredValue = OptionalProfile(providerName, profileName, settingName);
+        if (configuredValue == null)
+        {
+            return null;
+        }
+
+        var trimmedValue = configuredValue.Trim();
+        if (Array.Exists(supportedValues, supportedValue => string.Equals(supportedValue, trimmedValue, StringComparison.Ordinal)))
+        {
+            return trimmedValue;
+        }
+
+        throw new InvalidOperationException(
+            $"AI {settingName} value '{configuredValue}' is not supported. Use one of: {string.Join(", ", supportedValues)}.");
     }
 
     private static string CombineEndpointAndPath(string endpoint, string profilePath)
