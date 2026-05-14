@@ -59,7 +59,7 @@ public class GitHubBlameLookupService : IBlameLookupService
         _branch = Environment.GetEnvironmentVariable("GITHUB_BRANCH")
             ?? env switch
             {
-                "Development" => "dev",
+                "Development" => "dev2", // FIX LATER
                 "Test" => "test",
                 _ => "main"
             };
@@ -95,7 +95,7 @@ public class GitHubBlameLookupService : IBlameLookupService
         {
             var possibleBranch = reference[..firstSlash];
 
-            if (possibleBranch is "main" or "dev" or "test")
+            if (possibleBranch is "main" or "dev" or "dev2" or "test")
             {
                 branch = possibleBranch;
                 pathWithFragment = reference[(firstSlash + 1)..];
@@ -122,24 +122,23 @@ public class GitHubBlameLookupService : IBlameLookupService
         if (string.IsNullOrWhiteSpace(owner) || string.IsNullOrWhiteSpace(repo))
             return null;
 
-        // 🔥 FIX: resolve ACTUAL HEAD commit safely (not ambiguous ref target)
-        var sha = await ResolveBranchHeadCommitShaAsync(owner, repo, branch);
-
-        if (string.IsNullOrWhiteSpace(sha))
-            return null;
-
-        var query = BuildBlameQuery(owner, repo, sha, repoPath);
+        var query = BuildBlameQuery(owner, repo, branch, repoPath);
         var payload = JsonSerializer.Serialize(new { query });
 
         var url = await GetGraphQlUrlAsync();
         if (url == null)
             return null;
+
         _logger.LogInformation("[BlameLookup] Request payload: {Payload}", payload);
+
         using var response = await _httpClient.PostAsync(
             url,
             new StringContent(payload, Encoding.UTF8, "application/json"));
+
         response.EnsureSuccessStatusCode();
+
         string json = await response.Content.ReadAsStringAsync();
+
         _logger.LogInformation("[BlameLookup] Response body: {Json}", json);
 
         using var doc = JsonDocument.Parse(json);
@@ -202,60 +201,6 @@ public class GitHubBlameLookupService : IBlameLookupService
         return null;
     }
 
-    // 🔥 FIXED: reliable HEAD commit resolution (prevents wrong object types)
-    private async Task<string?> ResolveBranchHeadCommitShaAsync(string owner, string repo, string branch)
-    {
-        var query = $@"
-query {{
-  repository(owner: ""{owner}"", name: ""{repo}"") {{
-    ref(qualifiedName: ""refs/heads/{branch}"") {{
-      target {{
-        ... on Commit {{
-          history(first: 1) {{
-            nodes {{
-              oid
-            }}
-          }}
-        }}
-      }}
-    }}
-  }}
-}}";
-
-        var payload = JsonSerializer.Serialize(new { query });
-
-        var url = await GetGraphQlUrlAsync();
-        if (url == null)
-            return null;
-
-        using var response = await _httpClient.PostAsync(
-            url,
-            new StringContent(payload, Encoding.UTF8, "application/json"));
-        response.EnsureSuccessStatusCode();
-        string json = await response.Content.ReadAsStringAsync();
-        _logger.LogInformation("[BlameLookup] Response body: {Json}", json);
-
-        using var doc = JsonDocument.Parse(json);
-
-        try
-        {
-            return doc.RootElement
-                .GetProperty("data")
-                .GetProperty("repository")
-                .GetProperty("ref")
-                .GetProperty("target")
-                .GetProperty("history")
-                .GetProperty("nodes")[0]
-                .GetProperty("oid")
-                .GetString();
-        }
-        catch
-        {
-            _logger.LogWarning("[BlameLookup] Failed to resolve HEAD commit SHA");
-            return null;
-        }
-    }
-
     private async Task<string?> GetGraphQlUrlAsync()
     {
         try
@@ -270,12 +215,12 @@ query {{
         }
     }
 
-    private static string BuildBlameQuery(string owner, string repo, string sha, string path)
+    private static string BuildBlameQuery(string owner, string repo, string branch, string path)
     {
         return $@"
 query {{
   repository(owner: ""{owner}"", name: ""{repo}"") {{
-    object(oid: ""{sha}"") {{
+    object(expression: ""{branch}"") {{
       ... on Commit {{
         blame(path: ""{path}"") {{
           ranges {{
