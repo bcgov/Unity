@@ -63,8 +63,10 @@ public class AbpExceptionNotificationSubscriber(
         string exMessage = ex.Message;
         string innerMessage = ex.InnerException?.Message ?? string.Empty;
         string stackTrace = ex.StackTrace ?? "(no stack trace)";
-        if (stackTrace.Length > 1500)
-            stackTrace = stackTrace[..1500] + "\n... (truncated)";
+        // Shorten stack trace to first 5 lines
+        var stackLines = stackTrace.Split('\n');
+        if (stackLines.Length > 5)
+            stackTrace = string.Join("\n", stackLines[..5]) + "\n... (truncated)";
 
         _ = Task.Run(async () =>
         {
@@ -91,8 +93,7 @@ public class AbpExceptionNotificationSubscriber(
                     new() { Name = "Endpoint",    Value = endpoint },
                     new() { Name = "Stack Trace", Value = stackTrace },
                     new() { Name = "Source",      Value = sourceLine.HasValue ? $"{sourceFile}:{sourceLine}" : sourceFile },
-                    new() { Name = "Commit",      Value = ExceptionCounterMiddleware.CommitSha },
-                    new() { Name = "Author",      Value = ExceptionCounterMiddleware.CommitAuthor },
+                    new() { Name = "Release Number", Value = ExceptionCounterMiddleware.CommitSha },
                 };
 
                 if (!string.IsNullOrEmpty(innerMessage))
@@ -110,16 +111,16 @@ public class AbpExceptionNotificationSubscriber(
                         if (blame != null)
                         {
                             logger.LogInformation("[ExceptionNotify] Blame lookup result: Author={Author}, Commit={Commit}, PR={PR}, PRTitle={PRTitle}", blame.Author, blame.CommitSha, blame.PullRequestUrl, blame.PullRequestTitle);
-                            facts.Add(new Fact { Name = "Blame Author", Value = $"{blame.Author} <{blame.Email}>" });
+                            facts.Add(new Fact { Name = "Author", Value = $"{blame.Author} <{blame.Email}>" });
                             var shortSha = !string.IsNullOrEmpty(blame.CommitSha) && blame.CommitSha.Length > 7 ? blame.CommitSha.Substring(0, 7) : blame.CommitSha;
                             facts.Add(new Fact { Name = "Blame Commit", Value = $"{shortSha} {blame.Message}" });
 
                             if (blame.PullRequestUrl != null)
                             {
-                                facts.Add(new Fact { Name = "Blame PR", Value = $"#{blame.PullRequestNumber} {blame.PullRequestUrl}" });
+                                facts.Add(new Fact { Name = "PR", Value = $"#{blame.PullRequestNumber} {blame.PullRequestUrl}" });
                                 if (!string.IsNullOrWhiteSpace(blame.PullRequestTitle))
                                 {
-                                    facts.Add(new Fact { Name = "Blame PR Title", Value = blame.PullRequestTitle });
+                                    facts.Add(new Fact { Name = "PR Title", Value = blame.PullRequestTitle });
                                 }
                             }
                         }

@@ -59,10 +59,14 @@ public class GitHubBlameLookupService : IBlameLookupService
         _branch = Environment.GetEnvironmentVariable("GITHUB_BRANCH")
             ?? env switch
             {
-                "Development" => "dev2", // FIX LATER
+                "Development" => "dev",
                 "Test" => "test",
                 _ => "main"
             };
+
+        if( Environment.GetEnvironmentVariable("RabbitMQ__VirtualHost") == "dev2") {
+            _branch = "dev2";
+        }
 
         string pat = Environment.GetEnvironmentVariable("UNITY_GITHUB_PAT") ?? "";
 
@@ -74,12 +78,6 @@ public class GitHubBlameLookupService : IBlameLookupService
 
         _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("Unity-GrantManager");
     }
-
-    public string BuildBlameReference(string path, int line)
-        => $"{_branch}/{path}#L{line}";
-
-    public string BuildBlameUrl(string reference)
-        => $"https://github.com/{_owner}/{_repo}/blame/{reference}";
 
     public Task<GitHubBlameInfo?> GetBlameFromReferenceAsync(string reference)
     {
