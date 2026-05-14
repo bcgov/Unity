@@ -38,12 +38,6 @@ public class OpenAITransportService(
         }
 
         var apiKey = _configurationResolver.ResolveApiKey(operationName);
-        if (string.IsNullOrEmpty(apiKey))
-        {
-            _logger.LogWarning("Error: OpenAI API key is not configured");
-            return AIOperationResult.PermanentFailure(new AIProviderResult("OpenAI API key is not configured"));
-        }
-
         try
         {
             var resolvedSystemPrompt = string.IsNullOrWhiteSpace(systemPrompt)

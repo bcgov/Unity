@@ -20,7 +20,7 @@ public class OpenAIPromptRenderer : ITransientDependency
     private const string ApplicationScoringSystemTemplateName = "application-scoring.system";
     private const string ApplicationScoringUserTemplateName = "application-scoring.user";
     private static readonly Dictionary<string, string> PromptProfiles =
-        new(StringComparer.OrdinalIgnoreCase)
+        new(StringComparer.Ordinal)
         {
             [PromptVersionV0] = PromptVersionV0,
             [PromptVersionV1] = PromptVersionV1
@@ -184,13 +184,17 @@ public class OpenAIPromptRenderer : ITransientDependency
 
     public static string ResolvePromptVersion(string? version)
     {
-        if (!string.IsNullOrWhiteSpace(version) &&
-            PromptProfiles.TryGetValue(version.Trim(), out var selectedVersion))
+        if (string.IsNullOrWhiteSpace(version))
+        {
+            throw new InvalidOperationException("AI prompt version is not configured.");
+        }
+
+        if (PromptProfiles.TryGetValue(version.Trim(), out var selectedVersion))
         {
             return selectedVersion;
         }
 
-        return PromptVersionV1;
+        throw new InvalidOperationException($"AI prompt version '{version}' is not supported.");
     }
 
     private static bool TryGetPromptTemplate(string version, string templateName, out string template)

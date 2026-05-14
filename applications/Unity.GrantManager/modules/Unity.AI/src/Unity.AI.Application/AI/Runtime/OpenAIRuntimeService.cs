@@ -26,15 +26,10 @@ namespace Unity.AI.Runtime
         private const string AttachmentSummaryPromptType = AIPromptTypes.AttachmentSummary;
         private const string ApplicationScoringPromptType = AIPromptTypes.ApplicationScoring;
         private const int MaxAiAttempts = 3;
-        private const int DefaultAttachmentSummaryCompletionTokens = 2000;
-        private const int DefaultApplicationAnalysisCompletionTokens = 4000;
-        private const int DefaultApplicationScoringCompletionTokens = 8000;
 
-        private int AttachmentSummaryCompletionTokens => _openAIConfigurationResolver.ResolveCompletionTokens(AttachmentSummaryPromptType, DefaultAttachmentSummaryCompletionTokens);
-        private int ApplicationAnalysisCompletionTokens => _openAIConfigurationResolver.ResolveCompletionTokens(ApplicationAnalysisPromptType, DefaultApplicationAnalysisCompletionTokens);
-        private int ApplicationScoringCompletionTokens => _openAIConfigurationResolver.ResolveCompletionTokens(ApplicationScoringPromptType, DefaultApplicationScoringCompletionTokens);
-        private readonly string MissingApiKeyMessage = "OpenAI API key is not configured";
-
+        private int AttachmentSummaryCompletionTokens => _openAIConfigurationResolver.ResolveCompletionTokens(AttachmentSummaryPromptType);
+        private int ApplicationAnalysisCompletionTokens => _openAIConfigurationResolver.ResolveCompletionTokens(ApplicationAnalysisPromptType);
+        private int ApplicationScoringCompletionTokens => _openAIConfigurationResolver.ResolveCompletionTokens(ApplicationScoringPromptType);
         // Optional local debugging sink for prompt payload logs to a local file.
         // Not intended for deployed/shared environments.
         private bool IsPromptFileLoggingEnabled => _configuration.GetValue<bool?>("Azure:Logging:EnablePromptFileLog") ?? false;
@@ -57,19 +52,23 @@ namespace Unity.AI.Runtime
 
         public Task<bool> IsAvailableAsync()
         {
-            if (string.IsNullOrEmpty(_openAIConfigurationResolver.ResolveApiKey()))
+            try
             {
-                _logger.LogWarning("Error: {Message}", MissingApiKeyMessage);
+                _openAIConfigurationResolver.ResolveApiKey();
+                return Task.FromResult(true);
+            }
+            catch (InvalidOperationException ex)
+            {
+                _logger.LogWarning(ex, "AI is unavailable because the OpenAI configuration could not be resolved.");
                 return Task.FromResult(false);
             }
-
-            return Task.FromResult(true);
         }
 
         public async Task<ApplicationAnalysisResponse> GenerateApplicationAnalysisAsync(ApplicationAnalysisRequest request, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(request);
-            var promptVersion = OpenAIPromptRenderer.ResolvePromptVersion(request.PromptVersion ?? ResolvePromptVersionSetting(ApplicationAnalysisPromptType));
+            var promptVersion = OpenAIPromptRenderer.ResolvePromptVersion(
+                request.PromptVersion ?? _openAIConfigurationResolver.ResolvePromptVersion(ApplicationAnalysisPromptType));
             var data = JsonSerializer.Serialize(request.Data, AIJsonDefaults.Indented);
             var schema = JsonSerializer.Serialize(request.Schema, AIJsonDefaults.Indented);
 
@@ -115,7 +114,8 @@ namespace Unity.AI.Runtime
             ArgumentNullException.ThrowIfNull(request);
             var fileName = request.FileName ?? string.Empty;
             var contentType = request.ContentType ?? "application/octet-stream";
-            var promptVersion = OpenAIPromptRenderer.ResolvePromptVersion(request.PromptVersion ?? ResolvePromptVersionSetting(AttachmentSummaryPromptType));
+            var promptVersion = OpenAIPromptRenderer.ResolvePromptVersion(
+                request.PromptVersion ?? _openAIConfigurationResolver.ResolvePromptVersion(AttachmentSummaryPromptType));
 
             try
             {
@@ -186,19 +186,14 @@ namespace Unity.AI.Runtime
         public async Task<ApplicationScoringResponse> GenerateApplicationScoringAsync(ApplicationScoringRequest request, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(request);
-            var promptVersion = OpenAIPromptRenderer.ResolvePromptVersion(request.PromptVersion ?? ResolvePromptVersionSetting(ApplicationScoringPromptType));
+            var promptVersion = OpenAIPromptRenderer.ResolvePromptVersion(
+                request.PromptVersion ?? _openAIConfigurationResolver.ResolvePromptVersion(ApplicationScoringPromptType));
             var dataJson = JsonSerializer.Serialize(request.Data, AIJsonDefaults.Indented);
             var sectionJson = JsonSerializer.Serialize(request.SectionSchema, AIJsonDefaults.Indented);
 
             var attachmentSummaries = request.Attachments
                 .Select(a => $"{a.Name}: {a.Summary}")
                 .ToList();
-            if (string.IsNullOrEmpty(_openAIConfigurationResolver.ResolveApiKey(ApplicationScoringPromptType)))
-            {
-                _logger.LogWarning("{Message}", MissingApiKeyMessage);
-                return new ApplicationScoringResponse();
-            }
-
             try
             {
                 var attachments = attachmentSummaries.Count > 0
@@ -318,23 +313,6 @@ namespace Unity.AI.Runtime
                 && property.TryGetInt32(out var value)
                 ? value
                 : null;
-        }
-
-        private string? ResolvePromptVersionSetting(string operationName)
-        {
-            var operationPromptVersion = _configuration[$"Azure:Operations:{operationName}:PromptVersion"];
-            if (!string.IsNullOrWhiteSpace(operationPromptVersion))
-            {
-                return operationPromptVersion;
-            }
-
-            var defaultPromptVersion = _configuration["Azure:Operations:Defaults:PromptVersion"];
-            if (!string.IsNullOrWhiteSpace(defaultPromptVersion))
-            {
-                return defaultPromptVersion;
-            }
-
-            return _configuration["Azure:OpenAI:PromptVersion"];
         }
 
         private async Task LogPromptInputAsync(string promptType, string promptVersion, string? systemPrompt, string userPrompt, CancellationToken cancellationToken = default)
