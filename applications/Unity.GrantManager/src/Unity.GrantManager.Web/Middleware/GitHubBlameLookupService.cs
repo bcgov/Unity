@@ -158,6 +158,8 @@ public class GitHubBlameLookupService : IBlameLookupService
             line = parsedLine;
         }
 
+        _logger.LogInformation("[BlameLookup] GetBlameFromReferenceAsync called with reference: {Reference}", reference);
+
         return await GetBlameAsync(
             _owner,
             _repo,
@@ -194,9 +196,8 @@ public class GitHubBlameLookupService : IBlameLookupService
         if (string.IsNullOrWhiteSpace(owner) ||
             string.IsNullOrWhiteSpace(repo))
         {
-            _logger.LogDebug(
-                "GitHub blame lookup skipped — owner or repo missing");
-
+            _logger.LogWarning("[BlameLookup] Owner or repo missing. Owner: {Owner}, Repo: {Repo}", owner, repo);
+            _logger.LogDebug("GitHub blame lookup skipped — owner or repo missing");
             return null;
         }
 
@@ -225,56 +226,38 @@ public class GitHubBlameLookupService : IBlameLookupService
             return null;
         }
 
+        _logger.LogInformation("[BlameLookup] Starting blame lookup for {Owner}/{Repo} branch {Branch} path {RepoPath} line {Line}", owner, repo, branch, repoPath, line);
+        _logger.LogInformation("[BlameLookup] Sending GraphQL request to {Url} with payload: {Payload}", githubGraphQlUrl, payload);
         using var response = await _httpClient.PostAsync(
             githubGraphQlUrl,
-            new StringContent(
-                payload,
-                Encoding.UTF8,
-                "application/json"));
-
+            new StringContent(payload, Encoding.UTF8, "application/json"));
+        _logger.LogInformation("[BlameLookup] Received response: {StatusCode}", response.StatusCode);
         response.EnsureSuccessStatusCode();
-
-        string json =
-            await response.Content.ReadAsStringAsync();
-
-        using JsonDocument doc =
-            JsonDocument.Parse(json);
-
+        string json = await response.Content.ReadAsStringAsync();
+        _logger.LogInformation("[BlameLookup] Response JSON: {Json}", json);
+        using JsonDocument doc = JsonDocument.Parse(json);
         var root = doc.RootElement;
-
+        _logger.LogInformation("[BlameLookup] Parsed JSON root");
         if (root.TryGetProperty("errors", out var errors))
         {
-            _logger.LogWarning(
-                "GitHub GraphQL errors: {Errors}",
-                errors.ToString());
-
+            _logger.LogWarning("[BlameLookup] GraphQL errors: {Errors}", errors.ToString());
+            _logger.LogWarning("GitHub GraphQL errors: {Errors}", errors.ToString());
             return null;
         }
-
-        var ranges =
-            root
-                .GetProperty("data")
-                .GetProperty("repository")
-                .GetProperty("object")
-                .GetProperty("blame")
-                .GetProperty("ranges");
-
+        var ranges = root.GetProperty("data").GetProperty("repository").GetProperty("object").GetProperty("blame").GetProperty("ranges");
+        _logger.LogInformation("[BlameLookup] Found {Count} blame ranges", ranges.GetArrayLength());
         foreach (var range in ranges.EnumerateArray())
         {
-            int start =
-                range.GetProperty("startingLine").GetInt32();
-
-            int end =
-                range.GetProperty("endingLine").GetInt32();
-
+            _logger.LogInformation("[BlameLookup] Checking range: start {Start}, end {End}", range.GetProperty("startingLine").GetInt32(), range.GetProperty("endingLine").GetInt32());
+            int start = range.GetProperty("startingLine").GetInt32();
+            int end = range.GetProperty("endingLine").GetInt32();
             if (line < start || line > end)
             {
+                _logger.LogInformation("[BlameLookup] Line {Line} not in range {Start}-{End}", line, start, end);
                 continue;
             }
-
-            var commit =
-                range.GetProperty("commit");
-
+            var commit = range.GetProperty("commit");
+            _logger.LogInformation("[BlameLookup] Found commit: {Sha}", commit.GetProperty("oid").GetString());
             string sha =
                 commit.GetProperty("oid").GetString()
                 ?? "";
@@ -314,6 +297,7 @@ public class GitHubBlameLookupService : IBlameLookupService
                 }
             }
 
+            _logger.LogInformation("[BlameLookup] Returning blame info: Author={Author}, Commit={Commit}, PR={PR}, PRTitle={PRTitle}", authorName, sha, prUrl, prTitle);
             return new GitHubBlameInfo
             {
                 CommitSha = sha,
@@ -325,7 +309,7 @@ public class GitHubBlameLookupService : IBlameLookupService
                 PullRequestTitle = prTitle
             };
         }
-
+        _logger.LogWarning("[BlameLookup] No matching blame range found for line {Line}", line);
         return null;
     }
 
