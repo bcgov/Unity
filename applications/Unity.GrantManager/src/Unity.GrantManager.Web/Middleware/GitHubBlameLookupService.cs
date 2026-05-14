@@ -193,6 +193,7 @@ public class GitHubBlameLookupService : IBlameLookupService
         string repoPath,
         int line)
     {
+        _logger.LogInformation("[BlameLookup] GetBlameAsync entry: owner={Owner}, repo={Repo}, branch={Branch}, repoPath={RepoPath}, line={Line}", owner, repo, branch, repoPath, line);
         if (string.IsNullOrWhiteSpace(owner) ||
             string.IsNullOrWhiteSpace(repo))
         {
@@ -206,11 +207,13 @@ public class GitHubBlameLookupService : IBlameLookupService
             repo,
             branch,
             repoPath);
+        _logger.LogInformation("[BlameLookup] Built GraphQL query: {Query}", query);
 
         var payload = JsonSerializer.Serialize(new
         {
             query
         });
+        _logger.LogInformation("[BlameLookup] Built payload: {Payload}", payload);
 
         string? githubGraphQlUrl = null;
         if (_endpointService != null)
@@ -221,13 +224,12 @@ public class GitHubBlameLookupService : IBlameLookupService
             }
             catch { }
         }
-  
-        if (githubGraphQlUrl == null)        {
+        if (githubGraphQlUrl == null)
+        {
+            _logger.LogWarning("[BlameLookup] githubGraphQlUrl is null, aborting GraphQL call.");
             return null;
         }
-
-        _logger.LogInformation("[BlameLookup] Starting blame lookup for {Owner}/{Repo} branch {Branch} path {RepoPath} line {Line}", owner, repo, branch, repoPath, line);
-        _logger.LogInformation("[BlameLookup] Sending GraphQL request to {Url} with payload: {Payload}", githubGraphQlUrl, payload);
+        _logger.LogInformation("[BlameLookup] About to POST to GraphQL endpoint: {Url}", githubGraphQlUrl);
         using var response = await _httpClient.PostAsync(
             githubGraphQlUrl,
             new StringContent(payload, Encoding.UTF8, "application/json"));
