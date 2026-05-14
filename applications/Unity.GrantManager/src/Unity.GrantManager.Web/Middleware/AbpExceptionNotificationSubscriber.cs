@@ -83,6 +83,9 @@ public class AbpExceptionNotificationSubscriber(
                 string sourceFile = NormalizeRepoPath(frame?.File ?? "(unknown)");
                 int? sourceLine = frame?.Line;
 
+                // Fix: prepend repo root for blame lookup
+                string blamePath = $"applications/Unity.GrantManager/{sourceFile}";
+
                 var facts = new List<Fact>
                 {
                     new() { Name = "Exception",   Value = exTypeName },
@@ -102,7 +105,7 @@ public class AbpExceptionNotificationSubscriber(
                     try
                     {
                         var blameService = scope.ServiceProvider.GetRequiredService<IBlameLookupService>();
-                        var blame = await blameService.GetBlameAsync(sourceFile, sourceLine.Value);
+                        var blame = await blameService.GetBlameAsync(blamePath, sourceLine.Value);
                         
                         if (blame != null)
                         {
