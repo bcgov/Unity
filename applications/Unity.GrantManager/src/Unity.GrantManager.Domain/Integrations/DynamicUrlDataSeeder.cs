@@ -36,6 +36,7 @@ namespace Unity.GrantManager.Integrations
             public const string MATOMO_TEST_URL = $"{PROTOCOL}//test-analytics-matomo.apps.silver.devops.gov.bc.ca";
             public const string MATOMO_PROD_URL = $"{PROTOCOL}//prod-analytics-matomo.apps.silver.devops.gov.bc.ca";
             public const string GITHUB_REPO = $"{PROTOCOL}//github.com/bcgov/Unity";
+            public const string GITHUB_GRAPHQL = $"{PROTOCOL}//api.github.com/graphql";
         }
 
         private static string GetMatomoUrl()

@@ -17,5 +17,6 @@ public interface IEndpointManagementAppService : ICrudAppService<
     Task<string> GetUrlByKeyNameAsync(string keyName);
     Task<string> GetUgmUrlByKeyNameAsync(string keyName);
     Task<string> GetGitHubRepoUrlAsync();
+    Task<string> GetGitHubGraphQlUrlAsync();
     Task ClearCacheAsync(Guid? tenantId = null);
 }

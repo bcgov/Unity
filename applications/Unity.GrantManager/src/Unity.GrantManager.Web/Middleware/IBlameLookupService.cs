@@ -10,6 +10,7 @@ public record GitHubBlameInfo
     public string Message { get; init; } = "";
     public string? PullRequestUrl { get; init; }
     public int? PullRequestNumber { get; init; }
+    public string? PullRequestTitle { get; init; }
 }
 
 public interface IBlameLookupService
