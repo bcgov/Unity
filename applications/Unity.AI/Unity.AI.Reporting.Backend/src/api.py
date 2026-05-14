@@ -752,6 +752,7 @@ def preview_data_models():
     view_name = body.get("view_name", "").strip()
     view_names = body.get("view_names", [])
     core_fields_raw = body.get("core_fields")
+    selected_versions_raw = body.get("selected_versions")
 
     # Accept either view_names (multi) or view_name (single, backward-compat)
     if view_names and isinstance(view_names, list):
@@ -769,6 +770,11 @@ def preview_data_models():
     if isinstance(core_fields_raw, list):
         core_fields = [c.strip() for c in core_fields_raw if isinstance(c, str) and c.strip()]
 
+    # selected_versions is optional; None means use all versions
+    selected_versions = None
+    if isinstance(selected_versions_raw, list):
+        selected_versions = [v.strip() for v in selected_versions_raw if isinstance(v, str) and v.strip()]
+
     logger.info(
         f"Data model preview request - Tenant: {tenant_id}, Views: {view_names}, "
         f"CoreFields: {core_fields}"
@@ -778,7 +784,7 @@ def preview_data_models():
         if len(view_names) == 1:
             proposal = asyncio.run(
                 data_model_generator.preview_model(
-                    view_names[0], db_id, tenant_id, core_fields
+                    view_names[0], db_id, tenant_id, core_fields, selected_versions
                 )
             )
         else:

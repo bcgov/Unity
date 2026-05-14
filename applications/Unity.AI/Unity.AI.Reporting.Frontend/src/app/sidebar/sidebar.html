@@ -383,6 +383,11 @@
                       @if (view.is_empty) {
                         <span class="view-empty-badge">(no data yet)</span>
                       }
+                      @if (view.versions && view.versions.length > 1 && isViewSelected(view)) {
+                        <button class="view-expand-btn" (click)="toggleFormExpand(view, $event)">
+                          {{ isFormExpanded(view) ? '▾' : '▸' }}
+                        </button>
+                      }
                     </div>
                     <div class="view-picker-meta">
                       <span>{{ view.column_count }} columns</span>
@@ -392,6 +397,20 @@
                     </div>
                   </div>
                 </div>
+                @if (view.versions && view.versions.length > 1 && isViewSelected(view) && isFormExpanded(view)) {
+                  <ul class="version-picker-list">
+                    @for (ver of view.versions; track ver.table_name) {
+                      <li class="version-picker-item"
+                          [class.selected]="isFormVersionSelected(view, ver.table_name)"
+                          (click)="toggleFormVersion(view, ver.table_name, $event)">
+                        <div class="view-picker-check" [class.checked]="isFormVersionSelected(view, ver.table_name)">
+                          @if (isFormVersionSelected(view, ver.table_name)) { ✓ }
+                        </div>
+                        <span class="version-name">{{ ver.table_name }}</span>
+                      </li>
+                    }
+                  </ul>
+                }
               </li>
             }
           </ul>

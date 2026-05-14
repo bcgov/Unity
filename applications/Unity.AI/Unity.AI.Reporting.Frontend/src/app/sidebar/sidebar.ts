@@ -24,6 +24,7 @@ export interface ViewInfo {
   source_type?: 'form_view' | 'worksheet_view' | 'scoresheet_view' | 'other_view';
   form_group?: string;
   version?: string;
+  versions?: { table_name: string; version: number }[];
   is_empty?: boolean;
 }
 
@@ -119,6 +120,9 @@ export class SidebarComponent {
   selectedCoreFields: string[] = [];
   // Snapshot of core fields detected in the existing model when entering edit-existing
   initialCoreFields: string[] = [];
+  // Form version selection: tracks which versions are selected per form group
+  expandedFormGroups = new Set<string>();
+  selectedFormVersions = new Map<string, string[]>();
 
   get formViews(): ViewInfo[] { return this.availableViews.filter(v => v.source_type === 'form_view'); }
   get worksheetViews(): ViewInfo[] { return this.availableViews.filter(v => v.source_type === 'worksheet_view'); }
@@ -411,13 +415,58 @@ export class SidebarComponent {
     const idx = this.selectedViews.findIndex(v => v.view_name === view.view_name);
     if (idx >= 0) {
       this.selectedViews.splice(idx, 1);
+      this.expandedFormGroups.delete(view.view_name);
+      this.selectedFormVersions.delete(view.view_name);
     } else {
       this.selectedViews.push(view);
+      if (view.versions && view.versions.length > 0) {
+        this.selectedFormVersions.set(
+          view.view_name,
+          view.versions.map(v => v.table_name)
+        );
+      }
     }
   }
 
   isViewSelected(view: ViewInfo): boolean {
     return this.selectedViews.some(v => v.view_name === view.view_name);
+  }
+
+  toggleFormExpand(view: ViewInfo, event: Event): void {
+    event.stopPropagation();
+    if (this.expandedFormGroups.has(view.view_name)) {
+      this.expandedFormGroups.delete(view.view_name);
+    } else {
+      this.expandedFormGroups.add(view.view_name);
+    }
+  }
+
+  isFormExpanded(view: ViewInfo): boolean {
+    return this.expandedFormGroups.has(view.view_name);
+  }
+
+  toggleFormVersion(view: ViewInfo, tableName: string, event: Event): void {
+    event.stopPropagation();
+    const selected = this.selectedFormVersions.get(view.view_name) || [];
+    const idx = selected.indexOf(tableName);
+    if (idx >= 0) {
+      selected.splice(idx, 1);
+    } else {
+      selected.push(tableName);
+    }
+    this.selectedFormVersions.set(view.view_name, selected);
+  }
+
+  isFormVersionSelected(view: ViewInfo, tableName: string): boolean {
+    const selected = this.selectedFormVersions.get(view.view_name);
+    return selected ? selected.includes(tableName) : false;
+  }
+
+  private getSelectedVersionsForView(view: ViewInfo): string[] | undefined {
+    if (!view.versions || view.versions.length === 0) return undefined;
+    const selected = this.selectedFormVersions.get(view.view_name);
+    if (!selected || selected.length === view.versions.length) return undefined;
+    return selected;
   }
 
   get generateButtonLabel(): string {
@@ -438,8 +487,11 @@ export class SidebarComponent {
       type PreviewResponse = { proposal: Omit<ModelProposal, 'sqlExpanded'> };
       const viewNames = this.selectedViews.map(v => v.view_name);
       const coreFields = this.effectiveCoreFields();
+      const selectedVersions = viewNames.length === 1
+        ? this.getSelectedVersionsForView(this.selectedViews[0])
+        : undefined;
       const obs = viewNames.length === 1
-        ? this.apiService.previewDataModel<PreviewResponse>(viewNames[0], coreFields)
+        ? this.apiService.previewDataModel<PreviewResponse>(viewNames[0], coreFields, selectedVersions)
         : this.apiService.previewCombinedModel<PreviewResponse>(viewNames, coreFields);
       const response = await firstValueFrom(obs);
       this.modelProposal = { ...response.proposal, sqlExpanded: false };

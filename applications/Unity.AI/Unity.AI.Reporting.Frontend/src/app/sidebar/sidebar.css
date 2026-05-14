@@ -717,6 +717,31 @@
   font-style: italic;
 }
 
+/* Form version expand/collapse */
+.view-expand-btn {
+  display: inline-block; margin-left: 6px; padding: 0 4px;
+  background: none; border: none; cursor: pointer;
+  font-size: 0.8rem; color: #6c757d; vertical-align: middle;
+}
+.view-expand-btn:hover { color: #007bff; }
+
+.version-picker-list {
+  list-style: none; margin: 8px 0 0 28px; padding: 0;
+  display: flex; flex-direction: column; gap: 4px;
+}
+
+.version-picker-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 4px 8px; border-radius: 4px; cursor: pointer;
+  font-size: 0.82rem; color: #495057;
+}
+.version-picker-item:hover { background: #f0f7ff; }
+.version-picker-item.selected { background: #e7f1ff; }
+.version-picker-item .view-picker-check {
+  width: 16px; height: 16px; min-width: 16px;
+}
+.version-name { word-break: break-word; }
+
 /* Core fields picker (compact variant of view-picker) */
 .core-fields-list {
   max-height: 240px;

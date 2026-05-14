@@ -151,10 +151,11 @@ export class ApiService {
     return this.post<T>('/data-models/core-fields', {});
   }
 
-  previewDataModel<T>(viewName: string, coreFields?: string[]): Observable<T> {
+  previewDataModel<T>(viewName: string, coreFields?: string[], selectedVersions?: string[]): Observable<T> {
     return this.post<T>('/data-models/preview', {
       view_name: viewName,
       core_fields: coreFields,
+      selected_versions: selectedVersions,
     });
   }
 

@@ -221,10 +221,24 @@ class DataModelGenerator:
         form_groups = self._group_form_versions(metadata)
         if view_name in form_groups:
             return "form_view"
-        # Worksheet/scoresheet views in Reporting schema
-        name_lower = view_name.lower()
-        if "worksheet" in name_lower or "scoresheet" in name_lower:
+
+        # Primary: CorrelationProvider from ReportColumnsMaps
+        cp = self._get_correlation_provider(view_name, db_id, tenant_id)
+        if cp == "formversion":
+            return "form_view"
+        if cp == "worksheet":
             return "worksheet_view"
+        if cp == "scoresheet":
+            return "scoresheet_view"
+        if cp:
+            return "other_view"
+
+        # Fallback: name-based heuristic
+        name_lower = view_name.lower()
+        if "worksheet" in name_lower:
+            return "worksheet_view"
+        elif "scoresheet" in name_lower:
+            return "scoresheet_view"
         # Any other Reporting-schema table — generic SELECT + optional FK JOIN
         return "other_view"
 
@@ -500,7 +514,8 @@ class DataModelGenerator:
 
     def _build_form_view_sql(self, base_name: str, db_id: int,
                              tenant_id: str,
-                             core_fields: Optional[list[str]] = None) -> tuple[str, list[str]]:
+                             core_fields: Optional[list[str]] = None,
+                             selected_versions: Optional[list[str]] = None) -> tuple[str, list[str]]:
         """
         Build deterministic SQL for Pattern 1 (Form Views).
         Returns (sql, column_list).
@@ -517,6 +532,22 @@ class DataModelGenerator:
                     versions = tables
                     base_name = base
                     break
+            if not versions:
+                # Standalone form: CorrelationProvider='formversion' but the table
+                # name doesn't follow the Form-<base>-V<n> pattern. Treat the table
+                # itself as a single-version form.
+                reporting_tables = {
+                    t.get("name") for t in metadata.get("tables", [])
+                    if t.get("schema") == "Reporting"
+                }
+                if base_name in reporting_tables:
+                    versions = [base_name]
+                else:
+                    return "", []
+
+        # Filter to selected versions if specified
+        if selected_versions:
+            versions = [v for v in versions if v in selected_versions]
             if not versions:
                 return "", []
 
@@ -787,27 +818,31 @@ class DataModelGenerator:
             if t.get("schema") == "Reporting"
         }
 
+        views_with_labels, correlation_providers = self._get_report_columns_maps_info(db_id, tenant_id)
+
+        # Regex-based multi-version form grouping (Form-<base>-V<n>).
         form_groups = self._group_form_versions(metadata)
 
-        # Pick the primary (highest-version) physical table for each form group.
+        # Physical tables already captured by a regex form group.
+        grouped_tables: set[str] = set()
         primary_for_group: dict[str, str] = {}
         for base_name, version_tables in form_groups.items():
+            grouped_tables.update(version_tables)
             if version_tables and version_tables[0] in tables_by_name:
                 primary_for_group[base_name] = version_tables[0]
 
-        # All non-form, non-system Reporting tables.
-        other_view_names: list[str] = []
+        # Every other non-system Reporting table — classified by CorrelationProvider.
+        standalone_names: list[str] = []
         for name in tables_by_name:
-            if not name or FORM_VERSION_RE.match(name) or name.startswith("Form-"):
+            if not name or name in grouped_tables:
                 continue
             if name in self.SYSTEM_TABLES or name.startswith("__"):
                 continue
-            other_view_names.append(name)
+            standalone_names.append(name)
 
         # Two batched round-trips replace the old 2×N per-view probes.
-        physical_names = list(primary_for_group.values()) + other_view_names
+        physical_names = list(primary_for_group.values()) + standalone_names
         has_data_map = self._batch_check_view_data(physical_names, db_id, tenant_id)
-        views_with_labels = self._get_views_with_labels(db_id, tenant_id)
 
         views: list[dict] = []
 
@@ -820,6 +855,13 @@ class DataModelGenerator:
             version_count = len(form_groups[base_name])
             version_label = f"{version_count} version{'s' if version_count != 1 else ''}"
 
+            # Build per-version detail list for the frontend version picker
+            version_details = []
+            for table_name in form_groups[base_name]:
+                match = FORM_VERSION_RE.match(table_name)
+                v_num = int(match.group(2)) if match else 0
+                version_details.append({"table_name": table_name, "version": v_num})
+
             views.append({
                 "view_name": base_name,
                 "display_name": base_name,
@@ -828,32 +870,59 @@ class DataModelGenerator:
                 "source_type": "form_view",
                 "form_group": base_name,
                 "version": version_label,
+                "versions": version_details,
                 "is_empty": not has_data_map.get(primary, True),
             })
 
-        for name in other_view_names:
+        for name in standalone_names:
             table = tables_by_name[name]
-            name_lower = name.lower()
-            if "worksheet" in name_lower:
+
+            # Primary: CorrelationProvider from ReportColumnsMaps
+            cp = correlation_providers.get(name, "")
+            if cp == "formversion":
+                source_type = "form_view"
+            elif cp == "worksheet":
                 source_type = "worksheet_view"
-            elif "scoresheet" in name_lower:
+            elif cp == "scoresheet":
                 source_type = "scoresheet_view"
-            else:
+            elif cp:
                 source_type = "other_view"
+            else:
+                # Fallback: name-based heuristic for views not in ReportColumnsMaps
+                name_lower = name.lower()
+                if "worksheet" in name_lower:
+                    source_type = "worksheet_view"
+                elif "scoresheet" in name_lower:
+                    source_type = "scoresheet_view"
+                elif name.startswith("Form-"):
+                    source_type = "form_view"
+                else:
+                    source_type = "other_view"
 
             column_count = sum(
                 1 for f in table.get("fields", [])
                 if f.get("name") not in self.JUNK_COLUMNS
             )
 
-            views.append({
+            view_entry = {
                 "view_name": name,
                 "display_name": name,
                 "column_count": column_count,
                 "has_labels": name in views_with_labels,
                 "source_type": source_type,
                 "is_empty": not has_data_map.get(name, True),
-            })
+            }
+
+            # A formversion view that didn't match the Form-<base>-V<n> regex is a
+            # standalone, single-version form — give it the same shape the UI expects.
+            if source_type == "form_view":
+                match = FORM_VERSION_RE.match(name)
+                v_num = int(match.group(2)) if match else 0
+                view_entry["form_group"] = name
+                view_entry["version"] = "1 version"
+                view_entry["versions"] = [{"table_name": name, "version": v_num}]
+
+            views.append(view_entry)
 
         views.sort(key=lambda v: (v["source_type"], v["view_name"]))
         logger.info(f"Discovered {len(views)} views for tenant {tenant_id}")
@@ -861,7 +930,8 @@ class DataModelGenerator:
 
     async def preview_model(self, view_name: str, db_id: int,
                             tenant_id: str,
-                            core_fields: Optional[list[str]] = None) -> dict:
+                            core_fields: Optional[list[str]] = None,
+                            selected_versions: Optional[list[str]] = None) -> dict:
         """
         Step 1: Generate a model proposal for a selected view.
 
@@ -873,7 +943,9 @@ class DataModelGenerator:
             # Extract base name from full table name if needed
             match = FORM_VERSION_RE.match(view_name)
             base_name = match.group(1) if match else view_name
-            sql, columns = self._build_form_view_sql(base_name, db_id, tenant_id, core_fields)
+            sql, columns = self._build_form_view_sql(
+                base_name, db_id, tenant_id, core_fields, selected_versions
+            )
 
             # AI enhancement: improve aliases and suggest computed columns
             if sql:
@@ -1567,16 +1639,55 @@ class DataModelGenerator:
 
     def _get_views_with_labels(self, db_id: int, tenant_id: str) -> set[str]:
         """One round-trip: distinct ViewName values from ReportColumnsMaps."""
-        sql = 'SELECT DISTINCT "ViewName" FROM "Reporting"."ReportColumnsMaps"'
+        views_with_labels, _ = self._get_report_columns_maps_info(db_id, tenant_id)
+        return views_with_labels
+
+    def _get_report_columns_maps_info(
+        self, db_id: int, tenant_id: str
+    ) -> tuple[set[str], dict[str, str]]:
+        """One round-trip: fetch ViewName and CorrelationProvider from ReportColumnsMaps.
+
+        Returns (views_with_labels, correlation_providers) where:
+        - views_with_labels: set of ViewName values (for has_labels flag)
+        - correlation_providers: {ViewName: lowercase CorrelationProvider}
+        """
+        sql = 'SELECT DISTINCT "ViewName", "CorrelationProvider" FROM "Reporting"."ReportColumnsMaps"'
+        views_with_labels: set[str] = set()
+        correlation_providers: dict[str, str] = {}
         try:
             result = metabase_client.execute_sql(sql, db_id, tenant_id=tenant_id)
-            return {row[0] for row in result.get("rows", []) if row and row[0]}
+            for row in result.get("rows", []):
+                if row and row[0]:
+                    views_with_labels.add(row[0])
+                    if len(row) > 1 and row[1]:
+                        correlation_providers[row[0]] = row[1].strip().lower()
         except Exception as e:
             logger.warning(
-                "discover_views: ReportColumnsMaps query failed (%s); assuming no labels",
+                "discover_views: ReportColumnsMaps query failed (%s); "
+                "assuming no labels and no correlation providers",
                 e,
             )
-            return set()
+        return views_with_labels, correlation_providers
+
+    def _get_correlation_provider(
+        self, view_name: str, db_id: int, tenant_id: str
+    ) -> str:
+        """Fetch the CorrelationProvider for a single view from ReportColumnsMaps."""
+        sql = (
+            f'SELECT "CorrelationProvider" FROM "Reporting"."ReportColumnsMaps" '
+            f"WHERE \"ViewName\" = '{view_name}' LIMIT 1"
+        )
+        try:
+            result = metabase_client.execute_sql(sql, db_id, tenant_id=tenant_id)
+            rows = result.get("rows", [])
+            if rows and rows[0] and rows[0][0]:
+                return rows[0][0].strip().lower()
+        except Exception as e:
+            logger.warning(
+                "_get_correlation_provider: lookup failed for '%s' (%s)",
+                view_name, e,
+            )
+        return ""
 
     def _has_labels(self, view_name: str, db_id: int, tenant_id: str) -> bool:
         """Check if ReportColumnsMaps has entries for this view."""
