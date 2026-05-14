@@ -113,7 +113,7 @@ public class AbpExceptionNotificationSubscriber(
                             logger.LogInformation("[ExceptionNotify] Blame lookup result: Author={Author}, Commit={Commit}, PR={PR}, PRTitle={PRTitle}", blame.Author, blame.CommitSha, blame.PullRequestUrl, blame.PullRequestTitle);
                             facts.Add(new Fact { Name = "Author", Value = $"{blame.Author} <{blame.Email}>" });
                             var shortSha = !string.IsNullOrEmpty(blame.CommitSha) && blame.CommitSha.Length > 7 ? blame.CommitSha.Substring(0, 7) : blame.CommitSha;
-                            facts.Add(new Fact { Name = "Blame Commit", Value = $"{shortSha} {blame.Message}" });
+                            facts.Add(new Fact { Name = "Commit", Value = $"{shortSha} {blame.Message}" });
 
                             if (blame.PullRequestUrl != null)
                             {
