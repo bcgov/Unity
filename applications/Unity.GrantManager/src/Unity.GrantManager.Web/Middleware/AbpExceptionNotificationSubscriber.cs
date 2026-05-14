@@ -29,6 +29,7 @@ public class AbpExceptionNotificationSubscriber(
 
     public Task HandleAsync(ExceptionNotificationContext context)
     {
+        logger.LogInformation("[ExceptionNotify] HandleAsync called for exception: {ExceptionType} - {Message}", context.Exception.GetType().FullName, context.Exception.Message);
         var ex = context.Exception;
 
         // Increment Prometheus counters
@@ -43,7 +44,9 @@ public class AbpExceptionNotificationSubscriber(
 
     private void QueueTeamsNotification(Exception ex)
     {
+        logger.LogInformation("[ExceptionNotify] QueueTeamsNotification called for exception: {ExceptionType} - {Message}", ex.GetType().FullName, ex.Message);
         string? env = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
+        logger.LogInformation("[ExceptionNotify] Environment: {Env}", env);
 
         if (!NotifyEnvironments.Contains(env ?? string.Empty))
             return;
