@@ -1253,23 +1253,24 @@ function clearCurrencyError(input) {
 // htmlelement components default to <p ref="html">, which causes browser HTML auto-repair when
 // content contains block-level elements (div, h3, etc.), producing duplicate DOM nodes.
 // Changing tag to 'div' before rendering prevents this at the source.
+function walkFormComponents(components) {
+    if (!Array.isArray(components)) return;
+    components.forEach(comp => {
+        if (comp.type === 'htmlelement' && (!comp.tag || comp.tag === 'p')) {
+            comp.tag = 'div';
+        }
+        walkFormComponents(comp.components);
+        if (Array.isArray(comp.columns)) {
+            comp.columns.forEach(col => walkFormComponents(col.components));
+        }
+        if (Array.isArray(comp.rows)) {
+            comp.rows.forEach(row => {
+                if (Array.isArray(row)) row.forEach(cell => walkFormComponents(cell.components));
+            });
+        }
+    });
+}
+
 function patchHtmlElementTags(schema) {
-    function walk(components) {
-        if (!Array.isArray(components)) return;
-        components.forEach(comp => {
-            if (comp.type === 'htmlelement' && (!comp.tag || comp.tag === 'p')) {
-                comp.tag = 'div';
-            }
-            walk(comp.components);
-            if (Array.isArray(comp.columns)) {
-                comp.columns.forEach(col => walk(col.components));
-            }
-            if (Array.isArray(comp.rows)) {
-                comp.rows.forEach(row => {
-                    if (Array.isArray(row)) row.forEach(cell => walk(cell.components));
-                });
-            }
-        });
-    }
-    walk(schema.components);
+    walkFormComponents(schema.components);
 }
