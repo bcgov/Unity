@@ -1,3 +1,94 @@
+const assessmentScoresWidgetPanelStates = {};
+
+function getAssessmentScoresScrollContainer(wrapper) {
+    return (
+        wrapper.closest('.details-scrollable') ||
+        document.getElementById('detailsTabContent') ||
+        document.documentElement
+    );
+}
+
+function restoreAssessmentScoresScrollPosition(wrapper, scrollTop) {
+    if (!Number.isFinite(scrollTop)) {
+        return;
+    }
+
+    const container = getAssessmentScoresScrollContainer(wrapper);
+    const maxScroll = Math.max(
+        0,
+        container.scrollHeight - container.clientHeight
+    );
+    container.scrollTop = Math.min(scrollTop, maxScroll);
+}
+
+function getAssessmentScoresWidgetStateKey(wrapper) {
+    return wrapper.querySelector('#AssessmentId')?.value;
+}
+
+function saveAssessmentScoresWidgetState(wrapper) {
+    if (!wrapper) {
+        return;
+    }
+
+    const key = getAssessmentScoresWidgetStateKey(wrapper);
+    if (!key) {
+        return;
+    }
+
+    const scrollContainer = getAssessmentScoresScrollContainer(wrapper);
+    const scrollTop = scrollContainer.scrollTop;
+    const expandedCollapseIds = Array.from(
+        wrapper.querySelectorAll(
+            '#assessment-scoresheet .accordion-collapse.show'
+        )
+    )
+        .map((accordion) => accordion.id)
+        .filter(Boolean);
+
+    assessmentScoresWidgetPanelStates[key] = {
+        expandedCollapseIds,
+        scrollTop,
+    };
+}
+
+function restoreAssessmentScoresWidgetState(wrapper) {
+    const key = getAssessmentScoresWidgetStateKey(wrapper);
+    const state = assessmentScoresWidgetPanelStates[key];
+    if (!state) {
+        restoreAssessmentScoresScrollPosition(wrapper, 0);
+        return;
+    }
+
+    state.expandedCollapseIds.forEach((id) => {
+        const accordion = document.getElementById(id);
+        if (!accordion || !wrapper.contains(accordion)) {
+            return;
+        }
+
+        accordion.classList.add('show');
+        const accordionButton = accordion.previousElementSibling?.querySelector(
+            '.accordion-button'
+        );
+        accordionButton?.classList.remove('collapsed');
+        accordionButton?.setAttribute('aria-expanded', 'true');
+    });
+
+    requestAnimationFrame(() =>
+        restoreAssessmentScoresScrollPosition(wrapper, state.scrollTop)
+    );
+}
+
+globalThis.saveAssessmentScoresWidgetState = saveAssessmentScoresWidgetState;
+
+abp.widgets.AssessmentScoresWidget = function ($wrapper) {
+    return {
+        init: function () {
+            restoreAssessmentScoresWidgetState($wrapper[0]);
+            updateSubtotal();
+        },
+    };
+};
+
 function saveScoresSection(formId, sectionId) {
     const assessmentId = $('#AssessmentId').val();
     const secSaveButton = document.getElementById(

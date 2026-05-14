@@ -40,10 +40,17 @@
 
 .config-management {
     padding: 1rem;
-    max-height: 80vh;
-    overflow: auto;
+    max-height: calc(100vh - 140px);
+    overflow: hidden;
     margin-top: 20px;
     width: 95%;
+}
+
+/* When scroll-managed components are embedded in the config container,
+   constrain their height so the container's padding is visible at the bottom */
+.config-management .scoresheet-scrollable-content,
+.config-management .worksheet-scrollable-content {
+    height: calc(100vh - 210px);
 }
 
 .unity-app-main-container {

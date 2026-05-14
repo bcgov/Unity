@@ -704,6 +704,7 @@ div.dt-container div.dt-search {
     justify-content: flex-start;
     align-items: center;
     gap: 8px;
+    padding-left: 0.5rem;
 }
 
     .worksheet_section_wrapper:has(> :nth-child(1)) .worksheet_field {

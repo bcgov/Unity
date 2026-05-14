@@ -38,12 +38,6 @@ public class OpenAITransportService(
         }
 
         var apiKey = _configurationResolver.ResolveApiKey(operationName);
-        if (string.IsNullOrEmpty(apiKey))
-        {
-            _logger.LogWarning("Error: OpenAI API key is not configured");
-            return AIOperationResult.PermanentFailure(new AIProviderResult("OpenAI API key is not configured"));
-        }
-
         try
         {
             var resolvedSystemPrompt = string.IsNullOrWhiteSpace(systemPrompt)
@@ -60,10 +54,23 @@ public class OpenAITransportService(
                 [_configurationResolver.ResolveMaxTokensParameterNameForOperation(operationName)] = maxTokens
             };
 
-            var resolvedTemperature = temperature ?? _configurationResolver.ResolveConfiguredTemperature(operationName);
+            var profileTemperature = _configurationResolver.ResolveConfiguredTemperature(operationName);
+            var resolvedTemperature = profileTemperature.HasValue ? temperature ?? profileTemperature : null;
             if (resolvedTemperature.HasValue)
             {
                 requestPayload["temperature"] = resolvedTemperature.Value;
+            }
+
+            var reasoningEffort = _configurationResolver.ResolveConfiguredReasoningEffort(operationName);
+            if (!string.IsNullOrWhiteSpace(reasoningEffort))
+            {
+                requestPayload["reasoning_effort"] = reasoningEffort;
+            }
+
+            var verbosity = _configurationResolver.ResolveConfiguredVerbosity(operationName);
+            if (!string.IsNullOrWhiteSpace(verbosity))
+            {
+                requestPayload["verbosity"] = verbosity;
             }
 
             var json = JsonSerializer.Serialize(requestPayload);
@@ -123,6 +130,11 @@ public class OpenAITransportService(
         catch (OperationCanceledException)
         {
             throw;
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogError(ex, "AI request configuration is invalid.");
+            return AIOperationResult.PermanentFailure(new AIProviderResult(ex.Message));
         }
         catch (Exception ex)
         {

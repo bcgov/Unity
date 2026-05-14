@@ -69,15 +69,6 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
         public string? ApplicationFormSchema { get; set; } = null;
 
         [BindProperty(SupportsGet = true)]
-        public string? ApplicationFormSubmissionHtml { get; set; } = null;
-
-        [BindProperty(SupportsGet = true)]
-        public bool? HasRenderedHTML { get; set; } = false;
-
-        [BindProperty(SupportsGet = true)]
-        public bool RenderFormIoToHtml { get; set; } = false;
-
-        [BindProperty(SupportsGet = true)]
         public Guid? CurrentUserId { get; set; }
 
         [BindProperty(SupportsGet = true)]
@@ -151,16 +142,10 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
             ApplicationFormId = applicationFormSubmission.ApplicationFormId;
             ChefsSubmissionId = applicationFormSubmission.ChefsSubmissionGuid;
             ApplicationFormSubmissionId = applicationFormSubmission.Id.ToString();
-            HasRenderedHTML = !string.IsNullOrEmpty(applicationFormSubmission.RenderedHTML);
             ApplicationForm? applicationForm = await _grantApplicationAppService.GetApplicationFormAsync(ApplicationFormId);
             ArgumentNullException.ThrowIfNull(applicationForm);
             ApplicationScoresheetSchemaJson = await GetApplicationScoresheetSchemaJsonAsync(applicationForm);
-            RenderFormIoToHtml = applicationForm.RenderFormIoToHtml;
             ApplicationFormSubmissionData = applicationFormSubmission.Submission;
-            if (!string.IsNullOrEmpty(applicationFormSubmission.RenderedHTML) && RenderFormIoToHtml)
-            {
-                ApplicationFormSubmissionHtml = applicationFormSubmission.RenderedHTML;
-            }
         }
 
         public async Task<IActionResult> OnPostAsync()
