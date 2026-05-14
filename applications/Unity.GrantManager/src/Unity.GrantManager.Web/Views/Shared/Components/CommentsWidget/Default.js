@@ -86,6 +86,15 @@ $(function () {
         $('#addCommentTextArea' + $(this).data('ownerid')).val('');
     });
 
+    $('body').on('click', '.delete-button', function (e) {
+        e.preventDefault();
+        let itemId = $(this).data('id');
+        let ownerId = $(this).data('ownerid');
+        let commentType = $(this).data('type');
+
+        deleteComment(itemId, ownerId, commentType);
+    });
+
     $('body').on('click', '.pin-button', function (e) {
         e.preventDefault();
         let itemId = $(this).data('id');
@@ -207,6 +216,29 @@ function initTribute(mentionData) {
         tribute.attach(document.getElementById(item.id));
     });
 }
+
+function deleteComment(commentId, ownerId, commentType) {
+    abp.message.confirm(
+        'Are you sure you want to delete this comment?',
+        'Delete Comment',
+        function (confirmed) {
+            if (confirmed) {
+                unity.grantManager.comments.comment.delete(commentId, {
+                    ownerId: ownerId,
+                    commentType: commentType
+                }).then(function () {
+                    abp.notify.success('Comment deleted successfully');
+                    PubSub.publish(commentType + '_refresh');
+                }).catch(function (error) {
+                    const message = error?.error?.message || 'Failed to delete comment';
+                    abp.notify.error(message);
+                    console.error(error);
+                });
+            }
+        }
+    );
+}
+
 function pinComment(commentId, ownerId, commentType) {
     abp.message.confirm(
         'Are you sure you want to pin this comment?',
