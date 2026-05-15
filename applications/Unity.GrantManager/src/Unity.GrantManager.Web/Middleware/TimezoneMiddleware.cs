@@ -20,7 +20,8 @@ public class TimezoneMiddleware(RequestDelegate next)
             {
                 Path = "/",
                 IsEssential = true,
-                HttpOnly = true
+                HttpOnly = true,
+                Secure = true
             });
 
             context.Response.ContentType = "text/html; charset=utf-8";
