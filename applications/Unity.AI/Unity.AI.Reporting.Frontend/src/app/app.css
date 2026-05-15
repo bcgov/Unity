@@ -873,6 +873,87 @@
   z-index: 1;
   letter-spacing: 0.3px;
 }
+
+/* Secondary variant: shown beneath an inline result table */
+.metabase-view-container--secondary {
+  justify-content: flex-end;
+  margin-top: 12px;
+}
+
+.metabase-view-btn--secondary {
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  border-radius: 8px;
+  gap: 8px;
+  box-shadow: 0 2px 6px rgba(66, 153, 225, 0.25);
+}
+
+.metabase-view-btn--secondary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 3px 10px rgba(66, 153, 225, 0.3);
+}
+
+.metabase-view-btn--secondary svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* ---------- Inline result table ---------- */
+.result-table-wrapper {
+  max-height: 360px;
+  overflow: auto;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.result-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+.result-table thead th {
+  position: sticky;
+  top: 0;
+  background: #f7fafc;
+  color: #2d3748;
+  font-weight: 600;
+  text-align: left;
+  padding: 8px 12px;
+  border-bottom: 1px solid #e2e8f0;
+  white-space: nowrap;
+  z-index: 1;
+}
+
+.result-table tbody td {
+  padding: 6px 12px;
+  border-bottom: 1px solid #edf2f7;
+  color: #2d3748;
+  white-space: nowrap;
+  max-width: 320px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.result-table tbody tr:nth-child(even) td {
+  background: #fafbfc;
+}
+
+.result-table tbody tr:hover td {
+  background: #ebf8ff;
+}
+
+.result-truncation-note {
+  font-size: 12px;
+  color: #718096;
+  margin-top: 6px;
+  text-align: right;
+  font-style: italic;
+}
+
 .retry-hint {
   font-size: 0.9rem;
   color: #666;

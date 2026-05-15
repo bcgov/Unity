@@ -330,24 +330,6 @@ export class App implements OnInit, OnDestroy {
     this.turnToDelete = null;
   }
 
-  // VISUALIZATION: Commented out - not functional since switching to Metabase redirect.
-  //               Restore when custom visualization is implemented.
-  // async changeDisplay(turn: Turn, mode: string) {
-  //   try {
-  //     await firstValueFrom(
-  //       this.apiService.changeDisplay<Embed>(turn.embed.card_id, mode, turn.embed.x_field, turn.embed.y_field)
-  //     );
-  //     // Update the current visualization in the embed
-  //     turn.embed.current_visualization = mode;
-  //   } catch (error) {
-  //     // Log the error and notify the user
-  //     this.logger.error('Error changing display mode:', error);
-  //     this.toastService.error('Failed to change display mode. Please try again.');
-  //   } finally {
-  //     this.cdr.markForCheck();
-  //   }
-  // }
-
   async resetConversation() {
     this.conversation = [];
     this.currentTurnIndex = 0;

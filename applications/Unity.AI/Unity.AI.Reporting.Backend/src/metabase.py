@@ -121,9 +121,10 @@ class MetabaseClient:
 
     def create_card(self, sql: str, db_id: int, collection_id: int,
                     name: str, tenant_id: Optional[str] = None,
-                    visualization_settings: Optional[Dict[str, Any]] = None) -> int:
+                    visualization_settings: Optional[Dict[str, Any]] = None
+                    ) -> Tuple[int, Optional[Dict[str, Any]]]:
         """
-        Create a new Metabase card (saved question).
+        Create a new Metabase card (saved question) and execute its query.
 
         Args:
             sql: SQL query for the card
@@ -133,7 +134,9 @@ class MetabaseClient:
             tenant_id: Optional tenant ID to use tenant-specific API key
 
         Returns:
-            Card ID
+            Tuple of (card_id, card_data) where card_data is the inner
+            `{"cols": [...], "rows": [...]}` dict from Metabase (same shape as
+            execute_sql), or None if the post-creation query failed.
         """
         headers = self._get_headers(tenant_id)
         url = f"{self.config.url}/api/card"
@@ -189,7 +192,37 @@ class MetabaseClient:
             logger.error(f"Response text: {r.text}")
             raise ValueError(f"Error parsing Metabase response: {e}")
 
-        return card_id
+        card_data = self._run_card_query(card_id, headers)
+        return card_id, card_data
+
+    def _run_card_query(self, card_id: int, headers: Dict[str, str]) -> Optional[Dict[str, Any]]:
+        """Execute a saved card and return its inner data dict.
+
+        Returns None on any failure so callers can fall back gracefully.
+        """
+        query_url = f"{self.config.url}/api/card/{card_id}/query"
+        try:
+            r = requests.post(query_url, headers=headers, json={"ignore_cache": True}, timeout=30)
+            body = r.json()
+
+            if r.status_code == 202 and body.get("status") == "running":
+                job_id = body.get("id")
+                deadline = time.time() + 30
+                while time.time() < deadline:
+                    jr = requests.get(
+                        f"{self.config.url}/api/async/{job_id}",
+                        headers=headers,
+                        timeout=10,
+                    )
+                    if jr.status_code == 200:
+                        body = jr.json()
+                        break
+                    time.sleep(1)
+
+            return body.get("data") if isinstance(body, dict) else None
+        except Exception as e:
+            logger.error(f"Error fetching card data for card {card_id}: {e}", exc_info=True)
+            return None
     
     def update_card_visualization(self, card_id: int, display_mode: str,
                                  x_fields: List[str], y_fields: List[str],

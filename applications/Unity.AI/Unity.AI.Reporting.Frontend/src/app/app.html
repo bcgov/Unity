@@ -113,8 +113,39 @@
                           </button>
                         </div>
                       }
-                      <div class="metabase-view-container">
-                        <button class="metabase-view-btn" (click)="redirectToMB(turn)" title="View in Metabase">
+                      @if (turn.embed.card_data && turn.embed.card_data.rows.length > 0) {
+                        <div class="result-table-wrapper" role="region" aria-label="Query results preview">
+                          <table class="result-table">
+                            <thead>
+                              <tr>
+                                @for (col of turn.embed.card_data.columns; track col) {
+                                  <th>{{ col }}</th>
+                                }
+                              </tr>
+                            </thead>
+                            <tbody>
+                              @for (row of turn.embed.card_data.rows; track $index) {
+                                <tr>
+                                  @for (cell of row; track $index) {
+                                    <td>{{ cell }}</td>
+                                  }
+                                </tr>
+                              }
+                            </tbody>
+                          </table>
+                        </div>
+                        @if (turn.embed.card_data.truncated) {
+                          <div class="result-truncation-note">
+                            Showing {{ turn.embed.card_data.rows.length }} of {{ turn.embed.card_data.total_rows }} rows. Open in Metabase to see the full result.
+                          </div>
+                        }
+                      }
+                      <div class="metabase-view-container"
+                           [class.metabase-view-container--secondary]="!!turn.embed.card_data && turn.embed.card_data.rows.length > 0">
+                        <button class="metabase-view-btn"
+                                [class.metabase-view-btn--secondary]="!!turn.embed.card_data && turn.embed.card_data.rows.length > 0"
+                                (click)="redirectToMB(turn)"
+                                title="View in Metabase">
                           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                             <path d="M18 13V19C18 20.1046 17.1046 21 16 21H5C3.89543 21 3 20.1046 3 19V8C3 6.89543 3.89543 6 5 6H11" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                             <path d="M15 3H21V9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
