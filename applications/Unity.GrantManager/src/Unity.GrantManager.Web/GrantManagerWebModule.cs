@@ -35,6 +35,7 @@ using Unity.GrantManager.Web.Components.MiniProfiler;
 using Unity.GrantManager.Web.Exceptions;
 using Unity.GrantManager.Web.Filters;
 using Unity.GrantManager.Web.Identity;
+using Unity.GrantManager.Web.Middleware;
 using Unity.GrantManager.Web.Identity.Policy;
 using Unity.GrantManager.Web.Menus;
 using Unity.GrantManager.Web.Settings;
@@ -591,6 +592,7 @@ public class GrantManagerWebModule : AbpModule
 
         app.UseCorrelationId();
         app.UseStaticFiles();
+        app.UseMiddleware<TimezoneMiddleware>();
         app.UseRouting();
         app.UseAuthentication();
 

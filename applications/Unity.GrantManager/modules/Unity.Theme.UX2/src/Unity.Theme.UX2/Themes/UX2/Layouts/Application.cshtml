@@ -130,6 +130,8 @@
                 AnalyticsUtils.initMatomo(window.MATOMO_URL, 1);
             }
         })();
+
+        TimezoneUtils.setTimezoneCookie();
     </script>
 
     @await Component.InvokeLayoutHookAsync(LayoutHooks.Body.Last, StandardLayouts.Application)
