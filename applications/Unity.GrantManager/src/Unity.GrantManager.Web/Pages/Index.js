@@ -11,23 +11,7 @@ $(function () {
     });
 });
 
-
 $(function () {
-    setTimezoneCookie();
-
-    function setTimezoneCookie() {
-        let timezone_cookie = "timezoneoffset";
-        setCookie(timezone_cookie, new Date().getTimezoneOffset(), 5);
-    }
-
-    function setCookie(cname, cvalue, exdays) {
-        const d = new Date();
-        d.setTime(d.getTime() + (exdays * 24 * 60 * 60 * 1000));
-        let expires = "expires=" + d.toUTCString();
-        document.cookie = cname + "=" + cvalue + ";" + expires + ";path=/;domain=" +
-            window.location.hostname + ";SameSite=Lax;secure;";
-    }
-
     $('.btn-forms-templte').on("click", function (e) {
         document.getElementById("formsTemplateLibrary").style.display = "block";
         document.getElementById("welcomeContent").style.display = "none";
