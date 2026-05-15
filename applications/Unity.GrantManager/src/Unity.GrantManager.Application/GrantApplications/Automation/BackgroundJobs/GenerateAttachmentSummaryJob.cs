@@ -30,10 +30,10 @@ public class GenerateAttachmentSummaryJob(
                 logger.LogInformation(
                     "Executing AI attachment summary job for application {ApplicationId}.",
                     args.ApplicationId);
-                await attachmentSummaryService.GenerateForApplicationAsync(args.ApplicationId, args.PromptVersion);
+                await attachmentSummaryService.GenerateForApplicationAsync(args.ApplicationId, args.PromptVersion, args.AttachmentIds);
 
-                await AIGenerationRequestJobHelper.MarkCompletedInNewUowAsync(unitOfWorkManager, generationRequestRepository, args.RequestKey);
                 await AIGenerationRequestJobHelper.StampRateLimitBestEffortAsync(aiRateLimiter, logger, args.RequestedByUserId, args.ApplicationId, args.RequestKey);
+                await AIGenerationRequestJobHelper.MarkCompletedInNewUowAsync(unitOfWorkManager, generationRequestRepository, args.RequestKey);
             }
             catch (Exception ex)
             {

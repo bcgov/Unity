@@ -427,12 +427,18 @@ function updateAiActionButtonsVisibility(dataTableContext, rowsData) {
 function renderUnityWorkflowButton(actionValue) {
     let buttonConfig = actionButtonConfigMap[actionValue] ?? actionButtonConfigMap['_Fallback']
 
-    return {
+    const button = {
         extend: buttonConfig.buttonType,
         name: actionValue,
         sortOrder: buttonConfig.order ?? 100,
         attr: { id: `${actionValue}Button` }
     };
+
+    if (actionValue === 'Generate') {
+        button.className = 'ai-generate-btn';
+    }
+
+    return button;
 }
 
 /* Cutom Unity Workflow Buttons */
