@@ -538,11 +538,6 @@ form label.error {
     line-height: 1.6;
 }
 
-.ai-analysis-section.compact .ai-analysis-section-body {
-    padding-top: 10px;
-    padding-bottom: 10px;
-}
-
 .ai-analysis-section.header-only .ai-analysis-section-body {
     display: none;
 }
@@ -643,6 +638,12 @@ form label.error {
 .ai-analysis-collapse-toggle:hover {
     color: #1f2937;
     background-color: #eef2f6;
+}
+
+.ai-analysis-collapse-toggle:disabled {
+    color: #9ca3af;
+    cursor: default;
+    pointer-events: none;
 }
 
 .ai-analysis-collapse-toggle:focus,

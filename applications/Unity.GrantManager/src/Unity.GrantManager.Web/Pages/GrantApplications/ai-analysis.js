@@ -134,12 +134,18 @@ function createFindingItem(item, type, hidden) {
 
 function updateVisibleItemLayout($items) {
     const $allItems = $items.children('.ai-analysis-detail-item');
-    const $visibleItems = $allItems.filter(function() {
-        return this.style.display !== 'none';
-    });
+    const $visibleItems = getVisibleAnalysisItems($items);
 
     $allItems.removeClass('last-visible');
     $visibleItems.last().addClass('last-visible');
+}
+
+function getVisibleAnalysisItems($items) {
+    return $items
+        .children('.ai-analysis-detail-item')
+        .filter(function() {
+            return this.style.display !== 'none';
+        });
 }
 
 function formatSectionTitle(title, count) {
@@ -179,13 +185,9 @@ function setSectionCollapsed($section, $collapseToggle, isCollapsed) {
 }
 
 function syncSectionCollapseWithVisibleItems($section, $items, $collapseToggle) {
-    const hasVisibleItems = $items
-        .children('.ai-analysis-detail-item')
-        .filter(function() {
-            return this.style.display !== 'none';
-        })
-        .length > 0;
+    const hasVisibleItems = getVisibleAnalysisItems($items).length > 0;
 
+    $collapseToggle.prop('disabled', !hasVisibleItems);
     setSectionCollapsed($section, $collapseToggle, !hasVisibleItems);
 }
 
@@ -193,6 +195,10 @@ function configureCollapseToggle($section, $collapseToggle) {
     $collapseToggle
         .off('click')
         .on('click', function() {
+            if ($(this).prop('disabled')) {
+                return;
+            }
+
             const isCollapsed = $section.toggleClass('collapsed').hasClass('collapsed');
             setSectionCollapsed($section, $(this), isCollapsed);
         });
