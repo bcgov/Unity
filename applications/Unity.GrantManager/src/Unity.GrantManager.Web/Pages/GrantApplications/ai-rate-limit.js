@@ -9,9 +9,12 @@
     const BUTTON_SELECTOR = '.ai-generate-btn';
     const ATTR_LABEL = 'data-original-label';
     const ATTR_COOLDOWN = 'data-ai-cooldown-active';
+    const ATTR_CHECKING = 'data-ai-cooldown-checking';
+    const ATTR_OWNED_DISABLED = 'data-ai-rate-limit-disabled';
 
     let countdownTimer = null;
     let lastFetchAt = 0;
+    let remainingSeconds = 0;
 
     function buttons() {
         return document.querySelectorAll(BUTTON_SELECTOR);
@@ -39,6 +42,9 @@
         }
 
         rememberLabel(btn);
+        if (!btn.disabled || btn.getAttribute(ATTR_OWNED_DISABLED) === '1') {
+            btn.setAttribute(ATTR_OWNED_DISABLED, '1');
+        }
         btn.setAttribute(ATTR_COOLDOWN, '1');
         btn.setAttribute('disabled', 'disabled');
         btn.classList.add('disabled');
@@ -48,10 +54,48 @@
     function restore(btn) {
         if (btn.getAttribute(ATTR_COOLDOWN) !== '1') return;
         btn.removeAttribute(ATTR_COOLDOWN);
-        btn.removeAttribute('disabled');
+        if (btn.getAttribute(ATTR_OWNED_DISABLED) === '1') {
+            btn.removeAttribute(ATTR_OWNED_DISABLED);
+            btn.removeAttribute('disabled');
+        }
         btn.classList.remove('disabled');
         const original = btn.getAttribute(ATTR_LABEL);
         if (original) setLabel(btn, original);
+    }
+
+    function setChecking(btn) {
+        if (
+            btn.getAttribute(ATTR_CHECKING) === '1' ||
+            btn.getAttribute('data-ai-generating') === '1'
+        ) {
+            return;
+        }
+
+        btn.setAttribute(ATTR_CHECKING, '1');
+        if (!btn.disabled || btn.getAttribute(ATTR_OWNED_DISABLED) === '1') {
+            btn.setAttribute(ATTR_OWNED_DISABLED, '1');
+            btn.setAttribute('disabled', 'disabled');
+        }
+    }
+
+    function clearChecking(btn) {
+        if (btn.getAttribute(ATTR_CHECKING) !== '1') {
+            return;
+        }
+
+        btn.removeAttribute(ATTR_CHECKING);
+        if (btn.getAttribute(ATTR_OWNED_DISABLED) === '1') {
+            btn.removeAttribute(ATTR_OWNED_DISABLED);
+            btn.removeAttribute('disabled');
+        }
+    }
+
+    function disableUntilChecked() {
+        buttons().forEach(setChecking);
+    }
+
+    function clearCheckingButtons() {
+        buttons().forEach(clearChecking);
     }
 
     function clearTimer() {
@@ -61,24 +105,27 @@
         }
     }
 
+    function applyCooldownToButtons() {
+        buttons().forEach(b => disable(b, remainingSeconds));
+    }
+
     function applyCooldown(seconds) {
+        clearCheckingButtons();
         clearTimer();
-        if (!seconds || seconds <= 0) {
+        remainingSeconds = Number(seconds) || 0;
+        if (remainingSeconds <= 0) {
             buttons().forEach(restore);
             return;
         }
-        let remaining = seconds;
-        buttons().forEach(b => disable(b, remaining));
+        applyCooldownToButtons();
         countdownTimer = setInterval(() => {
-            remaining -= 1;
-            if (remaining <= 0) {
+            remainingSeconds -= 1;
+            if (remainingSeconds <= 0) {
                 clearTimer();
                 buttons().forEach(restore);
                 return;
             }
-            buttons().forEach(b => {
-                if (b.getAttribute(ATTR_COOLDOWN) === '1') setLabel(b, `Wait ${remaining}s`);
-            });
+            applyCooldownToButtons();
         }, 1000);
     }
 
@@ -92,15 +139,23 @@
                 credentials: 'same-origin',
                 headers: { Accept: 'application/json' },
             });
-            if (!res.ok) return;
+            if (!res.ok) {
+                clearCheckingButtons();
+                return;
+            }
             const data = await res.json();
             applyCooldown(Number(data.retryAfterSeconds) || 0);
         } catch (_) {
             // Best-effort; the server is the source of truth.
+            clearCheckingButtons();
         }
     }
 
-    globalThis.refreshAIRateLimitState = () => fetchState(true);
+    globalThis.syncAIRateLimitButtons = () => {
+        disableUntilChecked();
+        fetchState(true);
+    };
+    globalThis.refreshAIRateLimitState = globalThis.syncAIRateLimitButtons;
 
     document.addEventListener('click', (e) => {
         const btn = e.target.closest(BUTTON_SELECTOR);
@@ -110,6 +165,13 @@
         setTimeout(fetchState, 250);
     });
 
-    document.addEventListener('DOMContentLoaded', () => fetchState());
-    if (document.readyState !== 'loading') fetchState();
+    document.addEventListener('DOMContentLoaded', () => {
+        disableUntilChecked();
+        fetchState();
+    });
+
+    if (document.readyState !== 'loading') {
+        disableUntilChecked();
+        fetchState();
+    }
 })();

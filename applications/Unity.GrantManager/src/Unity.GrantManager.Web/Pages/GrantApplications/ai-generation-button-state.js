@@ -15,6 +15,15 @@
         $button.html(html).prop('disabled', false);
     }
 
+    function restoreButtonForCooldownCheck($button, html) {
+        global.AIGenerationButtonState.restore($button);
+        $button
+            .html(html)
+            .attr('data-ai-cooldown-checking', '1')
+            .attr('data-ai-rate-limit-disabled', '1')
+            .prop('disabled', true);
+    }
+
     global.AIGenerationButtonState = {
         resolveStatus(status) {
             switch (Number(status)) {
@@ -47,6 +56,9 @@
                 opacity: '',
             }).removeClass('disabled');
         },
+        restoreForCooldownCheck($button, html) {
+            restoreButtonForCooldownCheck($button, html);
+        },
         monitor(options) {
             const intervalMs = options.intervalMs || 15000;
             const maxFailures = options.maxFailures || 3;
@@ -75,9 +87,9 @@
 
                         if (!request || request.isActive === false || status === 'Completed') {
                             stop();
-                            restoreButton(options.$button, options.originalHtml);
+                            restoreButtonForCooldownCheck(options.$button, options.originalHtml);
                             options.onComplete?.(request);
-                            global.refreshAIRateLimitState?.();
+                            global.syncAIRateLimitButtons?.();
                             return;
                         }
 
