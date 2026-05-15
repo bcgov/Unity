@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Unity.AI.Automation;
@@ -23,7 +24,7 @@ public class ApplicationAIGenerationQueue(
     ILogger<ApplicationAIGenerationQueue> logger)
     : IApplicationAIGenerationQueue, ITransientDependency
 {
-    public async Task QueueAttachmentSummaryAsync(Guid applicationId, Guid? tenantId, string? promptVersion = null)
+    public async Task QueueAttachmentSummaryAsync(Guid applicationId, Guid? tenantId, string? promptVersion = null, List<Guid>? attachmentIds = null)
     {
         var requestKey = AIGenerationRequestKeyHelper.BuildRequestKey(tenantId, applicationId, AIGenerationRequestKeyHelper.AttachmentSummaryOperationType);
         await EnsureRequestAndEnqueueAsync(
@@ -36,6 +37,7 @@ public class ApplicationAIGenerationQueue(
                 return backgroundJobManager.EnqueueAsync(new GenerateAttachmentSummaryBackgroundJobArgs
                 {
                     ApplicationId = applicationId,
+                    AttachmentIds = attachmentIds,
                     PromptVersion = promptVersion,
                     RequestedByUserId = currentUser.Id,
                     TenantId = tenantId,
