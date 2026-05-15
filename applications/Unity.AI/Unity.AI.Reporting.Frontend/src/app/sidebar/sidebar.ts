@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, ChangeDetectorRef } from '@angular/core';
+import { Component, Input, Output, EventEmitter, ChangeDetectorRef, OnDestroy } from '@angular/core';
 
 import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
@@ -22,7 +22,7 @@ export interface Chat {
   templateUrl: './sidebar.html',
   styleUrls: ['./sidebar.css']
 })
-export class SidebarComponent {
+export class SidebarComponent implements OnDestroy {
   @Input() isOpen: boolean = false;
   @Input() currentChatId: string | null = null;
   @Input() conversation: Turn[] = [];
@@ -33,6 +33,38 @@ export class SidebarComponent {
 
   chats: Chat[] = [];
   loading: boolean = false;
+  sidebarWidth = 220;
+
+  private readonly MIN_WIDTH = 150;
+  private readonly MAX_WIDTH = 600;
+  private startX = 0;
+  private startWidth = 0;
+
+  private readonly onMouseMove = (e: MouseEvent) => {
+    const delta = e.clientX - this.startX;
+    this.sidebarWidth = Math.min(this.MAX_WIDTH, Math.max(this.MIN_WIDTH, this.startWidth + delta));
+    this.cdr.markForCheck();
+  };
+
+  private readonly onMouseUp = () => {
+    document.removeEventListener('mousemove', this.onMouseMove);
+    document.removeEventListener('mouseup', this.onMouseUp);
+    document.body.style.userSelect = '';
+  };
+
+  onResizeStart(e: MouseEvent): void {
+    this.startX = e.clientX;
+    this.startWidth = this.sidebarWidth;
+    document.body.style.userSelect = 'none';
+    document.addEventListener('mousemove', this.onMouseMove);
+    document.addEventListener('mouseup', this.onMouseUp);
+    e.preventDefault();
+  }
+
+  ngOnDestroy(): void {
+    document.removeEventListener('mousemove', this.onMouseMove);
+    document.removeEventListener('mouseup', this.onMouseUp);
+  }
   
   // Alert state
   showDeleteAlert: boolean = false;
