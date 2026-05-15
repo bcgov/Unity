@@ -131,7 +131,9 @@
             }
         })();
 
-        TimezoneUtils.setTimezoneCookie();
+        if (TimezoneUtils.setTimezoneCookie()) {
+            location.reload();
+        }
     </script>
 
     @await Component.InvokeLayoutHookAsync(LayoutHooks.Body.Last, StandardLayouts.Application)

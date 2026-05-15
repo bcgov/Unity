@@ -10,8 +10,7 @@ const TimezoneUtils = (function () {
         const d = new Date();
         d.setTime(d.getTime() + (exdays * 24 * 60 * 60 * 1000));
         let expires = "expires=" + d.toUTCString();
-        document.cookie = cname + "=" + cvalue + ";" + expires + ";path=/;domain=" +
-            globalThis.location.hostname + ";SameSite=Lax;secure;";
+        document.cookie = cname + "=" + cvalue + ";" + expires + ";path=/;SameSite=Lax;secure;";
     }
 
     function setTimezoneCookie() {
@@ -25,7 +24,9 @@ const TimezoneUtils = (function () {
 
         if (existing === undefined || Number.parseInt(existing, 10) !== currentOffset) {
             setCookie(cookieName, currentOffset, 1);
+            return true;
         }
+        return false;
     }
     
     return {
