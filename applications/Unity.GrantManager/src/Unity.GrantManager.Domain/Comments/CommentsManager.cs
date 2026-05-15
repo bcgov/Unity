@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Unity.GrantManager.Identity;
+using Volo.Abp;
 using Volo.Abp.Domain.Entities;
 using Volo.Abp.Domain.Services;
 using Volo.Abp.Users;
@@ -172,6 +173,30 @@ namespace Unity.GrantManager.Comments
                                                    PinDateTime = applicantComment.PinDateTime,
                                                };
                     return applicantCommentsQry.ToList();
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(type));
+            }
+        }
+
+        public virtual async Task DeleteCommentAsync(Guid ownerId, Guid commentId, CommentType type)
+        {
+            var comment = await GetCommentAsync(ownerId, commentId, type)
+                ?? throw new EntityNotFoundException(typeof(CommentBase), commentId);
+
+            if (comment.CommenterId != _currentUser.GetId())
+                throw new BusinessException(GrantManagerDomainErrorCodes.NotCommentOwner);
+
+            switch (type)
+            {
+                case CommentType.ApplicationComment:
+                    await _applicationCommentsRepository.DeleteAsync((ApplicationComment)comment, autoSave: true);
+                    break;
+                case CommentType.AssessmentComment:
+                    await _assessmentCommentsRepository.DeleteAsync((AssessmentComment)comment, autoSave: true);
+                    break;
+                case CommentType.ApplicantComment:
+                    await _applicantCommentsRepository.DeleteAsync((ApplicantComment)comment, autoSave: true);
+                    break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(type));
             }

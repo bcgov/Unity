@@ -613,6 +613,26 @@
         return inputString;
     }
 
+    const buildTodayDateSpan = () => new Handlebars.SafeString(buildTodayDateHtml());
+
+    const buildTodayDateHtml = () => {
+        const formatted = new Intl.DateTimeFormat('en-CA', {
+            timeZone: 'America/Vancouver',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        }).format(new Date());
+        return `<span data-token="today_date">${formatted}</span>`;
+    };
+
+    const refreshTodayDateSpans = (html) => {
+        if (!html) return html;
+        return html.replaceAll(
+            /<span[^>]*data-token="today_date"[^>]*>[\s\S]*?<\/span>/gi,
+            buildTodayDateHtml()
+        );
+    };
+
     function extractTemplateData(apiResponse, mappingConfig) {
         const templateData = {};
 
@@ -620,7 +640,7 @@
             const { token, mapTo } = mapping;
 
             if (!mapTo) {
-                templateData[token] = ""; // handle empty MapTo
+                templateData[token] = token === 'today_date' ? buildTodayDateSpan() : "";
                 return;
             }
 
@@ -690,7 +710,7 @@
                     handleDraftChange();
                 });
                 editorInstance = editor;
-                editorInstance.setContent(data.body);
+                editorInstance.setContent(refreshTodayDateSpans(data.body));
             }
         });
         UIElements.inputEmailTo.val(data.toAddress);
@@ -698,7 +718,7 @@
         UIElements.inputEmailBCC.val(data.bcc ? data.bcc.replace(/,/g, '; ') : '');
         UIElements.inputEmailFrom.val(data.fromAddress);
         UIElements.inputEmailSubject.val(data.subject);
-        UIElements.inputEmailBody.val(data.body);
+        UIElements.inputEmailBody.val(refreshTodayDateSpans(data.body));
 
         const isDraft = data?.status === 'Draft';
         if (isDraft) {

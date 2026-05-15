@@ -259,6 +259,7 @@
     "GrantManager:ChildFormCannotReferenceSelf": "A form cannot reference itself as the parent.",
     "GrantManager:CannotModifyAiAssessment": "AI assessments are read-only.",
     "GrantManager:CannotCloneNonAiAssessment": "Only AI assessments can be cloned.",
+    "GrantManager:NotCommentOwner": "You can only delete your own comments.",
 
     "AssessmentResultsView:ApprovalTitle": "Approval",
     "AssessmentResultsView:AssessmentResultsTitle": "Application Assessment Results",
