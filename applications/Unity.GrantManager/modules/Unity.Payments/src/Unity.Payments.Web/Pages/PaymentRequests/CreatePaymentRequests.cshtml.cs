@@ -178,7 +178,13 @@ namespace Unity.Payments.Web.Pages.Payments
         {
             if (ApplicationPaymentRequestForm == null) return NoContent();
 
-            // Validate parent-child payment amounts
+            // Validate standalone and parent-child payment amounts against current DB state
+            var standaloneErrors = await helperService.ValidateStandalonePaymentAmountsAsync(ApplicationPaymentRequestForm);
+            if (standaloneErrors.Count != 0)
+            {
+                throw new UserFriendlyException(string.Join(" ", standaloneErrors));
+            }
+
             var validationErrors = await helperService.ValidateParentChildPaymentAmountsAsync(ApplicationPaymentRequestForm);
             if (validationErrors.Count != 0)
             {
@@ -191,22 +197,14 @@ namespace Unity.Payments.Web.Pages.Payments
                     "Cannot submit payment request: Supplier number is missing for one or more applications.");
             }
 
+            if (ApplicationPaymentRequestForm.Exists(payment => payment.SiteId == Guid.Empty))
+            {
+                throw new UserFriendlyException(
+                    "Cannot submit payment request: Site is missing for one or more applications.");
+            }
+
+            // Resolve override once — used for both validation and mapping below
             bool hasOverridePermission = await AuthorizationService.IsGrantedAsync(PaymentsPermissions.Payments.AccountCodingOverride);
-            var payments = MapPaymentRequests(hasOverridePermission);
-
-            await paymentRequestAppService.CreateAsync(payments);
-
-            return NoContent();
-        }
-
-        private List<CreatePaymentRequestDto> MapPaymentRequests(bool hasOverridePermission)
-        {
-            var payments = new List<CreatePaymentRequestDto>();
-
-            if (ApplicationPaymentRequestForm == null) return payments;
-
-            // Only apply the override if the user has the permission,
-            // a value was provided, and it parses to a valid non-empty GUID
             Guid? accountCodingOverrideId = null;
             if (hasOverridePermission
                 && !string.IsNullOrWhiteSpace(AccountCodingOverride)
@@ -215,6 +213,26 @@ namespace Unity.Payments.Web.Pages.Payments
             {
                 accountCodingOverrideId = overrideGuid;
             }
+
+            if (accountCodingOverrideId == null
+                && ApplicationPaymentRequestForm.Exists(payment => payment.AccountCodingId == null || payment.AccountCodingId == Guid.Empty))
+            {
+                throw new UserFriendlyException(
+                    "Cannot submit payment request: Account Coding is missing for one or more applications.");
+            }
+
+            var payments = MapPaymentRequests(accountCodingOverrideId);
+
+            await paymentRequestAppService.CreateAsync(payments);
+
+            return NoContent();
+        }
+
+        private List<CreatePaymentRequestDto> MapPaymentRequests(Guid? accountCodingOverrideId)
+        {
+            var payments = new List<CreatePaymentRequestDto>();
+
+            if (ApplicationPaymentRequestForm == null) return payments;
 
             foreach (var payment in ApplicationPaymentRequestForm)
             {

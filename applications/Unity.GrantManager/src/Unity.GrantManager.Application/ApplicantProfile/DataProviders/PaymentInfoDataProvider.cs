@@ -6,6 +6,7 @@ using Unity.GrantManager.ApplicantProfile.ProfileData;
 using Unity.GrantManager.Applications;
 using Unity.Payments.Domain.PaymentRequests;
 using Unity.Payments.Codes;
+using Unity.Payments.Enums;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.MultiTenancy;
@@ -60,8 +61,9 @@ namespace Unity.GrantManager.ApplicantProfile
 #pragma warning disable CA1862 // EF Core does not support StringComparison overloads - https://github.com/dotnet/efcore/issues/1222
                 var paymentDetails = await paymentsQueryable
                     .Where(pr => applicationLookup.Keys.Contains(pr.CorrelationId)
-                                 && pr.PaymentStatus != null
-                                 && pr.PaymentStatus.Trim().ToUpper() == CasPaymentRequestStatus.FullyPaid.ToUpper())
+                                 && ((pr.PaymentStatus != null
+                                      && pr.PaymentStatus.Trim().ToUpper() == CasPaymentRequestStatus.FullyPaid.ToUpper())
+                                     || pr.Status == PaymentRequestStatus.HistoricalPayment))
                     .ToListAsync();
 #pragma warning restore CA1862
 
@@ -72,7 +74,7 @@ namespace Unity.GrantManager.ApplicantProfile
                     ReferenceNo = applicationLookup.TryGetValue(p.CorrelationId, out var refNo) ? refNo : string.Empty,
                     Amount = p.Amount,
                     PaymentDate = p.PaymentDate,
-                    PaymentStatus = CasPaymentRequestStatus.FullyPaid
+                    PaymentStatus = p.PaymentStatus ?? CasPaymentRequestStatus.FullyPaid
                 }));
             }
 

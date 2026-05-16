@@ -68,6 +68,7 @@ public class PaymentRequestAppService_Tests : PaymentsApplicationTestBase
                PayeeName= "",
                SiteId= siteId,
                SupplierNumber = "SUP-TEST",
+               AccountCodingId = Guid.NewGuid(),
             }
         ];
         // Act
@@ -100,7 +101,8 @@ public class PaymentRequestAppService_Tests : PaymentsApplicationTestBase
             CorrelationProvider = "",
             ReferenceNumber = "UP-XXXX-000000",
             BatchName = "UNITY_BATCH_1",
-            BatchNumber = 1
+            BatchNumber = 1,
+            AccountCodingId = Guid.NewGuid()
         };
         _ = await _paymentRequestRepository.InsertAsync(new PaymentRequest(Guid.NewGuid(), paymentRequestDto), true);
 
@@ -135,7 +137,8 @@ public class PaymentRequestAppService_Tests : PaymentsApplicationTestBase
             CorrelationProvider = "TestProvider",
             ReferenceNumber = "UP-XXXX-000001",
             BatchName = "UNITY_BATCH_1",
-            BatchNumber = 1
+            BatchNumber = 1,
+            AccountCodingId = Guid.NewGuid()
         };
         _ = await _paymentRequestRepository.InsertAsync(new PaymentRequest(Guid.NewGuid(), paymentRequestDto), true);
 

@@ -273,9 +273,47 @@ namespace Unity.Payments.Web.Pages.Payments
             }
         }
 
+        public async Task<List<string>> ValidateStandalonePaymentAmountsAsync<T>(List<T> form) where T : IPaymentFormItem
+        {
+            List<string> errors = [];
+
+            var standaloneItems = form.Where(x => !x.IsPartOfParentChildGroup).ToList();
+
+            foreach (var item in standaloneItems)
+            {
+                if (item.Amount <= 0)
+                {
+                    errors.Add($"Payment amount for application must be greater than zero.");
+                    continue;
+                }
+
+                var application = await applicationService.GetAsync(item.CorrelationId);
+                decimal currentRemainingAmount = await GetRemainingAmountAsync(application);
+
+                if (item.Amount > currentRemainingAmount)
+                {
+                    errors.Add($"Payment amount (${item.Amount:N2}) for application {application.ReferenceNo} exceeds the current remaining amount (${currentRemainingAmount:N2}). " +
+                               $"The remaining amount may have changed since the form was loaded. Please refresh and try again.");
+                }
+            }
+
+            return errors;
+        }
+
         public async Task<List<string>> ValidateParentChildPaymentAmountsAsync<T>(List<T> form) where T : IPaymentFormItem
         {
             List<string> errors = [];
+
+            var zeroAmountItems = form
+                .Where(x => !string.IsNullOrEmpty(x.ParentReferenceNo) && x.Amount <= 0)
+                .ToList();
+
+            foreach (var item in zeroAmountItems)
+            {
+                errors.Add($"Payment amount for application in parent-child group '{item.ParentReferenceNo}' must be greater than zero.");
+            }
+
+            if (errors.Count > 0) return errors;
 
             var childGroups = form
                 .Where(x => !string.IsNullOrEmpty(x.ParentReferenceNo))

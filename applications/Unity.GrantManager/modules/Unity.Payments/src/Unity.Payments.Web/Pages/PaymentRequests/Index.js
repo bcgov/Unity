@@ -484,6 +484,7 @@ $(function () {
             className: 'data-table-header',
             index: columnIndex,
             render: function (data) {
+                if (!data) return '';
                 switch (data.paymentGroup) {
                     case 1:
                         return 'EFT';

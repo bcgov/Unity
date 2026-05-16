@@ -55,7 +55,7 @@ namespace Unity.Payments.PaymentRequests
                         PaymentRequestId = paymentRequest.Id,
                         InvoiceNumber = paymentRequest.InvoiceNumber,
                         SupplierNumber = paymentRequest.SupplierNumber,
-                        SiteNumber = paymentRequest.Site.Number,
+                        SiteNumber = paymentRequest.Site?.Number ?? string.Empty,
                         TenantId = (Guid)currentTenant.Id
                     };
 
@@ -103,7 +103,7 @@ namespace Unity.Payments.PaymentRequests
                             PaymentRequestId = paymentRequest.Id,
                             InvoiceNumber = paymentRequest.InvoiceNumber,
                             SupplierNumber = paymentRequest.SupplierNumber,
-                            SiteNumber = paymentRequest.Site.Number,
+                            SiteNumber = paymentRequest.Site?.Number ?? string.Empty,
                             TenantId = tenantId
                         };
 

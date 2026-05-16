@@ -17,7 +17,8 @@ public static class PaymentsPermissions
         public const string AccountCodingOverride = Default + ".AccountCodingOverride";
         public const string EditSupplierInfo = Default + ".EditSupplierInfo";
         public const string EditFormPaymentConfiguration = Default + ".EditFormPaymentConfiguration";
-    }    
+        public const string AddHistoricalPayment = Default + ".AddHistoricalPayment";
+    }
 
     public static string[] GetAll()
     {

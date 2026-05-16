@@ -820,7 +820,8 @@ public class PaymentRequestRepository_Tests : PaymentsApplicationTestBase
             CorrelationProvider = "Test",
             ReferenceNumber = $"REF-{Guid.NewGuid():N}",
             BatchName = "TEST_BATCH",
-            BatchNumber = 1
+            BatchNumber = 1,
+            AccountCodingId = Guid.NewGuid()
         };
 
         var paymentRequest = new PaymentRequest(Guid.NewGuid(), dto);
