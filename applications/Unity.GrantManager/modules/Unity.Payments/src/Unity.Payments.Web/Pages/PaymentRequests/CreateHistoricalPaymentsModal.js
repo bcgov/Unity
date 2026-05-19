@@ -3,11 +3,11 @@ function removeHistoricalPaymentRequest(applicationId) {
     let $parentGroup = $container.closest('.parent-child-group');
     $container.remove();
 
-    if (!$('div.single-payment').length) {
+    if ($('div.single-payment').length) {
+        $('#no-payment-msg').css('display', 'none');
+    } else {
         $('#no-payment-msg').css('display', 'block');
         $('#historical-payment-modal').find('#btnSubmitHistoricalPayment').prop('disabled', true);
-    } else {
-        $('#no-payment-msg').css('display', 'none');
     }
 
     if ($parentGroup.length && $parentGroup.find('.single-payment').length === 0) {
@@ -25,7 +25,7 @@ function checkHistoricalMaxValueRequest(applicationId, input, amountRemaining) {
     if (isPartOfParentChildGroup(applicationId)) {
         validateParentChildAmounts(applicationId);
     } else {
-        let enteredValue = Number.parseFloat(input.value.replace(/,/g, ''));
+        let enteredValue = Number.parseFloat(input.value.replaceAll(',', ''));
         let remainingErrorId = '#error_column_' + applicationId;
         if (amountRemaining < enteredValue) {
             $(remainingErrorId).css('display', 'block');
@@ -46,10 +46,10 @@ function validateAllHistoricalPaymentAmounts() {
             validateParentChildAmounts(correlationId);
         } else {
             let amountInput = $(`input[name="ApplicationPaymentRequestForm[${index}].Amount"]`);
-            let remainingAmount = parseFloat(
+            let remainingAmount = Number.parseFloat(
                 $(`input[name="ApplicationPaymentRequestForm[${index}].RemainingAmount"]`).val()
             );
-            let enteredValue = parseFloat(amountInput.val().replace(/,/g, '')) || 0;
+            let enteredValue = Number.parseFloat(amountInput.val().replaceAll(',', '')) || 0;
             let remainingErrorId = `#error_column_${correlationId}`;
 
             if (enteredValue > remainingAmount) {

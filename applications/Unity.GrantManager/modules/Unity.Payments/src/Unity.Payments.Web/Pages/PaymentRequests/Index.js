@@ -286,7 +286,8 @@ $(function () {
         } else {
             payment_check_status_buttons.disable();
         }
-        if (dataTable.rows({ selected: true }).indexes().length > 0 && !isInSentState) {
+        let hasHistoricalPayment = dataTable.rows('.selected').data().toArray().some(row => row.status === 'HistoricalPayment');
+        if (dataTable.rows({ selected: true }).indexes().length > 0 && !isInSentState && !hasHistoricalPayment) {
             if (abp.auth.isGranted('PaymentsPermissions.Payments.L1ApproveOrDecline')
                 || abp.auth.isGranted('PaymentsPermissions.Payments.L2ApproveOrDecline')
                 || abp.auth.isGranted('PaymentsPermissions.Payments.L3ApproveOrDecline')) {
@@ -802,6 +803,7 @@ $(function () {
             case "Submitted":
                 return "#5595D9";
 
+            case "HistoricalPayment":
             case "Paid":
                 return "#42814A";
 

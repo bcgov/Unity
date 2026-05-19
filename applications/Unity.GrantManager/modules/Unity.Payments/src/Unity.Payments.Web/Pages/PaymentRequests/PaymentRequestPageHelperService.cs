@@ -305,12 +305,15 @@ namespace Unity.Payments.Web.Pages.Payments
             List<string> errors = [];
 
             var zeroAmountItems = form
-                .Where(x => !string.IsNullOrEmpty(x.ParentReferenceNo) && x.Amount <= 0)
+                .Where(x => x.IsPartOfParentChildGroup && x.Amount <= 0)
                 .ToList();
 
             foreach (var item in zeroAmountItems)
             {
-                errors.Add($"Payment amount for application in parent-child group '{item.ParentReferenceNo}' must be greater than zero.");
+                var groupRef = !string.IsNullOrEmpty(item.ParentReferenceNo)
+                    ? item.ParentReferenceNo
+                    : item.SubmissionConfirmationCode;
+                errors.Add($"Payment amount for application in parent-child group '{groupRef}' must be greater than zero.");
             }
 
             if (errors.Count > 0) return errors;

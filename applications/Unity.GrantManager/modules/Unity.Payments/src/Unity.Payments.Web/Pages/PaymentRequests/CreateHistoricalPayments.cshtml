@@ -142,7 +142,7 @@
                                     </div>
                                 </abp-column>
                                 <abp-column size="_2" class="px-1">
-                                    <label class="form-label unt-form-label-primary">@L["ApplicationHistoricalPaymentRequest:PaidDate"] *</label>
+                                    <label class="form-label unt-form-label-primary" for="ApplicationPaymentRequestForm_@(i)__PaidDate">@L["ApplicationHistoricalPaymentRequest:PaidDate"] *</label>
                                     <input type="date"
                                            name="ApplicationPaymentRequestForm[@i].PaidDate"
                                            id="ApplicationPaymentRequestForm_@(i)__PaidDate"
@@ -189,8 +189,8 @@
             }
         </abp-modal-body>
         <abp-modal-footer>
-            <abp-button id="btnSubmitHistoricalPayment" class="btn btn-primary" text="@L["ApplicationHistoricalPaymentRequest:SubmitButtonText"].Value" onclick="submitHistoricalPayments()" disabled="@Model.DisableSubmit" type="button"></abp-button>
-            <abp-button class="btn btn-secondary" text="@L["ApplicationHistoricalPaymentRequest:CancelButtonText"].Value" data-dismiss="modal" onclick="closeHistoricalPaymentModal()"></abp-button>
+            <abp-button id="btnSubmitHistoricalPayment" class="btn btn-primary" text="@L["ApplicationHistoricalPaymentRequest:SubmitButtonText"].Value" onclick="submitHistoricalPayments()" onkeydown='if(event.key==="Enter") { event.preventDefault(); submitHistoricalPayments(); }' disabled="@Model.DisableSubmit" type="button"></abp-button>
+            <abp-button class="btn btn-secondary" text="@L["ApplicationHistoricalPaymentRequest:CancelButtonText"].Value" data-dismiss="modal" onclick="closeHistoricalPaymentModal()" onkeydown='if(event.key==="Enter") { event.preventDefault(); closeHistoricalPaymentModal(); }'></abp-button>
         </abp-modal-footer>
     </abp-modal>
 </form>
