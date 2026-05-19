@@ -220,8 +220,8 @@ class MetabaseClient:
                     time.sleep(1)
 
             return body.get("data") if isinstance(body, dict) else None
-        except Exception as e:
-            logger.error(f"Error fetching card data for card {card_id}: {e}", exc_info=True)
+        except Exception:
+            logger.exception("Error fetching card data for card %s", card_id)
             return None
     
     def update_card_visualization(self, card_id: int, display_mode: str,

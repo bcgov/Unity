@@ -132,7 +132,7 @@
                             </div>
                           }
                         </div>
-                        <div class="result-table-wrapper" role="region" aria-label="Query results preview">
+                        <section class="result-table-wrapper" aria-label="Query results preview">
                           <table class="result-table">
                             <thead>
                               <tr>
@@ -151,7 +151,7 @@
                               }
                             </tbody>
                           </table>
-                        </div>
+                        </section>
                         @if (turn.embed.card_data.truncated) {
                           <div class="result-truncation-note">
                             Showing {{ turn.embed.card_data.rows.length }} of {{ turn.embed.card_data.total_rows }} rows. Open in Metabase to see the full result.
