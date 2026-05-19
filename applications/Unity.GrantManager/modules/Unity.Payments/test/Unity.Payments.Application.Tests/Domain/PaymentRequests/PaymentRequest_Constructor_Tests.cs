@@ -27,7 +27,8 @@ public class PaymentRequest_Constructor_Tests : PaymentsApplicationTestBase
     [Fact]
     public void NormalConstructor_WithNullAccountCodingId_ThrowsMissingAccountCoding()
     {
-        var dto = BuildNormalDto(accountCodingId: null);
+        var dto = BuildNormalDto();
+        dto.AccountCodingId = null;
         Should.Throw<BusinessException>(() => new PaymentRequest(Guid.NewGuid(), dto))
             .Code.ShouldBe(ErrorConsts.MissingAccountCoding);
     }

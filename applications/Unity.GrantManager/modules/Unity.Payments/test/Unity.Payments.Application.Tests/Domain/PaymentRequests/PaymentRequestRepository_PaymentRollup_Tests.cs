@@ -2,6 +2,7 @@ using Shouldly;
 using System;
 using System.ComponentModel;
 using System.Threading.Tasks;
+using Unity.Payments.Domain.AccountCodings;
 using Unity.Payments.Domain.Suppliers;
 using Unity.Payments.Enums;
 using Unity.Payments.PaymentRequests;
@@ -15,12 +16,14 @@ public class PaymentRequestRepository_PaymentRollup_Tests : PaymentsApplicationT
 {
     private readonly IPaymentRequestRepository _paymentRequestRepository;
     private readonly ISupplierRepository _supplierRepository;
+    private readonly IAccountCodingRepository _accountCodingRepository;
     private readonly IUnitOfWorkManager _unitOfWorkManager;
 
     public PaymentRequestRepository_PaymentRollup_Tests()
     {
         _paymentRequestRepository = GetRequiredService<IPaymentRequestRepository>();
         _supplierRepository = GetRequiredService<ISupplierRepository>();
+        _accountCodingRepository = GetRequiredService<IAccountCodingRepository>();
         _unitOfWorkManager = GetRequiredService<IUnitOfWorkManager>();
     }
 
@@ -432,6 +435,15 @@ public class PaymentRequestRepository_PaymentRollup_Tests : PaymentsApplicationT
         return siteId;
     }
 
+    private async Task<Guid> CreateAccountCodingAsync()
+    {
+        using var uow = _unitOfWorkManager.Begin();
+        var accountCoding = AccountCoding.Create("ABC", "ABCDE", "AB001", "AB01", "AB00001");
+        await _accountCodingRepository.InsertAsync(accountCoding, true);
+        await uow.CompleteAsync();
+        return accountCoding.Id;
+    }
+
     private async Task InsertPaymentRequestAsync(
         Guid siteId,
         Guid correlationId,
@@ -440,6 +452,8 @@ public class PaymentRequestRepository_PaymentRollup_Tests : PaymentsApplicationT
         string? paymentStatus = null,
         string? invoiceStatus = null)
     {
+        var accountCodingId = await CreateAccountCodingAsync();
+
         var dto = new CreatePaymentRequestDto
         {
             InvoiceNumber = $"INV-{Guid.NewGuid():N}",
@@ -453,7 +467,7 @@ public class PaymentRequestRepository_PaymentRollup_Tests : PaymentsApplicationT
             ReferenceNumber = $"REF-{Guid.NewGuid():N}",
             BatchName = "TEST_BATCH",
             BatchNumber = 1,
-            AccountCodingId = Guid.NewGuid()
+            AccountCodingId = accountCodingId
         };
 
         var paymentRequest = new PaymentRequest(Guid.NewGuid(), dto);

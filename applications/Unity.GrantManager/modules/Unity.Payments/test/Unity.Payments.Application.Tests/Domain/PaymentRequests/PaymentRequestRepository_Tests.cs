@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Linq;
 using System.Threading.Tasks;
 using Unity.Payments.Codes;
+using Unity.Payments.Domain.AccountCodings;
 using Unity.Payments.Domain.Suppliers;
 using Unity.Payments.Enums;
 using Unity.Payments.PaymentRequests;
@@ -17,13 +18,24 @@ public class PaymentRequestRepository_Tests : PaymentsApplicationTestBase
 {
     private readonly IPaymentRequestRepository _paymentRequestRepository;
     private readonly ISupplierRepository _supplierRepository;
+    private readonly IAccountCodingRepository _accountCodingRepository;
     private readonly IUnitOfWorkManager _unitOfWorkManager;
 
     public PaymentRequestRepository_Tests()
     {
         _paymentRequestRepository = GetRequiredService<IPaymentRequestRepository>();
         _supplierRepository = GetRequiredService<ISupplierRepository>();
+        _accountCodingRepository = GetRequiredService<IAccountCodingRepository>();
         _unitOfWorkManager = GetRequiredService<IUnitOfWorkManager>();
+    }
+
+    private async Task<Guid> CreateAccountCodingAsync()
+    {
+        using var uow = _unitOfWorkManager.Begin();
+        var accountCoding = AccountCoding.Create("ABC", "ABCDE", "AB001", "AB01", "AB00001");
+        await _accountCodingRepository.InsertAsync(accountCoding, true);
+        await uow.CompleteAsync();
+        return accountCoding.Id;
     }
 
     #region GetCountByCorrelationId
@@ -808,6 +820,7 @@ public class PaymentRequestRepository_Tests : PaymentsApplicationTestBase
         string? invoiceStatus = null)
     {
         var invoiceNumber = customInvoiceNumber ?? $"INV-{Guid.NewGuid():N}";
+        var accountCodingId = await CreateAccountCodingAsync();
         var dto = new CreatePaymentRequestDto
         {
             InvoiceNumber = invoiceNumber,
@@ -821,7 +834,7 @@ public class PaymentRequestRepository_Tests : PaymentsApplicationTestBase
             ReferenceNumber = $"REF-{Guid.NewGuid():N}",
             BatchName = "TEST_BATCH",
             BatchNumber = 1,
-            AccountCodingId = Guid.NewGuid()
+            AccountCodingId = accountCodingId
         };
 
         var paymentRequest = new PaymentRequest(Guid.NewGuid(), dto);

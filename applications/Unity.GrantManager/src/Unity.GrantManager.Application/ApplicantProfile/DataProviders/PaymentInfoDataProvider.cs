@@ -74,7 +74,9 @@ namespace Unity.GrantManager.ApplicantProfile
                     ReferenceNo = applicationLookup.TryGetValue(p.CorrelationId, out var refNo) ? refNo : string.Empty,
                     Amount = p.Amount,
                     PaymentDate = p.PaymentDate,
-                    PaymentStatus = p.PaymentStatus ?? CasPaymentRequestStatus.FullyPaid
+                    PaymentStatus = p.Status == PaymentRequestStatus.HistoricalPayment
+                        ? CasPaymentRequestStatus.Paid //Historical payments are considered paid as they represent completed transactions from the past, even if they were not processed through the current payment system. This allows us to acknowledge the payment without requiring it to have gone through the current validation and payment process.
+                        : CasPaymentRequestStatus.FullyPaid
                 }));
             }
 
