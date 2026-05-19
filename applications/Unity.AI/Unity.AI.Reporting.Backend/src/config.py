@@ -93,7 +93,7 @@ class AppConfig:
     semantic_cache_top_k: int = 5
     llm_judge_enabled: bool = False
     llm_judge_score_threshold: float = 8.0
-    preview_row_limit: int = 100
+    preview_row_limit: int = 1000
 
 
 class Config:
@@ -145,7 +145,7 @@ class Config:
             semantic_cache_top_k=int(os.getenv("SEMANTIC_CACHE_TOP_K", "5")),
             llm_judge_enabled=os.getenv("LLM_JUDGE_ENABLED", "false").lower() == "true",
             llm_judge_score_threshold=float(os.getenv("LLM_JUDGE_SCORE_THRESHOLD", "8.0")),
-            preview_row_limit=int(os.getenv("PREVIEW_ROW_LIMIT", "100")),
+            preview_row_limit=int(os.getenv("PREVIEW_ROW_LIMIT", "1000")),
         )
         
         # Tenant configuration - extensible for different use cases

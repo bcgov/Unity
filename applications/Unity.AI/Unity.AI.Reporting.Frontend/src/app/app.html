@@ -114,6 +114,24 @@
                         </div>
                       }
                       @if (turn.embed.card_data && turn.embed.card_data.rows.length > 0) {
+                        <div class="result-header">
+                          <button class="metabase-view-btn metabase-view-btn--secondary metabase-view-btn--header"
+                                  (click)="redirectToMB(turn)"
+                                  title="View in Metabase">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                              <path d="M18 13V19C18 20.1046 17.1046 21 16 21H5C3.89543 21 3 20.1046 3 19V8C3 6.89543 3.89543 6 5 6H11" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                              <path d="M15 3H21V9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                              <path d="M10 14L21 3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                            <span>View in Metabase</span>
+                          </button>
+                          <div class="result-title">{{ turn.embed.title }}</div>
+                          @if (turn.question) {
+                            <div class="result-question" [title]="turn.question">
+                              <span class="result-question-text">{{ turn.question }}</span>
+                            </div>
+                          }
+                        </div>
                         <div class="result-table-wrapper" role="region" aria-label="Query results preview">
                           <table class="result-table">
                             <thead>
@@ -127,7 +145,7 @@
                               @for (row of turn.embed.card_data.rows; track $index) {
                                 <tr>
                                   @for (cell of row; track $index) {
-                                    <td>{{ cell }}</td>
+                                    <td [title]="cell">{{ cell }}</td>
                                   }
                                 </tr>
                               }
@@ -140,20 +158,18 @@
                           </div>
                         }
                       }
-                      <div class="metabase-view-container"
-                           [class.metabase-view-container--secondary]="!!turn.embed.card_data && turn.embed.card_data.rows.length > 0">
-                        <button class="metabase-view-btn"
-                                [class.metabase-view-btn--secondary]="!!turn.embed.card_data && turn.embed.card_data.rows.length > 0"
-                                (click)="redirectToMB(turn)"
-                                title="View in Metabase">
-                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M18 13V19C18 20.1046 17.1046 21 16 21H5C3.89543 21 3 20.1046 3 19V8C3 6.89543 3.89543 6 5 6H11" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                            <path d="M15 3H21V9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                            <path d="M10 14L21 3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                          </svg>
-                          <span>View Full Report in Metabase</span>
-                        </button>
-                      </div>
+                      @if (!turn.embed.card_data || turn.embed.card_data.rows.length === 0) {
+                        <div class="metabase-view-container">
+                          <button class="metabase-view-btn" (click)="redirectToMB(turn)" title="View in Metabase">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                              <path d="M18 13V19C18 20.1046 17.1046 21 16 21H5C3.89543 21 3 20.1046 3 19V8C3 6.89543 3.89543 6 5 6H11" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                              <path d="M15 3H21V9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                              <path d="M10 14L21 3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                            <span>View Full Report in Metabase</span>
+                          </button>
+                        </div>
+                      }
                       @if (turn.sqlPanelOpen) {
                         <div class="sql-panel">
                           <div class="sql-panel-header">Generated SQL</div>
