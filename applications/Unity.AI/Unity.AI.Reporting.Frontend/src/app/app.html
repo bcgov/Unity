@@ -145,7 +145,7 @@
                               @for (row of turn.embed.card_data.rows; track $index) {
                                 <tr>
                                   @for (cell of row; track $index) {
-                                    <td [title]="cell">{{ cell }}</td>
+                                    <td [title]="formatCell(cell)">{{ formatCell(cell) }}</td>
                                   }
                                 </tr>
                               }
@@ -157,8 +157,7 @@
                             Showing {{ turn.embed.card_data.rows.length }} of {{ turn.embed.card_data.total_rows }} rows. Open in Metabase to see the full result.
                           </div>
                         }
-                      }
-                      @if (!turn.embed.card_data || turn.embed.card_data.rows.length === 0) {
+                      } @else {
                         <div class="metabase-view-container">
                           <button class="metabase-view-btn" (click)="redirectToMB(turn)" title="View in Metabase">
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">

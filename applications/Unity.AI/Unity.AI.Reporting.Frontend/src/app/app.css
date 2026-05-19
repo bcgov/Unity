@@ -874,11 +874,6 @@
   letter-spacing: 0.3px;
 }
 
-.metabase-view-container--secondary {
-  justify-content: flex-end;
-  margin-top: 12px;
-}
-
 .metabase-view-btn--secondary {
   padding: 8px 16px;
   font-size: 13px;
