@@ -72,20 +72,20 @@ function submitHistoricalPayments() {
             'There are payment requests that are in error. Please remove or fix them before submitting.'
         );
         return false;
-    } else {
-        let form = document.getElementById('historicalpaymentform');
-        if (!form.reportValidity()) {
-            return false;
-        }
-        abp.message.confirm(
-            'You are about to create and associate a historical payment to the current application. This action bypasses the standard approval workflow and creates a payment with Paid status. Are you sure you want to proceed?',
-            'Add Historical Payment',
-            function (confirmed) {
-                if (!confirmed) return;
-                $('#historicalpaymentform').submit();
-            }
-        );
     }
+
+    if (!$('#historicalpaymentform').valid()) {
+        return false;
+    }
+
+    abp.message.confirm(
+        'You are about to create and associate a historical payment to the current application. This action bypasses the standard approval workflow and creates a payment with Paid status. Are you sure you want to proceed?',
+        'Add Historical Payment',
+        function (confirmed) {
+            if (!confirmed) return;
+            $('#historicalpaymentform').submit();
+        }
+    );
 }
 
 $(function () {

@@ -9,7 +9,11 @@ namespace Unity.Payments.Web.Pages.Payments
     {
         // IPaymentFormItem
         public Guid CorrelationId { get; set; }
+        [Required(ErrorMessage = "This field is required.")]
+        [DisplayName("ApplicationPaymentRequest:InvoiceNumber")]
         public string InvoiceNumber { get; set; } = string.Empty;
+        [Required]
+        [DisplayName("ApplicationPaymentRequest:Amount")]
         public decimal Amount { get; set; }
         public string? ParentReferenceNo { get; set; }
         public string? SubmissionConfirmationCode { get; set; }
