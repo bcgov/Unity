@@ -427,22 +427,15 @@ $(function () {
     });
 
     $('#applicationHistoricalPaymentRequest').on('click', function () {
-        abp.message.confirm(
-            'You are about to create and associate a historical payment to the current application. This action bypasses the standard approval workflow and creates a payment with Paid status. Are you sure you want to proceed?',
-            'Add Historical Payment',
-            function (confirmed) {
-                if (!confirmed) return;
-                unity.grantManager.applications.applicationBulkActions
-                    .storeApplicationIds({ applicationIds: selectedApplicationIds })
-                    .then(function (response) {
-                        applicationHistoricalPaymentRequestModal.open({ cacheKey: response.cacheKey });
-                    })
-                    .catch(function (error) {
-                        abp.notify.error('Failed to prepare historical payment. Please try again.');
-                        console.error('Error storing application IDs:', error);
-                    });
-            }
-        );
+        unity.grantManager.applications.applicationBulkActions
+            .storeApplicationIds({ applicationIds: selectedApplicationIds })
+            .then(function (response) {
+                applicationHistoricalPaymentRequestModal.open({ cacheKey: response.cacheKey });
+            })
+            .catch(function (error) {
+                abp.notify.error('Failed to prepare historical payment. Please try again.');
+                console.error('Error storing application IDs:', error);
+            });
     });
 
     applicationHistoricalPaymentRequestModal.onResult(function () {

@@ -77,7 +77,14 @@ function submitHistoricalPayments() {
         if (!form.reportValidity()) {
             return false;
         }
-        $('#historicalpaymentform').submit();
+        abp.message.confirm(
+            'You are about to create and associate a historical payment to the current application. This action bypasses the standard approval workflow and creates a payment with Paid status. Are you sure you want to proceed?',
+            'Add Historical Payment',
+            function (confirmed) {
+                if (!confirmed) return;
+                $('#historicalpaymentform').submit();
+            }
+        );
     }
 }
 

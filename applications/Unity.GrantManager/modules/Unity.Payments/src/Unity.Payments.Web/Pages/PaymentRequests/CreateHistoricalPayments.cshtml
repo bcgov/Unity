@@ -151,6 +151,9 @@
                                            disabled="@(item.DisableFields ? "disabled" : null)"
                                            max="@DateTime.Today.ToString("yyyy-MM-dd")" />
                                 </abp-column>
+                                <abp-column size="_2" class="px-1">
+                                    <abp-input asp-for="@Model.ApplicationPaymentRequestForm[i].SiteName" alt="@item.SiteName" title="@item.SiteName" disabled="true"/>
+                                </abp-column>
                                 <abp-column size="_4" class="px-1">
                                     <abp-input asp-for="@Model.ApplicationPaymentRequestForm[i].Description" disabled="@item.DisableFields" />
                                 </abp-column>
