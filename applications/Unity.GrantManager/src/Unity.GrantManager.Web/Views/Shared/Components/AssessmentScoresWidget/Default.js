@@ -712,5 +712,6 @@ function queueApplicationScoring(triggerButton = null) {
             );
             globalThis.AIGenerationButtonState?.restore($button);
             $button.html(existingHtml).prop('disabled', false);
+            globalThis.syncAIRateLimitButtons?.();
         });
 }

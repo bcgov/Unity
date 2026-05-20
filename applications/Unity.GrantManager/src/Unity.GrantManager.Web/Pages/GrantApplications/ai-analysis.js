@@ -468,6 +468,7 @@ globalThis.queueApplicationAnalysis = function(triggerButton = null) {
             aiAnalysisMonitor?.stop();
             globalThis.AIGenerationButtonState?.restore($button);
             $button.html(existingHtml).prop('disabled', false);
+            globalThis.syncAIRateLimitButtons?.();
             abp.message.error('Failed to queue AI analysis. Please try again.');
         });
 }

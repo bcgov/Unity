@@ -34,13 +34,27 @@ public class AIRateLimiterTests
             }).Build();
     }
 
-    private AIRateLimiter NewLimiter() => new(_cache, _currentUser, _configuration, new TestDistributedLockProvider());
+    private AIRateLimiter NewLimiter(params IAIGenerationActivityProvider[] activityProviders) =>
+        new(_cache, _currentUser, _configuration, new TestDistributedLockProvider(), activityProviders);
 
     [Fact]
     public async Task GetStateAsync_Returns_Zero_When_NoCooldown()
     {
         var state = await NewLimiter().GetStateAsync();
         state.RetryAfterSeconds.ShouldBe(0);
+        state.IsGenerating.ShouldBeFalse();
+    }
+
+    [Fact]
+    public async Task GetStateAsync_Returns_Generating_When_ActivityProvider_HasActiveGeneration()
+    {
+        var activityProvider = Substitute.For<IAIGenerationActivityProvider>();
+        activityProvider.HasActiveGenerationAsync().Returns(true);
+
+        var state = await NewLimiter(activityProvider).GetStateAsync();
+
+        state.RetryAfterSeconds.ShouldBe(0);
+        state.IsGenerating.ShouldBeTrue();
     }
 
     [Fact]
@@ -119,7 +133,7 @@ public class AIRateLimiterTests
             {
                 ["Azure:Generation:CooldownSeconds"] = "1"
             }).Build();
-        var limiter = new AIRateLimiter(_cache, _currentUser, config, new TestDistributedLockProvider());
+        var limiter = new AIRateLimiter(_cache, _currentUser, config, new TestDistributedLockProvider(), []);
 
         await limiter.StampAsync();
         await Task.Delay(TimeSpan.FromSeconds(1.2), CancellationToken.None);
@@ -142,7 +156,7 @@ public class AIRateLimiterTests
             .AddInMemoryCollection(values)
             .Build();
 
-        var limiter = new AIRateLimiter(_cache, _currentUser, config, new TestDistributedLockProvider());
+        var limiter = new AIRateLimiter(_cache, _currentUser, config, new TestDistributedLockProvider(), []);
 
         var ex = await Should.ThrowAsync<AbpException>(() => limiter.StampAsync());
         ex.Message.ShouldContain("Azure:Generation:CooldownSeconds");

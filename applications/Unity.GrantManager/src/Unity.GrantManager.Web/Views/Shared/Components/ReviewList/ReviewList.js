@@ -487,6 +487,7 @@ function generateAiButtonAction(e, dt, button, config) {
         .fail(function () {
             abp.message.error('Failed to queue AI scoring. Please try again.');
             restoreReviewListAiButton($button);
+            globalThis.syncAIRateLimitButtons?.();
         })
         ;
 }
