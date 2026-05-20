@@ -144,11 +144,11 @@ table.dataTable tbody tr {
 }
 
 .action-bar-date-controls #app_custom_buttons {
-    margin-top: 10px;
+    margin-top: 0;
 }
 
 .action-bar-date-controls #dynamicButtonContainerId {
-    margin-top: 10px;
+    margin-top: 0;
 }
 
 /**end**/
