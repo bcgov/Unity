@@ -91,6 +91,8 @@ namespace Unity.Reporting.EntityFrameworkCore.Repositories
                     "formversion" => $@"CALL ""Reporting"".generate_formversion_view({correlationId});",
                     "worksheet" => $@"CALL ""Reporting"".generate_worksheet_view({correlationId});",
                     "scoresheet" => $@"CALL ""Reporting"".generate_scoresheet_view({correlationId});",
+                    "worksheetconsolidated" => $@"CALL ""Reporting"".generate_consolidated_worksheet_view({correlationId});",
+                    "formversionconsolidated" => $@"CALL ""Reporting"".generate_consolidated_formversion_view({correlationId});",
                     _ => throw new ArgumentException($"Unsupported correlation provider: {correlationProvider}"),
                 };
                 await dbContext.Database.ExecuteSqlAsync(sql);

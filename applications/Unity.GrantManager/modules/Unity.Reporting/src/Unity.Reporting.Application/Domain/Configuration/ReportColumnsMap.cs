@@ -133,6 +133,13 @@ namespace Unity.Reporting.Domain.Configuration
         /// Represents the component type path (e.g., "form->panel->textfield") in the source schema.
         /// </summary>
         public string TypePath { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Gets or sets an optional version label indicating which form version this column belongs to.
+        /// Used exclusively for consolidated worksheet views: null means the column is merged across all versions;
+        /// a non-null value (e.g., "v1", "v2") means the column is specific to that form version (conflict or version-exclusive field).
+        /// </summary>
+        public string? VersionLabel { get; set; } = null;
     }
 
     /// <summary>
@@ -148,5 +155,11 @@ namespace Unity.Reporting.Domain.Configuration
         /// used for display purposes and change detection analysis.
         /// </summary>
         public Dictionary<string, string>? Info { get; set; } = null;
+
+        /// <summary>
+        /// Gets or sets an optional free-text description for this mapping configuration.
+        /// Maximum 500 characters. Used to document the purpose or context of this reporting configuration.
+        /// </summary>
+        public string? Description { get; set; } = null;
     }
 }

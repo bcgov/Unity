@@ -42,6 +42,30 @@ $(function () {
                 columnName: 'Report Column',
                 typePath: 'Type Path'
             }
+        },
+        worksheetconsolidated: {
+            name: 'Consolidated Worksheets',
+            correlationProvider: 'worksheetconsolidated',
+            columns: {
+                label: 'Worksheet Label',
+                key: 'Worksheet Property Name',
+                type: 'Worksheet Type',
+                path: 'Path',
+                columnName: 'Report Column',
+                typePath: 'Type Path'
+            }
+        },
+        formversionconsolidated: {
+            name: 'Consolidated Submissions',
+            correlationProvider: 'formversionconsolidated',
+            columns: {
+                label: 'CHEFS Label',
+                key: 'CHEFS Property Name',
+                type: 'CHEFS Type',
+                path: 'Path',
+                columnName: 'Report Column',
+                typePath: 'Type Path'
+            }
         }
     };
 
@@ -162,28 +186,48 @@ $(function () {
 
     // Function to get current correlation ID based on provider
     function getCurrentCorrelationId() {
-        if (currentProvider === 'scoresheet') {
-            // For scoresheets, use form ID
+        if (currentProvider === 'scoresheet' || currentProvider === 'worksheetconsolidated' || currentProvider === 'formversionconsolidated') {
+            // Form-level providers use the form ID as correlation ID
             return $('#reportingFormId').val();
         } else {
-            // For form versions and worksheets, use version ID
+            // For form versions and per-version worksheets, use version ID
             return $('#versionSelector').val() || $('#reportingVersionId').val();
         }
     }
 
     // Function to show/hide version selector based on provider
     function updateVersionSelectorVisibility() {
-        const $versionSelectorContainer = $('#versionSelector').closest('div');
+        const $versionSelectorContainer = $('#version-selector-container');
         const $formInfoDisplay = $('.form-info-display');
+        const $worksheetModeToggle = $('#worksheet-mode-toggle');
+        const $submissionsModeToggle = $('#submissions-mode-toggle');
 
         if (currentProvider === 'scoresheet') {
-            // Hide version selector and show form info for scoresheets
+            $versionSelectorContainer.hide();
+            $formInfoDisplay.hide();
+            $worksheetModeToggle.hide();
+            $submissionsModeToggle.hide();
+        } else if (currentProvider === 'worksheetconsolidated') {
             $versionSelectorContainer.hide();
             $formInfoDisplay.show();
-        } else {
-            // Show version selector and hide form info for other providers
+            $worksheetModeToggle.show();
+            $submissionsModeToggle.hide();
+        } else if (currentProvider === 'worksheet') {
             $versionSelectorContainer.show();
             $formInfoDisplay.hide();
+            $worksheetModeToggle.show();
+            $submissionsModeToggle.hide();
+        } else if (currentProvider === 'formversionconsolidated') {
+            $versionSelectorContainer.hide();
+            $formInfoDisplay.show();
+            $worksheetModeToggle.hide();
+            $submissionsModeToggle.show();
+        } else {
+            // formversion (per-version)
+            $versionSelectorContainer.show();
+            $formInfoDisplay.hide();
+            $worksheetModeToggle.hide();
+            $submissionsModeToggle.show();
         }
     }
 
@@ -196,8 +240,18 @@ $(function () {
         // Check for unsaved changes
         if (hasUnsavedChanges) {
             if (!confirm('You have unsaved changes. Switching providers will discard these changes. Do you want to continue?')) {
-                // Reset the toggle to current provider
-                $(`input[name="provider-toggle"][value="${currentProvider}"]`).prop('checked', true);
+                // Reset the top-level toggle
+                const topLevelValue = (currentProvider === 'worksheetconsolidated') ? 'worksheet'
+                    : (currentProvider === 'formversionconsolidated') ? 'formversion'
+                    : currentProvider;
+                $(`input[name="provider-toggle"][value="${topLevelValue}"]`).prop('checked', true);
+                // Reset sub-toggles to match current provider
+                if (currentProvider === 'worksheet' || currentProvider === 'worksheetconsolidated') {
+                    $(`input[name="worksheet-mode"][value="${currentProvider}"]`).prop('checked', true);
+                }
+                if (currentProvider === 'formversion' || currentProvider === 'formversionconsolidated') {
+                    $(`input[name="submissions-mode"][value="${currentProvider}"]`).prop('checked', true);
+                }
                 return;
             }
         }
@@ -205,7 +259,27 @@ $(function () {
         // Update current provider
         currentProvider = newProvider;
 
-        // Update version selector visibility
+        // Sync worksheet sub-toggle radio
+        if (newProvider === 'worksheet' || newProvider === 'worksheetconsolidated') {
+            $(`input[name="worksheet-mode"][value="${newProvider}"]`).prop('checked', true);
+        }
+
+        // Sync submissions sub-toggle radio
+        if (newProvider === 'formversion' || newProvider === 'formversionconsolidated') {
+            $(`input[name="submissions-mode"][value="${newProvider}"]`).prop('checked', true);
+        }
+
+        // Keep top-level "Worksheets" button checked when switching to consolidated worksheet
+        if (newProvider === 'worksheetconsolidated') {
+            $('input[name="provider-toggle"][value="worksheet"]').prop('checked', true);
+        }
+
+        // Keep top-level "Submissions" button checked when switching to consolidated formversion
+        if (newProvider === 'formversionconsolidated') {
+            $('input[name="provider-toggle"][value="formversion"]').prop('checked', true);
+        }
+
+        // Update version selector, form info, and sub-toggle visibility
         updateVersionSelectorVisibility();
 
         // Reset changes state since we're switching providers
@@ -249,7 +323,7 @@ $(function () {
             { index: 2, title: columns.type },
             { index: 3, title: columns.path },
             { index: 4, title: columns.columnName },
-            { index: 5, title: columns.typePath}
+            { index: 5, title: columns.typePath }
         ];
 
         columnIndices.forEach(col => {
@@ -257,12 +331,35 @@ $(function () {
             header.text(col.title);
         });
 
+        // Show the Version(s) column only for consolidated providers
+        dataTable.column('versionLabel:name').visible(currentProvider === 'worksheetconsolidated' || currentProvider === 'formversionconsolidated');
+
         // Force redraw to update headers
         dataTable.draw(false);
     }
 
     // Handle provider toggle change event
     $(document).on('change', 'input[name="provider-toggle"]', function () {
+        let newProvider = $(this).val();
+        // When entering worksheet mode from outside, default to consolidated worksheet
+        if (newProvider === 'worksheet' && currentProvider !== 'worksheet' && currentProvider !== 'worksheetconsolidated') {
+            newProvider = 'worksheetconsolidated';
+        }
+        // When entering submissions mode from outside, default to consolidated formversion
+        if (newProvider === 'formversion' && currentProvider !== 'formversion' && currentProvider !== 'formversionconsolidated') {
+            newProvider = 'formversionconsolidated';
+        }
+        handleProviderChange(newProvider);
+    });
+
+    // Handle worksheet sub-toggle (Per Version / Consolidated)
+    $(document).on('change', 'input[name="worksheet-mode"]', function () {
+        const newProvider = $(this).val();
+        handleProviderChange(newProvider);
+    });
+
+    // Handle submissions sub-toggle (Per Version / Consolidated)
+    $(document).on('change', 'input[name="submissions-mode"]', function () {
         const newProvider = $(this).val();
         handleProviderChange(newProvider);
     });
@@ -387,10 +484,10 @@ $(function () {
         abp.message.warn(alertMessage, 'Schema Changes Detected');
     }
 
-    // Handle version selector change (only for non-scoresheet providers)
+    // Handle version selector change (only for per-version providers)
     $('#versionSelector').on('change', function () {
-        // Skip version selector handling for scoresheet provider
-        if (currentProvider === 'scoresheet') {
+        // Skip version selector handling for form-level providers
+        if (currentProvider === 'scoresheet' || currentProvider === 'worksheetconsolidated' || currentProvider === 'formversionconsolidated') {
             return;
         }
 
@@ -450,7 +547,11 @@ $(function () {
     // Helper function to transform configuration data (module-level to reduce nesting)
     function transformConfigurationResult(result) {
         processDetectedChanges(result.detectedChanges);
-        
+
+        // Populate description field from saved metadata
+        const description = result.mapping.metadata?.description || '';
+        setDescription(description);
+
         const items = result.mapping.rows.map(row => ({
             label: row.label,
             key: row.propertyName,
@@ -458,7 +559,8 @@ $(function () {
             path: row.path,
             dataPath: row.dataPath,
             columnName: row.columnName || '',
-            typePath: row.typePath
+            typePath: row.typePath,
+            versionLabel: row.versionLabel || null
         }));
 
         return {
@@ -473,7 +575,7 @@ $(function () {
     //   - worksheet/scoresheet: use Label only, no fallback to Key
     // No cross-field fallback ensures the client and server produce identical defaults.
     function getDefaultColumnNameSource(field) {
-        if (currentProvider === 'formversion') {
+        if (currentProvider === 'formversion' || currentProvider === 'formversionconsolidated') {
             return field.key || '';
         }
         return field.label || '';
@@ -481,6 +583,9 @@ $(function () {
 
     // Helper function to transform fields metadata (module-level to reduce nesting)
     function transformFieldsMetadata(fieldsMetadata) {
+        // No saved configuration exists, clear description field
+        setDescription('');
+
         const items = fieldsMetadata.fields.map(field => ({
             label: field.label || field.key,
             key: field.key,
@@ -488,7 +593,8 @@ $(function () {
             path: field.path,
             dataPath: field.dataPath,
             columnName: getDefaultColumnNameSource(field),
-            typePath: field.typePath
+            typePath: field.typePath,
+            versionLabel: field.versionLabel || null
         }));
 
         return {
@@ -617,6 +723,22 @@ $(function () {
                     }
                     return data;
                 }
+            },
+            {
+                title: 'Version(s)',
+                data: 'versionLabel',
+                name: 'versionLabel',
+                className: 'data-table-header',
+                width: '90px',
+                index: 6,
+                orderable: true,
+                visible: currentProvider === 'worksheetconsolidated' || currentProvider === 'formversionconsolidated',
+                render: function (data, type, _) {
+                    if (type === 'display') {
+                        return data || 'All';
+                    }
+                    return data || '';
+                }
             }
         ];
 
@@ -665,9 +787,14 @@ $(function () {
             }).catch(handleDataLoadingError);
         };
 
+        const defaultVisibleColumns = ['label', 'key', 'type', 'path', 'columnName'];
+        if (currentProvider === 'worksheetconsolidated' || currentProvider === 'formversionconsolidated') {
+            defaultVisibleColumns.push('versionLabel');
+        }
+
         dataTable = initializeDataTable({
             dt,
-            defaultVisibleColumns: ['label', 'key', 'type', 'path', 'columnName'],
+            defaultVisibleColumns,
             listColumns,
             defaultSortColumn: 0,
             dataEndpoint: dataEndpoint,
@@ -1123,6 +1250,43 @@ $(function () {
         });
     });
 
+    // Description field helpers
+    function getDescription() {
+        return ($('#reportingDescription').val() || '').trim();
+    }
+
+    function setDescription(value) {
+        const text = value || '';
+        $('#reportingDescription').val(text);
+        $('#descriptionCharCount').text(text.length + ' / 500');
+    }
+
+    // Description character counter (live update inside modal)
+    $(document).on('input', '#reportingDescription', function () {
+        $('#descriptionCharCount').text($(this).val().length + ' / 500');
+    });
+
+    // Open description modal – snapshot current value so Cancel can revert
+    $('#btn-edit-description').on('click', function () {
+        $('#reportingDescription').data('snapshot', getDescription());
+        const modal = new bootstrap.Modal(document.getElementById('descriptionModal'));
+        modal.show();
+    });
+
+    // Cancel: restore snapshot
+    $(document).on('click', '#descriptionModal .btn-secondary', function () {
+        const snapshot = $('#reportingDescription').data('snapshot');
+        if (snapshot !== undefined) {
+            setDescription(snapshot);
+        }
+    });
+
+    // Apply description and mark as changed
+    $(document).on('click', '#confirmDescription', function () {
+        markAsChanged();
+        bootstrap.Modal.getInstance(document.getElementById('descriptionModal')).hide();
+    });
+
     // Track changes in the data grid
     function markAsChanged() {
         hasUnsavedChanges = true;
@@ -1230,7 +1394,8 @@ $(function () {
             correlationId: correlationId,
             correlationProvider: getCorrelationProvider(),
             mapping: {
-                rows: getCurrentTableData()
+                rows: getCurrentTableData(),
+                description: getDescription()
             }
         };
 

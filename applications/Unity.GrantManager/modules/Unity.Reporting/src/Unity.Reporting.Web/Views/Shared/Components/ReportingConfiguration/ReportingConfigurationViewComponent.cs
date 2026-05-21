@@ -29,12 +29,6 @@ namespace Unity.Reporting.Web.Views.Shared.Components.ReportingConfiguration
         private readonly IApplicationFormAppService _applicationFormAppService;
         private readonly IReportMappingService _reportMappingService;
 
-        /// <summary>
-        /// Initializes a new instance of the ReportingConfigurationViewComponent with required dependency injection services.
-        /// Sets up application form service for form version management and report mapping service for configuration operations.
-        /// </summary>
-        /// <param name="applicationFormAppService">The service for managing application forms and version data.</param>
-        /// <param name="reportMappingService">The service for managing report mappings and field configurations.</param>
         public ReportingConfigurationViewComponent(
             IApplicationFormAppService applicationFormAppService,
             IReportMappingService reportMappingService)
@@ -55,19 +49,21 @@ namespace Unity.Reporting.Web.Views.Shared.Components.ReportingConfiguration
         /// <returns>A view component result containing the configuration interface with populated view model and provider-specific settings.</returns>
         public async Task<IViewComponentResult> InvokeAsync(Guid formId, Guid? selectedVersionId = null, string? provider = null)
         {
-            // Determine the correlation provider - default to formversion if not specified
-            var correlationProvider = !string.IsNullOrEmpty(provider) ? provider : Providers.FormVersion;
-            
+            // Determine the correlation provider - default to formversionconsolidated if not specified
+            var correlationProvider = !string.IsNullOrEmpty(provider) ? provider : Providers.FormVersionConsolidated;
+
             // Determine correlation ID based on provider
             Guid? correlationId = null;
-            if (correlationProvider == Providers.Scoresheet)
+            if (correlationProvider == Providers.Scoresheet
+                || correlationProvider == Providers.WorksheetConsolidated
+                || correlationProvider == Providers.FormVersionConsolidated)
             {
-                // For scoresheets, use the form ID directly
+                // Form-level providers correlate with the form ID directly
                 correlationId = formId;
             }
             else
             {
-                // For form versions and other providers, use the selected version ID
+                // For form versions and per-version worksheet providers, use the selected version ID
                 correlationId = selectedVersionId;
             }
 

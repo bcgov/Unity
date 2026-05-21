@@ -39,5 +39,12 @@ namespace Unity.Reporting.Configuration
         /// The path to reach the data, this is a datacentric version of the Path, and could be the same
         /// </summary>
         public string DataPath { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Optional version label used only by the consolidated worksheet provider.
+        /// Null means the field is merged across all versions; non-null (e.g., "v1") means the field
+        /// is specific to that form version (conflict or version-exclusive field).
+        /// </summary>
+        public string? VersionLabel { get; set; } = null;
     }
 }

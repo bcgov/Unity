@@ -16,5 +16,10 @@ namespace Unity.Reporting.Configuration
         /// used for display purposes, change detection analysis, and mapping management operations.
         /// </summary>
         public Dictionary<string, string> Info { get; set; } = new Dictionary<string, string>();
+
+        /// <summary>
+        /// Gets or sets the optional free-text description for this mapping configuration (max 500 characters).
+        /// </summary>
+        public string? Description { get; set; }
     }
 }
