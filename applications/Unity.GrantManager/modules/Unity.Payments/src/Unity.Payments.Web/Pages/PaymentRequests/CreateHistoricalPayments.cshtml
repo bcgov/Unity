@@ -170,6 +170,12 @@
                                     <span><span class="payment-note-prefix payment-note-error">Error</span>&nbsp; @item.ErrorList[j]</span>
                                 </abp-column>
                                 }
+                                @if (!item.SiteId.HasValue || item.SiteId == Guid.Empty)
+                                {
+                                <abp-column size="_12" class="payment-error-column">
+                                    <span><span class="payment-note-prefix">Note</span>&nbsp; No site selected for this payment. You can still add the payment.</span>
+                                </abp-column>
+                                }
                             </abp-row>
                         </div>
 
