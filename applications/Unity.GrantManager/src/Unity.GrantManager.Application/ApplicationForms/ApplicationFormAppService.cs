@@ -91,7 +91,8 @@ public class ApplicationFormAppService
                 var form = await _formsApiService.GetForm(
                     Guid.Parse(input.ChefsApplicationFormGuid),
                     input.ChefsApplicationFormGuid,
-                    input.ApiKey);
+                    input.ApiKey,
+                    true);
 
                 if (form is JObject formObject)
                 {

@@ -51,7 +51,7 @@ namespace Unity.GrantManager.Integrations.Chefs
             return await ParseJsonResponseAsync(response);
         }
 
-        public async Task<JObject> GetForm(Guid? formId, string chefsApplicationFormGuid, string encryptedApiKey)
+        public async Task<JObject> GetForm(Guid? formId, string chefsApplicationFormGuid, string encryptedApiKey, bool isFormVersionRequest = false)
         {
             if (string.IsNullOrWhiteSpace(chefsApplicationFormGuid) || string.IsNullOrWhiteSpace(encryptedApiKey))
             {
@@ -60,6 +60,10 @@ namespace Unity.GrantManager.Integrations.Chefs
 
             string chefsApi = await GetChefsApiBaseUrlAsync();
             string url = $"{chefsApi}/forms/{formId}";
+            if (isFormVersionRequest)
+            {
+                url += "/version";
+            }
 
             var response = await GetRequestAsync(url, chefsApplicationFormGuid, encryptedApiKey);
             return await ParseJsonResponseAsync(response) ?? [];

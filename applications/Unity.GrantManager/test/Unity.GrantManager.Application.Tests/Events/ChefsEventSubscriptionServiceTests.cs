@@ -80,27 +80,17 @@ namespace Unity.GrantManager.Events
 
         public class FormsApiServiceMock : IFormsApiService
         {
-            public Task<object> GetForm(Guid? formId, string chefsApplicationFormGuid, string encryptedApiKey)
+            public Task<JObject> GetForm(Guid? formId, string chefsApplicationFormGuid, string encryptedApiKey, bool isFormVersionRequest = false)
             {
                 throw new NotImplementedException();
             }
 
-            public Task<dynamic?> GetFormDataAsync(string chefsFormId, string chefsFormVersionId)
+            public Task<JObject?> GetFormDataAsync(string chefsFormId, string chefsFormVersionId)
             {
                 throw new NotImplementedException();
             }
 
             public Task<JObject?> GetSubmissionDataAsync(Guid chefsFormId, Guid submissionId)
-            {
-                throw new NotImplementedException();
-            }
-
-            Task<JObject> IFormsApiService.GetForm(Guid? formId, string chefsApplicationFormGuid, string encryptedApiKey)
-            {
-                throw new NotImplementedException();
-            }
-
-            Task<JObject?> IFormsApiService.GetFormDataAsync(string chefsFormId, string chefsFormVersionId)
             {
                 throw new NotImplementedException();
             }
