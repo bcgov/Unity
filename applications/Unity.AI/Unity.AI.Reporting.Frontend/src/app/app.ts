@@ -1,7 +1,6 @@
 import { Component, ViewChild, ElementRef, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { FormsModule } from '@angular/forms';
-import { DecimalPipe } from '@angular/common';
 import { SafeResourceUrl, DomSanitizer, SafeHtml } from '@angular/platform-browser';
 
 import { Embed } from './embed';
@@ -20,7 +19,7 @@ import { environment } from '../environments/environment';
 
 @Component({
   selector: 'app-root',
-  imports: [FormsModule, DecimalPipe, SqlExplanationComponent, SidebarComponent, ToastComponent, AlertComponent],
+  imports: [FormsModule, SqlExplanationComponent, SidebarComponent, ToastComponent, AlertComponent],
   templateUrl: './app.html',
   styleUrls: ['./app.css']
 })
@@ -329,24 +328,6 @@ export class App implements OnInit, OnDestroy {
     this.showDeleteQuestionAlert = false;
     this.turnToDelete = null;
   }
-
-  // VISUALIZATION: Commented out - not functional since switching to Metabase redirect.
-  //               Restore when custom visualization is implemented.
-  // async changeDisplay(turn: Turn, mode: string) {
-  //   try {
-  //     await firstValueFrom(
-  //       this.apiService.changeDisplay<Embed>(turn.embed.card_id, mode, turn.embed.x_field, turn.embed.y_field)
-  //     );
-  //     // Update the current visualization in the embed
-  //     turn.embed.current_visualization = mode;
-  //   } catch (error) {
-  //     // Log the error and notify the user
-  //     this.logger.error('Error changing display mode:', error);
-  //     this.toastService.error('Failed to change display mode. Please try again.');
-  //   } finally {
-  //     this.cdr.markForCheck();
-  //   }
-  // }
 
   async resetConversation() {
     this.conversation = [];
@@ -666,6 +647,13 @@ export class App implements OnInit, OnDestroy {
   //     this.selectedVisualization = 'table';
   //   }
   // }
+
+  formatCell(value: unknown): string {
+    if (value === null || value === undefined) return '—';
+    if (typeof value === 'string') return value;
+    if (typeof value === 'number' || typeof value === 'boolean') return String(value);
+    return JSON.stringify(value);
+  }
 
   highlightSql(sql: string): SafeHtml {
     if (!sql) return this.sanitizer.bypassSecurityTrustHtml('');

@@ -391,6 +391,33 @@ def _build_viz_settings(visualization_options: list) -> dict:
     return {}
 
 
+def _shape_card_data(card_data):
+    """Turn Metabase's `{cols, rows}` payload into the frontend preview shape.
+
+    Truncates rows to `config.app.preview_row_limit`. Returns None when the
+    payload is missing or malformed so the frontend can fall back to button-only.
+    """
+    if not isinstance(card_data, dict):
+        return None
+    cols = card_data.get("cols")
+    rows = card_data.get("rows")
+    if not isinstance(cols, list) or not isinstance(rows, list):
+        return None
+
+    limit = config.app.preview_row_limit
+    columns = [
+        (c.get("display_name") or c.get("name") or "") if isinstance(c, dict) else str(c)
+        for c in cols
+    ]
+    total_rows = len(rows)
+    return {
+        "columns": columns,
+        "rows": rows[:limit],
+        "total_rows": total_rows,
+        "truncated": total_rows > limit,
+    }
+
+
 def _fuzzy_cache_lookup(tenant_id, db_id, schema_types, collection_name, normalized_query):
     """Layer 1.5: rapidfuzz match against recent normalized queries."""
     recent = cache_repository.get_recent_normalized_queries(
@@ -527,7 +554,7 @@ async def _serve_cache_hit(cache_hit, db_id, collection_id, tenant_id):
         "exact_hit" if cache_hit["similarity"] >= 1.0 else "semantic_hit"
     )
     tokens_saved = cached.get("tokens", {}).get("total_tokens", 0)
-    card_id = metabase_client.create_card(
+    card_id, card_data = metabase_client.create_card(
         cached["sql"], db_id, collection_id, cached["title"],
         tenant_id=tenant_id,
         visualization_settings=_build_viz_settings(cached.get("visualization_options", [])),
@@ -554,6 +581,7 @@ async def _serve_cache_hit(cache_hit, db_id, collection_id, tenant_id):
         "visualization_options": cached.get("visualization_options", []),
         "SQL": cached["sql"],
         "tokens": {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0},
+        "card_data": _shape_card_data(card_data),
         "from_cache": True,
         "cache_similarity": round(cache_hit["similarity"], 4),
         "cache_hit_type": hit_type,
@@ -658,7 +686,7 @@ async def _async_ask(data, user_data):
     logger.debug(f"Metadata: {metadata}")
     logger.info(f"Creating Metabase card with SQL length: {len(sql)}")
 
-    card_id = metabase_client.create_card(
+    card_id, card_data = metabase_client.create_card(
         sql, db_id, collection_id, metadata['title'],
         tenant_id=tenant_id,
         visualization_settings=_build_viz_settings(metadata.get("visualization_options", [])),
@@ -681,6 +709,7 @@ async def _async_ask(data, user_data):
         "visualization_options": metadata.get('visualization_options', []),
         "SQL": sql,
         "tokens": sql_tokens,
+        "card_data": _shape_card_data(card_data),
     }, 200
 
 
