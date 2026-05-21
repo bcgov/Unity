@@ -139,10 +139,12 @@ export class App implements OnInit, OnDestroy {
         .then(() => this.cdr.markForCheck())
         .catch((error: any) => {
           this.logger.error('Failed to generate SQL explanation:', error);
-          const message = error?.status === 429
-            ? 'Rate limit exceeded. Please try again later.'
-            : (error?.status >= 500 ? 'Server error. Please try again.'
-            : 'Please try again or contact support if the issue persists.');
+          let message = 'Please try again or contact support if the issue persists.';
+          if (error?.status === 429) {
+            message = 'Rate limit exceeded. Please try again later.';
+          } else if (error?.status >= 500) {
+            message = 'Server error. Please try again.';
+          }
           this.toastService.error('Failed to generate SQL explanation. ' + message);
           turn.embed.sql_explanation = 'Unable to generate explanation at this time.';
           this.cdr.markForCheck();
@@ -354,11 +356,10 @@ export class App implements OnInit, OnDestroy {
 
       if (turn.embed?.SQL) {
         this.fetchSqlExplanation(turn)
-          .then(() => {
-            this.cdr.markForCheck();
-            this.saveChat();
-          })
-          .catch(() => {});
+          .then(() => this.cdr.markForCheck())
+          .catch(() => {
+            turn.embed.sql_explanation = 'Unable to generate explanation at this time.';
+          });
       }
 
       await this.saveChat();
