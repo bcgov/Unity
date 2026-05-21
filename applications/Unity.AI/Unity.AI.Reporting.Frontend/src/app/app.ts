@@ -1,7 +1,7 @@
 import { Component, ViewChild, ElementRef, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { FormsModule } from '@angular/forms';
-import { SafeResourceUrl, DomSanitizer, SafeHtml } from '@angular/platform-browser';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 
 import { Embed } from './embed';
 import { Turn } from './turn';
@@ -16,6 +16,9 @@ import { ConfigService } from './services/config.service';
 import { SidebarComponent, Chat } from './sidebar/sidebar';
 import { AlertComponent } from './alert/alert';
 import { environment } from '../environments/environment';
+
+/** Placeholder shown in the SQL panel when explanation generation fails. */
+const SQL_EXPLANATION_ERROR_TEXT = 'Unable to generate explanation at this time.';
 
 @Component({
   selector: 'app-root',
@@ -134,7 +137,8 @@ export class App implements OnInit, OnDestroy {
 
   toggleSqlPanel(turn: Turn): void {
     turn.sqlPanelOpen = !turn.sqlPanelOpen;
-    if (turn.sqlPanelOpen && !turn.embed?.sql_explanation && turn.embed?.SQL) {
+    // Fetch when there is no explanation yet, or when the previous attempt failed (allow retry).
+    if (turn.sqlPanelOpen && turn.embed?.SQL && (!turn.embed.sql_explanation || turn.embed.sql_explanation_error)) {
       this.fetchSqlExplanation(turn)
         .then(() => this.cdr.markForCheck())
         .catch((error: any) => {
@@ -146,7 +150,8 @@ export class App implements OnInit, OnDestroy {
             message = 'Server error. Please try again.';
           }
           this.toastService.error('Failed to generate SQL explanation. ' + message);
-          turn.embed.sql_explanation = 'Unable to generate explanation at this time.';
+          turn.embed.sql_explanation = SQL_EXPLANATION_ERROR_TEXT;
+          turn.embed.sql_explanation_error = true;
           this.cdr.markForCheck();
         });
     }
@@ -155,6 +160,10 @@ export class App implements OnInit, OnDestroy {
   private fetchSqlExplanation(turn: Turn): Promise<void> {
     const existing = this.sqlExplanationFetches.get(turn);
     if (existing) return existing;
+
+    // Reset prior state so a retry shows the loading cursor instead of stale/fallback text.
+    turn.embed.sql_explanation = '';
+    turn.embed.sql_explanation_error = false;
 
     const fetchPromise = (async () => {
       const response = await firstValueFrom(
@@ -333,7 +342,7 @@ export class App implements OnInit, OnDestroy {
     // Always reset to table visualization for new questions
     this.selectedVisualization = 'table';
     
-    const turn = {question: this.question.trim(), embed: {"url": "", "card_id": 0, "x_field": "", "y_field": "", "title": "", "visualization_options": [], "SQL": ""}, safeUrl: 'loading' as 'loading' | 'failure' | SafeResourceUrl, iframeLoaded: false, sqlPanelOpen: false, sql_explanation: ""} as Turn;
+    const turn = {question: this.question.trim(), embed: {"url": "", "card_id": 0, "x_field": "", "y_field": "", "title": "", "visualization_options": [], "SQL": ""}, safeUrl: 'loading', iframeLoaded: false, sqlPanelOpen: false} as Turn;
     this.conversation.push(turn);
     if (retryCount > 0) {
       turn.retryCount = retryCount;
@@ -358,7 +367,9 @@ export class App implements OnInit, OnDestroy {
         this.fetchSqlExplanation(turn)
           .then(() => this.cdr.markForCheck())
           .catch(() => {
-            turn.embed.sql_explanation = 'Unable to generate explanation at this time.';
+            turn.embed.sql_explanation = SQL_EXPLANATION_ERROR_TEXT;
+            turn.embed.sql_explanation_error = true;
+            this.cdr.markForCheck();
           });
       }
 

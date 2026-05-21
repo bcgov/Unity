@@ -173,7 +173,31 @@ describe('App', () => {
 
       await new Promise(resolve => setTimeout(resolve));
       expect(turn.embed.sql_explanation).toBe('Unable to generate explanation at this time.');
+      expect(turn.embed.sql_explanation_error).toBe(true);
       expect(toastSpy).toHaveBeenCalled();
+    });
+
+    it('should retry the fetch when the panel is reopened after a previous failure', async () => {
+      const fixture = TestBed.createComponent(App);
+      fixture.detectChanges();
+      httpTesting.match('/api/chats').forEach(req => req.flush([]));
+      const app = fixture.componentInstance as any;
+      const turn = makeTurn();
+
+      // First open: fetch fails and leaves the fallback text + error flag.
+      app.toggleSqlPanel(turn);
+      httpTesting.expectOne('/api/explain_sql').flush('error', { status: 500, statusText: 'Server Error' });
+      await new Promise(resolve => setTimeout(resolve));
+      expect(turn.embed.sql_explanation_error).toBe(true);
+
+      // Close, then reopen: the fallback text must not block a fresh attempt.
+      app.toggleSqlPanel(turn); // close
+      app.toggleSqlPanel(turn); // reopen
+
+      httpTesting.expectOne('/api/explain_sql').flush({ explanation: 'recovered on retry', tokens: null });
+      await fixture.whenStable();
+      expect(turn.embed.sql_explanation).toBe('recovered on retry');
+      expect(turn.embed.sql_explanation_error).toBe(false);
     });
   });
 });
