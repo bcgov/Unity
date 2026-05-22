@@ -152,31 +152,45 @@ public class ExceptionCounterMiddleware(
                 {
                     if (sourceLine.HasValue)
                     {
-                        // Use required service to fail-fast if the blame lookup service is not registered
+                        // Blame enrichment is best-effort here: don't let failures block notifications
                         string blamePath = ExceptionNotificationHelpers.BuildBlamePath(sourceFile);
-                        var blameService = scope.ServiceProvider.GetRequiredService<IBlameLookupService>();
-                        var blame = await blameService.GetBlameAsync(blamePath, sourceLine.Value);
-                        if (blame != null)
+                        var blameService = scope.ServiceProvider.GetService<IBlameLookupService>();
+                        if (blameService != null)
                         {
-                            facts.Add(new Fact { Name = "Author", Value = $"{blame.Author} <{blame.Email}>" });
-                            var shortSha = !string.IsNullOrEmpty(blame.CommitSha) && blame.CommitSha.Length > 7 ? blame.CommitSha.Substring(0, 7) : blame.CommitSha;
-                            facts.Add(new Fact { Name = "Commit", Value = $"{shortSha} {blame.Message}" });
-
-                            if (blame.PullRequestUrl != null)
+                            try
                             {
-                                facts.Add(new Fact { Name = "PR", Value = $"#{blame.PullRequestNumber} {blame.PullRequestUrl}" });
-                                if (!string.IsNullOrWhiteSpace(blame.PullRequestTitle))
+                                var blame = await blameService.GetBlameAsync(blamePath, sourceLine.Value);
+                                if (blame != null)
                                 {
-                                    facts.Add(new Fact { Name = "PR Title", Value = blame.PullRequestTitle });
+                                    facts.Add(new Fact { Name = "Author", Value = $"{blame.Author} <{blame.Email}>" });
+                                    var shortSha = !string.IsNullOrEmpty(blame.CommitSha) && blame.CommitSha.Length > 7 ? blame.CommitSha.Substring(0, 7) : blame.CommitSha;
+                                    facts.Add(new Fact { Name = "Commit", Value = $"{shortSha} {blame.Message}" });
+
+                                    if (blame.PullRequestUrl != null)
+                                    {
+                                        facts.Add(new Fact { Name = "PR", Value = $"#{blame.PullRequestNumber} {blame.PullRequestUrl}" });
+                                        if (!string.IsNullOrWhiteSpace(blame.PullRequestTitle))
+                                        {
+                                            facts.Add(new Fact { Name = "PR Title", Value = blame.PullRequestTitle });
+                                        }
+                                    }
                                 }
                             }
+                            catch (Exception blameEx)
+                            {
+                                logger.LogDebug(blameEx, "Blame lookup failed; continuing without blame info for {File}:{Line}", sourceFile, sourceLine);
+                            }
+                        }
+                        else
+                        {
+                            logger.LogDebug("Blame lookup service not registered; skipping blame enrichment for {File}:{Line}", sourceFile, sourceLine);
                         }
                     }
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
-                    // Let higher-level notification error handling observe and log failures (fail-fast behavior)
-                    throw;
+                    // Catch-all: ensure notifications still send even if enrichment logic fails
+                    logger.LogDebug(ex, "Unexpected error during blame enrichment; continuing without blame info for {File}:{Line}", sourceFile, sourceLine);
                 }
 
                 // Provide simple activity title/subtitle for the notification

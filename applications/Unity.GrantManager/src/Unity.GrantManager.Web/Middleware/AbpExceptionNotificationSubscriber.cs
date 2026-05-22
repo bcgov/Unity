@@ -7,6 +7,7 @@ using Microsoft.Extensions.Logging;
 using Unity.GrantManager.Notifications;
 using Unity.Notifications.TeamsNotifications;
 using Volo.Abp.ExceptionHandling;
+using Volo.Abp.Uow;
 
 namespace Unity.GrantManager.Web.Middleware;
 
@@ -85,6 +86,7 @@ public class AbpExceptionNotificationSubscriber(
 
             IServiceProvider services = scope.ServiceProvider;
 
+            var uowManager = services.GetRequiredService<IUnitOfWorkManager>();
             var notifications =
                 services.GetRequiredService<INotificationsAppService>();
 
@@ -120,17 +122,20 @@ public class AbpExceptionNotificationSubscriber(
                 tenantName,
                 sourceFile,
                 sourceLine);
-
             await EnrichWithBlameInfoAsync(
                 services,
                 facts,
                 sourceFile,
                 sourceLine);
 
+            using var uow = uowManager.Begin(requiresNew: true, isTransactional: false);
+
             await notifications.PostToTeamsAsync(
                 activityTitle,
                 activitySubtitle,
                 facts);
+
+            await uow.CompleteAsync();
         }
         catch (Exception notificationException)
         {
