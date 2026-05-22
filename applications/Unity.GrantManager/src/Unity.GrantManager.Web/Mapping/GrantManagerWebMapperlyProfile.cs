@@ -34,13 +34,11 @@ public partial class CreateUpdateApplicationFormViewModelToDtoMapper : MapperBas
     [MapperIgnoreTarget(nameof(CreateUpdateApplicationFormDto.ChefsCriteriaFormGuid))]
     [MapperIgnoreTarget(nameof(CreateUpdateApplicationFormDto.Version))]
     [MapperIgnoreTarget(nameof(CreateUpdateApplicationFormDto.Payable))]
-    [MapperIgnoreTarget(nameof(CreateUpdateApplicationFormDto.RenderFormIoToHtml))]
     public override partial CreateUpdateApplicationFormDto Map(CreateUpdateApplicationFormViewModel source);
 
     [MapperIgnoreTarget(nameof(CreateUpdateApplicationFormDto.ChefsCriteriaFormGuid))]
     [MapperIgnoreTarget(nameof(CreateUpdateApplicationFormDto.Version))]
     [MapperIgnoreTarget(nameof(CreateUpdateApplicationFormDto.Payable))]
-    [MapperIgnoreTarget(nameof(CreateUpdateApplicationFormDto.RenderFormIoToHtml))]
     public override partial void Map(CreateUpdateApplicationFormViewModel source, CreateUpdateApplicationFormDto destination); 
 }
 

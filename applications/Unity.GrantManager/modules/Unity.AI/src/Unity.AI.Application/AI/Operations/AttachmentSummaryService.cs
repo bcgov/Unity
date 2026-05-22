@@ -97,13 +97,30 @@ public class AttachmentSummaryService(
         }
     }
 
-    public async Task<List<string>> GenerateForApplicationAsync(Guid applicationId, string? promptVersion = null, CancellationToken cancellationToken = default)
+    public async Task<List<string>> GenerateForApplicationAsync(
+        Guid applicationId,
+        string? promptVersion = null,
+        IReadOnlyCollection<Guid>? attachmentIds = null,
+        CancellationToken cancellationToken = default)
     {
-        var attachmentIds = (await applicationChefsFileAttachmentRepository.GetListAsync(a => a.ApplicationId == applicationId))
+        var applicationAttachmentIds = (await applicationChefsFileAttachmentRepository.GetListAsync(a => a.ApplicationId == applicationId))
             .Select(a => a.Id)
             .ToList();
 
-        return await GenerateAndSaveAsync(attachmentIds, promptVersion, cancellationToken);
+        if (attachmentIds is not { Count: > 0 })
+        {
+            return await GenerateAndSaveAsync(applicationAttachmentIds, promptVersion, cancellationToken);
+        }
+
+        var applicationAttachmentIdSet = applicationAttachmentIds.ToHashSet();
+        var selectedIds = attachmentIds.Distinct().ToList();
+
+        if (selectedIds.Any(id => !applicationAttachmentIdSet.Contains(id)))
+        {
+            throw new InvalidOperationException("One or more selected attachments do not belong to the application.");
+        }
+
+        return await GenerateAndSaveAsync(selectedIds, promptVersion, cancellationToken);
     }
 
     private async Task<ChefsFileAttachmentStream> OpenAttachmentStreamAsync(

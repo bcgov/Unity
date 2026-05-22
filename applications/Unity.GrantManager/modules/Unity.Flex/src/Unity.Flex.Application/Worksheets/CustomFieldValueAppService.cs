@@ -27,7 +27,12 @@ namespace Unity.Flex.Worksheets
         [RemoteService(false)]
         public async Task ExplicitAddAsync(CustomFieldValueDto value)
         {
-            await customFieldValueRepository.InsertAsync(ObjectMapper.Map<CustomFieldValueDto, CustomFieldValue>(value));
+            var entity = new CustomFieldValue(
+                value.Id,
+                value.WorksheetInstanceId,
+                value.CustomFieldId,
+                value.CurrentValue ?? "{}");
+            await customFieldValueRepository.InsertAsync(entity);
         }
 
         [RemoteService(false)]

@@ -68,7 +68,8 @@ public class EditDataRowModalModel(DataGridWriteService dataGridWriteService,
         Guid worksheetInstanceId,
         Guid formVersionId,
         Guid applicationId,
-        string uiAnchor)
+        string uiAnchor,
+        string columnOrder = "")
     {
         Row = row;
         ValueId = valueId;
@@ -114,7 +115,7 @@ public class EditDataRowModalModel(DataGridWriteService dataGridWriteService,
 
         DynamicKeyMap = JsonSerializer.Serialize(keyMap);
 
-        AllFields = MergeAndSortFields(DynamicFields ?? [], Properties ?? []);
+        AllFields = MergeAndSortFields(DynamicFields ?? [], Properties ?? [], columnOrder);
     }
 
     private static DynamicFieldMap[] PrefixDynamicFields(DynamicFieldMap[] dynamicFieldMaps)
@@ -246,15 +247,26 @@ public class EditDataRowModalModel(DataGridWriteService dataGridWriteService,
 
     private sealed record DynamicKeyMapEntry(string Name, string Type, bool IsDynamic = true);
 
-    private static List<EditRowField> MergeAndSortFields(DynamicFieldMap[] dynamicFields, List<WorksheetFieldViewModel> customFields)
+    private static List<EditRowField> MergeAndSortFields(DynamicFieldMap[] dynamicFields, List<WorksheetFieldViewModel> customFields, string columnOrder)
     {
+        var columnKeys = columnOrder.Split(',', StringSplitOptions.RemoveEmptyEntries);
+        var orderMap = columnKeys
+            .Select((key, idx) => (key, idx))
+            .ToDictionary(t => t.key, t => t.idx, StringComparer.OrdinalIgnoreCase);
+
+        int GetOrder(string key) => orderMap.TryGetValue(key, out var idx) ? idx : int.MaxValue;
+
         var fields = new List<EditRowField>();
 
         foreach (var df in dynamicFields)
         {
+            var rawKey = df.Key.StartsWith(DynamicFieldPrefix, StringComparison.Ordinal)
+                ? df.Key[DynamicFieldPrefix.Length..]
+                : df.Key;
             fields.Add(new EditRowField
             {
                 SortKey = df.Name,
+                SortOrder = GetOrder(rawKey),
                 DynamicField = df
             });
         }
@@ -264,16 +276,18 @@ public class EditDataRowModalModel(DataGridWriteService dataGridWriteService,
             fields.Add(new EditRowField
             {
                 SortKey = cf.Label,
+                SortOrder = GetOrder(cf.Name),
                 CustomField = cf
             });
         }
 
-        return [.. fields.OrderBy(f => f.SortKey, StringComparer.OrdinalIgnoreCase)];
+        return [.. fields.OrderBy(f => f.SortOrder).ThenBy(f => f.SortKey, StringComparer.OrdinalIgnoreCase)];
     }
 
     public class EditRowField
     {
         public string SortKey { get; set; } = string.Empty;
+        public int SortOrder { get; set; } = int.MaxValue;
         public WorksheetFieldViewModel? CustomField { get; set; }
         public DynamicFieldMap? DynamicField { get; set; }
         public bool IsDynamic => DynamicField != null;
