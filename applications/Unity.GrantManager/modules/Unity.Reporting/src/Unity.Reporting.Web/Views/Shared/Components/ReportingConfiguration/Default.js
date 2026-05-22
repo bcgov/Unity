@@ -1239,10 +1239,9 @@ $(function () {
         return ($('#reportingDescription').val() || '').trim();
     }
 
-    function setDescription(value) {
-        const text = value || '';
-        $('#reportingDescription').val(text);
-        $('#descriptionCharCount').text(text.length + ' / 500');
+    function setDescription(value = '') {
+        $('#reportingDescription').val(value);
+        $('#descriptionCharCount').text(value.length + ' / 500');
     }
 
     // Description character counter (live update inside modal)
@@ -1553,10 +1552,10 @@ $(function () {
                     correlationProvider: getCorrelationProvider()
                 }
             }).done(function (isAvailable) {
-                if (!isAvailable) {
-                    callback(false, ['View name is already in use by another reporting configuration']);
-                } else {
+                if (isAvailable) {
                     callback(true, []);
+                } else {
+                    callback(false, ['View name is already in use by another reporting configuration']);
                 }
             }).fail(function (error) {
                 callback(false, ['Error checking view name availability']);
@@ -1697,52 +1696,7 @@ $(function () {
                 console.error('Error generating view - Error:', error);
                 console.error('Error generating view - XHR:', xhr);
 
-                let errorMessage = 'Failed to generate database view';
-
-                // Handle different error scenarios
-                if (xhr.status === 0) {
-                    errorMessage = 'Network error: Could not connect to the server';
-                } else if (xhr.status === 400) {
-                    // Try to extract detailed error message from response
-                    try {
-                        const errorResponse = JSON.parse(xhr.responseText);
-                        if (errorResponse?.error?.message) {
-                            errorMessage = errorResponse?.error?.message;
-                        } else if (typeof errorResponse === 'string') {
-                            errorMessage = errorResponse;
-                        } else {
-                            errorMessage = 'Bad request: Please check your input and try again';
-                        }
-                    } catch (parseError) {
-                        console.error(parseError);
-                        errorMessage = xhr.responseText || 'Bad request: Please check your input and try again';
-                    }
-                } else if (xhr.status === 401) {
-                    errorMessage = 'Unauthorized: Please log in and try again';
-                } else if (xhr.status === 403) {
-                    errorMessage = 'Forbidden: You do not have permission to perform this action';
-                } else if (xhr.status === 404) {
-                    errorMessage = 'Configuration not found: Please ensure the configuration exists and try again';
-                } else if (xhr.status === 500) {
-                    errorMessage = 'Server error: Please try again later or contact support';
-                } else if (xhr.responseText) {
-                    try {
-                        const parsedError = JSON.parse(xhr.responseText);
-                        if (parsedError?.error?.message) {
-                            errorMessage = parsedError?.error?.message;
-                        } else if (parsedError?.message) {
-                            errorMessage = parsedError?.message;
-                        } else {
-                            errorMessage = xhr.responseText;
-                        }
-                    } catch (parseError) {
-                        console.error('Failed to parse error response:', parseError);
-                        errorMessage = xhr.responseText;
-                    }
-                } else if (error && error !== 'parsererror') {
-                    errorMessage = error;
-                }
-
+                const errorMessage = getViewGenerationErrorMessage(xhr, error);
                 abp.message.error(errorMessage);
             },
             complete: function () {
@@ -1863,41 +1817,7 @@ $(function () {
             modal.hide();
 
         }).fail(function (xhr, status, error) {
-            let errorMessage = 'Failed to delete configuration';
-
-            // Handle different error scenarios
-            if (xhr.status === 0) {
-                errorMessage = 'Network error: Could not connect to the server';
-            } else if (xhr.status === 400) {
-                const errorResponse = JSON.parse(xhr.responseText);
-                if (errorResponse?.error?.message) {
-                    errorMessage = errorResponse?.error?.message;
-                } else if (typeof errorResponse === 'string') {
-                    errorMessage = errorResponse;
-                } else {
-                    errorMessage = 'Bad request: Please check your input and try again';
-                }
-            } else if (xhr.status === 401) {
-                errorMessage = 'Unauthorized: Please log in and try again';
-            } else if (xhr.status === 403) {
-                errorMessage = 'Forbidden: You do not have permission to perform this action';
-            } else if (xhr.status === 404) {
-                errorMessage = 'Configuration not found: The configuration may have already been deleted';
-            } else if (xhr.status === 500) {
-                errorMessage = 'Server error: Please try again later or contact support';
-            } else if (xhr.responseText) {
-                const parsedError = JSON.parse(xhr.responseText);
-                if (parsedError?.error?.message) {
-                    errorMessage = parsedError?.error?.message;
-                } else if (parsedError?.message) {
-                    errorMessage = parsedError?.message;
-                } else {
-                    errorMessage = xhr.responseText;
-                }
-            } else if (error && error !== 'parsererror') {
-                errorMessage = error;
-            }
-
+            const errorMessage = getDeleteErrorMessage(xhr, error);
             abp.message.error(errorMessage);
         }).always(function () {
             // Reset modal button states
@@ -1908,6 +1828,41 @@ $(function () {
             setControlButtonsLoadingState(false);
         });
     });
+
+    // Extract error handling logic to reduce cognitive complexity
+    function getDeleteErrorMessage(xhr, error) {
+        if (xhr.status === 0) {
+            return 'Network error: Could not connect to the server';
+        }
+        
+        if (xhr.status === 400) {
+            const errorResponse = JSON.parse(xhr.responseText);
+            return errorResponse?.error?.message || (typeof errorResponse === 'string' ? errorResponse : 'Bad request: Please check your input and try again');
+        }
+        
+        if (xhr.status === 401) {
+            return 'Unauthorized: Please log in and try again';
+        }
+        
+        if (xhr.status === 403) {
+            return 'Forbidden: You do not have permission to perform this action';
+        }
+        
+        if (xhr.status === 404) {
+            return 'Configuration not found: The configuration may have already been deleted';
+        }
+        
+        if (xhr.status === 500) {
+            return 'Server error: Please try again later or contact support';
+        }
+        
+        if (xhr.responseText) {
+            const parsedError = JSON.parse(xhr.responseText);
+            return parsedError?.error?.message || parsedError?.message || xhr.responseText;
+        }
+        
+        return (error && error !== 'parsererror') ? error : 'Failed to delete configuration';
+    }
 
     // Update the function to handle both generate and delete button visibility
     // This function was modified earlier to support both buttons
