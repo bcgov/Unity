@@ -1,7 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
@@ -146,7 +144,7 @@ public class ExceptionCounterMiddleware(
                     stackTrace,
                     sourceFile,
                     sourceLine,
-                    ExceptionCounterMiddleware.CommitSha,
+                    CommitSha,
                     innerMessage);
 
                 // Try to enrich with blame info similar to AbpExceptionNotificationSubscriber
