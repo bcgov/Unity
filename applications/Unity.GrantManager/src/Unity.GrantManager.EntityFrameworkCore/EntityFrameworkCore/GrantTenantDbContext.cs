@@ -398,6 +398,8 @@ namespace Unity.GrantManager.EntityFrameworkCore
                 b.ToTable(GrantManagerConsts.TenantTablePrefix + "AuditHistories", GrantManagerConsts.DbSchema);
                 b.ConfigureByConvention();
                 b.HasOne<Applicant>().WithMany().HasForeignKey(x => x.ApplicantId).IsRequired(false);
+                b.Property(x => x.AuditStatus)
+                    .HasConversion(new EnumToStringConverter<AuditHistoryStatus>());
             });
 
             modelBuilder.Entity<ReportsHistory>(b =>
