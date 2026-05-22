@@ -1,0 +1,2 @@
+TimezoneUtils.setTimezoneCookie();
+location.reload();

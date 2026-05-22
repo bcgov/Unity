@@ -455,10 +455,9 @@ globalThis.queueApplicationAnalysis = function(triggerButton = null) {
             const status = globalThis.AIGenerationButtonState?.resolveStatus(request?.status) ?? '';
 
             if (status === 'Completed') {
-                globalThis.AIGenerationButtonState?.restore($button);
-                $button.html(existingHtml).prop('disabled', false);
+                globalThis.AIGenerationButtonState?.restoreForCooldownCheck($button, existingHtml);
                 loadAIAnalysis();
-                globalThis.refreshAIRateLimitState?.();
+                globalThis.syncAIRateLimitButtons?.();
                 return;
             }
 
@@ -469,6 +468,7 @@ globalThis.queueApplicationAnalysis = function(triggerButton = null) {
             aiAnalysisMonitor?.stop();
             globalThis.AIGenerationButtonState?.restore($button);
             $button.html(existingHtml).prop('disabled', false);
+            globalThis.syncAIRateLimitButtons?.();
             abp.message.error('Failed to queue AI analysis. Please try again.');
         });
 }

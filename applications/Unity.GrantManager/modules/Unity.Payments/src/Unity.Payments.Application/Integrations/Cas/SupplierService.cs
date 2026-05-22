@@ -146,7 +146,9 @@ namespace Unity.Payments.Integrations.Cas
             string supplierprotected = GetProp("supplierprotected");
             string standardindustryclassification = GetProp("standardindustryclassification");
 
-            _ = DateTime.TryParse(lastUpdated, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out DateTime lastUpdatedDate);
+            DateTime? lastUpdatedDate = DateTime.TryParse(lastUpdated, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out DateTime parsedLastUpdated)
+                ? parsedLastUpdated
+                : null;
 
             var siteEtos = new List<SiteEto>();
             if (casSupplierResponse.TryGetProperty("supplieraddress", out var sitesJson) &&
@@ -181,7 +183,9 @@ namespace Unity.Payments.Integrations.Cas
                 ? new string('*', accountNumber.Length - 4) + accountNumber[^4..]
                 : accountNumber;
             string siteLastUpdated = GetJsonProperty("lastupdated", site);
-            _ = DateTime.TryParse(siteLastUpdated, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out DateTime siteLastUpdatedDate);
+            DateTime? siteLastUpdatedDate = DateTime.TryParse(siteLastUpdated, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out DateTime parsedSiteLastUpdated)
+                ? parsedSiteLastUpdated
+                : null;
 
             return new SiteEto
             {

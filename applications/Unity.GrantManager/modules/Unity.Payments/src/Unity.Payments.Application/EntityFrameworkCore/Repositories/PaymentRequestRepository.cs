@@ -140,8 +140,9 @@ namespace Unity.Payments.Repositories
                 {
                     ApplicationId = g.Key,
                     TotalPaid = g
-                        .Where(p => p.PaymentStatus != null
-                            && p.PaymentStatus.Trim().ToUpper() == CasPaymentRequestStatus.FullyPaid.ToUpper())
+                        .Where(p => (p.PaymentStatus != null
+                                && p.PaymentStatus.Trim().ToUpper() == CasPaymentRequestStatus.FullyPaid.ToUpper())
+                            || p.Status == PaymentRequestStatus.HistoricalPayment)
                         .Sum(p => p.Amount),
                     TotalPending = g
                         .Where(p => p.Status == PaymentRequestStatus.L1Pending
