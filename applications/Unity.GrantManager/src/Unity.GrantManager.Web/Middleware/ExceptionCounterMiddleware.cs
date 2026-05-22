@@ -35,7 +35,7 @@ public class ExceptionCounterMiddleware(
             "Total number of application exceptions",
             new CounterConfiguration
             {
-                LabelNames = ["type"]
+                LabelNames = new[] { "type" }
             });
 
     // Git SHA baked in at build time via -p:SourceRevisionId=<sha> in the Dockerfile.
@@ -85,6 +85,8 @@ public class ExceptionCounterMiddleware(
         }
     }
 
+    // Repo path and frame helpers are provided by ExceptionNotificationHelpers to avoid duplication
+
     private void QueueTeamsNotification(HttpContext context, Exception ex)
     {
         string? env = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
@@ -109,7 +111,7 @@ public class ExceptionCounterMiddleware(
         string innerMessage = ex.InnerException?.Message ?? string.Empty;
 
         // Compact stack trace with only application frames
-        string stackTrace = BuildApplicationStackExcerpt(ex);
+        string stackTrace = ExceptionNotificationHelpers.BuildApplicationStackExcerpt(ex);
 
         // Resolve a scoped INotificationsAppService from a fresh DI scope so
         // we can safely use it after the request scope has ended
@@ -126,64 +128,71 @@ public class ExceptionCounterMiddleware(
                 var notifications =
                     scope.ServiceProvider.GetRequiredService<INotificationsAppService>();
 
-                using var uow = uowManager.Begin(
-                    requiresNew: true,
-                    isTransactional: false);
+                // Get current user and tenant name
+                var userName = AbpUserTenantAccessor.GetCurrentUserName(scope.ServiceProvider) ?? "unknown";
+                var tenantName = AbpUserTenantAccessor.GetCurrentTenantName(scope.ServiceProvider) ?? "unknown";
 
-                string activityTitle = $"[CRITICAL] {ex.GetType().Name}";
+                // Determine top frame (file/line) for initial facts so variables exist when creating the list
+                var topForFacts = ExceptionNotificationHelpers.GetTopFrame(ex);
+                string sourceFile = ExceptionNotificationHelpers.NormalizeRepoPath(topForFacts?.File ?? "(unknown)");
+                int? sourceLine = topForFacts?.Line;
 
-                string activitySubtitle =
-                    $"Environment: {env} | {endpoint}";
+                var facts = ExceptionNotificationHelpers.BuildFacts(
+                    exTypeName,
+                    exMessage,
+                    endpoint,
+                    userName,
+                    tenantName,
+                    stackTrace,
+                    sourceFile,
+                    sourceLine,
+                    ExceptionCounterMiddleware.CommitSha,
+                    innerMessage);
 
-                var facts = new List<Fact>
+                // Try to enrich with blame info similar to AbpExceptionNotificationSubscriber
+                try
                 {
-                    new()
+                    if (sourceLine.HasValue)
                     {
-                        Name = "Exception",
-                        Value = exTypeName
-                    },
-                    new()
-                    {
-                        Name = "Message",
-                        Value = exMessage
-                    },
-                    new()
-                    {
-                        Name = "Endpoint",
-                        Value = endpoint
-                    },
-                    new()
-                    {
-                        Name = "Application Stack",
-                        Value = stackTrace
-                    },
-                    new()
-                    {
-                        Name = "Commit",
-                        Value = CommitSha
-                    },
-                    new()
-                    {
-                        Name = "Author",
-                        Value = CommitAuthor
+                        // Use required service to fail-fast if the blame lookup service is not registered
+                        string blamePath = ExceptionNotificationHelpers.BuildBlamePath(sourceFile);
+                        var blameService = scope.ServiceProvider.GetRequiredService<IBlameLookupService>();
+                        var blame = await blameService.GetBlameAsync(blamePath, sourceLine.Value);
+                        if (blame != null)
+                        {
+                            facts.Add(new Fact { Name = "Author", Value = $"{blame.Author} <{blame.Email}>" });
+                            var shortSha = !string.IsNullOrEmpty(blame.CommitSha) && blame.CommitSha.Length > 7 ? blame.CommitSha.Substring(0, 7) : blame.CommitSha;
+                            facts.Add(new Fact { Name = "Commit", Value = $"{shortSha} {blame.Message}" });
+
+                            if (blame.PullRequestUrl != null)
+                            {
+                                facts.Add(new Fact { Name = "PR", Value = $"#{blame.PullRequestNumber} {blame.PullRequestUrl}" });
+                                if (!string.IsNullOrWhiteSpace(blame.PullRequestTitle))
+                                {
+                                    facts.Add(new Fact { Name = "PR Title", Value = blame.PullRequestTitle });
+                                }
+                            }
+                        }
                     }
-                };
-
-                if (!string.IsNullOrWhiteSpace(innerMessage))
-                {
-                    facts.Add(new Fact
-                    {
-                        Name = "Inner Exception",
-                        Value = innerMessage
-                    });
                 }
+                catch (Exception)
+                {
+                    // Let higher-level notification error handling observe and log failures (fail-fast behavior)
+                    throw;
+                }
+
+                // Provide simple activity title/subtitle for the notification
+                var activityTitle = $"{exTypeName} thrown at {endpoint}";
+                var activitySubtitle = $"Environment: {env} | {endpoint} | {userName}@{tenantName}";
+
+                // If blame service not available or blame lookup fails we log and continue — do not block notifications
+                // (blame lookup is best-effort)
+                // Note: any exceptions from blame lookup are already caught and ignored above.
 
                 await notifications.PostToTeamsAsync(
                     activityTitle,
                     activitySubtitle,
                     facts);
-
-                await uow.CompleteAsync();
             }
             catch (Exception notifyEx)
             {
@@ -196,64 +205,6 @@ public class ExceptionCounterMiddleware(
 
     private static string BuildApplicationStackExcerpt(Exception ex)
     {
-        var trace = new StackTrace(ex, true);
-
-        var frames = trace.GetFrames();
-
-        if (frames == null || frames.Length == 0)
-        {
-            return "(no stack trace)";
-        }
-
-        // Keep only application frames
-        var appFrames = frames
-            .Where(f =>
-            {
-                var typeName =
-                    f.GetMethod()?.DeclaringType?.FullName;
-
-                if (string.IsNullOrWhiteSpace(typeName))
-                {
-                    return false;
-                }
-
-                // Include only your application namespaces
-                return typeName.StartsWith(
-                    "Unity.",
-                    StringComparison.Ordinal);
-            })
-            .Take(5)
-            .ToList();
-
-        if (appFrames.Count == 0)
-        {
-            return ex.Message;
-        }
-
-        return string.Join(
-            Environment.NewLine,
-            appFrames.Select((f, i) =>
-            {
-                var method = f.GetMethod();
-
-                var className =
-                    method?.DeclaringType?.Name ?? "UnknownClass";
-
-                var methodName =
-                    method?.Name ?? "UnknownMethod";
-
-                var file = f.GetFileName();
-
-                var fileName = string.IsNullOrWhiteSpace(file)
-                    ? "unknown"
-                    : Path.GetFileName(file);
-
-                var line = f.GetFileLineNumber();
-
-                return
-                    $"{i + 1}. " +
-                    $"{className}.{methodName}() " +
-                    $"in {fileName}:{line}";
-            }));
+        return ExceptionNotificationHelpers.BuildApplicationStackExcerpt(ex);
     }
 }

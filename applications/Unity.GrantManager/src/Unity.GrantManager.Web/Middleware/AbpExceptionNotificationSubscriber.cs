@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
@@ -62,11 +61,7 @@ public class AbpExceptionNotificationSubscriber(
         string exTypeName = ex.GetType().FullName ?? ex.GetType().Name;
         string exMessage = ex.Message;
         string innerMessage = ex.InnerException?.Message ?? string.Empty;
-        string stackTrace = ex.StackTrace ?? "(no stack trace)";
-        // Shorten stack trace to first 5 lines
-        var stackLines = stackTrace.Split('\n');
-        if (stackLines.Length > 5)
-            stackTrace = string.Join("\n", stackLines[..5]) + "\n... (truncated)";
+        string stackTrace = ExceptionNotificationHelpers.BuildApplicationStackExcerpt(ex);
 
         _ = Task.Run(async () =>
         {
@@ -79,55 +74,50 @@ public class AbpExceptionNotificationSubscriber(
                 using var uow = uowManager.Begin(requiresNew: true, isTransactional: false);
 
                 string activityTitle = $"[{env?.ToUpperInvariant()}] {ex.GetType().Name}";
-                string activitySubtitle = $"Environment: {env} | {endpoint}";
 
-                var frame = GetTopFrame(ex);
-                string sourceFile = NormalizeRepoPath(frame?.File ?? "(unknown)");
+                var frame = ExceptionNotificationHelpers.GetTopFrame(ex);
+                string sourceFile = ExceptionNotificationHelpers.NormalizeRepoPath(frame?.File ?? "(unknown)");
                 int? sourceLine = frame?.Line;
 
+                var userName = AbpUserTenantAccessor.GetCurrentUserName(scope.ServiceProvider) ?? "unknown";
+                var tenantName = AbpUserTenantAccessor.GetCurrentTenantName(scope.ServiceProvider) ?? "unknown";
 
-                var facts = new List<Fact>
-                {
-                    new() { Name = "Exception",   Value = exTypeName },
-                    new() { Name = "Message",     Value = exMessage },
-                    new() { Name = "Endpoint",    Value = endpoint },
-                    new() { Name = "Stack Trace", Value = stackTrace },
-                    new() { Name = "Source",      Value = sourceLine.HasValue ? $"{sourceFile}:{sourceLine}" : sourceFile },
-                    new() { Name = "Release Number", Value = ExceptionCounterMiddleware.CommitSha },
-                };
+                string activitySubtitle = $"Environment: {env} | {endpoint} | {userName}@{tenantName}";
 
-                if (!string.IsNullOrEmpty(innerMessage))
-                    facts.Add(new Fact { Name = "Inner Exception", Value = innerMessage });
+                var facts = ExceptionNotificationHelpers.BuildFacts(
+                    exTypeName,
+                    exMessage,
+                    endpoint,
+                    userName,
+                    tenantName,
+                    stackTrace,
+                    sourceFile,
+                    sourceLine,
+                    ExceptionCounterMiddleware.CommitSha,
+                    innerMessage);
 
                 if (sourceLine.HasValue)
                 {
-                    try
-                    {
-                        // Fix: prepend repo root for blame lookup
-                        string blamePath = $"applications/Unity.GrantManager/{sourceFile}";                        
-                        var blameService = scope.ServiceProvider.GetRequiredService<IBlameLookupService>();
-                        var blame = await blameService.GetBlameAsync(blamePath, sourceLine.Value);
-                        
-                        if (blame != null)
-                        {
-                            logger.LogInformation("[ExceptionNotify] Blame lookup result: Author={Author}, Commit={Commit}, PR={PR}, PRTitle={PRTitle}", blame.Author, blame.CommitSha, blame.PullRequestUrl, blame.PullRequestTitle);
-                            facts.Add(new Fact { Name = "Author", Value = $"{blame.Author} <{blame.Email}>" });
-                            var shortSha = !string.IsNullOrEmpty(blame.CommitSha) && blame.CommitSha.Length > 7 ? blame.CommitSha.Substring(0, 7) : blame.CommitSha;
-                            facts.Add(new Fact { Name = "Commit", Value = $"{shortSha} {blame.Message}" });
+                    // Use required service to fail-fast if the blame lookup service is not registered
+                    string blamePath = ExceptionNotificationHelpers.BuildBlamePath(sourceFile);
+                    var blameService = scope.ServiceProvider.GetRequiredService<IBlameLookupService>();
+                    var blame = await blameService.GetBlameAsync(blamePath, sourceLine.Value);
 
-                            if (blame.PullRequestUrl != null)
+                    if (blame != null)
+                    {
+                        logger.LogInformation("[ExceptionNotify] Blame lookup result: Author={Author}, Commit={Commit}, PR={PR}, PRTitle={PRTitle}", blame.Author, blame.CommitSha, blame.PullRequestUrl, blame.PullRequestTitle);
+                        facts.Add(new Fact { Name = "Author", Value = $"{blame.Author} <{blame.Email}>" });
+                        var shortSha = !string.IsNullOrEmpty(blame.CommitSha) && blame.CommitSha.Length > 7 ? blame.CommitSha.Substring(0, 7) : blame.CommitSha;
+                        facts.Add(new Fact { Name = "Commit", Value = $"{shortSha} {blame.Message}" });
+
+                        if (blame.PullRequestUrl != null)
+                        {
+                            facts.Add(new Fact { Name = "PR", Value = $"#{blame.PullRequestNumber} {blame.PullRequestUrl}" });
+                            if (!string.IsNullOrWhiteSpace(blame.PullRequestTitle))
                             {
-                                facts.Add(new Fact { Name = "PR", Value = $"#{blame.PullRequestNumber} {blame.PullRequestUrl}" });
-                                if (!string.IsNullOrWhiteSpace(blame.PullRequestTitle))
-                                {
-                                    facts.Add(new Fact { Name = "PR Title", Value = blame.PullRequestTitle });
-                                }
+                                facts.Add(new Fact { Name = "PR Title", Value = blame.PullRequestTitle });
                             }
                         }
-                    }
-                    catch (Exception blameEx)
-                    {
-                        logger.LogDebug(blameEx, "Blame lookup failed for {File}:{Line}", sourceFile, sourceLine);
                     }
                 }
 
@@ -141,34 +131,5 @@ public class AbpExceptionNotificationSubscriber(
         });
     }
 
-    private static string NormalizeRepoPath(string fullPath)
-    {
-        const string marker = "src/";
 
-        int idx = fullPath.IndexOf(marker, StringComparison.OrdinalIgnoreCase);
-
-        if (idx < 0)
-            return fullPath.Replace("\\", "/");
-
-        return fullPath[(idx + marker.Length)..]
-            .Replace("\\", "/");
-    }
-
-    private static (string? File, int? Line)? GetTopFrame(Exception ex)
-    {
-        var trace = new StackTrace(ex, true);
-
-        foreach (var frame in trace.GetFrames() ?? [])
-        {
-            var file = frame.GetFileName();
-            var line = frame.GetFileLineNumber();
-
-            if (!string.IsNullOrWhiteSpace(file) && line > 0)
-            {
-                return (file, line);
-            }
-        }
-
-        return null;
-    }
 }
