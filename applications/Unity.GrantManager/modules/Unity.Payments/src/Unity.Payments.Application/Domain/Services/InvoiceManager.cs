@@ -25,7 +25,8 @@ namespace Unity.Payments.Domain.Services
     {
         public async Task<Site?> GetSiteByPaymentRequestAsync(PaymentRequest paymentRequest)
         {
-            Site? site = await siteRepository.GetAsync(paymentRequest.SiteId, true);
+            if (!paymentRequest.SiteId.HasValue) return null;
+            Site? site = await siteRepository.GetAsync(paymentRequest.SiteId.Value, true);
             if (site?.SupplierId != null)
             {
                 Supplier supplier = await supplierRepository.GetAsync(site.SupplierId);

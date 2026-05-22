@@ -21,6 +21,9 @@ $(function () {
     let applicationPaymentRequestModal = new abp.ModalManager({
         viewUrl: 'PaymentRequests/CreatePaymentRequests',
     });
+    let applicationHistoricalPaymentRequestModal = new abp.ModalManager({
+        viewUrl: 'PaymentRequests/CreateHistoricalPayments',
+    });
 
     // Helper functions to reduce nesting depth
     function groupTagsByApplication(tags, applicationIds) {
@@ -416,11 +419,28 @@ $(function () {
             'The application/s payment request has been successfully submitted.',
             'Payment'
         );
-        PubSub.publish("refresh_application_list");        
+        PubSub.publish("refresh_application_list");
     });
 
     applicationPaymentRequestModal.onOpen(function () {
-        calculateTotalAmount();     
-    });    
+        calculateTotalAmount();
+    });
+
+    $('#applicationHistoricalPaymentRequest').on('click', function () {
+        unity.grantManager.applications.applicationBulkActions
+            .storeApplicationIds({ applicationIds: selectedApplicationIds })
+            .then(function (response) {
+                applicationHistoricalPaymentRequestModal.open({ cacheKey: response.cacheKey });
+            })
+            .catch(function (error) {
+                abp.notify.error('Failed to prepare historical payment. Please try again.');
+                console.error('Error storing application IDs:', error);
+            });
+    });
+
+    applicationHistoricalPaymentRequestModal.onResult(function () {
+        abp.notify.success('The historical payment has been successfully recorded.', 'Historical Payment');
+        PubSub.publish("refresh_application_list");
+    });
 });
 

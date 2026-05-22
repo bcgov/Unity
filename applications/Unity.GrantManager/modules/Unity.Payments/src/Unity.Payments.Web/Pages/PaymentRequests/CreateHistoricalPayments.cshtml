@@ -1,16 +1,12 @@
-﻿@page
+@page
 @using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal
 @using Unity.Payments.Localization
 @using Microsoft.Extensions.Localization
-@using Unity.Payments.Permissions
-@using Volo.Abp.Authorization.Permissions;
-@inject IPermissionChecker PermissionChecker
-@model Unity.Payments.Web.Pages.Payments.CreatePaymentRequestsModel
+@model Unity.Payments.Web.Pages.Payments.CreateHistoricalPaymentsModel
 
 @inject IStringLocalizer<PaymentsResource> L
 @{
     Layout = null;
-    var canOverride = await PermissionChecker.IsGrantedAsync(PaymentsPermissions.Payments.AccountCodingOverride);
 }
 
 <style>
@@ -43,7 +39,7 @@
     .parent-child-group.has-error .single-payment {
         border: none;
         border-bottom: 1px solid var(--bs-border-color);
-    }   
+    }
 
     .parent-child-group-error {
         padding: 4px 12px 4px 12px;
@@ -51,9 +47,9 @@
     }
 </style>
 
-<form method="post" asp-page-handler="OnPostAsync" id="paymentform">
-    <abp-modal size="ExtraLarge" id="payment-modal">
-        <abp-modal-header class="payment-modal-header" title="@L["ApplicationPaymentRequest:Title"].Value"></abp-modal-header>
+<form method="post" asp-page-handler="OnPostAsync" id="historicalpaymentform">
+    <abp-modal size="ExtraLarge" id="historical-payment-modal">
+        <abp-modal-header class="payment-modal-header" title="@L["ApplicationHistoricalPaymentRequest:Title"].Value"></abp-modal-header>
         <abp-modal-body>
             @if (ViewData["Error"] != null)
             {
@@ -63,42 +59,6 @@
             }
             else
             {
-                <abp-card class="pb-0">
-                    <abp-card-body class="pb-0 mb-0">
-                        <abp-row class="m-0 p-1">
-                            <abp-column size="_4" >
-                                <label for="@Model.BatchNumberDisplay" class="form-label unt-form-label-primary">@L["ApplicationPaymentRequest:BatchNumberName"]</label>
-                                <input type="text" class="form-control" value="@Model.BatchNumberDisplay" disabled />
-                            </abp-column>
-                            <abp-column size="_4">
-                                <label for="@Model.ApplicationPaymentRequestForm?.Count" class="form-label unt-form-label-primary">@L["ApplicationPaymentRequest:NumberPayment"]</label>
-                                <input type="text" class="form-control" id="ApplicationCount" value="@Model.ApplicationPaymentRequestForm?.Count" disabled />
-                            </abp-column>
-                            <abp-column size="_4">
-                                <label for="@Model.TotalAmount" class="form-label unt-form-label-primary">@L["ApplicationPaymentRequest:TotalAmount"]</label>
-                                <input type="text" class="form-control unity-currency-input" id="TotalAmount" value="@Model.TotalAmount" disabled />
-                            </abp-column>
-                        </abp-row>
-                    @if (canOverride)
-                    { 
-                        <abp-row class="m-0 p-1">
-                            <abp-column size="_8">
-                                <label for="AccountCodingSelect" class="form-label unt-form-label-primary">@L["ApplicationPaymentRequest:AccountCodingOverride"]</label>
-                                <select id="AccountCodingSelect" name="AccountCodingOverride" 
-                                    onchange="handleAccountCodingOverrideChange(this)"
-                                    class="form-control">
-                                    <option value="">Select @L["ApplicationPaymentRequest:AccountCodingOverride"]</option>
-                                    @foreach (Unity.Payments.Domain.AccountCodings.AccountCoding accountCoding in Model.AccountCodings)
-                                    {
-                                        <option value="@accountCoding.Id">@accountCoding.FullAccountCodeWithDescription()@(accountCoding.Id.ToString() == Model.DefaultAccountCodingId ? " (Default)" : "" )</option>
-                                    }
-                                </select>
-                            </abp-column>
-                        </abp-row>
-                    }
-
-                    </abp-card-body>
-                </abp-card>
             <abp-card class="pt-0">
                 <abp-card-body class="payment-card">
                     @{
@@ -143,17 +103,8 @@
                                         <span>&nbsp;&nbsp;(Parent Id: <strong>@item.ParentReferenceNo</strong>)</span>
                                     }
                                     </h6>
-                    @if (canOverride && item.AccountCodingId.HasValue && Model.AccountCodingDisplayMap.TryGetValue(item.AccountCodingId.Value, out var accountCodeDisplay))
-                    {
-                                <span class="ms-auto">
-                                    <h6 class="single-payment-card-application-name mb-0">
-                                        <span class="fw-bold">Account Code: </span>
-                                        <span class="fw-normal unt-form-label-primary nowrap">@accountCodeDisplay</span>
-                                    </h6>
-                                </span>
-                    }
-                                <abp-button onclick='removeApplicationPaymentRequest("@item.CorrelationId" + "_container")'
-                                                onkeydown='if(event.key==="Enter") removeApplicationPaymentRequest("@item.CorrelationId" + "_container")'
+                                    <abp-button onclick='removeHistoricalPaymentRequest("@item.CorrelationId" + "_container")'
+                                                onkeydown='if(event.key==="Enter") removeHistoricalPaymentRequest("@item.CorrelationId" + "_container")'
                                                 size="Small"
                                                 icon-type="Other"
                                                 class="m-0 p-0 remove-single-payment"
@@ -179,28 +130,38 @@
 
                             <abp-row class="m-0 p-3">
                                 <abp-column size="_2" class="px-1">
-                                    <abp-input asp-for="@Model.ApplicationPaymentRequestForm[i].InvoiceNumber" disabled="@item.DisableFields"/>
+                                    <abp-input asp-for="@Model.ApplicationPaymentRequestForm[i].InvoiceNumber" disabled="@item.DisableFields" />
                                 </abp-column>
                                 <abp-column size="_2" class="px-1">
                                     <div class="unity-input-group">
-                                            <span class="unity-input-prepend">$</span>
-                                            <abp-input asp-for="@Model.ApplicationPaymentRequestForm[i].Amount"
-                                               class="unity-currency-input amount"
-                                               disabled="@item.DisableFields"
-                                               onchange='checkMaxValueRequest("@item.CorrelationId",this, @item.RemainingAmount)' />
+                                        <span class="unity-input-prepend">$</span>
+                                        <abp-input asp-for="@Model.ApplicationPaymentRequestForm[i].Amount"
+                                                   class="unity-currency-input amount"
+                                                   disabled="@item.DisableFields"
+                                                   onchange='checkHistoricalMaxValueRequest("@item.CorrelationId", this, @item.RemainingAmount)' />
                                     </div>
                                 </abp-column>
-                                <abp-column size="_4" class="px-1">
+                                <abp-column size="_2" class="px-1">
+                                    <label class="form-label unt-form-label-primary" for="ApplicationPaymentRequestForm_@(i)__PaidDate">@L["ApplicationHistoricalPaymentRequest:PaidDate"] *</label>
+                                    <input type="date"
+                                           name="ApplicationPaymentRequestForm[@i].PaidDate"
+                                           id="ApplicationPaymentRequestForm_@(i)__PaidDate"
+                                           class="form-control"
+                                           required
+                                           disabled="@(item.DisableFields ? "disabled" : null)"
+                                           max="@DateTime.Today.ToString("yyyy-MM-dd")" />
+                                </abp-column>
+                                <abp-column size="_2" class="px-1">
                                     <abp-input asp-for="@Model.ApplicationPaymentRequestForm[i].SiteName" alt="@item.SiteName" title="@item.SiteName" disabled="true"/>
                                 </abp-column>
                                 <abp-column size="_4" class="px-1">
-                                    <abp-input asp-for="@Model.ApplicationPaymentRequestForm[i].Description" alt="@item.Description" disabled="@item.DisableFields"/>
+                                    <abp-input asp-for="@Model.ApplicationPaymentRequestForm[i].Description" disabled="@item.DisableFields" />
                                 </abp-column>
                                 <abp-column size="_12"
                                             class="payment-error-column"
                                             id="error_column_@($"{item.CorrelationId}")"
                                             style="display: none;">
-                                    <span><span class="payment-note-prefix payment-note-error">Error</span>&nbsp; @L["ApplicationPaymentRequest:Validations:RemainingAmountExceeded"] @item.RemainingAmount</span>
+                                    <span><span class="payment-note-prefix payment-note-error">Error</span>&nbsp; Amount exceeds remaining amount of @item.RemainingAmount</span>
                                 </abp-column>
 
                                 @for (var j = 0; j < item.ErrorList?.Count; j++)
@@ -209,13 +170,12 @@
                                     <span><span class="payment-note-prefix payment-note-error">Error</span>&nbsp; @item.ErrorList[j]</span>
                                 </abp-column>
                                 }
-                                <span class="warning-text account-coding-override-warning nowrap hidden" data-account-coding-id="@Model.ApplicationPaymentRequestForm[i].AccountCodingId">
-                                    <span class="payment-note-prefix">Note</span>
-                                    <div style="display: inline-block; margin-left: 14px;">
-                                        @L["ApplicationPaymentRequest:AccountCodingOverrideWarning"]                                                    
-                                    </div>
-                                </span>                                
-
+                                @if (!item.SiteId.HasValue || item.SiteId == Guid.Empty)
+                                {
+                                <abp-column size="_12" class="payment-error-column">
+                                    <span><span class="payment-note-prefix">Note</span>&nbsp; No site selected for this payment. You can still add the payment.</span>
+                                </abp-column>
+                                }
                             </abp-row>
                         </div>
 
@@ -231,30 +191,15 @@
                         currentGroupKey = itemGroupKey;
                     }
                     <abp-row class="m-0 p-2 no-payment-msg text-center" id="no-payment-msg" style="display: none;">
-                        <abp-column size="_12" class="px-1"> <p>No Payments Selected</p></abp-column>
+                        <abp-column size="_12" class="px-1"><p>No Payments Selected</p></abp-column>
                     </abp-row>
-                    
-                    @if (!Model.HasPaymentConfiguration)
-                    {
-                        <abp-row class="m-0 p-1 ">
-                            <abp-column size="_12">
-                                <span>
-                                    <span class="payment-note-prefix">Note</span>
-                                A default
-                                <a href="~/PaymentConfigurations" style="text-decoration: none;color: var(--bc-colors-blue-primary);font-weight: 700;text-transform: uppercase;">
-                                Account Coding
-                                </a> is required for payments.</span>
-                            </abp-column>
-                        </abp-row>
-                    }
-
                 </abp-card-body>
             </abp-card>
             }
         </abp-modal-body>
         <abp-modal-footer>
-            <abp-button id="btnSubmitPayment" class="btn btn-primary" text="@L["ApplicationPaymentRequest:SubmitButtonText"].Value"  onclick="submitPayments()" disabled="@Model.DisableSubmit" type="button"></abp-button>
-            <abp-button class="btn btn-secondary" text="@L["ApplicationPaymentRequest:CancelButtonText"].Value" data-dismiss="modal" onclick="closePaymentModal()"></abp-button>
+            <abp-button id="btnSubmitHistoricalPayment" class="btn btn-primary" text="@L["ApplicationHistoricalPaymentRequest:SubmitButtonText"].Value" onclick="submitHistoricalPayments()" onkeydown='if(event.key==="Enter") { event.preventDefault(); submitHistoricalPayments(); }' disabled="@Model.DisableSubmit" type="button"></abp-button>
+            <abp-button class="btn btn-secondary" text="@L["ApplicationHistoricalPaymentRequest:CancelButtonText"].Value" data-dismiss="modal" onclick="closeHistoricalPaymentModal()" onkeydown='if(event.key==="Enter") { event.preventDefault(); closeHistoricalPaymentModal(); }'></abp-button>
         </abp-modal-footer>
     </abp-modal>
 </form>
@@ -264,7 +209,6 @@
         if (window.jQuery) {
             $('.unity-currency-input').maskMoney();
 
-            // Format existing values from server fields
             $('.unity-currency-input').each(function () {
                 let $currencyField = $(this);
                 let fieldVal = $currencyField.val();
@@ -275,4 +219,3 @@
         }
     })();
 </script>
-
