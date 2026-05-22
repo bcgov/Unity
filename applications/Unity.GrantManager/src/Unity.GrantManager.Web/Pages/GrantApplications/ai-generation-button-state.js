@@ -1,18 +1,16 @@
 (function (global) {
-    const generatingStyles = {
-        'background-color': '#f1f3f5',
-        'border-color': '#adb5bd',
-        color: '#495057',
-        opacity: '1',
-    };
-
-    function applyStyles($button, styles) {
-        $button.css(styles);
-    }
-
     function restoreButton($button, html) {
         global.AIGenerationButtonState.restore($button);
         $button.html(html).prop('disabled', false);
+    }
+
+    function restoreButtonForCooldownCheck($button, html) {
+        global.AIGenerationButtonState.restore($button);
+        $button
+            .html(html)
+            .attr('data-ai-cooldown-checking', '1')
+            .attr('data-ai-rate-limit-disabled', '1')
+            .prop('disabled', true);
     }
 
     global.AIGenerationButtonState = {
@@ -31,21 +29,13 @@
             }
         },
         setGenerating($button) {
-            $button.removeAttr('data-ai-cooldown-active');
-            $button.attr('data-ai-generating', '1');
-            $button
-                .html('<span class="ai-button-content"><span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span><span>Generating...</span></span>')
-                .prop('disabled', true);
-            applyStyles($button, generatingStyles);
+            global.setAIGenerationButtonsGenerating?.();
         },
         restore($button) {
-            $button.removeAttr('data-ai-generating');
-            $button.css({
-                'background-color': '',
-                'border-color': '',
-                color: '',
-                opacity: '',
-            }).removeClass('disabled');
+            $button.removeClass('disabled');
+        },
+        restoreForCooldownCheck($button, html) {
+            restoreButtonForCooldownCheck($button, html);
         },
         monitor(options) {
             const intervalMs = options.intervalMs || 15000;
@@ -75,9 +65,9 @@
 
                         if (!request || request.isActive === false || status === 'Completed') {
                             stop();
-                            restoreButton(options.$button, options.originalHtml);
+                            restoreButtonForCooldownCheck(options.$button, options.originalHtml);
                             options.onComplete?.(request);
-                            global.refreshAIRateLimitState?.();
+                            global.syncAIRateLimitButtons?.();
                             return;
                         }
 

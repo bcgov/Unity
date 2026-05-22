@@ -85,6 +85,7 @@ abp.widgets.AssessmentScoresWidget = function ($wrapper) {
         init: function () {
             restoreAssessmentScoresWidgetState($wrapper[0]);
             updateSubtotal();
+            globalThis.syncAIRateLimitButtons?.();
         },
     };
 };
@@ -697,10 +698,9 @@ function queueApplicationScoring(triggerButton = null) {
             const status = globalThis.AIGenerationButtonState?.resolveStatus(request?.status) ?? '';
 
             if (status === 'Completed') {
-                globalThis.AIGenerationButtonState?.restore($button);
-                $button.html(existingHtml).prop('disabled', false);
+                globalThis.AIGenerationButtonState?.restoreForCooldownCheck($button, existingHtml);
                 PubSub.publish('refresh_assessment_scores', null);
-                globalThis.refreshAIRateLimitState?.();
+                globalThis.syncAIRateLimitButtons?.();
                 return;
             }
 
@@ -712,5 +712,6 @@ function queueApplicationScoring(triggerButton = null) {
             );
             globalThis.AIGenerationButtonState?.restore($button);
             $button.html(existingHtml).prop('disabled', false);
+            globalThis.syncAIRateLimitButtons?.();
         });
 }

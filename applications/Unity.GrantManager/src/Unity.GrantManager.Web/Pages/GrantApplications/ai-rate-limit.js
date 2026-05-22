@@ -1,17 +1,20 @@
-/* AB#32290 — per-user 60s cooldown for AI Generate buttons.
- * Server stamps the cooldown; this module only mirrors that state in the UI.
- * Strategy: on load, fetch the user's remaining seconds and disable every
- * .ai-generate-btn with a countdown. After any generate click resolves we
- * re-fetch (a successful click sets a new cooldown; a failed/blocked click
- * may report the existing one). KISS — no per-button logic, no mutex.
+/* AB#32290 — shared per-user AI Generate button state.
+ * Server owns active-generation and cooldown state; this module mirrors it
+ * across every .ai-generate-btn so all AI surfaces behave consistently.
  */
 (function () {
     const BUTTON_SELECTOR = '.ai-generate-btn';
     const ATTR_LABEL = 'data-original-label';
     const ATTR_COOLDOWN = 'data-ai-cooldown-active';
+    const ATTR_CHECKING = 'data-ai-cooldown-checking';
+    const ATTR_OWNED_DISABLED = 'data-ai-rate-limit-disabled';
+    const ATTR_SHARED_GENERATING = 'data-ai-shared-generating';
 
     let countdownTimer = null;
+    let statePollTimer = null;
     let lastFetchAt = 0;
+    let remainingSeconds = 0;
+    let currentState = { mode: 'checking' };
 
     function buttons() {
         return document.querySelectorAll(BUTTON_SELECTOR);
@@ -34,11 +37,11 @@
     }
 
     function disable(btn, seconds) {
-        if (btn.getAttribute('data-ai-generating') === '1') {
-            return;
-        }
-
+        btn.removeAttribute(ATTR_SHARED_GENERATING);
         rememberLabel(btn);
+        if (!btn.disabled || btn.getAttribute(ATTR_OWNED_DISABLED) === '1') {
+            btn.setAttribute(ATTR_OWNED_DISABLED, '1');
+        }
         btn.setAttribute(ATTR_COOLDOWN, '1');
         btn.setAttribute('disabled', 'disabled');
         btn.classList.add('disabled');
@@ -46,12 +49,55 @@
     }
 
     function restore(btn) {
-        if (btn.getAttribute(ATTR_COOLDOWN) !== '1') return;
+        if (
+            btn.getAttribute(ATTR_COOLDOWN) !== '1' &&
+            btn.getAttribute(ATTR_SHARED_GENERATING) !== '1'
+        ) {
+            return;
+        }
+
         btn.removeAttribute(ATTR_COOLDOWN);
-        btn.removeAttribute('disabled');
+        btn.removeAttribute(ATTR_SHARED_GENERATING);
+        if (btn.getAttribute(ATTR_OWNED_DISABLED) === '1') {
+            btn.removeAttribute(ATTR_OWNED_DISABLED);
+            btn.removeAttribute('disabled');
+        }
         btn.classList.remove('disabled');
         const original = btn.getAttribute(ATTR_LABEL);
         if (original) setLabel(btn, original);
+    }
+
+    function setChecking(btn) {
+        if (btn.getAttribute(ATTR_CHECKING) === '1') {
+            return;
+        }
+
+        btn.setAttribute(ATTR_CHECKING, '1');
+        if (!btn.disabled || btn.getAttribute(ATTR_OWNED_DISABLED) === '1') {
+            btn.setAttribute(ATTR_OWNED_DISABLED, '1');
+            btn.setAttribute('disabled', 'disabled');
+        }
+    }
+
+    function clearChecking(btn) {
+        if (btn.getAttribute(ATTR_CHECKING) !== '1') {
+            return;
+        }
+
+        btn.removeAttribute(ATTR_CHECKING);
+        if (btn.getAttribute(ATTR_OWNED_DISABLED) === '1') {
+            btn.removeAttribute(ATTR_OWNED_DISABLED);
+            btn.removeAttribute('disabled');
+        }
+    }
+
+    function disableUntilChecked() {
+        currentState = { mode: 'checking' };
+        renderState();
+    }
+
+    function clearCheckingButtons() {
+        buttons().forEach(clearChecking);
     }
 
     function clearTimer() {
@@ -61,25 +107,105 @@
         }
     }
 
-    function applyCooldown(seconds) {
+    function clearStatePollTimer() {
+        if (statePollTimer) {
+            clearTimeout(statePollTimer);
+            statePollTimer = null;
+        }
+    }
+
+    function setOwnedDisabled(btn) {
+        if (!btn.disabled || btn.getAttribute(ATTR_OWNED_DISABLED) === '1') {
+            btn.setAttribute(ATTR_OWNED_DISABLED, '1');
+            btn.setAttribute('disabled', 'disabled');
+        }
+    }
+
+    function applyGenerating() {
+        currentState = { mode: 'generating' };
+        renderState();
+
+        clearStatePollTimer();
+        statePollTimer = setTimeout(() => fetchState(true), 2000);
+    }
+
+    function renderGenerating() {
+        clearCheckingButtons();
         clearTimer();
-        if (!seconds || seconds <= 0) {
+        remainingSeconds = 0;
+        buttons().forEach(btn => {
+            rememberLabel(btn);
+            btn.removeAttribute(ATTR_COOLDOWN);
+            btn.setAttribute(ATTR_SHARED_GENERATING, '1');
+            setOwnedDisabled(btn);
+            btn.classList.add('disabled');
+            setLabel(btn, 'Generating...');
+        });
+    }
+
+    function applyCooldownToButtons() {
+        buttons().forEach(b => disable(b, remainingSeconds));
+    }
+
+    function applyCooldown(seconds) {
+        currentState = { mode: 'cooldown', seconds: Number(seconds) || 0 };
+        renderState();
+    }
+
+    function renderCooldown(seconds) {
+        clearCheckingButtons();
+        clearTimer();
+        clearStatePollTimer();
+        remainingSeconds = seconds;
+        if (remainingSeconds <= 0) {
+            currentState = { mode: 'available' };
             buttons().forEach(restore);
             return;
         }
-        let remaining = seconds;
-        buttons().forEach(b => disable(b, remaining));
+        applyCooldownToButtons();
         countdownTimer = setInterval(() => {
-            remaining -= 1;
-            if (remaining <= 0) {
+            remainingSeconds -= 1;
+            currentState = { mode: 'cooldown', seconds: remainingSeconds };
+            if (remainingSeconds <= 0) {
                 clearTimer();
+                currentState = { mode: 'available' };
                 buttons().forEach(restore);
                 return;
             }
-            buttons().forEach(b => {
-                if (b.getAttribute(ATTR_COOLDOWN) === '1') setLabel(b, `Wait ${remaining}s`);
-            });
+            applyCooldownToButtons();
         }, 1000);
+    }
+
+    function renderState() {
+        if (currentState.mode === 'generating') {
+            renderGenerating();
+            return;
+        }
+
+        if (currentState.mode === 'cooldown') {
+            renderCooldown(currentState.seconds);
+            return;
+        }
+
+        if (currentState.mode === 'checking') {
+            buttons().forEach(setChecking);
+            return;
+        }
+
+        clearCheckingButtons();
+        clearTimer();
+        clearStatePollTimer();
+        buttons().forEach(restore);
+    }
+
+    function retryStateFetch() {
+        clearStatePollTimer();
+        statePollTimer = setTimeout(() => fetchState(true), 2000);
+    }
+
+    function handleStateFetchFailure() {
+        renderState();
+        retryStateFetch();
     }
 
     async function fetchState(force = false) {
@@ -92,24 +218,43 @@
                 credentials: 'same-origin',
                 headers: { Accept: 'application/json' },
             });
-            if (!res.ok) return;
+            if (!res.ok) {
+                handleStateFetchFailure();
+                return;
+            }
             const data = await res.json();
+            if (data.isGenerating === true) {
+                applyGenerating();
+                return;
+            }
+
             applyCooldown(Number(data.retryAfterSeconds) || 0);
         } catch (_) {
             // Best-effort; the server is the source of truth.
+            handleStateFetchFailure();
         }
     }
 
-    globalThis.refreshAIRateLimitState = () => fetchState(true);
+    globalThis.syncAIRateLimitButtons = () => {
+        renderState();
+        fetchState(true);
+    };
+    globalThis.setAIGenerationButtonsGenerating = applyGenerating;
+    globalThis.refreshAIRateLimitState = globalThis.syncAIRateLimitButtons;
 
     document.addEventListener('click', (e) => {
         const btn = e.target.closest(BUTTON_SELECTOR);
         if (!btn) return;
-        // Re-check shortly after the click so a successful generate immediately
-        // shows the fresh 60s cooldown.
-        setTimeout(fetchState, 250);
+        applyGenerating();
     });
 
-    document.addEventListener('DOMContentLoaded', () => fetchState());
-    if (document.readyState !== 'loading') fetchState();
+    document.addEventListener('DOMContentLoaded', () => {
+        disableUntilChecked();
+        fetchState();
+    });
+
+    if (document.readyState !== 'loading') {
+        disableUntilChecked();
+        fetchState();
+    }
 })();
