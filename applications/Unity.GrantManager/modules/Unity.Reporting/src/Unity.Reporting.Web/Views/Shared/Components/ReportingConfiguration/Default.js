@@ -43,9 +43,9 @@ $(function () {
                 typePath: 'Type Path'
             }
         },
-        worksheetconsolidated: {
+        worksheet_consolidated: {
             name: 'Consolidated Worksheets',
-            correlationProvider: 'worksheetconsolidated',
+            correlationProvider: 'worksheet_consolidated',
             columns: {
                 label: 'Worksheet Label',
                 key: 'Worksheet Property Name',
@@ -55,9 +55,9 @@ $(function () {
                 typePath: 'Type Path'
             }
         },
-        formversionconsolidated: {
+        formversion_consolidated: {
             name: 'Consolidated Submissions',
-            correlationProvider: 'formversionconsolidated',
+            correlationProvider: 'formversion_consolidated',
             columns: {
                 label: 'CHEFS Label',
                 key: 'CHEFS Property Name',
@@ -186,7 +186,7 @@ $(function () {
 
     // Function to get current correlation ID based on provider
     function getCurrentCorrelationId() {
-        if (currentProvider === 'scoresheet' || currentProvider === 'worksheetconsolidated' || currentProvider === 'formversionconsolidated') {
+        if (currentProvider === 'scoresheet' || currentProvider === 'worksheet_consolidated' || currentProvider === 'formversion_consolidated') {
             // Form-level providers use the form ID as correlation ID
             return $('#reportingFormId').val();
         } else {
@@ -198,112 +198,93 @@ $(function () {
     // Function to show/hide version selector based on provider
     function updateVersionSelectorVisibility() {
         const $versionSelectorContainer = $('#version-selector-container');
-        const $formInfoDisplay = $('.form-info-display');
         const $worksheetModeToggle = $('#worksheet-mode-toggle');
         const $submissionsModeToggle = $('#submissions-mode-toggle');
 
         if (currentProvider === 'scoresheet') {
             $versionSelectorContainer.hide();
-            $formInfoDisplay.hide();
             $worksheetModeToggle.hide();
             $submissionsModeToggle.hide();
-        } else if (currentProvider === 'worksheetconsolidated') {
+        } else if (currentProvider === 'worksheet_consolidated') {
             $versionSelectorContainer.hide();
-            $formInfoDisplay.show();
             $worksheetModeToggle.show();
             $submissionsModeToggle.hide();
         } else if (currentProvider === 'worksheet') {
             $versionSelectorContainer.show();
-            $formInfoDisplay.hide();
             $worksheetModeToggle.show();
             $submissionsModeToggle.hide();
-        } else if (currentProvider === 'formversionconsolidated') {
+        } else if (currentProvider === 'formversion_consolidated') {
             $versionSelectorContainer.hide();
-            $formInfoDisplay.show();
             $worksheetModeToggle.hide();
             $submissionsModeToggle.show();
         } else {
             // formversion (per-version)
             $versionSelectorContainer.show();
-            $formInfoDisplay.hide();
             $worksheetModeToggle.hide();
             $submissionsModeToggle.show();
         }
     }
 
-    // Function to handle provider change
-    function handleProviderChange(newProvider) {
-        if (newProvider === currentProvider) {
-            return; // No change needed
+    function getTopLevelProviderValue(provider) {
+        if (provider === 'worksheet_consolidated') return 'worksheet';
+        if (provider === 'formversion_consolidated') return 'formversion';
+        return provider;
+    }
+
+    function resetTogglesToCurrentProvider() {
+        const topLevelValue = getTopLevelProviderValue(currentProvider);
+        $(`input[name="provider-toggle"][value="${topLevelValue}"]`).prop('checked', true);
+        if (currentProvider === 'worksheet' || currentProvider === 'worksheet_consolidated') {
+            $(`input[name="worksheet-mode"][value="${currentProvider}"]`).prop('checked', true);
         }
-
-        // Check for unsaved changes
-        if (hasUnsavedChanges) {
-            if (!confirm('You have unsaved changes. Switching providers will discard these changes. Do you want to continue?')) {
-                // Reset the top-level toggle
-                const topLevelValue = (currentProvider === 'worksheetconsolidated') ? 'worksheet'
-                    : (currentProvider === 'formversionconsolidated') ? 'formversion'
-                    : currentProvider;
-                $(`input[name="provider-toggle"][value="${topLevelValue}"]`).prop('checked', true);
-                // Reset sub-toggles to match current provider
-                if (currentProvider === 'worksheet' || currentProvider === 'worksheetconsolidated') {
-                    $(`input[name="worksheet-mode"][value="${currentProvider}"]`).prop('checked', true);
-                }
-                if (currentProvider === 'formversion' || currentProvider === 'formversionconsolidated') {
-                    $(`input[name="submissions-mode"][value="${currentProvider}"]`).prop('checked', true);
-                }
-                return;
-            }
+        if (currentProvider === 'formversion' || currentProvider === 'formversion_consolidated') {
+            $(`input[name="submissions-mode"][value="${currentProvider}"]`).prop('checked', true);
         }
+    }
 
-        // Update current provider
-        currentProvider = newProvider;
-
-        // Sync worksheet sub-toggle radio
-        if (newProvider === 'worksheet' || newProvider === 'worksheetconsolidated') {
+    function syncTogglesToProvider(newProvider) {
+        const topLevelValue = getTopLevelProviderValue(newProvider);
+        $(`input[name="provider-toggle"][value="${topLevelValue}"]`).prop('checked', true);
+        if (newProvider === 'worksheet' || newProvider === 'worksheet_consolidated') {
             $(`input[name="worksheet-mode"][value="${newProvider}"]`).prop('checked', true);
         }
-
-        // Sync submissions sub-toggle radio
-        if (newProvider === 'formversion' || newProvider === 'formversionconsolidated') {
+        if (newProvider === 'formversion' || newProvider === 'formversion_consolidated') {
             $(`input[name="submissions-mode"][value="${newProvider}"]`).prop('checked', true);
         }
+    }
 
-        // Keep top-level "Worksheets" button checked when switching to consolidated worksheet
-        if (newProvider === 'worksheetconsolidated') {
-            $('input[name="provider-toggle"][value="worksheet"]').prop('checked', true);
+    function refreshConfigurationState(correlationId) {
+        checkConfigurationExists(correlationId, function (exists) {
+            updateGenerateViewButtonVisibility(exists);
+            updateDeleteButtonVisibility(exists);
+        });
+        refreshViewStatusWidget(correlationId, getCorrelationProvider());
+    }
+
+    // Function to handle provider change
+    function handleProviderChange(newProvider) {
+        if (newProvider === currentProvider) return;
+
+        if (hasUnsavedChanges && !confirm('You have unsaved changes. Switching providers will discard these changes. Do you want to continue?')) {
+            resetTogglesToCurrentProvider();
+            return;
         }
 
-        // Keep top-level "Submissions" button checked when switching to consolidated formversion
-        if (newProvider === 'formversionconsolidated') {
-            $('input[name="provider-toggle"][value="formversion"]').prop('checked', true);
-        }
-
-        // Update version selector, form info, and sub-toggle visibility
+        currentProvider = newProvider;
+        syncTogglesToProvider(newProvider);
         updateVersionSelectorVisibility();
-
-        // Reset changes state since we're switching providers
         resetChangesState();
-
-        // Update column headers in the DataTable
+        $('#reportingViewStatus').val('');
         updateDataTableColumnHeaders();
 
-        // Check if configuration exists for the new provider and update button visibility
         const correlationId = getCurrentCorrelationId();
         if (correlationId) {
-            checkConfigurationExists(correlationId, function (exists) {
-                updateGenerateViewButtonVisibility(exists);
-                updateDeleteButtonVisibility(exists);
-            });
-
-            // Refresh the view status widget for the new provider
-            refreshViewStatusWidget(correlationId, getCorrelationProvider());
+            refreshConfigurationState(correlationId);
         } else {
             updateGenerateViewButtonVisibility(false);
             updateDeleteButtonVisibility(false);
         }
 
-        // Reload the DataTable with new provider
         if (dataTable) {
             dataTable.ajax.reload();
         }
@@ -332,7 +313,7 @@ $(function () {
         });
 
         // Show the Version(s) column only for consolidated providers
-        dataTable.column('versionLabel:name').visible(currentProvider === 'worksheetconsolidated' || currentProvider === 'formversionconsolidated');
+        dataTable.column('versionLabel:name').visible(currentProvider === 'worksheet_consolidated' || currentProvider === 'formversion_consolidated');
 
         // Force redraw to update headers
         dataTable.draw(false);
@@ -342,12 +323,12 @@ $(function () {
     $(document).on('change', 'input[name="provider-toggle"]', function () {
         let newProvider = $(this).val();
         // When entering worksheet mode from outside, default to consolidated worksheet
-        if (newProvider === 'worksheet' && currentProvider !== 'worksheet' && currentProvider !== 'worksheetconsolidated') {
-            newProvider = 'worksheetconsolidated';
+        if (newProvider === 'worksheet' && currentProvider !== 'worksheet' && currentProvider !== 'worksheet_consolidated') {
+            newProvider = 'worksheet_consolidated';
         }
         // When entering submissions mode from outside, default to consolidated formversion
-        if (newProvider === 'formversion' && currentProvider !== 'formversion' && currentProvider !== 'formversionconsolidated') {
-            newProvider = 'formversionconsolidated';
+        if (newProvider === 'formversion' && currentProvider !== 'formversion' && currentProvider !== 'formversion_consolidated') {
+            newProvider = 'formversion_consolidated';
         }
         handleProviderChange(newProvider);
     });
@@ -487,7 +468,7 @@ $(function () {
     // Handle version selector change (only for per-version providers)
     $('#versionSelector').on('change', function () {
         // Skip version selector handling for form-level providers
-        if (currentProvider === 'scoresheet' || currentProvider === 'worksheetconsolidated' || currentProvider === 'formversionconsolidated') {
+        if (currentProvider === 'scoresheet' || currentProvider === 'worksheet_consolidated' || currentProvider === 'formversion_consolidated') {
             return;
         }
 
@@ -512,6 +493,9 @@ $(function () {
 
         // Reset changes state since we're loading new data
         resetChangesState();
+
+        // Clear cached view status — the widget will reflect the real state after refresh
+        $('#reportingViewStatus').val('');
     });
 
     // Function to check if configuration exists
@@ -575,7 +559,7 @@ $(function () {
     //   - worksheet/scoresheet: use Label only, no fallback to Key
     // No cross-field fallback ensures the client and server produce identical defaults.
     function getDefaultColumnNameSource(field) {
-        if (currentProvider === 'formversion' || currentProvider === 'formversionconsolidated') {
+        if (currentProvider === 'formversion' || currentProvider === 'formversion_consolidated') {
             return field.key || '';
         }
         return field.label || '';
@@ -732,7 +716,7 @@ $(function () {
                 width: '90px',
                 index: 6,
                 orderable: true,
-                visible: currentProvider === 'worksheetconsolidated' || currentProvider === 'formversionconsolidated',
+                visible: currentProvider === 'worksheet_consolidated' || currentProvider === 'formversion_consolidated',
                 render: function (data, type, _) {
                     if (type === 'display') {
                         return data || 'All';
@@ -788,7 +772,7 @@ $(function () {
         };
 
         const defaultVisibleColumns = ['label', 'key', 'type', 'path', 'columnName'];
-        if (currentProvider === 'worksheetconsolidated' || currentProvider === 'formversionconsolidated') {
+        if (currentProvider === 'worksheet_consolidated' || currentProvider === 'formversion_consolidated') {
             defaultVisibleColumns.push('versionLabel');
         }
 
@@ -2246,7 +2230,7 @@ $(function () {
     });
 
     // Add intersection observer for visibility detection (fallback)
-    if (window.IntersectionObserver) {
+    if (globalThis.IntersectionObserver) {
         const observer = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
                 if (entry.isIntersecting && entry.target.id === 'nav-reporting-configuration') {
@@ -2264,7 +2248,7 @@ $(function () {
     }
 
     // Additional fallback: MutationObserver to detect class changes on the tab panel
-    if (window.MutationObserver) {
+    if (globalThis.MutationObserver) {
         const tabObserver = new MutationObserver((mutations) => {
             mutations.forEach((mutation) => {
                 if (mutation.type === 'attributes' && mutation.attributeName === 'class') {

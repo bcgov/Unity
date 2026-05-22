@@ -196,7 +196,7 @@ namespace Unity.Reporting.Configuration.FieldsProviders
                             Type = field.Type,
                             TypePath = field.TypePath,
                             DataPath = field.DataPath,
-                            VersionLabel = versionLabel
+                            VersionLabel = string.Join(", ", exactGroup.Select(e => e.VersionLabel))
                         });
                     }
                 }

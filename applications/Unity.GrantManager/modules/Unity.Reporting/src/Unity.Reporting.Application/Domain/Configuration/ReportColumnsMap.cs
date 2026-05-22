@@ -135,9 +135,10 @@ namespace Unity.Reporting.Domain.Configuration
         public string TypePath { get; set; } = string.Empty;
 
         /// <summary>
-        /// Gets or sets an optional version label indicating which form version this column belongs to.
-        /// Used exclusively for consolidated worksheet views: null means the column is merged across all versions;
-        /// a non-null value (e.g., "v1", "v2") means the column is specific to that form version (conflict or version-exclusive field).
+        /// Gets or sets an optional version label indicating which form version(s) this column belongs to.
+        /// Used exclusively for consolidated views: null means the column is merged across all versions ("All");
+        /// a single value (e.g., "v1") means the column is exclusive to that version;
+        /// a comma-separated value (e.g., "v1, v2") means the column appears in those versions but not all.
         /// </summary>
         public string? VersionLabel { get; set; } = null;
     }

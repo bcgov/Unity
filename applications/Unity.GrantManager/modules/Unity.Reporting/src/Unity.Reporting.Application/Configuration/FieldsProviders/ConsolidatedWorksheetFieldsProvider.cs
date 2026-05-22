@@ -173,7 +173,6 @@ namespace Unity.Reporting.Configuration.FieldsProviders
 
                     var typesForPath = pathGroups[pathKey];
                     var exactGroup = exactMatchGroups[exactKey];
-                    var allVersionLabels = versionsWithFields.Select(v => v.VersionLabel).ToList();
                     var versionsHavingThisExact = exactGroup.Select(e => e.VersionLabel).ToHashSet(StringComparer.OrdinalIgnoreCase);
 
                     if (typesForPath.Count > 1)
@@ -218,7 +217,7 @@ namespace Unity.Reporting.Configuration.FieldsProviders
                             Type = field.Type,
                             TypePath = field.TypePath,
                             DataPath = field.DataPath,
-                            VersionLabel = versionLabel
+                            VersionLabel = string.Join(", ", exactGroup.Select(e => e.VersionLabel))
                         });
                     }
                 }

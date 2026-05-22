@@ -104,7 +104,7 @@ BEGIN
                         -- This column belongs to this worksheet-datagrid AND this version (or is merged)
                         WHEN um.worksheet_name = udc.worksheet_name
                           AND um.datagrid_name = udc.datagrid_name
-                          AND (um.version_label IS NULL OR um.version_label = vi.version_label) THEN
+                          AND (um.version_label IS NULL OR vi.version_label = ANY(string_to_array(um.version_label, ', '))) THEN
                             CASE um.column_type
                                 WHEN 'currency' THEN
                                     format('(CASE WHEN ((SELECT cell_elem->>''value'' FROM jsonb_array_elements(dg_tbl.dg_data->''cells'') AS cell_elem WHERE cell_elem->>''key'' = %L)) IS NULL THEN NULL WHEN replace(btrim((SELECT cell_elem->>''value'' FROM jsonb_array_elements(dg_tbl.dg_data->''cells'') AS cell_elem WHERE cell_elem->>''key'' = %L)), '','', '''') ~ ''^-?[0-9]+\.?[0-9]*$'' THEN replace(btrim((SELECT cell_elem->>''value'' FROM jsonb_array_elements(dg_tbl.dg_data->''cells'') AS cell_elem WHERE cell_elem->>''key'' = %L)), '','', '''')::DECIMAL(18,2) ELSE NULL END) AS %I',
@@ -187,7 +187,7 @@ BEGIN
                         -- This column belongs to this worksheet root AND this version (or is merged)
                         WHEN um.worksheet_name = uwn.worksheet_name
                           AND (um.type_path NOT LIKE '%datagrid%' OR um.type_path IS NULL)
-                          AND (um.version_label IS NULL OR um.version_label = vi.version_label) THEN
+                          AND (um.version_label IS NULL OR vi.version_label = ANY(string_to_array(um.version_label, ', '))) THEN
                             CASE um.column_type
                                 WHEN 'currency' THEN
                                     format('(CASE WHEN ((SELECT v_elem->>''value'' FROM jsonb_array_elements(wi."CurrentValue"->''values'') AS v_elem WHERE v_elem->>''key'' = %L)) IS NULL THEN NULL WHEN replace(btrim((SELECT v_elem->>''value'' FROM jsonb_array_elements(wi."CurrentValue"->''values'') AS v_elem WHERE v_elem->>''key'' = %L)), '','', '''') ~ ''^-?[0-9]+\.?[0-9]*$'' THEN replace(btrim((SELECT v_elem->>''value'' FROM jsonb_array_elements(wi."CurrentValue"->''values'') AS v_elem WHERE v_elem->>''key'' = %L)), '','', '''')::DECIMAL(18,2) ELSE NULL END) AS %I',

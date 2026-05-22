@@ -49,7 +49,7 @@ namespace Unity.Reporting.Web.Views.Shared.Components.ReportingConfiguration
         /// <returns>A view component result containing the configuration interface with populated view model and provider-specific settings.</returns>
         public async Task<IViewComponentResult> InvokeAsync(Guid formId, Guid? selectedVersionId = null, string? provider = null)
         {
-            // Determine the correlation provider - default to formversionconsolidated if not specified
+            // Determine the correlation provider - default to formversion_consolidated if not specified
             var correlationProvider = !string.IsNullOrEmpty(provider) ? provider : Providers.FormVersionConsolidated;
 
             // Determine correlation ID based on provider

@@ -130,8 +130,10 @@ BEGIN
                 property_name := row_data->>'PropertyName';
                 data_path_raw := row_data->>'DataPath';
 
-                -- Version gating: skip columns that belong to a different version
-                IF (row_data->>'VersionLabel') IS NOT NULL AND (row_data->>'VersionLabel') != version_lbl THEN
+                -- Version gating: skip columns that don't include this version
+                -- VersionLabel is null (All), a single version ("v1"), or comma-separated ("v1, v2")
+                IF (row_data->>'VersionLabel') IS NOT NULL
+                   AND NOT (version_lbl = ANY(string_to_array(row_data->>'VersionLabel', ', '))) THEN
                     CONTINUE; -- Leave as typed NULL placeholder
                 END IF;
 

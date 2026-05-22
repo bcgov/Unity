@@ -8,10 +8,10 @@ DECLARE
     data_clause TEXT;
     report_map_id UUID;
 BEGIN
-    -- Fetch the view name, mapping data, and ID from ReportColumnsMap for formversionconsolidated provider
+    -- Fetch the view name, mapping data, and ID from ReportColumnsMap for formversion_consolidated provider
     SELECT "Id", "ViewName", "Mapping"::JSONB INTO report_map_id, view_name, mapping_data
     FROM "Reporting"."ReportColumnsMaps"
-    WHERE "CorrelationId" = form_id AND "CorrelationProvider" = 'formversionconsolidated';
+    WHERE "CorrelationId" = form_id AND "CorrelationProvider" = 'formversion_consolidated';
 
     -- Check if we found the mapping
     IF mapping_data IS NULL OR report_map_id IS NULL THEN
