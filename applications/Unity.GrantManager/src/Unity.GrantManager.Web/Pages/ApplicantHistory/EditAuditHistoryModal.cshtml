@@ -29,6 +29,21 @@
             </div>
 
             <div class="mb-3">
+                <label class="form-label" for="AuditHistoryForm_AuditStatus">Status</label>
+                <select id="AuditHistoryForm_AuditStatus" name="AuditHistoryForm.AuditStatus" class="form-select">
+                    <option value="">-- Select --</option>
+                    <option value="InProgress" selected="@(Model.AuditHistoryForm?.AuditStatus == "InProgress" ? "selected" : null)">In Progress</option>
+                    <option value="Completed" selected="@(Model.AuditHistoryForm?.AuditStatus == "Completed" ? "selected" : null)">Completed</option>
+                </select>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label" for="AuditHistoryForm_AuditorName">Auditor's Name</label>
+                <input type="text" id="AuditHistoryForm_AuditorName" name="AuditHistoryForm.AuditorName"
+                       class="form-control" value="@Model.AuditHistoryForm?.AuditorName" />
+            </div>
+
+            <div class="mb-3">
                 <label class="form-label" for="AuditHistoryForm_AuditNote">Audit Note</label>
                 <input type="text" id="AuditHistoryForm_AuditNote" name="AuditHistoryForm.AuditNote"
                        class="form-control" value="@Model.AuditHistoryForm?.AuditNote" />
