@@ -61,12 +61,9 @@ namespace Unity.GrantManager.Web.Identity
 
         private static void AddTenantClaims(ClaimsPrincipal claimsPrincipal, IList<UserTenantAccountDto> userTenantAccounts)
         {
-            foreach (var tenantAcc in userTenantAccounts)
+            if (userTenantAccounts.Count > 1)
             {
-                if (tenantAcc != null && tenantAcc.TenantId != null)
-                {
-                    claimsPrincipal.AddClaim(UnityClaimsTypes.Tenant, tenantAcc.TenantId.ToString() ?? Guid.Empty.ToString());
-                }
+                claimsPrincipal.AddClaim(UnityClaimsTypes.HasMultipleTenants, "true");
             }
         }
     }

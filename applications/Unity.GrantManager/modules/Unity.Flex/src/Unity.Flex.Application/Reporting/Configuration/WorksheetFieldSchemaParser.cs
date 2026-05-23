@@ -121,26 +121,21 @@ namespace Unity.Flex.Reporting.Configuration
                 var worksheetName = SanitizeName(worksheet.Name);
                 var dataGridName = SanitizeName(field.Key);
 
-                // Track whether we successfully extracted columns from CHEFS schema
-                bool extractedFromChefs = false;
-
                 // If dynamic is true, try to extract columns from form schema
                 if (dataGridDefinition.Dynamic)
                 { 
                     var headerMappingKey = MatchHeaderMapping(field.Name + ".DataGrid", submissionHeaderMapping);
                     List<DataGridDefinitionColumn>? dynamicColumns = null;
-                    
+
                     if (!string.IsNullOrWhiteSpace(headerMappingKey))
                     {
                         dynamicColumns = ExtractDynamicDataGridColumns(headerMappingKey, formSchema);
                     }
-                    
+
                     if (dynamicColumns != null && dynamicColumns.Count > 0)
                     {
-                        // We found columns in the form schema, use them
-                        // CHEFS schema includes ALL columns (both static and dynamic), so we mark this as extracted
-                        extractedFromChefs = true;
-                        
+                        // We found dynamic columns in the CHEFS form schema; emit them first.
+                        // Any statically-defined columns on the DataGrid are merged in below.
                         foreach (var column in dynamicColumns)
                         {
                             // Use the key for the component Key (becomes PropertyName), sanitize for ID
@@ -179,16 +174,25 @@ namespace Unity.Flex.Reporting.Configuration
                     }
                 }
 
-                // Process additional defined columns only if we haven't already extracted them from CHEFS
-                // When dynamic is true and CHEFS extraction succeeded, the CHEFS schema already includes
-                // all columns (both static and dynamic), so we skip this to avoid duplicates
-                if (!extractedFromChefs && dataGridDefinition.Columns != null && dataGridDefinition.Columns.Count > 0)
+                // Process additional defined columns from the DataGrid definition.
+                // For mixed grids (Dynamic == true), CHEFS only returns the dynamic wide columns and omits
+                // statically-defined ones, so we must merge them in here (dynamic wins on key collision).
+                if (dataGridDefinition.Columns != null && dataGridDefinition.Columns.Count > 0)
                 {
-                    // Create a component for each column in the DataGrid
+                    var existingKeys = new HashSet<string>(
+                        components.Select(c => c.Key ?? string.Empty),
+                        StringComparer.OrdinalIgnoreCase);
+
                     foreach (var column in dataGridDefinition.Columns)
                     {
+                        // Skip columns that were already emitted from the CHEFS extraction
+                        if (existingKeys.Contains(column.Name))
+                        {
+                            continue;
+                        }
+
                         var columnName = SanitizeName(column.Name);
-                        
+
                         var component = new WorksheetComponentMetaDataItemDto
                         {
                             Id = $"{field.Id}_{columnName}",
@@ -199,8 +203,9 @@ namespace Unity.Flex.Reporting.Configuration
                             TypePath = $"worksheet->section->datagrid->{MapDataGridColumnType(column.Type)}",
                             DataPath = $"({worksheetName}){dataGridName}->{column.Name}"
                         };
-                        
+
                         components.Add(component);
+                        existingKeys.Add(column.Name);
                     }
                 }
                 else if (!dataGridDefinition.Dynamic && (dataGridDefinition.Columns == null || dataGridDefinition.Columns.Count == 0))

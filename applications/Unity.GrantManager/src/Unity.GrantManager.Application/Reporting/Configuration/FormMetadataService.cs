@@ -174,18 +174,15 @@ namespace Unity.GrantManager.Reporting.Configuration
             hasDuplicates = false;
 
             // Second pass: prefix duplicate paths with (DKx)
-            foreach (var component in componentsList)
+            foreach (var component in componentsList.Where(c => !string.IsNullOrEmpty(c.Path) && pathCounts.GetValueOrDefault(c.Path, 0) > 1))
             {
-                if (!string.IsNullOrEmpty(component.Path) && pathCounts.GetValueOrDefault(component.Path, 0) > 1)
-                {
-                    // Get the current counter for this path
-                    pathCounters[component.Path] = pathCounters.GetValueOrDefault(component.Path, 0) + 1;
-                    int duplicateNumber = pathCounters[component.Path];
+                // Get the current counter for this path
+                pathCounters[component.Path] = pathCounters.GetValueOrDefault(component.Path, 0) + 1;
+                int duplicateNumber = pathCounters[component.Path];
 
-                    // Prefix with (DKx) where x is the duplicate number
-                    component.Path = $"(DK{duplicateNumber}){component.Path}";
-                    hasDuplicates = true;
-                }
+                // Prefix with (DKx) where x is the duplicate number
+                component.Path = $"(DK{duplicateNumber}){component.Path}";
+                hasDuplicates = true;
             }
         }
 
@@ -224,19 +221,9 @@ namespace Unity.GrantManager.Reporting.Configuration
             var pathSegments = workingPath.Split(separator, StringSplitOptions.RemoveEmptyEntries);
             var keySegments = component.TypePath.Split(separator, StringSplitOptions.RemoveEmptyEntries);
 
-            var dataPathSegments = new List<string>();
-            var index = 0;
-
-            // Process each segment to determine if it should be included in the data path
-            foreach (var segment in pathSegments)
-            {
-                // Always include segments that don't look like container segments
-                if (!IsContainerSegment(keySegments[index]))
-                {
-                    dataPathSegments.Add(segment);
-                }
-                index++;
-            }
+            var dataPathSegments = pathSegments
+                .Where((segment, index) => !IsContainerSegment(keySegments[index]))
+                .ToList();
 
             // Reconstruct the data path
             var dataPath = string.Join("->", dataPathSegments);

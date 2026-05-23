@@ -28,12 +28,12 @@ public class OpenAIPromptRenderer : ITransientDependency
     private static readonly ConcurrentDictionary<string, string> PromptTemplateCache = new(StringComparer.OrdinalIgnoreCase);
     private static readonly JsonSerializerOptions JsonLogOptions = new() { WriteIndented = true };
 
-    public string BuildApplicationAnalysisSystemPrompt(string version)
+    public static string BuildApplicationAnalysisSystemPrompt(string version)
     {
         return GetRequiredPromptTemplate(version, ApplicationAnalysisSystemTemplateName);
     }
 
-    public string BuildApplicationAnalysisUserPrompt(string version, string schema, string data, string attachments)
+    public static string BuildApplicationAnalysisUserPrompt(string version, string schema, string data, string attachments)
     {
         var replacements = new Dictionary<string, string>
         {
@@ -45,12 +45,12 @@ public class OpenAIPromptRenderer : ITransientDependency
         return RenderPromptTemplate(version, ApplicationAnalysisUserTemplateName, replacements);
     }
 
-    public string BuildAttachmentSummarySystemPrompt(string version)
+    public static string BuildAttachmentSummarySystemPrompt(string version)
     {
         return GetRequiredPromptTemplate(version, AttachmentSummarySystemTemplateName);
     }
 
-    public string BuildAttachmentSummaryUserPrompt(string version, string attachment)
+    public static string BuildAttachmentSummaryUserPrompt(string version, string attachment)
     {
         return RenderPromptTemplate(version, AttachmentSummaryUserTemplateName, new Dictionary<string, string>
         {
@@ -58,12 +58,12 @@ public class OpenAIPromptRenderer : ITransientDependency
         });
     }
 
-    public string BuildApplicationScoringSystemPrompt(string version)
+    public static string BuildApplicationScoringSystemPrompt(string version)
     {
         return GetRequiredPromptTemplate(version, ApplicationScoringSystemTemplateName);
     }
 
-    public string BuildApplicationScoringUserPrompt(string version, string data, string attachments, string section, string response)
+    public static string BuildApplicationScoringUserPrompt(string version, string data, string attachments, string section, string response)
     {
         return RenderPromptTemplate(version, ApplicationScoringUserTemplateName, new Dictionary<string, string>
         {
@@ -74,7 +74,7 @@ public class OpenAIPromptRenderer : ITransientDependency
         });
     }
 
-    public string BuildApplicationScoringResponseTemplate(string sectionPayloadJson)
+    public static string BuildApplicationScoringResponseTemplate(string sectionPayloadJson)
     {
         try
         {
@@ -119,7 +119,7 @@ public class OpenAIPromptRenderer : ITransientDependency
         }
     }
 
-    public string BuildAliasedApplicationScoringSection(string? sectionName, string sectionJson, out IReadOnlyDictionary<string, string> questionIdAliasMap)
+    public static string BuildAliasedApplicationScoringSection(string? sectionName, string sectionJson, out IReadOnlyDictionary<string, string> questionIdAliasMap)
     {
         questionIdAliasMap = new Dictionary<string, string>(StringComparer.Ordinal);
 
@@ -182,7 +182,7 @@ public class OpenAIPromptRenderer : ITransientDependency
         }
     }
 
-    public string ResolvePromptVersion(string? version)
+    public static string ResolvePromptVersion(string? version)
     {
         if (!string.IsNullOrWhiteSpace(version) &&
             PromptProfiles.TryGetValue(version.Trim(), out var selectedVersion))

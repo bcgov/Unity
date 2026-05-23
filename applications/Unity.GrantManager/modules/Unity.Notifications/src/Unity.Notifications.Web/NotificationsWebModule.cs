@@ -7,7 +7,7 @@ using Unity.Notifications.Web.Views.Settings;
 using Volo.Abp.AspNetCore.Mvc;
 using Volo.Abp.AspNetCore.Mvc.Localization;
 using Volo.Abp.AspNetCore.Mvc.UI.Theme.Shared;
-using Volo.Abp.AutoMapper;
+using Volo.Abp.Mapperly;
 using Volo.Abp.BackgroundJobs;
 using Volo.Abp.BackgroundWorkers.Quartz;
 using Volo.Abp.Modularity;
@@ -22,7 +22,7 @@ namespace Unity.Notifications.Web;
     typeof(NotificationsApplicationModule),
     typeof(NotificationsApplicationContractsModule),
     typeof(AbpAspNetCoreMvcUiThemeSharedModule),
-    typeof(AbpAutoMapperModule),
+    typeof(AbpMapperlyModule),
     typeof(AbpSettingManagementWebModule)
     )]
 public class NotificationsWebModule : AbpModule
@@ -73,11 +73,7 @@ public class NotificationsWebModule : AbpModule
             options.Contributors.Add(new NotificationsSettingPageContributor());
         });
 
-        context.Services.AddAutoMapperObjectMapper<NotificationsWebModule>();
-        Configure<AbpAutoMapperOptions>(options =>
-        {
-            options.AddMaps<NotificationsWebModule>(validate: true);
-        });
+        context.Services.AddMapperlyObjectMapper<NotificationsWebModule>();
 
         Configure<RazorPagesOptions>(options =>
         {

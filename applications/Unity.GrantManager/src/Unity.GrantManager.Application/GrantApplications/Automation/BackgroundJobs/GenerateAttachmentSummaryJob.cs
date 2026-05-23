@@ -1,24 +1,41 @@
 using Microsoft.Extensions.Logging;
+using System;
 using System.Threading.Tasks;
-using Unity.GrantManager.Attachments;
+using Unity.AI.Operations;
+using Unity.GrantManager.GrantApplications;
 using Volo.Abp.BackgroundJobs;
 using Volo.Abp.DependencyInjection;
+using Volo.Abp.Domain.Repositories;
 using Volo.Abp.MultiTenancy;
+using Volo.Abp.Uow;
+
 namespace Unity.GrantManager.GrantApplications.Automation.BackgroundJobs;
+
 public class GenerateAttachmentSummaryJob(
-    IAttachmentSummaryAppService attachmentSummaryService,
+    IAttachmentSummaryService attachmentSummaryService,
+    IRepository<AIGenerationRequest, Guid> generationRequestRepository,
     ICurrentTenant currentTenant,
+    IUnitOfWorkManager unitOfWorkManager,
     ILogger<GenerateAttachmentSummaryJob> logger) : AsyncBackgroundJob<GenerateAttachmentSummaryBackgroundJobArgs>, ITransientDependency
 {
     public override async Task ExecuteAsync(GenerateAttachmentSummaryBackgroundJobArgs args)
     {
         using (currentTenant.Change(args.TenantId))
         {
-            logger.LogInformation(
-                "Executing AI attachment summary job for {AttachmentCount} attachment(s).",
-                args.AttachmentIds.Count);
-            var results = await attachmentSummaryService.GenerateAttachmentSummariesAsync(args.AttachmentIds, args.PromptVersion);
-            logger.LogInformation("Completed AI attachment summaries for {CompletedCount} attachment(s).", results.Count);
+            await AIGenerationRequestJobHelper.MarkRunningInNewUowAsync(unitOfWorkManager, generationRequestRepository, args.RequestKey);
+            try
+            {
+                logger.LogInformation(
+                    "Executing AI attachment summary job for application {ApplicationId}.",
+                    args.ApplicationId);
+                await attachmentSummaryService.GenerateForApplicationAsync(args.ApplicationId, args.PromptVersion);
+                await AIGenerationRequestJobHelper.MarkCompletedInNewUowAsync(unitOfWorkManager, generationRequestRepository, args.RequestKey);
+            }
+            catch (Exception ex)
+            {
+                await AIGenerationRequestJobHelper.MarkFailedInNewUowAsync(unitOfWorkManager, generationRequestRepository, args.RequestKey, ex.Message);
+                throw;
+            }
         }
     }
 }

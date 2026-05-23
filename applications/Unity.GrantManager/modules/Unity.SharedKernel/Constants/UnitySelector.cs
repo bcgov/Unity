@@ -27,8 +27,7 @@ public static partial class UnitySelector
         {
             public const string Default = "Unity.GrantManager.ApplicationManagement.Applicant.Contact";
             public const string Create  = "Unity.GrantManager.ApplicationManagement.Applicant.Contact.Create";
-            public const string Update  = "Unity.GrantManager.ApplicationManagement.Applicant.Contact.Update";
-            public const string Delete  = "Unity.GrantManager.ApplicationManagement.Applicant.Contact.Delete";
+            public const string Update  = "Unity.GrantManager.ApplicationManagement.Applicant.Contact.Update";            
         }
         public static partial class AdditionalContact
         {

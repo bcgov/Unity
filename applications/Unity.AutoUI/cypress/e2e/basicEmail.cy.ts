@@ -1,4 +1,5 @@
 // cypress/e2e/basicEmail.cy.ts
+import { LoginPageInstance, NavigationPageInstance } from "../utilities";
 
 describe("Send an email", () => {
   const TEST_EMAIL_TO = Cypress.env("TEST_EMAIL_TO") as string;
@@ -32,123 +33,8 @@ describe("Send an email", () => {
     String(now.getSeconds()).padStart(2, "0");
 
   const TEST_EMAIL_SUBJECT = `Smoke Test Email ${timestamp}`;
-
-  function ensureLoggedInToGrantApplications() {
-    // Headless runs specs sequentially in the same browser process.
-    // Do not assume logged-out or logged-in. Detect UI state like chefsdata.cy.ts does.
-    cy.visit(Cypress.env("webapp.url"));
-
-    cy.get("body", { timeout: STANDARD_TIMEOUT }).then(($body) => {
-      // Already authenticated
-      if ($body.find('button:contains("VIEW APPLICATIONS")').length > 0) {
-        cy.contains("VIEW APPLICATIONS", { timeout: STANDARD_TIMEOUT }).click({
-          force: true,
-        });
-        return;
-      }
-
-      // Not authenticated
-      if ($body.find('button:contains("LOGIN")').length > 0) {
-        cy.contains("LOGIN", { timeout: STANDARD_TIMEOUT })
-          .should("exist")
-          .click({ force: true });
-
-        cy.get("body", { timeout: STANDARD_TIMEOUT }).then(($loginBody) => {
-          // IDIR chooser may or may not appear
-          if ($loginBody.find(':contains("IDIR")').length > 0) {
-            cy.contains("IDIR", { timeout: STANDARD_TIMEOUT }).click({
-              force: true,
-            });
-          }
-
-          cy.get("body", { timeout: STANDARD_TIMEOUT }).then(($authBody) => {
-            // Only type creds if the login form is actually present
-            if ($authBody.find("#user").length > 0) {
-              cy.get("#user", { timeout: STANDARD_TIMEOUT }).type(
-                Cypress.env("test1username"),
-              );
-              cy.get("#password", { timeout: STANDARD_TIMEOUT }).type(
-                Cypress.env("test1password"),
-              );
-              cy.contains("Continue", { timeout: STANDARD_TIMEOUT }).click({
-                force: true,
-              });
-            } else {
-              cy.log("Already authenticated");
-            }
-          });
-        });
-
-        return;
-      }
-
-      throw new Error("Unable to determine authentication state");
-    });
-
-    cy.location("pathname", { timeout: 30000 }).should(
-      "include",
-      "/GrantApplications",
-    );
-  }
-
-  function switchToDefaultGrantsProgramIfAvailable() {
-    cy.get("body").then(($body) => {
-      const hasUserInitials = $body.find(".unity-user-initials").length > 0;
-
-      if (!hasUserInitials) {
-        cy.log("Skipping tenant: no user initials menu found");
-        return;
-      }
-
-      cy.get(".unity-user-initials").click();
-
-      cy.get("body").then(($body2) => {
-        const switchLink = $body2
-          .find("#user-dropdown a.dropdown-item")
-          .filter((_, el) => {
-            return (el.textContent || "").trim() === "Switch Grant Programs";
-          });
-
-        if (switchLink.length === 0) {
-          cy.log(
-            'Skipping tenant: "Switch Grant Programs" not present for this user/session',
-          );
-          cy.get("body").click(0, 0);
-          return;
-        }
-
-        cy.wrap(switchLink.first()).click();
-
-        cy.url({ timeout: STANDARD_TIMEOUT }).should(
-          "include",
-          "/GrantPrograms",
-        );
-
-        cy.get("#search-grant-programs", { timeout: STANDARD_TIMEOUT })
-          .should("be.visible")
-          .clear()
-          .type("Default Grants Program");
-
-        cy.get("#UserGrantProgramsTable", { timeout: STANDARD_TIMEOUT })
-          .should("be.visible")
-          .within(() => {
-            cy.contains("tbody tr", "Default Grants Program", {
-              timeout: STANDARD_TIMEOUT,
-            })
-              .should("exist")
-              .within(() => {
-                cy.contains("button", "Select").should("be.enabled").click();
-              });
-          });
-
-        cy.location("pathname", { timeout: STANDARD_TIMEOUT }).should((p) => {
-          expect(
-            p.indexOf("/GrantApplications") >= 0 || p.indexOf("/auth/") >= 0,
-          ).to.eq(true);
-        });
-      });
-    });
-  }
+  const loginPage = LoginPageInstance();
+  const navPage = NavigationPageInstance();
 
   function openSavedEmailFromHistoryBySubject(subject: string) {
     cy.get("body", { timeout: STANDARD_TIMEOUT }).then(($body) => {
@@ -231,11 +117,12 @@ describe("Send an email", () => {
   }
 
   it("Login", () => {
-    ensureLoggedInToGrantApplications();
+    loginPage.login();
+    loginPage.verifyOnGrantApplications();
   });
 
   it("Switch to Default Grants Program if available", () => {
-    switchToDefaultGrantsProgramIfAvailable();
+    navPage.switchToDefaultGrantsProgramIfAvailable();
   });
 
   it("Handle IDIR if required", () => {
@@ -368,6 +255,7 @@ describe("Send an email", () => {
   it("Save the email", () => {
     cy.get("#btn-save", { timeout: STANDARD_TIMEOUT })
       .should("exist")
+      .scrollIntoView()
       .should("be.visible")
       .click();
 
@@ -391,6 +279,7 @@ describe("Send an email", () => {
   it("Send the email", () => {
     cy.get("#btn-send", { timeout: STANDARD_TIMEOUT })
       .should("exist")
+      .scrollIntoView()
       .should("be.visible")
       .should("not.be.disabled")
       .click();

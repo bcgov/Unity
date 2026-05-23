@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using Unity.GrantManager.Applications;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authorization.Infrastructure;
 using System;
 using System.Collections.Generic;
@@ -11,7 +12,6 @@ using Unity.Flex.Scoresheets;
 using Unity.Flex.Scoresheets.Enums;
 using Unity.Flex.Scoresheets.Events;
 using Unity.Flex.Worksheets.Definitions;
-using Unity.GrantManager.Applications;
 using Unity.GrantManager.Comments;
 using Unity.GrantManager.Exceptions;
 using Unity.GrantManager.Workflow;
@@ -23,7 +23,6 @@ using Volo.Abp.Domain.Repositories;
 using Volo.Abp.EventBus.Local;
 using Volo.Abp.Features;
 using Volo.Abp.Identity.Integration;
-using Volo.Abp.Settings;
 using Volo.Abp.Users;
 using Volo.Abp.Validation;
 
@@ -81,11 +80,10 @@ namespace Unity.GrantManager.Assessments
 
         public async Task<IList<AssessmentDto>> GetListAsync(Guid applicationId)
         {
-            IQueryable<Assessment> queryableAssessments = _assessmentRepository.GetQueryableAsync().Result;
+            IQueryable<Assessment> queryableAssessments = await _assessmentRepository.GetQueryableAsync();
             var assessments = queryableAssessments.Where(c => c.ApplicationId.Equals(applicationId)).ToList();
-            return await Task.FromResult<IList<AssessmentDto>>(
-                ObjectMapper.Map<List<Assessment>, List<AssessmentDto>>(
-                    assessments.OrderByDescending(s => s.IsAiAssessment).ThenByDescending(s => s.CreationTime).ToList()));
+            return ObjectMapper.Map<List<Assessment>, List<AssessmentDto>>(
+                assessments.OrderByDescending(s => s.IsAiAssessment).ThenByDescending(s => s.CreationTime).ToList());
         }
 
         public async Task<AssessmentDisplayListDto> GetDisplayList(Guid applicationId)

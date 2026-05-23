@@ -389,7 +389,8 @@ namespace Unity.Flex.Web.Views.Shared.Components.DataGridWidget
         private static string SumCells(string? key, DataGridViewModelRow[] rows)
         {
             decimal sum = 0;
-            foreach (var cell in rows.Select(row => row.Cells.Find(x => x.Key == key)).Where(cell => cell != null))
+            var cells = rows.Select(row => row.Cells.Find(x => x.Key == key)).Where(cell => cell != null);
+            foreach (var cell in cells)
             {
                 var preparse = cell!.Value.Replace("$", "").Replace(",", "");
                 if (decimal.TryParse(preparse, out decimal value))

@@ -5,7 +5,6 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.Threading.Tasks;
-using System.Text.Json;
 using Unity.Flex;
 using Unity.Flex.Web.Views.Shared.Components.CustomFieldDefinitionWidget;
 using Unity.Flex.Worksheets;
@@ -111,7 +110,7 @@ public class UpsertCustomFieldModalModel(ICustomFieldAppService customFieldAppSe
 
             if (customField.Definition != null)
             {
-                var existingDef = JsonSerializer.Deserialize<CustomFieldDefinition>(customField.Definition);
+                var existingDef = customField.Definition.ConvertDefinition(customField.Type);
                 IsHidden = existingDef?.IsHidden ?? false;
                 HideLabel = existingDef?.HideLabel ?? false;
                 IsDisabled = existingDef?.IsDisabled ?? false;

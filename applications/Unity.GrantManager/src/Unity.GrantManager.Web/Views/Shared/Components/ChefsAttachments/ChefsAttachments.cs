@@ -1,12 +1,16 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Volo.Abp.AspNetCore.Mvc.UI.Widgets;
 using Volo.Abp.AspNetCore.Mvc;
 using Volo.Abp.AspNetCore.Mvc.UI.Bundling;
-using System.Collections.Generic;
 using Volo.Abp.Features;
 using Volo.Abp.Authorization.Permissions;
+using Volo.Abp.Settings;
 using Unity.AI.Permissions;
+using Unity.AI.Settings;
+using Unity.GrantManager.Applications;
 
 namespace Unity.GrantManager.Web.Views.Shared.Components.ChefsAttachments
 {
@@ -14,25 +18,43 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ChefsAttachments
     [Widget(
         ScriptTypes = new[] { typeof(ChefsAttachmentsScriptBundleContributor) },
         StyleTypes = new[] { typeof(ChefsAttachmentsStyleBundleContributor) })]
-    public class ChefsAttachments : AbpViewComponent
+    public class ChefsAttachments(
+        IFeatureChecker featureChecker,
+        IPermissionChecker permissionChecker,
+        IApplicationFormRepository applicationFormRepository) : AbpViewComponent
     {
-        private readonly IFeatureChecker _featureChecker;
-        private readonly IPermissionChecker _permissionChecker;
+        public async Task<IViewComponentResult> InvokeAsync(Guid applicationFormId)
+            {
+                // Set safe defaults so the view is never left with null ViewBag values
+                // even if an exception is thrown partway through the checks below.
+                ViewBag.IsAIAttachmentSummariesEnabled = false;
+                ViewBag.IsAIAttachmentSummariesGenerateEnabled = false;
 
-        public ChefsAttachments(IFeatureChecker featureChecker, IPermissionChecker permissionChecker)
-        {
-            _featureChecker = featureChecker;
-            _permissionChecker = permissionChecker;
-        }
+                var featureEnabled = await featureChecker.IsEnabledAsync("Unity.AI.AttachmentSummaries");
 
-        public async Task<IViewComponentResult> InvokeAsync()
-        {
-            var isAIAttachmentSummariesEnabled =
-                await _featureChecker.IsEnabledAsync("Unity.AI.AttachmentSummaries") &&
-                await _permissionChecker.IsGrantedAsync(AIPermissions.Analysis.ViewAttachmentSummary);
-            ViewBag.IsAIAttachmentSummariesEnabled = isAIAttachmentSummariesEnabled;
-            return View();
-        }
+                // View guard — for toggling visibility of existing summaries
+                ViewBag.IsAIAttachmentSummariesEnabled =
+                    featureEnabled &&
+                    await permissionChecker.IsGrantedAsync(AIPermissions.Analysis.ViewAttachmentSummary);
+
+                if (applicationFormId == Guid.Empty)
+                {
+                    return View();
+                }
+
+                // Generate guard — full 3-level chain for the Generate Summary button
+                var settingProvider = LazyServiceProvider.LazyGetRequiredService<ISettingProvider>();
+                var tenantManualEnabled = await settingProvider.GetAsync<bool>(AISettings.ManualGenerationEnabled, defaultValue: false);
+                var applicationForm = await applicationFormRepository.GetAsync(applicationFormId);
+
+                ViewBag.IsAIAttachmentSummariesGenerateEnabled =
+                    featureEnabled &&
+                    tenantManualEnabled &&
+                    applicationForm.ManuallyInitiateAIAnalysis &&
+                    await permissionChecker.IsGrantedAsync(AIPermissions.Analysis.GenerateAttachmentSummaries);
+
+                return View();
+            }
     }
 
     public class ChefsAttachmentsStyleBundleContributor : BundleContributor

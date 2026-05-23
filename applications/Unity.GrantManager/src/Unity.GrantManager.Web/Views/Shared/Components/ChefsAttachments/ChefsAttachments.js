@@ -6,7 +6,7 @@ $(function () {
             .trigger('click');
     };
 
-    const downloadAll = $('#downloadAll');
+    const downloadAll = $('#downloadSelected');
     const dt = $('#ChefsAttachmentsTable');
     let chefsDataTable;
     let selectedAtttachments = [];
@@ -158,7 +158,7 @@ $(function () {
         function resetAttachmentSelectionState() {
             selectedAtttachments = [];
             $('.select-all-chefs-files').prop('checked', false);
-            $('.chkbox').prop('checked', false);
+            chefsDataTable.$('.chkbox').prop('checked', false);
             $(downloadAll).prop('disabled', true);
             $generateAISummariesButton.prop('disabled', true);
         }
@@ -170,7 +170,6 @@ $(function () {
             const rowsToProcess = triggerButton
                 ? chefsDataTable.rows().data()
                 : chefsDataTable.rows({ selected: true }).data();
-            const promptVersion = globalThis.getSelectedPromptVersion?.() || null;
 
             $button.removeData('trigger-button');
 
@@ -189,10 +188,7 @@ $(function () {
 
             // Call the backend API
             $.ajax({
-                url:
-                    '/api/app/attachment-summary/generate-attachment-summaries' +
-                    '?promptVersion=' +
-                    encodeURIComponent(promptVersion || ''),
+                url: '/api/app/attachment-summary/generate-attachment-summaries',
                 data: JSON.stringify(attachmentIds),
                 contentType: 'application/json',
                 type: 'POST',
@@ -329,8 +325,8 @@ $(function () {
     chefsDataTable.on('select', function (e, dt, type, indexes) {
         if (indexes?.length) {
             indexes.forEach((index) => {
-                $('#row_' + index).prop('checked', true);
-                if ($('.chkbox:checked').length == $('.chkbox').length) {
+                $(chefsDataTable.row(index).node()).find('.chkbox').prop('checked', true);
+                if (chefsDataTable.$('.chkbox:checked').length == chefsDataTable.$('.chkbox').length) {
                     $('.select-all-chefs-files').prop('checked', true);
                 }
                 selectAttachment(type, index, 'select_chefs_file');
@@ -341,8 +337,8 @@ $(function () {
     chefsDataTable.on('deselect', function (e, dt, type, indexes) {
         if (indexes?.length) {
             indexes.forEach((index) => {
-                $('#row_' + index).prop('checked', false);
-                if ($('.chkbox:checked').length != $('.chkbox').length) {
+                $(chefsDataTable.row(index).node()).find('.chkbox').prop('checked', false);
+                if (chefsDataTable.$('.chkbox:checked').length != chefsDataTable.$('.chkbox').length) {
                     $('.select-all-chefs-files').prop('checked', false);
                 }
                 selectAttachment(type, index, 'deselect_chefs_file');

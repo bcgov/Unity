@@ -6,12 +6,20 @@
 
 .attachments__title-button-split {
     display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: stretch;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.submission-title-and-actions {
+    display: flex;
     flex-direction: row;
     justify-content: space-between;
-    align-items: flex-start;
-    flex-wrap: wrap;
-    gap: 8px 8px;
-    margin-bottom: 8px;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: nowrap;
 }
 
 .sorting_disabled:before,
@@ -24,18 +32,28 @@
     align-items: center;
     height: 36px;
     padding-top: 0;
+    flex: 0 0 auto;
 }
 
 .submission-button-section {
     display: flex;
-    flex: 1 1 0;
-    margin-left: auto;
-    flex-wrap: wrap;
+    flex: 1 1 auto;
+    flex-wrap: nowrap;
     align-items: center;
     align-content: center;
     justify-content: flex-end;
     gap: 6px;
     min-width: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+}
+
+.submission-button-section--top {
+    justify-content: flex-end;
+}
+
+.submission-button-section--bottom {
+    justify-content: flex-end;
 }
 
 .submission-button-section .btn {
@@ -46,6 +64,10 @@
     justify-content: center;
     line-height: 1;
     white-space: nowrap;
+}
+
+.submission-button-section .btn + .btn {
+    margin-left: 0;
 }
 
 .submission-button-section .button-content {

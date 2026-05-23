@@ -22,6 +22,7 @@ using Unity.Payments.Integrations.Cas;
 using Unity.Payments.Suppliers;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Application.Dtos;
+using Volo.Abp.Domain.Repositories;
 
 namespace Unity.GrantManager.Applicants;
 
@@ -34,8 +35,12 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
                                  IApplicantAddressRepository addressRepository,
                                  IOrgBookService orgBookService,
                                  IApplicantAgentRepository applicantAgentRepository,
-                                 IApplicationRepository applicationRepository) : GrantManagerAppService, IApplicantAppService
-{   
+                                 IApplicationRepository applicationRepository,
+                                 IRepository<Supplier, Guid> supplierRepository) : GrantManagerAppService, IApplicantAppService
+{                                   
+
+    private const string ApplicantIdDataKey = "ApplicantId";
+
     protected new ILogger Logger => LazyServiceProvider.LazyGetService<ILogger>(provider => LoggerFactory?.CreateLogger(GetType().FullName!) ?? NullLogger.Instance);
 
     [RemoteService(false)]
@@ -80,18 +85,28 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
         Applicant? applicant = await applicantRepository.GetAsync(applicantSupplierEto.ApplicantId);
         ArgumentNullException.ThrowIfNull(applicant);
         applicant.SupplierId = applicantSupplierEto.SupplierId;
-        applicant.SiteId = null; // Reset site id to null
-        // lookup sites if there is only one then set it as default
+        await applicantRepository.UpdateAsync(applicant);
+
+        // Per-application cascade: if the new supplier has exactly one site,
+        // auto-pick it for every application of this applicant; otherwise clear
+        // DefaultSiteId so users repick per application on the Payment Info tab.
+        Guid? newDefaultSiteId = null;
         if (applicant.SupplierId != null)
         {
             List<Site> sites = await siteAppService.GetSitesBySupplierIdAsync(applicant.SupplierId.Value);
             if (sites.Count == 1)
             {
-                applicant.SiteId = sites.FirstOrDefault()?.Id;
+                newDefaultSiteId = sites[0].Id;
             }
         }
 
-        await applicantRepository.UpdateAsync(applicant);
+        var applications = await applicationRepository.GetListAsync(a => a.ApplicantId == applicant.Id);
+        foreach (var application in applications)
+        {
+            application.DefaultSiteId = newDefaultSiteId;
+            await applicationRepository.UpdateAsync(application);
+        }
+
         return applicant;
     }
 
@@ -262,11 +277,24 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
             throw new ArgumentException("Contact identifier is required.", nameof(input));
         }
 
+        switch (input.Source)
+        {
+            case "Contact":
+                await UpdateLinkedContactAsync(applicantId, input);
+                break;            
+            default:
+                await UpdateAgentContactAsync(applicantId, input);
+                break;
+        }
+    }
+
+    private async Task UpdateAgentContactAsync(Guid applicantId, UpdatePrimaryContactDto input)
+    {
         var applicantAgent = await applicantAgentRepository.GetAsync(input.Id);
         if (applicantAgent.ApplicantId != applicantId)
         {
             throw new BusinessException("Unity:Applicant:ContactNotFound")
-                .WithData("ApplicantId", applicantId)
+                .WithData(ApplicantIdDataKey, applicantId)
                 .WithData("ContactId", input.Id);
         }
 
@@ -277,6 +305,36 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
         applicantAgent.Phone2 = input.CellPhone?.Trim() ?? string.Empty;
 
         await applicantAgentRepository.UpdateAsync(applicantAgent);
+    }
+
+    private async Task UpdateLinkedContactAsync(Guid applicantId, UpdatePrimaryContactDto input)
+    {
+        var contactRepository = LazyServiceProvider.LazyGetRequiredService<Contacts.IContactRepository>();
+        var contactLinkRepository = LazyServiceProvider.LazyGetRequiredService<Contacts.IContactLinkRepository>();
+
+        var linkQuery = await contactLinkRepository.GetQueryableAsync();
+        var link = await linkQuery.FirstOrDefaultAsync(l =>
+            l.ContactId == input.Id
+            && l.RelatedEntityType == "Applicant"
+            && l.RelatedEntityId == applicantId
+            && l.IsActive);
+
+        if (link == null)
+        {
+            throw new BusinessException("Unity:Applicant:ContactNotFound")
+                .WithData(ApplicantIdDataKey, applicantId)
+                .WithData("ContactId", input.Id);
+        }
+
+        var contact = await contactRepository.GetAsync(input.Id);
+
+        contact.Name = input.FullName?.Trim() ?? string.Empty;
+        contact.Title = input.Title?.Trim();
+        contact.Email = input.Email?.Trim();
+        contact.WorkPhoneNumber = input.BusinessPhone?.Trim();
+        contact.MobilePhoneNumber = input.CellPhone?.Trim();
+
+        await contactRepository.UpdateAsync(contact);
     }
 
     private async Task UpdatePrimaryAddressAsync(Guid applicantId, UpdatePrimaryApplicantAddressDto input, GrantApplications.AddressType expectedType)
@@ -291,14 +349,14 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
         if (applicantAddress.ApplicantId != applicantId)
         {
             throw new BusinessException("Unity:Applicant:AddressNotFound")
-                .WithData("ApplicantId", applicantId)
+                .WithData(ApplicantIdDataKey, applicantId)
                 .WithData("AddressId", input.Id);
         }
 
         if (applicantAddress.AddressType != expectedType)
         {
             throw new BusinessException("Unity:Applicant:AddressTypeMismatch")
-                .WithData("ApplicantId", applicantId)
+                .WithData(ApplicantIdDataKey, applicantId)
                 .WithData("AddressId", input.Id)
                 .WithData("ExpectedType", expectedType.ToString());
         }
@@ -393,7 +451,10 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
                 return applicant;
             JsonElement orgData = results[0];
             await UpdateApplicantOrgNumberAsync(applicant, orgData);
-            await UpdateApplicantNamesAsync(applicant, orgData.GetProperty("names").EnumerateArray());
+            if (orgData.TryGetProperty("names", out JsonElement namesElement) && namesElement.ValueKind == JsonValueKind.Array)
+            {
+                await UpdateApplicantNamesAsync(applicant, namesElement.EnumerateArray());
+            }
         }
         catch (Exception ex)
         {
@@ -504,11 +565,6 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
         }
     }
 
-    public async Task<List<Applicant>> GetApplicantsBySiteIdAsync(Guid siteId)
-    {
-        List<Applicant> applicants = await applicantRepository.GetApplicantsBySiteIdAsync(siteId);
-        return applicants;
-    }
     [RemoteService(true)]
     public async Task<JsonDocument> GetApplicantLookUpAutocompleteQueryAsync(string? applicantLookUpQuery)
     {
@@ -673,38 +729,58 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
         // Execute query
         var applicants = await query.ToListAsync();
 
+        // Batch-load supplier data for all applicants in one query
+        var supplierIds = applicants
+            .Where(a => a.SupplierId.HasValue)
+            .Select(a => a.SupplierId!.Value)
+            .Distinct()
+            .ToList();
+
+        Dictionary<Guid, Supplier> supplierMap = new();
+        if (supplierIds.Count > 0)
+        {
+            var suppliers = await supplierRepository.GetListAsync(s => supplierIds.Contains(s.Id));
+            supplierMap = suppliers.ToDictionary(s => s.Id);
+        }
+
         // Map to DTOs
-        var items = applicants.Select(applicant => new ApplicantListDto
+        var items = applicants.Select(applicant =>
             {
-                Id = applicant.Id,
-                ApplicantName = applicant.ApplicantName,
-                UnityApplicantId = applicant.UnityApplicantId,
-                OrgName = applicant.OrgName,
-                OrgNumber = applicant.OrgNumber,
-                OrgStatus = applicant.OrgStatus,
-                OrganizationType = applicant.OrganizationType,
-                Status = applicant.Status,
-                RedStop = applicant.RedStop,
-                NonRegisteredBusinessName = applicant.NonRegisteredBusinessName,
-                NonRegOrgName = applicant.NonRegOrgName,
-                OrganizationSize = applicant.OrganizationSize,
-                Sector = applicant.Sector,
-                SubSector = applicant.SubSector,
-                ApproxNumberOfEmployees = applicant.ApproxNumberOfEmployees,
-                IndigenousOrgInd = applicant.IndigenousOrgInd,
-                SectorSubSectorIndustryDesc = applicant.SectorSubSectorIndustryDesc,
-                FiscalMonth = applicant.FiscalMonth,
-                BusinessNumber = applicant.BusinessNumber,
-                FiscalDay = applicant.FiscalDay,
-                StartedOperatingDate = applicant.StartedOperatingDate.HasValue 
-                    ? applicant.StartedOperatingDate.Value.ToDateTime(TimeOnly.MinValue) 
-                    : null,
-                SupplierId = applicant.SupplierId?.ToString(),
-                SiteId = applicant.SiteId,
-                MatchPercentage = applicant.MatchPercentage,
-                IsDuplicated = applicant.IsDuplicated,
-                CreationTime = applicant.CreationTime,
-                LastModificationTime = applicant.LastModificationTime
+                supplierMap.TryGetValue(applicant.SupplierId ?? Guid.Empty, out var supplier);
+                return new ApplicantListDto
+                {
+                    Id = applicant.Id,
+                    ApplicantName = applicant.ApplicantName,
+                    UnityApplicantId = applicant.UnityApplicantId,
+                    OrgName = applicant.OrgName,
+                    OrgNumber = applicant.OrgNumber,
+                    OrgStatus = applicant.OrgStatus,
+                    OrganizationType = applicant.OrganizationType,
+                    Status = applicant.Status,
+                    RedStop = applicant.RedStop,
+                    NonRegisteredBusinessName = applicant.NonRegisteredBusinessName,
+                    NonRegOrgName = applicant.NonRegOrgName,
+                    OrganizationSize = applicant.OrganizationSize,
+                    Sector = applicant.Sector,
+                    SubSector = applicant.SubSector,
+                    ApproxNumberOfEmployees = applicant.ApproxNumberOfEmployees,
+                    IndigenousOrgInd = applicant.IndigenousOrgInd,
+                    SectorSubSectorIndustryDesc = applicant.SectorSubSectorIndustryDesc,
+                    FiscalMonth = applicant.FiscalMonth,
+                    BusinessNumber = applicant.BusinessNumber,
+                    FiscalDay = applicant.FiscalDay,
+                    StartedOperatingDate = applicant.StartedOperatingDate.HasValue
+                        ? applicant.StartedOperatingDate.Value.ToDateTime(TimeOnly.MinValue)
+                        : null,
+                    SupplierId = applicant.SupplierId?.ToString(),
+                    SupplierNumber = supplier?.Number,
+                    SupplierName = supplier?.Name,
+                    SupplierStatus = supplier?.Status,
+                    MatchPercentage = applicant.MatchPercentage,
+                    IsDuplicated = applicant.IsDuplicated,
+                    CreationTime = applicant.CreationTime,
+                    LastModificationTime = applicant.LastModificationTime
+                };
             }).ToList();
 
         return new PagedResultDto<ApplicantListDto>(totalCount, items);

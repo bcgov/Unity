@@ -15,8 +15,7 @@ namespace Unity.Payments.Suppliers
         public string? SupplierProtected { get; set; }
         public string? StandardIndustryClassification { get; set; }
         public DateTime? LastUpdatedInCAS { get; set; }
-        public Guid CorrelationId { get; set; }
-        public string CorrelationProvider { get; set; } = string.Empty;
+        public Guid ApplicantId { get; set; }
         public List<SiteEto> SiteEtos { get; set; } = new List<SiteEto>();
         public Guid? ApplicationId { get; set; }
     }

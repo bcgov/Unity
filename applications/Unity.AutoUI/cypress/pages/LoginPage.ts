@@ -1,4 +1,5 @@
 import { BasePage } from "./BasePage";
+import { loginIfNeeded } from "../support/auth";
 
 /**
  * LoginPage - Page Object for Login/Authentication functionality
@@ -24,25 +25,22 @@ export class LoginPage extends BasePage {
    * Perform login with credentials
    */
   login(username?: string, password?: string): void {
-    this.visit();
-    this.clickByText(this.selectors.loginButton);
-    this.wait(1000);
-    this.clickByText(this.selectors.idirButton);
-    this.wait(1000);
-
-    // Check if already logged in
-    cy.get("body").then(($body) => {
-      if ($body.find(this.selectors.usernameField).length) {
-        const user = username || Cypress.env("test1username");
-        const pass = password || Cypress.env("test1password");
-
-        this.typeText(this.selectors.usernameField, user);
-        this.typeText(this.selectors.passwordField, pass);
-        this.clickByText(this.selectors.continueButton);
-      } else {
-        cy.log("Already logged in");
-      }
+    loginIfNeeded({
+      username,
+      password,
+      timeout: 30000,
+      baseUrl: Cypress.env("webapp.url"),
     });
+  }
+
+  /**
+   * Verify we are on the authenticated applications page
+   */
+  verifyOnGrantApplications(): void {
+    cy.location("pathname", { timeout: 30000 }).should(
+      "include",
+      "/GrantApplications",
+    );
   }
 
   /**
@@ -81,7 +79,7 @@ export class LoginPage extends BasePage {
    * Quick login using custom command (backward compatibility)
    */
   quickLogin(): void {
-    cy.login();
+    this.login();
   }
 
   /**

@@ -2,7 +2,9 @@
 @* #pragma warning disable S1128 *@
 @using Microsoft.Extensions.Localization
 @using Unity.AI.Permissions
+@using Unity.AI.Settings
 @using Unity.Flex.Web.Views.Shared.Components.WorksheetInstanceWidget
+@using Unity.GrantManager.Applications
 @using Unity.GrantManager.Flex
 @using Unity.GrantManager.Localization
 @using Unity.GrantManager.Web.Pages.GrantApplications
@@ -14,6 +16,7 @@
 @using Volo.Abp.Authorization.Permissions
 @using Volo.Abp.Features
 @using Volo.Abp.MultiTenancy
+@using Volo.Abp.Settings
 @* #pragma warning restore S1128 *@
 
 
@@ -23,18 +26,29 @@
 @inject IFeatureChecker FeatureChecker
 @inject IPermissionChecker PermissionChecker
 @inject ICurrentTenant CurrentTenant
+@inject ISettingProvider SettingProvider
+@inject IApplicationFormRepository ApplicationFormRepository
 
 @{
     PageLayout.Content.Title = L["Grants"].Value;
     var notificationsFeatureEnabled = await FeatureChecker.IsEnabledAsync("Unity.Notifications");
     var readEmailGranted = await PermissionChecker.IsGrantedAsync("Notifications.Email");
-    var aiAttachmentSummariesEnabled = await FeatureChecker.IsEnabledAsync("Unity.AI.AttachmentSummaries")
-        && await PermissionChecker.IsGrantedAsync(AIPermissions.Analysis.ViewAttachmentSummary);
+    var flexFeatureEnabled = await FeatureChecker.IsEnabledAsync("Unity.Flex");
+
+    // View guards — control tab visibility and loading of existing AI results
     var aiApplicationAnalysisEnabled = await FeatureChecker.IsEnabledAsync("Unity.AI.ApplicationAnalysis")
         && await PermissionChecker.IsGrantedAsync(AIPermissions.Analysis.ViewApplicationAnalysis);
-    var aiScoringEnabled = await FeatureChecker.IsEnabledAsync("Unity.AI.Scoring")
-        && await PermissionChecker.IsGrantedAsync(AIPermissions.Analysis.ViewScoringResult);
-    var flexFeatureEnabled = await FeatureChecker.IsEnabledAsync("Unity.Flex");
+
+    // Shared manual-generation guards
+    var tenantManualEnabled = await SettingProvider.GetAsync<bool>(AISettings.ManualGenerationEnabled, defaultValue: false);
+    var applicationForm = await ApplicationFormRepository.GetAsync(Model.ApplicationFormId);
+    var formManualEnabled = applicationForm.ManuallyInitiateAIAnalysis;
+
+    // Generate guard — controls visibility of the Generate button in the AI Analysis tab
+    var aiApplicationAnalysisGenerateEnabled = await FeatureChecker.IsEnabledAsync("Unity.AI.ApplicationAnalysis")
+        && tenantManualEnabled
+        && formManualEnabled
+        && await PermissionChecker.IsGrantedAsync(AIPermissions.Analysis.GenerateApplicationAnalysis);
 }
 @section styles
 {
@@ -43,10 +57,9 @@
 }
 @section scripts
 {
+    <abp-script src="/Pages/GrantApplications/ai-generation-button-state.js" />
     <abp-script src="/Pages/GrantApplications/Details.js" />
     <abp-script src="/libs/formiojs/formio.form.min.js" />
-    <abp-script src="/libs/jspdf/dist/jspdf.umd.min.js" />
-    <abp-script src="/libs/html2canvas/dist/html2canvas.min.js" />
     <abp-script src="/Pages/GrantApplications/ai-analysis.js" />
 }
 
@@ -72,7 +85,6 @@
 <input type="hidden" id="RenderFormIoToHtml" value="@Model.RenderFormIoToHtml.ToString()" />
 <input type="hidden" id="ApplicationFormVersionId" value="@Model.ApplicationFormVersionId" />
 <input type="hidden" id="AIAnalysisFeatureEnabled" value="@aiApplicationAnalysisEnabled" />
-<input type="hidden" id="AIScoringFeatureEnabled" value="@aiScoringEnabled.ToString()" />
 
 @functions
 {
@@ -153,7 +165,7 @@
 
                         <zone id="@UnitySelector.Review.AssessmentReviewList.Default" form-id="@Model.ApplicationFormId">
                             <div class="w-100 px-2" id="assessmentMainView">
-                                @await Component.InvokeAsync("ReviewList")
+                                @await Component.InvokeAsync("ReviewList", new { applicationFormId = Model.ApplicationFormId })
                             </div>
                         </zone>
 
@@ -274,12 +286,6 @@
                     <button class="nav-link" id="ai-analysis-tab" data-bs-toggle="tab" data-bs-target="#ai-analysis" type="button" role="tab" aria-controls="ai-analysis" aria-selected="false" title="Application Analysis"><i class="fa fa-wand-sparkles" aria-hidden="true"></i></button>
                 </li>
             }
-            @if (Model.IsDevPromptControlsEnabled)
-            {
-                <li class="nav-item ms-auto">
-                    <button class="nav-link" id="dev-tools-tab" data-bs-toggle="tab" data-bs-target="#dev-tools" type="button" role="tab" aria-controls="dev-tools" aria-selected="false">Dev</button>
-                </li>
-            }
             </ul>
 
             <div class="tab-content details-scrollable" id="myTabContent">
@@ -389,7 +395,7 @@
                 <div class="tab-pane fade" id="attachments" role="tabpanel" aria-labelledby="attachments-tab">
                     @await Component.InvokeAsync("ApplicationAttachments")
 
-                    @await Component.InvokeAsync("ChefsAttachments")
+                    @await Component.InvokeAsync("ChefsAttachments", new { applicationFormId = Model.ApplicationFormId })
                 </div>
                 @*-------- Attachments Tab Section END ---------*@
 
@@ -415,12 +421,15 @@
                 <div class="tab-pane fade" id="ai-analysis" role="tabpanel" aria-labelledby="ai-analysis-tab">
                     <div class="d-flex justify-content-between align-items-center px-3 pt-4 pb-2">
                         <h6 class="fw-bold m-0">Application Analysis</h6>
-                        <button type="button" class="btn unt-btn-outline-primary btn-outline-primary" id="regenerateApplicationAnalysis">
-                            <span class="ai-button-content">
-                                <i class="unt-icon-sm fa-solid fa-wand-sparkles"></i>
-                                <span>Generate</span>
-                            </span>
-                        </button>
+                        @if (aiApplicationAnalysisGenerateEnabled)
+                        {
+                            <button type="button" class="btn unt-btn-outline-primary btn-outline-primary ai-generate-btn" id="regenerateApplicationAnalysis">
+                                <span class="ai-button-content">
+                                    <i class="unt-icon-sm fa-solid fa-wand-sparkles"></i>
+                                    <span>Generate</span>
+                                </span>
+                            </button>
+                        }
                     </div>
                     <div class="ai-analysis-container">
                         @* Default message when no analysis data is available *@
@@ -497,122 +506,6 @@
                 </div>
                 }
                 @*-------- AI Analysis Tab Section END ---------*@
-                @if (Model.IsDevPromptControlsEnabled)
-                {
-                    <div class="tab-pane fade" id="dev-tools" role="tabpanel" aria-labelledby="dev-tools-tab">
-                        <div class="dev-tools-header px-3 pt-4 pb-3">
-                            <h6 class="fw-bold m-0">AI Dev Tools</h6>
-                            <div class="dev-prompt-toolbar-row">
-                                <div class="dev-prompt-toolbar-inline">
-                                    <select id="devPromptVersion" class="form-select form-select-sm">
-                                        @if (Model.DefaultPromptVersion == "v0")
-                                        {
-                                            <option value="v0" selected>v0</option>
-                                            <option value="v1">v1</option>
-                                        }
-                                        else
-                                        {
-                                            <option value="v1" selected>v1</option>
-                                            <option value="v0">v0</option>
-                                        }
-                                    </select>
-                                    @if (aiAttachmentSummariesEnabled && aiApplicationAnalysisEnabled && aiScoringEnabled)
-                                    {
-                                        <button type="button" class="btn unt-btn-outline-primary btn-outline-primary btn-sm" id="generateAllAiDevToolsBtn">
-                                            <span class="ai-button-content">
-                                                <i class="unt-icon-sm fa-solid fa-wand-sparkles"></i>
-                                                <span>Generate All</span>
-                                            </span>
-                                        </button>
-                                    }
-                                </div>
-                            </div>
-                        </div>
-                        <div class="px-3 pb-3">
-
-                            <div class="dev-prompt-section">
-                                <div class="dev-prompt-section-header">
-                                    <h6 class="fw-bold m-0">Attachment Summary <span class="ai-dev-output-timestamp" id="attachmentAiOutputTimestamp"></span></h6>
-                                    @if (aiAttachmentSummariesEnabled)
-                                    {
-                                        <button type="button" class="btn unt-btn-outline-primary btn-outline-primary btn-sm" onclick="queueAttachmentSummary(this)">
-                                            <span class="ai-button-content">
-                                                <i class="unt-icon-sm fa-solid fa-wand-sparkles"></i>
-                                                <span>Generate</span>
-                                            </span>
-                                        </button>
-                                    }
-                                    else
-                                    {
-                                        <span class="text-muted small">Unavailable: feature or permission not enabled</span>
-                                    }
-                                </div>
-                                <div class="ai-dev-output-container">
-                                    <div class="ai-dev-output-actions">
-                                        <button type="button" class="btn btn-icon ai-dev-output-copy-btn" data-target="#attachmentAiOutput" title="Copy" aria-label="Copy">
-                                            <i class="fl fl-copy" aria-hidden="true"></i>
-                                        </button>
-                                    </div>
-                                    <textarea class="form-control form-control-sm ai-dev-output" id="attachmentAiOutput" readonly spellcheck="false"></textarea>
-                                </div>
-                            </div>
-
-                            <div class="dev-prompt-section">
-                                <div class="dev-prompt-section-header">
-                                    <h6 class="fw-bold m-0">Application Analysis <span class="ai-dev-output-timestamp" id="analysisAiOutputTimestamp"></span></h6>
-                                    @if (aiApplicationAnalysisEnabled)
-                                    {
-                                        <button type="button" class="btn unt-btn-outline-primary btn-outline-primary btn-sm" onclick="queueApplicationAnalysis(this)">
-                                            <span class="ai-button-content">
-                                                <i class="unt-icon-sm fa-solid fa-wand-sparkles"></i>
-                                                <span>Generate</span>
-                                            </span>
-                                        </button>
-                                    }
-                                    else
-                                    {
-                                        <span class="text-muted small">Unavailable: feature or permission not enabled</span>
-                                    }
-                                </div>
-                                <div class="ai-dev-output-container">
-                                    <div class="ai-dev-output-actions">
-                                        <button type="button" class="btn btn-icon ai-dev-output-copy-btn" data-target="#analysisAiOutput" title="Copy" aria-label="Copy">
-                                            <i class="fl fl-copy" aria-hidden="true"></i>
-                                        </button>
-                                    </div>
-                                    <textarea class="form-control form-control-sm ai-dev-output" id="analysisAiOutput" readonly spellcheck="false"></textarea>
-                                </div>
-                            </div>
-
-                            <div class="dev-prompt-section">
-                                <div class="dev-prompt-section-header">
-                                    <h6 class="fw-bold m-0">Application Scoring <span class="ai-dev-output-timestamp" id="scoringAiOutputTimestamp"></span></h6>
-                                    @if (aiScoringEnabled)
-                                    {
-                                        <button type="button" class="btn unt-btn-outline-primary btn-outline-primary btn-sm" onclick="queueApplicationScoring(this)">
-                                            <span class="ai-button-content">
-                                                <i class="unt-icon-sm fa-solid fa-wand-sparkles"></i>
-                                                <span>Generate</span>
-                                            </span>
-                                        </button>
-                                    }
-                                    else
-                                    {
-                                        <span class="text-muted small">Unavailable: feature or permission not enabled</span>
-                                    }
-                                </div>
-                                <div class="ai-dev-output-container">
-                                    <div class="ai-dev-output-actions">
-                                        <button type="button" class="btn btn-icon ai-dev-output-copy-btn" data-target="#scoringAiOutput" title="Copy" aria-label="Copy">
-                                            <i class="fl fl-copy" aria-hidden="true"></i>
-                                        </button>
-                                    </div>
-                                    <textarea class="form-control form-control-sm ai-dev-output" id="scoringAiOutput" readonly spellcheck="false"></textarea>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                }
             </div>
 
         </abp-card>

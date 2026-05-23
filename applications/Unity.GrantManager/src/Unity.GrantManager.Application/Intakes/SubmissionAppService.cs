@@ -111,7 +111,6 @@ public class SubmissionAppService(
         return new BlobDto { Name = name, Content = contentBytes, ContentType = contentType };
     }
 
-
     public async Task<ApplicationForm?> GetApplicationFormBySubmissionId(Guid? formSubmissionId)
     {
         ApplicationForm? applicationFormData = new();
