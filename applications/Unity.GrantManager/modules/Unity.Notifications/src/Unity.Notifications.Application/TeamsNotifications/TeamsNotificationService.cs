@@ -147,8 +147,15 @@ namespace Unity.Notifications.TeamsNotifications
             var response = await httpClient.SendAsync(request);
             if (!response.IsSuccessStatusCode)
             {
-                // Optionally log or throw an exception here
-                throw new HttpRequestException($"Failed to post to Teams channel. Status code: {response.StatusCode}");
+                // Read response body for diagnostics then throw with details so callers can log it
+                string responseBody = string.Empty;
+                try
+                {
+                    responseBody = await response.Content.ReadAsStringAsync();
+                }
+                catch { /* ignore read failures */ }
+
+                throw new HttpRequestException($"Failed to post to Teams channel. Status code: {response.StatusCode}. Response: {responseBody}");
             }
         }
     }

@@ -198,41 +198,51 @@ public class AbpExceptionNotificationSubscriber(
             return;
         }
 
-        try
-        {
-            string blamePath =
-                ExceptionNotificationHelpers.BuildBlamePath(sourceFile);
-
-            var blameService =
-                services.GetRequiredService<IBlameLookupService>();
-
-            var blame =
-                await blameService.GetBlameAsync(
-                    blamePath,
-                    sourceLine.Value);
-
-            if (blame == null)
+            try
             {
-                return;
+                string blamePath =
+                    ExceptionNotificationHelpers.BuildBlamePath(sourceFile);
+
+                // Resolve blame lookup as optional — it may not be registered in some environments
+                var blameService = services.GetService<IBlameLookupService>();
+                if (blameService == null)
+                {
+                    logger.LogDebug("Blame lookup service not available; skipping blame enrichment for {File}:{Line}", sourceFile, sourceLine);
+                    return;
+                }
+
+                GitHubBlameInfo? blame = null;
+                try
+                {
+                    blame = await blameService.GetBlameAsync(blamePath, sourceLine.Value);
+                }
+                catch (Exception innerBlameEx)
+                {
+                    logger.LogDebug(innerBlameEx, "Blame lookup failed; continuing without blame info for {File}:{Line}", sourceFile, sourceLine);
+                }
+
+                if (blame == null)
+                {
+                    return;
+                }
+
+                logger.LogInformation(
+                    "[ExceptionNotify] Blame lookup successful: {Author} {Commit}",
+                    blame.Author,
+                    blame.CommitSha);
+
+                AddAuthorFact(facts, blame);
+
+                AddCommitFact(facts, blame);
+
+                AddPullRequestFacts(facts, blame);
             }
-
-            logger.LogInformation(
-                "[ExceptionNotify] Blame lookup successful: {Author} {Commit}",
-                blame.Author,
-                blame.CommitSha);
-
-            AddAuthorFact(facts, blame);
-
-            AddCommitFact(facts, blame);
-
-            AddPullRequestFacts(facts, blame);
-        }
-        catch (Exception blameException)
-        {
-            logger.LogWarning(
-                blameException,
-                "Failed to enrich exception with GitHub blame information");
-        }
+            catch (Exception blameException)
+            {
+                logger.LogWarning(
+                    blameException,
+                    "Failed to enrich exception with GitHub blame information");
+            }
     }
 
     private static void AddAuthorFact(
