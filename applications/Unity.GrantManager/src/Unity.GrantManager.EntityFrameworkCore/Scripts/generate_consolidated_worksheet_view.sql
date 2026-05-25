@@ -34,8 +34,7 @@ BEGIN
     -- Get the data clause from the consolidated worksheet data function
     data_clause := "Reporting".get_consolidated_worksheet_data(form_id, report_map_id);
 
-    RAISE NOTICE 'View name: %', view_name;
-    RAISE NOTICE 'Data clause: %', data_clause;
+    RAISE NOTICE 'View name: %', view_name;    
 
     -- Drop existing view to avoid conflicts on regeneration
     EXECUTE format('DROP VIEW IF EXISTS "Reporting".%I', view_name);

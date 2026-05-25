@@ -1839,7 +1839,7 @@ $(function () {
             modal.hide();
 
         }).fail(function (xhr, status, error) {
-            const errorMessage = getReportingDeleteErrorMessage(xhr, error);
+            const errorMessage = getReportingErrorMessage(xhr, error);
             abp.message.error(errorMessage);
         }).always(function () {
             // Reset modal button states
@@ -2238,7 +2238,7 @@ function getWorksheetTopLevelProviderValue(provider) {
 }
 
 // Extract error handling logic to reduce cognitive complexity
-function getReportingDeleteErrorMessage(xhr, error) {
+function getReportingErrorMessage(xhr, error) {
     if (xhr.status === 0) {
         return 'Network error: Could not connect to the server';
     }

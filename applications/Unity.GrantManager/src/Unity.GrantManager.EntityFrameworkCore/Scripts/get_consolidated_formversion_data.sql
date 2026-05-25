@@ -155,7 +155,7 @@ BEGIN
                 current_source_prefix := 'afs."Submission"->''submission''->''submission''->''data''';
 
                 CASE column_type
-                    WHEN 'textfield', 'textarea', 'email', 'select', 'phoneNumber' THEN
+                    WHEN 'textfield', 'textarea', 'email', 'select', 'phonenumber' THEN
                         IF json_path LIKE '%->%' THEN
                             json_path := regexp_replace(json_path, '->([^>]+)$', '->>\1');
                         ELSE
@@ -274,8 +274,9 @@ BEGIN
                     column_type := lower(COALESCE(row_data->>'Type', 'text'));
                     data_path_raw := row_data->>'DataPath';
 
-                    -- Version gating
-                    IF (row_data->>'VersionLabel') IS NOT NULL AND (row_data->>'VersionLabel') != version_lbl THEN
+                    -- Version gating                    
+                    IF (row_data->>'VersionLabel') IS NOT NULL 
+                    AND NOT (version_lbl = ANY(string_to_array((row_data->>'VersionLabel'), ', '))) THEN
                         CONTINUE;
                     END IF;
 
@@ -294,7 +295,7 @@ BEGIN
                     current_source_prefix := 'dg_' || datagrid_id || '_tbl.dg_' || datagrid_id;
 
                     CASE column_type
-                        WHEN 'textfield', 'textarea', 'email', 'select', 'phoneNumber' THEN
+                        WHEN 'textfield', 'textarea', 'email', 'select', 'phonenumber' THEN
                             json_path := replace(json_path, '->', '->>');
                             data_path := format('(%s%s)', '{}', json_path);
                             legacy_select_clause := replace(legacy_select_clause, format('NULL::TEXT AS %I', column_name), format('%s AS %I', replace(data_path, '{}', legacy_source_prefix), column_name));
