@@ -34,8 +34,8 @@
     }
 
         .provider-toggle-group .btn-outline-primary:hover {
-            background-color: #5595D9;
-            border-color: #3470B1;
+            background-color: #3470B1;
+            border-color: #255A90;
             color: #fff;
         }
 
@@ -205,7 +205,7 @@
     background-color: #ff9f38;
     border: 1px solid #e08800;
     border-radius: 0.375rem;
-    color: #fff;
+    color: #212529;
     cursor: help;
     transition: background-color 0.15s ease-in-out;
 }
@@ -219,7 +219,7 @@
     .dynamic-columns-warning small,
     .duplicate-keys-warning i,
     .dynamic-columns-warning i {
-        color: #fff !important;
+        color: #212529 !important;
     }
 
     .duplicate-keys-warning small,

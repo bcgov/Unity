@@ -225,14 +225,8 @@ $(function () {
         }
     }
 
-    function getTopLevelProviderValue(provider) {
-        if (provider === 'worksheet_consolidated') return 'worksheet';
-        if (provider === 'formversion_consolidated') return 'formversion';
-        return provider;
-    }
-
     function resetTogglesToCurrentProvider() {
-        const topLevelValue = getTopLevelProviderValue(currentProvider);
+        const topLevelValue = getWorksheetTopLevelProviderValue(currentProvider);
         $(`input[name="provider-toggle"][value="${topLevelValue}"]`).prop('checked', true);
         if (currentProvider === 'worksheet' || currentProvider === 'worksheet_consolidated') {
             $(`input[name="worksheet-mode"][value="${currentProvider}"]`).prop('checked', true);
@@ -1845,7 +1839,7 @@ $(function () {
             modal.hide();
 
         }).fail(function (xhr, status, error) {
-            const errorMessage = getDeleteErrorMessage(xhr, error);
+            const errorMessage = getReportingDeleteErrorMessage(xhr, error);
             abp.message.error(errorMessage);
         }).always(function () {
             // Reset modal button states
@@ -1855,42 +1849,7 @@ $(function () {
             // Re-enable main control buttons
             setControlButtonsLoadingState(false);
         });
-    });
-
-    // Extract error handling logic to reduce cognitive complexity
-    function getDeleteErrorMessage(xhr, error) {
-        if (xhr.status === 0) {
-            return 'Network error: Could not connect to the server';
-        }
-        
-        if (xhr.status === 400) {
-            const errorResponse = JSON.parse(xhr.responseText);
-            return errorResponse?.error?.message || (typeof errorResponse === 'string' ? errorResponse : 'Bad request: Please check your input and try again');
-        }
-        
-        if (xhr.status === 401) {
-            return 'Unauthorized: Please log in and try again';
-        }
-        
-        if (xhr.status === 403) {
-            return 'Forbidden: You do not have permission to perform this action';
-        }
-        
-        if (xhr.status === 404) {
-            return 'Configuration not found: The configuration may have already been deleted';
-        }
-        
-        if (xhr.status === 500) {
-            return 'Server error: Please try again later or contact support';
-        }
-        
-        if (xhr.responseText) {
-            const parsedError = JSON.parse(xhr.responseText);
-            return parsedError?.error?.message || parsedError?.message || xhr.responseText;
-        }
-        
-        return (error && error !== 'parsererror') ? error : 'Failed to delete configuration';
-    }
+    });    
 
     // Update the function to handle both generate and delete button visibility
     // This function was modified earlier to support both buttons
@@ -2271,3 +2230,44 @@ $(function () {
         }
     });
 });
+
+function getWorksheetTopLevelProviderValue(provider) {
+    if (provider === 'worksheet_consolidated') return 'worksheet';
+    if (provider === 'formversion_consolidated') return 'formversion';
+    return provider;
+}
+
+// Extract error handling logic to reduce cognitive complexity
+function getReportingDeleteErrorMessage(xhr, error) {
+    if (xhr.status === 0) {
+        return 'Network error: Could not connect to the server';
+    }
+    
+    if (xhr.status === 400) {
+        const errorResponse = JSON.parse(xhr.responseText);
+        return errorResponse?.error?.message || (typeof errorResponse === 'string' ? errorResponse : 'Bad request: Please check your input and try again');
+    }
+    
+    if (xhr.status === 401) {
+        return 'Unauthorized: Please log in and try again';
+    }
+    
+    if (xhr.status === 403) {
+        return 'Forbidden: You do not have permission to perform this action';
+    }
+    
+    if (xhr.status === 404) {
+        return 'Configuration not found: The configuration may have already been deleted';
+    }
+    
+    if (xhr.status === 500) {
+        return 'Server error: Please try again later or contact support';
+    }
+    
+    if (xhr.responseText) {
+        const parsedError = JSON.parse(xhr.responseText);
+        return parsedError?.error?.message || parsedError?.message || xhr.responseText;
+    }
+    
+    return (error && error !== 'parsererror') ? error : 'Failed to delete configuration';
+}
