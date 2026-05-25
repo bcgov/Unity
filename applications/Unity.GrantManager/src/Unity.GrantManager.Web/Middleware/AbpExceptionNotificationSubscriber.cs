@@ -101,13 +101,8 @@ public class AbpExceptionNotificationSubscriber(
 
             int? sourceLine = frame?.Line;
 
-            string userName =
-                AbpUserTenantAccessor.GetCurrentUserName(services)
-                ?? "unknown";
-
-            string tenantName =
-                AbpUserTenantAccessor.GetCurrentTenantName(services)
-                ?? "unknown";
+            string userName = AbpUserTenantAccessor.GetCurrentUserName(services) ?? "unknown";
+            string tenantName = await AbpUserTenantAccessor.GetCurrentTenantNameAsync(services) ?? "unknown";
 
             string activityTitle =
                 $"[{environment.ToUpperInvariant()}] {ex.GetType().Name}";
@@ -202,18 +197,58 @@ public class AbpExceptionNotificationSubscriber(
         {
             string blamePath =
                 ExceptionNotificationHelpers.BuildBlamePath(sourceFile);
+            string blamePath = ExceptionNotificationHelpers.BuildBlamePath(sourceFile, logger);
 
-            var blameService =
-                services.GetRequiredService<IBlameLookupService>();
+            // Resolve blame lookup as optional — it may not be registered in some environments
+            var blameService = services.GetService<IBlameLookupService>();
+            if (blameService == null)
+            {
+                logger.LogDebug("Blame lookup service not available; skipping blame enrichment for {File}:{Line}", sourceFile, sourceLine);
+                return;
+            }
 
-            var blame =
-                await blameService.GetBlameAsync(
-                    blamePath,
-                    sourceLine.Value);
+            GitHubBlameInfo? blame = null;
+            try
+            {
+                blame = await blameService.GetBlameAsync(blamePath, sourceLine.Value);
+            }
+            catch (Exception innerBlameEx)
+            {
+                logger.LogDebug(innerBlameEx, "Blame lookup failed; continuing without blame info for {File}:{Line}", sourceFile, sourceLine);
+            }
 
             if (blame == null)
             {
                 return;
+            }
+
+            logger.LogInformation(
+                "[ExceptionNotify] Blame lookup successful: {Author} {Commit}",
+                blame.Author,
+                blame.CommitSha);
+
+            AddAuthorFact(facts, blame);
+            AddCommitFact(facts, blame);
+            AddPullRequestFacts(facts, blame);
+                {
+                    return;
+                }
+
+                logger.LogInformation(
+                    "[ExceptionNotify] Blame lookup successful: {Author} {Commit}",
+                    blame.Author,
+                    blame.CommitSha);
+
+                AddAuthorFact(facts, blame);
+                AddCommitFact(facts, blame);
+                AddPullRequestFacts(facts, blame);
+            }
+            catch (Exception blameException)
+            {
+                logger.LogWarning(
+                    blameException,
+                    "Failed to enrich exception with GitHub blame information");
+>>>>>>> f09149c73 (feature/AB#32049-FixBuildExceptionConsistency)
             }
 
             logger.LogInformation(
@@ -250,8 +285,7 @@ public class AbpExceptionNotificationSubscriber(
         ICollection<Fact> facts,
         GitHubBlameInfo blame)
     {
-        string shortSha =
-            GetShortSha(blame.CommitSha);
+        string shortSha = GetShortSha(blame.CommitSha);
 
         facts.Add(new Fact
         {
