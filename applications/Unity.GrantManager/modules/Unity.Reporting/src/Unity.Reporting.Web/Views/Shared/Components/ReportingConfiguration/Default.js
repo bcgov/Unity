@@ -1718,7 +1718,7 @@ $(function () {
                 console.error('Error generating view - Error:', error);
                 console.error('Error generating view - XHR:', xhr);
 
-                const errorMessage = getViewGenerationErrorMessage(xhr, error);
+                const errorMessage = getReportingErrorMessage(xhr, error);
                 abp.message.error(errorMessage);
             },
             complete: function () {
