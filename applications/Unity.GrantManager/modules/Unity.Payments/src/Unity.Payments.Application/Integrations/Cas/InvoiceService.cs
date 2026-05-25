@@ -17,6 +17,9 @@ using Unity.Modules.Shared.Http;
 using Unity.GrantManager.Integrations;
 using Unity.Payments.Domain.Services;
 using Volo.Abp.MultiTenancy;
+using System.Linq;
+using Volo.Abp.Domain.Repositories;
+using Unity.SharedKernel.Utilities;
 
 namespace Unity.Payments.Integrations.Cas
 {
@@ -65,7 +68,11 @@ namespace Unity.Payments.Integrations.Cas
                 casInvoice.GlDate = dateStringDayMonYear;
                 casInvoice.InvoiceAmount = paymentRequest.Amount;
                 casInvoice.InvoiceBatchName = paymentRequest.BatchName;
-                casInvoice.PaymentAdviceComments = paymentRequest.Description;
+                // Payment description: build or use existing
+                casInvoice.PaymentAdviceComments = await BuildPaymentDescriptionAsync(paymentRequest.Description);                
+
+                // Set QualifiedReceiver to the Level1 approver's user name (lookup by DecisionUserId when possible)
+                casInvoice.QualifiedReceiver = await GetLevel1DecisionUserNameAsync(paymentRequest);
 
                 InvoiceLineDetail invoiceLineDetail = new()
                 {
@@ -73,10 +80,70 @@ namespace Unity.Payments.Integrations.Cas
                     InvoiceLineAmount = paymentRequest.Amount,
                     DefaultDistributionAccount = accountDistributionCode // This will be at the tenant level
                 };
-                casInvoice.InvoiceLineDetails = [invoiceLineDetail];
+                casInvoice.InvoiceLineDetails = new List<InvoiceLineDetail> { invoiceLineDetail };
             }
 
             return casInvoice;
+        }
+
+        private async Task<string> GetLevel1DecisionUserNameAsync(PaymentRequest paymentRequest)
+        {
+            if (paymentRequest?.ExpenseApprovals == null)
+                return string.Empty;
+
+            var decisionUserId = paymentRequest.ExpenseApprovals.FirstOrDefault(x => x.Type == ExpenseApprovalType.Level1)?.DecisionUserId;
+            if (decisionUserId == null || decisionUserId == Guid.Empty)
+                return string.Empty;
+
+            try
+            {
+                // Try to resolve a repository for IdentityUser: IRepository<IdentityUser, Guid>
+                var repoType = typeof(IRepository<,>).MakeGenericType(typeof(Volo.Abp.Identity.IdentityUser), typeof(Guid));
+                var repoObj = LazyServiceProvider.LazyGetService(repoType);
+                if (repoObj != null)
+                {
+                    // Use dynamic to call FindAsync
+                    dynamic repo = repoObj;
+                    var user = await repo.FindAsync((Guid)decisionUserId);
+                    if (user != null)
+                    {
+                        // Prefer UserName, then full name (Name + Surname), then fallback to id
+                        string? userName = user.UserName as string;
+                        if (!string.IsNullOrWhiteSpace(userName))
+                            return userName;
+
+                        var givenName = user.Name as string;
+                        var surname = user.Surname as string;
+                        if (!string.IsNullOrWhiteSpace(givenName) || !string.IsNullOrWhiteSpace(surname))
+                            return $"{givenName} {surname}".Trim();
+                    }
+                }
+            }
+            catch
+            {
+                // ignore and fallback
+            }
+
+            return string.Empty;
+        }
+
+        // Tenant/CurrentUser lookups: resolve from IServiceProvider (no dependency on Web project utilities)
+        private async Task<string> BuildPaymentDescriptionAsync(string? existingDescription)
+        {
+            if (!string.IsNullOrWhiteSpace(existingDescription))
+            {
+                var trimmed = existingDescription.Trim();
+                return trimmed.Length > 50 ? trimmed.Substring(0, 50) : trimmed;
+            }
+            // Resolve tenant name via shared helper
+            var serviceProvider = LazyServiceProvider.LazyGetRequiredService<IServiceProvider>();
+            var tenantDesc = await AbpUserTenantAccessor.GetCurrentTenantNameAsync(serviceProvider) ?? string.Empty;
+            var generated = string.IsNullOrWhiteSpace(tenantDesc)
+                ? "Grant Payment"
+                : $"{tenantDesc} – Grant Payment";
+            if (generated.Length > 50)
+                generated = generated.Substring(0, 50);
+            return generated;
         }
 
         public async Task<InvoiceResponse?> CreateInvoiceByPaymentRequestAsync(string invoiceNumber)
