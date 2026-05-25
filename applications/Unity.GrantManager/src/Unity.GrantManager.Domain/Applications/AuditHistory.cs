@@ -9,6 +9,8 @@ public class AuditHistory : AuditedAggregateRoot<Guid>, IMultiTenant
     public Guid? ApplicantId { get; set; }
     public string? AuditTrackingNumber { get; set; }
     public DateTime? AuditDate { get; set; }
+    public AuditHistoryStatus? AuditStatus { get; set; }
+    public string? AuditorName { get; set; }
     public string? AuditNote { get; set; }
     public Guid? TenantId { get; set; }
 }

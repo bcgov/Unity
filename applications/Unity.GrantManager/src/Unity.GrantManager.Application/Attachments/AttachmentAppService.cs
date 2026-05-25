@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -113,7 +114,7 @@ public class AttachmentAppService(
                         CreatorId      = person.Id
                     };
 
-        return query.ToList();
+        return await query.AsSingleQuery().ToListAsync();
     }
 
     public async Task<AttachmentMetadataDto> GetAttachmentMetadataAsync(AttachmentType attachmentType, Guid attachmentId)

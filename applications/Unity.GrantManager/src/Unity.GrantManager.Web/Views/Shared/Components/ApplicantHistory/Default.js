@@ -128,6 +128,14 @@ $(function () {
                     } catch (e) { console.warn('Audit date parse error:', e); return d; }
                 }
             },
+            {
+                title: 'Status', data: 'auditStatus', name: 'auditStatus', className: 'data-table-header',
+                render: function (d) {
+                    if (!d) return nullPlaceholder;
+                    return d === 'InProgress' ? 'In Progress' : d;
+                }
+            },
+            { title: "Auditor's Name", data: 'auditorName', name: 'auditorName', className: 'data-table-header', render: (d) => d ?? nullPlaceholder },
             { title: 'Audit Note', data: 'auditNote', name: 'auditNote', className: 'data-table-header', render: (d) => d ?? nullPlaceholder },
             {
                 title: 'Actions', data: null, name: 'actions', orderable: false, className: 'data-table-header', width: '70px',

@@ -214,7 +214,7 @@ $(function () {
                         abp.notify.success('AI summaries generated successfully.');
                         globalThis.AIGenerationButtonState?.restore($activeButton);
                         $activeButton.html(existingHTML).prop('disabled', false);
-                        globalThis.refreshAIRateLimitState?.();
+                        globalThis.syncAIRateLimitButtons?.();
                         return;
                     }
 
@@ -226,6 +226,7 @@ $(function () {
                     globalThis.AIGenerationButtonState?.restore($activeButton);
                     $activeButton.html(existingHTML).prop('disabled', false);
                     setGenerateSummariesEnabled();
+                    globalThis.syncAIRateLimitButtons?.();
                 });
         });
     }
