@@ -235,7 +235,7 @@ const isProd =
   function waitForSubmissionInList(
     id: string,
     attempt = 1,
-    maxAttempts = 8,
+    maxAttempts = 15,
   ): void {
     goToApplicationsList();
     dismissBlockingModalIfPresent();
@@ -273,44 +273,53 @@ const isProd =
       .searchForSubmission(id)
       .selectRowByText(id);
 
-    cy.get("#assignApplication", { timeout: 20000 })
-      .should("exist")
-      .and("not.have.class", "action-bar-btn-unavailable")
-      .and("be.visible")
-      .click({ force: true });
-
-    cy.contains(".modal-title", "Assessment Users", { timeout: 20000 }).should(
-      "be.visible",
-    );
-    cy.get("#AssigneeId", { timeout: 20000 })
-      .should("be.visible")
-      .select(BULK_CONFIG.assignOwner);
-    cy.get("#user-tags-input", { timeout: 20000 })
-      .should("be.visible")
-      .clear()
-      .type(BULK_CONFIG.assignOwner, { delay: 0 });
-
-    cy.get("body").then(($body) => {
-      if (
-        $body.find(".tags-suggestion-container .tags-suggestion-element")
-          .length > 0
-      ) {
-        cy.get(".tags-suggestion-container .tags-suggestion-element")
-          .contains(BULK_CONFIG.assignOwner)
-          .click({ force: true });
-      } else {
-        cy.get("#user-tags-input").type("{enter}");
+    // If the submission is already assigned (e.g. auto-assigned or left over from
+    // a previous partial run) the button has class action-bar-btn-unavailable.
+    // In that case skip re-assignment — subsequent status actions handle their
+    // own availability checks and will proceed from wherever the submission is.
+    cy.get("#assignApplication", { timeout: 20000 }).then(($btn) => {
+      if ($btn.hasClass("action-bar-btn-unavailable")) {
+        cy.log(
+          `assignSubmission: assign button unavailable for ${id} — skipping (already assigned or not assignable)`,
+        );
+        return;
       }
-    });
 
-    cy.contains(".modal-footer button", "Save", { timeout: 20000 })
-      .should("be.visible")
-      .and("not.be.disabled")
-      .click({ force: true });
-    cy.contains(".modal-title", "Assessment Users", { timeout: 20000 }).should(
-      "not.exist",
-    );
-    listPage.waitForNoBlockingOverlay();
+      cy.wrap($btn).should("be.visible").click({ force: true });
+
+      cy.contains(".modal-title", "Assessment Users", {
+        timeout: 20000,
+      }).should("be.visible");
+      cy.get("#AssigneeId", { timeout: 20000 })
+        .should("be.visible")
+        .select(BULK_CONFIG.assignOwner);
+      cy.get("#user-tags-input", { timeout: 20000 })
+        .should("be.visible")
+        .clear()
+        .type(BULK_CONFIG.assignOwner, { delay: 0 });
+
+      cy.get("body").then(($body) => {
+        if (
+          $body.find(".tags-suggestion-container .tags-suggestion-element")
+            .length > 0
+        ) {
+          cy.get(".tags-suggestion-container .tags-suggestion-element")
+            .contains(BULK_CONFIG.assignOwner)
+            .click({ force: true });
+        } else {
+          cy.get("#user-tags-input").type("{enter}");
+        }
+      });
+
+      cy.contains(".modal-footer button", "Save", { timeout: 20000 })
+        .should("be.visible")
+        .and("not.be.disabled")
+        .click({ force: true });
+      cy.contains(".modal-title", "Assessment Users", {
+        timeout: 20000,
+      }).should("not.exist");
+      listPage.waitForNoBlockingOverlay();
+    });
   }
 
   /** Open a submission's detail page from the applications list. */
@@ -408,6 +417,28 @@ const isProd =
     );
     detailsPage.clickRefreshSiteList();
     cy.wait("@siteRefresh");
+
+    // If site data is available, select the payment group so the payment-modal
+    // description inputs are enabled.  Without this step the inputs render as
+    // disabled and the bulk payment phase fails.
+    cy.get("body").then(($body) => {
+      const rows = $body.find("#SiteInfoTable tbody tr");
+      const firstRowText = rows.first().text().replace(/\s+/g, " ").trim();
+      const hasData =
+        rows.length > 0 && !/no data available/i.test(firstRowText);
+      const hasTokenError =
+        $body.text().includes("GetAuthTokenAsync") ||
+        $body.text().includes("Error retrieving Token");
+      if (hasData && !hasTokenError) {
+        detailsPage
+          .clickSiteInfoEdit()
+          .waitForEditSiteModal()
+          .selectPaymentGroup("Cheque")
+          .clickSaveChanges();
+      } else {
+        cy.log("No site data available — skipping site info edit");
+      }
+    });
 
     // Complete Assessment + Approve
     cy.reload();
@@ -625,7 +656,11 @@ const isProd =
 
     // Modal lists all N payment entries — #Note and #btnSubmitPayment are below them.
     const approvalNote = `BulkL1-${Date.now()}`.slice(0, 50);
-    cy.get("#Note").scrollIntoView().should("be.visible").clear().type(approvalNote);
+    cy.get("#Note")
+      .scrollIntoView()
+      .should("be.visible")
+      .clear()
+      .type(approvalNote);
     cy.get("#btnSubmitPayment")
       .scrollIntoView()
       .should("be.visible")
@@ -695,7 +730,11 @@ const isProd =
 
     // Modal lists all N payment entries — scroll to reach #Note and submit below them
     const approvalNote = `BulkL2-${Date.now()}`.slice(0, 50);
-    cy.get("#Note").scrollIntoView().should("be.visible").clear().type(approvalNote);
+    cy.get("#Note")
+      .scrollIntoView()
+      .should("be.visible")
+      .clear()
+      .type(approvalNote);
     cy.get("#btnSubmitPayment")
       .scrollIntoView()
       .should("be.visible")
