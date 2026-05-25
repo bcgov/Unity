@@ -365,12 +365,31 @@ $(function () {
         }
     }
 
-    // Function to check for duplicate keys in current table data
+    // Function to check for duplicate keys in current table data.
+    // Covers two cases:
+    //   1. Auto-generated (DKx) prefix markers added by the server when CHEFS fields share a key.
+    //   2. Literal path duplicates — two rows with the exact same DataPath value (e.g. same
+    //      worksheet field appearing twice from different version sync artefacts).
     function checkForDuplicateKeysInTable() {
         if (!dataTable) return false;
 
-        return dataTable.rows().data().toArray().some(function (data) {
+        const rows = dataTable.rows().data().toArray();
+
+        // Case 1: (DKx) prefix present on any row
+        if (rows.some(function (data) {
             return hasDuplicateKeyPrefix(data.path) || hasDuplicateKeyPrefix(data.dataPath);
+        })) {
+            return true;
+        }
+
+        // Case 2: two or more rows share the exact same path value
+        const seenPaths = new Set();
+        return rows.some(function (data) {
+            const p = (data.dataPath || data.path || '').toLowerCase();
+            if (!p) return false;
+            if (seenPaths.has(p)) return true;
+            seenPaths.add(p);
+            return false;
         });
     }
 
@@ -519,12 +538,21 @@ $(function () {
         });
     }
 
+    // Holds a schema-change message that arrived while the reporting tab was not visible.
+    // Displayed the first time the user navigates to the reporting configuration tab.
+    let pendingDetectedChanges = null;
+
     // Helper function to process detected changes alert (module-level to reduce nesting)
     function processDetectedChanges(detectedChanges) {
         if (detectedChanges?.trim() !== '') {
-            setTimeout(function () {
-                displayDetectedChangesAlert(detectedChanges);
-            }, 100);
+            if (isReportingTabVisible()) {
+                setTimeout(function () {
+                    displayDetectedChangesAlert(detectedChanges);
+                }, 100);
+            } else {
+                // Store for display when the reporting configuration tab is opened
+                pendingDetectedChanges = detectedChanges;
+            }
         }
     }
 
@@ -2175,6 +2203,15 @@ $(function () {
     // Listen for Bootstrap tab shown event
     $('button[data-bs-target="#nav-reporting-configuration"]').on('shown.bs.tab', function (e) {
         handleTabVisibilityChange();
+
+        // Show any schema-change alert that was deferred because the tab was not yet visible
+        if (pendingDetectedChanges) {
+            const changes = pendingDetectedChanges;
+            pendingDetectedChanges = null;
+            setTimeout(function () {
+                displayDetectedChangesAlert(changes);
+            }, 100);
+        }
     });
 
     // Alternative: Listen for tab clicks

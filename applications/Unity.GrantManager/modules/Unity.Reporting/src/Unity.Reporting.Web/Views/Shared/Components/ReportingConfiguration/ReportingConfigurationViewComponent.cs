@@ -141,9 +141,19 @@ namespace Unity.Reporting.Web.Views.Shared.Components.ReportingConfiguration
         {
             if (rows == null) return false;
 
-            return rows.Any(row =>
-                HasDuplicateKeyPrefix(row.Path) ||
-                HasDuplicateKeyPrefix(row.DataPath));
+            var rowList = rows.ToList();
+
+            // Check for auto-generated (DKx) prefix markers
+            if (rowList.Any(row => HasDuplicateKeyPrefix(row.Path) || HasDuplicateKeyPrefix(row.DataPath)))
+                return true;
+
+            // Check for literal path duplicates (two rows sharing the exact same DataPath/Path value)
+            var paths = rowList
+                .Select(row => row.DataPath ?? row.Path)
+                .Where(p => !string.IsNullOrEmpty(p))
+                .ToList();
+
+            return paths.Count != paths.Distinct(StringComparer.OrdinalIgnoreCase).Count();
         }
 
         /// <summary>
@@ -157,9 +167,17 @@ namespace Unity.Reporting.Web.Views.Shared.Components.ReportingConfiguration
         {
             if (fields == null) return false;
 
-            return fields.Any(field =>
-                HasDuplicateKeyPrefix(field.Path) ||
-                HasDuplicateKeyPrefix(field.DataPath));
+            // Check for auto-generated (DKx) prefix markers
+            if (fields.Any(field => HasDuplicateKeyPrefix(field.Path) || HasDuplicateKeyPrefix(field.DataPath)))
+                return true;
+
+            // Check for literal path duplicates (two fields sharing the exact same DataPath/Path value)
+            var paths = fields
+                .Select(field => field.DataPath ?? field.Path)
+                .Where(p => !string.IsNullOrEmpty(p))
+                .ToList();
+
+            return paths.Count != paths.Distinct(StringComparer.OrdinalIgnoreCase).Count();
         }
 
         /// <summary>

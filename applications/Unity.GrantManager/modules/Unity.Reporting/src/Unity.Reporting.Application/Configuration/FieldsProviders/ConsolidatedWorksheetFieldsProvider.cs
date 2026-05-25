@@ -61,7 +61,12 @@ namespace Unity.Reporting.Configuration.FieldsProviders
                     metadataInfo[$"ws_{version.Id}_{link.WorksheetId}"] = $"{worksheetTitle} ({worksheetName})";
                 }
 
-                versionsWithFields.Add((version.Id, versionLabel, [.. allComponents]));
+                // Stamp within-version duplicate DataPaths with (DK1), (DK2), … before merging,
+                // so MergeFields() treats them as distinct paths and preserves both rather than
+                // silently dropping the second occurrence.
+                var versionComponents = allComponents.ToArray();
+                WorksheetFieldsUtils.UniqueifyDataPaths(versionComponents);
+                versionsWithFields.Add((version.Id, versionLabel, versionComponents));
                 metadataInfo[$"formversion_{version.Id}"] = versionLabel;
             }
 
