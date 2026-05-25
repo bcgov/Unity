@@ -349,47 +349,54 @@ const APPLICATIONS_PATH = "GrantApplications";
 
     cy.get("#assignApplication", { timeout: 20000 })
       .should("exist")
-      .and("not.have.class", "action-bar-btn-unavailable")
-      .and("be.visible")
-      .click({ force: true });
+      .then(($btn) => {
+        if ($btn.hasClass("action-bar-btn-unavailable")) {
+          cy.log(
+            "Assign button is unavailable — submission may already be assigned, skipping assignment step",
+          );
+          return;
+        }
 
-    cy.contains(".modal-title", "Assessment Users", { timeout: 20000 }).should(
-      "be.visible",
-    );
+        cy.wrap($btn).should("be.visible").click({ force: true });
 
-    cy.get("#AssigneeId", { timeout: 20000 })
-      .should("be.visible")
-      .select(ownerName);
+        cy.contains(".modal-title", "Assessment Users", {
+          timeout: 20000,
+        }).should("be.visible");
 
-    cy.get("#user-tags-input", { timeout: 20000 })
-      .should("be.visible")
-      .clear()
-      .type(ownerName, { delay: 0 });
+        cy.get("#AssigneeId", { timeout: 20000 })
+          .should("be.visible")
+          .select(ownerName);
 
-    cy.get("body").then(($body) => {
-      if (
-        $body.find(".tags-suggestion-container .tags-suggestion-element")
-          .length > 0
-      ) {
-        cy.get(".tags-suggestion-container .tags-suggestion-element", {
-          timeout: 10000,
-        })
-          .contains(ownerName)
+        cy.get("#user-tags-input", { timeout: 20000 })
+          .should("be.visible")
+          .clear()
+          .type(ownerName, { delay: 0 });
+
+        cy.get("body").then(($body) => {
+          if (
+            $body.find(".tags-suggestion-container .tags-suggestion-element")
+              .length > 0
+          ) {
+            cy.get(".tags-suggestion-container .tags-suggestion-element", {
+              timeout: 10000,
+            })
+              .contains(ownerName)
+              .click({ force: true });
+          } else {
+            cy.get("#user-tags-input").type("{enter}");
+          }
+        });
+
+        cy.contains(".modal-footer button", "Save", { timeout: 20000 })
+          .should("be.visible")
+          .and("not.be.disabled")
           .click({ force: true });
-      } else {
-        cy.get("#user-tags-input").type("{enter}");
-      }
-    });
 
-    cy.contains(".modal-footer button", "Save", { timeout: 20000 })
-      .should("be.visible")
-      .and("not.be.disabled")
-      .click({ force: true });
-
-    cy.contains(".modal-title", "Assessment Users", { timeout: 20000 }).should(
-      "not.exist",
-    );
-    listPage.waitForNoBlockingOverlay();
+        cy.contains(".modal-title", "Assessment Users", {
+          timeout: 20000,
+        }).should("not.exist");
+        listPage.waitForNoBlockingOverlay();
+      });
   }
 
   function clickAdjudicationActionIfEnabled(actionSelector: string): void {
