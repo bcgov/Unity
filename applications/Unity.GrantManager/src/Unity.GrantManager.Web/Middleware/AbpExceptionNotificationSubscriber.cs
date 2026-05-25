@@ -101,13 +101,8 @@ public class AbpExceptionNotificationSubscriber(
 
             int? sourceLine = frame?.Line;
 
-            string userName =
-                AbpUserTenantAccessor.GetCurrentUserName(services)
-                ?? "unknown";
-
-            string tenantName =
-                AbpUserTenantAccessor.GetCurrentTenantName(services)
-                ?? "unknown";
+            string userName = AbpUserTenantAccessor.GetCurrentUserName(services) ?? "unknown";
+            string tenantName = await AbpUserTenantAccessor.GetCurrentTenantNameAsync(services) ?? "unknown";
 
             string activityTitle =
                 $"[{environment.ToUpperInvariant()}] {ex.GetType().Name}";
@@ -200,10 +195,7 @@ public class AbpExceptionNotificationSubscriber(
 
             try
             {
-                string blamePath =
-                    ExceptionNotificationHelpers.BuildBlamePath(sourceFile);
-
-                // Resolve blame lookup as optional — it may not be registered in some environments
+                string blamePath = ExceptionNotificationHelpers.BuildBlamePath(sourceFile);
                 var blameService = services.GetService<IBlameLookupService>();
                 if (blameService == null)
                 {
@@ -232,9 +224,7 @@ public class AbpExceptionNotificationSubscriber(
                     blame.CommitSha);
 
                 AddAuthorFact(facts, blame);
-
                 AddCommitFact(facts, blame);
-
                 AddPullRequestFacts(facts, blame);
             }
             catch (Exception blameException)
@@ -260,8 +250,7 @@ public class AbpExceptionNotificationSubscriber(
         ICollection<Fact> facts,
         GitHubBlameInfo blame)
     {
-        string shortSha =
-            GetShortSha(blame.CommitSha);
+        string shortSha = GetShortSha(blame.CommitSha);
 
         facts.Add(new Fact
         {

@@ -36,14 +36,11 @@ public class ExceptionCounterMiddleware(
                 LabelNames = new[] { "type" }
             });
 
-    // Git SHA baked in at build time via -p:SourceRevisionId=<sha> in the Dockerfile.
-    // Format is "<version>+<sha>" e.g. "1.0.0+a3f8c21"; we extract just the SHA.
     internal static readonly string CommitSha = ParseCommitSha(
         typeof(ExceptionCounterMiddleware).Assembly
             .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?
             .InformationalVersion);
 
-    // Commit author baked in at build time via -p:AssemblyMetadata_CommitAuthor=<author>.
     internal static readonly string CommitAuthor =
         typeof(ExceptionCounterMiddleware).Assembly
             .GetCustomAttributes<AssemblyMetadataAttribute>()
@@ -122,13 +119,11 @@ public class ExceptionCounterMiddleware(
                 await using var scope = scopeFactory.CreateAsyncScope();
 
                 var uowManager = scope.ServiceProvider.GetRequiredService<IUnitOfWorkManager>();
-
-                var notifications =
-                    scope.ServiceProvider.GetRequiredService<INotificationsAppService>();
+                var notifications = scope.ServiceProvider.GetRequiredService<INotificationsAppService>();
 
                 // Get current user and tenant name
                 var userName = AbpUserTenantAccessor.GetCurrentUserName(scope.ServiceProvider) ?? "unknown";
-                var tenantName = AbpUserTenantAccessor.GetCurrentTenantName(scope.ServiceProvider) ?? "unknown";
+                var tenantName = await AbpUserTenantAccessor.GetCurrentTenantNameAsync(scope.ServiceProvider) ?? "unknown";
 
                 // Determine top frame (file/line) for initial facts so variables exist when creating the list
                 var topForFacts = ExceptionNotificationHelpers.GetTopFrame(ex);
@@ -187,24 +182,32 @@ public class ExceptionCounterMiddleware(
                         }
                     }
                 }
-                catch (Exception ex)
+                catch (Exception ex2)
                 {
                     // Catch-all: ensure notifications still send even if enrichment logic fails
-                    logger.LogDebug(ex, "Unexpected error during blame enrichment; continuing without blame info for {File}:{Line}", sourceFile, sourceLine);
+                    logger.LogDebug(ex2, "Unexpected error during blame enrichment; continuing without blame info for {File}:{Line}", sourceFile, sourceLine);
                 }
 
                 // Provide simple activity title/subtitle for the notification
                 var activityTitle = $"{exTypeName} thrown at {endpoint}";
                 var activitySubtitle = $"Environment: {env} | {endpoint} | {userName}@{tenantName}";
 
-                // If blame service not available or blame lookup fails we log and continue — do not block notifications
-                // (blame lookup is best-effort)
-                // Note: any exceptions from blame lookup are already caught and ignored above.
+                // Ensure a Unit-of-Work is active for any DB access inside NotificationsAppService
+                try
+                {
+                    using var uow = uowManager.Begin(requiresNew: true, isTransactional: false);
 
-                await notifications.PostToTeamsAsync(
-                    activityTitle,
-                    activitySubtitle,
-                    facts);
+                    await notifications.PostToTeamsAsync(
+                        activityTitle,
+                        activitySubtitle,
+                        facts);
+
+                    await uow.CompleteAsync();
+                }
+                catch (Exception uowEx)
+                {
+                    logger.LogWarning(uowEx, "Failed to send Teams exception notification within UnitOfWork");
+                }
             }
             catch (Exception notifyEx)
             {

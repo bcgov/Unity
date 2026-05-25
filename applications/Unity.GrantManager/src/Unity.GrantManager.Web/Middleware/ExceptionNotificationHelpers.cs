@@ -9,15 +9,37 @@ namespace Unity.GrantManager.Web.Middleware
     {
         public static string NormalizeRepoPath(string fullPath)
         {
-            const string marker = "src/";
+            if (string.IsNullOrWhiteSpace(fullPath)) return fullPath;
 
-            int idx = fullPath.IndexOf(marker, StringComparison.OrdinalIgnoreCase);
+            // Normalize separators for comparison
+            var path = fullPath.Replace("\\", "/");
 
-            if (idx < 0)
-                return fullPath.Replace("\\", "/");
+            // Prefer repository-relative path under applications/Unity.GrantManager/src/
+            const string repoMarker = "applications/unity.grantmanager/src/";
+            int idx = path.IndexOf(repoMarker, StringComparison.OrdinalIgnoreCase);
+            if (idx >= 0)
+            {
+                return path[(idx + repoMarker.Length)..].TrimStart('/');
+            }
 
-            return fullPath[(idx + marker.Length)..]
-                .Replace("\\", "/");
+            // Fallback to any src/ directory
+            const string srcMarker = "src/";
+            idx = path.IndexOf(srcMarker, StringComparison.OrdinalIgnoreCase);
+            if (idx >= 0)
+            {
+                return path[(idx + srcMarker.Length)..].TrimStart('/');
+            }
+
+            // Last resort: strip drive letter (Windows) and return the path relative to repository root if possible
+            // If we can't determine a repo-relative path, return just the file name so notifications remain readable
+            try
+            {
+                return System.IO.Path.GetFileName(path);
+            }
+            catch
+            {
+                return path;
+            }
         }
 
         public static (string? File, int? Line)? GetTopFrame(Exception ex)
@@ -40,7 +62,22 @@ namespace Unity.GrantManager.Web.Middleware
 
         public static string BuildBlamePath(string sourceFile)
         {
-            return $"applications/Unity.GrantManager/{sourceFile}";
+            if (string.IsNullOrWhiteSpace(sourceFile)) return sourceFile;
+
+            // Normalize separators
+            var path = sourceFile.Replace("\\", "/").TrimStart('/');
+
+            // If caller already passed a repo-rooted path, return as-is
+            string result;
+            if (path.StartsWith("applications/", StringComparison.OrdinalIgnoreCase))
+                result = path;
+            else if (path.StartsWith("src/", StringComparison.OrdinalIgnoreCase))
+                result = $"applications/Unity.GrantManager/{path}";
+            else
+                // Default: assume sourceFile is the portion after src/, so include src/
+                result = $"applications/Unity.GrantManager/src/{path}";
+
+            return result;
         }
 
         public static string BuildApplicationStackExcerpt(Exception ex)
