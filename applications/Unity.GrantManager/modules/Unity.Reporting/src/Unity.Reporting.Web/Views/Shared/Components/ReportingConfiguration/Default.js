@@ -953,9 +953,11 @@ $(function () {
             if (error?.responseJSON?.error?.message) {
                 errorMessage = error.responseJSON.error.message;
             } else if (error?.responseText) {
-                const parsedError = JSON.parse(error.responseText);
+                const parsedError = tryParseJson(error.responseText);
                 if (parsedError?.message) {
                     errorMessage = parsedError.message;
+                } else {
+                    errorMessage = error.responseText;
                 }
             }
             abp.message.error(errorMessage);
@@ -1718,7 +1720,7 @@ $(function () {
                 console.error('Error generating view - Error:', error);
                 console.error('Error generating view - XHR:', xhr);
 
-                const errorMessage = getReportingErrorMessage(xhr, error);
+                const errorMessage = getReportingErrorMessage(xhr, error, 'Failed to generate view');
                 abp.message.error(errorMessage);
             },
             complete: function () {
@@ -1839,7 +1841,7 @@ $(function () {
             modal.hide();
 
         }).fail(function (xhr, status, error) {
-            const errorMessage = getReportingErrorMessage(xhr, error);
+            const errorMessage = getReportingErrorMessage(xhr, error, 'Failed to delete configuration');
             abp.message.error(errorMessage);
         }).always(function () {
             // Reset modal button states
@@ -2237,37 +2239,53 @@ function getTopLevelProviderValue(provider) {
     return provider;
 }
 
-// Extract error handling logic to reduce cognitive complexity
-function getReportingErrorMessage(xhr, error) {
+// Safe JSON.parse wrapper — returns null instead of throwing on invalid input.
+function tryParseJson(text) {
+    if (!text || typeof text !== 'string') return null;
+    try {
+        return JSON.parse(text);
+    } catch (e) {
+        return null;
+    }
+}
+
+// Extract error handling logic to reduce cognitive complexity.
+// `fallbackMessage` is shown when no structured error detail is available; callers
+// should pass a short operation-specific string (e.g. 'Failed to generate view').
+function getReportingErrorMessage(xhr, error, fallbackMessage) {
+    fallbackMessage = fallbackMessage || 'An error occurred. Please try again';
     if (xhr.status === 0) {
         return 'Network error: Could not connect to the server';
     }
-    
+
     if (xhr.status === 400) {
-        const errorResponse = JSON.parse(xhr.responseText);
-        return errorResponse?.error?.message || (typeof errorResponse === 'string' ? errorResponse : 'Bad request: Please check your input and try again');
+        const errorResponse = tryParseJson(xhr.responseText);
+        return errorResponse?.error?.message
+            || (typeof errorResponse === 'string' ? errorResponse : null)
+            || xhr.responseText
+            || 'Bad request: Please check your input and try again';
     }
-    
+
     if (xhr.status === 401) {
         return 'Unauthorized: Please log in and try again';
     }
-    
+
     if (xhr.status === 403) {
         return 'Forbidden: You do not have permission to perform this action';
     }
-    
+
     if (xhr.status === 404) {
         return 'Configuration not found: The configuration may have already been deleted';
     }
-    
+
     if (xhr.status === 500) {
         return 'Server error: Please try again later or contact support';
     }
-    
+
     if (xhr.responseText) {
-        const parsedError = JSON.parse(xhr.responseText);
+        const parsedError = tryParseJson(xhr.responseText);
         return parsedError?.error?.message || parsedError?.message || xhr.responseText;
     }
-    
-    return (error && error !== 'parsererror') ? error : 'Failed to delete configuration';
+
+    return (error && error !== 'parsererror') ? error : fallbackMessage;
 }

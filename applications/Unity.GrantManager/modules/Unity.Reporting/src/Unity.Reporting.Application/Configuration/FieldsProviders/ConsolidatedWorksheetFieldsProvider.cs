@@ -182,7 +182,12 @@ namespace Unity.Reporting.Configuration.FieldsProviders
 
                     if (typesForPath.Count > 1)
                     {
-                        // Conflict: same (label, path) but different types — emit per-version entry
+                        // Conflict: same (label, path) but different types — emit one row per
+                        // distinct type, labelled with every version that carries that type.
+                        // exactGroup already holds every (versionLabel, field) pair for this
+                        // exact (label, path, type) triple, so join them all rather than using
+                        // the outer-loop versionLabel (which would only reflect the first version
+                        // encountered due to processedExactKeys suppressing subsequent entries).
                         result.Add(new FieldPathTypeDto
                         {
                             Id = field.Id,
@@ -192,7 +197,7 @@ namespace Unity.Reporting.Configuration.FieldsProviders
                             Type = field.Type,
                             TypePath = field.TypePath,
                             DataPath = field.DataPath,
-                            VersionLabel = versionLabel
+                            VersionLabel = string.Join(", ", exactGroup.Select(e => e.VersionLabel))
                         });
                     }
                     else if (versionsWithFields.Count > 1 && versionsHavingThisExact.Count == versionsWithFields.Count)

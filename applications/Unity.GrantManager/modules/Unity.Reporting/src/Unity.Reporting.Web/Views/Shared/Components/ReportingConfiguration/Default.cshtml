@@ -227,9 +227,10 @@
             <div class="modal-body">
                 <form id="generateViewForm">
                     <div class="mb-3">
-                        <input type="text" class="form-control" id="viewNameInput" placeholder="Enter view name" required>
+                        <label for="viewNameInput" class="form-label">View Name</label>
+                        <input type="text" class="form-control" id="viewNameInput" placeholder="Enter view name" required aria-describedby="viewNameFeedback viewNameHint">
                         <div class="invalid-feedback" id="viewNameFeedback"></div>
-                        <div class="form-text">
+                        <div class="form-text" id="viewNameHint">
                             View name must start with a letter or underscore, contain only letters, numbers, and underscores,
                             and be between 1-63 characters long.
                         </div>
