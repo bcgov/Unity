@@ -226,7 +226,7 @@ $(function () {
     }
 
     function resetTogglesToCurrentProvider() {
-        const topLevelValue = getWorksheetTopLevelProviderValue(currentProvider);
+        const topLevelValue = getTopLevelProviderValue(currentProvider);
         $(`input[name="provider-toggle"][value="${topLevelValue}"]`).prop('checked', true);
         if (currentProvider === 'worksheet' || currentProvider === 'worksheet_consolidated') {
             $(`input[name="worksheet-mode"][value="${currentProvider}"]`).prop('checked', true);
@@ -2231,7 +2231,7 @@ $(function () {
     });
 });
 
-function getWorksheetTopLevelProviderValue(provider) {
+function getTopLevelProviderValue(provider) {
     if (provider === 'worksheet_consolidated') return 'worksheet';
     if (provider === 'formversion_consolidated') return 'formversion';
     return provider;
