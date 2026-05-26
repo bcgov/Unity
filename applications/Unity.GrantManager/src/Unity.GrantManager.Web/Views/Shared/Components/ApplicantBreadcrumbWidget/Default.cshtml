@@ -7,6 +7,9 @@
     <div class="applicant-details-breadcrumb">
         <div class="unity-applicant-id">@Model.UnityApplicantId</div>
         <div class="applicant-name">@Model.ApplicantName</div>
-        <div class="applicant-status">@Model.Status</div>    
+        @if (Model.Status == "Active" || Model.Status == "Inactive")
+        {
+            <div class="applicant-status">@Model.Status</div>
+        }
     </div>
 </div>
