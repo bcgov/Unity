@@ -63,50 +63,48 @@ namespace Unity.Payments.Domain.Services
                 try
                 {
                     // Each attempt must have a fresh UoW
-                    using (var uow = unitOfWorkManager.Begin())
+                    using var uow = unitOfWorkManager.Begin();
+                    // Load with tracking
+                    var paymentRequest = await paymentRequestRepository.GetAsync(paymentRequestId);
+
+                    if (paymentRequest == null)
                     {
-                        // Load with tracking
-                        var paymentRequest = await paymentRequestRepository.GetAsync(paymentRequestId);
-
-                        if (paymentRequest == null)
-                        {
-                            Logger.LogWarning("PaymentRequest {Id} not found. Skipping update.", paymentRequestId);
-                            return;
-                        }
-
-                        // Idempotency: do not re-process
-                        if (paymentRequest.InvoiceStatus == CasPaymentRequestStatus.SentToCas)
-                        {
-                            Logger.LogInformation(
-                                "PaymentRequest {Id} already invoiced. Skipping update.",
-                                paymentRequestId
-                            );
-                            return;
-                        }
-
-                        // Apply CAS response info
-                        paymentRequest.SetCasHttpStatusCode((int)invoiceResponse.CASHttpStatusCode);
-                        paymentRequest.SetCasResponse(invoiceResponse.CASReturnedMessages);
-
-                        // Set status
-                        paymentRequest.SetInvoiceStatus(
-                            invoiceResponse.IsSuccess()
-                                ? CasPaymentRequestStatus.SentToCas
-                                : CasPaymentRequestStatus.ErrorFromCas
-                        );
-
-                        await paymentRequestRepository.UpdateAsync(paymentRequest, autoSave: false);
-
-                        // Commit this attempt
-                        await uow.CompleteAsync();
-
-                        Logger.LogInformation(
-                            "PaymentRequest {Id} updated successfully on attempt {Attempt}.",
-                            paymentRequestId,
-                            attempt
-                        );
-                        return; // success
+                        Logger.LogWarning("PaymentRequest {Id} not found. Skipping update.", paymentRequestId);
+                        return;
                     }
+
+                    // Idempotency: do not re-process
+                    if (paymentRequest.InvoiceStatus == CasPaymentRequestStatus.SentToCas)
+                    {
+                        Logger.LogInformation(
+                            "PaymentRequest {Id} already invoiced. Skipping update.",
+                            paymentRequestId
+                        );
+                        return;
+                    }
+
+                    // Apply CAS response info
+                    paymentRequest.SetCasHttpStatusCode((int)invoiceResponse.CASHttpStatusCode);
+                    paymentRequest.SetCasResponse(invoiceResponse.CASReturnedMessages);
+
+                    // Set status
+                    paymentRequest.SetInvoiceStatus(
+                        invoiceResponse.IsSuccess()
+                            ? CasPaymentRequestStatus.SentToCas
+                            : CasPaymentRequestStatus.ErrorFromCas
+                    );
+
+                    await paymentRequestRepository.UpdateAsync(paymentRequest, autoSave: false);
+
+                    // Commit this attempt
+                    await uow.CompleteAsync();
+
+                    Logger.LogInformation(
+                        "PaymentRequest {Id} updated successfully on attempt {Attempt}.",
+                        paymentRequestId,
+                        attempt
+                    );
+                    return; // success
                 }
                 catch (Exception ex) when (
                     ex is AbpDbConcurrencyException ||

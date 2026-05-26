@@ -28,5 +28,19 @@
         /// Scoresheets contain structured evaluation criteria and scoring mechanisms for application review.
         /// </summary>
         public static string Scoresheet => "scoresheet";
+
+        /// <summary>
+        /// Gets the correlation provider identifier for consolidated worksheet views spanning all form versions.
+        /// Used when creating a single unified report view that merges worksheet data across all versions of a form.
+        /// The CorrelationId for this provider is the FormId (not a specific version ID).
+        /// </summary>
+        public static string WorksheetConsolidated => "worksheet_consolidated";
+
+        /// <summary>
+        /// Gets the correlation provider identifier for consolidated form version submission views spanning all form versions.
+        /// Used when creating a single unified report view that merges submission data across all versions of a form.
+        /// The CorrelationId for this provider is the FormId (not a specific version ID).
+        /// </summary>
+        public static string FormVersionConsolidated => "formversion_consolidated";
     }
 }
