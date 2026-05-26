@@ -97,15 +97,15 @@ namespace Unity.Payments.Integrations.Cas
                 QualifiedReceiver =
                 await GetLevel1DecisionUserNameAsync(paymentRequest),
 
-                InvoiceLineDetails = new List<InvoiceLineDetail>
-                {
+                InvoiceLineDetails =
+                [
                     new()
                     {
                         InvoiceLineNumber = 1,
                         InvoiceLineAmount = paymentRequest.Amount,
                         DefaultDistributionAccount = accountDistributionCode
                     }
-                }
+                ]
             };
 
             return casInvoice;
@@ -252,14 +252,8 @@ namespace Unity.Payments.Integrations.Cas
             var authToken = await iTokenService.GetAuthTokenAsync(CurrentTenant.Id ?? Guid.Empty);
             string casBaseUrl = await endpointManagementAppService.GetUgmUrlByKeyNameAsync(DynamicUrlKeyNames.PAYMENT_API_BASE);
             var resource = $"{casBaseUrl}/{CFS_APINVOICE}/";
-            var response = await resilientHttpRequest.HttpAsync(HttpMethod.Post, resource, jsonString, authToken);
-
-            if (response == null)
-            {
-                throw new UserFriendlyException(
-                    "CAS InvoiceService CreateInvoiceAsync: Null response");
-            }
-
+            var response = await resilientHttpRequest.HttpAsync(HttpMethod.Post, resource, jsonString, authToken) 
+                                    ?? throw new UserFriendlyException("CAS InvoiceService CreateInvoiceAsync: Null response");
             if (response.Content != null &&
                 response.StatusCode != HttpStatusCode.NotFound)
             {
