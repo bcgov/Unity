@@ -1,12 +1,15 @@
 @page "/GrantApplicants/Details"
 @using Microsoft.Extensions.Localization
 @using Unity.GrantManager.Localization
+@using Unity.GrantManager.Permissions
 @using Unity.GrantManager.Web.Pages.Applicants
 @using Volo.Abp.AspNetCore.Mvc.UI.Layout
+@using Volo.Abp.Authorization.Permissions
 
 @model DetailsModel
 @inject IStringLocalizer<GrantManagerResource> L
 @inject IPageLayout PageLayout
+@inject IPermissionChecker PermissionChecker
 
 @{
     PageLayout.Content.Title = L["Applicants"].Value;
@@ -25,7 +28,38 @@
     @await Component.InvokeAsync("ApplicantBreadcrumbWidget", new { applicantId = @Model.ApplicantId })
 </div>
 
+@if (await PermissionChecker.IsGrantedAsync(GrantApplicationPermissions.Applicants.Edit))
+{
+    <div class="action-bar p-2 fade-in-load" id="applicantActionBar">
+        <div id="ApplicantActionBarStart" class="d-flex align-items-stretch justify-content-start gap-2">
+            <div class="order-first">
+                <abp-dropdown id="ApplicantStatusDropdown">
+                    <abp-dropdown-button button-type="Light"
+                        text="@L["GrantApplication:ActionButtonName"].Value" />
+                    <ul class="dropdown-menu">
+                        <li>
+                            <abp-button id="ApplicantStatusActiveButton"
+                                        button-type="Light"
+                                        class="dropdown-item applicant-status-action"
+                                        disabled="@(Model.Status == "Active")"
+                                        data-status="Active">Active</abp-button>
+                        </li>
+                        <li>
+                            <abp-button id="ApplicantStatusInactiveButton"
+                                        button-type="Light"
+                                        class="dropdown-item applicant-status-action"
+                                        disabled="@(Model.Status == "Inactive")"
+                                        data-status="Inactive">Inactive</abp-button>
+                        </li>
+                    </ul>
+                </abp-dropdown>
+            </div>
+        </div>
+    </div>
+}
+
 <input type="hidden" id="DetailsViewApplicantId" value="@Model.ApplicantId" />
+<input type="hidden" id="ApplicantCurrentStatus" value="@Model.Status" />
 <input type="hidden" id="CurrentUserId" value="@Model.CurrentUserId" />
 <input type="hidden" id="CurrentUserName" value="@Model.CurrentUserName" />
 <input type="hidden" id="Extensions" value="@Model.Extensions" />
