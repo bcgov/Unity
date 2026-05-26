@@ -2245,6 +2245,7 @@ function tryParseJson(text) {
     try {
         return JSON.parse(text);
     } catch (e) {
+        console.log(e);
         return null;
     }
 }
@@ -2252,8 +2253,7 @@ function tryParseJson(text) {
 // Extract error handling logic to reduce cognitive complexity.
 // `fallbackMessage` is shown when no structured error detail is available; callers
 // should pass a short operation-specific string (e.g. 'Failed to generate view').
-function getReportingErrorMessage(xhr, error, fallbackMessage) {
-    fallbackMessage = fallbackMessage || 'An error occurred. Please try again';
+function getReportingErrorMessage(xhr, error, fallbackMessage = 'An error occurred. Please try again') {
     if (xhr.status === 0) {
         return 'Network error: Could not connect to the server';
     }
