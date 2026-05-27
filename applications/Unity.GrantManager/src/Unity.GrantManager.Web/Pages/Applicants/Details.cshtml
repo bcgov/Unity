@@ -5,11 +5,14 @@
 @using Unity.GrantManager.Web.Pages.Applicants
 @using Volo.Abp.AspNetCore.Mvc.UI.Layout
 @using Volo.Abp.Authorization.Permissions
+@using Unity.Modules.Shared
+@using Volo.Abp.Features
 
 @model DetailsModel
 @inject IStringLocalizer<GrantManagerResource> L
 @inject IPageLayout PageLayout
 @inject IPermissionChecker PermissionChecker
+@inject IFeatureChecker FeatureChecker
 
 @{
     PageLayout.Content.Title = L["Applicants"].Value;
@@ -120,6 +123,19 @@
                     </div>
                 </abp-tab>
                 @*-------- History Section END ---------*@
+
+                @*-------- Payments Section ---------*@
+                @if (await FeatureChecker.IsEnabledAsync("Unity.Payments") &&
+                     (await PermissionChecker.IsGrantedAsync(UnitySelector.Payment.Summary.Default) ||
+                      await PermissionChecker.IsGrantedAsync(UnitySelector.Payment.PaymentList.Default)))
+                {
+                <abp-tab name="nav-payments" title="Payments">
+                    <div class="w-100 px-2" id="PaymentsWidget">
+                        @await Component.InvokeAsync("ApplicantPayments", new { applicantId = Model.ApplicantId })
+                    </div>
+                </abp-tab>
+                }
+                @*-------- Payments Section END ---------*@
 
             </abp-tabs>
         </abp-card>
