@@ -107,7 +107,7 @@ namespace Unity.Payments.Integrations.Cas
                     }
                 ]
             };
-
+            
             return casInvoice;
         }
 
@@ -249,6 +249,9 @@ namespace Unity.Payments.Integrations.Cas
         public async Task<InvoiceResponse> CreateInvoiceAsync(Invoice casAPInvoice)
         {
             string jsonString = JsonSerializer.Serialize(casAPInvoice);
+
+            Logger.LogDebug("CAS Invoice JSON: {CasInvoiceJson}", jsonString);
+
             var authToken = await iTokenService.GetAuthTokenAsync(CurrentTenant.Id ?? Guid.Empty);
             string casBaseUrl = await endpointManagementAppService.GetUgmUrlByKeyNameAsync(DynamicUrlKeyNames.PAYMENT_API_BASE);
             var resource = $"{casBaseUrl}/{CFS_APINVOICE}/";
