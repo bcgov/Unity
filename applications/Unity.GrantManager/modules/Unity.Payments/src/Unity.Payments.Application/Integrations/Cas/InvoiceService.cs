@@ -3,7 +3,10 @@ using System.Net;
 using System.Threading.Tasks;
 using System.Text.Json;
 using System;
+using System.Globalization;
+using System.Text.RegularExpressions;
 using Unity.Payments.Integrations.Http;
+using System.Text.Encodings.Web;
 using Volo.Abp.Application.Services;
 using System.Collections.Generic;
 using Unity.Payments.Enums;
@@ -197,7 +200,7 @@ namespace Unity.Payments.Integrations.Cas
 
             var generated = string.IsNullOrWhiteSpace(tenantDesc)
                 ? "Grant Payment"
-                : $"{tenantDesc} – Grant Payment";
+                : $"{tenantDesc} - Grant Payment";
 
             if (generated.Length > 50)
             {
@@ -248,9 +251,13 @@ namespace Unity.Payments.Integrations.Cas
 
         public async Task<InvoiceResponse> CreateInvoiceAsync(Invoice casAPInvoice)
         {
-            string jsonString = JsonSerializer.Serialize(casAPInvoice);
+            var jsonOptions = new JsonSerializerOptions
+            {
+                Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+            };
 
-            Logger.LogDebug("CAS Invoice JSON: {CasInvoiceJson}", jsonString);
+            string jsonString = JsonSerializer.Serialize(casAPInvoice, jsonOptions);
+
 
             var authToken = await iTokenService.GetAuthTokenAsync(CurrentTenant.Id ?? Guid.Empty);
             string casBaseUrl = await endpointManagementAppService.GetUgmUrlByKeyNameAsync(DynamicUrlKeyNames.PAYMENT_API_BASE);
