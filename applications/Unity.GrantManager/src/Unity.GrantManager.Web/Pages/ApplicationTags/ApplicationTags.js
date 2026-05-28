@@ -59,9 +59,9 @@ $(function () {
             let closeIcon = document.createElement('a');
             closeIcon.innerHTML = '&times;';
 
-            closeIcon.addEventListener('click', function (e) {
+            closeIcon.addEventListener('click', (e) => {
                 e.preventDefault();
-                let tag = this.parentNode;
+                let tag = e.currentTarget.parentNode;
 
                 let tagIndex = Array.from(this.wrapper.childNodes).indexOf(tag);
                 if (tagIndex !== -1) {
@@ -82,7 +82,7 @@ $(function () {
     TagsInput.prototype.deleteTag = function (tag, i) {
         if (this.arr[i]?.Name === 'Uncommon Tags') {
             abp.message.confirm('Are you sure you want to delete all the uncommon tags?')
-                .then(function (confirmed) {
+                .then((confirmed) => {
                     if (confirmed) {
                         tag.remove();
                         this.arr.splice(i, 1);
@@ -130,7 +130,7 @@ $(function () {
     }
 
     TagsInput.prototype.addData = function (array) {
-        array.forEach(function (string) {
+        array.forEach((string) => {
             this.addTag(string);
         })
         return this;
@@ -149,7 +149,7 @@ $(function () {
 
         delete this.orignal_input;
 
-        Object.keys(this).forEach(function (key) {
+        Object.keys(this).forEach((key) => {
             if (this[key] instanceof HTMLElement)
                 this[key].remove();
 
