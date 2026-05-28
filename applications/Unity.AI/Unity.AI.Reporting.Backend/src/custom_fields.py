@@ -1,12 +1,8 @@
-import os
 import json
-import dotenv
 import textwrap
 import requests
 import logging
 from config import config
-
-dotenv.load_dotenv()
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -35,12 +31,12 @@ def get_sql(sql, db_id, metabase_url, tenant_id=None):
 
 def get_worksheets():
     sql = 'SELECT "Worksheets"."Name", "Worksheets"."Id" FROM "Flex"."Worksheets"'
-    data = get_sql(sql, int(os.getenv("MB_EMBED_ID", "3")), os.getenv("MB_URL"))
+    data = get_sql(sql, config.metabase.default_db_id, config.metabase.url)
     return [{"name": r[0], "id": r[1]} for r in data["rows"]]
 
 def get_worksheet_instances(worksheet_id):
     sql = f'SELECT "WorksheetInstances"."CurrentValue", "WorksheetInstances"."WorksheetCorrelationId" FROM "Flex"."WorksheetInstances" WHERE "WorksheetInstances"."WorksheetId" = \'{worksheet_id}\''
-    data = get_sql(sql, int(os.getenv("MB_EMBED_ID", "3")), os.getenv("MB_URL"))
+    data = get_sql(sql, config.metabase.default_db_id, config.metabase.url)
     return data
 
 def get_custom_labels():
@@ -55,7 +51,7 @@ def get_custom_labels():
         ORDER BY "CustomFields"."Key"
         LIMIT {batch_size} OFFSET {offset}
         '''
-        rows = get_sql(sql, int(os.getenv("MB_EMBED_ID", "3")), os.getenv("MB_URL"))["rows"]
+        rows = get_sql(sql, config.metabase.default_db_id, config.metabase.url)["rows"]
 
         if not rows:
             break
@@ -100,7 +96,7 @@ _(none)_
 
 def get_column_example(table, column):
     sql = f"SELECT \"{column}\" FROM \"Reporting\".\"{table}\" WHERE \"{column}\" IS NOT null and \"{column}\" <> ''"
-    instance = get_sql(sql, int(os.getenv("MB_EMBED_ID", "3")), os.getenv("MB_URL"))
+    instance = get_sql(sql, config.metabase.default_db_id, config.metabase.url)
     try:
         return instance["rows"][0][0]
     except (KeyError, IndexError, TypeError):
@@ -120,7 +116,7 @@ def _format_table_schema(table_name, cols):
 
 def get_views_schemas():
     schema = requests.get(
-        f"{os.getenv('MB_URL')}/api/database/{os.getenv('MB_EMBED_ID')}/metadata",
+        f"{config.metabase.url}/api/database/{config.metabase.default_db_id}/metadata",
         headers=_get_headers()
     ).json()
 
@@ -143,7 +139,7 @@ def get_views_schemas():
 
         # Find out if there are non-blank rows
         sql = f"SELECT * FROM \"Reporting\".\"{tbl['name']}\" "
-        instance = get_sql(sql, int(os.getenv("MB_EMBED_ID", "3")), os.getenv("MB_URL"))
+        instance = get_sql(sql, config.metabase.default_db_id, config.metabase.url)
         rows = [r for r in instance["rows"] if set(r[3:]) != set([''])]
         if not rows:
             continue

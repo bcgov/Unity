@@ -61,6 +61,9 @@ RUN pip install --no-cache-dir -r requirements.txt gunicorn && \
     chown appuser:appuser /entrypoint.sh && \
     chown -R appuser:appuser /app
 
+# Default to production; override via env var for local development
+ENV FLASK_ENV=production
+
 # Expose port 8080
 EXPOSE 8080
 

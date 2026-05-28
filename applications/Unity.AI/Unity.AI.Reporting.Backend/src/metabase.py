@@ -250,7 +250,7 @@ class MetabaseClient:
                 "pie.metric": y_fields[0] if y_fields else ""
             })
         elif display_mode == "map":
-            visualization_settings["map.region"] = os.getenv("MB_MAP_REGION_UUID", "1c5d50ee-4389-4593-37c1-fa8d4687ff4c")
+            visualization_settings["map.region"] = config.metabase.map_region_uuid
 
         r = requests.put(
             f"{self.config.url}/api/card/{card_id}",

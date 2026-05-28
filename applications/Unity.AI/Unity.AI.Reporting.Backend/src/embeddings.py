@@ -6,7 +6,7 @@ import logging
 import time
 from typing import List, Optional
 from langchain_core.documents import Document
-from langchain_openai import OpenAIEmbeddings, AzureOpenAIEmbeddings
+from langchain_openai import AzureOpenAIEmbeddings
 from pydantic import SecretStr
 from langchain_postgres import PGVector
 from config import config
@@ -197,19 +197,12 @@ class EmbeddingManager:
     """Manages vector embeddings for schema similarity search"""
 
     def __init__(self):
-        # Initialize embeddings model based on configuration
-        if config.ai.use_azure:
-            self.embedding_model = AzureOpenAIEmbeddings(
-                azure_endpoint=config.ai.azure_endpoint,
-                api_key=SecretStr(config.ai.azure_api_key),
-                azure_deployment=config.ai.azure_embedding_deployment,
-                api_version=config.ai.azure_api_version
-            )
-        else:
-            self.embedding_model = OpenAIEmbeddings(
-                model=config.ai.embedding_model,
-                api_key=SecretStr(config.ai.completion_key)
-            )
+        self.embedding_model = AzureOpenAIEmbeddings(
+            azure_endpoint=config.ai.azure_endpoint,
+            api_key=SecretStr(config.ai.azure_api_key),
+            azure_deployment=config.ai.azure_embedding_deployment,
+            api_version=config.ai.azure_api_version
+        )
 
         self.vector_store = PGVector(
             embeddings=self.embedding_model,
