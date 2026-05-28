@@ -355,5 +355,5 @@ $(function () {
         duplicate: false
     }
 
-    window.TagsInput = TagsInput;
+    window.PaymentTagsInput = TagsInput;
 });
