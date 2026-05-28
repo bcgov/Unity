@@ -387,7 +387,7 @@ def get_feedback_for_admin():
 def _build_viz_settings(visualization_options: list) -> dict:
     """Return Metabase visualization settings dict for the given options list."""
     if "map" in visualization_options:
-        return {"map.region": os.getenv("MB_MAP_REGION_UUID", "1c5d50ee-4389-4593-37c1-fa8d4687ff4c")}
+        return {"map.region": config.metabase.map_region_uuid}
     return {}
 
 
