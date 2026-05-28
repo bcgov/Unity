@@ -46,11 +46,7 @@
     width: 95%;
 }
 
-#tags-div.config-management {
-    overflow: visible;
-    max-height: none;
-}
-
+#tags-div.config-management,
 #tags-div .dt-scroll-body,
 #tags-div .dt-container {
     overflow-y: visible !important;
