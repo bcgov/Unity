@@ -1,9 +1,6 @@
 ﻿$(function () {
     const l = abp.localization.getResource('Payments');
-    $('.unity-currency-input').maskMoney({});
-    $('.unity-currency-input').each(function () {
-        $(this).maskMoney('mask', this.value);
-    });
+    initCurrencyInputs(document);
     const formatter = createNumberFormatter();
     let dt = $('#ApplicationPaymentRequestListTable');
     let dataTable;

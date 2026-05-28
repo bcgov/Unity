@@ -1018,13 +1018,6 @@ jquery-form@^4.3.0:
   dependencies:
     jquery ">=1.7.2"
 
-jquery-maskmoney@~3.0.2:
-  version "3.0.2"
-  resolved "https://registry.npmjs.org/jquery-maskmoney/-/jquery-maskmoney-3.0.2.tgz"
-  integrity sha512-tmhGSfx3QTwrYcZYgELsr8qgcvRcR72+p6D+YrZrlkUdVE6g9vuRLwbl4FuL5X84KBfWBtoX6k2HawYjv2WVag==
-  dependencies:
-    jquery ">=1.6"
-
 jquery-mousewheel@>=3.0.6:
   version "3.2.2"
   resolved "https://registry.npmjs.org/jquery-mousewheel/-/jquery-mousewheel-3.2.2.tgz"

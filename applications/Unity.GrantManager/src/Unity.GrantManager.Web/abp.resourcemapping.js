@@ -18,7 +18,6 @@ module.exports = {
         '@node_modules/datatables.net-staterestore/': '@libs/datatables.net-staterestore/',
         '@node_modules/datatables.net-staterestore-dt/': '@libs/datatables.net-staterestore-dt/',
         '@node_modules/sweetalert2/src/': '@libs/sweetalert2/src',
-        '@node_modules/jquery-maskmoney/': '@libs/jquery-maskmoney',
         '@node_modules/datatables.net-fixedheader/js': '@libs/datatables.net-fixedheader/js/',
         '@node_modules/echarts/dist/echarts.min.js': '@libs/echarts/',
         '@node_modules/bootstrap-4/dist': '@libs/bootstrap-4/dist/',
@@ -29,5 +28,6 @@ module.exports = {
         '@node_modules/tributejs': '@libs/tributejs',
         '@node_modules/tinymce': '@libs/tinymce',
         '@node_modules/handlebars': '@libs/handlebars',
+        '@node_modules/autonumeric/dist': '@libs/autonumeric/dist',
     },
 };

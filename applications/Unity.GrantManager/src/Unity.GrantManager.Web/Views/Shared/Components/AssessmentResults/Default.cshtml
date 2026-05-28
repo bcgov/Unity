@@ -150,7 +150,7 @@
 <script defer>
     (function () {
         if (window.jQuery) {
-            $('.unity-currency-input').maskMoney({allowZero: true});
+            initCurrencyInputs(document, { minimumValue: '0' });
         }
     })();
 </script>

@@ -45,8 +45,6 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ActionBar
             context.Files
               .AddIfNotContains("/Pages/PaymentRequests/CreateHistoricalPaymentsModal.js");
             context.Files
-              .AddIfNotContains("/libs/jquery-maskmoney/dist/jquery.maskMoney.min.js");
-            context.Files
               .AddIfNotContains("/Pages/BulkApprovals/ApproveApplicationsModal.js");
         }
     }
