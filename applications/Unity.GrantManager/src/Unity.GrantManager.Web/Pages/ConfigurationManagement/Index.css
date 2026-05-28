@@ -51,14 +51,10 @@
     max-height: none;
 }
 
-#tags-div .dt-scroll-body {
-    overflow-y: visible !important;
-    max-height: none !important;
-}
-
+#tags-div .dt-scroll-body,
 #tags-div .dt-container {
-    max-height: none !important;
     overflow-y: visible !important;
+    max-height: none !important;
 }
 
 /* When scroll-managed components are embedded in the config container,
