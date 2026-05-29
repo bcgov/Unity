@@ -52,5 +52,8 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.EmailsWidget
         public string? EmailTemplateName { get; set; }
 
         public List<SelectListItem> TemplatesList { get; set; } = new();
+
+        /// <summary>Whether the email delay feature is enabled for this tenant.</summary>
+        public bool EnableEmailDelay { get; set; }
     }
 }

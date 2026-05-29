@@ -12,7 +12,8 @@ public class NotificationsSettingDefinitionProvider : SettingDefinitionProvider
         var notificationsSettings = new Dictionary<string, string>
         {
             { NotificationsSettings.Mailing.DefaultFromAddress, "NoReply.Unity@gov.bc.ca"},
-            { NotificationsSettings.Mailing.EmailMaxRetryAttempts, "3"}
+            { NotificationsSettings.Mailing.EmailMaxRetryAttempts, "3"},
+            { NotificationsSettings.Mailing.EnableEmailDelay, "false"}
         };
 
         foreach (var notificationSetting in notificationsSettings)

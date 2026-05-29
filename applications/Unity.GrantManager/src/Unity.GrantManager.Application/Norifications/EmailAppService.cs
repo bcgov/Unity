@@ -55,7 +55,8 @@ namespace Unity.GrantManager.Emails
                 Bcc = bccList,
                 Subject = dto.EmailSubject,
                 Body = dto.EmailBody,
-                EmailTemplateName = dto.EmailTemplateName
+                EmailTemplateName = dto.EmailTemplateName,
+                SendOnDateTime = dto.SendOnDateTime
             };
         }
     }

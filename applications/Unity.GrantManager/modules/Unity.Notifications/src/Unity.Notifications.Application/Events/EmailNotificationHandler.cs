@@ -50,19 +50,21 @@ namespace Unity.GrantManager.Events
             }
         }
 
-        private async Task<EmailLog> InitializeEmailAndUploadAttachments(string emailTo, string body, string subject, Guid applicationId, string? emailFrom, string? emailTemplateName, string? emailCC = null, string? emailBCC = null, List<EmailAttachmentData>? emailAttachments = null)
+        private sealed record EmailInitParams(
+            string EmailTo,
+            string Body,
+            string Subject,
+            Guid ApplicationId,
+            string? EmailFrom,
+            string? EmailTemplateName,
+            string? EmailCC = null,
+            string? EmailBCC = null,
+            DateTime? SendOnDateTime = null);
+
+        private async Task<EmailLog> InitializeEmailAndUploadAttachments(EmailInitParams p, List<EmailAttachmentData>? emailAttachments = null)
         {
-            EmailLog emailLog = await InitializeEmail(
-                                                emailTo,
-                                                body,
-                                                subject,
-                                                applicationId,
-                                                emailFrom,
-                                                EmailStatus.Initialized,
-                                                emailTemplateName,
-                                                emailCC,
-                                                emailBCC);
-            
+            EmailLog emailLog = await InitializeEmail(p, EmailStatus.Initialized);
+
             try
             {
                 // Upload attachments to S3
@@ -90,18 +92,13 @@ namespace Unity.GrantManager.Events
             return emailLog;
         }
 
-        private async Task<EmailLog> InitializeEmail(string emailTo, string body, string subject, Guid applicationId, string? emailFrom, string status, string? emailTemplateName, string? emailCC = null, string? emailBCC = null)
+        private async Task<EmailLog> InitializeEmail(EmailInitParams p, string status)
         {
             EmailLog emailLog = await emailNotificationService.InitializeEmailLog(
-                                                emailTo,
-                                                body,
-                                                subject,
-                                                applicationId,
-                                                emailFrom,
-                                                status,
-                                                emailTemplateName,
-                                                emailCC,
-                                                emailBCC) ?? throw new UserFriendlyException("Unable to Initialize Email Log");
+                                                    new EmailMessageParams(p.EmailTo, p.Body, p.Subject,
+                                                        p.EmailFrom, p.EmailTemplateName, p.EmailCC, p.EmailBCC, p.SendOnDateTime),
+                                                    p.ApplicationId,
+                                                    status) ?? throw new UserFriendlyException("Unable to Initialize Email Log");
             return emailLog;
         }
 
@@ -119,12 +116,8 @@ namespace Unity.GrantManager.Events
                     string emailToAddress = String.Join(",", eventData.EmailAddressList);
 
                     return await InitializeEmailAndUploadAttachments(
-                        emailToAddress,
-                        eventData.Body,
-                        FAILED_PAYMENTS_SUBJECT,
-                        eventData.ApplicationId,
-                        eventData.EmailFrom,
-                        eventData.EmailTemplateName);
+                        new EmailInitParams(emailToAddress, eventData.Body, FAILED_PAYMENTS_SUBJECT,
+                            eventData.ApplicationId, eventData.EmailFrom, eventData.EmailTemplateName));
                 }
                 case EmailAction.SendCustom:
                     return await HandleSendCustomEmail(eventData);
@@ -137,14 +130,9 @@ namespace Unity.GrantManager.Events
                 {
                     string fsbEmailToAddress = String.Join(",", eventData.EmailAddressList);
                     var emailLog = await InitializeEmailAndUploadAttachments(
-                        fsbEmailToAddress,
-                        eventData.Body,
-                        eventData.Subject ?? "FSB Payment Notification",
-                        eventData.ApplicationId,
-                        eventData.EmailFrom,
-                        eventData.EmailTemplateName,
-                        null, // emailCC
-                        null, // emailBCC
+                        new EmailInitParams(fsbEmailToAddress, eventData.Body,
+                            eventData.Subject ?? "FSB Payment Notification",
+                            eventData.ApplicationId, eventData.EmailFrom, eventData.EmailTemplateName),
                         eventData.EmailAttachments);
 
                     // Store payment request IDs for tracking
@@ -167,39 +155,32 @@ namespace Unity.GrantManager.Events
             string emailToAddress = String.Join(",", eventData.EmailAddressList);
             string? emailCC = eventData.Cc?.Any() == true ? String.Join(",", eventData.Cc) : null;
             string? emailBCC = eventData.Bcc?.Any() == true ? String.Join(",", eventData.Bcc) : null;
-            
+
+            EmailLog? emailLog;
             if (eventData.Id == Guid.Empty)
             {
-                return await InitializeEmailAndUploadAttachments(
-                    emailToAddress,
-                    eventData.Body,
-                    eventData.Subject,
-                    eventData.ApplicationId,
-                    eventData.EmailFrom,
-                    eventData.EmailTemplateName,
-                    emailCC,
-                    emailBCC,
+                emailLog = await InitializeEmailAndUploadAttachments(
+                    new EmailInitParams(emailToAddress, eventData.Body, eventData.Subject,
+                        eventData.ApplicationId, eventData.EmailFrom, eventData.EmailTemplateName,
+                        emailCC, emailBCC, eventData.SendOnDateTime),
                     eventData.EmailAttachments);
             }
-
-            EmailLog? emailLog = await emailNotificationService.UpdateEmailLog(
-                eventData.Id,
-                emailToAddress,
-                eventData.Body,
-                eventData.Subject,
-                eventData.ApplicationId,
-                eventData.EmailFrom,
-                EmailStatus.Initialized,
-                eventData.EmailTemplateName,
-                emailCC,
-                emailBCC);
-
-            if (emailLog != null)
+            else
             {
-                return emailLog;
+                emailLog = await emailNotificationService.UpdateEmailLog(
+                    eventData.Id,
+                    new EmailMessageParams(emailToAddress, eventData.Body, eventData.Subject,
+                        eventData.EmailFrom, eventData.EmailTemplateName, emailCC, emailBCC, eventData.SendOnDateTime),
+                    eventData.ApplicationId,
+                    EmailStatus.Initialized);
+
+                if (emailLog == null)
+                {
+                    throw new UserFriendlyException("Unable to update Email Log");
+                }
             }
 
-            throw new UserFriendlyException("Unable to update Email Log");
+            return emailLog;
         }
 
         private async Task HandleSaveDraftEmail(EmailNotificationEvent eventData)
@@ -212,28 +193,18 @@ namespace Unity.GrantManager.Events
                 {
                     await emailNotificationService.UpdateEmailLog(
                         eventData.Id,
-                        emailToAddress,
-                        eventData.Body,
-                        eventData.Subject,
+                        new EmailMessageParams(emailToAddress, eventData.Body, eventData.Subject,
+                            eventData.EmailFrom, eventData.EmailTemplateName, emailCC, emailBCC, eventData.SendOnDateTime),
                         eventData.ApplicationId,
-                        eventData.EmailFrom,
-                        EmailStatus.Draft,
-                        eventData.EmailTemplateName,
-                        emailCC,
-                        emailBCC);
+                        EmailStatus.Draft);
                 }
                 else
                 {
                     await InitializeEmail(
-                        emailToAddress,
-                        eventData.Body,
-                        eventData.Subject,
-                        eventData.ApplicationId,
-                        eventData.EmailFrom,
-                        EmailStatus.Draft, 
-                        eventData.EmailTemplateName,
-                        emailCC,
-                        emailBCC);
+                        new EmailInitParams(emailToAddress, eventData.Body, eventData.Subject,
+                            eventData.ApplicationId, eventData.EmailFrom, eventData.EmailTemplateName,
+                            emailCC, emailBCC, eventData.SendOnDateTime),
+                        EmailStatus.Draft);
                 }
             
         }

@@ -263,6 +263,77 @@
     background-color: white !important;
 }
 
+#schedule-send-modal-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    z-index: 1060;
+}
+
+#schedule-send-modal {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 360px;
+    max-width: 90vw;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+    z-index: 1061;
+    padding: 24px;
+}
+
+#btn-picker-ok {
+    display: none;
+    cursor: pointer;
+    font-size: 0.85em;
+    font-weight: 600;
+    padding: 0 12px;
+    background: #f8f9fa;
+    color: #495057;
+    border-color: #ced4da;
+    margin: 0;
+}
+
+#btn-picker-ok:hover {
+    background: #e9ecef;
+    color: #212529;
+}
+
+#send-on-display {
+    font-size: 0.9em;
+}
+
+#btn-clear-schedule {
+    display: none;
+}
+
+#delay-datetime-validation {
+    display: none;
+    font-size: 0.85em;
+}
+
+#schedule-modal-validation {
+    display: none;
+    font-size: 0.85em;
+}
+
+.schedule-modal-label {
+    font-size: 0.9em;
+    white-space: nowrap;
+}
+
+#DelayDaysHelper {
+    width: 80px;
+}
+
+.send-date-hint {
+    font-size: 0.85em;
+}
+
 @keyframes rotateSpinner {
 	to {
 		transform: rotate(360deg);

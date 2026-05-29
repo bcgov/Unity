@@ -10,12 +10,12 @@ namespace Unity.Notifications.EmailNotifications
 {
     public interface IEmailNotificationService : IApplicationService
     {
-        Task<EmailLog?> UpdateEmailLog(Guid emailId, string emailTo, string body, string subject, Guid applicationId, string? emailFrom, string? status, string? emailTemplateName, string? emailCC = null, string? emailBCC = null);
-        Task<EmailLog?> InitializeEmailLog(string emailTo, string body, string subject, Guid applicationId, string? emailFrom, string? status, string? emailTemplateName, string? emailCC = null, string? emailBCC = null);
-        Task<EmailLog?> InitializeEmailLog(string emailTo, string body, string subject, Guid applicationId, string? emailFrom, string? emailTemplateName, string? emailCC = null, string? emailBCC = null);
+        Task<EmailLog?> UpdateEmailLog(Guid emailId, EmailMessageParams email, Guid applicationId, string? status);
+        Task<EmailLog?> InitializeEmailLog(EmailMessageParams email, Guid applicationId, string? status);
+        Task<EmailLog?> InitializeEmailLog(EmailMessageParams email, Guid applicationId);
         Task<EmailLog?> GetEmailLogById(Guid id);
         Task<HttpResponseMessage> SendCommentNotification(EmailCommentDto input);
-        Task<HttpResponseMessage> SendEmailNotification(string emailTo, string body, string subject, string? emailFrom, string? emailBodyType, string? emailTemplateName, string? emailCC = null, string? emailBCC = null);
+        Task<HttpResponseMessage> SendEmailNotification(EmailMessageParams email, string? emailBodyType = null);
         Task<HttpResponseMessage> SendEmailNotification(EmailLog emailLog);        
         Task SendEmailToQueue(EmailLog emailLog);
         Task<List<EmailHistoryDto>> GetHistoryByApplicationId(Guid applicationId);

@@ -14,17 +14,17 @@ namespace Unity.Notifications.EmailNotifications
         /// <summary>
         /// Creates and initializes a new email log
         /// </summary>
-        Task<EmailLog?> CreateEmailLogAsync(string emailTo, string body, string subject, Guid applicationId, string? emailFrom, string? emailTemplateName, string? emailCC = null, string? emailBCC = null);
+        Task<EmailLog?> CreateEmailLogAsync(EmailMessageParams email, Guid applicationId);
 
         /// <summary>
         /// Creates and initializes a new email log with status
         /// </summary>
-        Task<EmailLog?> CreateEmailLogAsync(string emailTo, string body, string subject, Guid applicationId, string? emailFrom, string? status, string? emailTemplateName, string? emailCC = null, string? emailBCC = null);
+        Task<EmailLog?> CreateEmailLogAsync(EmailMessageParams email, Guid applicationId, string? status);
 
         /// <summary>
         /// Updates an existing email log
         /// </summary>
-        Task<EmailLog?> UpdateEmailLogAsync(Guid emailId, string emailTo, string body, string subject, Guid applicationId, string? emailFrom, string? status, string? emailTemplateName, string? emailCC = null, string? emailBCC = null);
+        Task<EmailLog?> UpdateEmailLogAsync(Guid emailId, EmailMessageParams email, Guid applicationId, string? status);
 
         /// <summary>
         /// Retrieves an email log by ID
@@ -44,7 +44,7 @@ namespace Unity.Notifications.EmailNotifications
         /// <summary>
         /// Sends an email notification using CHES
         /// </summary>
-        Task<HttpResponseMessage> SendEmailAsync(string emailTo, string body, string subject, string? emailFrom, string? emailBodyType, string? emailTemplateName, string? emailCC = null, string? emailBCC = null);
+        Task<HttpResponseMessage> SendEmailAsync(EmailMessageParams email, string? emailBodyType = null);
 
         /// <summary>
         /// Sends an email notification from an EmailLog (with S3 attachments support)
