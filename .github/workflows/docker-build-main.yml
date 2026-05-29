@@ -21,7 +21,7 @@ on:
 # Workflow dependencies
 env:
   TARGET_ENV: main
-  GH_TOKEN: ${{secrets.GITHUB_TOKEN}}
+  GH_TOKEN: ${{secrets.GH_API_TOKEN}}
   OC_CLUSTER: ${{ vars.OPENSHIFT_CLUSTER }}
   OC_REGISTRY: ${{ vars.OPENSHIFT_REGISTRY }}
   OC_AUTH_TOKEN: ${{ secrets.OPENSHIFT_TOKEN }}
