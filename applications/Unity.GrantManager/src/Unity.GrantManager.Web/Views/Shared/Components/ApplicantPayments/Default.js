@@ -1,3 +1,111 @@
+function getPaymentIdColumn() {
+    return {
+        title: 'Payment ID',
+        name: 'referenceNumber',
+        data: 'referenceNumber',
+        className: 'data-table-header',
+        index: 0,
+    };
+}
+
+function getSubmissionIdColumn() {
+    return {
+        title: 'Submission ID',
+        name: 'applicationReferenceNo',
+        data: 'applicationReferenceNo',
+        className: 'data-table-header',
+        index: 1,
+        render: function (data, type, row) {
+            if (type === 'display') {
+                return (
+                    '<a href="/GrantApplications/Details?ApplicationId=' +
+                    row.applicationId +
+                    '">' +
+                    (data || '') +
+                    '</a>'
+                );
+            }
+            return data;
+        },
+    };
+}
+
+function getPaidDateColumn() {
+    return {
+        title: 'Paid Date',
+        name: 'paymentDate',
+        data: 'paymentDate',
+        className: 'data-table-header',
+        index: 2,
+        render: function (data, type) {
+            if (type !== 'display' && type !== 'filter') return data || '';
+            return data || '';
+        },
+    };
+}
+
+function getCasPaymentStatusColumn() {
+    return {
+        title: 'CAS Payment Status',
+        name: 'paymentStatus',
+        data: 'paymentStatus',
+        className: 'data-table-header',
+        index: 5,
+    };
+}
+
+function getSupplierNumberColumn() {
+    return {
+        title: 'Supplier #',
+        name: 'supplierNumber',
+        data: 'supplierNumber',
+        className: 'data-table-header',
+        index: 6,
+    };
+}
+
+function getSupplierNameColumn() {
+    return {
+        title: 'Supplier Name',
+        name: 'supplierName',
+        data: 'supplierName',
+        className: 'data-table-header',
+        index: 7,
+    };
+}
+
+function getSiteNumberColumn() {
+    return {
+        title: 'Site #',
+        name: 'siteNumber',
+        data: 'site.number',
+        className: 'data-table-header',
+        defaultContent: '',
+        index: 8,
+    };
+}
+
+function getPaymentStatusTextColor(status) {
+    switch (status) {
+        case 'L1Pending':
+        case 'L2Pending':
+        case 'L3Pending':
+            return '#053662';
+        case 'L1Declined':
+        case 'L2Declined':
+        case 'L3Declined':
+        case 'Failed':
+            return '#CE3E39';
+        case 'Submitted':
+            return '#5595D9';
+        case 'Paid':
+        case 'HistoricalPayment':
+            return '#42814A';
+        default:
+            return '#053662';
+    }
+}
+
 $(function () {
     const l = abp.localization.getResource('Payments');
     $('.unity-currency-input').maskMoney({});
@@ -101,52 +209,6 @@ $(function () {
         ];
     }
 
-    function getPaymentIdColumn() {
-        return {
-            title: 'Payment ID',
-            name: 'referenceNumber',
-            data: 'referenceNumber',
-            className: 'data-table-header',
-            index: 0,
-        };
-    }
-
-    function getSubmissionIdColumn() {
-        return {
-            title: 'Submission ID',
-            name: 'applicationReferenceNo',
-            data: 'applicationReferenceNo',
-            className: 'data-table-header',
-            index: 1,
-            render: function (data, type, row) {
-                if (type === 'display') {
-                    return (
-                        '<a href="/GrantApplications/Details?ApplicationId=' +
-                        row.applicationId +
-                        '">' +
-                        (data || '') +
-                        '</a>'
-                    );
-                }
-                return data;
-            },
-        };
-    }
-
-    function getPaidDateColumn() {
-        return {
-            title: 'Paid Date',
-            name: 'paymentDate',
-            data: 'paymentDate',
-            className: 'data-table-header',
-            index: 2,
-            render: function (data, type) {
-                if (type !== 'display' && type !== 'filter') return data || '';
-                return data || '';
-            },
-        };
-    }
-
     function getStatusColumn() {
         return {
             title: 'Status',
@@ -178,67 +240,5 @@ $(function () {
                 return formatter.format(data);
             },
         };
-    }
-
-    function getCasPaymentStatusColumn() {
-        return {
-            title: 'CAS Payment Status',
-            name: 'paymentStatus',
-            data: 'paymentStatus',
-            className: 'data-table-header',
-            index: 5,
-        };
-    }
-
-    function getSupplierNumberColumn() {
-        return {
-            title: 'Supplier #',
-            name: 'supplierNumber',
-            data: 'supplierNumber',
-            className: 'data-table-header',
-            index: 6,
-        };
-    }
-
-    function getSupplierNameColumn() {
-        return {
-            title: 'Supplier Name',
-            name: 'supplierName',
-            data: 'supplierName',
-            className: 'data-table-header',
-            index: 7,
-        };
-    }
-
-    function getSiteNumberColumn() {
-        return {
-            title: 'Site #',
-            name: 'siteNumber',
-            data: 'site.number',
-            className: 'data-table-header',
-            defaultContent: '',
-            index: 8,
-        };
-    }
-
-    function getPaymentStatusTextColor(status) {
-        switch (status) {
-            case 'L1Pending':
-            case 'L2Pending':
-            case 'L3Pending':
-                return '#053662';
-            case 'L1Declined':
-            case 'L2Declined':
-            case 'L3Declined':
-            case 'Failed':
-                return '#CE3E39';
-            case 'Submitted':
-                return '#5595D9';
-            case 'Paid':
-            case 'HistoricalPayment':
-                return '#42814A';
-            default:
-                return '#053662';
-        }
     }
 });
