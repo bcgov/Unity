@@ -12,7 +12,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Logging;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using Microsoft.IdentityModel.Tokens;
-using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi;
 using StackExchange.Profiling;
 using StackExchange.Profiling.Storage;
 using System;
@@ -35,6 +35,7 @@ using Unity.GrantManager.Web.Components.MiniProfiler;
 using Unity.GrantManager.Web.Exceptions;
 using Unity.GrantManager.Web.Filters;
 using Unity.GrantManager.Web.Identity;
+using Unity.GrantManager.Web.Middleware;
 using Unity.GrantManager.Web.Identity.Policy;
 using Unity.GrantManager.Web.Menus;
 using Unity.GrantManager.Web.Settings;
@@ -54,7 +55,7 @@ using Volo.Abp.AspNetCore.Mvc.UI.Theme.Shared;
 using Volo.Abp.AspNetCore.Serilog;
 using Volo.Abp.Auditing;
 using Volo.Abp.Autofac;
-using Volo.Abp.AutoMapper;
+using Volo.Abp.Mapperly;
 using Volo.Abp.BlobStoring;
 using Volo.Abp.Identity;
 using Volo.Abp.Localization;
@@ -134,6 +135,10 @@ public class GrantManagerWebModule : AbpModule
     {
         var hostingEnvironment = context.Services.GetHostingEnvironment();
         var configuration = context.Services.GetConfiguration();
+
+        // Pre-warm the EF Core query pipeline after startup (web host only, not DbMigrator)
+        context.Services.Configure<DbWarmupOptions>(configuration.GetSection(DbWarmupOptions.SectionName));
+        context.Services.AddHostedService<GrantManagerDbWarmupService>();
 
         ConfgureFormsApiAuhentication(context);
         ConfigureAuthentication(context, configuration);
@@ -302,7 +307,7 @@ public class GrantManagerWebModule : AbpModule
             options.ClientId = configuration["AuthServer:ClientId"];
             options.ClientSecret = configuration["AuthServer:ClientSecret"];
 
-            options.SaveTokens = true;
+            options.SaveTokens = false;
             options.GetClaimsFromUserInfoEndpoint = true;
             options.MaxAge = TimeSpan.FromHours(8);
 
@@ -419,10 +424,8 @@ public class GrantManagerWebModule : AbpModule
 
     private void ConfigureAutoMapper()
     {
-        Configure<AbpAutoMapperOptions>(options =>
-        {
-            options.AddMaps<GrantManagerWebModule>();
-        });
+        // Mapperly mappers in this assembly are auto-discovered by
+        // AbpMapperlyConventionalRegistrar. No explicit registration required.
     }
 
     private void ConfigureVirtualFileSystem(IWebHostEnvironment hostingEnvironment)
@@ -559,8 +562,15 @@ public class GrantManagerWebModule : AbpModule
 
         app.UseAbpRequestLocalization();
 
-        app.UseStatusCodePagesWithReExecute("/Error", "?httpStatusCode={0}");
-        app.UseErrorPage();
+        if (env.IsProduction() || env.IsStaging())
+        {
+            app.UseStatusCodePagesWithReExecute("/Error", "?httpStatusCode={0}");
+            app.UseErrorPage();
+        }
+        else
+        {
+            app.UseDeveloperExceptionPage();
+        }
 
         if (Convert.ToBoolean(configuration["AuthServer:IsBehindTlsTerminationProxy"]))
         {
@@ -582,6 +592,7 @@ public class GrantManagerWebModule : AbpModule
 
         app.UseCorrelationId();
         app.UseStaticFiles();
+        app.UseMiddleware<TimezoneMiddleware>();
         app.UseRouting();
         app.UseAuthentication();
 

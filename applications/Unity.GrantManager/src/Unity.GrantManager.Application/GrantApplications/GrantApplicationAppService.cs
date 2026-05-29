@@ -22,25 +22,32 @@ using Unity.GrantManager.Applications;
 using Unity.GrantManager.Events;
 using Unity.GrantManager.Flex;
 using Unity.GrantManager.Identity;
+using Unity.GrantManager.GlobalTag;
 using Unity.GrantManager.Payments;
 using Unity.Modules.Shared;
 using Unity.Modules.Shared.Correlation;
 using Unity.Payments.PaymentRequests;
+using Unity.AI.Automation;
+using Unity.AI.Permissions;
 using Volo.Abp;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Authorization;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Entities;
 using Volo.Abp.Domain.Repositories;
+using Volo.Abp.Features;
 
 namespace Unity.GrantManager.GrantApplications;
 
+// Suppress S107: Methods should not have too many parameters
+#pragma warning disable S107 // Methods should not have too many parameters
 [Authorize]
 [Dependency(ReplaceServices = true)]
 [ExposeServices(typeof(GrantApplicationAppService), typeof(IGrantApplicationAppService))]
 public class GrantApplicationAppService(
     IApplicationManager applicationManager,
     IApplicationRepository applicationRepository,
+    IApplicationChefsFileAttachmentRepository applicationChefsFileAttachmentRepository,
     IApplicationStatusRepository applicationStatusRepository,
     IApplicationFormSubmissionRepository applicationFormSubmissionRepository,
     IApplicantRepository applicantRepository,
@@ -48,8 +55,12 @@ public class GrantApplicationAppService(
     IApplicantAgentRepository applicantAgentRepository,
     IApplicantAddressRepository applicantAddressRepository,
     IApplicantSupplierAppService applicantSupplierService,
-    IPaymentRequestAppService paymentRequestService)
+    IPaymentRequestAppService paymentRequestService,
+    IApplicationAIGenerationQueue aiGenerationQueue,
+    IAIGenerationStatusAppService aiGenerationStatusAppService,
+    IFeatureChecker featureChecker)
     : GrantManagerAppService, IGrantApplicationAppService
+#pragma warning restore S107 // Methods should not have too many parameters
 {
     private static readonly JsonSerializerOptions AiAnalysisReadOptions = new()
     {
@@ -63,56 +74,177 @@ public class GrantApplicationAppService(
 
     public async Task<PagedResultDto<GrantApplicationDto>> GetListAsync(GrantApplicationListInputDto input)
     {
-        // 1. Fetch applications with filters + paging in DB
-        var applications = await applicationRepository.WithFullDetailsAsync(
+        var listRecords = await applicationRepository.GetApplicationListRecordsAsync(
             input.SkipCount,
             input.MaxResultCount,
             input.Sorting,
             input.SubmittedFromDate,
-            input.SubmittedToDate
+            input.SubmittedToDate,
+            requestedFields: input.RequestedFields
         );
 
-        var applicationIds = applications.Select(a => a.Id).ToList();
+        var applicationIds = listRecords.Select(r => r.Id).ToList();
 
-        // 2. Fetch payment rollup batch if feature enabled
-        bool paymentsFeatureEnabled = await FeatureChecker.IsEnabledAsync(PaymentConsts.UnityPaymentsFeature);
+
+        // Fetch payment rollup batch only when the feature is enabled AND at least one
+        // payment column is visible. The two payment column sNames are "totalPaidAmount"
+        // and "paymentInfo"; null RequestedFields means all columns are requested.
+        bool paymentColumnsRequested = input.RequestedFields == null || input.RequestedFields.Any(f =>
+                f.Equals("totalPaidAmount", StringComparison.OrdinalIgnoreCase)
+             || f.Equals("paymentInfo", StringComparison.OrdinalIgnoreCase));
+
+
+        bool paymentsFeatureEnabled = false;
+        if (paymentColumnsRequested) // Only even check if a column is requested.
+        {
+            paymentsFeatureEnabled = await FeatureChecker.IsEnabledAsync(PaymentConsts.UnityPaymentsFeature);
+        }
 
         Dictionary<Guid, ApplicationPaymentRollupDto> paymentRollupBatch = [];
 
-        if (paymentsFeatureEnabled && applicationIds.Count > 0)
+        if (paymentColumnsRequested && paymentsFeatureEnabled && applicationIds.Count > 0)
         {
             paymentRollupBatch = await paymentRequestService.GetApplicationPaymentRollupBatchAsync(applicationIds);
         }
 
-        // 3. Map applications to DTOs
-        var appDtos = applications.Select(app =>
+        var appDtos = listRecords.Select(rec =>
         {
-            var appDto = ObjectMapper.Map<Application, GrantApplicationDto>(app);
+            var appDto = new GrantApplicationDto
+            {
+                Id = rec.Id,
+                ProjectName = rec.ProjectName,
+                ReferenceNo = rec.ReferenceNo,
+                RequestedAmount = rec.RequestedAmount,
+                TotalProjectBudget = rec.TotalProjectBudget,
+                EconomicRegion = rec.EconomicRegion ?? string.Empty,
+                City = rec.City ?? string.Empty,
+                ProposalDate = rec.ProposalDate,
+                SubmissionDate = rec.SubmissionDate,
+                FinalDecisionDate = rec.FinalDecisionDate,
+                DueDate = rec.DueDate,
+                NotificationDate = rec.NotificationDate,
+                ProjectSummary = rec.ProjectSummary ?? string.Empty,
+                TotalScore = rec.TotalScore ?? 0,
+                RecommendedAmount = rec.RecommendedAmount,
+                ApprovedAmount = rec.ApprovedAmount,
+                LikelihoodOfFunding = rec.LikelihoodOfFunding ?? string.Empty,
+                DueDiligenceStatus = rec.DueDiligenceStatus ?? string.Empty,
+                SubStatus = rec.SubStatus ?? string.Empty,
+                SubStatusDisplayValue = MapSubstatusDisplayValue(rec.SubStatus ?? string.Empty),
+                DeclineRational = MapDeclineRationalDisplayValue(rec.DeclineRational ?? string.Empty),
+                Notes = rec.Notes ?? string.Empty,
+                AssessmentResultStatus = rec.AssessmentResultStatus ?? string.Empty,
+                AssessmentResultDate = rec.AssessmentResultDate,
+                ProjectStartDate = rec.ProjectStartDate,
+                ProjectEndDate = rec.ProjectEndDate,
+                PercentageTotalProjectBudget = rec.PercentageTotalProjectBudget,
+                ProjectFundingTotal = rec.ProjectFundingTotal,
+                Community = rec.Community,
+                CommunityPopulation = rec.CommunityPopulation,
+                Acquisition = rec.Acquisition,
+                Forestry = rec.Forestry,
+                ForestryFocus = rec.ForestryFocus,
+                ElectoralDistrict = rec.ElectoralDistrict,
+                ApplicantElectoralDistrict = rec.ApplicantElectoralDistrict,
+                Place = rec.Place,
+                RegionalDistrict = rec.RegionalDistrict,
+                OwnerId = rec.OwnerId,
+                DefaultSiteId = rec.DefaultSiteId,
+                SigningAuthorityFullName = rec.SigningAuthorityFullName,
+                SigningAuthorityTitle = rec.SigningAuthorityTitle,
+                SigningAuthorityEmail = rec.SigningAuthorityEmail,
+                SigningAuthorityBusinessPhone = rec.SigningAuthorityBusinessPhone,
+                SigningAuthorityCellPhone = rec.SigningAuthorityCellPhone,
+                ContractNumber = rec.ContractNumber,
+                ContractExecutionDate = rec.ContractExecutionDate,
+                RiskRanking = rec.RiskRanking,
+                UnityApplicationId = rec.UnityApplicationId,
 
-            appDto.Status = app.ApplicationStatus.InternalStatus;
-            appDto.Applicant = ObjectMapper.Map<Applicant, GrantApplicationApplicantDto>(app.Applicant);
-            appDto.Category = app.ApplicationForm.Category ?? string.Empty;
-            appDto.Owner = BuildApplicationOwner(app.Owner);
-            appDto.OrganizationName = app.Applicant?.OrgName ?? string.Empty;
-            appDto.ApplicationTag = ObjectMapper.Map<List<ApplicationTags>, List<ApplicationTagsDto>>(app.ApplicationTags?.ToList() ?? []);
-            appDto.NonRegOrgName = app.Applicant?.NonRegOrgName ?? string.Empty;
-            appDto.OrganizationType = app.Applicant?.OrganizationType ?? string.Empty;
-            appDto.Assignees = BuildApplicationAssignees(app.ApplicationAssignments);
-            appDto.SubStatusDisplayValue = MapSubstatusDisplayValue(appDto.SubStatus);
-            appDto.DeclineRational = MapDeclineRationalDisplayValue(appDto.DeclineRational);
-            appDto.ContactFullName = app.ApplicantAgent?.Name;
-            appDto.ContactEmail = app.ApplicantAgent?.Email;
-            appDto.ContactTitle = app.ApplicantAgent?.Title;
-            appDto.ContactBusinessPhone = app.ApplicantAgent?.Phone;
-            appDto.ContactCellPhone = app.ApplicantAgent?.Phone2;
-            appDto.ApplicationLinks = ObjectMapper.Map<List<ApplicationLink>, List<ApplicationLinksDto>>(app.ApplicationLinks?.ToList() ?? []);
+                // From ApplicationStatus
+                Status = rec.Status,
+
+                // From ApplicationForm
+                Category = rec.Category,
+
+                // From Applicant - both the nested DTO and the flattened top-level properties
+                Applicant = new GrantApplicationApplicantDto
+                {
+                    Id = rec.ApplicantId,
+                    ApplicantName = rec.ApplicantName ?? string.Empty,
+                    SupplierId = rec.ApplicantSupplierId ?? Guid.Empty,
+                    Sector = rec.ApplicantSector ?? string.Empty,
+                    SubSector = rec.ApplicantSubSector ?? string.Empty,
+                    OrgNumber = rec.ApplicantOrgNumber ?? string.Empty,
+                    OrgName = rec.ApplicantOrgName ?? string.Empty,
+                    OrgStatus = rec.ApplicantOrgStatus ?? string.Empty,
+                    BusinessNumber = rec.ApplicantBusinessNumber ?? string.Empty,
+                    OrganizationType = rec.ApplicantOrganizationType ?? string.Empty,
+                    OrganizationSize = rec.ApplicantOrganizationSize ?? string.Empty,
+                    SectorSubSectorIndustryDesc = rec.ApplicantSectorSubSectorIndustryDesc ?? string.Empty,
+                    RedStop = rec.ApplicantRedStop ?? false,
+                    IndigenousOrgInd = rec.ApplicantIndigenousOrgInd ?? string.Empty,
+                    UnityApplicantId = rec.ApplicantUnityApplicantId ?? string.Empty,
+                    FiscalDay = rec.ApplicantFiscalDay?.ToString() ?? string.Empty,
+                    FiscalMonth = rec.ApplicantFiscalMonth ?? string.Empty
+                },
+                OrganizationName = rec.ApplicantOrgName ?? string.Empty,
+                NonRegOrgName = rec.ApplicantNonRegOrgName ?? string.Empty,
+                OrganizationType = rec.ApplicantOrganizationType ?? string.Empty,
+                OrgStatus = rec.ApplicantOrgStatus,
+                BusinessNumber = rec.ApplicantBusinessNumber,
+                OrgNumber = rec.ApplicantOrgNumber,
+                OrganizationSize = rec.ApplicantOrganizationSize,
+                SectorSubSectorIndustryDesc = rec.ApplicantSectorSubSectorIndustryDesc,
+                Sector = rec.ApplicantSector,
+                SubSector = rec.ApplicantSubSector,
+
+                // From ApplicantAgent
+                ContactFullName = rec.ContactFullName,
+                ContactTitle = rec.ContactTitle,
+                ContactEmail = rec.ContactEmail,
+                ContactBusinessPhone = rec.ContactBusinessPhone,
+                ContactCellPhone = rec.ContactCellPhone,
+
+                // From Owner
+                Owner = rec.OwnerPersonId.HasValue
+                    ? new GrantApplicationAssigneeDto { Id = rec.OwnerPersonId.Value, FullName = rec.OwnerFullName ?? string.Empty }
+                    : new GrantApplicationAssigneeDto(),
+
+                // Collections
+                ApplicationTag = rec.Tags
+                    .Select(t => new ApplicationTagsDto
+                    {
+                        Id = t.Id,
+                        ApplicationId = t.ApplicationId,
+                        Tag = t.TagName != null ? new TagDto { Name = t.TagName } : null
+                    }).ToList(),
+
+                Assignees = rec.Assignments
+                    .Select(a => new GrantApplicationAssigneeDto
+                    {
+                        Id = a.Id,
+                        ApplicationId = a.ApplicationId,
+                        AssigneeId = a.AssigneeId,
+                        FullName = a.AssigneeName,
+                        Duty = a.Duty
+                    }).ToList(),
+
+                ApplicationLinks = rec.Links
+                    .Select(l => new ApplicationLinksDto
+                    {
+                        Id = l.Id,
+                        ApplicationId = l.ApplicationId,
+                        LinkedApplicationId = l.LinkedApplicationId,
+                        LinkType = l.LinkType
+                    }).ToList()
+            };
 
             if (paymentsFeatureEnabled && paymentRollupBatch.Count > 0)
             {
-                paymentRollupBatch.TryGetValue(app.Id, out var rollup);
+                paymentRollupBatch.TryGetValue(rec.Id, out var rollup);
                 appDto.PaymentInfo = new PaymentInfoDto
                 {
-                    ApprovedAmount = app.ApprovedAmount,
+                    ApprovedAmount = rec.ApprovedAmount,
                     TotalPaid = rollup?.TotalPaid ?? 0
                 };
             }
@@ -120,11 +252,15 @@ public class GrantApplicationAppService(
 
         }).ToList();
 
-        // 4. Get total count using same filters
-        var totalCount = await applicationRepository.GetCountAsync(
-            input.SubmittedFromDate,
-            input.SubmittedToDate
-        );
+#pragma warning disable S125
+        //Code is temporarily commented out as this will be the way to get the accurate count
+        //once the core GrantApplications data table is moved server side from client side.
+        //Until then, since it is client side and always requests all records at once to be
+        //loaded, an extra round-trip to the database for a query is unnecessary. 
+
+        //var totalCount = await applicationRepository.GetCountAsync(input.SubmittedFromDate,input.SubmittedToDate);
+#pragma warning restore S125
+        var totalCount = appDtos.Count;
 
         return new PagedResultDto<GrantApplicationDto>(totalCount, appDtos);
     }
@@ -634,11 +770,8 @@ public class GrantApplicationAppService(
         var application = await applicationRepository.GetAsync(applicationId);
         if (await FeatureChecker.IsEnabledAsync(PaymentConsts.UnityPaymentsFeature) && application != null)
         {
-            var pendingPayments = await paymentRequestService.GetPaymentPendingListByCorrelationIdAsync(applicationId);
-            if (pendingPayments != null && pendingPayments.Count > 0)
-            {
-                throw new UserFriendlyException("There are outstanding payment requests with the current Supplier. Please decline or approve the outstanding payments before changing the Supplier Number");
-            }
+            await applicantSupplierService.EnsureNoPendingPaymentsForApplicantAsync(application.ApplicantId);
+
             // Handle both clearing (null/empty) and updating supplier number
             if (string.IsNullOrWhiteSpace(supplierNumber))
             {
@@ -955,7 +1088,7 @@ public class GrantApplicationAppService(
         return form.AccountCodingId;
     }
 
-    
+
 
     public async Task<bool> IsApplicantRedStopAsync(Guid applicationId)
     {
@@ -982,7 +1115,7 @@ public class GrantApplicationAppService(
 
         // NOTE: Authorization is applied on the AppService layer and is false by default
         // AUTHORIZATION HANDLING
-         bool isRedStop = application.Applicant != null && application.Applicant.RedStop == true;
+        bool isRedStop = application.Applicant != null && application.Applicant.RedStop == true;
         foreach (var item in actionDtos)
         {
             item.IsPermitted = !isRedStop && item.IsPermitted && (await AuthorizationService.IsGrantedAsync(application, GetActionAuthorizationRequirement(item.ApplicationAction)));
@@ -1028,6 +1161,162 @@ public class GrantApplicationAppService(
         );
 
         return ObjectMapper.Map<Application, GrantApplicationDto>(application);
+    }
+
+    public async Task<AIGenerationRequestDto> QueueAIGenerationAsync(Guid applicationId, string? promptVersion = null)
+    {
+        await EnsureAIAnalysisEnabledAsync();
+        return await QueueApplicationAnalysisAsync(applicationId, promptVersion);
+    }
+
+    [Authorize(AIPermissions.Analysis.GenerateApplicationAnalysis)]
+    public async Task<AIGenerationRequestDto> QueueApplicationAnalysisAsync(Guid applicationId, string? promptVersion = null)
+    {
+        await EnsureAIAnalysisEnabledAsync();
+        await aiGenerationQueue.QueueApplicationAnalysisAsync(applicationId, CurrentTenant.Id, promptVersion);
+
+        var request = await aiGenerationStatusAppService.GetLatestAsync(
+            applicationId,
+            AIGenerationRequestKeyHelper.ApplicationAnalysisOperationType,
+            CurrentTenant.Id);
+
+        return request ?? throw new UserFriendlyException("Unable to queue AI analysis request.");
+    }
+
+    [Authorize(AIPermissions.Analysis.GenerateAttachmentSummaries)]
+    public async Task<AIGenerationRequestDto> QueueAttachmentSummaryAsync(QueueAttachmentSummaryRequestDto input, string? promptVersion = null)
+    {
+        await EnsureAttachmentSummariesEnabledAsync();
+        var attachmentIds = await ResolveAttachmentSummaryIdsAsync(input);
+        await aiGenerationQueue.QueueAttachmentSummaryAsync(input.ApplicationId, CurrentTenant.Id, promptVersion, attachmentIds);
+
+        var request = await aiGenerationStatusAppService.GetLatestAsync(
+            input.ApplicationId,
+            AIGenerationRequestKeyHelper.AttachmentSummaryOperationType,
+            CurrentTenant.Id);
+
+        return request ?? throw new UserFriendlyException("Unable to queue AI attachment summary request.");
+    }
+
+    [Authorize(AIPermissions.Analysis.GenerateScoring)]
+    public async Task<AIGenerationRequestDto> QueueApplicationScoringAsync(Guid applicationId, string? promptVersion = null)
+    {
+        await EnsureScoringEnabledAsync();
+        await aiGenerationQueue.QueueApplicationScoringAsync(applicationId, CurrentTenant.Id, promptVersion);
+
+        var request = await aiGenerationStatusAppService.GetLatestAsync(
+            applicationId,
+            AIGenerationRequestKeyHelper.ApplicationScoringOperationType,
+            CurrentTenant.Id);
+
+        return request ?? throw new UserFriendlyException("Unable to queue AI scoring request.");
+    }
+
+    public async Task<AIGenerationRequestDto?> GetAIGenerationStatusAsync(Guid applicationId, string operationType, string? promptVersion = null)
+    {
+        await EnsureAIGenerationStatusAccessAsync(operationType);
+        return await aiGenerationStatusAppService.GetLatestAsync(applicationId, operationType, CurrentTenant.Id);
+    }
+
+    [Authorize(AIPermissions.Analysis.GenerateApplicationAnalysis)]
+    [Authorize(AIPermissions.Analysis.GenerateAttachmentSummaries)]
+    [Authorize(AIPermissions.Analysis.GenerateScoring)]
+    public async Task<AIGenerationRequestDto> QueueAllAIStagesAsync(Guid applicationId, string? promptVersion = null)
+    {
+        await EnsureAttachmentSummariesEnabledAsync();
+        await EnsureAIAnalysisEnabledAsync();
+        await EnsureScoringEnabledAsync();
+        await aiGenerationQueue.QueueAllAIStagesAsync(applicationId, CurrentTenant.Id, promptVersion);
+
+        var request = await aiGenerationStatusAppService.GetLatestAsync(
+            applicationId,
+            AIGenerationRequestKeyHelper.PipelineOperationType,
+            CurrentTenant.Id);
+
+        return request ?? throw new UserFriendlyException("Unable to queue AI generation request.");
+    }
+
+    private async Task EnsureAIGenerationStatusAccessAsync(string operationType)
+    {
+        switch (operationType)
+        {
+            case AIGenerationRequestKeyHelper.ApplicationAnalysisOperationType:
+                await AuthorizationService.CheckAsync(AIPermissions.Analysis.ViewApplicationAnalysis);
+                return;
+            case AIGenerationRequestKeyHelper.AttachmentSummaryOperationType:
+                await AuthorizationService.CheckAsync(AIPermissions.Analysis.ViewAttachmentSummary);
+                return;
+            case AIGenerationRequestKeyHelper.ApplicationScoringOperationType:
+                await AuthorizationService.CheckAsync(AIPermissions.Analysis.ViewScoringResult);
+                return;
+            case AIGenerationRequestKeyHelper.PipelineOperationType:
+                await AuthorizationService.CheckAsync(AIPermissions.Analysis.ViewApplicationAnalysis);
+                await AuthorizationService.CheckAsync(AIPermissions.Analysis.ViewAttachmentSummary);
+                await AuthorizationService.CheckAsync(AIPermissions.Analysis.ViewScoringResult);
+                return;
+            default:
+                throw new UserFriendlyException("Unknown AI generation operation type.");
+        }
+    }
+
+    private async Task EnsureAttachmentSummariesEnabledAsync()
+    {
+        if (!await featureChecker.IsEnabledAsync("Unity.AI.AttachmentSummaries"))
+        {
+            throw new UserFriendlyException("AI attachment summaries are not enabled.");
+        }
+    }
+
+    private async Task<List<Guid>> ResolveAttachmentSummaryIdsAsync(QueueAttachmentSummaryRequestDto input)
+    {
+        if (input == null)
+        {
+            throw new UserFriendlyException("Attachment summary request is required.");
+        }
+
+        if (input.ApplicationId == Guid.Empty)
+        {
+            throw new UserFriendlyException("Application id is required.");
+        }
+
+        var applicationAttachmentIds = (await applicationChefsFileAttachmentRepository.GetListAsync(a => a.ApplicationId == input.ApplicationId))
+            .Select(a => a.Id)
+            .ToList();
+
+        if (applicationAttachmentIds.Count == 0)
+        {
+            throw new UserFriendlyException("No attachments were found to generate summaries.");
+        }
+
+        if (input.AttachmentIds is not { Count: > 0 })
+        {
+            return applicationAttachmentIds;
+        }
+
+        var applicationAttachmentIdSet = applicationAttachmentIds.ToHashSet();
+        var selectedAttachmentIds = input.AttachmentIds.Distinct().ToList();
+        if (selectedAttachmentIds.Any(id => !applicationAttachmentIdSet.Contains(id)))
+        {
+            throw new UserFriendlyException("One or more selected attachments do not belong to the application.");
+        }
+
+        return selectedAttachmentIds;
+    }
+
+    private async Task EnsureAIAnalysisEnabledAsync()
+    {
+        if (!await featureChecker.IsEnabledAsync("Unity.AI.ApplicationAnalysis"))
+        {
+            throw new UserFriendlyException("AI application analysis is not enabled.");
+        }
+    }
+
+    private async Task EnsureScoringEnabledAsync()
+    {
+        if (!await featureChecker.IsEnabledAsync("Unity.AI.Scoring"))
+        {
+            throw new UserFriendlyException("AI scoring is not enabled.");
+        }
     }
     #endregion APPLICATION WORKFLOW
 

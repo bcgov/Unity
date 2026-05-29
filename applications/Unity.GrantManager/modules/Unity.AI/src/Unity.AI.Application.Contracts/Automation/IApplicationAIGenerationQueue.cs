@@ -6,8 +6,8 @@ namespace Unity.AI.Automation;
 
 public interface IApplicationAIGenerationQueue
 {
-    Task QueueAttachmentSummariesAsync(IReadOnlyList<Guid> attachmentIds, Guid? tenantId, string? promptVersion = null);
+    Task QueueAttachmentSummaryAsync(Guid applicationId, Guid? tenantId, string? promptVersion = null, List<Guid>? attachmentIds = null);
     Task QueueApplicationAnalysisAsync(Guid applicationId, Guid? tenantId, string? promptVersion = null);
     Task QueueApplicationScoringAsync(Guid applicationId, Guid? tenantId, string? promptVersion = null);
-    Task QueueApplicationPipelineAsync(Guid applicationId, Guid? tenantId, string? promptVersion = null);
+    Task QueueAllAIStagesAsync(Guid applicationId, Guid? tenantId, string? promptVersion = null);
 }

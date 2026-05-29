@@ -10,7 +10,6 @@ using Unity.Modules.Shared.Http;
 using Volo.Abp.EventBus.Local;
 using Unity.GrantManager.Payments;
 using Unity.Payments.Suppliers;
-using Unity.Modules.Shared.Correlation;
 using System;
 using System.Collections.Generic;
 using Microsoft.AspNetCore.Authorization;
@@ -108,8 +107,7 @@ namespace Unity.Payments.Integrations.Cas
                 if (rootElement.TryGetProperty("code", out JsonElement codeProp) && codeProp.GetString() == "Unauthorized")
                     throw new UserFriendlyException("Unauthorized access to CAS supplier information.");
                 UpsertSupplierEto supplierEto = GetEventDtoFromCasResponse(rootElement);
-                supplierEto.CorrelationId = applicantId;
-                supplierEto.CorrelationProvider = CorrelationConsts.Applicant;
+                supplierEto.ApplicantId = applicantId;
                 supplierEto.ApplicationId = applicationId;
                 await localEventBus.PublishAsync(supplierEto);
             }
@@ -148,7 +146,9 @@ namespace Unity.Payments.Integrations.Cas
             string supplierprotected = GetProp("supplierprotected");
             string standardindustryclassification = GetProp("standardindustryclassification");
 
-            _ = DateTime.TryParse(lastUpdated, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out DateTime lastUpdatedDate);
+            DateTime? lastUpdatedDate = DateTime.TryParse(lastUpdated, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out DateTime parsedLastUpdated)
+                ? parsedLastUpdated
+                : null;
 
             var siteEtos = new List<SiteEto>();
             if (casSupplierResponse.TryGetProperty("supplieraddress", out var sitesJson) &&
@@ -183,14 +183,16 @@ namespace Unity.Payments.Integrations.Cas
                 ? new string('*', accountNumber.Length - 4) + accountNumber[^4..]
                 : accountNumber;
             string siteLastUpdated = GetJsonProperty("lastupdated", site);
-            _ = DateTime.TryParse(siteLastUpdated, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out DateTime siteLastUpdatedDate);
+            DateTime? siteLastUpdatedDate = DateTime.TryParse(siteLastUpdated, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out DateTime parsedSiteLastUpdated)
+                ? parsedSiteLastUpdated
+                : null;
 
             return new SiteEto
             {
                 SupplierSiteCode = GetJsonProperty("suppliersitecode", site),
                 AddressLine1 = GetJsonProperty("addressline1", site),
                 AddressLine2 = GetJsonProperty("addressline2", site),
-                AddressLine3 = GetJsonProperty("addressline2", site),
+                AddressLine3 = GetJsonProperty("addressline3", site),
                 City = GetJsonProperty("city", site),
                 Province = GetJsonProperty("province", site),
                 Country = GetJsonProperty("country", site),

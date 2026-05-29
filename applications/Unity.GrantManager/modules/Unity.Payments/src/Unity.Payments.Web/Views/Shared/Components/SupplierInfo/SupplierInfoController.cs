@@ -14,17 +14,17 @@ namespace Unity.Payments.Web.Views.Shared.Components.SupplierInfo
 
         [HttpGet]
         [Route("Refresh")]
-        public IActionResult SupplierInfo(Guid applicantId)
+        public IActionResult SupplierInfo(Guid applicantId, Guid applicationId)
         {
             // Check if the model state is valid
             if (!ModelState.IsValid)
-            {       
+            {
                 logger.LogWarning("Invalid model state for SupplierInfoController");
                 return ViewComponent("SupplierInfo");
             }
 
             // If the model state is valid, render the view component
-            return ViewComponent("SupplierInfo", new { applicantId });
+            return ViewComponent("SupplierInfo", new { applicantId, applicationId });
         }
     }
 }

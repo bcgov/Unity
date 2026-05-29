@@ -1,23 +1,23 @@
 const l = abp.localization.getResource('GrantManager');
-const pageApplicationId = decodeURIComponent(document.querySelector("#DetailsViewApplicationId").value);
+const pageApplicationId = decodeURIComponent(document.querySelector("#DetailsViewApplicationId")?.value ?? '');
 const isAiScoringEnabled = document.querySelector("#ReviewListAIScoringEnabled")?.value === 'True';
 const canUseAiScoring = isAiScoringEnabled;
 
 const actionButtonConfigMap = {
-    Generate: { buttonType: 'generateAiButton', order: 1 },
-    Clone: { buttonType: 'cloneButton', order: 2 },
-    Create: { buttonType: 'createButton', order: 3 },
-    SendBack: { buttonType: 'unityWorkflow', order: 4 },
-    Complete: { buttonType: 'unityWorkflow', order: 5 },
+    Generate: { buttonType: 'generateAiButton', order: 4 },
+    Clone: { buttonType: 'cloneButton', order: 5 },
+    Create: { buttonType: 'createButton', order: 1 },
+    SendBack: { buttonType: 'unityWorkflow', order: 3 },
+    Complete: { buttonType: 'unityWorkflow', order: 2 },
     _Fallback: { buttonType: 'unityWorkflow', order: 100 }
 }
 
 const actionButtonLabelMap = {
     Generate: 'Generate',
     Clone: 'Clone',
-    Create: 'Create',
+    Create: 'Create Assessment',
     SendBack: 'Send Back',
-    Complete: 'Complete'
+    Complete: 'Complete Assessment'
 };
 
 const finalApplicationStates = [
@@ -54,13 +54,14 @@ $(function () {
 
     $.extend(DataTable.ext.buttons, {
         unityWorkflow: {
-            className: 'btn unt-btn-outline-primary btn-outline-primary',
+            className: 'btn btn-light rounded-1',
             enabled: false,
             text: unityWorkflowButtonText,
             action: unityWorkflowButtonAction
         },
         generateAiButton: {
             extend: 'unityWorkflow',
+            className: 'btn btn-light rounded-1 ai-generate-btn',
             text: generateAiButtonText,
             action: generateAiButtonAction
         },
@@ -237,6 +238,8 @@ $(function () {
         let generateButtons = new $.fn.dataTable.Buttons(reviewListTable, assessmentGenerateButtonGroup);
         generateButtons.container().appendTo("#AdjudicationTeamLeadActionBar");
         reviewListTable.buttons('Generate:name').enable();
+        globalThis.syncAIRateLimitButtons?.();
+        resumeActiveReviewListAiButton(reviewListTable);
     }
 
     async function CreateAssessmentButton() {
@@ -367,7 +370,7 @@ function renderApproval(data) {
     }
 }
 async function getActionButtonConfigMap() {
-    let applicationId = document.getElementById('DetailsViewApplicationId').value;
+    let applicationId = document.getElementById('DetailsViewApplicationId')?.value;
     let applicationStatus = await unity.grantManager.grantApplications.grantApplication.getApplicationStatus(applicationId).then(data => {
         return data;
     });
@@ -426,12 +429,18 @@ function updateAiActionButtonsVisibility(dataTableContext, rowsData) {
 function renderUnityWorkflowButton(actionValue) {
     let buttonConfig = actionButtonConfigMap[actionValue] ?? actionButtonConfigMap['_Fallback']
 
-    return {
+    const button = {
         extend: buttonConfig.buttonType,
         name: actionValue,
         sortOrder: buttonConfig.order ?? 100,
         attr: { id: `${actionValue}Button` }
     };
+
+    if (actionValue === 'Generate') {
+        button.className = 'ai-generate-btn';
+    }
+
+    return button;
 }
 
 /* Cutom Unity Workflow Buttons */
@@ -456,27 +465,83 @@ function unityWorkflowButtonAction(e, dt, button, config) {
 }
 
 function generateAiButtonAction(e, dt, button, config) {
-    const triggerButton = button?.node ? $(button.node) : null;
-    const promptVersion = globalThis.getSelectedPromptVersion?.() || null;
+    const $button = button?.node ? $(button.node) : null;
 
-    if (triggerButton?.length) {
-        triggerButton.prop('disabled', true);
-        triggerButton.html('<span class="ai-button-content"><i class="unt-icon-sm fa-solid fa-wand-sparkles"></i><span>Queueing...</span></span>');
+    if ($button?.length) {
+        globalThis.AIGenerationButtonState?.setGenerating($button);
     }
 
-    unity.grantManager.grantApplications.applicationScoring.generateApplicationScoring(pageApplicationId, promptVersion)
-        .done(function () {
-            abp.notify.success('AI scoring queued. Refresh later to see updated results.');
+    unity.grantManager.grantApplications.grantApplication.queueApplicationScoring(pageApplicationId)
+        .done(function (request) {
+            const status = globalThis.AIGenerationButtonState?.resolveStatus(request?.status) ?? '';
+
+            if (status === 'Completed') {
+                restoreReviewListAiButtonForCooldownCheck($button);
+                refreshReviewListAfterAiScoring();
+                globalThis.syncAIRateLimitButtons?.();
+                return;
+            }
+
+            pollReviewListAiButton($button);
         })
         .fail(function () {
             abp.message.error('Failed to queue AI scoring. Please try again.');
+            restoreReviewListAiButton($button);
+            globalThis.syncAIRateLimitButtons?.();
         })
-        .always(function () {
-            if (triggerButton?.length) {
-                triggerButton.prop('disabled', false);
-                triggerButton.html(generateAiButtonText(null, null, null));
+        ;
+}
+
+function restoreReviewListAiButton($button) {
+    if (!$button?.length) {
+        return;
+    }
+
+    globalThis.AIGenerationButtonState?.restore($button);
+    $button.html(generateAiButtonText(null, null, null)).prop('disabled', false);
+}
+
+function restoreReviewListAiButtonForCooldownCheck($button) {
+    if (!$button?.length) {
+        return;
+    }
+
+    globalThis.AIGenerationButtonState?.restoreForCooldownCheck($button, generateAiButtonText(null, null, null));
+}
+
+function resumeActiveReviewListAiButton(reviewListTable) {
+    const button = reviewListTable.button('Generate:name');
+    if (!button?.any()) {
+        return;
+    }
+
+    const $button = $(button.node());
+    unity.grantManager.grantApplications.grantApplication
+        .getAIGenerationStatus(pageApplicationId, 'application-scoring')
+        .done(function(request) {
+            if (request?.isActive !== true) {
+                return;
             }
+
+            globalThis.AIGenerationButtonState?.setGenerating($button);
+            pollReviewListAiButton($button);
         });
+}
+
+function pollReviewListAiButton($button) {
+    globalThis.AIGenerationButtonState.monitor({
+        $button,
+        originalHtml: generateAiButtonText(null, null, null),
+        getStatus: () => unity.grantManager.grantApplications.grantApplication
+            .getAIGenerationStatus(pageApplicationId, 'application-scoring'),
+        onComplete: refreshReviewListAfterAiScoring,
+        onFailed: (request) => abp.message.error(request?.failureReason || 'AI scoring failed.')
+    });
+}
+
+function refreshReviewListAfterAiScoring() {
+    PubSub.publish('refresh_review_list', pageApplicationId);
+    PubSub.publish('refresh_assessment_scores', null);
 }
 
 function executeAssessmentAction(assessmentId, triggerAction) {

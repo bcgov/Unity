@@ -2,410 +2,8 @@
  * Grant Application Details Page
  * Dependencies: ai-analysis.js - handles AI analysis rendering and management
  */
-function formatJsonOrRaw(value) {
-    if (!value) {
-        return '';
-    }
-
-    if (typeof value !== 'string') {
-        return JSON.stringify(value, null, 2);
-    }
-
-    try {
-        return JSON.stringify(JSON.parse(value), null, 2);
-    } catch {
-        return value;
-    }
-}
-
-function formatSectionBody(title, value) {
-    if (!value) {
-        return '';
-    }
-
-    return `${title}:\n${value}`;
-}
-
-function formatOutputBody(title, sections) {
-    const content = sections.filter(Boolean).join('\n\n');
-    if (!content) {
-        return '';
-    }
-
-    return `${title}\n\n${content}`;
-}
-
-function unwrapWhenResult(result) {
-    if (
-        Array.isArray(result) &&
-        result.length === 3 &&
-        typeof result[1] === 'string'
-    ) {
-        return result[0];
-    }
-
-    return result;
-}
-
-function extractSubmissionDataObject(root) {
-    if (!root || typeof root !== 'object' || Array.isArray(root)) {
-        return null;
-    }
-
-    if (root.data && typeof root.data === 'object' && !Array.isArray(root.data)) {
-        return root.data;
-    }
-
-    if (
-        root.submission &&
-        typeof root.submission === 'object' &&
-        !Array.isArray(root.submission) &&
-        root.submission.data &&
-        typeof root.submission.data === 'object' &&
-        !Array.isArray(root.submission.data)
-    ) {
-        return root.submission.data;
-    }
-
-    return root;
-}
-
-function formatTimestamp(value) {
-    if (!value) {
-        return '';
-    }
-
-    const timestamp = new Date(value);
-    if (Number.isNaN(timestamp.getTime())) {
-        return '';
-    }
-
-    return timestamp.toLocaleString();
-}
-
-function getAttachmentSummaryValue(attachment) {
-    return attachment?.aiSummary ?? attachment?.aISummary ?? '';
-}
-
-function formatAttachmentSummaryBody(attachments) {
-    if (!Array.isArray(attachments) || attachments.length === 0) {
-        return '';
-    }
-
-    const summarizedAttachments = attachments.filter(
-        (attachment) => {
-            const summary = getAttachmentSummaryValue(attachment);
-            return summary && summary.trim() !== '';
-        }
-    );
-
-    if (summarizedAttachments.length === 0) {
-        return '';
-    }
-
-    return summarizedAttachments.map(function(attachment) {
-        const summary = getAttachmentSummaryValue(attachment);
-        return [
-            'NAME:',
-            attachment.fileName || '',
-            '',
-            'SUMMARY:',
-            summary
-        ].join('\n');
-    }).join('\n\n----------------------------------------\n\n');
-}
-
-function formatAttachmentSummaryJson(attachments) {
-    if (!Array.isArray(attachments) || attachments.length === 0) {
-        return '';
-    }
-
-    const summarizedAttachments = attachments
-        .map((attachment) => {
-            const summary = getAttachmentSummaryValue(attachment);
-            if (!summary || summary.trim() === '') {
-                return null;
-            }
-
-            return {
-                name: attachment.fileName || '',
-                summary
-            };
-        })
-        .filter((attachment) => attachment !== null);
-
-    if (summarizedAttachments.length === 0) {
-        return '';
-    }
-
-    return JSON.stringify(summarizedAttachments, null, 2);
-}
-
 $(function () {
-    const excludedPromptDataKeys = new Set([
-        'simplefile',
-        'applicantAgent',
-        'submit',
-        'lateEntry',
-        'metadata',
-        'full_application_form_submission',
-        'files',
-        'file',
-        'attachments'
-    ]);
-
-    const nonDataComponentTypes = new Set([
-        'button',
-        'simplebuttonadvanced',
-        'html',
-        'htmlelement',
-        'content',
-        'simpleseparator'
-    ]);
-
-    globalThis.getSelectedPromptVersion = function() {
-        return $('#devPromptVersion').val() || null;
-    };
-
-    function setDevAiOutput(selector, value) {
-        $(selector).val(value || '');
-    }
-
-    function setDevAiOutputTimestamp(selector, value) {
-        $(selector).text(value ? `(${value})` : '');
-    }
-
-    function getScoresheetSchemaJson() {
-        return $('#ApplicationScoresheetSchemaJson').val() ||
-            $('#AssessmentScoresheetSchemaJson').val() ||
-            '';
-    }
-
-    function getPromptDataPayload() {
-        const submissionJson = $('#ApplicationFormSubmissionData').val();
-        if (!submissionJson) {
-            return '';
-        }
-
-        try {
-            const root = JSON.parse(submissionJson);
-            const submissionData = extractSubmissionDataObject(root);
-            if (!submissionData || typeof submissionData !== 'object' || Array.isArray(submissionData)) {
-                return '';
-            }
-
-            const filteredValues = { ...submissionData };
-            for (const key of excludedPromptDataKeys) {
-                delete filteredValues[key];
-            }
-
-            const allowedSchemaKeys = extractAllowedSchemaKeys($('#ApplicationFormSchema').val());
-            const payload = allowedSchemaKeys.size > 0
-                ? Object.fromEntries(
-                    Object.entries(filteredValues).filter(([key]) => allowedSchemaKeys.has(key))
-                )
-                : filteredValues;
-
-            return JSON.stringify(payload, null, 2);
-        } catch {
-            return '';
-        }
-    }
-
-    function extractAllowedSchemaKeys(formSchema) {
-        if (!formSchema) {
-            return new Set();
-        }
-
-        try {
-            const schema = JSON.parse(formSchema);
-            const keys = new Set();
-            extractSchemaKeys(schema.components, keys);
-            return keys;
-        } catch {
-            return new Set();
-        }
-    }
-
-    function extractSchemaKeys(components, keys) {
-        if (!Array.isArray(components)) {
-            return;
-        }
-
-        for (const component of components) {
-            if (!component || typeof component !== 'object') {
-                continue;
-            }
-
-            const key = component.key;
-            const type = component.type;
-            const isInput = component.input === true;
-
-            if (
-                typeof key === 'string' &&
-                typeof type === 'string' &&
-                !nonDataComponentTypes.has(type.toLowerCase()) &&
-                isInput
-            ) {
-                keys.add(key);
-            }
-
-            if (Array.isArray(component.components)) {
-                extractSchemaKeys(component.components, keys);
-            }
-
-            if (Array.isArray(component.columns)) {
-                for (const column of component.columns) {
-                    if (column && Array.isArray(column.components)) {
-                        extractSchemaKeys(column.components, keys);
-                    }
-                }
-            }
-        }
-    }
-
-    function formatAttachmentAiOutput(attachments) {
-        const attachmentBody = formatAttachmentSummaryBody(attachments);
-        if (!attachmentBody) {
-            setDevAiOutputTimestamp('#attachmentAiOutputTimestamp', '');
-            return '';
-        }
-
-        const summarizedAttachments = attachments.filter(
-            (attachment) => {
-                const summary = getAttachmentSummaryValue(attachment);
-                return summary && summary.trim() !== '';
-            }
-        );
-
-        const latestTimestamp = summarizedAttachments
-            .map((attachment) => attachment.lastModificationTime || attachment.creationTime || null)
-            .filter((timestamp) => !!timestamp)
-            .sort()
-            .at(-1);
-
-        setDevAiOutputTimestamp('#attachmentAiOutputTimestamp', formatTimestamp(latestTimestamp));
-        return attachmentBody;
-    }
-
-    function loadDevAiOutputs() {
-        const applicationId = $('#DetailsViewApplicationId').val();
-
-        if (!applicationId) {
-            setDevAiOutput('#analysisAiOutput', '');
-            setDevAiOutput('#scoringAiOutput', '');
-            setDevAiOutput('#attachmentAiOutput', '');
-            setDevAiOutputTimestamp('#analysisAiOutputTimestamp', '');
-            setDevAiOutputTimestamp('#scoringAiOutputTimestamp', '');
-            setDevAiOutputTimestamp('#attachmentAiOutputTimestamp', '');
-            return;
-        }
-
-        $.when(
-            unity.grantManager.grantApplications.grantApplication.get(applicationId),
-            unity.grantManager.attachments.attachment.getApplicationChefsFileAttachments(applicationId)
-        )
-            .done(function(applicationResponse, attachmentsResponse) {
-                const application = unwrapWhenResult(applicationResponse);
-                const attachments = unwrapWhenResult(attachmentsResponse);
-                const updatedAt = application?.lastModificationTime || application?.creationTime || null;
-                const formattedUpdatedAt = formatTimestamp(updatedAt);
-                const attachmentSection = formatSectionBody('ATTACHMENTS', formatAttachmentSummaryJson(attachments));
-                setDevAiOutputTimestamp('#analysisAiOutputTimestamp', formattedUpdatedAt);
-                setDevAiOutputTimestamp('#scoringAiOutputTimestamp', formattedUpdatedAt);
-                setDevAiOutput(
-                    '#analysisAiOutput',
-                    formatOutputBody('APPLICATION ANALYSIS', [
-                        formatSectionBody('DATA', getPromptDataPayload()),
-                        attachmentSection,
-                        formatSectionBody(
-                            'OUTPUT',
-                            formatJsonOrRaw(application?.aiAnalysisData ?? application?.aiAnalysis ?? '')
-                        )
-                    ])
-                );
-                setDevAiOutput(
-                    '#scoringAiOutput',
-                    formatOutputBody('APPLICATION SCORING', [
-                        formatSectionBody('SCORESHEET', formatJsonOrRaw(getScoresheetSchemaJson())),
-                        formatSectionBody('DATA', getPromptDataPayload()),
-                        attachmentSection,
-                        formatSectionBody(
-                            'OUTPUT',
-                            formatJsonOrRaw(application?.aiScoresheetAnswers ?? application?.aIScoresheetAnswers ?? '')
-                        )
-                    ])
-                );
-                setDevAiOutput(
-                    '#attachmentAiOutput',
-                    formatOutputBody('ATTACHMENT SUMMARY', [formatAttachmentAiOutput(attachments)])
-                );
-            })
-            .fail(function() {
-                setDevAiOutput('#analysisAiOutput', '');
-                setDevAiOutput('#scoringAiOutput', '');
-                setDevAiOutput('#attachmentAiOutput', '');
-                setDevAiOutputTimestamp('#analysisAiOutputTimestamp', '');
-                setDevAiOutputTimestamp('#scoringAiOutputTimestamp', '');
-                setDevAiOutputTimestamp('#attachmentAiOutputTimestamp', '');
-            });
-    }
-
-    globalThis.refreshDevAiOutputs = loadDevAiOutputs;
-
-    globalThis.generateAllAIDevOutputs = function(triggerButton = null) {
-        const $button = triggerButton ? $(triggerButton) : $('#generateAllAiDevToolsBtn');
-        const existingHtml = $button.html();
-        const applicationId = $('#DetailsViewApplicationId').val();
-        const promptVersion = globalThis.getSelectedPromptVersion?.() || null;
-
-        if (!applicationId || $button.prop('disabled')) {
-            return;
-        }
-
-        $button
-            .html('<span class="ai-button-content"><span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span><span>Queueing...</span></span>')
-            .prop('disabled', true);
-
-        unity.grantManager.grantApplications.applicationContent
-            .generateContent(applicationId, promptVersion)
-            .done(function() {
-                abp.notify.success('AI generate all queued. Refresh later to see updated results.');
-            })
-            .fail(function() {
-                abp.message.error('Failed to queue AI generate all. Please try again.');
-            })
-            .always(function() {
-                $button.html(existingHtml).prop('disabled', false);
-            });
-    };
-
-    $('#generateAllAiDevToolsBtn').on('click', function() {
-        globalThis.generateAllAIDevOutputs(this);
-    });
-
-    $(document).on('click', '.ai-dev-output-copy-btn', async function () {
-        const targetSelector = $(this).data('target');
-        const text = $(targetSelector).val();
-
-        if (!targetSelector || !text) {
-            return;
-        }
-
-        try {
-            await navigator.clipboard.writeText(text);
-            abp.notify.success('Copied AI output.');
-        } catch {
-            const output = $(targetSelector);
-            output.trigger('focus');
-            output.trigger('select');
-        }
-    });
-
     let selectedReviewDetails = null;
-    let renderFormIoToHtml =
-        document.getElementById('RenderFormIoToHtml').value;
-    let hasRenderedHtml = document.getElementById('HasRenderedHTML').value;
     abp.localization.getResource('GrantManager');
 
     const divider = document.getElementById('main-divider');
@@ -430,7 +28,6 @@ $(function () {
         updateLinksCounters();
         renderSubmission();
         loadAIAnalysis();
-        loadDevAiOutputs();
         applyTabHeightOffset();
     }
 
@@ -492,24 +89,8 @@ $(function () {
     }
 
     function renderSubmission() {
-        // Initialize shadow DOM first
         const shadowRoot = initializeShadowDOM();
-
-        if (renderFormIoToHtml == 'False' || hasRenderedHtml == 'False') {
-            getSubmission(shadowRoot);
-        } else {
-            $('.spinner-grow').hide();
-
-            // Inject pre-rendered HTML into shadow DOM
-            if (shadowRoot) {
-                const htmlContent = document.getElementById('ApplicationFormSubmissionHtml');
-                if (htmlContent?.value) {
-                    shadowRoot.innerHTML += DOMPurify.sanitize(htmlContent.value);
-                }
-            }
-
-            addEventListeners(shadowRoot);
-        }
+        getSubmission(shadowRoot);
     }
 
 
@@ -543,6 +124,7 @@ $(function () {
             }
 
             Formio.icons = 'fontawesome';
+            patchHtmlElementTags(formSchema);
 
             // Create container inside shadow DOM
             const container = document.createElement('div');
@@ -571,36 +153,6 @@ $(function () {
         form.refresh();
         form.on('render', () => addEventListeners(shadowRoot));
 
-        waitFor(() => isFormChanging(form)).then(() => {
-            setTimeout(storeRenderedHtml, 2000);
-        });
-    }
-
-    async function storeRenderedHtml() {
-        if (renderFormIoToHtml == 'False') {
-            return;
-        }
-        const formioContainer = document.getElementById('formio');
-        const shadowRoot = formioContainer.shadowRoot;
-        let innerHTML = shadowRoot ? shadowRoot.innerHTML : formioContainer.innerHTML;
-        let submissionId = document.getElementById(
-            'ApplicationFormSubmissionId'
-        ).value;
-        $.ajax({
-            url: '/api/app/submission',
-            data: JSON.stringify({
-                SubmissionId: submissionId,
-                InnerHTML: innerHTML,
-            }),
-            contentType: 'application/json',
-            type: 'POST',
-            success: function (data) {
-                console.log(data);
-            },
-            error: function () {
-                console.log('error');
-            },
-        });
     }
 
     // Wait for the DOM to be fully loaded
@@ -709,24 +261,52 @@ $(function () {
         wrapper: '#assessmentScoresWidgetArea',
         filterCallback: function () {
             return {
-                assessmentId: decodeURIComponent($('#AssessmentId').val()),
+                assessmentId:
+                    selectedReviewDetails?.id ||
+                    decodeURIComponent($('#AssessmentId').val()),
                 currentUserId: decodeURIComponent(abp.currentUser.id),
             };
         },
     });
 
-    PubSub.subscribe('refresh_assessment_scores', (msg, data) => {
-        assessmentScoresWidgetManager.refresh();
-        updateSubtotal();
-        loadDevAiOutputs();
-    });
+    let assessmentScoresRefreshToken = 0;
+    function getAssessmentScoresWidgetElement() {
+        return document.getElementById('assessmentScoresWidgetArea');
+    }
 
-    PubSub.subscribe('refresh_chefs_attachment_list', () => {
-        loadDevAiOutputs();
+    function refreshAssessmentScoresWidget() {
+        const refreshToken = ++assessmentScoresRefreshToken;
+        globalThis.saveAssessmentScoresWidgetState?.(
+            getAssessmentScoresWidgetElement()
+        );
+
+        const refreshResult = assessmentScoresWidgetManager.refresh();
+
+        const afterRefresh = () => {
+            if (refreshToken !== assessmentScoresRefreshToken) {
+                return;
+            }
+
+            updateSubtotal();
+            globalThis.syncAIRateLimitButtons?.();
+        };
+
+        if (refreshResult && typeof refreshResult.then === 'function') {
+            refreshResult.then(afterRefresh);
+        } else {
+            setTimeout(afterRefresh, 0);
+        }
+    }
+
+    PubSub.subscribe('refresh_assessment_scores', (msg, data) => {
+        refreshAssessmentScoresWidget();
     });
 
     PubSub.subscribe('select_application_review', (msg, data) => {
         if (data) {
+            globalThis.saveAssessmentScoresWidgetState?.(
+                getAssessmentScoresWidgetElement()
+            );
             selectedReviewDetails = data;
             setDetailsContext('assessment');
             let selectElement = document.getElementById(
@@ -737,8 +317,7 @@ $(function () {
                 review: selectedReviewDetails,
             });
             assessmentUserDetailsWidgetManager.refresh();
-            assessmentScoresWidgetManager.refresh();
-            updateSubtotal();
+            refreshAssessmentScoresWidget();
             checkCurrentUser(data);
         } else {
             setDetailsContext('application');
@@ -746,6 +325,10 @@ $(function () {
     });
 
     PubSub.subscribe('deselect_application_review', (msg, data) => {
+        globalThis.saveAssessmentScoresWidgetState?.(
+            getAssessmentScoresWidgetElement()
+        );
+        assessmentScoresRefreshToken++;
         setDetailsContext('application');
     });
 
@@ -1305,6 +888,9 @@ function updateCustomForm(
         .update(customFormUpdate)
         .done(function () {
             abp.notify.success('Information has been updated.');
+        })
+        .fail(function () {
+            $(`#${saveId}`).prop('disabled', false);
         });
 }
 
@@ -1663,4 +1249,32 @@ function clearCurrencyError(input) {
     let errorSpan = input.attr('id') + '-error';
     document.getElementById(errorSpan).textContent = '';
     input.attr('aria-invalid', 'false');
+}
+
+// htmlelement components default to <p ref="html">, which causes browser HTML auto-repair when
+// content contains block-level elements (div, h3, etc.), producing duplicate DOM nodes.
+// Changing tag to 'div' before rendering prevents this at the source.
+function walkFormComponents(components) {
+    if (!Array.isArray(components)) return;
+    components.forEach(comp => {
+        if (comp.type === 'htmlelement' && (!comp.tag || comp.tag === 'p')) {
+            comp.tag = 'div';
+        }
+        walkFormComponents(comp.components);
+        if (Array.isArray(comp.columns)) {
+            comp.columns.forEach(col => walkFormComponents(col.components));
+        }
+        if (Array.isArray(comp.rows)) {
+            comp.rows.forEach(row => {
+                if (Array.isArray(row)) row.forEach(cell => walkFormComponents(cell.components));
+            });
+        }
+    });
+}
+
+function patchHtmlElementTags(schema) {
+    if (!schema || !Array.isArray(schema.components)) {
+        return;
+    }
+    walkFormComponents(schema.components);
 }

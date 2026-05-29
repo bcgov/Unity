@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using System;
 using System.Linq;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Unity.Flex.Domain.Worksheets;
 using Volo.Abp;
@@ -20,7 +21,11 @@ namespace Unity.Flex.Worksheets
         {
             (Worksheet worksheet, WorksheetSection section) = await GetWorksheetAndSectionAsync(id);
 
-            _ = worksheet.UpdateSection(section, dto.Name.Trim());
+            string? definition = dto.FieldWidth is > 0
+                ? JsonSerializer.Serialize(new { fieldWidth = dto.FieldWidth })
+                : null;
+
+            _ = worksheet.UpdateSection(section, dto.Name.Trim(), definition);
             return ObjectMapper.Map<WorksheetSection, WorksheetSectionDto>(section);
         }
 

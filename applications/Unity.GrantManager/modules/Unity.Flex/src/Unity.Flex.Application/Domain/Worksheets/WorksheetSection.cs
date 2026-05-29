@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.ObjectModel;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Text.Json.Serialization;
 using Volo.Abp;
@@ -25,6 +26,9 @@ namespace Unity.Flex.Domain.Worksheets
 
         public virtual string Name { get; private set; } = string.Empty;
         public virtual uint Order { get; private set; }
+
+        [Column(TypeName = "jsonb")]
+        public virtual string? Definition { get; private set; }
 
         public virtual Collection<CustomField> Fields { get; private set; } = [];
 
@@ -72,6 +76,12 @@ namespace Unity.Flex.Domain.Worksheets
         public WorksheetSection SetOrder(uint order)
         {
             Order = order;
+            return this;
+        }
+
+        public WorksheetSection SetDefinition(string? definition)
+        {
+            Definition = definition;
             return this;
         }
 

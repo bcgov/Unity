@@ -51,6 +51,10 @@ namespace Unity.Reporting.Configuration.FieldsProviders
                 .Where(x => x != null)
                 .Select(x => x!)];
 
+            // Mirror submission behaviour: stamp within-version duplicate DataPaths with (DK1), (DK2), …
+            // so that each row is distinguishable and the Duplicate Keys warning is triggered.
+            WorksheetFieldsUtils.UniqueifyDataPaths(convertedMetadata);
+
             return new FieldPathMetaMapDto() { Fields = convertedMetadata, Metadata = mapMetadata };
         }
 

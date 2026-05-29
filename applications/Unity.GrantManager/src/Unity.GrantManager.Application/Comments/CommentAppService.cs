@@ -23,8 +23,8 @@ namespace Unity.GrantManager.Comments
 
         public async Task<IReadOnlyList<CommentDto>> GetListAsync(QueryCommentsByTypeDto dto)
         {
-            return ObjectMapper.Map<IReadOnlyList<CommentListItem>, IReadOnlyList<CommentDto>>
-                (await commentsManager.GetCommentsDisplayListAsync(dto.OwnerId, dto.CommentType));
+            var comments = await commentsManager.GetCommentsDisplayListAsync(dto.OwnerId, dto.CommentType);
+            return ObjectMapper.Map<List<CommentListItem>, List<CommentDto>>([.. comments]);
         }
 
         public async Task<CommentDto> UpdateAsync(UpdateCommentByTypeDto dto)
@@ -48,6 +48,11 @@ namespace Unity.GrantManager.Comments
             return comment == null
                 ? throw new InvalidCommentParametersException()
                 : ObjectMapper.Map<CommentBase, CommentDto>(comment);
+        }
+
+        public virtual async Task DeleteAsync(Guid id, QueryCommentsByTypeDto dto)
+        {
+            await commentsManager.DeleteCommentAsync(dto.OwnerId, id, dto.CommentType);
         }
 
         [Authorize(GrantApplicationPermissions.Comments.Add)]

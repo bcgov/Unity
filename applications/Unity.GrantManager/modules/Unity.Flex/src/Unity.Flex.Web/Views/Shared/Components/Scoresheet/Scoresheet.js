@@ -97,7 +97,7 @@ $(function () {
     }
 
     function updatePreviewAccordion(sortedItems) {
-        const previewDiv = document.getElementById('preview');
+        const previewDiv = document.getElementById('scoresheet-preview') || document.getElementById('preview');
 
         if (sortedItems.length === 0) {
             previewDiv.innerHTML = '<p>No sections to display.</p>';

@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
 using Volo.Abp.Data;
@@ -31,6 +32,20 @@ namespace Unity.GrantManager.Integrations
             public const string GEOCODER_BASE_URL = $"{PROTOCOL}//openmaps.gov.bc.ca/geo/pub/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=";
             public const string GEOCODER_LOCATION_BASE_URL = $"{PROTOCOL}//geocoder.api.gov.bc.ca";
             public const string REPORTING_AI = $"{PROTOCOL}//reporting.grants.gov.bc.ca";
+            public const string MATOMO_DEV_URL = $"{PROTOCOL}//dev-analytics-matomo.apps.silver.devops.gov.bc.ca";
+            public const string MATOMO_TEST_URL = $"{PROTOCOL}//test-analytics-matomo.apps.silver.devops.gov.bc.ca";
+            public const string MATOMO_PROD_URL = $"{PROTOCOL}//prod-analytics-matomo.apps.silver.devops.gov.bc.ca";
+        }
+
+        private static string GetMatomoUrl()
+        {
+            var env = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? string.Empty;
+            if (string.IsNullOrEmpty(env) || env.StartsWith("dev", StringComparison.OrdinalIgnoreCase))
+                return DynamicUrls.MATOMO_DEV_URL;
+            if (env.StartsWith("test", StringComparison.OrdinalIgnoreCase) ||
+                env.Equals("uat", StringComparison.OrdinalIgnoreCase))
+                return DynamicUrls.MATOMO_TEST_URL;
+            return DynamicUrls.MATOMO_PROD_URL;
         }
 
         private async Task SeedDynamicUrlAsync()
@@ -51,6 +66,7 @@ namespace Unity.GrantManager.Integrations
                     new() { KeyName = DynamicUrlKeyNames.NOTIFICATION_API_BASE, Url = DynamicUrls.CHES_PROD_URL, Description = "Common Hosted Email Service API" },
                     new() { KeyName = DynamicUrlKeyNames.REPORTING_AI, Url = DynamicUrls.REPORTING_AI, Description = "Reporting AI iFrame Source" },
                     new() { KeyName = DynamicUrlKeyNames.NOTIFICATION_AUTH, Url = DynamicUrls.CHES_PROD_AUTH, Description = "Common Hosted Email Service OAUTH" },
+                    new() { KeyName = DynamicUrlKeyNames.ANALYTICS_MATOMO_BASE, Url = GetMatomoUrl(), Description = "Matomo Analytics" },
                     new() { KeyName = $"{DynamicUrlKeyNames.DIRECT_MESSAGE_KEY_PREFIX}{messageIndex++}", Url = "", Description = $"Direct message webhook {messageIndex}" },
                     new() { KeyName = $"{DynamicUrlKeyNames.DIRECT_MESSAGE_KEY_PREFIX}{messageIndex++}", Url = "", Description = $"Direct message webhook {messageIndex}" },
                     new() { KeyName = $"{DynamicUrlKeyNames.DIRECT_MESSAGE_KEY_PREFIX}{messageIndex++}", Url = "", Description = $"Direct message webhook {messageIndex}" },
@@ -65,6 +81,12 @@ namespace Unity.GrantManager.Integrations
                     if (existing == null)
                     {
                         await DynamicUrlRepository.InsertAsync(dynamicUrl);
+                    }
+                    else if (existing.KeyName == DynamicUrlKeyNames.ANALYTICS_MATOMO_BASE &&
+                             existing.Url != dynamicUrl.Url)
+                    {
+                        existing.Url = dynamicUrl.Url;
+                        await DynamicUrlRepository.UpdateAsync(existing);
                     }
                 }
             }

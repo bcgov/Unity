@@ -30,10 +30,8 @@
 
     @{
         bool isAuthorizedForTenantSwitch = false;
-        if (CurrentUser.IsAuthenticated && CurrentUser.FindClaims("tenant").Length > 1)
+        if (CurrentUser.IsAuthenticated && CurrentUser.FindClaimValue("has_multiple_tenants") == "true")
             isAuthorizedForTenantSwitch = true;
-
-        bool isAuthorizedForPaymentConfiguration = await PermissionChecker.IsGrantedAsync("SettingManagement.ConfigurePayments");
     }
     <abp-dropdown id="user-dropdown">
         <abp-dropdown-button class="btn-dropdown" text="@CurrentTenant.Name" />
@@ -45,24 +43,16 @@
             @if (CurrentTenant.Id != null)
             {
                 <abp-dropdown-item href="/ApplicantPortalSettings">Applicant Portal Configuration</abp-dropdown-item>
-            }
-            @if (await FeatureChecker.IsEnabledAsync("Unity.Payments") && isAuthorizedForPaymentConfiguration)
+            }          
+            @if (CurrentUser.IsInRole("system_admin") && await FeatureChecker.IsEnabledAsync("SettingManagement.Enable"))
             {
-                <abp-dropdown-item href="/PaymentConfigurations">Payments Configuration</abp-dropdown-item>
-            }            
-            @if (await FeatureChecker.IsEnabledAsync("Unity.Flex"))
-            {
-                <abp-dropdown-item href="/ScoresheetConfiguration">Scoresheets Configuration</abp-dropdown-item>
-                <abp-dropdown-item href="/WorksheetConfiguration">Custom Fields Configuration</abp-dropdown-item>
+                <abp-dropdown-item href="/ConfigurationManagement">Configuration Management</abp-dropdown-item>
             }
             @if (CurrentUser.IsInRole("ITOperations"))
             {
                 <abp-dropdown-item href="/UnityAdmin">Unity Admin</abp-dropdown-item>
             }
-            @if (CurrentUser.IsInRole("system_admin") && await FeatureChecker.IsEnabledAsync("SettingManagement.Enable"))
-            {
-                <abp-dropdown-item href="/SettingManagement">Settings</abp-dropdown-item>
-            }
+
             <abp-dropdown-item href="/Account/Logout">Logout</abp-dropdown-item>
         </abp-dropdown-menu>
     </abp-dropdown>

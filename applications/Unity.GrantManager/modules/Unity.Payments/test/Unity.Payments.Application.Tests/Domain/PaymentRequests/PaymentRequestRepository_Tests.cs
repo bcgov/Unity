@@ -3,8 +3,8 @@ using System;
 using System.ComponentModel;
 using System.Linq;
 using System.Threading.Tasks;
-using Unity.Modules.Shared.Correlation;
 using Unity.Payments.Codes;
+using Unity.Payments.Domain.AccountCodings;
 using Unity.Payments.Domain.Suppliers;
 using Unity.Payments.Enums;
 using Unity.Payments.PaymentRequests;
@@ -18,13 +18,24 @@ public class PaymentRequestRepository_Tests : PaymentsApplicationTestBase
 {
     private readonly IPaymentRequestRepository _paymentRequestRepository;
     private readonly ISupplierRepository _supplierRepository;
+    private readonly IAccountCodingRepository _accountCodingRepository;
     private readonly IUnitOfWorkManager _unitOfWorkManager;
 
     public PaymentRequestRepository_Tests()
     {
         _paymentRequestRepository = GetRequiredService<IPaymentRequestRepository>();
         _supplierRepository = GetRequiredService<ISupplierRepository>();
+        _accountCodingRepository = GetRequiredService<IAccountCodingRepository>();
         _unitOfWorkManager = GetRequiredService<IUnitOfWorkManager>();
+    }
+
+    private async Task<Guid> CreateAccountCodingAsync()
+    {
+        using var uow = _unitOfWorkManager.Begin();
+        var accountCoding = AccountCoding.Create("ABC", "ABCDE", "AB001", "AB01", "AB00001");
+        await _accountCodingRepository.InsertAsync(accountCoding, true);
+        await uow.CompleteAsync();
+        return accountCoding.Id;
     }
 
     #region GetCountByCorrelationId
@@ -733,22 +744,21 @@ public class PaymentRequestRepository_Tests : PaymentsApplicationTestBase
 
     [Fact]
     [Trait("Category", "Integration")]
-    public async Task GetPaymentPendingListByCorrelationIdAsync_Should_Not_Return_L3Pending()
+    public async Task GetPaymentPendingListByCorrelationIdAsync_Should_Return_L3Pending()
     {
-        // Arrange - The method only returns L1 and L2 pending
+        // Arrange
         var correlationId = Guid.NewGuid();
         var siteId = await CreateSupplierAndSiteAsync();
 
         using var uow = _unitOfWorkManager.Begin();
-        await InsertPaymentRequestAsync(siteId, correlationId, 1000m, PaymentRequestStatus.L3Pending);
-        await InsertPaymentRequestAsync(siteId, correlationId, 2000m, PaymentRequestStatus.L1Pending);
+        await InsertPaymentRequestAsync(siteId, correlationId, 1000m, PaymentRequestStatus.L3Pending);        
 
         // Act
         var payments = await _paymentRequestRepository.GetPaymentPendingListByCorrelationIdAsync(correlationId);
 
         // Assert
         payments.Count.ShouldBe(1);
-        payments[0].Status.ShouldBe(PaymentRequestStatus.L1Pending);
+        payments[0].Status.ShouldBe(PaymentRequestStatus.L3Pending);
     }
 
     [Fact]
@@ -780,8 +790,7 @@ public class PaymentRequestRepository_Tests : PaymentsApplicationTestBase
     {
         using var uow = _unitOfWorkManager.Begin();
         var siteId = Guid.NewGuid();
-        var supplier = new Supplier(Guid.NewGuid(), "TestSupplier", "SUP-001",
-            new Correlation(Guid.NewGuid(), "Test"));
+        var supplier = new Supplier(Guid.NewGuid(), "TestSupplier", "SUP-001");
         supplier.AddSite(new Site(siteId, "001", PaymentGroup.EFT));
         await _supplierRepository.InsertAsync(supplier, true);
         await uow.CompleteAsync();
@@ -811,6 +820,7 @@ public class PaymentRequestRepository_Tests : PaymentsApplicationTestBase
         string? invoiceStatus = null)
     {
         var invoiceNumber = customInvoiceNumber ?? $"INV-{Guid.NewGuid():N}";
+        var accountCodingId = await CreateAccountCodingAsync();
         var dto = new CreatePaymentRequestDto
         {
             InvoiceNumber = invoiceNumber,
@@ -823,7 +833,8 @@ public class PaymentRequestRepository_Tests : PaymentsApplicationTestBase
             CorrelationProvider = "Test",
             ReferenceNumber = $"REF-{Guid.NewGuid():N}",
             BatchName = "TEST_BATCH",
-            BatchNumber = 1
+            BatchNumber = 1,
+            AccountCodingId = accountCodingId
         };
 
         var paymentRequest = new PaymentRequest(Guid.NewGuid(), dto);

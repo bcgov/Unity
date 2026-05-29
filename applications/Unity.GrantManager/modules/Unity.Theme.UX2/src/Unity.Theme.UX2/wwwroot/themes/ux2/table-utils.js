@@ -229,7 +229,8 @@ function initializeDataTable(options) {
         onStateLoadParams,
         onStateLoaded,
         fixedHeaders = false,
-        lengthMenu = [25, 50, 75, 100, -1]
+        lengthMenu = [25, 50, 75, 100, -1],
+        deferRender = false
     } = options;
 
     // Process columns and visibility
@@ -255,7 +256,7 @@ function initializeDataTable(options) {
         scrollX: true,
         scrollCollapse: true,
         autoWidth: true,
-        deferRender: false,
+        deferRender: deferRender,
         deferLoading: serverSideEnabled ? 0 : null,
         ajax: abp.libs.datatables.createAjax(
             dataEndpoint,
@@ -692,7 +693,7 @@ function createNumberFormatter() {
  */
 function addDataTableFixCSS() {
     if (!$('#dt-column-fix-css').length) {
-        $('<style id="dt-column-fix-css"> table.dataTable { width: 100%; } .dt-loading { visibility: hidden; } .dt-scroll-body { min-height: 200px; } </style>').appendTo('head');
+        $('<style id="dt-column-fix-css"> table.dataTable { width: 100%; } .dt-loading { visibility: hidden; } .dt-scroll-body { min-height: 20px; } </style>').appendTo('head');
     }
 }
 

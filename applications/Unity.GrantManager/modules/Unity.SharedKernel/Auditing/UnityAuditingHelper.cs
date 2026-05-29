@@ -75,5 +75,15 @@ public class UnityAuditingHelper : IAuditingHelper, ITransientDependency
     {
         return _inner.CreateAuditLogAction(auditLog, type, method, arguments);
     }
+
+    public IDisposable DisableAuditing()
+    {
+        return _inner.DisableAuditing();
+    }
+
+    public bool IsAuditingEnabled()
+    {
+        return _inner.IsAuditingEnabled();
+    }
 }
 

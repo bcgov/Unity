@@ -5,6 +5,7 @@ namespace Unity.Flex.Web.Views.Shared.Components.WorksheetInstanceWidget.ViewMod
     public class WorksheetInstanceSectionViewModel
     {
         public string Name { get; set; } = string.Empty;
+        public int? FieldWidth { get; set; }
         public List<WorksheetFieldViewModel> Fields { get; set; } = [];
     }
 }

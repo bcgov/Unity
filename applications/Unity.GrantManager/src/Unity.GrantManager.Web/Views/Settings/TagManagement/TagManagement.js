@@ -1,9 +1,7 @@
 ﻿const TagTypes = {};
-let userCanUpdate = abp.auth.isGranted('Unity.GrantManager.SettingManagement.Tags.Update');
-let userCanDelete = abp.auth.isGranted('Unity.GrantManager.SettingManagement.Tags.Delete');
-let addNewTagModal = new abp.ModalManager({
-    viewUrl: 'Tags/CreateTagsModal'
-});
+let userCanUpdate;
+let userCanDelete;
+let addNewTagModal;
 
 function defineTagSummaryColumnDefs() {
     const columnDefs = [
@@ -162,7 +160,11 @@ function getUnifiedTagSummaryAjax(requestData, callback, settings) {
     });
 }
 $(function () {
-    abp.log.debug('TagManagement.js initialized!');
+    userCanUpdate = abp.auth.isGranted('Unity.GrantManager.SettingManagement.Tags.Update');
+    userCanDelete = abp.auth.isGranted('Unity.GrantManager.SettingManagement.Tags.Delete');
+    addNewTagModal = new abp.ModalManager({
+        viewUrl: 'Tags/CreateTagsModal'
+    });
 
     abp.modals.RenameTag = function () {
         let formElements = {};
@@ -217,8 +219,6 @@ $(function () {
         serverSide: false,
         paging: false,
         searching: true,
-        scrollCollapse: true,
-        scrollX: true,
         ordering: true,
         ajax: (requestData, callback, settings) => getUnifiedTagSummaryAjax(requestData, callback, settings),
         columnDefs: defineTagSummaryColumnDefs()

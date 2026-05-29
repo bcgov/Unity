@@ -15,6 +15,11 @@
         /// of the auto-generated mapping configuration while preserving automatic naming for unmapped fields.
         /// </summary>
         public UpsertMapRowDto[] Rows { get; set; } = [];
+
+        /// <summary>
+        /// Gets or sets the optional free-text description for this mapping configuration (max 500 characters).
+        /// </summary>
+        public string? Description { get; set; }
     }
 
     /// <summary>

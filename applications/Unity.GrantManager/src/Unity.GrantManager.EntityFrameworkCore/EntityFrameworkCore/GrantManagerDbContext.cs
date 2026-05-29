@@ -3,6 +3,7 @@ using System.Linq;
 using Unity.AI.Domain;
 using Unity.AI.EntityFrameworkCore;
 using Unity.GrantManager.Applicants;
+using Unity.GrantManager.GrantApplications;
 using Unity.GrantManager.Locality;
 using Unity.GrantManager.Tokens;
 using Volo.Abp.AuditLogging.EntityFrameworkCore;
@@ -48,6 +49,7 @@ public class GrantManagerDbContext :
     public DbSet<Community> Communities { get; set; }
     public DbSet<InboxMessage> InboxMessages { get; set; }
     public DbSet<OutboxMessage> OutboxMessages { get; set; }
+    public DbSet<AIGenerationRequest> AIGenerationRequests { get; set; }
 
     // Unity.AI entities
     public DbSet<AIPrompt> AIPrompts { get; set; }
@@ -236,11 +238,23 @@ public class GrantManagerDbContext :
             b.HasIndex(x => new { x.Source, x.Status });
         });
 
+        modelBuilder.Entity<AIGenerationRequest>(b =>
+        {
+            b.ToTable(GrantManagerConsts.DbTablePrefix + "AIRequests", AIDbProperties.DbSchema);
+            b.ConfigureByConvention();
+            b.Property(x => x.OperationType).IsRequired().HasMaxLength(64);
+            b.Property(x => x.RequestKey).IsRequired().HasMaxLength(256);
+            b.Property(x => x.FailureReason).HasMaxLength(2000);
+            b.Property(x => x.Status).IsRequired();
+            b.HasIndex(x => x.RequestKey);
+            b.HasIndex(x => new { x.TenantId, x.ApplicationId, x.OperationType, x.Status });
+        });
+
 
         var allEntityTypes = modelBuilder.Model.GetEntityTypes();
-        foreach (var type in allEntityTypes.Where(t => t.ClrType != typeof(ExtraPropertyDictionary)).Select(t => t.ClrType))
+        foreach (var entityType in allEntityTypes.Where(t => t.ClrType != typeof(ExtraPropertyDictionary) && !t.IsOwned()))
         {
-            var entityBuilder = modelBuilder.Entity(type);
+            var entityBuilder = modelBuilder.Entity(entityType.ClrType);
             entityBuilder.TryConfigureExtraProperties();
         }
     }

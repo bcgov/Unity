@@ -162,29 +162,30 @@ $(function () {
         } return -1; // Return -1 if the column is not found 
     }
 
-    function openEditDatagridRowModal(valueId,
-        fieldId,
-        worksheetId,
-        worksheetInstanceId,
-        row,
-        isNew,
-        uiAnchor) {
-
+    function openEditDatagridRowModal(options) {
         let formVersionId = $('#ApplicationFormVersionId').val();
         let applicationId = $('#DetailsViewApplicationId').val();
 
         editDatagridRowModal.open({
-            valueId: valueId,
-            fieldId: fieldId,
-            row: row,
-            isNew: isNew,
-            worksheetId: worksheetId,
-            worksheetInstanceId: worksheetInstanceId,
+            valueId: options.valueId,
+            fieldId: options.fieldId,
+            row: options.row,
+            isNew: options.isNew,
+            worksheetId: options.worksheetId,
+            worksheetInstanceId: options.worksheetInstanceId,
             // There is dependency here on the core module and details page !
             formVersionId: formVersionId,
             applicationId: applicationId,
-            uiAnchor: uiAnchor
+            uiAnchor: options.uiAnchor,
+            columnOrder: options.columnOrder || ''
         });
+    }
+
+    function getColumnOrder(dt) {
+        return dt.columns().header().toArray()
+            .map(th => $(th).data('key'))
+            .filter(key => key !== undefined && key !== null)
+            .join(',');
     }
 
     let actionButtons = [
@@ -201,13 +202,16 @@ $(function () {
                 let tableElement = $('#' + tableId);
                 let tableDataSet = tableElement[0].dataset;
 
-                openEditDatagridRowModal(tableDataSet.valueId,
-                    tableDataSet.fieldId,
-                    tableDataSet.wsId,
-                    tableDataSet.wsiId,
-                    0,
-                    true,
-                    tableDataSet.wsAnchor);
+                openEditDatagridRowModal({
+                    valueId: tableDataSet.valueId,
+                    fieldId: tableDataSet.fieldId,
+                    worksheetId: tableDataSet.wsId,
+                    worksheetInstanceId: tableDataSet.wsiId,
+                    row: 0,
+                    isNew: true,
+                    uiAnchor: tableDataSet.wsAnchor,
+                    columnOrder: getColumnOrder(dt)
+                });
             }
         },
         {
@@ -320,13 +324,16 @@ $(function () {
         let table = $(button).closest('table');
         let tableDataSet = table[0].dataset;
 
-        openEditDatagridRowModal(tableDataSet.valueId,
-            tableDataSet.fieldId,
-            tableDataSet.wsId,
-            tableDataSet.wsiId,
-            rowDataSet.rowNo,
-            false,
-            tableDataSet.uiAnchor);
+        openEditDatagridRowModal({
+            valueId: tableDataSet.valueId,
+            fieldId: tableDataSet.fieldId,
+            worksheetId: tableDataSet.wsId,
+            worksheetInstanceId: tableDataSet.wsiId,
+            row: rowDataSet.rowNo,
+            isNew: false,
+            uiAnchor: tableDataSet.uiAnchor,
+            columnOrder: getColumnOrder(table.DataTable())
+        });
     }
 
     PubSub.subscribe(

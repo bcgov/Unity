@@ -4,36 +4,22 @@ using System.Threading.Tasks;
 using Unity.AI;
 using Unity.AI.Operations;
 using Unity.AI.Permissions;
+using Unity.AI.Settings;
 using Volo.Abp;
 using Volo.Abp.DependencyInjection;
-using Volo.Abp.Features;
 
 namespace Unity.GrantManager.Attachments;
 
-[Authorize(AIPermissions.Analysis.ViewAttachmentSummary)]
+[Authorize(AIPermissions.Analysis.GenerateAttachmentSummaries)]
 [ExposeServices(typeof(AttachmentSummaryAppService), typeof(IAttachmentSummaryAppService))]
 public class AttachmentSummaryAppService(
-    IAttachmentSummaryService attachmentSummaryService,
-    IFeatureChecker featureChecker) : AIAppService, IAttachmentSummaryAppService
+    IAttachmentSummaryService attachmentSummaryService) : AIAppService, IAttachmentSummaryAppService
 {
-    public async Task<AttachmentSummaryResultDto> GenerateAttachmentSummaryAsync(System.Guid attachmentId, string? promptVersion = null)
+    // Internal-only: no HTTP endpoint, no auth check — safe for background job callers
+    [AllowAnonymous]
+    [RemoteService(IsEnabled = false)]
+    public virtual async Task<List<AttachmentSummaryResultDto>> GenerateAttachmentSummariesForPipelineAsync(List<System.Guid> attachmentIds, string? promptVersion = null)
     {
-        if (!await featureChecker.IsEnabledAsync("Unity.AI.AttachmentSummaries"))
-        {
-            throw new UserFriendlyException("AI attachment summaries are not enabled.");
-        }
-
-        await attachmentSummaryService.GenerateAndSaveAsync(attachmentId, promptVersion);
-        return new AttachmentSummaryResultDto { Completed = true };
-    }
-
-    public async Task<List<AttachmentSummaryResultDto>> GenerateAttachmentSummariesAsync(List<System.Guid> attachmentIds, string? promptVersion = null)
-    {
-        if (!await featureChecker.IsEnabledAsync("Unity.AI.AttachmentSummaries"))
-        {
-            throw new UserFriendlyException("AI attachment summaries are not enabled.");
-        }
-
         if (attachmentIds.Count == 0)
         {
             return [];

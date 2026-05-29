@@ -10,6 +10,10 @@ const dismissedSectionVisibility = {
     recommendation: false
 };
 
+const aiAnalysisPollIntervalMs = 15000;
+const aiAnalysisMaxPollFailures = 3;
+let aiAnalysisMonitor = null;
+
 function getAnalysisLabels() {
     const labels = document.getElementById('aiAnalysisLabels')?.dataset ?? {};
 
@@ -130,12 +134,18 @@ function createFindingItem(item, type, hidden) {
 
 function updateVisibleItemLayout($items) {
     const $allItems = $items.children('.ai-analysis-detail-item');
-    const $visibleItems = $allItems.filter(function() {
-        return this.style.display !== 'none';
-    });
+    const $visibleItems = getVisibleAnalysisItems($items);
 
     $allItems.removeClass('last-visible');
     $visibleItems.last().addClass('last-visible');
+}
+
+function getVisibleAnalysisItems($items) {
+    return $items
+        .children('.ai-analysis-detail-item')
+        .filter(function() {
+            return this.style.display !== 'none';
+        });
 }
 
 function formatSectionTitle(title, count) {
@@ -160,21 +170,37 @@ function configureSectionStatus($status, text, statusClass) {
         .show();
 }
 
-function configureCollapseToggle($section, $collapseToggle) {
+function setSectionCollapsed($section, $collapseToggle, isCollapsed) {
     const labels = getAnalysisLabels();
+    const $icon = $collapseToggle.find('i');
+
+    $section.toggleClass('collapsed', isCollapsed);
+    $collapseToggle
+        .attr('aria-expanded', (!isCollapsed).toString())
+        .attr('title', isCollapsed ? labels.expandTitle : labels.collapseTitle);
+
+    $icon
+        .toggleClass('fa-chevron-down', !isCollapsed)
+        .toggleClass('fa-chevron-up', isCollapsed);
+}
+
+function syncSectionCollapseWithVisibleItems($section, $items, $collapseToggle) {
+    const hasVisibleItems = getVisibleAnalysisItems($items).length > 0;
+
+    $collapseToggle.prop('disabled', !hasVisibleItems);
+    setSectionCollapsed($section, $collapseToggle, !hasVisibleItems);
+}
+
+function configureCollapseToggle($section, $collapseToggle) {
     $collapseToggle
         .off('click')
         .on('click', function() {
+            if ($(this).prop('disabled')) {
+                return;
+            }
+
             const isCollapsed = $section.toggleClass('collapsed').hasClass('collapsed');
-            const $icon = $(this).find('i');
-
-            $(this)
-                .attr('aria-expanded', (!isCollapsed).toString())
-                .attr('title', isCollapsed ? labels.expandTitle : labels.collapseTitle);
-
-            $icon
-                .toggleClass('fa-chevron-down', !isCollapsed)
-                .toggleClass('fa-chevron-up', isCollapsed);
+            setSectionCollapsed($section, $(this), isCollapsed);
         });
 }
 
@@ -210,7 +236,7 @@ function appendSectionItems($items, section, isDismissedVisible) {
     updateVisibleItemLayout($items);
 }
 
-function configureDismissedItemsToggle($items, $toggle, section, isDismissedVisible) {
+function configureDismissedItemsToggle($section, $items, $toggle, $collapseToggle, section, isDismissedVisible) {
     const labels = getAnalysisLabels();
     const hiddenCount = section.hiddenItems.length;
 
@@ -235,6 +261,7 @@ function configureDismissedItemsToggle($items, $toggle, section, isDismissedVisi
             dismissedSectionVisibility[section.itemType] = shouldShow;
             $items.find('.dismissed-item').toggle(shouldShow);
             updateVisibleItemLayout($items);
+            syncSectionCollapseWithVisibleItems($section, $items, $collapseToggle);
             $toggle.text(shouldShow ? labels.hideDismissed : labels.showDismissed);
         });
 }
@@ -246,7 +273,6 @@ function renderSection(section) {
 
     $section
         .addClass(section.sectionClass)
-        .toggleClass('compact', section.activeItems.length === 0)
         .toggleClass('header-only', !section.hasItems);
 
     const $items = $section.find('[data-element="items"]');
@@ -260,7 +286,8 @@ function renderSection(section) {
     $collapseToggle.toggle(section.hasItems);
 
     appendSectionItems($items, section, isDismissedVisible);
-    configureDismissedItemsToggle($items, $toggle, section, isDismissedVisible);
+    configureDismissedItemsToggle($section, $items, $toggle, $collapseToggle, section, isDismissedVisible);
+    syncSectionCollapseWithVisibleItems($section, $items, $collapseToggle);
 
     return $section;
 }
@@ -415,27 +442,56 @@ globalThis.queueApplicationAnalysis = function(triggerButton = null) {
     const applicationId = $('#DetailsViewApplicationId').val();
     const $button = triggerButton ? $(triggerButton) : $('#regenerateApplicationAnalysis');
     const existingHtml = $button.html();
-    const promptVersion = globalThis.getSelectedPromptVersion?.() || null;
 
     if (!applicationId || $button.prop('disabled')) {
         return;
     }
 
-    $button
-        .html('<span class="ai-button-content"><span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span><span>Queueing...</span></span>')
-        .prop('disabled', true);
+    globalThis.AIGenerationButtonState?.setGenerating($button);
 
-    unity.grantManager.grantApplications.applicationAnalysis
-        .generateApplicationAnalysis(applicationId, promptVersion)
-        .then(function() {
-            abp.notify.success('AI analysis queued. Refresh later to see updated results.');
+    unity.grantManager.grantApplications.grantApplication
+        .queueApplicationAnalysis(applicationId)
+        .done(function(request) {
+            const status = globalThis.AIGenerationButtonState?.resolveStatus(request?.status) ?? '';
+
+            if (status === 'Completed') {
+                globalThis.AIGenerationButtonState?.restoreForCooldownCheck($button, existingHtml);
+                loadAIAnalysis();
+                globalThis.syncAIRateLimitButtons?.();
+                return;
+            }
+
+            monitorAIAnalysisGeneration(applicationId, $button, existingHtml);
         })
-        .catch(function() {
-            abp.message.error('Failed to queue AI analysis. Please try again.');
-        })
-        .always(function() {
+        .fail(function(error) {
+            console.error('Failed to queue AI analysis.', error);
+            aiAnalysisMonitor?.stop();
+            globalThis.AIGenerationButtonState?.restore($button);
             $button.html(existingHtml).prop('disabled', false);
+            globalThis.syncAIRateLimitButtons?.();
+            abp.message.error('Failed to queue AI analysis. Please try again.');
         });
+}
+
+function monitorAIAnalysisGeneration(applicationId, $button, existingHtml) {
+    aiAnalysisMonitor?.stop();
+    aiAnalysisMonitor = globalThis.AIGenerationButtonState.monitor({
+        $button,
+        originalHtml: existingHtml,
+        intervalMs: aiAnalysisPollIntervalMs,
+        maxFailures: aiAnalysisMaxPollFailures,
+        getStatus: () => unity.grantManager.grantApplications.grantApplication
+            .getAIGenerationStatus(applicationId, 'application-analysis'),
+        onComplete: loadAIAnalysis,
+        onFailed: (request) => {
+            loadAIAnalysis();
+            abp.message.error(request?.failureReason || 'AI analysis failed.');
+        },
+        onPollFailed: (error) => {
+            console.warn('Failed to poll AI analysis status.', error);
+            abp.message.error('Unable to load AI analysis status. Please try again.');
+        }
+    });
 }
 
 function loadAIAnalysis() {
@@ -476,5 +532,22 @@ $(function() {
         $regenerateButton.on('click', function() {
             queueApplicationAnalysis();
         });
+
+        const applicationId = $('#DetailsViewApplicationId').val();
+        if (!applicationId) {
+            return;
+        }
+
+        unity.grantManager.grantApplications.grantApplication
+            .getAIGenerationStatus(applicationId, 'application-analysis')
+            .done(function(request) {
+                if (request?.isActive !== true) {
+                    return;
+                }
+
+                const existingHtml = $regenerateButton.html();
+                globalThis.AIGenerationButtonState?.setGenerating($regenerateButton);
+                monitorAIAnalysisGeneration(applicationId, $regenerateButton, existingHtml);
+            });
     }
 });

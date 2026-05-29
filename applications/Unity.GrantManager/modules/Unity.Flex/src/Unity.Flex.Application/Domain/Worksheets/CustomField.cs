@@ -32,7 +32,7 @@ namespace Unity.Flex.Domain.Worksheets
             get => _section
                    ?? throw new InvalidOperationException("Uninitialized property: " + nameof(Section));
         }
-        public virtual Guid SectionId { get; }
+        public virtual Guid SectionId { get; internal set; }
         private WorksheetSection? _section;
 
         protected CustomField()

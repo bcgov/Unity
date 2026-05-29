@@ -10,6 +10,7 @@ public interface ICommentAppService
     Task<IReadOnlyList<CommentDto>> GetListAsync(QueryCommentsByTypeDto dto);        
     Task<CommentDto> UpdateAsync(UpdateCommentByTypeDto dto);
     Task<CommentDto> GetAsync(Guid id, QueryCommentsByTypeDto dto);
+    Task DeleteAsync(Guid id, QueryCommentsByTypeDto dto);
     Task PinAsync(Guid id, PinCommentDto dto);
     Task UnpinAsync(Guid id, PinCommentDto dto);
 }

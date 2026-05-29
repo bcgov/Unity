@@ -4,6 +4,7 @@ using Xunit;
 using Unity.GrantManager.Assessments;
 using System.Linq;
 using System;
+using Volo.Abp;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Uow;
 using Unity.GrantManager.Applications;
@@ -209,6 +210,61 @@ namespace Unity.GrantManager.Comments
 
             // Assert
             comment.ShouldNotBeNull();
+        }
+
+        [Fact]
+        [Trait("Category", "Integration")]
+        public async Task Should_DeleteComment_When_Owner_Requests_Delete()
+        {
+            // Arrange
+            Login(GrantManagerTestData.User1_UserId);
+            using var uow = _unitOfWorkManager.Begin();
+            var application = (await _applicationsRepository.GetListAsync())[0];
+
+            var created = await _commentsAppService.CreateAsync(new CreateCommentByTypeDto
+            {
+                OwnerId = application.Id,
+                Comment = "Comment to delete",
+                CommentType = CommentType.ApplicationComment
+            });
+
+            // Act
+            await _commentsAppService.DeleteAsync(created.Id, new QueryCommentsByTypeDto
+            {
+                OwnerId = application.Id,
+                CommentType = CommentType.ApplicationComment
+            });
+
+            // Assert
+            var remaining = await _applicationCommentsRepository.FindAsync(created.Id);
+            remaining.ShouldBeNull();
+        }
+
+        [Fact]
+        [Trait("Category", "Integration")]
+        public async Task Should_Throw_When_NonOwner_Attempts_Delete()
+        {
+            // Arrange
+            Login(GrantManagerTestData.User1_UserId);
+            using var uow = _unitOfWorkManager.Begin();
+            var application = (await _applicationsRepository.GetListAsync())[0];
+
+            var created = await _commentsAppService.CreateAsync(new CreateCommentByTypeDto
+            {
+                OwnerId = application.Id,
+                Comment = "Comment owned by user1",
+                CommentType = CommentType.ApplicationComment
+            });
+
+            Login(GrantManagerTestData.User2_UserId);
+
+            // Act & Assert
+            await Should.ThrowAsync<BusinessException>(() =>
+                _commentsAppService.DeleteAsync(created.Id, new QueryCommentsByTypeDto
+                {
+                    OwnerId = application.Id,
+                    CommentType = CommentType.ApplicationComment
+                }));
         }
 
         [Theory]

@@ -16,7 +16,6 @@ using Unity.GrantManager.ApplicationForms;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Flex;
 using Unity.GrantManager.GrantApplications;
-using Unity.AI.Web.PromptTools;
 using Unity.GrantManager.Zones;
 using Unity.Modules.Shared.Correlation;
 using Volo.Abp.AspNetCore.Mvc.UI.RazorPages;
@@ -70,15 +69,6 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
         public string? ApplicationFormSchema { get; set; } = null;
 
         [BindProperty(SupportsGet = true)]
-        public string? ApplicationFormSubmissionHtml { get; set; } = null;
-
-        [BindProperty(SupportsGet = true)]
-        public bool? HasRenderedHTML { get; set; } = false;
-
-        [BindProperty(SupportsGet = true)]
-        public bool RenderFormIoToHtml { get; set; } = false;
-
-        [BindProperty(SupportsGet = true)]
         public Guid? CurrentUserId { get; set; }
 
         [BindProperty(SupportsGet = true)]
@@ -95,12 +85,6 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
         public HashSet<string> ZoneStateSet { get; set; } = [];
 
         [BindProperty(SupportsGet = true)]
-        public bool IsDevPromptControlsEnabled { get; set; }
-
-        [BindProperty(SupportsGet = true)]
-        public string DefaultPromptVersion { get; set; }
-
-        [BindProperty(SupportsGet = true)]
         public string? ApplicationScoresheetSchemaJson { get; set; }
 
         public DetailsModel(
@@ -111,7 +95,6 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
             IFeatureChecker featureChecker,
             ICurrentUser currentUser,
             IConfiguration configuration,
-            IAIPromptToolViewOptionsProvider aiPromptToolViewOptionsProvider,
             IZoneManagementAppService zoneManagementAppService)
         {
             _grantApplicationAppService = grantApplicationAppService;
@@ -127,8 +110,6 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
             MaxFileSize = configuration["S3:MaxFileSize"] ?? "";
             EmailAttachmentMaxFileSize = configuration["S3:EmailAttachmentMaxFileSize"] ?? "20";
             TotalEmailAttachmentMaxFileSize = configuration["S3:EmailAttachmentsTotalMaxFileSize"] ?? "25";
-            IsDevPromptControlsEnabled = aiPromptToolViewOptionsProvider.IsDevPromptControlsEnabled;
-            DefaultPromptVersion = aiPromptToolViewOptionsProvider.DefaultPromptVersion;
         }
 
         public async Task OnGetAsync()
@@ -161,16 +142,10 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
             ApplicationFormId = applicationFormSubmission.ApplicationFormId;
             ChefsSubmissionId = applicationFormSubmission.ChefsSubmissionGuid;
             ApplicationFormSubmissionId = applicationFormSubmission.Id.ToString();
-            HasRenderedHTML = !string.IsNullOrEmpty(applicationFormSubmission.RenderedHTML);
             ApplicationForm? applicationForm = await _grantApplicationAppService.GetApplicationFormAsync(ApplicationFormId);
             ArgumentNullException.ThrowIfNull(applicationForm);
             ApplicationScoresheetSchemaJson = await GetApplicationScoresheetSchemaJsonAsync(applicationForm);
-            RenderFormIoToHtml = applicationForm.RenderFormIoToHtml;
             ApplicationFormSubmissionData = applicationFormSubmission.Submission;
-            if (!string.IsNullOrEmpty(applicationFormSubmission.RenderedHTML) && RenderFormIoToHtml)
-            {
-                ApplicationFormSubmissionHtml = applicationFormSubmission.RenderedHTML;
-            }
         }
 
         public async Task<IActionResult> OnPostAsync()

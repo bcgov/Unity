@@ -15,8 +15,8 @@ namespace Unity.Payments.Repositories
 {
     public class PaymentRequestRepository : EfCoreRepository<PaymentsDbContext, PaymentRequest, Guid>, IPaymentRequestRepository
     {
-        private List<string> ReCheckStatusList { get; set; } = new List<string>();
-        private List<string> FailedStatusList { get; set; } = new List<string>();
+        private List<string> ReCheckStatusList { get; set; } = [];
+        private List<string> FailedStatusList { get; set; } = [];
 
         public PaymentRequestRepository(IDbContextProvider<PaymentsDbContext> dbContextProvider) : base(dbContextProvider)
         {
@@ -58,6 +58,7 @@ namespace Unity.Payments.Repositories
               .Where(p => p.Status != PaymentRequestStatus.L1Declined
                         && p.Status != PaymentRequestStatus.L2Declined
                         && p.Status != PaymentRequestStatus.L3Declined
+                        && p.InvoiceStatus != CasPaymentRequestStatus.Cancelled
                         && p.InvoiceStatus != CasPaymentRequestStatus.NotFound
                         && p.InvoiceStatus != CasPaymentRequestStatus.ErrorFromCas)
               .GroupBy(p => p.CorrelationId)
@@ -95,7 +96,22 @@ namespace Unity.Payments.Repositories
         {
             var dbSet = await GetDbSetAsync();
             return await dbSet.Where(p => p.CorrelationId.Equals(correlationId))
-                        .Where(p => p.Status == PaymentRequestStatus.L1Pending || p.Status == PaymentRequestStatus.L2Pending)
+                        .Where(p => p.Status == PaymentRequestStatus.L1Pending || p.Status == PaymentRequestStatus.L2Pending || p.Status == PaymentRequestStatus.L3Pending)
+                        .IncludeDetails()
+                        .ToListAsync();
+        }
+
+        public async Task<List<PaymentRequest>> GetPaymentPendingListByCorrelationIdsAsync(IEnumerable<Guid> correlationIds)
+        {
+            var idList = correlationIds?.ToList() ?? new List<Guid>();
+            if (idList.Count == 0)
+            {
+                return new List<PaymentRequest>();
+            }
+
+            var dbSet = await GetDbSetAsync();
+            return await dbSet.Where(p => idList.Contains(p.CorrelationId))
+                        .Where(p => p.Status == PaymentRequestStatus.L1Pending || p.Status == PaymentRequestStatus.L2Pending || p.Status == PaymentRequestStatus.L3Pending)
                         .IncludeDetails()
                         .ToListAsync();
         }
@@ -124,8 +140,9 @@ namespace Unity.Payments.Repositories
                 {
                     ApplicationId = g.Key,
                     TotalPaid = g
-                        .Where(p => p.PaymentStatus != null
-                            && p.PaymentStatus.Trim().ToUpper() == CasPaymentRequestStatus.FullyPaid.ToUpper())
+                        .Where(p => (p.PaymentStatus != null
+                                && p.PaymentStatus.Trim().ToUpper() == CasPaymentRequestStatus.FullyPaid.ToUpper())
+                            || p.Status == PaymentRequestStatus.HistoricalPayment)
                         .Sum(p => p.Amount),
                     TotalPending = g
                         .Where(p => p.Status == PaymentRequestStatus.L1Pending

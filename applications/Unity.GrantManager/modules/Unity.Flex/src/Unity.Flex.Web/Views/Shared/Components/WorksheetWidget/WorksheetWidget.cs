@@ -60,5 +60,7 @@ public class WorksheetWidgetScriptBundleContributor : BundleContributor
     {
         context.Files
           .AddIfNotContains("/Views/Shared/Components/WorksheetWidget/Worksheet.js");
+        context.Files
+          .AddIfNotContains("/Pages/WorksheetConfiguration/UpsertCustomFieldModal.js");
     }
 }

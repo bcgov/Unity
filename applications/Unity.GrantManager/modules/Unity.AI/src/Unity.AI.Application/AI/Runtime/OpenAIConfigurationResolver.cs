@@ -7,11 +7,8 @@ namespace Unity.AI.Runtime;
 
 public class OpenAIConfigurationResolver(IConfiguration configuration) : ITransientDependency
 {
-    private const string DefaultMaxTokensParameterName = "max_completion_tokens";
-    private const string LegacyMaxTokensParameterName = "max_tokens";
-    private const string DefaultProviderName = "OpenAI";
-    private const string OpenAiApiKeyEnvironmentVariableName = "AZURE_OPENAI_API_KEY";
-    private const string OpenAiEndpointEnvironmentVariableName = "AZURE_OPENAI_ENDPOINT";
+    private static readonly string[] SupportedReasoningEfforts = ["minimal", "low", "medium", "high"];
+    private static readonly string[] SupportedVerbosityValues = ["low", "medium", "high"];
 
     private readonly IConfiguration _configuration = configuration;
 
@@ -19,45 +16,34 @@ public class OpenAIConfigurationResolver(IConfiguration configuration) : ITransi
     {
         if (!string.IsNullOrWhiteSpace(operationName))
         {
-            var configuredProvider = _configuration[$"Azure:Operations:{operationName}:Provider"];
-            if (!string.IsNullOrWhiteSpace(configuredProvider))
+            var operationProvider = Optional($"Azure:Operations:{operationName}:Provider");
+            if (operationProvider != null)
             {
-                return configuredProvider.Trim();
+                return operationProvider;
             }
         }
 
-        var defaultProvider = _configuration["Azure:Operations:Defaults:Provider"];
-        return string.IsNullOrWhiteSpace(defaultProvider) ? DefaultProviderName : defaultProvider.Trim();
+        return Required("Azure:Operations:Defaults:Provider");
     }
 
     public string ResolveApiKey(string? operationName = null)
     {
         var providerName = ResolveProviderName(operationName);
-        if (string.Equals(providerName, DefaultProviderName, StringComparison.Ordinal))
-        {
-            var injectedApiKey = _configuration[OpenAiApiKeyEnvironmentVariableName];
-            if (!string.IsNullOrWhiteSpace(injectedApiKey))
-            {
-                return injectedApiKey;
-            }
-        }
-
-        return _configuration[$"Azure:{providerName}:ApiKey"] ?? string.Empty;
+        return Required($"Azure:{providerName}:ApiKey");
     }
 
     public string ResolveMaxTokensParameterNameForOperation(string? operationName = null)
     {
         var providerName = ResolveProviderName(operationName);
         var profileName = ResolveProfileName(operationName);
-        var profileParameterName = ResolveProfileSetting(providerName, profileName, "MaxTokensParameter");
-        return ResolveMaxTokensParameterName(profileParameterName);
+        return RequiredProfile(providerName, profileName, "MaxTokensParameter");
     }
 
     public double? ResolveConfiguredTemperature(string? operationName = null)
     {
         var providerName = ResolveProviderName(operationName);
         var profileName = ResolveProfileName(operationName);
-        var profileTemperature = ResolveProfileSetting(providerName, profileName, "Temperature");
+        var profileTemperature = OptionalProfile(providerName, profileName, "Temperature");
         if (profileTemperature != null
             && double.TryParse(profileTemperature, NumberStyles.Float, CultureInfo.InvariantCulture, out var parsedTemperature))
         {
@@ -67,112 +53,121 @@ public class OpenAIConfigurationResolver(IConfiguration configuration) : ITransi
         return null;
     }
 
-    public int ResolveCompletionTokens(string operationName, int defaultValue)
+    public string? ResolveConfiguredReasoningEffort(string? operationName = null)
     {
-        var configuredValue = _configuration.GetValue<int?>($"Azure:Operations:{operationName}:MaxCompletionTokens");
+        return ResolveOptionalProfileValue(operationName, "ReasoningEffort", SupportedReasoningEfforts);
+    }
+
+    public string? ResolveConfiguredVerbosity(string? operationName = null)
+    {
+        return ResolveOptionalProfileValue(operationName, "Verbosity", SupportedVerbosityValues);
+    }
+
+    public int ResolveCompletionTokens(string operationName)
+    {
+        var configuredValue = OptionalPositiveInt($"Azure:Operations:{operationName}:MaxCompletionTokens");
         if (configuredValue is > 0)
         {
             return configuredValue.Value;
         }
 
-        var defaultConfiguredValue = _configuration.GetValue<int?>("Azure:Operations:Defaults:MaxCompletionTokens");
-        return defaultConfiguredValue is > 0 ? defaultConfiguredValue.Value : defaultValue;
+        var defaultConfiguredValue = OptionalPositiveInt("Azure:Operations:Defaults:MaxCompletionTokens");
+        if (defaultConfiguredValue is > 0)
+        {
+            return defaultConfiguredValue.Value;
+        }
+
+        throw new InvalidOperationException($"AI max completion tokens are not configured for operation '{operationName}'.");
+    }
+
+    public string ResolvePromptVersion(string operationName)
+    {
+        return Optional($"Azure:Operations:{operationName}:PromptVersion")
+            ?? Required("Azure:Operations:Defaults:PromptVersion");
     }
 
     public string ResolveApiUrl(string? operationName = null)
     {
         var providerName = ResolveProviderName(operationName);
+        var endpoint = Required($"Azure:{providerName}:Endpoint");
         var profileName = ResolveProfileName(operationName);
-        var profileApiUrl = ResolveProfileSetting(providerName, profileName, "ApiUrl");
-        var injectedEndpoint = ResolveInjectedEndpoint(providerName);
-        var legacyOpenAiApiUrl = _configuration["Azure:OpenAI:ApiUrl"];
-
-        if (!string.IsNullOrWhiteSpace(injectedEndpoint) && !string.IsNullOrWhiteSpace(profileApiUrl))
-        {
-            return CombineEndpointAndPath(injectedEndpoint, profileApiUrl);
-        }
-
-        if (!string.IsNullOrWhiteSpace(profileApiUrl))
-        {
-            return profileApiUrl;
-        }
-
-        if (!string.IsNullOrWhiteSpace(legacyOpenAiApiUrl))
-        {
-            return legacyOpenAiApiUrl;
-        }
-
-        throw new InvalidOperationException($"AI API URL is not configured for provider '{providerName}'.");
+        var profileApiUrl = RequiredProfile(providerName, profileName, "ApiUrl");
+        return CombineEndpointAndPath(endpoint, profileApiUrl);
     }
 
-    private static string ResolveMaxTokensParameterName(string? configuredParameterName)
-    {
-        if (string.Equals(configuredParameterName, LegacyMaxTokensParameterName, StringComparison.Ordinal))
-        {
-            return LegacyMaxTokensParameterName;
-        }
-
-        return DefaultMaxTokensParameterName;
-    }
-
-    private string? ResolveInjectedEndpoint(string providerName)
-    {
-        if (!string.Equals(providerName, DefaultProviderName, StringComparison.Ordinal))
-        {
-            return _configuration[$"Azure:{providerName}:Endpoint"];
-        }
-
-        var injectedEndpoint = _configuration[OpenAiEndpointEnvironmentVariableName];
-        if (!string.IsNullOrWhiteSpace(injectedEndpoint))
-        {
-            return injectedEndpoint;
-        }
-
-        return _configuration["Azure:OpenAI:Endpoint"];
-    }
-
-    private string? ResolveProfileName(string? operationName)
+    private string ResolveProfileName(string? operationName)
     {
         if (!string.IsNullOrWhiteSpace(operationName))
         {
-            var operationProfile = _configuration[$"Azure:Operations:{operationName}:Profile"];
-            if (!string.IsNullOrWhiteSpace(operationProfile))
+            var operationProfile = Optional($"Azure:Operations:{operationName}:Profile");
+            if (operationProfile != null)
             {
-                return operationProfile.Trim();
+                return operationProfile;
             }
         }
 
-        var defaultProfile = _configuration["Azure:Operations:Defaults:Profile"];
-        return string.IsNullOrWhiteSpace(defaultProfile) ? null : defaultProfile.Trim();
+        return Required("Azure:Operations:Defaults:Profile");
     }
 
-    private string? ResolveProfileSetting(string providerName, string? profileName, string settingName)
+    private string RequiredProfile(string providerName, string profileName, string settingName)
     {
-        if (string.IsNullOrWhiteSpace(profileName))
+        var key = ProfileKey(providerName, profileName, settingName);
+        return Required(key);
+    }
+
+    private string? OptionalProfile(string providerName, string profileName, string settingName)
+    {
+        return Optional(ProfileKey(providerName, profileName, settingName));
+    }
+
+    private string Required(string key)
+    {
+        return Optional(key) ?? throw new InvalidOperationException($"{key} is not configured.");
+    }
+
+    private string? Optional(string key)
+    {
+        var value = _configuration[key];
+        return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+    }
+
+    private int? OptionalPositiveInt(string key)
+    {
+        var value = _configuration.GetValue<int?>(key);
+        return value is > 0 ? value : null;
+    }
+
+    private static string ProfileKey(string providerName, string profileName, string settingName)
+    {
+        return $"Azure:{providerName}:Profiles:{profileName}:{settingName}";
+    }
+
+    private string? ResolveOptionalProfileValue(string? operationName, string settingName, string[] supportedValues)
+    {
+        var providerName = ResolveProviderName(operationName);
+        var profileName = ResolveProfileName(operationName);
+        var configuredValue = OptionalProfile(providerName, profileName, settingName);
+        if (configuredValue == null)
         {
             return null;
         }
 
-        var profileSetting = _configuration[$"Azure:{providerName}:Profiles:{profileName}:{settingName}"];
-        return string.IsNullOrWhiteSpace(profileSetting) ? null : profileSetting;
+        var trimmedValue = configuredValue.Trim();
+        if (Array.Exists(supportedValues, supportedValue => string.Equals(supportedValue, trimmedValue, StringComparison.Ordinal)))
+        {
+            return trimmedValue;
+        }
+
+        throw new InvalidOperationException(
+            $"AI {settingName} value '{configuredValue}' is not supported. Use one of: {string.Join(", ", supportedValues)}.");
     }
 
     private static string CombineEndpointAndPath(string endpoint, string profilePath)
     {
         const char UrlPathSeparator = '/';
 
-        if (Uri.TryCreate(profilePath, UriKind.Absolute, out var absoluteUri))
-        {
-            return absoluteUri.ToString();
-        }
-
-        var trimmedEndpoint = endpoint.Trim().TrimEnd(UrlPathSeparator);
-        var trimmedPath = profilePath.Trim();
-        if (!trimmedPath.StartsWith(UrlPathSeparator))
-        {
-            trimmedPath = string.Concat(UrlPathSeparator, trimmedPath);
-        }
-
-        return trimmedEndpoint + trimmedPath;
+        return endpoint.Trim().TrimEnd(UrlPathSeparator)
+            + UrlPathSeparator
+            + profilePath.Trim().TrimStart(UrlPathSeparator);
     }
 }

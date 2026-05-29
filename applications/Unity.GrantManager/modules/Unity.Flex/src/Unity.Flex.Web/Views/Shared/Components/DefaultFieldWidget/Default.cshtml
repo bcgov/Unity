@@ -1,0 +1,26 @@
+@using Unity.Flex.Web.Views.Shared.Components.DefaultFieldWidget
+@using Unity.Flex.Web.Views.Shared.Components
+@using Unity.Flex
+
+@model DefaultFieldViewModel
+
+@if (Model.Field != null)
+{
+    var fieldId = Model.WorksheetId.HasValue
+        ? $"{Model.Field.Name}.{Model.Name}.{Model.Field.Id}.{Model.WorksheetId}"
+        : $"{Model.Field.Name}.{Model.Name}.{Model.Field.Id}";
+
+    var fieldDef = Model.Field.Definition?.ConvertDefinition(Model.Field.Type);
+
+    <input type="@Model.Field.Type.ConvertInputType()"
+           value="@Model.Field.CurrentValue?.ConvertInputValueOrNull(Model.Field.Type)"
+           class="@Model.Field.Type.ApplyCssClass()"
+           min="@fieldDef?.GetMinValueOrNull()"
+           max="@fieldDef?.GetMaxValueOrNull()"
+           minlength="@fieldDef?.GetMinLengthValueOrNull()"
+           maxlength="@fieldDef?.GetMaxLengthValueOrNull()"
+           placeholder="@fieldDef?.Placeholder"
+           id="@fieldId"
+           name="@fieldId"
+           onchange="@($"notifyFieldChange('{Model.Name}', '{Model.Field.UiAnchor}', this)")" />
+}

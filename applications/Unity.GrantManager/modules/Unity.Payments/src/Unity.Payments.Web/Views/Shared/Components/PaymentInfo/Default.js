@@ -409,6 +409,7 @@
             data: 'site.addressLine1',
             className: 'data-table-header',
             render: function (data, type, full, meta) {
+                if (!full.site) return '';
                 return (
                     nullToEmpty(full.site.addressLine1) +
                     ' ' +
@@ -521,7 +522,8 @@ function enablePaymentInfoSaveBtn() {
 
 function refreshSupplierInfoWidget() {
     const applicantId = $('#PaymentInfo_ApplicantId').val();
-    const refreshUrl = `../Payments/Widget/SupplierInfo/Refresh?applicantId=${applicantId}`;
+    const applicationId = $('#PaymentInfoViewApplicationId').val();
+    const refreshUrl = `../Payments/Widget/SupplierInfo/Refresh?applicantId=${applicantId}&applicationId=${applicationId}`;
     fetch(refreshUrl)
         .then((response) => response.text())
         .then((data) => {
@@ -573,6 +575,9 @@ function getPaymentStatusTextColor(status) {
             return '#5595D9';
 
         case 'Paid':
+            return '#42814A';
+
+        case 'HistoricalPayment':
             return '#42814A';
 
         case 'Failed':

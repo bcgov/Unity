@@ -251,7 +251,6 @@ $(function () {
 
         // Clear hidden fields
         $('#SupplierId').val('');
-        $('#SupplierCorrelationId').val('');
 
         // Hide error message
         supplierOrgInfoErrorDiv.addClass('hidden');
@@ -504,11 +503,11 @@ $(function () {
 });
 
 function saveSiteDefault(siteId) {
-    let applicantId = $('#ApplicantId').val();
+    let applicationId = $('#SupplierInfo_ApplicationId').val();
     $.ajax({
-        url: `/api/app/applicant/${applicantId}/site/${siteId}`,
+        url: `/api/app/application/${applicationId}/site/${siteId}`,
         type: 'POST',
-        data: JSON.stringify({ ApplicantId: applicantId, SiteId: siteId }),
+        data: JSON.stringify({ ApplicationId: applicationId, SiteId: siteId }),
     })
         .then((response) => {
             abp.notify.success(

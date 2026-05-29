@@ -1,3 +1,4 @@
+using Amazon.S3;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -11,7 +12,7 @@ using Unity.GrantManager.Attachments;
 using Unity.GrantManager.Intake;
 using Unity.GrantManager.Integrations.Css;
 using Unity.TenantManagement;
-using Volo.Abp.AutoMapper;
+using Volo.Abp.Mapperly;
 using Volo.Abp.BlobStoring;
 using Volo.Abp.FeatureManagement;
 using Volo.Abp.Identity;
@@ -46,6 +47,8 @@ using Unity.GrantManager.GrantsPortal;
 using Unity.GrantManager.GrantsPortal.Configuration;
 using Unity.GrantManager.GrantsPortal.Handlers;
 using Unity.GrantManager.Messaging;
+using Unity.GrantManager.Analytics;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace Unity.GrantManager;
 
@@ -125,16 +128,26 @@ public class GrantManagerApplicationModule : AbpModule
             });
         });
 
-        Configure<AbpAutoMapperOptions>(options =>
+        context.Services.AddMapperlyObjectMapper<GrantManagerApplicationModule>();
+
+        context.Services.TryAddSingleton<IAmazonS3>(_ =>
         {
-            options.AddMaps<GrantManagerApplicationModule>();
+            var s3Config = new AmazonS3Config
+            {
+                RegionEndpoint = null,
+                ServiceURL = configuration["S3:Endpoint"],
+                AllowAutoRedirect = true,
+                ForcePathStyle = true
+            };
+            return new AmazonS3Client(configuration["S3:AccessKeyId"], configuration["S3:SecretAccessKey"], s3Config);
         });
 
         context.Services.AddSingleton<IAuthorizationHandler, AssessmentAuthorizationHandler>();
         context.Services.AddTransient<IResilientHttpRequest, ResilientHttpRequest>();
         context.Services.AddTransient<IFormsApiService, FormsApiService>();
 
-        context.Services.AddScoped<IGeocoderApiService, GeocoderApiService>();        
+        context.Services.AddScoped<IGeocoderApiService, GeocoderApiService>();    
+        context.Services.AddScoped<IAnalyticsUrlProvider, MatomoUrlProvider>();
         context.Services.AddScoped<GeocoderApiService>();
 
         context.Services.Configure<CasClientOptions>(configuration.GetSection("Payments"));

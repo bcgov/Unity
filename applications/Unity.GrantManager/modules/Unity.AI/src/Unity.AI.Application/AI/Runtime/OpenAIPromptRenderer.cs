@@ -20,20 +20,20 @@ public class OpenAIPromptRenderer : ITransientDependency
     private const string ApplicationScoringSystemTemplateName = "application-scoring.system";
     private const string ApplicationScoringUserTemplateName = "application-scoring.user";
     private static readonly Dictionary<string, string> PromptProfiles =
-        new(StringComparer.OrdinalIgnoreCase)
+        new(StringComparer.Ordinal)
         {
             [PromptVersionV0] = PromptVersionV0,
             [PromptVersionV1] = PromptVersionV1
         };
     private static readonly ConcurrentDictionary<string, string> PromptTemplateCache = new(StringComparer.OrdinalIgnoreCase);
-    private static readonly JsonSerializerOptions JsonLogOptions = new() { WriteIndented = true };
 
-    public string BuildApplicationAnalysisSystemPrompt(string version)
+
+    public static string BuildApplicationAnalysisSystemPrompt(string version)
     {
         return GetRequiredPromptTemplate(version, ApplicationAnalysisSystemTemplateName);
     }
 
-    public string BuildApplicationAnalysisUserPrompt(string version, string schema, string data, string attachments)
+    public static string BuildApplicationAnalysisUserPrompt(string version, string schema, string data, string attachments)
     {
         var replacements = new Dictionary<string, string>
         {
@@ -45,12 +45,12 @@ public class OpenAIPromptRenderer : ITransientDependency
         return RenderPromptTemplate(version, ApplicationAnalysisUserTemplateName, replacements);
     }
 
-    public string BuildAttachmentSummarySystemPrompt(string version)
+    public static string BuildAttachmentSummarySystemPrompt(string version)
     {
         return GetRequiredPromptTemplate(version, AttachmentSummarySystemTemplateName);
     }
 
-    public string BuildAttachmentSummaryUserPrompt(string version, string attachment)
+    public static string BuildAttachmentSummaryUserPrompt(string version, string attachment)
     {
         return RenderPromptTemplate(version, AttachmentSummaryUserTemplateName, new Dictionary<string, string>
         {
@@ -58,12 +58,12 @@ public class OpenAIPromptRenderer : ITransientDependency
         });
     }
 
-    public string BuildApplicationScoringSystemPrompt(string version)
+    public static string BuildApplicationScoringSystemPrompt(string version)
     {
         return GetRequiredPromptTemplate(version, ApplicationScoringSystemTemplateName);
     }
 
-    public string BuildApplicationScoringUserPrompt(string version, string data, string attachments, string section, string response)
+    public static string BuildApplicationScoringUserPrompt(string version, string data, string attachments, string section, string response)
     {
         return RenderPromptTemplate(version, ApplicationScoringUserTemplateName, new Dictionary<string, string>
         {
@@ -74,7 +74,7 @@ public class OpenAIPromptRenderer : ITransientDependency
         });
     }
 
-    public string BuildApplicationScoringResponseTemplate(string sectionPayloadJson)
+    public static string BuildApplicationScoringResponseTemplate(string sectionPayloadJson)
     {
         try
         {
@@ -111,7 +111,7 @@ public class OpenAIPromptRenderer : ITransientDependency
                 return "{}";
             }
 
-            return JsonSerializer.Serialize(template, JsonLogOptions);
+            return JsonSerializer.Serialize(template, AIJsonDefaults.Indented);
         }
         catch (JsonException)
         {
@@ -119,13 +119,13 @@ public class OpenAIPromptRenderer : ITransientDependency
         }
     }
 
-    public string BuildAliasedApplicationScoringSection(string? sectionName, string sectionJson, out IReadOnlyDictionary<string, string> questionIdAliasMap)
+    public static string BuildAliasedApplicationScoringSection(string? sectionName, string sectionJson, out IReadOnlyDictionary<string, string> questionIdAliasMap)
     {
         questionIdAliasMap = new Dictionary<string, string>(StringComparer.Ordinal);
 
         if (string.IsNullOrWhiteSpace(sectionJson))
         {
-            return JsonSerializer.Serialize(new { name = sectionName, questions = sectionJson }, JsonLogOptions);
+            return JsonSerializer.Serialize(new { name = sectionName, questions = sectionJson }, AIJsonDefaults.Indented);
         }
 
         try
@@ -133,7 +133,7 @@ public class OpenAIPromptRenderer : ITransientDependency
             using var sectionDoc = JsonDocument.Parse(sectionJson);
             if (sectionDoc.RootElement.ValueKind != JsonValueKind.Array)
             {
-                return JsonSerializer.Serialize(new { name = sectionName, questions = sectionDoc.RootElement.Clone() }, JsonLogOptions);
+                return JsonSerializer.Serialize(new { name = sectionName, questions = sectionDoc.RootElement.Clone() }, AIJsonDefaults.Indented);
             }
 
             var aliasedQuestions = new List<Dictionary<string, object?>>();
@@ -174,23 +174,27 @@ public class OpenAIPromptRenderer : ITransientDependency
             }
 
             questionIdAliasMap = aliasMap;
-            return JsonSerializer.Serialize(new { name = sectionName, questions = aliasedQuestions }, JsonLogOptions);
+            return JsonSerializer.Serialize(new { name = sectionName, questions = aliasedQuestions }, AIJsonDefaults.Indented);
         }
         catch (JsonException)
         {
-            return JsonSerializer.Serialize(new { name = sectionName, questions = sectionJson }, JsonLogOptions);
+            return JsonSerializer.Serialize(new { name = sectionName, questions = sectionJson }, AIJsonDefaults.Indented);
         }
     }
 
-    public string ResolvePromptVersion(string? version)
+    public static string ResolvePromptVersion(string? version)
     {
-        if (!string.IsNullOrWhiteSpace(version) &&
-            PromptProfiles.TryGetValue(version.Trim(), out var selectedVersion))
+        if (string.IsNullOrWhiteSpace(version))
+        {
+            throw new InvalidOperationException("AI prompt version is not configured.");
+        }
+
+        if (PromptProfiles.TryGetValue(version.Trim(), out var selectedVersion))
         {
             return selectedVersion;
         }
 
-        return PromptVersionV1;
+        throw new InvalidOperationException($"AI prompt version '{version}' is not supported.");
     }
 
     private static bool TryGetPromptTemplate(string version, string templateName, out string template)

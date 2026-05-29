@@ -1,11 +1,8 @@
-﻿using NSubstitute;
+using NSubstitute;
 using Shouldly;
 using System;
-using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 using Unity.GrantManager.TestHelpers;
-using Volo.Abp;
 using Volo.Abp.Domain.Entities;
 using Xunit;
 
@@ -15,16 +12,19 @@ namespace Unity.GrantManager.Contacts
     {
         private readonly IContactRepository _contactRepository;
         private readonly IContactLinkRepository _contactLinkRepository;
+        private readonly IContactManager _contactManager;
         private readonly ContactAppService _service;
 
         public ContactAppServiceTests()
         {
             _contactRepository = Substitute.For<IContactRepository>();
             _contactLinkRepository = Substitute.For<IContactLinkRepository>();
+            _contactManager = Substitute.For<IContactManager>();
 
             _service = new ContactAppService(
                 _contactRepository,
-                _contactLinkRepository);
+                _contactLinkRepository,
+                _contactManager);
         }
 
         private static T WithId<T>(T entity, Guid id) where T : Entity<Guid>
@@ -139,7 +139,6 @@ namespace Unity.GrantManager.Contacts
         [Fact]
         public async Task GetContactsByEntityAsync_ShouldExcludeInactiveLinks()
         {
-            // Arrange
             var entityId = Guid.NewGuid();
             var contactId = Guid.NewGuid();
 
@@ -162,17 +161,14 @@ namespace Unity.GrantManager.Contacts
             _contactRepository.GetQueryableAsync().Returns(contacts);
             _contactLinkRepository.GetQueryableAsync().Returns(contactLinks);
 
-            // Act
             var result = await _service.GetContactsByEntityAsync("TestEntity", entityId);
 
-            // Assert
             result.ShouldBeEmpty();
         }
 
         [Fact]
         public async Task GetContactsByEntityAsync_ShouldExcludeDifferentEntityType()
         {
-            // Arrange
             var entityId = Guid.NewGuid();
             var contactId = Guid.NewGuid();
 
@@ -195,17 +191,14 @@ namespace Unity.GrantManager.Contacts
             _contactRepository.GetQueryableAsync().Returns(contacts);
             _contactLinkRepository.GetQueryableAsync().Returns(contactLinks);
 
-            // Act
             var result = await _service.GetContactsByEntityAsync("TestEntity", entityId);
 
-            // Assert
             result.ShouldBeEmpty();
         }
 
         [Fact]
         public async Task GetContactsByEntityAsync_ShouldExcludeDifferentEntityId()
         {
-            // Arrange
             var entityId = Guid.NewGuid();
             var otherEntityId = Guid.NewGuid();
             var contactId = Guid.NewGuid();
@@ -229,24 +222,19 @@ namespace Unity.GrantManager.Contacts
             _contactRepository.GetQueryableAsync().Returns(contacts);
             _contactLinkRepository.GetQueryableAsync().Returns(contactLinks);
 
-            // Act
             var result = await _service.GetContactsByEntityAsync("TestEntity", entityId);
 
-            // Assert
             result.ShouldBeEmpty();
         }
 
         [Fact]
         public async Task GetContactsByEntityAsync_WithNoLinks_ShouldReturnEmpty()
         {
-            // Arrange
             _contactRepository.GetQueryableAsync().Returns(Array.Empty<Contact>().AsAsyncQueryable());
             _contactLinkRepository.GetQueryableAsync().Returns(Array.Empty<ContactLink>().AsAsyncQueryable());
 
-            // Act
             var result = await _service.GetContactsByEntityAsync("TestEntity", Guid.NewGuid());
 
-            // Assert
             result.ShouldBeEmpty();
         }
 
@@ -255,22 +243,11 @@ namespace Unity.GrantManager.Contacts
         #region CreateContactAsync
 
         [Fact]
-        public async Task CreateContactAsync_ShouldCreateContactAndLink()
+        public async Task CreateContactAsync_ShouldDelegateToContactManagerAndMapDto()
         {
             // Arrange
-            var contactId = Guid.NewGuid();
             var entityId = Guid.NewGuid();
-
-            _contactRepository.InsertAsync(Arg.Any<Contact>(), true, Arg.Any<CancellationToken>())
-                .Returns(ci =>
-                {
-                    var c = ci.Arg<Contact>();
-                    EntityHelper.TrySetId(c, () => contactId);
-                    return c;
-                });
-
-            _contactLinkRepository.GetQueryableAsync()
-                .Returns(Array.Empty<ContactLink>().AsAsyncQueryable());
+            var contactId = Guid.NewGuid();
 
             var input = new CreateContactLinkDto
             {
@@ -282,128 +259,159 @@ namespace Unity.GrantManager.Contacts
                 WorkPhoneNumber = "333-3333",
                 WorkPhoneExtension = "101",
                 Role = "Reviewer",
-                IsPrimary = false,
-                RelatedEntityType = "TestEntity",
-                RelatedEntityId = entityId
-            };
-
-            // Act
-            var result = await _service.CreateContactAsync(input);
-
-            // Assert
-            result.ContactId.ShouldBe(contactId);
-            result.Name.ShouldBe("New Contact");
-            result.Title.ShouldBe("Analyst");
-            result.Email.ShouldBe("new@example.com");
-            result.HomePhoneNumber.ShouldBe("111-1111");
-            result.MobilePhoneNumber.ShouldBe("222-2222");
-            result.WorkPhoneNumber.ShouldBe("333-3333");
-            result.WorkPhoneExtension.ShouldBe("101");
-            result.Role.ShouldBe("Reviewer");
-            result.IsPrimary.ShouldBeFalse();
-
-            await _contactRepository.Received(1).InsertAsync(
-                Arg.Is<Contact>(c =>
-                    c.Name == "New Contact"
-                    && c.Title == "Analyst"
-                    && c.Email == "new@example.com"
-                    && c.HomePhoneNumber == "111-1111"
-                    && c.MobilePhoneNumber == "222-2222"
-                    && c.WorkPhoneNumber == "333-3333"
-                    && c.WorkPhoneExtension == "101"),
-                true,
-                Arg.Any<CancellationToken>());
-
-            await _contactLinkRepository.Received(1).InsertAsync(
-                Arg.Is<ContactLink>(l =>
-                    l.ContactId == contactId
-                    && l.RelatedEntityType == "TestEntity"
-                    && l.RelatedEntityId == entityId
-                    && l.Role == "Reviewer"
-                    && !l.IsPrimary
-                    && l.IsActive),
-                true,
-                Arg.Any<CancellationToken>());
-        }
-
-        [Fact]
-        public async Task CreateContactAsync_NonPrimary_ShouldNotClearExistingPrimary()
-        {
-            // Arrange
-            var contactId = Guid.NewGuid();
-            var entityId = Guid.NewGuid();
-
-            _contactRepository.InsertAsync(Arg.Any<Contact>(), true, Arg.Any<CancellationToken>())
-                .Returns(ci =>
-                {
-                    var c = ci.Arg<Contact>();
-                    EntityHelper.TrySetId(c, () => contactId);
-                    return c;
-                });
-
-            var input = new CreateContactLinkDto
-            {
-                Name = "Non-Primary Contact",
-                IsPrimary = false,
-                RelatedEntityType = "TestEntity",
-                RelatedEntityId = entityId
-            };
-
-            // Act
-            await _service.CreateContactAsync(input);
-
-            // Assert - GetQueryableAsync should not be called (ClearPrimaryAsync not invoked)
-            await _contactLinkRepository.DidNotReceive().GetQueryableAsync();
-        }
-
-        [Fact]
-        public async Task CreateContactAsync_WhenPrimary_ShouldClearExistingPrimary()
-        {
-            // Arrange
-            var contactId = Guid.NewGuid();
-            var entityId = Guid.NewGuid();
-            var existingLinkId = Guid.NewGuid();
-
-            var existingLink = new ContactLink
-            {
-                ContactId = Guid.NewGuid(),
-                RelatedEntityType = "TestEntity",
-                RelatedEntityId = entityId,
                 IsPrimary = true,
+                RelatedEntityType = "TestEntity",
+                RelatedEntityId = entityId
+            };
+
+            var contact = WithId(new Contact
+            {
+                Name = input.Name,
+                Title = input.Title,
+                Email = input.Email,
+                HomePhoneNumber = input.HomePhoneNumber,
+                MobilePhoneNumber = input.MobilePhoneNumber,
+                WorkPhoneNumber = input.WorkPhoneNumber,
+                WorkPhoneExtension = input.WorkPhoneExtension
+            }, contactId);
+            var link = new ContactLink
+            {
+                ContactId = contactId,
+                RelatedEntityType = input.RelatedEntityType,
+                RelatedEntityId = entityId,
+                Role = input.Role,
+                IsPrimary = input.IsPrimary,
                 IsActive = true
             };
-            EntityHelper.TrySetId(existingLink, () => existingLinkId);
 
-            _contactLinkRepository.GetQueryableAsync()
-                .Returns(
-                    new[] { existingLink }.AsAsyncQueryable(),
-                    Array.Empty<ContactLink>().AsAsyncQueryable());
-
-            _contactRepository.InsertAsync(Arg.Any<Contact>(), true, Arg.Any<CancellationToken>())
-                .Returns(ci =>
-                {
-                    var c = ci.Arg<Contact>();
-                    EntityHelper.TrySetId(c, () => contactId);
-                    return c;
-                });
-
-            var input = new CreateContactLinkDto
-            {
-                Name = "Primary Contact",
-                IsPrimary = true,
-                RelatedEntityType = "TestEntity",
-                RelatedEntityId = entityId
-            };
+            _contactManager.CreateAsync(
+                    Arg.Any<string>(),
+                    Arg.Any<Guid>(),
+                    Arg.Any<ContactInput>(),
+                    Arg.Any<string?>(),
+                    Arg.Any<bool>())
+                .Returns((contact, link));
 
             // Act
             var result = await _service.CreateContactAsync(input);
 
             // Assert
-            result.IsPrimary.ShouldBeTrue();
-            await _contactLinkRepository.Received(1).UpdateAsync(
-                Arg.Is<ContactLink>(l => l.Id == existingLinkId && !l.IsPrimary),
-                true,
-                Arg.Any<CancellationToken>());
+            await _contactManager.Received(1).CreateAsync(
+                input.RelatedEntityType,
+                input.RelatedEntityId,
+                Arg.Is<ContactInput>(ci =>
+                    ci.Name == input.Name
+                    && ci.Title == input.Title
+                    && ci.Email == input.Email
+                    && ci.HomePhoneNumber == input.HomePhoneNumber
+                    && ci.MobilePhoneNumber == input.MobilePhoneNumber
+                    && ci.WorkPhoneNumber == input.WorkPhoneNumber
+                    && ci.WorkPhoneExtension == input.WorkPhoneExtension),
+                input.Role,
+                input.IsPrimary);
+
+            result.ContactId.ShouldBe(contactId);
+            result.Name.ShouldBe(input.Name);
+            result.Title.ShouldBe(input.Title);
+            result.Email.ShouldBe(input.Email);
+            result.HomePhoneNumber.ShouldBe(input.HomePhoneNumber);
+            result.MobilePhoneNumber.ShouldBe(input.MobilePhoneNumber);
+            result.WorkPhoneNumber.ShouldBe(input.WorkPhoneNumber);
+            result.WorkPhoneExtension.ShouldBe(input.WorkPhoneExtension);
+            result.Role.ShouldBe(input.Role);
+            result.IsPrimary.ShouldBe(input.IsPrimary);
+        }
+
+        [Fact]
+        public async Task CreateContactAsync_WithNullInput_ShouldThrow()
+        {
+            await Should.ThrowAsync<ArgumentNullException>(
+                () => _service.CreateContactAsync(null!));
+        }
+
+        #endregion
+
+        #region UpdateContactAsync
+
+        [Fact]
+        public async Task UpdateContactAsync_ShouldDelegateToContactManagerAndMapDto()
+        {
+            // Arrange
+            var entityId = Guid.NewGuid();
+            var contactId = Guid.NewGuid();
+
+            var input = new UpdateContactDto
+            {
+                Name = "Updated",
+                Title = "CFO",
+                Email = "updated@example.com",
+                HomePhoneNumber = "111-0000",
+                MobilePhoneNumber = "555-3333",
+                WorkPhoneNumber = "555-4444",
+                WorkPhoneExtension = "99",
+                Role = "Financial",
+                IsPrimary = false
+            };
+
+            var contact = WithId(new Contact
+            {
+                Name = input.Name,
+                Title = input.Title,
+                Email = input.Email,
+                HomePhoneNumber = input.HomePhoneNumber,
+                MobilePhoneNumber = input.MobilePhoneNumber,
+                WorkPhoneNumber = input.WorkPhoneNumber,
+                WorkPhoneExtension = input.WorkPhoneExtension
+            }, contactId);
+            var link = new ContactLink
+            {
+                ContactId = contactId,
+                RelatedEntityType = "TestEntity",
+                RelatedEntityId = entityId,
+                Role = input.Role,
+                IsPrimary = input.IsPrimary,
+                IsActive = true
+            };
+
+            _contactManager.UpdateAsync(
+                    Arg.Any<string>(),
+                    Arg.Any<Guid>(),
+                    Arg.Any<Guid>(),
+                    Arg.Any<ContactInput>(),
+                    Arg.Any<string?>(),
+                    Arg.Any<bool>())
+                .Returns((contact, link));
+
+            // Act
+            var result = await _service.UpdateContactAsync("TestEntity", entityId, contactId, input);
+
+            // Assert
+            await _contactManager.Received(1).UpdateAsync(
+                "TestEntity",
+                entityId,
+                contactId,
+                Arg.Is<ContactInput>(ci =>
+                    ci.Name == input.Name
+                    && ci.Title == input.Title
+                    && ci.Email == input.Email
+                    && ci.HomePhoneNumber == input.HomePhoneNumber
+                    && ci.MobilePhoneNumber == input.MobilePhoneNumber
+                    && ci.WorkPhoneNumber == input.WorkPhoneNumber
+                    && ci.WorkPhoneExtension == input.WorkPhoneExtension),
+                input.Role,
+                input.IsPrimary);
+
+            result.ContactId.ShouldBe(contactId);
+            result.Name.ShouldBe(input.Name);
+            result.Role.ShouldBe(input.Role);
+            result.IsPrimary.ShouldBe(input.IsPrimary);
+        }
+
+        [Fact]
+        public async Task UpdateContactAsync_WithNullInput_ShouldThrow()
+        {
+            await Should.ThrowAsync<ArgumentNullException>(
+                () => _service.UpdateContactAsync("TestEntity", Guid.NewGuid(), Guid.NewGuid(), null!));
         }
 
         #endregion
@@ -411,192 +419,17 @@ namespace Unity.GrantManager.Contacts
         #region SetPrimaryContactAsync
 
         [Fact]
-        public async Task SetPrimaryContactAsync_ShouldClearExistingAndSetNew()
+        public async Task SetPrimaryContactAsync_ShouldDelegateToContactManager()
         {
             // Arrange
             var entityId = Guid.NewGuid();
             var contactId = Guid.NewGuid();
-            var existingPrimaryLinkId = Guid.NewGuid();
-            var targetLinkId = Guid.NewGuid();
-
-            var existingPrimaryLink = new ContactLink
-            {
-                ContactId = Guid.NewGuid(),
-                RelatedEntityType = "TestEntity",
-                RelatedEntityId = entityId,
-                IsPrimary = true,
-                IsActive = true
-            };
-            EntityHelper.TrySetId(existingPrimaryLink, () => existingPrimaryLinkId);
-
-            var targetLink = new ContactLink
-            {
-                ContactId = contactId,
-                RelatedEntityType = "TestEntity",
-                RelatedEntityId = entityId,
-                IsPrimary = false,
-                IsActive = true
-            };
-            EntityHelper.TrySetId(targetLink, () => targetLinkId);
-
-            _contactLinkRepository.GetQueryableAsync()
-                .Returns(
-                    new[] { existingPrimaryLink }.AsAsyncQueryable(),
-                    new[] { targetLink }.AsAsyncQueryable());
 
             // Act
             await _service.SetPrimaryContactAsync("TestEntity", entityId, contactId);
 
             // Assert
-            await _contactLinkRepository.Received(1).UpdateAsync(
-                Arg.Is<ContactLink>(l => l.Id == existingPrimaryLinkId && !l.IsPrimary),
-                true,
-                Arg.Any<CancellationToken>());
-            await _contactLinkRepository.Received(1).UpdateAsync(
-                Arg.Is<ContactLink>(l => l.Id == targetLinkId && l.IsPrimary),
-                true,
-                Arg.Any<CancellationToken>());
-        }
-
-        [Fact]
-        public async Task SetPrimaryContactAsync_WithNoExistingPrimary_ShouldSetNew()
-        {
-            // Arrange
-            var entityId = Guid.NewGuid();
-            var contactId = Guid.NewGuid();
-            var targetLinkId = Guid.NewGuid();
-
-            var targetLink = new ContactLink
-            {
-                ContactId = contactId,
-                RelatedEntityType = "TestEntity",
-                RelatedEntityId = entityId,
-                IsPrimary = false,
-                IsActive = true
-            };
-            EntityHelper.TrySetId(targetLink, () => targetLinkId);
-
-            _contactLinkRepository.GetQueryableAsync()
-                .Returns(
-                    Array.Empty<ContactLink>().AsAsyncQueryable(),
-                    new[] { targetLink }.AsAsyncQueryable());
-
-            // Act
-            await _service.SetPrimaryContactAsync("TestEntity", entityId, contactId);
-
-            // Assert — only the target link should be updated (set to primary)
-            await _contactLinkRepository.Received(1).UpdateAsync(
-                Arg.Is<ContactLink>(l => l.Id == targetLinkId && l.IsPrimary),
-                true,
-                Arg.Any<CancellationToken>());
-        }
-
-        [Fact]
-        public async Task SetPrimaryContactAsync_WithMultipleExistingPrimaries_ShouldClearAll()
-        {
-            // Arrange
-            var entityId = Guid.NewGuid();
-            var contactId = Guid.NewGuid();
-            var primaryLinkId1 = Guid.NewGuid();
-            var primaryLinkId2 = Guid.NewGuid();
-            var targetLinkId = Guid.NewGuid();
-
-            var primaryLink1 = new ContactLink
-            {
-                ContactId = Guid.NewGuid(),
-                RelatedEntityType = "TestEntity",
-                RelatedEntityId = entityId,
-                IsPrimary = true,
-                IsActive = true
-            };
-            EntityHelper.TrySetId(primaryLink1, () => primaryLinkId1);
-
-            var primaryLink2 = new ContactLink
-            {
-                ContactId = Guid.NewGuid(),
-                RelatedEntityType = "TestEntity",
-                RelatedEntityId = entityId,
-                IsPrimary = true,
-                IsActive = true
-            };
-            EntityHelper.TrySetId(primaryLink2, () => primaryLinkId2);
-
-            var targetLink = new ContactLink
-            {
-                ContactId = contactId,
-                RelatedEntityType = "TestEntity",
-                RelatedEntityId = entityId,
-                IsPrimary = false,
-                IsActive = true
-            };
-            EntityHelper.TrySetId(targetLink, () => targetLinkId);
-
-            _contactLinkRepository.GetQueryableAsync()
-                .Returns(
-                    new[] { primaryLink1, primaryLink2 }.AsAsyncQueryable(),
-                    new[] { targetLink }.AsAsyncQueryable());
-
-            // Act
-            await _service.SetPrimaryContactAsync("TestEntity", entityId, contactId);
-
-            // Assert — both existing primaries cleared
-            await _contactLinkRepository.Received(1).UpdateAsync(
-                Arg.Is<ContactLink>(l => l.Id == primaryLinkId1 && !l.IsPrimary),
-                true,
-                Arg.Any<CancellationToken>());
-            await _contactLinkRepository.Received(1).UpdateAsync(
-                Arg.Is<ContactLink>(l => l.Id == primaryLinkId2 && !l.IsPrimary),
-                true,
-                Arg.Any<CancellationToken>());
-            // Target set as primary
-            await _contactLinkRepository.Received(1).UpdateAsync(
-                Arg.Is<ContactLink>(l => l.Id == targetLinkId && l.IsPrimary),
-                true,
-                Arg.Any<CancellationToken>());
-        }
-
-        [Fact]
-        public async Task SetPrimaryContactAsync_ShouldNotMatchInactiveLink()
-        {
-            // Arrange
-            var entityId = Guid.NewGuid();
-            var contactId = Guid.NewGuid();
-
-            var inactiveLink = new ContactLink
-            {
-                ContactId = contactId,
-                RelatedEntityType = "TestEntity",
-                RelatedEntityId = entityId,
-                IsPrimary = false,
-                IsActive = false
-            };
-
-            _contactLinkRepository.GetQueryableAsync()
-                .Returns(
-                    Array.Empty<ContactLink>().AsAsyncQueryable(),
-                    new[] { inactiveLink }.AsAsyncQueryable());
-
-            // Act & Assert
-            await Should.ThrowAsync<BusinessException>(
-                () => _service.SetPrimaryContactAsync("TestEntity", entityId, contactId));
-        }
-
-        [Fact]
-        public async Task SetPrimaryContactAsync_WhenContactLinkNotFound_ShouldThrow()
-        {
-            // Arrange
-            var entityId = Guid.NewGuid();
-            var contactId = Guid.NewGuid();
-
-            _contactLinkRepository.GetQueryableAsync()
-                .Returns(
-                    Array.Empty<ContactLink>().AsAsyncQueryable(),
-                    Array.Empty<ContactLink>().AsAsyncQueryable());
-
-            // Act & Assert
-            var ex = await Should.ThrowAsync<BusinessException>(
-                () => _service.SetPrimaryContactAsync("TestEntity", entityId, contactId));
-            ex.Code.ShouldBe("Contacts:ContactLinkNotFound");
+            await _contactManager.Received(1).SetPrimaryAsync("TestEntity", entityId, contactId);
         }
 
         #endregion

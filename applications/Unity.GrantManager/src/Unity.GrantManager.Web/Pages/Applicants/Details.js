@@ -49,6 +49,7 @@ $(document).ready(function () {
     // Handle resizable divider
     initializeResizableDivider();
     initCommentsWidget();
+    initializeStatusActions();
 });
 
 const LEFT_INTERNAL_SCROLL_TABS = new Set(['nav-submissions']);
@@ -456,3 +457,48 @@ function uploadFiles(inputId, urlStr, channel) {
 PubSub.subscribe('update_applicant_attachment_count', function (msg, data) {
     $('#applicant_attachment_count').text(data.files);
 });
+
+function initializeStatusActions() {
+    const applicantId = decodeURIComponent($('#DetailsViewApplicantId').val());
+
+    $(document).on('click', '.applicant-status-action', function () {
+        const $btn = $(this);
+        const newStatus = $btn.data('status');
+
+        abp.message.confirm(
+            `Set applicant status to "${newStatus}"?`,
+            'Confirm Status Change',
+            function (confirmed) {
+                if (!confirmed) return;
+
+                $('#ApplicantStatusDropdown .dropdown-toggle').buttonBusy();
+
+                unity.grantManager.applicants.applicant
+                    .updateApplicantStatus(applicantId, newStatus)
+                    .then(function () {
+                        const $badge = $('.applicant-details-breadcrumb .applicant-status');
+                        if ($badge.length) {
+                            $badge.text(newStatus).show();
+                        } else {
+                            $('.applicant-details-breadcrumb').append(
+                                $('<div class="applicant-status"></div>').text(newStatus)
+                            );
+                        }
+
+                        $('#ApplicantStatusActiveButton').prop('disabled', newStatus === 'Active');
+                        $('#ApplicantStatusInactiveButton').prop('disabled', newStatus === 'Inactive');
+                        $('#ApplicantCurrentStatus').val(newStatus);
+
+                        abp.notify.success(`Applicant status set to ${newStatus}.`, 'Status Updated');
+                    })
+                    .catch(function (err) {
+                        abp.notify.error(abp.localization.localize('Error', 'AbpUi'));
+                        console.warn('Status update failed:', err);
+                    })
+                    .always(function () {
+                        $('#ApplicantStatusDropdown .dropdown-toggle').buttonBusy(false);
+                    });
+            }
+        );
+    });
+}

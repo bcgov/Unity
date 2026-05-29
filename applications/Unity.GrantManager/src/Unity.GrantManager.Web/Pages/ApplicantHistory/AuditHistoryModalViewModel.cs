@@ -17,6 +17,12 @@ public class AuditHistoryModalViewModel
     [DataType(DataType.Date)]
     public DateTime? AuditDate { get; set; }
 
+    [DisplayName("Status")]
+    public string? AuditStatus { get; set; }
+
+    [DisplayName("Auditor's Name")]
+    public string? AuditorName { get; set; }
+
     [DisplayName("Audit Note")]
     public string? AuditNote { get; set; }
 }

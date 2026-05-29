@@ -33,6 +33,7 @@ public static class PaymentsDbContextModelCreatingExtensions
             b.HasOne(e => e.Site)
                 .WithMany()
                 .HasForeignKey(x => x.SiteId)
+                .IsRequired(false)
                 .OnDelete(DeleteBehavior.NoAction);
 
             b.HasOne(e => e.AccountCoding)

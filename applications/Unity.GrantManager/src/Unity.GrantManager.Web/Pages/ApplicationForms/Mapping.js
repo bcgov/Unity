@@ -8,7 +8,7 @@
     let worksheetMapColumn = document.querySelector('#worksheet-map-available-fields-column');
     let excludedIntakeMappings = ['ConfirmationId', 'SubmissionId', 'SubmissionDate'];
     let dataTable;
-    toastr.options.positionClass = 'toast-top-center';
+    if (globalThis.toastr) { toastr.options.positionClass = 'toast-top-center'; }
 
     let allowableTypes = ['textarea',
         'orgbook',
@@ -77,7 +77,7 @@
     function init() {
         bindUIEvents();
         dataTable = initializeDataTable();
-        let availableChefsFields = JSON.parse(availableChefFieldsString)
+        let availableChefsFields = availableChefFieldsString ? JSON.parse(availableChefFieldsString) : []
         initializeIntakeMap(availableChefsFields);
         bindExistingMaps();
         setupTooltips();
@@ -136,6 +136,7 @@
             let jsonText = $('#jsonText').val();
             $.parseJSON(jsonText);
             let mappingJsonStr = jsonText.replace(/\s+/g, ' ').replace(/(\r\n|\n|\r)/gm, "");
+            UIElements.btnSaveMapping.prop('disabled', true);
             handleSaveMapping($.parseJSON(mappingJsonStr));
             handleCancelMapping();
 
@@ -145,11 +146,12 @@
             );
 
             setTimeout(function () {
-                window.location.href = location.href;
+                globalThis.location.href = location.href;
             }, 500);
 
         }
         catch (err) {
+            UIElements.btnSaveMapping.prop('disabled', false);
             abp.notify.error(
                 '',
                 'The JSON is not valid:' + err
@@ -179,7 +181,7 @@
         );
 
         setTimeout(function () {
-            const url = new URL(window.location.href);
+            const url = new URL(globalThis.location.href);
 
             // If this really is a GUID, validate it defensively
             if (!/^[0-9a-fA-F-]{36}$/.test(chefsFormVersionGuid)) {
@@ -188,7 +190,7 @@
             }
 
             url.searchParams.set("ChefsFormVersionGuid", chefsFormVersionGuid);
-            window.location.href = url.toString();
+            globalThis.location.href = url.toString();
         }, 500);
     }
 
@@ -313,6 +315,7 @@
         formData["availableChefsFields"] = document.getElementById('availableChefsFields').value;
         formData["ChefsApplicationFormGuid"] = document.getElementById('applicationFormId').value;
 
+        UIElements.btnSave.prop('disabled', true);
         $.ajax(
             {
                 url: "/api/app/application-form-version/" + formVersionId,
@@ -332,6 +335,9 @@
                         data.responseText,
                         'Mapping Not Saved Successful'
                     );
+                },
+                complete: function () {
+                    UIElements.btnSave.prop('disabled', false);
                 }
             }
         );
@@ -340,7 +346,7 @@
     function handleReset() {
         $(intakeMapColumn).empty();
         $(worksheetMapColumn).empty();
-        let availableChefsFields = JSON.parse(availableChefFieldsString)
+        let availableChefsFields = availableChefFieldsString ? JSON.parse(availableChefFieldsString) : []
         initializeIntakeMap(availableChefsFields);
         bindExistingMaps();
     }
@@ -640,6 +646,7 @@
         };
 
         btnSaveAIConfig.addEventListener('click', function () {
+            btnSaveAIConfig.disabled = true;
             abp.ajax({
                 url: `/api/app/application-form/${aiFormId}/ai-config`,
                 type: 'PATCH',
@@ -658,6 +665,9 @@
             })
             .fail(function () {
                 abp.notify.error('Failed to save AI configuration.');
+            })
+            .always(function () {
+                btnSaveAIConfig.disabled = false;
             });
         });
 

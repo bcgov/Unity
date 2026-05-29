@@ -34,7 +34,7 @@
         toggleParentFormSection();
         toggleDefaultPaymentGroupRow(UIElements.payable.is(':checked'));
 
-        toastr.options.positionClass = 'toast-top-center';
+        if (window.toastr) { toastr.options.positionClass = 'toast-top-center'; }
         UIElements.btnSave.prop('disabled', true);
     }
 
@@ -197,6 +197,8 @@
             return;
         }
 
+        UIElements.btnSave.prop('disabled', true);
+
         const hierarchyValue = UIElements.formHierarchy.val();
         const formHierarchy = hierarchyValue ? parseInt(hierarchyValue, 10) : null;
         const parentFormId = UIElements.parentFormSelect.val();
@@ -235,6 +237,9 @@
                         confirmButton: 'btn btn-primary'
                     }
                 });
+            })
+            .catch(() => {
+                UIElements.btnSave.prop('disabled', false);
             });
     }
 

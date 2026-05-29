@@ -16,15 +16,6 @@ namespace Unity.Payments.Repositories
         {
         }
 
-        public async Task<Supplier?> GetByCorrelationAsync(Guid correlationId, string correlationProvider, bool includeDetails = false)
-        {
-            var dbSet = await GetDbSetAsync();         
-            return await dbSet
-                    .IncludeDetails(includeDetails)
-                    .FirstOrDefaultAsync(s => s.CorrelationId == correlationId
-                        && s.CorrelationProvider == correlationProvider);
-        }
-
         public async Task<Supplier?> GetBySupplierNumberAsync(string supplierNumber, bool includeDetails = false)
         {
             var dbSet = await GetDbSetAsync();

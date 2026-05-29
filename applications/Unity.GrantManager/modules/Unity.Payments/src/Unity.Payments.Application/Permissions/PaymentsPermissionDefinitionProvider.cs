@@ -19,6 +19,7 @@ public class PaymentsPermissionDefinitionProvider : PermissionDefinitionProvider
         paymentsPermissions.AddChild(PaymentsPermissions.Payments.L3ApproveOrDecline, L("Permission:Payments.L3ApproveOrDecline"));
         paymentsPermissions.AddChild(PaymentsPermissions.Payments.RequestPayment, L("Permission:Payments.RequestPayment"));
         paymentsPermissions.AddChild(PaymentsPermissions.Payments.AccountCodingOverride, L("Permission:Payments.AccountCodingOverride"));
+        paymentsPermissions.AddChild(PaymentsPermissions.Payments.AddHistoricalPayment, L("Permission:Payments.AddHistoricalPayment"));
 
         //-- PAYMENT INFO PERMISSIONS
         grantApplicationPermissionsGroup.Add_PaymentInfo_Permissions();

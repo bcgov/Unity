@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Services;
 
@@ -9,5 +10,6 @@ namespace Unity.GrantManager.Identity
         Task AutoImportUserInternalAsync(ImportUserDto importUserDto, string username, string firstName, string lastName, string emailAddress, string oidcSub, string displayName);
         Task ImportUserAsync(ImportUserDto importUserDto);
         Task<IList<UserDto>> SearchAsync(UserSearchDto importUserSearchDto);
+        Task SetUserRolesAsync(Guid userId, string[] roleNames);
     }
 }

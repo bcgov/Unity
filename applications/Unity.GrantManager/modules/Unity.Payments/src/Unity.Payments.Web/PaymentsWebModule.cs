@@ -1,10 +1,11 @@
 ﻿using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.Extensions.DependencyInjection;
+using Unity.Payments.Web.Pages.Payments;
 using Unity.Payments.Localization;
 using Unity.Payments.Web.Menus;
 using Volo.Abp.AspNetCore.Mvc.Localization;
 using Volo.Abp.AspNetCore.Mvc.UI.Theme.Shared;
-using Volo.Abp.AutoMapper;
+using Volo.Abp.Mapperly;
 using Volo.Abp.Modularity;
 using Volo.Abp.UI.Navigation;
 using Volo.Abp.VirtualFileSystem;
@@ -14,7 +15,7 @@ namespace Unity.Payments.Web;
 [DependsOn(
     typeof(PaymentsApplicationContractsModule),
     typeof(AbpAspNetCoreMvcUiThemeSharedModule),
-    typeof(AbpAutoMapperModule)
+    typeof(AbpMapperlyModule)
     )]
 public class PaymentsWebModule : AbpModule
 {
@@ -43,11 +44,8 @@ public class PaymentsWebModule : AbpModule
             options.FileSets.AddEmbedded<PaymentsWebModule>();
         });
 
-        context.Services.AddAutoMapperObjectMapper<PaymentsWebModule>();
-        Configure<AbpAutoMapperOptions>(options =>
-        {
-            options.AddMaps<PaymentsWebModule>(validate: true);
-        });
+        context.Services.AddMapperlyObjectMapper<PaymentsWebModule>();
+        context.Services.AddScoped<PaymentRequestPageHelperService>();
 
         Configure<RazorPagesOptions>(options =>
         {

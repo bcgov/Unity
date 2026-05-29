@@ -32,32 +32,32 @@ namespace Unity.Payments.Domain.Services
         private void ConfigureWorkflow(StateMachine<PaymentRequestStatus, PaymentApprovalAction> paymentStateMachine)
         {
             paymentStateMachine.Configure(PaymentRequestStatus.L1Pending)
-                .PermitIf(PaymentApprovalAction.L1Approve, PaymentRequestStatus.L2Pending, () => HasPermission(PaymentsPermissions.Payments.L1ApproveOrDecline))
-                .PermitIf(PaymentApprovalAction.L1Decline, PaymentRequestStatus.L1Declined, () => HasPermission(PaymentsPermissions.Payments.L1ApproveOrDecline));
+                .PermitIf(PaymentApprovalAction.L1Approve, PaymentRequestStatus.L2Pending, () => HasPermissionAsync(PaymentsPermissions.Payments.L1ApproveOrDecline).GetAwaiter().GetResult())
+                .PermitIf(PaymentApprovalAction.L1Decline, PaymentRequestStatus.L1Declined, () => HasPermissionAsync(PaymentsPermissions.Payments.L1ApproveOrDecline).GetAwaiter().GetResult());
 
             paymentStateMachine.Configure(PaymentRequestStatus.L1Declined)
-                  .PermitIf(PaymentApprovalAction.L1Approve, PaymentRequestStatus.L2Pending, () => HasPermission(PaymentsPermissions.Payments.L1ApproveOrDecline));
+                  .PermitIf(PaymentApprovalAction.L1Approve, PaymentRequestStatus.L2Pending, () => HasPermissionAsync(PaymentsPermissions.Payments.L1ApproveOrDecline).GetAwaiter().GetResult());
 
             paymentStateMachine.Configure(PaymentRequestStatus.L2Pending)
-                .PermitIf(PaymentApprovalAction.L2Approve, PaymentRequestStatus.L3Pending, () => HasPermission(PaymentsPermissions.Payments.L2ApproveOrDecline))
-                .PermitIf(PaymentApprovalAction.Submit, PaymentRequestStatus.Submitted, () => HasPermission(PaymentsPermissions.Payments.L2ApproveOrDecline))
-                .PermitIf(PaymentApprovalAction.L2Decline, PaymentRequestStatus.L2Declined, () => HasPermission(PaymentsPermissions.Payments.L2ApproveOrDecline));
+                .PermitIf(PaymentApprovalAction.L2Approve, PaymentRequestStatus.L3Pending, () => HasPermissionAsync(PaymentsPermissions.Payments.L2ApproveOrDecline).GetAwaiter().GetResult())
+                .PermitIf(PaymentApprovalAction.Submit, PaymentRequestStatus.Submitted, () => HasPermissionAsync(PaymentsPermissions.Payments.L2ApproveOrDecline).GetAwaiter().GetResult())
+                .PermitIf(PaymentApprovalAction.L2Decline, PaymentRequestStatus.L2Declined, () => HasPermissionAsync(PaymentsPermissions.Payments.L2ApproveOrDecline).GetAwaiter().GetResult());
 
             paymentStateMachine.Configure(PaymentRequestStatus.L2Declined)
-                .PermitIf(PaymentApprovalAction.L2Approve, PaymentRequestStatus.L3Pending, () => HasPermission(PaymentsPermissions.Payments.L2ApproveOrDecline))
-                .PermitIf(PaymentApprovalAction.Submit, PaymentRequestStatus.Submitted, () => HasPermission(PaymentsPermissions.Payments.L2ApproveOrDecline));
+                .PermitIf(PaymentApprovalAction.L2Approve, PaymentRequestStatus.L3Pending, () => HasPermissionAsync(PaymentsPermissions.Payments.L2ApproveOrDecline).GetAwaiter().GetResult())
+                .PermitIf(PaymentApprovalAction.Submit, PaymentRequestStatus.Submitted, () => HasPermissionAsync(PaymentsPermissions.Payments.L2ApproveOrDecline).GetAwaiter().GetResult());
 
             paymentStateMachine.Configure(PaymentRequestStatus.L3Pending)
-                .PermitIf(PaymentApprovalAction.Submit, PaymentRequestStatus.Submitted, () => HasPermission(PaymentsPermissions.Payments.L3ApproveOrDecline))
-                .PermitIf(PaymentApprovalAction.L3Decline, PaymentRequestStatus.L3Declined, () => HasPermission(PaymentsPermissions.Payments.L3ApproveOrDecline));
+                .PermitIf(PaymentApprovalAction.Submit, PaymentRequestStatus.Submitted, () => HasPermissionAsync(PaymentsPermissions.Payments.L3ApproveOrDecline).GetAwaiter().GetResult())
+                .PermitIf(PaymentApprovalAction.L3Decline, PaymentRequestStatus.L3Declined, () => HasPermissionAsync(PaymentsPermissions.Payments.L3ApproveOrDecline).GetAwaiter().GetResult());
 
             paymentStateMachine.Configure(PaymentRequestStatus.L2Declined)
-                .PermitIf(PaymentApprovalAction.Submit, PaymentRequestStatus.Submitted, () => HasPermission(PaymentsPermissions.Payments.L2ApproveOrDecline));
+                .PermitIf(PaymentApprovalAction.Submit, PaymentRequestStatus.Submitted, () => HasPermissionAsync(PaymentsPermissions.Payments.L2ApproveOrDecline).GetAwaiter().GetResult());
         }
 
-        private bool HasPermission(string permission)
+        private async Task<bool> HasPermissionAsync(string permission)
         {
-            return permissionChecker.IsGrantedAsync(permission).Result;
+            return await permissionChecker.IsGrantedAsync(permission);
         }
 
         public async Task<List<PaymentActionResultItem>> GetActions(Guid paymentRequestsId)
@@ -136,12 +136,12 @@ namespace Unity.Payments.Domain.Services
 
             else if (triggerAction == PaymentApprovalAction.Submit)
             {
-                if (HasPermission(PaymentsPermissions.Payments.L2ApproveOrDecline) && paymentRequest.Status == PaymentRequestStatus.L2Pending)
+                if (await HasPermissionAsync(PaymentsPermissions.Payments.L2ApproveOrDecline) && paymentRequest.Status == PaymentRequestStatus.L2Pending)
                 {
                     var index = paymentRequest.ExpenseApprovals.FindIndex(i => i.Type == ExpenseApprovalType.Level2);
                     paymentRequest.ExpenseApprovals[index].Approve(currentUserId);
                 }
-                else if (HasPermission(PaymentsPermissions.Payments.L3ApproveOrDecline) && paymentRequest.Status == PaymentRequestStatus.L3Pending)
+                else if (await HasPermissionAsync(PaymentsPermissions.Payments.L3ApproveOrDecline) && paymentRequest.Status == PaymentRequestStatus.L3Pending)
                 {
                     var index = paymentRequest.ExpenseApprovals.FindIndex(i => i.Type == ExpenseApprovalType.Level3);
                     paymentRequest.ExpenseApprovals[index].Approve(currentUserId);

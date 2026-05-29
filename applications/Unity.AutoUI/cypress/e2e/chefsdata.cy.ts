@@ -1,9 +1,12 @@
 /// <reference types="cypress" />
 
 // cypress/e2e/chefsdata.cy.ts
+import { LoginPageInstance, NavigationPageInstance } from "../utilities";
 
 describe('Unity Login and check data from CHEFS', () => {
     const STANDARD_TIMEOUT = 20000
+    const loginPage = LoginPageInstance()
+    const navPage = NavigationPageInstance()
 
     // TEST renders the Submission tab inside an open shadow root (Form.io).
     // Enabling this makes cy.get / cy.contains pierce shadow DOM consistently across envs.
@@ -12,42 +15,12 @@ describe('Unity Login and check data from CHEFS', () => {
     })
 
     it('Verify Login', () => {
-        // 1.) Always start from the base URL
-        cy.visit(Cypress.env('webapp.url'))
+        loginPage.login()
+        loginPage.verifyOnGrantApplications()
+    })
 
-        // 2.) Decide auth path based on visible UI
-        cy.get('body', { timeout: STANDARD_TIMEOUT }).then(($body) => {
-            // Already authenticated
-            if ($body.find('button:contains("VIEW APPLICATIONS")').length > 0) {
-                cy.contains('VIEW APPLICATIONS', { timeout: STANDARD_TIMEOUT }).click({ force: true })
-                return
-            }
-
-            // Not authenticated
-            if ($body.find('button:contains("LOGIN")').length > 0) {
-                cy.contains('LOGIN', { timeout: STANDARD_TIMEOUT }).should('exist').click({ force: true })
-                cy.contains('IDIR', { timeout: STANDARD_TIMEOUT }).should('exist').click({ force: true })
-
-                cy.get('body', { timeout: STANDARD_TIMEOUT }).then(($loginBody) => {
-                    // Perform IDIR login only if prompted
-                    if ($loginBody.find('#user').length > 0) {
-                        cy.get('#user', { timeout: STANDARD_TIMEOUT }).type(Cypress.env('test1username'))
-                        cy.get('#password', { timeout: STANDARD_TIMEOUT }).type(Cypress.env('test1password'))
-                        cy.contains('Continue', { timeout: STANDARD_TIMEOUT }).should('exist').click({ force: true })
-                    } else {
-                        cy.log('Already logged in')
-                    }
-                })
-
-                return
-            }
-
-            // Fail loudly if neither state is detectable
-            throw new Error('Unable to determine authentication state')
-        })
-
-        // 3.) Post-condition check
-        cy.url({ timeout: STANDARD_TIMEOUT }).should('include', '/GrantApplications')
+    it('Switch to Default Grants Program if available', () => {
+        navPage.switchToDefaultGrantsProgramIfAvailable()
     })
 
     // Verify that the details panel populates with mapped data
@@ -228,6 +201,6 @@ describe('Unity Login and check data from CHEFS', () => {
     })
 
     it('Verify Logout', () => {
-        cy.logout()
+        loginPage.quickLogout()
     })
 })
