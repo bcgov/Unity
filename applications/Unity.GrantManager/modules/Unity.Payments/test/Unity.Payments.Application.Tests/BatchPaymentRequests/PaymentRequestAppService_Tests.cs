@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Unity.Payments.Domain.AccountCodings;
 using Unity.Payments.Domain.PaymentRequests;
 using Unity.Payments.Domain.Suppliers;
 using Unity.Payments.Domain.Suppliers.ValueObjects;
@@ -16,6 +17,7 @@ public class PaymentRequestAppService_Tests : PaymentsApplicationTestBase
     private readonly IPaymentRequestAppService _paymentRequestAppService;
     private readonly IPaymentRequestRepository _paymentRequestRepository;
     private readonly ISupplierRepository _supplierRepository;
+    private readonly IAccountCodingRepository _accountCodingRepository;
     private readonly IUnitOfWorkManager _unitOfWorkManager;
 
     public PaymentRequestAppService_Tests()
@@ -23,14 +25,24 @@ public class PaymentRequestAppService_Tests : PaymentsApplicationTestBase
         _paymentRequestAppService = GetRequiredService<IPaymentRequestAppService>();
         _paymentRequestRepository = GetRequiredService<IPaymentRequestRepository>();
         _supplierRepository = GetRequiredService<ISupplierRepository>();
+        _accountCodingRepository = GetRequiredService<IAccountCodingRepository>();
         _unitOfWorkManager = GetRequiredService<IUnitOfWorkManager>();
+    }
+
+    private async Task<Guid> CreateAccountCodingAsync()
+    {
+        using var uow = _unitOfWorkManager.Begin();
+        var accountCoding = AccountCoding.Create("ABC", "ABCDE", "AB001", "AB01", "AB00001");
+        await _accountCodingRepository.InsertAsync(accountCoding, true);
+        await uow.CompleteAsync();
+        return accountCoding.Id;
     }
 
     [Fact]
     [Trait("Category", "Integration")]
     public async Task CreateAsync_CreatesPaymentRequest()
     {
-        // Arrange        
+        // Arrange
         using var uow = _unitOfWorkManager.Begin();
         var siteId = Guid.NewGuid();
         var newSupplier = new Supplier(Guid.NewGuid(),
@@ -55,6 +67,7 @@ public class PaymentRequestAppService_Tests : PaymentsApplicationTestBase
             "ABC123")));
 
         _ = await _supplierRepository.InsertAsync(newSupplier, true);
+        var accountCodingId = await CreateAccountCodingAsync();
 
         List<CreatePaymentRequestDto> paymentRequests =
         [
@@ -68,6 +81,7 @@ public class PaymentRequestAppService_Tests : PaymentsApplicationTestBase
                PayeeName= "",
                SiteId= siteId,
                SupplierNumber = "SUP-TEST",
+               AccountCodingId = accountCodingId,
             }
         ];
         // Act
@@ -88,6 +102,7 @@ public class PaymentRequestAppService_Tests : PaymentsApplicationTestBase
         var supplier = new Supplier(Guid.NewGuid(), "supp", "123");
         supplier.AddSite(new Site(Guid.NewGuid(), "123", PaymentGroup.EFT));
         var addedSupplier = await _supplierRepository.InsertAsync(supplier);
+        var accountCodingId = await CreateAccountCodingAsync();
         CreatePaymentRequestDto paymentRequestDto = new()
         {
             InvoiceNumber = "",
@@ -100,7 +115,8 @@ public class PaymentRequestAppService_Tests : PaymentsApplicationTestBase
             CorrelationProvider = "",
             ReferenceNumber = "UP-XXXX-000000",
             BatchName = "UNITY_BATCH_1",
-            BatchNumber = 1
+            BatchNumber = 1,
+            AccountCodingId = accountCodingId
         };
         _ = await _paymentRequestRepository.InsertAsync(new PaymentRequest(Guid.NewGuid(), paymentRequestDto), true);
 
@@ -123,6 +139,7 @@ public class PaymentRequestAppService_Tests : PaymentsApplicationTestBase
         var supplier = new Supplier(Guid.NewGuid(), "supp", "123");
         supplier.AddSite(new Site(Guid.NewGuid(), "123", PaymentGroup.EFT));
         var addedSupplier = await _supplierRepository.InsertAsync(supplier);
+        var accountCodingId = await CreateAccountCodingAsync();
         CreatePaymentRequestDto paymentRequestDto = new()
         {
             InvoiceNumber = "INV-001",
@@ -135,7 +152,8 @@ public class PaymentRequestAppService_Tests : PaymentsApplicationTestBase
             CorrelationProvider = "TestProvider",
             ReferenceNumber = "UP-XXXX-000001",
             BatchName = "UNITY_BATCH_1",
-            BatchNumber = 1
+            BatchNumber = 1,
+            AccountCodingId = accountCodingId
         };
         _ = await _paymentRequestRepository.InsertAsync(new PaymentRequest(Guid.NewGuid(), paymentRequestDto), true);
 

@@ -72,6 +72,11 @@ namespace Unity.Reporting.Configuration
         /// Each row defines how a source field maps to a database column with type, path, and label information.
         /// </summary>
         public MapRowDto[] Rows { get; set; } = [];
+
+        /// <summary>
+        /// Gets or sets optional metadata for this mapping configuration including description and info context.
+        /// </summary>
+        public MapMetadataDto? Metadata { get; set; }
     }
 
     /// <summary>
@@ -128,5 +133,12 @@ namespace Unity.Reporting.Configuration
         /// Represents the component type path (e.g., "form->panel->textfield") in the source schema structure.
         /// </summary>
         public string TypePath { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Gets or sets an optional version label indicating which form version this column belongs to.
+        /// Used exclusively for consolidated worksheet views: null means the column is merged across all versions;
+        /// a non-null value (e.g., "v1", "v2") means the column is specific to that form version.
+        /// </summary>
+        public string? VersionLabel { get; set; } = null;
     }
 }

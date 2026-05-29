@@ -47,6 +47,7 @@ namespace Unity.GrantManager.GrantApplications;
 public class GrantApplicationAppService(
     IApplicationManager applicationManager,
     IApplicationRepository applicationRepository,
+    IApplicationChefsFileAttachmentRepository applicationChefsFileAttachmentRepository,
     IApplicationStatusRepository applicationStatusRepository,
     IApplicationFormSubmissionRepository applicationFormSubmissionRepository,
     IApplicantRepository applicantRepository,
@@ -1183,13 +1184,14 @@ public class GrantApplicationAppService(
     }
 
     [Authorize(AIPermissions.Analysis.GenerateAttachmentSummaries)]
-    public async Task<AIGenerationRequestDto> QueueAttachmentSummaryAsync(Guid applicationId, string? promptVersion = null)
+    public async Task<AIGenerationRequestDto> QueueAttachmentSummaryAsync(QueueAttachmentSummaryRequestDto input, string? promptVersion = null)
     {
         await EnsureAttachmentSummariesEnabledAsync();
-        await aiGenerationQueue.QueueAttachmentSummaryAsync(applicationId, CurrentTenant.Id, promptVersion);
+        var attachmentIds = await ResolveAttachmentSummaryIdsAsync(input);
+        await aiGenerationQueue.QueueAttachmentSummaryAsync(input.ApplicationId, CurrentTenant.Id, promptVersion, attachmentIds);
 
         var request = await aiGenerationStatusAppService.GetLatestAsync(
-            applicationId,
+            input.ApplicationId,
             AIGenerationRequestKeyHelper.AttachmentSummaryOperationType,
             CurrentTenant.Id);
 
@@ -1263,6 +1265,42 @@ public class GrantApplicationAppService(
         {
             throw new UserFriendlyException("AI attachment summaries are not enabled.");
         }
+    }
+
+    private async Task<List<Guid>> ResolveAttachmentSummaryIdsAsync(QueueAttachmentSummaryRequestDto input)
+    {
+        if (input == null)
+        {
+            throw new UserFriendlyException("Attachment summary request is required.");
+        }
+
+        if (input.ApplicationId == Guid.Empty)
+        {
+            throw new UserFriendlyException("Application id is required.");
+        }
+
+        var applicationAttachmentIds = (await applicationChefsFileAttachmentRepository.GetListAsync(a => a.ApplicationId == input.ApplicationId))
+            .Select(a => a.Id)
+            .ToList();
+
+        if (applicationAttachmentIds.Count == 0)
+        {
+            throw new UserFriendlyException("No attachments were found to generate summaries.");
+        }
+
+        if (input.AttachmentIds is not { Count: > 0 })
+        {
+            return applicationAttachmentIds;
+        }
+
+        var applicationAttachmentIdSet = applicationAttachmentIds.ToHashSet();
+        var selectedAttachmentIds = input.AttachmentIds.Distinct().ToList();
+        if (selectedAttachmentIds.Any(id => !applicationAttachmentIdSet.Contains(id)))
+        {
+            throw new UserFriendlyException("One or more selected attachments do not belong to the application.");
+        }
+
+        return selectedAttachmentIds;
     }
 
     private async Task EnsureAIAnalysisEnabledAsync()

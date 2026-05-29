@@ -3,7 +3,10 @@ using System.Net;
 using System.Threading.Tasks;
 using System.Text.Json;
 using System;
+using System.Globalization;
+using System.Text.RegularExpressions;
 using Unity.Payments.Integrations.Http;
+using System.Text.Encodings.Web;
 using Volo.Abp.Application.Services;
 using System.Collections.Generic;
 using Unity.Payments.Enums;
@@ -17,6 +20,10 @@ using Unity.Modules.Shared.Http;
 using Unity.GrantManager.Integrations;
 using Unity.Payments.Domain.Services;
 using Volo.Abp.MultiTenancy;
+using System.Linq;
+using Volo.Abp.Domain.Repositories;
+using Unity.SharedKernel.Utilities;
+using Volo.Abp.Identity;
 
 namespace Unity.Payments.Integrations.Cas
 {
@@ -28,10 +35,14 @@ namespace Unity.Payments.Integrations.Cas
                     IEndpointManagementAppService endpointManagementAppService,
                     ICasTokenService iTokenService,
                     IResilientHttpRequest resilientHttpRequest,
-                    IInvoiceManager invoiceManager) : ApplicationService, IInvoiceService
+                    IInvoiceManager invoiceManager,
+                    IRepository<ExpenseApproval, Guid> expenseApprovalRepository,
+                    IRepository<IdentityUser, Guid> identityUserRepository) : ApplicationService, IInvoiceService
     {
         private const string CFS_APINVOICE = "cfs/apinvoice";
-        protected new ICurrentTenant CurrentTenant => LazyServiceProvider.LazyGetRequiredService<ICurrentTenant>();
+
+        protected new ICurrentTenant CurrentTenant =>
+            LazyServiceProvider.LazyGetRequiredService<ICurrentTenant>();
 
         private readonly Dictionary<int, string> CASPaymentGroup = new()
         {
@@ -39,63 +50,192 @@ namespace Unity.Payments.Integrations.Cas
             [(int)PaymentGroup.Cheque] = "GEN CHQ"
         };
 
-        protected virtual async Task<Invoice?> InitializeCASInvoice(PaymentRequest paymentRequest,
-                                                                  string? accountDistributionCode)
+        protected virtual async Task<Invoice?> InitializeCASInvoice(
+            PaymentRequest paymentRequest,
+            string? accountDistributionCode)
         {
-            Invoice? casInvoice = new();
             Site? site = await invoiceManager.GetSiteByPaymentRequestAsync(paymentRequest);
 
-            if (site != null && site.Supplier != null && site.Supplier.Number != null && accountDistributionCode != null)
+            if (site == null ||
+                site.Supplier == null ||
+                string.IsNullOrWhiteSpace(site.Supplier.Number) ||
+                string.IsNullOrWhiteSpace(accountDistributionCode))
             {
-                // This can not be UTC Now it is sent to cas and can not be in the future - this is not being stored in Unity as a date
-                var vancouverTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Pacific Standard Time");
-                var localDateTime = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, vancouverTimeZone);
-                var currentMonth = localDateTime.ToString("MMM").Trim('.');
-                var currentDay = localDateTime.ToString("dd");
-                var currentYear = localDateTime.ToString("yyyy");
-                var dateStringDayMonYear = $"{currentDay}-{currentMonth}-{currentYear}";
-
-                casInvoice.SupplierNumber = site.Supplier.Number; // This is from each Applicant
-                casInvoice.SupplierName = site.Supplier.Name;
-                casInvoice.SupplierSiteNumber = site.Number;
-                casInvoice.PayGroup = CASPaymentGroup[(int)site.PaymentGroup]; // GEN CHQ - other options
-                casInvoice.InvoiceNumber = paymentRequest.InvoiceNumber;
-                casInvoice.InvoiceDate = dateStringDayMonYear; //DD-MMM-YYYY
-                casInvoice.DateInvoiceReceived = dateStringDayMonYear;
-                casInvoice.GlDate = dateStringDayMonYear;
-                casInvoice.InvoiceAmount = paymentRequest.Amount;
-                casInvoice.InvoiceBatchName = paymentRequest.BatchName;
-                casInvoice.PaymentAdviceComments = paymentRequest.Description;
-
-                InvoiceLineDetail invoiceLineDetail = new()
-                {
-                    InvoiceLineNumber = 1,
-                    InvoiceLineAmount = paymentRequest.Amount,
-                    DefaultDistributionAccount = accountDistributionCode // This will be at the tenant level
-                };
-                casInvoice.InvoiceLineDetails = [invoiceLineDetail];
+                return null;
             }
 
+
+            // This can not be UTC Now it is sent to cas and can not be in the future - this is not being stored in Unity as a date
+            var vancouverTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Pacific Standard Time");
+            var localDateTime = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, vancouverTimeZone);
+            var currentMonth = localDateTime.ToString("MMM").Trim('.');
+            var currentDay = localDateTime.ToString("dd");
+            var currentYear = localDateTime.ToString("yyyy");
+            var dateStringDayMonYear = $"{currentDay}-{currentMonth}-{currentYear}";
+
+            if (!CASPaymentGroup.TryGetValue((int)site.PaymentGroup, out var payGroup))
+            {
+                throw new UserFriendlyException(
+                    $"Unsupported payment group: {site.PaymentGroup}");
+            }
+
+            var casInvoice = new Invoice
+            {
+                SupplierNumber = site.Supplier.Number,
+                SupplierName = site.Supplier.Name,
+                SupplierSiteNumber = site.Number,
+                PayGroup = payGroup,
+                InvoiceNumber = paymentRequest.InvoiceNumber,
+                InvoiceDate = dateStringDayMonYear,
+                DateInvoiceReceived = dateStringDayMonYear,
+                GlDate = dateStringDayMonYear,
+                InvoiceAmount = paymentRequest.Amount,
+                InvoiceBatchName = paymentRequest.BatchName,
+
+                // Payment description: build or use existing
+                PaymentAdviceComments =
+                await BuildPaymentDescriptionAsync(paymentRequest.Description),
+
+                // Level1 approver username
+                QualifiedReceiver =
+                await GetLevel1DecisionUserNameAsync(paymentRequest),
+
+                InvoiceLineDetails =
+                [
+                    new()
+                    {
+                        InvoiceLineNumber = 1,
+                        InvoiceLineAmount = paymentRequest.Amount,
+                        DefaultDistributionAccount = accountDistributionCode
+                    }
+                ]
+            };
+            
             return casInvoice;
         }
 
-        public async Task<InvoiceResponse?> CreateInvoiceByPaymentRequestAsync(string invoiceNumber)
+        private async Task<string> GetLevel1DecisionUserNameAsync(
+            PaymentRequest? paymentRequest)
         {
-            InvoiceResponse invoiceResponse = new();
+            if (paymentRequest == null)
+            {
+                return string.Empty;
+            }
+
+            Guid? decisionUserId = null;
+
             try
             {
-                var paymentRequestData = await invoiceManager.GetPaymentRequestDataAsync(invoiceNumber);
-
-                if (!string.IsNullOrEmpty(paymentRequestData.AccountDistributionCode))
+                if (paymentRequest.ExpenseApprovals == null ||
+                    paymentRequest.ExpenseApprovals.Count == 0)
                 {
-                    Invoice? invoice = await InitializeCASInvoice(paymentRequestData.PaymentRequest, paymentRequestData.AccountDistributionCode);
+                    var approvals = await expenseApprovalRepository.GetListAsync(
+                        a => a.PaymentRequestId == paymentRequest.Id &&
+                             a.Type == ExpenseApprovalType.Level1);
 
-                    if (invoice is not null)
+                    decisionUserId = approvals
+                        .FirstOrDefault()?
+                        .DecisionUserId;
+                }
+                else
+                {
+                    decisionUserId = paymentRequest.ExpenseApprovals
+                        .FirstOrDefault(x => x.Type == ExpenseApprovalType.Level1)?
+                        .DecisionUserId;
+                }
+
+                if (decisionUserId == null || decisionUserId == Guid.Empty)
+                {
+                    return string.Empty;
+                }
+
+                var user = await identityUserRepository.FindAsync(
+                    (Guid)decisionUserId);
+
+                if (user == null)
+                {
+                    return string.Empty;
+                }
+
+                if (!string.IsNullOrWhiteSpace(user.UserName))
+                {
+                    return user.UserName;
+                }
+
+                var fullName = $"{user.Name} {user.Surname}".Trim();
+
+                return string.IsNullOrWhiteSpace(fullName)
+                    ? string.Empty
+                    : fullName;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogWarning(
+                    ex,
+                    "Failed resolving Level1 approver for payment request {PaymentRequestId}",
+                    paymentRequest.Id);
+
+                return string.Empty;
+            }
+        }
+
+        private async Task<string> BuildPaymentDescriptionAsync(
+            string? existingDescription)
+        {
+            if (!string.IsNullOrWhiteSpace(existingDescription))
+            {
+                var trimmed = existingDescription.Trim();
+
+                return trimmed.Length > 50
+                    ? trimmed[..50]
+                    : trimmed;
+            }
+
+            var serviceProvider =
+                LazyServiceProvider.LazyGetRequiredService<IServiceProvider>();
+
+            var tenantDesc =
+                await AbpUserTenantAccessor.GetCurrentTenantNameAsync(serviceProvider)
+                ?? string.Empty;
+
+            var generated = string.IsNullOrWhiteSpace(tenantDesc)
+                ? "Grant Payment"
+                : $"{tenantDesc} - Grant Payment";
+
+            if (generated.Length > 50)
+            {
+                generated = generated[..50];
+            }
+
+            return generated;
+        }
+
+        public async Task<InvoiceResponse?> CreateInvoiceByPaymentRequestAsync(
+            string invoiceNumber)
+        {
+            InvoiceResponse invoiceResponse = new();
+
+            try
+            {
+                var paymentRequestData =
+                    await invoiceManager.GetPaymentRequestDataAsync(invoiceNumber);
+
+                if (!string.IsNullOrWhiteSpace(
+                        paymentRequestData.AccountDistributionCode))
+                {
+                    var invoice = await InitializeCASInvoice(
+                        paymentRequestData.PaymentRequest,
+                        paymentRequestData.AccountDistributionCode);
+
+                    if (invoice != null)
                     {
                         invoiceResponse = await CreateInvoiceAsync(invoice);
-                        if (invoiceResponse is not null)
+
+                        if (invoiceResponse != null)
                         {
-                            await invoiceManager.UpdatePaymentRequestWithInvoiceAsync(paymentRequestData.PaymentRequest.Id, invoiceResponse);
+                            await invoiceManager.UpdatePaymentRequestWithInvoiceAsync(
+                                paymentRequestData.PaymentRequest.Id,
+                                invoiceResponse);
                         }
                     }
                 }
@@ -111,59 +251,91 @@ namespace Unity.Payments.Integrations.Cas
 
         public async Task<InvoiceResponse> CreateInvoiceAsync(Invoice casAPInvoice)
         {
-            string jsonString = JsonSerializer.Serialize(casAPInvoice);            
+            var jsonOptions = new JsonSerializerOptions
+            {
+                Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+            };
+
+            string jsonString = JsonSerializer.Serialize(casAPInvoice, jsonOptions);
+
+
             var authToken = await iTokenService.GetAuthTokenAsync(CurrentTenant.Id ?? Guid.Empty);
             string casBaseUrl = await endpointManagementAppService.GetUgmUrlByKeyNameAsync(DynamicUrlKeyNames.PAYMENT_API_BASE);
             var resource = $"{casBaseUrl}/{CFS_APINVOICE}/";
-            var response = await resilientHttpRequest.HttpAsync(HttpMethod.Post, resource, jsonString, authToken);
+            var response = await resilientHttpRequest.HttpAsync(HttpMethod.Post, resource, jsonString, authToken) 
+                                    ?? throw new UserFriendlyException("CAS InvoiceService CreateInvoiceAsync: Null response");
+            if (response.Content != null &&
+                response.StatusCode != HttpStatusCode.NotFound)
+            {
+                var contentString =
+                    await ResilientHttpRequest.ContentToStringAsync(
+                        response.Content);
 
-            if (response != null)
-            {
-                if (response.Content != null && response.StatusCode != HttpStatusCode.NotFound)
-                {
-                    var contentString = await ResilientHttpRequest.ContentToStringAsync(response.Content);
-                    var result = JsonSerializer.Deserialize<InvoiceResponse>(contentString)
-                        ?? throw new UserFriendlyException("CAS InvoiceService CreateInvoiceAsync Exception: " + response);
-                    result.CASHttpStatusCode = response.StatusCode;
-                    return result;
-                }
-                else if (response.RequestMessage != null)
-                {
-                    throw new UserFriendlyException("CAS InvoiceService CreateInvoiceAsync Exception: " + response.RequestMessage);
-                }
-                else
-                {
-                    throw new UserFriendlyException("CAS InvoiceService CreateInvoiceAsync Exception: " + response);
-                }
+                var result =
+                    JsonSerializer.Deserialize<InvoiceResponse>(contentString)
+                    ?? throw new UserFriendlyException(
+                        $"CAS InvoiceService CreateInvoiceAsync Exception: {response}");
+
+                result.CASHttpStatusCode = response.StatusCode;
+
+                return result;
             }
-            else
+
+            if (response.RequestMessage != null)
             {
-                throw new UserFriendlyException("CAS InvoiceService CreateInvoiceAsync: Null response");
+                throw new UserFriendlyException(
+                    $"CAS InvoiceService CreateInvoiceAsync Exception: {response.RequestMessage}");
             }
+
+            throw new UserFriendlyException(
+                $"CAS InvoiceService CreateInvoiceAsync Exception: {response}");
         }
 
-        public async Task<CasPaymentSearchResult> GetCasInvoiceAsync(string invoiceNumber, string supplierNumber, string supplierSiteCode)
+        public async Task<CasPaymentSearchResult> GetCasInvoiceAsync(
+            string invoiceNumber,
+            string supplierNumber,
+            string supplierSiteCode)
         {
-            var authToken = await iTokenService.GetAuthTokenAsync(CurrentTenant.Id ?? Guid.Empty);
-            var casBaseUrl = await endpointManagementAppService.GetUgmUrlByKeyNameAsync(DynamicUrlKeyNames.PAYMENT_API_BASE);
-            var resource = $"{casBaseUrl}/{CFS_APINVOICE}/{invoiceNumber}/{supplierNumber}/{supplierSiteCode}";
-            var response = await resilientHttpRequest.HttpAsync(HttpMethod.Get, resource, body: null, authToken);
+            var authToken =
+                await iTokenService.GetAuthTokenAsync(
+                    CurrentTenant.Id ?? Guid.Empty);
 
-            if (response != null
-                && response.Content != null
-                && response.IsSuccessStatusCode)
+            var casBaseUrl =
+                await endpointManagementAppService.GetUgmUrlByKeyNameAsync(
+                    DynamicUrlKeyNames.PAYMENT_API_BASE);
+
+            var resource =
+                $"{casBaseUrl}/{CFS_APINVOICE}/{invoiceNumber}/{supplierNumber}/{supplierSiteCode}";
+
+            var response = await resilientHttpRequest.HttpAsync(
+                HttpMethod.Get,
+                resource,
+                body: null,
+                authToken);
+
+            if (response != null &&
+                response.Content != null &&
+                response.IsSuccessStatusCode)
             {
-                string contentString = await ResilientHttpRequest.ContentToStringAsync(response.Content);
-                var result = JsonSerializer.Deserialize<CasPaymentSearchResult>(contentString);
+                string contentString =
+                    await ResilientHttpRequest.ContentToStringAsync(
+                        response.Content);
+
+                var result =
+                    JsonSerializer.Deserialize<CasPaymentSearchResult>(
+                        contentString);
+
                 return result ?? new CasPaymentSearchResult();
             }
-            else
-            {
-                return new CasPaymentSearchResult() { };
-            }
+
+            return new CasPaymentSearchResult();
         }
 
-        public async Task<CasPaymentSearchResult> GetCasPaymentAsync(Guid tenantId, string invoiceNumber, string supplierNumber, string siteNumber)
+        public async Task<CasPaymentSearchResult> GetCasPaymentAsync(
+            Guid tenantId,
+            string invoiceNumber,
+            string supplierNumber,
+            string siteNumber)
         {
             Logger.LogInformation("GetCasPaymentAsync for Invoice: {InvoiceNumber}, SupplierNumber: {SupplierNumber}, SiteNumber: {SiteNumber}, TenantId: {TenantId}", invoiceNumber, supplierNumber, siteNumber, tenantId);
             var authToken = await iTokenService.GetAuthTokenAsync(tenantId);
@@ -172,15 +344,20 @@ namespace Unity.Payments.Integrations.Cas
             var response = await resilientHttpRequest.HttpAsync(HttpMethod.Get, resource, body: null, authToken);
             CasPaymentSearchResult casPaymentSearchResult = new();
 
-            if (response != null
-                && response.Content != null
-                && response.IsSuccessStatusCode)
+            if (response != null &&
+                response.Content != null &&
+                response.IsSuccessStatusCode)
             {
-                var content = response.Content.ReadAsStringAsync();
-                var result = JsonSerializer.Deserialize<CasPaymentSearchResult>(content.Result);
+                var content =
+                    await response.Content.ReadAsStringAsync();
+
+                var result =
+                    JsonSerializer.Deserialize<CasPaymentSearchResult>(content);
+
                 return result ?? casPaymentSearchResult;
             }
-            else if (response != null)
+
+            if (response != null)
             {
                 casPaymentSearchResult.InvoiceStatus = response.StatusCode.ToString();
             }
@@ -189,22 +366,27 @@ namespace Unity.Payments.Integrations.Cas
         }
     }
 
-#pragma warning disable S125 // Sections of code should not be commented out
+#pragma warning disable S125
 
     /*
     <INVOICE NUMBER>/<SUPPLIER NUMBER>/<SUPPLIER SITE CODE>
-     Example Response for GET:
-     {
-     "invoice_number": "TESTINVOICE2",
-     "invoice_status": "Validated",
-     "payment_status": " Paid",
-     "payment_number": "009877676",
-     "payment_date": "25-Aug-2017"
-     }
+
+    Example Response for GET:
+
+    {
+        "invoice_number": "TESTINVOICE2",
+        "invoice_status": "Validated",
+        "payment_status": " Paid",
+        "payment_number": "009877676",
+        "payment_date": "25-Aug-2017"
+    }
 
     Void Payment Webservices Request Format, Type POST
+
     https://<server>:<port>/ords/cas/cfs/apinvoice/
-    Sample JSON File – Regular Standard Invoice -  Web Service
+
+    Sample JSON File – Regular Standard Invoice - Web Service
+
     {
         "invoiceType": "Standard",
         "supplierNumber": "3125635",
@@ -229,8 +411,8 @@ namespace Unity.Payments.Integrations.Cas
         "glDate": "06-MAR-2023",
         "invoiceBatchName": "CASAPWEB1",
         "currencyCode": "CAD",
-        "invoiceLineDetails": 
-            [{
+        "invoiceLineDetails":
+        [{
             "invoiceLineNumber": 1,
             "invoiceLineType": "Item",
             "lineCode": "DR",
@@ -242,8 +424,9 @@ namespace Unity.Payments.Integrations.Cas
             "info1": "",
             "info2": "",
             "info3": ""
-            }]
+        }]
     }
     */
-#pragma warning restore S125 // Sections of code should not be commented out
+
+#pragma warning restore S125
 }

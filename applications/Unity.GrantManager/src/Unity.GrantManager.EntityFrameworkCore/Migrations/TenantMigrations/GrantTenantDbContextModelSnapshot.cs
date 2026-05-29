@@ -2202,7 +2202,13 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<string>("AuditNote")
                         .HasColumnType("text");
 
+                    b.Property<string>("AuditStatus")
+                        .HasColumnType("text");
+
                     b.Property<string>("AuditTrackingNumber")
+                        .HasColumnType("text");
+
+                    b.Property<string>("AuditorName")
                         .HasColumnType("text");
 
                     b.Property<string>("ConcurrencyStamp")
@@ -4037,7 +4043,7 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<Guid>("SiteId")
+                    b.Property<Guid?>("SiteId")
                         .HasColumnType("uuid");
 
                     b.Property<int>("Status")
@@ -4912,8 +4918,7 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.HasOne("Unity.Payments.Domain.Suppliers.Site", "Site")
                         .WithMany()
                         .HasForeignKey("SiteId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.NoAction);
 
                     b.Navigation("AccountCoding");
 

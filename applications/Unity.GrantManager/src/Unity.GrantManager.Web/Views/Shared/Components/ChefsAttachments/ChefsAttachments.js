@@ -13,10 +13,13 @@ $(function () {
     const nullPlaceholder = '—';
 
     let inputAction = function (requestData, dataTableSettings) {
-        const urlParams = new URL(globalThis.location.toLocaleString()).searchParams;
-        const applicationId = urlParams.get('ApplicationId');
-        return applicationId;
+        return getApplicationId();
     };
+
+    function getApplicationId() {
+        const urlParams = new URL(globalThis.location.toLocaleString()).searchParams;
+        return urlParams.get('ApplicationId');
+    }
 
     let responseCallback = function (result) {
         if (result.length <= 0) {
@@ -182,33 +185,49 @@ $(function () {
 
             const existingHTML = $activeButton.html();
 
-            $activeButton
-                .html(
-                    '<span class="ai-button-content"><span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span><span>Generating...</span></span>'
-                )
-                .prop('disabled', true);
             globalThis.AIGenerationButtonState?.setGenerating($activeButton);
 
-            $.ajax({
-                url: '/api/app/attachment-summary/generate-attachment-summaries',
-                data: JSON.stringify(summaryAttachmentIds),
-                contentType: 'application/json',
-                type: 'POST',
-                success: function () {
+            const monitorAttachmentSummaries = () => globalThis.AIGenerationButtonState.monitor({
+                $button: $activeButton,
+                originalHtml: existingHTML,
+                getStatus: () => unity.grantManager.grantApplications.grantApplication
+                    .getAIGenerationStatus(getApplicationId(), 'attachment-summary'),
+                onComplete: () => {
                     resetAttachmentSelection();
                     chefsDataTable.ajax.reload();
                     abp.notify.success('AI summaries generated successfully.');
-                    globalThis.AIGenerationButtonState?.restore($activeButton);
-                    $activeButton.html(existingHTML).prop('disabled', false);
                 },
-                error: function (error) {
-                    console.error('Error generating AI summaries:', error);
-                    abp.message.error('An error occurred while generating AI summaries. Please try again.');
+                onFailed: (request) => abp.message.error(request?.failureReason || 'AI summary generation failed.')
+            });
+
+            unity.grantManager.grantApplications.grantApplication
+                .queueAttachmentSummary({
+                    applicationId: getApplicationId(),
+                    attachmentIds: summaryAttachmentIds
+                })
+                .done(function (request) {
+                    const status = globalThis.AIGenerationButtonState?.resolveStatus(request?.status) ?? '';
+
+                    if (status === 'Completed') {
+                        resetAttachmentSelection();
+                        chefsDataTable.ajax.reload();
+                        abp.notify.success('AI summaries generated successfully.');
+                        globalThis.AIGenerationButtonState?.restore($activeButton);
+                        $activeButton.html(existingHTML).prop('disabled', false);
+                        globalThis.syncAIRateLimitButtons?.();
+                        return;
+                    }
+
+                    monitorAttachmentSummaries();
+                })
+                .fail(function (error) {
+                    console.error('Error queueing AI summaries:', error);
+                    abp.message.error('An error occurred while queueing AI summaries. Please try again.');
                     globalThis.AIGenerationButtonState?.restore($activeButton);
                     $activeButton.html(existingHTML).prop('disabled', false);
                     setGenerateSummariesEnabled();
-                },
-            });
+                    globalThis.syncAIRateLimitButtons?.();
+                });
         });
     }
 

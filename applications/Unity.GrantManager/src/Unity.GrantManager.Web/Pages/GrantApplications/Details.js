@@ -288,6 +288,7 @@ $(function () {
             }
 
             updateSubtotal();
+            globalThis.syncAIRateLimitButtons?.();
         };
 
         if (refreshResult && typeof refreshResult.then === 'function') {

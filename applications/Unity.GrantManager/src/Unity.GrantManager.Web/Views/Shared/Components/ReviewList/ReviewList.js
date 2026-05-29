@@ -61,6 +61,7 @@ $(function () {
         },
         generateAiButton: {
             extend: 'unityWorkflow',
+            className: 'btn btn-light rounded-1 ai-generate-btn',
             text: generateAiButtonText,
             action: generateAiButtonAction
         },
@@ -237,6 +238,7 @@ $(function () {
         let generateButtons = new $.fn.dataTable.Buttons(reviewListTable, assessmentGenerateButtonGroup);
         generateButtons.container().appendTo("#AdjudicationTeamLeadActionBar");
         reviewListTable.buttons('Generate:name').enable();
+        globalThis.syncAIRateLimitButtons?.();
         resumeActiveReviewListAiButton(reviewListTable);
     }
 
@@ -427,12 +429,18 @@ function updateAiActionButtonsVisibility(dataTableContext, rowsData) {
 function renderUnityWorkflowButton(actionValue) {
     let buttonConfig = actionButtonConfigMap[actionValue] ?? actionButtonConfigMap['_Fallback']
 
-    return {
+    const button = {
         extend: buttonConfig.buttonType,
         name: actionValue,
         sortOrder: buttonConfig.order ?? 100,
         attr: { id: `${actionValue}Button` }
     };
+
+    if (actionValue === 'Generate') {
+        button.className = 'ai-generate-btn';
+    }
+
+    return button;
 }
 
 /* Cutom Unity Workflow Buttons */
@@ -468,9 +476,9 @@ function generateAiButtonAction(e, dt, button, config) {
             const status = globalThis.AIGenerationButtonState?.resolveStatus(request?.status) ?? '';
 
             if (status === 'Completed') {
-                restoreReviewListAiButton($button);
+                restoreReviewListAiButtonForCooldownCheck($button);
                 refreshReviewListAfterAiScoring();
-                globalThis.refreshAIRateLimitState?.();
+                globalThis.syncAIRateLimitButtons?.();
                 return;
             }
 
@@ -479,6 +487,7 @@ function generateAiButtonAction(e, dt, button, config) {
         .fail(function () {
             abp.message.error('Failed to queue AI scoring. Please try again.');
             restoreReviewListAiButton($button);
+            globalThis.syncAIRateLimitButtons?.();
         })
         ;
 }
@@ -490,6 +499,14 @@ function restoreReviewListAiButton($button) {
 
     globalThis.AIGenerationButtonState?.restore($button);
     $button.html(generateAiButtonText(null, null, null)).prop('disabled', false);
+}
+
+function restoreReviewListAiButtonForCooldownCheck($button) {
+    if (!$button?.length) {
+        return;
+    }
+
+    globalThis.AIGenerationButtonState?.restoreForCooldownCheck($button, generateAiButtonText(null, null, null));
 }
 
 function resumeActiveReviewListAiButton(reviewListTable) {

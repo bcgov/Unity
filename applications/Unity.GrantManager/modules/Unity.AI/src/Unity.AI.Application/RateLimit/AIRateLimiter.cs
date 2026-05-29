@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Threading.Tasks;
 using Medallion.Threading;
@@ -20,7 +21,8 @@ public class AIRateLimiter(
     IDistributedCache cache,
     ICurrentUser currentUser,
     IConfiguration configuration,
-    IDistributedLockProvider distributedLockProvider) : IAIRateLimiter, ITransientDependency
+    IDistributedLockProvider distributedLockProvider,
+    IEnumerable<IAIGenerationActivityProvider> generationActivityProviders) : IAIRateLimiter, ITransientDependency
 {
     private const string CooldownKeyPrefix = "ai-generation:cooldown:";
     private const string CooldownLockPrefix = "ai-generation:cooldown-lock:";
@@ -81,7 +83,7 @@ public class AIRateLimiter(
     {
         if (currentUser.Id is not Guid userId)
         {
-            return new AIRateLimitStateDto { RetryAfterSeconds = 0 };
+            return new AIRateLimitStateDto { RetryAfterSeconds = 0, IsGenerating = false };
         }
 
         var userLock = distributedLockProvider.CreateLock(CooldownLockPrefix + userId);
@@ -89,9 +91,23 @@ public class AIRateLimiter(
         {
             return new AIRateLimitStateDto
             {
-                RetryAfterSeconds = await GetRemainingSecondsAsync(userId)
+                RetryAfterSeconds = await GetRemainingSecondsAsync(userId),
+                IsGenerating = await HasActiveGenerationAsync()
             };
         }
+    }
+
+    private async Task<bool> HasActiveGenerationAsync()
+    {
+        foreach (var provider in generationActivityProviders)
+        {
+            if (await provider.HasActiveGenerationAsync())
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private async Task<int> GetRemainingSecondsAsync(Guid userId)

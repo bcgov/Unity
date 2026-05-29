@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.Extensions.DependencyInjection;
+using Unity.Payments.Web.Pages.Payments;
 using Unity.Payments.Localization;
 using Unity.Payments.Web.Menus;
 using Volo.Abp.AspNetCore.Mvc.Localization;
@@ -44,6 +45,7 @@ public class PaymentsWebModule : AbpModule
         });
 
         context.Services.AddMapperlyObjectMapper<PaymentsWebModule>();
+        context.Services.AddScoped<PaymentRequestPageHelperService>();
 
         Configure<RazorPagesOptions>(options =>
         {
