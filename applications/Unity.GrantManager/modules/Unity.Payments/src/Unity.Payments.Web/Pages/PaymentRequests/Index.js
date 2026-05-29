@@ -141,8 +141,7 @@ $(function () {
                     }
                 }
             }
-        },
-
+        }
     ];
 
     let responseCallback = function (result) {
@@ -390,11 +389,11 @@ $(function () {
                 const safeApplicantName = $.fn.dataTable.render.text().display(applicantName);
 
                 if (type === 'display' && abp.auth.isGranted('GrantApplicationManagement.Applicants.ViewList')) {
-                    const applicantId = row?.correlationId;
+                    const applicantId = row?.id;
                     const isGuid = applicantId && guidPattern.test(applicantId);
 
-                    if (row?.correlationProvider === 'Application' && isGuid) {
-                        return `<a href="/GrantApplicants/Details?ApplicationId=${encodeURIComponent(applicantId)}">${safeApplicantName}</a>`;
+                    if (isGuid) {
+                        return `<a href="/GrantApplicants/Details?ApplicantId=${encodeURIComponent(applicantId)}">${safeApplicantName}</a>`;
                     }
 
                     return safeApplicantName;
@@ -413,11 +412,26 @@ $(function () {
             className: 'data-table-header text-nowrap',
             index: columnIndex,
             render: function (data, type, row) {
-                if (row.correlationProvider === 'Application' && data?.length > 0) {
-                    return `<a href="/GrantApplications/Details?ApplicationId=${row.correlationId}">${data}</a>`;
+                let code = (typeof data !== 'string' || data.trim() === '') ? '' : data;
+
+                if (type === 'sort' || type === 'filter') {
+                    return code;
                 }
 
-                return data || null;
+                const safeCode = $.fn.dataTable.render.text().display(code);
+
+                if (type === 'display' && abp.auth.isGranted('GrantApplicationManagement.Applicants.ViewList')) {
+                    const applicantId = row?.id;
+                    const isGuid = applicantId && guidPattern.test(applicantId);
+
+                    if (isGuid) {
+                        return `<a href="/GrantApplicants/Details?ApplicantId=${encodeURIComponent(applicantId)}">${safeCode}</a>`;
+                    }
+
+                    return safeCode;
+                }
+
+                return code || null;
             }
         };
     }
@@ -518,9 +532,21 @@ $(function () {
             data: 'status',
             className: 'data-table-header',
             index: columnIndex,
-            render: function (data) {
-                let statusColor = getStatusTextColor(data);
-                return `<span style="color:${statusColor};">` + l(`Enum:PaymentRequestStatus.${data}`) + '</span>';
+            render: function (data, type, row) {
+                const statusText = data ? l(`Enum:PaymentRequestStatus.${data}`) : '';
+
+                if (type === 'sort' || type === 'filter') {
+                    return statusText;
+                }
+
+                const safeStatus = $.fn.dataTable.render.text().display(statusText);
+
+                if (type === 'display') {
+                    let statusColor = getStatusTextColor(data);
+                    return `<span style="color:${statusColor};">` + safeStatus + '</span>';
+                }
+
+                return statusText;
             }
         };
     }
@@ -576,7 +602,7 @@ $(function () {
             title: l('ApplicationPaymentListTable:CASResponse'),
             name: 'CASResponse',
             data: 'casResponse',
-            className: 'data-table-header',
+            className: 'data-table-header notexport',
             index: columnIndex,
             render: function (data) {
                 if (data + "" !== "undefined" && data?.length > 0) {
