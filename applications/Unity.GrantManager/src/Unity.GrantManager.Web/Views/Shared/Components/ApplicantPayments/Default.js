@@ -34,6 +34,7 @@ $(function () {
             title: 'Applicant Payments',
             className: 'custom-table-btn flex-none btn btn-secondary',
             exportOptions: {
+                rows: { search: 'applied' },
                 columns: ':visible:not(.notexport)',
                 orthogonal: 'fullName',
             },
