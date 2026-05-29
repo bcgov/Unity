@@ -5,7 +5,7 @@ $(function () {
     });
 
     tagPaymentModal.onOpen(async function () {
-        let tagInput = new TagsInput({
+        let tagInput = new PaymentTagsInput({
             selector: 'SelectedTags',
             duplicate: false,
             max: 50
