@@ -12,6 +12,11 @@ export const routes: Routes = [
   // Protected routes - require valid token
   { path: 'admin', component: AdminComponent, canActivate: [authGuard] },
   { path: 'app', component: App, canActivate: [authGuard] },
+  {
+    path: 'models',
+    loadComponent: () => import('./data-models/data-models-page').then(m => m.DataModelsPageComponent),
+    canActivate: [authGuard],
+  },
   { path: '', component: RootComponent, canActivate: [authGuard] },
   { path: '**', redirectTo: '' }
 ];

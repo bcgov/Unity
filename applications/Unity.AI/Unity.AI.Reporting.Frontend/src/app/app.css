@@ -80,6 +80,70 @@
   font-weight: 500;
 }
 
+.welcome-actions {
+  margin-top: 16px;
+  display: flex;
+  justify-content: flex-start;
+  padding: 0 24px;
+}
+
+.welcome-action-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 10px 14px;
+  width: 320px;
+  text-align: left;
+  color: inherit;
+  transition: all 0.15s ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.welcome-action-card:hover {
+  border-color: #2563eb;
+  background: #f5f9ff;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(37, 99, 235, 0.12);
+}
+
+.welcome-action-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: #eef4ff;
+  color: #2563eb;
+  font-size: 1.3rem;
+  font-weight: 400;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.welcome-action-text { flex: 1; min-width: 0; }
+
+.welcome-action-title {
+  font-weight: 600;
+  color: #111827;
+  font-size: 0.92rem;
+}
+
+.welcome-action-desc {
+  margin-top: 2px;
+  color: #64748b;
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
+
+.welcome-action-chevron {
+  color: #cbd5e1;
+  font-size: 1.5rem;
+}
+
 
 .chat-container {
   display: grid;

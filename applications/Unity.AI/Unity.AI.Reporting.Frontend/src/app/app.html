@@ -25,16 +25,26 @@
                 [(ngModel)]="question"
                 placeholder="Type a prompt to generate a report..."
                 (keyup.enter)="askQuestion()" />
-                <button class="ask-question-btn" (click)="askQuestion()">
-                  <svg width="20" height="20" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M24 6L24 42" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
-                    <path d="M12 18L24 6L36 18" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
-                  </svg>
-                </button>
-              </div>
+              <button class="ask-question-btn" (click)="askQuestion()">
+                <svg width="20" height="20" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M24 6L24 42" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path d="M12 18L24 6L36 18" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </button>
             </div>
           </div>
+          <div class="welcome-actions">
+            <a class="welcome-action-card" routerLink="/models">
+              <div class="welcome-action-icon">+</div>
+              <div class="welcome-action-text">
+                <div class="welcome-action-title">Build a data model</div>
+                <div class="welcome-action-desc">Create or modify a Metabase model from your worksheet views.</div>
+              </div>
+              <div class="welcome-action-chevron">›</div>
+            </a>
+          </div>
         </div>
+      </div>
       }
 
       <!-- Chat conversation -->

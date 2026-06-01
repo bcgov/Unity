@@ -2,6 +2,7 @@ import { Component, ViewChild, ElementRef, OnInit, OnDestroy, ChangeDetectorRef 
 import { firstValueFrom } from 'rxjs';
 import { FormsModule } from '@angular/forms';
 import { DecimalPipe } from '@angular/common';
+import { RouterLink } from '@angular/router';
 import { SafeResourceUrl, DomSanitizer, SafeHtml } from '@angular/platform-browser';
 
 import { Embed } from './embed';
@@ -20,7 +21,7 @@ import { environment } from '../environments/environment';
 
 @Component({
   selector: 'app-root',
-  imports: [FormsModule, DecimalPipe, SqlExplanationComponent, SidebarComponent, ToastComponent, AlertComponent],
+  imports: [FormsModule, DecimalPipe, RouterLink, SqlExplanationComponent, SidebarComponent, ToastComponent, AlertComponent],
   templateUrl: './app.html',
   styleUrls: ['./app.css']
 })

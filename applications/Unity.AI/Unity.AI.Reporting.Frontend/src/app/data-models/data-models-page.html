@@ -1,0 +1,444 @@
+<div class="dm-page">
+
+  <!-- Header / Hero -->
+  <header class="dm-header">
+    <button class="dm-exit" (click)="exitToApp()" title="Back to chat" aria-label="Back to chat">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M15 18l-6-6 6-6"/>
+      </svg>
+      <span>Back to chat</span>
+    </button>
+    <div class="dm-header-text">
+      <h1 class="dm-title">Build a Data Model</h1>
+      <p class="dm-subtitle">{{ pageSubtitle }}</p>
+    </div>
+  </header>
+
+  <!-- Stepper -->
+  <nav class="dm-stepper" aria-label="Progress">
+    <div class="dm-stepper-inner">
+      <div class="dm-step" [class.active]="isStageActive('mode')" [class.done]="isStageComplete('mode')">
+        <div class="dm-step-bubble">1</div>
+        <div class="dm-step-label">Mode</div>
+      </div>
+      <div class="dm-step-line" [class.done]="isStageComplete('mode')"></div>
+      <div class="dm-step" [class.active]="isStageActive('select')" [class.done]="isStageComplete('select')">
+        <div class="dm-step-bubble">2</div>
+        <div class="dm-step-label">{{ selectedExistingModel ? 'Modify' : 'Select Views' }}</div>
+      </div>
+      <div class="dm-step-line" [class.done]="isStageComplete('select')"></div>
+      <div class="dm-step" [class.active]="isStageActive('review')" [class.done]="isStageComplete('review')">
+        <div class="dm-step-bubble">3</div>
+        <div class="dm-step-label">Review</div>
+      </div>
+      <div class="dm-step-line" [class.done]="isStageComplete('review')"></div>
+      <div class="dm-step" [class.active]="isStageActive('done')" [class.done]="isStageComplete('done')">
+        <div class="dm-step-bubble">4</div>
+        <div class="dm-step-label">Done</div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Step bodies -->
+  <main class="dm-body">
+
+    <!-- pick-mode -->
+    @if (step === 'pick-mode') {
+      <div class="dm-mode-grid">
+        <button class="dm-mode-card" (click)="chooseModeCreate()">
+          <div class="dm-mode-icon">+</div>
+          <div class="dm-mode-title">Create New Model</div>
+          <div class="dm-mode-desc">Build a model from one or more Reporting views.</div>
+        </button>
+        <button class="dm-mode-card" (click)="chooseModeModify()">
+          <div class="dm-mode-icon">✎</div>
+          <div class="dm-mode-title">Modify Existing Model</div>
+          <div class="dm-mode-desc">Pick an existing model, describe changes or add views; saves as a new variant.</div>
+        </button>
+      </div>
+    }
+
+    <!-- loading -->
+    @if (step === 'loading-views' || step === 'loading-models') {
+      <div class="dm-loading">
+        <div class="dm-dots"><span></span><span></span><span></span></div>
+        <div class="dm-loading-text">
+          {{ step === 'loading-models' ? 'Loading existing models…' : 'Discovering available views…' }}
+        </div>
+      </div>
+    }
+
+    <!-- pick-existing-model -->
+    @if (step === 'pick-existing-model') {
+      <div class="dm-section">
+        @if (existingModels.length === 0) {
+          <div class="dm-empty">No existing models found in this tenant's collection.</div>
+        }
+        <ul class="dm-list dm-list-rows">
+          @for (m of existingModels; track m.card_id) {
+            <li class="dm-row" (click)="selectExistingModel(m)">
+              <div class="dm-row-main">
+                <div class="dm-row-title">{{ m.name }}</div>
+                @if (m.description) {
+                  <div class="dm-row-desc">{{ m.description }}</div>
+                }
+              </div>
+              <div class="dm-row-chevron">›</div>
+            </li>
+          }
+        </ul>
+      </div>
+    }
+
+    <!-- pick-view (create) -->
+    @if (step === 'pick-view') {
+      <div class="dm-split">
+        <aside class="dm-rail">
+          <div class="dm-rail-title">View type</div>
+          <button class="dm-rail-tab" [class.active]="activeViewTab === 'form_view'"
+                  [disabled]="formViews.length === 0"
+                  (click)="activeViewTab = 'form_view'">
+            Form <span class="dm-rail-count">{{ formViews.length }}</span>
+          </button>
+          <button class="dm-rail-tab" [class.active]="activeViewTab === 'worksheet_view'"
+                  [disabled]="worksheetViews.length === 0"
+                  (click)="activeViewTab = 'worksheet_view'">
+            Worksheet <span class="dm-rail-count">{{ worksheetViews.length }}</span>
+          </button>
+          <button class="dm-rail-tab" [class.active]="activeViewTab === 'scoresheet_view'"
+                  [disabled]="scoresheetViews.length === 0"
+                  (click)="activeViewTab = 'scoresheet_view'">
+            Scoresheet <span class="dm-rail-count">{{ scoresheetViews.length }}</span>
+          </button>
+          <button class="dm-rail-tab" [class.active]="activeViewTab === 'other_view'"
+                  [disabled]="otherViews.length === 0"
+                  (click)="activeViewTab = 'other_view'">
+            Other <span class="dm-rail-count">{{ otherViews.length }}</span>
+          </button>
+
+          @if (selectedViews.length > 0) {
+            <div class="dm-rail-summary">
+              <div class="dm-rail-summary-label">Selected ({{ selectedViews.length }})</div>
+              <ul>
+                @for (v of selectedViews; track v.view_name) {
+                  <li>{{ v.display_name || v.view_name }}</li>
+                }
+              </ul>
+            </div>
+          }
+        </aside>
+
+        <section class="dm-pane">
+          @if (availableCoreFields.length > 0) {
+            <div class="dm-section dm-section-cores dm-section-cores-top">
+              <div class="dm-section-label">Core fields <span class="dm-section-hint">(from public.Applications)</span></div>
+              <div class="dm-chip-grid">
+                @for (cf of availableCoreFields; track cf.name) {
+                  <button class="dm-chip"
+                          [class.selected]="isCoreFieldSelected(cf.name)"
+                          [class.locked]="isCoreFieldLocked(cf.name)"
+                          (click)="toggleCoreField(cf.name)">
+                    <div class="dm-check small" [class.checked]="isCoreFieldSelected(cf.name)">
+                      @if (isCoreFieldSelected(cf.name)) { ✓ }
+                    </div>
+                    <span>{{ cf.label }}</span>
+                    @if (isCoreFieldLocked(cf.name)) {
+                      <span class="dm-chip-lock" title="Required when combining views">🔒</span>
+                    }
+                  </button>
+                }
+              </div>
+            </div>
+          }
+
+          @if (tabViews.length === 0) {
+            <div class="dm-empty">No views found in this category.</div>
+          }
+          <div class="dm-card-grid">
+            @for (view of tabViews; track view.view_name) {
+              <div class="dm-view-card"
+                   [class.selected]="isViewSelected(view)"
+                   (click)="selectView(view)">
+                <div class="dm-view-card-head">
+                  <div class="dm-check" [class.checked]="isViewSelected(view)">
+                    @if (isViewSelected(view)) { ✓ }
+                  </div>
+                  <div class="dm-view-card-name">
+                    {{ view.display_name || view.view_name }}
+                    @if (view.version) {
+                      <span class="dm-badge">{{ view.version }}</span>
+                    }
+                    @if (view.is_empty) {
+                      <span class="dm-badge dm-badge-muted">no data yet</span>
+                    }
+                  </div>
+                </div>
+                <div class="dm-view-card-meta">
+                  <span>{{ view.column_count }} columns</span>
+                </div>
+
+                @if (view.versions && view.versions.length > 1 && isViewSelected(view)) {
+                  <button class="dm-expand-btn" (click)="toggleFormExpand(view, $event)">
+                    {{ isFormExpanded(view) ? '▾ Hide versions' : '▸ ' + view.versions.length + ' versions' }}
+                  </button>
+                  @if (isFormExpanded(view)) {
+                    <ul class="dm-version-list">
+                      @for (ver of view.versions; track ver.table_name) {
+                        <li class="dm-version-item"
+                            [class.selected]="isFormVersionSelected(view, ver.table_name)"
+                            (click)="toggleFormVersion(view, ver.table_name, $event)">
+                          <div class="dm-check small" [class.checked]="isFormVersionSelected(view, ver.table_name)">
+                            @if (isFormVersionSelected(view, ver.table_name)) { ✓ }
+                          </div>
+                          <span class="dm-version-name">{{ ver.table_name }}</span>
+                        </li>
+                      }
+                    </ul>
+                  }
+                }
+              </div>
+            }
+          </div>
+        </section>
+      </div>
+    }
+
+    <!-- edit-existing -->
+    @if (step === 'edit-existing') {
+      <div class="dm-edit-grid">
+        <section class="dm-pane">
+          @if (availableCoreFields.length > 0) {
+            <div class="dm-section dm-section-cores-top">
+              <div class="dm-section-label">Core fields <span class="dm-section-hint">(from public.Applications)</span></div>
+              <div class="dm-chip-grid">
+                @for (cf of availableCoreFields; track cf.name) {
+                  <button class="dm-chip"
+                          [class.selected]="isCoreFieldSelected(cf.name)"
+                          [class.locked]="isCoreFieldLocked(cf.name)"
+                          (click)="toggleCoreField(cf.name)">
+                    <div class="dm-check small" [class.checked]="isCoreFieldSelected(cf.name)">
+                      @if (isCoreFieldSelected(cf.name)) { ✓ }
+                    </div>
+                    <span>{{ cf.label }}</span>
+                    @if (isCoreFieldLocked(cf.name)) {
+                      <span class="dm-chip-lock" title="Required when adding views">🔒</span>
+                    }
+                  </button>
+                }
+              </div>
+            </div>
+          }
+
+          @if (selectedExistingModel) {
+            <div class="dm-model-summary">
+              <h3 class="dm-model-summary-title">{{ selectedExistingModel.name }}</h3>
+              @if (selectedExistingModel.description) {
+                <p class="dm-model-summary-desc">{{ selectedExistingModel.description }}</p>
+              }
+              <button type="button" class="dm-link" (click)="existingSqlExpanded = !existingSqlExpanded">
+                {{ existingSqlExpanded ? 'Hide current SQL ▲' : 'Show current SQL ▼' }}
+              </button>
+              @if (existingSqlExpanded) {
+                <pre class="dm-sql">{{ selectedExistingModel.sql }}</pre>
+              }
+            </div>
+          }
+
+          <div class="dm-section">
+            <label class="dm-section-label">Describe changes (optional)</label>
+            <textarea class="dm-textarea" rows="4"
+                      placeholder="e.g. Add a column for total funding by region"
+                      [(ngModel)]="editPrompt"></textarea>
+          </div>
+        </section>
+
+        <aside class="dm-rail dm-rail-right">
+          <div class="dm-rail-title">Add views (optional)</div>
+          <div class="dm-rail-tabs">
+            <button class="dm-rail-tab" [class.active]="activeViewTab === 'form_view'"
+                    [disabled]="formViews.length === 0"
+                    (click)="activeViewTab = 'form_view'">
+              Form <span class="dm-rail-count">{{ formViews.length }}</span>
+            </button>
+            <button class="dm-rail-tab" [class.active]="activeViewTab === 'worksheet_view'"
+                    [disabled]="worksheetViews.length === 0"
+                    (click)="activeViewTab = 'worksheet_view'">
+              Worksheet <span class="dm-rail-count">{{ worksheetViews.length }}</span>
+            </button>
+            <button class="dm-rail-tab" [class.active]="activeViewTab === 'scoresheet_view'"
+                    [disabled]="scoresheetViews.length === 0"
+                    (click)="activeViewTab = 'scoresheet_view'">
+              Scoresheet <span class="dm-rail-count">{{ scoresheetViews.length }}</span>
+            </button>
+            <button class="dm-rail-tab" [class.active]="activeViewTab === 'other_view'"
+                    [disabled]="otherViews.length === 0"
+                    (click)="activeViewTab = 'other_view'">
+              Other <span class="dm-rail-count">{{ otherViews.length }}</span>
+            </button>
+          </div>
+          <ul class="dm-list">
+            @for (view of tabViews; track view.view_name) {
+              <li class="dm-list-item"
+                  [class.selected]="isEditAdditionalViewSelected(view)"
+                  (click)="toggleEditAdditionalView(view)">
+                <div class="dm-check" [class.checked]="isEditAdditionalViewSelected(view)">
+                  @if (isEditAdditionalViewSelected(view)) { ✓ }
+                </div>
+                <div class="dm-list-item-name">
+                  {{ view.display_name || view.view_name }}
+                  @if (view.is_empty) {
+                    <span class="dm-badge dm-badge-muted">no data yet</span>
+                  }
+                </div>
+              </li>
+            }
+          </ul>
+        </aside>
+      </div>
+    }
+
+    <!-- generating / creating -->
+    @if (step === 'generating') {
+      <div class="dm-loading">
+        <div class="dm-dots"><span></span><span></span><span></span></div>
+        <div class="dm-loading-text">
+          AI is building a data model from
+          <strong>{{ selectedExistingModel ? selectedExistingModel.name : selectedViews.length > 0 ? (selectedViews[0].display_name || selectedViews[0].view_name) + (selectedViews.length > 1 ? ' + ' + (selectedViews.length - 1) + ' more' : '') : '' }}</strong>…
+        </div>
+      </div>
+    }
+
+    @if (step === 'creating') {
+      <div class="dm-loading">
+        <div class="dm-dots"><span></span><span></span><span></span></div>
+        <div class="dm-loading-text">Publishing to Metabase…</div>
+      </div>
+    }
+
+    <!-- review -->
+    @if (step === 'review' && modelProposal) {
+      <div class="dm-review-grid">
+        <section class="dm-review-left">
+          <label class="dm-field-label">Name</label>
+          <input class="dm-input dm-input-large" type="text" [(ngModel)]="modelProposal.name" />
+
+          <label class="dm-field-label">Description</label>
+          <textarea class="dm-textarea" rows="3" [(ngModel)]="modelProposal.description"></textarea>
+
+          <div class="dm-source-tag">Source: <code>{{ modelProposal.source_view }}</code></div>
+
+          @if (modelProposal.columns.length > 0) {
+            <h4 class="dm-preview-title">Model preview — {{ modelProposal.columns.length }} columns</h4>
+            <div class="dm-column-grid">
+              @for (col of modelProposal.columns; track col) {
+                <div class="dm-column-chip">{{ col }}</div>
+              }
+            </div>
+          }
+          @if (modelProposal.excluded_columns.length > 0) {
+            <details class="dm-columns dm-columns-excluded">
+              <summary>Excluded columns ({{ modelProposal.excluded_columns.length }})</summary>
+              <ul>
+                @for (col of modelProposal.excluded_columns; track col) {
+                  <li>{{ col }}</li>
+                }
+              </ul>
+            </details>
+          }
+
+          @if (!modelProposal.valid && modelProposal.error) {
+            <div class="dm-error">
+              <div class="dm-error-title">⚠️ SQL validation failed</div>
+              <div class="dm-error-message">{{ friendlyError }}</div>
+              <button type="button" class="dm-link" (click)="toggleFullError()">
+                {{ showFullError ? 'Hide technical details ▲' : 'Show technical details ▼' }}
+              </button>
+              @if (showFullError) {
+                <pre class="dm-error-raw">{{ modelProposal.error }}</pre>
+              }
+            </div>
+          }
+        </section>
+      </div>
+    }
+
+    <!-- done -->
+    @if (step === 'done') {
+      <div class="dm-done">
+        @if (createdModels.length > 0) {
+          <div class="dm-done-icon dm-done-icon-success">✓</div>
+          <h2 class="dm-done-title">Model created</h2>
+          <ul class="dm-created-list">
+            @for (model of createdModels; track model.card_id) {
+              <li>
+                <div class="dm-created-name">{{ model.name }}</div>
+                @if (model.description) {
+                  <p class="dm-created-desc">{{ model.description }}</p>
+                }
+                <a class="dm-created-link" [href]="model.metabase_url" target="_blank" rel="noopener noreferrer">
+                  View in Metabase →
+                </a>
+              </li>
+            }
+          </ul>
+        }
+        @if (modelErrors.length > 0) {
+          <h3 class="dm-done-errors-title">Failed</h3>
+          <ul class="dm-errors-list">
+            @for (err of modelErrors; track err.name) {
+              <li><strong>{{ err.name }}</strong>: {{ err.error }}</li>
+            }
+          </ul>
+        }
+        @if (createdModels.length === 0 && modelErrors.length === 0) {
+          <div class="dm-empty">No models were created.</div>
+        }
+      </div>
+    }
+
+  </main>
+
+  <!-- Footer action bar -->
+  <footer class="dm-footer">
+    @if (step === 'pick-mode') {
+      <button class="dm-btn-secondary" (click)="exitToApp()">Cancel</button>
+    }
+    @if (step === 'pick-existing-model') {
+      <button class="dm-btn-secondary" (click)="step = 'pick-mode'">← Back</button>
+    }
+    @if (step === 'pick-view') {
+      <button class="dm-btn-secondary" (click)="step = 'pick-mode'">← Back</button>
+      <div class="dm-footer-spacer"></div>
+      <button class="dm-btn-primary"
+              [disabled]="selectedViews.length === 0"
+              (click)="generateModelForView()">
+        {{ generateButtonLabel }}
+      </button>
+    }
+    @if (step === 'edit-existing') {
+      <button class="dm-btn-secondary" (click)="step = 'pick-existing-model'">← Back</button>
+      <div class="dm-footer-spacer"></div>
+      <button class="dm-btn-primary"
+              [disabled]="!canGenerateModified"
+              (click)="generateModifiedModel()">
+        Generate Modified Model →
+      </button>
+    }
+    @if (step === 'review') {
+      <button class="dm-btn-secondary" (click)="backFromReview()">← Back</button>
+      <button class="dm-btn-secondary" (click)="regenerateProposal()">Regenerate</button>
+      <div class="dm-footer-spacer"></div>
+      <button class="dm-btn-primary"
+              [disabled]="!modelProposal?.valid"
+              (click)="createModel()">
+        Create in Metabase →
+      </button>
+    }
+    @if (step === 'done') {
+      <button class="dm-btn-secondary" (click)="startAnother()">Build another</button>
+      <div class="dm-footer-spacer"></div>
+      <button class="dm-btn-primary" (click)="exitToApp()">Back to chat</button>
+    }
+  </footer>
+
+</div>
