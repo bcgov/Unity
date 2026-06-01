@@ -95,7 +95,8 @@ class Config:
             url=os.getenv("MB_URL", ""),
             api_key=os.getenv("METABASE_KEY", ""),
             embed_secret=os.getenv("MB_EMBED_SECRET", ""),
-            default_db_id=int(os.getenv("MB_EMBED_ID", "3"))
+            default_db_id=int(os.getenv("MB_EMBED_ID", "3")),
+            map_region_uuid=os.getenv("MB_MAP_REGION_UUID", "1c5d50ee-4389-4593-37c1-fa8d4687ff4c"),
         )
         
         self.ai = AIConfig(

@@ -45,10 +45,11 @@ services:
       - JWT_SECRET=${JWT_SECRET}
       - ORIGIN_URL=${ORIGIN_URL}
 
-      # Metabase config (secrets + env-specific base URL)
+      # Metabase config (secrets + env-specific base URL and UUIDs)
       - METABASE_KEY=${METABASE_KEY}
       - MB_EMBED_SECRET=${MB_EMBED_SECRET}
       - MB_URL=${MB_URL}
+      - MB_MAP_REGION_UUID=${MB_MAP_REGION_UUID}
 
       # Feature flags
       - EMBED_WORKSHEETS=${EMBED_WORKSHEETS:-true}
