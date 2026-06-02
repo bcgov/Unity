@@ -59,12 +59,12 @@ namespace Unity.GrantManager.Applications
                     var formName = formObject.SelectToken("name");
                     var formDescription = formObject.SelectToken("description");
                     
-                    if(formName != null)
+                    if (formName != null)
                     {
                         applicationForm.ApplicationFormName = formName.ToString();
                     }
 
-                    if (formDescription != null && applicationForm.ApplicationFormDescription == null)
+                    if (formDescription != null && string.IsNullOrWhiteSpace(applicationForm.ApplicationFormDescription))
                     {
                         applicationForm.ApplicationFormDescription = formDescription.ToString();
                     }
