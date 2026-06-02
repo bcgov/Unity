@@ -218,7 +218,7 @@ $(function () {
         
         userTagsInput.setSuggestions(suggestionsArray);
         userTagsInput.addData(tagInputArray);
-        document.getElementById("user-tags-input").setAttribute("data-touched", "false");
+        document.getElementById("user-tags-input").dataset.touched = "false";
     });
     tagApplicationModal.onResult(function () {
         abp.notify.success(

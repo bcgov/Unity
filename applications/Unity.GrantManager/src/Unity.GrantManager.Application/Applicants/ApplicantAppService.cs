@@ -235,6 +235,19 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
         return await applicantRepository.UpdateAsync(applicant);
     }
 
+    [Authorize(GrantApplicationPermissions.Applicants.Edit)]
+    public async Task UpdateApplicantStatusAsync(Guid applicantId, string status)
+    {
+        if (status != "Active" && status != "Inactive")
+        {
+            throw new UserFriendlyException($"Invalid applicant status '{status}'. Allowed values are Active or Inactive.");
+        }
+
+        var applicant = await applicantRepository.GetAsync(applicantId);
+        applicant.Status = status;
+        await applicantRepository.UpdateAsync(applicant);
+    }
+
     public async Task UpdateApplicantContactAddressesAsync(Guid applicantId, UpdateApplicantContactAddressesDto input)
     {
         if (applicantId == Guid.Empty)

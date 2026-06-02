@@ -98,23 +98,42 @@ public class AttachmentAppService(
         Expression<Func<T, bool>> predicate) where T : AbstractS3Attachment
     {
         var attachmentsQuery = await repository.GetQueryableAsync();
-        var people = await personUserRepository.GetQueryableAsync();
-        var filteredAttachments = attachmentsQuery.Where(predicate);
-        var query = from attachment in filteredAttachments
-                    join person in people on attachment.UserId equals person.Id
-                    select new UnityAttachmentDto()
-                    {
-                        Id             = attachment.Id,
-                        FileName       = attachment.FileName,
-                        DisplayName    = attachment.DisplayName,
-                        S3ObjectKey    = attachment.S3ObjectKey,
-                        Time           = attachment.Time,
-                        AttachmentType = attachment.AttachmentType,
-                        AttachedBy     = person.FullName,
-                        CreatorId      = person.Id
-                    };
 
-        return await query.AsSingleQuery().ToListAsync();
+        var attachments = await attachmentsQuery
+            .Where(predicate)
+            .Select(a => new
+            {
+                a.Id,
+                a.FileName,
+                a.DisplayName,
+                a.S3ObjectKey,
+                a.Time,
+                a.AttachmentType,
+                a.UserId
+            })
+            .ToListAsync();
+
+        if (attachments.Count == 0) return [];
+
+        var userIds = attachments.Select(a => a.UserId).Distinct().ToList();
+        var people = await personUserRepository.GetListAsync(p => userIds.Contains(p.Id));
+        var peopleById = people.ToDictionary(p => p.Id);
+
+        return [.. attachments.Select(a =>
+        {
+            var person = peopleById.GetValueOrDefault(a.UserId);
+            return new UnityAttachmentDto
+            {
+                Id             = a.Id,
+                FileName       = a.FileName,
+                DisplayName    = a.DisplayName,
+                S3ObjectKey    = a.S3ObjectKey,
+                Time           = a.Time,
+                AttachmentType = a.AttachmentType,
+                AttachedBy     = person?.FullName,
+                CreatorId      = person?.Id
+            };
+        })];
     }
 
     public async Task<AttachmentMetadataDto> GetAttachmentMetadataAsync(AttachmentType attachmentType, Guid attachmentId)

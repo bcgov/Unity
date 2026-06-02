@@ -28,7 +28,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantBreadcrumbWidg
                     ApplicantName = !string.IsNullOrEmpty(applicant.ApplicantName) 
                             ? applicant.ApplicantName 
                             : "Applicant Name",
-                    Status = applicant.Status ?? "Active"
+                    Status = applicant.Status
                 };
 
                 return View(model);
@@ -40,7 +40,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantBreadcrumbWidg
                     ApplicantId = applicantId,
                     UnityApplicantId = "N/A",
                     ApplicantName = "Applicant Not Found",
-                    Status = "Unknown"
+                    Status = null
                 };
 
                 return View(errorModel);

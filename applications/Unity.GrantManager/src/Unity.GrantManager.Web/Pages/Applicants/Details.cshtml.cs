@@ -75,7 +75,7 @@ namespace Unity.GrantManager.Web.Pages.Applicants
                     : "Applicant Name";
 
                 UnityApplicantId = Applicant.UnityApplicantId ?? "N/A";
-                Status = Applicant.Status ?? "Active";
+                Status = Applicant.Status ?? string.Empty;
 
                 return Page();
             }

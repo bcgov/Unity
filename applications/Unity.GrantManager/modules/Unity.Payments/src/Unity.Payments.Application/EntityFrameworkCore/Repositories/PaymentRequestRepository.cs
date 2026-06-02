@@ -15,8 +15,8 @@ namespace Unity.Payments.Repositories
 {
     public class PaymentRequestRepository : EfCoreRepository<PaymentsDbContext, PaymentRequest, Guid>, IPaymentRequestRepository
     {
-        private List<string> ReCheckStatusList { get; set; } = new List<string>();
-        private List<string> FailedStatusList { get; set; } = new List<string>();
+        private List<string> ReCheckStatusList { get; set; } = [];
+        private List<string> FailedStatusList { get; set; } = [];
 
         public PaymentRequestRepository(IDbContextProvider<PaymentsDbContext> dbContextProvider) : base(dbContextProvider)
         {
