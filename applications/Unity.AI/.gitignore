@@ -25,6 +25,7 @@ chroma_db/
 
 # Unity AI specific
 embedded_schema/
+tenant_config.local.json
 
 # Claude Code
 .claude/

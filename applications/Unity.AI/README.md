@@ -44,8 +44,7 @@ AZURE_OPENAI_API_KEY=your_api_key
 JWT_SECRET=your_jwt_secret_64_chars_minimum
 ORIGIN_URL=https://your-parent-domain.com,http://localhost
 
-# Metabase — DB ID is derived from tenant_config.json, not an env var
-METABASE_KEY=your_metabase_api_key
+# Metabase — API key lives in tenant_config.local.json (gitignored), not here
 MB_EMBED_SECRET=your_metabase_embed_secret
 MB_URL=https://your-metabase-instance.com
 MB_MAP_REGION_UUID=your_metabase_regional_districts_uuid

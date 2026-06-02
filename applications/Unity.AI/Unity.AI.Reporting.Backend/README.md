@@ -66,8 +66,7 @@ AZURE_OPENAI_API_KEY=your_key
 # JWT Authentication
 JWT_SECRET=your_secure_secret_key
 
-# Metabase — DB ID is derived from tenant_config.json
-METABASE_KEY=your_metabase_api_key
+# Metabase — API key lives in tenant_config.local.json (gitignored), not here
 MB_EMBED_SECRET=your_metabase_embed_secret
 MB_URL=https://your-metabase-url.com
 MB_MAP_REGION_UUID=your_metabase_regional_districts_uuid

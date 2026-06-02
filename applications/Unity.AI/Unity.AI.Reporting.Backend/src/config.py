@@ -36,10 +36,9 @@ class DatabaseConfig:
 class MetabaseConfig:
     """Metabase API configuration"""
     url: str
-    api_key: str
     embed_secret: str
-    default_db_id: int = 5
-    map_region_uuid: str = "1c5d50ee-4389-4593-37c1-fa8d4687ff4c"
+    default_db_id: int
+    map_region_uuid: str
     
 
 @dataclass
@@ -98,7 +97,6 @@ class Config:
 
         self.metabase = MetabaseConfig(
             url=os.getenv("MB_URL", ""),
-            api_key=os.getenv("METABASE_KEY", ""),
             embed_secret=os.getenv("MB_EMBED_SECRET", ""),
             default_db_id=default_db_id,
             map_region_uuid=os.getenv("MB_MAP_REGION_UUID") or "1c5d50ee-4389-4593-37c1-fa8d4687ff4c",
@@ -130,22 +128,41 @@ class Config:
         """
         Load tenant to database/collection mappings from JSON file.
         Falls back to default configuration if file is not found.
+        A tenant_config.local.json alongside the base file is merged on top
+        (per-tenant key override) and is never committed — use it for local
+        secrets like api_key.
         """
 
         # Try Docker path first, then local path (same directory as this file)
-        config_paths = [
-            "/app/backend/src/tenant_config.json",  # Docker container path
-            Path(__file__).parent / "tenant_config.json"  # Local development path
+        config_path_pairs = [
+            (
+                "/app/backend/src/tenant_config.json",
+                "/app/backend/src/tenant_config.local.json",
+            ),
+            (
+                Path(__file__).parent / "tenant_config.json",
+                Path(__file__).parent / "tenant_config.local.json",
+            ),
         ]
 
-        for config_file in config_paths:
+        for config_file, local_override_file in config_path_pairs:
             try:
                 with open(config_file, 'r') as f:
                     mappings = json.load(f)
                     if DEFAULT_TENANT not in mappings.keys():
                         mappings = {DEFAULT_TENANT: mappings}
 
-                print(f"Loaded tenant mappings from {config_file}: {mappings}")
+                if Path(local_override_file).is_file():
+                    with open(local_override_file, 'r') as f:
+                        overrides = json.load(f)
+                        for tenant, values in overrides.items():
+                            if tenant in mappings:
+                                mappings[tenant].update(values)
+                            else:
+                                mappings[tenant] = values
+                    print(f"Applied local tenant overrides from {local_override_file}")
+
+                print(f"Loaded tenant mappings from {config_file}")
                 return mappings
             except FileNotFoundError:
                 continue
@@ -165,14 +182,9 @@ class Config:
         return self.tenant_mappings.get(tenant_id, self.tenant_mappings[DEFAULT_TENANT])
 
     def get_tenant_metabase_headers(self, tenant_id: str) -> Dict[str, str]:
-        """
-        Get Metabase API headers for a specific tenant.
-        Uses tenant-specific API key from config file if available,
-        otherwise falls back to global METABASE_KEY from environment.
-        """
+        """Get Metabase API headers for a specific tenant using its api_key from tenant config."""
         tenant_config = self.get_tenant_config(tenant_id)
-        api_key = tenant_config.get("api_key", "") or self.metabase.api_key
-        return {"x-api-key": api_key}
+        return {"x-api-key": tenant_config.get("api_key", "")}
 
     @property
     def metabase_headers(self) -> Dict[str, str]:
