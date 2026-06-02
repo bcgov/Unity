@@ -59,25 +59,21 @@ Server runs on `http://localhost:5000`
 Required variables (see `applications/.env.example`):
 
 ```env
-# Azure OpenAI
+# Azure OpenAI — endpoint and key only; deployment names, versions are hardcoded in config.py
 AZURE_OPENAI_ENDPOINT=https://your-resource.openai.azure.com/
 AZURE_OPENAI_API_KEY=your_key
-AZURE_OPENAI_DEPLOYMENT=gpt-4o-mini
-AZURE_OPENAI_EMBEDDING_DEPLOYMENT=text-embedding-3-large
-AZURE_OPENAI_API_VERSION=2024-02-15-preview
 
 # JWT Authentication
 JWT_SECRET=your_secure_secret_key
 
-# Metabase
+# Metabase — DB ID is derived from tenant_config.json
 METABASE_KEY=your_metabase_api_key
 MB_EMBED_SECRET=your_metabase_embed_secret
 MB_URL=https://your-metabase-url.com
-DEFAULT_EMBED_DB_ID=3
+MB_MAP_REGION_UUID=your_metabase_regional_districts_uuid
 
-# Database
+# Database — port is hardcoded to 5432
 DB_HOST=postgres
-DB_PORT=5432
 DB_NAME=unity_ai
 DB_USER=unity_user
 DB_PASSWORD=your_secure_password
@@ -118,7 +114,7 @@ DB_PASSWORD=your_secure_password
 
 - `app.py` - Application entry point, CLI commands
 - `api.py` - Flask routes and endpoints
-- `static_routes.py` - **NEW**: Serves Angular static files
+- `static_routes.py` - Serves Angular static files
 - `auth.py` - JWT authentication middleware
 - `config.py` - Configuration management
 - `database.py` - Database operations and repositories
