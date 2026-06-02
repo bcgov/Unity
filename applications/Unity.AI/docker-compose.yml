@@ -46,7 +46,6 @@ services:
       - ORIGIN_URL=${ORIGIN_URL}
 
       # Metabase config (secrets + env-specific base URL and UUIDs)
-      - MB_EMBED_SECRET=${MB_EMBED_SECRET}
       - MB_URL=${MB_URL}
       - MB_MAP_REGION_UUID=${MB_MAP_REGION_UUID}
 

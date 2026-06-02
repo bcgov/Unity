@@ -20,7 +20,6 @@ Non-sensitive config (deployment names, model versions, database port) is hardco
 | `AZURE_OPENAI_ENDPOINT` | Azure OpenAI service endpoint | `https://d837ad-dev-econ-llm-east.openai.azure.com/` |
 | `AZURE_OPENAI_API_KEY` | Azure OpenAI API key | Environment-specific key |
 | `JWT_SECRET` | JWT signing secret (64+ chars) | `openssl rand -base64 64` |
-| `MB_EMBED_SECRET` | Metabase embedding secret | Environment-specific secret |
 | `DB_PASSWORD` | PostgreSQL password | Environment-specific password |
 
 ### 🟡 ConfigMap (environment-specific, non-sensitive)
@@ -111,7 +110,6 @@ stringData:
   AZURE_OPENAI_ENDPOINT: "https://d837ad-dev-econ-llm-east.openai.azure.com/"
   AZURE_OPENAI_API_KEY: "your-dev-api-key"
   JWT_SECRET: "your-64-char-jwt-secret"
-  MB_EMBED_SECRET: "your-dev-embed-secret"
   DB_PASSWORD: "your-dev-db-password"
 ```
 

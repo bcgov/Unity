@@ -36,7 +36,6 @@ class DatabaseConfig:
 class MetabaseConfig:
     """Metabase API configuration"""
     url: str
-    embed_secret: str
     default_db_id: int
     map_region_uuid: str
     
@@ -97,7 +96,6 @@ class Config:
 
         self.metabase = MetabaseConfig(
             url=os.getenv("MB_URL", ""),
-            embed_secret=os.getenv("MB_EMBED_SECRET", ""),
             default_db_id=default_db_id,
             map_region_uuid=os.getenv("MB_MAP_REGION_UUID") or "1c5d50ee-4389-4593-37c1-fa8d4687ff4c",
         )
