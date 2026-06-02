@@ -38,7 +38,7 @@ class MetabaseConfig:
     url: str
     api_key: str
     embed_secret: str
-    default_db_id: int = 3
+    default_db_id: int = 5
     map_region_uuid: str = "1c5d50ee-4389-4593-37c1-fa8d4687ff4c"
     
 
@@ -84,6 +84,10 @@ class Config:
     """Central configuration manager"""
     
     def __init__(self):
+        # Load tenant mappings first so db_id can be derived from them
+        self.tenant_mappings = self._load_tenant_mappings()
+        default_db_id = self.tenant_mappings.get(DEFAULT_TENANT, {}).get("db_id", 5)
+
         self.database = DatabaseConfig(
             host=os.getenv("DB_HOST", "localhost"),
             port="5432",
@@ -91,20 +95,20 @@ class Config:
             user=os.getenv("DB_USER", "unity_user"),
             password=os.getenv("DB_PASSWORD", "unity_pass")
         )
-        
+
         self.metabase = MetabaseConfig(
             url=os.getenv("MB_URL", ""),
             api_key=os.getenv("METABASE_KEY", ""),
             embed_secret=os.getenv("MB_EMBED_SECRET", ""),
-            default_db_id=int(os.getenv("MB_EMBED_ID", "3")),
-            map_region_uuid=os.getenv("MB_MAP_REGION_UUID", "1c5d50ee-4389-4593-37c1-fa8d4687ff4c"),
+            default_db_id=default_db_id,
+            map_region_uuid=os.getenv("MB_MAP_REGION_UUID") or "1c5d50ee-4389-4593-37c1-fa8d4687ff4c",
         )
-        
+
         self.ai = AIConfig(
             azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT", ""),
             azure_api_key=os.getenv("AZURE_OPENAI_API_KEY", ""),
         )
-        
+
         flask_env = os.getenv("FLASK_ENV", "development")
         self.app = AppConfig(
             flask_env=flask_env,
@@ -121,9 +125,6 @@ class Config:
             llm_judge_score_threshold=float(os.getenv("LLM_JUDGE_SCORE_THRESHOLD", "8.0")),
             preview_row_limit=int(os.getenv("PREVIEW_ROW_LIMIT", "1000")),
         )
-        
-        # Tenant configuration - extensible for different use cases
-        self.tenant_mappings = self._load_tenant_mappings()
     
     def _load_tenant_mappings(self) -> Dict[str, Dict[str, Any]]:
         """
