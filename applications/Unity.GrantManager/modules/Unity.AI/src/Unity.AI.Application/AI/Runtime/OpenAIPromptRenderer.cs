@@ -261,8 +261,9 @@ public class OpenAIPromptRenderer : ITransientDependency
         var template = GetRequiredPromptTemplate(version, templateName);
         var replacements = new Dictionary<string, string>(runtimeReplacements, StringComparer.Ordinal);
         var baseTemplateName = GetTemplateBaseName(templateName);
+        var placeholders = GetTemplatePlaceholders(template);
 
-        foreach (var placeholder in GetTemplatePlaceholders(template))
+        foreach (var placeholder in placeholders)
         {
             if (replacements.ContainsKey(placeholder))
             {
@@ -280,17 +281,19 @@ public class OpenAIPromptRenderer : ITransientDependency
             }
         }
 
-        var rendered = template;
-        foreach (var replacement in replacements)
-        {
-            rendered = rendered.Replace($"{{{{{replacement.Key}}}}}", replacement.Value ?? string.Empty, StringComparison.Ordinal);
-        }
-
-        var unresolved = GetTemplatePlaceholders(rendered);
+        var unresolved = placeholders
+            .Where(placeholder => !replacements.ContainsKey(placeholder))
+            .ToList();
         if (unresolved.Count > 0)
         {
             throw new InvalidOperationException(
                 $"Unresolved prompt placeholders in '{templateName}.txt' for prompt version '{version}': {string.Join(", ", unresolved.OrderBy(item => item))}");
+        }
+
+        var rendered = template;
+        foreach (var placeholder in placeholders)
+        {
+            rendered = rendered.Replace($"{{{{{placeholder}}}}}", replacements[placeholder] ?? string.Empty, StringComparison.Ordinal);
         }
 
         resolutionStack.Remove(templateName);
@@ -369,7 +372,7 @@ public class OpenAIPromptRenderer : ITransientDependency
             }
 
             var placeholder = template.Substring(start + 2, end - start - 2).Trim();
-            if (!string.IsNullOrWhiteSpace(placeholder))
+            if (IsPromptPlaceholder(placeholder))
             {
                 placeholders.Add(placeholder);
             }
@@ -378,5 +381,11 @@ public class OpenAIPromptRenderer : ITransientDependency
         }
 
         return placeholders;
+    }
+
+    private static bool IsPromptPlaceholder(string placeholder)
+    {
+        return !string.IsNullOrWhiteSpace(placeholder) &&
+               placeholder.All(character => char.IsUpper(character) || char.IsDigit(character) || character == '_');
     }
 }

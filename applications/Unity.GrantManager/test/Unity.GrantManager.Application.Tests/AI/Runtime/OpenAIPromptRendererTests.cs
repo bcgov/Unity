@@ -42,4 +42,30 @@ public class OpenAIPromptRendererTests
         prompt.ShouldContain("If ATTACHMENTS is empty, use DATA only");
         prompt.ShouldNotContain("No attachments provided.");
     }
+
+    [Fact]
+    public void BuildApplicationAnalysisUserPrompt_Should_Not_Treat_FormIo_Mustache_Data_As_Prompt_Placeholders()
+    {
+        const string data = """
+            {
+              "template": "<span>{{ item.label }}</span>",
+              "fileNameTemplate": "{{fileName}}",
+              "sector": "{{ item.SectorName }}",
+              "topicSourceId": "{{ item.topic_source_id }}",
+              "uppercaseTemplateValue": "{{FORMIO_VALUE}}"
+            }
+            """;
+
+        var result = OpenAIPromptRenderer.BuildApplicationAnalysisUserPrompt(
+            "v1",
+            "{}",
+            data,
+            "[]");
+
+        result.ShouldContain("{{ item.label }}");
+        result.ShouldContain("{{fileName}}");
+        result.ShouldContain("{{ item.SectorName }}");
+        result.ShouldContain("{{ item.topic_source_id }}");
+        result.ShouldContain("{{FORMIO_VALUE}}");
+    }
 }
