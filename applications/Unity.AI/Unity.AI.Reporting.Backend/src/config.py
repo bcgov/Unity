@@ -65,7 +65,6 @@ class AppConfig:
     flask_env: str
     debug: bool
     testing: bool
-    embed_worksheets: bool = False
     collection_name: str = "embedded_schema"
     semantic_cache_enabled: bool = True
     semantic_cache_threshold: float = 0.95
@@ -109,7 +108,6 @@ class Config:
             flask_env=flask_env,
             debug=flask_env != "production",
             testing=False,
-            embed_worksheets=os.getenv("EMBED_WORKSHEETS", "true").lower() == "true",
             semantic_cache_enabled=os.getenv("SEMANTIC_CACHE_ENABLED", "true").lower() == "true",
             semantic_cache_threshold=float(os.getenv("SEMANTIC_CACHE_THRESHOLD", "0.95")),
             fuzzy_match_enabled=os.getenv("FUZZY_MATCH_ENABLED", "true").lower() == "true",

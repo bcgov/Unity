@@ -51,9 +51,6 @@ services:
       - MB_URL=${MB_URL}
       - MB_MAP_REGION_UUID=${MB_MAP_REGION_UUID}
 
-      # Feature flags
-      - EMBED_WORKSHEETS=${EMBED_WORKSHEETS:-true}
-
       # Database config
       - DB_HOST=postgres
       - DB_NAME=${DB_NAME:-unity_ai}

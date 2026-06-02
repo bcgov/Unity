@@ -253,8 +253,6 @@ class EmbeddingManager:
         # Default schema types if not specified
         if schema_types is None:
             schema_types = ['public']
-            if config.app.embed_worksheets:
-                schema_types.append('custom')
         
         # Purge existing embeddings for this db_id
         db_manager.purge_embeddings(db_id, config.app.collection_name)
@@ -296,7 +294,8 @@ class EmbeddingManager:
         ) or []
 
     def search_similar_schemas(self, query: str, db_id: int,
-                             k_public: int = 4) -> List[Document]:
+                             k_public: int = 4,
+                             tenant_id: Optional[str] = None) -> List[Document]:
         """
         Search for similar schemas based on query with automatic retry on connection errors.
 
@@ -304,6 +303,7 @@ class EmbeddingManager:
             query: Natural language query
             db_id: Database ID to filter by
             k_public: Number of public schemas to retrieve
+            tenant_id: Optional tenant ID to determine which schema types to include
 
         Returns:
             List of similar schema documents
@@ -322,20 +322,22 @@ class EmbeddingManager:
                 retrieved.extend(public_results)
 
         # Get ALL custom/worksheet schemas — don't rely on top-k similarity
-        if config.app.embed_worksheets:
+        tenant_schema_types = config.get_tenant_config(tenant_id or "default").get("schema_types", ["public"])
+        if "custom" in tenant_schema_types:
             custom_results = self._get_all_custom_schemas(query, db_id)
             if custom_results:
                 retrieved.extend(custom_results)
 
         return retrieved
-    
+
     def embed_query(self, query: str) -> list:
         """Return raw embedding vector for a single query string."""
         return self.embedding_model.embed_query(query)
 
-    def get_formatted_schemas(self, query: str, db_id: int) -> str:
+    def get_formatted_schemas(self, query: str, db_id: int,
+                              tenant_id: Optional[str] = None) -> str:
         """Get formatted schema text for prompt, grouped by section with headers."""
-        schemas = self.search_similar_schemas(query, db_id)
+        schemas = self.search_similar_schemas(query, db_id, tenant_id=tenant_id)
 
         section_headers = {
             "public": "=== PUBLIC TABLES ===",

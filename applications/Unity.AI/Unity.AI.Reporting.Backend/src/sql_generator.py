@@ -341,7 +341,7 @@ class SQLGenerator:
             return sql, metadata, {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}, None
 
         # Get relevant schemas
-        schemas = self.embeddings.get_formatted_schemas(question, db_id)
+        schemas = self.embeddings.get_formatted_schemas(question, db_id, tenant_id=tenant_id)
         if not schemas:
             logger.error(f"No schemas found for db_id={db_id}. Embeddings may not have been generated yet.")
             return None, None, None, None
