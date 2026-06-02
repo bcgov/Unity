@@ -252,6 +252,9 @@
 
 #applicationEmailsWidget button {
     margin: 2px;
+}
+
+#applicationEmailsWidget button:hover {
     border: 1px solid var(--bc-colors-blue-primary);
 }
 
