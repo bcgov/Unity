@@ -97,7 +97,7 @@ class Config:
         self.metabase = MetabaseConfig(
             url=os.getenv("MB_URL", ""),
             default_db_id=default_db_id,
-            map_region_uuid=os.getenv("MB_MAP_REGION_UUID") or "1c5d50ee-4389-4593-37c1-fa8d4687ff4c",
+            map_region_uuid=os.getenv("MB_MAP_REGION_UUID", ""),
         )
 
         self.ai = AIConfig(
@@ -182,7 +182,14 @@ class Config:
     def get_tenant_metabase_headers(self, tenant_id: str) -> Dict[str, str]:
         """Get Metabase API headers for a specific tenant using its api_key from tenant config."""
         tenant_config = self.get_tenant_config(tenant_id)
-        return {"x-api-key": tenant_config.get("api_key", "")}
+        api_key = tenant_config.get("api_key", "")
+        if not api_key:
+            raise ValueError(
+                f"Metabase api_key is not configured for tenant '{tenant_id}'. "
+                "For local development add it to tenant_config.local.json; "
+                "in OpenShift check the [env]-unity-ai-tenant-config secret."
+            )
+        return {"x-api-key": api_key}
 
     @property
     def metabase_headers(self) -> Dict[str, str]:
