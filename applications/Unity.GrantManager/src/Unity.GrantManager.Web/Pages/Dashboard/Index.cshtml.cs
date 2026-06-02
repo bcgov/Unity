@@ -96,8 +96,7 @@ public class IndexModel : GrantManagerPageModel
             if (intakeR.Count == 0) return;
 
             IntakeOptionsList = intakeR.DistinctBy(s => s.IntakeId).Select(intake => new SelectListItem { Value = intake.IntakeId.ToString(), Text = intake.IntakeName }).ToList();
-            var latestIntakeId = intakeR.OrderByDescending(intake => intake.IntakeCreationTime).First()?.IntakeId;
-            IntakeIds = [latestIntakeId ?? Guid.Empty];
+            IntakeIds = intakeR.DistinctBy(s => s.IntakeId).Select(s => s.IntakeId).ToArray();
 
             foreach (var intake in intakeR)
             {
@@ -112,13 +111,16 @@ public class IndexModel : GrantManagerPageModel
                     IntakeName = intake.IntakeName,
                     Categories = categoryList
                 });
-
-                if (intake.IntakeId == latestIntakeId)
-                {
-                    CategoryOptionsList = categoryList.Select(category => new SelectListItem { Value = category, Text = category }).ToList();
-                    CategoryNames = [.. categoryList];
-                }
             }
+
+            var allCategories = intakeR
+                .Where(s => !string.IsNullOrWhiteSpace(s.Category))
+                .Select(s => s.Category!)
+                .Distinct()
+                .OrderBy(c => c)
+                .ToList();
+            CategoryOptionsList = allCategories.Select(category => new SelectListItem { Value = category, Text = category }).ToList();
+            CategoryNames = [.. allCategories];
 
             var statuses = await _applicationStatusRepository.GetListAsync();
             StatusOptionsList = statuses.Select(s => new SelectListItem { Value = s.StatusCode.ToString(), Text = s.InternalStatus }).ToList();

@@ -3,11 +3,13 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
 using Unity.Flex.Domain.Scoresheets;
 using Unity.AI.Models;
 using Unity.AI.Prompts;
 using Unity.AI.Requests;
+using Unity.AI.Runtime;
 using Unity.GrantManager.Applications;
 using Volo.Abp.DependencyInjection;
 
@@ -21,20 +23,10 @@ namespace Unity.AI.Operations
         IApplicationChefsFileAttachmentRepository applicationChefsFileAttachmentRepository,
         IScoresheetRepository scoresheetRepository,
         IAIService aiService,
+        AIExecutionModeResolver executionModeResolver,
         ILogger<ApplicationScoringService> logger) : IApplicationScoringService, ITransientDependency
     {
-        private readonly JsonSerializerOptions _jsonOptions = new()
-        {
-            WriteIndented = true,
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-        };
-
-        private readonly JsonSerializerOptions _jsonOptionsIndented = new()
-        {
-            WriteIndented = true
-        };
-
-        public async Task<string> RegenerateAndSaveAsync(Guid applicationId, string? promptVersion = null)
+        public async Task<string> RegenerateAndSaveAsync(Guid applicationId, string? promptVersion = null, CancellationToken cancellationToken = default)
         {
             var application = await applicationRepository.GetAsync(applicationId);
             var applicationForm = await applicationFormRepository.GetAsync(application.ApplicationFormId);
@@ -63,57 +55,140 @@ namespace Unity.AI.Operations
             var formSchema = await GetFormSchemaAsync(formSubmission?.ApplicationFormVersionId);
             var promptData = PromptDataPayloadBuilder.BuildPromptDataPayload(application, formSubmission, formSchema, logger);
 
+            var sections = scoresheet.Sections.OrderBy(s => s.Order).ToList();
+            var mode = executionModeResolver.ResolveMode(AIExecutionModeResolver.ApplicationScoringOperation);
+
+            var perSectionResults = await AIExecutionStrategy.RunAsync(
+                sections,
+                mode,
+                section => ProcessSectionAsync(applicationId, section, promptData, attachmentSummaries, promptVersion, cancellationToken),
+                batch => ProcessSectionsAsync(applicationId, batch, promptData, attachmentSummaries, promptVersion, cancellationToken));
+
             var allSectionResults = new Dictionary<string, object>();
-            foreach (var section in scoresheet.Sections.OrderBy(s => s.Order))
+            foreach (var sectionResult in perSectionResults)
             {
-                try
+                foreach (var kvp in sectionResult)
                 {
-                    var sectionQuestionsData = new List<object>();
-                    foreach (var field in section.Fields.OrderBy(f => f.Order))
-                    {
-                        var options = ExtractSelectListOptions(field);
-                        sectionQuestionsData.Add(new
-                        {
-                            id = field.Id.ToString(),
-                            question = field.Label,
-                            description = field.Description,
-                            type = field.Type.ToString(),
-                            options,
-                            allowed_answers = ExtractSelectListOptionNumbers(options)
-                        });
-                    }
-
-                    var applicationScoringRequest = new ApplicationScoringRequest
-                    {
-                        Data = promptData,
-                        Attachments = attachmentSummaries,
-                        SectionName = section.Name,
-                        SectionSchema = JsonSerializer.SerializeToElement(sectionQuestionsData, _jsonOptions),
-                        PromptVersion = promptVersion,
-                    };
-                    var applicationScoringResponse = await aiService.GenerateApplicationScoringAsync(applicationScoringRequest);
-
-                    if (applicationScoringResponse.Answers.Count > 0)
-                    {
-                        var sectionJson = JsonSerializer.Serialize(applicationScoringResponse.Answers, _jsonOptions);
-                        using var sectionDoc = JsonDocument.Parse(sectionJson);
-                        foreach (var property in sectionDoc.RootElement.EnumerateObject())
-                        {
-                            allSectionResults[property.Name] = property.Value.Clone();
-                        }
-                    }
-                }
-                catch (Exception ex)
-                {
-                    logger.LogError(ex, "Error processing AI application scoring section {SectionName} for application {ApplicationId}", section.Name, applicationId);
+                    allSectionResults[kvp.Key] = kvp.Value;
                 }
             }
 
-            var combinedResults = JsonSerializer.Serialize(allSectionResults, _jsonOptionsIndented);
+            var combinedResults = JsonSerializer.Serialize(allSectionResults, AIJsonDefaults.Indented);
             var validatedJson = ValidateApplicationScoringJson(combinedResults);
             application.AIScoresheetAnswers = validatedJson;
             await applicationRepository.UpdateAsync(application);
             return validatedJson;
+        }
+
+        private async Task<Dictionary<string, object>> ProcessSectionAsync(
+            Guid applicationId,
+            ScoresheetSection section,
+            JsonElement promptData,
+            List<AIAttachmentItem> attachmentSummaries,
+            string? promptVersion,
+            CancellationToken cancellationToken)
+        {
+            var sectionResults = new Dictionary<string, object>();
+            try
+            {
+                var applicationScoringRequest = new ApplicationScoringRequest
+                {
+                    Data = promptData,
+                    Attachments = attachmentSummaries,
+                    SectionName = section.Name,
+                    SectionSchema = JsonSerializer.SerializeToElement(BuildSectionQuestionsData(section), AIJsonDefaults.IndentedCamelCase),
+                    PromptVersion = promptVersion,
+                };
+                var applicationScoringResponse = await aiService.GenerateApplicationScoringAsync(applicationScoringRequest, cancellationToken);
+
+                if (applicationScoringResponse.Answers.Count > 0)
+                {
+                    CopyAnswers(applicationScoringResponse.Answers, sectionResults);
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Error processing AI application scoring section {SectionName} for application {ApplicationId}", section.Name, applicationId);
+            }
+            return sectionResults;
+        }
+
+        private async Task<List<Dictionary<string, object>>> ProcessSectionsAsync(
+            Guid applicationId,
+            IReadOnlyCollection<ScoresheetSection> sections,
+            JsonElement promptData,
+            List<AIAttachmentItem> attachmentSummaries,
+            string? promptVersion,
+            CancellationToken cancellationToken)
+        {
+            var sectionResults = new Dictionary<string, object>();
+            try
+            {
+                var questions = sections
+                    .OrderBy(s => s.Order)
+                    .SelectMany(BuildSectionQuestionsData)
+                    .ToList();
+
+                var applicationScoringRequest = new ApplicationScoringRequest
+                {
+                    Data = promptData,
+                    Attachments = attachmentSummaries,
+                    SectionName = "All Sections",
+                    SectionSchema = JsonSerializer.SerializeToElement(questions, AIJsonDefaults.IndentedCamelCase),
+                    PromptVersion = promptVersion,
+                };
+                var applicationScoringResponse = await aiService.GenerateApplicationScoringAsync(applicationScoringRequest, cancellationToken);
+
+                if (applicationScoringResponse.Answers.Count > 0)
+                {
+                    CopyAnswers(applicationScoringResponse.Answers, sectionResults);
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Error processing AI application scoring batch for application {ApplicationId}", applicationId);
+            }
+
+            return [sectionResults];
+        }
+
+        private static List<object> BuildSectionQuestionsData(ScoresheetSection section)
+        {
+            var sectionQuestionsData = new List<object>();
+            foreach (var field in section.Fields.OrderBy(f => f.Order))
+            {
+                var options = ExtractSelectListOptions(field);
+                sectionQuestionsData.Add(new
+                {
+                    id = field.Id.ToString(),
+                    section = section.Name,
+                    question = field.Label,
+                    description = field.Description,
+                    type = field.Type.ToString(),
+                    options,
+                    allowed_answers = ExtractSelectListOptionNumbers(options)
+                });
+            }
+
+            return sectionQuestionsData;
+        }
+
+        private void CopyAnswers(Dictionary<string, ApplicationScoringAnswer> answers, Dictionary<string, object> results)
+        {
+            var answersJson = JsonSerializer.Serialize(answers, AIJsonDefaults.IndentedCamelCase);
+            using var answersDoc = JsonDocument.Parse(answersJson);
+            foreach (var property in answersDoc.RootElement.EnumerateObject())
+            {
+                results[property.Name] = property.Value.Clone();
+            }
         }
 
         private async Task<string?> GetFormSchemaAsync(Guid? formVersionId)

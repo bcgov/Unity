@@ -2,6 +2,7 @@ using Shouldly;
 using System;
 using System.ComponentModel;
 using System.Threading.Tasks;
+using Unity.Payments.Domain.AccountCodings;
 using Unity.Payments.Domain.Suppliers;
 using Unity.Payments.Enums;
 using Unity.Payments.PaymentRequests;
@@ -15,12 +16,14 @@ public class PaymentRequestRepository_PaymentRollup_Tests : PaymentsApplicationT
 {
     private readonly IPaymentRequestRepository _paymentRequestRepository;
     private readonly ISupplierRepository _supplierRepository;
+    private readonly IAccountCodingRepository _accountCodingRepository;
     private readonly IUnitOfWorkManager _unitOfWorkManager;
 
     public PaymentRequestRepository_PaymentRollup_Tests()
     {
         _paymentRequestRepository = GetRequiredService<IPaymentRequestRepository>();
         _supplierRepository = GetRequiredService<ISupplierRepository>();
+        _accountCodingRepository = GetRequiredService<IAccountCodingRepository>();
         _unitOfWorkManager = GetRequiredService<IUnitOfWorkManager>();
     }
 
@@ -376,6 +379,47 @@ public class PaymentRequestRepository_PaymentRollup_Tests : PaymentsApplicationT
         results.ShouldBeEmpty();
     }
 
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task Should_Count_HistoricalPayment_In_TotalPaid()
+    {
+        // Arrange
+        var correlationId = Guid.NewGuid();
+
+        using var uow = _unitOfWorkManager.Begin();
+        await InsertHistoricalPaymentRequestAsync(correlationId, 750m);
+
+        // Act
+        var results = await _paymentRequestRepository
+            .GetBatchPaymentRollupsByCorrelationIdsAsync([correlationId]);
+
+        // Assert
+        results.Count.ShouldBe(1);
+        results[0].TotalPaid.ShouldBe(750m);
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task Should_Count_HistoricalPayment_Alongside_FullyPaid_In_TotalPaid()
+    {
+        // Arrange
+        var correlationId = Guid.NewGuid();
+        var siteId = await CreateSupplierAndSiteAsync();
+
+        using var uow = _unitOfWorkManager.Begin();
+        await InsertPaymentRequestAsync(siteId, correlationId, 1000m,
+            PaymentRequestStatus.Submitted, paymentStatus: "Fully Paid");
+        await InsertHistoricalPaymentRequestAsync(correlationId, 500m);
+
+        // Act
+        var results = await _paymentRequestRepository
+            .GetBatchPaymentRollupsByCorrelationIdsAsync([correlationId]);
+
+        // Assert
+        results.Count.ShouldBe(1);
+        results[0].TotalPaid.ShouldBe(1500m);
+    }
+
     #endregion
 
     #region Helpers
@@ -391,6 +435,15 @@ public class PaymentRequestRepository_PaymentRollup_Tests : PaymentsApplicationT
         return siteId;
     }
 
+    private async Task<Guid> CreateAccountCodingAsync()
+    {
+        using var uow = _unitOfWorkManager.Begin();
+        var accountCoding = AccountCoding.Create("ABC", "ABCDE", "AB001", "AB01", "AB00001");
+        await _accountCodingRepository.InsertAsync(accountCoding, true);
+        await uow.CompleteAsync();
+        return accountCoding.Id;
+    }
+
     private async Task InsertPaymentRequestAsync(
         Guid siteId,
         Guid correlationId,
@@ -399,6 +452,8 @@ public class PaymentRequestRepository_PaymentRollup_Tests : PaymentsApplicationT
         string? paymentStatus = null,
         string? invoiceStatus = null)
     {
+        var accountCodingId = await CreateAccountCodingAsync();
+
         var dto = new CreatePaymentRequestDto
         {
             InvoiceNumber = $"INV-{Guid.NewGuid():N}",
@@ -411,7 +466,8 @@ public class PaymentRequestRepository_PaymentRollup_Tests : PaymentsApplicationT
             CorrelationProvider = "Test",
             ReferenceNumber = $"REF-{Guid.NewGuid():N}",
             BatchName = "TEST_BATCH",
-            BatchNumber = 1
+            BatchNumber = 1,
+            AccountCodingId = accountCodingId
         };
 
         var paymentRequest = new PaymentRequest(Guid.NewGuid(), dto);
@@ -427,6 +483,29 @@ public class PaymentRequestRepository_PaymentRollup_Tests : PaymentsApplicationT
             paymentRequest.SetInvoiceStatus(invoiceStatus);
         }
 
+        await _paymentRequestRepository.InsertAsync(paymentRequest, true);
+    }
+
+    private async Task InsertHistoricalPaymentRequestAsync(
+        Guid correlationId,
+        decimal amount)
+    {
+        var dto = new CreateHistoricalPaymentRequestDto
+        {
+            InvoiceNumber = $"HIST-{Guid.NewGuid():N}",
+            Amount = amount,
+            PayeeName = "Test Payee",
+            ContractNumber = "0000000000",
+            CorrelationId = correlationId,
+            CorrelationProvider = "Test",
+            ReferenceNumber = $"REF-{Guid.NewGuid():N}",
+            BatchName = "HIST_BATCH",
+            BatchNumber = 1,
+            PaidDate = "2025-01-15"
+            // SiteId, SupplierNumber, AccountCodingId intentionally omitted — optional for historical
+        };
+
+        var paymentRequest = new PaymentRequest(Guid.NewGuid(), dto);
         await _paymentRequestRepository.InsertAsync(paymentRequest, true);
     }
 

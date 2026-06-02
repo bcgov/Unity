@@ -58,6 +58,7 @@
 @section scripts
 {
     <abp-script src="/Pages/GrantApplications/ai-generation-button-state.js" />
+    <abp-script src="/Pages/GrantApplications/ai-rate-limit.js" />
     <abp-script src="/Pages/GrantApplications/Details.js" />
     <abp-script src="/libs/formiojs/formio.form.min.js" />
     <abp-script src="/Pages/GrantApplications/ai-analysis.js" />
@@ -75,14 +76,12 @@
 <input type="hidden" id="ApplicationFormSchema" value="@Model.ApplicationFormSchema" />
 <input type="hidden" id="ApplicationScoresheetSchemaJson" value="@Model.ApplicationScoresheetSchemaJson" />
 <input type="hidden" id="ApplicationFormId" value="@Model.ApplicationFormId" />
-<input type="hidden" id="HasRenderedHTML" value="@Model.HasRenderedHTML.ToString()" />
 <input type="hidden" id="CurrentUserId" value="@Model.CurrentUserId" />
 <input type="hidden" id="CurrentUserName" value="@Model.CurrentUserName" />
 <input type="hidden" id="Extensions" value="@Model.Extensions" />
 <input type="hidden" id="MaxFileSize" value="@Model.MaxFileSize" />
 <input type="hidden" id="EmailAttachmentMaxFileSize" value="@Model.EmailAttachmentMaxFileSize" />
 <input type="hidden" id="TotalEmailAttachmentMaxFileSize" value="@Model.TotalEmailAttachmentMaxFileSize" />
-<input type="hidden" id="RenderFormIoToHtml" value="@Model.RenderFormIoToHtml.ToString()" />
 <input type="hidden" id="ApplicationFormVersionId" value="@Model.ApplicationFormVersionId" />
 <input type="hidden" id="AIAnalysisFeatureEnabled" value="@aiApplicationAnalysisEnabled" />
 
@@ -121,7 +120,7 @@
                         <abp-row>
                             <abp-column size="_12">
                                 <abp-button icon="fl fl-pdf" icon-type="Other" id="printPdf" class="pdf-icon"></abp-button>
-                                <div id="formio">@Html.Raw(@Model.ApplicationFormSubmissionHtml)</div>
+                                <div id="formio"></div>
                             </abp-column>
 
                         </abp-row>
@@ -423,7 +422,7 @@
                         <h6 class="fw-bold m-0">Application Analysis</h6>
                         @if (aiApplicationAnalysisGenerateEnabled)
                         {
-                            <button type="button" class="btn unt-btn-outline-primary btn-outline-primary ai-generate-btn" id="regenerateApplicationAnalysis">
+                            <button type="button" class="btn unt-btn-outline-primary btn-outline-primary ai-generate-btn" id="regenerateApplicationAnalysis" data-ai-cooldown-checking="1" data-ai-rate-limit-disabled="1" disabled>
                                 <span class="ai-button-content">
                                     <i class="unt-icon-sm fa-solid fa-wand-sparkles"></i>
                                     <span>Generate</span>

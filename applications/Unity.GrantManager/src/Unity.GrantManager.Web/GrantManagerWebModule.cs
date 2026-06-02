@@ -36,6 +36,7 @@ using Unity.GrantManager.Web.Components.MiniProfiler;
 using Unity.GrantManager.Web.Exceptions;
 using Unity.GrantManager.Web.Filters;
 using Unity.GrantManager.Web.Identity;
+using Unity.GrantManager.Web.Middleware;
 using Unity.GrantManager.Web.Identity.Policy;
 using Unity.GrantManager.Web.Menus;
 using Unity.GrantManager.Web.Settings;
@@ -136,6 +137,10 @@ public class GrantManagerWebModule : AbpModule
     {
         var hostingEnvironment = context.Services.GetHostingEnvironment();
         var configuration = context.Services.GetConfiguration();
+
+        // Pre-warm the EF Core query pipeline after startup (web host only, not DbMigrator)
+        context.Services.Configure<DbWarmupOptions>(configuration.GetSection(DbWarmupOptions.SectionName));
+        context.Services.AddHostedService<GrantManagerDbWarmupService>();
 
         ConfgureFormsApiAuhentication(context);
         ConfigureAuthentication(context, configuration);
@@ -638,6 +643,7 @@ public class GrantManagerWebModule : AbpModule
         app.UseCorrelationId();
         app.UseStaticFiles();
         app.UseMiddleware<Unity.GrantManager.Web.Middleware.ExceptionCounterMiddleware>();
+        app.UseMiddleware<TimezoneMiddleware>();
         app.UseRouting();
         app.UseHttpMetrics();
         app.UseAuthentication();

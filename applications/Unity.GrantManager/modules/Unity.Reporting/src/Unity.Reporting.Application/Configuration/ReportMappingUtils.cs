@@ -343,7 +343,8 @@ namespace Unity.Reporting.Configuration
                     Path = field.Path,
                     DataPath = field.DataPath,
                     TypePath = field.TypePath,
-                    Id = field.Id
+                    Id = field.Id,
+                    VersionLabel = field.VersionLabel
                 };
             }).ToList();
 
@@ -351,7 +352,11 @@ namespace Unity.Reporting.Configuration
             var mapping = new Mapping
             {
                 Rows = [.. mapRows],
-                Metadata = new MapMetadata() { Info = fieldsMap.Metadata?.Info }
+                Metadata = new MapMetadata()
+                {
+                    Info = fieldsMap.Metadata?.Info,
+                    Description = upsertReportColmnsMapDto.Mapping?.Description
+                }
             };
 
             // Create and return the map entity
@@ -447,15 +452,20 @@ namespace Unity.Reporting.Configuration
                     Path = field.Path,
                     DataPath = field.DataPath,
                     TypePath = field.TypePath,
-                    Id = field.Id
+                    Id = field.Id,
+                    VersionLabel = field.VersionLabel
                 };
             }).ToList();
 
             // Create new mapping object and serialize it
-            var updatedMapping = new Mapping 
-            { 
+            var updatedMapping = new Mapping
+            {
                 Rows = [.. mapRows],
-                Metadata = new MapMetadata() { Info = fieldsMap.Metadata?.Info }
+                Metadata = new MapMetadata()
+                {
+                    Info = fieldsMap.Metadata?.Info,
+                    Description = updateReportColumnsMapDto.Mapping?.Description
+                }
             };
             existing.Mapping = JsonSerializer.Serialize(updatedMapping);
 

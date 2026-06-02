@@ -36,6 +36,7 @@
     <ProjectReference Include="..\..\..\..\src\Unity.GrantManager.Domain\Unity.GrantManager.Domain.csproj" />
     <ProjectReference Include="..\Unity.Payments.Application.Contracts\Unity.Payments.Application.Contracts.csproj" />
     <ProjectReference Include="..\..\..\Unity.Notifications\src\Unity.Notifications.Application\Unity.Notifications.Application.csproj" />
+    <ProjectReference Include="..\..\..\Unity.SharedKernel\Unity.SharedKernel.csproj" />
   </ItemGroup>
 
   <ItemGroup>

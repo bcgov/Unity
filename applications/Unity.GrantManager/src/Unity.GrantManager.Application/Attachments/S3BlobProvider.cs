@@ -1,19 +1,18 @@
-﻿using Amazon.S3.Model;
-using Amazon.S3;
+﻿using Amazon.S3;
+using Amazon.S3.Model;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Routing;
+using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.Extensions.Primitives;
 using System;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
 using Volo.Abp.BlobStoring;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Validation;
-using Microsoft.AspNetCore.StaticFiles;
-using Microsoft.Extensions.Configuration;
-using System.Text.RegularExpressions;
-using Microsoft.AspNetCore.Routing;
 
 namespace Unity.GrantManager.Attachments;
 
@@ -23,30 +22,15 @@ public partial class S3BlobProvider : BlobProviderBase, ITransientDependency
     private readonly IApplicationAttachmentRepository _applicationAttachmentRepository;
     private readonly IAssessmentAttachmentRepository _assessmentAttachmentRepository;
     private readonly IApplicantAttachmentRepository _applicantAttachmentRepository;
-    private readonly AmazonS3Client _amazonS3Client;
+    private readonly IAmazonS3 _amazonS3Client;
 
-    public S3BlobProvider(IHttpContextAccessor httpContextAccessor, IApplicationAttachmentRepository attachmentRepository, IAssessmentAttachmentRepository assessmentAttachmentRepository, IApplicantAttachmentRepository applicantAttachmentRepository, IConfiguration configuration)
+    public S3BlobProvider(IHttpContextAccessor httpContextAccessor, IApplicationAttachmentRepository attachmentRepository, IAssessmentAttachmentRepository assessmentAttachmentRepository, IApplicantAttachmentRepository applicantAttachmentRepository, IAmazonS3 amazonS3Client)
     {
         _httpContextAccessor = httpContextAccessor;
         _applicationAttachmentRepository = attachmentRepository;
         _assessmentAttachmentRepository = assessmentAttachmentRepository;
         _applicantAttachmentRepository = applicantAttachmentRepository;
-
-        AmazonS3Config s3config = new()
-        {
-            RegionEndpoint = null,
-            ServiceURL = configuration["S3:Endpoint"],
-            AllowAutoRedirect = true,
-            ForcePathStyle = true
-        };
-
-
-        AmazonS3Client s3Client = new(
-                configuration["S3:AccessKeyId"],
-                configuration["S3:SecretAccessKey"],
-                s3config
-                );
-        _amazonS3Client = s3Client;
+        _amazonS3Client = amazonS3Client;
     }    
 
     public override async Task<bool> DeleteAsync(BlobProviderDeleteArgs args)

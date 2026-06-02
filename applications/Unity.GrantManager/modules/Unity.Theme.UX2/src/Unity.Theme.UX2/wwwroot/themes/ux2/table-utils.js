@@ -229,7 +229,8 @@ function initializeDataTable(options) {
         onStateLoadParams,
         onStateLoaded,
         fixedHeaders = false,
-        lengthMenu = [25, 50, 75, 100, -1]
+        lengthMenu = [25, 50, 75, 100, -1],
+        deferRender = false
     } = options;
 
     // Process columns and visibility
@@ -255,7 +256,7 @@ function initializeDataTable(options) {
         scrollX: true,
         scrollCollapse: true,
         autoWidth: true,
-        deferRender: false,
+        deferRender: deferRender,
         deferLoading: serverSideEnabled ? 0 : null,
         ajax: abp.libs.datatables.createAjax(
             dataEndpoint,

@@ -5,6 +5,7 @@ using System.Net;
 using System.Net.Http;
 using System.Text;
 using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
 using Volo.Abp.DependencyInjection;
 
@@ -26,7 +27,8 @@ public class OpenAITransportService(
         double? temperature = null,
         string? operationName = null,
         string? promptVersion = null,
-        string? fileName = null)
+        string? fileName = null,
+        CancellationToken cancellationToken = default)
     {
         var providerName = _configurationResolver.ResolveProviderName(operationName);
         if (!string.Equals(providerName, "OpenAI", StringComparison.Ordinal))
@@ -36,12 +38,6 @@ public class OpenAITransportService(
         }
 
         var apiKey = _configurationResolver.ResolveApiKey(operationName);
-        if (string.IsNullOrEmpty(apiKey))
-        {
-            _logger.LogWarning("Error: OpenAI API key is not configured");
-            return AIOperationResult.PermanentFailure(new AIProviderResult("OpenAI API key is not configured"));
-        }
-
         try
         {
             var resolvedSystemPrompt = string.IsNullOrWhiteSpace(systemPrompt)
@@ -58,10 +54,23 @@ public class OpenAITransportService(
                 [_configurationResolver.ResolveMaxTokensParameterNameForOperation(operationName)] = maxTokens
             };
 
-            var resolvedTemperature = temperature ?? _configurationResolver.ResolveConfiguredTemperature(operationName);
+            var profileTemperature = _configurationResolver.ResolveConfiguredTemperature(operationName);
+            var resolvedTemperature = profileTemperature.HasValue ? temperature ?? profileTemperature : null;
             if (resolvedTemperature.HasValue)
             {
                 requestPayload["temperature"] = resolvedTemperature.Value;
+            }
+
+            var reasoningEffort = _configurationResolver.ResolveConfiguredReasoningEffort(operationName);
+            if (!string.IsNullOrWhiteSpace(reasoningEffort))
+            {
+                requestPayload["reasoning_effort"] = reasoningEffort;
+            }
+
+            var verbosity = _configurationResolver.ResolveConfiguredVerbosity(operationName);
+            if (!string.IsNullOrWhiteSpace(verbosity))
+            {
+                requestPayload["verbosity"] = verbosity;
             }
 
             var json = JsonSerializer.Serialize(requestPayload);
@@ -73,8 +82,8 @@ public class OpenAITransportService(
             };
             request.Headers.TryAddWithoutValidation("Authorization", apiKey);
 
-            var response = await _httpClient.SendAsync(request);
-            var responseContent = await response.Content.ReadAsStringAsync();
+            using var response = await _httpClient.SendAsync(request, cancellationToken);
+            var responseContent = await response.Content.ReadAsStringAsync(cancellationToken);
             var metadata = TryExtractProviderMetadata(responseContent);
             var providerResponse = BuildProviderResponseFromMetadata(
                 string.Empty,
@@ -117,6 +126,15 @@ public class OpenAITransportService(
                 _logger.LogWarning(ex, "AI response payload had an invalid output shape");
                 return AIOperationResult.InvalidOutput(providerResponse);
             }
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogError(ex, "AI request configuration is invalid.");
+            return AIOperationResult.PermanentFailure(new AIProviderResult(ex.Message));
         }
         catch (Exception ex)
         {

@@ -1,0 +1,36 @@
+@page
+@model Unity.AI.Web.Pages.AIReporting.IndexModel
+
+@section styles {
+    @if (Model.CanViewAiReporting)
+    {
+        <abp-style src="/libs/bootstrap/css/bootstrap.css" />
+    }
+}
+
+@section scripts {
+    @if (Model.CanViewAiReporting)
+    {
+        <abp-script src="/libs/jquery/jquery.js" />
+        <abp-script src="/libs/bootstrap-4/dist/js/bootstrap.min.js"></abp-script>
+        <script>
+            globalThis.reportingAiUrl = @Json.Serialize(Model.ReportingAiUrl);
+        </script>
+        <abp-script src="/Pages/AIReporting/Index.js" />
+    }
+}
+
+@if (Model.CanViewAiReporting)
+{
+    <style>
+        #container {
+            height: calc(100vh - 6.75rem);
+        }
+
+        .unity-app-main-container {
+            padding: 0;
+        }
+    </style>
+
+    <div id="container"></div>
+}

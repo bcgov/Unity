@@ -1,7 +1,6 @@
 ﻿@page
 @using Newtonsoft.Json
 @using Unity.Modules.Shared
-@using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal
 @using Volo.Abp.Authorization.Permissions
 
 @model Unity.GrantManager.Web.Pages.ApplicationTags.ApplicationTagsModalModel
@@ -49,7 +48,14 @@
         }
     </abp-modal-body>
         <abp-modal-footer>
-            <button class="btn btn-primary" data-busy-text="Saving..." type="submit" id="assignTagsModelSaveBtn">Save</button>
+            @if (await PermissionChecker.IsGrantedAsync(UnitySelector.Application.Tags.Create) || await PermissionChecker.IsGrantedAsync(UnitySelector.Application.Tags.Delete))
+            {
+                <button class="btn btn-primary" data-busy-text="Saving..." type="submit" id="assignTagsModelSaveBtn">Save</button>
+            } 
+            else 
+            {
+                <button class="btn btn-primary" data-busy-text="Saving..." type="submit" id="assignTagsModelSaveBtn" disabled>Save</button>
+            }
             <button class="btn btn-secondary" data-bs-dismiss="modal" type="button">Cancel</button>
         </abp-modal-footer>
 </abp-modal>

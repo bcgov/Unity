@@ -9,6 +9,7 @@ using Volo.Abp;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.MultiTenancy;
+using Volo.Abp.Uow;
 
 namespace Unity.GrantManager.Notifications
 {
@@ -18,6 +19,16 @@ namespace Unity.GrantManager.Notifications
     public class NotificationsAppService(IDynamicUrlRepository dynamicUrlRepository,
         ILogger<NotificationsAppService> logger, ICurrentTenant currentTenant) : INotificationsAppService, ITransientDependency
     {
+        private readonly IDynamicUrlRepository _dynamicUrlRepository;
+        private readonly TeamsNotificationService _teamsNotificationService;
+
+        public NotificationsAppService(IDynamicUrlRepository dynamicUrlRepository)
+        {
+            _dynamicUrlRepository = dynamicUrlRepository;
+            _teamsNotificationService = new TeamsNotificationService();
+        }
+
+        [UnitOfWork]
         public async Task<string> InitializeTeamsChannelAsync(string keyName)
         {
             using (currentTenant.Change(null))
@@ -50,6 +61,7 @@ namespace Unity.GrantManager.Notifications
             await teamsNotificationService.PostFactsToTeamsAsync(teamsChannel, activityTitle, activitySubtitle);
         }
 
+        [UnitOfWork]
         public async Task PostToTeamsAsync(string activityTitle, string activitySubtitle, List<Fact> facts)
         {
             string teamsChannel = await InitializeTeamsChannelAsync(TeamsNotificationService.TEAMS_NOTIFICATION);

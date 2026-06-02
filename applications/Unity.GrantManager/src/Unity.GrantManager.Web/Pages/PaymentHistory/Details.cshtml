@@ -7,8 +7,9 @@
 
 @inject IPageLayout PageLayout
 @{
+    ViewData["ActiveNavHref"] = "/PaymentRequests";
     PageLayout.Content.MenuItemName = "GrantManager.Payments";
-    PageLayout.Content.Title = "Payment History";    
+    PageLayout.Content.Title = "Payment History";
     ViewBag.PageTitle = "Payment History";
 }
 

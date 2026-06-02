@@ -49,3 +49,11 @@ public partial class MapRowToMapRowDtoMapper : MapperBase<MapRow, MapRowDto>
 
     public override partial void Map(MapRow source, MapRowDto destination);
 }
+
+[Mapper]
+public partial class MapMetadataToMapMetadataDtoMapper : MapperBase<MapMetadata, MapMetadataDto>
+{
+    public override partial MapMetadataDto Map(MapMetadata source);
+
+    public override partial void Map(MapMetadata source, MapMetadataDto destination);
+}

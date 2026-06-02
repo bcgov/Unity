@@ -32,6 +32,7 @@ public class WorksheetToWorksheetDtoMapper : MapperBase<Worksheet, WorksheetDto>
         destination.Version = source.Version;
         destination.Published = source.Published;
         destination.ReportViewName = source.ReportViewName;
+        destination.IsArchived = source.IsArchived;
         destination.Sections = source.Sections?
             .Select(s => new WorksheetSectionMapper().Map(s))
             .ToList() ?? [];

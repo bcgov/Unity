@@ -27,6 +27,17 @@ namespace Unity.GrantManager.Applications
             string? searchTerm = null // optional search filter
         );
 
+        // Optimized projected list for the application list table.
+        Task<List<ApplicationListRecord>> GetApplicationListRecordsAsync(
+            int skipCount,
+            int maxResultCount,
+            string? sorting = null,
+            DateTime? submittedFromDate = null,
+            DateTime? submittedToDate = null,
+            string? searchTerm = null,
+            IReadOnlyList<string>? requestedFields = null
+        );
+
         // Get applications by applicant ID
         Task<List<Application>> GetByApplicantIdAsync(Guid applicantId);
 

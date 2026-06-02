@@ -24,4 +24,5 @@ public interface IApplicantAppService : IApplicationService
     Task<PagedResultDto<ApplicantListDto>> GetListAsync(ApplicantListRequestDto input);
     Task<Applicant> PartialUpdateApplicantSummaryAsync(Guid applicantId, PartialUpdateDto<UpdateApplicantSummaryDto> input);
     Task UpdateApplicantContactAddressesAsync(Guid applicantId, UpdateApplicantContactAddressesDto input);
+    Task UpdateApplicantStatusAsync(Guid applicantId, string status);
 }

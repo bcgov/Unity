@@ -50,6 +50,11 @@ namespace Unity.GrantManager.Comments
                 : ObjectMapper.Map<CommentBase, CommentDto>(comment);
         }
 
+        public virtual async Task DeleteAsync(Guid id, QueryCommentsByTypeDto dto)
+        {
+            await commentsManager.DeleteCommentAsync(dto.OwnerId, id, dto.CommentType);
+        }
+
         [Authorize(GrantApplicationPermissions.Comments.Add)]
         public virtual async Task PinAsync(Guid id, PinCommentDto dto)
         {

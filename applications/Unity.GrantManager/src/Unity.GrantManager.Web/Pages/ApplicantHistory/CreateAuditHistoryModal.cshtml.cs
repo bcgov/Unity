@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Threading.Tasks;
+using Unity.GrantManager.Applications;
 using Unity.GrantManager.ApplicantProfile;
 using Volo.Abp.AspNetCore.Mvc.UI.RazorPages;
 
@@ -33,6 +34,8 @@ public class CreateAuditHistoryModal : AbpPageModel
             ApplicantId = AuditHistoryForm!.ApplicantId,
             AuditTrackingNumber = AuditHistoryForm.AuditTrackingNumber,
             AuditDate = AuditHistoryForm.AuditDate,
+            AuditStatus = Enum.TryParse<AuditHistoryStatus>(AuditHistoryForm.AuditStatus, out var status) ? status : null,
+            AuditorName = AuditHistoryForm.AuditorName,
             AuditNote = AuditHistoryForm.AuditNote
         };
 

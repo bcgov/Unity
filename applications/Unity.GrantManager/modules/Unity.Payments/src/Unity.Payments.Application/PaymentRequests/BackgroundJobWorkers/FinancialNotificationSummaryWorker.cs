@@ -18,6 +18,8 @@ public class FinancialNotificationSummaryWorker : QuartzBackgroundWorkerBase
     private readonly FinancialSummaryNotifier _financialSummaryNotifier;
     private readonly IEnumerable<IEmailRecipientStrategy> _strategies;
 
+    private const string FallbackCron = "0 0 9 1/1 * ? *";
+
     public FinancialNotificationSummaryWorker(
         ISettingManager settingManager,
         FinancialSummaryNotifier financialSummaryNotifier,
@@ -27,40 +29,52 @@ public class FinancialNotificationSummaryWorker : QuartzBackgroundWorkerBase
         _financialSummaryNotifier = financialSummaryNotifier;
         _strategies = strategies;
 
-        logger.LogInformation("FinancialNotificationSummary Constructor: Email strategies registered.");
+        var cronExpression = ResolveCronExpression(settingManager, logger);
 
-        string casFinancialNotificationExpression = "";
+        JobDetail = JobBuilder
+            .Create<FinancialNotificationSummaryWorker>()
+            .WithIdentity(nameof(FinancialNotificationSummaryWorker))
+            .Build();
 
-        try
-        {
-            casFinancialNotificationExpression = SettingDefinitions
-                .GetSettingsValue(settingManager,
-                    PaymentSettingsConstants.BackgroundJobs.CasFinancialNotificationSummary_ProducerExpression);
-        }
-        catch
-        {
-            casFinancialNotificationExpression = "0 0 9 1/1 * ? *";
-        }
-
-        if (!casFinancialNotificationExpression.IsNullOrEmpty())
-        {
-
-            JobDetail = JobBuilder
-                .Create<FinancialNotificationSummaryWorker>()
-                .WithIdentity(nameof(FinancialNotificationSummaryWorker))
-                .Build();
-
-            Trigger = TriggerBuilder
-                .Create()
-                .WithIdentity(nameof(FinancialNotificationSummaryWorker))
-                .WithSchedule(CronScheduleBuilder.CronSchedule(casFinancialNotificationExpression)
+        Trigger = TriggerBuilder
+            .Create()
+            .WithIdentity(nameof(FinancialNotificationSummaryWorker))
+            .WithSchedule(CronScheduleBuilder
+                .CronSchedule(cronExpression)
                 .WithMisfireHandlingInstructionIgnoreMisfires())
-                .Build();
-        }
+            .Build();
     }
 
     public override async Task Execute(IJobExecutionContext context)
     {
+        Logger.LogInformation("FinancialNotificationSummary Execute");
         await _financialSummaryNotifier.NotifyFailedPayments(_strategies);
+    }
+
+    private static string ResolveCronExpression(ISettingManager settingManager, ILogger logger)
+    {
+        try
+        {
+            var expression = SettingDefinitions.GetSettingsValue(
+                settingManager,
+                PaymentSettingsConstants.BackgroundJobs.CasFinancialNotificationSummary_ProducerExpression);
+
+            if (!expression.IsNullOrEmpty())
+            {
+                return expression;
+            }
+
+            logger.LogWarning(
+                "FinancialNotificationSummary: Cron expression setting was empty. Using fallback: {Fallback}",
+                FallbackCron);
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex,
+                "FinancialNotificationSummary: Failed to read cron expression setting. Using fallback: {Fallback}",
+                FallbackCron);
+        }
+
+        return FallbackCron;
     }
 }

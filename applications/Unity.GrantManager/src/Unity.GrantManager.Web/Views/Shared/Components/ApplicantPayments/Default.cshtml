@@ -1,0 +1,73 @@
+@using Unity.GrantManager.Web.Views.Shared.Components.ApplicantPayments
+@using Unity.Modules.Shared
+@using Volo.Abp.Authorization.Permissions
+
+@inject IPermissionChecker PermissionChecker
+
+@model ApplicantPaymentsViewModel
+
+@{
+    Layout = null;
+}
+
+<input type="hidden" id="ApplicantPaymentsApplicantId" value="@Model.ApplicantId" />
+
+<div class="px-1 pb-2 mb-4 applicant-payments-container">
+
+    @* Payment Summary *@
+    @if (await PermissionChecker.IsGrantedAsync(UnitySelector.Payment.Summary.Default))
+    {
+    <div class="applicant-payments-summary">
+        <div class="d-flex align-items-stretch justify-content-start pb-3 pt-2">
+            <h6 class="ps-1 fw-bold">Payment Summary</h6>
+        </div>
+        <div class="row m-0 p-0">
+            <div class="col-4 px-1">
+                <div class="unity-input-group">
+                    <span class="unity-input-prepend">$</span>
+                    <abp-input class="unity-currency-input" asp-for="@Model.TotalApprovedAmount" disabled />
+                </div>
+            </div>
+            <div class="col-4 px-1">
+                <div class="unity-input-group">
+                    <span class="unity-input-prepend">$</span>
+                    <abp-input class="unity-currency-input" asp-for="@Model.TotalPaidAmount" disabled />
+                </div>
+            </div>
+            <div class="col-4 px-1">
+                <div class="unity-input-group">
+                    <span class="unity-input-prepend">$</span>
+                    <abp-input class="unity-currency-input" asp-for="@Model.TotalRemainingAmount" disabled />
+                </div>
+            </div>
+        </div>
+    </div>
+    }
+
+    @* Payment List *@
+    @if (await PermissionChecker.IsGrantedAsync(UnitySelector.Payment.PaymentList.Default))
+    {
+    <div class="d-flex align-items-stretch justify-content-start pb-3 pt-2">
+        <h6 class="ps-1 fw-bold">Payment List</h6>
+    </div>
+    }
+    <div class="@(await PermissionChecker.IsGrantedAsync(UnitySelector.Payment.PaymentList.Default) ? string.Empty : "d-none")">
+        <div class="applicant-payments-toolbar">
+            <input type="search"
+                   id="applicant-payments-search"
+                   placeholder="Search payments..."
+                   class="tbl-search" />
+            <div id="applicantPaymentsDynamicButtonContainerId" class="dynamic-buttons-div button-gap-1"></div>
+        </div>
+        <abp-table id="ApplicantPaymentRequestListTable" hoverable-rows="true" class="w-100"></abp-table>
+    </div>
+
+</div>
+
+<script defer>
+    (function () {
+        if (window.jQuery) {
+            $('.unity-currency-input').maskMoney();
+        }
+    })();
+</script>

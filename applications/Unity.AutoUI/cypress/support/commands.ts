@@ -143,15 +143,39 @@ Cypress.Commands.add("getChefsDetail", (key: string) => {
 Cypress.Commands.add("chefsLogin", () => {
   cy.getChefsDetail("chefsBaseURL").then((baseURL) => {
     cy.visit(baseURL); // Visit the URL fetched from chefs.json
-    cy.get("#app > div > main > header > header > div > div.d-print-none")
-      .should("exist")
-      .click(); // click the login button
+    cy.get("body").then(($body) => {
+      // Prefer resilient text-based selectors over brittle full DOM paths.
+      if ($body.find("button:contains('LOGIN'), a:contains('LOGIN')").length) {
+        cy.contains("button, a", /^LOGIN$/i)
+          .first()
+          .click({ force: true });
+      } else if (
+        $body.find(
+          "#app > div > main > header > header > div > div.d-print-none",
+        ).length
+      ) {
+        cy.get("#app > div > main > header > header > div > div.d-print-none")
+          .should("exist")
+          .click({ force: true });
+      }
+    });
     cy.wait(1000);
-    cy.get(
-      "#app > div > main > div.v-container.v-locale--is-ltr.text-center.main > div > div:nth-child(2) > div > button",
-    )
-      .should("exist")
-      .click(); // click the idir buttton
+    cy.get("body").then(($body) => {
+      // Some pages show an IDIR choice button before the credential form.
+      if ($body.find("button:contains('IDIR'), a:contains('IDIR')").length) {
+        cy.contains("button, a", /IDIR/i).first().click({ force: true });
+      } else if (
+        $body.find(
+          "#app > div > main > div.v-container.v-locale--is-ltr.text-center.main > div > div:nth-child(2) > div > button",
+        ).length
+      ) {
+        cy.get(
+          "#app > div > main > div.v-container.v-locale--is-ltr.text-center.main > div > div:nth-child(2) > div > button",
+        )
+          .should("exist")
+          .click({ force: true });
+      }
+    });
     cy.wait(1000);
     cy.get("body").then(($body) => {
       // Check if you're already logged in.
@@ -246,11 +270,14 @@ function fetchGrantApplications(): Cypress.Chainable<GrantApplication[]> {
       .then((response) => {
         if (response.status !== 200) {
           throw new Error(
-            `API request failed with status ${response.status}: ${JSON.stringify(response.body)}`
+            `API request failed with status ${response.status}: ${JSON.stringify(response.body)}`,
           );
         }
         const data = response.body as GrantApplicationResponse;
-        Cypress.log({ name: "fetch", message: `📋 Fetched ${data.items?.length || 0} applications` });
+        Cypress.log({
+          name: "fetch",
+          message: `📋 Fetched ${data.items?.length || 0} applications`,
+        });
         return data.items || [];
       });
   });
@@ -262,89 +289,92 @@ Cypress.Commands.add(
     return fetchGrantApplications().then((allApplications) => {
       let applications = allApplications;
 
-          Cypress.log({ name: "fetch", message: `📋 Fetched ${applications.length} applications from API` });
+      Cypress.log({
+        name: "fetch",
+        message: `📋 Fetched ${applications.length} applications from API`,
+      });
 
-          // Filter by category if specified (e.g., 'Data Seeder')
-          if (options.categoryFilter) {
-            applications = applications.filter((app) =>
-              app.category === options.categoryFilter
-            );
-            Cypress.log({
-              name: "filter",
-              message: `📋 Filtered to ${applications.length} applications with category: ${options.categoryFilter}`,
-            });
-          }
-
-          // Filter by status if specified (e.g., 'Submitted', 'Under Assessment', 'Approved')
-          if (options.statusFilter && options.statusFilter.length > 0) {
-            applications = applications.filter((app) =>
-              options.statusFilter!.includes(app.status)
-            );
-            Cypress.log({
-              name: "filter",
-              message: `📋 Filtered to ${applications.length} applications with status: ${options.statusFilter.join(", ")}`,
-            });
-          }
-
-          // Filter by max age if specified
-          if (options.maxAge) {
-            const cutoffDate = new Date();
-            cutoffDate.setDate(cutoffDate.getDate() - options.maxAge);
-            applications = applications.filter((app) => {
-              const submissionDate = new Date(app.submissionDate);
-              return submissionDate >= cutoffDate;
-            });
-            Cypress.log({
-              name: "filter",
-              message: `📋 Filtered to ${applications.length} applications within ${options.maxAge} days`,
-            });
-          }
-
-          if (applications.length === 0) {
-            throw new Error(
-              "No applications found matching the specified criteria"
-            );
-          }
-
-          // Sort applications (default: by submissionDate descending for latest first)
-          const sortBy = options.sortBy || 'submissionDate';
-          const sortOrder = options.sortOrder || 'desc';
-          applications.sort((a, b) => {
-            let aVal: number | string;
-            let bVal: number | string;
-
-            if (sortBy === 'submissionDate') {
-              aVal = new Date(a.submissionDate).getTime();
-              bVal = new Date(b.submissionDate).getTime();
-            } else {
-              aVal = a[sortBy] as number;
-              bVal = b[sortBy] as number;
-            }
-
-            if (sortOrder === 'desc') {
-              return bVal > aVal ? 1 : bVal < aVal ? -1 : 0;
-            } else {
-              return aVal > bVal ? 1 : aVal < bVal ? -1 : 0;
-            }
-          });
-
-          // Get the submission at the specified index (default: 0 = first/latest)
-          const index = options.index || 0;
-          if (index >= applications.length) {
-            throw new Error(
-              `Index ${index} out of range. Only ${applications.length} applications available.`
-            );
-          }
-
-          const selectedApp = applications[index];
-          Cypress.log({
-            name: "selected",
-            message: `✅ Selected submission: ${selectedApp.referenceNo} (Status: ${selectedApp.status}, Category: ${selectedApp.category})`,
-          });
-
-          return selectedApp.referenceNo;
+      // Filter by category if specified (e.g., 'Data Seeder')
+      if (options.categoryFilter) {
+        applications = applications.filter(
+          (app) => app.category === options.categoryFilter,
+        );
+        Cypress.log({
+          name: "filter",
+          message: `📋 Filtered to ${applications.length} applications with category: ${options.categoryFilter}`,
         });
-  }
+      }
+
+      // Filter by status if specified (e.g., 'Submitted', 'Under Assessment', 'Approved')
+      if (options.statusFilter && options.statusFilter.length > 0) {
+        applications = applications.filter((app) =>
+          options.statusFilter!.includes(app.status),
+        );
+        Cypress.log({
+          name: "filter",
+          message: `📋 Filtered to ${applications.length} applications with status: ${options.statusFilter.join(", ")}`,
+        });
+      }
+
+      // Filter by max age if specified
+      if (options.maxAge) {
+        const cutoffDate = new Date();
+        cutoffDate.setDate(cutoffDate.getDate() - options.maxAge);
+        applications = applications.filter((app) => {
+          const submissionDate = new Date(app.submissionDate);
+          return submissionDate >= cutoffDate;
+        });
+        Cypress.log({
+          name: "filter",
+          message: `📋 Filtered to ${applications.length} applications within ${options.maxAge} days`,
+        });
+      }
+
+      if (applications.length === 0) {
+        throw new Error(
+          "No applications found matching the specified criteria",
+        );
+      }
+
+      // Sort applications (default: by submissionDate descending for latest first)
+      const sortBy = options.sortBy || "submissionDate";
+      const sortOrder = options.sortOrder || "desc";
+      applications.sort((a, b) => {
+        let aVal: number | string;
+        let bVal: number | string;
+
+        if (sortBy === "submissionDate") {
+          aVal = new Date(a.submissionDate).getTime();
+          bVal = new Date(b.submissionDate).getTime();
+        } else {
+          aVal = a[sortBy] as number;
+          bVal = b[sortBy] as number;
+        }
+
+        if (sortOrder === "desc") {
+          return bVal > aVal ? 1 : bVal < aVal ? -1 : 0;
+        } else {
+          return aVal > bVal ? 1 : aVal < bVal ? -1 : 0;
+        }
+      });
+
+      // Get the submission at the specified index (default: 0 = first/latest)
+      const index = options.index || 0;
+      if (index >= applications.length) {
+        throw new Error(
+          `Index ${index} out of range. Only ${applications.length} applications available.`,
+        );
+      }
+
+      const selectedApp = applications[index];
+      Cypress.log({
+        name: "selected",
+        message: `✅ Selected submission: ${selectedApp.referenceNo} (Status: ${selectedApp.status}, Category: ${selectedApp.category})`,
+      });
+
+      return selectedApp.referenceNo;
+    });
+  },
 );
 
 /**
