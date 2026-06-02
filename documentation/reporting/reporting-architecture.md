@@ -96,8 +96,9 @@ sequenceDiagram
     Service->>Job: Enqueue GenerateViewBackgroundJob
     Job->>DB: CALL Reporting.generate_*_view(correlationId)
     DB-->>Job: View created/updated
-    Job->>DB: GRANT SELECT ON view TO reporting_role
-    Job-->>Config: Status → SUCCESS
+    Job->>DB: Update ViewStatus → SUCCESS
+    Job->>RoleJob: Enqueue AssignViewRoleBackgroundJob
+    RoleJob->>DB: GRANT SELECT ON view TO reporting_role
 ```
 
 **Provider types and data characteristics:**
