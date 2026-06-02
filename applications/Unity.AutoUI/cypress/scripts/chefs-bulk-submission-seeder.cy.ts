@@ -8,21 +8,9 @@ export {};
  * Creates SUBMISSION_COUNT submitted form entries in CHEFS via API and writes
  * all confirmation IDs to cypress/scripts/bulk-submission-ids.json so that
  * BulkPaymentApproval.cy.ts can process them.
- *
- * Configuration:
- *   SUBMISSION_COUNT — number of submissions to create (default: 10).
- *   Set via CYPRESS_SUBMISSION_COUNT env var or directly below.
- *
- * Configuration files:
- *   cypress/scripts/chefs-submission-payload.json  — form submission data
- *   cypress/scripts/chefs-api-config.json          — API config and headers
  */
 
-// ─── Configuration ────────────────────────────────────────────────────────
-/** Override via: CYPRESS_SUBMISSION_COUNT=5 npx cypress run ... */
 const SUBMISSION_COUNT: number = Number(Cypress.env("SUBMISSION_COUNT") || 10);
-
-// ─── Types ────────────────────────────────────────────────────────────────
 
 interface ChefsEnvironment {
   baseURL: string;
@@ -47,9 +35,6 @@ interface ChefsSubmissionPayload {
   };
 }
 
-// ─── Token Extraction Helpers ─────────────────────────────────────────────
-// Identical to chefs-api-submission.cy.ts — extracts JWT from browser storage.
-
 const TOKEN_PROPERTY_KEYS = [
   "access_token",
   "accessToken",
@@ -64,11 +49,18 @@ function isJwtLike(value: string): boolean {
 
 function extractTokenFromString(value: string): string {
   const trimmed = value.trim();
+
   if (trimmed.toLowerCase().startsWith("bearer ")) {
-    const bearer = trimmed.replace(/^Bearer\s+/i, "").trim();
-    if (isJwtLike(bearer)) return bearer;
+    const bearerToken = trimmed.replace(/^Bearer\s+/i, "").trim();
+    if (bearerToken) {
+      return bearerToken;
+    }
   }
-  if (isJwtLike(trimmed)) return trimmed;
+
+  if (isJwtLike(trimmed)) {
+    return trimmed;
+  }
+
   try {
     return extractTokenFromValue(JSON.parse(trimmed));
   } catch {
@@ -77,41 +69,65 @@ function extractTokenFromString(value: string): string {
 }
 
 function extractTokenFromArray(values: unknown[]): string {
-  for (const v of values) {
-    const t = extractTokenFromValue(v);
-    if (t) return t;
+  for (const value of values) {
+    const token = extractTokenFromValue(value);
+    if (token) {
+      return token;
+    }
   }
+
   return "";
 }
 
 function extractTokenFromObject(value: Record<string, unknown>): string {
   for (const key of TOKEN_PROPERTY_KEYS) {
-    const t = extractTokenFromValue(value[key]);
-    if (t) return t;
+    const token = extractTokenFromValue(value[key]);
+    if (token) {
+      return token;
+    }
   }
+
   return extractTokenFromArray(Object.values(value));
 }
 
 function extractTokenFromValue(value: unknown): string {
-  if (typeof value === "string") return extractTokenFromString(value);
-  if (Array.isArray(value)) return extractTokenFromArray(value);
-  if (value && typeof value === "object")
+  if (typeof value === "string") {
+    return extractTokenFromString(value);
+  }
+
+  if (Array.isArray(value)) {
+    return extractTokenFromArray(value);
+  }
+
+  if (value && typeof value === "object") {
     return extractTokenFromObject(value as Record<string, unknown>);
+  }
+
   return "";
 }
 
 function extractTokenFromStorage(win: Window): string {
   const storages = [win.localStorage, win.sessionStorage];
+
   for (const storage of storages) {
-    for (let i = 0; i < storage.length; i++) {
-      const key = storage.key(i);
-      if (!key) continue;
-      const raw = storage.getItem(key);
-      if (!raw) continue;
-      const t = extractTokenFromValue(raw);
-      if (t) return t;
+    for (let index = 0; index < storage.length; index += 1) {
+      const key = storage.key(index);
+      if (!key) {
+        continue;
+      }
+
+      const value = storage.getItem(key);
+      if (!value) {
+        continue;
+      }
+
+      const token = extractTokenFromValue(value);
+      if (token) {
+        return token;
+      }
     }
   }
+
   return "";
 }
 
@@ -124,53 +140,98 @@ function waitForIdentityRedirectOrAuthenticatedChefsPage(
   timeout: number,
 ): void {
   const chefsHostname = getChefsHostname(baseURL);
+
   cy.location("hostname", { timeout }).should((hostname) => {
+    const onChefs = hostname === chefsHostname;
+    const onBcGovIdentity = hostname.endsWith("gov.bc.ca");
+
     expect(
-      hostname === chefsHostname || hostname.endsWith("gov.bc.ca"),
+      onChefs || onBcGovIdentity,
       `Expected CHEFS or BC Gov identity host, got '${hostname}'`,
     ).to.eq(true);
   });
 }
 
-function completeChefsLogin(environment: ChefsEnvironment, timeout: number): void {
+function completeChefsLogin(
+  environment: ChefsEnvironment,
+  timeout: number,
+): void {
   const chefsHostname = getChefsHostname(environment.baseURL);
 
   cy.visit(`${environment.baseURL}/app`);
 
-  cy.get("#app > div > main > header > header > div > div.d-print-none", {
-    timeout,
-  })
-    .should("exist")
-    .click();
-
-  cy.get(
-    "#app > div > main > div.v-container.v-locale--is-ltr.text-center.main > div > div:nth-child(2) > div > button",
-    { timeout },
-  )
-    .should("exist")
-    .click();
-
-  waitForIdentityRedirectOrAuthenticatedChefsPage(environment.baseURL, timeout);
-
-  cy.location("hostname", { timeout }).then((hostname) => {
-    if (hostname === chefsHostname) {
-      cy.log("Already logged in to CHEFS");
+  cy.window({ timeout }).then((win) => {
+    const existingToken = extractTokenFromStorage(win);
+    if (existingToken) {
+      cy.log("CHEFS token already present in browser storage");
       return;
     }
 
-    cy.get("#user", { timeout })
-      .should("be.visible")
-      .clear()
-      .type(Cypress.env("test1username"), { log: false });
+    cy.contains("button, a, [role='button']", /LOG\s*IN|LOGIN/i, {
+      timeout,
+    })
+      .first()
+      .click({ force: true });
 
-    cy.get("#password", { timeout })
-      .should("be.visible")
-      .clear()
-      .type(Cypress.env("test1password"), { log: false });
-
-    cy.contains("Continue", { timeout }).should("be.visible").click();
-    cy.location("hostname", { timeout }).should("eq", chefsHostname);
+    cy.get("body", { timeout }).then(($body) => {
+      if (
+        $body.find(
+          "button:contains('IDIR'), a:contains('IDIR'), [role='button']:contains('IDIR')",
+        ).length
+      ) {
+        cy.contains("button, a, [role='button']", /IDIR/i, { timeout })
+          .first()
+          .click({ force: true });
+      }
+    });
   });
+
+  waitForIdentityRedirectOrAuthenticatedChefsPage(environment.baseURL, timeout);
+
+  cy.location("hostname", { timeout }).then((currentHostname) => {
+    if (currentHostname === chefsHostname) {
+      cy.log("CHEFS session appears authenticated");
+      return;
+    }
+
+    const usernameSelector =
+      "input#user, input[name='user'], input[name='username'], input[type='text']";
+    const passwordSelector =
+      "input#password, input[name='password'], input[type='password']";
+
+    cy.get("body", { timeout }).then(($identityBody) => {
+      const hasUsernameField = $identityBody.find(usernameSelector).length > 0;
+      const hasPasswordField = $identityBody.find(passwordSelector).length > 0;
+
+      if (!hasUsernameField || !hasPasswordField) {
+        return;
+      }
+
+      cy.get(
+        "input#user:visible, input[name='user']:visible, input[name='username']:visible, input[type='text']:visible",
+        { timeout },
+      )
+        .first()
+        .clear()
+        .type(Cypress.env("test1username"), { log: false });
+
+      cy.get(
+        "input#password:visible, input[name='password']:visible, input[type='password']:visible",
+        { timeout },
+      )
+        .first()
+        .clear()
+        .type(Cypress.env("test1password"), { log: false });
+
+      cy.contains("button, input[type='submit']", /continue|log\s*in/i, {
+        timeout,
+      })
+        .first()
+        .click({ force: true });
+    });
+  });
+
+  cy.location("hostname", { timeout }).should("eq", chefsHostname);
 }
 
 function visitChefsForm(environment: ChefsEnvironment, timeout: number): void {
@@ -181,8 +242,6 @@ function visitChefsForm(environment: ChefsEnvironment, timeout: number): void {
   );
   cy.location("pathname", { timeout }).should("include", "/app");
 }
-
-// ─── Spec ────────────────────────────────────────────────────────────────
 
 const isProd =
   (Cypress.env("CHEFS_ENV") || "").toLowerCase() === "prod" ||
@@ -208,10 +267,8 @@ const isProd =
 
       environment = config.environments[envKey];
 
-      expect(
-        environment,
-        `Missing CHEFS environment config for '${envKey}'`,
-      ).to.exist;
+      expect(environment, `Missing CHEFS environment config for '${envKey}'`).to
+        .exist;
 
       cy.log(`Using environment: ${envKey}`);
       cy.log(`Submission count: ${SUBMISSION_COUNT}`);
@@ -225,11 +282,50 @@ const isProd =
       );
 
       let capturedToken = "";
+      let tokenSource = "unknown";
 
-      cy.intercept("**/app/api/v1/**", (req) => {
-        const authHeader = req.headers["authorization"] as string;
-        if (authHeader && !capturedToken) {
+      cy.intercept("POST", "**/protocol/openid-connect/token", (req) => {
+        req.continue((res) => {
+          if (capturedToken) {
+            return;
+          }
+
+          const responseToken = extractTokenFromValue(res.body);
+          if (!responseToken) {
+            return;
+          }
+
+          capturedToken = responseToken;
+          try {
+            tokenSource = `intercept:token-endpoint ${new URL(req.url).hostname}`;
+          } catch {
+            tokenSource = "intercept:token-endpoint";
+          }
+        });
+      }).as("oidcTokenEndpoint");
+
+      const expectedChefsHost = getChefsHostname(environment.baseURL);
+
+      cy.intercept("**/*", (req) => {
+        const authHeader = req.headers.authorization as string;
+        if (!authHeader || capturedToken) {
+          return;
+        }
+
+        try {
+          const parsed = new URL(req.url);
+          const isChefsApiRequest =
+            parsed.hostname === expectedChefsHost &&
+            parsed.pathname.startsWith("/app/api/v1/");
+
+          if (!isChefsApiRequest) {
+            return;
+          }
+
           capturedToken = authHeader.replace(/^Bearer\s+/i, "");
+          tokenSource = `intercept:${req.method} ${parsed.hostname}${parsed.pathname}`;
+        } catch {
+          // Ignore malformed URLs from non-network shim events.
         }
       }).as("chefsApiCalls");
 
@@ -239,19 +335,27 @@ const isProd =
       cy.window({ timeout: authTimeout })
         .should((win) => {
           const tokenFromStorage = extractTokenFromStorage(win);
-          const resolved = capturedToken || tokenFromStorage;
-          expect(resolved, "Waiting for CHEFS auth token").to.not.equal("");
-          if (!capturedToken && tokenFromStorage) capturedToken = tokenFromStorage;
+          const resolvedToken = capturedToken || tokenFromStorage;
+
+          expect(
+            resolvedToken,
+            "Waiting for authenticated CHEFS API token from token endpoint, API request, or browser storage",
+          ).to.not.equal("");
+
+          if (!capturedToken && tokenFromStorage) {
+            capturedToken = tokenFromStorage;
+            tokenSource = "storage";
+          }
         })
         .then(() => {
           authToken = capturedToken;
-          cy.log("✅ Auth token captured");
+          cy.log(
+            `Auth token captured from runtime CHEFS login (${tokenSource})`,
+          );
         });
     });
   });
 
-  // Creates SUBMISSION_COUNT submissions sequentially and writes all
-  // confirmation IDs to bulk-submission-ids.json for BulkPaymentApproval.cy.ts.
   it(`Create ${SUBMISSION_COUNT} bulk submissions`, () => {
     const confirmationIds: string[] = [];
 
@@ -281,11 +385,10 @@ const isProd =
 
         const confirmationId = response.body.confirmationId || response.body.id;
         confirmationIds.push(confirmationId);
-        cy.log(`✅ [${i + 1}/${SUBMISSION_COUNT}] Created: ${confirmationId}`);
+        cy.log(`Created [${i + 1}/${SUBMISSION_COUNT}]: ${confirmationId}`);
       });
     });
 
-    // cy.then() executes after all queued cy.request() calls complete
     cy.then(() => {
       expect(confirmationIds).to.have.length(SUBMISSION_COUNT);
 
@@ -295,7 +398,7 @@ const isProd =
         createdAt: new Date().toISOString(),
       });
 
-      cy.log(`✅ Wrote ${confirmationIds.length} IDs to bulk-submission-ids.json`);
+      cy.log(`Wrote ${confirmationIds.length} IDs to bulk-submission-ids.json`);
     });
   });
 });
