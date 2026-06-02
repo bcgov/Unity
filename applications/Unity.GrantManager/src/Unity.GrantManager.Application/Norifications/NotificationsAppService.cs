@@ -7,6 +7,7 @@ using Unity.Notifications.TeamsNotifications;
 using Volo.Abp;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Repositories;
+using Volo.Abp.Uow;
 
 namespace Unity.GrantManager.Notifications
 {
@@ -24,6 +25,7 @@ namespace Unity.GrantManager.Notifications
             _teamsNotificationService = new TeamsNotificationService();
         }
 
+        [UnitOfWork]
         public async Task<string> InitializeTeamsChannelAsync(string keyName)
         {
             DynamicUrl? teamsChannel = await _dynamicUrlRepository.FirstOrDefaultAsync(q => q.KeyName == keyName);
@@ -50,6 +52,7 @@ namespace Unity.GrantManager.Notifications
             await _teamsNotificationService.PostFactsToTeamsAsync(teamsChannel, activityTitle, activitySubtitle);
         }
 
+        [UnitOfWork]
         public async Task PostToTeamsAsync(string activityTitle, string activitySubtitle, List<Fact> facts)
         {
             string teamsChannel = await InitializeTeamsChannelAsync(TeamsNotificationService.TEAMS_NOTIFICATION);
