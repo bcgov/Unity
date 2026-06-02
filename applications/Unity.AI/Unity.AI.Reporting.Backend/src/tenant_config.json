@@ -1,5 +1,5 @@
 {
-  "default": {
+  "Default Grants Program": {
     "db_id": 5,
     "collection_id": 16,
     "schema_types": ["public", "custom"],
@@ -8,12 +8,6 @@
   "REDIP": {
     "db_id": 9,
     "collection_id": 93,
-    "schema_types": ["public", "custom"],
-    "api_key": ""
-  },
-  "Default Grants Program": {
-    "db_id": 5,
-    "collection_id": 16,
     "schema_types": ["public", "custom"],
     "api_key": ""
   }

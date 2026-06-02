@@ -11,6 +11,8 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+DEFAULT_TENANT = "Default Grants Program"
+
 
 @dataclass
 class DatabaseConfig:
@@ -139,8 +141,8 @@ class Config:
             try:
                 with open(config_file, 'r') as f:
                     mappings = json.load(f)
-                    if "default" not in mappings.keys():
-                        mappings = {"default": mappings}
+                    if DEFAULT_TENANT not in mappings.keys():
+                        mappings = {DEFAULT_TENANT: mappings}
 
                 print(f"Loaded tenant mappings from {config_file}: {mappings}")
                 return mappings
@@ -150,7 +152,7 @@ class Config:
         # Fallback to hardcoded defaults if no config file found
         print("No tenant_config.json found, using hardcoded defaults")
         return {
-            "default": {
+            DEFAULT_TENANT: {
                 "db_id": 5,
                 "collection_id": 16,
                 "schema_types": ["public"]
@@ -159,7 +161,7 @@ class Config:
     
     def get_tenant_config(self, tenant_id: str) -> Dict[str, Any]:
         """Get configuration for a specific tenant"""
-        return self.tenant_mappings.get(tenant_id, self.tenant_mappings["default"])
+        return self.tenant_mappings.get(tenant_id, self.tenant_mappings[DEFAULT_TENANT])
 
     def get_tenant_metabase_headers(self, tenant_id: str) -> Dict[str, str]:
         """
@@ -174,7 +176,7 @@ class Config:
     @property
     def metabase_headers(self) -> Dict[str, str]:
         """Get headers for Metabase API requests (uses default tenant)"""
-        return self.get_tenant_metabase_headers("default")
+        return self.get_tenant_metabase_headers(DEFAULT_TENANT)
 
 
 # Global config instance
