@@ -45,13 +45,9 @@ services:
       - JWT_SECRET=${JWT_SECRET}
       - ORIGIN_URL=${ORIGIN_URL}
 
-      # Metabase config (secrets + env-specific base URL)
-      - METABASE_KEY=${METABASE_KEY}
-      - MB_EMBED_SECRET=${MB_EMBED_SECRET}
+      # Metabase config (secrets + env-specific base URL and UUIDs)
       - MB_URL=${MB_URL}
-
-      # Feature flags
-      - EMBED_WORKSHEETS=${EMBED_WORKSHEETS:-true}
+      - MB_MAP_REGION_UUID=${MB_MAP_REGION_UUID}
 
       # Database config
       - DB_HOST=postgres

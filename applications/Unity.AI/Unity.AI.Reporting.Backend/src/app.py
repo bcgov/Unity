@@ -34,7 +34,7 @@ def embed_schemas_command(db_id: Optional[int] = None):
     if tenant_config:
         schema_types = tenant_config.get("schema_types", ["public"])
     else:
-        schema_types = ["public", "custom"] if config.app.embed_worksheets else ["public"]
+        schema_types = ["public"]
 
     embedding_manager.embed_schemas(db_id, schema_types, tenant_id=matched_tenant_id)
     logger.info("Finished embedding process.")
