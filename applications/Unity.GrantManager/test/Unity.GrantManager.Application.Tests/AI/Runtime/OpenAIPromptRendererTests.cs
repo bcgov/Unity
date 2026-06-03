@@ -1,5 +1,8 @@
 using Shouldly;
 using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Reflection;
 using Unity.AI.Runtime;
 using Xunit;
 
@@ -67,5 +70,40 @@ public class OpenAIPromptRendererTests
         result.ShouldContain("{{ item.SectorName }}");
         result.ShouldContain("{{ item.topic_source_id }}");
         result.ShouldContain("{{FORMIO_VALUE}}");
+    }
+
+    [Fact]
+    public void RenderPromptTemplate_Should_Reject_Non_Prompt_Placeholders_In_Template_Text()
+    {
+        var templateCache = GetPromptTemplateCache();
+        templateCache["v1/unit-test.invalid"] = "Bad template token: {{ item.label }}";
+
+        var exception = Should.Throw<TargetInvocationException>(() =>
+            RenderPromptTemplate("v1", "unit-test.invalid", new Dictionary<string, string>()));
+
+        exception.InnerException.ShouldBeOfType<InvalidOperationException>();
+        exception.InnerException!.Message.ShouldContain("Invalid prompt placeholders");
+        exception.InnerException.Message.ShouldContain("item.label");
+    }
+
+    private static string RenderPromptTemplate(
+        string version,
+        string templateName,
+        IReadOnlyDictionary<string, string> runtimeReplacements)
+    {
+        var method = typeof(OpenAIPromptRenderer).GetMethod(
+            "RenderPromptTemplate",
+            BindingFlags.Static | BindingFlags.NonPublic);
+        method.ShouldNotBeNull();
+        return (string)method.Invoke(null, [version, templateName, runtimeReplacements])!;
+    }
+
+    private static ConcurrentDictionary<string, string> GetPromptTemplateCache()
+    {
+        var field = typeof(OpenAIPromptRenderer).GetField(
+            "PromptTemplateCache",
+            BindingFlags.Static | BindingFlags.NonPublic);
+        field.ShouldNotBeNull();
+        return (ConcurrentDictionary<string, string>)field.GetValue(null)!;
     }
 }

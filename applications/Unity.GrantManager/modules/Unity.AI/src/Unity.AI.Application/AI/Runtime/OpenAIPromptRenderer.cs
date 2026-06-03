@@ -261,7 +261,7 @@ public class OpenAIPromptRenderer : ITransientDependency
         var template = GetRequiredPromptTemplate(version, templateName);
         var replacements = new Dictionary<string, string>(runtimeReplacements, StringComparer.Ordinal);
         var baseTemplateName = GetTemplateBaseName(templateName);
-        var placeholders = GetTemplatePlaceholders(template);
+        var placeholders = GetTemplatePlaceholders(template, version, templateName);
 
         foreach (var placeholder in placeholders)
         {
@@ -352,9 +352,10 @@ public class OpenAIPromptRenderer : ITransientDependency
         return templateName.Substring(0, separatorIndex);
     }
 
-    private static HashSet<string> GetTemplatePlaceholders(string template)
+    private static HashSet<string> GetTemplatePlaceholders(string template, string version, string templateName)
     {
         var placeholders = new HashSet<string>(StringComparer.Ordinal);
+        var invalidPlaceholders = new List<string>();
         var searchIndex = 0;
 
         while (searchIndex < template.Length)
@@ -376,8 +377,18 @@ public class OpenAIPromptRenderer : ITransientDependency
             {
                 placeholders.Add(placeholder);
             }
+            else
+            {
+                invalidPlaceholders.Add(placeholder);
+            }
 
             searchIndex = end + 2;
+        }
+
+        if (invalidPlaceholders.Count > 0)
+        {
+            throw new InvalidOperationException(
+                $"Invalid prompt placeholders in '{templateName}.txt' for prompt version '{version}': {string.Join(", ", invalidPlaceholders.OrderBy(item => item))}");
         }
 
         return placeholders;
