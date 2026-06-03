@@ -677,5 +677,5 @@
 });
 
 function stripHtml(html) {
-    return new DOMParser().parseFromString(html, 'text/html').body.textContent || '';
+    return String(html).replace(/<[^>]*>/g, '');
 }
