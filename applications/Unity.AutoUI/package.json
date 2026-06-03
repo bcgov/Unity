@@ -1,13 +1,16 @@
 {
   "scripts": {
-    "test": "env -u ELECTRON_RUN_AS_NODE cypress run --spec 'cypress/e2e/**/*.cy.ts' --browser chrome",
-    "test:e2e": "env -u ELECTRON_RUN_AS_NODE cypress run --spec 'cypress/e2e/**/*.cy.ts' --browser chrome",
-    "test:regression-headed": "env -u ELECTRON_RUN_AS_NODE cypress run --spec 'cypress/regression/**/*.cy.ts' --headed --browser chrome",
-    "test:regression-headless": "env -u ELECTRON_RUN_AS_NODE cypress run --spec 'cypress/regression/**/*.cy.ts' --headless --browser chrome",
-    "test:open": "env -u ELECTRON_RUN_AS_NODE cypress open --browser chrome",
-    "test:seed": "env -u ELECTRON_RUN_AS_NODE cypress run --spec 'cypress/scripts/chefs-api-submission.cy.ts' --browser chrome",
-    "test:approval-flow": "npm run test:seed && env -u ELECTRON_RUN_AS_NODE cypress run --spec 'cypress/regression/ApprovalFlow.cy.ts' --headed --browser chrome",
-    "test:approval-flow-headless": "npm run test:seed && env -u ELECTRON_RUN_AS_NODE cypress run --spec 'cypress/regression/ApprovalFlow.cy.ts' --browser chrome"
+    "test": "cypress run --spec \"cypress/e2e/**/*.cy.ts\" --browser chrome",
+    "test:e2e": "cypress run --spec \"cypress/e2e/**/*.cy.ts\" --browser chrome",
+    "test:regression-headed": "cypress run --spec \"cypress/regression/**/*.cy.ts\" --headed --browser chrome",
+    "test:regression-headless": "cypress run --spec \"cypress/regression/**/*.cy.ts\" --headless --browser chrome",
+    "test:open": "cypress open --browser chrome",
+    "test:seed": "cypress run --spec \"cypress/scripts/chefs-api-submission.cy.ts\" --browser chrome",
+    "test:seed:bulk": "cypress run --spec \"cypress/scripts/chefs-bulk-submission-seeder.cy.ts\" --browser chrome",
+    "test:bulk-approval-flow": "npm run test:seed:bulk && cypress run --spec \"cypress/regression/BulkPaymentApproval.cy.ts\" --headed --browser chrome",
+    "test:bulk-approval-flow-headless": "npm run test:seed:bulk && cypress run --spec \"cypress/regression/BulkPaymentApproval.cy.ts\" --browser chrome",
+    "test:approval-flow": "npm run test:seed && cypress run --spec \"cypress/regression/ApprovalFlow.cy.ts\" --headed --browser chrome",
+    "test:approval-flow-headless": "npm run test:seed && cypress run --spec \"cypress/regression/ApprovalFlow.cy.ts\" --browser chrome"
   },
   "dependencies": {
     "form-data": "^4.0.5",
