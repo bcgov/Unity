@@ -677,5 +677,5 @@
 });
 
 function stripHtml(html) {
-    return String(html).replace(/<[^>]*>/g, '');
+    return String(html).replace(/<[^>]*>/g, '').replace(/</g, '');
 }
