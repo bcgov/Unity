@@ -216,7 +216,42 @@
         @if (Model.ShowScoresheets)
         {
             <div id="scoresheets-div" class="config-section input-area card mb-3 config-management hide">
-                @await Component.InvokeAsync(typeof(ScoresheetConfigurationViewComponent))
+                <div class="config-split-container" id="scoresheet-split-container">
+                    <div class="config-split-left" id="scoresheet-left">
+                        <div class="d-flex justify-content-end m-3">
+                            <form id="scoresheet-import-form" name="scoresheet-import-form" action="/uploader" enctype="multipart/form-data" method="post">
+                                <input id="scoresheet_import_upload" name="scoresheet_import_upload" type="file" size="1" onchange="importScoresheetFile('scoresheet_import_upload');" style="display: none" />
+                                <abp-button text="Import Scoresheet"
+                                            id="scoresheet_import_upload_btn"
+                                            icon-type="Other"
+                                            icon="fl fl-import"
+                                            button-type="Light" />
+                            </form>
+                        </div>
+                        <div id="scoresheet-info-widget">
+                            @await Component.InvokeAsync("Scoresheet")
+                        </div>
+                        <div class="p-4">
+                            <abp-button text="Add Scoresheet"
+                                        id="add_scoresheet_btn"
+                                        icon-type="Other"
+                                        icon="fl fl-plus"
+                                        onclick="openScoresheetModal(null,'Add Scoresheet');"
+                                        onkeydown="if(event.key==='Enter'||event.key===' ')openScoresheetModal(null,'Add Scoresheet');"
+                                        button-type="Light" />
+                        </div>
+                    </div>
+                    <div class="config-split-divider" id="scoresheet-divider"></div>
+                    <div class="config-split-right" id="scoresheet-right">
+                        <abp-card class="right-card">
+                            <abp-card-body>
+                                <h4><b>Preview</b></h4>
+                                <div id="scoresheet-preview">
+                                </div>
+                            </abp-card-body>
+                        </abp-card>
+                    </div>
+                </div>
             </div>
         }
 
