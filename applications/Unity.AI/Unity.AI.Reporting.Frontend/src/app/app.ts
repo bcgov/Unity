@@ -363,16 +363,6 @@ export class App implements OnInit, OnDestroy {
       turn.iframeLoaded = true;
       turn.safeUrl = null;
 
-      if (turn.embed?.SQL) {
-        this.fetchSqlExplanation(turn)
-          .then(() => this.cdr.markForCheck())
-          .catch(() => {
-            turn.embed.sql_explanation = SQL_EXPLANATION_ERROR_TEXT;
-            turn.embed.sql_explanation_error = true;
-            this.cdr.markForCheck();
-          });
-      }
-
       await this.saveChat();
     } catch (error: any) {
       this.logger.error('Failed to process question:', error);
