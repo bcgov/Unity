@@ -18,10 +18,12 @@ namespace Unity.SharedKernel.Utilities
             var surname = currentUser.SurName;
             if (!string.IsNullOrWhiteSpace(given) || !string.IsNullOrWhiteSpace(surname))
             {
-                return $"{given} {surname}".Trim();
+                var fullName = $"{given} {surname}".Trim();
+                if (!string.IsNullOrWhiteSpace(fullName)) return fullName;
             }
 
-            return currentUser.UserName;
+            var userName = currentUser.UserName;
+            return string.IsNullOrWhiteSpace(userName) ? null : userName;
         }
 
         public static async Task<string?> GetCurrentTenantNameAsync(IServiceProvider serviceProvider)

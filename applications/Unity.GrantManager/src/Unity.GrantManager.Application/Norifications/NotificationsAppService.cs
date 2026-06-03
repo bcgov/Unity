@@ -19,14 +19,6 @@ namespace Unity.GrantManager.Notifications
     public class NotificationsAppService(IDynamicUrlRepository dynamicUrlRepository,
         ILogger<NotificationsAppService> logger, ICurrentTenant currentTenant) : INotificationsAppService, ITransientDependency
     {
-        private readonly IDynamicUrlRepository _dynamicUrlRepository;
-        private readonly TeamsNotificationService _teamsNotificationService;
-
-        public NotificationsAppService(IDynamicUrlRepository dynamicUrlRepository)
-        {
-            _dynamicUrlRepository = dynamicUrlRepository;
-            _teamsNotificationService = new TeamsNotificationService();
-        }
 
         [UnitOfWork]
         public async Task<string> InitializeTeamsChannelAsync(string keyName)
@@ -67,7 +59,7 @@ namespace Unity.GrantManager.Notifications
             string teamsChannel = await InitializeTeamsChannelAsync(TeamsNotificationService.TEAMS_NOTIFICATION);
             if (teamsChannel.IsNullOrEmpty())
             {
-                logger.LogWarning("PostToTeamsAsync: no Teams channel configured, skipping notification {Title}", activityTitle);
+                logger.LogWarning("PostToTeamsAsync: no Teams channel configured, skipping notification TeamsNotificationService.TEAMS_NOTIFICATION");
                 return;
             }
 
@@ -78,7 +70,7 @@ namespace Unity.GrantManager.Notifications
             }
             catch (Exception ex)
             {
-                logger.LogWarning(ex, "Failed to post Teams notification '{Title}' to channel {Channel}", activityTitle, teamsChannel);
+                logger.LogWarning(ex, "Failed to post Teams notification to channel");
             }
         }
 
@@ -87,7 +79,7 @@ namespace Unity.GrantManager.Notifications
             string teamsChannel = await InitializeTeamsChannelAsync(TeamsNotificationService.TEAMS_NOTIFICATION);
             if (teamsChannel.IsNullOrEmpty())
             {
-                logger.LogWarning("PostToTeamsAsync (no-facts): no Teams channel configured, skipping notification {Title}", activityTitle);
+                logger.LogWarning("PostToTeamsAsync (no-facts): no Teams channel configured, skipping notification");
                 return;
             }
 
@@ -99,7 +91,7 @@ namespace Unity.GrantManager.Notifications
             }
             catch (Exception ex)
             {
-                logger.LogWarning(ex, "Failed to post Teams notification '{Title}' to channel {Channel}", activityTitle, teamsChannel);
+                logger.LogWarning(ex, "Failed to post Teams notification to channel");
             }
         }
 

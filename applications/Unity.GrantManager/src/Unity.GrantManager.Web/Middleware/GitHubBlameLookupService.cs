@@ -37,7 +37,10 @@ public class GitHubBlameLookupService : IBlameLookupService
                 repoUrl = _endpointService.GetGitHubRepoUrlAsync()
                     .GetAwaiter().GetResult();
             }
-            catch { }
+            catch (Exception ex)
+            {
+                _logger.LogDebug(ex, "Failed to resolve GitHub repo URL from endpoint configuration; falling back to environment variables.");
+            }
         }
 
         if (!string.IsNullOrWhiteSpace(repoUrl))
@@ -127,8 +130,6 @@ public class GitHubBlameLookupService : IBlameLookupService
         if (url == null)
             return null;
 
-        _logger.LogInformation("[BlameLookup] Request payload: {Payload}", payload);
-
         using var response = await _httpClient.PostAsync(
             url,
             new StringContent(payload, Encoding.UTF8, "application/json"));
@@ -136,15 +137,12 @@ public class GitHubBlameLookupService : IBlameLookupService
         response.EnsureSuccessStatusCode();
 
         string json = await response.Content.ReadAsStringAsync();
-
-        _logger.LogInformation("[BlameLookup] Response body: {Json}", json);
-
         using var doc = JsonDocument.Parse(json);
         var root = doc.RootElement;
 
         if (root.TryGetProperty("errors", out var errors))
         {
-            _logger.LogWarning("[BlameLookup] GraphQL errors: {Errors}", errors);
+            _logger.LogWarning("[BlameLookup] GraphQL errors");
             return null;
         }
 
