@@ -13,6 +13,4 @@ public class AIGenerationRequestDto : EntityDto<Guid>
     public DateTime? CompletedAt { get; set; }
     public string? FailureReason { get; set; }
     public bool IsActive { get; set; }
-    public bool IsGenerating { get; set; }
-    public int RetryAfterSeconds { get; set; }
 }

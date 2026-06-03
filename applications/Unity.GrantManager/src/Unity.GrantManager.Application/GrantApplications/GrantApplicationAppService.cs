@@ -1165,14 +1165,14 @@ public class GrantApplicationAppService(
         return ObjectMapper.Map<Application, GrantApplicationDto>(application);
     }
 
-    public async Task<AIGenerationRequestDto> QueueAIGenerationAsync(Guid applicationId, string? promptVersion = null)
+    public async Task<AIGenerationStatusDto> QueueAIGenerationAsync(Guid applicationId, string? promptVersion = null)
     {
         await EnsureAIAnalysisEnabledAsync();
         return await QueueApplicationAnalysisAsync(applicationId, promptVersion);
     }
 
     [Authorize(AIPermissions.Analysis.GenerateApplicationAnalysis)]
-    public async Task<AIGenerationRequestDto> QueueApplicationAnalysisAsync(Guid applicationId, string? promptVersion = null)
+    public async Task<AIGenerationStatusDto> QueueApplicationAnalysisAsync(Guid applicationId, string? promptVersion = null)
     {
         await EnsureAIAnalysisEnabledAsync();
         await aiGenerationQueue.QueueApplicationAnalysisAsync(applicationId, CurrentTenant.Id, promptVersion);
@@ -1182,12 +1182,12 @@ public class GrantApplicationAppService(
             AIGenerationRequestKeyHelper.ApplicationAnalysisOperationType,
             CurrentTenant.Id);
 
-        return await ApplyRateLimitStateAsync(
+        return await CreateGenerationStatusAsync(
             request ?? throw new UserFriendlyException("Unable to queue AI analysis request."));
     }
 
     [Authorize(AIPermissions.Analysis.GenerateAttachmentSummaries)]
-    public async Task<AIGenerationRequestDto> QueueAttachmentSummaryAsync(QueueAttachmentSummaryRequestDto input, string? promptVersion = null)
+    public async Task<AIGenerationStatusDto> QueueAttachmentSummaryAsync(QueueAttachmentSummaryRequestDto input, string? promptVersion = null)
     {
         await EnsureAttachmentSummariesEnabledAsync();
         var attachmentIds = await ResolveAttachmentSummaryIdsAsync(input);
@@ -1198,12 +1198,12 @@ public class GrantApplicationAppService(
             AIGenerationRequestKeyHelper.AttachmentSummaryOperationType,
             CurrentTenant.Id);
 
-        return await ApplyRateLimitStateAsync(
+        return await CreateGenerationStatusAsync(
             request ?? throw new UserFriendlyException("Unable to queue AI attachment summary request."));
     }
 
     [Authorize(AIPermissions.Analysis.GenerateScoring)]
-    public async Task<AIGenerationRequestDto> QueueApplicationScoringAsync(Guid applicationId, string? promptVersion = null)
+    public async Task<AIGenerationStatusDto> QueueApplicationScoringAsync(Guid applicationId, string? promptVersion = null)
     {
         await EnsureScoringEnabledAsync();
         await aiGenerationQueue.QueueApplicationScoringAsync(applicationId, CurrentTenant.Id, promptVersion);
@@ -1213,21 +1213,21 @@ public class GrantApplicationAppService(
             AIGenerationRequestKeyHelper.ApplicationScoringOperationType,
             CurrentTenant.Id);
 
-        return await ApplyRateLimitStateAsync(
+        return await CreateGenerationStatusAsync(
             request ?? throw new UserFriendlyException("Unable to queue AI scoring request."));
     }
 
-    public async Task<AIGenerationRequestDto?> GetAIGenerationStatusAsync(Guid applicationId, string operationType, string? promptVersion = null)
+    public async Task<AIGenerationStatusDto> GetAIGenerationStatusAsync(Guid applicationId, string operationType, string? promptVersion = null)
     {
         await EnsureAIGenerationStatusAccessAsync(operationType);
-        return await ApplyRateLimitStateOrDefaultAsync(
+        return await CreateGenerationStatusAsync(
             await aiGenerationStatusAppService.GetLatestAsync(applicationId, operationType, CurrentTenant.Id));
     }
 
     [Authorize(AIPermissions.Analysis.GenerateApplicationAnalysis)]
     [Authorize(AIPermissions.Analysis.GenerateAttachmentSummaries)]
     [Authorize(AIPermissions.Analysis.GenerateScoring)]
-    public async Task<AIGenerationRequestDto> QueueAllAIStagesAsync(Guid applicationId, string? promptVersion = null)
+    public async Task<AIGenerationStatusDto> QueueAllAIStagesAsync(Guid applicationId, string? promptVersion = null)
     {
         await EnsureAttachmentSummariesEnabledAsync();
         await EnsureAIAnalysisEnabledAsync();
@@ -1239,26 +1239,19 @@ public class GrantApplicationAppService(
             AIGenerationRequestKeyHelper.PipelineOperationType,
             CurrentTenant.Id);
 
-        return await ApplyRateLimitStateAsync(
+        return await CreateGenerationStatusAsync(
             request ?? throw new UserFriendlyException("Unable to queue AI generation request."));
     }
 
-    private async Task<AIGenerationRequestDto?> ApplyRateLimitStateOrDefaultAsync(AIGenerationRequestDto? request)
-    {
-        if (request is null)
-        {
-            return null;
-        }
-
-        return await ApplyRateLimitStateAsync(request);
-    }
-
-    private async Task<AIGenerationRequestDto> ApplyRateLimitStateAsync(AIGenerationRequestDto request)
+    private async Task<AIGenerationStatusDto> CreateGenerationStatusAsync(AIGenerationRequestDto? request)
     {
         var state = await aiRateLimiter.GetStateAsync();
-        request.IsGenerating = state.IsGenerating;
-        request.RetryAfterSeconds = state.RetryAfterSeconds;
-        return request;
+        return new AIGenerationStatusDto
+        {
+            GenerationRequest = request,
+            IsGenerating = state.IsGenerating,
+            RetryAfterSeconds = state.RetryAfterSeconds
+        };
     }
 
     private async Task EnsureAIGenerationStatusAccessAsync(string operationType)

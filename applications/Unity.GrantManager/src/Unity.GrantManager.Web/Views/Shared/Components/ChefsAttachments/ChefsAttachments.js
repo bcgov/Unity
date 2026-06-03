@@ -210,7 +210,8 @@ $(function () {
                     applicationId: getApplicationId(),
                     attachmentIds: summaryAttachmentIds
                 })
-                .done(function (request) {
+                .done(function (generationStatus) {
+                    const request = generationStatus?.generationRequest;
                     const status = globalThis.AIGenerationButtonState?.resolveStatus(request?.status) ?? '';
 
                     if (status === 'Completed') {
@@ -218,7 +219,7 @@ $(function () {
                         chefsDataTable.ajax.reload();
                         abp.notify.success('AI summaries generated successfully.');
                         globalThis.AIGenerationButtonState?.restoreForCooldownCheck($activeButton, existingHTML);
-                        globalThis.AIGenerationButtonState?.applyStatusState(request);
+                        globalThis.AIGenerationButtonState?.applyStatusState(generationStatus);
                         return;
                     }
 
