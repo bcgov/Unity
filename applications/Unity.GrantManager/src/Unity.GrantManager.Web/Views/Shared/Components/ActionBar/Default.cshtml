@@ -96,7 +96,16 @@
                     text="Payment"
                     class="custom-table-btn flex-none btn btn-secondary action-bar-btn-unavailable"
                     button-type="Secondary" />
+        }
 
+        @if (await FeatureChecker.IsEnabledAsync(PaymentConsts.UnityPaymentsFeature)
+            && await PermissionChecker.IsGrantedAsync(PaymentsPermissions.Payments.AddHistoricalPayment))
+        {
+        <abp-button id="applicationHistoricalPaymentRequest"
+                    data-selector="applications-table-actions"
+                    text="Add Historical Payment"
+                    class="custom-table-btn flex-none btn btn-secondary action-bar-btn-unavailable"
+                    button-type="Secondary" />
         }
 
         <abp-button id="applicationLink"

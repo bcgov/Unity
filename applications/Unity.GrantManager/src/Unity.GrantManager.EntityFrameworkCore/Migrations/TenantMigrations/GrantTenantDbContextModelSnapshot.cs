@@ -19,7 +19,7 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
 #pragma warning disable 612, 618
             modelBuilder
                 .HasAnnotation("_Abp_DatabaseProvider", EfCoreDatabaseProvider.PostgreSql)
-                .HasAnnotation("ProductVersion", "9.0.5")
+                .HasAnnotation("ProductVersion", "10.0.3")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -915,6 +915,8 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
 
                     b.HasIndex("ApplicantName");
 
+                    b.HasIndex("TenantId");
+
                     b.ToTable("Applicants", (string)null);
                 });
 
@@ -1102,6 +1104,8 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
 
                     b.HasIndex("ApplicationId")
                         .IsUnique();
+
+                    b.HasIndex("TenantId", "ApplicationId");
 
                     b.ToTable("ApplicantAgents", (string)null);
                 });
@@ -1393,6 +1397,11 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
 
                     b.HasIndex("OwnerId");
 
+                    b.HasIndex("ReferenceNo");
+
+                    b.HasIndex("TenantId", "SubmissionDate")
+                        .HasFilter("\"IsDeleted\" = false");
+
                     b.ToTable("Applications", (string)null);
                 });
 
@@ -1447,6 +1456,8 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.HasIndex("ApplicationId");
 
                     b.HasIndex("AssigneeId");
+
+                    b.HasIndex("TenantId", "ApplicationId");
 
                     b.ToTable("ApplicationAssignments", (string)null);
                 });
@@ -1761,9 +1772,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<bool>("PreventPayment")
                         .HasColumnType("boolean");
 
-                    b.Property<bool>("RenderFormIoToHtml")
-                        .HasColumnType("boolean");
-
                     b.Property<Guid?>("ScoresheetId")
                         .HasColumnType("uuid");
 
@@ -1782,6 +1790,9 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.HasIndex("IntakeId");
 
                     b.HasIndex("ParentFormId");
+
+                    b.HasIndex("TenantId", "IsDeleted")
+                        .HasFilter("\"IsDeleted\" = false");
 
                     b.ToTable("ApplicationForms", (string)null);
                 });
@@ -1840,9 +1851,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
 
                     b.Property<string>("OidcSub")
                         .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("RenderedHTML")
                         .HasColumnType("text");
 
                     b.Property<string>("ReportData")
@@ -1999,6 +2007,8 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
 
                     b.HasIndex("ApplicationId");
 
+                    b.HasIndex("TenantId", "ApplicationId");
+
                     b.ToTable("ApplicationLinks", (string)null);
                 });
 
@@ -2109,6 +2119,8 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
 
                     b.HasIndex("TagId");
 
+                    b.HasIndex("TenantId", "ApplicationId");
+
                     b.ToTable("ApplicationTags", (string)null);
                 });
 
@@ -2190,7 +2202,13 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<string>("AuditNote")
                         .HasColumnType("text");
 
+                    b.Property<string>("AuditStatus")
+                        .HasColumnType("text");
+
                     b.Property<string>("AuditTrackingNumber")
+                        .HasColumnType("text");
+
+                    b.Property<string>("AuditorName")
                         .HasColumnType("text");
 
                     b.Property<string>("ConcurrencyStamp")
@@ -2925,6 +2943,8 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.HasKey("Id");
 
                     b.HasIndex("OidcSub");
+
+                    b.HasIndex("TenantId");
 
                     b.ToTable("Persons", (string)null);
                 });
@@ -4023,7 +4043,7 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<Guid>("SiteId")
+                    b.Property<Guid?>("SiteId")
                         .HasColumnType("uuid");
 
                     b.Property<int>("Status")
@@ -4898,8 +4918,7 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.HasOne("Unity.Payments.Domain.Suppliers.Site", "Site")
                         .WithMany()
                         .HasForeignKey("SiteId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.NoAction);
 
                     b.Navigation("AccountCoding");
 

@@ -166,8 +166,6 @@ $(function () {
         viewUrl: 'Tags/CreateTagsModal'
     });
 
-    abp.log.debug('TagManagement.js initialized!');
-
     abp.modals.RenameTag = function () {
         let formElements = {};
         let initialFormState = {};
@@ -221,8 +219,6 @@ $(function () {
         serverSide: false,
         paging: false,
         searching: true,
-        scrollCollapse: true,
-        scrollX: true,
         ordering: true,
         ajax: (requestData, callback, settings) => getUnifiedTagSummaryAjax(requestData, callback, settings),
         columnDefs: defineTagSummaryColumnDefs()

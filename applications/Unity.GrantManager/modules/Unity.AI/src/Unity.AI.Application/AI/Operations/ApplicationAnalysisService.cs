@@ -4,10 +4,12 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
 using Unity.AI.Models;
 using Unity.AI.Prompts;
 using Unity.AI.Requests;
+using Unity.AI.Runtime;
 using Unity.GrantManager.Applications;
 using Volo.Abp.DependencyInjection;
 
@@ -21,18 +23,13 @@ namespace Unity.AI.Operations
         IAIService aiService,
         ILogger<ApplicationAnalysisService> logger) : IApplicationAnalysisService, ITransientDependency
     {
-        private readonly JsonSerializerOptions _jsonOptionsIndented = new()
-        {
-            WriteIndented = true
-        };
-
         private const string ComponentsKey = "components";
         private static readonly HashSet<string> ExcludedSchemaKeys = new(StringComparer.OrdinalIgnoreCase)
         {
             "applicantAgent"
         };
 
-        public async Task<string> RegenerateAndSaveAsync(Guid applicationId, string? promptVersion = null)
+        public async Task<string> RegenerateAndSaveAsync(Guid applicationId, string? promptVersion = null, CancellationToken cancellationToken = default)
         {
             var application = await applicationRepository.GetAsync(applicationId);
             var formSubmission = await applicationFormSubmissionRepository.GetByApplicationAsync(applicationId);
@@ -60,9 +57,9 @@ namespace Unity.AI.Operations
                 Data = PromptDataPayloadBuilder.BuildPromptDataPayload(application, formSubmission, formSchema, logger),
                 Attachments = attachmentSummaries,
                 PromptVersion = promptVersion,
-            });
+            }, cancellationToken);
 
-            var analysisJson = JsonSerializer.Serialize(analysis, _jsonOptionsIndented);
+            var analysisJson = JsonSerializer.Serialize(analysis, AIJsonDefaults.Indented);
             application.AIAnalysis = analysisJson;
             await applicationRepository.UpdateAsync(application);
             return analysisJson;

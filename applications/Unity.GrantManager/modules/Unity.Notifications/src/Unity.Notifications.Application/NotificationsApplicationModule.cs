@@ -1,5 +1,6 @@
+using Amazon.S3;
 using Microsoft.Extensions.DependencyInjection;
-using Volo.Abp.AutoMapper;
+using Volo.Abp.Mapperly;
 using Volo.Abp.Modularity;
 using Volo.Abp.Application;
 using Volo.Abp.BackgroundJobs;
@@ -11,6 +12,7 @@ using Unity.Notifications.Integrations.RabbitMQ;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Http.Client;
 using Unity.Modules.Shared.Http;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace Unity.Notifications;
 
@@ -18,7 +20,7 @@ namespace Unity.Notifications;
     typeof(NotificationsDomainModule),
     typeof(NotificationsApplicationContractsModule),
     typeof(AbpDddApplicationModule),
-    typeof(AbpAutoMapperModule),
+    typeof(AbpMapperlyModule),
     typeof(AbpBackgroundJobsModule),
     typeof(AbpBackgroundWorkersQuartzModule),
     typeof(AbpHttpClientModule)
@@ -27,13 +29,23 @@ public class NotificationsApplicationModule : AbpModule
 {
     public override void ConfigureServices(ServiceConfigurationContext context)
     {
-        context.Services.AddAutoMapperObjectMapper<NotificationsApplicationModule>();
-        context.Services.AddTransient<IResilientHttpRequest, ResilientHttpRequest>();
+        var configuration = context.Services.GetConfiguration();
 
-        Configure<AbpAutoMapperOptions>(options =>
+        context.Services.TryAddSingleton<IAmazonS3>(_ =>
         {
-            options.AddMaps<NotificationsApplicationModule>(validate: true);
+            var s3Config = new AmazonS3Config
+            {
+                RegionEndpoint = null,
+                ServiceURL = configuration["S3:Endpoint"],
+                AllowAutoRedirect = true,
+                ForcePathStyle = true
+            };
+            return new AmazonS3Client(configuration["S3:AccessKeyId"], configuration["S3:SecretAccessKey"], s3Config);
         });
+
+        context.Services.AddMapperlyObjectMapper<NotificationsApplicationModule>();
+
+        context.Services.AddTransient<IResilientHttpRequest, ResilientHttpRequest>();
 
         context.Services.AddHttpClientProxies(
            typeof(NotificationsApplicationContractsModule).Assembly,

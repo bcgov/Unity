@@ -144,5 +144,5 @@ Rules:
 
 - Enforce module dependency direction from `.github/skills/unity-module-structure/SKILL.md`.
 - Enforce ABP app/domain rules from `.github/instructions/csharp.instructions.md`.
-- Do not use Mapperly. Use AutoMapper.
+- Do not use AutoMapper. Use Mapperly (`[Mapper]` attribute, `MapperBase<TSource, TDest>`).
 - Do not place business rules in controllers or app services.

@@ -9,5 +9,7 @@
         public const string InvalidAccountCodingField = "Unity.Payments:Errors:InvalidAccountCodingFiled";
         public const string L2ApproverRestriction = "Unity.Payments:Errors:L2ApproverRestriction";
         public const string MissingSupplierNumber = "Unity.Payments:Errors:MissingSupplierNumber";
+        public const string MissingSite = "Unity.Payments:Errors:MissingSite";
+        public const string MissingAccountCoding = "Unity.Payments:Errors:MissingAccountCoding";
     }
 }

@@ -1,9 +1,9 @@
-FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS base
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS base
 ENV ASPNETCORE_URLS="http://+:8080"
 EXPOSE 8080 443
 WORKDIR /app
 
-FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
 # set up node
@@ -37,9 +37,9 @@ RUN dotnet restore "src/Unity.GrantManager.Web/Unity.GrantManager.Web.csproj"
 COPY . .
 WORKDIR "/src/src/Unity.GrantManager.Web"
 
-RUN dotnet tool install -g Volo.Abp.Cli --version 9.1.3
+RUN dotnet tool install -g Volo.Abp.Cli --version 10.3.0
 ENV PATH="${PATH}:/root/.dotnet/tools"
-RUN dotnet dev-certs https --trust
+#RUN dotnet dev-certs https --trust
 RUN abp install-libs
 
 FROM build AS publish
@@ -54,7 +54,7 @@ RUN dotnet publish "Unity.GrantManager.Web.csproj" \
 
 FROM base AS final
 WORKDIR /app
-COPY --from=build /root/.dotnet/corefx/cryptography/x509stores/my/* /root/.dotnet/corefx/cryptography/x509stores/my/
+# COPY --from=build /root/.dotnet/corefx/cryptography/x509stores/my/* /root/.dotnet/corefx/cryptography/x509stores/my/
 # CAS Dev/Test Certs changed - again Sept 17
 
 COPY ["/src/Unity.GrantManager.Web/certs/cas2024inter.crt", "/usr/local/share/ca-certificates/cas2024inter.crt"]

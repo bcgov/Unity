@@ -8,7 +8,7 @@
     let worksheetMapColumn = document.querySelector('#worksheet-map-available-fields-column');
     let excludedIntakeMappings = ['ConfirmationId', 'SubmissionId', 'SubmissionDate'];
     let dataTable;
-    toastr.options.positionClass = 'toast-top-center';
+    if (globalThis.toastr) { toastr.options.positionClass = 'toast-top-center'; }
 
     let allowableTypes = ['textarea',
         'orgbook',
@@ -77,7 +77,7 @@
     function init() {
         bindUIEvents();
         dataTable = initializeDataTable();
-        let availableChefsFields = JSON.parse(availableChefFieldsString)
+        let availableChefsFields = availableChefFieldsString ? JSON.parse(availableChefFieldsString) : []
         initializeIntakeMap(availableChefsFields);
         bindExistingMaps();
         setupTooltips();
@@ -146,7 +146,7 @@
             );
 
             setTimeout(function () {
-                window.location.href = location.href;
+                globalThis.location.href = location.href;
             }, 500);
 
         }
@@ -181,7 +181,7 @@
         );
 
         setTimeout(function () {
-            const url = new URL(window.location.href);
+            const url = new URL(globalThis.location.href);
 
             // If this really is a GUID, validate it defensively
             if (!/^[0-9a-fA-F-]{36}$/.test(chefsFormVersionGuid)) {
@@ -190,7 +190,7 @@
             }
 
             url.searchParams.set("ChefsFormVersionGuid", chefsFormVersionGuid);
-            window.location.href = url.toString();
+            globalThis.location.href = url.toString();
         }, 500);
     }
 
@@ -228,7 +228,8 @@
             columnDefs: [
                 {
                     render: function (data) {
-                        return '<div id="' + data + '" class="col map-div non-drag" draggable="false"></div>';
+                        const safeId = String(data).replaceAll('&', '&amp;').replaceAll('"', '&quot;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
+                        return '<div id="' + safeId + '" class="col map-div non-drag" draggable="false"></div>';
                     },
                     targets: 3
                 }
@@ -346,7 +347,7 @@
     function handleReset() {
         $(intakeMapColumn).empty();
         $(worksheetMapColumn).empty();
-        let availableChefsFields = JSON.parse(availableChefFieldsString)
+        let availableChefsFields = availableChefFieldsString ? JSON.parse(availableChefFieldsString) : []
         initializeIntakeMap(availableChefsFields);
         bindExistingMaps();
     }
@@ -367,7 +368,8 @@
                     dragableDiv.id = 'unity_' + intakeFieldJson.Name;
                     dragableDiv.className = 'card mapping-field';
                     dragableDiv.setAttribute("draggable", "true");
-                    dragableDiv.innerHTML = `${setTypeIndicator(intakeField)}` + intakeFieldJson.Label + (intakeFieldJson.IsCustom ? " *" : "");
+                    dragableDiv.innerHTML = setTypeIndicator(intakeField);
+                    dragableDiv.appendChild(document.createTextNode(intakeFieldJson.Label + (intakeFieldJson.IsCustom ? ' *' : '')));
                     if (intakeFieldJson.IsCustom) {
                         worksheetMapColumn.appendChild(dragableDiv);
                         dragableDiv.className += ' custom-field';
@@ -454,12 +456,6 @@
 
     function setTypeIndicatorText(text) {
         return `<span class="mapping-indicator-text">${text}</span>`;
-    }
-
-    function stripHtml(html) {
-        let tmp = document.createElement("DIV");
-        tmp.innerHTML = html;
-        return tmp.textContent || tmp.innerText || "";
     }
 
     document.addEventListener('dragstart', function (ev) {
@@ -679,3 +675,10 @@
         }
     }
 });
+
+function stripHtml(html) {
+    return String(html)
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;');
+}

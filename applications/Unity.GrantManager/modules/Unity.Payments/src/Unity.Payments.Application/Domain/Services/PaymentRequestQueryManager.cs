@@ -209,8 +209,11 @@ namespace Unity.Payments.Domain.Services
                 if (paymentRequest != null)
                 {
                     var paymentRequestDto = objectMapper.Map<PaymentRequest, PaymentRequestDto>(paymentRequest);
-                    Site site = await siteRepository.GetAsync(paymentRequest.SiteId);
-                    paymentRequestDto.Site = objectMapper.Map<Site, SiteDto>(site);
+                    if (paymentRequest.SiteId.HasValue)
+                    {
+                        Site site = await siteRepository.GetAsync(paymentRequest.SiteId.Value);
+                        paymentRequestDto.Site = objectMapper.Map<Site, SiteDto>(site);
+                    }
                     paymentRequestDtos.Add(paymentRequestDto);
                 }
             }

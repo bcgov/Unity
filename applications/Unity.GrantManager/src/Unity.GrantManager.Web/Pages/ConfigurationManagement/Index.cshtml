@@ -1,5 +1,6 @@
 ﻿@page
 @using Microsoft.AspNetCore.Mvc.Localization
+@using Unity.Flex.Web.Views.Shared.Components.ScoresheetConfiguration
 @using Unity.Flex.Web.Views.Shared.Components.WorksheetConfiguration
 @using Unity.GrantManager.Localization
 @using Unity.GrantManager.Web.Pages.ConfigurationManagement
@@ -35,7 +36,6 @@
         {
             <abp-script src="/Pages/ConfigurationManagement/PaymentConfigurations.js" />
         }
-        <abp-script src="/Pages/ConfigurationManagement/ScoresheetConfiguration.js" />
         <abp-script src="/libs/sortablejs/Sortable.js" />
         @if (Model.ShowNotifications)
         {

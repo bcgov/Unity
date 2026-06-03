@@ -1,3 +1,95 @@
+const assessmentScoresWidgetPanelStates = {};
+
+function getAssessmentScoresScrollContainer(wrapper) {
+    return (
+        wrapper.closest('.details-scrollable') ||
+        document.getElementById('detailsTabContent') ||
+        document.documentElement
+    );
+}
+
+function restoreAssessmentScoresScrollPosition(wrapper, scrollTop) {
+    if (!Number.isFinite(scrollTop)) {
+        return;
+    }
+
+    const container = getAssessmentScoresScrollContainer(wrapper);
+    const maxScroll = Math.max(
+        0,
+        container.scrollHeight - container.clientHeight
+    );
+    container.scrollTop = Math.min(scrollTop, maxScroll);
+}
+
+function getAssessmentScoresWidgetStateKey(wrapper) {
+    return wrapper.querySelector('#AssessmentId')?.value;
+}
+
+function saveAssessmentScoresWidgetState(wrapper) {
+    if (!wrapper) {
+        return;
+    }
+
+    const key = getAssessmentScoresWidgetStateKey(wrapper);
+    if (!key) {
+        return;
+    }
+
+    const scrollContainer = getAssessmentScoresScrollContainer(wrapper);
+    const scrollTop = scrollContainer.scrollTop;
+    const expandedCollapseIds = Array.from(
+        wrapper.querySelectorAll(
+            '#assessment-scoresheet .accordion-collapse.show'
+        )
+    )
+        .map((accordion) => accordion.id)
+        .filter(Boolean);
+
+    assessmentScoresWidgetPanelStates[key] = {
+        expandedCollapseIds,
+        scrollTop,
+    };
+}
+
+function restoreAssessmentScoresWidgetState(wrapper) {
+    const key = getAssessmentScoresWidgetStateKey(wrapper);
+    const state = assessmentScoresWidgetPanelStates[key];
+    if (!state) {
+        restoreAssessmentScoresScrollPosition(wrapper, 0);
+        return;
+    }
+
+    state.expandedCollapseIds.forEach((id) => {
+        const accordion = document.getElementById(id);
+        if (!accordion || !wrapper.contains(accordion)) {
+            return;
+        }
+
+        accordion.classList.add('show');
+        const accordionButton = accordion.previousElementSibling?.querySelector(
+            '.accordion-button'
+        );
+        accordionButton?.classList.remove('collapsed');
+        accordionButton?.setAttribute('aria-expanded', 'true');
+    });
+
+    requestAnimationFrame(() =>
+        restoreAssessmentScoresScrollPosition(wrapper, state.scrollTop)
+    );
+}
+
+globalThis.saveAssessmentScoresWidgetState = saveAssessmentScoresWidgetState;
+
+abp.widgets.AssessmentScoresWidget = function ($wrapper) {
+    return {
+        init: function () {
+            restoreAssessmentScoresWidgetState($wrapper[0]);
+            updateSubtotal();
+            globalThis.syncAIRateLimitButtons?.();
+        },
+    };
+};
+
 function saveScoresSection(formId, sectionId) {
     const assessmentId = $('#AssessmentId').val();
     const secSaveButton = document.getElementById(
@@ -584,76 +676,42 @@ function queueApplicationScoring(triggerButton = null) {
     const applicationId = $('#DetailsViewApplicationId').val();
     const $button = triggerButton ? $(triggerButton) : $('#regenerateAiScoresheetBtn');
     const existingHtml = $button.html();
-    const promptVersion = globalThis.getSelectedPromptVersion?.() || null;
-    const aiGenerationPollIntervalMs = 15000;
-    let aiGenerationPollTimeoutId = null;
 
     if (!applicationId || $button.prop('disabled')) {
         return;
     }
 
-    $button
-        .html(
-            '<span class="ai-button-content"><span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span><span>Generating...</span></span>'
-        )
-        .prop('disabled', true);
     globalThis.AIGenerationButtonState?.setGenerating($button);
 
-    const stopPolling = function () {
-        if (aiGenerationPollTimeoutId) {
-            clearTimeout(aiGenerationPollTimeoutId);
-            aiGenerationPollTimeoutId = null;
-        }
-    };
+    const monitorScoring = () => globalThis.AIGenerationButtonState.monitor({
+        $button,
+        originalHtml: existingHtml,
+        getStatus: () => unity.grantManager.grantApplications.grantApplication
+            .getAIGenerationStatus(applicationId, 'application-scoring'),
+        onComplete: () => PubSub.publish('refresh_assessment_scores', null),
+        onFailed: (request) => abp.message.error(request?.failureReason || 'AI scoring failed.')
+    });
 
-    const poll = function () {
-        unity.grantManager.grantApplications.grantApplication
-            .getAIGenerationStatus(applicationId, 'application-scoring', promptVersion)
-            .done(function (request) {
-                const status = globalThis.AIGenerationButtonState?.resolveStatus(request?.status) ?? '';
-
-                if (status === 'Failed') {
-                    stopPolling();
-                    abp.message.error(request?.failureReason || 'AI scoring failed.');
-                    globalThis.AIGenerationButtonState?.restore($button);
-                    $button.html(existingHtml).prop('disabled', false);
-                    return;
-                }
-
-                if (!request || request.isActive === false || status === 'Completed') {
-                    stopPolling();
-                    globalThis.AIGenerationButtonState?.setCompleted($button);
-                    $button.html('<span class="ai-button-content"><span>Completed</span></span>').prop('disabled', true);
-                    PubSub.publish('refresh_assessment_scores', null);
-                    return;
-                }
-
-                aiGenerationPollTimeoutId = setTimeout(poll, aiGenerationPollIntervalMs);
-            })
-            .fail(function () {
-                aiGenerationPollTimeoutId = setTimeout(poll, aiGenerationPollIntervalMs);
-            });
-    };
-
-    unity.grantManager.grantApplications.applicationScoring
-        .queueApplicationScoring(applicationId, promptVersion)
+    unity.grantManager.grantApplications.grantApplication
+        .queueApplicationScoring(applicationId)
         .done(function (request) {
             const status = globalThis.AIGenerationButtonState?.resolveStatus(request?.status) ?? '';
 
             if (status === 'Completed') {
-                $button.html('<span class="ai-button-content"><span>Completed</span></span>').prop('disabled', true);
+                globalThis.AIGenerationButtonState?.restoreForCooldownCheck($button, existingHtml);
                 PubSub.publish('refresh_assessment_scores', null);
+                globalThis.syncAIRateLimitButtons?.();
                 return;
             }
 
-            aiGenerationPollTimeoutId = setTimeout(poll, 500);
+            monitorScoring();
         })
         .fail(function () {
-            stopPolling();
             abp.message.error(
                 'Failed to queue AI scoring. Please try again.'
             );
             globalThis.AIGenerationButtonState?.restore($button);
             $button.html(existingHtml).prop('disabled', false);
+            globalThis.syncAIRateLimitButtons?.();
         });
 }

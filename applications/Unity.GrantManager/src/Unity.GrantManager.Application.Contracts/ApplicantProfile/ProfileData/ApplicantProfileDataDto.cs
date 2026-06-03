@@ -10,6 +10,7 @@ namespace Unity.GrantManager.ApplicantProfile.ProfileData
     [JsonDerivedType(typeof(ApplicantPaymentInfoDto), "PAYMENTINFO")]
     public class ApplicantProfileDataDto
     {
+        [JsonIgnore]
         public virtual string DataType { get; } = "";
     }
 }

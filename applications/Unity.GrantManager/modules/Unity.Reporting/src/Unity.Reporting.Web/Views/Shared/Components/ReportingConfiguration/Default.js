@@ -42,6 +42,30 @@ $(function () {
                 columnName: 'Report Column',
                 typePath: 'Type Path'
             }
+        },
+        worksheet_consolidated: {
+            name: 'Consolidated Worksheets',
+            correlationProvider: 'worksheet_consolidated',
+            columns: {
+                label: 'Worksheet Label',
+                key: 'Worksheet Property Name',
+                type: 'Worksheet Type',
+                path: 'Path',
+                columnName: 'Report Column',
+                typePath: 'Type Path'
+            }
+        },
+        formversion_consolidated: {
+            name: 'Consolidated Submissions',
+            correlationProvider: 'formversion_consolidated',
+            columns: {
+                label: 'CHEFS Label',
+                key: 'CHEFS Property Name',
+                type: 'CHEFS Type',
+                path: 'Path',
+                columnName: 'Report Column',
+                typePath: 'Type Path'
+            }
         }
     };
 
@@ -162,74 +186,99 @@ $(function () {
 
     // Function to get current correlation ID based on provider
     function getCurrentCorrelationId() {
-        if (currentProvider === 'scoresheet') {
-            // For scoresheets, use form ID
+        if (currentProvider === 'scoresheet' || currentProvider === 'worksheet_consolidated' || currentProvider === 'formversion_consolidated') {
+            // Form-level providers use the form ID as correlation ID
             return $('#reportingFormId').val();
         } else {
-            // For form versions and worksheets, use version ID
+            // For form versions and per-version worksheets, use version ID
             return $('#versionSelector').val() || $('#reportingVersionId').val();
         }
     }
 
     // Function to show/hide version selector based on provider
     function updateVersionSelectorVisibility() {
-        const $versionSelectorContainer = $('#versionSelector').closest('div');
-        const $formInfoDisplay = $('.form-info-display');
+        const $versionSelectorContainer = $('#version-selector-container');
+        const $worksheetModeToggle = $('#worksheet-mode-toggle');
+        const $submissionsModeToggle = $('#submissions-mode-toggle');
 
         if (currentProvider === 'scoresheet') {
-            // Hide version selector and show form info for scoresheets
             $versionSelectorContainer.hide();
-            $formInfoDisplay.show();
-        } else {
-            // Show version selector and hide form info for other providers
+            $worksheetModeToggle.hide();
+            $submissionsModeToggle.hide();
+        } else if (currentProvider === 'worksheet_consolidated') {
+            $versionSelectorContainer.hide();
+            $worksheetModeToggle.show();
+            $submissionsModeToggle.hide();
+        } else if (currentProvider === 'worksheet') {
             $versionSelectorContainer.show();
-            $formInfoDisplay.hide();
+            $worksheetModeToggle.show();
+            $submissionsModeToggle.hide();
+        } else if (currentProvider === 'formversion_consolidated') {
+            $versionSelectorContainer.hide();
+            $worksheetModeToggle.hide();
+            $submissionsModeToggle.show();
+        } else {
+            // formversion (per-version)
+            $versionSelectorContainer.show();
+            $worksheetModeToggle.hide();
+            $submissionsModeToggle.show();
         }
+    }
+
+    function resetTogglesToCurrentProvider() {
+        const topLevelValue = getTopLevelProviderValue(currentProvider);
+        $(`input[name="provider-toggle"][value="${topLevelValue}"]`).prop('checked', true);
+        if (currentProvider === 'worksheet' || currentProvider === 'worksheet_consolidated') {
+            $(`input[name="worksheet-mode"][value="${currentProvider}"]`).prop('checked', true);
+        }
+        if (currentProvider === 'formversion' || currentProvider === 'formversion_consolidated') {
+            $(`input[name="submissions-mode"][value="${currentProvider}"]`).prop('checked', true);
+        }
+    }
+
+    function syncTogglesToProvider(newProvider) {
+        const topLevelValue = getTopLevelProviderValue(newProvider);
+        $(`input[name="provider-toggle"][value="${topLevelValue}"]`).prop('checked', true);
+        if (newProvider === 'worksheet' || newProvider === 'worksheet_consolidated') {
+            $(`input[name="worksheet-mode"][value="${newProvider}"]`).prop('checked', true);
+        }
+        if (newProvider === 'formversion' || newProvider === 'formversion_consolidated') {
+            $(`input[name="submissions-mode"][value="${newProvider}"]`).prop('checked', true);
+        }
+    }
+
+    function refreshConfigurationState(correlationId) {
+        checkConfigurationExists(correlationId, function (exists) {
+            updateGenerateViewButtonVisibility(exists);
+            updateDeleteButtonVisibility(exists);
+        });
+        refreshViewStatusWidget(correlationId, getCorrelationProvider());
     }
 
     // Function to handle provider change
     function handleProviderChange(newProvider) {
-        if (newProvider === currentProvider) {
-            return; // No change needed
+        if (newProvider === currentProvider) return;
+
+        if (hasUnsavedChanges && !confirm('You have unsaved changes. Switching providers will discard these changes. Do you want to continue?')) {
+            resetTogglesToCurrentProvider();
+            return;
         }
 
-        // Check for unsaved changes
-        if (hasUnsavedChanges) {
-            if (!confirm('You have unsaved changes. Switching providers will discard these changes. Do you want to continue?')) {
-                // Reset the toggle to current provider
-                $(`input[name="provider-toggle"][value="${currentProvider}"]`).prop('checked', true);
-                return;
-            }
-        }
-
-        // Update current provider
         currentProvider = newProvider;
-
-        // Update version selector visibility
+        syncTogglesToProvider(newProvider);
         updateVersionSelectorVisibility();
-
-        // Reset changes state since we're switching providers
         resetChangesState();
-
-        // Update column headers in the DataTable
+        $('#reportingViewStatus').val('');
         updateDataTableColumnHeaders();
 
-        // Check if configuration exists for the new provider and update button visibility
         const correlationId = getCurrentCorrelationId();
         if (correlationId) {
-            checkConfigurationExists(correlationId, function (exists) {
-                updateGenerateViewButtonVisibility(exists);
-                updateDeleteButtonVisibility(exists);
-            });
-
-            // Refresh the view status widget for the new provider
-            refreshViewStatusWidget(correlationId, getCorrelationProvider());
+            refreshConfigurationState(correlationId);
         } else {
             updateGenerateViewButtonVisibility(false);
             updateDeleteButtonVisibility(false);
         }
 
-        // Reload the DataTable with new provider
         if (dataTable) {
             dataTable.ajax.reload();
         }
@@ -249,7 +298,7 @@ $(function () {
             { index: 2, title: columns.type },
             { index: 3, title: columns.path },
             { index: 4, title: columns.columnName },
-            { index: 5, title: columns.typePath}
+            { index: 5, title: columns.typePath }
         ];
 
         columnIndices.forEach(col => {
@@ -257,12 +306,35 @@ $(function () {
             header.text(col.title);
         });
 
+        // Show the Version(s) column only for consolidated providers
+        dataTable.column('versionLabel:name').visible(currentProvider === 'worksheet_consolidated' || currentProvider === 'formversion_consolidated');
+
         // Force redraw to update headers
         dataTable.draw(false);
     }
 
     // Handle provider toggle change event
     $(document).on('change', 'input[name="provider-toggle"]', function () {
+        let newProvider = $(this).val();
+        // When entering worksheet mode from outside, default to consolidated worksheet
+        if (newProvider === 'worksheet' && currentProvider !== 'worksheet' && currentProvider !== 'worksheet_consolidated') {
+            newProvider = 'worksheet_consolidated';
+        }
+        // When entering submissions mode from outside, default to consolidated formversion
+        if (newProvider === 'formversion' && currentProvider !== 'formversion' && currentProvider !== 'formversion_consolidated') {
+            newProvider = 'formversion_consolidated';
+        }
+        handleProviderChange(newProvider);
+    });
+
+    // Handle worksheet sub-toggle (Per Version / Consolidated)
+    $(document).on('change', 'input[name="worksheet-mode"]', function () {
+        const newProvider = $(this).val();
+        handleProviderChange(newProvider);
+    });
+
+    // Handle submissions sub-toggle (Per Version / Consolidated)
+    $(document).on('change', 'input[name="submissions-mode"]', function () {
         const newProvider = $(this).val();
         handleProviderChange(newProvider);
     });
@@ -287,12 +359,31 @@ $(function () {
         }
     }
 
-    // Function to check for duplicate keys in current table data
+    // Function to check for duplicate keys in current table data.
+    // Covers two cases:
+    //   1. Auto-generated (DKx) prefix markers added by the server when CHEFS fields share a key.
+    //   2. Literal path duplicates — two rows with the exact same DataPath value (e.g. same
+    //      worksheet field appearing twice from different version sync artefacts).
     function checkForDuplicateKeysInTable() {
         if (!dataTable) return false;
 
-        return dataTable.rows().data().toArray().some(function (data) {
+        const rows = dataTable.rows().data().toArray();
+
+        // Case 1: (DKx) prefix present on any row
+        if (rows.some(function (data) {
             return hasDuplicateKeyPrefix(data.path) || hasDuplicateKeyPrefix(data.dataPath);
+        })) {
+            return true;
+        }
+
+        // Case 2: two or more rows share the exact same path value
+        const seenPaths = new Set();
+        return rows.some(function (data) {
+            const p = (data.dataPath || data.path || '').toLowerCase();
+            if (!p) return false;
+            if (seenPaths.has(p)) return true;
+            seenPaths.add(p);
+            return false;
         });
     }
 
@@ -387,10 +478,10 @@ $(function () {
         abp.message.warn(alertMessage, 'Schema Changes Detected');
     }
 
-    // Handle version selector change (only for non-scoresheet providers)
+    // Handle version selector change (only for per-version providers)
     $('#versionSelector').on('change', function () {
-        // Skip version selector handling for scoresheet provider
-        if (currentProvider === 'scoresheet') {
+        // Skip version selector handling for form-level providers
+        if (currentProvider === 'scoresheet' || currentProvider === 'worksheet_consolidated' || currentProvider === 'formversion_consolidated') {
             return;
         }
 
@@ -415,6 +506,9 @@ $(function () {
 
         // Reset changes state since we're loading new data
         resetChangesState();
+
+        // Clear cached view status — the widget will reflect the real state after refresh
+        $('#reportingViewStatus').val('');
     });
 
     // Function to check if configuration exists
@@ -438,19 +532,32 @@ $(function () {
         });
     }
 
+    // Holds a schema-change message that arrived while the reporting tab was not visible.
+    // Displayed the first time the user navigates to the reporting configuration tab.
+    let pendingDetectedChanges = null;
+
     // Helper function to process detected changes alert (module-level to reduce nesting)
     function processDetectedChanges(detectedChanges) {
         if (detectedChanges?.trim() !== '') {
-            setTimeout(function () {
-                displayDetectedChangesAlert(detectedChanges);
-            }, 100);
+            if (isReportingTabVisible()) {
+                setTimeout(function () {
+                    displayDetectedChangesAlert(detectedChanges);
+                }, 100);
+            } else {
+                // Store for display when the reporting configuration tab is opened
+                pendingDetectedChanges = detectedChanges;
+            }
         }
     }
 
     // Helper function to transform configuration data (module-level to reduce nesting)
     function transformConfigurationResult(result) {
         processDetectedChanges(result.detectedChanges);
-        
+
+        // Populate description field from saved metadata
+        const description = result.mapping.metadata?.description || '';
+        setDescription(description);
+
         const items = result.mapping.rows.map(row => ({
             label: row.label,
             key: row.propertyName,
@@ -458,7 +565,8 @@ $(function () {
             path: row.path,
             dataPath: row.dataPath,
             columnName: row.columnName || '',
-            typePath: row.typePath
+            typePath: row.typePath,
+            versionLabel: row.versionLabel || null
         }));
 
         return {
@@ -473,7 +581,7 @@ $(function () {
     //   - worksheet/scoresheet: use Label only, no fallback to Key
     // No cross-field fallback ensures the client and server produce identical defaults.
     function getDefaultColumnNameSource(field) {
-        if (currentProvider === 'formversion') {
+        if (currentProvider === 'formversion' || currentProvider === 'formversion_consolidated') {
             return field.key || '';
         }
         return field.label || '';
@@ -481,6 +589,9 @@ $(function () {
 
     // Helper function to transform fields metadata (module-level to reduce nesting)
     function transformFieldsMetadata(fieldsMetadata) {
+        // No saved configuration exists, clear description field
+        setDescription('');
+
         const items = fieldsMetadata.fields.map(field => ({
             label: field.label || field.key,
             key: field.key,
@@ -488,7 +599,8 @@ $(function () {
             path: field.path,
             dataPath: field.dataPath,
             columnName: getDefaultColumnNameSource(field),
-            typePath: field.typePath
+            typePath: field.typePath,
+            versionLabel: field.versionLabel || null
         }));
 
         return {
@@ -617,6 +729,22 @@ $(function () {
                     }
                     return data;
                 }
+            },
+            {
+                title: 'Version(s)',
+                data: 'versionLabel',
+                name: 'versionLabel',
+                className: 'data-table-header',
+                width: '90px',
+                index: 6,
+                orderable: true,
+                visible: currentProvider === 'worksheet_consolidated' || currentProvider === 'formversion_consolidated',
+                render: function (data, type, _) {
+                    if (type === 'display') {
+                        return data || 'All';
+                    }
+                    return data || '';
+                }
             }
         ];
 
@@ -665,9 +793,14 @@ $(function () {
             }).catch(handleDataLoadingError);
         };
 
+        const defaultVisibleColumns = ['label', 'key', 'type', 'path', 'columnName'];
+        if (currentProvider === 'worksheet_consolidated' || currentProvider === 'formversion_consolidated') {
+            defaultVisibleColumns.push('versionLabel');
+        }
+
         dataTable = initializeDataTable({
             dt,
-            defaultVisibleColumns: ['label', 'key', 'type', 'path', 'columnName'],
+            defaultVisibleColumns,
             listColumns,
             defaultSortColumn: 0,
             dataEndpoint: dataEndpoint,
@@ -820,9 +953,11 @@ $(function () {
             if (error?.responseJSON?.error?.message) {
                 errorMessage = error.responseJSON.error.message;
             } else if (error?.responseText) {
-                const parsedError = JSON.parse(error.responseText);
+                const parsedError = tryParseJson(error.responseText);
                 if (parsedError?.message) {
                     errorMessage = parsedError.message;
+                } else {
+                    errorMessage = error.responseText;
                 }
             }
             abp.message.error(errorMessage);
@@ -1123,6 +1258,42 @@ $(function () {
         });
     });
 
+    // Description field helpers
+    function getDescription() {
+        return ($('#reportingDescription').val() || '').trim();
+    }
+
+    function setDescription(value = '') {
+        $('#reportingDescription').val(value);
+        $('#descriptionCharCount').text(value.length + ' / 500');
+    }
+
+    // Description character counter (live update inside modal)
+    $(document).on('input', '#reportingDescription', function () {
+        $('#descriptionCharCount').text($(this).val().length + ' / 500');
+    });
+
+    // Open description modal – snapshot current value so Cancel can revert
+    $('#btn-edit-description').on('click', function () {
+        $('#reportingDescription').data('snapshot', getDescription());
+        const modal = new bootstrap.Modal(document.getElementById('descriptionModal'));
+        modal.show();
+    });
+
+    // Cancel: restore snapshot
+    $(document).on('click', '#descriptionModal .btn-secondary', function () {
+        const snapshot = $('#reportingDescription').data('snapshot');
+        if (snapshot !== undefined) {
+            setDescription(snapshot);
+        }
+    });
+
+    // Apply description and mark as changed
+    $(document).on('click', '#confirmDescription', function () {
+        markAsChanged();
+        bootstrap.Modal.getInstance(document.getElementById('descriptionModal')).hide();
+    });
+
     // Track changes in the data grid
     function markAsChanged() {
         hasUnsavedChanges = true;
@@ -1230,7 +1401,8 @@ $(function () {
             correlationId: correlationId,
             correlationProvider: getCorrelationProvider(),
             mapping: {
-                rows: getCurrentTableData()
+                rows: getCurrentTableData(),
+                description: getDescription()
             }
         };
 
@@ -1404,10 +1576,10 @@ $(function () {
                     correlationProvider: getCorrelationProvider()
                 }
             }).done(function (isAvailable) {
-                if (!isAvailable) {
-                    callback(false, ['View name is already in use by another reporting configuration']);
-                } else {
+                if (isAvailable) {
                     callback(true, []);
+                } else {
+                    callback(false, ['View name is already in use by another reporting configuration']);
                 }
             }).fail(function (error) {
                 callback(false, ['Error checking view name availability']);
@@ -1548,52 +1720,7 @@ $(function () {
                 console.error('Error generating view - Error:', error);
                 console.error('Error generating view - XHR:', xhr);
 
-                let errorMessage = 'Failed to generate database view';
-
-                // Handle different error scenarios
-                if (xhr.status === 0) {
-                    errorMessage = 'Network error: Could not connect to the server';
-                } else if (xhr.status === 400) {
-                    // Try to extract detailed error message from response
-                    try {
-                        const errorResponse = JSON.parse(xhr.responseText);
-                        if (errorResponse?.error?.message) {
-                            errorMessage = errorResponse?.error?.message;
-                        } else if (typeof errorResponse === 'string') {
-                            errorMessage = errorResponse;
-                        } else {
-                            errorMessage = 'Bad request: Please check your input and try again';
-                        }
-                    } catch (parseError) {
-                        console.error(parseError);
-                        errorMessage = xhr.responseText || 'Bad request: Please check your input and try again';
-                    }
-                } else if (xhr.status === 401) {
-                    errorMessage = 'Unauthorized: Please log in and try again';
-                } else if (xhr.status === 403) {
-                    errorMessage = 'Forbidden: You do not have permission to perform this action';
-                } else if (xhr.status === 404) {
-                    errorMessage = 'Configuration not found: Please ensure the configuration exists and try again';
-                } else if (xhr.status === 500) {
-                    errorMessage = 'Server error: Please try again later or contact support';
-                } else if (xhr.responseText) {
-                    try {
-                        const parsedError = JSON.parse(xhr.responseText);
-                        if (parsedError?.error?.message) {
-                            errorMessage = parsedError?.error?.message;
-                        } else if (parsedError?.message) {
-                            errorMessage = parsedError?.message;
-                        } else {
-                            errorMessage = xhr.responseText;
-                        }
-                    } catch (parseError) {
-                        console.error('Failed to parse error response:', parseError);
-                        errorMessage = xhr.responseText;
-                    }
-                } else if (error && error !== 'parsererror') {
-                    errorMessage = error;
-                }
-
+                const errorMessage = getReportingErrorMessage(xhr, error, 'Failed to generate view');
                 abp.message.error(errorMessage);
             },
             complete: function () {
@@ -1714,41 +1841,7 @@ $(function () {
             modal.hide();
 
         }).fail(function (xhr, status, error) {
-            let errorMessage = 'Failed to delete configuration';
-
-            // Handle different error scenarios
-            if (xhr.status === 0) {
-                errorMessage = 'Network error: Could not connect to the server';
-            } else if (xhr.status === 400) {
-                const errorResponse = JSON.parse(xhr.responseText);
-                if (errorResponse?.error?.message) {
-                    errorMessage = errorResponse?.error?.message;
-                } else if (typeof errorResponse === 'string') {
-                    errorMessage = errorResponse;
-                } else {
-                    errorMessage = 'Bad request: Please check your input and try again';
-                }
-            } else if (xhr.status === 401) {
-                errorMessage = 'Unauthorized: Please log in and try again';
-            } else if (xhr.status === 403) {
-                errorMessage = 'Forbidden: You do not have permission to perform this action';
-            } else if (xhr.status === 404) {
-                errorMessage = 'Configuration not found: The configuration may have already been deleted';
-            } else if (xhr.status === 500) {
-                errorMessage = 'Server error: Please try again later or contact support';
-            } else if (xhr.responseText) {
-                const parsedError = JSON.parse(xhr.responseText);
-                if (parsedError?.error?.message) {
-                    errorMessage = parsedError?.error?.message;
-                } else if (parsedError?.message) {
-                    errorMessage = parsedError?.message;
-                } else {
-                    errorMessage = xhr.responseText;
-                }
-            } else if (error && error !== 'parsererror') {
-                errorMessage = error;
-            }
-
+            const errorMessage = getReportingErrorMessage(xhr, error, 'Failed to delete configuration');
             abp.message.error(errorMessage);
         }).always(function () {
             // Reset modal button states
@@ -1758,7 +1851,7 @@ $(function () {
             // Re-enable main control buttons
             setControlButtonsLoadingState(false);
         });
-    });
+    });    
 
     // Update the function to handle both generate and delete button visibility
     // This function was modified earlier to support both buttons
@@ -2071,6 +2164,15 @@ $(function () {
     // Listen for Bootstrap tab shown event
     $('button[data-bs-target="#nav-reporting-configuration"]').on('shown.bs.tab', function (e) {
         handleTabVisibilityChange();
+
+        // Show any schema-change alert that was deferred because the tab was not yet visible
+        if (pendingDetectedChanges) {
+            const changes = pendingDetectedChanges;
+            pendingDetectedChanges = null;
+            setTimeout(function () {
+                displayDetectedChangesAlert(changes);
+            }, 100);
+        }
     });
 
     // Alternative: Listen for tab clicks
@@ -2081,7 +2183,7 @@ $(function () {
     });
 
     // Add intersection observer for visibility detection (fallback)
-    if (window.IntersectionObserver) {
+    if (globalThis.IntersectionObserver) {
         const observer = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
                 if (entry.isIntersecting && entry.target.id === 'nav-reporting-configuration') {
@@ -2099,7 +2201,7 @@ $(function () {
     }
 
     // Additional fallback: MutationObserver to detect class changes on the tab panel
-    if (window.MutationObserver) {
+    if (globalThis.MutationObserver) {
         const tabObserver = new MutationObserver((mutations) => {
             mutations.forEach((mutation) => {
                 if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
@@ -2130,3 +2232,60 @@ $(function () {
         }
     });
 });
+
+function getTopLevelProviderValue(provider) {
+    if (provider === 'worksheet_consolidated') return 'worksheet';
+    if (provider === 'formversion_consolidated') return 'formversion';
+    return provider;
+}
+
+// Safe JSON.parse wrapper — returns null instead of throwing on invalid input.
+function tryParseJson(text) {
+    if (!text || typeof text !== 'string') return null;
+    try {
+        return JSON.parse(text);
+    } catch (e) {
+        console.log(e);
+        return null;
+    }
+}
+
+// Extract error handling logic to reduce cognitive complexity.
+// `fallbackMessage` is shown when no structured error detail is available; callers
+// should pass a short operation-specific string (e.g. 'Failed to generate view').
+function getReportingErrorMessage(xhr, error, fallbackMessage = 'An error occurred. Please try again') {
+    if (xhr.status === 0) {
+        return 'Network error: Could not connect to the server';
+    }
+
+    if (xhr.status === 400) {
+        const errorResponse = tryParseJson(xhr.responseText);
+        return errorResponse?.error?.message
+            || (typeof errorResponse === 'string' ? errorResponse : null)
+            || xhr.responseText
+            || 'Bad request: Please check your input and try again';
+    }
+
+    if (xhr.status === 401) {
+        return 'Unauthorized: Please log in and try again';
+    }
+
+    if (xhr.status === 403) {
+        return 'Forbidden: You do not have permission to perform this action';
+    }
+
+    if (xhr.status === 404) {
+        return 'Configuration not found: The configuration may have already been deleted';
+    }
+
+    if (xhr.status === 500) {
+        return 'Server error: Please try again later or contact support';
+    }
+
+    if (xhr.responseText) {
+        const parsedError = tryParseJson(xhr.responseText);
+        return parsedError?.error?.message || parsedError?.message || xhr.responseText;
+    }
+
+    return (error && error !== 'parsererror') ? error : fallbackMessage;
+}

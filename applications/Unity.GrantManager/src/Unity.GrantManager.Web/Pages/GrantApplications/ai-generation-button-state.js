@@ -1,19 +1,16 @@
 (function (global) {
-    const generatingStyles = {
-        'background-color': '#f1f3f5',
-        'border-color': '#adb5bd',
-        color: '#495057',
-        opacity: '1',
-    };
+    function restoreButton($button, html) {
+        global.AIGenerationButtonState.restore($button);
+        $button.html(html).prop('disabled', false);
+    }
 
-    const completedStyles = {
-        'border-color': '#2e7d32',
-        color: '#2e7d32',
-        opacity: '1',
-    };
-
-    function applyStyles($button, styles) {
-        $button.css(styles);
+    function restoreButtonForCooldownCheck($button, html) {
+        global.AIGenerationButtonState.restore($button);
+        $button
+            .html(html)
+            .attr('data-ai-cooldown-checking', '1')
+            .attr('data-ai-rate-limit-disabled', '1')
+            .prop('disabled', true);
     }
 
     global.AIGenerationButtonState = {
@@ -32,18 +29,66 @@
             }
         },
         setGenerating($button) {
-            applyStyles($button, generatingStyles);
-        },
-        setCompleted($button) {
-            applyStyles($button, completedStyles);
+            global.setAIGenerationButtonsGenerating?.();
         },
         restore($button) {
-            $button.css({
-                'background-color': '',
-                'border-color': '',
-                color: '',
-                opacity: '',
-            }).removeClass('disabled');
+            $button.removeClass('disabled');
+        },
+        restoreForCooldownCheck($button, html) {
+            restoreButtonForCooldownCheck($button, html);
+        },
+        monitor(options) {
+            const intervalMs = options.intervalMs || 15000;
+            const maxFailures = options.maxFailures || 3;
+            let timeoutId = null;
+            let failures = 0;
+
+            const stop = () => {
+                if (timeoutId) {
+                    clearTimeout(timeoutId);
+                    timeoutId = null;
+                }
+            };
+
+            const poll = () => {
+                options.getStatus()
+                    .done((request) => {
+                        failures = 0;
+                        const status = this.resolveStatus(request?.status);
+
+                        if (status === 'Failed') {
+                            stop();
+                            restoreButton(options.$button, options.originalHtml);
+                            options.onFailed?.(request);
+                            return;
+                        }
+
+                        if (!request || request.isActive === false || status === 'Completed') {
+                            stop();
+                            restoreButtonForCooldownCheck(options.$button, options.originalHtml);
+                            options.onComplete?.(request);
+                            global.syncAIRateLimitButtons?.();
+                            return;
+                        }
+
+                        timeoutId = setTimeout(poll, intervalMs);
+                    })
+                    .fail((error) => {
+                        failures += 1;
+                        if (failures > maxFailures) {
+                            stop();
+                            restoreButton(options.$button, options.originalHtml);
+                            options.onPollFailed?.(error);
+                            return;
+                        }
+
+                        timeoutId = setTimeout(poll, intervalMs);
+                    });
+            };
+
+            stop();
+            timeoutId = setTimeout(poll, options.initialDelayMs ?? 500);
+            return { stop };
         },
     };
 })(globalThis);

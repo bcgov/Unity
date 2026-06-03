@@ -3,7 +3,7 @@ using Unity.Flex;
 using Unity.GrantManager;
 using Volo.Abp.Application;
 using Volo.Abp.AspNetCore.Mvc;
-using Volo.Abp.AutoMapper;
+using Volo.Abp.Mapperly;
 using Volo.Abp.Modularity;
 using Volo.Abp.MultiTenancy;
 using Volo.Abp.TenantManagement;
@@ -14,7 +14,7 @@ namespace Unity.AI;
 [DependsOn(
     typeof(AIApplicationContractsModule),
     typeof(AbpDddApplicationModule),
-    typeof(AbpAutoMapperModule),
+    typeof(AbpMapperlyModule),
     typeof(AbpTenantManagementDomainModule),
     typeof(FlexApplicationModule),
     typeof(GrantManagerDomainModule)
@@ -41,11 +41,7 @@ public class AIApplicationModule : AbpModule
             options.FileSets.AddEmbedded<AIApplicationModule>();
         });
 
-        context.Services.AddAutoMapperObjectMapper<AIApplicationModule>();
-        Configure<AbpAutoMapperOptions>(options =>
-        {
-            options.AddMaps<AIApplicationModule>(validate: true);
-        });
+        context.Services.AddMapperlyObjectMapper<AIApplicationModule>();
 
         context.Services.AddHttpClientProxies(
             typeof(AIApplicationContractsModule).Assembly,

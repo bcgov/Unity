@@ -2,511 +2,8 @@
  * Grant Application Details Page
  * Dependencies: ai-analysis.js - handles AI analysis rendering and management
  */
-function formatJsonOrRaw(value) {
-    if (!value) {
-        return '';
-    }
-
-    if (typeof value !== 'string') {
-        return JSON.stringify(value, null, 2);
-    }
-
-    try {
-        return JSON.stringify(JSON.parse(value), null, 2);
-    } catch {
-        return value;
-    }
-}
-
-function formatSectionBody(title, value) {
-    if (!value) {
-        return '';
-    }
-
-    return `${title}:\n${value}`;
-}
-
-function formatOutputBody(title, sections) {
-    const content = sections.filter(Boolean).join('\n\n');
-    if (!content) {
-        return '';
-    }
-
-    return `${title}\n\n${content}`;
-}
-
-function getAIGenerationFailureMessage(operationType) {
-    switch (operationType) {
-        case 'attachment-summary':
-            return 'AI attachment summary failed.';
-        case 'application-scoring':
-            return 'AI application scoring failed.';
-        default:
-            return 'AI operation failed.';
-    }
-}
-
-function unwrapWhenResult(result) {
-    if (
-        Array.isArray(result) &&
-        result.length === 3 &&
-        typeof result[1] === 'string'
-    ) {
-        return result[0];
-    }
-
-    return result;
-}
-
-function extractSubmissionDataObject(root) {
-    if (!root || typeof root !== 'object' || Array.isArray(root)) {
-        return null;
-    }
-
-    if (root.data && typeof root.data === 'object' && !Array.isArray(root.data)) {
-        return root.data;
-    }
-
-    if (
-        root.submission &&
-        typeof root.submission === 'object' &&
-        !Array.isArray(root.submission) &&
-        root.submission.data &&
-        typeof root.submission.data === 'object' &&
-        !Array.isArray(root.submission.data)
-    ) {
-        return root.submission.data;
-    }
-
-    return root;
-}
-
-function formatTimestamp(value) {
-    if (!value) {
-        return '';
-    }
-
-    const timestamp = new Date(value);
-    if (Number.isNaN(timestamp.getTime())) {
-        return '';
-    }
-
-    return timestamp.toLocaleString();
-}
-
-function getAttachmentSummaryValue(attachment) {
-    return attachment?.aiSummary ?? attachment?.aISummary ?? '';
-}
-
-function formatAttachmentSummaryBody(attachments) {
-    if (!Array.isArray(attachments) || attachments.length === 0) {
-        return '';
-    }
-
-    const summarizedAttachments = attachments.filter(
-        (attachment) => {
-            const summary = getAttachmentSummaryValue(attachment);
-            return summary && summary.trim() !== '';
-        }
-    );
-
-    if (summarizedAttachments.length === 0) {
-        return '';
-    }
-
-    return summarizedAttachments.map(function(attachment) {
-        const summary = getAttachmentSummaryValue(attachment);
-        return [
-            'NAME:',
-            attachment.fileName || '',
-            '',
-            'SUMMARY:',
-            summary
-        ].join('\n');
-    }).join('\n\n----------------------------------------\n\n');
-}
-
-function formatAttachmentSummaryJson(attachments) {
-    if (!Array.isArray(attachments) || attachments.length === 0) {
-        return '';
-    }
-
-    const summarizedAttachments = attachments
-        .map((attachment) => {
-            const summary = getAttachmentSummaryValue(attachment);
-            if (!summary || summary.trim() === '') {
-                return null;
-            }
-
-            return {
-                name: attachment.fileName || '',
-                summary
-            };
-        })
-        .filter((attachment) => attachment !== null);
-
-    if (summarizedAttachments.length === 0) {
-        return '';
-    }
-
-    return JSON.stringify(summarizedAttachments, null, 2);
-}
-
 $(function () {
-    const excludedPromptDataKeys = new Set([
-        'simplefile',
-        'applicantAgent',
-        'submit',
-        'lateEntry',
-        'metadata',
-        'full_application_form_submission',
-        'files',
-        'file',
-        'attachments'
-    ]);
-
-    const nonDataComponentTypes = new Set([
-        'button',
-        'simplebuttonadvanced',
-        'html',
-        'htmlelement',
-        'content',
-        'simpleseparator'
-    ]);
-
-    globalThis.getSelectedPromptVersion = function() {
-        return $('#promptVersion').val() || null;
-    };
-
-    function setPromptToolsOutput(selector, value) {
-        $(selector).val(value || '');
-    }
-
-    function setPromptToolsTimestamp(selector, value) {
-        $(selector).text(value ? `(${value})` : '');
-    }
-
-    function getScoresheetSchemaJson() {
-        return $('#ApplicationScoresheetSchemaJson').val() ||
-            $('#AssessmentScoresheetSchemaJson').val() ||
-            '';
-    }
-
-    function hasPromptTools() {
-        return $('#prompt-tools').length > 0 && $('#promptVersion').length > 0;
-    }
-
-    function getPromptDataPayload() {
-        const submissionJson = $('#ApplicationFormSubmissionData').val();
-        if (!submissionJson) {
-            return '';
-        }
-
-        try {
-            const root = JSON.parse(submissionJson);
-            const submissionData = extractSubmissionDataObject(root);
-            if (!submissionData || typeof submissionData !== 'object' || Array.isArray(submissionData)) {
-                return '';
-            }
-
-            const filteredValues = { ...submissionData };
-            for (const key of excludedPromptDataKeys) {
-                delete filteredValues[key];
-            }
-
-            const allowedSchemaKeys = extractAllowedSchemaKeys($('#ApplicationFormSchema').val());
-            const payload = allowedSchemaKeys.size > 0
-                ? Object.fromEntries(
-                    Object.entries(filteredValues).filter(([key]) => allowedSchemaKeys.has(key))
-                )
-                : filteredValues;
-
-            return JSON.stringify(payload, null, 2);
-        } catch {
-            return '';
-        }
-    }
-
-    function extractAllowedSchemaKeys(formSchema) {
-        if (!formSchema) {
-            return new Set();
-        }
-
-        try {
-            const schema = JSON.parse(formSchema);
-            const keys = new Set();
-            extractSchemaKeys(schema.components, keys);
-            return keys;
-        } catch {
-            return new Set();
-        }
-    }
-
-    function extractSchemaKeys(components, keys) {
-        if (!Array.isArray(components)) {
-            return;
-        }
-
-        for (const component of components) {
-            if (!component || typeof component !== 'object') {
-                continue;
-            }
-
-            const key = component.key;
-            const type = component.type;
-            const isInput = component.input === true;
-
-            if (
-                typeof key === 'string' &&
-                typeof type === 'string' &&
-                !nonDataComponentTypes.has(type.toLowerCase()) &&
-                isInput
-            ) {
-                keys.add(key);
-            }
-
-            if (Array.isArray(component.components)) {
-                extractSchemaKeys(component.components, keys);
-            }
-
-            if (Array.isArray(component.columns)) {
-                for (const column of component.columns) {
-                    if (column && Array.isArray(column.components)) {
-                        extractSchemaKeys(column.components, keys);
-                    }
-                }
-            }
-        }
-    }
-
-    function formatAttachmentAiOutput(attachments) {
-        const attachmentBody = formatAttachmentSummaryBody(attachments);
-        if (!attachmentBody) {
-            setPromptToolsTimestamp('#attachmentOutputTimestamp', '');
-            return '';
-        }
-
-        const summarizedAttachments = attachments.filter(
-            (attachment) => {
-                const summary = getAttachmentSummaryValue(attachment);
-                return summary && summary.trim() !== '';
-            }
-        );
-
-        const latestTimestamp = summarizedAttachments
-            .map((attachment) => attachment.lastModificationTime || attachment.creationTime || null)
-            .filter((timestamp) => !!timestamp)
-            .sort()
-            .at(-1);
-
-        setPromptToolsTimestamp('#attachmentOutputTimestamp', formatTimestamp(latestTimestamp));
-        return attachmentBody;
-    }
-
-    function loadPromptToolsOutputs() {
-        if (!hasPromptTools()) {
-            return;
-        }
-
-        const applicationId = $('#DetailsViewApplicationId').val();
-
-        if (!applicationId) {
-            setPromptToolsOutput('#analysisOutput', '');
-            setPromptToolsOutput('#scoringOutput', '');
-            setPromptToolsOutput('#attachmentOutput', '');
-            setPromptToolsTimestamp('#analysisOutputTimestamp', '');
-            setPromptToolsTimestamp('#scoringOutputTimestamp', '');
-            setPromptToolsTimestamp('#attachmentOutputTimestamp', '');
-            return;
-        }
-
-        $.when(
-            unity.grantManager.grantApplications.grantApplication.get(applicationId),
-            unity.grantManager.attachments.attachment.getApplicationChefsFileAttachments(applicationId)
-        )
-            .done(function(applicationResponse, attachmentsResponse) {
-                const application = unwrapWhenResult(applicationResponse);
-                const attachments = unwrapWhenResult(attachmentsResponse);
-                const updatedAt = application?.lastModificationTime || application?.creationTime || null;
-                const formattedUpdatedAt = formatTimestamp(updatedAt);
-                const attachmentSection = formatSectionBody('ATTACHMENTS', formatAttachmentSummaryJson(attachments));
-                setPromptToolsTimestamp('#analysisOutputTimestamp', formattedUpdatedAt);
-                setPromptToolsTimestamp('#scoringOutputTimestamp', formattedUpdatedAt);
-                setPromptToolsOutput(
-                    '#analysisOutput',
-                    formatOutputBody('APPLICATION ANALYSIS', [
-                        formatSectionBody('DATA', getPromptDataPayload()),
-                        attachmentSection,
-                        formatSectionBody(
-                            'OUTPUT',
-                            formatJsonOrRaw(application?.aiAnalysisData ?? application?.aiAnalysis ?? '')
-                        )
-                    ])
-                );
-                setPromptToolsOutput(
-                    '#scoringOutput',
-                    formatOutputBody('APPLICATION SCORING', [
-                        formatSectionBody('SCORESHEET', formatJsonOrRaw(getScoresheetSchemaJson())),
-                        formatSectionBody('DATA', getPromptDataPayload()),
-                        attachmentSection,
-                        formatSectionBody(
-                            'OUTPUT',
-                            formatJsonOrRaw(application?.aiScoresheetAnswers ?? application?.aIScoresheetAnswers ?? '')
-                        )
-                    ])
-                );
-                setPromptToolsOutput(
-                    '#attachmentOutput',
-                    formatOutputBody('ATTACHMENT SUMMARY', [formatAttachmentAiOutput(attachments)])
-                );
-            })
-            .fail(function() {
-                setPromptToolsOutput('#analysisOutput', '');
-                setPromptToolsOutput('#scoringOutput', '');
-                setPromptToolsOutput('#attachmentOutput', '');
-                setPromptToolsTimestamp('#analysisOutputTimestamp', '');
-                setPromptToolsTimestamp('#scoringOutputTimestamp', '');
-                setPromptToolsTimestamp('#attachmentOutputTimestamp', '');
-            });
-    }
-
-    let aiGenerationPollTimeoutId = null;
-    const aiGenerationPollIntervalMs = 15000;
-
-    function stopAIGenerationPolling() {
-        if (aiGenerationPollTimeoutId) {
-            clearTimeout(aiGenerationPollTimeoutId);
-            aiGenerationPollTimeoutId = null;
-        }
-    }
-
-    function pollAIGenerationStatus(applicationId, operationType, promptVersion, restoreButton, originalHtml) {
-        const poll = function() {
-            unity.grantManager.grantApplications.grantApplication
-                .getAIGenerationStatus(applicationId, operationType, promptVersion)
-                .done(function(request) {
-                    const statusText = globalThis.AIGenerationButtonState?.resolveStatus(request?.status) ?? '';
-
-                    if (statusText === 'Failed') {
-                        stopAIGenerationPolling();
-                        globalThis.AIGenerationButtonState?.restore(restoreButton);
-                        restoreButton.html(originalHtml).prop('disabled', false);
-                        loadPromptToolsOutputs();
-                        abp.message.error(request?.failureReason || getAIGenerationFailureMessage(operationType));
-                        return;
-                    }
-
-                    if (!request || request.isActive === false || statusText === 'Completed') {
-                        stopAIGenerationPolling();
-                        setPromptToolsTimestamp('#analysisOutputTimestamp', request?.completedAt || request?.startedAt || null);
-                        setPromptToolsTimestamp('#scoringOutputTimestamp', request?.completedAt || request?.startedAt || null);
-                        loadPromptToolsOutputs();
-                        globalThis.AIGenerationButtonState?.setCompleted(restoreButton);
-                        restoreButton.html('<span class="ai-button-content"><span>Completed</span></span>').prop('disabled', true);
-                        return;
-                    }
-
-                    aiGenerationPollTimeoutId = setTimeout(poll, aiGenerationPollIntervalMs);
-                })
-                .fail(function() {
-                    aiGenerationPollTimeoutId = setTimeout(poll, aiGenerationPollIntervalMs);
-                });
-        };
-
-        stopAIGenerationPolling();
-        aiGenerationPollTimeoutId = setTimeout(poll, 500);
-    }
-
-    function queueAIGenerationOperation(queueAction, operationType, failureMessage, restoreButton, originalHtml) {
-        queueAction()
-            .done(function(request) {
-                pollAIGenerationStatus(
-                    $('#DetailsViewApplicationId').val(),
-                    operationType,
-                    globalThis.getSelectedPromptVersion?.() || null,
-                    restoreButton,
-                    originalHtml
-                );
-            })
-            .fail(function() {
-                abp.message.error(failureMessage);
-                globalThis.AIGenerationButtonState?.restore(restoreButton);
-                restoreButton.html(originalHtml).prop('disabled', false);
-            });
-    }
-
-    globalThis.queueAttachmentSummary = function(triggerButton = null) {
-        const applicationId = $('#DetailsViewApplicationId').val();
-        const $button = triggerButton ? $(triggerButton) : $('[onclick*="queueAttachmentSummary"]').first();
-        const existingHtml = $button.html();
-        const promptVersion = globalThis.getSelectedPromptVersion?.() || null;
-
-        if (!applicationId || $button.prop('disabled')) {
-            return;
-        }
-
-        $button
-            .html('<span class="ai-button-content"><span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span><span>Generating...</span></span>')
-            .prop('disabled', true);
-        globalThis.AIGenerationButtonState?.setGenerating($button);
-
-        queueAIGenerationOperation(
-            () => unity.grantManager.grantApplications.grantApplication.queueAttachmentSummary(applicationId, promptVersion),
-            'attachment-summary',
-            'Failed to queue AI attachment summary. Please try again.',
-            $button,
-            existingHtml
-        );
-    };
-
-    globalThis.queueApplicationScoring = function(triggerButton = null) {
-        const applicationId = $('#DetailsViewApplicationId').val();
-        const $button = triggerButton ? $(triggerButton) : $('[onclick*="queueApplicationScoring"]').first();
-        const existingHtml = $button.html();
-        const promptVersion = globalThis.getSelectedPromptVersion?.() || null;
-
-        if (!applicationId || $button.prop('disabled')) {
-            return;
-        }
-
-        $button
-            .html('<span class="ai-button-content"><span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span><span>Generating...</span></span>')
-            .prop('disabled', true);
-        globalThis.AIGenerationButtonState?.setGenerating($button);
-
-        queueAIGenerationOperation(
-            () => unity.grantManager.grantApplications.grantApplication.queueApplicationScoring(applicationId, promptVersion),
-            'application-scoring',
-            'Failed to queue AI application scoring. Please try again.',
-            $button,
-            existingHtml
-        );
-    };
-
-    globalThis.refreshPromptToolsOutputs = loadPromptToolsOutputs;
-
-    $(document).on('click', '.prompt-tools-output-copy-btn', async function () {
-        const targetSelector = $(this).data('target');
-        const text = $(targetSelector).val();
-
-        if (!targetSelector || !text) {
-            return;
-        }
-
-        try {
-            await navigator.clipboard.writeText(text);
-            abp.notify.success('Copied AI output.');
-        } catch {
-            const output = $(targetSelector);
-            output.trigger('focus');
-            output.trigger('select');
-        }
-    });
-
     let selectedReviewDetails = null;
-    let renderFormIoToHtml =
-        document.getElementById('RenderFormIoToHtml').value;
-    let hasRenderedHtml = document.getElementById('HasRenderedHTML').value;
     abp.localization.getResource('GrantManager');
 
     const divider = document.getElementById('main-divider');
@@ -531,7 +28,6 @@ $(function () {
         updateLinksCounters();
         renderSubmission();
         loadAIAnalysis();
-        loadPromptToolsOutputs();
         applyTabHeightOffset();
     }
 
@@ -593,24 +89,8 @@ $(function () {
     }
 
     function renderSubmission() {
-        // Initialize shadow DOM first
         const shadowRoot = initializeShadowDOM();
-
-        if (renderFormIoToHtml == 'False' || hasRenderedHtml == 'False') {
-            getSubmission(shadowRoot);
-        } else {
-            $('.spinner-grow').hide();
-
-            // Inject pre-rendered HTML into shadow DOM
-            if (shadowRoot) {
-                const htmlContent = document.getElementById('ApplicationFormSubmissionHtml');
-                if (htmlContent?.value) {
-                    shadowRoot.innerHTML += DOMPurify.sanitize(htmlContent.value);
-                }
-            }
-
-            addEventListeners(shadowRoot);
-        }
+        getSubmission(shadowRoot);
     }
 
 
@@ -673,36 +153,6 @@ $(function () {
         form.refresh();
         form.on('render', () => addEventListeners(shadowRoot));
 
-        waitFor(() => isFormChanging(form)).then(() => {
-            setTimeout(storeRenderedHtml, 2000);
-        });
-    }
-
-    async function storeRenderedHtml() {
-        if (renderFormIoToHtml == 'False') {
-            return;
-        }
-        const formioContainer = document.getElementById('formio');
-        const shadowRoot = formioContainer.shadowRoot;
-        let innerHTML = shadowRoot ? shadowRoot.innerHTML : formioContainer.innerHTML;
-        let submissionId = document.getElementById(
-            'ApplicationFormSubmissionId'
-        ).value;
-        $.ajax({
-            url: '/api/app/submission',
-            data: JSON.stringify({
-                SubmissionId: submissionId,
-                InnerHTML: innerHTML,
-            }),
-            contentType: 'application/json',
-            type: 'POST',
-            success: function (data) {
-                console.log(data);
-            },
-            error: function () {
-                console.log('error');
-            },
-        });
     }
 
     // Wait for the DOM to be fully loaded
@@ -811,24 +261,52 @@ $(function () {
         wrapper: '#assessmentScoresWidgetArea',
         filterCallback: function () {
             return {
-                assessmentId: decodeURIComponent($('#AssessmentId').val()),
+                assessmentId:
+                    selectedReviewDetails?.id ||
+                    decodeURIComponent($('#AssessmentId').val()),
                 currentUserId: decodeURIComponent(abp.currentUser.id),
             };
         },
     });
 
-    PubSub.subscribe('refresh_assessment_scores', (msg, data) => {
-        assessmentScoresWidgetManager.refresh();
-        updateSubtotal();
-        loadPromptToolsOutputs();
-    });
+    let assessmentScoresRefreshToken = 0;
+    function getAssessmentScoresWidgetElement() {
+        return document.getElementById('assessmentScoresWidgetArea');
+    }
 
-    PubSub.subscribe('refresh_chefs_attachment_list', () => {
-        loadPromptToolsOutputs();
+    function refreshAssessmentScoresWidget() {
+        const refreshToken = ++assessmentScoresRefreshToken;
+        globalThis.saveAssessmentScoresWidgetState?.(
+            getAssessmentScoresWidgetElement()
+        );
+
+        const refreshResult = assessmentScoresWidgetManager.refresh();
+
+        const afterRefresh = () => {
+            if (refreshToken !== assessmentScoresRefreshToken) {
+                return;
+            }
+
+            updateSubtotal();
+            globalThis.syncAIRateLimitButtons?.();
+        };
+
+        if (refreshResult && typeof refreshResult.then === 'function') {
+            refreshResult.then(afterRefresh);
+        } else {
+            setTimeout(afterRefresh, 0);
+        }
+    }
+
+    PubSub.subscribe('refresh_assessment_scores', (msg, data) => {
+        refreshAssessmentScoresWidget();
     });
 
     PubSub.subscribe('select_application_review', (msg, data) => {
         if (data) {
+            globalThis.saveAssessmentScoresWidgetState?.(
+                getAssessmentScoresWidgetElement()
+            );
             selectedReviewDetails = data;
             setDetailsContext('assessment');
             let selectElement = document.getElementById(
@@ -839,8 +317,7 @@ $(function () {
                 review: selectedReviewDetails,
             });
             assessmentUserDetailsWidgetManager.refresh();
-            assessmentScoresWidgetManager.refresh();
-            updateSubtotal();
+            refreshAssessmentScoresWidget();
             checkCurrentUser(data);
         } else {
             setDetailsContext('application');
@@ -848,6 +325,10 @@ $(function () {
     });
 
     PubSub.subscribe('deselect_application_review', (msg, data) => {
+        globalThis.saveAssessmentScoresWidgetState?.(
+            getAssessmentScoresWidgetElement()
+        );
+        assessmentScoresRefreshToken++;
         setDetailsContext('application');
     });
 
@@ -1792,5 +1273,8 @@ function walkFormComponents(components) {
 }
 
 function patchHtmlElementTags(schema) {
+    if (!schema || !Array.isArray(schema.components)) {
+        return;
+    }
     walkFormComponents(schema.components);
 }

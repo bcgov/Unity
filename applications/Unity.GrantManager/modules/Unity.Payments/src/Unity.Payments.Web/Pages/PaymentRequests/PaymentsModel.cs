@@ -5,7 +5,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Unity.Payments.Web.Pages.Payments
 {
-    public class PaymentsModel
+    public class PaymentsModel : IPaymentFormItem
     {
         [DisplayName("ApplicationPaymentRequest:Amount")]
         [Required]

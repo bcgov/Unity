@@ -15,7 +15,7 @@ Unity.{ModuleName}/
     Unity.{ModuleName}.Domain.Shared/     ← Enums, constants, localization, ETOs
     Unity.{ModuleName}.Domain/            ← Entities, repository interfaces, domain services
     Unity.{ModuleName}.Application.Contracts/ ← DTOs, app service interfaces
-    Unity.{ModuleName}.Application/       ← App service implementations, AutoMapper profiles
+    Unity.{ModuleName}.Application/       ← App service implementations, Mapperly mappers
     Unity.{ModuleName}.EntityFrameworkCore/ ← DbContext, migrations (if module has own DB tables)
     Unity.{ModuleName}.HttpApi/           ← REST controllers
     Unity.{ModuleName}.HttpApi.Client/    ← Remote client proxies

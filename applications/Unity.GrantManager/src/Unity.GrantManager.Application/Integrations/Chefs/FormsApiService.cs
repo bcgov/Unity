@@ -91,9 +91,12 @@ namespace Unity.GrantManager.Integrations.Chefs
                 throw new ArgumentException("API key is missing or empty");
 
             var decryptedApiKey = stringEncryptionService.Decrypt(encryptedApiKey) ?? string.Empty;
+            var sanitizedUrl = url.Replace(Environment.NewLine, string.Empty, StringComparison.Ordinal)
+                                  .Replace("\n", string.Empty, StringComparison.Ordinal)
+                                  .Replace("\r", string.Empty, StringComparison.Ordinal);
             logger.LogInformation(
                 "Sending GET request to {Url} using basic auth with FormGuid: {FormGuid}",
-                url.Replace(Environment.NewLine, "").Replace("\n", "").Replace("\r", ""),
+                sanitizedUrl,
                 chefsApplicationFormGuid
             );
 
@@ -110,7 +113,7 @@ namespace Unity.GrantManager.Integrations.Chefs
                 var content = await response.Content.ReadAsStringAsync();
                 logger.LogError(
                     "Request to {Url} failed with status {StatusCode} ({Reason}). Response: {Content}",
-                    url.Replace(Environment.NewLine, "").Replace("\n", "").Replace("\r", ""),
+                    sanitizedUrl,
                     response.StatusCode,
                     response.ReasonPhrase,
                     content

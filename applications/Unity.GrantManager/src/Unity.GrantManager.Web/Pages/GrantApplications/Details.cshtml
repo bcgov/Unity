@@ -58,6 +58,7 @@
 @section scripts
 {
     <abp-script src="/Pages/GrantApplications/ai-generation-button-state.js" />
+    <abp-script src="/Pages/GrantApplications/ai-rate-limit.js" />
     <abp-script src="/Pages/GrantApplications/Details.js" />
     <abp-script src="/libs/formiojs/formio.form.min.js" />
     <abp-script src="/Pages/GrantApplications/ai-analysis.js" />
@@ -75,14 +76,12 @@
 <input type="hidden" id="ApplicationFormSchema" value="@Model.ApplicationFormSchema" />
 <input type="hidden" id="ApplicationScoresheetSchemaJson" value="@Model.ApplicationScoresheetSchemaJson" />
 <input type="hidden" id="ApplicationFormId" value="@Model.ApplicationFormId" />
-<input type="hidden" id="HasRenderedHTML" value="@Model.HasRenderedHTML.ToString()" />
 <input type="hidden" id="CurrentUserId" value="@Model.CurrentUserId" />
 <input type="hidden" id="CurrentUserName" value="@Model.CurrentUserName" />
 <input type="hidden" id="Extensions" value="@Model.Extensions" />
 <input type="hidden" id="MaxFileSize" value="@Model.MaxFileSize" />
 <input type="hidden" id="EmailAttachmentMaxFileSize" value="@Model.EmailAttachmentMaxFileSize" />
 <input type="hidden" id="TotalEmailAttachmentMaxFileSize" value="@Model.TotalEmailAttachmentMaxFileSize" />
-<input type="hidden" id="RenderFormIoToHtml" value="@Model.RenderFormIoToHtml.ToString()" />
 <input type="hidden" id="ApplicationFormVersionId" value="@Model.ApplicationFormVersionId" />
 <input type="hidden" id="AIAnalysisFeatureEnabled" value="@aiApplicationAnalysisEnabled" />
 
@@ -121,7 +120,7 @@
                         <abp-row>
                             <abp-column size="_12">
                                 <abp-button icon="fl fl-pdf" icon-type="Other" id="printPdf" class="pdf-icon"></abp-button>
-                                <div id="formio">@Html.Raw(@Model.ApplicationFormSubmissionHtml)</div>
+                                <div id="formio"></div>
                             </abp-column>
 
                         </abp-row>
@@ -286,12 +285,6 @@
                     <button class="nav-link" id="ai-analysis-tab" data-bs-toggle="tab" data-bs-target="#ai-analysis" type="button" role="tab" aria-controls="ai-analysis" aria-selected="false" title="Application Analysis"><i class="fa fa-wand-sparkles" aria-hidden="true"></i></button>
                 </li>
             }
-            @if (Model.CanViewPromptTools)
-            {
-                <li class="nav-item ms-auto">
-                    <button class="nav-link" id="prompt-tools-tab" data-bs-toggle="tab" data-bs-target="#prompt-tools" type="button" role="tab" aria-controls="prompt-tools" aria-selected="false">Prompt Tools</button>
-                </li>
-            }
             </ul>
 
             <div class="tab-content details-scrollable" id="myTabContent">
@@ -429,7 +422,7 @@
                         <h6 class="fw-bold m-0">Application Analysis</h6>
                         @if (aiApplicationAnalysisGenerateEnabled)
                         {
-                            <button type="button" class="btn unt-btn-outline-primary btn-outline-primary ai-generate-btn" id="regenerateApplicationAnalysis">
+                            <button type="button" class="btn unt-btn-outline-primary btn-outline-primary ai-generate-btn" id="regenerateApplicationAnalysis" data-ai-cooldown-checking="1" data-ai-rate-limit-disabled="1" disabled>
                                 <span class="ai-button-content">
                                     <i class="unt-icon-sm fa-solid fa-wand-sparkles"></i>
                                     <span>Generate</span>
@@ -512,92 +505,6 @@
                 </div>
                 }
                 @*-------- AI Analysis Tab Section END ---------*@
-                @if (Model.CanViewPromptTools)
-                {
-                    <div class="tab-pane fade" id="prompt-tools" role="tabpanel" aria-labelledby="prompt-tools-tab">
-                        <div class="prompt-tools-header px-3 pt-4 pb-3">
-                            <h6 class="fw-bold m-0">Prompt Tools</h6>
-                            <div class="prompt-tools-toolbar-row">
-                                <div class="prompt-tools-toolbar-inline">
-                                    <select id="promptVersion" class="form-select form-select-sm">
-                                        @if (Model.DefaultPromptVersion == "v0")
-                                        {
-                                            <option value="v0" selected>v0</option>
-                                            <option value="v1">v1</option>
-                                        }
-                                        else
-                                        {
-                                            <option value="v1" selected>v1</option>
-                                            <option value="v0">v0</option>
-                                        }
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="px-3 pb-3">
-
-                            <div class="prompt-tools-section">
-                                <div class="prompt-tools-section-header">
-                                    <h6 class="fw-bold m-0">Attachment Summary <span class="prompt-tools-output-timestamp" id="attachmentOutputTimestamp"></span></h6>
-                                    <button type="button" class="btn unt-btn-outline-primary btn-outline-primary btn-sm ai-generate-btn" onclick="queueAttachmentSummary(this)">
-                                        <span class="ai-button-content">
-                                            <i class="unt-icon-sm fa-solid fa-wand-sparkles"></i>
-                                            <span>Generate</span>
-                                        </span>
-                                    </button>
-                                </div>
-                                <div class="prompt-tools-output-container">
-                                    <div class="prompt-tools-output-actions">
-                                        <button type="button" class="btn btn-icon prompt-tools-output-copy-btn" data-target="#attachmentOutput" title="Copy" aria-label="Copy">
-                                            <i class="fl fl-copy" aria-hidden="true"></i>
-                                        </button>
-                                    </div>
-                                    <textarea class="form-control form-control-sm prompt-tools-output" id="attachmentOutput" readonly spellcheck="false"></textarea>
-                                </div>
-                            </div>
-
-                            <div class="prompt-tools-section">
-                                <div class="prompt-tools-section-header">
-                                    <h6 class="fw-bold m-0">Application Analysis <span class="prompt-tools-output-timestamp" id="analysisOutputTimestamp"></span></h6>
-                                    <button type="button" class="btn unt-btn-outline-primary btn-outline-primary btn-sm ai-generate-btn" onclick="queueApplicationAnalysis(this)">
-                                        <span class="ai-button-content">
-                                            <i class="unt-icon-sm fa-solid fa-wand-sparkles"></i>
-                                            <span>Generate</span>
-                                        </span>
-                                    </button>
-                                </div>
-                                <div class="prompt-tools-output-container">
-                                    <div class="prompt-tools-output-actions">
-                                        <button type="button" class="btn btn-icon prompt-tools-output-copy-btn" data-target="#analysisOutput" title="Copy" aria-label="Copy">
-                                            <i class="fl fl-copy" aria-hidden="true"></i>
-                                        </button>
-                                    </div>
-                                    <textarea class="form-control form-control-sm prompt-tools-output" id="analysisOutput" readonly spellcheck="false"></textarea>
-                                </div>
-                            </div>
-
-                            <div class="prompt-tools-section">
-                                <div class="prompt-tools-section-header">
-                                    <h6 class="fw-bold m-0">Application Scoring <span class="prompt-tools-output-timestamp" id="scoringOutputTimestamp"></span></h6>
-                                    <button type="button" class="btn unt-btn-outline-primary btn-outline-primary btn-sm ai-generate-btn" onclick="queueApplicationScoring(this)">
-                                        <span class="ai-button-content">
-                                            <i class="unt-icon-sm fa-solid fa-wand-sparkles"></i>
-                                            <span>Generate</span>
-                                        </span>
-                                    </button>
-                                </div>
-                                <div class="prompt-tools-output-container">
-                                    <div class="prompt-tools-output-actions">
-                                        <button type="button" class="btn btn-icon prompt-tools-output-copy-btn" data-target="#scoringOutput" title="Copy" aria-label="Copy">
-                                            <i class="fl fl-copy" aria-hidden="true"></i>
-                                        </button>
-                                    </div>
-                                    <textarea class="form-control form-control-sm prompt-tools-output" id="scoringOutput" readonly spellcheck="false"></textarea>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                }
             </div>
 
         </abp-card>

@@ -2,6 +2,7 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Threading.Tasks;
 using Unity.AI.Operations;
+using Unity.AI.RateLimit;
 using Unity.GrantManager.GrantApplications;
 using Volo.Abp.BackgroundJobs;
 using Volo.Abp.DependencyInjection;
@@ -16,6 +17,7 @@ public class GenerateApplicationAnalysisJob(
     IRepository<AIGenerationRequest, Guid> generationRequestRepository,
     ICurrentTenant currentTenant,
     IUnitOfWorkManager unitOfWorkManager,
+    IAIRateLimiter aiRateLimiter,
     ILogger<GenerateApplicationAnalysisJob> logger) : AsyncBackgroundJob<GenerateApplicationAnalysisBackgroundJobArgs>, ITransientDependency
 {
     public override async Task ExecuteAsync(GenerateApplicationAnalysisBackgroundJobArgs args)
@@ -29,6 +31,7 @@ public class GenerateApplicationAnalysisJob(
                 await applicationAnalysisService.RegenerateAndSaveAsync(args.ApplicationId, args.PromptVersion);
                 logger.LogInformation("Completed AI application analysis job for application {ApplicationId}.", args.ApplicationId);
 
+                await AIGenerationRequestJobHelper.StampRateLimitBestEffortAsync(aiRateLimiter, logger, args.RequestedByUserId, args.ApplicationId, args.RequestKey);
                 await AIGenerationRequestJobHelper.MarkCompletedInNewUowAsync(unitOfWorkManager, generationRequestRepository, args.RequestKey);
             }
             catch (Exception ex)

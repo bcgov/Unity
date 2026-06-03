@@ -27,7 +27,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicationBreadcrumbWi
             return View(new ApplicationBreadcrumbWidgetViewModel()
             {
                 ApplicantId = applicationApplicant.ApplicantId,
-                ApplicantName = applicationApplicant.ApplicantName,
+                ApplicantName = applicationApplicant.ApplicantName ?? string.Empty,
                 ApplicationStatus = applicationApplicant.ApplicationStatus,
                 ReferenceNo = applicationApplicant.ApplicationReferenceNo,
 

@@ -17,7 +17,7 @@ public class EmailAttachmentService : ITransientDependency
 {
     private const string S3BucketConfigKey = "S3:Bucket";
 
-    private readonly AmazonS3Client _amazonS3Client;
+    private readonly IAmazonS3 _amazonS3Client;
     private readonly IEmailLogAttachmentRepository _emailLogAttachmentRepository;
     private readonly IConfiguration _configuration;
     private readonly ICurrentUser _currentUser;
@@ -27,27 +27,14 @@ public class EmailAttachmentService : ITransientDependency
         IConfiguration configuration,
         IEmailLogAttachmentRepository emailLogAttachmentRepository,
         ICurrentUser currentUser,
-        ILogger<EmailAttachmentService> logger)
+        ILogger<EmailAttachmentService> logger,
+        IAmazonS3 amazonS3Client)
     {
         _configuration = configuration;
         _emailLogAttachmentRepository = emailLogAttachmentRepository;
         _currentUser = currentUser;
         _logger = logger;
-
-        // Initialize S3 client (same pattern as S3BlobProvider)
-        var s3Config = new AmazonS3Config
-        {
-            RegionEndpoint = null,
-            ServiceURL = configuration["S3:Endpoint"],
-            AllowAutoRedirect = true,
-            ForcePathStyle = true
-        };
-
-        _amazonS3Client = new AmazonS3Client(
-            configuration["S3:AccessKeyId"],
-            configuration["S3:SecretAccessKey"],
-            s3Config
-        );
+        _amazonS3Client = amazonS3Client;
     }
 
     public async Task<EmailLogAttachment> UploadAttachmentAsync(

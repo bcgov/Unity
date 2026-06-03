@@ -23,28 +23,29 @@ public class NotificationsDataSeedContributor(ITemplateVariablesRepository templ
 
         var emailTemplateVariableDtos = new List<EmailTempateVariableDto>
         {
-            new EmailTempateVariableDto { Name = "Applicant name", Token = "applicant_name", MapTo = "applicant.applicantName" },
-            new EmailTempateVariableDto { Name = "Submission #", Token = "submission_number", MapTo = "referenceNo" },
-            new EmailTempateVariableDto { Name = "Submission Date", Token = "submission_date", MapTo = "submissionDate" },
-            new EmailTempateVariableDto { Name = "Category", Token = "category", MapTo = "applicationForm.category" },
-            new EmailTempateVariableDto { Name = "Status", Token = "status", MapTo = "status" },
-            new EmailTempateVariableDto { Name = "Approved Amount", Token = "approved_amount", MapTo = "approvedAmount" },
-            new EmailTempateVariableDto { Name = "Approval date", Token = "approval_date", MapTo = "finalDecisionDate" },
-            new EmailTempateVariableDto { Name = "Community", Token = "community", MapTo = "community" },
-            new EmailTempateVariableDto { Name = "Contact Full Name", Token = "contact_full_name", MapTo = "contactFullName" },
-            new EmailTempateVariableDto { Name = "Contact Title", Token = "contact_title", MapTo = "contactTitle" },
-            new EmailTempateVariableDto { Name = "Decline Rationale", Token = "decline_rationale", MapTo = "declineRational" },
-            new EmailTempateVariableDto { Name = "Registered Organization Name", Token = "organization_name", MapTo = "organizationName" },
-            new EmailTempateVariableDto { Name = "Project Start Date", Token = "project_start_date", MapTo = "projectStartDate" },
-            new EmailTempateVariableDto { Name = "Project End Date", Token = "project_end_date", MapTo = "projectEndDate" },
-            new EmailTempateVariableDto { Name = "Project Name", Token = "project_name", MapTo = "projectName" },
-            new EmailTempateVariableDto { Name = "Project Summary", Token = "project_summary", MapTo = "projectSummary" },
-            new EmailTempateVariableDto { Name = "Signing Authority Full Name", Token = "signing_authority_full_name", MapTo = "signingAuthorityFullName" },
-            new EmailTempateVariableDto { Name = "Signing Authority Title", Token = "signing_authority_title", MapTo = "signingAuthorityTitle" },
-            new EmailTempateVariableDto { Name = "Applicant ID", Token = "applicant_id", MapTo = "applicant.unityApplicantId" },
-            new EmailTempateVariableDto { Name = "Requested Amount", Token = "requested_amount", MapTo = "requestedAmount" },
-            new EmailTempateVariableDto { Name = "Recommended Amount", Token = "recommended_amount", MapTo = "recommendedAmount" },
-            new EmailTempateVariableDto { Name = "Unity Application ID", Token = "unity_application_id", MapTo = "unityApplicationId" }
+            new() { Name = "Applicant name", Token = "applicant_name", MapTo = "applicant.applicantName" },
+            new() { Name = "Submission #", Token = "submission_number", MapTo = "referenceNo" },
+            new() { Name = "Submission Date", Token = "submission_date", MapTo = "submissionDate" },
+            new() { Name = "Category", Token = "category", MapTo = "applicationForm.category" },
+            new() { Name = "Status", Token = "status", MapTo = "status" },
+            new() { Name = "Approved Amount", Token = "approved_amount", MapTo = "approvedAmount" },
+            new() { Name = "Approval date", Token = "approval_date", MapTo = "finalDecisionDate" },
+            new() { Name = "Community", Token = "community", MapTo = "community" },
+            new() { Name = "Contact Full Name", Token = "contact_full_name", MapTo = "contactFullName" },
+            new() { Name = "Contact Title", Token = "contact_title", MapTo = "contactTitle" },
+            new() { Name = "Decline Rationale", Token = "decline_rationale", MapTo = "declineRational" },
+            new() { Name = "Registered Organization Name", Token = "organization_name", MapTo = "organizationName" },
+            new() { Name = "Project Start Date", Token = "project_start_date", MapTo = "projectStartDate" },
+            new() { Name = "Project End Date", Token = "project_end_date", MapTo = "projectEndDate" },
+            new() { Name = "Project Name", Token = "project_name", MapTo = "projectName" },
+            new() { Name = "Project Summary", Token = "project_summary", MapTo = "projectSummary" },
+            new() { Name = "Signing Authority Full Name", Token = "signing_authority_full_name", MapTo = "signingAuthorityFullName" },
+            new() { Name = "Signing Authority Title", Token = "signing_authority_title", MapTo = "signingAuthorityTitle" },
+            new() { Name = "Applicant ID", Token = "applicant_id", MapTo = "applicant.unityApplicantId" },
+            new() { Name = "Requested Amount", Token = "requested_amount", MapTo = "requestedAmount" },
+            new() { Name = "Recommended Amount", Token = "recommended_amount", MapTo = "recommendedAmount" },
+            new() { Name = "Unity Application ID", Token = "unity_application_id", MapTo = "unityApplicationId" },
+            new() { Name = "Today's Date", Token = "today_date", MapTo = "" }
         };
 
         try
@@ -74,8 +75,8 @@ public class NotificationsDataSeedContributor(ITemplateVariablesRepository templ
 
         var emailGroups = new List<EmailGroupDto>
         {
-            new EmailGroupDto  {Name = "FSB-AP", Description = "This group manages the recipients for PO-related payments, which will be sent to FSB-AP to update contracts and initiate payment creation.",Type = "static"},
-            new EmailGroupDto  {Name = "Payments", Description = "This group manages the recipients for payment notifications, such as failures or errors",Type = "static"}
+            new() {Name = "FSB-AP", Description = "This group manages the recipients for PO-related payments, which will be sent to FSB-AP to update contracts and initiate payment creation.",Type = "static"},
+            new() {Name = "Payments", Description = "This group manages the recipients for payment notifications, such as failures or errors",Type = "static"}
         };
         try
         {
