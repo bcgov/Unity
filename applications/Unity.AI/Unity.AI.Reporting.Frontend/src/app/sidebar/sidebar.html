@@ -1,4 +1,4 @@
-<div class="sidebar">
+<div class="sidebar" [style.width.px]="sidebarWidth">
   <div class="sidebar-header">
     <button class="new-chat-btn" (click)="onNewChat()">
       <span class="new-chat-icon">+</span>
@@ -28,7 +28,7 @@
             [class.active]="currentChatId === chat.id"
             (click)="onChatSelect(chat)"
             >
-            <div class="chat-title">{{ chat.title }}</div>
+            <div class="chat-title" title="{{ chat.title }}">{{ chat.title }}</div>
             <button
               class="delete-chat-btn"
               (click)="deleteChat(chat, $event)"
@@ -63,6 +63,7 @@
       </svg>
     </button>
   </div>
+  <div class="resize-handle" (mousedown)="onResizeStart($event)"></div>
 </div>
 
 <app-alert

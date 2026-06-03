@@ -12,6 +12,7 @@ from datetime import datetime, timedelta, timezone
 from functools import wraps
 from flask import abort, g, request, jsonify
 from typing import Optional, Dict, Any, Callable
+from config import DEFAULT_TENANT
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -75,7 +76,7 @@ class AuthManager:
 
             # If tenant is missing, use default
             if 'tenant' not in payload:
-                payload['tenant'] = 'default'
+                payload['tenant'] = DEFAULT_TENANT
 
             return payload
         except jwt.ExpiredSignatureError:

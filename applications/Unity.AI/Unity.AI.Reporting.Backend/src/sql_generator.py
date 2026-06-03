@@ -105,40 +105,21 @@ class SQLGenerator:
         """
         logger.debug(f"[{index}] Tokens in prompt: {len(self.tokenizer.encode(prompt))}")
 
-        if self.config.use_azure:
-            # Use Azure OpenAI
-            headers = {
-                "api-key": self.config.azure_api_key,
-                "Content-Type": CONTENT_TYPE
-            }
-            
-            endpoint = f"{self.config.azure_endpoint}/openai/deployments/{self.config.azure_deployment}/chat/completions?api-version={self.config.azure_api_version}"
-            
-            json_data = {
-                "messages": [
-                    {"role": "system", "content": system_message},
-                    {"role": "user", "content": prompt}
-                ]
-            }
-            if self.config.supports_temperature:
-                json_data["temperature"] = self.config.temperature
-        else:
-            # Use standard OpenAI
-            headers = {
-                "Authorization": f"Bearer {self.config.completion_key}",
-                "Content-Type": CONTENT_TYPE
-            }
+        headers = {
+            "api-key": self.config.azure_api_key,
+            "Content-Type": CONTENT_TYPE
+        }
 
-            endpoint = self.config.completion_endpoint
+        endpoint = f"{self.config.azure_endpoint}/openai/deployments/{self.config.azure_deployment}/chat/completions?api-version={self.config.azure_api_version}"
 
-            json_data = {
-                "model": self.config.model,
-                "messages": [
-                    {"role": "system", "content": system_message},
-                    {"role": "user", "content": prompt}
-                ],
-                "temperature": self.config.temperature
-            }
+        json_data: Dict[str, Any] = {
+            "messages": [
+                {"role": "system", "content": system_message},
+                {"role": "user", "content": prompt}
+            ]
+        }
+        if self.config.supports_temperature:
+            json_data["temperature"] = self.config.temperature
         
         async with session.post(
             endpoint,
@@ -340,10 +321,16 @@ class SQLGenerator:
             past_questions: List of past questions and SQL
             db_id: Database ID
             tenant_id: Optional tenant ID for tenant-specific Metabase API key
+            is_retry: Whether this call is a retry of a previously failed attempt
+            retry_error_type: Error type from the previous attempt, if retrying
+            retry_error_detail: Validation error detail from the previous attempt,
+                fed back into the prompt to guide a corrected query
 
         Returns:
-            Tuple of (sql, metadata, token_usage) or (None, None, None) if generation fails
-            where token_usage contains prompt_tokens, completion_tokens, total_tokens
+            Tuple of (sql, metadata, token_usage, error_detail). On failure the
+            leading elements are None; error_detail carries any validation error
+            text when no valid candidate could be generated.
+            token_usage contains prompt_tokens, completion_tokens, total_tokens.
         """
 
         # Check for hardcoded examples first (can be removed in production)
@@ -354,10 +341,10 @@ class SQLGenerator:
             return sql, metadata, {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}, None
 
         # Get relevant schemas
-        schemas = self.embeddings.get_formatted_schemas(question, db_id)
+        schemas = self.embeddings.get_formatted_schemas(question, db_id, tenant_id=tenant_id)
         if not schemas:
             logger.error(f"No schemas found for db_id={db_id}. Embeddings may not have been generated yet.")
-            return None, None, None
+            return None, None, None, None
 
         # Generate multiple completions in parallel
         async with aiohttp.ClientSession() as session:
@@ -387,7 +374,8 @@ Output EXACTLY one word: RELATED or UNRELATED.
                 return None, None, None, None
 
             # Build prompt
-            prompt = self.build_prompt(question, schemas, past_questions, is_retry=is_retry, retry_error_type=retry_error_type)
+            prompt = self.build_prompt(question, schemas, past_questions, is_retry=is_retry,
+                                       retry_error_type=retry_error_type, retry_error_detail=retry_error_detail)
             logger.debug(f"Prompt: {prompt[:200]}...")
             tasks = [
                 self.fetch_completion(prompt, session, i)
@@ -577,40 +565,21 @@ ORDER BY
 
 {sql}"""
             
-            if self.config.use_azure:
-                # Use Azure OpenAI
-                headers = {
-                    "api-key": self.config.azure_api_key,
-                    "Content-Type": CONTENT_TYPE
-                }
-                
-                endpoint = f"{self.config.azure_endpoint}/openai/deployments/{self.config.azure_deployment}/chat/completions?api-version={self.config.azure_api_version}"
-                
-                json_data = {
-                    "messages": [
-                        {"role": "system", "content": "You are a helpful assistant that explains SQL queries in simple terms."},
-                        {"role": "user", "content": prompt}
-                    ]
-                }
-                if self.config.supports_temperature:
-                    json_data["temperature"] = 0.3
-            else:
-                # Use standard OpenAI
-                headers = {
-                    "Authorization": f"Bearer {self.config.completion_key}",
-                    "Content-Type": CONTENT_TYPE
-                }
-                
-                endpoint = self.config.completion_endpoint
-                
-                json_data = {
-                    "model": "gpt-4o-mini",
-                    "messages": [
-                        {"role": "system", "content": "You are a helpful assistant that explains SQL queries in simple terms."},
-                        {"role": "user", "content": prompt}
-                    ],
-                    "temperature": 0.3
-                }
+            headers = {
+                "api-key": self.config.azure_api_key,
+                "Content-Type": CONTENT_TYPE
+            }
+
+            endpoint = f"{self.config.azure_endpoint}/openai/deployments/{self.config.azure_deployment}/chat/completions?api-version={self.config.azure_api_version}"
+
+            json_data: Dict[str, Any] = {
+                "messages": [
+                    {"role": "system", "content": "You are a helpful assistant that explains SQL queries in simple terms."},
+                    {"role": "user", "content": prompt}
+                ]
+            }
+            if self.config.supports_temperature:
+                json_data["temperature"] = 0.3
             
             async with aiohttp.ClientSession() as session:
                 async with session.post(

@@ -102,8 +102,8 @@ class ChatManager:
 
         title = embed_data.get('title', 'Untitled')
         try:
-            # Create new card
-            new_card_id = self.metabase.create_card(
+            # Create new card; card_data unused here (only restoring the card)
+            new_card_id, _ = self.metabase.create_card(
                 sql, db_id, collection_id, title,
                 tenant_id=tenant_id
             )

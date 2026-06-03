@@ -36,24 +36,22 @@ Copy `.env.example` to `.env` and configure required variables:
 
 ### Critical Variables (Must Set)
 ```env
-# Azure OpenAI
+# Azure OpenAI — endpoint and key only; deployment names and versions are hardcoded in config.py
 AZURE_OPENAI_ENDPOINT=https://your-resource.openai.azure.com/
 AZURE_OPENAI_API_KEY=your_api_key
-AZURE_OPENAI_DEPLOYMENT=gpt-4o-mini
-AZURE_OPENAI_EMBEDDING_DEPLOYMENT=text-embedding-3-large
 
-# Authentication  
+# Authentication
 JWT_SECRET=your_jwt_secret_64_chars_minimum
 ORIGIN_URL=https://your-parent-domain.com,http://localhost
 
-# Metabase
-METABASE_KEY=your_metabase_api_key
-MB_EMBED_SECRET=your_metabase_embed_secret
+# Metabase — API key lives in tenant_config.local.json (gitignored), not here
 MB_URL=https://your-metabase-instance.com
-MB_EMBED_ID=5
+MB_MAP_REGION_UUID=your_metabase_regional_districts_uuid
 
-# Database
-POSTGRES_PASSWORD=your_secure_password
+# Database — shared by app and postgres container
+DB_NAME=unity_ai
+DB_USER=unity_user
+DB_PASSWORD=your_secure_password
 ```
 
 ### Platform Variables
@@ -144,12 +142,7 @@ docker push your-registry/unity-ai-reporting:latest
 
 ### Environment-Specific Configuration
 
-The application supports multiple deployment environments with different configurations:
-
-- **Development**: Local development with debug enabled
-- **Test**: Testing environment with test database (DB_ID=3)
-- **UAT**: User acceptance testing (DB_ID=5, FLASK_ENV=staging)  
-- **Production**: Production environment (DB_ID=3, FLASK_ENV=production)
+The application supports multiple deployment environments. Non-sensitive configuration (deployment names, model versions, DB IDs) is hardcoded in `config.py` or derived from `tenant_config.json`. Only secrets and base URLs need to be injected at runtime.
 
 See [Environment Configuration Guide](../documentation/unity-ai-reporting-environment-specific-configuration.md) for details.
 
