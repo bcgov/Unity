@@ -34,12 +34,13 @@ public class OpenAIPromptRendererTests
             "v1",
             "{}",
             "[]",
-            "{\"name\":\"Test\",\"questions\":[]}",
+            "{\"name\":\"Test\",\"questions\":[{\"id\":\"q1\",\"type\":\"YesNo\"}]}",
             "{}");
 
-        prompt.ShouldContain("ATTACHMENTS");
-        prompt.ShouldContain("[]");
-        prompt.ShouldContain("If ATTACHMENTS is empty, use DATA only");
-        prompt.ShouldNotContain("No attachments provided.");
+        var normalized = prompt.Replace("\r\n", "\n");
+
+        normalized.ShouldContain("ATTACHMENTS\n[]\n\nSECTION");
+        normalized.ShouldContain("If ATTACHMENTS is empty, use DATA only");
+        normalized.ShouldNotContain("No attachments provided.");
     }
 }
