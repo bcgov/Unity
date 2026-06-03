@@ -311,10 +311,7 @@ $(function () {
         updateVersionSelectorVisibility();
         resetChangesState();
         $('#reportingViewStatus').val('');
-        _suppressColvisSave = true;
         reinitTable();
-        restoreColvisState(newProvider);
-        _suppressColvisSave = false;
     }
 
     // Handle provider toggle change event
