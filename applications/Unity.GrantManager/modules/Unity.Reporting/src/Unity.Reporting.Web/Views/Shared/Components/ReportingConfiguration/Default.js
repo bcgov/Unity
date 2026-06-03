@@ -268,7 +268,7 @@ $(function () {
             localStorage.setItem('reportingColvis_' + provider, JSON.stringify(state));
         } catch (e) { 
             /* storage unavailable */ 
-            console.err(e);
+            console.error(e);
         }
     }
 
@@ -284,7 +284,7 @@ $(function () {
             });
         } catch (e) { 
             /* ignore invalid stored state */ 
-            console.err(e);
+            console.error(e);
         }
     }
 
