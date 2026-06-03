@@ -6,6 +6,7 @@ import { LoginPage } from "../pages/LoginPage";
 import { NavigationPage } from "../pages/NavigationPage";
 import { DashboardPage } from "../pages/DashboardPage";
 import { ApplicationDetailsPage } from "../pages/ApplicationDetailsPage";
+import { ApplicantsViewPage } from "../pages/ApplicantsViewPage";
 import {
   ApplicationsPage,
   RolesPage,
@@ -52,7 +53,17 @@ export class PageFactory {
   static getApplicationDetailsPage(): ApplicationDetailsPage {
     return this.getInstance(
       "ApplicationDetailsPage",
-      () => new ApplicationDetailsPage()
+      () => new ApplicationDetailsPage(),
+    );
+  }
+
+  /**
+   * Get or create ApplicantsViewPage instance
+   */
+  static getApplicantsViewPage(): ApplicantsViewPage {
+    return this.getInstance(
+      "ApplicantsViewPage",
+      () => new ApplicantsViewPage(),
     );
   }
 
@@ -125,6 +136,8 @@ export const DashboardPageInstance = () => PageFactory.getDashboardPage();
 export const ApplicationsPageInstance = () => PageFactory.getApplicationsPage();
 export const ApplicationDetailsPageInstance = () =>
   PageFactory.getApplicationDetailsPage();
+export const ApplicantsViewPageInstance = () =>
+  PageFactory.getApplicantsViewPage();
 export const RolesPageInstance = () => PageFactory.getRolesPage();
 export const UsersPageInstance = () => PageFactory.getUsersPage();
 export const IntakesPageInstance = () => PageFactory.getIntakesPage();

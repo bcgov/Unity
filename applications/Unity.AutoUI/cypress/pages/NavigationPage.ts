@@ -4,6 +4,7 @@ export class NavigationPage extends BasePage {
   // Navigation menu items
   private readonly navItems = {
     applications: "Applications",
+    applicants: "Applicants",
     roles: "Roles",
     users: "Users",
     intakes: "Intakes",
@@ -62,7 +63,7 @@ export class NavigationPage extends BasePage {
 
         if (switchLink.length === 0) {
           cy.log(
-            'Skipping tenant switch: "Switch Grant Programs" not present for this user/session'
+            'Skipping tenant switch: "Switch Grant Programs" not present for this user/session',
           );
           // Close dropdown so it does not block clicks later
           cy.get("body").click(0, 0);
@@ -95,7 +96,7 @@ export class NavigationPage extends BasePage {
         // Verify redirect to GrantApplications or auth page
         cy.location("pathname", { timeout: 20000 }).should((p) => {
           expect(
-            p.indexOf("/GrantApplications") >= 0 || p.indexOf("/auth/") >= 0
+            p.indexOf("/GrantApplications") >= 0 || p.indexOf("/auth/") >= 0,
           ).to.eq(true);
         });
       });
@@ -114,6 +115,13 @@ export class NavigationPage extends BasePage {
    */
   goToApplications(): void {
     this.clickByText(this.navItems.applications);
+  }
+
+  /**
+   * Navigate to Applicants page
+   */
+  goToApplicants(): void {
+    this.clickByText(this.navItems.applicants);
   }
 
   /**
