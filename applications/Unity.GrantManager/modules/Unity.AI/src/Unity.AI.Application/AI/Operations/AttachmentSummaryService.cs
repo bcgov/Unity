@@ -1,10 +1,12 @@
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Localization;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Unity.AI.Extraction;
+using Unity.AI.Localization;
 using Unity.AI.Requests;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Intakes;
@@ -20,7 +22,8 @@ public class AttachmentSummaryService(
     IAIService aiService,
     IAIGenerationPrerequisiteValidator aiGenerationPrerequisiteValidator,
     AIExecutionModeResolver executionModeResolver,
-    ILogger<AttachmentSummaryService> logger) : IAttachmentSummaryService, ITransientDependency
+    ILogger<AttachmentSummaryService> logger,
+    IStringLocalizer<AIResource> localizer) : IAttachmentSummaryService, ITransientDependency
 {
     private const string SummaryGenerationFailedMessage = "AI summary generation failed.";
 
@@ -51,7 +54,7 @@ public class AttachmentSummaryService(
         var ids = attachmentIds as IReadOnlyCollection<Guid> ?? attachmentIds.ToList();
         if (ids.Count == 0)
         {
-            throw new UserFriendlyException("Select at least one attachment to generate summaries.");
+            throw new UserFriendlyException(localizer[AILocalizationKeys.SelectAttachmentForSummaries]);
         }
 
         var mode = executionModeResolver.ResolveMode(AIExecutionModeResolver.AttachmentSummaryOperation);

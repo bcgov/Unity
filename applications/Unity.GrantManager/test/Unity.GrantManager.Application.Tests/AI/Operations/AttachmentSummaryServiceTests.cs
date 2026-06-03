@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
 using Shouldly;
@@ -8,6 +9,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Unity.AI;
 using Unity.AI.Extraction;
+using Unity.AI.Localization;
 using Unity.AI.Operations;
 using Unity.AI.Requests;
 using Unity.AI.Responses;
@@ -61,7 +63,8 @@ public class AttachmentSummaryServiceTests
             aiService,
             prerequisiteValidator,
             new AIExecutionModeResolver(new ConfigurationBuilder().Build()),
-            NullLogger<AttachmentSummaryService>.Instance);
+            NullLogger<AttachmentSummaryService>.Instance,
+            Substitute.For<IStringLocalizer<AIResource>>());
 
         var result = await service.GenerateAndSaveAsync(attachmentId, "v1");
 
@@ -109,7 +112,8 @@ public class AttachmentSummaryServiceTests
             Substitute.For<IAIService>(),
             Substitute.For<IAIGenerationPrerequisiteValidator>(),
             new AIExecutionModeResolver(new ConfigurationBuilder().Build()),
-            NullLogger<AttachmentSummaryService>.Instance);
+            NullLogger<AttachmentSummaryService>.Instance,
+            Substitute.For<IStringLocalizer<AIResource>>());
 
         await Should.ThrowAsync<OperationCanceledException>(() =>
             service.GenerateAndSaveAsync(attachmentId, "v1", cancellationTokenSource.Token));
@@ -131,7 +135,8 @@ public class AttachmentSummaryServiceTests
             aiService,
             prerequisiteValidator,
             new AIExecutionModeResolver(new ConfigurationBuilder().Build()),
-            NullLogger<AttachmentSummaryService>.Instance);
+            NullLogger<AttachmentSummaryService>.Instance,
+            Substitute.For<IStringLocalizer<AIResource>>());
 
         await Should.ThrowAsync<UserFriendlyException>(() => service.GenerateAndSaveAsync([], "v1"));
 

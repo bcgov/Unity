@@ -4,12 +4,14 @@ using System.Linq;
 using System.Threading.Tasks;
 using Unity.AI.Automation;
 using Unity.AI.Features;
+using Unity.AI.Localization;
 using Unity.AI.Operations;
 using Unity.AI.RateLimit;
 using Unity.GrantManager.GrantApplications;
 using Unity.GrantManager.GrantApplications.Automation.BackgroundJobs;
 using Medallion.Threading;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Localization;
 using Volo.Abp;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.BackgroundJobs;
@@ -27,7 +29,8 @@ public class ApplicationAIGenerationQueue(
     IFeatureChecker featureChecker,
     IAIRateLimiter aiRateLimiter,
     ICurrentUser currentUser,
-    ILogger<ApplicationAIGenerationQueue> logger)
+    ILogger<ApplicationAIGenerationQueue> logger,
+    IStringLocalizer<AIResource> localizer)
     : IApplicationAIGenerationQueue, ITransientDependency
 {
     public async Task QueueAttachmentSummaryAsync(Guid applicationId, Guid? tenantId, string? promptVersion = null, List<Guid>? attachmentIds = null)
@@ -221,10 +224,8 @@ public class ApplicationAIGenerationQueue(
 
         if (!hasEnabledStage)
         {
-            throw new UserFriendlyException("AI generation is not enabled.");
+            throw new UserFriendlyException(localizer[AILocalizationKeys.GenerateAllDisabled]);
         }
-
-        throw new UserFriendlyException("No AI generation stages have the required input to run.");
     }
 
     private async Task MarkFailedBestEffortAsync(AIGenerationRequest request, Exception exception)
