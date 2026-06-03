@@ -212,9 +212,8 @@ $(function () {
                         resetAttachmentSelection();
                         chefsDataTable.ajax.reload();
                         abp.notify.success('AI summaries generated successfully.');
-                        globalThis.AIGenerationButtonState?.restore($activeButton);
-                        $activeButton.html(existingHTML).prop('disabled', false);
-                        globalThis.syncAIRateLimitButtons?.();
+                        globalThis.AIGenerationButtonState?.restoreForCooldownCheck($activeButton, existingHTML);
+                        globalThis.AIGenerationButtonState?.applyStatusState(request);
                         return;
                     }
 

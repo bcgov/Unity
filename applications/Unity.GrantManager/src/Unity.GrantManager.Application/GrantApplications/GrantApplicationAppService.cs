@@ -15,6 +15,7 @@ using System.Threading.Tasks;
 using Unity.Flex.WorksheetInstances;
 using Unity.Flex.Worksheets;
 using Unity.AI.Models;
+using Unity.AI.RateLimit;
 using Unity.AI.Responses;
 using Unity.GrantManager.Applicants;
 using Unity.GrantManager.ApplicationForms;
@@ -58,6 +59,7 @@ public class GrantApplicationAppService(
     IPaymentRequestAppService paymentRequestService,
     IApplicationAIGenerationQueue aiGenerationQueue,
     IAIGenerationStatusAppService aiGenerationStatusAppService,
+    IAIRateLimiter aiRateLimiter,
     IFeatureChecker featureChecker)
     : GrantManagerAppService, IGrantApplicationAppService
 #pragma warning restore S107 // Methods should not have too many parameters
@@ -1180,7 +1182,8 @@ public class GrantApplicationAppService(
             AIGenerationRequestKeyHelper.ApplicationAnalysisOperationType,
             CurrentTenant.Id);
 
-        return request ?? throw new UserFriendlyException("Unable to queue AI analysis request.");
+        return await ApplyRateLimitStateAsync(
+            request ?? throw new UserFriendlyException("Unable to queue AI analysis request."));
     }
 
     [Authorize(AIPermissions.Analysis.GenerateAttachmentSummaries)]
@@ -1195,7 +1198,8 @@ public class GrantApplicationAppService(
             AIGenerationRequestKeyHelper.AttachmentSummaryOperationType,
             CurrentTenant.Id);
 
-        return request ?? throw new UserFriendlyException("Unable to queue AI attachment summary request.");
+        return await ApplyRateLimitStateAsync(
+            request ?? throw new UserFriendlyException("Unable to queue AI attachment summary request."));
     }
 
     [Authorize(AIPermissions.Analysis.GenerateScoring)]
@@ -1209,13 +1213,15 @@ public class GrantApplicationAppService(
             AIGenerationRequestKeyHelper.ApplicationScoringOperationType,
             CurrentTenant.Id);
 
-        return request ?? throw new UserFriendlyException("Unable to queue AI scoring request.");
+        return await ApplyRateLimitStateAsync(
+            request ?? throw new UserFriendlyException("Unable to queue AI scoring request."));
     }
 
     public async Task<AIGenerationRequestDto?> GetAIGenerationStatusAsync(Guid applicationId, string operationType, string? promptVersion = null)
     {
         await EnsureAIGenerationStatusAccessAsync(operationType);
-        return await aiGenerationStatusAppService.GetLatestAsync(applicationId, operationType, CurrentTenant.Id);
+        return await ApplyRateLimitStateOrDefaultAsync(
+            await aiGenerationStatusAppService.GetLatestAsync(applicationId, operationType, CurrentTenant.Id));
     }
 
     [Authorize(AIPermissions.Analysis.GenerateApplicationAnalysis)]
@@ -1233,7 +1239,26 @@ public class GrantApplicationAppService(
             AIGenerationRequestKeyHelper.PipelineOperationType,
             CurrentTenant.Id);
 
-        return request ?? throw new UserFriendlyException("Unable to queue AI generation request.");
+        return await ApplyRateLimitStateAsync(
+            request ?? throw new UserFriendlyException("Unable to queue AI generation request."));
+    }
+
+    private async Task<AIGenerationRequestDto?> ApplyRateLimitStateOrDefaultAsync(AIGenerationRequestDto? request)
+    {
+        if (request is null)
+        {
+            return null;
+        }
+
+        return await ApplyRateLimitStateAsync(request);
+    }
+
+    private async Task<AIGenerationRequestDto> ApplyRateLimitStateAsync(AIGenerationRequestDto request)
+    {
+        var state = await aiRateLimiter.GetStateAsync();
+        request.IsGenerating = state.IsGenerating;
+        request.RetryAfterSeconds = state.RetryAfterSeconds;
+        return request;
     }
 
     private async Task EnsureAIGenerationStatusAccessAsync(string operationType)
