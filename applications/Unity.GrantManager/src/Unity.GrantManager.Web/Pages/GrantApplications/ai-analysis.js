@@ -456,8 +456,8 @@ globalThis.queueApplicationAnalysis = function(triggerButton = null) {
 
             if (status === 'Completed') {
                 globalThis.AIGenerationButtonState?.restoreForCooldownCheck($button, existingHtml);
+                globalThis.AIGenerationButtonState?.applyStatusState(request);
                 loadAIAnalysis();
-                globalThis.syncAIRateLimitButtons?.();
                 return;
             }
 

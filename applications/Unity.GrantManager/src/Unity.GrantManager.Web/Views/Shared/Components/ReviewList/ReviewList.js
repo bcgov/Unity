@@ -477,8 +477,8 @@ function generateAiButtonAction(e, dt, button, config) {
 
             if (status === 'Completed') {
                 restoreReviewListAiButtonForCooldownCheck($button);
+                globalThis.AIGenerationButtonState?.applyStatusState(request);
                 refreshReviewListAfterAiScoring();
-                globalThis.syncAIRateLimitButtons?.();
                 return;
             }
 
