@@ -318,14 +318,12 @@ namespace Unity.AI.Runtime
         private async Task LogPromptInputAsync(string promptType, string promptVersion, string? systemPrompt, string userPrompt, CancellationToken cancellationToken = default)
         {
             var formattedInput = FormatPromptInputForLog(systemPrompt, userPrompt);
-            _logger.LogInformation("AI {PromptType} ({PromptVersion}) input payload: {PromptInput}", promptType, promptVersion, formattedInput);
             await WritePromptLogFileAsync(promptType, promptVersion, "INPUT", formattedInput, cancellationToken);
         }
 
         private async Task LogPromptOutputAsync(string promptType, string promptVersion, string output, CancellationToken cancellationToken = default)
         {
             var formattedOutput = FormatPromptOutputForLog(output);
-            _logger.LogInformation("AI {PromptType} ({PromptVersion}) model output payload: {ModelOutput}", promptType, promptVersion, formattedOutput);
             await WritePromptLogFileAsync(promptType, promptVersion, "OUTPUT", formattedOutput, cancellationToken);
         }
 
