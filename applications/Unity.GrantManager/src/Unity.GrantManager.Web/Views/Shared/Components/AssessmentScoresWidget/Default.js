@@ -699,8 +699,8 @@ function queueApplicationScoring(triggerButton = null) {
 
             if (status === 'Completed') {
                 globalThis.AIGenerationButtonState?.restoreForCooldownCheck($button, existingHtml);
+                globalThis.AIGenerationButtonState?.applyStatusState(request);
                 PubSub.publish('refresh_assessment_scores', null);
-                globalThis.syncAIRateLimitButtons?.();
                 return;
             }
 

@@ -121,12 +121,14 @@
         }
     }
 
-    function applyGenerating() {
+    function applyGenerating(options = {}) {
         currentState = { mode: 'generating' };
         renderState();
 
         clearStatePollTimer();
-        statePollTimer = setTimeout(() => fetchState(true), 2000);
+        if (options.poll !== false) {
+            statePollTimer = setTimeout(() => fetchState(true), 2000);
+        }
     }
 
     function renderGenerating() {
@@ -223,16 +225,20 @@
                 return;
             }
             const data = await res.json();
-            if (data.isGenerating === true) {
-                applyGenerating();
-                return;
-            }
-
-            applyCooldown(Number(data.retryAfterSeconds) || 0);
+            applyRateLimitState(data);
         } catch (_) {
             // Best-effort; the server is the source of truth.
             handleStateFetchFailure();
         }
+    }
+
+    function applyRateLimitState(data, options = {}) {
+        if (data?.isGenerating === true) {
+            applyGenerating({ poll: options.pollWhenGenerating !== false });
+            return;
+        }
+
+        applyCooldown(Number(data?.retryAfterSeconds) || 0);
     }
 
     globalThis.syncAIRateLimitButtons = () => {
@@ -240,12 +246,13 @@
         fetchState(true);
     };
     globalThis.setAIGenerationButtonsGenerating = applyGenerating;
+    globalThis.applyAIRateLimitState = applyRateLimitState;
     globalThis.refreshAIRateLimitState = globalThis.syncAIRateLimitButtons;
 
     document.addEventListener('click', (e) => {
         const btn = e.target.closest(BUTTON_SELECTOR);
         if (!btn) return;
-        applyGenerating();
+        applyGenerating({ poll: false });
     });
 
     document.addEventListener('DOMContentLoaded', () => {

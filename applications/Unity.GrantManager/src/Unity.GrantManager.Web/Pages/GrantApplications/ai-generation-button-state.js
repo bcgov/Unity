@@ -13,6 +13,16 @@
             .prop('disabled', true);
     }
 
+    function applyRateLimitState(request, options = {}) {
+        global.applyAIRateLimitState?.(
+            {
+                isGenerating: request?.isGenerating === true || request?.isActive === true,
+                retryAfterSeconds: Number(request?.retryAfterSeconds) || 0
+            },
+            { pollWhenGenerating: options.pollWhenGenerating === true }
+        );
+    }
+
     global.AIGenerationButtonState = {
         resolveStatus(status) {
             switch (Number(status)) {
@@ -29,7 +39,7 @@
             }
         },
         setGenerating($button) {
-            global.setAIGenerationButtonsGenerating?.();
+            global.setAIGenerationButtonsGenerating?.({ poll: false });
         },
         restore($button) {
             $button.removeClass('disabled');
@@ -37,17 +47,32 @@
         restoreForCooldownCheck($button, html) {
             restoreButtonForCooldownCheck($button, html);
         },
+        applyStatusState(request) {
+            applyRateLimitState(request, { pollWhenGenerating: true });
+        },
         monitor(options) {
             const intervalMs = options.intervalMs || 15000;
+            const activeIntervalMs = options.activeIntervalMs || 2000;
+            const activePollCount = options.activePollCount || 10;
             const maxFailures = options.maxFailures || 3;
             let timeoutId = null;
             let failures = 0;
+            let pollCount = 0;
 
             const stop = () => {
                 if (timeoutId) {
                     clearTimeout(timeoutId);
                     timeoutId = null;
                 }
+            };
+
+            const scheduleNextPoll = () => {
+                pollCount += 1;
+                const nextIntervalMs = pollCount <= activePollCount
+                    ? activeIntervalMs
+                    : intervalMs;
+
+                timeoutId = setTimeout(poll, nextIntervalMs);
             };
 
             const poll = () => {
@@ -59,19 +84,29 @@
                         if (status === 'Failed') {
                             stop();
                             restoreButton(options.$button, options.originalHtml);
+                            applyRateLimitState(request, { pollWhenGenerating: true });
                             options.onFailed?.(request);
                             return;
                         }
 
-                        if (!request || request.isActive === false || status === 'Completed') {
+                        if (!request) {
                             stop();
-                            restoreButtonForCooldownCheck(options.$button, options.originalHtml);
-                            options.onComplete?.(request);
-                            global.syncAIRateLimitButtons?.();
+                            restoreButton(options.$button, options.originalHtml);
+                            global.refreshAIRateLimitState?.();
+                            options.onMissing?.();
                             return;
                         }
 
-                        timeoutId = setTimeout(poll, intervalMs);
+                        if (request.isActive === false || status === 'Completed') {
+                            stop();
+                            restoreButtonForCooldownCheck(options.$button, options.originalHtml);
+                            applyRateLimitState(request, { pollWhenGenerating: true });
+                            options.onComplete?.(request);
+                            return;
+                        }
+
+                        applyRateLimitState(request);
+                        scheduleNextPoll();
                     })
                     .fail((error) => {
                         failures += 1;
@@ -82,7 +117,7 @@
                             return;
                         }
 
-                        timeoutId = setTimeout(poll, intervalMs);
+                        scheduleNextPoll();
                     });
             };
 

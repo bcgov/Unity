@@ -26,4 +26,20 @@ public class OpenAIPromptRendererTests
     {
         Should.Throw<InvalidOperationException>(() => OpenAIPromptRenderer.ResolvePromptVersion(version));
     }
+
+    [Fact]
+    public void BuildApplicationScoringUserPrompt_Should_Render_Structured_Empty_Attachments()
+    {
+        var prompt = OpenAIPromptRenderer.BuildApplicationScoringUserPrompt(
+            "v1",
+            "{}",
+            "[]",
+            "{\"name\":\"Test\",\"questions\":[]}",
+            "{}");
+
+        prompt.ShouldContain("ATTACHMENTS");
+        prompt.ShouldContain("[]");
+        prompt.ShouldContain("If ATTACHMENTS is empty, use DATA only");
+        prompt.ShouldNotContain("No attachments provided.");
+    }
 }
