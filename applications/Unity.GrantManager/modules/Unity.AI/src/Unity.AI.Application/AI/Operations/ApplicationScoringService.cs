@@ -11,6 +11,7 @@ using Unity.AI.Prompts;
 using Unity.AI.Requests;
 using Unity.AI.Runtime;
 using Unity.GrantManager.Applications;
+using Volo.Abp;
 using Volo.Abp.DependencyInjection;
 
 namespace Unity.AI.Operations
@@ -23,25 +24,22 @@ namespace Unity.AI.Operations
         IApplicationChefsFileAttachmentRepository applicationChefsFileAttachmentRepository,
         IScoresheetRepository scoresheetRepository,
         IAIService aiService,
-        IAIGenerationPrerequisiteValidator aiGenerationPrerequisiteValidator,
         AIExecutionModeResolver executionModeResolver,
         ILogger<ApplicationScoringService> logger) : IApplicationScoringService, ITransientDependency
     {
         public async Task<string> RegenerateAndSaveAsync(Guid applicationId, string? promptVersion = null, CancellationToken cancellationToken = default)
         {
-            await aiGenerationPrerequisiteValidator.EnsureApplicationScoringAvailableAsync(applicationId);
-
             var application = await applicationRepository.GetAsync(applicationId);
             var applicationForm = await applicationFormRepository.GetAsync(application.ApplicationFormId);
             if (applicationForm.ScoresheetId == null)
             {
-                return "{}";
+                throw new UserFriendlyException("AI scoring requires a configured scoresheet.");
             }
 
             var scoresheet = await scoresheetRepository.GetWithChildrenAsync(applicationForm.ScoresheetId.Value);
-            if (scoresheet == null)
+            if (scoresheet == null || !scoresheet.Sections.Any() || !scoresheet.Sections.SelectMany(s => s.Fields).Any())
             {
-                return "{}";
+                throw new UserFriendlyException("AI scoring requires a scoresheet with scoring fields.");
             }
 
             var attachments = await applicationChefsFileAttachmentRepository.GetListAsync(a => a.ApplicationId == applicationId);

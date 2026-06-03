@@ -5,6 +5,7 @@ using Unity.Flex.Domain.Scoresheets;
 using Unity.GrantManager.Applications;
 using Volo.Abp;
 using Volo.Abp.DependencyInjection;
+using Volo.Abp.Linq;
 
 namespace Unity.AI.Operations;
 
@@ -13,12 +14,14 @@ public class AIGenerationPrerequisiteValidator(
     IApplicationFormRepository applicationFormRepository,
     IApplicationFormSubmissionRepository applicationFormSubmissionRepository,
     IApplicationChefsFileAttachmentRepository applicationChefsFileAttachmentRepository,
-    IScoresheetRepository scoresheetRepository) : IAIGenerationPrerequisiteValidator, ITransientDependency
+    IScoresheetRepository scoresheetRepository,
+    IAsyncQueryableExecuter asyncExecuter) : IAIGenerationPrerequisiteValidator, ITransientDependency
 {
     public async Task EnsureAttachmentSummaryAvailableAsync(Guid applicationId)
     {
-        var attachments = await applicationChefsFileAttachmentRepository.GetListAsync(a => a.ApplicationId == applicationId);
-        if (attachments.Count == 0)
+        var attachmentQuery = await applicationChefsFileAttachmentRepository.GetQueryableAsync();
+        var hasAttachments = await asyncExecuter.AnyAsync(attachmentQuery.Where(a => a.ApplicationId == applicationId));
+        if (!hasAttachments)
         {
             throw new UserFriendlyException("No attachments are available to summarize.");
         }
