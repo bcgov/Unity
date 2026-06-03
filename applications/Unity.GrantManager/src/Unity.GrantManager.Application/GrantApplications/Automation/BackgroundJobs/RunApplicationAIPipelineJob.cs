@@ -3,11 +3,13 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Unity.AI.Operations;
 using Unity.AI.RateLimit;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Attachments;
 using Unity.GrantManager.GrantApplications;
 using Unity.GrantManager.GrantApplications.Automation.Events;
+using Volo.Abp;
 using Volo.Abp.BackgroundJobs;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Repositories;
@@ -23,6 +25,7 @@ public class RunApplicationAIPipelineJob(
     IAttachmentSummaryAppService attachmentSummaryAppService,
     IApplicationAnalysisAppService applicationAnalysisAppService,
     IApplicationScoringAppService applicationScoringAppService,
+    IAIGenerationPrerequisiteValidator aiGenerationPrerequisiteValidator,
     IFeatureChecker featureChecker,
     ILocalEventBus localEventBus,
     IRepository<AIGenerationRequest, Guid> generationRequestRepository,
@@ -58,7 +61,10 @@ public class RunApplicationAIPipelineJob(
 
                 logger.LogInformation("Executing queued AI content pipeline for application {ApplicationId}.", args.ApplicationId);
 
-                if (attachmentSummariesEnabled)
+                if (attachmentSummariesEnabled && await HasStageInputAsync(
+                    args.ApplicationId,
+                    "attachment summaries",
+                    () => aiGenerationPrerequisiteValidator.EnsureAttachmentSummaryAvailableAsync(args.ApplicationId)))
                 {
                     var attachmentIds = await GetAttachmentIdsAsync(args.ApplicationId);
                     var attachmentResults = await attachmentSummaryAppService.GenerateAttachmentSummariesForPipelineAsync(attachmentIds, args.PromptVersion);
@@ -68,7 +74,10 @@ public class RunApplicationAIPipelineJob(
                 Exception? analysisException = null;
                 Exception? scoringException = null;
 
-                if (applicationAnalysisEnabled)
+                if (applicationAnalysisEnabled && await HasStageInputAsync(
+                    args.ApplicationId,
+                    "application analysis",
+                    () => aiGenerationPrerequisiteValidator.EnsureApplicationAnalysisAvailableAsync(args.ApplicationId)))
                 {
                     try
                     {
@@ -85,7 +94,10 @@ public class RunApplicationAIPipelineJob(
                     }
                 }
 
-                if (scoringEnabled)
+                if (scoringEnabled && await HasStageInputAsync(
+                    args.ApplicationId,
+                    "application scoring",
+                    () => aiGenerationPrerequisiteValidator.EnsureApplicationScoringAvailableAsync(args.ApplicationId)))
                 {
                     try
                     {
@@ -123,6 +135,24 @@ public class RunApplicationAIPipelineJob(
                 await AIGenerationRequestJobHelper.MarkFailedInNewUowAsync(unitOfWorkManager, generationRequestRepository, args.RequestKey, ex.Message);
                 throw;
             }
+        }
+    }
+
+    private async Task<bool> HasStageInputAsync(Guid applicationId, string stageName, Func<Task> ensurePrerequisite)
+    {
+        try
+        {
+            await ensurePrerequisite();
+            return true;
+        }
+        catch (UserFriendlyException ex)
+        {
+            logger.LogInformation(
+                ex,
+                "Skipping AI {StageName} stage for application {ApplicationId} because required input is unavailable.",
+                stageName,
+                applicationId);
+            return false;
         }
     }
 
