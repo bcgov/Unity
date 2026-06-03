@@ -248,14 +248,6 @@ $(function () {
         }
     }
 
-    function refreshConfigurationState(correlationId) {
-        checkConfigurationExists(correlationId, function (exists) {
-            updateGenerateViewButtonVisibility(exists);
-            updateDeleteButtonVisibility(exists);
-        });
-        refreshViewStatusWidget(correlationId, getCorrelationProvider());
-    }
-
     // Persist column visibility state per provider in localStorage
     function saveColvisState(provider) {
         if (!dataTable) return;
