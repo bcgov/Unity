@@ -1,6 +1,7 @@
 $(function () {
     let hasUnsavedChanges = false;
     let dataTable = null;
+    let _suppressColvisSave = false;
 
     // Initialize provider from the hidden input
     let currentProvider = $('#reportingProvider').val() || 'formversion';
@@ -255,6 +256,47 @@ $(function () {
         refreshViewStatusWidget(correlationId, getCorrelationProvider());
     }
 
+    // Persist column visibility state per provider in localStorage
+    function saveColvisState(provider) {
+        if (!dataTable) return;
+        try {
+            const state = {};
+            dataTable.columns().every(function (colIdx) {
+                const colName = dataTable.settings()[0].aoColumns[colIdx].name;
+                if (colName) state[colName] = this.visible();
+            });
+            localStorage.setItem('reportingColvis_' + provider, JSON.stringify(state));
+        } catch (e) { 
+            /* storage unavailable */ 
+            console.err(e);
+        }
+    }
+
+    function restoreColvisState(provider) {
+        if (!dataTable) return;
+        try {
+            const stored = localStorage.getItem('reportingColvis_' + provider);
+            if (!stored) return;
+            const state = JSON.parse(stored);
+            dataTable.columns().every(function (colIdx) {
+                const colName = dataTable.settings()[0].aoColumns[colIdx].name;
+                if (colName && colName in state) this.visible(state[colName]);
+            });
+        } catch (e) { 
+            /* ignore invalid stored state */ 
+            console.err(e);
+        }
+    }
+
+    // Destroy and reinitialize the DataTable for the current provider
+    function reinitTable() {
+        if (dataTable) {
+            dataTable.destroy();
+            dataTable = null;
+        }
+        initializeReportConfigTable();
+    }
+
     // Function to handle provider change
     function handleProviderChange(newProvider) {
         if (newProvider === currentProvider) return;
@@ -269,48 +311,10 @@ $(function () {
         updateVersionSelectorVisibility();
         resetChangesState();
         $('#reportingViewStatus').val('');
-        updateDataTableColumnHeaders();
-
-        const correlationId = getCurrentCorrelationId();
-        if (correlationId) {
-            refreshConfigurationState(correlationId);
-        } else {
-            updateGenerateViewButtonVisibility(false);
-            updateDeleteButtonVisibility(false);
-        }
-
-        if (dataTable) {
-            dataTable.ajax.reload();
-        }
-    }
-
-    // Function to update DataTable column headers
-    function updateDataTableColumnHeaders() {
-        if (!dataTable) return;
-
-        const providerConfig = getCurrentProviderConfig();
-        const columns = providerConfig.columns;
-
-        // Update column headers
-        const columnIndices = [
-            { index: 0, title: columns.label },
-            { index: 1, title: columns.key },
-            { index: 2, title: columns.type },
-            { index: 3, title: columns.path },
-            { index: 4, title: columns.columnName },
-            { index: 5, title: columns.typePath }
-        ];
-
-        columnIndices.forEach(col => {
-            const header = $(dataTable.column(col.index).header());
-            header.text(col.title);
-        });
-
-        // Show the Version(s) column only for consolidated providers
-        dataTable.column('versionLabel:name').visible(currentProvider === 'worksheet_consolidated' || currentProvider === 'formversion_consolidated');
-
-        // Force redraw to update headers
-        dataTable.draw(false);
+        _suppressColvisSave = true;
+        reinitTable();
+        restoreColvisState(newProvider);
+        _suppressColvisSave = false;
     }
 
     // Handle provider toggle change event
@@ -818,6 +822,16 @@ $(function () {
             fixedHeaders: true
         });
 
+        // Persist column visibility per provider
+        dataTable.on('column-visibility.dt', function () {
+            if (!_suppressColvisSave) saveColvisState(currentProvider);
+        });
+
+        // Restore saved visibility for the initial provider
+        _suppressColvisSave = true;
+        restoreColvisState(currentProvider);
+        _suppressColvisSave = false;
+
         // Add event handler for when DataTable completes drawing
         dataTable.on('draw.dt', function () {
             // Ensure inputs are always enabled (edit mode is always on)
@@ -830,31 +844,6 @@ $(function () {
             // Check for dynamic columns placeholder and update warning
             const hasDynamicColumns = checkForDynamicColumnsInTable();
             updateDynamicColumnsWarning(hasDynamicColumns);
-        });
-
-        // Track changes on column name inputs with validation
-        $('#ReportConfigurationTable').on('input', '.column-name-input', function () {
-            const $input = $(this);
-            const value = $input.val();
-            const path = $input.data('path');
-
-            // Validate and provide feedback
-            validateColumnNameInput($input, value, path);
-            markAsChanged();
-        });
-
-        // Handle blur event to sanitize input
-        $('#ReportConfigurationTable').on('blur', '.column-name-input', function () {
-            const $input = $(this);
-            const value = $input.val().trim();
-
-            if (value) {
-                const sanitized = sanitizeColumnName(value);
-                if (sanitized !== value) {
-                    $input.val(sanitized);
-                    validateColumnNameInput($input, sanitized, $input.data('path'));
-                }
-            }
         });
 
         // Initial check for button visibility on page load
@@ -2153,6 +2142,25 @@ $(function () {
 
     // Initialize on page load
     initializeReportConfigTable();
+
+    // Delegated handlers registered once — survive DataTable destroy/reinit
+    $('#ReportConfigurationTable').on('input', '.column-name-input', function () {
+        const $input = $(this);
+        validateColumnNameInput($input, $input.val(), $input.data('path'));
+        markAsChanged();
+    });
+
+    $('#ReportConfigurationTable').on('blur', '.column-name-input', function () {
+        const $input = $(this);
+        const value = $input.val().trim();
+        if (value) {
+            const sanitized = sanitizeColumnName(value);
+            if (sanitized !== value) {
+                $input.val(sanitized);
+                validateColumnNameInput($input, sanitized, $input.data('path'));
+            }
+        }
+    });
 
     // Set initial undo button state
     updateUndoButtonVisibility();
