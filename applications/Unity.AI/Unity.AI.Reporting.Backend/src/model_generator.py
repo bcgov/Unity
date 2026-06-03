@@ -1383,7 +1383,7 @@ class DataModelGenerator:
         async with aiohttp.ClientSession() as session:
             new_sql = await self._post_completion(session, SYSTEM_PROMPT, modify_request)
         if not new_sql:
-            raise ValueError("AI failed to generate modified SQL")
+            raise RuntimeError("AI service failed to generate modified SQL — the LLM request timed out or returned an error")
 
         # Clean markdown fences
         new_sql = re.sub(r"^```(?:sql)?\s*", "", new_sql.strip(), flags=re.IGNORECASE)
@@ -1828,37 +1828,22 @@ class DataModelGenerator:
         """Call the configured LLM."""
         ai_cfg = config.ai
 
-        if ai_cfg.use_azure:
-            headers = {
-                "api-key": ai_cfg.azure_api_key,
-                "Content-Type": CONTENT_TYPE,
-            }
-            endpoint = (
-                f"{ai_cfg.azure_endpoint}/openai/deployments/"
-                f"{ai_cfg.azure_deployment}/chat/completions"
-                f"?api-version={ai_cfg.azure_api_version}"
-            )
-            json_data = {
-                "messages": [
-                    {"role": "system", "content": system_message},
-                    {"role": "user", "content": prompt},
-                ],
-                "max_completion_tokens": 4000,
-            }
-        else:
-            headers = {
-                "Authorization": f"Bearer {ai_cfg.completion_key}",
-                "Content-Type": CONTENT_TYPE,
-            }
-            endpoint = ai_cfg.completion_endpoint
-            json_data = {
-                "model": ai_cfg.model,
-                "messages": [
-                    {"role": "system", "content": system_message},
-                    {"role": "user", "content": prompt},
-                ],
-                "max_completion_tokens": 4000,
-            }
+        headers = {
+            "api-key": ai_cfg.azure_api_key,
+            "Content-Type": CONTENT_TYPE,
+        }
+        endpoint = (
+            f"{ai_cfg.azure_endpoint}/openai/deployments/"
+            f"{ai_cfg.azure_deployment}/chat/completions"
+            f"?api-version={ai_cfg.azure_api_version}"
+        )
+        json_data = {
+            "messages": [
+                {"role": "system", "content": system_message},
+                {"role": "user", "content": prompt},
+            ],
+            "max_completion_tokens": 4000,
+        }
 
         try:
             timeout = aiohttp.ClientTimeout(total=120)

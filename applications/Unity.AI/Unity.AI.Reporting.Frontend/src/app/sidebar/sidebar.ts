@@ -8,6 +8,7 @@ import { ConfigService } from '../services/config.service';
 import { ToastService } from '../services/toast.service';
 import { LoggerService } from '../services/logger.service';
 import { AlertComponent } from '../alert/alert';
+import { CardData } from '../embed';
 import { Turn } from '../turn';
 
 export interface Chat {
@@ -69,6 +70,8 @@ export interface ExistingModelSummary {
 export interface ExistingModelDetail extends ExistingModelSummary {
   sql: string;
   columns: string[];
+  previewData?: CardData | null;
+  previewLoading?: boolean;
 }
 
 export type ModelsModalStep = 'idle' | 'pick-mode' | 'loading-views' | 'pick-view'

@@ -949,6 +949,44 @@ def data_model_detail():
         )
 
 
+@app.route("/api/data-models/preview-data", methods=["POST"])
+@require_auth
+def data_model_preview_data():
+    """Execute a saved model's SQL via Metabase and return preview rows."""
+    user_data = get_user_from_token()
+    tenant_id = user_data["tenant"]
+
+    body = request.get_json(silent=True) or {}
+    card_id = body.get("card_id")
+    if card_id is not None:
+        try:
+            card_id = int(card_id)
+        except (ValueError, TypeError):
+            return jsonify({"error": "card_id must be a valid integer"}), 400
+    else:
+        return jsonify({"error": "card_id is required"}), 400
+
+    try:
+        card = metabase_client.get_card(card_id, tenant_id)
+        dataset_query = card.get("dataset_query", {})
+        tenant_config = config.get_tenant_config(tenant_id)
+        db_id = tenant_config["db_id"]
+        if dataset_query.get("type") == "native":
+            sql = dataset_query.get("native", {}).get("query", "")
+        else:
+            sql = metabase_client.get_native_query(dataset_query, tenant_id, db_id=db_id) or ""
+        raw = metabase_client.execute_sql(sql, db_id, tenant_id)
+        shaped = _shape_card_data(raw)
+        if shaped is None:
+            return _error_response("server_error", "Could not read query results.", 500)
+        return jsonify(shaped), 200
+    except Exception as e:
+        logger.error(f"Error in /api/data-models/preview-data: {e}", exc_info=True)
+        return _error_response(
+            "server_error", "Failed to preview model data.", 500, detail=str(e)
+        )
+
+
 @app.route("/api/data-models/modify-preview", methods=["POST"])
 @require_auth
 def modify_data_model_preview():

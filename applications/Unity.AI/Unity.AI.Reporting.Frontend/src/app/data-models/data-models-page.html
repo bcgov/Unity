@@ -235,11 +235,42 @@
               @if (selectedExistingModel.description) {
                 <p class="dm-model-summary-desc">{{ selectedExistingModel.description }}</p>
               }
-              <button type="button" class="dm-link" (click)="existingSqlExpanded = !existingSqlExpanded">
-                {{ existingSqlExpanded ? 'Hide current SQL ▲' : 'Show current SQL ▼' }}
+              <button type="button" class="dm-link" (click)="togglePreviewTable()">
+                {{ existingPreviewExpanded ? 'Hide preview table ▲' : 'Show preview table ▼' }}
               </button>
-              @if (existingSqlExpanded) {
-                <pre class="dm-sql">{{ selectedExistingModel.sql }}</pre>
+              @if (existingPreviewExpanded) {
+                @if (selectedExistingModel.previewLoading) {
+                  <p class="dm-preview-loading">Loading preview…</p>
+                } @else if (selectedExistingModel.previewData) {
+                  <div class="dm-preview-table-wrap">
+                    <table class="dm-preview-table">
+                      <thead>
+                        <tr>
+                          @for (col of selectedExistingModel.previewData.columns; track col) {
+                            <th>{{ col }}</th>
+                          }
+                        </tr>
+                      </thead>
+                      <tbody>
+                        @for (row of selectedExistingModel.previewData.rows; track $index) {
+                          <tr>
+                            @for (cell of row; track $index) {
+                              <td>{{ formatCell(cell) }}</td>
+                            }
+                          </tr>
+                        }
+                      </tbody>
+                    </table>
+                    @if (selectedExistingModel.previewData.truncated) {
+                      <p class="dm-preview-note">
+                        Showing first {{ selectedExistingModel.previewData.rows.length }} of
+                        {{ selectedExistingModel.previewData.total_rows }} rows
+                      </p>
+                    }
+                  </div>
+                } @else {
+                  <p class="dm-preview-error">Could not load preview data.</p>
+                }
               }
             </div>
           }
@@ -328,12 +359,23 @@
           <div class="dm-source-tag">Source: <code>{{ modelProposal.source_view }}</code></div>
 
           @if (modelProposal.columns.length > 0) {
-            <h4 class="dm-preview-title">Model preview — {{ modelProposal.columns.length }} columns</h4>
-            <div class="dm-column-grid">
-              @for (col of modelProposal.columns; track col) {
-                <div class="dm-column-chip">{{ col }}</div>
-              }
-            </div>
+            <button type="button" class="dm-link" (click)="toggleReviewPreview()">
+              {{ reviewPreviewExpanded ? 'Hide column preview ▲' : 'Show column preview (' + modelProposal.columns.length + ') ▼' }}
+            </button>
+            @if (reviewPreviewExpanded) {
+              <div class="dm-preview-table-wrap">
+                <table class="dm-preview-table">
+                  <thead>
+                    <tr>
+                      @for (col of modelProposal.columns; track col) {
+                        <th>{{ col }}</th>
+                      }
+                    </tr>
+                  </thead>
+                </table>
+                <p class="dm-preview-note">{{ modelProposal.columns.length }} columns — sample rows available after saving to Metabase.</p>
+              </div>
+            }
           }
           @if (modelProposal.excluded_columns.length > 0) {
             <details class="dm-columns dm-columns-excluded">

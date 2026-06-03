@@ -875,20 +875,58 @@
   background: #f8fbff;
 }
 
-.dm-sql {
-  margin: 0;
-  padding: 14px 16px;
-  background: #0f172a;
-  color: #e2e8f0;
+.dm-preview-table-wrap {
+  overflow-x: auto;
+  max-height: 320px;
+  overflow-y: auto;
   border-radius: 8px;
-  font-family: 'Consolas', 'Monaco', monospace;
-  font-size: 0.8rem;
-  line-height: 1.6;
-  overflow: auto;
-  white-space: pre-wrap;
-  word-break: break-word;
-  max-height: 560px;
+  border: 1px solid #e5e7eb;
+  margin-top: 10px;
 }
+
+.dm-preview-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+
+.dm-preview-table th {
+  background: #f1f5f9;
+  padding: 8px 12px;
+  text-align: left;
+  font-weight: 600;
+  color: #374151;
+  position: sticky;
+  top: 0;
+  border-bottom: 1px solid #e5e7eb;
+  border-right: 1px solid #e5e7eb;
+}
+.dm-preview-table th:last-child { border-right: none; }
+
+.dm-preview-table td {
+  padding: 6px 12px;
+  border-bottom: 1px solid #f3f4f6;
+  border-right: 1px solid #f3f4f6;
+  color: #1f2937;
+  max-width: 240px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.dm-preview-table td:last-child { border-right: none; }
+
+.dm-preview-table tr:last-child td { border-bottom: none; }
+.dm-preview-table tr:hover td { background: #f8fafc; }
+
+.dm-preview-loading,
+.dm-preview-note,
+.dm-preview-error {
+  margin: 8px 0 0;
+  font-size: 0.8rem;
+  color: #6b7280;
+}
+
+.dm-preview-error { color: #ef4444; }
 
 /* ----- Done layout ----- */
 

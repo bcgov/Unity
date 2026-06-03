@@ -178,6 +178,10 @@ export class ApiService {
     return this.post<T>('/data-models/detail', { card_id: cardId });
   }
 
+  getDataModelPreviewData<T>(cardId: number): Observable<T> {
+    return this.post<T>('/data-models/preview-data', { card_id: cardId });
+  }
+
   modifyDataModelPreview<T>(
     cardId: number,
     prompt: string,

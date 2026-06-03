@@ -15,6 +15,7 @@ import {
   ExistingModelDetail,
   ModelsModalStep,
 } from '../sidebar/sidebar';
+import { CardData } from '../embed';
 
 type Stage = 'mode' | 'select' | 'review' | 'done';
 
@@ -36,7 +37,8 @@ export class DataModelsPageComponent implements OnInit {
   modelErrors: ModelError[] = [];
   existingModels: ExistingModelSummary[] = [];
   selectedExistingModel: ExistingModelDetail | null = null;
-  existingSqlExpanded = false;
+  existingPreviewExpanded = false;
+  reviewPreviewExpanded = false;
   editPrompt = '';
   editAdditionalViews: ViewInfo[] = [];
   availableCoreFields: CoreField[] = [];
@@ -341,7 +343,7 @@ export class DataModelsPageComponent implements OnInit {
       ]);
 
       this.selectedExistingModel = detail;
-      this.existingSqlExpanded = false;
+      this.existingPreviewExpanded = false;
       this.availableViews = viewsResponse.views || [];
       this.availableCoreFields = coreFieldsResponse.core_fields || [];
 
@@ -382,6 +384,35 @@ export class DataModelsPageComponent implements OnInit {
     return !!(this.editPrompt.trim() || this.editAdditionalViews.length > 0 || this.coreFieldsDiffer());
   }
 
+  async togglePreviewTable(): Promise<void> {
+    this.existingPreviewExpanded = !this.existingPreviewExpanded;
+    if (!this.existingPreviewExpanded || !this.selectedExistingModel) return;
+    if (this.selectedExistingModel.previewData !== undefined) return;
+
+    this.selectedExistingModel.previewLoading = true;
+    this.cdr.markForCheck();
+    try {
+      const data = await firstValueFrom(
+        this.apiService.getDataModelPreviewData<CardData>(this.selectedExistingModel.card_id)
+      );
+      this.selectedExistingModel.previewData = data;
+    } catch {
+      this.selectedExistingModel.previewData = null;
+    } finally {
+      this.selectedExistingModel.previewLoading = false;
+      this.cdr.markForCheck();
+    }
+  }
+
+  formatCell(value: unknown): string {
+    if (value === null || value === undefined) return '—';
+    if (typeof value === 'string') return value;
+    if (typeof value === 'number' || typeof value === 'boolean') return String(value);
+    return JSON.stringify(value);
+  }
+
+  toggleReviewPreview(): void { this.reviewPreviewExpanded = !this.reviewPreviewExpanded; }
+
   async generateModifiedModel(): Promise<void> {
     if (!this.selectedExistingModel || !this.canGenerateModified) return;
     this.step = 'generating';
@@ -412,6 +443,7 @@ export class DataModelsPageComponent implements OnInit {
   // ----- Navigation -----
 
   backFromReview(): void {
+    this.reviewPreviewExpanded = false;
     if (this.selectedExistingModel) this.step = 'edit-existing';
     else this.step = 'pick-view';
   }
@@ -428,7 +460,8 @@ export class DataModelsPageComponent implements OnInit {
     this.modelErrors = [];
     this.existingModels = [];
     this.selectedExistingModel = null;
-    this.existingSqlExpanded = false;
+    this.existingPreviewExpanded = false;
+    this.reviewPreviewExpanded = false;
     this.editPrompt = '';
     this.editAdditionalViews = [];
     this.availableCoreFields = [];
