@@ -36,7 +36,7 @@ import { loginIfNeeded } from "../support/auth";
 
 // MAX_BULK controls how many it() blocks are generated at describe-time.
 // Must be >= SUBMISSION_COUNT used in the seeder. Extras are skipped automatically.
-const MAX_BULK = Number(Cypress.env("SUBMISSION_COUNT") || 10);
+const MAX_BULK = Number(Cypress.env("SUBMISSION_COUNT") || 5);
 
 const BULK_CONFIG = {
   grantProgram: "Default Grants Program",
@@ -261,6 +261,81 @@ const isProd =
     });
   }
 
+  /** Poll the applications list until a submission row contains an expected status. */
+  function waitForSubmissionStatusInList(
+    id: string,
+    expectedStatus: string,
+    attempt = 1,
+    maxAttempts = 12,
+  ): void {
+    goToApplicationsList();
+    dismissBlockingModalIfPresent();
+    listPage
+      .selectQuickDateRange("last7days")
+      .waitForTableRefresh()
+      .searchForSubmission(id);
+
+    cy.contains("tr", id, { timeout: 20000 }).then(($row) => {
+      const rowText = $row.text().toLowerCase();
+      const expected = expectedStatus.toLowerCase();
+      if (rowText.includes(expected)) {
+        cy.log(`✅ ${id} reached ${expectedStatus} on attempt ${attempt}`);
+        return;
+      }
+
+      if (attempt >= maxAttempts) {
+        throw new Error(
+          `Submission ${id} did not reach status '${expectedStatus}' after ${maxAttempts} attempts`,
+        );
+      }
+
+      cy.log(
+        `${id} not yet ${expectedStatus} (attempt ${attempt}/${maxAttempts}); retrying`,
+      );
+      cy.wait(5000);
+      cy.reload();
+      waitForSubmissionStatusInList(
+        id,
+        expectedStatus,
+        attempt + 1,
+        maxAttempts,
+      );
+    });
+  }
+
+  /** Poll the details breadcrumb until it reflects the expected status. */
+  function waitForDetailBreadcrumbStatus(
+    expectedStatus: string,
+    attempt = 1,
+    maxAttempts = 8,
+  ): void {
+    cy.get(BREADCRUMB_STATUS, { timeout: 20000 })
+      .should("be.visible")
+      .invoke("text")
+      .then((txt) => {
+        const current = txt.trim().toLowerCase();
+        const expected = expectedStatus.toLowerCase();
+        if (current.includes(expected)) {
+          cy.log(`✅ Detail status is ${expectedStatus}`);
+          return;
+        }
+
+        if (attempt >= maxAttempts) {
+          throw new Error(
+            `Detail status did not reach '${expectedStatus}' after ${maxAttempts} attempts (current='${txt.trim()}')`,
+          );
+        }
+
+        cy.log(
+          `Detail status not yet ${expectedStatus} (attempt ${attempt}/${maxAttempts}); reloading`,
+        );
+        cy.wait(3000);
+        cy.reload();
+        detailsPage.dismissErrorModalIfPresent();
+        waitForDetailBreadcrumbStatus(expectedStatus, attempt + 1, maxAttempts);
+      });
+  }
+
   /** Assign a submission to the configured owner from the applications list. */
   function assignSubmission(id: string): void {
     dismissBlockingModalIfPresent();
@@ -455,10 +530,14 @@ const isProd =
     clickStatusAction(STATUS_ACTIONS.approve);
     detailsPage.waitForConfirmModal().clickConfirm();
 
+    // Approval is asynchronous; wait until details and list reflect final state.
+    waitForDetailBreadcrumbStatus("Approved");
+
     cy.log(`── Approval workflow complete: ${id}`);
 
     // Return to the list page — clears details-page state before next it() block
     goToApplicationsList();
+    waitForSubmissionStatusInList(id, "Approved");
   }
 
   /**
@@ -577,6 +656,7 @@ const isProd =
       cy.log(
         `Selecting approved row ${index + 1} / ${submissionIds.length}: ${id}`,
       );
+      waitForSubmissionStatusInList(id, "Approved");
       clickRowCheckboxByText(id);
     });
 
