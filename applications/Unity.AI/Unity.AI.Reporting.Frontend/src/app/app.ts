@@ -1,7 +1,7 @@
 import { Component, ViewChild, ElementRef, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { FormsModule } from '@angular/forms';
-import { SafeResourceUrl, DomSanitizer, SafeHtml } from '@angular/platform-browser';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 
 import { Embed } from './embed';
 import { Turn } from './turn';
@@ -16,6 +16,9 @@ import { ConfigService } from './services/config.service';
 import { SidebarComponent, Chat } from './sidebar/sidebar';
 import { AlertComponent } from './alert/alert';
 import { environment } from '../environments/environment';
+
+/** Placeholder shown in the SQL panel when explanation generation fails. */
+const SQL_EXPLANATION_ERROR_TEXT = 'Unable to generate explanation at this time.';
 
 @Component({
   selector: 'app-root',
@@ -36,6 +39,7 @@ export class App implements OnInit, OnDestroy {
   readonly MAX_RETRIES = 2;
   showDeleteQuestionAlert: boolean = false;
   private turnToDelete: Turn | null = null;
+  private readonly sqlExplanationFetches = new WeakMap<Turn, Promise<void>>();
 
   constructor(
     private readonly authService: AuthService,
@@ -133,57 +137,52 @@ export class App implements OnInit, OnDestroy {
 
   toggleSqlPanel(turn: Turn): void {
     turn.sqlPanelOpen = !turn.sqlPanelOpen;
+    // Fetch when there is no explanation yet, or when the previous attempt failed (allow retry).
+    if (turn.sqlPanelOpen && turn.embed?.SQL && (!turn.embed.sql_explanation || turn.embed.sql_explanation_error)) {
+      this.fetchSqlExplanation(turn)
+        .then(() => this.cdr.markForCheck())
+        .catch((error: any) => {
+          this.logger.error('Failed to generate SQL explanation:', error);
+          let message = 'Please try again or contact support if the issue persists.';
+          if (error?.status === 429) {
+            message = 'Rate limit exceeded. Please try again later.';
+          } else if (error?.status >= 500) {
+            message = 'Server error. Please try again.';
+          }
+          this.toastService.error('Failed to generate SQL explanation. ' + message);
+          turn.embed.sql_explanation = SQL_EXPLANATION_ERROR_TEXT;
+          turn.embed.sql_explanation_error = true;
+          this.cdr.markForCheck();
+        });
+    }
   }
 
-  async generateSqlExplanation(turn: Turn): Promise<void> {
-    if (!turn.embed?.SQL) {
-      // If no SQL exists, do nothing
-      return;
-    }
+  private fetchSqlExplanation(turn: Turn): Promise<void> {
+    const existing = this.sqlExplanationFetches.get(turn);
+    if (existing) return existing;
 
-    // Toggle visibility
-    turn.sql_explanation_visible = !turn.sql_explanation_visible;
+    // Reset prior state so a retry shows the loading cursor instead of stale/fallback text.
+    turn.embed.sql_explanation = '';
+    turn.embed.sql_explanation_error = false;
 
-    // If turning on and no explanation exists yet, generate it
-    if (turn.sql_explanation_visible && !turn.embed.sql_explanation) {
-      try {
-        const explanationResponse = await firstValueFrom(
-          this.apiService.explainSql<{
-            explanation: string;
-            tokens?: { prompt_tokens: number; completion_tokens: number; total_tokens: number; }
-          }>(turn.embed.SQL)
-        );
-        turn.embed.sql_explanation = explanationResponse.explanation;
-
-        // Combine explanation tokens with existing SQL generation tokens
-        if (explanationResponse.tokens && turn.embed.tokens) {
-          turn.embed.tokens.prompt_tokens += explanationResponse.tokens.prompt_tokens;
-          turn.embed.tokens.completion_tokens += explanationResponse.tokens.completion_tokens;
-          turn.embed.tokens.total_tokens += explanationResponse.tokens.total_tokens;
-        }
-      } catch (error: any) {
-        this.logger.error('Failed to generate SQL explanation:', error);
-
-        // Provide user feedback about the failure
-        let errorMessage = 'Failed to generate SQL explanation. ';
-        if (error?.status === 429) {
-          errorMessage += 'Rate limit exceeded. Please try again later.';
-        } else if (error?.status >= 500) {
-          errorMessage += 'Server error. Please try again.';
-        } else {
-          errorMessage += 'Please try again or contact support if the issue persists.';
-        }
-
-        this.toastService.error(errorMessage);
-
-        // Set a fallback explanation that indicates the failure
-        turn.embed.sql_explanation = "Unable to generate explanation at this time.";
+    const fetchPromise = (async () => {
+      const response = await firstValueFrom(
+        this.apiService.explainSql<{
+          explanation: string;
+          tokens?: { prompt_tokens: number; completion_tokens: number; total_tokens: number; };
+        }>(turn.embed.SQL)
+      );
+      turn.embed.sql_explanation = response.explanation;
+      if (response.tokens && turn.embed.tokens) {
+        turn.embed.tokens.prompt_tokens += response.tokens.prompt_tokens;
+        turn.embed.tokens.completion_tokens += response.tokens.completion_tokens;
+        turn.embed.tokens.total_tokens += response.tokens.total_tokens;
       }
-    }
+    })();
 
-    // Save the chat to persist the visibility state
-    await this.saveChat();
-    this.cdr.markForCheck();
+    this.sqlExplanationFetches.set(turn, fetchPromise);
+    fetchPromise.catch(() => this.sqlExplanationFetches.delete(turn));
+    return fetchPromise;
   }
 
   async redirectToMB(turn: Turn): Promise<Window | null> {
@@ -343,7 +342,7 @@ export class App implements OnInit, OnDestroy {
     // Always reset to table visualization for new questions
     this.selectedVisualization = 'table';
     
-    const turn = {question: this.question.trim(), embed: {"url": "", "card_id": 0, "x_field": "", "y_field": "", "title": "", "visualization_options": [], "SQL": ""}, safeUrl: 'loading' as 'loading' | 'failure' | SafeResourceUrl, iframeLoaded: false, sqlPanelOpen: false, sql_explanation: "", sql_explanation_visible: false} as Turn;
+    const turn = {question: this.question.trim(), embed: {"url": "", "card_id": 0, "x_field": "", "y_field": "", "title": "", "visualization_options": [], "SQL": ""}, safeUrl: 'loading', iframeLoaded: false, sqlPanelOpen: false} as Turn;
     this.conversation.push(turn);
     if (retryCount > 0) {
       turn.retryCount = retryCount;
@@ -466,7 +465,6 @@ export class App implements OnInit, OnDestroy {
       this.conversation = chatData.conversation.map(turn => ({
         ...turn,
         iframeLoaded: true, // No iframe anymore, always mark as loaded
-        sql_explanation_visible: turn.sql_explanation_visible ?? false // Preserve visibility state or default to false
       }));
       
       this.currentChatId = chatId;
@@ -502,14 +500,8 @@ export class App implements OnInit, OnDestroy {
       const mostRecentTurn = this.conversation[this.conversation.length - 1];
       const chatTitle = mostRecentTurn?.embed?.title || this.conversation[0]?.question || 'New Chat';
 
-      // Ensure sql_explanation_visible is included in the saved conversation
-      const conversationToSave = this.conversation.map(turn => ({
-        ...turn,
-        sql_explanation_visible: turn.sql_explanation_visible || false
-      }));
-
       const response = await firstValueFrom(
-        this.apiService.saveChat<{chat_id: string}>(this.currentChatId, conversationToSave, chatTitle)
+        this.apiService.saveChat<{chat_id: string}>(this.currentChatId, this.conversation, chatTitle)
       );
 
       this.currentChatId = response.chat_id;

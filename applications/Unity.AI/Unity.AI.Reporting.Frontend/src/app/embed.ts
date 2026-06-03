@@ -7,6 +7,7 @@ export interface Embed {
     SQL: string;
     current_visualization?: string; // Current visualization type being displayed
     sql_explanation?: string; // Explanation of the generated SQL
+    sql_explanation_error?: boolean; // True when explanation generation failed; gates retry
     tokens?: {
         prompt_tokens: number;      // Input tokens (combined from SQL generation + explanation)
         completion_tokens: number;  // Output tokens (combined from SQL generation + explanation)
