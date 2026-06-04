@@ -46,6 +46,7 @@ export interface ModelProposal {
   source_view: string;
   columns: string[];
   excluded_columns: string[];
+  preview_data?: CardData | null;  // Real columns + 1 sample row from Metabase (null when SQL invalid)
   sqlExpanded: boolean;  // local UI state
 }
 

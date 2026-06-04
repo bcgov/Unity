@@ -30,7 +30,8 @@ class MetabaseClient:
             return config.get_tenant_metabase_headers(tenant_id)
         return self.headers
 
-    def execute_sql(self, sql: str, db_id: int, tenant_id: Optional[str] = None) -> Dict[str, Any]:
+    def execute_sql(self, sql: str, db_id: int, tenant_id: Optional[str] = None,
+                    max_rows: Optional[int] = None) -> Dict[str, Any]:
         """
         Execute SQL query via Metabase API.
 
@@ -38,6 +39,9 @@ class MetabaseClient:
             sql: SQL query to execute
             db_id: Database ID in Metabase
             tenant_id: Optional tenant ID to use tenant-specific API key
+            max_rows: Optional cap on rows returned by Metabase. When set, only
+                this many rows leave Metabase (avoids transferring the full
+                result just to sample a few rows). None returns the default cap.
 
         Returns:
             Query results from Metabase
@@ -47,6 +51,11 @@ class MetabaseClient:
             "type": "native",
             "native": {"query": sql}
         }
+        if max_rows is not None:
+            payload["constraints"] = {
+                "max-results": max_rows,
+                "max-results-bare-rows": max_rows,
+            }
 
         headers = self._get_headers(tenant_id)
 

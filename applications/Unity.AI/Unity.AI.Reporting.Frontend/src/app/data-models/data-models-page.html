@@ -372,8 +372,23 @@
                       }
                     </tr>
                   </thead>
+                  @if (modelProposal.preview_data && modelProposal.preview_data.rows.length) {
+                    <tbody>
+                      @for (row of modelProposal.preview_data.rows; track $index) {
+                        <tr>
+                          @for (cell of row; track $index) {
+                            <td>{{ formatCell(cell) }}</td>
+                          }
+                        </tr>
+                      }
+                    </tbody>
+                  }
                 </table>
-                <p class="dm-preview-note">{{ modelProposal.columns.length }} columns — sample rows available after saving to Metabase.</p>
+                @if (modelProposal.preview_data && modelProposal.preview_data.rows.length) {
+                  <p class="dm-preview-note">{{ modelProposal.columns.length }} columns — {{ modelProposal.preview_data.rows.length }} sample row(s).</p>
+                } @else {
+                  <p class="dm-preview-note">{{ modelProposal.columns.length }} columns — sample rows available after saving to Metabase.</p>
+                }
               </div>
             }
           }

@@ -76,6 +76,7 @@ class AppConfig:
     llm_judge_enabled: bool = False
     llm_judge_score_threshold: float = 8.0
     preview_row_limit: int = 1000
+    data_model_preview_row_limit: int = 1
 
 
 class Config:
@@ -120,6 +121,7 @@ class Config:
             llm_judge_enabled=os.getenv("LLM_JUDGE_ENABLED", "false").lower() == "true",
             llm_judge_score_threshold=float(os.getenv("LLM_JUDGE_SCORE_THRESHOLD", "8.0")),
             preview_row_limit=int(os.getenv("PREVIEW_ROW_LIMIT", "1000")),
+            data_model_preview_row_limit=int(os.getenv("DATA_MODEL_PREVIEW_ROW_LIMIT", "1")),
         )
     
     def _load_tenant_mappings(self) -> Dict[str, Dict[str, Any]]:

@@ -392,11 +392,12 @@ def _build_viz_settings(visualization_options: list) -> dict:
     return {}
 
 
-def _shape_card_data(card_data):
+def _shape_card_data(card_data, limit=None):
     """Turn Metabase's `{cols, rows}` payload into the frontend preview shape.
 
-    Truncates rows to `config.app.preview_row_limit`. Returns None when the
-    payload is missing or malformed so the frontend can fall back to button-only.
+    Truncates rows to `limit` (defaults to `config.app.preview_row_limit` when
+    None — the data-model preview passes its own smaller limit). Returns None when
+    the payload is missing or malformed so the frontend can fall back to button-only.
     """
     if not isinstance(card_data, dict):
         return None
@@ -405,7 +406,7 @@ def _shape_card_data(card_data):
     if not isinstance(cols, list) or not isinstance(rows, list):
         return None
 
-    limit = config.app.preview_row_limit
+    limit = config.app.preview_row_limit if limit is None else limit
     columns = [
         (c.get("display_name") or c.get("name") or "") if isinstance(c, dict) else str(c)
         for c in cols
@@ -417,6 +418,32 @@ def _shape_card_data(card_data):
         "total_rows": total_rows,
         "truncated": total_rows > limit,
     }
+
+
+def _attach_preview_to_proposal(proposal, db_id, tenant_id):
+    """Enrich a model proposal with real columns + a sample row from Metabase.
+
+    Executes the validated proposal SQL and reads the authoritative columns and a
+    one-row sample (the same source the frontend table renders), replacing the
+    generator's regex-inferred `columns`. This is what fixes added columns being
+    missing and bogus `...` headers in the review preview. On invalid SQL or any
+    failure, the generator's existing `columns` are kept and `preview_data` is None.
+    """
+    proposal["preview_data"] = None
+    if not proposal.get("valid") or not proposal.get("sql"):
+        return proposal
+    try:
+        raw = metabase_client.execute_sql(
+            proposal["sql"], db_id, tenant_id,
+            max_rows=config.app.data_model_preview_row_limit,
+        )
+        shaped = _shape_card_data(raw, limit=config.app.data_model_preview_row_limit)
+        if shaped is not None:
+            proposal["columns"] = shaped["columns"]
+            proposal["preview_data"] = shaped
+    except Exception as e:
+        logger.warning("Could not attach preview data to proposal: %s", e)
+    return proposal
 
 
 def _fuzzy_cache_lookup(tenant_id, db_id, schema_types, collection_name, normalized_query):
@@ -822,6 +849,7 @@ def preview_data_models():
                     view_names, db_id, tenant_id, core_fields
                 )
             )
+        _attach_preview_to_proposal(proposal, db_id, tenant_id)
         return jsonify({"proposal": proposal}), 200
     except Exception as e:
         logger.error(f"Error in /api/data-models/preview: {e}", exc_info=True)
@@ -976,7 +1004,7 @@ def data_model_preview_data():
         else:
             sql = metabase_client.get_native_query(dataset_query, tenant_id, db_id=db_id) or ""
         raw = metabase_client.execute_sql(sql, db_id, tenant_id)
-        shaped = _shape_card_data(raw)
+        shaped = _shape_card_data(raw, limit=config.app.data_model_preview_row_limit)
         if shaped is None:
             return _error_response("server_error", "Could not read query results.", 500)
         return jsonify(shaped), 200
@@ -1037,6 +1065,7 @@ def modify_data_model_preview():
                 core_fields=core_fields,
             )
         )
+        _attach_preview_to_proposal(result, db_id, tenant_id)
         return jsonify({"proposal": result}), 200
     except ValueError as e:
         return jsonify({"error": str(e)}), 400
