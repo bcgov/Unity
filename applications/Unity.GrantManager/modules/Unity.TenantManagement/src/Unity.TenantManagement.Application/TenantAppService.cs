@@ -137,15 +137,18 @@ public class TenantAppService(
         Tenant tenant = null;
 
         using (var uow = unitOfWorkManager.Begin(true, false))
-        {            
+        {
             tenant = await tenantManager.CreateAsync(input.Name);
+
+            var credentials = await tenantConnectionStringBuilder.GenerateCredentialsAsync();
 
             tenant.ConnectionStrings
                 .Add(new TenantConnectionString(tenant.Id,
                     UnityTenantManagementConsts.TenantConnectionStringName,
-                    tenantConnectionStringBuilder.Build(tenant.Name)));
+                    tenantConnectionStringBuilder.Build(tenant.Name, credentials)));
 
             // Set ExtraProperties from input
+            tenant.ExtraProperties[UnityTenantManagementConsts.TenantLicencePlateExtraPropertyKey] = credentials.DbName;
             tenant.ExtraProperties[ExtraPropDivision] = input.Division ?? string.Empty;
             tenant.ExtraProperties[ExtraPropBranch] = input.Branch ?? string.Empty;
             tenant.ExtraProperties[ExtraPropDescription] = input.Description ?? string.Empty;
