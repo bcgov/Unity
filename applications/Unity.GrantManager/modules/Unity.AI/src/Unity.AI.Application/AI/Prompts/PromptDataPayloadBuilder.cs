@@ -35,6 +35,16 @@ namespace Unity.AI.Prompts
             "simpleseparator"
         };
 
+        private static readonly HashSet<string> NonFieldRequirementComponentTypes =
+        [
+            "button",
+            "simplebuttonadvanced",
+            "html",
+            "htmlelement",
+            "content",
+            "simpleseparator"
+        ];
+
         private const string ComponentsKey = "components";
 
         private static readonly HashSet<string> ExcludedSchemaKeys = new(StringComparer.OrdinalIgnoreCase)
@@ -65,10 +75,14 @@ namespace Unity.AI.Prompts
             return JsonSerializer.SerializeToElement(fallbackPayload);
         }
 
-        public static List<AIAttachmentItem> BuildAttachmentSummaries(IEnumerable<ApplicationChefsFileAttachment> attachments)
+        public static List<AIAttachmentItem> BuildAttachmentSummaries(
+            IEnumerable<ApplicationChefsFileAttachment> attachments,
+            bool excludeWhitespaceOnlySummaries = true)
         {
             return attachments
-                .Where(a => !string.IsNullOrWhiteSpace(a.AISummary))
+                .Where(a => excludeWhitespaceOnlySummaries
+                    ? !string.IsNullOrWhiteSpace(a.AISummary)
+                    : !string.IsNullOrEmpty(a.AISummary))
                 .Select(a => new AIAttachmentItem
                 {
                     Name = string.IsNullOrWhiteSpace(a.FileName) ? "attachment" : a.FileName.Trim(),
@@ -289,7 +303,7 @@ namespace Unity.AI.Prompts
                 var label = component["label"]?.ToString();
                 var type = component["type"]?.ToString();
 
-                if (string.IsNullOrEmpty(key) || string.IsNullOrEmpty(type) || NonDataComponentTypes.Contains(type) || ExcludedSchemaKeys.Contains(key))
+                if (string.IsNullOrEmpty(key) || string.IsNullOrEmpty(type) || NonFieldRequirementComponentTypes.Contains(type) || ExcludedSchemaKeys.Contains(key))
                 {
                     ProcessNestedFieldRequirements(component, type, requiredFields, optionalFields, currentPath);
                     continue;
