@@ -44,13 +44,19 @@ $(function () {
         });
     }
 
-    // --- Scoresheet name filter & published toggle ---
+    // --- Scoresheet name filter, published toggle, and archived toggle ---
     $(document).on('input', '#scoresheet-name-filter', applyScoresheetFilters);
 
     $(document).on('click', '#scoresheet-published-toggle button', function () {
         $('#scoresheet-published-toggle button').removeClass('active');
         $(this).addClass('active');
         applyScoresheetFilters();
+    });
+
+    $(document).on('click', '.archive-scoresheet-btn', function () {
+        const scoresheetId = $(this).data('scoresheet-id');
+        const isArchived = $(this).data('is-archived') === true || $(this).data('is-archived') === 'true';
+        handleArchiveScoresheet(scoresheetId, isArchived);
     });
 
     applyScoresheetFilters();
@@ -66,12 +72,17 @@ function applyScoresheetFilters() {
         const title = $item.find('.scoresheet-title').text().toLowerCase();
         const name = $item.find('.scoresheet-name').text().toLowerCase();
         const isPublished = !$item.find('.scoresheet-published-icon').hasClass('hidden');
+        const isArchived = $item.data('is-archived') === true || $item.data('is-archived') === 'true';
 
         const matchesText = !searchText || title.includes(searchText) || name.includes(searchText);
         const matchesFilter =
-            publishedFilter === 'all' ||
-            (publishedFilter === 'published' && isPublished) ||
-            (publishedFilter === 'unpublished' && !isPublished);
+            publishedFilter === 'archived'
+                ? isArchived
+                : !isArchived && (
+                    publishedFilter === 'all' ||
+                    (publishedFilter === 'published' && isPublished) ||
+                    (publishedFilter === 'unpublished' && !isPublished)
+                );
 
         const visible = matchesText && matchesFilter;
         $item.toggle(visible);
@@ -79,6 +90,40 @@ function applyScoresheetFilters() {
     });
 
     $('#scoresheet-no-results').toggle(visibleCount === 0);
+}
+
+function handleArchiveScoresheet(scoresheetId, currentlyArchived) {
+    const l = abp.localization.getResource('Flex');
+    const label = currentlyArchived ? l('Scoresheet:Configuration:UnarchiveScoresheetButtonText') : l('Scoresheet:Configuration:ArchiveScoresheetButtonText');
+    const message = currentlyArchived
+        ? l('Scoresheet:Configuration:UnarchiveModal.Message')
+        : l('Scoresheet:Configuration:ArchiveModal.Message');
+
+    Swal.fire({
+        title: label + '?',
+        text: message,
+        showCancelButton: true,
+        confirmButtonText: l('Scoresheet:Configuration:ArchiveModal.Confirm'),
+        cancelButtonText: l('Scoresheet:Configuration:ArchiveModal.Cancel'),
+        customClass: {
+            confirmButton: 'btn btn-primary',
+            cancelButton: 'btn btn-secondary'
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            unity.flex.scoresheets.scoresheet.archive(scoresheetId, !currentlyArchived)
+                .done(function () {
+                    PubSub.publish('refresh_scoresheet_list', { scoresheetId: null });
+                    abp.notify.success(
+                        currentlyArchived ? l('Scoresheet:Configuration:UnarchivedSuccess') : l('Scoresheet:Configuration:ArchivedSuccess'),
+                        label
+                    );
+                })
+                .fail(function () {
+                    abp.notify.error(currentlyArchived ? l('Scoresheet:Configuration:UnarchiveFailed') : l('Scoresheet:Configuration:ArchiveFailed'));
+                });
+        }
+    });
 }
 
 function importScoresheetFile(inputId) {
