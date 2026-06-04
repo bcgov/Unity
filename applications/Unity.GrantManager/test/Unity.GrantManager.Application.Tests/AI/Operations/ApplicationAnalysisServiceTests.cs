@@ -96,6 +96,7 @@ public class ApplicationAnalysisServiceTests : GrantManagerApplicationTestBase
         var aiService = Substitute.For<IAIService>();
         aiService.GenerateApplicationAnalysisAsync(Arg.Do<ApplicationAnalysisRequest>(request => capturedRequest = request))
             .Returns(new ApplicationAnalysisResponse { Decision = "ok" });
+        var prerequisiteValidator = Substitute.For<IAIGenerationPrerequisiteValidator>();
 
         var service = new ApplicationAnalysisService(
             applicationRepository,
@@ -103,6 +104,7 @@ public class ApplicationAnalysisServiceTests : GrantManagerApplicationTestBase
             formVersionRepository,
             attachmentRepository,
             aiService,
+            prerequisiteValidator,
             NullLogger<ApplicationAnalysisService>.Instance);
 
         var result = await service.RegenerateAndSaveAsync(applicationId, "v1");
@@ -157,6 +159,7 @@ public class ApplicationAnalysisServiceTests : GrantManagerApplicationTestBase
         var aiService = Substitute.For<IAIService>();
         aiService.GenerateApplicationAnalysisAsync(Arg.Do<ApplicationAnalysisRequest>(request => capturedRequest = request))
             .Returns(new ApplicationAnalysisResponse());
+        var prerequisiteValidator = Substitute.For<IAIGenerationPrerequisiteValidator>();
 
         var service = new ApplicationAnalysisService(
             applicationRepository,
@@ -164,6 +167,7 @@ public class ApplicationAnalysisServiceTests : GrantManagerApplicationTestBase
             formVersionRepository,
             attachmentRepository,
             aiService,
+            prerequisiteValidator,
             NullLogger<ApplicationAnalysisService>.Instance);
 
         await service.RegenerateAndSaveAsync(applicationId);
