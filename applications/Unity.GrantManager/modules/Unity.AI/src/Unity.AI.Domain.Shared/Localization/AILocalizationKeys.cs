@@ -6,4 +6,9 @@ public static class AILocalizationKeys
     public const string ApplicationAnalysisDisabled = "AI:ApplicationAnalysisDisabled";
     public const string ScoringDisabled = "AI:ScoringDisabled";
     public const string GenerateAllDisabled = "AI:GenerateAllDisabled";
+    public const string NoAttachmentsAvailable = "AI:NoAttachmentsAvailable";
+    public const string ApplicationAnalysisRequiresSubmission = "AI:ApplicationAnalysisRequiresSubmission";
+    public const string ScoringRequiresScoresheet = "AI:ScoringRequiresScoresheet";
+    public const string ScoringRequiresScoresheetFields = "AI:ScoringRequiresScoresheetFields";
+    public const string SelectAttachmentForSummaries = "AI:SelectAttachmentForSummaries";
 }
