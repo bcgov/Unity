@@ -195,11 +195,7 @@ public class AbpExceptionNotificationSubscriber(
 
         try
         {
-            string blamePath =
-                ExceptionNotificationHelpers.BuildBlamePath(sourceFile);
-            string blamePath = ExceptionNotificationHelpers.BuildBlamePath(sourceFile, logger);
-
-            // Resolve blame lookup as optional — it may not be registered in some environments
+            string blamePath = ExceptionNotificationHelpers.BuildBlamePath(sourceFile);
             var blameService = services.GetService<IBlameLookupService>();
             if (blameService == null)
             {
@@ -229,37 +225,6 @@ public class AbpExceptionNotificationSubscriber(
 
             AddAuthorFact(facts, blame);
             AddCommitFact(facts, blame);
-            AddPullRequestFacts(facts, blame);
-                {
-                    return;
-                }
-
-                logger.LogInformation(
-                    "[ExceptionNotify] Blame lookup successful: {Author} {Commit}",
-                    blame.Author,
-                    blame.CommitSha);
-
-                AddAuthorFact(facts, blame);
-                AddCommitFact(facts, blame);
-                AddPullRequestFacts(facts, blame);
-            }
-            catch (Exception blameException)
-            {
-                logger.LogWarning(
-                    blameException,
-                    "Failed to enrich exception with GitHub blame information");
->>>>>>> f09149c73 (feature/AB#32049-FixBuildExceptionConsistency)
-            }
-
-            logger.LogInformation(
-                "[ExceptionNotify] Blame lookup successful: {Author} {Commit}",
-                blame.Author,
-                blame.CommitSha);
-
-            AddAuthorFact(facts, blame);
-
-            AddCommitFact(facts, blame);
-
             AddPullRequestFacts(facts, blame);
         }
         catch (Exception blameException)
