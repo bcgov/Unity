@@ -22,11 +22,14 @@ $(function () {
                 let row = getNewInputRow(newRowControl);
 
                 if (!validateInputCharacters(newRowControl))
-                    return;                    
+                    return;
+
+                let sanitizedLabel = sanitizeInput(row.label);
+                let sanitizedKey = sanitizeInput(row.key);
 
                 // Add valid row to table
                 $('#checkbox-options-table').find('tbody')
-                    .append(getCheckboxGroupRowTemplate(row.key, row.label));
+                    .append(getCheckboxGroupRowTemplate(sanitizedKey, sanitizedLabel));
 
                 cancelAddRow();
 
@@ -95,43 +98,10 @@ $(function () {
 });
 
 function getCheckboxGroupRowTemplate(key, label) {
-    let $row = $('<tr>');
-
-    let $keyInput = $('<input>', {
-        type: 'text',
-        class: 'form-control key-input',
-        name: 'CheckboxKeys',
-        minlength: 1,
-        maxlength: 60,
-        required: true,
-        id: 'new-chk-key-' + key
-    }).val(key);
-
-    let $labelInput = $('<input>', {
-        type: 'text',
-        class: 'form-control',
-        name: 'CheckboxLabels',
-        maxlength: 100,
-        required: true,
-        id: 'new-chk-label-' + key
-    }).val(label);
-
-    let $button = $('<button>', {
-        id: 'data-btn-' + key,
-        class: 'delete-checkbox-option btn btn-danger',
-        type: 'button',
-        'data-busy-text': 'Processing...',
-        'data-bs-toggle': 'tooltip',
-        'data-bs-placement': 'top',
-        'aria-label': 'Delete',
-        'data-bs-original-title': 'Delete'
-    }).append($('<i>', { class: 'fl fl-delete' }));
-
-    $row
-        .append($('<td>').append($keyInput))
-        .append($('<td>').append($labelInput))
-        .append($('<td>').append($button));
-
-    return $row;
+    return `<tr>
+        <td><input type="text" class="form-control key-input" name="CheckboxKeys" value="${key}" minlength="1" maxlength="60" required pattern="[a-zA-Z0-9 ]+" id="new-chk-key-${key}" /></td>
+        <td><input type="text" class="form-control" name="CheckboxLabels" value="${label}" maxlength="100" required id="new-chk-label-${key}" /></td>
+        <td><button id="data-btn-${key}" class="delete-checkbox-option btn btn-danger" type="button" data-busy-text="Processing..." data-bs-toggle="tooltip" data-bs-placement="top" aria-label="Delete" data-bs-original-title="Delete"><i class="fl fl-delete"></i></button></td>
+    </tr>`;
 }
 
