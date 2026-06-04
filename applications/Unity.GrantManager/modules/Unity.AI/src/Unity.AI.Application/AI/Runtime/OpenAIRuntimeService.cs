@@ -99,13 +99,13 @@ namespace Unity.AI.Runtime
                 AIProviderPayloadValidator.IsValidApplicationAnalysisJson,
                 "application analysis",
                 cancellationToken);
-            await LogPromptOutputAsync(ApplicationAnalysisPromptType, promptVersion, result.CaptureOutput, cancellationToken);
 
             if (result.Outcome != AIOperationOutcome.Success)
             {
                 return new ApplicationAnalysisResponse();
             }
 
+            await LogPromptOutputAsync(ApplicationAnalysisPromptType, promptVersion, result.CaptureOutput, cancellationToken);
             return OpenAIResponseParser.ParseApplicationAnalysisResponse(result.Content);
         }
 
@@ -154,7 +154,6 @@ namespace Unity.AI.Runtime
                     AIProviderPayloadValidator.IsValidAttachmentSummaryText,
                     "attachment summary",
                     cancellationToken);
-                await LogPromptOutputAsync(AttachmentSummaryPromptType, promptVersion, result.CaptureOutput, cancellationToken);
 
                 if (result.Outcome != AIOperationOutcome.Success)
                 {
@@ -164,6 +163,7 @@ namespace Unity.AI.Runtime
                     };
                 }
 
+                await LogPromptOutputAsync(AttachmentSummaryPromptType, promptVersion, result.CaptureOutput, cancellationToken);
                 return new AttachmentSummaryResponse
                 {
                     Summary = ExtractSummaryFromJson(result.Content)
@@ -230,13 +230,13 @@ namespace Unity.AI.Runtime
                     content => AIProviderPayloadValidator.IsValidApplicationScoringJson(content, section),
                     $"application scoring section {request.SectionName}",
                     cancellationToken);
-                await LogPromptOutputAsync(ApplicationScoringPromptType, promptVersion, result.CaptureOutput, cancellationToken);
 
                 if (result.Outcome != AIOperationOutcome.Success)
                 {
                     return new ApplicationScoringResponse();
                 }
 
+                await LogPromptOutputAsync(ApplicationScoringPromptType, promptVersion, result.CaptureOutput, cancellationToken);
                 return OpenAIResponseParser.ParseApplicationScoringResponse(result.Content, questionIdAliasMap);
             }
             catch (OperationCanceledException)
