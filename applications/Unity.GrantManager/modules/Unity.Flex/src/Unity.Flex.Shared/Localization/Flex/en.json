@@ -16,6 +16,8 @@
     "Scoresheet:Configuration:CloneScoresheetButtonText": "CLONE",
     "Scoresheet:Configuration:PublishScoresheetButtonText": "PUBLISH",
     "Scoresheet:Configuration:ExportScoresheetButtonText": "EXPORT",
+    "Scoresheet:Configuration:ArchiveScoresheetButtonText": "ARCHIVE",
+    "Scoresheet:Configuration:UnarchiveScoresheetButtonText": "UNARCHIVE",
     "Scoresheet:Configuration:SaveChangesButtonText": "SAVE CHANGES",
     "Scoresheet:Configuration:DiscardChangesButtonText": "DISCARD CHANGES",
     "Worksheet:Configuration:SaveChangesButtonText": "SAVE CHANGES",

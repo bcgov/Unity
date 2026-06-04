@@ -197,6 +197,14 @@ namespace Unity.Flex.Scoresheets
             }
         }
 
+        public virtual async Task<bool> ArchiveAsync(Guid id, bool archive)
+        {
+            var scoresheet = await scoresheetRepository.GetAsync(id);
+            scoresheet.SetArchived(archive);
+            await scoresheetRepository.UpdateAsync(scoresheet);
+            return true;
+        }
+
         public async Task PublishScoresheetAsync(Guid id)
         {
             var scoresheet = await scoresheetRepository.GetAsync(id);

@@ -17,6 +17,7 @@ namespace Unity.Flex.Domain.Scoresheets
         public virtual uint Version { get; set; } = 1;
         public virtual uint Order { get; set; } = 0;
         public virtual bool Published { get; set; } = false;
+        public virtual bool IsArchived { get; private set; } = false;
         public Guid? TenantId { get; set; }
 
         // For reporting purposes
@@ -85,6 +86,12 @@ namespace Unity.Flex.Domain.Scoresheets
         public Scoresheet IncreaseVersion()
         {
             Version++;
+            return this;
+        }
+
+        public Scoresheet SetArchived(bool archived)
+        {
+            IsArchived = archived;
             return this;
         }
 
