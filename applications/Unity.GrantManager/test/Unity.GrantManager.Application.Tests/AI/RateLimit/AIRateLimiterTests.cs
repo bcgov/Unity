@@ -58,6 +58,17 @@ public class AIRateLimiterTests
     }
 
     [Fact]
+    public async Task GetStateAsync_Does_Not_Acquire_Cooldown_Lock()
+    {
+        var lockProvider = new CountingDistributedLockProvider();
+        var limiter = new AIRateLimiter(_cache, _currentUser, _configuration, lockProvider, []);
+
+        await limiter.GetStateAsync();
+
+        lockProvider.CreatedLockCount.ShouldBe(0);
+    }
+
+    [Fact]
     public async Task EnsureAsync_AllowsThrough_When_NoCooldown()
     {
         await NewLimiter().EnsureAsync();
@@ -165,6 +176,17 @@ public class AIRateLimiterTests
     private sealed class TestDistributedLockProvider : IDistributedLockProvider
     {
         public IDistributedLock CreateLock(string name) => new TestDistributedLock(name);
+    }
+
+    private sealed class CountingDistributedLockProvider : IDistributedLockProvider
+    {
+        public int CreatedLockCount { get; private set; }
+
+        public IDistributedLock CreateLock(string name)
+        {
+            CreatedLockCount++;
+            return new TestDistributedLock(name);
+        }
     }
 
     private sealed class TestDistributedLock(string name) : IDistributedLock

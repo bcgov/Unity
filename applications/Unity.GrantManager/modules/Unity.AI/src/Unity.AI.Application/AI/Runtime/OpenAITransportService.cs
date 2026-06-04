@@ -93,7 +93,10 @@ public class OpenAITransportService(
 
             if (!response.IsSuccessStatusCode)
             {
-                _logger.LogError("OpenAI API request failed: {StatusCode} - {Content}", response.StatusCode, responseContent);
+                _logger.LogError(
+                    "OpenAI API request failed with status {StatusCode}. Response body length: {ResponseLength}.",
+                    response.StatusCode,
+                    responseContent.Length);
                 return MapFailureOutcome(response.StatusCode, providerResponse);
             }
 
