@@ -1,9 +1,10 @@
+using Azure.AI.OpenAI;
 using Microsoft.Extensions.Logging;
+using OpenAI.Chat;
 using System;
+using System.ClientModel;
 using System.Collections.Generic;
 using System.Net;
-using System.Net.Http;
-using System.Text;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -12,11 +13,9 @@ using Volo.Abp.DependencyInjection;
 namespace Unity.AI.Runtime;
 
 public class OpenAITransportService(
-    HttpClient httpClient,
     OpenAIConfigurationResolver configurationResolver,
     ILogger<OpenAITransportService> logger) : ITransientDependency
 {
-    private readonly HttpClient _httpClient = httpClient;
     private readonly OpenAIConfigurationResolver _configurationResolver = configurationResolver;
     private readonly ILogger<OpenAITransportService> _logger = logger;
 
@@ -30,105 +29,67 @@ public class OpenAITransportService(
         string? fileName = null,
         CancellationToken cancellationToken = default)
     {
-        var providerName = _configurationResolver.ResolveProviderName(operationName);
-        if (!string.Equals(providerName, "OpenAI", StringComparison.Ordinal))
-        {
-            _logger.LogWarning("Provider {ProviderName} is not supported by OpenAI transport.", providerName);
-            return AIOperationResult.PermanentFailure(new AIProviderResult($"Unsupported provider: {providerName}"));
-        }
-
-        var apiKey = _configurationResolver.ResolveApiKey(operationName);
         try
         {
+            var providerName = _configurationResolver.ResolveProviderName(operationName);
+            if (!string.Equals(providerName, "OpenAI", StringComparison.Ordinal))
+            {
+                _logger.LogWarning("Provider {ProviderName} is not supported by OpenAI transport.", providerName);
+                return AIOperationResult.PermanentFailure(new AIProviderResult($"Unsupported provider: {providerName}"));
+            }
+
+            var apiKey = _configurationResolver.ResolveApiKey(operationName);
             var resolvedSystemPrompt = string.IsNullOrWhiteSpace(systemPrompt)
                 ? "You are a professional grant analyst for the BC Government."
                 : systemPrompt;
 
-            var requestPayload = new Dictionary<string, object?>
+            var clientOptions = new AzureOpenAIClientOptions();
+            var resolvedApiVersion = _configurationResolver.ResolveApiVersion(operationName);
+            // Note: Azure SDK uses its default API version. Configured version is parsed for documentation/future use.
+            if (!string.IsNullOrEmpty(resolvedApiVersion))
             {
-                ["messages"] = new[]
-                {
-                    new { role = "system", content = resolvedSystemPrompt },
-                    new { role = "user", content = content ?? string.Empty }
-                },
-                [_configurationResolver.ResolveMaxTokensParameterNameForOperation(operationName)] = maxTokens
+                _logger.LogDebug("Profile specifies API version {ApiVersion}; SDK will use its default", resolvedApiVersion);
+            }
+
+            var client = new AzureOpenAIClient(
+                _configurationResolver.ResolveEndpoint(operationName),
+                new ApiKeyCredential(apiKey),
+                clientOptions)
+                .GetChatClient(_configurationResolver.ResolveDeploymentName(operationName));
+
+            var options = new ChatCompletionOptions
+            {
+                MaxOutputTokenCount = maxTokens
             };
 
             var profileTemperature = _configurationResolver.ResolveConfiguredTemperature(operationName);
-            var resolvedTemperature = profileTemperature.HasValue ? temperature ?? profileTemperature : null;
+            var resolvedTemperature = temperature ?? profileTemperature;
             if (resolvedTemperature.HasValue)
             {
-                requestPayload["temperature"] = resolvedTemperature.Value;
+                options.Temperature = (float)resolvedTemperature.Value;
             }
 
-            var reasoningEffort = _configurationResolver.ResolveConfiguredReasoningEffort(operationName);
-            if (!string.IsNullOrWhiteSpace(reasoningEffort))
-            {
-                requestPayload["reasoning_effort"] = reasoningEffort;
-            }
+            var result = await client.CompleteChatAsync(
+                [
+                    new SystemChatMessage(resolvedSystemPrompt),
+                    new UserChatMessage(content ?? string.Empty)
+                ],
+                options,
+                cancellationToken);
 
-            var verbosity = _configurationResolver.ResolveConfiguredVerbosity(operationName);
-            if (!string.IsNullOrWhiteSpace(verbosity))
-            {
-                requestPayload["verbosity"] = verbosity;
-            }
-
-            var json = JsonSerializer.Serialize(requestPayload);
-            var httpContent = new StringContent(json, Encoding.UTF8, "application/json");
-
-            using var request = new HttpRequestMessage(HttpMethod.Post, _configurationResolver.ResolveApiUrl(operationName))
-            {
-                Content = httpContent
-            };
-            request.Headers.TryAddWithoutValidation("Authorization", apiKey);
-
-            using var response = await _httpClient.SendAsync(request, cancellationToken);
-            var responseContent = await response.Content.ReadAsStringAsync(cancellationToken);
-            var metadata = TryExtractProviderMetadata(responseContent);
+            var completion = result.Value;
+            var rawResponse = result.GetRawResponse();
+            var responseContent = rawResponse.Content.ToString();
+            var modelOutput = completion.Content.Count > 0 ? completion.Content[0].Text : null;
             var providerResponse = BuildProviderResponseFromMetadata(
-                string.Empty,
+                modelOutput ?? string.Empty,
                 responseContent,
-                metadata,
-                (int)response.StatusCode);
+                TryExtractProviderMetadata(responseContent),
+                rawResponse.Status);
 
-            if (!response.IsSuccessStatusCode)
-            {
-                _logger.LogError(
-                    "OpenAI API request failed with status {StatusCode}. Response body length: {ResponseLength}.",
-                    response.StatusCode,
-                    responseContent.Length);
-                return MapFailureOutcome(response.StatusCode, providerResponse);
-            }
-
-            if (string.IsNullOrWhiteSpace(responseContent))
-            {
-                return AIOperationResult.InvalidOutput(providerResponse);
-            }
-
-            try
-            {
-                using var jsonDoc = JsonDocument.Parse(responseContent);
-                var choices = jsonDoc.RootElement.GetProperty("choices");
-                if (choices.GetArrayLength() > 0)
-                {
-                    var message = choices[0].GetProperty("message");
-                    var modelOutput = message.GetProperty("content").GetString();
-                    return string.IsNullOrWhiteSpace(modelOutput)
-                        ? AIOperationResult.InvalidOutput(providerResponse)
-                        : AIOperationResult.Success(BuildProviderResponseFromMetadata(
-                            modelOutput,
-                            responseContent,
-                            metadata,
-                            (int)response.StatusCode));
-                }
-
-                return AIOperationResult.InvalidOutput(providerResponse);
-            }
-            catch (Exception ex) when (ex is JsonException || ex is KeyNotFoundException || ex is InvalidOperationException)
-            {
-                _logger.LogWarning(ex, "AI response payload had an invalid output shape");
-                return AIOperationResult.InvalidOutput(providerResponse);
-            }
+            return string.IsNullOrWhiteSpace(modelOutput)
+                ? AIOperationResult.InvalidOutput(providerResponse)
+                : AIOperationResult.Success(providerResponse);
         }
         catch (OperationCanceledException)
         {
@@ -138,6 +99,21 @@ public class OpenAITransportService(
         {
             _logger.LogError(ex, "AI request configuration is invalid.");
             return AIOperationResult.PermanentFailure(new AIProviderResult(ex.Message));
+        }
+        catch (ClientResultException ex)
+        {
+            int? statusCode = ex.Status > 0 ? ex.Status : null;
+            var responseContent = ex.GetRawResponse()?.Content?.ToString() ?? ex.Message;
+            var providerResponse = BuildProviderResponseFromMetadata(
+                string.Empty,
+                responseContent,
+                TryExtractProviderMetadata(responseContent),
+                statusCode);
+
+            _logger.LogError(ex, "OpenAI API request failed: {StatusCode} - {Content}", statusCode, responseContent);
+            return statusCode.HasValue
+                ? MapFailureOutcome((HttpStatusCode)statusCode.Value, providerResponse)
+                : AIOperationResult.TransientFailure(providerResponse);
         }
         catch (Exception ex)
         {
