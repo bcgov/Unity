@@ -274,6 +274,15 @@ select.selected {
 
 .details-nav .nav-link {
     display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    height: 42px;
+    line-height: 1.5;
+}
+
+.details-nav .nav-link i {
+    line-height: 1;
 }
 
 .details-nav .nav-link .fl {
@@ -675,35 +684,6 @@ form label.error {
     color: #842029;
     background-color: #f8d7da;
     border-color: #f5c2c7;
-}
-
-#ai-analysis-tab {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-}
-
-.ai-analysis-tab-icon-wrap {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.ai-analysis-tab-indicator {
-    width: 8px;
-    height: 8px;
-    border-radius: 999px;
-    background-color: #adb5bd;
-    flex-shrink: 0;
-}
-
-.ai-analysis-tab-indicator.proceed {
-    background-color: #198754;
-}
-
-.ai-analysis-tab-indicator.hold {
-    background-color: #dc3545;
 }
 
 .ai-analysis-action-btn {

@@ -33,7 +33,7 @@ $(function () {
                 });
             }, 10);
 
-            $(downloadAll).prop('disabled', result.length === 0);
+            $(downloadAll).prop('disabled', true);
             selectedAttachmentIds = [];
             setGenerateSummariesEnabled();
 
@@ -68,6 +68,10 @@ $(function () {
         $('#generateAiSummaries').prop('disabled', selectedAttachmentIds.length === 0);
     }
 
+    function setDownloadAllEnabled() {
+        $(downloadAll).prop('disabled', selectedAttachmentIds.length === 0);
+    }
+
     function setSelectAllState() {
         const totalCheckboxes = $('#ChefsAttachmentsTable .chkbox').length;
         const selectedCheckboxes = $('#ChefsAttachmentsTable .chkbox:checked').length;
@@ -83,6 +87,7 @@ $(function () {
         chefsDataTable.$('.chkbox').prop('checked', false);
         $('.select-all-chefs-files').prop('checked', false);
         setGenerateSummariesEnabled();
+        setDownloadAllEnabled();
     }
 
     function setAllAttachmentSelections(isSelected) {
@@ -205,16 +210,16 @@ $(function () {
                     applicationId: getApplicationId(),
                     attachmentIds: summaryAttachmentIds
                 })
-                .done(function (request) {
+                .done(function (generationStatus) {
+                    const request = generationStatus?.generationRequest;
                     const status = globalThis.AIGenerationButtonState?.resolveStatus(request?.status) ?? '';
 
                     if (status === 'Completed') {
                         resetAttachmentSelection();
                         chefsDataTable.ajax.reload();
                         abp.notify.success('AI summaries generated successfully.');
-                        globalThis.AIGenerationButtonState?.restore($activeButton);
-                        $activeButton.html(existingHTML).prop('disabled', false);
-                        globalThis.syncAIRateLimitButtons?.();
+                        globalThis.AIGenerationButtonState?.restoreForCooldownCheck($activeButton, existingHTML);
+                        globalThis.AIGenerationButtonState?.applyStatusState(generationStatus);
                         return;
                     }
 
@@ -335,6 +340,7 @@ $(function () {
         });
         setGenerateSummariesEnabled();
         setSelectAllState();
+        setDownloadAllEnabled();
     });
 
     chefsDataTable.on('deselect', function (e, dt, type, indexes) {
@@ -352,6 +358,7 @@ $(function () {
         });
         setGenerateSummariesEnabled();
         setSelectAllState();
+        setDownloadAllEnabled();
     });
 
     $('#resyncSubmissionAttachments').on('click', function () {
@@ -381,7 +388,7 @@ $(function () {
         const _this = $(this);
         const existingHTML = _this.html();
         const zip = new JSZip();
-        const tempFiles = chefsDataTable.rows().data().toArray().map((row) => ({
+        const tempFiles = chefsDataTable.rows({ selected: true }).data().toArray().map((row) => ({
             FormSubmissionId: row.chefsSubmissionId,
             ChefsFileId: row.chefsFileId,
             Filename: row.fileName,

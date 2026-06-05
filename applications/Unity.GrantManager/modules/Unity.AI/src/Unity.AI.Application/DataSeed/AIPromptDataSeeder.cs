@@ -278,7 +278,7 @@ public class AIPromptDataSeeder(
 
         TASK
         Using SCHEMA, DATA, ATTACHMENTS, RUBRIC, SCORE, OUTPUT, and RULES:
-        1. Review the application and attachments for the strongest reviewer-relevant evidence.
+        1. Review the application and any provided attachments for the strongest reviewer-relevant evidence.
         2. Determine which conclusions are directly supported by that evidence.
         3. Exclude weak, repetitive, or loosely supported conclusions.
         4. Return only the strongest evidence-backed reviewer conclusions.
@@ -520,7 +520,7 @@ public class AIPromptDataSeeder(
         Using DATA, ATTACHMENTS, SECTION, RESPONSE, OUTPUT, and RULES:
         1. Review each question in SECTION one at a time.
         2. Identify the exact condition the question asks about.
-        3. Consider only the most relevant evidence in DATA and ATTACHMENTS for that condition.
+        3. Consider only the most relevant evidence in DATA and any provided ATTACHMENTS for that condition.
         4. Choose the most conservative valid answer supported by that evidence.
         5. If evidence is incomplete or indirect, explain the uncertainty in the rationale.
         6. Repeat for every question in SECTION.
@@ -583,6 +583,7 @@ public class AIPromptDataSeeder(
     // ── v1/common.rules.txt ──────────────────────────────────────────────────
     private const string CommonRules = """
         - Any narrative text response must be at least 12 words.
+        - If ATTACHMENTS is empty, use DATA only and do not mention missing attachments unless their absence is material to the specific conclusion or question.
         - Return values exactly as specified in OUTPUT.
         - Do not return keys outside OUTPUT.
         - Return valid JSON only.

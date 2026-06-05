@@ -451,13 +451,14 @@ globalThis.queueApplicationAnalysis = function(triggerButton = null) {
 
     unity.grantManager.grantApplications.grantApplication
         .queueApplicationAnalysis(applicationId)
-        .done(function(request) {
+        .done(function(generationStatus) {
+            const request = generationStatus?.generationRequest;
             const status = globalThis.AIGenerationButtonState?.resolveStatus(request?.status) ?? '';
 
             if (status === 'Completed') {
                 globalThis.AIGenerationButtonState?.restoreForCooldownCheck($button, existingHtml);
+                globalThis.AIGenerationButtonState?.applyStatusState(generationStatus);
                 loadAIAnalysis();
-                globalThis.syncAIRateLimitButtons?.();
                 return;
             }
 
@@ -540,7 +541,8 @@ $(function() {
 
         unity.grantManager.grantApplications.grantApplication
             .getAIGenerationStatus(applicationId, 'application-analysis')
-            .done(function(request) {
+            .done(function(generationStatus) {
+                const request = generationStatus?.generationRequest;
                 if (request?.isActive !== true) {
                     return;
                 }

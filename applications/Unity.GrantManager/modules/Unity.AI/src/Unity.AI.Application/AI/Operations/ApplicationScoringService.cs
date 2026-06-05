@@ -10,8 +10,11 @@ using Unity.AI.Models;
 using Unity.AI.Prompts;
 using Unity.AI.Requests;
 using Unity.AI.Runtime;
+using Unity.AI.Localization;
 using Unity.GrantManager.Applications;
+using Volo.Abp;
 using Volo.Abp.DependencyInjection;
+using Microsoft.Extensions.Localization;
 
 namespace Unity.AI.Operations
 {
@@ -24,7 +27,8 @@ namespace Unity.AI.Operations
         IScoresheetRepository scoresheetRepository,
         IAIService aiService,
         AIExecutionModeResolver executionModeResolver,
-        ILogger<ApplicationScoringService> logger) : IApplicationScoringService, ITransientDependency
+        ILogger<ApplicationScoringService> logger,
+        IStringLocalizer<AIResource> localizer) : IApplicationScoringService, ITransientDependency
     {
         public async Task<string> RegenerateAndSaveAsync(Guid applicationId, string? promptVersion = null, CancellationToken cancellationToken = default)
         {
@@ -32,24 +36,19 @@ namespace Unity.AI.Operations
             var applicationForm = await applicationFormRepository.GetAsync(application.ApplicationFormId);
             if (applicationForm.ScoresheetId == null)
             {
-                return "{}";
+                throw new UserFriendlyException(localizer[AILocalizationKeys.ScoringRequiresScoresheet]);
             }
 
             var scoresheet = await scoresheetRepository.GetWithChildrenAsync(applicationForm.ScoresheetId.Value);
-            if (scoresheet == null)
+            if (scoresheet == null || !scoresheet.Sections.Any() || !scoresheet.Sections.SelectMany(s => s.Fields).Any())
             {
-                return "{}";
+                throw new UserFriendlyException(localizer[AILocalizationKeys.ScoringRequiresScoresheetFields]);
             }
 
             var attachments = await applicationChefsFileAttachmentRepository.GetListAsync(a => a.ApplicationId == applicationId);
-            var attachmentSummaries = attachments
-                .Where(a => !string.IsNullOrEmpty(a.AISummary))
-                .Select(a => new AIAttachmentItem
-                {
-                    Name = string.IsNullOrWhiteSpace(a.FileName) ? "attachment" : a.FileName.Trim(),
-                    Summary = a.AISummary!.Trim()
-                })
-                .ToList();
+            var attachmentSummaries = PromptDataPayloadBuilder.BuildAttachmentSummaries(
+                attachments,
+                excludeWhitespaceOnlySummaries: false);
 
             var formSubmission = await applicationFormSubmissionRepository.GetByApplicationAsync(applicationId);
             var formSchema = await GetFormSchemaAsync(formSubmission?.ApplicationFormVersionId);

@@ -99,13 +99,13 @@ namespace Unity.AI.Runtime
                 AIProviderPayloadValidator.IsValidApplicationAnalysisJson,
                 "application analysis",
                 cancellationToken);
-            await LogPromptOutputAsync(ApplicationAnalysisPromptType, promptVersion, result.CaptureOutput, cancellationToken);
 
             if (result.Outcome != AIOperationOutcome.Success)
             {
                 return new ApplicationAnalysisResponse();
             }
 
+            await LogPromptOutputAsync(ApplicationAnalysisPromptType, promptVersion, result.CaptureOutput, cancellationToken);
             return OpenAIResponseParser.ParseApplicationAnalysisResponse(result.Content);
         }
 
@@ -154,7 +154,6 @@ namespace Unity.AI.Runtime
                     AIProviderPayloadValidator.IsValidAttachmentSummaryText,
                     "attachment summary",
                     cancellationToken);
-                await LogPromptOutputAsync(AttachmentSummaryPromptType, promptVersion, result.CaptureOutput, cancellationToken);
 
                 if (result.Outcome != AIOperationOutcome.Success)
                 {
@@ -164,6 +163,7 @@ namespace Unity.AI.Runtime
                     };
                 }
 
+                await LogPromptOutputAsync(AttachmentSummaryPromptType, promptVersion, result.CaptureOutput, cancellationToken);
                 return new AttachmentSummaryResponse
                 {
                     Summary = ExtractSummaryFromJson(result.Content)
@@ -198,7 +198,7 @@ namespace Unity.AI.Runtime
             {
                 var attachments = attachmentSummaries.Count > 0
                     ? string.Join("\n- ", attachmentSummaries.Select((summary, index) => $"Attachment {index + 1}: {summary}"))
-                    : "No attachments provided.";
+                    : "[]";
 
                 var section = OpenAIPromptRenderer.BuildAliasedApplicationScoringSection(request.SectionName, sectionJson, out var questionIdAliasMap);
                 var response = OpenAIPromptRenderer.BuildApplicationScoringResponseTemplate(section);
@@ -230,13 +230,13 @@ namespace Unity.AI.Runtime
                     content => AIProviderPayloadValidator.IsValidApplicationScoringJson(content, section),
                     $"application scoring section {request.SectionName}",
                     cancellationToken);
-                await LogPromptOutputAsync(ApplicationScoringPromptType, promptVersion, result.CaptureOutput, cancellationToken);
 
                 if (result.Outcome != AIOperationOutcome.Success)
                 {
                     return new ApplicationScoringResponse();
                 }
 
+                await LogPromptOutputAsync(ApplicationScoringPromptType, promptVersion, result.CaptureOutput, cancellationToken);
                 return OpenAIResponseParser.ParseApplicationScoringResponse(result.Content, questionIdAliasMap);
             }
             catch (OperationCanceledException)
@@ -317,15 +317,23 @@ namespace Unity.AI.Runtime
 
         private async Task LogPromptInputAsync(string promptType, string promptVersion, string? systemPrompt, string userPrompt, CancellationToken cancellationToken = default)
         {
+            if (!CanWritePromptFileLog())
+            {
+                return;
+            }
+
             var formattedInput = FormatPromptInputForLog(systemPrompt, userPrompt);
-            _logger.LogInformation("AI {PromptType} ({PromptVersion}) input payload: {PromptInput}", promptType, promptVersion, formattedInput);
             await WritePromptLogFileAsync(promptType, promptVersion, "INPUT", formattedInput, cancellationToken);
         }
 
         private async Task LogPromptOutputAsync(string promptType, string promptVersion, string output, CancellationToken cancellationToken = default)
         {
+            if (!CanWritePromptFileLog())
+            {
+                return;
+            }
+
             var formattedOutput = FormatPromptOutputForLog(output);
-            _logger.LogInformation("AI {PromptType} ({PromptVersion}) model output payload: {ModelOutput}", promptType, promptVersion, formattedOutput);
             await WritePromptLogFileAsync(promptType, promptVersion, "OUTPUT", formattedOutput, cancellationToken);
         }
 

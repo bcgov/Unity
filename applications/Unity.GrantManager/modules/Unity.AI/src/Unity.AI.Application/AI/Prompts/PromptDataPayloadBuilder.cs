@@ -4,6 +4,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
+using System.Threading.Tasks;
+using Unity.AI.Models;
 using Unity.GrantManager.Applications;
 
 namespace Unity.AI.Prompts
@@ -33,6 +35,23 @@ namespace Unity.AI.Prompts
             "simpleseparator"
         };
 
+        private static readonly HashSet<string> NonFieldRequirementComponentTypes = new(StringComparer.OrdinalIgnoreCase)
+        {
+            "button",
+            "simplebuttonadvanced",
+            "html",
+            "htmlelement",
+            "content",
+            "simpleseparator"
+        };
+
+        private const string ComponentsKey = "components";
+
+        private static readonly HashSet<string> ExcludedSchemaKeys = new(StringComparer.OrdinalIgnoreCase)
+        {
+            "applicantAgent"
+        };
+
         public static JsonElement BuildPromptDataPayload(
             Application application,
             ApplicationFormSubmission? formSubmission,
@@ -54,6 +73,64 @@ namespace Unity.AI.Prompts
             }
 
             return JsonSerializer.SerializeToElement(fallbackPayload);
+        }
+
+        public static List<AIAttachmentItem> BuildAttachmentSummaries(
+            IEnumerable<ApplicationChefsFileAttachment> attachments,
+            bool excludeWhitespaceOnlySummaries = true)
+        {
+            return attachments
+                .Where(a => excludeWhitespaceOnlySummaries
+                    ? !string.IsNullOrWhiteSpace(a.AISummary)
+                    : !string.IsNullOrEmpty(a.AISummary))
+                .Select(a => new AIAttachmentItem
+                {
+                    Name = string.IsNullOrWhiteSpace(a.FileName) ? "attachment" : a.FileName.Trim(),
+                    Summary = a.AISummary!.Trim()
+                })
+                .ToList();
+        }
+
+        public static async Task<object> BuildFormFieldConfigurationAsync(
+            IApplicationFormVersionRepository applicationFormVersionRepository,
+            Guid? formVersionId,
+            ILogger logger)
+        {
+            if (formVersionId == null)
+            {
+                return new { message = "Form configuration not available." };
+            }
+
+            try
+            {
+                var formVersion = await applicationFormVersionRepository.GetAsync(formVersionId.Value);
+                if (formVersion == null || string.IsNullOrWhiteSpace(formVersion.FormSchema))
+                {
+                    return new { message = "Form configuration not available." };
+                }
+
+                var schema = JObject.Parse(formVersion.FormSchema);
+                var components = schema[ComponentsKey] as JArray;
+                if (components == null || components.Count == 0)
+                {
+                    return new { message = "No form fields configured." };
+                }
+
+                var requiredFields = new List<string>();
+                var optionalFields = new List<string>();
+                ExtractFieldRequirements(components, requiredFields, optionalFields, string.Empty);
+
+                return new
+                {
+                    required_fields = requiredFields,
+                    optional_fields = optionalFields
+                };
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Error extracting form field configuration for form version {FormVersionId}", formVersionId);
+                return new { message = "Form configuration could not be extracted." };
+            }
         }
 
         private static object BuildFallbackPromptDataPayload(Application application)
@@ -164,7 +241,7 @@ namespace Unity.AI.Prompts
             try
             {
                 var schema = JObject.Parse(formSchema);
-                if (schema["components"] is not JArray components)
+                if (schema[ComponentsKey] is not JArray components)
                 {
                     return new HashSet<string>(StringComparer.OrdinalIgnoreCase);
                 }
@@ -215,6 +292,82 @@ namespace Unity.AI.Prompts
                         ExtractSchemaKeys(columnComponents, keys);
                     }
                 }
+            }
+        }
+
+        private static void ExtractFieldRequirements(JArray components, List<string> requiredFields, List<string> optionalFields, string currentPath)
+        {
+            foreach (var component in components.OfType<JObject>())
+            {
+                var key = component["key"]?.ToString();
+                var label = component["label"]?.ToString();
+                var type = component["type"]?.ToString();
+
+                if (string.IsNullOrEmpty(key) || string.IsNullOrEmpty(type) || NonFieldRequirementComponentTypes.Contains(type) || ExcludedSchemaKeys.Contains(key))
+                {
+                    ProcessNestedFieldRequirements(component, type, requiredFields, optionalFields, currentPath);
+                    continue;
+                }
+
+                var displayName = !string.IsNullOrEmpty(label) ? $"{label} ({key})" : key;
+                var fullPath = string.IsNullOrEmpty(currentPath) ? displayName : $"{currentPath} > {displayName}";
+                var validate = component["validate"] as JObject;
+                var isRequired = validate?["required"]?.Value<bool>() ?? false;
+
+                if (component["input"]?.Value<bool>() == true)
+                {
+                    if (isRequired) requiredFields.Add(fullPath);
+                    else optionalFields.Add(fullPath);
+                }
+
+                ProcessNestedFieldRequirements(component, type, requiredFields, optionalFields, fullPath);
+            }
+        }
+
+        private static void ProcessNestedFieldRequirements(JObject component, string? type, List<string> requiredFields, List<string> optionalFields, string currentPath)
+        {
+            switch (type)
+            {
+                case "panel":
+                case "simplepanel":
+                case "fieldset":
+                case "well":
+                case "container":
+                case "datagrid":
+                case "table":
+                    if (component[ComponentsKey] is JArray nestedComponents)
+                    {
+                        ExtractFieldRequirements(nestedComponents, requiredFields, optionalFields, currentPath);
+                    }
+                    break;
+                case "columns":
+                case "simplecols2":
+                case "simplecols3":
+                case "simplecols4":
+                    if (component["columns"] is JArray columns)
+                    {
+                        foreach (var column in columns.OfType<JObject>())
+                        {
+                            if (column[ComponentsKey] is JArray columnComponents)
+                            {
+                                ExtractFieldRequirements(columnComponents, requiredFields, optionalFields, currentPath);
+                            }
+                        }
+                    }
+                    break;
+                case "tabs":
+                case "simpletabs":
+                    if (component[ComponentsKey] is JArray tabs)
+                    {
+                        foreach (var tab in tabs.OfType<JObject>())
+                        {
+                            if (tab[ComponentsKey] is JArray tabComponents)
+                            {
+                                ExtractFieldRequirements(tabComponents, requiredFields, optionalFields, currentPath);
+                            }
+                        }
+                    }
+                    break;
             }
         }
     }
