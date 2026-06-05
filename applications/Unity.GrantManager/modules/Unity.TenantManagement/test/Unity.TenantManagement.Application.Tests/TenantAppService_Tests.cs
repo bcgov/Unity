@@ -19,7 +19,10 @@ public class TenantAppService_Tests : AbpTenantManagementApplicationTestBase
         // Create a Substitute and replace original one in Service Collection
         var tenantConnectionStringBuilder = Substitute.For<ITenantConnectionStringBuilder>();
 
-        tenantConnectionStringBuilder.Build(Arg.Any<string>()).Returns("acme test connection");
+        tenantConnectionStringBuilder.GenerateCredentialsAsync()
+            .Returns(Task.FromResult(new TenantDbCredentials("T_ABC123", "T_ABC123", "XYZ789")));
+        tenantConnectionStringBuilder.Build(Arg.Any<string>(), Arg.Any<TenantDbCredentials>())
+            .Returns("acme test connection");
 
         services.AddSingleton(tenantConnectionStringBuilder);
     }
