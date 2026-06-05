@@ -7,9 +7,6 @@ namespace Unity.AI.Runtime;
 
 public class OpenAIConfigurationResolver(IConfiguration configuration) : ITransientDependency
 {
-    private static readonly string[] SupportedReasoningEfforts = ["minimal", "low", "medium", "high"];
-    private static readonly string[] SupportedVerbosityValues = ["low", "medium", "high"];
-
     private readonly IConfiguration _configuration = configuration;
 
     public string ResolveProviderName(string? operationName = null)
@@ -32,13 +29,6 @@ public class OpenAIConfigurationResolver(IConfiguration configuration) : ITransi
         return Required($"Azure:{providerName}:ApiKey");
     }
 
-    public string ResolveMaxTokensParameterNameForOperation(string? operationName = null)
-    {
-        var providerName = ResolveProviderName(operationName);
-        var profileName = ResolveProfileName(operationName);
-        return RequiredProfile(providerName, profileName, "MaxTokensParameter");
-    }
-
     public double? ResolveConfiguredTemperature(string? operationName = null)
     {
         var providerName = ResolveProviderName(operationName);
@@ -51,16 +41,6 @@ public class OpenAIConfigurationResolver(IConfiguration configuration) : ITransi
         }
 
         return null;
-    }
-
-    public string? ResolveConfiguredReasoningEffort(string? operationName = null)
-    {
-        return ResolveOptionalProfileValue(operationName, "ReasoningEffort", SupportedReasoningEfforts);
-    }
-
-    public string? ResolveConfiguredVerbosity(string? operationName = null)
-    {
-        return ResolveOptionalProfileValue(operationName, "Verbosity", SupportedVerbosityValues);
     }
 
     public int ResolveCompletionTokens(string operationName)
@@ -86,13 +66,54 @@ public class OpenAIConfigurationResolver(IConfiguration configuration) : ITransi
             ?? Required("Azure:Operations:Defaults:PromptVersion");
     }
 
-    public string ResolveApiUrl(string? operationName = null)
+    public Uri ResolveEndpoint(string? operationName = null)
     {
         var providerName = ResolveProviderName(operationName);
         var endpoint = Required($"Azure:{providerName}:Endpoint");
+        return new Uri(endpoint);
+    }
+
+    public string ResolveDeploymentName(string? operationName = null)
+    {
+        var providerName = ResolveProviderName(operationName);
         var profileName = ResolveProfileName(operationName);
         var profileApiUrl = RequiredProfile(providerName, profileName, "ApiUrl");
-        return CombineEndpointAndPath(endpoint, profileApiUrl);
+        // Extract deployment name from URL like "/openai/deployments/gpt-5-mini/chat/completions?api-version=..."
+        var parts = profileApiUrl.Split('/', StringSplitOptions.RemoveEmptyEntries);
+        var deploymentIndex = Array.IndexOf(parts, "deployments");
+        if (deploymentIndex >= 0 && deploymentIndex + 1 < parts.Length)
+        {
+            var raw = parts[deploymentIndex + 1];
+            // Strip query string if present (e.g., "gpt-5-mini?api-version=...")
+            var deployment = raw.Contains('?') ? raw[..raw.IndexOf('?')] : raw;
+            return deployment;
+        }
+        throw new InvalidOperationException($"Could not extract deployment name from API URL: {profileApiUrl}");
+    }
+
+    public string? ResolveApiVersion(string? operationName = null)
+    {
+        var providerName = ResolveProviderName(operationName);
+        var profileName = ResolveProfileName(operationName);
+        var profileApiUrl = RequiredProfile(providerName, profileName, "ApiUrl");
+        // Extract api-version from query string like "?api-version=2024-10-01-preview"
+        var queryString = profileApiUrl.Contains('?') ? profileApiUrl.Substring(profileApiUrl.IndexOf('?') + 1) : null;
+        if (string.IsNullOrEmpty(queryString))
+        {
+            return null;
+        }
+
+        var parameters = queryString.Split('&');
+        foreach (var param in parameters)
+        {
+            var keyValue = param.Split('=');
+            if (keyValue.Length == 2 && keyValue[0] == "api-version")
+            {
+                return Uri.UnescapeDataString(keyValue[1]);
+            }
+        }
+
+        return null;
     }
 
     private string ResolveProfileName(string? operationName)
@@ -140,34 +161,5 @@ public class OpenAIConfigurationResolver(IConfiguration configuration) : ITransi
     private static string ProfileKey(string providerName, string profileName, string settingName)
     {
         return $"Azure:{providerName}:Profiles:{profileName}:{settingName}";
-    }
-
-    private string? ResolveOptionalProfileValue(string? operationName, string settingName, string[] supportedValues)
-    {
-        var providerName = ResolveProviderName(operationName);
-        var profileName = ResolveProfileName(operationName);
-        var configuredValue = OptionalProfile(providerName, profileName, settingName);
-        if (configuredValue == null)
-        {
-            return null;
-        }
-
-        var trimmedValue = configuredValue.Trim();
-        if (Array.Exists(supportedValues, supportedValue => string.Equals(supportedValue, trimmedValue, StringComparison.Ordinal)))
-        {
-            return trimmedValue;
-        }
-
-        throw new InvalidOperationException(
-            $"AI {settingName} value '{configuredValue}' is not supported. Use one of: {string.Join(", ", supportedValues)}.");
-    }
-
-    private static string CombineEndpointAndPath(string endpoint, string profilePath)
-    {
-        const char UrlPathSeparator = '/';
-
-        return endpoint.Trim().TrimEnd(UrlPathSeparator)
-            + UrlPathSeparator
-            + profilePath.Trim().TrimStart(UrlPathSeparator);
     }
 }

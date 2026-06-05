@@ -27,9 +27,6 @@ namespace Unity.AI.Runtime
         private const string ApplicationScoringPromptType = AIPromptTypes.ApplicationScoring;
         private const int MaxAiAttempts = 3;
 
-        private int AttachmentSummaryCompletionTokens => _openAIConfigurationResolver.ResolveCompletionTokens(AttachmentSummaryPromptType);
-        private int ApplicationAnalysisCompletionTokens => _openAIConfigurationResolver.ResolveCompletionTokens(ApplicationAnalysisPromptType);
-        private int ApplicationScoringCompletionTokens => _openAIConfigurationResolver.ResolveCompletionTokens(ApplicationScoringPromptType);
         // Optional local debugging sink for prompt payload logs to a local file.
         // Not intended for deployed/shared environments.
         private bool IsPromptFileLoggingEnabled => _configuration.GetValue<bool?>("Azure:Logging:EnablePromptFileLog") ?? false;
@@ -92,7 +89,7 @@ namespace Unity.AI.Runtime
                 () => _openAITransportService.GenerateSummaryAsync(
                     applicationAnalysisContent,
                     systemPrompt,
-                    ApplicationAnalysisCompletionTokens,
+                    _openAIConfigurationResolver.ResolveCompletionTokens(ApplicationAnalysisPromptType),
                     operationName: ApplicationAnalysisPromptType,
                     promptVersion: promptVersion,
                     cancellationToken: cancellationToken),
@@ -146,7 +143,7 @@ namespace Unity.AI.Runtime
                     () => _openAITransportService.GenerateSummaryAsync(
                         contentToAnalyze,
                         prompt,
-                        AttachmentSummaryCompletionTokens,
+                        _openAIConfigurationResolver.ResolveCompletionTokens(AttachmentSummaryPromptType),
                         operationName: AttachmentSummaryPromptType,
                         promptVersion: promptVersion,
                         fileName: fileName,
@@ -223,7 +220,7 @@ namespace Unity.AI.Runtime
                 () => _openAITransportService.GenerateSummaryAsync(
                     applicationScoringContent,
                     systemPrompt,
-                    ApplicationScoringCompletionTokens,
+                    _openAIConfigurationResolver.ResolveCompletionTokens(ApplicationScoringPromptType),
                     operationName: ApplicationScoringPromptType,
                     promptVersion: promptVersion,
                     cancellationToken: cancellationToken),

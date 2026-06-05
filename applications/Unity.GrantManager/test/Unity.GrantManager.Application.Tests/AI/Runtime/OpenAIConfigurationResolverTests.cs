@@ -10,25 +10,6 @@ namespace Unity.GrantManager.AI.Runtime;
 public class OpenAIConfigurationResolverTests
 {
     [Fact]
-    public void ResolveApiUrl_Should_CombineEndpointWithLeadingSlashProfilePath()
-    {
-        var configuration = new ConfigurationBuilder()
-            .AddInMemoryCollection(new Dictionary<string, string?>
-            {
-                ["Azure:Operations:Defaults:Provider"] = "OpenAI",
-                ["Azure:Operations:Defaults:Profile"] = "Gpt4oMini",
-                ["Azure:OpenAI:Endpoint"] = "https://d837ad-test-recap-webapp.azurewebsites.net",
-                ["Azure:OpenAI:Profiles:Gpt4oMini:ApiUrl"] = "/openai/deployments/gpt-4o-mini/chat/completions?api-version=2024-02-01"
-            })
-            .Build();
-
-        var resolver = new OpenAIConfigurationResolver(configuration);
-
-        resolver.ResolveApiUrl().ShouldBe(
-            "https://d837ad-test-recap-webapp.azurewebsites.net/openai/deployments/gpt-4o-mini/chat/completions?api-version=2024-02-01");
-    }
-
-    [Fact]
     public void ResolveProviderName_Should_Throw_When_DefaultProvider_Is_Missing()
     {
         var configuration = new ConfigurationBuilder()
@@ -39,41 +20,6 @@ public class OpenAIConfigurationResolverTests
 
         var ex = Should.Throw<InvalidOperationException>(() => resolver.ResolveProviderName());
         ex.Message.ShouldContain("Azure:Operations:Defaults:Provider");
-    }
-
-    [Fact]
-    public void ResolveApiUrl_Should_Throw_When_Endpoint_Is_Missing()
-    {
-        var configuration = new ConfigurationBuilder()
-            .AddInMemoryCollection(new Dictionary<string, string?>
-            {
-                ["Azure:Operations:Defaults:Provider"] = "OpenAI",
-                ["Azure:Operations:Defaults:Profile"] = "Gpt4oMini",
-                ["Azure:OpenAI:Profiles:Gpt4oMini:ApiUrl"] = "/openai/deployments/gpt-4o-mini/chat/completions?api-version=2024-02-01"
-            })
-            .Build();
-
-        var resolver = new OpenAIConfigurationResolver(configuration);
-
-        var ex = Should.Throw<InvalidOperationException>(() => resolver.ResolveApiUrl());
-        ex.Message.ShouldContain("Azure:OpenAI:Endpoint");
-    }
-
-    [Fact]
-    public void ResolveMaxTokensParameterNameForOperation_Should_Return_Configured_Profile_Parameter()
-    {
-        var configuration = new ConfigurationBuilder()
-            .AddInMemoryCollection(new Dictionary<string, string?>
-            {
-                ["Azure:Operations:Defaults:Provider"] = "OpenAI",
-                ["Azure:Operations:Defaults:Profile"] = "Gpt4oMini",
-                ["Azure:OpenAI:Profiles:Gpt4oMini:MaxTokensParameter"] = "max_tokens"
-            })
-            .Build();
-
-        var resolver = new OpenAIConfigurationResolver(configuration);
-
-        resolver.ResolveMaxTokensParameterNameForOperation().ShouldBe("max_tokens");
     }
 
     [Fact]
@@ -174,44 +120,6 @@ public class OpenAIConfigurationResolverTests
         var resolver = new OpenAIConfigurationResolver(configuration);
 
         resolver.ResolveConfiguredTemperature().ShouldBeNull();
-    }
-
-    [Fact]
-    public void ResolveConfiguredReasoningEffort_Should_Return_ProfileValue()
-    {
-        var configuration = BuildProfileConfiguration("ReasoningEffort", "minimal");
-        var resolver = new OpenAIConfigurationResolver(configuration);
-
-        resolver.ResolveConfiguredReasoningEffort().ShouldBe("minimal");
-    }
-
-    [Fact]
-    public void ResolveConfiguredVerbosity_Should_Return_ProfileValue()
-    {
-        var configuration = BuildProfileConfiguration("Verbosity", "low");
-        var resolver = new OpenAIConfigurationResolver(configuration);
-
-        resolver.ResolveConfiguredVerbosity().ShouldBe("low");
-    }
-
-    [Fact]
-    public void ResolveConfiguredReasoningEffort_Should_ReturnNull_WhenProfileSettingMissing()
-    {
-        var configuration = BuildProfileConfiguration("Temperature", "0.3");
-        var resolver = new OpenAIConfigurationResolver(configuration);
-
-        resolver.ResolveConfiguredReasoningEffort().ShouldBeNull();
-    }
-
-    [Fact]
-    public void ResolveConfiguredVerbosity_Should_RejectUnsupportedValue()
-    {
-        var configuration = BuildProfileConfiguration("Verbosity", "verbose");
-        var resolver = new OpenAIConfigurationResolver(configuration);
-
-        var exception = Should.Throw<System.InvalidOperationException>(() => resolver.ResolveConfiguredVerbosity());
-        exception.Message.ShouldContain("Verbosity");
-        exception.Message.ShouldContain("low, medium, high");
     }
 
     private static IConfiguration BuildProfileConfiguration(string settingName, string settingValue)
