@@ -11,6 +11,7 @@ using Volo.Abp.Application.Dtos;
 using Volo.Abp.Data;
 using Volo.Abp.EventBus.Local;
 using Volo.Abp.MultiTenancy;
+using Volo.Abp.Security.Encryption;
 using Volo.Abp.TenantManagement;
 using Volo.Abp.Uow;
 using Volo.Abp.DependencyInjection;
@@ -25,7 +26,8 @@ public class TenantAppService(
     ITenantManager tenantManager,
     ILocalEventBus localEventBus,
     IUnitOfWorkManager unitOfWorkManager,
-    ITenantConnectionStringBuilder tenantConnectionStringBuilder) : TenantManagementAppServiceBase, ITenantAppService
+    ITenantConnectionStringBuilder tenantConnectionStringBuilder,
+    IStringEncryptionService stringEncryptionService) : TenantManagementAppServiceBase, ITenantAppService
 {
     private const string ExtraPropDivision = "Division";
     private const string ExtraPropBranch = "Branch";
@@ -142,10 +144,13 @@ public class TenantAppService(
 
             var credentials = await tenantConnectionStringBuilder.GenerateCredentialsAsync();
 
+            var plainConnectionString = tenantConnectionStringBuilder.Build(tenant.Name, credentials);
+            var encryptedConnectionString = stringEncryptionService.Encrypt(plainConnectionString);
+
             tenant.ConnectionStrings
                 .Add(new TenantConnectionString(tenant.Id,
                     UnityTenantManagementConsts.TenantConnectionStringName,
-                    tenantConnectionStringBuilder.Build(tenant.Name, credentials)));
+                    encryptedConnectionString));
 
             // Set ExtraProperties from input
             tenant.ExtraProperties[UnityTenantManagementConsts.TenantLicencePlateExtraPropertyKey] = credentials.DbName;

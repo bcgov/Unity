@@ -9,6 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Npgsql;
 using Unity.GrantManager.Data;
 using Volo.Abp.DependencyInjection;
+using Volo.Abp.Security.Encryption;
 using Volo.Abp.TenantManagement;
 
 namespace Unity.GrantManager.EntityFrameworkCore;
@@ -17,10 +18,14 @@ public class EntityFrameworkCoreGrantManagerDbSchemaMigrator
     : IGrantManagerDbSchemaMigrator, ITransientDependency
 {
     private readonly IServiceProvider _serviceProvider;
+    private readonly IStringEncryptionService _encryptionService;
 
-    public EntityFrameworkCoreGrantManagerDbSchemaMigrator(IServiceProvider serviceProvider)
+    public EntityFrameworkCoreGrantManagerDbSchemaMigrator(
+        IServiceProvider serviceProvider,
+        IStringEncryptionService encryptionService)
     {
         _serviceProvider = serviceProvider;
+        _encryptionService = encryptionService;
     }
 
     public async Task MigrateAsync(Tenant? tenant)
@@ -39,8 +44,24 @@ public class EntityFrameworkCoreGrantManagerDbSchemaMigrator
                 var adminConnectionString = configuration.GetConnectionString(GrantManagerConsts.DefaultConnectionStringName)
                     ?? throw new InvalidOperationException($"Connection string '{GrantManagerConsts.DefaultConnectionStringName}' is not configured.");
 
+                // Decrypt the stored value — plain-text rows (pre-encryption) fall back to their original value.
+                // A successful decrypt that produces non-connection-string output (wrong passphrase returning garbage)
+                // is also rejected by the Contains('=') check so we surface a meaningful error rather than a
+                // cryptic NpgsqlConnectionStringBuilder format exception.
+                var rawValue = connectionString.Value;
+                string plainValue;
+                try
+                {
+                    var decrypted = _encryptionService.Decrypt(rawValue);
+                    plainValue = (decrypted != null && decrypted.Contains('=')) ? decrypted : rawValue;
+                }
+                catch
+                {
+                    plainValue = rawValue;
+                }
+
                 // Parse the stored tenant connection string to get the DB name and role credentials
-                var tenantCsb = new NpgsqlConnectionStringBuilder(connectionString.Value);
+                var tenantCsb = new NpgsqlConnectionStringBuilder(plainValue);
                 var dbName = tenantCsb.Database
                     ?? throw new InvalidOperationException("Tenant connection string is missing the Database value.");
                 var roleName = tenantCsb.Username

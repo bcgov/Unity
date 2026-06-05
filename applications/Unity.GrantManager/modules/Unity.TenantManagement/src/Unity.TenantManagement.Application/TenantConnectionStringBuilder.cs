@@ -59,16 +59,17 @@ namespace Unity.TenantManagement.Application
         {
             var allTenants = await _tenantRepository.GetListAsync(nameof(Tenant.Name), int.MaxValue, 0, null, includeDetails: true);
 
-            var existingConnectionStrings = allTenants
-                .SelectMany(t => t.ConnectionStrings.Select(cs => cs.Value))
-                .ToList();
+            var existingDbNames = allTenants
+                .Where(t => t.ExtraProperties.ContainsKey(UnityTenantManagementConsts.TenantLicencePlateExtraPropertyKey))
+                .Select(t => t.ExtraProperties[UnityTenantManagementConsts.TenantLicencePlateExtraPropertyKey]?.ToString() ?? "")
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
             string dbName;
             do
             {
                 dbName = GenerateDbName();
             }
-            while (existingConnectionStrings.Any(cs => cs.Contains(dbName, StringComparison.OrdinalIgnoreCase)));
+            while (existingDbNames.Contains(dbName));
 
             return new TenantDbCredentials(dbName, dbName, GeneratePassword());
         }
