@@ -35,15 +35,15 @@ namespace Unity.AI.Prompts
             "simpleseparator"
         };
 
-        private static readonly HashSet<string> NonFieldRequirementComponentTypes =
-        [
+        private static readonly HashSet<string> NonFieldRequirementComponentTypes = new(StringComparer.OrdinalIgnoreCase)
+        {
             "button",
             "simplebuttonadvanced",
             "html",
             "htmlelement",
             "content",
             "simpleseparator"
-        ];
+        };
 
         private const string ComponentsKey = "components";
 
@@ -104,7 +104,7 @@ namespace Unity.AI.Prompts
             try
             {
                 var formVersion = await applicationFormVersionRepository.GetAsync(formVersionId.Value);
-                if (formVersion == null || string.IsNullOrEmpty(formVersion.FormSchema))
+                if (formVersion == null || string.IsNullOrWhiteSpace(formVersion.FormSchema))
                 {
                     return new { message = "Form configuration not available." };
                 }
