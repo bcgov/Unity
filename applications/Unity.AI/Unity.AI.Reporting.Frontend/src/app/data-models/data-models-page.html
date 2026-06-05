@@ -129,6 +129,14 @@
         </aside>
 
         <section class="dm-pane">
+          <div class="dm-search">
+            <input class="dm-input dm-search-input" type="text"
+                   [(ngModel)]="viewSearch" />
+            @if (searchActive) {
+              <button class="dm-search-clear" (click)="viewSearch = ''" aria-label="Clear search">✕</button>
+            }
+          </div>
+
           @if (availableCoreFields.length > 0) {
             <div class="dm-section dm-section-cores dm-section-cores-top">
               <div class="dm-section-label">Core fields <span class="dm-section-hint">(from public.Applications)</span></div>
@@ -151,11 +159,13 @@
             </div>
           }
 
-          @if (tabViews.length === 0) {
+          @if (searchActive && filteredViews.length === 0) {
+            <div class="dm-empty">No views match "{{ viewSearch }}".</div>
+          } @else if (!searchActive && tabViews.length === 0) {
             <div class="dm-empty">No views found in this category.</div>
           }
           <div class="dm-card-grid">
-            @for (view of tabViews; track view.view_name) {
+            @for (view of (searchActive ? filteredViews : tabViews); track view.view_name) {
               <div class="dm-view-card"
                    [class.selected]="isViewSelected(view)"
                    (click)="selectView(view)">
@@ -165,6 +175,9 @@
                   </div>
                   <div class="dm-view-card-name">
                     {{ view.display_name || view.view_name }}
+                    @if (searchActive) {
+                      <span class="dm-badge dm-badge-muted">{{ categoryLabel(view) }}</span>
+                    }
                     @if (view.version) {
                       <span class="dm-badge">{{ view.version }}</span>
                     }
@@ -261,12 +274,6 @@
                         }
                       </tbody>
                     </table>
-                    @if (selectedExistingModel.previewData.truncated) {
-                      <p class="dm-preview-note">
-                        Showing first {{ selectedExistingModel.previewData.rows.length }} of
-                        {{ selectedExistingModel.previewData.total_rows }} rows
-                      </p>
-                    }
                   </div>
                 } @else {
                   <p class="dm-preview-error">Could not load preview data.</p>
@@ -285,6 +292,13 @@
 
         <aside class="dm-rail dm-rail-right">
           <div class="dm-rail-title">Add views (optional)</div>
+          <div class="dm-search">
+            <input class="dm-input dm-search-input" type="text"
+                   [(ngModel)]="viewSearch" />
+            @if (searchActive) {
+              <button class="dm-search-clear" (click)="viewSearch = ''" aria-label="Clear search">✕</button>
+            }
+          </div>
           <div class="dm-rail-tabs">
             <button class="dm-rail-tab" [class.active]="activeViewTab === 'form_view'"
                     [disabled]="formViews.length === 0"
@@ -307,8 +321,11 @@
               Other <span class="dm-rail-count">{{ otherViews.length }}</span>
             </button>
           </div>
+          @if (searchActive && filteredViews.length === 0) {
+            <div class="dm-empty">No views match "{{ viewSearch }}".</div>
+          }
           <ul class="dm-list">
-            @for (view of tabViews; track view.view_name) {
+            @for (view of (searchActive ? filteredViews : tabViews); track view.view_name) {
               <li class="dm-list-item"
                   [class.selected]="isEditAdditionalViewSelected(view)"
                   (click)="toggleEditAdditionalView(view)">
@@ -317,6 +334,9 @@
                 </div>
                 <div class="dm-list-item-name">
                   {{ view.display_name || view.view_name }}
+                  @if (searchActive) {
+                    <span class="dm-badge dm-badge-muted">{{ categoryLabel(view) }}</span>
+                  }
                   @if (view.is_empty) {
                     <span class="dm-badge dm-badge-muted">no data yet</span>
                   }
@@ -384,11 +404,6 @@
                     </tbody>
                   }
                 </table>
-                @if (modelProposal.preview_data && modelProposal.preview_data.rows.length) {
-                  <p class="dm-preview-note">{{ modelProposal.columns.length }} columns — {{ modelProposal.preview_data.rows.length }} sample row(s).</p>
-                } @else {
-                  <p class="dm-preview-note">{{ modelProposal.columns.length }} columns — sample rows available after saving to Metabase.</p>
-                }
               </div>
             }
           }

@@ -734,6 +734,30 @@
   padding: 12px 14px;
 }
 
+.dm-search {
+  position: relative;
+  display: flex;
+  align-items: center;
+  max-width: 280px;
+  margin-bottom: 14px;
+}
+
+.dm-search-input { padding-right: 36px; }
+
+.dm-search-clear {
+  position: absolute;
+  right: 10px;
+  padding: 2px 4px;
+  font-size: 0.8rem;
+  line-height: 1;
+  color: #64748b;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.dm-search-clear:hover { color: #111827; }
+
 .dm-field-label {
   display: block;
   font-size: 0.78rem;

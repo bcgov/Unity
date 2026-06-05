@@ -32,6 +32,7 @@ export class DataModelsPageComponent implements OnInit {
   availableViews: ViewInfo[] = [];
   selectedViews: ViewInfo[] = [];
   activeViewTab: 'form_view' | 'worksheet_view' | 'scoresheet_view' | 'other_view' = 'form_view';
+  viewSearch = '';
   modelProposal: ModelProposal | null = null;
   createdModels: CreatedModel[] = [];
   modelErrors: ModelError[] = [];
@@ -63,6 +64,28 @@ export class DataModelsPageComponent implements OnInit {
   get scoresheetViews(): ViewInfo[] { return this.availableViews.filter(v => v.source_type === 'scoresheet_view'); }
   get otherViews(): ViewInfo[] { return this.availableViews.filter(v => v.source_type === 'other_view'); }
   get tabViews(): ViewInfo[] { return this.availableViews.filter(v => v.source_type === this.activeViewTab); }
+
+  private readonly sourceTypeLabels: Record<string, string> = {
+    form_view: 'Form',
+    worksheet_view: 'Worksheet',
+    scoresheet_view: 'Scoresheet',
+    other_view: 'Other',
+  };
+
+  categoryLabel(v: ViewInfo): string {
+    return this.sourceTypeLabels[v.source_type ?? 'other_view'] ?? 'Other';
+  }
+
+  get searchActive(): boolean { return this.viewSearch.trim().length > 0; }
+
+  get filteredViews(): ViewInfo[] {
+    const q = this.viewSearch.trim().toLowerCase();
+    if (!q) return [];
+    return this.availableViews.filter(v =>
+      (v.display_name || '').toLowerCase().includes(q) ||
+      (v.view_name || '').toLowerCase().includes(q)
+    );
+  }
 
   constructor(
     private readonly apiService: ApiService,
@@ -134,6 +157,7 @@ export class DataModelsPageComponent implements OnInit {
         firstValueFrom(this.apiService.getDataModelCoreFields<{ core_fields: CoreField[] }>()),
       ]);
       this.availableViews = viewsResponse.views || [];
+      this.viewSearch = '';
       this.availableCoreFields = coreFieldsResponse.core_fields || [];
       this.selectedCoreFields = this.availableCoreFields
         .filter(cf => cf.default_selected)
@@ -360,6 +384,7 @@ export class DataModelsPageComponent implements OnInit {
       else this.activeViewTab = 'other_view';
       this.editPrompt = '';
       this.editAdditionalViews = [];
+      this.viewSearch = '';
       this.step = 'edit-existing';
     } catch (error) {
       this.logger.error('Failed to load model detail:', error);
