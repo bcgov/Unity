@@ -117,7 +117,62 @@ class MetabaseClient:
             return False, body["error"]
 
         return True, None
-    
+
+    def run_query_checked(
+        self, sql: str, db_id: int, tenant_id: Optional[str] = None,
+        max_rows: Optional[int] = None,
+    ) -> Tuple[bool, Optional[str], Optional[Dict[str, Any]]]:
+        """Execute SQL once and return (is_valid, error, data).
+
+        Combines validation and a bounded fetch in a single Metabase round-trip:
+        callers that previously did validate_sql() followed by a second execute_sql()
+        for preview rows can use this instead. `max_rows` caps the rows Metabase
+        returns (a bounded run still executes the plan, so SQL errors still surface).
+        `data` is the inner `{cols, rows}` payload on success, else None.
+        """
+        payload = {
+            "database": db_id,
+            "type": "native",
+            "native": {"query": sql},
+        }
+        if max_rows is not None:
+            payload["constraints"] = {
+                "max-results": max_rows,
+                "max-results-bare-rows": max_rows,
+            }
+
+        headers = self._get_headers(tenant_id)
+
+        r = requests.post(
+            f"{self.config.url}/api/dataset",
+            headers=headers,
+            json=payload,
+        )
+
+        if r.status_code not in (200, 202):
+            return False, f"HTTP {r.status_code}: {r.text}", None
+
+        body = r.json()
+
+        # Handle async queries (same polling contract as validate_sql)
+        if r.status_code == 202 and body.get("status") == "running":
+            job_id = body["id"]
+            deadline = time.time() + 10
+            while time.time() < deadline:
+                jr = requests.get(
+                    f"{self.config.url}/api/async/{job_id}",
+                    headers=headers,
+                )
+                if jr.status_code == 200:
+                    body = jr.json()
+                    break
+                time.sleep(0.5)
+
+        if "error" in body:
+            return False, body["error"], None
+
+        return True, None, body.get("data")
+
     def get_database_metadata(self, db_id: int, tenant_id: Optional[str] = None) -> Dict[str, Any]:
         """Get metadata for a database including tables and fields"""
         headers = self._get_headers(tenant_id)

@@ -423,26 +423,37 @@ def _shape_card_data(card_data, limit=None):
 def _attach_preview_to_proposal(proposal, db_id, tenant_id):
     """Enrich a model proposal with real columns + a sample row from Metabase.
 
-    Executes the validated proposal SQL and reads the authoritative columns and a
-    one-row sample (the same source the frontend table renders), replacing the
-    generator's regex-inferred `columns`. This is what fixes added columns being
-    missing and bogus `...` headers in the review preview. On invalid SQL or any
-    failure, the generator's existing `columns` are kept and `preview_data` is None.
+    Reads the authoritative columns and a one-row sample (the same source the
+    frontend table renders), replacing the generator's regex-inferred `columns`.
+    This is what fixes added columns being missing and bogus `...` headers in the
+    review preview.
+
+    The generator already executed the validated SQL once (bounded) and stashes the
+    raw `{cols, rows}` payload in the private `_preview_raw` key — reuse it instead of
+    running the query a second time. Falls back to executing once if that key is
+    absent (e.g. a path that didn't run the SQL). On invalid SQL or any failure, the
+    generator's existing `columns` are kept and `preview_data` is None.
     """
+    raw = proposal.pop("_preview_raw", None)
     proposal["preview_data"] = None
-    if not proposal.get("valid") or not proposal.get("sql"):
-        return proposal
-    try:
-        raw = metabase_client.execute_sql(
-            proposal["sql"], db_id, tenant_id,
-            max_rows=config.app.data_model_preview_row_limit,
-        )
-        shaped = _shape_card_data(raw, limit=config.app.data_model_preview_row_limit)
-        if shaped is not None:
-            proposal["columns"] = shaped["columns"]
-            proposal["preview_data"] = shaped
-    except Exception as e:
-        logger.warning("Could not attach preview data to proposal: %s", e)
+
+    if raw is None:
+        # No pre-fetched rows — only execute if the SQL validated.
+        if not proposal.get("valid") or not proposal.get("sql"):
+            return proposal
+        try:
+            raw = metabase_client.execute_sql(
+                proposal["sql"], db_id, tenant_id,
+                max_rows=config.app.data_model_preview_row_limit,
+            )
+        except Exception as e:
+            logger.warning("Could not attach preview data to proposal: %s", e)
+            return proposal
+
+    shaped = _shape_card_data(raw, limit=config.app.data_model_preview_row_limit)
+    if shaped is not None:
+        proposal["columns"] = shaped["columns"]
+        proposal["preview_data"] = shaped
     return proposal
 
 

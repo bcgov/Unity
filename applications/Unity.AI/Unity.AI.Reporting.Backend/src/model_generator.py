@@ -18,6 +18,8 @@ Supported patterns:
 import json
 import logging
 import re
+import threading
+import time
 from collections import defaultdict
 from typing import Optional
 
@@ -120,6 +122,36 @@ COLUMN SAMPLES (name | sample1 | sample2):
 
 Output ONLY the improved SQL — no markdown fences, no explanation."""
 
+# Combined alias-enhancement + naming in a single LLM call. Used when the
+# deterministic SQL still has raw (unlabeled) aliases, so we pay for one call
+# instead of separate enhance + naming calls. Same structure-lock rules as
+# ENHANCE_PROMPT; output adds the {name, description} the naming call produced.
+ENHANCE_AND_NAME_PROMPT = """You are finalizing a reusable reporting data model. The query structure is LOCKED — do NOT change it.
+
+RULES:
+- Do NOT add or remove columns from the final SELECT
+- Do NOT change column order
+- Do NOT modify CTEs, FROM clauses, JOINs, UNION ALL, or WHERE clauses
+- ONLY modify the final SELECT expressions:
+  1. Replace raw field name aliases with human-readable labels:
+     - Strip section prefixes (s1_, t3_, s02_, n01K, S01K, etc.)
+     - Convert camelCase to Title Case with spaces
+     - Example: "s1_simpletextfieldadvancedWide" → "Simple Text Field"
+     - Example: "t7_totalProjectCost" → "Total Project Cost"
+  2. Keep all existing type casts (::BOOLEAN, ::FLOAT) exactly as they are
+  3. You may add computed columns at the END only (e.g., date differences)
+
+CURRENT SQL:
+{sql}
+
+COLUMN SAMPLES (name | sample1 | sample2):
+{samples}
+
+Also provide a short model name (2-4 words) and a one-sentence description of what it provides for reporting.
+
+Output ONLY valid JSON — no markdown fences, no explanation:
+{{"name": "Short Model Name", "description": "One sentence explaining what this model provides for reporting", "sql": "SELECT ..."}}"""
+
 MODIFY_PROMPT = """You are modifying an existing data model SQL query.
 
 CURRENT SQL:
@@ -161,6 +193,36 @@ FORM_VERSION_RE = re.compile(r'^Form-(.+?)(?:\s+Alternate)?-V(\d+)$')
 
 class DataModelGenerator:
     """Hybrid AI-assisted data model generator using Reporting views."""
+
+    # Short TTL cache for Metabase database metadata. The same metadata is fetched
+    # multiple times within a single preview (and once per view for combined models);
+    # a brief TTL de-dupes those round-trips while staying fresh for schema edits.
+    _META_CACHE_TTL = 60  # seconds
+
+    def __init__(self) -> None:
+        # key: (db_id, tenant_id) → (fetched_at_monotonic, metadata_dict)
+        self._meta_cache: dict[tuple[int, str], tuple[float, dict]] = {}
+        self._meta_lock = threading.Lock()
+        # ReportColumnsMaps info (label set + correlation-provider map), same TTL —
+        # de-dupes the per-view source-type lookups within a single preview.
+        self._rcm_cache: dict[tuple[int, str], tuple[float, tuple[set, dict]]] = {}
+        self._rcm_lock = threading.Lock()
+
+    def _get_metadata(self, db_id: int, tenant_id: str) -> dict:
+        """Return Metabase DB metadata, cached per (db_id, tenant_id) for a short TTL.
+
+        Callers treat the returned dict as read-only — it is shared across the cache
+        window, so it must not be mutated.
+        """
+        key = (int(db_id), str(tenant_id).strip())
+        now = time.monotonic()
+        with self._meta_lock:
+            cached = self._meta_cache.get(key)
+            if cached and (now - cached[0]) < self._META_CACHE_TTL:
+                return cached[1]
+            metadata = metabase_client.get_database_metadata(db_id, tenant_id=tenant_id)
+            self._meta_cache[key] = (now, metadata)
+            return metadata
 
     JUNK_COLUMNS = {
         "Id", "CreatorId", "LastModificationTime",
@@ -217,13 +279,16 @@ class DataModelGenerator:
         if view_name.startswith("Form-"):
             return "form_view"
         # Check if it's a base name that matches a form group
-        metadata = metabase_client.get_database_metadata(db_id, tenant_id=tenant_id)
+        metadata = self._get_metadata(db_id, tenant_id)
         form_groups = self._group_form_versions(metadata)
         if view_name in form_groups:
             return "form_view"
 
-        # Primary: CorrelationProvider from ReportColumnsMaps
-        cp = self._get_correlation_provider(view_name, db_id, tenant_id)
+        # Primary: CorrelationProvider from ReportColumnsMaps. Read from the cached
+        # batch fetch (same data discover_views already pulled) rather than a per-view
+        # query — this saves a round-trip per view, N-1 for combined previews.
+        _, correlation_providers = self._get_report_columns_maps_info(db_id, tenant_id)
+        cp = correlation_providers.get(view_name, "")
         if cp == "formversion":
             return "form_view"
         if cp == "worksheet":
@@ -391,60 +456,32 @@ class DataModelGenerator:
 
     # --- AI Enhancement ---
 
-    async def _ai_enhance_sql(self, sql: str, view_name: str,
-                               db_id: int, tenant_id: str,
-                               primary_table: str = "") -> Optional[str]:
-        """
-        AI enhancement: improve aliases and suggest computed columns.
-        Returns enhanced SQL or None if enhancement fails.
-        """
-        if not primary_table:
-            primary_table = view_name
+    async def _enhance_and_name(
+        self, sql: str, samples: dict[str, list[str]]
+    ) -> tuple[Optional[str], Optional[str], Optional[str]]:
+        """One LLM call that both improves raw aliases and produces a name/description.
 
-        # Get column names from the SQL (between combinedOri and FROM)
-        columns = []
-        for field_match in re.finditer(r'combinedOri\."([^"]+)"', sql):
-            col = field_match.group(1)
-            if col not in columns:
-                columns.append(col)
+        Used only when the deterministic SQL still has unlabeled (raw) aliases — when
+        every column already has a label we skip this and do a cheap naming-only call.
+        `samples` is reused from the SQL builder, so this adds no Metabase round-trip.
 
-        samples = self._get_column_samples("Reporting", primary_table, columns, db_id, tenant_id)
+        Returns (enhanced_sql, name, description); any element is None if the call or
+        JSON parse fails, letting the caller fall back to deterministic SQL / derived naming.
+        """
         samples_text = self._format_samples_for_prompt(samples)
-
-        prompt = ENHANCE_PROMPT.format(sql=sql, samples=samples_text)
+        prompt = ENHANCE_AND_NAME_PROMPT.format(sql=sql, samples=samples_text)
 
         async with aiohttp.ClientSession() as session:
-            result = await self._post_completion(session, SYSTEM_PROMPT, prompt)
+            raw = await self._post_completion(session, SYSTEM_PROMPT, prompt)
 
-        if not result:
-            return None
-
-        # Clean markdown fences if present
-        result = re.sub(r"^```(?:sql)?\s*", "", result.strip(), flags=re.IGNORECASE)
-        result = re.sub(r"\s*```$", "", result.strip())
-        return result.strip() or None
-
-    async def _ai_enhance_worksheet_sql(self, sql: str, view_name: str,
-                                          columns: list[str], db_id: int,
-                                          tenant_id: str) -> Optional[str]:
-        """
-        AI enhancement for worksheet/scoresheet views.
-        Returns enhanced SQL or None if enhancement fails.
-        """
-        samples = self._get_column_samples("Reporting", view_name, columns, db_id, tenant_id)
-        samples_text = self._format_samples_for_prompt(samples)
-
-        prompt = ENHANCE_PROMPT.format(sql=sql, samples=samples_text)
-
-        async with aiohttp.ClientSession() as session:
-            result = await self._post_completion(session, SYSTEM_PROMPT, prompt)
-
-        if not result:
-            return None
-
-        result = re.sub(r"^```(?:sql)?\s*", "", result.strip(), flags=re.IGNORECASE)
-        result = re.sub(r"\s*```$", "", result.strip())
-        return result.strip() or None
+        if not raw:
+            return None, None, None
+        try:
+            defn = self._parse_single_definition(raw)
+            return defn["sql"], defn["name"], defn["description"]
+        except (json.JSONDecodeError, KeyError, ValueError) as e:
+            logger.warning("AI enhance+name parse failed — keeping deterministic SQL: %s", e)
+            return None, None, None
 
     def _validate_enhancement(self, original_sql: str, enhanced_sql: str) -> bool:
         """Verify AI didn't modify structure — only aliases/casts in SELECT."""
@@ -520,7 +557,7 @@ class DataModelGenerator:
         Build deterministic SQL for Pattern 1 (Form Views).
         Returns (sql, column_list).
         """
-        metadata = metabase_client.get_database_metadata(db_id, tenant_id=tenant_id)
+        metadata = self._get_metadata(db_id, tenant_id)
         all_groups = self._group_form_versions(metadata)
 
         # Find the matching group for this base_name
@@ -543,13 +580,13 @@ class DataModelGenerator:
                 if base_name in reporting_tables:
                     versions = [base_name]
                 else:
-                    return "", []
+                    return "", [], {}, False, {}, False
 
         # Filter to selected versions if specified
         if selected_versions:
             versions = [v for v in versions if v in selected_versions]
             if not versions:
-                return "", []
+                return "", [], {}, False, {}, False
 
         # Get columns from the primary (highest version) table
         primary_table = versions[0]
@@ -576,7 +613,7 @@ class DataModelGenerator:
             columns.append(col_name)
 
         if not columns:
-            return "", []
+            return "", [], {}, False
 
         # Detect per-column JSON wrapping (one column may be wrapped while another isn't)
         wrapped_cols = self._columns_needing_unwrap(
@@ -660,7 +697,11 @@ class DataModelGenerator:
             "ReferenceNo" if cf["name"] == "ReferenceNo" else cf["label"]
             for cf in resolved_core_fields
         ] + [labels.get(c, {}).get("label", c) for c in columns]
-        return sql, column_labels
+
+        # Any column without a real label falls back to its raw name → worth an AI
+        # alias pass. When every column is labeled the deterministic SQL is already clean.
+        needs_enhancement = any(not labels.get(c, {}).get("label") for c in columns)
+        return sql, column_labels, samples, needs_enhancement
 
     def _build_worksheet_view_sql(self, view_name: str, db_id: int,
                                    tenant_id: str,
@@ -671,7 +712,7 @@ class DataModelGenerator:
         Just SELECT columns with optional JOIN to Applications for core fields.
         Returns (sql, column_list).
         """
-        metadata = metabase_client.get_database_metadata(db_id, tenant_id=tenant_id)
+        metadata = self._get_metadata(db_id, tenant_id)
 
         # Find the view
         target_fields = []
@@ -681,7 +722,7 @@ class DataModelGenerator:
                 break
 
         if not target_fields:
-            return "", []
+            return "", [], {}, False
 
         # Get labels
         labels = self._get_view_labels(view_name, db_id, tenant_id)
@@ -723,7 +764,7 @@ class DataModelGenerator:
             columns.append(col_name)
 
         if not columns:
-            return "", []
+            return "", [], {}, False
 
         # Get samples for type inference
         samples = self._get_column_samples("Reporting", view_name, columns, db_id, tenant_id)
@@ -769,32 +810,50 @@ class DataModelGenerator:
 
         column_labels = [cf["label"] if cf["name"] != "ReferenceNo" else "ReferenceNo"
                          for cf in resolved_core_fields]
+        needs_enhancement = False
         for col in columns:
             label_info = labels.get(col, {})
-            label = label_info.get("label", "") or custom_labels.get(col, "") or col
-            column_labels.append(label)
+            real_label = label_info.get("label", "") or custom_labels.get(col, "")
+            column_labels.append(real_label or col)
+            if not real_label:
+                needs_enhancement = True
 
-        return sql, column_labels
+        return sql, column_labels, samples, needs_enhancement
 
     # --- AI naming helper ---
 
-    async def _generate_name_description(self, source: str, columns: list[str],
-                                          db_id: int, tenant_id: str) -> tuple[str, str]:
-        """Use AI only for naming and description."""
+    async def _generate_name_description(self, source: str,
+                                          columns: list[str]) -> tuple[str, str]:
+        """Use AI only for naming and description (small token budget).
+
+        NAMING_PROMPT returns just {name, description} — parsed directly here rather
+        than via _parse_single_definition (which also requires a `sql` field).
+        Falls back to a name derived from the source view when AI is unavailable.
+        """
         columns_preview = ", ".join(columns[:25])
         prompt = NAMING_PROMPT.format(source=source, columns=columns_preview)
 
         async with aiohttp.ClientSession() as session:
-            raw = await self._post_completion(session, SYSTEM_PROMPT, prompt)
+            raw = await self._post_completion(session, SYSTEM_PROMPT, prompt, max_tokens=300)
 
         if raw:
             try:
-                defn = self._parse_single_definition(raw)
-                return defn["name"], defn["description"]
-            except (json.JSONDecodeError, KeyError, ValueError):
+                text = re.sub(r"^```(?:json)?\s*", "", raw.strip(), flags=re.IGNORECASE)
+                text = re.sub(r"\s*```$", "", text.strip())
+                start, end = text.find("{"), text.rfind("}")
+                if start != -1 and end > start:
+                    defn = json.loads(text[start:end + 1])
+                    name = (defn.get("name") or "").strip()
+                    description = (defn.get("description") or "").strip()
+                    if name and description:
+                        return name, description
+            except (json.JSONDecodeError, ValueError):
                 pass
 
-        # Fallback: derive from source name
+        return self._fallback_name_description(source)
+
+    def _fallback_name_description(self, source: str) -> tuple[str, str]:
+        """Derive a name/description from the source view name when AI is unavailable."""
         clean_name = re.sub(r'-V\d+$', '', source).replace("-", " ").strip()
         clean_name = re.sub(r'^Form-\s*', '', clean_name)
         return clean_name, f"Data model from {source}"
@@ -812,7 +871,7 @@ class DataModelGenerator:
         Returns list of {view_name, display_name, column_count, has_labels,
         source_type, is_empty, ...}.
         """
-        metadata = metabase_client.get_database_metadata(db_id, tenant_id=tenant_id)
+        metadata = self._get_metadata(db_id, tenant_id)
         tables_by_name = {
             t.get("name"): t for t in metadata.get("tables", [])
             if t.get("schema") == "Reporting"
@@ -928,6 +987,32 @@ class DataModelGenerator:
         logger.info(f"Discovered {len(views)} views for tenant {tenant_id}")
         return views
 
+    async def _validate_sql_with_heal(
+        self, sql: str, db_id: int, tenant_id: str,
+        heal_args: Optional[tuple[str, str, str]] = None,
+    ) -> tuple[str, bool, Optional[str], Optional[dict]]:
+        """Run SQL once (bounded) to get validity AND preview rows in one round-trip.
+
+        Replaces the old validate_sql()-then-execute_sql() pattern: validation no
+        longer pulls the full result set, and the API layer reuses the returned rows
+        instead of executing the query a second time. On failure, self-heals once and
+        re-runs. heal_args = (columns_text, join_keys_text, relationships_text); pass
+        None to skip self-healing. Returns (final_sql, is_valid, error, preview_data).
+        """
+        limit = config.app.data_model_preview_row_limit
+        is_valid, error, data = metabase_client.run_query_checked(
+            sql, db_id, tenant_id=tenant_id, max_rows=limit
+        )
+        if not is_valid and heal_args is not None:
+            healed = await self._self_heal(sql, error or "", *heal_args)
+            if healed:
+                h_valid, h_error, h_data = metabase_client.run_query_checked(
+                    healed, db_id, tenant_id=tenant_id, max_rows=limit
+                )
+                if h_valid:
+                    return healed, True, h_error, h_data
+        return sql, is_valid, error, data
+
     async def preview_model(self, view_name: str, db_id: int,
                             tenant_id: str,
                             core_fields: Optional[list[str]] = None,
@@ -943,26 +1028,16 @@ class DataModelGenerator:
             # Extract base name from full table name if needed
             match = FORM_VERSION_RE.match(view_name)
             base_name = match.group(1) if match else view_name
-            sql, columns = self._build_form_view_sql(
+            sql, columns, samples, needs_enhancement = self._build_form_view_sql(
                 base_name, db_id, tenant_id, core_fields, selected_versions
             )
-
-            # AI enhancement: improve aliases and suggest computed columns
-            if sql:
-                enhanced_sql = await self._ai_enhance_sql(sql, view_name, db_id, tenant_id, primary_table=view_name)
-                if enhanced_sql and self._validate_enhancement(sql, enhanced_sql):
-                    sql = enhanced_sql
         elif source_type in ("worksheet_view", "scoresheet_view", "other_view"):
             # other_view: any non-Form/non-worksheet/non-scoresheet Reporting table.
             # The worksheet builder is generic — simple SELECT + optional FK JOIN —
             # and degrades gracefully when no FK is found.
-            sql, columns = self._build_worksheet_view_sql(view_name, db_id, tenant_id, core_fields)
-
-            # AI enhancement for worksheet views too
-            if sql:
-                enhanced_sql = await self._ai_enhance_worksheet_sql(sql, view_name, columns, db_id, tenant_id)
-                if enhanced_sql and self._validate_enhancement(sql, enhanced_sql):
-                    sql = enhanced_sql
+            sql, columns, samples, needs_enhancement = self._build_worksheet_view_sql(
+                view_name, db_id, tenant_id, core_fields
+            )
         else:
             return await self._preview_model_ai(view_name, db_id, tenant_id)
 
@@ -978,25 +1053,32 @@ class DataModelGenerator:
                 "excluded_columns": [],
             }
 
-        # Validate deterministic SQL
-        is_valid, error = metabase_client.validate_sql(sql, db_id, tenant_id=tenant_id)
+        # One LLM call per preview. When every column already has a label the
+        # deterministic SQL is clean → a cheap naming-only call. Otherwise a single
+        # combined call both improves the raw aliases and returns name/description,
+        # reusing the samples the builder already fetched (no extra round-trip).
+        name = description = None
+        if needs_enhancement:
+            try:
+                enhanced_sql, name, description = await self._enhance_and_name(sql, samples)
+            except Exception as e:
+                logger.warning("AI enhance+name failed — keeping deterministic SQL: %s", e)
+                enhanced_sql = None
+            if enhanced_sql and self._validate_enhancement(sql, enhanced_sql):
+                sql = enhanced_sql
+        else:
+            try:
+                name, description = await self._generate_name_description(view_name, columns)
+            except Exception as e:
+                logger.warning("AI naming failed — using fallback name: %s", e)
 
-        if not is_valid:
-            # Self-heal as safety net
-            healed_sql = await self._self_heal(
-                sql, error or "", "\n".join(columns), "(deterministic)", "(deterministic)"
-            )
-            if healed_sql:
-                is_valid, heal_error = metabase_client.validate_sql(
-                    healed_sql, db_id, tenant_id=tenant_id
-                )
-                if is_valid:
-                    sql = healed_sql
-                    error = heal_error
+        if not name or not description:
+            name, description = self._fallback_name_description(view_name)
 
-        # AI for naming/description only
-        name, description = await self._generate_name_description(
-            view_name, columns, db_id, tenant_id
+        # Single bounded execution validates the SQL and yields the preview rows.
+        sql, is_valid, error, preview_raw = await self._validate_sql_with_heal(
+            sql, db_id, tenant_id,
+            heal_args=("\n".join(columns), "(deterministic)", "(deterministic)"),
         )
 
         proposal = {
@@ -1009,6 +1091,8 @@ class DataModelGenerator:
             "columns": columns,
             "excluded_columns": [],
         }
+        if preview_raw is not None:
+            proposal["_preview_raw"] = preview_raw
 
         logger.info(
             "Model preview complete (deterministic/%s) - tenant=%s view=%s valid=%s",
@@ -1062,22 +1146,12 @@ class DataModelGenerator:
                 "excluded_columns": [],
             }
 
-        # Validate SQL
-        is_valid, error = metabase_client.validate_sql(
-            definition["sql"], db_id, tenant_id=tenant_id
+        # Single bounded execution validates the SQL and yields the preview rows.
+        sql, is_valid, error, preview_raw = await self._validate_sql_with_heal(
+            definition["sql"], db_id, tenant_id,
+            heal_args=(columns_text, join_keys_text, relationships_text),
         )
-
-        # Self-heal on failure
-        if not is_valid:
-            healed_sql = await self._self_heal(
-                definition["sql"], error or "", columns_text, join_keys_text, relationships_text
-            )
-            if healed_sql:
-                is_valid, error = metabase_client.validate_sql(
-                    healed_sql, db_id, tenant_id=tenant_id
-                )
-                if is_valid:
-                    definition["sql"] = healed_sql
+        definition["sql"] = sql
 
         # Extract column lists from the generated SQL
         columns, excluded = self._extract_column_info(
@@ -1094,6 +1168,8 @@ class DataModelGenerator:
             "columns": columns,
             "excluded_columns": excluded,
         }
+        if preview_raw is not None:
+            proposal["_preview_raw"] = preview_raw
 
         logger.info(
             "Model preview complete - tenant=%s view=%s valid=%s",
@@ -1129,10 +1205,10 @@ class DataModelGenerator:
             if source_type == "form_view":
                 match = FORM_VERSION_RE.match(vn)
                 base_name = match.group(1) if match else vn
-                sql, cols = self._build_form_view_sql(base_name, db_id, tenant_id, effective_core_fields)
+                sql, cols, _, _ = self._build_form_view_sql(base_name, db_id, tenant_id, effective_core_fields)
             else:
                 # worksheet_view, scoresheet_view, other_view — worksheet builder handles all
-                sql, cols = self._build_worksheet_view_sql(vn, db_id, tenant_id, effective_core_fields)
+                sql, cols, _, _ = self._build_worksheet_view_sql(vn, db_id, tenant_id, effective_core_fields)
 
             if not sql:
                 logger.warning("Could not build SQL for '%s' in combined model — skipping", vn)
@@ -1229,15 +1305,15 @@ class DataModelGenerator:
             + "\n".join(join_clauses)
         )
 
-        # Validate
-        is_valid, error = metabase_client.validate_sql(combined_sql, db_id, tenant_id=tenant_id)
+        # Single bounded execution validates the SQL and yields the preview rows.
+        combined_sql, is_valid, error, preview_raw = await self._validate_sql_with_heal(
+            combined_sql, db_id, tenant_id, heal_args=None
+        )
 
         # AI naming based on combined column set (only views actually joined)
         all_cols = list({c for _, _, cols in joinable for c in cols})
         source_label = " + ".join(vn for vn, _, _ in joinable)
-        name, description = await self._generate_name_description(
-            source_label, all_cols, db_id, tenant_id
-        )
+        name, description = await self._generate_name_description(source_label, all_cols)
 
         logger.info(
             "Combined model preview complete - tenant=%s views=%s valid=%s",
@@ -1247,7 +1323,7 @@ class DataModelGenerator:
             note = f" (skipped — no \"ReferenceNo\" join key: {', '.join(skipped)})"
             description = (description or "") + note
 
-        return {
+        proposal = {
             "name": name,
             "description": description,
             "sql": combined_sql,
@@ -1257,6 +1333,9 @@ class DataModelGenerator:
             "columns": all_cols,
             "excluded_columns": [],
         }
+        if preview_raw is not None:
+            proposal["_preview_raw"] = preview_raw
+        return proposal
 
     # ----- Discover & Modify Existing Models -----
 
@@ -1341,11 +1420,11 @@ class DataModelGenerator:
                     # not the full table name "Form-GrantApplication-V2"
                     match = FORM_VERSION_RE.match(vn)
                     base_name = match.group(1) if match else vn
-                    view_sql, _ = self._build_form_view_sql(
+                    view_sql, _, _, _ = self._build_form_view_sql(
                         base_name, db_id, tenant_id, builder_core_fields
                     )
                 elif source_type in ("worksheet_view", "scoresheet_view", "other_view"):
-                    view_sql, _ = self._build_worksheet_view_sql(
+                    view_sql, _, _, _ = self._build_worksheet_view_sql(
                         vn, db_id, tenant_id, builder_core_fields
                     )
                 else:
@@ -1389,24 +1468,16 @@ class DataModelGenerator:
         new_sql = re.sub(r"^```(?:sql)?\s*", "", new_sql.strip(), flags=re.IGNORECASE)
         new_sql = re.sub(r"\s*```$", "", new_sql.strip())
 
-        # 4. Validate
-        is_valid, error = metabase_client.validate_sql(new_sql, db_id, tenant_id=tenant_id)
-
-        # Self-heal once on failure — _self_heal takes 5 strings, no DB IDs
-        if not is_valid and error:
-            columns_text = "\n".join(f"  {c}" for c in current_columns)
-            healed = await self._self_heal(
-                new_sql, error, columns_text,
+        # 4. Single bounded execution validates the SQL, self-heals once, and yields rows.
+        columns_text = "\n".join(f"  {c}" for c in current_columns)
+        new_sql, is_valid, error, preview_raw = await self._validate_sql_with_heal(
+            new_sql, db_id, tenant_id,
+            heal_args=(
+                columns_text,
                 "(modification — preserve existing JOIN structure)",
                 "(modification — preserve existing relationships)",
-            )
-            if healed:
-                is_valid, heal_error = metabase_client.validate_sql(
-                    healed, db_id, tenant_id=tenant_id
-                )
-                if is_valid:
-                    new_sql = healed
-                    error = heal_error
+            ),
+        )
 
         # 5. Generate name (variant)
         new_name = f"{current_name} v2"
@@ -1426,7 +1497,7 @@ class DataModelGenerator:
         if prompt:
             description += f" — {prompt[:100]}"
 
-        return {
+        proposal = {
             "name": new_name,
             "description": description,
             "sql": new_sql,
@@ -1436,6 +1507,9 @@ class DataModelGenerator:
             "columns": new_columns,
             "excluded_columns": [],
         }
+        if preview_raw is not None:
+            proposal["_preview_raw"] = preview_raw
+        return proposal
 
     def create_models(self, definitions: list[dict], db_id: int,
                       collection_id: int, tenant_id: str) -> dict:
@@ -1480,7 +1554,7 @@ class DataModelGenerator:
 
         Returns (columns_text, schema_name, join_keys_text, relationships_text).
         """
-        metadata = metabase_client.get_database_metadata(db_id, tenant_id=tenant_id)
+        metadata = self._get_metadata(db_id, tenant_id)
 
         # Build a field-ID → (schema, table, column) lookup across all tables
         field_lookup: dict[int, tuple[str, str, str]] = {}
@@ -1582,15 +1656,6 @@ class DataModelGenerator:
 
         return "\n".join(lines), schema_name, join_keys_text, relationships_text
 
-    def _has_data(self, schema: str, table: str, db_id: int, tenant_id: str) -> bool:
-        """Check if a view/table has at least one row."""
-        sql = f'SELECT 1 FROM "{schema}"."{table}" LIMIT 1'
-        try:
-            result = metabase_client.execute_sql(sql, db_id, tenant_id=tenant_id)
-            return bool(result.get("rows"))
-        except Exception:
-            return False
-
     _BATCH_DATA_CHECK_SIZE = 100
 
     def _batch_check_view_data(
@@ -1598,8 +1663,8 @@ class DataModelGenerator:
     ) -> dict[str, bool]:
         """One round-trip EXISTS probe across many Reporting views.
 
-        Replaces N sequential _has_data calls. Falls back to assuming each view
-        has data if the batch fails — better to show a stale empty-flag than
+        Replaces N sequential per-view existence checks. Falls back to assuming each
+        view has data if the batch fails — better to show a stale empty-flag than
         block discovery.
         """
         if not view_names:
@@ -1637,69 +1702,45 @@ class DataModelGenerator:
 
         return result_map
 
-    def _get_views_with_labels(self, db_id: int, tenant_id: str) -> set[str]:
-        """One round-trip: distinct ViewName values from ReportColumnsMaps."""
-        views_with_labels, _ = self._get_report_columns_maps_info(db_id, tenant_id)
-        return views_with_labels
-
     def _get_report_columns_maps_info(
         self, db_id: int, tenant_id: str
     ) -> tuple[set[str], dict[str, str]]:
-        """One round-trip: fetch ViewName and CorrelationProvider from ReportColumnsMaps.
+        """Fetch (views_with_labels, correlation_providers) from ReportColumnsMaps.
 
-        Returns (views_with_labels, correlation_providers) where:
-        - views_with_labels: set of ViewName values (for has_labels flag)
+        One round-trip, cached per (db_id, tenant_id) for the same short TTL as
+        metadata. Source-type detection reads this once per view, so caching collapses
+        those repeated lookups to a single query within a preview.
+
+        - views_with_labels: set of ViewName values (for the has_labels flag)
         - correlation_providers: {ViewName: lowercase CorrelationProvider}
         """
-        sql = 'SELECT DISTINCT "ViewName", "CorrelationProvider" FROM "Reporting"."ReportColumnsMaps"'
-        views_with_labels: set[str] = set()
-        correlation_providers: dict[str, str] = {}
-        try:
-            result = metabase_client.execute_sql(sql, db_id, tenant_id=tenant_id)
-            for row in result.get("rows", []):
-                if row and row[0]:
-                    views_with_labels.add(row[0])
-                    if len(row) > 1 and row[1]:
-                        correlation_providers[row[0]] = row[1].strip().lower()
-        except Exception as e:
-            logger.warning(
-                "discover_views: ReportColumnsMaps query failed (%s); "
-                "assuming no labels and no correlation providers",
-                e,
-            )
-        return views_with_labels, correlation_providers
+        key = (int(db_id), str(tenant_id).strip())
+        now = time.monotonic()
+        with self._rcm_lock:
+            cached = self._rcm_cache.get(key)
+            if cached and (now - cached[0]) < self._META_CACHE_TTL:
+                return cached[1]
 
-    def _get_correlation_provider(
-        self, view_name: str, db_id: int, tenant_id: str
-    ) -> str:
-        """Fetch the CorrelationProvider for a single view from ReportColumnsMaps."""
-        sql = (
-            f'SELECT "CorrelationProvider" FROM "Reporting"."ReportColumnsMaps" '
-            f"WHERE \"ViewName\" = '{view_name}' LIMIT 1"
-        )
-        try:
-            result = metabase_client.execute_sql(sql, db_id, tenant_id=tenant_id)
-            rows = result.get("rows", [])
-            if rows and rows[0] and rows[0][0]:
-                return rows[0][0].strip().lower()
-        except Exception as e:
-            logger.warning(
-                "_get_correlation_provider: lookup failed for '%s' (%s)",
-                view_name, e,
-            )
-        return ""
+            sql = 'SELECT DISTINCT "ViewName", "CorrelationProvider" FROM "Reporting"."ReportColumnsMaps"'
+            views_with_labels: set[str] = set()
+            correlation_providers: dict[str, str] = {}
+            try:
+                result = metabase_client.execute_sql(sql, db_id, tenant_id=tenant_id)
+                for row in result.get("rows", []):
+                    if row and row[0]:
+                        views_with_labels.add(row[0])
+                        if len(row) > 1 and row[1]:
+                            correlation_providers[row[0]] = row[1].strip().lower()
+            except Exception as e:
+                logger.warning(
+                    "discover_views: ReportColumnsMaps query failed (%s); "
+                    "assuming no labels and no correlation providers",
+                    e,
+                )
 
-    def _has_labels(self, view_name: str, db_id: int, tenant_id: str) -> bool:
-        """Check if ReportColumnsMaps has entries for this view."""
-        sql = f"""
-        SELECT 1 FROM "Reporting"."ReportColumnsMaps"
-        WHERE "ViewName" = '{view_name}' LIMIT 1
-        """
-        try:
-            result = metabase_client.execute_sql(sql, db_id, tenant_id=tenant_id)
-            return bool(result.get("rows"))
-        except Exception:
-            return False
+            info = (views_with_labels, correlation_providers)
+            self._rcm_cache[key] = (now, info)
+            return info
 
     def _get_view_labels(self, view_name: str, db_id: int,
                          tenant_id: str) -> dict:
@@ -1771,7 +1812,7 @@ class DataModelGenerator:
 
         Returns (included_columns, excluded_columns).
         """
-        metadata = metabase_client.get_database_metadata(db_id, tenant_id=tenant_id)
+        metadata = self._get_metadata(db_id, tenant_id)
 
         all_columns = set()
         for table in metadata.get("tables", []):
@@ -1824,8 +1865,10 @@ class DataModelGenerator:
         return result.strip() or None
 
     async def _post_completion(self, session: aiohttp.ClientSession,
-                               system_message: str, prompt: str) -> Optional[str]:
-        """Call the configured LLM."""
+                               system_message: str, prompt: str,
+                               max_tokens: int = 4000) -> Optional[str]:
+        """Call the configured LLM. `max_tokens` caps completion length — naming-only
+        calls pass a small value to avoid paying for the full SQL-sized budget."""
         ai_cfg = config.ai
 
         headers = {
@@ -1842,7 +1885,7 @@ class DataModelGenerator:
                 {"role": "system", "content": system_message},
                 {"role": "user", "content": prompt},
             ],
-            "max_completion_tokens": 4000,
+            "max_completion_tokens": max_tokens,
         }
 
         try:
