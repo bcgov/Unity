@@ -47,8 +47,19 @@ public class OpenAIConfigurationResolver(IConfiguration configuration) : ITransi
     {
         var providerName = ResolveProviderName(operationName);
         var profileName = ResolveProfileName(operationName);
-        var configuredValue = OptionalProfile(providerName, profileName, "MaxOutputTokenCountSupported");
-        return configuredValue == null || bool.Parse(configuredValue);
+        var key = ProfileKey(providerName, profileName, "MaxOutputTokenCountSupported");
+        var configuredValue = Optional(key);
+        if (configuredValue == null)
+        {
+            return true;
+        }
+
+        if (bool.TryParse(configuredValue, out var parsedValue))
+        {
+            return parsedValue;
+        }
+
+        throw new InvalidOperationException($"{key} must be 'true' or 'false'.");
     }
 
     public int ResolveCompletionTokens(string operationName)

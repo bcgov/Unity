@@ -162,9 +162,18 @@ public class OpenAITransportService(
 
     private static string? ExtractModelOutput(ChatCompletion completion, string? responseContent)
     {
-        if (completion.Content.Count > 0 && !string.IsNullOrWhiteSpace(completion.Content[0].Text))
+        var contentParts = new List<string>();
+        foreach (var part in completion.Content)
         {
-            return completion.Content[0].Text;
+            if (!string.IsNullOrWhiteSpace(part.Text))
+            {
+                contentParts.Add(part.Text!);
+            }
+        }
+
+        if (contentParts.Count > 0)
+        {
+            return string.Concat(contentParts);
         }
 
         return TryExtractMessageContent(responseContent);

@@ -21,6 +21,7 @@ public class ChefsAttachmentDownloadService(
     IResilientHttpRequest resilientRestClient,
     IStringEncryptionService stringEncryptionService) : IChefsAttachmentDownloadService, ITransientDependency
 {
+    [Volo.Abp.Uow.UnitOfWork(isTransactional: false)]
     public async Task<BlobDto> DownloadAsync(Guid? formSubmissionId, Guid? chefsFileAttachmentId, string name)
     {
         if (formSubmissionId == null)
@@ -50,7 +51,7 @@ public class ChefsAttachmentDownloadService(
         string url = $"{chefsApi}/files/{chefsFileAttachmentId}";
         var decryptedApiKey = stringEncryptionService.Decrypt(applicationForm.ApiKey!);
 
-        var response = await resilientRestClient.HttpAsync(
+        using var response = await resilientRestClient.HttpAsync(
             HttpMethod.Get,
             url,
             null,
