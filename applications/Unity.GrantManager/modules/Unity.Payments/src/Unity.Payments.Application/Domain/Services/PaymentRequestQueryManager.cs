@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Unity.GrantManager.Applications;
 using Unity.Payments.Domain.PaymentRequests;
 using Unity.Payments.Domain.Suppliers;
 using Unity.Payments.Enums;
@@ -19,7 +20,8 @@ namespace Unity.Payments.Domain.Services
         ISiteRepository siteRepository,
         IExternalUserLookupServiceProvider externalUserLookupServiceProvider,
         CasPaymentRequestCoordinator casPaymentRequestCoordinator,
-        IObjectMapper objectMapper) : DomainService, IPaymentRequestQueryManager
+        IObjectMapper objectMapper,
+        IApplicationRepository applicationRepository) : DomainService, IPaymentRequestQueryManager
     {
         public Task<int> GetPaymentRequestCountBySiteIdAsync(Guid siteId)
         {
@@ -127,6 +129,23 @@ namespace Unity.Payments.Domain.Services
         public async Task<List<PaymentRequestDto>> MapToDtoAndLoadDetailsAsync(List<PaymentRequest> paymentsList)
         {
             var paymentDtos = objectMapper.Map<List<PaymentRequest>, List<PaymentRequestDto>>(paymentsList);
+
+            // Batch-fetch applicant IDs for all unique correlation IDs (application IDs)
+            var applicationIds = paymentDtos
+                .Select(p => p.CorrelationId)
+                .Distinct()
+                .ToArray();
+
+            var applications = await applicationRepository.GetListByIdsAsync(applicationIds) ?? [];
+            var applicantIdByApplicationId = applications.ToDictionary(a => a.Id, a => a.ApplicantId);
+
+            foreach (var paymentDto in paymentDtos)
+            {
+                if (applicantIdByApplicationId.TryGetValue(paymentDto.CorrelationId, out var applicantId))
+                {
+                    paymentDto.ApplicantId = applicantId;
+                }
+            }
 
             // Flatten all DecisionUserIds from ExpenseApprovals across all PaymentRequestDtos
             List<Guid> paymentRequesterIds = [.. paymentDtos
