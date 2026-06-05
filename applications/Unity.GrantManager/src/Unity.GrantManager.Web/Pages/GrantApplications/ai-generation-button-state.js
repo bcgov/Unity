@@ -13,11 +13,12 @@
             .prop('disabled', true);
     }
 
-    function applyRateLimitState(request, options = {}) {
+    function applyRateLimitState(generationStatus, options = {}) {
+        const request = generationStatus?.generationRequest;
         global.applyAIRateLimitState?.(
             {
-                isGenerating: request?.isGenerating === true || request?.isActive === true,
-                retryAfterSeconds: Number(request?.retryAfterSeconds) || 0
+                isGenerating: generationStatus?.isGenerating === true || request?.isActive === true,
+                retryAfterSeconds: Number(generationStatus?.retryAfterSeconds) || 0
             },
             { pollWhenGenerating: options.pollWhenGenerating === true }
         );
@@ -47,8 +48,8 @@
         restoreForCooldownCheck($button, html) {
             restoreButtonForCooldownCheck($button, html);
         },
-        applyStatusState(request) {
-            applyRateLimitState(request, { pollWhenGenerating: true });
+        applyStatusState(generationStatus) {
+            applyRateLimitState(generationStatus, { pollWhenGenerating: true });
         },
         monitor(options) {
             const intervalMs = options.intervalMs || 15000;
@@ -77,14 +78,15 @@
 
             const poll = () => {
                 options.getStatus()
-                    .done((request) => {
+                    .done((generationStatus) => {
                         failures = 0;
+                        const request = generationStatus?.generationRequest;
                         const status = this.resolveStatus(request?.status);
 
                         if (status === 'Failed') {
                             stop();
                             restoreButton(options.$button, options.originalHtml);
-                            applyRateLimitState(request, { pollWhenGenerating: true });
+                            applyRateLimitState(generationStatus, { pollWhenGenerating: true });
                             options.onFailed?.(request);
                             return;
                         }
@@ -100,12 +102,12 @@
                         if (request.isActive === false || status === 'Completed') {
                             stop();
                             restoreButtonForCooldownCheck(options.$button, options.originalHtml);
-                            applyRateLimitState(request, { pollWhenGenerating: true });
+                            applyRateLimitState(generationStatus, { pollWhenGenerating: true });
                             options.onComplete?.(request);
                             return;
                         }
 
-                        applyRateLimitState(request);
+                        applyRateLimitState(generationStatus);
                         scheduleNextPoll();
                     })
                     .fail((error) => {

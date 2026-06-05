@@ -472,12 +472,13 @@ function generateAiButtonAction(e, dt, button, config) {
     }
 
     unity.grantManager.grantApplications.grantApplication.queueApplicationScoring(pageApplicationId)
-        .done(function (request) {
+        .done(function (generationStatus) {
+            const request = generationStatus?.generationRequest;
             const status = globalThis.AIGenerationButtonState?.resolveStatus(request?.status) ?? '';
 
             if (status === 'Completed') {
                 restoreReviewListAiButtonForCooldownCheck($button);
-                globalThis.AIGenerationButtonState?.applyStatusState(request);
+                globalThis.AIGenerationButtonState?.applyStatusState(generationStatus);
                 refreshReviewListAfterAiScoring();
                 return;
             }
@@ -518,7 +519,8 @@ function resumeActiveReviewListAiButton(reviewListTable) {
     const $button = $(button.node());
     unity.grantManager.grantApplications.grantApplication
         .getAIGenerationStatus(pageApplicationId, 'application-scoring')
-        .done(function(request) {
+        .done(function(generationStatus) {
+            const request = generationStatus?.generationRequest;
             if (request?.isActive !== true) {
                 return;
             }

@@ -694,12 +694,13 @@ function queueApplicationScoring(triggerButton = null) {
 
     unity.grantManager.grantApplications.grantApplication
         .queueApplicationScoring(applicationId)
-        .done(function (request) {
+        .done(function (generationStatus) {
+            const request = generationStatus?.generationRequest;
             const status = globalThis.AIGenerationButtonState?.resolveStatus(request?.status) ?? '';
 
             if (status === 'Completed') {
                 globalThis.AIGenerationButtonState?.restoreForCooldownCheck($button, existingHtml);
-                globalThis.AIGenerationButtonState?.applyStatusState(request);
+                globalThis.AIGenerationButtonState?.applyStatusState(generationStatus);
                 PubSub.publish('refresh_assessment_scores', null);
                 return;
             }

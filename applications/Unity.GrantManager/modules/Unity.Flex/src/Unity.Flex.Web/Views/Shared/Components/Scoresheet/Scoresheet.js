@@ -2,8 +2,11 @@ $(function () {
 
     function makeScoresheetsSortable() {
         document.querySelectorAll('[id^="sections-questions"]').forEach(function (div) {
+            const accordionItem = div.closest('.accordion-item');
+            const isArchived = accordionItem?.dataset.isArchived === 'true';
 
             _ = new Sortable(div, {
+                disabled: isArchived,
                 animation: 150,
                 onEnd: function (evt) {
                     const sortedScoresheetId = evt.target.dataset.scoresheetid;
@@ -50,6 +53,9 @@ $(function () {
                 let itemEl = evt.item;
                 itemEl.style.border = "2px solid lightblue";
             },
+            onMove: function (evt) {
+                return evt.dragged.dataset.isArchived !== 'true';
+            }
         });
 
     }

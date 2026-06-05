@@ -31,9 +31,9 @@ namespace Unity.Reporting.Configuration.FieldsProviders
         /// Fields with the same (Label, Path) but different Type produce per-version conflict entries.
         /// Fields unique to one version are included with a VersionLabel marker.
         /// </summary>
-        public async Task<FieldPathMetaMapDto> GetFieldsMetadataAsync(Guid formId)
+        public async Task<FieldPathMetaMapDto> GetFieldsMetadataAsync(Guid correlationId)
         {
-            var versions = await applicationFormAppService.GetVersionsAsync(formId);
+            var versions = await applicationFormAppService.GetVersionsAsync(correlationId);
             var versionsWithFields = new List<(Guid VersionId, string VersionLabel, FieldPathTypeDto[] Fields)>();
             var metadataInfo = new Dictionary<string, string>();
 
@@ -164,7 +164,7 @@ namespace Unity.Reporting.Configuration.FieldsProviders
             var result = new List<FieldPathTypeDto>();
             var processedExactKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-            foreach (var (_, versionLabel, fields) in versionsWithFields)
+            foreach (var (_, _, fields) in versionsWithFields)
             {
                 foreach (var field in fields)
                 {
@@ -193,8 +193,8 @@ namespace Unity.Reporting.Configuration.FieldsProviders
                             Id = field.Id,
                             Key = field.Key,
                             Label = field.Label,
-                            Path = field.Path,
-                            Type = field.Type,
+                            Path = field.Path ?? string.Empty,
+                            Type = field.Type ?? string.Empty,
                             TypePath = field.TypePath,
                             DataPath = field.DataPath,
                             VersionLabel = string.Join(", ", exactGroup.Select(e => e.VersionLabel))
@@ -208,8 +208,8 @@ namespace Unity.Reporting.Configuration.FieldsProviders
                             Id = field.Id,
                             Key = field.Key,
                             Label = field.Label,
-                            Path = field.Path,
-                            Type = field.Type,
+                            Path = field.Path ?? string.Empty,
+                            Type = field.Type ?? string.Empty,
                             TypePath = field.TypePath,
                             DataPath = field.DataPath,
                             VersionLabel = null
@@ -223,8 +223,8 @@ namespace Unity.Reporting.Configuration.FieldsProviders
                             Id = field.Id,
                             Key = field.Key,
                             Label = field.Label,
-                            Path = field.Path,
-                            Type = field.Type,
+                            Path = field.Path ?? string.Empty,
+                            Type = field.Type ?? string.Empty,
                             TypePath = field.TypePath,
                             DataPath = field.DataPath,
                             VersionLabel = string.Join(", ", exactGroup.Select(e => e.VersionLabel))
