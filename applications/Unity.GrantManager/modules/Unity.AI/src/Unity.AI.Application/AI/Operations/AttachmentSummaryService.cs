@@ -1,13 +1,16 @@
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Localization;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Unity.AI.Extraction;
+using Unity.AI.Localization;
 using Unity.AI.Requests;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Intakes;
+using Volo.Abp;
 using Volo.Abp.DependencyInjection;
 
 namespace Unity.AI.Operations;
@@ -17,8 +20,10 @@ public class AttachmentSummaryService(
     IChefsFileAttachmentStreamProvider chefsFileAttachmentStreamProvider,
     ITextExtractionService textExtractionService,
     IAIService aiService,
+    IAIGenerationPrerequisiteValidator aiGenerationPrerequisiteValidator,
     AIExecutionModeResolver executionModeResolver,
-    ILogger<AttachmentSummaryService> logger) : IAttachmentSummaryService, ITransientDependency
+    ILogger<AttachmentSummaryService> logger,
+    IStringLocalizer<AIResource> localizer) : IAttachmentSummaryService, ITransientDependency
 {
     private const string SummaryGenerationFailedMessage = "AI summary generation failed.";
 
@@ -47,6 +52,11 @@ public class AttachmentSummaryService(
     public async Task<List<string>> GenerateAndSaveAsync(IEnumerable<Guid> attachmentIds, string? promptVersion = null, CancellationToken cancellationToken = default)
     {
         var ids = attachmentIds as IReadOnlyCollection<Guid> ?? attachmentIds.ToList();
+        if (ids.Count == 0)
+        {
+            throw new UserFriendlyException(localizer[AILocalizationKeys.SelectAttachmentForSummaries]);
+        }
+
         var mode = executionModeResolver.ResolveMode(AIExecutionModeResolver.AttachmentSummaryOperation);
         if (mode != AIExecutionMode.Sequential)
         {
@@ -103,6 +113,8 @@ public class AttachmentSummaryService(
         IReadOnlyCollection<Guid>? attachmentIds = null,
         CancellationToken cancellationToken = default)
     {
+        await aiGenerationPrerequisiteValidator.EnsureAttachmentSummaryAvailableAsync(applicationId);
+
         var applicationAttachmentIds = (await applicationChefsFileAttachmentRepository.GetListAsync(a => a.ApplicationId == applicationId))
             .Select(a => a.Id)
             .ToList();

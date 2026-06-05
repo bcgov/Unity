@@ -317,12 +317,22 @@ namespace Unity.AI.Runtime
 
         private async Task LogPromptInputAsync(string promptType, string promptVersion, string? systemPrompt, string userPrompt, CancellationToken cancellationToken = default)
         {
+            if (!CanWritePromptFileLog())
+            {
+                return;
+            }
+
             var formattedInput = FormatPromptInputForLog(systemPrompt, userPrompt);
             await WritePromptLogFileAsync(promptType, promptVersion, "INPUT", formattedInput, cancellationToken);
         }
 
         private async Task LogPromptOutputAsync(string promptType, string promptVersion, string output, CancellationToken cancellationToken = default)
         {
+            if (!CanWritePromptFileLog())
+            {
+                return;
+            }
+
             var formattedOutput = FormatPromptOutputForLog(output);
             await WritePromptLogFileAsync(promptType, promptVersion, "OUTPUT", formattedOutput, cancellationToken);
         }

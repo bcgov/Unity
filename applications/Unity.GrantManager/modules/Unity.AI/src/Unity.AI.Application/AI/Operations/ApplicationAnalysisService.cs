@@ -21,6 +21,7 @@ namespace Unity.AI.Operations
         IApplicationFormVersionRepository applicationFormVersionRepository,
         IApplicationChefsFileAttachmentRepository applicationChefsFileAttachmentRepository,
         IAIService aiService,
+        IAIGenerationPrerequisiteValidator aiGenerationPrerequisiteValidator,
         ILogger<ApplicationAnalysisService> logger) : IApplicationAnalysisService, ITransientDependency
     {
         private const string ComponentsKey = "components";
@@ -31,6 +32,8 @@ namespace Unity.AI.Operations
 
         public async Task<string> RegenerateAndSaveAsync(Guid applicationId, string? promptVersion = null, CancellationToken cancellationToken = default)
         {
+            await aiGenerationPrerequisiteValidator.EnsureApplicationAnalysisAvailableAsync(applicationId);
+
             var application = await applicationRepository.GetAsync(applicationId);
             var formSubmission = await applicationFormSubmissionRepository.GetByApplicationAsync(applicationId);
             var attachments = await applicationChefsFileAttachmentRepository.GetListAsync(a => a.ApplicationId == applicationId);

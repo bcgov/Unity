@@ -86,15 +86,11 @@ public class AIRateLimiter(
             return new AIRateLimitStateDto { RetryAfterSeconds = 0, IsGenerating = false };
         }
 
-        var userLock = distributedLockProvider.CreateLock(CooldownLockPrefix + userId);
-        using (await userLock.AcquireAsync())
+        return new AIRateLimitStateDto
         {
-            return new AIRateLimitStateDto
-            {
-                RetryAfterSeconds = await GetRemainingSecondsAsync(userId),
-                IsGenerating = await HasActiveGenerationAsync()
-            };
-        }
+            RetryAfterSeconds = await GetRemainingSecondsAsync(userId),
+            IsGenerating = await HasActiveGenerationAsync()
+        };
     }
 
     private async Task<bool> HasActiveGenerationAsync()

@@ -536,17 +536,7 @@ public partial class ApplicationActionResultItemToDtoMapper : MapperBase<Applica
 [Mapper] public partial class CommunityToDtoMapper : MapperBase<Community, CommunityDto> { public override partial CommunityDto Map(Community source); public override partial void Map(Community source, CommunityDto destination); }
 [Mapper] public partial class RegionalDistrictToDtoMapper : MapperBase<RegionalDistrict, RegionalDistrictDto> { public override partial RegionalDistrictDto Map(RegionalDistrict source); public override partial void Map(RegionalDistrict source, RegionalDistrictDto destination); }
 [Mapper] public partial class ApplicationTagsToDtoMapper : MapperBase<ApplicationTags, ApplicationTagsDto> { public override partial ApplicationTagsDto Map(ApplicationTags source); public override partial void Map(ApplicationTags source, ApplicationTagsDto destination); }
-[Mapper]
-public partial class AIGenerationRequestToDtoMapper : MapperBase<AIGenerationRequest, AIGenerationRequestDto>
-{
-    [MapperIgnoreTarget(nameof(AIGenerationRequestDto.IsGenerating))]
-    [MapperIgnoreTarget(nameof(AIGenerationRequestDto.RetryAfterSeconds))]
-    public override partial AIGenerationRequestDto Map(AIGenerationRequest source);
-
-    [MapperIgnoreTarget(nameof(AIGenerationRequestDto.IsGenerating))]
-    [MapperIgnoreTarget(nameof(AIGenerationRequestDto.RetryAfterSeconds))]
-    public override partial void Map(AIGenerationRequest source, AIGenerationRequestDto destination);
-}
+[Mapper] public partial class AIGenerationRequestToDtoMapper : MapperBase<AIGenerationRequest, AIGenerationRequestDto> { public override partial AIGenerationRequestDto Map(AIGenerationRequest source); public override partial void Map(AIGenerationRequest source, AIGenerationRequestDto destination); }
 [Mapper(AllowNullPropertyAssignment = true)]
 public partial class ApplicantToGrantApplicationApplicantDtoMapper : MapperBase<Applicant, GrantApplicationApplicantDto>
 {
