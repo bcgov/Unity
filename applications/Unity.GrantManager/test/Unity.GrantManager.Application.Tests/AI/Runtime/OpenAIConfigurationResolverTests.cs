@@ -81,6 +81,75 @@ public class OpenAIConfigurationResolverTests
     }
 
     [Fact]
+    public void ResolveEndpoint_Should_Return_Configured_Provider_Endpoint()
+    {
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["Azure:Operations:Defaults:Provider"] = "OpenAI",
+                ["Azure:OpenAI:Endpoint"] = "https://example.test"
+            })
+            .Build();
+
+        var resolver = new OpenAIConfigurationResolver(configuration);
+
+        resolver.ResolveEndpoint().ShouldBe(new Uri("https://example.test"));
+    }
+
+    [Fact]
+    public void ResolveDeploymentName_Should_Return_Profile_DeploymentName()
+    {
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["Azure:Operations:Defaults:Provider"] = "OpenAI",
+                ["Azure:Operations:Defaults:Profile"] = "Gpt5Mini",
+                ["Azure:OpenAI:Profiles:Gpt5Mini:DeploymentName"] = "gpt-5-mini"
+            })
+            .Build();
+
+        var resolver = new OpenAIConfigurationResolver(configuration);
+
+        resolver.ResolveDeploymentName().ShouldBe("gpt-5-mini");
+    }
+
+    [Fact]
+    public void ResolveDeploymentName_Should_Use_Operation_Profile_Override()
+    {
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["Azure:Operations:Defaults:Provider"] = "OpenAI",
+                ["Azure:Operations:Defaults:Profile"] = "Gpt5Mini",
+                ["Azure:Operations:ApplicationAnalysis:Profile"] = "Gpt4oMini",
+                ["Azure:OpenAI:Profiles:Gpt5Mini:DeploymentName"] = "gpt-5-mini",
+                ["Azure:OpenAI:Profiles:Gpt4oMini:DeploymentName"] = "gpt-4o-mini"
+            })
+            .Build();
+
+        var resolver = new OpenAIConfigurationResolver(configuration);
+
+        resolver.ResolveDeploymentName("ApplicationAnalysis").ShouldBe("gpt-4o-mini");
+    }
+
+    [Fact]
+    public void ResolveDeploymentName_Should_Throw_When_Profile_DeploymentName_Is_Missing()
+    {
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["Azure:Operations:Defaults:Provider"] = "OpenAI",
+                ["Azure:Operations:Defaults:Profile"] = "Gpt5Mini"
+            })
+            .Build();
+
+        var resolver = new OpenAIConfigurationResolver(configuration);
+
+        var ex = Should.Throw<InvalidOperationException>(() => resolver.ResolveDeploymentName());
+        ex.Message.ShouldContain("Azure:OpenAI:Profiles:Gpt5Mini:DeploymentName");
+    }
+
+    [Fact]
     public void ResolveConfiguredTemperature_Should_Return_Profile_Temperature()
     {
         var configuration = new ConfigurationBuilder()
@@ -122,15 +191,31 @@ public class OpenAIConfigurationResolverTests
         resolver.ResolveConfiguredTemperature().ShouldBeNull();
     }
 
-    private static IConfiguration BuildProfileConfiguration(string settingName, string settingValue)
+    [Theory]
+    [InlineData(null, true)]
+    [InlineData("true", true)]
+    [InlineData("false", false)]
+    public void ResolveMaxOutputTokenCountSupported_Should_Use_Profile_Setting_Or_Default_True(
+        string? configuredValue,
+        bool expected)
     {
-        return new ConfigurationBuilder()
-            .AddInMemoryCollection(new Dictionary<string, string?>
-            {
-                ["Azure:Operations:Defaults:Provider"] = "OpenAI",
-                ["Azure:Operations:Defaults:Profile"] = "Gpt5Mini",
-                [$"Azure:OpenAI:Profiles:Gpt5Mini:{settingName}"] = settingValue
-            })
+        var values = new Dictionary<string, string?>
+        {
+            ["Azure:Operations:Defaults:Provider"] = "OpenAI",
+            ["Azure:Operations:Defaults:Profile"] = "Gpt5Mini"
+        };
+
+        if (configuredValue != null)
+        {
+            values["Azure:OpenAI:Profiles:Gpt5Mini:MaxOutputTokenCountSupported"] = configuredValue;
+        }
+
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(values)
             .Build();
+
+        var resolver = new OpenAIConfigurationResolver(configuration);
+
+        resolver.ResolveMaxOutputTokenCountSupported().ShouldBe(expected);
     }
 }

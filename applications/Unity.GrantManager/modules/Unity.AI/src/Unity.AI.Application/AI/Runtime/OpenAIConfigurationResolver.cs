@@ -43,6 +43,14 @@ public class OpenAIConfigurationResolver(IConfiguration configuration) : ITransi
         return null;
     }
 
+    public bool ResolveMaxOutputTokenCountSupported(string? operationName = null)
+    {
+        var providerName = ResolveProviderName(operationName);
+        var profileName = ResolveProfileName(operationName);
+        var configuredValue = OptionalProfile(providerName, profileName, "MaxOutputTokenCountSupported");
+        return configuredValue == null || bool.Parse(configuredValue);
+    }
+
     public int ResolveCompletionTokens(string operationName)
     {
         var configuredValue = OptionalPositiveInt($"Azure:Operations:{operationName}:MaxCompletionTokens");
@@ -77,43 +85,7 @@ public class OpenAIConfigurationResolver(IConfiguration configuration) : ITransi
     {
         var providerName = ResolveProviderName(operationName);
         var profileName = ResolveProfileName(operationName);
-        var profileApiUrl = RequiredProfile(providerName, profileName, "ApiUrl");
-        // Extract deployment name from URL like "/openai/deployments/gpt-5-mini/chat/completions?api-version=..."
-        var parts = profileApiUrl.Split('/', StringSplitOptions.RemoveEmptyEntries);
-        var deploymentIndex = Array.IndexOf(parts, "deployments");
-        if (deploymentIndex >= 0 && deploymentIndex + 1 < parts.Length)
-        {
-            var raw = parts[deploymentIndex + 1];
-            // Strip query string if present (e.g., "gpt-5-mini?api-version=...")
-            var deployment = raw.Contains('?') ? raw[..raw.IndexOf('?')] : raw;
-            return deployment;
-        }
-        throw new InvalidOperationException($"Could not extract deployment name from API URL: {profileApiUrl}");
-    }
-
-    public string? ResolveApiVersion(string? operationName = null)
-    {
-        var providerName = ResolveProviderName(operationName);
-        var profileName = ResolveProfileName(operationName);
-        var profileApiUrl = RequiredProfile(providerName, profileName, "ApiUrl");
-        // Extract api-version from query string like "?api-version=2024-10-01-preview"
-        var queryString = profileApiUrl.Contains('?') ? profileApiUrl.Substring(profileApiUrl.IndexOf('?') + 1) : null;
-        if (string.IsNullOrEmpty(queryString))
-        {
-            return null;
-        }
-
-        var parameters = queryString.Split('&');
-        foreach (var param in parameters)
-        {
-            var keyValue = param.Split('=');
-            if (keyValue.Length == 2 && keyValue[0] == "api-version")
-            {
-                return Uri.UnescapeDataString(keyValue[1]);
-            }
-        }
-
-        return null;
+        return RequiredProfile(providerName, profileName, "DeploymentName");
     }
 
     private string ResolveProfileName(string? operationName)

@@ -27,8 +27,9 @@ public class SubmissionAppService(
         IEndpointManagementAppService endpointManagementAppService,
         IResilientHttpRequest resilientRestClient,
         IStringEncryptionService stringEncryptionService,
-        IApplicationRepository applicationRepository,
-        ITenantRepository tenantRepository
+    IChefsAttachmentDownloadService chefsAttachmentDownloadService,
+    IApplicationRepository applicationRepository,
+    ITenantRepository tenantRepository
         ) : GrantManagerAppService, ISubmissionAppService
 {
 
@@ -61,54 +62,7 @@ public class SubmissionAppService(
     [AllowAnonymous]
     public async Task<BlobDto> GetChefsFileAttachment(Guid? formSubmissionId, Guid? chefsFileAttachmentId, string name)
     {
-        if (formSubmissionId == null)
-        {
-            throw new ApiException(400, "Missing required parameter 'formId' when calling GetSubmission");
-        }
-
-        if (chefsFileAttachmentId == null)
-        {
-            throw new ApiException(400, "Missing required parameter 'chefsFileAttachmentId' when calling GetFileAttachment");
-        }
-
-        ApplicationForm? applicationForm = await GetApplicationFormBySubmissionId(formSubmissionId) ?? throw new ApiException(400, "Missing Form configuration");
-        if (applicationForm.ChefsApplicationFormGuid == null)
-        {
-            throw new ApiException(400, "Missing CHEFS form Id");
-        }
-
-        if (applicationForm.ApiKey == null)
-        {
-            throw new ApiException(400, "Missing CHEFS Api Key");
-        }
-
-        string chefsApi = await endpointManagementAppService.GetChefsApiBaseUrlAsync();
-        string url = $"{chefsApi}/files/{chefsFileAttachmentId}";
-        var decryptedApiKey = stringEncryptionService.Decrypt(applicationForm.ApiKey!);
-
-        var response = await resilientRestClient.HttpAsync(
-            HttpMethod.Get,
-            url,
-            null,
-            null,
-            basicAuth: (applicationForm.ChefsApplicationFormGuid!, decryptedApiKey ?? string.Empty)
-        );
-
-        if (((int)response.StatusCode) != 200)
-        {
-            var errorContent = response.Content != null ? await response.Content.ReadAsStringAsync() : string.Empty;
-            throw new ApiException((int)response.StatusCode, "Error calling GetChefsFileAttachment: " + errorContent, response.ReasonPhrase ?? $"{response.StatusCode}");
-        }
-
-        var contentBytes = response.Content != null ? await response.Content.ReadAsByteArrayAsync() : [];
-        var contentType = response.Content?.Headers?.ContentType?.MediaType ?? "application/octet-stream";
-        // Check and decode the file name if it is URL encoded
-        if (!string.IsNullOrEmpty(name) && name.Contains('%'))
-        {
-            name = Uri.UnescapeDataString(name);
-        }
-
-        return new BlobDto { Name = name, Content = contentBytes, ContentType = contentType };
+        return await chefsAttachmentDownloadService.DownloadAsync(formSubmissionId, chefsFileAttachmentId, name);
     }
 
     public async Task<ApplicationForm?> GetApplicationFormBySubmissionId(Guid? formSubmissionId)
