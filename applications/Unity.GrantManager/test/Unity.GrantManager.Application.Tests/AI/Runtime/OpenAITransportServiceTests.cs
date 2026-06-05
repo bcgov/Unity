@@ -2,7 +2,6 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging.Abstractions;
 using Shouldly;
 using System.Collections.Generic;
-using System.Text.Json;
 using System.Threading.Tasks;
 using Unity.AI.Runtime;
 using Xunit;
@@ -21,6 +20,7 @@ public class OpenAITransportServiceTests
 
         var service = new OpenAITransportService(
             resolver,
+            new OpenAIChatClientFactory(resolver),
             NullLogger<OpenAITransportService>.Instance);
 
         var result = await service.GenerateSummaryAsync("content", "system", 100);
@@ -37,8 +37,7 @@ public class OpenAITransportServiceTests
             ["Azure:Operations:Defaults:Profile"] = "Gpt5Mini",
             ["Azure:OpenAI:ApiKey"] = "test-key",
             ["Azure:OpenAI:Endpoint"] = "https://example.test",
-            ["Azure:OpenAI:Profiles:Gpt5Mini:ApiUrl"] = "/openai/deployments/gpt-5-mini/chat/completions",
-            ["Azure:OpenAI:Profiles:Gpt5Mini:MaxTokensParameter"] = "max_completion_tokens"
+            ["Azure:OpenAI:Profiles:Gpt5Mini:DeploymentName"] = "gpt-5-mini"
         };
 
         if (overrides != null)
