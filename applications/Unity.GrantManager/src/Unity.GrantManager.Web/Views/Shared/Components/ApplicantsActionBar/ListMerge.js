@@ -216,7 +216,8 @@
                 abp.notify.success('Applicants merged successfully.');
             }).catch(err => {
                 console.warn('Merge failed:', err);
-                abp.notify.error('Merge failed. Please try again.');
+                const msg = err?.responseJSON?.error?.message || 'Merge failed. Please try again.';
+                abp.message.error(msg, 'Merge Failed');
             }).always(() => {
                 $('#listMergeSpinner').addClass('d-none');
                 $('#listMergeMergeBtn').prop('disabled', false);

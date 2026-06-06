@@ -653,6 +653,15 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
     [RemoteService(true)]
     public async Task TransferApplicantApplicationsAsync(TransferApplicantApplicationsDto dto)
     {
+        var principal = await applicantRepository.GetAsync(dto.PrincipalApplicantId);
+        var nonPrincipal = await applicantRepository.GetAsync(dto.NonPrincipalApplicantId);
+
+        if ((principal != null && principal.IsDeleted) || (nonPrincipal != null && nonPrincipal.IsDeleted))
+        {
+            throw new UserFriendlyException(
+                "One or more selected applicants have been deleted. Please refresh the applicant list to update the view.");
+        }
+
         var applications = await applicationRepository.GetByApplicantIdAsync(dto.NonPrincipalApplicantId);
         foreach (var application in applications)
         {
@@ -669,6 +678,14 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
     {
         // Set principal as not duplicated
         var principal = await applicantRepository.GetAsync(dto.PrincipalApplicantId);
+        var nonPrincipal = await applicantRepository.GetAsync(dto.NonPrincipalApplicantId);
+
+        if ((principal != null && principal.IsDeleted) || (nonPrincipal != null && nonPrincipal.IsDeleted))
+        {
+            throw new UserFriendlyException(
+                "One or more selected applicants have been deleted. Please refresh the applicant list to update the view.");
+        }
+
         if (principal != null && principal.IsDuplicated)
         {
             principal.IsDuplicated = false;
@@ -676,12 +693,35 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
         }
 
         // Set non-principal as duplicated
-        var nonPrincipal = await applicantRepository.GetAsync(dto.NonPrincipalApplicantId);
         if (nonPrincipal != null && !nonPrincipal.IsDuplicated)
         {
             nonPrincipal.IsDuplicated = true;
             await applicantRepository.UpdateAsync(nonPrincipal);
         }
+    }
+
+    [RemoteService(true)]
+    [Authorize(GrantApplicationPermissions.Applicants.Delete)]
+    public async Task<bool> HasSubmissionsAsync(Guid id)
+    {
+        return await applicationRepository.HasApplicationsByApplicantIdAsync(id);
+    }
+
+    [RemoteService(true)]
+    [Authorize(GrantApplicationPermissions.Applicants.Delete)]
+    public async Task DeleteApplicantAsync(Guid id)
+    {
+        if (await applicationRepository.HasApplicationsByApplicantIdAsync(id))
+        {
+            throw new UserFriendlyException(
+                "This applicant cannot be deleted because it is associated with one or more submissions.");
+        }
+
+        var applicant = await applicantRepository.GetAsync(id);
+        applicant.IsDeleted = true;
+        applicant.DeletionTime = Clock.Now;
+        applicant.DeleterId = CurrentUser.Id;
+        await applicantRepository.UpdateAsync(applicant, autoSave: true);
     }
 
     private async Task UpdateApplicationFormSubmissionsAsync(Guid applicationId, Guid newApplicantId)
@@ -732,6 +772,9 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
     public async Task<PagedResultDto<ApplicantListDto>> GetListAsync(ApplicantListRequestDto input)
     {
         var query = await applicantRepository.GetQueryableAsync();
+
+        // Exclude soft-deleted applicants from the list
+        query = query.Where(a => !a.IsDeleted);
 
         // Apply default sorting (client-side DataTable handles search, sorting, and paging)
         query = query.OrderByDescending(a => a.CreationTime);
