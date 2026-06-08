@@ -350,6 +350,11 @@ function initializeDataTable(options) {
             }
         },
         stateLoadParams: function (settings, data) {
+            // Discard stale state when column count has changed so defaultVisibleColumns applies cleanly
+            if (data?.columns && data.columns.length !== settings.aoColumns.length) {
+                return false;
+            }
+
             if (data?.externalSearch) {
                 let externalSearch = $(settings.oInit.externalSearchInputId);
                 if (externalSearch.length) externalSearch.val(data.externalSearch);
