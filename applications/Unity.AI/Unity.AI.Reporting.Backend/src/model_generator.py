@@ -18,8 +18,6 @@ Supported patterns:
 import json
 import logging
 import re
-import threading
-import time
 from collections import defaultdict
 from typing import Optional
 
@@ -27,165 +25,19 @@ import aiohttp
 
 from config import config
 from metabase import metabase_client
+from model_prompts import (
+    ENHANCE_AND_NAME_PROMPT,
+    MODEL_GENERATION_PROMPT,
+    MODIFY_PROMPT,
+    NAMING_PROMPT,
+    SELF_HEAL_PROMPT,
+    SYSTEM_PROMPT,
+)
+from schema_repository import SchemaRepository
 
 CONTENT_TYPE = "application/json"
 
 logger = logging.getLogger(__name__)
-
-# --- Prompts ---
-
-SYSTEM_PROMPT = (
-    "You are a senior data analyst building a reusable reporting data model "
-    "for a grants management database. You produce clean, well-aliased SQL."
-)
-
-MODEL_GENERATION_PROMPT = """Build a data model query for the worksheet view described below.
-
-BASE VIEW: "{schema_name}"."{view_name}"
-COLUMNS (name | type | label | sample value):
-{columns_text}
-
-AVAILABLE REFERENCE TABLES:
-- "public"."Applications" (Id, ReferenceNo, ProjectName, ProjectSummary, RequestedAmount, TotalProjectBudget, EconomicRegion, RegionalDistrict, Community, Place, ProjectEndDate, SubmissionDate, ApplicationFormId, ApplicantId)
-- "public"."Applicants" (Id, OrgName, OrgNumber)
-- "public"."ApplicantAgents" (ApplicantId, ApplicationId, Name, Phone, Email)
-- "public"."ApplicantAddresses" (ApplicantId, ApplicationId, Street, Unit, City, Province, Postal)
-
-JOIN KEYS (columns that exist in the view for joining — do not SELECT these):
-{join_keys_text}
-
-RELATIONSHIPS (only use joins shown here):
-{relationships_text}
-
-RULES:
-- Always include from reference tables: ReferenceNo, OrgName, ProjectName
-- Include other useful reference columns (region, community, amounts) when relevant
-- Exclude junk columns: any UUID/internal-key columns, CreatorId, timestamps (CreationTime, LastModificationTime), ExtraProperties, ConcurrencyStamp, CorrelationProvider
-- Exclude the JOIN KEY columns from SELECT — they are only for JOIN conditions
-- Include ALL worksheet columns in the SELECT (even those with no data yet) — do not exclude columns unless they are junk
-- Use the provided Label as the column alias (AS "Label"). If no label exists, create a human-readable alias.
-- Add computed columns where useful (e.g., date differences like CURRENT_DATE - CAST(col AS date) for "days since" calculations)
-- Use LEFT JOINs to reference tables using ONLY the JOIN KEYS listed above
-- Use PostgreSQL double-quoted identifiers for all table/column names
-- Order columns logically: reference info first, then worksheet fields grouped by section
-- If no JOIN KEYS are listed, query only the base view without any joins
-
-Output ONLY valid JSON — no markdown fences, no explanation:
-{{"name": "Short Model Name", "description": "One sentence explaining what this model provides for reporting", "sql": "SELECT ..."}}"""
-
-SELF_HEAL_PROMPT = """The following SQL model query failed validation:
-
-```sql
-{bad_sql}
-```
-
-Error: {error}
-
-Available view columns:
-{columns_text}
-
-JOIN KEYS (exist in view but must NOT be selected):
-{join_keys_text}
-
-Valid relationships:
-{relationships_text}
-
-Fix the SQL query. Output ONLY the corrected SQL — no explanation, no markdown fences."""
-
-NAMING_PROMPT = """Given a data model built from source "{source}" with these columns:
-{columns}
-
-Provide ONLY valid JSON — no markdown fences, no explanation:
-{{"name": "Short Model Name (2-4 words)", "description": "One sentence explaining what this model provides for reporting"}}"""
-
-ENHANCE_PROMPT = """You are enhancing a data model SQL query. The query structure is LOCKED — do NOT change it.
-
-RULES:
-- Do NOT add or remove columns from the final SELECT
-- Do NOT change column order
-- Do NOT modify CTEs, FROM clauses, JOINs, UNION ALL, or WHERE clauses
-- ONLY modify the final SELECT expressions:
-  1. Replace raw field name aliases with human-readable labels:
-     - Strip section prefixes (s1_, t3_, s02_, n01K, S01K, etc.)
-     - Convert camelCase to Title Case with spaces
-     - Example: "s1_simpletextfieldadvancedWide" → "Simple Text Field"
-     - Example: "t7_totalProjectCost" → "Total Project Cost"
-     - Example: "s2_selectBoolean" → "Select Boolean"
-  2. Keep all existing type casts (::BOOLEAN, ::FLOAT) exactly as they are
-  3. You may add computed columns at the END only (e.g., date differences)
-
-CURRENT SQL:
-{sql}
-
-COLUMN SAMPLES (name | sample1 | sample2):
-{samples}
-
-Output ONLY the improved SQL — no markdown fences, no explanation."""
-
-# Combined alias-enhancement + naming in a single LLM call. Used when the
-# deterministic SQL still has raw (unlabeled) aliases, so we pay for one call
-# instead of separate enhance + naming calls. Same structure-lock rules as
-# ENHANCE_PROMPT; output adds the {name, description} the naming call produced.
-ENHANCE_AND_NAME_PROMPT = """You are finalizing a reusable reporting data model. The query structure is LOCKED — do NOT change it.
-
-RULES:
-- Do NOT add or remove columns from the final SELECT
-- Do NOT change column order
-- Do NOT modify CTEs, FROM clauses, JOINs, UNION ALL, or WHERE clauses
-- ONLY modify the final SELECT expressions:
-  1. Replace raw field name aliases with human-readable labels:
-     - Strip section prefixes (s1_, t3_, s02_, n01K, S01K, etc.)
-     - Convert camelCase to Title Case with spaces
-     - Example: "s1_simpletextfieldadvancedWide" → "Simple Text Field"
-     - Example: "t7_totalProjectCost" → "Total Project Cost"
-  2. Keep all existing type casts (::BOOLEAN, ::FLOAT) exactly as they are
-  3. You may add computed columns at the END only (e.g., date differences)
-
-CURRENT SQL:
-{sql}
-
-COLUMN SAMPLES (name | sample1 | sample2):
-{samples}
-
-Also provide a short model name (2-4 words) and a one-sentence description of what it provides for reporting.
-
-Output ONLY valid JSON — no markdown fences, no explanation:
-{{"name": "Short Model Name", "description": "One sentence explaining what this model provides for reporting", "sql": "SELECT ..."}}"""
-
-MODIFY_PROMPT = """You are modifying an existing data model SQL query.
-
-CURRENT SQL:
-{current_sql}
-
-CURRENT COLUMNS (preserve unless user explicitly asks to remove them):
-{current_columns}
-
-USER'S CHANGE REQUEST:
-{user_prompt}
-
-CORE FIELDS TO INCLUDE (from "public"."Applications" — ensure these are present
-in the final SELECT, adding a LEFT JOIN if not already joined):
-{core_fields_text}
-
-ADDITIONAL VIEW SQL TO INTEGRATE (wrap each as a named CTE and LEFT JOIN to the
-existing SQL via "ReferenceNo"; if a view has no "ReferenceNo" column, omit it):
-{additional_views_text}
-
-RULES:
-- Keep all existing columns from CURRENT SQL unless the user explicitly asked to drop them
-- Use PostgreSQL double-quoted identifiers
-- When integrating additional views, wrap them as named CTEs (view_a, view_b, ...) and
-  LEFT JOIN on "ReferenceNo" — never CROSS JOIN
-- If the user prompt asks for a computed column, add it at the end of the SELECT list
-- Do not invent table or column names not present in CURRENT SQL or ADDITIONAL VIEW SQL
-- For CORE FIELDS TO INCLUDE: ensure each listed column is in the SELECT, using
-  exactly the alias shown after the "→" arrow (do not invent your own alias).
-  If "public"."Applications" is not yet joined, add a LEFT JOIN via
-  "ApplicationId" or "CorrelationId" — never CROSS JOIN
-- Remove any column whose alias ends with "_id" (case-insensitive snake_case suffix);
-  these are internal FK reference columns and should not appear in the final SELECT
-
-Output ONLY the rewritten SQL — no markdown fences, no explanation."""
 
 # Regex for parsing form view table names
 FORM_VERSION_RE = re.compile(r'^Form-(.+?)(?:\s+Alternate)?-V(\d+)$')
@@ -194,35 +46,10 @@ FORM_VERSION_RE = re.compile(r'^Form-(.+?)(?:\s+Alternate)?-V(\d+)$')
 class DataModelGenerator:
     """Hybrid AI-assisted data model generator using Reporting views."""
 
-    # Short TTL cache for Metabase database metadata. The same metadata is fetched
-    # multiple times within a single preview (and once per view for combined models);
-    # a brief TTL de-dupes those round-trips while staying fresh for schema edits.
-    _META_CACHE_TTL = 60  # seconds
-
     def __init__(self) -> None:
-        # key: (db_id, tenant_id) → (fetched_at_monotonic, metadata_dict)
-        self._meta_cache: dict[tuple[int, str], tuple[float, dict]] = {}
-        self._meta_lock = threading.Lock()
-        # ReportColumnsMaps info (label set + correlation-provider map), same TTL —
-        # de-dupes the per-view source-type lookups within a single preview.
-        self._rcm_cache: dict[tuple[int, str], tuple[float, tuple[set, dict]]] = {}
-        self._rcm_lock = threading.Lock()
-
-    def _get_metadata(self, db_id: int, tenant_id: str) -> dict:
-        """Return Metabase DB metadata, cached per (db_id, tenant_id) for a short TTL.
-
-        Callers treat the returned dict as read-only — it is shared across the cache
-        window, so it must not be mutated.
-        """
-        key = (int(db_id), str(tenant_id).strip())
-        now = time.monotonic()
-        with self._meta_lock:
-            cached = self._meta_cache.get(key)
-            if cached and (now - cached[0]) < self._META_CACHE_TTL:
-                return cached[1]
-            metadata = metabase_client.get_database_metadata(db_id, tenant_id=tenant_id)
-            self._meta_cache[key] = (now, metadata)
-            return metadata
+        # All cached, read-only Metabase access (metadata, labels, samples, FK probes)
+        # lives in SchemaRepository so this class stays focused on SQL/AI orchestration.
+        self.schema = SchemaRepository()
 
     JUNK_COLUMNS = {
         "Id", "CreatorId", "LastModificationTime",
@@ -279,7 +106,7 @@ class DataModelGenerator:
         if view_name.startswith("Form-"):
             return "form_view"
         # Check if it's a base name that matches a form group
-        metadata = self._get_metadata(db_id, tenant_id)
+        metadata = self.schema.get_metadata(db_id, tenant_id)
         form_groups = self._group_form_versions(metadata)
         if view_name in form_groups:
             return "form_view"
@@ -287,7 +114,7 @@ class DataModelGenerator:
         # Primary: CorrelationProvider from ReportColumnsMaps. Read from the cached
         # batch fetch (same data discover_views already pulled) rather than a per-view
         # query — this saves a round-trip per view, N-1 for combined previews.
-        _, correlation_providers = self._get_report_columns_maps_info(db_id, tenant_id)
+        _, correlation_providers = self.schema.get_report_columns_maps_info(db_id, tenant_id)
         cp = correlation_providers.get(view_name, "")
         if cp == "formversion":
             return "form_view"
@@ -355,40 +182,6 @@ class DataModelGenerator:
             return f'{col_ref} AS "{alias}"'
 
 
-    def _needs_unwrap(self, schema: str, table: str, col_name: str,
-                      db_id: int, tenant_id: str) -> bool:
-        """Check if a column's sample value starts with '[\"' (JSON array wrapper)."""
-        sample = self._get_sample_value(schema, table, col_name, db_id, tenant_id)
-        return bool(sample and sample.startswith('["'))
-
-    def _columns_needing_unwrap(self, schema: str, table: str, columns: list[str],
-                                  db_id: int, tenant_id: str) -> set[str]:
-        """
-        Return the set of column names whose stored values are JSON-array-wrapped
-        (i.e. start with '["'). Detected per-column from raw (un-stripped) samples.
-        """
-        if not columns:
-            return set()
-
-        col_refs = ", ".join(f'"{c}"' for c in columns[:50])
-        sql = f'SELECT {col_refs} FROM "{schema}"."{table}" LIMIT 5'
-        try:
-            result = metabase_client.execute_sql(sql, db_id, tenant_id=tenant_id)
-        except Exception as e:
-            logger.warning(f"Could not detect JSON unwrap for {schema}.{table}: {e}")
-            return set()
-
-        wrapped: set[str] = set()
-        for row in result.get("rows", []):
-            for i, col in enumerate(columns[:50]):
-                if col in wrapped:
-                    continue
-                if i < len(row) and row[i] is not None:
-                    val = str(row[i]).strip()
-                    if val.startswith('["'):
-                        wrapped.add(col)
-        return wrapped
-
     # --- Type inference ---
 
     def _infer_column_type(self, col_name: str, samples: list[str]) -> str:
@@ -415,36 +208,6 @@ class DataModelGenerator:
             except (ValueError, TypeError):
                 break  # if first sample isn't numeric, assume text
         return "text"
-
-    def _get_column_samples(self, schema: str, table: str, columns: list[str],
-                             db_id: int, tenant_id: str) -> dict[str, list[str]]:
-        """Get 2-3 non-null sample values per column for type inference and AI context."""
-        if not columns:
-            return {}
-
-        # Build a single query to get samples for all columns at once
-        col_refs = ", ".join(f'"{c}"' for c in columns[:50])
-        sql = (
-            f'SELECT {col_refs} FROM "{schema}"."{table}" '
-            f'LIMIT 3'
-        )
-        try:
-            result = metabase_client.execute_sql(sql, db_id, tenant_id=tenant_id)
-            rows = result.get("rows", [])
-            samples: dict[str, list[str]] = {c: [] for c in columns[:50]}
-            for row in rows:
-                for i, col in enumerate(columns[:50]):
-                    if i < len(row) and row[i] is not None and str(row[i]).strip():
-                        val = str(row[i]).strip()
-                        # Strip JSON wrapper if present for cleaner samples
-                        if val.startswith('["') and val.endswith('"]'):
-                            val = val[2:-2]
-                        if val and len(samples[col]) < 3:
-                            samples[col].append(val)
-            return samples
-        except Exception as e:
-            logger.warning(f"Could not fetch column samples from {schema}.{table}: {e}")
-            return {c: [] for c in columns[:50]}
 
     def _format_samples_for_prompt(self, samples: dict[str, list[str]]) -> str:
         """Format samples dict into a string for AI prompt."""
@@ -557,7 +320,7 @@ class DataModelGenerator:
         Build deterministic SQL for Pattern 1 (Form Views).
         Returns (sql, column_list).
         """
-        metadata = self._get_metadata(db_id, tenant_id)
+        metadata = self.schema.get_metadata(db_id, tenant_id)
         all_groups = self._group_form_versions(metadata)
 
         # Find the matching group for this base_name
@@ -597,7 +360,7 @@ class DataModelGenerator:
                 break
 
         # Get labels
-        labels = self._get_view_labels(primary_table, db_id, tenant_id)
+        labels = self.schema.get_view_labels(primary_table, db_id, tenant_id)
 
         # Identify columns to include (exclude junk)
         columns = []
@@ -616,7 +379,7 @@ class DataModelGenerator:
             return "", [], {}, False
 
         # Detect per-column JSON wrapping (one column may be wrapped while another isn't)
-        wrapped_cols = self._columns_needing_unwrap(
+        wrapped_cols = self.schema.columns_needing_unwrap(
             "Reporting", primary_table, columns, db_id, tenant_id
         )
 
@@ -643,7 +406,7 @@ class DataModelGenerator:
         combined_cte = "\n  UNION ALL\n  ".join(union_parts)
 
         # Get samples for type inference
-        samples = self._get_column_samples("Reporting", primary_table, columns, db_id, tenant_id)
+        samples = self.schema.get_column_samples("Reporting", primary_table, columns, db_id, tenant_id)
 
         # Resolve user-selected core fields (defaults to ReferenceNo only)
         resolved_core_fields = self._resolve_core_fields(core_fields)
@@ -712,7 +475,7 @@ class DataModelGenerator:
         Just SELECT columns with optional JOIN to Applications for core fields.
         Returns (sql, column_list).
         """
-        metadata = self._get_metadata(db_id, tenant_id)
+        metadata = self.schema.get_metadata(db_id, tenant_id)
 
         # Find the view
         target_fields = []
@@ -725,9 +488,9 @@ class DataModelGenerator:
             return "", [], {}, False
 
         # Get labels
-        labels = self._get_view_labels(view_name, db_id, tenant_id)
+        labels = self.schema.get_view_labels(view_name, db_id, tenant_id)
         if not labels:
-            custom_labels = self._get_custom_field_labels(db_id, tenant_id)
+            custom_labels = self.schema.get_custom_field_labels(db_id, tenant_id)
         else:
             custom_labels = {}
 
@@ -740,7 +503,7 @@ class DataModelGenerator:
                 break
         # Last resort: query for it
         if not fk_column:
-            fk_column = self._find_application_id_column("Reporting", view_name, db_id, tenant_id)
+            fk_column = self.schema.find_application_id_column("Reporting", view_name, db_id, tenant_id)
 
         # Determine JOIN target
         # Both ApplicationId and CorrelationId map to Applications.Id
@@ -767,7 +530,7 @@ class DataModelGenerator:
             return "", [], {}, False
 
         # Get samples for type inference
-        samples = self._get_column_samples("Reporting", view_name, columns, db_id, tenant_id)
+        samples = self.schema.get_column_samples("Reporting", view_name, columns, db_id, tenant_id)
 
         # Resolve user-selected core fields (defaults to ReferenceNo only)
         resolved_core_fields = self._resolve_core_fields(core_fields) if join_condition else []
@@ -871,13 +634,13 @@ class DataModelGenerator:
         Returns list of {view_name, display_name, column_count, has_labels,
         source_type, is_empty, ...}.
         """
-        metadata = self._get_metadata(db_id, tenant_id)
+        metadata = self.schema.get_metadata(db_id, tenant_id)
         tables_by_name = {
             t.get("name"): t for t in metadata.get("tables", [])
             if t.get("schema") == "Reporting"
         }
 
-        views_with_labels, correlation_providers = self._get_report_columns_maps_info(db_id, tenant_id)
+        views_with_labels, correlation_providers = self.schema.get_report_columns_maps_info(db_id, tenant_id)
 
         # Regex-based multi-version form grouping (Form-<base>-V<n>).
         form_groups = self._group_form_versions(metadata)
@@ -901,7 +664,7 @@ class DataModelGenerator:
 
         # Two batched round-trips replace the old 2×N per-view probes.
         physical_names = list(primary_for_group.values()) + standalone_names
-        has_data_map = self._batch_check_view_data(physical_names, db_id, tenant_id)
+        has_data_map = self.schema.batch_check_view_data(physical_names, db_id, tenant_id)
 
         views: list[dict] = []
 
@@ -1554,7 +1317,7 @@ class DataModelGenerator:
 
         Returns (columns_text, schema_name, join_keys_text, relationships_text).
         """
-        metadata = self._get_metadata(db_id, tenant_id)
+        metadata = self.schema.get_metadata(db_id, tenant_id)
 
         # Build a field-ID → (schema, table, column) lookup across all tables
         field_lookup: dict[int, tuple[str, str, str]] = {}
@@ -1581,8 +1344,8 @@ class DataModelGenerator:
         fields = target_table.get("fields", [])
 
         # Fetch labels from ReportColumnsMaps, fall back to CustomFields
-        view_labels = self._get_view_labels(view_name, db_id, tenant_id)
-        custom_labels = {} if view_labels else self._get_custom_field_labels(db_id, tenant_id)
+        view_labels = self.schema.get_view_labels(view_name, db_id, tenant_id)
+        custom_labels = {} if view_labels else self.schema.get_custom_field_labels(db_id, tenant_id)
 
         # Separate fields into FK join keys and displayable columns
         fk_map: dict[str, tuple[str, str, str]] = {}  # col_name → (tgt_schema, tgt_table, tgt_col)
@@ -1606,7 +1369,7 @@ class DataModelGenerator:
 
         # Last resort: query the actual view to check for ApplicationId column
         if not fk_map:
-            app_id_col = self._find_application_id_column(schema_name, view_name, db_id, tenant_id)
+            app_id_col = self.schema.find_application_id_column(schema_name, view_name, db_id, tenant_id)
             if app_id_col:
                 fk_map[app_id_col] = ("public", "Applications", "Id")
                 field_names.add(app_id_col)
@@ -1627,7 +1390,7 @@ class DataModelGenerator:
                 view_labels.get(col_name, {}).get("label", "")
                 or custom_labels.get(col_name, "")
             )
-            sample = self._get_sample_value(schema_name, view_name, col_name, db_id, tenant_id)
+            sample = self.schema.get_sample_value(schema_name, view_name, col_name, db_id, tenant_id)
             sample_str = f'"{sample[:60]}"' if sample else "(no data yet)"
             lines.append(f"  {col_name} | {db_type} | {label or '(no label)'} | {sample_str}")
 
@@ -1656,155 +1419,6 @@ class DataModelGenerator:
 
         return "\n".join(lines), schema_name, join_keys_text, relationships_text
 
-    _BATCH_DATA_CHECK_SIZE = 100
-
-    def _batch_check_view_data(
-        self, view_names: list[str], db_id: int, tenant_id: str
-    ) -> dict[str, bool]:
-        """One round-trip EXISTS probe across many Reporting views.
-
-        Replaces N sequential per-view existence checks. Falls back to assuming each
-        view has data if the batch fails — better to show a stale empty-flag than
-        block discovery.
-        """
-        if not view_names:
-            return {}
-
-        # Names come from Metabase metadata, not user input, but escape defensively.
-        def quote_ident(n: str) -> str:
-            return '"' + n.replace('"', '""') + '"'
-
-        def quote_lit(n: str) -> str:
-            return "'" + n.replace("'", "''") + "'"
-
-        result_map: dict[str, bool] = {}
-        for i in range(0, len(view_names), self._BATCH_DATA_CHECK_SIZE):
-            chunk = view_names[i:i + self._BATCH_DATA_CHECK_SIZE]
-            parts = [
-                f'SELECT {quote_lit(name)} AS view_name, '
-                f'EXISTS (SELECT 1 FROM "Reporting".{quote_ident(name)}) AS has_data'
-                for name in chunk
-            ]
-            sql = "\nUNION ALL\n".join(parts)
-            try:
-                result = metabase_client.execute_sql(sql, db_id, tenant_id=tenant_id)
-                for row in result.get("rows", []):
-                    if row and len(row) >= 2:
-                        result_map[row[0]] = bool(row[1])
-            except Exception as e:
-                logger.warning(
-                    "discover_views: batched data check failed for chunk starting at %d "
-                    "(%s); assuming has_data=True for these",
-                    i, e,
-                )
-                for name in chunk:
-                    result_map.setdefault(name, True)
-
-        return result_map
-
-    def _get_report_columns_maps_info(
-        self, db_id: int, tenant_id: str
-    ) -> tuple[set[str], dict[str, str]]:
-        """Fetch (views_with_labels, correlation_providers) from ReportColumnsMaps.
-
-        One round-trip, cached per (db_id, tenant_id) for the same short TTL as
-        metadata. Source-type detection reads this once per view, so caching collapses
-        those repeated lookups to a single query within a preview.
-
-        - views_with_labels: set of ViewName values (for the has_labels flag)
-        - correlation_providers: {ViewName: lowercase CorrelationProvider}
-        """
-        key = (int(db_id), str(tenant_id).strip())
-        now = time.monotonic()
-        with self._rcm_lock:
-            cached = self._rcm_cache.get(key)
-            if cached and (now - cached[0]) < self._META_CACHE_TTL:
-                return cached[1]
-
-            sql = 'SELECT DISTINCT "ViewName", "CorrelationProvider" FROM "Reporting"."ReportColumnsMaps"'
-            views_with_labels: set[str] = set()
-            correlation_providers: dict[str, str] = {}
-            try:
-                result = metabase_client.execute_sql(sql, db_id, tenant_id=tenant_id)
-                for row in result.get("rows", []):
-                    if row and row[0]:
-                        views_with_labels.add(row[0])
-                        if len(row) > 1 and row[1]:
-                            correlation_providers[row[0]] = row[1].strip().lower()
-            except Exception as e:
-                logger.warning(
-                    "discover_views: ReportColumnsMaps query failed (%s); "
-                    "assuming no labels and no correlation providers",
-                    e,
-                )
-
-            info = (views_with_labels, correlation_providers)
-            self._rcm_cache[key] = (now, info)
-            return info
-
-    def _get_view_labels(self, view_name: str, db_id: int,
-                         tenant_id: str) -> dict:
-        """Fetch {col_name: {label, forms_type}} from ReportColumnsMaps."""
-        sql = f"""
-        SELECT
-            row_data->>'ColumnName' AS column_name,
-            row_data->>'Label'      AS label,
-            row_data->>'Type'       AS forms_type
-        FROM "Reporting"."ReportColumnsMaps" rcm,
-             jsonb_array_elements(rcm."Mapping"->'Rows') AS row_data
-        WHERE rcm."ViewName" = '{view_name}'
-        """
-        try:
-            result = metabase_client.execute_sql(sql, db_id, tenant_id=tenant_id)
-            return {
-                row[0]: {"label": row[1], "forms_type": row[2]}
-                for row in result.get("rows", [])
-                if row[0]
-            }
-        except Exception as e:
-            logger.warning(f"Could not fetch labels for view {view_name}: {e}")
-            return {}
-
-    def _get_custom_field_labels(self, db_id: int, tenant_id: str) -> dict:
-        """Fallback: fetch {key: label} from Flex.CustomFields."""
-        sql = 'SELECT "Key", "Label" FROM "Flex"."CustomFields" WHERE "Key" IS NOT NULL'
-        try:
-            result = metabase_client.execute_sql(sql, db_id, tenant_id=tenant_id)
-            return {row[0]: row[1] for row in result.get("rows", []) if row[0]}
-        except Exception as e:
-            logger.warning(f"Could not fetch custom field labels: {e}")
-            return {}
-
-    def _find_application_id_column(self, schema: str, view_name: str,
-                                     db_id: int, tenant_id: str) -> Optional[str]:
-        """Check if the view has an application ID column by querying it directly."""
-        for col_name in ("ApplicationId", "application_id"):
-            sql = f'SELECT "{col_name}" FROM "{schema}"."{view_name}" LIMIT 1'
-            try:
-                result = metabase_client.execute_sql(sql, db_id, tenant_id=tenant_id)
-                if "error" not in result:
-                    logger.info(f"Found {col_name} column in {schema}.{view_name}")
-                    return col_name
-            except Exception as e:
-                logger.debug(f"{col_name} not found in {schema}.{view_name}: {e}")
-        return None
-
-    def _get_sample_value(self, schema: str, table: str, column: str,
-                          db_id: int, tenant_id: str) -> Optional[str]:
-        """Get a single sample value for a column."""
-        sql = (
-            f'SELECT "{column}" FROM "{schema}"."{table}" '
-            f"WHERE \"{column}\" IS NOT NULL AND \"{column}\" <> '' LIMIT 1"
-        )
-        try:
-            result = metabase_client.execute_sql(sql, db_id, tenant_id=tenant_id)
-            rows = result.get("rows", [])
-            if rows and rows[0][0]:
-                return str(rows[0][0])
-        except Exception:
-            pass
-        return None
-
     def _extract_column_info(self, view_name: str, db_id: int,
                              tenant_id: str, sql: str) -> tuple[list[str], list[str]]:
         """
@@ -1812,7 +1426,7 @@ class DataModelGenerator:
 
         Returns (included_columns, excluded_columns).
         """
-        metadata = self._get_metadata(db_id, tenant_id)
+        metadata = self.schema.get_metadata(db_id, tenant_id)
 
         all_columns = set()
         for table in metadata.get("tables", []):

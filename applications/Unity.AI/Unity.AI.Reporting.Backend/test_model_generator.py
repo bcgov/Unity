@@ -1,11 +1,11 @@
 """
-Focused unit tests for the data-model generator performance changes:
+Focused unit tests for the data-model generator.
 
-  1. `_get_metadata` and `_get_report_columns_maps_info` — short-TTL caches that
-     de-dupe the repeated Metabase fetches done during a single preview (the latter
-     also feeds source-type detection, which used to query once per view).
-  2. `preview_model` — now makes ONE LLM call per preview (naming-only when the view
-     is fully labeled, a combined enhance+name call otherwise) and ONE bounded SQL
+  1. SchemaRepository — short-TTL caches (metadata + ReportColumnsMaps) that de-dupe
+     the repeated Metabase fetches a single preview otherwise makes. The
+     ReportColumnsMaps cache also backs source-type detection (was a per-view query).
+  2. preview_model — makes ONE LLM call per preview (naming-only when the view is
+     fully labeled, a combined enhance+name call otherwise) and ONE bounded SQL
      execution that both validates the query and returns the preview rows.
 
 The backend's real dependencies (aiohttp, config env, Metabase) are not needed here —
@@ -26,9 +26,9 @@ SRC = os.path.join(os.path.dirname(__file__), "src")
 if SRC not in sys.path:
     sys.path.insert(0, SRC)
 
-# model_generator does `import aiohttp`, `from config import config`,
-# `from metabase import metabase_client` at module load. None are exercised directly
-# by these tests, so lightweight stubs are enough to import the module.
+# model_generator / schema_repository do `import aiohttp`, `from config import config`,
+# `from metabase import metabase_client` at module load. None are exercised directly by
+# these tests, so lightweight stubs are enough to import the modules.
 sys.modules.setdefault("aiohttp", types.ModuleType("aiohttp"))
 
 _config_mod = types.ModuleType("config")
@@ -43,43 +43,45 @@ _metabase_mod.metabase_client = SimpleNamespace()
 sys.modules.setdefault("metabase", _metabase_mod)
 
 import model_generator  # noqa: E402
+import schema_repository  # noqa: E402
 from model_generator import DataModelGenerator  # noqa: E402
+from schema_repository import SchemaRepository  # noqa: E402
 
 
-class GetMetadataCacheTests(unittest.TestCase):
+class SchemaMetadataCacheTests(unittest.TestCase):
     def setUp(self):
-        self.gen = DataModelGenerator()
+        self.repo = SchemaRepository()
         self.fetch = mock.Mock(side_effect=lambda db_id, tenant_id=None: {"db": db_id, "tenant": tenant_id})
-        # _get_metadata calls the module-global metabase_client.get_database_metadata
+        # get_metadata calls the module-global metabase_client.get_database_metadata
         self.patcher = mock.patch.object(
-            model_generator, "metabase_client",
+            schema_repository, "metabase_client",
             SimpleNamespace(get_database_metadata=self.fetch),
         )
         self.patcher.start()
         self.addCleanup(self.patcher.stop)
 
     def test_cache_hit_within_ttl_fetches_once(self):
-        first = self.gen._get_metadata(7, "tenant-a")
-        second = self.gen._get_metadata(7, "tenant-a")
+        first = self.repo.get_metadata(7, "tenant-a")
+        second = self.repo.get_metadata(7, "tenant-a")
         self.assertIs(first, second)
         self.assertEqual(self.fetch.call_count, 1)
 
     def test_distinct_tenants_do_not_share_cache(self):
-        self.gen._get_metadata(7, "tenant-a")
-        self.gen._get_metadata(7, "tenant-b")
+        self.repo.get_metadata(7, "tenant-a")
+        self.repo.get_metadata(7, "tenant-b")
         self.assertEqual(self.fetch.call_count, 2)
 
     def test_key_is_normalized(self):
         # int-vs-str db_id and padded tenant_id should resolve to one cache entry
-        self.gen._get_metadata(7, "tenant-a")
-        self.gen._get_metadata("7", "  tenant-a  ")
+        self.repo.get_metadata(7, "tenant-a")
+        self.repo.get_metadata("7", "  tenant-a  ")
         self.assertEqual(self.fetch.call_count, 1)
 
     def test_expired_entry_refetches(self):
-        self.gen._get_metadata(7, "tenant-a")
+        self.repo.get_metadata(7, "tenant-a")
         # Force the cached entry to look stale
-        self.gen._META_CACHE_TTL = 0
-        self.gen._get_metadata(7, "tenant-a")
+        self.repo._META_CACHE_TTL = 0
+        self.repo.get_metadata(7, "tenant-a")
         self.assertEqual(self.fetch.call_count, 2)
 
 
@@ -88,36 +90,50 @@ class ReportColumnsMapsCacheTests(unittest.TestCase):
     caching it collapses the old per-view CorrelationProvider queries to one."""
 
     def setUp(self):
-        self.gen = DataModelGenerator()
+        self.repo = SchemaRepository()
         self.exec = mock.Mock(return_value={"rows": [["V1", "worksheet"], ["V2", "formversion"]]})
         self.patcher = mock.patch.object(
-            model_generator, "metabase_client",
+            schema_repository, "metabase_client",
             SimpleNamespace(execute_sql=self.exec),
         )
         self.patcher.start()
         self.addCleanup(self.patcher.stop)
 
     def test_cache_hit_within_ttl_fetches_once(self):
-        first = self.gen._get_report_columns_maps_info(1, "t")
-        second = self.gen._get_report_columns_maps_info(1, "t")
+        first = self.repo.get_report_columns_maps_info(1, "t")
+        second = self.repo.get_report_columns_maps_info(1, "t")
         self.assertIs(first, second)
         self.assertEqual(self.exec.call_count, 1)
         labels, providers = first
         self.assertEqual(labels, {"V1", "V2"})
         self.assertEqual(providers, {"V1": "worksheet", "V2": "formversion"})
 
-    def test_detect_source_type_reads_cached_map(self):
-        # No metadata round-trip needed for a name carrying a known provider.
-        self.gen._get_metadata = mock.Mock(return_value={"tables": []})
+    def test_expired_entry_refetches(self):
+        self.repo.get_report_columns_maps_info(1, "t")
+        self.repo._META_CACHE_TTL = 0
+        self.repo.get_report_columns_maps_info(1, "t")
+        self.assertEqual(self.exec.call_count, 2)
+
+
+class DetectSourceTypeTests(unittest.TestCase):
+    """_detect_source_type now reads the cached ReportColumnsMaps map via self.schema
+    rather than issuing its own per-view CorrelationProvider query."""
+
+    def setUp(self):
+        self.gen = DataModelGenerator()
+        self.exec = mock.Mock(return_value={"rows": [["V1", "worksheet"]]})
+        self.meta = mock.Mock(return_value={"tables": []})
+        self.patcher = mock.patch.object(
+            schema_repository, "metabase_client",
+            SimpleNamespace(execute_sql=self.exec, get_database_metadata=self.meta),
+        )
+        self.patcher.start()
+        self.addCleanup(self.patcher.stop)
+
+    def test_reads_cached_correlation_map(self):
         st = self.gen._detect_source_type("V1", 1, "t")
         self.assertEqual(st, "worksheet_view")
         self.assertEqual(self.exec.call_count, 1)  # single ReportColumnsMaps query
-
-    def test_expired_entry_refetches(self):
-        self.gen._get_report_columns_maps_info(1, "t")
-        self.gen._META_CACHE_TTL = 0
-        self.gen._get_report_columns_maps_info(1, "t")
-        self.assertEqual(self.exec.call_count, 2)
 
 
 class PreviewModelTests(unittest.IsolatedAsyncioTestCase):
