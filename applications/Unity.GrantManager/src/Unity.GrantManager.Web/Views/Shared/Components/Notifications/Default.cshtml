@@ -1,4 +1,7 @@
 @model Unity.GrantManager.Web.Views.Shared.Components.Notifications.NotificationsViewModel
+@using Volo.Abp.Authorization.Permissions
+@using Unity.Notifications.Permissions;
+@inject IPermissionChecker PermissionChecker
 
 @section scripts {
     <abp-script src="/Views/Shared/Components/Notifications/Default.js"></abp-script>
@@ -10,8 +13,11 @@
 
 <div class="notifications-widget p-3">
     <div class="d-flex justify-content-between align-items-center mb-3">
-        <h6 class="mb-0"><b>Scheduled &amp; Event Based Notifications</b></h6>
+        <h6 class="mb-0"><label for="NotificationsTable" class="form-label">Scheduled &amp; Event Based Notifications</label></h6>
+        @if (await PermissionChecker.IsGrantedAsync(NotificationsPermissions.Email.ScheduleCreate)) 
+        {   
         <button id="btn-add-notification" class="btn unt-btn-primary btn-primary btn-sm">Create Automated Notification</button>
+        }
     </div>
 
     <div id="notifications-list" class="mb-3">
@@ -19,6 +25,29 @@
             <th></th>
         </table>
     </div>
+
+    <template id="notification-actions-template">
+        <div class="button-group">
+            @if (await PermissionChecker.IsGrantedAsync(NotificationsPermissions.Email.ScheduleCreate)) 
+            {              
+            <button class="btn unt-btn-primary btn-sm abp-action-button js-edit-notification notification-action-btn" type="button">
+                <span>Edit</span>
+            </button>
+            }
+            @if (await PermissionChecker.IsGrantedAsync(NotificationsPermissions.Email.ScheduleCancel)) 
+            {            
+            <button class="btn unt-btn-outline-primary btn-sm abp-action-button js-cancel-notification notification-action-btn" type="button">
+                <span>Cancel</span>
+            </button>
+            }
+            @if (await PermissionChecker.IsGrantedAsync(NotificationsPermissions.Email.ScheduleDelete)) 
+            {                         
+            <button class="btn unt-btn-outline-primary btn-sm abp-action-button js-delete-notification notification-action-btn" type="button">
+                <i class="fl fl-cancel"></i>
+            </button>
+            }
+        </div>
+    </template>
 
     <!-- Create/Edit Modal -->
     <div id="notificationModal" class="modal" tabindex="-1">
@@ -28,11 +57,11 @@
                     <h5 class="modal-title">Create Scheduled Notification</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <div class="modal-body" style="overflow:auto; flex:1 1 auto;">
-                    <form id="notificationForm">
-                        <div class="d-flex" id="modalColumns">
+                <div class="modal-body" style="overflow:hidden; flex:1 1 auto; display:flex; flex-direction:column;">
+                    <form id="notificationForm" novalidate>
+                        <div class="d-flex" id="modalColumns" style="flex:1 1 auto; min-height:0;">
 
-                            <div id="leftColumn" class="left-col">
+                            <div id="leftColumn" class="left-col" style="overflow-y:auto;">
                                 <div class="mb-3">
                                     <label for="templateSelect" class="form-label">Email Template</label>
                                     <select id="templateSelect" class="form-select" required></select>
@@ -41,7 +70,7 @@
                                 <div class="mb-3">
                                     <label for="triggerType" class="form-label">Trigger Type</label>
                                     <select id="triggerType" class="form-select" required>
-                                        <option value="">-- Select --</option>
+                                        <option value=""></option>
                                         <option value="Date">Date</option>
                                         <option value="Event">Event</option>
                                     </select>
@@ -51,7 +80,7 @@
                                     <div class="mb-3">
                                         <label for="dateType" class="form-label">Notification Date Type</label>
                                         <select id="dateType" class="form-select" required>
-                                            <option value="">-- Select --</option>
+                                            <option value=""></option>
                                             <option value="NotificationDate">Notification Date</option>
                                             <option value="DueDate">Due Date</option>
                                             <option value="ProjectStartDate">Project Start Date</option>
@@ -70,7 +99,7 @@
                                     <div class="mb-3">
                                         <label for="recipientCategory" class="form-label">Recipient Category</label>
                                         <select id="recipientCategory" class="form-select" required>
-                                            <option value="">-- Select --</option>
+                                            <option value=""></option>
                                             <option value="Internal">Internal</option>
                                             <option value="External">External</option>
                                         </select>

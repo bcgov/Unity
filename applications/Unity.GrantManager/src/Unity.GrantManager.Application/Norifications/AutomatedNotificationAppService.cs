@@ -25,7 +25,8 @@ namespace Unity.GrantManager.Notifications
                 ApplicationStatusId = input.ApplicationStatusId,
                 ApplicationStatus = input.ApplicationStatus,
                 DateField = input.DateField,
-                IsDeleted = false
+                RecipientCategory = input.RecipientCategory,
+                RecipientIdentifier = input.RecipientIdentifier
             };
 
             await _repository.InsertAsync(entity, autoSave: true);
@@ -51,6 +52,13 @@ namespace Unity.GrantManager.Notifications
             await _repository.DeleteAsync(id, autoSave: true);
         }
 
+        public async Task CancelAsync(Guid id)
+        {
+            var entity = await _repository.GetAsync(id);
+            entity.IsActive = false;
+            await _repository.UpdateAsync(entity, autoSave: true);
+        }
+
         public async Task<NotificationDto> GetAsync(Guid id)
         {
             var e = await _repository.GetAsync(id);
@@ -66,7 +74,9 @@ namespace Unity.GrantManager.Notifications
                 EventType = e.EventType,
                 ApplicationStatusId = e.ApplicationStatusId,
                 ApplicationStatus = e.ApplicationStatus,
-                DateField = e.DateField
+                DateField = e.DateField,
+                RecipientCategory = e.RecipientCategory,
+                RecipientIdentifier = e.RecipientIdentifier
             };
         }
 
@@ -99,7 +109,9 @@ namespace Unity.GrantManager.Notifications
                 EventType = e.EventType,
                 ApplicationStatusId = e.ApplicationStatusId,
                 ApplicationStatus = e.ApplicationStatus,
-                DateField = e.DateField
+                DateField = e.DateField,
+                RecipientCategory = e.RecipientCategory,
+                RecipientIdentifier = e.RecipientIdentifier
             }).ToList();
 
             return new PagedResultDto<NotificationDto>(total, items);
@@ -116,6 +128,8 @@ namespace Unity.GrantManager.Notifications
             e.ApplicationStatusId = input.ApplicationStatusId;
             e.ApplicationStatus = input.ApplicationStatus;
             e.DateField = input.DateField;
+            e.RecipientCategory = input.RecipientCategory;
+            e.RecipientIdentifier = input.RecipientIdentifier;
 
             await _repository.UpdateAsync(e, autoSave: true);
 
@@ -133,17 +147,6 @@ namespace Unity.GrantManager.Notifications
                 ApplicationStatus = e.ApplicationStatus,
                 DateField = e.DateField
             };
-        }
-
-        public Task<NotificationTemplateDto[]> GetTemplatesAsync()
-        {
-            // For now return demo templates; replace with tenant-settings-backed templates later
-            var templates = new[]
-            {
-                new NotificationTemplateDto { Name = "WelcomeTemplate", Subject = "Welcome", Body = "Hello {{applicantName}}" },
-                new NotificationTemplateDto { Name = "ReminderTemplate", Subject = "Reminder", Body = "Reminder for {{applicationId}}" }
-            };
-            return Task.FromResult(templates);
         }
     }
 }

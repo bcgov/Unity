@@ -425,12 +425,11 @@ namespace Unity.GrantManager.EntityFrameworkCore
                 b.Property(x => x.DateField).HasMaxLength(128);
                 b.Property(x => x.TenantId).HasColumnName("TenantId");
                 b.HasIndex(x => x.TenantId);
-                // Exclude ExtraProperties from automatic configuration
-                b.Ignore(x => x.ExtraProperties);
+                b.TryConfigureExtraProperties();    
             });
 
             var allEntityTypes = modelBuilder.Model.GetEntityTypes();
-            foreach (var entityType in allEntityTypes.Where(t => t.ClrType != typeof(ExtraPropertyDictionary) && !t.IsOwned() && t.ClrType != typeof(ScheduledNotification)))
+            foreach (var entityType in allEntityTypes.Where(t => t.ClrType != typeof(ExtraPropertyDictionary) && !t.IsOwned()))
             {
                 var entityBuilder = modelBuilder.Entity(entityType.ClrType);
                 entityBuilder.TryConfigureExtraProperties();

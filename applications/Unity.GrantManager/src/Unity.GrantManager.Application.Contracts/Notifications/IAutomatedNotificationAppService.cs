@@ -12,6 +12,6 @@ namespace Unity.GrantManager.Notifications
         Task<NotificationDto> CreateAsync(CreateUpdateNotificationDto input);
         Task<NotificationDto> UpdateAsync(Guid id, CreateUpdateNotificationDto input);
         Task DeleteAsync(Guid id);
-        Task<NotificationTemplateDto[]> GetTemplatesAsync();
+        Task CancelAsync(Guid id);
     }
 }

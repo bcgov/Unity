@@ -21,3 +21,53 @@
 #modalColumns { align-items: stretch; gap: 60px; }
 .left-col { flex: 0 0 33%; min-width: 320px; }
 .right-col { flex: 1 1 0; }
+#notificationForm { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }
+
+/* Notification table action buttons */
+.notification-action-btn {
+    margin-left: 10px;
+    margin-right: 10px;
+}
+
+.button-group {
+    display: flex;
+    justify-content: center;
+}
+
+.dt-column-title, table.dataTable thead th {
+    color: #fff;
+    font-weight: 500;
+    font-size: 18px;
+}
+
+table.dataTable td {
+    word-wrap: break-word;
+    max-width: 250px;
+    font-size: 15px;
+}
+
+.unt-btn-outline-primary {
+    background-color: white;
+}
+
+.js-delete-notification {
+    padding: 10px 5px;
+}
+
+.badge {
+    min-height: 24px;
+    /* Layout & Alignment */
+    display: inline-block;
+    vertical-align: middle;
+    
+    /* Text Spacing */
+    line-height: 1;
+    
+    /* Visually centered padding (compensates for font metrics) */
+    padding-top: 8px;
+    padding-bottom: 8px;
+    
+    /* Horizontal padding (inherited from Bootstrap default) */
+    padding-left: 0.65em;
+    padding-right: 0.65em;
+}

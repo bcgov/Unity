@@ -91,6 +91,11 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<string>("Value")
                         .IsRequired()
                         .HasColumnType("text");
+                    
+                    b.Property<string>("ExtraProperties")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("ExtraProperties");
 
                     b.HasKey("Id");
 

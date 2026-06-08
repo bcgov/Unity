@@ -99,9 +99,11 @@ namespace Unity.GrantManager.Web.Controllers
                 TriggerType = e.TriggerType,
                 DateType = e.DateField,
                 EventStatus = e.ApplicationStatus,
-                RecipientCategory = null,
-                RecipientIdentifier = null,
-                CreatedAt = DateTime.UtcNow
+                ApplicationStatusId = e.ApplicationStatusId,
+                RecipientCategory = e.RecipientCategory,
+                RecipientIdentifier = e.RecipientIdentifier,
+                CreatedAt = DateTime.UtcNow,
+                IsActive = e.IsActive
             }).ToList();
 
             return Ok(items);
@@ -140,7 +142,9 @@ namespace Unity.GrantManager.Web.Controllers
                 EventType = null,
                 ApplicationStatusId = input.ApplicationStatusId,
                 ApplicationStatus = statusLabel,
-                DateField = input.DateType
+                DateField = input.DateType,
+                RecipientCategory = input.TriggerType == "Event" ? input.RecipientCategory : null,
+                RecipientIdentifier = input.TriggerType == "Event" ? input.RecipientIdentifier : null
             };
 
             var created = await _automatedNotificationAppService.CreateAsync(createDto);
@@ -153,8 +157,9 @@ namespace Unity.GrantManager.Web.Controllers
                 TriggerType = created.TriggerType,
                 DateType = created.DateField,
                 EventStatus = created.ApplicationStatus,
-                RecipientCategory = null,
-                RecipientIdentifier = null,
+                ApplicationStatusId = created.ApplicationStatusId,
+                RecipientCategory = created.RecipientCategory,
+                RecipientIdentifier = created.RecipientIdentifier,
                 CreatedAt = DateTime.UtcNow
             };
 
@@ -166,6 +171,65 @@ namespace Unity.GrantManager.Web.Controllers
         {
             await _automatedNotificationAppService.DeleteAsync(id);
             return NoContent();
+        }
+
+        [HttpPatch("{formId}/{id:guid}/cancel")]
+        public async Task<IActionResult> CancelNotification(string formId, Guid id)
+        {
+            if (!Guid.TryParse(formId, out _)) return BadRequest("Invalid form id");
+            await _automatedNotificationAppService.CancelAsync(id);
+            return NoContent();
+        }
+
+        [HttpPut("{formId}/{id:guid}")]
+        public async Task<ActionResult<ScheduledNotificationDto>> UpdateForForm(string formId, Guid id, [FromBody] CreateScheduledNotificationInput input)
+        {
+            if (!Guid.TryParse(formId, out var parsedFormId)) return BadRequest("Invalid form id");
+            if (input.TemplateId == Guid.Empty) return BadRequest("TemplateId required");
+
+            var template = await _templateService.GetTemplateById(input.TemplateId);
+            if (template == null) return BadRequest("Template not found");
+
+            string? statusLabel = null;
+            if (input.ApplicationStatusId.HasValue)
+            {
+                var statuses = await _statusService.GetListAsync();
+                var match = statuses.FirstOrDefault(s => s.Id == input.ApplicationStatusId.Value);
+                if (match != null) statusLabel = match.InternalStatus;
+            }
+
+            var updateDto = new Notifications.CreateUpdateNotificationDto
+            {
+                FormId = parsedFormId,
+                EmailTemplateId = template.Id,
+                TriggerType = input.TriggerType,
+                TriggerDetail = input.TriggerType == "Date" ? input.DateType : statusLabel,
+                IsActive = true,
+                EventType = null,
+                ApplicationStatusId = input.ApplicationStatusId,
+                ApplicationStatus = statusLabel,
+                DateField = input.DateType,
+                RecipientCategory = input.TriggerType == "Event" ? input.RecipientCategory : null,
+                RecipientIdentifier = input.TriggerType == "Event" ? input.RecipientIdentifier : null
+            };
+
+            var updated = await _automatedNotificationAppService.UpdateAsync(id, updateDto);
+
+            var dto = new ScheduledNotificationDto
+            {
+                Id = updated.Id,
+                TemplateId = input.TemplateId,
+                TemplateName = template.Name,
+                TriggerType = updated.TriggerType,
+                DateType = updated.DateField,
+                EventStatus = updated.ApplicationStatus,
+                ApplicationStatusId = updated.ApplicationStatusId,
+                RecipientCategory = updated.RecipientCategory,
+                RecipientIdentifier = updated.RecipientIdentifier,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            return Ok(dto);
         }
     }
 
@@ -185,9 +249,11 @@ namespace Unity.GrantManager.Web.Controllers
         public string TriggerType { get; init; } = string.Empty;
         public string? DateType { get; init; }
         public string? EventStatus { get; init; }
+        public Guid? ApplicationStatusId { get; init; }
         public string? RecipientCategory { get; init; }
         public string? RecipientIdentifier { get; init; }
         public DateTime CreatedAt { get; init; }
+        public bool IsActive { get; init; }
     }
 
     public record CreateScheduledNotificationInput

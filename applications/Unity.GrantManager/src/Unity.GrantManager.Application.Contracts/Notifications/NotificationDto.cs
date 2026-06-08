@@ -15,5 +15,7 @@ namespace Unity.GrantManager.Notifications
         public Guid? ApplicationStatusId { get; set; }
         public string? ApplicationStatus { get; set; }
         public string? DateField { get; set; }
+        public string? RecipientCategory { get; set; }
+        public string? RecipientIdentifier { get; set; }
     }
 }
