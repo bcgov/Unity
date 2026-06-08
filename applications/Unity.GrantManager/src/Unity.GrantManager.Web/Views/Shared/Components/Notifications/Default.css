@@ -1,0 +1,23 @@
+/* Notifications widget styles */
+.notifications-widget {
+    padding: 1rem;
+    background: #f8f9fb;
+    font-family: var(--bs-body-font-family, 'BCSans', sans-serif);
+    font-size: var(--bc-font-size, 1rem);
+}
+.notifications-widget .card { border: 0; }
+.notifications-widget .card .card-body { background: #fff; }
+
+/* Suppress Bootstrap's invalid !-circle icon on selects; keep red border only */
+#notificationForm .form-select.is-invalid,
+#notificationForm .form-select.is-invalid:focus {
+    background-image: var(--bs-form-select-bg-img);
+    background-size: 16px 12px;
+    background-position: right 0.75rem center;
+    padding-right: 2.25rem;
+}
+
+ /* Modal column layout */
+#modalColumns { align-items: stretch; gap: 60px; }
+.left-col { flex: 0 0 33%; min-width: 320px; }
+.right-col { flex: 1 1 0; }

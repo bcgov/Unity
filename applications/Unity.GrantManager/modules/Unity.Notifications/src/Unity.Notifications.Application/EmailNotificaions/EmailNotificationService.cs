@@ -43,6 +43,12 @@ public class EmailNotificationService(
         await emailNotificationManager.DeleteEmailLogAsync(id);
     }
 
+    [Authorize(NotificationsPermissions.Email.Send)]
+    public async Task CancelEmail(Guid id)
+    {
+        await emailNotificationManager.CancelEmailLogAsync(id);
+    }
+
     public async Task<int> GetEmailsChesWithNoResponseCountAsync()
     {
         return await emailNotificationManager.GetPendingEmailsCountAsync();

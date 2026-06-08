@@ -16,6 +16,7 @@ using Unity.Notifications.EntityFrameworkCore;
 using Unity.Reporting.EntityFrameworkCore;
 using Unity.GrantManager.GlobalTag;
 using Unity.GrantManager.Contacts;
+using Unity.GrantManager.Notifications;
 
 namespace Unity.GrantManager.EntityFrameworkCore
 {
@@ -52,6 +53,7 @@ namespace Unity.GrantManager.EntityFrameworkCore
         public DbSet<IssueTracking> IssueTrackings { get; set; }
         public DbSet<AuditHistory> AuditHistories { get; set; }
         public DbSet<ReportsHistory> ReportsHistories { get; set; }
+        public DbSet<ScheduledNotification> ScheduledNotifications { get; set; }
         #endregion
 
         public GrantTenantDbContext(DbContextOptions<GrantTenantDbContext> options) : base(options)
@@ -409,8 +411,26 @@ namespace Unity.GrantManager.EntityFrameworkCore
                 b.HasOne<Applicant>().WithMany().HasForeignKey(x => x.ApplicantId).IsRequired(false);
             });
 
+            modelBuilder.Entity<ScheduledNotification>(b =>
+            {
+                b.ToTable("ScheduledNotifications", "Notifications");
+                b.ConfigureByConvention();
+                b.HasKey(x => x.Id);
+                b.Property(x => x.FormId).IsRequired();
+                b.Property(x => x.EmailTemplateId).IsRequired();
+                b.Property(x => x.TriggerType).IsRequired().HasMaxLength(64);
+                b.Property(x => x.TriggerDetail).HasMaxLength(1000);
+                b.Property(x => x.EventType).HasMaxLength(128);
+                b.Property(x => x.ApplicationStatus).HasMaxLength(128);
+                b.Property(x => x.DateField).HasMaxLength(128);
+                b.Property(x => x.TenantId).HasColumnName("TenantId");
+                b.HasIndex(x => x.TenantId);
+                // Exclude ExtraProperties from automatic configuration
+                b.Ignore(x => x.ExtraProperties);
+            });
+
             var allEntityTypes = modelBuilder.Model.GetEntityTypes();
-            foreach (var entityType in allEntityTypes.Where(t => t.ClrType != typeof(ExtraPropertyDictionary) && !t.IsOwned()))
+            foreach (var entityType in allEntityTypes.Where(t => t.ClrType != typeof(ExtraPropertyDictionary) && !t.IsOwned() && t.ClrType != typeof(ScheduledNotification)))
             {
                 var entityBuilder = modelBuilder.Entity(entityType.ClrType);
                 entityBuilder.TryConfigureExtraProperties();

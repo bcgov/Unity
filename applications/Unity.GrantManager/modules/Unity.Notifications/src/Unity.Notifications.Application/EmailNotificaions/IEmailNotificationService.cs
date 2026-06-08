@@ -22,6 +22,7 @@ namespace Unity.Notifications.EmailNotifications
         Task UpdateSettings(NotificationsSettingsDto settingsDto);
         Task<Guid> InitializeDraftAsync(Guid applicationId);
         Task DeleteEmail(Guid id);
+        Task CancelEmail(Guid id);
         Task<int> GetEmailsChesWithNoResponseCountAsync();
     }
 }

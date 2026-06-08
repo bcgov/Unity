@@ -121,6 +121,18 @@ namespace Unity.Notifications.EmailNotifications
             await emailLogsRepository.DeleteAsync(id);
         }
 
+        public async Task CancelEmailLogAsync(Guid id)
+        {
+            var emailLog = await emailLogsRepository.GetAsync(id);
+            if (emailLog.Status == EmailStatus.Sent)
+            {
+                throw new UserFriendlyException("Sent emails cannot be cancelled.");
+            }
+
+            emailLog.Status = EmailStatus.Cancelled;
+            await emailLogsRepository.UpdateAsync(emailLog, autoSave: true);
+        }
+
         /// <summary>
         /// Send Email Notification
         /// </summary>

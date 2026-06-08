@@ -1,0 +1,106 @@
+@model Unity.GrantManager.Web.Views.Shared.Components.Notifications.NotificationsViewModel
+
+@section scripts {
+    <abp-script src="/Views/Shared/Components/Notifications/Default.js"></abp-script>
+}
+
+@section styles {
+    <abp-style src="/Views/Shared/Components/Notifications/Default.css"></abp-style>
+}
+
+<div class="notifications-widget p-3">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h6 class="mb-0"><b>Scheduled &amp; Event Based Notifications</b></h6>
+        <button id="btn-add-notification" class="btn unt-btn-primary btn-primary btn-sm">Create Automated Notification</button>
+    </div>
+
+    <div id="notifications-list" class="mb-3">
+        <table id="NotificationsTable" class="table table-striped" style="width:100%">
+            <th></th>
+        </table>
+    </div>
+
+    <!-- Create/Edit Modal -->
+    <div id="notificationModal" class="modal" tabindex="-1">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content" style="display:flex; flex-direction:column; min-width:900px; min-height:480px; max-height:85vh;">
+                <div class="modal-header">
+                    <h5 class="modal-title">Create Scheduled Notification</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" style="overflow:auto; flex:1 1 auto;">
+                    <form id="notificationForm">
+                        <div class="d-flex" id="modalColumns">
+
+                            <div id="leftColumn" class="left-col">
+                                <div class="mb-3">
+                                    <label for="templateSelect" class="form-label">Email Template</label>
+                                    <select id="templateSelect" class="form-select" required></select>
+                                    <div class="invalid-feedback">Please select an email template.</div>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="triggerType" class="form-label">Trigger Type</label>
+                                    <select id="triggerType" class="form-select" required>
+                                        <option value="">-- Select --</option>
+                                        <option value="Date">Date</option>
+                                        <option value="Event">Event</option>
+                                    </select>
+                                    <div class="invalid-feedback">Please select a trigger type.</div>
+                                </div>
+                                <div id="dateOptions" style="display:none">
+                                    <div class="mb-3">
+                                        <label for="dateType" class="form-label">Notification Date Type</label>
+                                        <select id="dateType" class="form-select" required>
+                                            <option value="">-- Select --</option>
+                                            <option value="NotificationDate">Notification Date</option>
+                                            <option value="DueDate">Due Date</option>
+                                            <option value="ProjectStartDate">Project Start Date</option>
+                                            <option value="ProjectEndDate">Project End Date</option>
+                                            <option value="ContractExecutionDate">Contract Execution Date</option>
+                                        </select>
+                                        <div class="invalid-feedback">Please select a date type.</div>
+                                    </div>
+                                </div>
+                                <div id="eventOptions" style="display:none">
+                                    <div class="mb-3">
+                                        <label for="statusSelect" class="form-label">Application Status Trigger</label>
+                                        <select id="statusSelect" class="form-select" required></select>
+                                        <div class="invalid-feedback">Please select an application status.</div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="recipientCategory" class="form-label">Recipient Category</label>
+                                        <select id="recipientCategory" class="form-select" required>
+                                            <option value="">-- Select --</option>
+                                            <option value="Internal">Internal</option>
+                                            <option value="External">External</option>
+                                        </select>
+                                        <div class="invalid-feedback">Please select a recipient category.</div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="recipientSelect" class="form-label">Recipient</label>
+                                        <select id="recipientSelect" class="form-select" required></select>
+                                        <div class="invalid-feedback">Please select a recipient.</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div id="rightColumn" class="right-col" style="min-width:0; display:flex; flex-direction:column;">
+                                <label for="templatePreview" class="form-label">Template Preview</label>
+                                <div class="border" style="padding:12px; background:#fff; flex:1; overflow:auto; box-sizing:border-box;">
+                                    <div id="templatePreview" class="p-2" style="min-height:120px; white-space:pre-wrap; width:100%; height:100%; box-sizing:border-box;"></div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer" style="flex-shrink:0;">
+                    <button id="btn-save-notification" type="button" class="btn unt-btn-primary btn-primary">Save</button>
+                    <button type="button" class="btn unt-btn-outline-primary btn-outline-primary" data-bs-dismiss="modal">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+

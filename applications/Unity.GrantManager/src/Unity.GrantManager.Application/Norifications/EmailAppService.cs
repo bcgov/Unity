@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using System;
 using System.Threading.Tasks;
+using Unity.GrantManager.Notifications.Email;
 using Unity.Modules.Shared.Utils;
 using Unity.Notifications.EmailNotifications;
 using Unity.Notifications.Emails;
@@ -9,7 +10,7 @@ using Volo.Abp.Application.Services;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.EventBus.Local;
 
-namespace Unity.GrantManager.Emails
+namespace Unity.GrantManager.Notifications
 {
     [Authorize]
     [Dependency(ReplaceServices = true)]

@@ -278,5 +278,5 @@ public class EmailConsumer(
     }
 
     private static bool ShouldProcessEmail(EmailLog log)
-        => log != null && log.Status != EmailStatus.Sent;
+        => log != null && log.Status != EmailStatus.Sent && log.Status != EmailStatus.Cancelled;
 }

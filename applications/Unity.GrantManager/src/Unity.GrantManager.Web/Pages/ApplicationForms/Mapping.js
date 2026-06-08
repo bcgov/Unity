@@ -76,6 +76,7 @@
 
     function init() {
         bindUIEvents();
+        restoreActiveTab();
         dataTable = initializeDataTable();
         let availableChefsFields = availableChefFieldsString ? JSON.parse(availableChefFieldsString) : []
         initializeIntakeMap(availableChefsFields);
@@ -102,6 +103,25 @@
         UIElements.inputSearchBar.on('keyup', handleSeearchBar);
         UIElements.selectVersionList.on('change', handleSelectVersion);  
         UIElements.mappingTab.on('click', handleMappingTabClick);
+
+        // Persist active tab to localStorage on switch
+        $('#nav-tab').on('shown.bs.tab', 'button[data-bs-toggle="tab"]', function () {
+            const formId = document.getElementById('applicationFormId')?.value;
+            if (formId) {
+                localStorage.setItem('mapping-active-tab:' + formId, this.id);
+            }
+        });
+    }
+
+    function restoreActiveTab() {
+        const formId = document.getElementById('applicationFormId')?.value;
+        if (!formId) return;
+        const savedTabId = localStorage.getItem('mapping-active-tab:' + formId);
+        if (!savedTabId) return;
+        const tabEl = document.getElementById(savedTabId);
+        if (tabEl) {
+            bootstrap.Tab.getOrCreateInstance(tabEl).show();
+        }
     }
 
     function initializeUIConfiguration() {
@@ -228,8 +248,7 @@
             columnDefs: [
                 {
                     render: function (data) {
-                        const safeId = String(data).replaceAll('&', '&amp;').replaceAll('"', '&quot;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
-                        return '<div id="' + safeId + '" class="col map-div non-drag" draggable="false"></div>';
+                        return '<div id="' + data + '" class="col map-div non-drag" draggable="false"></div>';
                     },
                     targets: 3
                 }
@@ -368,8 +387,7 @@
                     dragableDiv.id = 'unity_' + intakeFieldJson.Name;
                     dragableDiv.className = 'card mapping-field';
                     dragableDiv.setAttribute("draggable", "true");
-                    dragableDiv.innerHTML = setTypeIndicator(intakeField);
-                    dragableDiv.appendChild(document.createTextNode(intakeFieldJson.Label + (intakeFieldJson.IsCustom ? ' *' : '')));
+                    dragableDiv.innerHTML = `${setTypeIndicator(intakeField)}` + intakeFieldJson.Label + (intakeFieldJson.IsCustom ? " *" : "");
                     if (intakeFieldJson.IsCustom) {
                         worksheetMapColumn.appendChild(dragableDiv);
                         dragableDiv.className += ' custom-field';
@@ -456,6 +474,12 @@
 
     function setTypeIndicatorText(text) {
         return `<span class="mapping-indicator-text">${text}</span>`;
+    }
+
+    function stripHtml(html) {
+        let tmp = document.createElement("DIV");
+        tmp.innerHTML = html;
+        return tmp.textContent || tmp.innerText || "";
     }
 
     document.addEventListener('dragstart', function (ev) {
@@ -675,10 +699,3 @@
         }
     }
 });
-
-function stripHtml(html) {
-    return String(html)
-        .replaceAll('&', '&amp;')
-        .replaceAll('<', '&lt;')
-        .replaceAll('>', '&gt;');
-}
