@@ -71,11 +71,26 @@ $(function () {
         }
     });
 
+    function executeDelete(applicantId, applicantName) {
+        unity.grantManager.applicants.applicant
+            .deleteApplicant(applicantId)
+            .then(function () {
+                PubSub.publish('deselect_applicant', 'reset_data');
+                $('#ApplicantsTable').DataTable().ajax.reload();
+                abp.notify.success('Applicant "' + applicantName + '" has been deleted.');
+            })
+            .catch(function (e) {
+                console.warn('deleteApplicant error:', e);
+                const msg = e?.responseJSON?.error?.message || 'An error occurred while deleting the applicant. Please try again.';
+                abp.message.error(msg, 'Delete Failed');
+            });
+    }
+
     // DELETE button click — pre-check submissions, then show the correct modal
     $('#deleteApplicant').on('click', function () {
         if (selectedApplicantIds.length !== 1) return;
-        var applicantId = selectedApplicantIds[0];
-        var applicantName = (selectedApplicants[0].applicantName || 'this applicant');
+        const applicantId = selectedApplicantIds[0];
+        const applicantName = (selectedApplicants[0].applicantName || 'Applicant Name');
 
         unity.grantManager.applicants.applicant
             .hasSubmissions(applicantId)
@@ -90,19 +105,7 @@ $(function () {
                         'Are you sure you want to delete the applicant "' + applicantName + '"?',
                         'Delete Applicant',
                         function (confirmed) {
-                            if (!confirmed) return;
-                            unity.grantManager.applicants.applicant
-                                .deleteApplicant(applicantId)
-                                .then(function () {
-                                    PubSub.publish('deselect_applicant', 'reset_data');
-                                    $('#ApplicantsTable').DataTable().ajax.reload();
-                                    abp.notify.success('Applicant "' + applicantName + '" has been deleted.');
-                                })
-                                .catch(function (e) {
-                                    console.warn('deleteApplicant error:', e);
-                                    const msg = e?.responseJSON?.error?.message || 'An error occurred while deleting the applicant. Please try again.';
-                                    abp.message.error(msg, 'Delete Failed');
-                                });
+                            if (confirmed) executeDelete(applicantId, applicantName);
                         }
                     );
                 }
