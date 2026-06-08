@@ -52,9 +52,9 @@
             applyRateLimitState(generationStatus, { pollWhenGenerating: true });
         },
         monitor(options) {
-            const intervalMs = options.intervalMs || 15000;
-            const activeIntervalMs = options.activeIntervalMs || 2000;
-            const activePollCount = options.activePollCount || 10;
+            const intervalMs = options.intervalMs || 5000;
+            const activeIntervalMs = options.activeIntervalMs || 1000;
+            const activePollCount = options.activePollCount || 30;
             const maxFailures = options.maxFailures || 3;
             let timeoutId = null;
             let failures = 0;

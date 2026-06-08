@@ -29,6 +29,28 @@ public class OpenAIConfigurationResolver(IConfiguration configuration) : ITransi
         return Required($"Azure:{providerName}:ApiKey");
     }
 
+    public OpenAIOperationSettings ResolveOperationSettings(string operationName)
+    {
+        var providerName = ResolveProviderName(operationName);
+        var profileName = ResolveProfileName(operationName);
+        var apiKey = Required($"Azure:{providerName}:ApiKey");
+        var endpoint = new Uri(Required($"Azure:{providerName}:Endpoint"));
+        var deploymentName = RequiredProfile(providerName, profileName, "DeploymentName");
+        var promptVersion = Optional($"Azure:Operations:{operationName}:PromptVersion")
+            ?? Required("Azure:Operations:Defaults:PromptVersion");
+
+        return new OpenAIOperationSettings(
+            providerName,
+            profileName,
+            apiKey,
+            endpoint,
+            deploymentName,
+            ResolveMaxOutputTokenCountSupported(operationName),
+            ResolveConfiguredTemperature(operationName),
+            ResolveCompletionTokens(operationName),
+            promptVersion);
+    }
+
     public double? ResolveConfiguredTemperature(string? operationName = null)
     {
         var providerName = ResolveProviderName(operationName);

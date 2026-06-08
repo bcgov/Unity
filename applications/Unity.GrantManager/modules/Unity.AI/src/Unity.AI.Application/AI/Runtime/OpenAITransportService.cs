@@ -12,31 +12,27 @@ using Volo.Abp.DependencyInjection;
 namespace Unity.AI.Runtime;
 
 public class OpenAITransportService(
-    OpenAIConfigurationResolver configurationResolver,
     OpenAIChatClientFactory chatClientFactory,
     ILogger<OpenAITransportService> logger) : ITransientDependency
 {
-    private readonly OpenAIConfigurationResolver _configurationResolver = configurationResolver;
     private readonly OpenAIChatClientFactory _chatClientFactory = chatClientFactory;
     private readonly ILogger<OpenAITransportService> _logger = logger;
 
     public async Task<AIOperationResult> GenerateSummaryAsync(
         string content,
         string? systemPrompt,
+        OpenAIOperationSettings settings,
         int maxTokens = 150,
-        double? temperature = null,
-        string? operationName = null,
         string? promptVersion = null,
         string? fileName = null,
         CancellationToken cancellationToken = default)
     {
         try
         {
-            var providerName = _configurationResolver.ResolveProviderName(operationName);
-            if (!string.Equals(providerName, "OpenAI", StringComparison.Ordinal))
+            if (!string.Equals(settings.ProviderName, "OpenAI", StringComparison.Ordinal))
             {
-                _logger.LogWarning("Provider {ProviderName} is not supported by OpenAI transport.", providerName);
-                return AIOperationResult.PermanentFailure(new AIProviderResult($"Unsupported provider: {providerName}"));
+                _logger.LogWarning("Provider {ProviderName} is not supported by OpenAI transport.", settings.ProviderName);
+                return AIOperationResult.PermanentFailure(new AIProviderResult($"Unsupported provider: {settings.ProviderName}"));
             }
 
             var resolvedSystemPrompt = string.IsNullOrWhiteSpace(systemPrompt)
@@ -44,19 +40,17 @@ public class OpenAITransportService(
                 : systemPrompt;
 
             var options = new ChatCompletionOptions();
-            if (_configurationResolver.ResolveMaxOutputTokenCountSupported(operationName))
+            if (settings.MaxOutputTokenCountSupported)
             {
                 options.MaxOutputTokenCount = maxTokens;
             }
 
-            var profileTemperature = _configurationResolver.ResolveConfiguredTemperature(operationName);
-            var resolvedTemperature = temperature ?? profileTemperature;
-            if (resolvedTemperature.HasValue)
+            if (settings.Temperature.HasValue)
             {
-                options.Temperature = (float)resolvedTemperature.Value;
+                options.Temperature = (float)settings.Temperature.Value;
             }
 
-            var result = await _chatClientFactory.Create(operationName).CompleteChatAsync(
+            var result = await _chatClientFactory.Create(settings).CompleteChatAsync(
                 [
                     new SystemChatMessage(resolvedSystemPrompt),
                     new UserChatMessage(content ?? string.Empty)

@@ -5,16 +5,14 @@ using Volo.Abp.DependencyInjection;
 
 namespace Unity.AI.Runtime;
 
-public class OpenAIChatClientFactory(OpenAIConfigurationResolver configurationResolver) : ITransientDependency
+public class OpenAIChatClientFactory : ITransientDependency
 {
-    private readonly OpenAIConfigurationResolver _configurationResolver = configurationResolver;
-
-    public ChatClient Create(string? operationName = null)
+    public ChatClient Create(OpenAIOperationSettings settings)
     {
         return new AzureOpenAIClient(
-            _configurationResolver.ResolveEndpoint(operationName),
-            new ApiKeyCredential(_configurationResolver.ResolveApiKey(operationName)),
+            settings.Endpoint,
+            new ApiKeyCredential(settings.ApiKey),
             new AzureOpenAIClientOptions())
-            .GetChatClient(_configurationResolver.ResolveDeploymentName(operationName));
+            .GetChatClient(settings.DeploymentName);
     }
 }
