@@ -53,6 +53,11 @@ export class App implements OnInit, OnDestroy {
   @ViewChild('sqlAnimationContainer') private readonly sqlAnimationContainer!: ElementRef<HTMLDivElement>;
   @ViewChild('sidebar') private readonly sidebar!: SidebarComponent;
 
+  /** Whether to show the "Build a data model" entry point (Create/Edit Data Model permission). */
+  get canEditDataModel(): boolean {
+    return this.authService.canEditDataModel();
+  }
+
   ngOnInit(): void {
     this.initialize();
   }

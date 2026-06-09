@@ -10,6 +10,7 @@ export interface JwtPayload {
   exp?: number;
   iss?: string;
   aud?: string;
+  can_edit_data_model?: boolean | string;
   [key: string]: any;
 }
 
@@ -601,6 +602,16 @@ export class AuthService {
       this.logger.error('Token decode error:', error);
       return null;
     }
+  }
+
+  /**
+   * Whether the current user holds the "Create/Edit Data Model" permission.
+   * The claim is minted by GrantManager as the string "true"/"false", so accept
+   * both the boolean and string forms (mirrors the is_it_admin read in root.component.ts).
+   */
+  canEditDataModel(): boolean {
+    const payload = this.decodeToken();
+    return payload?.['can_edit_data_model'] === true || payload?.['can_edit_data_model'] === 'true';
   }
 
   private base64urlDecode(base64url: string): string {

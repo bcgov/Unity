@@ -200,3 +200,40 @@ def get_user_from_token() -> Dict[str, Any]:
     if not user_data:
         abort(401, description="User data not found in token")
     return user_data
+
+
+def _claim_is_true(value: Any) -> bool:
+    """
+    Permission claims minted by GrantManager arrive as the strings 'true'/'false'
+    (C# bool.ToString().ToLower()). A naive bool() is wrong here since bool("false")
+    is True in Python, so compare against the literal string.
+    """
+    return str(value).strip().lower() == "true"
+
+
+def require_data_model_permission(f: Callable) -> Callable:
+    """
+    Decorator to require the can_edit_data_model permission claim.
+
+    Must be layered AFTER @require_auth so that g.current_user is already populated;
+    this reads the already-decoded payload and does not re-decode or re-validate the
+    token.
+
+    Usage:
+        @app.route('/api/data-models/create', methods=['POST'])
+        @require_auth
+        @require_data_model_permission
+        def create_data_models():
+            ...
+    """
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        user_data = get_user_from_token()
+        if not _claim_is_true(user_data.get("can_edit_data_model")):
+            return jsonify({
+                "error": "permission_denied",
+                "message": "You do not have permission to use the Data Model feature."
+            }), 403
+        return f(*args, **kwargs)
+
+    return decorated_function

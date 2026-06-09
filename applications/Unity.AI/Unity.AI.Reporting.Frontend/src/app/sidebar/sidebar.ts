@@ -7,6 +7,7 @@ import { ApiService } from '../services/api.service';
 import { ConfigService } from '../services/config.service';
 import { ToastService } from '../services/toast.service';
 import { LoggerService } from '../services/logger.service';
+import { AuthService } from '../services/auth.service';
 import { AlertComponent } from '../alert/alert';
 import { CardData } from '../embed';
 import { Turn } from '../turn';
@@ -145,8 +146,14 @@ export class SidebarComponent implements OnDestroy {
     private readonly configService: ConfigService,
     private readonly toastService: ToastService,
     private readonly logger: LoggerService,
+    private readonly authService: AuthService,
     private readonly cdr: ChangeDetectorRef
   ) {}
+
+  /** Whether to show the "Generate Data Models" entry point (Create/Edit Data Model permission). */
+  get canEditDataModel(): boolean {
+    return this.authService.canEditDataModel();
+  }
 
   async ngOnInit(): Promise<void> {
     await this.loadChats();

@@ -13,7 +13,7 @@ from metabase import metabase_client
 from chat import chat_manager
 from sql_generator import sql_generator
 from model_generator import data_model_generator
-from auth import require_auth, get_user_from_token
+from auth import require_auth, get_user_from_token, require_data_model_permission
 from embeddings import embedding_manager
 from static_routes import add_static_routes
 import cache_reranker
@@ -775,6 +775,7 @@ def ask():
 
 @app.route("/api/data-models/views", methods=["POST"])
 @require_auth
+@require_data_model_permission
 def get_data_model_views():
     """Discover available worksheet/scoresheet views for the tenant."""
     user_data = get_user_from_token()
@@ -800,6 +801,7 @@ def get_data_model_views():
 
 @app.route("/api/data-models/core-fields", methods=["POST"])
 @require_auth
+@require_data_model_permission
 def get_data_model_core_fields():
     """Return the curated list of public.Applications columns users can opt-in to."""
     return jsonify({"core_fields": data_model_generator.get_core_fields()}), 200
@@ -807,6 +809,7 @@ def get_data_model_core_fields():
 
 @app.route("/api/data-models/preview", methods=["POST"])
 @require_auth
+@require_data_model_permission
 def preview_data_models():
     """Generate an AI model proposal for a selected view."""
     user_data = get_user_from_token()
@@ -874,6 +877,7 @@ def preview_data_models():
 
 @app.route("/api/data-models/create", methods=["POST"])
 @require_auth
+@require_data_model_permission
 def create_data_models():
     """Step 2: Create user-approved data models in Metabase."""
     user_data = get_user_from_token()
@@ -924,6 +928,7 @@ def create_data_models():
 
 @app.route("/api/data-models/list", methods=["POST"])
 @require_auth
+@require_data_model_permission
 def list_data_models():
     """List existing model cards in the tenant's collection."""
     user_data = get_user_from_token()
@@ -944,6 +949,7 @@ def list_data_models():
 
 @app.route("/api/data-models/detail", methods=["POST"])
 @require_auth
+@require_data_model_permission
 def data_model_detail():
     """Fetch full detail (SQL + columns) for one model card."""
     user_data = get_user_from_token()
@@ -990,6 +996,7 @@ def data_model_detail():
 
 @app.route("/api/data-models/preview-data", methods=["POST"])
 @require_auth
+@require_data_model_permission
 def data_model_preview_data():
     """Execute a saved model's SQL via Metabase and return preview rows."""
     user_data = get_user_from_token()
@@ -1028,6 +1035,7 @@ def data_model_preview_data():
 
 @app.route("/api/data-models/modify-preview", methods=["POST"])
 @require_auth
+@require_data_model_permission
 def modify_data_model_preview():
     """Generate a modified-variant preview from an existing model."""
     user_data = get_user_from_token()

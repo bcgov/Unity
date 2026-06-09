@@ -33,6 +33,7 @@
               </button>
             </div>
           </div>
+          @if (canEditDataModel) {
           <div class="welcome-actions">
             <a class="welcome-action-card" routerLink="/models">
               <div class="welcome-action-icon">+</div>
@@ -43,6 +44,7 @@
               <div class="welcome-action-chevron">›</div>
             </a>
           </div>
+          }
         </div>
       </div>
       }
