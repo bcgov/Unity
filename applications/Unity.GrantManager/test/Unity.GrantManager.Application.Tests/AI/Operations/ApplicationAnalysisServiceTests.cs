@@ -9,8 +9,6 @@ using Unity.AI.Models;
 using Unity.AI.Operations;
 using Unity.AI.Requests;
 using Unity.AI.Responses;
-using Unity.GrantManager.Applications;
-using Volo.Abp.Domain.Entities;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -23,27 +21,21 @@ public class ApplicationAnalysisServiceTests : GrantManagerApplicationTestBase
     }
 
     [Fact]
-    public async Task RegenerateAndSaveAsync_Uses_Input_Dto_And_Persists_Analysis()
+    public async Task RegenerateAsync_Uses_Input_Dto_And_Returns_Serialized_Response()
     {
         var applicationId = Guid.NewGuid();
-        var application = WithId(new Application(), applicationId);
         ApplicationAnalysisRequest? capturedRequest = null;
-
-        var applicationRepository = Substitute.For<IApplicationRepository>();
-        applicationRepository.GetAsync(applicationId).Returns(application);
 
         var aiService = Substitute.For<IAIService>();
         aiService.GenerateApplicationAnalysisAsync(Arg.Do<ApplicationAnalysisRequest>(request => capturedRequest = request))
             .Returns(new ApplicationAnalysisResponse { Decision = "ok" });
-
         var prerequisiteValidator = Substitute.For<IAIGenerationPrerequisiteValidator>();
 
         var service = new ApplicationAnalysisService(
-            applicationRepository,
             aiService,
             prerequisiteValidator);
 
-        var result = await service.RegenerateAndSaveAsync(new ApplicationAnalysisOperationInputDto
+        var result = await service.RegenerateAsync(new ApplicationAnalysisOperationInputDto
         {
             ApplicationId = applicationId,
             Schema = JsonSerializer.SerializeToElement(new { projectName = "Project Name" }),
@@ -69,31 +61,25 @@ public class ApplicationAnalysisServiceTests : GrantManagerApplicationTestBase
         capturedRequest.Schema.GetProperty("projectName").GetString().ShouldBe("Project Name");
 
         await prerequisiteValidator.Received(1).EnsureApplicationAnalysisAvailableAsync(applicationId);
-        await applicationRepository.Received(1).UpdateAsync(application);
+        await aiService.Received(1).GenerateApplicationAnalysisAsync(Arg.Any<ApplicationAnalysisRequest>(), Arg.Any<System.Threading.CancellationToken>());
     }
 
     [Fact]
-    public async Task RegenerateAndSaveAsync_Flows_Without_Repository_Loading_Inputs()
+    public async Task RegenerateAsync_Flows_Api_Request_To_The_Runtime_Without_Repository_Dependencies()
     {
         var applicationId = Guid.NewGuid();
-        var application = WithId(new Application(), applicationId);
         ApplicationAnalysisRequest? capturedRequest = null;
-
-        var applicationRepository = Substitute.For<IApplicationRepository>();
-        applicationRepository.GetAsync(applicationId).Returns(application);
 
         var aiService = Substitute.For<IAIService>();
         aiService.GenerateApplicationAnalysisAsync(Arg.Do<ApplicationAnalysisRequest>(request => capturedRequest = request))
             .Returns(new ApplicationAnalysisResponse());
-
         var prerequisiteValidator = Substitute.For<IAIGenerationPrerequisiteValidator>();
 
         var service = new ApplicationAnalysisService(
-            applicationRepository,
             aiService,
             prerequisiteValidator);
 
-        await service.RegenerateAndSaveAsync(new ApplicationAnalysisOperationInputDto
+        await service.RegenerateAsync(new ApplicationAnalysisOperationInputDto
         {
             ApplicationId = applicationId,
             Schema = JsonSerializer.SerializeToElement(new { }),
@@ -106,13 +92,5 @@ public class ApplicationAnalysisServiceTests : GrantManagerApplicationTestBase
         capturedRequest.Data.GetProperty("project_name").GetString().ShouldBe("Fallback project");
         capturedRequest.Attachments.ShouldBeEmpty();
         capturedRequest.PromptVersion.ShouldBeNull();
-    }
-
-    private static T WithId<T>(T entity, Guid id) where T : Entity<Guid>
-    {
-        typeof(Entity<Guid>)
-            .GetProperty(nameof(Entity<Guid>.Id))!
-            .SetValue(entity, id);
-        return entity;
     }
 }

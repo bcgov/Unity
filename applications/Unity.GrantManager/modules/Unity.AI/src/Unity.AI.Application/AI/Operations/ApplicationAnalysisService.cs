@@ -5,17 +5,15 @@ using Unity.AI;
 using Unity.AI.Models;
 using Unity.AI.Requests;
 using Unity.AI.Runtime;
-using Unity.GrantManager.Applications;
 using Volo.Abp.DependencyInjection;
 
 namespace Unity.AI.Operations
 {
     public class ApplicationAnalysisService(
-        IApplicationRepository applicationRepository,
         IAIService aiService,
         IAIGenerationPrerequisiteValidator aiGenerationPrerequisiteValidator) : IApplicationAnalysisService, ITransientDependency
     {
-        public async Task<string> RegenerateAndSaveAsync(ApplicationAnalysisOperationInputDto input, CancellationToken cancellationToken = default)
+        public async Task<string> RegenerateAsync(ApplicationAnalysisOperationInputDto input, CancellationToken cancellationToken = default)
         {
             await aiGenerationPrerequisiteValidator.EnsureApplicationAnalysisAvailableAsync(input.ApplicationId);
 
@@ -28,9 +26,6 @@ namespace Unity.AI.Operations
             }, cancellationToken);
 
             var analysisJson = JsonSerializer.Serialize(analysis, AIJsonDefaults.Indented);
-            var application = await applicationRepository.GetAsync(input.ApplicationId);
-            application.AIAnalysis = analysisJson;
-            await applicationRepository.UpdateAsync(application);
             return analysisJson;
         }
 

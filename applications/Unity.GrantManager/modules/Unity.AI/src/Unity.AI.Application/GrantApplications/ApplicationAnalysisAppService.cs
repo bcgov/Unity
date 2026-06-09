@@ -46,7 +46,10 @@ public class ApplicationAnalysisAppService(
     public virtual async Task<ApplicationAnalysisResultDto> GenerateApplicationAnalysisForPipelineAsync(Guid applicationId, string? promptVersion = null)
     {
         var input = await BuildInputAsync(applicationId, promptVersion);
-        await applicationAnalysisService.RegenerateAndSaveAsync(input);
+        var analysisJson = await applicationAnalysisService.RegenerateAsync(input);
+        var application = await applicationRepository.GetAsync(applicationId);
+        application.AIAnalysis = analysisJson;
+        await applicationRepository.UpdateAsync(application);
         return new ApplicationAnalysisResultDto { Completed = true };
     }
 
