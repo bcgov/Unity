@@ -128,6 +128,15 @@ namespace Unity.AI.Operations
 
         private static JsonElement BuildBatchSectionSchema(IReadOnlyCollection<ApplicationScoringSectionOperationInputDto> sections)
         {
+            foreach (var section in sections)
+            {
+                if (section.SectionSchema.ValueKind != JsonValueKind.Array)
+                {
+                    throw new InvalidOperationException(
+                        $"Section schema for '{section.SectionName}' must be a JSON array.");
+                }
+            }
+
             var questions = new List<JsonElement>();
             foreach (var section in sections)
             {

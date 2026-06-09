@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Logging;
 using System;
-using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Unity.AI;
@@ -59,9 +58,8 @@ public class ApplicationAnalysisAppService(
         var formSchema = await GetFormSchemaAsync(formSubmission?.ApplicationFormVersionId);
 
         var attachmentSummaries = PromptDataPayloadBuilder.BuildAttachmentSummaries(attachments);
-        var formFieldConfiguration = await PromptDataPayloadBuilder.BuildFormFieldConfigurationAsync(
-            applicationFormVersionRepository,
-            formSubmission?.ApplicationFormVersionId,
+        var formFieldConfiguration = PromptDataPayloadBuilder.BuildFormFieldConfigurationAsync(
+            formSchema,
             logger);
 
         return new Unity.AI.Operations.ApplicationAnalysisOperationInputDto

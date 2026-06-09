@@ -1,4 +1,3 @@
-using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
 using Shouldly;
 using System;
