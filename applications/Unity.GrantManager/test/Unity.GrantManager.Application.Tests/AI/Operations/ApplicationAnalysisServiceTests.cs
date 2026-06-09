@@ -1,12 +1,11 @@
-using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
 using Shouldly;
 using System;
 using System.Collections.Generic;
-using System.Linq.Expressions;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Unity.AI;
+using Unity.AI.Models;
 using Unity.AI.Operations;
 using Unity.AI.Requests;
 using Unity.AI.Responses;
@@ -24,90 +23,41 @@ public class ApplicationAnalysisServiceTests : GrantManagerApplicationTestBase
     }
 
     [Fact]
-    public async Task RegenerateAndSaveAsync_Builds_Filtered_Prompt_Payload_From_Form_Submission()
+    public async Task RegenerateAndSaveAsync_Uses_Input_Dto_And_Persists_Analysis()
     {
         var applicationId = Guid.NewGuid();
-        var formVersionId = Guid.NewGuid();
+        var application = WithId(new Application(), applicationId);
         ApplicationAnalysisRequest? capturedRequest = null;
-        var application = WithId(new Application
-        {
-            ApplicationFormId = Guid.NewGuid(),
-            ProjectName = "Fallback project",
-            ReferenceNo = "REF-001",
-            RequestedAmount = 100,
-            TotalProjectBudget = 200,
-            SubmissionDate = new DateTime(2026, 1, 2)
-        }, applicationId);
-        var submission = new ApplicationFormSubmission
-        {
-            ApplicationId = applicationId,
-            ApplicationFormVersionId = formVersionId,
-            Submission = """
-            {
-              "data": {
-                "projectName": "Submitted project",
-                "requestedAmount": 12345,
-                "metadata": { "timezone": "utc" },
-                "files": [{ "name": "large.pdf" }],
-                "ignoredField": "not in schema"
-              }
-            }
-            """
-        };
-        var formVersion = new ApplicationFormVersion
-        {
-            FormSchema = """
-            {
-              "components": [
-                { "key": "projectName", "label": "Project Name", "type": "textfield", "input": true, "validate": { "required": true } },
-                { "key": "requestedAmount", "label": "Requested Amount", "type": "number", "input": true },
-                { "key": "applicantAgent", "label": "Applicant Agent", "type": "textfield", "input": true },
-                { "key": "ignoredField", "label": "Ignored Field", "type": "html", "input": false }
-              ]
-            }
-            """
-        };
 
         var applicationRepository = Substitute.For<IApplicationRepository>();
         applicationRepository.GetAsync(applicationId).Returns(application);
 
-        var submissionRepository = Substitute.For<IApplicationFormSubmissionRepository>();
-        submissionRepository.GetByApplicationAsync(applicationId).Returns(submission);
-
-        var formVersionRepository = Substitute.For<IApplicationFormVersionRepository>();
-        formVersionRepository.GetAsync(formVersionId).Returns(formVersion);
-
-        var attachmentRepository = Substitute.For<IApplicationChefsFileAttachmentRepository>();
-        attachmentRepository
-            .GetListAsync(Arg.Any<Expression<Func<ApplicationChefsFileAttachment, bool>>>())
-            .Returns([
-                new ApplicationChefsFileAttachment
-                {
-                    FileName = " summary.pdf ",
-                    AISummary = " Summary text "
-                },
-                new ApplicationChefsFileAttachment
-                {
-                    FileName = "empty.txt",
-                    AISummary = " "
-                }
-            ]);
-
         var aiService = Substitute.For<IAIService>();
         aiService.GenerateApplicationAnalysisAsync(Arg.Do<ApplicationAnalysisRequest>(request => capturedRequest = request))
             .Returns(new ApplicationAnalysisResponse { Decision = "ok" });
+
         var prerequisiteValidator = Substitute.For<IAIGenerationPrerequisiteValidator>();
 
         var service = new ApplicationAnalysisService(
             applicationRepository,
-            submissionRepository,
-            formVersionRepository,
-            attachmentRepository,
             aiService,
-            prerequisiteValidator,
-            NullLogger<ApplicationAnalysisService>.Instance);
+            prerequisiteValidator);
 
-        var result = await service.RegenerateAndSaveAsync(applicationId, "v1");
+        var result = await service.RegenerateAndSaveAsync(new ApplicationAnalysisOperationInputDto
+        {
+            ApplicationId = applicationId,
+            Schema = JsonSerializer.SerializeToElement(new { projectName = "Project Name" }),
+            Data = JsonSerializer.SerializeToElement(new { projectName = "Submitted project" }),
+            Attachments = new List<AIAttachmentItem>
+            {
+                new()
+                {
+                    Name = "summary.pdf",
+                    Summary = "Summary text"
+                }
+            },
+            PromptVersion = "v1"
+        });
 
         result.ShouldContain("\"Decision\": \"ok\"");
         capturedRequest.ShouldNotBeNull();
@@ -115,68 +65,47 @@ public class ApplicationAnalysisServiceTests : GrantManagerApplicationTestBase
         capturedRequest.Attachments.Count.ShouldBe(1);
         capturedRequest.Attachments[0].Name.ShouldBe("summary.pdf");
         capturedRequest.Attachments[0].Summary.ShouldBe("Summary text");
-
         capturedRequest.Data.GetProperty("projectName").GetString().ShouldBe("Submitted project");
-        capturedRequest.Data.GetProperty("requestedAmount").GetInt32().ShouldBe(12345);
-        capturedRequest.Data.TryGetProperty("metadata", out _).ShouldBeFalse();
-        capturedRequest.Data.TryGetProperty("files", out _).ShouldBeFalse();
-        capturedRequest.Data.TryGetProperty("ignoredField", out _).ShouldBeFalse();
+        capturedRequest.Schema.GetProperty("projectName").GetString().ShouldBe("Project Name");
 
-        var schemaJson = JsonSerializer.Serialize(capturedRequest.Schema);
-        schemaJson.ShouldContain("Project Name (projectName)");
-        schemaJson.ShouldContain("Requested Amount (requestedAmount)");
-        schemaJson.ShouldNotContain("Applicant Agent (applicantAgent)");
+        await prerequisiteValidator.Received(1).EnsureApplicationAnalysisAvailableAsync(applicationId);
         await applicationRepository.Received(1).UpdateAsync(application);
     }
 
     [Fact]
-    public async Task RegenerateAndSaveAsync_Falls_Back_To_Application_Data_When_Submission_Is_Missing()
+    public async Task RegenerateAndSaveAsync_Flows_Without_Repository_Loading_Inputs()
     {
         var applicationId = Guid.NewGuid();
-        var application = WithId(new Application
-        {
-            ProjectName = "Fallback project",
-            ReferenceNo = "REF-002",
-            RequestedAmount = 1500,
-            TotalProjectBudget = 3000,
-            ProjectSummary = "Fallback summary",
-            SubmissionDate = new DateTime(2026, 2, 3)
-        }, applicationId);
+        var application = WithId(new Application(), applicationId);
         ApplicationAnalysisRequest? capturedRequest = null;
 
         var applicationRepository = Substitute.For<IApplicationRepository>();
         applicationRepository.GetAsync(applicationId).Returns(application);
 
-        var submissionRepository = Substitute.For<IApplicationFormSubmissionRepository>();
-        submissionRepository.GetByApplicationAsync(applicationId).Returns((ApplicationFormSubmission?)null);
-
-        var formVersionRepository = Substitute.For<IApplicationFormVersionRepository>();
-        var attachmentRepository = Substitute.For<IApplicationChefsFileAttachmentRepository>();
-        attachmentRepository
-            .GetListAsync(Arg.Any<Expression<Func<ApplicationChefsFileAttachment, bool>>>())
-            .Returns([]);
-
         var aiService = Substitute.For<IAIService>();
         aiService.GenerateApplicationAnalysisAsync(Arg.Do<ApplicationAnalysisRequest>(request => capturedRequest = request))
             .Returns(new ApplicationAnalysisResponse());
+
         var prerequisiteValidator = Substitute.For<IAIGenerationPrerequisiteValidator>();
 
         var service = new ApplicationAnalysisService(
             applicationRepository,
-            submissionRepository,
-            formVersionRepository,
-            attachmentRepository,
             aiService,
-            prerequisiteValidator,
-            NullLogger<ApplicationAnalysisService>.Instance);
+            prerequisiteValidator);
 
-        await service.RegenerateAndSaveAsync(applicationId);
+        await service.RegenerateAndSaveAsync(new ApplicationAnalysisOperationInputDto
+        {
+            ApplicationId = applicationId,
+            Schema = JsonSerializer.SerializeToElement(new { }),
+            Data = JsonSerializer.SerializeToElement(new { project_name = "Fallback project" }),
+            Attachments = [],
+            PromptVersion = null
+        });
 
         capturedRequest.ShouldNotBeNull();
         capturedRequest.Data.GetProperty("project_name").GetString().ShouldBe("Fallback project");
-        capturedRequest.Data.GetProperty("reference_number").GetString().ShouldBe("REF-002");
-        capturedRequest.Data.GetProperty("requested_amount").GetDecimal().ShouldBe(1500);
         capturedRequest.Attachments.ShouldBeEmpty();
+        capturedRequest.PromptVersion.ShouldBeNull();
     }
 
     private static T WithId<T>(T entity, Guid id) where T : Entity<Guid>
