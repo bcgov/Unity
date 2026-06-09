@@ -77,7 +77,7 @@ public class ChefsAttachmentDownloadService(
 
     private async Task<ApplicationForm?> GetApplicationFormBySubmissionId(Guid? formSubmissionId)
     {
-        ApplicationForm? applicationFormData = new();
+        ApplicationForm? applicationFormData = null;
 
         if (formSubmissionId != null)
         {

@@ -34,7 +34,7 @@ public class OpenAIConfigurationResolver(IConfiguration configuration) : ITransi
         var providerName = ResolveProviderName(operationName);
         var profileName = ResolveProfileName(operationName);
         var apiKey = Required($"Azure:{providerName}:ApiKey");
-        var endpoint = new Uri(Required($"Azure:{providerName}:Endpoint"));
+        var endpoint = ResolveEndpointUri(providerName);
         var deploymentName = RequiredProfile(providerName, profileName, "DeploymentName");
         var promptVersion = Optional($"Azure:Operations:{operationName}:PromptVersion")
             ?? Required("Azure:Operations:Defaults:PromptVersion");
@@ -110,8 +110,7 @@ public class OpenAIConfigurationResolver(IConfiguration configuration) : ITransi
     public Uri ResolveEndpoint(string? operationName = null)
     {
         var providerName = ResolveProviderName(operationName);
-        var endpoint = Required($"Azure:{providerName}:Endpoint");
-        return new Uri(endpoint);
+        return ResolveEndpointUri(providerName);
     }
 
     public string ResolveDeploymentName(string? operationName = null)
@@ -149,6 +148,21 @@ public class OpenAIConfigurationResolver(IConfiguration configuration) : ITransi
     private string Required(string key)
     {
         return Optional(key) ?? throw new InvalidOperationException($"{key} is not configured.");
+    }
+
+    private Uri ResolveEndpointUri(string providerName)
+    {
+        var key = $"Azure:{providerName}:Endpoint";
+        var endpoint = Required(key);
+
+        try
+        {
+            return new Uri(endpoint);
+        }
+        catch (UriFormatException ex)
+        {
+            throw new InvalidOperationException($"{key} must be a valid absolute URI.", ex);
+        }
     }
 
     private string? Optional(string key)

@@ -23,8 +23,6 @@ public class OpenAITransportService(
         string? systemPrompt,
         OpenAIOperationSettings settings,
         int maxTokens = 150,
-        string? promptVersion = null,
-        string? fileName = null,
         CancellationToken cancellationToken = default)
     {
         try

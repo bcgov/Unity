@@ -55,47 +55,60 @@ namespace Unity.AI.Runtime
 
         public async Task<ApplicationAnalysisResponse> GenerateApplicationAnalysisAsync(ApplicationAnalysisRequest request, CancellationToken cancellationToken = default)
         {
-            ArgumentNullException.ThrowIfNull(request);
-            var settings = _openAIConfigurationResolver.ResolveOperationSettings(ApplicationAnalysisPromptType);
-            var promptVersion = OpenAIPromptRenderer.ResolvePromptVersion(request.PromptVersion ?? settings.PromptVersion);
-            var data = JsonSerializer.Serialize(request.Data, AIJsonDefaults.Indented);
-            var schema = JsonSerializer.Serialize(request.Schema, AIJsonDefaults.Indented);
+            try
+            {
+                ArgumentNullException.ThrowIfNull(request);
+                var settings = _openAIConfigurationResolver.ResolveOperationSettings(ApplicationAnalysisPromptType);
+                var promptVersion = OpenAIPromptRenderer.ResolvePromptVersion(request.PromptVersion ?? settings.PromptVersion);
+                var data = JsonSerializer.Serialize(request.Data, AIJsonDefaults.Indented);
+                var schema = JsonSerializer.Serialize(request.Schema, AIJsonDefaults.Indented);
 
-            var attachmentsPayload = request.Attachments
-                .Select(a => new
-                {
-                    name = string.IsNullOrWhiteSpace(a.Name) ? "attachment" : a.Name.Trim(),
-                    summary = string.IsNullOrWhiteSpace(a.Summary) ? string.Empty : a.Summary.Trim()
-                })
-                .Cast<object>();
+                var attachmentsPayload = request.Attachments
+                    .Select(a => new
+                    {
+                        name = string.IsNullOrWhiteSpace(a.Name) ? "attachment" : a.Name.Trim(),
+                        summary = string.IsNullOrWhiteSpace(a.Summary) ? string.Empty : a.Summary.Trim()
+                    })
+                    .Cast<object>();
 
-            var attachments = JsonSerializer.Serialize(attachmentsPayload, AIJsonDefaults.Indented);
-            var systemPrompt = OpenAIPromptRenderer.BuildApplicationAnalysisSystemPrompt(promptVersion);
-            var applicationAnalysisContent = OpenAIPromptRenderer.BuildApplicationAnalysisUserPrompt(
-                promptVersion,
-                schema,
-                data,
-                attachments);
-            await _promptFileLogger.LogPromptInputAsync(ApplicationAnalysisPromptType, promptVersion, systemPrompt, applicationAnalysisContent, cancellationToken);
+                var attachments = JsonSerializer.Serialize(attachmentsPayload, AIJsonDefaults.Indented);
+                var systemPrompt = OpenAIPromptRenderer.BuildApplicationAnalysisSystemPrompt(promptVersion);
+                var applicationAnalysisContent = OpenAIPromptRenderer.BuildApplicationAnalysisUserPrompt(
+                    promptVersion,
+                    schema,
+                    data,
+                    attachments);
+
+                await _promptFileLogger.LogPromptInputAsync(ApplicationAnalysisPromptType, promptVersion, systemPrompt, applicationAnalysisContent, cancellationToken);
                 var result = await GenerateWithRetryAsync(
                     () => _openAITransportService.GenerateSummaryAsync(
                         applicationAnalysisContent,
                         systemPrompt,
                         settings,
                         settings.CompletionTokens,
-                        promptVersion: promptVersion,
                         cancellationToken: cancellationToken),
                     AIProviderPayloadValidator.IsValidApplicationAnalysisJson,
                     "application analysis",
                     cancellationToken);
-            await _promptFileLogger.LogPromptOutputAsync(ApplicationAnalysisPromptType, promptVersion, result.CaptureOutput, cancellationToken);
 
-            if (result.Outcome != AIOperationOutcome.Success)
+                await _promptFileLogger.LogPromptOutputAsync(ApplicationAnalysisPromptType, promptVersion, result.CaptureOutput, cancellationToken);
+
+                if (result.Outcome != AIOperationOutcome.Success)
+                {
+                    return new ApplicationAnalysisResponse();
+                }
+
+                return OpenAIResponseParser.ParseApplicationAnalysisResponse(result.Content);
+            }
+            catch (OperationCanceledException)
             {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error generating application analysis.");
                 return new ApplicationAnalysisResponse();
             }
-
-            return OpenAIResponseParser.ParseApplicationAnalysisResponse(result.Content);
         }
 
         public async Task<AttachmentSummaryResponse> GenerateAttachmentSummaryAsync(AttachmentSummaryRequest request, CancellationToken cancellationToken = default)
@@ -137,8 +150,6 @@ namespace Unity.AI.Runtime
                         prompt,
                         settings,
                         settings.CompletionTokens,
-                        promptVersion: promptVersion,
-                        fileName: fileName,
                         cancellationToken: cancellationToken),
                     AIProviderPayloadValidator.IsValidAttachmentSummaryText,
                     "attachment summary",
@@ -214,7 +225,6 @@ namespace Unity.AI.Runtime
                     systemPrompt,
                     settings,
                     settings.CompletionTokens,
-                    promptVersion: promptVersion,
                     cancellationToken: cancellationToken),
                     content => AIProviderPayloadValidator.IsValidApplicationScoringJson(content, section),
                     $"application scoring section {request.SectionName}",
