@@ -23,27 +23,27 @@ namespace Unity.AI.Runtime
 
             if (!root.TryGetProperty(AIJsonKeys.Decision, out var decision) || decision.ValueKind != JsonValueKind.String)
             {
-                return AIResponseValidationResult.Invalid($"Application analysis response is missing required field: {AIJsonKeys.Decision}.");
+                return AIResponseValidationResult.Invalid($"Application analysis response is missing or invalid required field '{AIJsonKeys.Decision}' (expected string).");
             }
 
             if (!root.TryGetProperty(AIJsonKeys.Errors, out var errors) || errors.ValueKind != JsonValueKind.Array)
             {
-                return AIResponseValidationResult.Invalid($"Application analysis response is missing required field: {AIJsonKeys.Errors}.");
+                return AIResponseValidationResult.Invalid($"Application analysis response is missing or invalid required field '{AIJsonKeys.Errors}' (expected array).");
             }
 
             if (!root.TryGetProperty(AIJsonKeys.Warnings, out var warnings) || warnings.ValueKind != JsonValueKind.Array)
             {
-                return AIResponseValidationResult.Invalid($"Application analysis response is missing required field: {AIJsonKeys.Warnings}.");
+                return AIResponseValidationResult.Invalid($"Application analysis response is missing or invalid required field '{AIJsonKeys.Warnings}' (expected array).");
             }
 
             if (!root.TryGetProperty(AIJsonKeys.Summaries, out var summaries) || summaries.ValueKind != JsonValueKind.Array)
             {
-                return AIResponseValidationResult.Invalid($"Application analysis response is missing required field: {AIJsonKeys.Summaries}.");
+                return AIResponseValidationResult.Invalid($"Application analysis response is missing or invalid required field '{AIJsonKeys.Summaries}' (expected array).");
             }
 
             if (!root.TryGetProperty(AIJsonKeys.Recommendations, out var recommendations) || recommendations.ValueKind != JsonValueKind.Array)
             {
-                return AIResponseValidationResult.Invalid($"Application analysis response is missing required field: {AIJsonKeys.Recommendations}.");
+                return AIResponseValidationResult.Invalid($"Application analysis response is missing or invalid required field '{AIJsonKeys.Recommendations}' (expected array).");
             }
 
             return AIResponseValidationResult.Success();
@@ -59,7 +59,7 @@ namespace Unity.AI.Runtime
             var expectedQuestionIds = ExtractQuestionIds(sectionJson);
             if (expectedQuestionIds.Count == 0)
             {
-                return AIResponseValidationResult.Invalid("Application scoring section schema did not contain any question ids.");
+                return AIResponseValidationResult.Invalid("Application scoring section schema could not be parsed or did not contain any question ids.");
             }
 
             foreach (var questionId in expectedQuestionIds)
