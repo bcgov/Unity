@@ -44,7 +44,10 @@ public class ApplicationScoringAppService(
             AILocalizationKeys.ScoringDisabled);
 
         var input = await BuildInputAsync(applicationId, promptVersion);
-        await applicationScoringService.RegenerateAndSaveAsync(input);
+        var scoresheetAnswers = await applicationScoringService.RegenerateAsync(input);
+        var application = await applicationRepository.GetAsync(applicationId);
+        application.AIScoresheetAnswers = scoresheetAnswers;
+        await applicationRepository.UpdateAsync(application);
 
         if (UnitOfWorkManager.Current != null)
         {
@@ -77,7 +80,10 @@ public class ApplicationScoringAppService(
     public virtual async Task<ApplicationScoringResultDto> GenerateApplicationScoringForPipelineAsync(Guid applicationId, string? promptVersion = null)
     {
         var input = await BuildInputAsync(applicationId, promptVersion);
-        await applicationScoringService.RegenerateAndSaveAsync(input);
+        var scoresheetAnswers = await applicationScoringService.RegenerateAsync(input);
+        var application = await applicationRepository.GetAsync(applicationId);
+        application.AIScoresheetAnswers = scoresheetAnswers;
+        await applicationRepository.UpdateAsync(application);
         return new ApplicationScoringResultDto { Completed = true };
     }
 

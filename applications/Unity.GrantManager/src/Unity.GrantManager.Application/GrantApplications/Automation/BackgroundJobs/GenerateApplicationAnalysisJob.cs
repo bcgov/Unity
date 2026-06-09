@@ -36,11 +36,8 @@ public class GenerateApplicationAnalysisJob(
             try
             {
                 logger.LogInformation("Executing AI application analysis job for application {ApplicationId}.", args.ApplicationId);
-                var result = await applicationAnalysisAppService.GenerateApplicationAnalysisForPipelineAsync(args.ApplicationId, args.PromptVersion);
-                if (result.Completed)
-                {
-                    logger.LogInformation("Completed AI application analysis job for application {ApplicationId}.", args.ApplicationId);
-                }
+                await applicationAnalysisAppService.GenerateApplicationAnalysisForPipelineAsync(args.ApplicationId, args.PromptVersion);
+                logger.LogInformation("Completed AI application analysis job for application {ApplicationId}.", args.ApplicationId);
 
                 await AIGenerationRequestJobHelper.StampRateLimitBestEffortAsync(aiRateLimiter, logger, args.RequestedByUserId, args.ApplicationId, args.RequestKey);
                 await AIGenerationRequestJobHelper.MarkCompletedInNewUowAsync(unitOfWorkManager, generationRequestRepository, args.RequestKey);

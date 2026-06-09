@@ -9,18 +9,16 @@ using Unity.AI;
 using Unity.AI.Models;
 using Unity.AI.Requests;
 using Unity.AI.Runtime;
-using Unity.GrantManager.Applications;
 using Volo.Abp.DependencyInjection;
 
 namespace Unity.AI.Operations
 {
     public class ApplicationScoringService(
-        IApplicationRepository applicationRepository,
         IAIService aiService,
         AIExecutionModeResolver executionModeResolver,
         ILogger<ApplicationScoringService> logger) : IApplicationScoringService, ITransientDependency
     {
-        public async Task<string> RegenerateAndSaveAsync(ApplicationScoringOperationInputDto input, CancellationToken cancellationToken = default)
+        public async Task<string> RegenerateAsync(ApplicationScoringOperationInputDto input, CancellationToken cancellationToken = default)
         {
             var sections = input.Sections;
             var mode = executionModeResolver.ResolveMode(AIExecutionModeResolver.ApplicationScoringOperation);
@@ -42,9 +40,6 @@ namespace Unity.AI.Operations
 
             var combinedResults = JsonSerializer.Serialize(allSectionResults, AIJsonDefaults.Indented);
             var validatedJson = ValidateApplicationScoringJson(combinedResults);
-            var application = await applicationRepository.GetAsync(input.ApplicationId);
-            application.AIScoresheetAnswers = validatedJson;
-            await applicationRepository.UpdateAsync(application);
             return validatedJson;
         }
 
@@ -140,6 +135,12 @@ namespace Unity.AI.Operations
             var questions = new List<JsonElement>();
             foreach (var section in sections)
             {
+                if (section.SectionSchema.ValueKind != JsonValueKind.Array)
+                {
+                    throw new InvalidOperationException(
+                        $"Section schema for '{section.SectionName}' must be a JSON array.");
+                }
+
                 foreach (var question in section.SectionSchema.EnumerateArray())
                 {
                     questions.Add(question.Clone());
