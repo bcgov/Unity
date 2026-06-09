@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Unity.AI;
 using Unity.AI.Models;
 using Unity.AI.Requests;
+using Unity.AI.Runtime;
 using Unity.GrantManager.Applications;
 using Volo.Abp.DependencyInjection;
 
