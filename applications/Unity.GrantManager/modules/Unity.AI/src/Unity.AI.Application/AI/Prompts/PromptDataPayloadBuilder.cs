@@ -4,7 +4,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
-using System.Threading.Tasks;
 using Unity.AI.Models;
 using Unity.GrantManager.Applications;
 
@@ -91,7 +90,7 @@ namespace Unity.AI.Prompts
                 .ToList();
         }
 
-        public static object BuildFormFieldConfigurationAsync(
+        public static object BuildFormFieldConfiguration(
             string? formSchema,
             ILogger logger)
         {

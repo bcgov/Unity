@@ -61,7 +61,7 @@ public class ApplicationAnalysisAppService(
         var formSchema = await GetFormSchemaAsync(formSubmission?.ApplicationFormVersionId);
 
         var attachmentSummaries = PromptDataPayloadBuilder.BuildAttachmentSummaries(attachments);
-        var formFieldConfiguration = PromptDataPayloadBuilder.BuildFormFieldConfigurationAsync(
+        var formFieldConfiguration = PromptDataPayloadBuilder.BuildFormFieldConfiguration(
             formSchema,
             logger);
 
