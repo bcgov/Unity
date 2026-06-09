@@ -20,9 +20,11 @@ namespace Unity.GrantManager.GrantApplications.Automation.BackgroundJobs;
 
 public class RunApplicationAIPipelineJob(
     IApplicationChefsFileAttachmentRepository applicationChefsFileAttachmentRepository,
+    IAIApplicationInputBuilder inputBuilder,
     IAttachmentSummaryService attachmentSummaryService,
     IApplicationAnalysisService applicationAnalysisService,
     IApplicationScoringService applicationScoringService,
+    IApplicationRepository applicationRepository,
     IFeatureChecker featureChecker,
     ILocalEventBus localEventBus,
     IRepository<AIGenerationRequest, Guid> generationRequestRepository,
@@ -81,7 +83,11 @@ public class RunApplicationAIPipelineJob(
                 {
                     try
                     {
-                        await applicationAnalysisService.RegenerateAndSaveAsync(args.ApplicationId, args.PromptVersion);
+                        var analysisInput = await inputBuilder.BuildApplicationAnalysisInputAsync(args.ApplicationId, args.PromptVersion);
+                        var analysisJson = await applicationAnalysisService.RegenerateAsync(analysisInput);
+                        var application = await applicationRepository.GetAsync(args.ApplicationId);
+                        application.AIAnalysis = analysisJson;
+                        await applicationRepository.UpdateAsync(application);
                         logger.LogInformation("Completed AI application analysis stage for application {ApplicationId}.", args.ApplicationId);
                     }
                     catch (Exception ex)
@@ -95,7 +101,11 @@ public class RunApplicationAIPipelineJob(
                 {
                     try
                     {
-                        await applicationScoringService.RegenerateAndSaveAsync(args.ApplicationId, args.PromptVersion);
+                        var scoringInput = await inputBuilder.BuildApplicationScoringInputAsync(args.ApplicationId, args.PromptVersion);
+                        var scoresheetAnswers = await applicationScoringService.RegenerateAsync(scoringInput);
+                        var application = await applicationRepository.GetAsync(args.ApplicationId);
+                        application.AIScoresheetAnswers = scoresheetAnswers;
+                        await applicationRepository.UpdateAsync(application);
                         await localEventBus.PublishAsync(new ApplicationAIScoringGeneratedEvent
                         {
                             ApplicationId = args.ApplicationId

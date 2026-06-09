@@ -37,11 +37,9 @@ public class AIGenerationAppServiceTests(ITestOutputHelper outputHelper) : Grant
 
         var service = new AIGenerationAppService(
             Substitute.For<IAttachmentSummaryService>(),
-            Substitute.For<IApplicationScoringService>(),
             queue,
             featureGuard,
-            currentTenant,
-            Substitute.For<ILocalEventBus>());
+            currentTenant);
 
         var result = await service.GenerateContentAsync(Guid.NewGuid());
 

@@ -3,6 +3,7 @@ using System;
 using System.Threading.Tasks;
 using Unity.AI.Operations;
 using Unity.AI.RateLimit;
+using Unity.GrantManager.Applications;
 using Unity.GrantManager.GrantApplications.Automation.Events;
 using Volo.Abp.BackgroundJobs;
 using Volo.Abp.DependencyInjection;
@@ -14,7 +15,9 @@ using Volo.Abp.Uow;
 namespace Unity.GrantManager.GrantApplications.Automation.BackgroundJobs;
 
 public class GenerateApplicationScoringJob(
+    IAIApplicationInputBuilder inputBuilder,
     IApplicationScoringService applicationScoringService,
+    IApplicationRepository applicationRepository,
     IRepository<AIGenerationRequest, Guid> generationRequestRepository,
     ICurrentTenant currentTenant,
     IUnitOfWorkManager unitOfWorkManager,
@@ -39,7 +42,11 @@ public class GenerateApplicationScoringJob(
             try
             {
                 logger.LogInformation("Executing AI application scoring job for application {ApplicationId}.", args.ApplicationId);
-                await applicationScoringService.RegenerateAndSaveAsync(args.ApplicationId, args.PromptVersion);
+                var input = await inputBuilder.BuildApplicationScoringInputAsync(args.ApplicationId, args.PromptVersion);
+                var scoresheetAnswers = await applicationScoringService.RegenerateAsync(input);
+                var application = await applicationRepository.GetAsync(args.ApplicationId);
+                application.AIScoresheetAnswers = scoresheetAnswers;
+                await applicationRepository.UpdateAsync(application);
                 await localEventBus.PublishAsync(new ApplicationAIScoringGeneratedEvent
                 {
                     ApplicationId = args.ApplicationId

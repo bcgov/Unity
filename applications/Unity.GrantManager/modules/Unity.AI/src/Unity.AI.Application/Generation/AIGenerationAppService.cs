@@ -11,8 +11,6 @@ using Unity.AI.Permissions;
 using Unity.AI.Settings;
 using Unity.GrantManager.Attachments;
 using Unity.GrantManager.GrantApplications;
-using Unity.GrantManager.GrantApplications.Automation.Events;
-using Volo.Abp.EventBus.Local;
 using Volo.Abp.MultiTenancy;
 
 namespace Unity.AI.Generation;
@@ -20,11 +18,9 @@ namespace Unity.AI.Generation;
 [Route("api/app/ai/generation")]
 public class AIGenerationAppService(
     IAttachmentSummaryService attachmentSummaryService,
-    IApplicationScoringService applicationScoringService,
     IApplicationAIGenerationQueue aiGenerationQueue,
     AIFeatureGuard featureGuard,
-    ICurrentTenant currentTenant,
-    ILocalEventBus localEventBus)
+    ICurrentTenant currentTenant)
     : AIAppService, IAIGenerationAppService
 {
     [Authorize(AIPermissions.Analysis.GenerateAttachmentSummaries)]
@@ -70,28 +66,8 @@ public class AIGenerationAppService(
             AIFeatures.Scoring,
             AILocalizationKeys.ScoringDisabled);
 
-        await applicationScoringService.RegenerateAndSaveAsync(applicationId, promptVersion);
-
-        if (UnitOfWorkManager.Current != null)
-        {
-            var capturedId = applicationId;
-            UnitOfWorkManager.Current.OnCompleted(async () =>
-            {
-                await localEventBus.PublishAsync(new ApplicationAIScoringGeneratedEvent
-                {
-                    ApplicationId = capturedId
-                });
-            });
-        }
-        else
-        {
-            await localEventBus.PublishAsync(new ApplicationAIScoringGeneratedEvent
-            {
-                ApplicationId = applicationId
-            });
-        }
-
-        return new ApplicationScoringResultDto { Completed = true };
+        await aiGenerationQueue.QueueApplicationScoringAsync(applicationId, currentTenant.Id, promptVersion);
+        return new ApplicationScoringResultDto { Completed = false };
     }
 
     [Authorize(AIPermissions.Analysis.ViewAttachmentSummary)]

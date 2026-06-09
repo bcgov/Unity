@@ -60,8 +60,18 @@ public class RunApplicationAIPipelineJobTests(ITestOutputHelper outputHelper) : 
         requests.Add(request);
 
         var scoringService = Substitute.For<IApplicationScoringService>();
-        scoringService.RegenerateAndSaveAsync(Arg.Any<Guid>(), Arg.Any<string?>())
+        scoringService.RegenerateAsync(Arg.Any<ApplicationScoringOperationInputDto>(), Arg.Any<CancellationToken>())
             .Returns("{}");
+        var inputBuilder = Substitute.For<IAIApplicationInputBuilder>();
+        inputBuilder.BuildApplicationScoringInputAsync(request.ApplicationId!.Value, Arg.Any<string?>())
+            .Returns(new ApplicationScoringOperationInputDto { ApplicationId = request.ApplicationId!.Value });
+        var applicationRepository = Substitute.For<IApplicationRepository>();
+        applicationRepository.GetAsync(request.ApplicationId!.Value).Returns(new Application
+        {
+            ApplicationFormId = Guid.NewGuid()
+        });
+        applicationRepository.UpdateAsync(Arg.Any<Application>(), Arg.Any<bool>(), Arg.Any<CancellationToken>())
+            .Returns(callInfo => Task.FromResult(callInfo.Arg<Application>()));
 
         var localEventBus = Substitute.For<ILocalEventBus>();
         var rateLimiter = Substitute.For<IAIRateLimiter>();
@@ -72,7 +82,9 @@ public class RunApplicationAIPipelineJobTests(ITestOutputHelper outputHelper) : 
             repository,
             localEventBus: localEventBus,
             rateLimiter: rateLimiter,
-            applicationScoringService: scoringService);
+            applicationScoringService: scoringService,
+            inputBuilder: inputBuilder,
+            applicationRepository: applicationRepository);
 
         await job.ExecuteAsync(new RunApplicationAIPipelineJobArgs
         {
@@ -111,15 +123,27 @@ public class RunApplicationAIPipelineJobTests(ITestOutputHelper outputHelper) : 
             .Returns(new List<string>());
 
         var applicationAnalysisService = Substitute.For<IApplicationAnalysisService>();
-        applicationAnalysisService.RegenerateAndSaveAsync(Arg.Any<Guid>(), Arg.Any<string?>())
+        applicationAnalysisService.RegenerateAsync(Arg.Any<ApplicationAnalysisOperationInputDto>(), Arg.Any<CancellationToken>())
             .Returns("{}");
+        var inputBuilder = Substitute.For<IAIApplicationInputBuilder>();
+        inputBuilder.BuildApplicationAnalysisInputAsync(request.ApplicationId!.Value, Arg.Any<string?>())
+            .Returns(new ApplicationAnalysisOperationInputDto { ApplicationId = request.ApplicationId!.Value });
+        var applicationRepository = Substitute.For<IApplicationRepository>();
+        applicationRepository.GetAsync(request.ApplicationId!.Value).Returns(new Application
+        {
+            ApplicationFormId = Guid.NewGuid()
+        });
+        applicationRepository.UpdateAsync(Arg.Any<Application>(), Arg.Any<bool>(), Arg.Any<CancellationToken>())
+            .Returns(callInfo => Task.FromResult(callInfo.Arg<Application>()));
 
         var job = BuildJob(
             featureChecker,
             repository,
             attachmentRepository: attachmentRepository,
             attachmentSummaryService: attachmentSummaryService,
-            applicationAnalysisService: applicationAnalysisService);
+            applicationAnalysisService: applicationAnalysisService,
+            inputBuilder: inputBuilder,
+            applicationRepository: applicationRepository);
 
         await job.ExecuteAsync(new RunApplicationAIPipelineJobArgs
         {
@@ -131,7 +155,7 @@ public class RunApplicationAIPipelineJobTests(ITestOutputHelper outputHelper) : 
 
         request.Status.ShouldBe(AIGenerationRequestStatus.Completed);
         await attachmentSummaryService.Received(1).GenerateAndSaveAsync(Arg.Any<List<Guid>>(), Arg.Any<string?>());
-        await applicationAnalysisService.Received(1).RegenerateAndSaveAsync(request.ApplicationId.Value, Arg.Any<string?>());
+        await applicationAnalysisService.Received(1).RegenerateAsync(Arg.Any<ApplicationAnalysisOperationInputDto>(), Arg.Any<CancellationToken>());
     }
 
     private RunApplicationAIPipelineJob BuildJob(
@@ -142,13 +166,17 @@ public class RunApplicationAIPipelineJobTests(ITestOutputHelper outputHelper) : 
         IAttachmentSummaryService? attachmentSummaryService = null,
         IApplicationAnalysisService? applicationAnalysisService = null,
         IApplicationScoringService? applicationScoringService = null,
+        IAIApplicationInputBuilder? inputBuilder = null,
+        IApplicationRepository? applicationRepository = null,
         IAIRateLimiter? rateLimiter = null)
     {
         return new RunApplicationAIPipelineJob(
             attachmentRepository ?? Substitute.For<IApplicationChefsFileAttachmentRepository>(),
+            inputBuilder ?? Substitute.For<IAIApplicationInputBuilder>(),
             attachmentSummaryService ?? Substitute.For<IAttachmentSummaryService>(),
             applicationAnalysisService ?? Substitute.For<IApplicationAnalysisService>(),
             applicationScoringService ?? Substitute.For<IApplicationScoringService>(),
+            applicationRepository ?? Substitute.For<IApplicationRepository>(),
             featureChecker,
             localEventBus ?? Substitute.For<ILocalEventBus>(),
             generationRequestRepository,
