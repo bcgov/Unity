@@ -14,9 +14,7 @@ namespace Unity.AI.Runtime
         ProviderUnavailable,
         TransientProviderFailure,
         PermanentProviderFailure,
-        InvalidOutput,
-        PartialBatchOutput,
-        PersistenceFailure
+        InvalidOutput
     }
 
     public sealed record AIOperationResult(

@@ -310,6 +310,17 @@ namespace Unity.AI.Runtime
             return lastResult;
         }
 
+        private static string ResolveNarrativeContent(AIOperationResult result)
+        {
+            return result.Outcome switch
+            {
+                AIOperationOutcome.Success => result.Content,
+                AIOperationOutcome.PermanentFailure => "AI service not available - service not configured.",
+                AIOperationOutcome.TransientFailure => "AI request failed - service temporarily unavailable.",
+                _ => "AI request failed - please try again later."
+            };
+        }
+
         private static bool TryParseJsonObjectFromResponse(string response, out JsonElement objectElement)
         {
             objectElement = default;
