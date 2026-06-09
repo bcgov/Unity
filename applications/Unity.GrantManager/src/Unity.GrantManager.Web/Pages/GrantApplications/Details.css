@@ -397,6 +397,7 @@ form label.error {
 
 #main-divider {
     width: 10px;
+    min-width: 10px;
     background-color: #ccc;
     cursor: col-resize;
     border-radius: 10px;
