@@ -36,6 +36,15 @@ public class RunApplicationAIPipelineJob(
 {
     public override async Task ExecuteAsync(RunApplicationAIPipelineJobArgs args)
     {
+        using var logScope = AIGenerationLogScope.Begin(
+            logger,
+            AIGenerationRequestKeyHelper.PipelineOperationType,
+            args.ApplicationId,
+            args.TenantId,
+            args.RequestKey,
+            args.PromptVersion,
+            args.RequestedByUserId);
+
         if (string.IsNullOrWhiteSpace(args.RequestKey))
         {
             throw new ArgumentException("RequestKey is required.", nameof(args));
