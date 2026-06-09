@@ -8,9 +8,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using Unity.AI.Operations;
 using Unity.GrantManager.Applications;
-using Unity.GrantManager.Attachments;
 using Unity.GrantManager.GrantApplications.Automation.BackgroundJobs;
 using Unity.AI.RateLimit;
+using Volo.Abp.Domain.Entities;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.EventBus.Local;
 using Volo.Abp.Features;
@@ -99,10 +99,16 @@ public class RunApplicationAIPipelineJobTests(ITestOutputHelper outputHelper) : 
         var repository = BuildRequestRepository(out var requests);
         var request = CreateRequest();
         requests.Add(request);
+        var attachmentRepository = Substitute.For<IApplicationChefsFileAttachmentRepository>();
+        attachmentRepository.GetListAsync(Arg.Any<System.Linq.Expressions.Expression<Func<ApplicationChefsFileAttachment, bool>>>())
+            .Returns(new List<ApplicationChefsFileAttachment>
+            {
+                CreateAttachment(request.ApplicationId!.Value)
+            });
 
         var attachmentSummaryService = Substitute.For<IAttachmentSummaryService>();
         attachmentSummaryService.GenerateAndSaveAsync(Arg.Any<List<Guid>>(), Arg.Any<string?>())
-            .Returns(new List<AttachmentSummaryResultDto>());
+            .Returns(new List<string>());
 
         var applicationAnalysisService = Substitute.For<IApplicationAnalysisService>();
         applicationAnalysisService.RegenerateAndSaveAsync(Arg.Any<Guid>(), Arg.Any<string?>())
@@ -111,6 +117,7 @@ public class RunApplicationAIPipelineJobTests(ITestOutputHelper outputHelper) : 
         var job = BuildJob(
             featureChecker,
             repository,
+            attachmentRepository: attachmentRepository,
             attachmentSummaryService: attachmentSummaryService,
             applicationAnalysisService: applicationAnalysisService);
 
@@ -131,13 +138,14 @@ public class RunApplicationAIPipelineJobTests(ITestOutputHelper outputHelper) : 
         IFeatureChecker featureChecker,
         IRepository<AIGenerationRequest, Guid> generationRequestRepository,
         ILocalEventBus? localEventBus = null,
+        IApplicationChefsFileAttachmentRepository? attachmentRepository = null,
         IAttachmentSummaryService? attachmentSummaryService = null,
         IApplicationAnalysisService? applicationAnalysisService = null,
         IApplicationScoringService? applicationScoringService = null,
         IAIRateLimiter? rateLimiter = null)
     {
         return new RunApplicationAIPipelineJob(
-            Substitute.For<IApplicationChefsFileAttachmentRepository>(),
+            attachmentRepository ?? Substitute.For<IApplicationChefsFileAttachmentRepository>(),
             attachmentSummaryService ?? Substitute.For<IAttachmentSummaryService>(),
             applicationAnalysisService ?? Substitute.For<IApplicationAnalysisService>(),
             applicationScoringService ?? Substitute.For<IApplicationScoringService>(),
@@ -174,5 +182,17 @@ public class RunApplicationAIPipelineJobTests(ITestOutputHelper outputHelper) : 
             AIGenerationRequestKeyHelper.PipelineOperationType,
             applicationId,
             AIGenerationRequestKeyHelper.BuildRequestKey(tenantId, applicationId, AIGenerationRequestKeyHelper.PipelineOperationType));
+    }
+
+    private static ApplicationChefsFileAttachment CreateAttachment(Guid applicationId)
+    {
+        var attachment = new ApplicationChefsFileAttachment
+        {
+            ApplicationId = applicationId
+        };
+
+        EntityHelper.TrySetId(attachment, () => Guid.NewGuid());
+
+        return attachment;
     }
 }
