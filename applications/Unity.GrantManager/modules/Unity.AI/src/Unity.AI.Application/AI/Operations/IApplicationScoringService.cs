@@ -6,6 +6,6 @@ namespace Unity.AI.Operations
 {
     public interface IApplicationScoringService
     {
-        Task<string> RegenerateAndSaveAsync(Guid applicationId, string? promptVersion = null, CancellationToken cancellationToken = default);
+        Task<string> RegenerateAndSaveAsync(ApplicationScoringOperationInputDto input, CancellationToken cancellationToken = default);
     }
 }

@@ -37,10 +37,12 @@ $(function () {
             $('*[data-selector="applicants-table-actions"]').removeClass('action-bar-btn-unavailable');
             $('.action-bar').addClass('active');
 
-            // OPEN button is only visible when exactly 1 applicant is selected
+            // OPEN and DELETE buttons are only visible when exactly 1 applicant is selected
             $('#openApplicant').addClass('action-bar-btn-unavailable');
+            $('#deleteApplicant').addClass('action-bar-btn-unavailable');
             if (selectedApplicantIds.length === 1) {
                 $('#openApplicant').removeClass('action-bar-btn-unavailable');
+                $('#deleteApplicant').removeClass('action-bar-btn-unavailable');
             }
         }
 
@@ -67,6 +69,50 @@ $(function () {
                 b: selectedApplicants[1]
             });
         }
+    });
+
+    function executeDelete(applicantId, applicantName) {
+        unity.grantManager.applicants.applicant
+            .deleteApplicant(applicantId)
+            .then(function () {
+                PubSub.publish('deselect_applicant', 'reset_data');
+                $('#ApplicantsTable').DataTable().ajax.reload();
+                abp.notify.success('Applicant "' + applicantName + '" has been deleted.');
+            })
+            .catch(function (e) {
+                console.warn('deleteApplicant error:', e);
+                const msg = e?.responseJSON?.error?.message || 'An error occurred while deleting the applicant. Please try again.';
+                abp.message.error(msg, 'Delete Failed');
+            });
+    }
+
+    // DELETE button click — pre-check submissions, then show the correct modal
+    $('#deleteApplicant').on('click', function () {
+        if (selectedApplicantIds.length !== 1) return;
+        const applicantId = selectedApplicantIds[0];
+        const applicantName = (selectedApplicants[0].applicantName || 'Applicant Name');
+
+        unity.grantManager.applicants.applicant
+            .hasSubmissions(applicantId)
+            .then(function (hasSubmissions) {
+                if (hasSubmissions) {
+                    abp.message.warn(
+                        'This applicant cannot be deleted because it is associated with one or more submissions.',
+                        'Cannot Delete Applicant'
+                    );
+                } else {
+                    abp.message.confirm(
+                        'Are you sure you want to delete the applicant "' + applicantName + '"?',
+                        'Delete Applicant',
+                        function (confirmed) {
+                            if (confirmed) executeDelete(applicantId, applicantName);
+                        }
+                    );
+                }
+            })
+            .catch(function (e) {
+                console.warn('hasSubmissions error:', e);
+            });
     });
 
     // Handle search input

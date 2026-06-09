@@ -28,14 +28,14 @@ namespace Unity.GrantManager.Repositories
         {
             var dbContext = await GetDbContextAsync();
             return await dbContext.Applicants
-                .Where(x => x.MatchPercentage == null)
+                .Where(x => x.MatchPercentage == null && !x.IsDeleted)
                 .ToListAsync();
         }
 
         public async Task<Applicant?> GetByUnityApplicantIdAsync(string unityApplicantId)
         {
             var dbContext = await GetDbContextAsync();
-            return await dbContext.Applicants.FirstOrDefaultAsync(x => x.UnityApplicantId == unityApplicantId);
+            return await dbContext.Applicants.FirstOrDefaultAsync(x => x.UnityApplicantId == unityApplicantId && !x.IsDeleted);
         }
 
         public async Task<Applicant?> GetByUnityApplicantNameAsync(string unityApplicantName)
@@ -47,7 +47,8 @@ namespace Unity.GrantManager.Repositories
             // EF Core cannot translate StringComparison overloads to SQL, so we use ToLower() for database compatibility
             return await dbContext.Applicants
                 .FirstOrDefaultAsync(a => a.ApplicantName != null &&
-                                          a.ApplicantName.ToLower() == unityApplicantNameNormalized);
+                                          a.ApplicantName.ToLower() == unityApplicantNameNormalized &&
+                                          !a.IsDeleted);
 #pragma warning restore CA1862 // Use the 'StringComparison' method overloads to perform case-insensitive string comparisons
 
         }
@@ -55,7 +56,7 @@ namespace Unity.GrantManager.Repositories
         {
             var dbContext = await GetDbContextAsync();
             return await dbContext.Applicants
-                .Where(x => x.UnityApplicantId != null)
+                .Where(x => x.UnityApplicantId != null && !x.IsDeleted)
                 .ToListAsync();
         }
 
@@ -72,6 +73,7 @@ namespace Unity.GrantManager.Repositories
 
             var applicants = await dbContext.Applicants
             .AsNoTracking()
+            .Where(a => !a.IsDeleted)
             .ToListAsync();
 
             var filtered = applicants
