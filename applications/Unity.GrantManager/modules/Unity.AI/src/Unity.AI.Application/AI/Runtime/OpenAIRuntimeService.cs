@@ -25,8 +25,6 @@ namespace Unity.AI.Runtime
         private const string ApplicationScoringPromptType = AIPromptTypes.ApplicationScoring;
         private const int MaxAiAttempts = 3;
 
-
-
         public OpenAIRuntimeService(
             ILogger<OpenAIRuntimeService> logger,
             OpenAITransportService openAITransportService,
@@ -87,7 +85,7 @@ namespace Unity.AI.Runtime
                         settings,
                         settings.CompletionTokens,
                         cancellationToken: cancellationToken),
-                    AIProviderPayloadValidator.IsValidApplicationAnalysisJson,
+                    AIProviderPayloadValidator.ValidateApplicationAnalysisJson,
                     "application analysis",
                     cancellationToken);
 
@@ -151,7 +149,7 @@ namespace Unity.AI.Runtime
                         settings,
                         settings.CompletionTokens,
                         cancellationToken: cancellationToken),
-                    AIProviderPayloadValidator.IsValidAttachmentSummaryText,
+                    AIProviderPayloadValidator.ValidateAttachmentSummaryText,
                     "attachment summary",
                     cancellationToken);
                 await _promptFileLogger.LogPromptOutputAsync(AttachmentSummaryPromptType, promptVersion, result.CaptureOutput, cancellationToken);
@@ -220,13 +218,13 @@ namespace Unity.AI.Runtime
 
                 await _promptFileLogger.LogPromptInputAsync(ApplicationScoringPromptType, promptVersion, systemPrompt, applicationScoringContent, cancellationToken);
                 var result = await GenerateWithRetryAsync(
-                () => _openAITransportService.GenerateSummaryAsync(
-                    applicationScoringContent,
-                    systemPrompt,
-                    settings,
-                    settings.CompletionTokens,
-                    cancellationToken: cancellationToken),
-                    content => AIProviderPayloadValidator.IsValidApplicationScoringJson(content, section),
+                    () => _openAITransportService.GenerateSummaryAsync(
+                        applicationScoringContent,
+                        systemPrompt,
+                        settings,
+                        settings.CompletionTokens,
+                        cancellationToken: cancellationToken),
+                    content => AIProviderPayloadValidator.ValidateApplicationScoringJson(content, section),
                     $"application scoring section {request.SectionName}",
                     cancellationToken);
                 await _promptFileLogger.LogPromptOutputAsync(ApplicationScoringPromptType, promptVersion, result.CaptureOutput, cancellationToken);
@@ -251,7 +249,7 @@ namespace Unity.AI.Runtime
 
         private async Task<AIOperationResult> GenerateWithRetryAsync(
             Func<Task<AIOperationResult>> operation,
-            Func<string, bool> validator,
+            Func<string, AIResponseValidationResult> validator,
             string operationName,
             CancellationToken cancellationToken = default)
         {
@@ -262,14 +260,23 @@ namespace Unity.AI.Runtime
                 cancellationToken.ThrowIfCancellationRequested();
                 lastResult = await operation();
 
-                if (lastResult.Outcome == AIOperationOutcome.Success && validator(lastResult.Content))
-                {
-                    return lastResult;
-                }
-
                 if (lastResult.Outcome == AIOperationOutcome.Success)
                 {
-                    lastResult = lastResult.WithOutcome(AIOperationOutcome.InvalidOutput);
+                    var validationResult = validator(lastResult.Content);
+                    if (validationResult.IsValid)
+                    {
+                        return lastResult;
+                    }
+
+                    lastResult = lastResult.WithOutcome(AIOperationOutcome.InvalidOutput, validationResult.FailureCategory);
+
+                    _logger.LogWarning(
+                        "AI {OperationName} attempt {Attempt}/{MaxAttempts} returned invalid response shape ({FailureCategory}): {Reason}; will retry if attempts remain",
+                        operationName,
+                        attempt,
+                        MaxAiAttempts,
+                        validationResult.FailureCategory,
+                        validationResult.Reason ?? "No validation reason provided");
                 }
 
                 if (lastResult.Outcome == AIOperationOutcome.PermanentFailure)
@@ -282,27 +289,43 @@ namespace Unity.AI.Runtime
                     if (lastResult.Outcome == AIOperationOutcome.TransientFailure)
                     {
                         _logger.LogWarning(
-                            "AI {OperationName} attempt {Attempt}/{MaxAttempts} failed transiently; retrying",
+                            "AI {OperationName} attempt {Attempt}/{MaxAttempts} failed transiently ({FailureCategory}); retrying",
                             operationName,
                             attempt,
-                            MaxAiAttempts);
+                            MaxAiAttempts,
+                            lastResult.FailureCategory);
                     }
                     else if (lastResult.Outcome == AIOperationOutcome.InvalidOutput)
                     {
                         _logger.LogWarning(
-                            "AI {OperationName} attempt {Attempt}/{MaxAttempts} returned invalid response shape; retrying",
+                            "AI {OperationName} attempt {Attempt}/{MaxAttempts} returned invalid output ({FailureCategory}); retrying",
                             operationName,
                             attempt,
-                            MaxAiAttempts);
+                            MaxAiAttempts,
+                            lastResult.FailureCategory);
                     }
                 }
             }
 
             _logger.LogWarning(
-                "AI {OperationName} exhausted retries with outcome {Outcome}; returning last result",
+                "AI {OperationName} exhausted retries with outcome {Outcome} and failure category {FailureCategory}; HTTP status {HttpStatusCode}; model {Model}; returning last result",
                 operationName,
-                lastResult.Outcome);
+                lastResult.Outcome,
+                lastResult.FailureCategory,
+                lastResult.Response.HttpStatusCode,
+                lastResult.Response.Model);
             return lastResult;
+        }
+
+        private static string ResolveNarrativeContent(AIOperationResult result)
+        {
+            return result.Outcome switch
+            {
+                AIOperationOutcome.Success => result.Content,
+                AIOperationOutcome.PermanentFailure => "AI service not available - service not configured.",
+                AIOperationOutcome.TransientFailure => "AI request failed - service temporarily unavailable.",
+                _ => "AI request failed - please try again later."
+            };
         }
 
         private static bool TryParseJsonObjectFromResponse(string response, out JsonElement objectElement)
