@@ -124,15 +124,16 @@ Also provide a short model name (2-4 words) and a one-sentence description of wh
 Output ONLY valid JSON — no markdown fences, no explanation:
 {{"name": "Short Model Name", "description": "One sentence explaining what this model provides for reporting", "sql": "SELECT ..."}}"""
 
-MODIFY_PROMPT = """You are modifying an existing data model SQL query.
+MODIFY_PROMPT = """You are modifying an existing data model SQL query. Apply the user's
+change request below and return the full rewritten query.
 
 CURRENT SQL:
 {current_sql}
 
-CURRENT COLUMNS (preserve unless user explicitly asks to remove them):
+CURRENT OUTPUT COLUMNS (the columns this query currently returns):
 {current_columns}
 
-USER'S CHANGE REQUEST:
+USER'S CHANGE REQUEST (this is the primary instruction — apply it in full):
 {user_prompt}
 
 CORE FIELDS TO INCLUDE (from "public"."Applications" — ensure these are present
@@ -144,7 +145,15 @@ existing SQL via "ReferenceNo"; if a view has no "ReferenceNo" column, omit it):
 {additional_views_text}
 
 RULES:
-- Keep all existing columns from CURRENT SQL unless the user explicitly asked to drop them
+- Apply the USER'S CHANGE REQUEST in full, then leave every other existing column
+  unchanged. Only add, remove, or alter the columns the request actually calls for.
+- REMOVING a column: the query's output is determined ONLY by the final (outermost)
+  SELECT list. To drop a column the user named, delete its entry from that final
+  SELECT and nothing else — you do NOT need to touch inner CTE definitions, and the
+  column staying defined inside a CTE is fine as long as the final SELECT no longer
+  references it. Match the user's wording to the closest entry in CURRENT OUTPUT
+  COLUMNS. In combined models the final SELECT lists each output column as
+  `view_N."Column Name"` (with no AS alias) — delete that whole `view_N."..."` entry.
 - Use PostgreSQL double-quoted identifiers
 - When integrating additional views, wrap them as named CTEs (view_a, view_b, ...) and
   LEFT JOIN on "ReferenceNo" — never CROSS JOIN
