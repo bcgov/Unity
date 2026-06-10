@@ -333,7 +333,7 @@ export class SidebarComponent implements OnDestroy {
       const currentTurn = this.conversation[this.currentTurnIndex];
       context.currentQuestion = currentTurn.question;
       context.currentSql = currentTurn.embed?.SQL;
-      context.currentSqlExplanation = currentTurn.sql_explanation ?? currentTurn.embed?.sql_explanation;
+      context.currentSqlExplanation = currentTurn.embed?.sql_explanation;
     }
 
     // Get previous turn data (if exists)
@@ -341,7 +341,7 @@ export class SidebarComponent implements OnDestroy {
       const previousTurn = this.conversation[this.currentTurnIndex - 1];
       context.previousQuestion = previousTurn.question;
       context.previousSql = previousTurn.embed?.SQL;
-      context.previousSqlExplanation = previousTurn.sql_explanation ?? previousTurn.embed?.sql_explanation;
+      context.previousSqlExplanation = previousTurn.embed?.sql_explanation;
     }
 
     return context;
