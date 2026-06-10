@@ -46,8 +46,8 @@ public class ApplicationManager : DomainService, IApplicationManager
             .Permit(GrantApplicationAction.Withdraw, GrantApplicationState.WITHDRAWN)                             // 2.2 - Withdraw;          Role: Reviewer
             .Permit(GrantApplicationAction.Close, GrantApplicationState.CLOSED)                                   // 2.4 - Close Application; Role: Reviewer
             .Permit(GrantApplicationAction.Internal_Unasign, GrantApplicationState.SUBMITTED)
-            .PermitIf(GrantApplicationAction.Approve, GrantApplicationState.GRANT_APPROVED, () => isDirectApproval && stateMachine.State != GrantApplicationState.GRANT_APPROVED)
-            .PermitIf(GrantApplicationAction.Deny, GrantApplicationState.GRANT_NOT_APPROVED, () => isDirectApproval && stateMachine.State != GrantApplicationState.GRANT_NOT_APPROVED);
+            .PermitIf(GrantApplicationAction.Approve, GrantApplicationState.GRANT_APPROVED, () => AllowDirectDecision(isDirectApproval, stateMachine, GrantApplicationState.GRANT_APPROVED))
+            .PermitIf(GrantApplicationAction.Deny, GrantApplicationState.GRANT_NOT_APPROVED, () => AllowDirectDecision(isDirectApproval, stateMachine, GrantApplicationState.GRANT_NOT_APPROVED));
 
 
         stateMachine.Configure(GrantApplicationState.SUBMITTED)
@@ -116,8 +116,8 @@ public class ApplicationManager : DomainService, IApplicationManager
             .Permit(GrantApplicationAction.Withdraw, GrantApplicationState.WITHDRAWN)
             .Permit(GrantApplicationAction.Defer, GrantApplicationState.DEFER)
             .Permit(GrantApplicationAction.OnHold, GrantApplicationState.ON_HOLD)
-            .PermitIf(GrantApplicationAction.Approve, GrantApplicationState.GRANT_APPROVED, () => isDirectApproval && stateMachine.State != GrantApplicationState.GRANT_APPROVED)
-            .PermitIf(GrantApplicationAction.Deny, GrantApplicationState.GRANT_NOT_APPROVED, () => isDirectApproval && stateMachine.State != GrantApplicationState.GRANT_NOT_APPROVED);
+            .PermitIf(GrantApplicationAction.Approve, GrantApplicationState.GRANT_APPROVED, () => AllowDirectDecision(isDirectApproval, stateMachine, GrantApplicationState.GRANT_APPROVED))
+            .PermitIf(GrantApplicationAction.Deny, GrantApplicationState.GRANT_NOT_APPROVED, () => AllowDirectDecision(isDirectApproval, stateMachine, GrantApplicationState.GRANT_NOT_APPROVED));
 
         stateMachine.Configure(GrantApplicationState.WITHDRAWN)
             .SubstateOf(GrantApplicationState.CLOSED)
@@ -136,6 +136,22 @@ public class ApplicationManager : DomainService, IApplicationManager
             .Permit(GrantApplicationAction.Close, GrantApplicationState.CLOSED);
         #endregion CLOSED STATES
     }
+
+    /// <summary>
+    /// Determines if a direct decision (Approve/Deny) can be made based on the current state and the isDirectApproval flag.
+    /// </summary>
+    /// <param name="isDirectApproval">Indicates if direct approval is allowed.</param>
+    /// <param name="stateMachine">The state machine instance.</param>
+    /// <param name="targetState">The target state for the direct decision to prevent reentrant transitions.</param>
+    /// <returns>True if a direct decision can be made; otherwise, false.</returns>
+    private static bool AllowDirectDecision(
+        bool isDirectApproval,
+        StateMachine<GrantApplicationState, GrantApplicationAction> stateMachine,
+        GrantApplicationState targetState)
+    {
+        return isDirectApproval && stateMachine.State != targetState;
+    }
+
     private bool HasPermission(string permission)
     {
         return _permissionChecker.IsGrantedAsync(permission).Result;
