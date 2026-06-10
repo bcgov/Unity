@@ -29,7 +29,23 @@ type Stage = 'mode' | 'select' | 'review' | 'done';
 export class DataModelsPageComponent implements OnInit {
   step: ModelsModalStep = 'pick-mode';
 
-  availableViews: ViewInfo[] = [];
+  private _availableViews: ViewInfo[] = [];
+  // Buckets precomputed once per assignment (see availableViews setter) so the
+  // template's rail counts / tab lists don't re-filter on every change-detection.
+  formViews: ViewInfo[] = [];
+  worksheetViews: ViewInfo[] = [];
+  scoresheetViews: ViewInfo[] = [];
+  otherViews: ViewInfo[] = [];
+
+  get availableViews(): ViewInfo[] { return this._availableViews; }
+  set availableViews(views: ViewInfo[]) {
+    this._availableViews = views;
+    this.formViews = views.filter(v => v.source_type === 'form_view');
+    this.worksheetViews = views.filter(v => v.source_type === 'worksheet_view');
+    this.scoresheetViews = views.filter(v => v.source_type === 'scoresheet_view');
+    this.otherViews = views.filter(v => v.source_type === 'other_view');
+  }
+
   selectedViews: ViewInfo[] = [];
   activeViewTab: 'form_view' | 'worksheet_view' | 'scoresheet_view' | 'other_view' = 'form_view';
   viewSearch = '';
@@ -59,11 +75,14 @@ export class DataModelsPageComponent implements OnInit {
 
   toggleFullError(): void { this.showFullError = !this.showFullError; }
 
-  get formViews(): ViewInfo[] { return this.availableViews.filter(v => v.source_type === 'form_view'); }
-  get worksheetViews(): ViewInfo[] { return this.availableViews.filter(v => v.source_type === 'worksheet_view'); }
-  get scoresheetViews(): ViewInfo[] { return this.availableViews.filter(v => v.source_type === 'scoresheet_view'); }
-  get otherViews(): ViewInfo[] { return this.availableViews.filter(v => v.source_type === 'other_view'); }
-  get tabViews(): ViewInfo[] { return this.availableViews.filter(v => v.source_type === this.activeViewTab); }
+  get tabViews(): ViewInfo[] {
+    switch (this.activeViewTab) {
+      case 'form_view': return this.formViews;
+      case 'worksheet_view': return this.worksheetViews;
+      case 'scoresheet_view': return this.scoresheetViews;
+      default: return this.otherViews;
+    }
+  }
 
   private readonly sourceTypeLabels: Record<string, string> = {
     form_view: 'Form',

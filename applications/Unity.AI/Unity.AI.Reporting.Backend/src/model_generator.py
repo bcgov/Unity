@@ -315,10 +315,10 @@ class DataModelGenerator:
     def _build_form_view_sql(self, base_name: str, db_id: int,
                              tenant_id: str,
                              core_fields: Optional[list[str]] = None,
-                             selected_versions: Optional[list[str]] = None) -> tuple[str, list[str]]:
+                             selected_versions: Optional[list[str]] = None) -> tuple[str, list[str], dict, bool]:
         """
         Build deterministic SQL for Pattern 1 (Form Views).
-        Returns (sql, column_list).
+        Returns (sql, column_labels, samples, needs_enhancement).
         """
         metadata = self.schema.get_metadata(db_id, tenant_id)
         all_groups = self._group_form_versions(metadata)
@@ -343,13 +343,13 @@ class DataModelGenerator:
                 if base_name in reporting_tables:
                     versions = [base_name]
                 else:
-                    return "", [], {}, False, {}, False
+                    return "", [], {}, False
 
         # Filter to selected versions if specified
         if selected_versions:
             versions = [v for v in versions if v in selected_versions]
             if not versions:
-                return "", [], {}, False, {}, False
+                return "", [], {}, False
 
         # Get columns from the primary (highest version) table
         primary_table = versions[0]
@@ -468,12 +468,12 @@ class DataModelGenerator:
 
     def _build_worksheet_view_sql(self, view_name: str, db_id: int,
                                    tenant_id: str,
-                                   core_fields: Optional[list[str]] = None) -> tuple[str, list[str]]:
+                                   core_fields: Optional[list[str]] = None) -> tuple[str, list[str], dict, bool]:
         """
         Build deterministic SQL for worksheet/scoresheet views.
         Simpler than form views: no UNION ALL, no JSON unwrap.
         Just SELECT columns with optional JOIN to Applications for core fields.
-        Returns (sql, column_list).
+        Returns (sql, column_labels, samples, needs_enhancement).
         """
         metadata = self.schema.get_metadata(db_id, tenant_id)
 
@@ -1047,13 +1047,19 @@ class DataModelGenerator:
         # Build outer SELECT — deduplicate aliases across views
         used_lower: set[str] = {c.lower() for c in primary_cols}
         select_exprs = [f'view_1."{col}"' for col in primary_cols]
+        dropped_cols: list[str] = []
 
-        for i, (_, _, cols) in enumerate(joinable[1:], start=2):
+        for i, (vn, _, cols) in enumerate(joinable[1:], start=2):
             alias = f"view_{i}"
             for col in cols:
                 if col.lower() not in used_lower:
                     select_exprs.append(f'{alias}."{col}"')
                     used_lower.add(col.lower())
+                elif col.lower() != "referenceno":
+                    # Already provided by an earlier view — dropped to avoid an
+                    # ambiguous duplicate alias. (ReferenceNo is the shared join
+                    # key, present on every view, so it isn't reported.)
+                    dropped_cols.append(f"{col} (from {vn})")
 
         # JOIN secondary CTEs to primary via "ReferenceNo"
         join_clauses = [
@@ -1086,6 +1092,20 @@ class DataModelGenerator:
             note = f" (skipped — no \"ReferenceNo\" join key: {', '.join(skipped)})"
             description = (description or "") + note
 
+        # Warn when a joined secondary is many-rows-per-application: a 1:N LEFT JOIN
+        # on ReferenceNo fans out the primary's rows. We still build the model.
+        fan_out_views = [
+            vn for vn, _, _ in joinable[1:]
+            if self._detect_source_type(vn, db_id, tenant_id)
+            in ("worksheet_view", "scoresheet_view")
+        ]
+        if fan_out_views:
+            warning = (
+                f" ⚠ Combining with multi-row-per-application view(s) "
+                f"{', '.join(fan_out_views)} may duplicate the primary view's rows."
+            )
+            description = (description or "") + warning
+
         proposal = {
             "name": name,
             "description": description,
@@ -1094,7 +1114,7 @@ class DataModelGenerator:
             "error": error,
             "source_view": " + ".join(vn for vn, _, _ in joinable),
             "columns": all_cols,
-            "excluded_columns": [],
+            "excluded_columns": dropped_cols,
         }
         if preview_raw is not None:
             proposal["_preview_raw"] = preview_raw
@@ -1132,32 +1152,17 @@ class DataModelGenerator:
 
         # 1. Fetch existing card
         card = metabase_client.get_card(card_id, tenant_id)
-        dataset_query = card.get("dataset_query", {})
         current_name = card.get("name", "Unnamed Model")
+        query_type = card.get("dataset_query", {}).get("type", "unknown")
 
-        logger.debug(f"Card {card_id} dataset_query keys: {list(dataset_query.keys())}, type={dataset_query.get('type')}, database={dataset_query.get('database')}")
-
-        query_type = dataset_query.get("type", "unknown")
-        if query_type == "native":
-            current_sql = dataset_query.get("native", {}).get("query", "")
-        else:
-            logger.info(f"Model card_id={card_id} uses structured query (type='{query_type}'), converting to native SQL")
-            current_sql = metabase_client.get_native_query(dataset_query, tenant_id, db_id=db_id) or ""
-
+        current_sql, current_columns = metabase_client.card_sql_and_columns(
+            card, db_id, tenant_id
+        )
         if not current_sql:
             raise ValueError(
                 f"Could not extract SQL from existing model (query type='{query_type}'). "
                 "Metabase may not support converting this structured query to native SQL."
             )
-
-        # Extract current columns from SQL (AS "..." pattern)
-        current_columns = re.findall(r'AS\s+"([^"]+)"', current_sql)
-        if not current_columns:
-            # Fallback: try to get column names from card result_metadata
-            current_columns = [
-                col.get("display_name", col.get("name", ""))
-                for col in card.get("result_metadata", [])
-            ]
 
         # 2. Build additional view SQL if needed (each builder returns (sql, columns))
         # Additional view CTEs must include ReferenceNo as the JOIN key, regardless

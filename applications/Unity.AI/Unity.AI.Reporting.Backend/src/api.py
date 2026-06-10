@@ -967,19 +967,9 @@ def data_model_detail():
 
     try:
         card = metabase_client.get_card(card_id, tenant_id)
-        dataset_query = card.get("dataset_query", {})
         tenant_config = config.get_tenant_config(tenant_id)
         db_id = tenant_config["db_id"]
-        if dataset_query.get("type") == "native":
-            sql = dataset_query.get("native", {}).get("query", "")
-        else:
-            sql = metabase_client.get_native_query(dataset_query, tenant_id, db_id=db_id) or ""
-        columns = re.findall(r'AS\s+"([^"]+)"', sql)
-        if not columns:
-            columns = [
-                col.get("display_name", col.get("name", ""))
-                for col in card.get("result_metadata", [])
-            ]
+        sql, columns = metabase_client.card_sql_and_columns(card, db_id, tenant_id)
         return jsonify({
             "card_id": card_id,
             "name": card.get("name", ""),
@@ -1014,14 +1004,12 @@ def data_model_preview_data():
 
     try:
         card = metabase_client.get_card(card_id, tenant_id)
-        dataset_query = card.get("dataset_query", {})
         tenant_config = config.get_tenant_config(tenant_id)
         db_id = tenant_config["db_id"]
-        if dataset_query.get("type") == "native":
-            sql = dataset_query.get("native", {}).get("query", "")
-        else:
-            sql = metabase_client.get_native_query(dataset_query, tenant_id, db_id=db_id) or ""
-        raw = metabase_client.execute_sql(sql, db_id, tenant_id)
+        sql, _ = metabase_client.card_sql_and_columns(card, db_id, tenant_id)
+        raw = metabase_client.execute_sql(
+            sql, db_id, tenant_id, max_rows=config.app.data_model_preview_row_limit
+        )
         shaped = _shape_card_data(raw, limit=config.app.data_model_preview_row_limit)
         if shaped is None:
             return _error_response("server_error", "Could not read query results.", 500)

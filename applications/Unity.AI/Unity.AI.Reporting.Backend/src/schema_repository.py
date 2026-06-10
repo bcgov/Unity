@@ -96,6 +96,9 @@ class SchemaRepository:
 
     def get_view_labels(self, view_name: str, db_id: int, tenant_id: str) -> dict:
         """Fetch {col_name: {label, forms_type}} from ReportColumnsMaps."""
+        # Metabase native query (not psycopg3) — escape the single-quoted literal
+        # by doubling apostrophes, matching batch_check_view_data's literal escaper.
+        view_name_literal = view_name.replace("'", "''")
         sql = f"""
         SELECT
             row_data->>'ColumnName' AS column_name,
@@ -103,7 +106,7 @@ class SchemaRepository:
             row_data->>'Type'       AS forms_type
         FROM "Reporting"."ReportColumnsMaps" rcm,
              jsonb_array_elements(rcm."Mapping"->'Rows') AS row_data
-        WHERE rcm."ViewName" = '{view_name}'
+        WHERE rcm."ViewName" = '{view_name_literal}'
         """
         try:
             result = metabase_client.execute_sql(sql, db_id, tenant_id=tenant_id)

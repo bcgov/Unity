@@ -3,6 +3,7 @@ Metabase API integration module.
 Handles all interactions with Metabase including queries, cards, and embeddings.
 """
 import os
+import re
 import requests
 import time
 import logging
@@ -147,6 +148,7 @@ class MetabaseClient:
             f"{self.config.url}/api/dataset",
             headers=headers,
             json=payload,
+            timeout=30,
         )
 
         if r.status_code not in (200, 202):
@@ -162,6 +164,7 @@ class MetabaseClient:
                 jr = requests.get(
                     f"{self.config.url}/api/async/{job_id}",
                     headers=headers,
+                    timeout=30,
                 )
                 if jr.status_code == 200:
                     body = jr.json()
@@ -338,7 +341,7 @@ class MetabaseClient:
         """Get all card/model names from Metabase (used for duplicate detection)."""
         headers = self._get_headers(tenant_id)
         try:
-            r = requests.get(f"{self.config.url}/api/card", headers=headers)
+            r = requests.get(f"{self.config.url}/api/card", headers=headers, timeout=30)
             if r.status_code != 200:
                 raise requests.exceptions.HTTPError(f"HTTP {r.status_code}: {r.text}", response=r)
             cards = r.json()
@@ -430,6 +433,30 @@ class MetabaseClient:
         r.raise_for_status()
         return r.json()
 
+    def card_sql_and_columns(
+        self, card: Dict[str, Any], db_id: Optional[int] = None,
+        tenant_id: Optional[str] = None,
+    ) -> Tuple[str, List[str]]:
+        """Extract native SQL and output column names from a fetched card.
+
+        Handles both native and structured (GUI) dataset_query — the latter is
+        converted via get_native_query. Columns are read from the SQL's
+        AS "..." aliases, falling back to the card's result_metadata display
+        names. Callers that already hold the card dict avoid a second fetch.
+        """
+        dataset_query = card.get("dataset_query", {})
+        if dataset_query.get("type") == "native":
+            sql = dataset_query.get("native", {}).get("query", "")
+        else:
+            sql = self.get_native_query(dataset_query, tenant_id, db_id=db_id) or ""
+        columns = re.findall(r'AS\s+"([^"]+)"', sql)
+        if not columns:
+            columns = [
+                col.get("display_name", col.get("name", ""))
+                for col in card.get("result_metadata", [])
+            ]
+        return sql, columns
+
     def get_native_query(self, dataset_query: Dict[str, Any],
                          tenant_id: Optional[str] = None,
                          db_id: Optional[int] = None) -> Optional[str]:
@@ -468,8 +495,9 @@ class MetabaseClient:
                 else:
                     logger.debug(f"get_native_query format failed: HTTP {r.status_code} — {r.text[:300]}")
             except Exception as e:
+                # Don't abort the loop — let the next body format be tried.
                 logger.error(f"Failed to convert structured query to native SQL: {e}")
-                return None
+                continue
 
         logger.warning("get_native_query: all request formats exhausted")
         return None
