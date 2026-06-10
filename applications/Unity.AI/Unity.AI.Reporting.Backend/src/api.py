@@ -922,7 +922,6 @@ def create_data_models():
             "server_error",
             "Failed to create data models. Please try again.",
             500,
-            detail=str(e)
         )
 
 
@@ -1074,12 +1073,17 @@ def modify_data_model_preview():
         )
         _attach_preview_to_proposal(result, db_id, tenant_id)
         return jsonify({"proposal": result}), 200
-    except ValueError as e:
-        return jsonify({"error": str(e)}), 400
+    except ValueError:
+        # Detail is logged server-side; the client gets a generic message so
+        # internal exception text isn't exposed externally.
+        logger.warning(
+            "Validation error in /api/data-models/modify-preview", exc_info=True
+        )
+        return _error_response("bad_request", "Invalid request parameters.", 400)
     except Exception as e:
         logger.error(f"Error in /api/data-models/modify-preview: {e}", exc_info=True)
         return _error_response(
-            "server_error", "Failed to generate modified model.", 500, detail=str(e)
+            "server_error", "Failed to generate modified model.", 500
         )
 
 

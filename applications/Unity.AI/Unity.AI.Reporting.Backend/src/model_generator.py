@@ -39,8 +39,27 @@ CONTENT_TYPE = "application/json"
 
 logger = logging.getLogger(__name__)
 
-# Regex for parsing form view table names
-FORM_VERSION_RE = re.compile(r'^Form-(.+?)(?:\s+Alternate)?-V(\d+)$')
+# Regex for parsing form view table names: "Form-<base>-V<n>" or
+# "Form-<base> Alternate-V<n>". <base> uses \S+ (form names have no internal
+# whitespace) so it stays disjoint from the optional \s+ Alternate group; this
+# removes the ambiguity a .+? caused and avoids polynomial backtracking on
+# untrusted table names (CodeQL py/polynomial-redos).
+FORM_VERSION_RE = re.compile(r'^Form-(\S+)(?:\s+Alternate)?-V(\d+)$')
+
+
+def _strip_trailing_code_fence(text: str) -> str:
+    """Strip a trailing ``` markdown fence (and surrounding whitespace) from an
+    LLM response.
+
+    Done with string operations instead of a ``\\s*```$`` regex: that pattern
+    has polynomial backtracking on untrusted model output, because re.sub
+    retries the unanchored ``\\s*`` at every position of a whitespace run
+    (python:S5852 / CWE-1333). String slicing is linear-time.
+    """
+    text = text.strip()
+    if text.endswith("```"):
+        text = text[:-3].rstrip()
+    return text
 
 
 class DataModelGenerator:
@@ -602,7 +621,7 @@ class DataModelGenerator:
         if raw:
             try:
                 text = re.sub(r"^```(?:json)?\s*", "", raw.strip(), flags=re.IGNORECASE)
-                text = re.sub(r"\s*```$", "", text.strip())
+                text = _strip_trailing_code_fence(text)
                 start, end = text.find("{"), text.rfind("}")
                 if start != -1 and end > start:
                     defn = json.loads(text[start:end + 1])
@@ -1234,7 +1253,7 @@ class DataModelGenerator:
 
         # Clean markdown fences
         new_sql = re.sub(r"^```(?:sql)?\s*", "", new_sql.strip(), flags=re.IGNORECASE)
-        new_sql = re.sub(r"\s*```$", "", new_sql.strip())
+        new_sql = _strip_trailing_code_fence(new_sql)
 
         # 4. Single bounded execution validates the SQL, self-heals once, and yields rows.
         columns_text = "\n".join(f"  {c}" for c in current_columns)
@@ -1301,9 +1320,14 @@ class DataModelGenerator:
                     "description": defn.get("description", ""),
                     "card_id": card_id,
                 })
-            except Exception as e:
+            except Exception:
+                # Full detail is logged server-side; the client only gets a
+                # generic message so exception text isn't exposed externally.
                 logger.error(f"Failed to create model '{name}'", exc_info=True)
-                errors.append({"name": name, "error": str(e)})
+                errors.append({
+                    "name": name,
+                    "error": "Failed to create model due to an internal error",
+                })
 
         logger.info(
             "Model creation complete - tenant=%s models_created=%d models_errored=%d",
@@ -1480,7 +1504,7 @@ class DataModelGenerator:
         if not result:
             return None
         result = re.sub(r"^```sql\s*", "", result.strip(), flags=re.IGNORECASE)
-        result = re.sub(r"\s*```$", "", result.strip())
+        result = _strip_trailing_code_fence(result)
         return result.strip() or None
 
     async def _post_completion(self, session: aiohttp.ClientSession,
@@ -1522,7 +1546,7 @@ class DataModelGenerator:
     def _parse_single_definition(self, raw: str) -> dict:
         """Parse AI response into a single {name, description, sql} dict."""
         text = re.sub(r"^```(?:json)?\s*", "", raw.strip(), flags=re.IGNORECASE)
-        text = re.sub(r"\s*```$", "", text.strip())
+        text = _strip_trailing_code_fence(text)
 
         # Find JSON object
         start = text.find("{")
