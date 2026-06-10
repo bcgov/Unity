@@ -9,7 +9,7 @@ import { ToastService } from '../services/toast.service';
 import { LoggerService } from '../services/logger.service';
 import { AuthService } from '../services/auth.service';
 import { AlertComponent } from '../alert/alert';
-import { CardData } from '../embed';
+import type { CardData } from '../embed';
 import { Turn } from '../turn';
 
 export interface Chat {

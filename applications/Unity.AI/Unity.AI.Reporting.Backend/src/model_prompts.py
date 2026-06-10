@@ -73,8 +73,8 @@ Provide ONLY valid JSON — no markdown fences, no explanation:
 ENHANCE_PROMPT = """You are enhancing a data model SQL query. The query structure is LOCKED — do NOT change it.
 
 RULES:
-- Do NOT add or remove columns from the final SELECT
-- Do NOT change column order
+- Do NOT remove columns from the final SELECT
+- Do NOT change the order of existing columns
 - Do NOT modify CTEs, FROM clauses, JOINs, UNION ALL, or WHERE clauses
 - ONLY modify the final SELECT expressions:
   1. Replace raw field name aliases with human-readable labels:
@@ -101,8 +101,8 @@ Output ONLY the improved SQL — no markdown fences, no explanation."""
 ENHANCE_AND_NAME_PROMPT = """You are finalizing a reusable reporting data model. The query structure is LOCKED — do NOT change it.
 
 RULES:
-- Do NOT add or remove columns from the final SELECT
-- Do NOT change column order
+- Do NOT remove columns from the final SELECT
+- Do NOT change the order of existing columns
 - Do NOT modify CTEs, FROM clauses, JOINs, UNION ALL, or WHERE clauses
 - ONLY modify the final SELECT expressions:
   1. Replace raw field name aliases with human-readable labels:

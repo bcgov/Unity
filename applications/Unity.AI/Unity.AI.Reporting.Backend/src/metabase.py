@@ -63,7 +63,8 @@ class MetabaseClient:
         r = requests.post(
             f"{self.config.url}/api/dataset",
             headers=headers,
-            json=payload
+            json=payload,
+            timeout=30,
         )
         r.raise_for_status()
         return r.json()["data"]
@@ -91,7 +92,8 @@ class MetabaseClient:
         r = requests.post(
             f"{self.config.url}/api/dataset",
             headers=headers,
-            json=payload
+            json=payload,
+            timeout=30,
         )
 
         if r.status_code not in (200, 202):
@@ -107,12 +109,18 @@ class MetabaseClient:
             while time.time() < deadline:
                 jr = requests.get(
                     f"{self.config.url}/api/async/{job_id}",
-                    headers=headers
+                    headers=headers,
+                    timeout=30,
                 )
                 if jr.status_code == 200:
                     body = jr.json()
-                    break
+                    if body.get("status") != "running":
+                        break
                 time.sleep(0.5)
+
+            # An unfinished job is not a valid query — don't report it as valid.
+            if body.get("status") == "running":
+                return False, "Metabase async query did not finish before timeout"
 
         if "error" in body:
             return False, body["error"]
@@ -168,8 +176,15 @@ class MetabaseClient:
                 )
                 if jr.status_code == 200:
                     body = jr.json()
-                    break
+                    if body.get("status") != "running":
+                        break
                 time.sleep(0.5)
+
+            # Don't treat an unfinished job as a successful (valid) query —
+            # returning (True, None, None) here would mark it valid and break
+            # the downstream preview/creation flow.
+            if body.get("status") == "running":
+                return False, "Metabase async query did not finish before timeout", None
 
         if "error" in body:
             return False, body["error"], None

@@ -5,7 +5,7 @@ import { firstValueFrom } from 'rxjs';
 import { ApiService } from '../services/api.service';
 import { ToastService } from '../services/toast.service';
 import { LoggerService } from '../services/logger.service';
-import {
+import type {
   ViewInfo,
   CoreField,
   ModelProposal,
@@ -15,7 +15,7 @@ import {
   ExistingModelDetail,
   ModelsModalStep,
 } from '../sidebar/sidebar';
-import { CardData } from '../embed';
+import type { CardData } from '../embed';
 
 type Stage = 'mode' | 'select' | 'review' | 'done';
 
@@ -240,8 +240,8 @@ export class DataModelsPageComponent implements OnInit {
   }
 
   private coreFieldsDiffer(): boolean {
-    const a = [...this.selectedCoreFields].sort();
-    const b = [...this.initialCoreFields].sort();
+    const a = [...this.selectedCoreFields].sort((x, y) => x.localeCompare(y));
+    const b = [...this.initialCoreFields].sort((x, y) => x.localeCompare(y));
     return a.length !== b.length || a.some((v, i) => v !== b[i]);
   }
 

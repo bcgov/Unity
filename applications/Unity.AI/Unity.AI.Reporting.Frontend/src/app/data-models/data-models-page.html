@@ -167,8 +167,13 @@
           <div class="dm-card-grid">
             @for (view of (searchActive ? filteredViews : tabViews); track view.view_name) {
               <div class="dm-view-card"
+                   role="checkbox"
+                   tabindex="0"
                    [class.selected]="isViewSelected(view)"
-                   (click)="selectView(view)">
+                   [attr.aria-checked]="isViewSelected(view)"
+                   (click)="selectView(view)"
+                   (keydown.enter)="selectView(view)"
+                   (keydown.space)="$event.preventDefault(); selectView(view)">
                 <div class="dm-view-card-head">
                   <div class="dm-check" [class.checked]="isViewSelected(view)">
                     @if (isViewSelected(view)) { ✓ }
@@ -198,8 +203,13 @@
                     <ul class="dm-version-list">
                       @for (ver of view.versions; track ver.table_name) {
                         <li class="dm-version-item"
+                            role="checkbox"
+                            tabindex="0"
                             [class.selected]="isFormVersionSelected(view, ver.table_name)"
-                            (click)="toggleFormVersion(view, ver.table_name, $event)">
+                            [attr.aria-checked]="isFormVersionSelected(view, ver.table_name)"
+                            (click)="toggleFormVersion(view, ver.table_name, $event)"
+                            (keydown.enter)="toggleFormVersion(view, ver.table_name, $event)"
+                            (keydown.space)="$event.preventDefault(); toggleFormVersion(view, ver.table_name, $event)">
                           <div class="dm-check small" [class.checked]="isFormVersionSelected(view, ver.table_name)">
                             @if (isFormVersionSelected(view, ver.table_name)) { ✓ }
                           </div>
@@ -327,8 +337,13 @@
           <ul class="dm-list">
             @for (view of (searchActive ? filteredViews : tabViews); track view.view_name) {
               <li class="dm-list-item"
+                  role="checkbox"
+                  tabindex="0"
                   [class.selected]="isEditAdditionalViewSelected(view)"
-                  (click)="toggleEditAdditionalView(view)">
+                  [attr.aria-checked]="isEditAdditionalViewSelected(view)"
+                  (click)="toggleEditAdditionalView(view)"
+                  (keydown.enter)="toggleEditAdditionalView(view)"
+                  (keydown.space)="$event.preventDefault(); toggleEditAdditionalView(view)">
                 <div class="dm-check" [class.checked]="isEditAdditionalViewSelected(view)">
                   @if (isEditAdditionalViewSelected(view)) { ✓ }
                 </div>

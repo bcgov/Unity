@@ -193,11 +193,6 @@
   color: #155724;
 }
 
-.models-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
 /* Feedback Modal */
 .feedback-modal-overlay {
   position: fixed;
