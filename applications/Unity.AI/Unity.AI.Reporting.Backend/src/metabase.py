@@ -255,10 +255,10 @@ class MetabaseClient:
             logger.error("Metabase request timed out after 30 seconds")
             raise requests.exceptions.Timeout("Metabase API request timed out")
         except requests.exceptions.ConnectionError as e:
-            logger.error(f"Connection error to Metabase: {e}", exc_info=True)
+            logger.exception(f"Connection error to Metabase: {e}")
             raise requests.exceptions.ConnectionError(f"Connection error to Metabase: {e}")
         except Exception as e:
-            logger.error(f"Unexpected error during Metabase request: {e}", exc_info=True)
+            logger.exception(f"Unexpected error during Metabase request: {e}")
             raise requests.exceptions.RequestException(f"Unexpected error during Metabase request: {e}")
 
         if r.status_code != 200:
@@ -270,7 +270,7 @@ class MetabaseClient:
             card_id = response_json["id"]
             logger.info(f"Card created successfully with ID: {card_id}")
         except Exception as e:
-            logger.error(f"Error parsing Metabase response: {e}", exc_info=True)
+            logger.exception(f"Error parsing Metabase response: {e}")
             logger.error(f"Response text: {r.text}")
             raise ValueError(f"Error parsing Metabase response: {e}")
 
@@ -337,7 +337,7 @@ class MetabaseClient:
             logger.error("Metabase create_model request timed out after 30 seconds")
             raise requests.exceptions.Timeout("Metabase API request timed out")
         except requests.exceptions.ConnectionError as e:
-            logger.error(f"Connection error to Metabase: {e}", exc_info=True)
+            logger.exception(f"Connection error to Metabase: {e}")
             raise
 
         if r.status_code != 200:
@@ -349,7 +349,7 @@ class MetabaseClient:
             logger.info(f"Model created successfully with ID: {card_id} (name='{name}')")
             return card_id
         except Exception as e:
-            logger.error(f"Error parsing Metabase create_model response: {e}", exc_info=True)
+            logger.exception(f"Error parsing Metabase create_model response: {e}")
             raise ValueError(f"Error parsing Metabase response: {e}")
 
     def get_all_card_names(self, tenant_id: Optional[str] = None) -> set:
@@ -362,7 +362,7 @@ class MetabaseClient:
             cards = r.json()
             return {card.get("name", "") for card in cards if card.get("name")}
         except Exception as e:
-            logger.error(f"Error getting card names from Metabase: {e}", exc_info=True)
+            logger.exception(f"Error getting card names from Metabase: {e}")
             return set()
 
     def update_card_visualization(self, card_id: int, display_mode: str,
@@ -428,7 +428,7 @@ class MetabaseClient:
             cards = r.json()
             return [card["id"] for card in cards]
         except Exception as e:
-            logger.error(f"Error getting cards from Metabase: {e}", exc_info=True)
+            logger.exception(f"Error getting cards from Metabase: {e}")
             return []
     
     

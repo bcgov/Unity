@@ -188,7 +188,7 @@ class SchemaExtractor:
                 docs.append(page)
                 logger.debug(f"Extracted schema for {table['name']}")
             except Exception as e:
-                logger.error(f"Error processing table {table['name']}: {e}", exc_info=True)
+                logger.exception(f"Error processing table {table['name']}: {e}")
 
         return docs
 

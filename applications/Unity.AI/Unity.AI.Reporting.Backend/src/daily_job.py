@@ -37,7 +37,7 @@ def list_card_creators():
             logger.info("")
 
     except Exception as e:
-        logger.error(f"Error listing cards: {e}", exc_info=True)
+        logger.exception(f"Error listing cards: {e}")
 
 if __name__ == "__main__":
     list_card_creators()

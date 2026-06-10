@@ -79,6 +79,9 @@ class DataModelGenerator:
     # CorrelationId intentionally NOT in JUNK_COLUMNS — used as FK for JOINs
     JUNK_PATTERNS = {"password", "ssn", "sin", "secret", "token"}
 
+    COMBINED_MODEL_NAME = "Combined Model"
+    COMBINED_MODEL_BUILD_FAILED_DESC = "Could not build combined model SQL"
+
     # Curated columns from public.Applications that users can opt-in to via the
     # "Core fields" picker. ReferenceNo is required as JOIN key for combined
     # multi-view models, so it's the default selection.
@@ -265,61 +268,62 @@ class DataModelGenerator:
             logger.warning("AI enhance+name parse failed — keeping deterministic SQL: %s", e)
             return None, None, None
 
+    @staticmethod
+    def _extract_from_clause(sql: str) -> str:
+        match = re.search(r'\bFROM\b(.+)$', sql, flags=re.IGNORECASE | re.DOTALL)
+        return re.sub(r'\s+', ' ', match.group(1).strip()) if match else ""
+
+    @staticmethod
+    def _extract_cte(sql: str) -> str:
+        parts = re.split(r'\)\s*SELECT\b', sql, flags=re.IGNORECASE)
+        return parts[0] if len(parts) >= 2 else ""
+
+    @staticmethod
+    def _count_select_cols(sql: str, has_cte: bool) -> int:
+        if has_cte:
+            parts = re.split(r'\)\s*SELECT\b', sql, flags=re.IGNORECASE)
+            if len(parts) < 2:
+                return 0
+            final = parts[-1].split("FROM")[0] if "FROM" in parts[-1] else parts[-1]
+        else:
+            select_match = re.search(r'\bSELECT\b(.+?)\bFROM\b', sql, flags=re.IGNORECASE | re.DOTALL)
+            if not select_match:
+                return 0
+            final = select_match.group(1)
+        cleaned = re.sub(r'\bCASE\b.*?\bEND\b', 'X', final, flags=re.IGNORECASE | re.DOTALL)
+        return cleaned.count(",") + 1
+
+    def _cte_structure_preserved(self, original_sql: str, enhanced_sql: str) -> bool:
+        original_cte = self._extract_cte(original_sql)
+        enhanced_cte = self._extract_cte(enhanced_sql)
+        if not original_cte or not enhanced_cte:
+            return False
+        norm_orig = re.sub(r'\s+', ' ', original_cte.strip())
+        norm_enh = re.sub(r'\s+', ' ', enhanced_cte.strip())
+        if norm_orig != norm_enh:
+            logger.warning("AI enhancement modified CTE structure — rejecting")
+            return False
+        return True
+
+    def _from_clause_preserved(self, original_sql: str, enhanced_sql: str) -> bool:
+        if self._extract_from_clause(original_sql) != self._extract_from_clause(enhanced_sql):
+            logger.warning("AI enhancement modified FROM clause — rejecting")
+            return False
+        return True
+
     def _validate_enhancement(self, original_sql: str, enhanced_sql: str) -> bool:
         """Verify AI didn't modify structure — only aliases/casts in SELECT."""
-        # For simple queries (no CTE), check FROM clause is preserved
-        def extract_from_clause(sql: str) -> str:
-            match = re.search(r'\bFROM\b(.+)$', sql, flags=re.IGNORECASE | re.DOTALL)
-            return re.sub(r'\s+', ' ', match.group(1).strip()) if match else ""
-
-        # For CTE queries, check CTE portion is preserved
-        def extract_cte(sql: str) -> str:
-            parts = re.split(r'\)\s*SELECT\b', sql, flags=re.IGNORECASE)
-            if len(parts) >= 2:
-                return parts[0]
-            return ""
-
         has_cte = original_sql.strip().upper().startswith("WITH")
 
-        if has_cte:
-            original_cte = extract_cte(original_sql)
-            enhanced_cte = extract_cte(enhanced_sql)
-            if not original_cte or not enhanced_cte:
-                return False
-            norm_orig = re.sub(r'\s+', ' ', original_cte.strip())
-            norm_enh = re.sub(r'\s+', ' ', enhanced_cte.strip())
-            if norm_orig != norm_enh:
-                logger.warning("AI enhancement modified CTE structure — rejecting")
-                return False
-        else:
-            # Simple query — verify FROM clause unchanged
-            orig_from = extract_from_clause(original_sql)
-            enh_from = extract_from_clause(enhanced_sql)
-            if orig_from != enh_from:
-                logger.warning("AI enhancement modified FROM clause — rejecting")
-                return False
+        structure_ok = (
+            self._cte_structure_preserved(original_sql, enhanced_sql) if has_cte
+            else self._from_clause_preserved(original_sql, enhanced_sql)
+        )
+        if not structure_ok:
+            return False
 
-        # Count columns in SELECT (handles commas inside CASE...END)
-        def count_select_cols(sql: str) -> int:
-            if has_cte:
-                parts = re.split(r'\)\s*SELECT\b', sql, flags=re.IGNORECASE)
-                if len(parts) >= 2:
-                    final = parts[-1].split("FROM")[0] if "FROM" in parts[-1] else parts[-1]
-                else:
-                    return 0
-            else:
-                select_match = re.search(r'\bSELECT\b(.+?)\bFROM\b', sql, flags=re.IGNORECASE | re.DOTALL)
-                if select_match:
-                    final = select_match.group(1)
-                else:
-                    return 0
-            # Remove CASE...END blocks to avoid counting their internal commas
-            cleaned = re.sub(r'\bCASE\b.*?\bEND\b', 'X', final, flags=re.IGNORECASE | re.DOTALL)
-            return cleaned.count(",") + 1
-
-        orig_count = count_select_cols(original_sql)
-        enh_count = count_select_cols(enhanced_sql)
-
+        orig_count = self._count_select_cols(original_sql, has_cte)
+        enh_count = self._count_select_cols(enhanced_sql, has_cte)
         if enh_count < orig_count:
             logger.warning(
                 "AI enhancement removed columns (%d → %d) — rejecting",
@@ -331,6 +335,116 @@ class DataModelGenerator:
 
     # --- Deterministic SQL builders ---
 
+    def _resolve_form_versions(self, base_name: str, metadata: dict,
+                                all_groups: dict) -> tuple[Optional[list[str]], str]:
+        """Resolve a base_name to its list of form-version tables.
+
+        Tries the group key, then a full-table-name match, then a standalone
+        Reporting table fallback. Returns (None, base_name) if nothing matches.
+        """
+        versions = all_groups.get(base_name, [])
+        if versions:
+            return versions, base_name
+
+        for base, tables in all_groups.items():
+            if base_name in tables:
+                return tables, base
+
+        reporting_tables = {
+            t.get("name") for t in metadata.get("tables", [])
+            if t.get("schema") == "Reporting"
+        }
+        if base_name in reporting_tables:
+            return [base_name], base_name
+        return None, base_name
+
+    def _get_reporting_table_fields(self, table_name: str, metadata: dict) -> list[dict]:
+        for table in metadata.get("tables", []):
+            if table.get("name") == table_name and table.get("schema") == "Reporting":
+                return table.get("fields", [])
+        return []
+
+    def _select_form_columns(self, primary_fields: list[dict]) -> list[str]:
+        """Filter out junk/FK-style columns from a form view's fields."""
+        columns = []
+        for field in primary_fields:
+            col_name = field.get("name", "")
+            if not col_name or col_name in self.JUNK_COLUMNS or col_name == "ApplicationId":
+                continue
+            if col_name.lower().endswith("_id"):
+                continue
+            if any(p in col_name.lower() for p in self.JUNK_PATTERNS):
+                continue
+            columns.append(col_name)
+        return columns
+
+    def _build_union_cte(self, versions: list[str], columns: list[str],
+                          wrapped_cols: set) -> str:
+        """Build the UNION ALL body that combines all form-version tables."""
+        union_parts = []
+        for i, table_name in enumerate(versions):
+            alias = f"ori{i + 1}"
+            col_exprs = [f'{alias}."Id" AS "Id"', f'{alias}."ApplicationId" AS "ApplicationId"']
+            for col in columns:
+                col_exprs.append(self._form_column_expr(alias, col, col in wrapped_cols))
+            select_clause = ",\n".join(col_exprs)
+            union_parts.append(
+                f"SELECT\n{select_clause}\nFROM\n"
+                f'  "Reporting"."{table_name}" AS {alias}'
+            )
+        return "\n  UNION ALL\n  ".join(union_parts)
+
+    @staticmethod
+    def _form_column_expr(alias: str, col: str, wrapped: bool) -> str:
+        if wrapped:
+            return (
+                f'CASE WHEN LENGTH({alias}."{col}") > 2 '
+                f'THEN SUBSTRING({alias}."{col}", 3, LENGTH({alias}."{col}") - 4) END AS "{col}"'
+            )
+        return f'{alias}."{col}" AS "{col}"'
+
+    def _build_form_select_exprs(self, resolved_core_fields: list[dict], columns: list[str],
+                                   labels: dict, samples: dict) -> list[str]:
+        """Build SELECT expressions for core fields + form columns with type casts."""
+        exprs = []
+        for cf in resolved_core_fields:
+            if cf["name"] == "ReferenceNo":
+                exprs.append('a."ReferenceNo"')
+            else:
+                exprs.append(self._type_cast_expr(f'a."{cf["name"]}"', cf["type"], cf["label"]))
+        for col in columns:
+            label_info = labels.get(col, {})
+            label = label_info.get("label", col)
+            forms_type = label_info.get("forms_type", "") or ""
+            if not forms_type or forms_type == "text":
+                forms_type = self._infer_column_type(col, samples.get(col, []))
+            exprs.append(self._type_cast_expr(f'combinedOri."{col}"', forms_type, label))
+        return exprs
+
+    @staticmethod
+    def _assemble_form_sql(combined_cte: str, final_select: str,
+                            resolved_core_fields: list[dict]) -> str:
+        if not resolved_core_fields:
+            return (
+                f'WITH combinedOri AS ({combined_cte})\n'
+                f'  SELECT\n  {final_select}\n'
+                f'  FROM\n  combinedOri'
+            )
+        a_select_cols = ',\n      '.join(
+            f'"public"."Applications"."{cf["name"]}"' for cf in resolved_core_fields
+        )
+        return (
+            f'WITH a AS (\n'
+            f'    SELECT\n      "public"."Applications"."Id",\n'
+            f'      {a_select_cols}\n'
+            f'    FROM\n      "public"."Applications"\n'
+            f'  ),\n'
+            f'  combinedOri AS ({combined_cte})\n'
+            f'  SELECT\n  {final_select}\n'
+            f'  FROM\n  combinedOri\n'
+            f'  LEFT JOIN a ON a."Id" = combinedOri."ApplicationId"'
+        )
+
     def _build_form_view_sql(self, base_name: str, db_id: int,
                              tenant_id: str,
                              core_fields: Optional[list[str]] = None,
@@ -339,141 +453,37 @@ class DataModelGenerator:
         Build deterministic SQL for Pattern 1 (Form Views).
         Returns (sql, column_labels, samples, needs_enhancement).
         """
+        empty: tuple[str, list[str], dict, bool] = ("", [], {}, False)
         metadata = self.schema.get_metadata(db_id, tenant_id)
         all_groups = self._group_form_versions(metadata)
 
-        # Find the matching group for this base_name
-        versions = all_groups.get(base_name, [])
-        if not versions:
-            # Try matching by full view name (user may pass the full table name)
-            for base, tables in all_groups.items():
-                if base_name in tables:
-                    versions = tables
-                    base_name = base
-                    break
-            if not versions:
-                # Standalone form: CorrelationProvider='formversion' but the table
-                # name doesn't follow the Form-<base>-V<n> pattern. Treat the table
-                # itself as a single-version form.
-                reporting_tables = {
-                    t.get("name") for t in metadata.get("tables", [])
-                    if t.get("schema") == "Reporting"
-                }
-                if base_name in reporting_tables:
-                    versions = [base_name]
-                else:
-                    return "", [], {}, False
+        versions, base_name = self._resolve_form_versions(base_name, metadata, all_groups)
+        if versions is None:
+            return empty
 
-        # Filter to selected versions if specified
         if selected_versions:
             versions = [v for v in versions if v in selected_versions]
             if not versions:
-                return "", [], {}, False
+                return empty
 
-        # Get columns from the primary (highest version) table
         primary_table = versions[0]
-        primary_fields = []
-        for table in metadata.get("tables", []):
-            if table.get("name") == primary_table and table.get("schema") == "Reporting":
-                primary_fields = table.get("fields", [])
-                break
-
-        # Get labels
-        labels = self.schema.get_view_labels(primary_table, db_id, tenant_id)
-
-        # Identify columns to include (exclude junk)
-        columns = []
-        for field in primary_fields:
-            col_name = field.get("name", "")
-            if col_name in self.JUNK_COLUMNS or col_name == "ApplicationId":
-                continue
-            # Generic FK-style ID filter (e.g. scoresheet_instance_id, assessment_id)
-            if col_name.lower().endswith("_id"):
-                continue
-            if any(p in col_name.lower() for p in self.JUNK_PATTERNS):
-                continue
-            columns.append(col_name)
-
+        primary_fields = self._get_reporting_table_fields(primary_table, metadata)
+        columns = self._select_form_columns(primary_fields)
         if not columns:
-            return "", [], {}, False
+            return empty
 
-        # Detect per-column JSON wrapping (one column may be wrapped while another isn't)
+        labels = self.schema.get_view_labels(primary_table, db_id, tenant_id)
         wrapped_cols = self.schema.columns_needing_unwrap(
             "Reporting", primary_table, columns, db_id, tenant_id
         )
-
-        # Build UNION ALL CTE parts
-        union_parts = []
-        for i, table_name in enumerate(versions):
-            alias = f"ori{i + 1}"
-            col_exprs = [f'{alias}."Id" AS "Id"', f'{alias}."ApplicationId" AS "ApplicationId"']
-            for col in columns:
-                if col in wrapped_cols:
-                    col_exprs.append(
-                        f'CASE WHEN LENGTH({alias}."{col}") > 2 '
-                        f'THEN SUBSTRING({alias}."{col}", 3, LENGTH({alias}."{col}") - 4) END AS "{col}"'
-                    )
-                else:
-                    col_exprs.append(f'{alias}."{col}" AS "{col}"')
-
-            select_clause = ",\n".join(col_exprs)
-            union_parts.append(
-                f"SELECT\n{select_clause}\nFROM\n"
-                f'  "Reporting"."{table_name}" AS {alias}'
-            )
-
-        combined_cte = "\n  UNION ALL\n  ".join(union_parts)
-
-        # Get samples for type inference
+        combined_cte = self._build_union_cte(versions, columns, wrapped_cols)
         samples = self.schema.get_column_samples("Reporting", primary_table, columns, db_id, tenant_id)
-
-        # Resolve user-selected core fields (defaults to ReferenceNo only)
         resolved_core_fields = self._resolve_core_fields(core_fields)
 
-        # Build final SELECT with type casts
-        final_exprs = []
-        for cf in resolved_core_fields:
-            if cf["name"] == "ReferenceNo":
-                final_exprs.append('a."ReferenceNo"')
-            else:
-                final_exprs.append(
-                    self._type_cast_expr(f'a."{cf["name"]}"', cf["type"], cf["label"])
-                )
-        for col in columns:
-            label_info = labels.get(col, {})
-            label = label_info.get("label", col)
-            forms_type = label_info.get("forms_type", "")
-            # If no forms_type from labels, infer from name + samples
-            if not forms_type or forms_type == "text":
-                forms_type = self._infer_column_type(col, samples.get(col, []))
-            col_ref = f'combinedOri."{col}"'
-            final_exprs.append(self._type_cast_expr(col_ref, forms_type, label))
-
-        final_select = ",\n  ".join(final_exprs)
-
-        if resolved_core_fields:
-            # CTE selects only the chosen core-field columns from Applications
-            a_select_cols = ',\n      '.join(
-                f'"public"."Applications"."{cf["name"]}"' for cf in resolved_core_fields
-            )
-            sql = (
-                f'WITH a AS (\n'
-                f'    SELECT\n      "public"."Applications"."Id",\n'
-                f'      {a_select_cols}\n'
-                f'    FROM\n      "public"."Applications"\n'
-                f'  ),\n'
-                f'  combinedOri AS ({combined_cte})\n'
-                f'  SELECT\n  {final_select}\n'
-                f'  FROM\n  combinedOri\n'
-                f'  LEFT JOIN a ON a."Id" = combinedOri."ApplicationId"'
-            )
-        else:
-            # No core fields selected → skip the Applications JOIN entirely
-            sql = (
-                f'WITH combinedOri AS ({combined_cte})\n'
-                f'  SELECT\n  {final_select}\n'
-                f'  FROM\n  combinedOri'
-            )
+        final_select = ",\n  ".join(
+            self._build_form_select_exprs(resolved_core_fields, columns, labels, samples)
+        )
+        sql = self._assemble_form_sql(combined_cte, final_select, resolved_core_fields)
 
         column_labels = [
             "ReferenceNo" if cf["name"] == "ReferenceNo" else cf["label"]
@@ -485,6 +495,74 @@ class DataModelGenerator:
         needs_enhancement = any(not labels.get(c, {}).get("label") for c in columns)
         return sql, column_labels, samples, needs_enhancement
 
+    def _find_worksheet_fk_column(self, view_name: str, target_fields: list[dict],
+                                    db_id: int, tenant_id: str) -> Optional[str]:
+        """Detect the Applications FK column on a worksheet/scoresheet view."""
+        field_names = {f.get("name", "") for f in target_fields}
+        for candidate in ("ApplicationId", "application_id", "CorrelationId", "correlation_id"):
+            if candidate in field_names:
+                return candidate
+        return self.schema.find_application_id_column("Reporting", view_name, db_id, tenant_id)
+
+    def _filter_worksheet_columns(self, target_fields: list[dict],
+                                    fk_column: Optional[str]) -> list[str]:
+        skip_cols = self.JUNK_COLUMNS | ({fk_column} if fk_column else set())
+        columns = []
+        for field in target_fields:
+            col_name = field.get("name", "")
+            if not col_name or col_name in skip_cols:
+                continue
+            if col_name.lower().endswith("_id"):
+                continue
+            if any(p in col_name.lower() for p in self.JUNK_PATTERNS):
+                continue
+            columns.append(col_name)
+        return columns
+
+    def _build_worksheet_select_exprs(self, resolved_core_fields: list[dict],
+                                        columns: list[str], labels: dict,
+                                        custom_labels: dict, samples: dict) -> list[str]:
+        exprs = []
+        for cf in resolved_core_fields:
+            if cf["name"] == "ReferenceNo":
+                exprs.append('a."ReferenceNo"')
+            else:
+                exprs.append(self._type_cast_expr(f'a."{cf["name"]}"', cf["type"], cf["label"]))
+        for col in columns:
+            label_info = labels.get(col, {})
+            label = label_info.get("label", "") or custom_labels.get(col, "") or col
+            forms_type = label_info.get("forms_type", "") or ""
+            if not forms_type or forms_type == "text":
+                forms_type = self._infer_column_type(col, samples.get(col, []))
+            exprs.append(self._type_cast_expr(f'"t"."{col}"', forms_type, label))
+        return exprs
+
+    @staticmethod
+    def _assemble_worksheet_sql(select_clause: str, view_name: str,
+                                  join_condition: Optional[str], has_core_fields: bool) -> str:
+        base = (
+            f'SELECT\n  {select_clause}\n'
+            f'FROM\n  "Reporting"."{view_name}" AS "t"'
+        )
+        if join_condition and has_core_fields:
+            return f'{base}\nLEFT JOIN "public"."Applications" AS a ON {join_condition}'
+        return base
+
+    def _worksheet_column_labels(self, resolved_core_fields: list[dict], columns: list[str],
+                                   labels: dict, custom_labels: dict) -> tuple[list[str], bool]:
+        column_labels = [
+            "ReferenceNo" if cf["name"] == "ReferenceNo" else cf["label"]
+            for cf in resolved_core_fields
+        ]
+        needs_enhancement = False
+        for col in columns:
+            label_info = labels.get(col, {})
+            real_label = label_info.get("label", "") or custom_labels.get(col, "")
+            column_labels.append(real_label or col)
+            if not real_label:
+                needs_enhancement = True
+        return column_labels, needs_enhancement
+
     def _build_worksheet_view_sql(self, view_name: str, db_id: int,
                                    tenant_id: str,
                                    core_fields: Optional[list[str]] = None) -> tuple[str, list[str], dict, bool]:
@@ -494,112 +572,37 @@ class DataModelGenerator:
         Just SELECT columns with optional JOIN to Applications for core fields.
         Returns (sql, column_labels, samples, needs_enhancement).
         """
+        empty: tuple[str, list[str], dict, bool] = ("", [], {}, False)
         metadata = self.schema.get_metadata(db_id, tenant_id)
 
-        # Find the view
-        target_fields = []
-        for table in metadata.get("tables", []):
-            if table.get("name") == view_name and table.get("schema") == "Reporting":
-                target_fields = table.get("fields", [])
-                break
-
+        target_fields = self._get_reporting_table_fields(view_name, metadata)
         if not target_fields:
-            return "", [], {}, False
+            return empty
 
-        # Get labels
         labels = self.schema.get_view_labels(view_name, db_id, tenant_id)
-        if not labels:
-            custom_labels = self.schema.get_custom_field_labels(db_id, tenant_id)
-        else:
-            custom_labels = {}
+        custom_labels = {} if labels else self.schema.get_custom_field_labels(db_id, tenant_id)
 
-        # Detect FK column for JOIN (check both PascalCase and snake_case)
-        fk_column = None
-        field_names = {f.get("name", "") for f in target_fields}
-        for candidate in ("ApplicationId", "application_id", "CorrelationId", "correlation_id"):
-            if candidate in field_names:
-                fk_column = candidate
-                break
-        # Last resort: query for it
-        if not fk_column:
-            fk_column = self.schema.find_application_id_column("Reporting", view_name, db_id, tenant_id)
+        fk_column = self._find_worksheet_fk_column(view_name, target_fields, db_id, tenant_id)
+        join_condition = f'"t"."{fk_column}" = a."Id"' if fk_column else None
 
-        # Determine JOIN target
-        # Both ApplicationId and CorrelationId map to Applications.Id
-        if fk_column:
-            join_condition = f'"t"."{fk_column}" = a."Id"'
-        else:
-            join_condition = None
-
-        # Identify columns to include (exclude junk + FK columns)
-        columns = []
-        skip_cols = self.JUNK_COLUMNS | ({fk_column} if fk_column else set())
-        for field in target_fields:
-            col_name = field.get("name", "")
-            if col_name in skip_cols:
-                continue
-            # Generic FK-style ID filter (e.g. scoresheet_instance_id, assessment_id)
-            if col_name.lower().endswith("_id"):
-                continue
-            if any(p in col_name.lower() for p in self.JUNK_PATTERNS):
-                continue
-            columns.append(col_name)
-
+        columns = self._filter_worksheet_columns(target_fields, fk_column)
         if not columns:
-            return "", [], {}, False
+            return empty
 
-        # Get samples for type inference
         samples = self.schema.get_column_samples("Reporting", view_name, columns, db_id, tenant_id)
-
-        # Resolve user-selected core fields (defaults to ReferenceNo only)
         resolved_core_fields = self._resolve_core_fields(core_fields) if join_condition else []
 
-        # Build SELECT expressions
-        select_exprs = []
-        for cf in resolved_core_fields:
-            if cf["name"] == "ReferenceNo":
-                # Keep the historical un-cast form for ReferenceNo to preserve
-                # the existing column header and avoid unnecessary CASE wrappers.
-                select_exprs.append('a."ReferenceNo"')
-            else:
-                select_exprs.append(
-                    self._type_cast_expr(f'a."{cf["name"]}"', cf["type"], cf["label"])
-                )
-
-        for col in columns:
-            label_info = labels.get(col, {})
-            label = label_info.get("label", "") or custom_labels.get(col, "") or col
-            forms_type = label_info.get("forms_type", "")
-            if not forms_type or forms_type == "text":
-                forms_type = self._infer_column_type(col, samples.get(col, []))
-            col_ref = f'"t"."{col}"'
-            select_exprs.append(self._type_cast_expr(col_ref, forms_type, label))
-
-        select_clause = ",\n  ".join(select_exprs)
-
-        # Only emit the JOIN when we actually need core fields from Applications
-        if join_condition and resolved_core_fields:
-            sql = (
-                f'SELECT\n  {select_clause}\n'
-                f'FROM\n  "Reporting"."{view_name}" AS "t"\n'
-                f'LEFT JOIN "public"."Applications" AS a ON {join_condition}'
+        select_clause = ",\n  ".join(
+            self._build_worksheet_select_exprs(
+                resolved_core_fields, columns, labels, custom_labels, samples
             )
-        else:
-            sql = (
-                f'SELECT\n  {select_clause}\n'
-                f'FROM\n  "Reporting"."{view_name}" AS "t"'
-            )
-
-        column_labels = [cf["label"] if cf["name"] != "ReferenceNo" else "ReferenceNo"
-                         for cf in resolved_core_fields]
-        needs_enhancement = False
-        for col in columns:
-            label_info = labels.get(col, {})
-            real_label = label_info.get("label", "") or custom_labels.get(col, "")
-            column_labels.append(real_label or col)
-            if not real_label:
-                needs_enhancement = True
-
+        )
+        sql = self._assemble_worksheet_sql(
+            select_clause, view_name, join_condition, bool(resolved_core_fields)
+        )
+        column_labels, needs_enhancement = self._worksheet_column_labels(
+            resolved_core_fields, columns, labels, custom_labels
+        )
         return sql, column_labels, samples, needs_enhancement
 
     # --- AI naming helper ---
@@ -795,6 +798,57 @@ class DataModelGenerator:
                     return healed, True, h_error, h_data
         return sql, is_valid, error, data
 
+    @staticmethod
+    def _empty_preview(view_name: str, description: str, error: str) -> dict:
+        return {
+            "name": view_name,
+            "description": description,
+            "sql": "",
+            "valid": False,
+            "error": error,
+            "source_view": view_name,
+            "columns": [],
+            "excluded_columns": [],
+        }
+
+    def _build_deterministic_sql(self, source_type: str, view_name: str, db_id: int,
+                                   tenant_id: str, core_fields: Optional[list[str]],
+                                   selected_versions: Optional[list[str]]
+                                   ) -> Optional[tuple[str, list[str], dict, bool]]:
+        """Route to the right deterministic builder. Returns None when the
+        caller should fall through to the full AI pipeline."""
+        if source_type == "form_view":
+            match = FORM_VERSION_RE.match(view_name)
+            base_name = match.group(1) if match else view_name
+            return self._build_form_view_sql(
+                base_name, db_id, tenant_id, core_fields, selected_versions
+            )
+        if source_type in ("worksheet_view", "scoresheet_view", "other_view"):
+            return self._build_worksheet_view_sql(view_name, db_id, tenant_id, core_fields)
+        return None
+
+    async def _enhance_or_name(self, sql: str, samples: dict, view_name: str,
+                                 columns: list[str], needs_enhancement: bool
+                                 ) -> tuple[str, Optional[str], Optional[str]]:
+        """Run the single LLM call that produces a name/description (and
+        optionally a cleaned-up SQL). Returns (sql, name, description)."""
+        if needs_enhancement:
+            try:
+                enhanced_sql, name, description = await self._enhance_and_name(sql, samples)
+            except Exception as e:
+                logger.warning("AI enhance+name failed — keeping deterministic SQL: %s", e)
+                return sql, None, None
+            if enhanced_sql and self._validate_enhancement(sql, enhanced_sql):
+                sql = enhanced_sql
+            return sql, name, description
+
+        try:
+            name, description = await self._generate_name_description(view_name, columns)
+            return sql, name, description
+        except Exception as e:
+            logger.warning("AI naming failed — using fallback name: %s", e)
+            return sql, None, None
+
     async def preview_model(self, view_name: str, db_id: int,
                             tenant_id: str,
                             core_fields: Optional[list[str]] = None,
@@ -805,54 +859,23 @@ class DataModelGenerator:
         Routes to deterministic builders for known patterns, falls back to AI.
         """
         source_type = self._detect_source_type(view_name, db_id, tenant_id)
-
-        if source_type == "form_view":
-            # Extract base name from full table name if needed
-            match = FORM_VERSION_RE.match(view_name)
-            base_name = match.group(1) if match else view_name
-            sql, columns, samples, needs_enhancement = self._build_form_view_sql(
-                base_name, db_id, tenant_id, core_fields, selected_versions
-            )
-        elif source_type in ("worksheet_view", "scoresheet_view", "other_view"):
-            # other_view: any non-Form/non-worksheet/non-scoresheet Reporting table.
-            # The worksheet builder is generic — simple SELECT + optional FK JOIN —
-            # and degrades gracefully when no FK is found.
-            sql, columns, samples, needs_enhancement = self._build_worksheet_view_sql(
-                view_name, db_id, tenant_id, core_fields
-            )
-        else:
+        build_result = self._build_deterministic_sql(
+            source_type, view_name, db_id, tenant_id, core_fields, selected_versions
+        )
+        if build_result is None:
             return await self._preview_model_ai(view_name, db_id, tenant_id)
 
+        sql, columns, samples, needs_enhancement = build_result
         if not sql:
-            return {
-                "name": view_name,
-                "description": "Could not build model SQL",
-                "sql": "",
-                "valid": False,
-                "error": "No columns or source data found",
-                "source_view": view_name,
-                "columns": [],
-                "excluded_columns": [],
-            }
+            return self._empty_preview(
+                view_name, "Could not build model SQL", "No columns or source data found"
+            )
 
-        # One LLM call per preview. When every column already has a label the
-        # deterministic SQL is clean → a cheap naming-only call. Otherwise a single
-        # combined call both improves the raw aliases and returns name/description,
-        # reusing the samples the builder already fetched (no extra round-trip).
-        name = description = None
-        if needs_enhancement:
-            try:
-                enhanced_sql, name, description = await self._enhance_and_name(sql, samples)
-            except Exception as e:
-                logger.warning("AI enhance+name failed — keeping deterministic SQL: %s", e)
-                enhanced_sql = None
-            if enhanced_sql and self._validate_enhancement(sql, enhanced_sql):
-                sql = enhanced_sql
-        else:
-            try:
-                name, description = await self._generate_name_description(view_name, columns)
-            except Exception as e:
-                logger.warning("AI naming failed — using fallback name: %s", e)
+        # One LLM call per preview — enhance+name when columns lack labels,
+        # otherwise a cheaper naming-only call.
+        sql, name, description = await self._enhance_or_name(
+            sql, samples, view_name, columns, needs_enhancement
+        )
 
         if not name or not description:
             name, description = self._fallback_name_description(view_name)
@@ -959,77 +982,63 @@ class DataModelGenerator:
         )
         return proposal
 
-    async def preview_combined_model(self, view_names: list[str], db_id: int,
-                                     tenant_id: str,
-                                     core_fields: Optional[list[str]] = None) -> dict:
-        """
-        Generate a single merged model SQL from 2+ views joined via "ReferenceNo".
+    @classmethod
+    def _combined_error(cls, view_names: list[str], error: str) -> dict:
+        return {
+            "name": cls.COMBINED_MODEL_NAME,
+            "description": cls.COMBINED_MODEL_BUILD_FAILED_DESC,
+            "sql": "",
+            "valid": False,
+            "error": error,
+            "source_view": " + ".join(view_names),
+            "columns": [],
+            "excluded_columns": [],
+        }
 
-        Each view's SQL is wrapped as a named CTE (PostgreSQL supports nested CTEs
-        inside CTE bodies). Secondary views are LEFT JOINed to the primary view
-        on "ReferenceNo". Column aliases are deduplicated.
-        """
-        # ReferenceNo is the JOIN key — auto-prepend if caller omitted it
+    def _effective_combined_core_fields(self, core_fields: Optional[list[str]]) -> list[str]:
+        """Ensure ReferenceNo (the JOIN key) is present in the core-field list."""
         if core_fields is None:
-            effective_core_fields = self._default_core_field_names()
+            return self._default_core_field_names()
+        effective = list(core_fields)
+        if "ReferenceNo" not in effective:
+            effective.insert(0, "ReferenceNo")
+        return effective
+
+    def _build_view_sql_for_combine(self, vn: str, db_id: int, tenant_id: str,
+                                      effective_core_fields: list[str]) -> tuple[str, list[str]]:
+        """Build the per-view SQL + column list used as a CTE in a combined model."""
+        source_type = self._detect_source_type(vn, db_id, tenant_id)
+        if source_type == "form_view":
+            match = FORM_VERSION_RE.match(vn)
+            base_name = match.group(1) if match else vn
+            sql, cols, _, _ = self._build_form_view_sql(
+                base_name, db_id, tenant_id, effective_core_fields
+            )
         else:
-            effective_core_fields = list(core_fields)
-            if "ReferenceNo" not in effective_core_fields:
-                effective_core_fields.insert(0, "ReferenceNo")
+            sql, cols, _, _ = self._build_worksheet_view_sql(
+                vn, db_id, tenant_id, effective_core_fields
+            )
+        return sql, cols
 
-        if len(view_names) < 2:
-            return await self.preview_model(view_names[0], db_id, tenant_id, effective_core_fields)
-
-        # Build individual SQL for each view: [(view_name, sql, column_labels), ...]
+    def _build_combined_views(self, view_names: list[str], db_id: int, tenant_id: str,
+                                effective_core_fields: list[str]
+                                ) -> list[tuple[str, str, list[str]]]:
         built: list[tuple[str, str, list[str]]] = []
         for vn in view_names:
-            source_type = self._detect_source_type(vn, db_id, tenant_id)
-            if source_type == "form_view":
-                match = FORM_VERSION_RE.match(vn)
-                base_name = match.group(1) if match else vn
-                sql, cols, _, _ = self._build_form_view_sql(base_name, db_id, tenant_id, effective_core_fields)
-            else:
-                # worksheet_view, scoresheet_view, other_view — worksheet builder handles all
-                sql, cols, _, _ = self._build_worksheet_view_sql(vn, db_id, tenant_id, effective_core_fields)
-
+            sql, cols = self._build_view_sql_for_combine(
+                vn, db_id, tenant_id, effective_core_fields
+            )
             if not sql:
                 logger.warning("Could not build SQL for '%s' in combined model — skipping", vn)
                 continue
             built.append((vn, sql, cols))
+        return built
 
-        if len(built) < 2:
-            if built:
-                return await self.preview_model(built[0][0], db_id, tenant_id, effective_core_fields)
-            return {
-                "name": "Combined Model",
-                "description": "Could not build combined model SQL",
-                "sql": "",
-                "valid": False,
-                "error": "No valid SQL could be built for the selected views",
-                "source_view": " + ".join(view_names),
-                "columns": [],
-                "excluded_columns": [],
-            }
-
-        # Primary must have "ReferenceNo" to act as the join anchor
-        primary_vn, _, primary_cols = built[0]
-        primary_has_ref = "referenceno" in {c.lower() for c in primary_cols}
-        if not primary_has_ref:
-            return {
-                "name": "Combined Model",
-                "description": "Could not build combined model SQL",
-                "sql": "",
-                "valid": False,
-                "error": (
-                    f"Primary view '{primary_vn}' has no \"ReferenceNo\" column to join on. "
-                    f"Combine requires views that link to public.Applications."
-                ),
-                "source_view": " + ".join(view_names),
-                "columns": [],
-                "excluded_columns": [],
-            }
-
-        # Filter secondaries to those that share the join key — never CROSS JOIN
+    @staticmethod
+    def _partition_joinable(built: list[tuple[str, str, list[str]]]
+                             ) -> tuple[list[tuple[str, str, list[str]]], list[str]]:
+        """Return (joinable_with_primary, skipped_view_names). Joinable views all
+        have a ReferenceNo column; the primary is always included."""
         joinable = [built[0]]
         skipped: list[str] = []
         for entry in built[1:]:
@@ -1041,89 +1050,120 @@ class DataModelGenerator:
                 logger.warning(
                     "Combined model: skipping '%s' — no \"ReferenceNo\" column to join on", vn
                 )
+        return joinable, skipped
 
-        if len(joinable) < 2:
-            return {
-                "name": "Combined Model",
-                "description": "Could not build combined model SQL",
-                "sql": "",
-                "valid": False,
-                "error": (
-                    f"None of the secondary views share a \"ReferenceNo\" join key with "
-                    f"'{primary_vn}'. Skipped: {', '.join(skipped)}."
-                ),
-                "source_view": " + ".join(view_names),
-                "columns": [],
-                "excluded_columns": [],
-            }
-
-        # Wrap each as a named CTE
-        cte_parts = [
-            f"view_{i + 1} AS (\n{sql}\n)"
-            for i, (_, sql, _) in enumerate(joinable)
-        ]
-
-        # Build outer SELECT — deduplicate aliases across views
-        used_lower: set[str] = {c.lower() for c in primary_cols}
+    @staticmethod
+    def _build_combined_select(joinable: list[tuple[str, str, list[str]]]
+                                 ) -> tuple[list[str], list[str]]:
+        """Build (select_exprs, dropped_alias_notes) — dedupes column aliases
+        across views and reports which dups were dropped."""
+        _, _, primary_cols = joinable[0]
+        used_lower = {c.lower() for c in primary_cols}
         select_exprs = [f'view_1."{col}"' for col in primary_cols]
         dropped_cols: list[str] = []
 
         for i, (vn, _, cols) in enumerate(joinable[1:], start=2):
             alias = f"view_{i}"
             for col in cols:
-                if col.lower() not in used_lower:
+                low = col.lower()
+                if low not in used_lower:
                     select_exprs.append(f'{alias}."{col}"')
-                    used_lower.add(col.lower())
-                elif col.lower() != "referenceno":
-                    # Already provided by an earlier view — dropped to avoid an
-                    # ambiguous duplicate alias. (ReferenceNo is the shared join
-                    # key, present on every view, so it isn't reported.)
+                    used_lower.add(low)
+                elif low != "referenceno":
                     dropped_cols.append(f"{col} (from {vn})")
+        return select_exprs, dropped_cols
 
-        # JOIN secondary CTEs to primary via "ReferenceNo"
+    @staticmethod
+    def _assemble_combined_sql(joinable: list[tuple[str, str, list[str]]],
+                                 select_exprs: list[str]) -> str:
+        cte_parts = [
+            f"view_{i + 1} AS (\n{sql}\n)"
+            for i, (_, sql, _) in enumerate(joinable)
+        ]
         join_clauses = [
             f'LEFT JOIN view_{i} ON view_{i}."ReferenceNo" = view_1."ReferenceNo"'
             for i in range(2, len(joinable) + 1)
         ]
-
-        combined_sql = (
+        return (
             f"WITH\n{',\n'.join(cte_parts)}\n"
             f"SELECT\n  {',\n  '.join(select_exprs)}\n"
             f"FROM view_1\n"
             + "\n".join(join_clauses)
         )
 
-        # Single bounded execution validates the SQL and yields the preview rows.
-        combined_sql, is_valid, error, preview_raw = await self._validate_sql_with_heal(
-            combined_sql, db_id, tenant_id, heal_args=None
-        )
-
-        # AI naming based on combined column set (only views actually joined)
-        all_cols = list({c for _, _, cols in joinable for c in cols})
-        source_label = " + ".join(vn for vn, _, _ in joinable)
-        name, description = await self._generate_name_description(source_label, all_cols)
-
-        logger.info(
-            "Combined model preview complete - tenant=%s views=%s valid=%s",
-            tenant_id, view_names, is_valid
-        )
+    def _annotate_combined_description(self, description: Optional[str], skipped: list[str],
+                                          joinable: list[tuple[str, str, list[str]]],
+                                          db_id: int, tenant_id: str) -> str:
+        annotated = description or ""
         if skipped:
-            note = f" (skipped — no \"ReferenceNo\" join key: {', '.join(skipped)})"
-            description = (description or "") + note
-
-        # Warn when a joined secondary is many-rows-per-application: a 1:N LEFT JOIN
-        # on ReferenceNo fans out the primary's rows. We still build the model.
+            annotated += f" (skipped — no \"ReferenceNo\" join key: {', '.join(skipped)})"
         fan_out_views = [
             vn for vn, _, _ in joinable[1:]
             if self._detect_source_type(vn, db_id, tenant_id)
             in ("worksheet_view", "scoresheet_view")
         ]
         if fan_out_views:
-            warning = (
+            annotated += (
                 f" ⚠ Combining with multi-row-per-application view(s) "
                 f"{', '.join(fan_out_views)} may duplicate the primary view's rows."
             )
-            description = (description or "") + warning
+        return annotated
+
+    async def preview_combined_model(self, view_names: list[str], db_id: int,
+                                     tenant_id: str,
+                                     core_fields: Optional[list[str]] = None) -> dict:
+        """
+        Generate a single merged model SQL from 2+ views joined via "ReferenceNo".
+
+        Each view's SQL is wrapped as a named CTE (PostgreSQL supports nested CTEs
+        inside CTE bodies). Secondary views are LEFT JOINed to the primary view
+        on "ReferenceNo". Column aliases are deduplicated.
+        """
+        effective_core_fields = self._effective_combined_core_fields(core_fields)
+
+        if len(view_names) < 2:
+            return await self.preview_model(view_names[0], db_id, tenant_id, effective_core_fields)
+
+        built = self._build_combined_views(view_names, db_id, tenant_id, effective_core_fields)
+        if len(built) < 2:
+            if built:
+                return await self.preview_model(built[0][0], db_id, tenant_id, effective_core_fields)
+            return self._combined_error(view_names, "No valid SQL could be built for the selected views")
+
+        primary_vn, _, primary_cols = built[0]
+        if "referenceno" not in {c.lower() for c in primary_cols}:
+            return self._combined_error(
+                view_names,
+                f"Primary view '{primary_vn}' has no \"ReferenceNo\" column to join on. "
+                f"Combine requires views that link to public.Applications."
+            )
+
+        joinable, skipped = self._partition_joinable(built)
+        if len(joinable) < 2:
+            return self._combined_error(
+                view_names,
+                f"None of the secondary views share a \"ReferenceNo\" join key with "
+                f"'{primary_vn}'. Skipped: {', '.join(skipped)}."
+            )
+
+        select_exprs, dropped_cols = self._build_combined_select(joinable)
+        combined_sql = self._assemble_combined_sql(joinable, select_exprs)
+
+        combined_sql, is_valid, error, preview_raw = await self._validate_sql_with_heal(
+            combined_sql, db_id, tenant_id, heal_args=None
+        )
+
+        all_cols = list({c for _, _, cols in joinable for c in cols})
+        source_label = " + ".join(vn for vn, _, _ in joinable)
+        name, description = await self._generate_name_description(source_label, all_cols)
+        description = self._annotate_combined_description(
+            description, skipped, joinable, db_id, tenant_id
+        )
+
+        logger.info(
+            "Combined model preview complete - tenant=%s views=%s valid=%s",
+            tenant_id, view_names, is_valid
+        )
 
         proposal = {
             "name": name,
@@ -1153,6 +1193,67 @@ class DataModelGenerator:
             for c in cards
         ]
 
+    def _builder_core_fields_for_modification(
+        self, additional_view_names: list[str], core_fields: Optional[list[str]]
+    ) -> Optional[list[str]]:
+        """Additional view CTEs must include ReferenceNo as JOIN key. The AI
+        prompt still sees the literal user selection — this is internal plumbing."""
+        if not additional_view_names:
+            return core_fields
+        if not core_fields:
+            return self._default_core_field_names()
+        builder = list(core_fields)
+        if "ReferenceNo" not in builder:
+            builder.insert(0, "ReferenceNo")
+        return builder
+
+    def _build_additional_views_text(self, additional_view_names: list[str], db_id: int,
+                                       tenant_id: str,
+                                       builder_core_fields: Optional[list[str]]) -> str:
+        if not additional_view_names:
+            return "(none)"
+        view_sqls: list[str] = []
+        for vn in additional_view_names:
+            source_type = self._detect_source_type(vn, db_id, tenant_id)
+            if source_type == "form_view":
+                match = FORM_VERSION_RE.match(vn)
+                base_name = match.group(1) if match else vn
+                view_sql, _, _, _ = self._build_form_view_sql(
+                    base_name, db_id, tenant_id, builder_core_fields
+                )
+            elif source_type in ("worksheet_view", "scoresheet_view", "other_view"):
+                view_sql, _, _, _ = self._build_worksheet_view_sql(
+                    vn, db_id, tenant_id, builder_core_fields
+                )
+            else:
+                logger.warning("Skipping unknown view '%s' in modification", vn)
+                continue
+            if view_sql:
+                view_sqls.append(f"-- View: {vn}\n{view_sql}")
+        return "\n\n".join(view_sqls) if view_sqls else "(none)"
+
+    def _format_core_fields_for_prompt(self, core_fields: Optional[list[str]]) -> str:
+        resolved = self._resolve_core_fields(core_fields) if core_fields else []
+        if not resolved:
+            return "(none)"
+        return "\n".join(
+            f'  "{cf["name"]}" → alias '
+            f'"{cf["name"] if cf["name"] == "ReferenceNo" else cf["label"]}" '
+            f'(type: {cf["type"]})'
+            for cf in resolved
+        )
+
+    @staticmethod
+    def _pick_unique_variant_name(current_name: str, existing_names: set[str]) -> str:
+        candidate = f"{current_name} v2"
+        if candidate not in existing_names:
+            return candidate
+        for n in range(3, 100):
+            candidate = f"{current_name} v{n}"
+            if candidate not in existing_names:
+                return candidate
+        return f"{current_name} v2"
+
     async def preview_model_modification(
         self, card_id: int, prompt: str, additional_view_names: list[str],
         db_id: int, collection_id: int, tenant_id: str,
@@ -1163,13 +1264,11 @@ class DataModelGenerator:
         At least one of prompt, additional_view_names, or core_fields must be non-empty.
         Returns a ModelProposal dict (same shape as preview_model).
         """
-        # core_fields is None → not provided; list (even empty) → user-provided intent
         if not prompt and not additional_view_names and core_fields is None:
             raise ValueError(
                 "At least one of prompt, additional_view_names, or core_fields is required"
             )
 
-        # 1. Fetch existing card
         card = metabase_client.get_card(card_id, tenant_id)
         current_name = card.get("name", "Unnamed Model")
         query_type = card.get("dataset_query", {}).get("type", "unknown")
@@ -1183,60 +1282,14 @@ class DataModelGenerator:
                 "Metabase may not support converting this structured query to native SQL."
             )
 
-        # 2. Build additional view SQL if needed (each builder returns (sql, columns))
-        # Additional view CTEs must include ReferenceNo as the JOIN key, regardless
-        # of the user's core_fields choice. The AI prompt still receives the literal
-        # user selection — this adjustment is only for the internal view-building plumbing.
-        if additional_view_names:
-            if not core_fields:  # None or []
-                builder_core_fields = self._default_core_field_names()
-            else:
-                builder_core_fields = list(core_fields)
-                if "ReferenceNo" not in builder_core_fields:
-                    builder_core_fields.insert(0, "ReferenceNo")
-        else:
-            builder_core_fields = core_fields
+        builder_core_fields = self._builder_core_fields_for_modification(
+            additional_view_names, core_fields
+        )
+        additional_views_text = self._build_additional_views_text(
+            additional_view_names, db_id, tenant_id, builder_core_fields
+        )
+        core_fields_text = self._format_core_fields_for_prompt(core_fields)
 
-        additional_views_text = "(none)"
-        if additional_view_names:
-            view_sqls: list[str] = []
-            for vn in additional_view_names:
-                source_type = self._detect_source_type(vn, db_id, tenant_id)
-                if source_type == "form_view":
-                    # _build_form_view_sql expects the base name (e.g. "GrantApplication"),
-                    # not the full table name "Form-GrantApplication-V2"
-                    match = FORM_VERSION_RE.match(vn)
-                    base_name = match.group(1) if match else vn
-                    view_sql, _, _, _ = self._build_form_view_sql(
-                        base_name, db_id, tenant_id, builder_core_fields
-                    )
-                elif source_type in ("worksheet_view", "scoresheet_view", "other_view"):
-                    view_sql, _, _, _ = self._build_worksheet_view_sql(
-                        vn, db_id, tenant_id, builder_core_fields
-                    )
-                else:
-                    logger.warning("Skipping unknown view '%s' in modification", vn)
-                    continue
-                if view_sql:
-                    view_sqls.append(f"-- View: {vn}\n{view_sql}")
-            if view_sqls:
-                additional_views_text = "\n\n".join(view_sqls)
-
-        # 2b. Format core fields for the prompt
-        resolved_core_fields = self._resolve_core_fields(core_fields) if core_fields else []
-        if resolved_core_fields:
-            # ReferenceNo uses its column name as the header (no rename) to match the
-            # deterministic builder's output. Other core fields use their label as alias.
-            def _alias_for(cf):
-                return cf["name"] if cf["name"] == "ReferenceNo" else cf["label"]
-            core_fields_text = "\n".join(
-                f'  "{cf["name"]}" → alias "{_alias_for(cf)}" (type: {cf["type"]})'
-                for cf in resolved_core_fields
-            )
-        else:
-            core_fields_text = "(none)"
-
-        # 3. Call AI to rewrite
         user_prompt = prompt.strip() if prompt else "(none)"
         modify_request = MODIFY_PROMPT.format(
             current_sql=current_sql,
@@ -1249,13 +1302,14 @@ class DataModelGenerator:
         async with aiohttp.ClientSession() as session:
             new_sql = await self._post_completion(session, SYSTEM_PROMPT, modify_request)
         if not new_sql:
-            raise RuntimeError("AI service failed to generate modified SQL — the LLM request timed out or returned an error")
+            raise RuntimeError(
+                "AI service failed to generate modified SQL — "
+                "the LLM request timed out or returned an error"
+            )
 
-        # Clean markdown fences
         new_sql = re.sub(r"^```(?:sql)?\s*", "", new_sql.strip(), flags=re.IGNORECASE)
         new_sql = _strip_trailing_code_fence(new_sql)
 
-        # 4. Single bounded execution validates the SQL, self-heals once, and yields rows.
         columns_text = "\n".join(f"  {c}" for c in current_columns)
         new_sql, is_valid, error, preview_raw = await self._validate_sql_with_heal(
             new_sql, db_id, tenant_id,
@@ -1266,18 +1320,8 @@ class DataModelGenerator:
             ),
         )
 
-        # 5. Generate name (variant)
-        new_name = f"{current_name} v2"
-        # Check for existing vN names
         existing_names = metabase_client.get_all_card_names(tenant_id)
-        if new_name in existing_names:
-            for n in range(3, 100):
-                candidate = f"{current_name} v{n}"
-                if candidate not in existing_names:
-                    new_name = candidate
-                    break
-
-        # Extract new columns
+        new_name = self._pick_unique_variant_name(current_name, set(existing_names))
         new_columns = re.findall(r'AS\s+"([^"]+)"', new_sql)
 
         description = f"Modified variant of \"{current_name}\""
@@ -1323,7 +1367,7 @@ class DataModelGenerator:
             except Exception:
                 # Full detail is logged server-side; the client only gets a
                 # generic message so exception text isn't exposed externally.
-                logger.error(f"Failed to create model '{name}'", exc_info=True)
+                logger.exception(f"Failed to create model '{name}'")
                 errors.append({
                     "name": name,
                     "error": "Failed to create model due to an internal error",
@@ -1337,6 +1381,109 @@ class DataModelGenerator:
 
     # --- Private helpers ---
 
+    @staticmethod
+    def _build_field_id_lookup(metadata: dict) -> dict[int, tuple[str, str, str]]:
+        """field_id → (schema, table, column) across every table in metadata."""
+        lookup: dict[int, tuple[str, str, str]] = {}
+        for table in metadata.get("tables", []):
+            t_schema = table.get("schema", "public")
+            t_name = table.get("name", "")
+            for field in table.get("fields", []):
+                fid = field.get("id")
+                if fid:
+                    lookup[fid] = (t_schema, t_name, field.get("name", ""))
+        return lookup
+
+    @staticmethod
+    def _find_reporting_table(view_name: str, metadata: dict) -> Optional[dict]:
+        for table in metadata.get("tables", []):
+            if table.get("name") == view_name and table.get("schema") == "Reporting":
+                return table
+        return None
+
+    _KNOWN_FK_FALLBACK = {
+        "ApplicationId": ("public", "Applications", "Id"),
+        "CorrelationId": ("public", "Applications", "Id"),
+        "ApplicantId": ("public", "Applicants", "Id"),
+    }
+
+    def _resolve_fk_map(self, fields: list[dict], field_lookup: dict,
+                          schema_name: str, view_name: str,
+                          db_id: int, tenant_id: str
+                          ) -> tuple[dict[str, tuple[str, str, str]], set[str]]:
+        """Returns (fk_map, field_names). field_names may grow if a probe finds
+        an FK column not declared in metadata."""
+        field_names = {f.get("name", "") for f in fields}
+        fk_map: dict[str, tuple[str, str, str]] = {}
+        for field in fields:
+            col_name = field.get("name", "")
+            fk_target_id = field.get("fk_target_field_id")
+            if fk_target_id and fk_target_id in field_lookup:
+                fk_map[col_name] = field_lookup[fk_target_id]
+
+        if not fk_map:
+            for col_name, target in self._KNOWN_FK_FALLBACK.items():
+                if col_name in field_names:
+                    fk_map[col_name] = target
+
+        if not fk_map:
+            app_id_col = self.schema.find_application_id_column(
+                schema_name, view_name, db_id, tenant_id
+            )
+            if app_id_col:
+                fk_map[app_id_col] = ("public", "Applications", "Id")
+                field_names.add(app_id_col)
+
+        return fk_map, field_names
+
+    def _format_displayable_columns(self, fields: list[dict], join_key_names: set[str],
+                                      view_labels: dict, custom_labels: dict,
+                                      schema_name: str, view_name: str,
+                                      db_id: int, tenant_id: str) -> str:
+        lines = []
+        for field in fields:
+            col_name = field.get("name", "")
+            if col_name in join_key_names:
+                continue
+            if any(p in col_name.lower() for p in self.JUNK_PATTERNS):
+                continue
+            db_type = field.get("database_type") or field.get("base_type", "unknown")
+            label = (
+                view_labels.get(col_name, {}).get("label", "")
+                or custom_labels.get(col_name, "")
+            )
+            sample = self.schema.get_sample_value(
+                schema_name, view_name, col_name, db_id, tenant_id
+            )
+            sample_str = f'"{sample[:60]}"' if sample else "(no data yet)"
+            lines.append(f"  {col_name} | {db_type} | {label or '(no label)'} | {sample_str}")
+        return "\n".join(lines)
+
+    @staticmethod
+    def _format_join_keys_and_relationships(
+        fk_map: dict[str, tuple[str, str, str]], view_name: str
+    ) -> tuple[str, str]:
+        if not fk_map:
+            return (
+                "(none — this view has no FK columns; query directly without joins)",
+                "(none — query the view directly without joins)",
+            )
+
+        join_keys_text = "\n".join(
+            f'  "{col}" (FK → "{ts}"."{tt}"."{tc}" — JOIN only, do not SELECT)'
+            for col, (ts, tt, tc) in sorted(fk_map.items())
+        )
+        rel_lines = [
+            f'- "{view_name}"."{col}" = "{ts}"."{tt}"."{tc}"'
+            for col, (ts, tt, tc) in sorted(fk_map.items())
+        ]
+        fk_targets = {(s, t) for s, t, _ in fk_map.values()}
+        if ("public", "Applications") in fk_targets:
+            rel_lines.append('- "public"."Applications"."ApplicantId" → "public"."Applicants"."Id"')
+            rel_lines.append('- "public"."ApplicantAgents"."ApplicantId" = "public"."Applicants"."Id" AND "public"."ApplicantAgents"."ApplicationId" = "public"."Applications"."Id"')
+            rel_lines.append('- "public"."ApplicantAddresses"."ApplicantId" = "public"."Applicants"."Id" AND "public"."ApplicantAddresses"."ApplicationId" = "public"."Applications"."Id"')
+        return join_keys_text, "\n".join(rel_lines)
+
     def _build_prompt_context(self, view_name: str, db_id: int,
                               tenant_id: str) -> tuple[str, str, str, str]:
         """
@@ -1347,24 +1494,9 @@ class DataModelGenerator:
         Returns (columns_text, schema_name, join_keys_text, relationships_text).
         """
         metadata = self.schema.get_metadata(db_id, tenant_id)
+        field_lookup = self._build_field_id_lookup(metadata)
 
-        # Build a field-ID → (schema, table, column) lookup across all tables
-        field_lookup: dict[int, tuple[str, str, str]] = {}
-        for table in metadata.get("tables", []):
-            t_schema = table.get("schema", "public")
-            t_name = table.get("name", "")
-            for field in table.get("fields", []):
-                fid = field.get("id")
-                if fid:
-                    field_lookup[fid] = (t_schema, t_name, field.get("name", ""))
-
-        # Find the target view
-        target_table = None
-        for table in metadata.get("tables", []):
-            if table.get("name") == view_name and table.get("schema") == "Reporting":
-                target_table = table
-                break
-
+        target_table = self._find_reporting_table(view_name, metadata)
         if not target_table:
             logger.error(f"View '{view_name}' not found in metadata")
             return "", "Reporting", "(none)", "(none — query the view directly without joins)"
@@ -1372,81 +1504,23 @@ class DataModelGenerator:
         schema_name = target_table.get("schema", "Reporting")
         fields = target_table.get("fields", [])
 
-        # Fetch labels from ReportColumnsMaps, fall back to CustomFields
         view_labels = self.schema.get_view_labels(view_name, db_id, tenant_id)
         custom_labels = {} if view_labels else self.schema.get_custom_field_labels(db_id, tenant_id)
 
-        # Separate fields into FK join keys and displayable columns
-        fk_map: dict[str, tuple[str, str, str]] = {}  # col_name → (tgt_schema, tgt_table, tgt_col)
-        field_names = {f.get("name", "") for f in fields}
-        for field in fields:
-            col_name = field.get("name", "")
-            fk_target_id = field.get("fk_target_field_id")
-            if fk_target_id and fk_target_id in field_lookup:
-                fk_map[col_name] = field_lookup[fk_target_id]
-
-        # Fallback: detect common FK columns by naming convention if Metabase has no FK metadata
-        if not fk_map:
-            KNOWN_FKS = {
-                "ApplicationId": ("public", "Applications", "Id"),
-                "CorrelationId": ("public", "Applications", "Id"),
-                "ApplicantId": ("public", "Applicants", "Id"),
-            }
-            for col_name, target in KNOWN_FKS.items():
-                if col_name in field_names:
-                    fk_map[col_name] = target
-
-        # Last resort: query the actual view to check for ApplicationId column
-        if not fk_map:
-            app_id_col = self.schema.find_application_id_column(schema_name, view_name, db_id, tenant_id)
-            if app_id_col:
-                fk_map[app_id_col] = ("public", "Applications", "Id")
-                field_names.add(app_id_col)
-
+        fk_map, field_names = self._resolve_fk_map(
+            fields, field_lookup, schema_name, view_name, db_id, tenant_id
+        )
         logger.info(f"FK map for {view_name}: {fk_map}")
-        join_key_names = set(fk_map.keys()) | (self.JUNK_COLUMNS & {f.get("name", "") for f in fields})
 
-        lines = []
-        for field in fields:
-            col_name = field.get("name", "")
-            if col_name in join_key_names:
-                continue
-            if any(p in col_name.lower() for p in self.JUNK_PATTERNS):
-                continue
-
-            db_type = field.get("database_type") or field.get("base_type", "unknown")
-            label = (
-                view_labels.get(col_name, {}).get("label", "")
-                or custom_labels.get(col_name, "")
-            )
-            sample = self.schema.get_sample_value(schema_name, view_name, col_name, db_id, tenant_id)
-            sample_str = f'"{sample[:60]}"' if sample else "(no data yet)"
-            lines.append(f"  {col_name} | {db_type} | {label or '(no label)'} | {sample_str}")
-
-        # Build join keys and relationships from actual FK metadata
-        if fk_map:
-            fk_lines = [
-                f'  "{col}" (FK → "{tgt_schema}"."{tgt_table}"."{tgt_col}" — JOIN only, do not SELECT)'
-                for col, (tgt_schema, tgt_table, tgt_col) in sorted(fk_map.items())
-            ]
-            join_keys_text = "\n".join(fk_lines)
-
-            rel_lines = [
-                f'- "{view_name}"."{col}" = "{tgt_schema}"."{tgt_table}"."{tgt_col}"'
-                for col, (tgt_schema, tgt_table, tgt_col) in sorted(fk_map.items())
-            ]
-            # Add transitive joins through known reference tables
-            fk_targets = {(s, t) for s, t, _ in fk_map.values()}
-            if ("public", "Applications") in fk_targets:
-                rel_lines.append('- "public"."Applications"."ApplicantId" → "public"."Applicants"."Id"')
-                rel_lines.append('- "public"."ApplicantAgents"."ApplicantId" = "public"."Applicants"."Id" AND "public"."ApplicantAgents"."ApplicationId" = "public"."Applications"."Id"')
-                rel_lines.append('- "public"."ApplicantAddresses"."ApplicantId" = "public"."Applicants"."Id" AND "public"."ApplicantAddresses"."ApplicationId" = "public"."Applications"."Id"')
-            relationships_text = "\n".join(rel_lines)
-        else:
-            join_keys_text = "(none — this view has no FK columns; query directly without joins)"
-            relationships_text = "(none — query the view directly without joins)"
-
-        return "\n".join(lines), schema_name, join_keys_text, relationships_text
+        join_key_names = set(fk_map.keys()) | (self.JUNK_COLUMNS & field_names)
+        columns_text = self._format_displayable_columns(
+            fields, join_key_names, view_labels, custom_labels,
+            schema_name, view_name, db_id, tenant_id,
+        )
+        join_keys_text, relationships_text = self._format_join_keys_and_relationships(
+            fk_map, view_name
+        )
+        return columns_text, schema_name, join_keys_text, relationships_text
 
     def _extract_column_info(self, view_name: str, db_id: int,
                              tenant_id: str, sql: str) -> tuple[list[str], list[str]]:
@@ -1540,7 +1614,7 @@ class DataModelGenerator:
                 data = await response.json()
                 return data["choices"][0]["message"]["content"]
         except Exception as e:
-            logger.error(f"LLM request failed: {e}", exc_info=True)
+            logger.exception(f"LLM request failed: {e}")
             return None
 
     def _parse_single_definition(self, raw: str) -> dict:

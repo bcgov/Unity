@@ -24,6 +24,8 @@ import re
 ADMIN_PRIVILEGES_REQUIRED = "Admin privileges required"
 INTERNAL_SERVER_ERROR = "Internal server error"
 CHAT_NOT_FOUND = "Chat not found"
+CARD_ID_REQUIRED = "card_id is required"
+CARD_ID_INVALID = "card_id must be a valid integer"
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -382,7 +384,7 @@ def get_feedback_for_admin():
         }), 200
 
     except Exception as e:
-        logger.error(f"Error retrieving feedback: {e}", exc_info=True)
+        logger.exception(f"Error retrieving feedback: {e}")
         return jsonify({"error": "Failed to retrieve feedback"}), 500
 
 def _build_viz_settings(visualization_options: list) -> dict:
@@ -764,7 +766,7 @@ def ask():
     try:
         return asyncio.run(_async_ask(data, user_data))
     except Exception as e:
-        logger.error(f"Error in /api/ask: {e}", exc_info=True)
+        logger.exception(f"Error in /api/ask: {e}")
         return _error_response(
             "server_error",
             "Something went wrong on our end. Please try again.",
@@ -790,7 +792,7 @@ def get_data_model_views():
         views = data_model_generator.discover_views(db_id, tenant_id)
         return jsonify({"views": views}), 200
     except Exception as e:
-        logger.error(f"Error in /api/data-models/views: {e}", exc_info=True)
+        logger.exception(f"Error in /api/data-models/views: {e}")
         return _error_response(
             "server_error",
             "Failed to discover available views. Please try again.",
@@ -866,7 +868,7 @@ def preview_data_models():
         _attach_preview_to_proposal(proposal, db_id, tenant_id)
         return jsonify({"proposal": proposal}), 200
     except Exception as e:
-        logger.error(f"Error in /api/data-models/preview: {e}", exc_info=True)
+        logger.exception(f"Error in /api/data-models/preview: {e}")
         return _error_response(
             "server_error",
             "Failed to generate data model proposal. Please try again.",
@@ -917,7 +919,7 @@ def create_data_models():
             "errors": result["errors"],
         }), 200
     except Exception as e:
-        logger.error(f"Error in /api/data-models/create: {e}", exc_info=True)
+        logger.exception(f"Error in /api/data-models/create: {e}")
         return _error_response(
             "server_error",
             "Failed to create data models. Please try again.",
@@ -940,7 +942,7 @@ def list_data_models():
         models = data_model_generator.discover_existing_models(collection_id, tenant_id)
         return jsonify({"models": models}), 200
     except Exception as e:
-        logger.error(f"Error in /api/data-models/list: {e}", exc_info=True)
+        logger.exception(f"Error in /api/data-models/list: {e}")
         return _error_response(
             "server_error", "Failed to list existing models.", 500, detail=str(e)
         )
@@ -960,9 +962,9 @@ def data_model_detail():
         try:
             card_id = int(card_id)
         except (ValueError, TypeError):
-            return jsonify({"error": "card_id must be a valid integer"}), 400
+            return jsonify({"error": CARD_ID_INVALID}), 400
     else:
-        return jsonify({"error": "card_id is required"}), 400
+        return jsonify({"error": CARD_ID_REQUIRED}), 400
 
     try:
         card = metabase_client.get_card(card_id, tenant_id)
@@ -977,7 +979,7 @@ def data_model_detail():
             "columns": columns,
         }), 200
     except Exception as e:
-        logger.error(f"Error in /api/data-models/detail: {e}", exc_info=True)
+        logger.exception(f"Error in /api/data-models/detail: {e}")
         return _error_response(
             "server_error", "Failed to fetch model detail.", 500, detail=str(e)
         )
@@ -997,9 +999,9 @@ def data_model_preview_data():
         try:
             card_id = int(card_id)
         except (ValueError, TypeError):
-            return jsonify({"error": "card_id must be a valid integer"}), 400
+            return jsonify({"error": CARD_ID_INVALID}), 400
     else:
-        return jsonify({"error": "card_id is required"}), 400
+        return jsonify({"error": CARD_ID_REQUIRED}), 400
 
     try:
         card = metabase_client.get_card(card_id, tenant_id)
@@ -1014,7 +1016,7 @@ def data_model_preview_data():
             return _error_response("server_error", "Could not read query results.", 500)
         return jsonify(shaped), 200
     except Exception as e:
-        logger.error(f"Error in /api/data-models/preview-data: {e}", exc_info=True)
+        logger.exception(f"Error in /api/data-models/preview-data: {e}")
         return _error_response(
             "server_error", "Failed to preview model data.", 500, detail=str(e)
         )
@@ -1048,9 +1050,9 @@ def modify_data_model_preview():
         try:
             card_id = int(card_id)
         except (ValueError, TypeError):
-            return jsonify({"error": "card_id must be a valid integer"}), 400
+            return jsonify({"error": CARD_ID_INVALID}), 400
     else:
-        return jsonify({"error": "card_id is required"}), 400
+        return jsonify({"error": CARD_ID_REQUIRED}), 400
 
     # Distinguish "key not sent" (None) from "key sent as list" (intent, even if empty).
     # An empty list is a valid intent signal — the user toggled the picker.
@@ -1081,7 +1083,7 @@ def modify_data_model_preview():
         )
         return _error_response("bad_request", "Invalid request parameters.", 400)
     except Exception as e:
-        logger.error(f"Error in /api/data-models/modify-preview: {e}", exc_info=True)
+        logger.exception(f"Error in /api/data-models/modify-preview: {e}")
         return _error_response(
             "server_error", "Failed to generate modified model.", 500
         )
@@ -1131,7 +1133,7 @@ def change_display():
         }), 200
 
     except Exception as e:
-        logger.error(f"Error in /api/change_display: {e}", exc_info=True)
+        logger.exception(f"Error in /api/change_display: {e}")
         return abort(500, INTERNAL_SERVER_ERROR)
 
 
@@ -1147,7 +1149,7 @@ def delete_question():
         card_id = data.get("card_id")
 
         if not card_id:
-            return abort(400, "card_id is required")
+            return abort(400, CARD_ID_REQUIRED)
 
         # Validate and sanitize card_id
         safe_card_id = _sanitize_card_id(card_id)
@@ -1158,7 +1160,7 @@ def delete_question():
         return {"success": success}
 
     except Exception as e:
-        logger.error(f"Error in /api/delete: {e}", exc_info=True)
+        logger.exception(f"Error in /api/delete: {e}")
         return {"success": False}
 
 
@@ -1185,7 +1187,7 @@ def explain_sql():
     try:
         return asyncio.run(async_explain_sql())
     except Exception as e:
-        logger.error(f"Error in /api/explain_sql: {e}", exc_info=True)
+        logger.exception(f"Error in /api/explain_sql: {e}")
         return {
             "explanation": "This query retrieves and analyzes your data."
         }, 200
@@ -1208,7 +1210,7 @@ def get_chats():
         return jsonify(chats), 200
 
     except Exception as e:
-        logger.error(f"Error getting chats: {e}", exc_info=True)
+        logger.exception(f"Error getting chats: {e}")
         return abort(500, INTERNAL_SERVER_ERROR)
 
 
@@ -1229,7 +1231,7 @@ def get_chat(chat_id):
         return jsonify(chat_data), 200
 
     except Exception as e:
-        logger.error(f"Error getting chat: {e}", exc_info=True)
+        logger.exception(f"Error getting chat: {e}")
         return abort(500, INTERNAL_SERVER_ERROR)
 
 
@@ -1259,7 +1261,7 @@ def save_chat():
         return {"chat_id": result_chat_id}, 200
 
     except Exception as e:
-        logger.error(f"Error saving chat: {e}", exc_info=True)
+        logger.exception(f"Error saving chat: {e}")
         return abort(500, INTERNAL_SERVER_ERROR)
 
 
@@ -1281,7 +1283,7 @@ def delete_chat(chat_id):
         return {"success": True}, 200
 
     except Exception as e:
-        logger.error(f"Error deleting chat: {e}", exc_info=True)
+        logger.exception(f"Error deleting chat: {e}")
         return abort(500, INTERNAL_SERVER_ERROR)
 
 
@@ -1356,7 +1358,7 @@ def submit_feedback():
         }, 200
 
     except Exception as e:
-        logger.error(f"Error submitting feedback: {e}", exc_info=True)
+        logger.exception(f"Error submitting feedback: {e}")
         return abort(500, INTERNAL_SERVER_ERROR)
 
 
@@ -1383,7 +1385,7 @@ def get_feedback(feedback_id):
         return jsonify(feedback_data), 200
 
     except Exception as e:
-        logger.error(f"Error getting feedback: {e}", exc_info=True)
+        logger.exception(f"Error getting feedback: {e}")
         return abort(500, INTERNAL_SERVER_ERROR)
 
 
@@ -1426,6 +1428,6 @@ def update_feedback_status(feedback_id):
         }), 200
 
     except Exception as e:
-        logger.error(f"Error updating feedback status: {e}", exc_info=True)
+        logger.exception(f"Error updating feedback status: {e}")
         return jsonify({"error": "Failed to update feedback status"}), 500
 

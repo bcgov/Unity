@@ -159,35 +159,44 @@ class SchemaRepository:
             pass
         return None
 
+    @staticmethod
+    def _normalize_sample(raw) -> Optional[str]:
+        """Clean a single cell value into a non-empty sample string, stripping
+        a JSON-array wrapper when present. Returns None for empty/null cells."""
+        if raw is None:
+            return None
+        val = str(raw).strip()
+        if not val:
+            return None
+        if val.startswith('["') and val.endswith('"]'):
+            val = val[2:-2]
+        return val or None
+
     def get_column_samples(self, schema: str, table: str, columns: list[str],
                            db_id: int, tenant_id: str) -> dict[str, list[str]]:
         """Get 2-3 non-null sample values per column for type inference and AI context."""
         if not columns:
             return {}
 
-        # Build a single query to get samples for all columns at once
-        col_refs = ", ".join(f'"{c}"' for c in columns[:50])
-        sql = (
-            f'SELECT {col_refs} FROM "{schema}"."{table}" '
-            f'LIMIT 3'
-        )
+        capped = columns[:50]
+        col_refs = ", ".join(f'"{c}"' for c in capped)
+        sql = f'SELECT {col_refs} FROM "{schema}"."{table}" LIMIT 3'
+
+        samples: dict[str, list[str]] = {c: [] for c in capped}
         try:
             result = metabase_client.execute_sql(sql, db_id, tenant_id=tenant_id)
-            rows = result.get("rows", [])
-            samples: dict[str, list[str]] = {c: [] for c in columns[:50]}
-            for row in rows:
-                for i, col in enumerate(columns[:50]):
-                    if i < len(row) and row[i] is not None and str(row[i]).strip():
-                        val = str(row[i]).strip()
-                        # Strip JSON wrapper if present for cleaner samples
-                        if val.startswith('["') and val.endswith('"]'):
-                            val = val[2:-2]
-                        if val and len(samples[col]) < 3:
-                            samples[col].append(val)
-            return samples
         except Exception as e:
             logger.warning(f"Could not fetch column samples from {schema}.{table}: {e}")
-            return {c: [] for c in columns[:50]}
+            return samples
+
+        for row in result.get("rows", []):
+            for i, col in enumerate(capped):
+                if i >= len(row) or len(samples[col]) >= 3:
+                    continue
+                value = self._normalize_sample(row[i])
+                if value:
+                    samples[col].append(value)
+        return samples
 
     def columns_needing_unwrap(self, schema: str, table: str, columns: list[str],
                                db_id: int, tenant_id: str) -> set[str]:
@@ -198,7 +207,8 @@ class SchemaRepository:
         if not columns:
             return set()
 
-        col_refs = ", ".join(f'"{c}"' for c in columns[:50])
+        capped = columns[:50]
+        col_refs = ", ".join(f'"{c}"' for c in capped)
         sql = f'SELECT {col_refs} FROM "{schema}"."{table}" LIMIT 5'
         try:
             result = metabase_client.execute_sql(sql, db_id, tenant_id=tenant_id)
@@ -208,13 +218,11 @@ class SchemaRepository:
 
         wrapped: set[str] = set()
         for row in result.get("rows", []):
-            for i, col in enumerate(columns[:50]):
-                if col in wrapped:
+            for i, col in enumerate(capped):
+                if col in wrapped or i >= len(row) or row[i] is None:
                     continue
-                if i < len(row) and row[i] is not None:
-                    val = str(row[i]).strip()
-                    if val.startswith('["'):
-                        wrapped.add(col)
+                if str(row[i]).strip().startswith('["'):
+                    wrapped.add(col)
         return wrapped
 
     def batch_check_view_data(

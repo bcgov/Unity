@@ -116,7 +116,7 @@ class ChatManager:
 
             logger.info(f"Recreated card {card_id} as {new_card_id}")
         except Exception as e:
-            logger.error(f"Error recreating card {card_id}: {e}", exc_info=True)
+            logger.exception(f"Error recreating card {card_id}: {e}")
 
     def _apply_visualization(self, card_id: int, embed_data: Dict,
                              tenant_id: Optional[str] = None) -> None:
@@ -134,7 +134,7 @@ class ChatManager:
                 tenant_id=tenant_id
             )
         except Exception as e:
-            logger.error(f"Error updating visualization: {e}", exc_info=True)
+            logger.exception(f"Error updating visualization: {e}")
     
     def save_chat(self, user_id: str, tenant_id: str, metabase_url: str,
                   title: str, conversation: List[Dict], 

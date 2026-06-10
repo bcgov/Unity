@@ -156,7 +156,7 @@ def require_auth(f: Callable) -> Callable:
             return f(*args, **kwargs)
 
         except Exception as e:
-            logger.error(f"Authentication error: {e}", exc_info=True)
+            logger.exception(f"Authentication error: {e}")
             return jsonify({
                 'error': 'Authentication failed',
                 'message': 'An error occurred during authentication'

@@ -144,7 +144,7 @@ class DatabaseManager:
                     conn.commit()
                     logger.info(f"Purged {deleted_count} existing embeddings")
         except Exception as e:
-            logger.error(f"Error purging embeddings: {e}", exc_info=True)
+            logger.exception(f"Error purging embeddings: {e}")
             raise
 
 

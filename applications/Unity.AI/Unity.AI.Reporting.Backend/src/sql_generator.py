@@ -268,7 +268,7 @@ class SQLGenerator:
             fingerprint = self.fingerprint_results(sql, db_id, tenant_id=tenant_id)
             return (fingerprint, sql, metadata)
         except Exception as e:
-            logger.error(f"Error generating fingerprint: {e}", exc_info=True)
+            logger.exception(f"Error generating fingerprint: {e}")
             return None
 
     def _aggregate_token_usage(self, completions) -> Dict[str, int]:
@@ -597,7 +597,7 @@ ORDER BY
                     return explanation, usage
 
         except Exception as e:
-            logger.error(f"Error generating SQL explanation: {e}", exc_info=True)
+            logger.exception(f"Error generating SQL explanation: {e}")
             return "This query retrieves and analyzes your data.", {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}
 
 

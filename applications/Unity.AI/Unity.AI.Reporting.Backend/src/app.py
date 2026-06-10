@@ -65,7 +65,7 @@ def embed_all_tenants():
             embedding_manager.embed_schemas(db_id, db_cfg["schema_types"], tenant_id=first_tenant_id)
             logger.info(f"Successfully embedded db_id={db_id}")
         except Exception as e:
-            logger.error(f"Failed to embed db_id={db_id}: {e}", exc_info=True)
+            logger.exception(f"Failed to embed db_id={db_id}: {e}")
 
     logger.info("Finished embedding all tenant databases.")
 
@@ -138,7 +138,7 @@ if not _initialized and os.environ.get('WERKZEUG_RUN_MAIN') != 'true':
         db_manager.init_tables()
         logger.info("Database schema initialized successfully")
     except Exception as e:
-        logger.error(f"Error initializing database schema: {e}", exc_info=True)
+        logger.exception(f"Error initializing database schema: {e}")
         # Don't exit - let the app try to run anyway
 
     # Embed schemas for ALL tenants on startup (runs once with --preload before forking workers)
