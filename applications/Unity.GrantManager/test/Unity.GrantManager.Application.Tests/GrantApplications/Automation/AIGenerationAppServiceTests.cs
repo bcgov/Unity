@@ -2,6 +2,8 @@ using Microsoft.Extensions.Localization;
 using NSubstitute;
 using Shouldly;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Unity.AI.Generation;
 using Unity.AI.Localization;
@@ -46,6 +48,45 @@ public class AIGenerationAppServiceTests(ITestOutputHelper outputHelper) : Grant
         result.ShouldNotBeNull();
         result.Completed.ShouldBeTrue();
         await queue.Received(1).QueueAllAIStagesAsync(Arg.Any<Guid>(), Arg.Any<Guid?>(), Arg.Any<string?>());
+    }
+
+    [Fact]
+    public async Task GenerateAttachmentSummariesAsync_Should_Validate_Against_Application_Ownership()
+    {
+        var featureChecker = Substitute.For<IFeatureChecker>();
+        featureChecker.IsEnabledAsync("Unity.AI.AttachmentSummaries").Returns(true);
+        var localizer = Substitute.For<IStringLocalizer<AIResource>>();
+        var featureGuard = new AIFeatureGuard(featureChecker, localizer);
+
+        var applicationId = Guid.NewGuid();
+        var attachmentIds = new List<Guid> { Guid.NewGuid(), Guid.NewGuid() };
+        var attachmentSummaryService = Substitute.For<IAttachmentSummaryService>();
+        attachmentSummaryService.GenerateForApplicationAsync(
+                applicationId,
+                "v1",
+                Arg.Is<IReadOnlyCollection<Guid>>(ids => ids.SequenceEqual(attachmentIds)),
+                Arg.Any<System.Threading.CancellationToken>())
+            .Returns(new List<string> { "summary-1", "summary-2" });
+
+        var service = new AIGenerationAppService(
+            attachmentSummaryService,
+            Substitute.For<IApplicationAIGenerationQueue>(),
+            featureGuard,
+            Substitute.For<Volo.Abp.MultiTenancy.ICurrentTenant>());
+
+        var result = await service.GenerateAttachmentSummariesAsync(new GenerateAttachmentSummariesInputDto
+        {
+            ApplicationId = applicationId,
+            AttachmentIds = attachmentIds,
+            PromptVersion = "v1"
+        });
+
+        result.Count.ShouldBe(2);
+        await attachmentSummaryService.Received(1).GenerateForApplicationAsync(
+            applicationId,
+            "v1",
+            Arg.Is<IReadOnlyCollection<Guid>>(ids => ids.SequenceEqual(attachmentIds)),
+            Arg.Any<System.Threading.CancellationToken>());
     }
 }
 

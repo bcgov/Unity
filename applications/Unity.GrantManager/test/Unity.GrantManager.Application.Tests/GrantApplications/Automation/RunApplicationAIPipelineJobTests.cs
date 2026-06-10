@@ -10,6 +10,7 @@ using Unity.AI.Operations;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.GrantApplications.Automation.BackgroundJobs;
 using Unity.AI.RateLimit;
+using Volo.Abp;
 using Volo.Abp.Domain.Entities;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.EventBus.Local;
@@ -156,6 +157,68 @@ public class RunApplicationAIPipelineJobTests(ITestOutputHelper outputHelper) : 
         request.Status.ShouldBe(AIGenerationRequestStatus.Completed);
         await attachmentSummaryService.Received(1).GenerateAndSaveAsync(Arg.Any<List<Guid>>(), Arg.Any<string?>());
         await applicationAnalysisService.Received(1).RegenerateAsync(Arg.Any<ApplicationAnalysisOperationInputDto>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_Should_Skip_Analysis_UserFriendlyException_And_Continue_To_Scoring()
+    {
+        var featureChecker = Substitute.For<IFeatureChecker>();
+        featureChecker.IsEnabledAsync("Unity.AI.AttachmentSummaries").Returns(false);
+        featureChecker.IsEnabledAsync("Unity.AI.ApplicationAnalysis").Returns(true);
+        featureChecker.IsEnabledAsync("Unity.AI.Scoring").Returns(true);
+
+        var repository = BuildRequestRepository(out var requests);
+        var request = CreateRequest();
+        requests.Add(request);
+
+        var analysisService = Substitute.For<IApplicationAnalysisService>();
+        analysisService.RegenerateAsync(Arg.Any<ApplicationAnalysisOperationInputDto>(), Arg.Any<CancellationToken>())
+            .Returns<Task>(callInfo => throw new UserFriendlyException("analysis prerequisites missing"));
+
+        var scoringService = Substitute.For<IApplicationScoringService>();
+        scoringService.RegenerateAsync(Arg.Any<ApplicationScoringOperationInputDto>(), Arg.Any<CancellationToken>())
+            .Returns("{}");
+
+        var inputBuilder = Substitute.For<IAIApplicationInputBuilder>();
+        inputBuilder.BuildApplicationAnalysisInputAsync(request.ApplicationId!.Value, Arg.Any<string?>())
+            .Returns(new ApplicationAnalysisOperationInputDto { ApplicationId = request.ApplicationId!.Value });
+        inputBuilder.BuildApplicationScoringInputAsync(request.ApplicationId!.Value, Arg.Any<string?>())
+            .Returns(new ApplicationScoringOperationInputDto { ApplicationId = request.ApplicationId!.Value });
+
+        var applicationRepository = Substitute.For<IApplicationRepository>();
+        applicationRepository.GetAsync(request.ApplicationId!.Value).Returns(new Application
+        {
+            ApplicationFormId = Guid.NewGuid()
+        });
+        applicationRepository.UpdateAsync(Arg.Any<Application>(), Arg.Any<bool>(), Arg.Any<CancellationToken>())
+            .Returns(callInfo => Task.FromResult(callInfo.Arg<Application>()));
+
+        var localEventBus = Substitute.For<ILocalEventBus>();
+        var rateLimiter = Substitute.For<IAIRateLimiter>();
+        var requestedByUserId = Guid.NewGuid();
+
+        var job = BuildJob(
+            featureChecker,
+            repository,
+            localEventBus: localEventBus,
+            rateLimiter: rateLimiter,
+            applicationAnalysisService: analysisService,
+            applicationScoringService: scoringService,
+            inputBuilder: inputBuilder,
+            applicationRepository: applicationRepository);
+
+        await job.ExecuteAsync(new RunApplicationAIPipelineJobArgs
+        {
+            ApplicationId = request.ApplicationId.Value,
+            RequestKey = request.RequestKey,
+            RequestedByUserId = requestedByUserId,
+            TenantId = request.TenantId
+        });
+
+        request.Status.ShouldBe(AIGenerationRequestStatus.Completed);
+        await scoringService.Received(1).RegenerateAsync(Arg.Any<ApplicationScoringOperationInputDto>(), Arg.Any<CancellationToken>());
+        await localEventBus.Received(1).PublishAsync(
+            Arg.Is<Automation.Events.ApplicationAIScoringGeneratedEvent>(x => x.ApplicationId == request.ApplicationId));
     }
 
     private RunApplicationAIPipelineJob BuildJob(

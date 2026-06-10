@@ -72,8 +72,15 @@ public class RunApplicationAIPipelineJob(
                 if (attachmentSummariesEnabled)
                 {
                     var attachmentIds = await GetAttachmentIdsAsync(args.ApplicationId);
-                    var attachmentResults = await attachmentSummaryService.GenerateAndSaveAsync(attachmentIds, args.PromptVersion);
-                    logger.LogInformation("Completed AI attachment summaries for application {ApplicationId} with {AttachmentCount} result(s).", args.ApplicationId, attachmentResults.Count);
+                    if (attachmentIds.Count > 0)
+                    {
+                        var attachmentResults = await attachmentSummaryService.GenerateAndSaveAsync(attachmentIds, args.PromptVersion);
+                        logger.LogInformation("Completed AI attachment summaries for application {ApplicationId} with {AttachmentCount} result(s).", args.ApplicationId, attachmentResults.Count);
+                    }
+                    else
+                    {
+                        logger.LogDebug("Skipping AI attachment summaries for application {ApplicationId} because no attachments were available.", args.ApplicationId);
+                    }
                 }
 
                 Exception? analysisException = null;
@@ -89,6 +96,10 @@ public class RunApplicationAIPipelineJob(
                         application.AIAnalysis = analysisJson;
                         await applicationRepository.UpdateAsync(application);
                         logger.LogInformation("Completed AI application analysis stage for application {ApplicationId}.", args.ApplicationId);
+                    }
+                    catch (UserFriendlyException ex)
+                    {
+                        logger.LogDebug(ex, "Skipping AI application analysis stage for application {ApplicationId}.", args.ApplicationId);
                     }
                     catch (Exception ex)
                     {
@@ -110,6 +121,10 @@ public class RunApplicationAIPipelineJob(
                         {
                             ApplicationId = args.ApplicationId
                         });
+                    }
+                    catch (UserFriendlyException ex)
+                    {
+                        logger.LogDebug(ex, "Skipping AI application scoring stage for application {ApplicationId}.", args.ApplicationId);
                     }
                     catch (Exception ex)
                     {

@@ -9,7 +9,7 @@ namespace Unity.AI.Generation;
 
 public interface IAIGenerationAppService : IApplicationService
 {
-    Task<List<AttachmentSummaryResultDto>> GenerateAttachmentSummariesAsync(List<Guid> attachmentIds, string? promptVersion = null);
+    Task<List<AttachmentSummaryResultDto>> GenerateAttachmentSummariesAsync(GenerateAttachmentSummariesInputDto input);
 
     Task<ApplicationAnalysisResultDto> GenerateApplicationAnalysisAsync(Guid applicationId, string? promptVersion = null);
 

@@ -176,6 +176,7 @@ $(function () {
                 ? chefsDataTable.rows().data().toArray()
                 : chefsDataTable.rows({ selected: true }).data().toArray();
             const summaryAttachmentIds = rows.map((row) => row.id);
+            const applicationId = getApplicationId();
 
             $button.removeData('trigger-button');
 
@@ -190,16 +191,19 @@ $(function () {
 
             const existingHTML = $activeButton.html();
 
+            globalThis.AIGenerationButtonState?.setGenerating($activeButton);
             $activeButton
                 .html(
                     '<span class="ai-button-content"><span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span><span>Generating...</span></span>'
                 )
                 .prop('disabled', true);
-            globalThis.AIGenerationButtonState?.setGenerating($activeButton);
 
             $.ajax({
                 url: '/api/app/ai/generation/attachment-summary',
-                data: JSON.stringify(summaryAttachmentIds),
+                data: JSON.stringify({
+                    applicationId: applicationId,
+                    attachmentIds: summaryAttachmentIds,
+                }),
                 contentType: 'application/json',
                 type: 'POST',
                 success: function () {
@@ -207,12 +211,14 @@ $(function () {
                     chefsDataTable.ajax.reload();
                     abp.notify.success('AI summaries generated successfully.');
                     globalThis.AIGenerationButtonState?.restore($activeButton);
+                    globalThis.refreshAIRateLimitState?.();
                     $activeButton.html(existingHTML).prop('disabled', false);
                 },
                 error: function (error) {
                     console.error('Error generating AI summaries:', error);
                     abp.message.error('An error occurred while generating AI summaries. Please try again.');
                     globalThis.AIGenerationButtonState?.restore($activeButton);
+                    globalThis.refreshAIRateLimitState?.();
                     $activeButton.html(existingHTML).prop('disabled', false);
                     setGenerateSummariesEnabled();
                 },

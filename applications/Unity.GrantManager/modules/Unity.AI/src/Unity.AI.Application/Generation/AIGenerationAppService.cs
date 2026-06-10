@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Unity.AI.Automation;
 using Unity.AI.Features;
@@ -25,25 +26,23 @@ public class AIGenerationAppService(
 {
     [Authorize(AIPermissions.Analysis.GenerateAttachmentSummaries)]
     [HttpPost("attachment-summary")]
-    public virtual async Task<List<AttachmentSummaryResultDto>> GenerateAttachmentSummariesAsync(List<Guid> attachmentIds, string? promptVersion = null)
+    public virtual async Task<List<AttachmentSummaryResultDto>> GenerateAttachmentSummariesAsync(GenerateAttachmentSummariesInputDto input)
     {
         await featureGuard.EnsureEnabledAsync(
             AIFeatures.AttachmentSummaries,
             AILocalizationKeys.AttachmentSummariesDisabled);
 
-        if (attachmentIds.Count == 0)
+        if (input.AttachmentIds.Count == 0)
         {
             return [];
         }
 
-        var results = new List<AttachmentSummaryResultDto>();
-        foreach (var attachmentId in attachmentIds)
-        {
-            await attachmentSummaryService.GenerateAndSaveAsync(attachmentId, promptVersion);
-            results.Add(new AttachmentSummaryResultDto { Completed = true });
-        }
+        var summaries = await attachmentSummaryService.GenerateForApplicationAsync(
+            input.ApplicationId,
+            input.PromptVersion,
+            input.AttachmentIds);
 
-        return results;
+        return summaries.Select(_ => new AttachmentSummaryResultDto { Completed = true }).ToList();
     }
 
     [Authorize(AIPermissions.Analysis.GenerateApplicationAnalysis)]
