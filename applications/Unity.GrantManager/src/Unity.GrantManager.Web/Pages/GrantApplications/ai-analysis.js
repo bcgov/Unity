@@ -10,6 +10,13 @@ const dismissedSectionVisibility = {
     recommendation: false
 };
 
+const sectionCollapseState = {
+    error: false,
+    warning: false,
+    summary: false,
+    recommendation: false
+};
+
 const aiAnalysisPollIntervalMs = 15000;
 const aiAnalysisMaxPollFailures = 3;
 let aiAnalysisMonitor = null;
@@ -170,9 +177,13 @@ function configureSectionStatus($status, text, statusClass) {
         .show();
 }
 
-function setSectionCollapsed($section, $collapseToggle, isCollapsed) {
+function setSectionCollapsed($section, $collapseToggle, isCollapsed, itemType) {
     const labels = getAnalysisLabels();
     const $icon = $collapseToggle.find('i');
+
+    if (itemType) {
+        sectionCollapseState[itemType] = isCollapsed;
+    }
 
     $section.toggleClass('collapsed', isCollapsed);
     $collapseToggle
@@ -184,14 +195,17 @@ function setSectionCollapsed($section, $collapseToggle, isCollapsed) {
         .toggleClass('fa-chevron-up', isCollapsed);
 }
 
-function syncSectionCollapseWithVisibleItems($section, $items, $collapseToggle) {
+function syncSectionCollapseWithVisibleItems($section, $items, $collapseToggle, itemType) {
     const hasVisibleItems = getVisibleAnalysisItems($items).length > 0;
+    const isCollapsed = hasVisibleItems
+        ? sectionCollapseState[itemType] === true
+        : true;
 
     $collapseToggle.prop('disabled', !hasVisibleItems);
-    setSectionCollapsed($section, $collapseToggle, !hasVisibleItems);
+    setSectionCollapsed($section, $collapseToggle, isCollapsed, itemType);
 }
 
-function configureCollapseToggle($section, $collapseToggle) {
+function configureCollapseToggle($section, $collapseToggle, itemType) {
     $collapseToggle
         .off('click')
         .on('click', function() {
@@ -200,7 +214,7 @@ function configureCollapseToggle($section, $collapseToggle) {
             }
 
             const isCollapsed = $section.toggleClass('collapsed').hasClass('collapsed');
-            setSectionCollapsed($section, $(this), isCollapsed);
+            setSectionCollapsed($section, $(this), isCollapsed, itemType);
         });
 }
 
@@ -261,7 +275,7 @@ function configureDismissedItemsToggle($section, $items, $toggle, $collapseToggl
             dismissedSectionVisibility[section.itemType] = shouldShow;
             $items.find('.dismissed-item').toggle(shouldShow);
             updateVisibleItemLayout($items);
-            syncSectionCollapseWithVisibleItems($section, $items, $collapseToggle);
+            syncSectionCollapseWithVisibleItems($section, $items, $collapseToggle, section.itemType);
             $toggle.text(shouldShow ? labels.hideDismissed : labels.showDismissed);
         });
 }
@@ -282,12 +296,12 @@ function renderSection(section) {
     const isDismissedVisible = dismissedSectionVisibility[section.itemType] === true;
 
     configureSectionStatus($status, section.statusText, section.statusClass);
-    configureCollapseToggle($section, $collapseToggle);
+    configureCollapseToggle($section, $collapseToggle, section.itemType);
     $collapseToggle.toggle(section.hasItems);
 
     appendSectionItems($items, section, isDismissedVisible);
     configureDismissedItemsToggle($section, $items, $toggle, $collapseToggle, section, isDismissedVisible);
-    syncSectionCollapseWithVisibleItems($section, $items, $collapseToggle);
+    syncSectionCollapseWithVisibleItems($section, $items, $collapseToggle, section.itemType);
 
     return $section;
 }
