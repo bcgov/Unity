@@ -38,8 +38,7 @@ class SchemaExtractor:
         Each entry: {view_name, correlation_type, description, columns: {col: {label, forms_type}}}
         """
         correlation_types = (
-            "'worksheet','worksheet_consolidated',"
-            "'formversion','formversion_consolidated','scoresheet'"
+            "'worksheet','worksheet_consolidated','scoresheet'"
         )
         sql = f"""
         SELECT "ViewName", "CorrelationProvider", "Mapping"
@@ -198,36 +197,92 @@ class SchemaExtractor:
                 logger.exception(f"Error processing table {table['name']}: {e}")
         return docs
 
+    def _get_legacy_custom_tables(self, db_id: int,
+                                  tenant_id: Optional[str] = None) -> List[dict]:
+        """Return Metabase metadata tables in the Reporting schema whose name
+        contains 'worksheet' or 'scoresheet' (legacy auto-generated views)."""
+        metadata = self.metabase.get_database_metadata(db_id, tenant_id=tenant_id)
+        tables = []
+        for table in metadata["tables"]:
+            if table["schema"] != "Reporting":
+                continue
+            name = table["name"].lower()
+            if "worksheet" in name or "scoresheet" in name:
+                tables.append(table)
+        return tables
+
+    def _build_custom_doc(self, db_id: int, view_name: str, correlation_type: str,
+                          columns: List[str], view_metadata: Optional[dict],
+                          custom_labels: dict, description: str,
+                          tenant_id: Optional[str] = None) -> Optional[dict]:
+        """Build one embedding doc for a Reporting view, skipping empty views."""
+        try:
+            if not self._has_data("Reporting", view_name, db_id, tenant_id=tenant_id):
+                return None
+            page = self._format_schema_with_examples(
+                "Reporting", view_name, columns, db_id,
+                tenant_id=tenant_id,
+                view_metadata=view_metadata,
+                custom_labels=custom_labels,
+                description=description,
+            )
+            logger.debug(f"Extracted schema for {view_name} ({correlation_type})")
+            return {"page_content": page, "correlation_type": correlation_type}
+        except Exception as e:
+            logger.exception(f"Error processing view {view_name}: {e}")
+            return None
+
     def _extract_custom_schemas(self, db_id: int,
                                 tenant_id: Optional[str] = None) -> List[dict]:
-        """Extract worksheet/scoresheet schemas using ReportColumnsMaps as entry point."""
+        """Extract worksheet/scoresheet schemas.
+
+        Primary source is ReportColumnsMaps (richest metadata). The legacy
+        name-prefix sweep over Metabase metadata is a supplement that covers
+        legacy-generated views not yet registered in ReportColumnsMaps. Views
+        are de-duplicated by name, preferring the ReportColumnsMaps entry.
+        """
         custom_labels = self.get_custom_field_labels(db_id, tenant_id=tenant_id)
         views = self.get_all_custom_views(db_id, tenant_id=tenant_id)
+        covered = {view["view_name"] for view in views}
         docs = []
+
+        # Primary: ReportColumnsMaps views
         for view in views:
-            view_name = view["view_name"]
-            correlation_type = view["correlation_type"]
-            description = view["description"]
             view_metadata = view["columns"]
             columns = [
                 col_name
                 for col_name in view_metadata.keys()
                 if col_name not in self.junk_columns
             ]
-            try:
-                if not self._has_data("Reporting", view_name, db_id, tenant_id=tenant_id):
-                    continue
-                page = self._format_schema_with_examples(
-                    "Reporting", view_name, columns, db_id,
-                    tenant_id=tenant_id,
-                    view_metadata=view_metadata,
-                    custom_labels=custom_labels,
-                    description=description,
-                )
-                docs.append({"page_content": page, "correlation_type": correlation_type})
-                logger.debug(f"Extracted schema for {view_name} ({correlation_type})")
-            except Exception as e:
-                logger.error(f"Error processing view {view_name}: {e}", exc_info=True)
+            doc = self._build_custom_doc(
+                db_id, view["view_name"], view["correlation_type"], columns,
+                view_metadata=view_metadata, custom_labels=custom_labels,
+                description=view["description"], tenant_id=tenant_id,
+            )
+            if doc:
+                docs.append(doc)
+
+        # Supplement: legacy name-prefix sweep for views not in ReportColumnsMaps
+        for table in self._get_legacy_custom_tables(db_id, tenant_id=tenant_id):
+            view_name = table["name"]
+            if view_name in covered:
+                continue
+            correlation_type = (
+                "scoresheet" if "scoresheet" in view_name.lower() else "worksheet"
+            )
+            columns = [
+                f"{field['name']} ({field['base_type']})"
+                for field in table["fields"]
+                if field["name"] not in self.junk_columns
+            ]
+            doc = self._build_custom_doc(
+                db_id, view_name, correlation_type, columns,
+                view_metadata=None, custom_labels=custom_labels,
+                description="", tenant_id=tenant_id,
+            )
+            if doc:
+                docs.append(doc)
+
         return docs
 
 
