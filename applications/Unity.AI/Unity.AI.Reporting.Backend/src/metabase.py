@@ -103,21 +103,7 @@ class MetabaseClient:
 
         # Handle async queries
         if r.status_code == 202 and body.get("status") == "running":
-            job_id = body["id"]
-            deadline = time.time() + 10
-
-            while time.time() < deadline:
-                jr = requests.get(
-                    f"{self.config.url}/api/async/{job_id}",
-                    headers=headers,
-                    timeout=30,
-                )
-                if jr.status_code == 200:
-                    body = jr.json()
-                    if body.get("status") != "running":
-                        break
-                time.sleep(0.5)
-
+            body = self._await_async_body(body, headers)
             # An unfinished job is not a valid query — don't report it as valid.
             if body.get("status") == "running":
                 return False, "Metabase async query did not finish before timeout"
@@ -126,6 +112,25 @@ class MetabaseClient:
             return False, body["error"]
 
         return True, None
+
+    def _await_async_body(self, body: Dict[str, Any], headers: Dict[str, str]) -> Dict[str, Any]:
+        """Poll Metabase's async-job endpoint until the job stops running or the
+        deadline elapses. Returns the latest body (which may still show
+        status='running' if it never finished — callers must check)."""
+        job_id = body["id"]
+        deadline = time.time() + 10
+        while time.time() < deadline:
+            jr = requests.get(
+                f"{self.config.url}/api/async/{job_id}",
+                headers=headers,
+                timeout=30,
+            )
+            if jr.status_code == 200:
+                body = jr.json()
+                if body.get("status") != "running":
+                    break
+            time.sleep(0.5)
+        return body
 
     def run_query_checked(
         self, sql: str, db_id: int, tenant_id: Optional[str] = None,
@@ -139,7 +144,7 @@ class MetabaseClient:
         returns (a bounded run still executes the plan, so SQL errors still surface).
         `data` is the inner `{cols, rows}` payload on success, else None.
         """
-        payload = {
+        payload: Dict[str, Any] = {
             "database": db_id,
             "type": "native",
             "native": {"query": sql},
@@ -151,7 +156,6 @@ class MetabaseClient:
             }
 
         headers = self._get_headers(tenant_id)
-
         r = requests.post(
             f"{self.config.url}/api/dataset",
             headers=headers,
@@ -163,23 +167,8 @@ class MetabaseClient:
             return False, f"HTTP {r.status_code}: {r.text}", None
 
         body = r.json()
-
-        # Handle async queries (same polling contract as validate_sql)
         if r.status_code == 202 and body.get("status") == "running":
-            job_id = body["id"]
-            deadline = time.time() + 10
-            while time.time() < deadline:
-                jr = requests.get(
-                    f"{self.config.url}/api/async/{job_id}",
-                    headers=headers,
-                    timeout=30,
-                )
-                if jr.status_code == 200:
-                    body = jr.json()
-                    if body.get("status") != "running":
-                        break
-                time.sleep(0.5)
-
+            body = self._await_async_body(body, headers)
             # Don't treat an unfinished job as a successful (valid) query —
             # returning (True, None, None) here would mark it valid and break
             # the downstream preview/creation flow.
@@ -509,9 +498,9 @@ class MetabaseClient:
                     return None
                 else:
                     logger.debug(f"get_native_query format failed: HTTP {r.status_code} — {r.text[:300]}")
-            except Exception as e:
+            except Exception:
                 # Don't abort the loop — let the next body format be tried.
-                logger.error(f"Failed to convert structured query to native SQL: {e}")
+                logger.exception("Failed to convert structured query to native SQL")
                 continue
 
         logger.warning("get_native_query: all request formats exhausted")

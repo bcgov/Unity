@@ -167,7 +167,10 @@ def _classify_sql_generation_error(error):
 def create_app():
     """Create and configure Flask application"""
     app = Flask(__name__)
-    CORS(app)
+    # Scope CORS to /api/* and restrict to configured origins.
+    # Frontend is served same-origin from this Flask app, so CORS is only needed
+    # for external callers (set CORS_ALLOWED_ORIGINS env var as a comma list).
+    CORS(app, resources={r"/api/*": {"origins": config.app.cors_allowed_origins or []}})
     
     # Configure Flask based on environment
     app.config['DEBUG'] = config.app.debug
@@ -1032,7 +1035,6 @@ def modify_data_model_preview():
 
     tenant_config = config.get_tenant_config(tenant_id)
     db_id = tenant_config["db_id"]
-    collection_id = tenant_config["collection_id"]
 
     body = request.get_json(silent=True) or {}
     logger.debug(
@@ -1069,7 +1071,7 @@ def modify_data_model_preview():
     try:
         result = asyncio.run(
             data_model_generator.preview_model_modification(
-                card_id, prompt, view_names, db_id, collection_id, tenant_id,
+                card_id, prompt, view_names, db_id, tenant_id,
                 core_fields=core_fields,
             )
         )

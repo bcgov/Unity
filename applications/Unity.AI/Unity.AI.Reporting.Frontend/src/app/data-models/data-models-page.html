@@ -76,14 +76,16 @@
         }
         <ul class="dm-list dm-list-rows">
           @for (m of existingModels; track m.card_id) {
-            <li class="dm-row" (click)="selectExistingModel(m)">
-              <div class="dm-row-main">
-                <div class="dm-row-title">{{ m.name }}</div>
-                @if (m.description) {
-                  <div class="dm-row-desc">{{ m.description }}</div>
-                }
-              </div>
-              <div class="dm-row-chevron">›</div>
+            <li>
+              <button type="button" class="dm-row" (click)="selectExistingModel(m)">
+                <div class="dm-row-main">
+                  <div class="dm-row-title">{{ m.name }}</div>
+                  @if (m.description) {
+                    <div class="dm-row-desc">{{ m.description }}</div>
+                  }
+                </div>
+                <div class="dm-row-chevron">›</div>
+              </button>
             </li>
           }
         </ul>
@@ -93,7 +95,7 @@
     <!-- pick-view (create) -->
     @if (step === 'pick-view') {
       <div class="dm-split">
-        <aside class="dm-rail">
+        <aside class="dm-rail" aria-label="View type filter">
           <div class="dm-rail-title">View type</div>
           <button class="dm-rail-tab" [class.active]="activeViewTab === 'form_view'"
                   [disabled]="formViews.length === 0"
@@ -166,34 +168,31 @@
           }
           <div class="dm-card-grid">
             @for (view of (searchActive ? filteredViews : tabViews); track view.view_name) {
-              <div class="dm-view-card"
-                   role="checkbox"
-                   tabindex="0"
-                   [class.selected]="isViewSelected(view)"
-                   [attr.aria-checked]="isViewSelected(view)"
-                   (click)="selectView(view)"
-                   (keydown.enter)="selectView(view)"
-                   (keydown.space)="$event.preventDefault(); selectView(view)">
-                <div class="dm-view-card-head">
-                  <div class="dm-check" [class.checked]="isViewSelected(view)">
-                    @if (isViewSelected(view)) { ✓ }
+              <div class="dm-view-card" [class.selected]="isViewSelected(view)">
+                <button type="button" class="dm-view-card-select"
+                        [attr.aria-pressed]="isViewSelected(view)"
+                        (click)="selectView(view)">
+                  <div class="dm-view-card-head">
+                    <div class="dm-check" [class.checked]="isViewSelected(view)">
+                      @if (isViewSelected(view)) { ✓ }
+                    </div>
+                    <div class="dm-view-card-name">
+                      {{ view.display_name || view.view_name }}
+                      @if (searchActive) {
+                        <span class="dm-badge dm-badge-muted">{{ categoryLabel(view) }}</span>
+                      }
+                      @if (view.version) {
+                        <span class="dm-badge">{{ view.version }}</span>
+                      }
+                      @if (view.is_empty) {
+                        <span class="dm-badge dm-badge-muted">no data yet</span>
+                      }
+                    </div>
                   </div>
-                  <div class="dm-view-card-name">
-                    {{ view.display_name || view.view_name }}
-                    @if (searchActive) {
-                      <span class="dm-badge dm-badge-muted">{{ categoryLabel(view) }}</span>
-                    }
-                    @if (view.version) {
-                      <span class="dm-badge">{{ view.version }}</span>
-                    }
-                    @if (view.is_empty) {
-                      <span class="dm-badge dm-badge-muted">no data yet</span>
-                    }
+                  <div class="dm-view-card-meta">
+                    <span>{{ view.column_count }} columns</span>
                   </div>
-                </div>
-                <div class="dm-view-card-meta">
-                  <span>{{ view.column_count }} columns</span>
-                </div>
+                </button>
 
                 @if (view.versions && view.versions.length > 1 && isViewSelected(view)) {
                   <button class="dm-expand-btn" (click)="toggleFormExpand(view, $event)">
@@ -202,18 +201,16 @@
                   @if (isFormExpanded(view)) {
                     <ul class="dm-version-list">
                       @for (ver of view.versions; track ver.table_name) {
-                        <li class="dm-version-item"
-                            role="checkbox"
-                            tabindex="0"
-                            [class.selected]="isFormVersionSelected(view, ver.table_name)"
-                            [attr.aria-checked]="isFormVersionSelected(view, ver.table_name)"
-                            (click)="toggleFormVersion(view, ver.table_name, $event)"
-                            (keydown.enter)="toggleFormVersion(view, ver.table_name, $event)"
-                            (keydown.space)="$event.preventDefault(); toggleFormVersion(view, ver.table_name, $event)">
-                          <div class="dm-check small" [class.checked]="isFormVersionSelected(view, ver.table_name)">
-                            @if (isFormVersionSelected(view, ver.table_name)) { ✓ }
-                          </div>
-                          <span class="dm-version-name">{{ ver.table_name }}</span>
+                        <li>
+                          <button type="button" class="dm-version-item"
+                                  [class.selected]="isFormVersionSelected(view, ver.table_name)"
+                                  [attr.aria-pressed]="isFormVersionSelected(view, ver.table_name)"
+                                  (click)="toggleFormVersion(view, ver.table_name, $event)">
+                            <div class="dm-check small" [class.checked]="isFormVersionSelected(view, ver.table_name)">
+                              @if (isFormVersionSelected(view, ver.table_name)) { ✓ }
+                            </div>
+                            <span class="dm-version-name">{{ ver.table_name }}</span>
+                          </button>
                         </li>
                       }
                     </ul>
@@ -293,14 +290,14 @@
           }
 
           <div class="dm-section">
-            <label class="dm-section-label">Describe changes (optional)</label>
-            <textarea class="dm-textarea" rows="4"
+            <label class="dm-section-label" for="dm-edit-prompt">Describe changes (optional)</label>
+            <textarea id="dm-edit-prompt" class="dm-textarea" rows="4"
                       placeholder="e.g. Add a column for total funding by region"
                       [(ngModel)]="editPrompt"></textarea>
           </div>
         </section>
 
-        <aside class="dm-rail dm-rail-right">
+        <aside class="dm-rail dm-rail-right" aria-label="Add views">
           <div class="dm-rail-title">Add views (optional)</div>
           <div class="dm-search">
             <input class="dm-input dm-search-input" type="text"
@@ -336,26 +333,24 @@
           }
           <ul class="dm-list">
             @for (view of (searchActive ? filteredViews : tabViews); track view.view_name) {
-              <li class="dm-list-item"
-                  role="checkbox"
-                  tabindex="0"
+              <li>
+                <button type="button" class="dm-list-item"
                   [class.selected]="isEditAdditionalViewSelected(view)"
-                  [attr.aria-checked]="isEditAdditionalViewSelected(view)"
-                  (click)="toggleEditAdditionalView(view)"
-                  (keydown.enter)="toggleEditAdditionalView(view)"
-                  (keydown.space)="$event.preventDefault(); toggleEditAdditionalView(view)">
-                <div class="dm-check" [class.checked]="isEditAdditionalViewSelected(view)">
-                  @if (isEditAdditionalViewSelected(view)) { ✓ }
-                </div>
-                <div class="dm-list-item-name">
-                  {{ view.display_name || view.view_name }}
-                  @if (searchActive) {
-                    <span class="dm-badge dm-badge-muted">{{ categoryLabel(view) }}</span>
-                  }
-                  @if (view.is_empty) {
-                    <span class="dm-badge dm-badge-muted">no data yet</span>
-                  }
-                </div>
+                  [attr.aria-pressed]="isEditAdditionalViewSelected(view)"
+                  (click)="toggleEditAdditionalView(view)">
+                  <div class="dm-check" [class.checked]="isEditAdditionalViewSelected(view)">
+                    @if (isEditAdditionalViewSelected(view)) { ✓ }
+                  </div>
+                  <div class="dm-list-item-name">
+                    {{ view.display_name || view.view_name }}
+                    @if (searchActive) {
+                      <span class="dm-badge dm-badge-muted">{{ categoryLabel(view) }}</span>
+                    }
+                    @if (view.is_empty) {
+                      <span class="dm-badge dm-badge-muted">no data yet</span>
+                    }
+                  </div>
+                </button>
               </li>
             }
           </ul>
@@ -385,11 +380,11 @@
     @if (step === 'review' && modelProposal) {
       <div class="dm-review-grid">
         <section class="dm-review-left">
-          <label class="dm-field-label">Name</label>
-          <input class="dm-input dm-input-large" type="text" [(ngModel)]="modelProposal.name" />
+          <label class="dm-field-label" for="dm-review-name">Name</label>
+          <input id="dm-review-name" class="dm-input dm-input-large" type="text" [(ngModel)]="modelProposal.name" />
 
-          <label class="dm-field-label">Description</label>
-          <textarea class="dm-textarea" rows="3" [(ngModel)]="modelProposal.description"></textarea>
+          <label class="dm-field-label" for="dm-review-desc">Description</label>
+          <textarea id="dm-review-desc" class="dm-textarea" rows="3" [(ngModel)]="modelProposal.description"></textarea>
 
           <div class="dm-source-tag">Source: <code>{{ modelProposal.source_view }}</code></div>
 

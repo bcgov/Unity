@@ -90,7 +90,7 @@
   height: 28px;
   border-radius: 50%;
   background: #f1f5f9;
-  color: #94a3b8;
+  color: #475569;
   border: 2px solid #e2e8f0;
   display: flex;
   align-items: center;
@@ -301,6 +301,10 @@
   align-items: center;
   gap: 16px;
   transition: all 0.15s ease;
+  width: 100%;
+  font: inherit;
+  color: inherit;
+  text-align: left;
 }
 
 .dm-row:hover {
@@ -437,7 +441,6 @@
   border: 2px solid #e5e7eb;
   border-radius: 12px;
   padding: 14px 16px;
-  cursor: pointer;
   transition: all 0.15s ease;
   display: flex;
   flex-direction: column;
@@ -453,6 +456,24 @@
   border-color: #2563eb;
   background: #eef4ff;
   box-shadow: 0 2px 8px rgba(37, 99, 235, 0.1);
+}
+
+/* The selectable surface of the card (head + meta). A real <button> so it is
+   keyboard-operable natively; the expand button / version list sit outside it
+   to avoid nesting interactive elements. */
+.dm-view-card-select {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  padding: 0;
+  margin: 0;
+  background: none;
+  border: 0;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
 }
 
 .dm-view-card-head {
@@ -489,7 +510,6 @@
   align-items: center;
   justify-content: center;
   font-size: 0.8rem;
-  color: #fff;
   background: #fff;
   flex-shrink: 0;
   transition: all 0.15s ease;
@@ -505,6 +525,7 @@
 .dm-check.checked {
   background: #2563eb;
   border-color: #2563eb;
+  color: #fff;
 }
 
 /* Badges */
@@ -522,7 +543,7 @@
 
 .dm-badge-muted {
   background: #f1f5f9;
-  color: #64748b;
+  color: #475569;
   font-weight: 500;
   font-style: italic;
 }
@@ -557,11 +578,16 @@
   display: flex;
   align-items: center;
   gap: 8px;
+  width: 100%;
   padding: 4px 8px;
   border-radius: 6px;
   cursor: pointer;
   font-size: 0.82rem;
   color: #475569;
+  background: transparent;
+  border: 0;
+  text-align: left;
+  font-family: inherit;
 }
 
 .dm-version-item:hover { background: #f1f5f9; }
@@ -652,12 +678,15 @@
   display: flex;
   align-items: center;
   gap: 10px;
+  width: 100%;
   background: #fff;
   border: 1px solid #e5e7eb;
   border-radius: 8px;
   padding: 9px 12px;
   cursor: pointer;
   transition: all 0.15s ease;
+  text-align: left;
+  font-family: inherit;
 }
 
 .dm-list-item:hover {
@@ -976,7 +1005,7 @@
 
 .dm-done-icon-success {
   background: #dcfce7;
-  color: #16a34a;
+  color: #15803d;
 }
 
 .dm-done-title {

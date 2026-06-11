@@ -277,7 +277,7 @@ export class App implements OnInit, OnDestroy {
       );
 
       // Find the index of the turn being deleted
-      const deletedIndex = this.conversation.findIndex(t => t === turn);
+      const deletedIndex = this.conversation.indexOf(turn);
 
       // Remove the turn from the conversation
       this.conversation = this.conversation.filter(t => t !== turn);
@@ -503,7 +503,7 @@ export class App implements OnInit, OnDestroy {
       }
 
       // Use the most recent embed's title, or fall back to the first question
-      const mostRecentTurn = this.conversation[this.conversation.length - 1];
+      const mostRecentTurn = this.conversation.at(-1);
       const chatTitle = mostRecentTurn?.embed?.title || this.conversation[0]?.question || 'New Chat';
 
       const response = await firstValueFrom(
@@ -527,7 +527,6 @@ export class App implements OnInit, OnDestroy {
     if (this.currentTurnIndex > 0) {
       this.currentTurnIndex--;
       this.scrollToTurn(this.currentTurnIndex);
-      // this.updateDropdownSelection(); // VISUALIZATION: commented out
     }
   }
 
@@ -535,7 +534,6 @@ export class App implements OnInit, OnDestroy {
     if (this.currentTurnIndex < this.conversation.length - 1) {
       this.currentTurnIndex++;
       this.scrollToTurn(this.currentTurnIndex);
-      // this.updateDropdownSelection(); // VISUALIZATION: commented out
     }
   }
 

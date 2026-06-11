@@ -81,6 +81,7 @@ class DataModelGenerator:
 
     COMBINED_MODEL_NAME = "Combined Model"
     COMBINED_MODEL_BUILD_FAILED_DESC = "Could not build combined model SQL"
+    NONE_PLACEHOLDER = "(none)"
 
     # Curated columns from public.Applications that users can opt-in to via the
     # "Core fields" picker. ReferenceNo is required as JOIN key for combined
@@ -264,7 +265,7 @@ class DataModelGenerator:
         try:
             defn = self._parse_single_definition(raw)
             return defn["sql"], defn["name"], defn["description"]
-        except (json.JSONDecodeError, KeyError, ValueError) as e:
+        except (KeyError, ValueError) as e:
             logger.warning("AI enhance+name parse failed — keeping deterministic SQL: %s", e)
             return None, None, None
 
@@ -632,7 +633,7 @@ class DataModelGenerator:
                     description = (defn.get("description") or "").strip()
                     if name and description:
                         return name, description
-            except (json.JSONDecodeError, ValueError):
+            except ValueError:
                 pass
 
         return self._fallback_name_description(source)
@@ -642,6 +643,100 @@ class DataModelGenerator:
         clean_name = re.sub(r'-V\d+$', '', source).replace("-", " ").strip()
         clean_name = re.sub(r'^Form-\s*', '', clean_name)
         return clean_name, f"Data model from {source}"
+
+    @staticmethod
+    def _collect_primary_for_groups(form_groups: dict, tables_by_name: dict
+                                      ) -> tuple[set[str], dict[str, str]]:
+        """Returns (set of every physical table captured by a regex group,
+        map from base_name → primary table for groups whose primary exists)."""
+        grouped: set[str] = set()
+        primary_for_group: dict[str, str] = {}
+        for base_name, version_tables in form_groups.items():
+            grouped.update(version_tables)
+            if version_tables and version_tables[0] in tables_by_name:
+                primary_for_group[base_name] = version_tables[0]
+        return grouped, primary_for_group
+
+    def _collect_standalone_names(self, tables_by_name: dict, grouped_tables: set[str]
+                                    ) -> list[str]:
+        return [
+            name for name in tables_by_name
+            if name
+            and name not in grouped_tables
+            and name not in self.SYSTEM_TABLES
+            and not name.startswith("__")
+        ]
+
+    def _column_count(self, table: dict) -> int:
+        return sum(
+            1 for f in table.get("fields", [])
+            if f.get("name") not in self.JUNK_COLUMNS
+        )
+
+    _CORRELATION_PROVIDER_SOURCE_TYPES = {
+        "formversion": "form_view",
+        "worksheet": "worksheet_view",
+        "scoresheet": "scoresheet_view",
+    }
+
+    @classmethod
+    def _classify_standalone_source(cls, name: str, correlation_providers: dict) -> str:
+        cp = correlation_providers.get(name, "")
+        if cp:
+            return cls._CORRELATION_PROVIDER_SOURCE_TYPES.get(cp, "other_view")
+
+        name_lower = name.lower()
+        if "worksheet" in name_lower:
+            return "worksheet_view"
+        if "scoresheet" in name_lower:
+            return "scoresheet_view"
+        if name.startswith("Form-"):
+            return "form_view"
+        return "other_view"
+
+    def _build_form_group_entry(self, base_name: str, primary: str,
+                                  primary_table: dict, form_groups: dict,
+                                  views_with_labels: set, has_data_map: dict) -> dict:
+        version_tables = form_groups[base_name]
+        version_count = len(version_tables)
+        version_details = []
+        for table_name in version_tables:
+            match = FORM_VERSION_RE.match(table_name)
+            version_details.append({
+                "table_name": table_name,
+                "version": int(match.group(2)) if match else 0,
+            })
+        return {
+            "view_name": base_name,
+            "display_name": base_name,
+            "column_count": self._column_count(primary_table),
+            "has_labels": primary in views_with_labels,
+            "source_type": "form_view",
+            "form_group": base_name,
+            "version": f"{version_count} version{'s' if version_count != 1 else ''}",
+            "versions": version_details,
+            "is_empty": not has_data_map.get(primary, True),
+        }
+
+    def _build_standalone_entry(self, name: str, table: dict, source_type: str,
+                                  views_with_labels: set, has_data_map: dict) -> dict:
+        entry = {
+            "view_name": name,
+            "display_name": name,
+            "column_count": self._column_count(table),
+            "has_labels": name in views_with_labels,
+            "source_type": source_type,
+            "is_empty": not has_data_map.get(name, True),
+        }
+        if source_type == "form_view":
+            # Standalone formversion view that didn't match Form-<base>-V<n> —
+            # give it the same shape the UI expects.
+            match = FORM_VERSION_RE.match(name)
+            v_num = int(match.group(2)) if match else 0
+            entry["form_group"] = name
+            entry["version"] = "1 version"
+            entry["versions"] = [{"table_name": name, "version": v_num}]
+        return entry
 
     def discover_views(self, db_id: int, tenant_id: str) -> list[dict]:
         """
@@ -662,111 +757,34 @@ class DataModelGenerator:
             if t.get("schema") == "Reporting"
         }
 
-        views_with_labels, correlation_providers = self.schema.get_report_columns_maps_info(db_id, tenant_id)
-
-        # Regex-based multi-version form grouping (Form-<base>-V<n>).
+        views_with_labels, correlation_providers = self.schema.get_report_columns_maps_info(
+            db_id, tenant_id
+        )
         form_groups = self._group_form_versions(metadata)
-
-        # Physical tables already captured by a regex form group.
-        grouped_tables: set[str] = set()
-        primary_for_group: dict[str, str] = {}
-        for base_name, version_tables in form_groups.items():
-            grouped_tables.update(version_tables)
-            if version_tables and version_tables[0] in tables_by_name:
-                primary_for_group[base_name] = version_tables[0]
-
-        # Every other non-system Reporting table — classified by CorrelationProvider.
-        standalone_names: list[str] = []
-        for name in tables_by_name:
-            if not name or name in grouped_tables:
-                continue
-            if name in self.SYSTEM_TABLES or name.startswith("__"):
-                continue
-            standalone_names.append(name)
+        grouped_tables, primary_for_group = self._collect_primary_for_groups(
+            form_groups, tables_by_name
+        )
+        standalone_names = self._collect_standalone_names(tables_by_name, grouped_tables)
 
         # Two batched round-trips replace the old 2×N per-view probes.
         physical_names = list(primary_for_group.values()) + standalone_names
         has_data_map = self.schema.batch_check_view_data(physical_names, db_id, tenant_id)
 
-        views: list[dict] = []
-
-        for base_name, primary in primary_for_group.items():
-            primary_table = tables_by_name[primary]
-            column_count = sum(
-                1 for f in primary_table.get("fields", [])
-                if f.get("name") not in self.JUNK_COLUMNS
+        views: list[dict] = [
+            self._build_form_group_entry(
+                base_name, primary, tables_by_name[primary],
+                form_groups, views_with_labels, has_data_map,
             )
-            version_count = len(form_groups[base_name])
-            version_label = f"{version_count} version{'s' if version_count != 1 else ''}"
-
-            # Build per-version detail list for the frontend version picker
-            version_details = []
-            for table_name in form_groups[base_name]:
-                match = FORM_VERSION_RE.match(table_name)
-                v_num = int(match.group(2)) if match else 0
-                version_details.append({"table_name": table_name, "version": v_num})
-
-            views.append({
-                "view_name": base_name,
-                "display_name": base_name,
-                "column_count": column_count,
-                "has_labels": primary in views_with_labels,
-                "source_type": "form_view",
-                "form_group": base_name,
-                "version": version_label,
-                "versions": version_details,
-                "is_empty": not has_data_map.get(primary, True),
-            })
-
-        for name in standalone_names:
-            table = tables_by_name[name]
-
-            # Primary: CorrelationProvider from ReportColumnsMaps
-            cp = correlation_providers.get(name, "")
-            if cp == "formversion":
-                source_type = "form_view"
-            elif cp == "worksheet":
-                source_type = "worksheet_view"
-            elif cp == "scoresheet":
-                source_type = "scoresheet_view"
-            elif cp:
-                source_type = "other_view"
-            else:
-                # Fallback: name-based heuristic for views not in ReportColumnsMaps
-                name_lower = name.lower()
-                if "worksheet" in name_lower:
-                    source_type = "worksheet_view"
-                elif "scoresheet" in name_lower:
-                    source_type = "scoresheet_view"
-                elif name.startswith("Form-"):
-                    source_type = "form_view"
-                else:
-                    source_type = "other_view"
-
-            column_count = sum(
-                1 for f in table.get("fields", [])
-                if f.get("name") not in self.JUNK_COLUMNS
+            for base_name, primary in primary_for_group.items()
+        ]
+        views.extend(
+            self._build_standalone_entry(
+                name, tables_by_name[name],
+                self._classify_standalone_source(name, correlation_providers),
+                views_with_labels, has_data_map,
             )
-
-            view_entry = {
-                "view_name": name,
-                "display_name": name,
-                "column_count": column_count,
-                "has_labels": name in views_with_labels,
-                "source_type": source_type,
-                "is_empty": not has_data_map.get(name, True),
-            }
-
-            # A formversion view that didn't match the Form-<base>-V<n> regex is a
-            # standalone, single-version form — give it the same shape the UI expects.
-            if source_type == "form_view":
-                match = FORM_VERSION_RE.match(name)
-                v_num = int(match.group(2)) if match else 0
-                view_entry["form_group"] = name
-                view_entry["version"] = "1 version"
-                view_entry["versions"] = [{"table_name": name, "version": v_num}]
-
-            views.append(view_entry)
+            for name in standalone_names
+        )
 
         views.sort(key=lambda v: (v["source_type"], v["view_name"]))
         logger.info(f"Discovered {len(views)} views for tenant {tenant_id}")
@@ -1211,7 +1229,7 @@ class DataModelGenerator:
                                        tenant_id: str,
                                        builder_core_fields: Optional[list[str]]) -> str:
         if not additional_view_names:
-            return "(none)"
+            return self.NONE_PLACEHOLDER
         view_sqls: list[str] = []
         for vn in additional_view_names:
             source_type = self._detect_source_type(vn, db_id, tenant_id)
@@ -1230,12 +1248,12 @@ class DataModelGenerator:
                 continue
             if view_sql:
                 view_sqls.append(f"-- View: {vn}\n{view_sql}")
-        return "\n\n".join(view_sqls) if view_sqls else "(none)"
+        return "\n\n".join(view_sqls) if view_sqls else self.NONE_PLACEHOLDER
 
     def _format_core_fields_for_prompt(self, core_fields: Optional[list[str]]) -> str:
         resolved = self._resolve_core_fields(core_fields) if core_fields else []
         if not resolved:
-            return "(none)"
+            return self.NONE_PLACEHOLDER
         return "\n".join(
             f'  "{cf["name"]}" → alias '
             f'"{cf["name"] if cf["name"] == "ReferenceNo" else cf["label"]}" '
@@ -1256,7 +1274,7 @@ class DataModelGenerator:
 
     async def preview_model_modification(
         self, card_id: int, prompt: str, additional_view_names: list[str],
-        db_id: int, collection_id: int, tenant_id: str,
+        db_id: int, tenant_id: str,
         core_fields: Optional[list[str]] = None
     ) -> dict:
         """
@@ -1290,7 +1308,7 @@ class DataModelGenerator:
         )
         core_fields_text = self._format_core_fields_for_prompt(core_fields)
 
-        user_prompt = prompt.strip() if prompt else "(none)"
+        user_prompt = prompt.strip() if prompt else self.NONE_PLACEHOLDER
         modify_request = MODIFY_PROMPT.format(
             current_sql=current_sql,
             current_columns=", ".join(current_columns) if current_columns else "(unknown)",
@@ -1499,7 +1517,7 @@ class DataModelGenerator:
         target_table = self._find_reporting_table(view_name, metadata)
         if not target_table:
             logger.error(f"View '{view_name}' not found in metadata")
-            return "", "Reporting", "(none)", "(none — query the view directly without joins)"
+            return "", "Reporting", self.NONE_PLACEHOLDER, "(none — query the view directly without joins)"
 
         schema_name = target_table.get("schema", "Reporting")
         fields = target_table.get("fields", [])
@@ -1562,7 +1580,7 @@ class DataModelGenerator:
                     continue
                 try:
                     return self._parse_single_definition(raw)
-                except (json.JSONDecodeError, KeyError, ValueError) as e:
+                except (KeyError, ValueError) as e:
                     logger.warning(f"Parse attempt {attempt + 1} failed: {e}")
         return None
 

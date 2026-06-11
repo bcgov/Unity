@@ -68,8 +68,8 @@ export class DataModelsPageComponent implements OnInit {
   get friendlyError(): string {
     const raw = this.modelProposal?.error || '';
     if (!raw) return '';
-    const m = raw.match(/"error"\s*:\s*"([^"]+)"/);
-    if (m && m[1]) return m[1].replace(/\\n/g, ' ').trim();
+    const m = /"error"\s*:\s*"([^"]+)"/.exec(raw);
+    if (m?.[1]) return m[1].replaceAll(String.raw`\n`, ' ').trim();
     return raw.length > 240 ? raw.slice(0, 240) + '…' : raw;
   }
 
@@ -331,7 +331,7 @@ export class DataModelsPageComponent implements OnInit {
   }
 
   async createModel(): Promise<void> {
-    if (!this.modelProposal || !this.modelProposal.valid) return;
+    if (!this.modelProposal?.valid) return;
     const { name, description, sql } = this.modelProposal;
     this.step = 'creating';
     this.cdr.markForCheck();
@@ -392,7 +392,7 @@ export class DataModelsPageComponent implements OnInit {
 
       const sql = detail.sql || '';
       const detected = this.availableCoreFields
-        .filter(cf => new RegExp(`a\\."${cf.name}"`).test(sql))
+        .filter(cf => new RegExp(String.raw`a\."${cf.name}"`).test(sql))
         .map(cf => cf.name);
       this.selectedCoreFields = [...detected];
       this.initialCoreFields = [...detected];
