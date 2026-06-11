@@ -29,4 +29,5 @@ public interface IGrantApplicationAppService
     Task<string> RestoreAIAnalysisItemAsync(Guid applicationId, string itemId);
     Task<PagedResultDto<GrantApplicationDto>> GetListAsync(GrantApplicationListInputDto input);
     Task<bool> IsApplicantRedStopAsync(Guid applicationId);
+    string? GetWorkflowDiagram(bool isDirectApproval);
 }

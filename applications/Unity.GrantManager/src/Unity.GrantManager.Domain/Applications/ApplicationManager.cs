@@ -43,25 +43,25 @@ public class ApplicationManager : DomainService, IApplicationManager
         #region OPEN STATES
         stateMachine.Configure(GrantApplicationState.OPEN)
             .InitialTransition(GrantApplicationState.SUBMITTED)
-            .Permit(GrantApplicationAction.Withdraw, GrantApplicationState.WITHDRAWN)                             // 2.2 - Withdraw;          Role: Reviewer
-            .Permit(GrantApplicationAction.Close, GrantApplicationState.CLOSED)                                   // 2.4 - Close Application; Role: Reviewer
+            .Permit(GrantApplicationAction.Withdraw, GrantApplicationState.WITHDRAWN)
+            .Permit(GrantApplicationAction.Close, GrantApplicationState.CLOSED)
             .Permit(GrantApplicationAction.Internal_Unasign, GrantApplicationState.SUBMITTED)
-            .PermitIf(GrantApplicationAction.Approve, GrantApplicationState.GRANT_APPROVED, () => AllowDirectDecision(isDirectApproval, stateMachine, GrantApplicationState.GRANT_APPROVED))
-            .PermitIf(GrantApplicationAction.Deny, GrantApplicationState.GRANT_NOT_APPROVED, () => AllowDirectDecision(isDirectApproval, stateMachine, GrantApplicationState.GRANT_NOT_APPROVED));
+            .PermitIf(GrantApplicationAction.Approve, GrantApplicationState.GRANT_APPROVED, () => AllowDirectDecision(isDirectApproval, stateMachine, GrantApplicationState.GRANT_APPROVED), "Direct Approval Bypass")
+            .PermitIf(GrantApplicationAction.Deny, GrantApplicationState.GRANT_NOT_APPROVED, () => AllowDirectDecision(isDirectApproval, stateMachine, GrantApplicationState.GRANT_NOT_APPROVED), "Direct Denial Bypass");
 
 
         stateMachine.Configure(GrantApplicationState.SUBMITTED)
             .SubstateOf(GrantApplicationState.OPEN)
             .Permit(GrantApplicationAction.Defer, GrantApplicationState.DEFER)
             .Permit(GrantApplicationAction.OnHold, GrantApplicationState.ON_HOLD)
-            .Permit(GrantApplicationAction.Internal_Assign, GrantApplicationState.ASSIGNED)                      // 2.1 - Internal_Assign;    Role: Team Lead
+            .Permit(GrantApplicationAction.Internal_Assign, GrantApplicationState.ASSIGNED)
             .Permit(GrantApplicationAction.Internal_StartAssessment, GrantApplicationState.UNDER_ASSESSMENT);
 
         stateMachine.Configure(GrantApplicationState.ASSIGNED)
             .SubstateOf(GrantApplicationState.OPEN)
             .Permit(GrantApplicationAction.Defer, GrantApplicationState.DEFER)
             .Permit(GrantApplicationAction.OnHold, GrantApplicationState.ON_HOLD)
-            .Permit(GrantApplicationAction.StartReview, GrantApplicationState.UNDER_INITIAL_REVIEW)              // 2.3 - Start Review;       Role: Reviewer
+            .Permit(GrantApplicationAction.StartReview, GrantApplicationState.UNDER_INITIAL_REVIEW)
             .Permit(GrantApplicationAction.Internal_StartAssessment, GrantApplicationState.UNDER_ASSESSMENT);
 
         stateMachine.Configure(GrantApplicationState.UNDER_INITIAL_REVIEW)
@@ -116,8 +116,8 @@ public class ApplicationManager : DomainService, IApplicationManager
             .Permit(GrantApplicationAction.Withdraw, GrantApplicationState.WITHDRAWN)
             .Permit(GrantApplicationAction.Defer, GrantApplicationState.DEFER)
             .Permit(GrantApplicationAction.OnHold, GrantApplicationState.ON_HOLD)
-            .PermitIf(GrantApplicationAction.Approve, GrantApplicationState.GRANT_APPROVED, () => AllowDirectDecision(isDirectApproval, stateMachine, GrantApplicationState.GRANT_APPROVED))
-            .PermitIf(GrantApplicationAction.Deny, GrantApplicationState.GRANT_NOT_APPROVED, () => AllowDirectDecision(isDirectApproval, stateMachine, GrantApplicationState.GRANT_NOT_APPROVED));
+            .PermitIf(GrantApplicationAction.Approve, GrantApplicationState.GRANT_APPROVED, () => AllowDirectDecision(isDirectApproval, stateMachine, GrantApplicationState.GRANT_APPROVED), "Direct Approval Bypass")
+            .PermitIf(GrantApplicationAction.Deny, GrantApplicationState.GRANT_NOT_APPROVED, () => AllowDirectDecision(isDirectApproval, stateMachine, GrantApplicationState.GRANT_NOT_APPROVED), "Direct Denial Bypass");
 
         stateMachine.Configure(GrantApplicationState.WITHDRAWN)
             .SubstateOf(GrantApplicationState.CLOSED)
@@ -196,6 +196,22 @@ public class ApplicationManager : DomainService, IApplicationManager
             });
 
         return Workflow.GetPermittedActions().Contains(triggerAction);
+    }
+
+    /// <summary>
+    /// Generate a Mermaid graph from the Asssessment workflow.
+    /// </summary>
+    public string? GetWorkflowDiagram(bool isDirectApproval)
+    {
+        var applicationStatus = GrantApplicationState.SUBMITTED;
+        var Workflow = new UnityWorkflow<GrantApplicationState, GrantApplicationAction>(
+            () => GrantApplicationState.SUBMITTED,
+            s => applicationStatus = s, sm =>
+            {
+                ConfigureWorkflow(sm, isDirectApproval);
+            });
+
+        return Workflow.GetWorkflowDiagram();
     }
 
     public async Task<Application> TriggerAction(Guid applicationId, GrantApplicationAction triggerAction)
