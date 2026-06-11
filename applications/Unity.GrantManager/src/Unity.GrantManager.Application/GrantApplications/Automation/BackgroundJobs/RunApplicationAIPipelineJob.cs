@@ -6,8 +6,6 @@ using System.Threading.Tasks;
 using Unity.AI.Operations;
 using Unity.AI.RateLimit;
 using Unity.GrantManager.Applications;
-using Unity.GrantManager.Attachments;
-using Unity.GrantManager.GrantApplications;
 using Unity.GrantManager.GrantApplications.Automation.Events;
 using Volo.Abp;
 using Volo.Abp.BackgroundJobs;
@@ -22,10 +20,11 @@ namespace Unity.GrantManager.GrantApplications.Automation.BackgroundJobs;
 
 public class RunApplicationAIPipelineJob(
     IApplicationChefsFileAttachmentRepository applicationChefsFileAttachmentRepository,
-    IAttachmentSummaryAppService attachmentSummaryAppService,
-    IApplicationAnalysisAppService applicationAnalysisAppService,
-    IApplicationScoringAppService applicationScoringAppService,
-    IAIGenerationPrerequisiteValidator aiGenerationPrerequisiteValidator,
+    IAIApplicationInputBuilder inputBuilder,
+    IAttachmentSummaryService attachmentSummaryService,
+    IApplicationAnalysisService applicationAnalysisService,
+    IApplicationScoringService applicationScoringService,
+    IApplicationRepository applicationRepository,
     IFeatureChecker featureChecker,
     ILocalEventBus localEventBus,
     IRepository<AIGenerationRequest, Guid> generationRequestRepository,
@@ -63,38 +62,44 @@ public class RunApplicationAIPipelineJob(
                 if (!attachmentSummariesEnabled && !applicationAnalysisEnabled && !scoringEnabled)
                 {
                     logger.LogDebug("All AI features are disabled, skipping queued AI generation for application {ApplicationId}.", args.ApplicationId);
-                    await AIGenerationRequestJobHelper.StampRateLimitBestEffortAsync(aiRateLimiter, logger, args.RequestedByUserId, args.ApplicationId, args.RequestKey);
                     await AIGenerationRequestJobHelper.MarkCompletedInNewUowAsync(unitOfWorkManager, generationRequestRepository, args.RequestKey);
+                    await AIGenerationRequestJobHelper.StampRateLimitBestEffortAsync(aiRateLimiter, logger, args.RequestedByUserId, args.ApplicationId, args.RequestKey);
                     return;
                 }
 
                 logger.LogInformation("Executing queued AI content pipeline for application {ApplicationId}.", args.ApplicationId);
 
-                if (attachmentSummariesEnabled && await HasStageInputAsync(
-                    args.ApplicationId,
-                    "attachment summaries",
-                    () => aiGenerationPrerequisiteValidator.EnsureAttachmentSummaryAvailableAsync(args.ApplicationId)))
+                if (attachmentSummariesEnabled)
                 {
                     var attachmentIds = await GetAttachmentIdsAsync(args.ApplicationId);
-                    var attachmentResults = await attachmentSummaryAppService.GenerateAttachmentSummariesForPipelineAsync(attachmentIds, args.PromptVersion);
-                    logger.LogInformation("Completed AI attachment summaries for application {ApplicationId} with {AttachmentCount} result(s).", args.ApplicationId, attachmentResults.Count);
+                    if (attachmentIds.Count > 0)
+                    {
+                        var attachmentResults = await attachmentSummaryService.GenerateAndSaveAsync(attachmentIds, args.PromptVersion);
+                        logger.LogInformation("Completed AI attachment summaries for application {ApplicationId} with {AttachmentCount} result(s).", args.ApplicationId, attachmentResults.Count);
+                    }
+                    else
+                    {
+                        logger.LogDebug("Skipping AI attachment summaries for application {ApplicationId} because no attachments were available.", args.ApplicationId);
+                    }
                 }
 
                 Exception? analysisException = null;
                 Exception? scoringException = null;
 
-                if (applicationAnalysisEnabled && await HasStageInputAsync(
-                    args.ApplicationId,
-                    "application analysis",
-                    () => aiGenerationPrerequisiteValidator.EnsureApplicationAnalysisAvailableAsync(args.ApplicationId)))
+                if (applicationAnalysisEnabled)
                 {
                     try
                     {
-                        var analysisResult = await applicationAnalysisAppService.GenerateApplicationAnalysisForPipelineAsync(args.ApplicationId, args.PromptVersion);
-                        if (analysisResult.Completed)
-                        {
-                            logger.LogInformation("Completed AI application analysis stage for application {ApplicationId}.", args.ApplicationId);
-                        }
+                        var analysisInput = await inputBuilder.BuildApplicationAnalysisInputAsync(args.ApplicationId, args.PromptVersion);
+                        var analysisJson = await applicationAnalysisService.RegenerateAsync(analysisInput);
+                        var application = await applicationRepository.GetAsync(args.ApplicationId);
+                        application.AIAnalysis = analysisJson;
+                        await applicationRepository.UpdateAsync(application);
+                        logger.LogInformation("Completed AI application analysis stage for application {ApplicationId}.", args.ApplicationId);
+                    }
+                    catch (UserFriendlyException ex)
+                    {
+                        logger.LogDebug(ex, "Skipping AI application analysis stage for application {ApplicationId}.", args.ApplicationId);
                     }
                     catch (Exception ex)
                     {
@@ -103,21 +108,23 @@ public class RunApplicationAIPipelineJob(
                     }
                 }
 
-                if (scoringEnabled && await HasStageInputAsync(
-                    args.ApplicationId,
-                    "application scoring",
-                    () => aiGenerationPrerequisiteValidator.EnsureApplicationScoringAvailableAsync(args.ApplicationId)))
+                if (scoringEnabled)
                 {
                     try
                     {
-                        var result = await applicationScoringAppService.GenerateApplicationScoringForPipelineAsync(args.ApplicationId, args.PromptVersion);
-                        if (result.Completed)
+                        var scoringInput = await inputBuilder.BuildApplicationScoringInputAsync(args.ApplicationId, args.PromptVersion);
+                        var scoresheetAnswers = await applicationScoringService.RegenerateAsync(scoringInput);
+                        var application = await applicationRepository.GetAsync(args.ApplicationId);
+                        application.AIScoresheetAnswers = scoresheetAnswers;
+                        await applicationRepository.UpdateAsync(application);
+                        await localEventBus.PublishAsync(new ApplicationAIScoringGeneratedEvent
                         {
-                            await localEventBus.PublishAsync(new ApplicationAIScoringGeneratedEvent
-                            {
-                                ApplicationId = args.ApplicationId
-                            });
-                        }
+                            ApplicationId = args.ApplicationId
+                        });
+                    }
+                    catch (UserFriendlyException ex)
+                    {
+                        logger.LogDebug(ex, "Skipping AI application scoring stage for application {ApplicationId}.", args.ApplicationId);
                     }
                     catch (Exception ex)
                     {
@@ -144,24 +151,6 @@ public class RunApplicationAIPipelineJob(
                 await AIGenerationRequestJobHelper.MarkFailedInNewUowAsync(unitOfWorkManager, generationRequestRepository, args.RequestKey, ex.Message);
                 throw;
             }
-        }
-    }
-
-    private async Task<bool> HasStageInputAsync(Guid applicationId, string stageName, Func<Task> ensurePrerequisite)
-    {
-        try
-        {
-            await ensurePrerequisite();
-            return true;
-        }
-        catch (UserFriendlyException ex)
-        {
-            logger.LogInformation(
-                ex,
-                "Skipping AI {StageName} stage for application {ApplicationId} because required input is unavailable.",
-                stageName,
-                applicationId);
-            return false;
         }
     }
 
