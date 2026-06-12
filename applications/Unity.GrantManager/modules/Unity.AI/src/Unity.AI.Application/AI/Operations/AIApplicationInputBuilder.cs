@@ -14,7 +14,6 @@ using Volo.Abp.DependencyInjection;
 namespace Unity.AI.Operations;
 
 public class AIApplicationInputBuilder(
-    IApplicationRepository applicationRepository,
     IApplicationFormRepository applicationFormRepository,
     IApplicationFormSubmissionRepository applicationFormSubmissionRepository,
     IApplicationFormVersionRepository applicationFormVersionRepository,
@@ -22,26 +21,24 @@ public class AIApplicationInputBuilder(
     IScoresheetRepository scoresheetRepository,
     ILogger<AIApplicationInputBuilder> logger) : IAIApplicationInputBuilder, ITransientDependency
 {
-    public async Task<ApplicationAnalysisOperationInputDto> BuildApplicationAnalysisInputAsync(Guid applicationId, string? promptVersion)
+    public async Task<ApplicationAnalysisOperationInputDto> BuildApplicationAnalysisInputAsync(AIApplicationPromptDataDto application, string? promptVersion)
     {
-        var application = await applicationRepository.GetAsync(applicationId);
-        var formSubmission = await applicationFormSubmissionRepository.GetByApplicationAsync(applicationId);
-        var attachments = await applicationChefsFileAttachmentRepository.GetListAsync(a => a.ApplicationId == applicationId);
+        var formSubmission = await applicationFormSubmissionRepository.GetByApplicationAsync(application.ApplicationId);
+        var attachments = await applicationChefsFileAttachmentRepository.GetListAsync(a => a.ApplicationId == application.ApplicationId);
         var formSchema = await GetFormSchemaAsync(formSubmission?.ApplicationFormVersionId);
 
         return new ApplicationAnalysisOperationInputDto
         {
-            ApplicationId = applicationId,
+            ApplicationId = application.ApplicationId,
             Schema = JsonSerializer.SerializeToElement(PromptDataPayloadBuilder.BuildFormFieldConfiguration(formSchema, logger)),
-            Data = PromptDataPayloadBuilder.BuildPromptDataPayload(application, formSubmission, formSchema, logger),
+            Data = PromptDataPayloadBuilder.BuildPromptDataPayload(application, formSubmission?.Submission, formSchema, logger),
             Attachments = PromptDataPayloadBuilder.BuildAttachmentSummaries(attachments),
             PromptVersion = promptVersion
         };
     }
 
-    public async Task<ApplicationScoringOperationInputDto> BuildApplicationScoringInputAsync(Guid applicationId, string? promptVersion)
+    public async Task<ApplicationScoringOperationInputDto> BuildApplicationScoringInputAsync(AIApplicationPromptDataDto application, string? promptVersion)
     {
-        var application = await applicationRepository.GetAsync(applicationId);
         var applicationForm = await applicationFormRepository.GetAsync(application.ApplicationFormId);
         if (applicationForm.ScoresheetId == null)
         {
@@ -54,14 +51,12 @@ public class AIApplicationInputBuilder(
             throw new UserFriendlyException("Scoring requires a scoresheet with fields.");
         }
 
-        var attachments = await applicationChefsFileAttachmentRepository.GetListAsync(a => a.ApplicationId == applicationId);
-        var attachmentSummaries = PromptDataPayloadBuilder.BuildAttachmentSummaries(
-            attachments,
-            excludeWhitespaceOnlySummaries: false);
+        var attachments = await applicationChefsFileAttachmentRepository.GetListAsync(a => a.ApplicationId == application.ApplicationId);
+        var attachmentSummaries = PromptDataPayloadBuilder.BuildAttachmentSummaries(attachments);
 
-        var formSubmission = await applicationFormSubmissionRepository.GetByApplicationAsync(applicationId);
+        var formSubmission = await applicationFormSubmissionRepository.GetByApplicationAsync(application.ApplicationId);
         var formSchema = await GetFormSchemaAsync(formSubmission?.ApplicationFormVersionId);
-        var promptData = PromptDataPayloadBuilder.BuildPromptDataPayload(application, formSubmission, formSchema, logger);
+        var promptData = PromptDataPayloadBuilder.BuildPromptDataPayload(application, formSubmission?.Submission, formSchema, logger);
 
         var sections = scoresheet.Sections
             .OrderBy(s => s.Order)
@@ -74,7 +69,7 @@ public class AIApplicationInputBuilder(
 
         return new ApplicationScoringOperationInputDto
         {
-            ApplicationId = applicationId,
+            ApplicationId = application.ApplicationId,
             Data = promptData,
             Attachments = attachmentSummaries,
             Sections = sections,

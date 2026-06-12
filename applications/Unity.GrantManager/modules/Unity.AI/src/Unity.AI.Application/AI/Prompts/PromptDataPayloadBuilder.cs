@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
+using Unity.AI.Operations;
 using Unity.AI.Models;
 using Unity.GrantManager.Applications;
 
@@ -52,13 +53,13 @@ namespace Unity.AI.Prompts
         };
 
         public static JsonElement BuildPromptDataPayload(
-            Application application,
-            ApplicationFormSubmission? formSubmission,
+            AIApplicationPromptDataDto application,
+            string? submissionJson,
             string? formSchema,
             ILogger logger)
         {
             var fallbackPayload = BuildFallbackPromptDataPayload(application);
-            if (TryBuildPromptDataValues(formSubmission?.Submission, formSchema, out var values, out var exception))
+            if (TryBuildPromptDataValues(submissionJson, formSchema, out var values, out var exception))
             {
                 return JsonSerializer.SerializeToElement(values);
             }
@@ -68,7 +69,7 @@ namespace Unity.AI.Prompts
                 logger.LogWarning(
                     exception,
                     "Failed to parse form submission JSON for prompt payload generation for application {ApplicationId}.",
-                    application.Id);
+                    application.ApplicationId);
             }
 
             return JsonSerializer.SerializeToElement(fallbackPayload);
@@ -125,7 +126,7 @@ namespace Unity.AI.Prompts
             }
         }
 
-        private static object BuildFallbackPromptDataPayload(Application application)
+        private static object BuildFallbackPromptDataPayload(AIApplicationPromptDataDto application)
         {
             var notSpecified = "Not specified";
             return new
