@@ -389,7 +389,7 @@ $(function () {
                 const safeApplicantName = $.fn.dataTable.render.text().display(applicantName);
 
                 if (type === 'display' && abp.auth.isGranted('GrantApplicationManagement.Applicants.ViewList')) {
-                    const applicantId = row?.id;
+                    const applicantId = row?.applicantId;
                     const isGuid = applicantId && guidPattern.test(applicantId);
 
                     if (isGuid) {
@@ -421,11 +421,11 @@ $(function () {
                 const safeCode = $.fn.dataTable.render.text().display(code);
 
                 if (type === 'display' && abp.auth.isGranted('GrantApplicationManagement.Applicants.ViewList')) {
-                    const applicantId = row?.id;
-                    const isGuid = applicantId && guidPattern.test(applicantId);
+                    const applicationId = row?.correlationId;
+                    const isGuid = applicationId && guidPattern.test(applicationId);
 
                     if (isGuid) {
-                        return `<a href="/GrantApplicants/Details?ApplicantId=${encodeURIComponent(applicantId)}">${safeCode}</a>`;
+                        return `<a href="/GrantApplications/Details?ApplicationId=${encodeURIComponent(applicationId)}">${safeCode}</a>`;
                     }
 
                     return safeCode;
