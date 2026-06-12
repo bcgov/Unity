@@ -22,11 +22,11 @@ public class AIApplicationInputBuilderTests
         var applicationId = Guid.NewGuid();
         var formVersionId = Guid.NewGuid();
         var builder = CreateBuilder(
-            out var applicationFormRepository,
+            out _,
             out var applicationFormSubmissionRepository,
             out var applicationFormVersionRepository,
             out var applicationChefsFileAttachmentRepository,
-            out var scoresheetRepository);
+            out _);
 
         var submission = new ApplicationFormSubmission
         {
