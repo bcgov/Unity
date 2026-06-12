@@ -10,6 +10,7 @@ const dismissedSectionVisibility = {
     recommendation: false
 };
 
+// Preserve the user's collapse choice across analysis rerenders.
 const sectionCollapseState = {
     error: false,
     warning: false,
@@ -195,7 +196,7 @@ function setSectionCollapsed($section, $collapseToggle, isCollapsed, itemType) {
         .toggleClass('fa-chevron-up', isCollapsed);
 }
 
-function syncSectionCollapseWithVisibleItems($section, $items, $collapseToggle, itemType) {
+function applySectionCollapseState($section, $items, $collapseToggle, itemType) {
     const hasVisibleItems = getVisibleAnalysisItems($items).length > 0;
     const isCollapsed = hasVisibleItems
         ? sectionCollapseState[itemType] === true
@@ -275,7 +276,11 @@ function configureDismissedItemsToggle($section, $items, $toggle, $collapseToggl
             dismissedSectionVisibility[section.itemType] = shouldShow;
             $items.find('.dismissed-item').toggle(shouldShow);
             updateVisibleItemLayout($items);
-            syncSectionCollapseWithVisibleItems($section, $items, $collapseToggle, section.itemType);
+            if (shouldShow) {
+                // Showing dismissed items should reveal the section body.
+                setSectionCollapsed($section, $collapseToggle, false, section.itemType);
+            }
+            applySectionCollapseState($section, $items, $collapseToggle, section.itemType);
             $toggle.text(shouldShow ? labels.hideDismissed : labels.showDismissed);
         });
 }
@@ -301,7 +306,7 @@ function renderSection(section) {
 
     appendSectionItems($items, section, isDismissedVisible);
     configureDismissedItemsToggle($section, $items, $toggle, $collapseToggle, section, isDismissedVisible);
-    syncSectionCollapseWithVisibleItems($section, $items, $collapseToggle, section.itemType);
+    applySectionCollapseState($section, $items, $collapseToggle, section.itemType);
 
     return $section;
 }
