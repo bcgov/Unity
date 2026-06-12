@@ -196,14 +196,30 @@ function setSectionCollapsed($section, $collapseToggle, isCollapsed, itemType) {
         .toggleClass('fa-chevron-up', isCollapsed);
 }
 
+function setSectionAutoCollapsed($section, $collapseToggle, isCollapsed) {
+    const labels = getAnalysisLabels();
+    const $icon = $collapseToggle.find('i');
+
+    $section.toggleClass('collapsed', isCollapsed);
+    $collapseToggle
+        .attr('aria-expanded', (!isCollapsed).toString())
+        .attr('title', isCollapsed ? labels.expandTitle : labels.collapseTitle);
+
+    $icon
+        .toggleClass('fa-chevron-down', !isCollapsed)
+        .toggleClass('fa-chevron-up', isCollapsed);
+}
+
 function applySectionCollapseState($section, $items, $collapseToggle, itemType) {
     const hasVisibleItems = getVisibleAnalysisItems($items).length > 0;
-    const isCollapsed = hasVisibleItems
-        ? sectionCollapseState[itemType] === true
-        : true;
+    const isCollapsed = hasVisibleItems ? sectionCollapseState[itemType] === true : true;
 
     $collapseToggle.prop('disabled', !hasVisibleItems);
-    setSectionCollapsed($section, $collapseToggle, isCollapsed, itemType);
+    if (hasVisibleItems) {
+        setSectionCollapsed($section, $collapseToggle, isCollapsed, itemType);
+    } else {
+        setSectionAutoCollapsed($section, $collapseToggle, true);
+    }
 }
 
 function configureCollapseToggle($section, $collapseToggle, itemType) {
