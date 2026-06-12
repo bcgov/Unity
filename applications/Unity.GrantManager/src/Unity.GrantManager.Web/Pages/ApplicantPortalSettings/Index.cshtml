@@ -66,8 +66,7 @@
                                                    name="Statuses[@i].ExternalStatus"
                                                    value="@status.ExternalStatus"
                                                    required
-                                                   maxlength="@ApplicationStatusConsts.MaxNameLength"
-                                                   aria-label="@status.InternalStatus @L["ApplicantPortalSettings:ExternalStatusPlaceholder"].Value Label"/>
+                                                   maxlength="@ApplicationStatusConsts.MaxNameLength" />
                                         </td>
                                         <td>
                                             <input type="text"
@@ -76,8 +75,7 @@
                                                    name="Statuses[@i].NotifiedStatus"
                                                    value="@status.NotifiedStatus"
                                                    maxlength="@ApplicationStatusConsts.MaxNameLength"
-                                                   placeholder="—"
-                                                   aria-label="@status.InternalStatus @L["ApplicantPortalSettings:NotifiedStatusPlaceholder"].Value Label"/>
+                                                   placeholder="—" />
                                         </td>
                                     </tr>
                                 }
