@@ -106,9 +106,13 @@ namespace Unity.GrantManager.Applicants
             return entity;
         }
 
-        private static ApplicationStatus CreateStatus(Guid id, string externalStatus)
+        private static ApplicationStatus CreateStatus(Guid id, string externalStatus, string? notifiedStatus = null)
         {
-            var entity = new ApplicationStatus { ExternalStatus = externalStatus };
+            var entity = new ApplicationStatus
+            {
+                ExternalStatus = externalStatus,
+                NotifiedStatus = notifiedStatus
+            };
             EntityHelper.TrySetId(entity, () => id);
             return entity;
         }
@@ -197,6 +201,62 @@ namespace Unity.GrantManager.Applicants
             sub.ReferenceNo.ShouldBe("REF-001");
             sub.Type.ShouldBe("Test Form");
             sub.Status.ShouldBe("Submitted");
+        }
+
+        [Fact]
+        public async Task GetDataAsync_ShouldUseNotifiedStatus_WhenSubStatusIsNotified()
+        {
+            // Arrange
+            var request = CreateRequest();
+            var applicationId = Guid.NewGuid();
+            var formId = Guid.NewGuid();
+            var statusId = Guid.NewGuid();
+
+            SetupQueryables(
+                [CreateSubmission(applicationId, "TESTUSER")],
+                [CreateApplication(applicationId, statusId, a =>
+                {
+                    a.ApplicationFormId = formId;
+                    a.SubStatus = "NOTIFIED";
+                })],
+                [CreateForm(formId, "Form")],
+                [CreateStatus(statusId, "Under Review", "Approved")]);
+
+            // Act
+            var result = await _provider.GetDataAsync(request);
+
+            // Assert
+            var dto = result.ShouldBeOfType<ApplicantSubmissionInfoDto>();
+            dto.Submissions.Count.ShouldBe(1);
+            dto.Submissions[0].Status.ShouldBe("Approved");
+        }
+
+        [Fact]
+        public async Task GetDataAsync_ShouldUseExternalStatus_WhenSubStatusIsNotNotified()
+        {
+            // Arrange
+            var request = CreateRequest();
+            var applicationId = Guid.NewGuid();
+            var formId = Guid.NewGuid();
+            var statusId = Guid.NewGuid();
+
+            SetupQueryables(
+                [CreateSubmission(applicationId, "TESTUSER")],
+                [CreateApplication(applicationId, statusId, a =>
+                {
+                    a.ApplicationFormId = formId;
+                    a.SubStatus = "COMPLETE";
+                })],
+                [CreateForm(formId, "Form")],
+                [CreateStatus(statusId, "Under Review", "Approved")]);
+
+            // Act
+            var result = await _provider.GetDataAsync(request);
+
+            // Assert
+            var dto = result.ShouldBeOfType<ApplicantSubmissionInfoDto>();
+            dto.Submissions.Count.ShouldBe(1);
+            dto.Submissions[0].Status.ShouldBe("Under Review");
         }
 
         [Fact]
