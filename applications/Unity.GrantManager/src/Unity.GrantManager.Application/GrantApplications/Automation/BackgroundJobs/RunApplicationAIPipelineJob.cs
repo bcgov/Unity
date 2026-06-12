@@ -14,6 +14,7 @@ using Volo.Abp.Domain.Repositories;
 using Volo.Abp.EventBus.Local;
 using Volo.Abp.Features;
 using Volo.Abp.MultiTenancy;
+using Volo.Abp.ObjectMapping;
 using Volo.Abp.Uow;
 
 namespace Unity.GrantManager.GrantApplications.Automation.BackgroundJobs;
@@ -29,6 +30,7 @@ public class RunApplicationAIPipelineJob(
     ILocalEventBus localEventBus,
     IRepository<AIGenerationRequest, Guid> generationRequestRepository,
     ICurrentTenant currentTenant,
+    IObjectMapper objectMapper,
     IUnitOfWorkManager unitOfWorkManager,
     IAIRateLimiter aiRateLimiter,
     ILogger<RunApplicationAIPipelineJob> logger) : AsyncBackgroundJob<RunApplicationAIPipelineJobArgs>, ITransientDependency
@@ -58,6 +60,7 @@ public class RunApplicationAIPipelineJob(
                 var attachmentSummariesEnabled = await featureChecker.IsEnabledAsync("Unity.AI.AttachmentSummaries");
                 var applicationAnalysisEnabled = await featureChecker.IsEnabledAsync("Unity.AI.ApplicationAnalysis");
                 var scoringEnabled = await featureChecker.IsEnabledAsync("Unity.AI.Scoring");
+                AIApplicationPromptDataDto? applicationInput = null;
 
                 if (!attachmentSummariesEnabled && !applicationAnalysisEnabled && !scoringEnabled)
                 {
@@ -68,6 +71,12 @@ public class RunApplicationAIPipelineJob(
                 }
 
                 logger.LogInformation("Executing queued AI content pipeline for application {ApplicationId}.", args.ApplicationId);
+                var application = (applicationAnalysisEnabled || scoringEnabled)
+                    ? await applicationRepository.GetAsync(args.ApplicationId)
+                    : null;
+                applicationInput = application == null
+                    ? null
+                    : objectMapper.Map<Application, AIApplicationPromptDataDto>(application);
 
                 if (attachmentSummariesEnabled)
                 {
@@ -90,10 +99,9 @@ public class RunApplicationAIPipelineJob(
                 {
                     try
                     {
-                        var analysisInput = await inputBuilder.BuildApplicationAnalysisInputAsync(args.ApplicationId, args.PromptVersion);
+                        var analysisInput = await inputBuilder.BuildApplicationAnalysisInputAsync(applicationInput!, args.PromptVersion);
                         var analysisJson = await applicationAnalysisService.RegenerateAsync(analysisInput);
-                        var application = await applicationRepository.GetAsync(args.ApplicationId);
-                        application.AIAnalysis = analysisJson;
+                        application!.AIAnalysis = analysisJson;
                         await applicationRepository.UpdateAsync(application);
                         logger.LogInformation("Completed AI application analysis stage for application {ApplicationId}.", args.ApplicationId);
                     }
@@ -112,10 +120,9 @@ public class RunApplicationAIPipelineJob(
                 {
                     try
                     {
-                        var scoringInput = await inputBuilder.BuildApplicationScoringInputAsync(args.ApplicationId, args.PromptVersion);
+                        var scoringInput = await inputBuilder.BuildApplicationScoringInputAsync(applicationInput!, args.PromptVersion);
                         var scoresheetAnswers = await applicationScoringService.RegenerateAsync(scoringInput);
-                        var application = await applicationRepository.GetAsync(args.ApplicationId);
-                        application.AIScoresheetAnswers = scoresheetAnswers;
+                        application!.AIScoresheetAnswers = scoresheetAnswers;
                         await applicationRepository.UpdateAsync(application);
                         await localEventBus.PublishAsync(new ApplicationAIScoringGeneratedEvent
                         {
