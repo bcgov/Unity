@@ -63,8 +63,6 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.FundingAgreementInfo
         {
             context.Files
               .AddIfNotContains("/Views/Shared/Components/FundingAgreementInfo/Default.js");
-            context.Files
-              .AddIfNotContains("/libs/jquery-maskmoney/dist/jquery.maskMoney.min.js");
         }
     }
 }

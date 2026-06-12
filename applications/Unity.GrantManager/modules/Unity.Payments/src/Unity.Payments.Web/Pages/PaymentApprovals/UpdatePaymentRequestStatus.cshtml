@@ -211,10 +211,7 @@
 <script defer>
     (function () {
         if (window.jQuery) {
-            let currencyInputs = $('.unity-currency-input');
-            if (currencyInputs && currencyInputs.maskMoney === 'function') {
-                currencyInputs.maskMoney();
-            }
+            initCurrencyInputs(document);
         }
     })();
 </script>
