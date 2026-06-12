@@ -16,10 +16,15 @@ public class AIPermissionDefinitionProvider : PermissionDefinitionProvider
                 L("Permission:AI"));
 
 
-            aiPermissionsGroup.AddPermission(
+            var aiReporting = aiPermissionsGroup.AddPermission(
                 AIPermissions.Reporting.ReportingDefault,
                 L("Permission:AI.Reporting"))
-                .RequireFeatures("Unity.AIReporting");                
+                .RequireFeatures("Unity.AIReporting");
+
+            aiReporting.AddChild(
+                AIPermissions.Reporting.CreateEditDataModel,
+                L("Permission:AI.Reporting.CreateEditDataModel"))
+                .RequireFeatures("Unity.AIReporting");
 
             var viewApplicationAnalysis = aiPermissionsGroup.AddPermission(
                 AIPermissions.Analysis.ViewApplicationAnalysis,
