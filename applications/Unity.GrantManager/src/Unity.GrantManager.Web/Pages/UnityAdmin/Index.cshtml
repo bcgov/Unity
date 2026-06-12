@@ -22,6 +22,7 @@
     <abp-script-bundle name="@typeof(IndexModel).FullName">
         <abp-script src="/themes/ux2/plugins/filterRow.js" />
         <abp-script src="/Pages/UnityAdmin/Index.js" />
+        <abp-script src="/Views/Settings/BackgroundJobsSettingGroup/Default.js" />
     </abp-script-bundle>
 }
 
@@ -29,6 +30,9 @@
     <ul>
         <li id="reconciliation-report-menu-item" class="nav-item btn btn-nav active">
             Reconciliation Report
+        </li>
+        <li id="background-jobs-menu-item" class="nav-item btn btn-nav">
+            Background Jobs
         </li>
     </ul>
 </div>
@@ -84,4 +88,8 @@
             <abp-table id="ReconciliationTable"></abp-table>
         </div>
     </div>
+</div>
+
+<div id="background-jobs-div" class="input-area card mb-3 background-jobs hide">
+    @await Component.InvokeAsync("BackgroundJobs")
 </div>

@@ -11,6 +11,7 @@ namespace Unity.Notifications.Events
         public Guid? TenantId { get; set; }
         public Guid TemplateId { get; set; }
         public Guid ApplicationId { get; set; }
+        public Guid? ScheduledNotificationId { get; set; }
         public int RetryAttempts { get; set; } = 0;
         public string Body { get; set; } = string.Empty;
         public string Subject { get; set; } = string.Empty;

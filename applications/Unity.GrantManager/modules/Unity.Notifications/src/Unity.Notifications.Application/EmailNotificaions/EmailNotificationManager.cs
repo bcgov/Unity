@@ -37,16 +37,17 @@ namespace Unity.Notifications.EmailNotifications
         }
 
         [RemoteService(false)]
-        public async Task<EmailLog?> CreateEmailLogAsync(EmailMessageParams email, Guid applicationId, string? status)
+        public async Task<EmailLog?> CreateEmailLogAsync(EmailMessageParams email, Guid applicationId, string? status, Guid? scheduledNotificationId = null)
         {
             if (string.IsNullOrEmpty(email.EmailTo))
             {
                 return null;
             }
             var emailObject = await GetEmailObjectAsync(email, "html");
-            EmailLog emailLog = new();
+            EmailLog emailLog = new() { Id = GuidGenerator.Create() };
             emailLog = UpdateMappedEmailLog(emailLog, emailObject);
             emailLog.ApplicationId = applicationId;
+            emailLog.ScheduledNotificationId = scheduledNotificationId;
             emailLog.Status = status ?? EmailStatus.Initialized;
             emailLog.SendOnDateTime = email.SendOnDateTime;
 

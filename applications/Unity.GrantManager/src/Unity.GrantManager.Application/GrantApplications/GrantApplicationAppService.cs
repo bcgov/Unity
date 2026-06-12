@@ -1154,11 +1154,13 @@ public class GrantApplicationAppService(
 
         application = await applicationManager.TriggerAction(applicationId, triggerAction);
 
+        // After the workflow state change, publish to the local event bus
         await LocalEventBus.PublishAsync(
             new ApplicationChangedEvent
             {
-                Action = triggerAction,
-                ApplicationId = applicationId
+                ApplicationId = applicationId,
+                Action = triggerAction,  // e.g. GrantApplicationAction.Approve / Deny
+                TenantId = CurrentTenant.Id
             }
         );
 

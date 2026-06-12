@@ -143,8 +143,8 @@ namespace Unity.GrantManager.Web.Controllers
                 ApplicationStatusId = input.ApplicationStatusId,
                 ApplicationStatus = statusLabel,
                 DateField = input.DateType,
-                RecipientCategory = input.TriggerType == "Event" ? input.RecipientCategory : null,
-                RecipientIdentifier = input.TriggerType == "Event" ? input.RecipientIdentifier : null
+                RecipientCategory = input.RecipientCategory,
+                RecipientIdentifier = input.RecipientIdentifier
             };
 
             var created = await _automatedNotificationAppService.CreateAsync(createDto);
@@ -209,8 +209,8 @@ namespace Unity.GrantManager.Web.Controllers
                 ApplicationStatusId = input.ApplicationStatusId,
                 ApplicationStatus = statusLabel,
                 DateField = input.DateType,
-                RecipientCategory = input.TriggerType == "Event" ? input.RecipientCategory : null,
-                RecipientIdentifier = input.TriggerType == "Event" ? input.RecipientIdentifier : null
+                RecipientCategory = input.RecipientCategory,
+                RecipientIdentifier = input.RecipientIdentifier
             };
 
             var updated = await _automatedNotificationAppService.UpdateAsync(id, updateDto);

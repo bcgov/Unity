@@ -117,11 +117,33 @@
         document.getElementById('eventSection').style.display = isDate ? 'none' : 'block';
     }
 
+    function getApplicationStatusId(triggerType, appStatusId) {
+        if (triggerType !== 'Event') {
+            return null;
+        }
+        return appStatusId || null;
+    }
+
+    function calculateOffsetDays(triggerType, offsetType, offset) {
+        if (triggerType !== 'Date') {
+            return 0;
+        }
+        return offsetType === 'Before' ? -Math.abs(offset) : Math.abs(offset);
+    }
+
     function formatTriggerDetail(r) {
         if (!r) return '';
-        const offset = Number(r.offsetDays) || 0;
-        const offsetDisplay = offset > 0 ? ('+' + offset) : offset;
-        return r.triggerType === 'Date' ? `${r.dateType} ${offsetDisplay}` : (r.eventStatus || '');
+        if (r.triggerType === 'Date') {
+            const offset = Number(r.offsetDays) || 0;
+            const offsetDisplay = offset > 0 ? ('+' + offset) : offset;
+            let detail = `${r.dateType} ${offsetDisplay}`;
+            // Include recipient category and identifier for date triggers
+            if (r.recipientCategory && r.recipientIdentifier) {
+                detail += ` → ${r.recipientCategory}: ${r.recipientIdentifier}`;
+            }
+            return detail;
+        }
+        return r.eventStatus || '';
     }
 
     function handleTemplatesList(list) {
@@ -150,20 +172,23 @@
         const dateType = document.getElementById('cf_dateField').value;
         const offset = Number.parseInt(document.getElementById('cf_offset').value || '0', 10);
         const offsetType = document.getElementById('cf_offsetType').value;
-        const eventType = document.getElementById('cf_eventType').value;
         const appStatusId = document.getElementById('cf_appStatus').value;
         const recipientCategory = document.getElementById('cf_recipientCategory').value;
-        const recipient = document.getElementById('cf_recipient').value;
+        
+        // Get all selected recipients and join with comma for multiple selections
+        const recipientSelect = document.getElementById('cf_recipient');
+        const recipients = Array.from(recipientSelect.selectedOptions || []).map(opt => opt.value);
+        const recipient = recipients.length > 0 ? recipients.join(',') : null;
 
         const body = {
             templateId: templateId,
             triggerType: triggerType,
             dateType: triggerType === 'Date' ? dateType : null,
-            offsetDays: triggerType === 'Date' ? (offsetType === 'Before' ? -Math.abs(offset) : Math.abs(offset)) : 0,
-            applicationStatusId: triggerType === 'Event' ? (appStatusId ? appStatusId : null) : null,
-            eventStatus: triggerType === 'Event' ? null : null,
-            recipientCategory: triggerType === 'Event' ? recipientCategory : null,
-            recipientIdentifier: triggerType === 'Event' ? recipient : null
+            offsetDays: calculateOffsetDays(triggerType, offsetType, offset),
+            applicationStatusId: getApplicationStatusId(triggerType, appStatusId),
+            eventStatus: null,
+            recipientCategory: recipientCategory || null,
+            recipientIdentifier: recipient
         };
 
         fetch('/api/form-notifications/' + encodeURIComponent(formId ?? 'global'), {

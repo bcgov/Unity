@@ -24,6 +24,8 @@ module.exports = {
         '@node_modules/bootstrap-4/dist': '@libs/bootstrap-4/dist/',
         '@node_modules/popper.js/dist': '@libs/popper.js/dist/',
         '@node_modules/bootstrap-select/dist': '@libs/bootstrap-select/dist',
+        '@node_modules/select2/dist': '@libs/select2/dist',
+        '@node_modules/select2-bootstrap-5-theme/dist': '@libs/select2-bootstrap-5-theme/dist',
         '@node_modules/sortablejs': '@libs/sortablejs',
         '@node_modules/jszip': '@libs/jszip',
         '@node_modules/tributejs': '@libs/tributejs',

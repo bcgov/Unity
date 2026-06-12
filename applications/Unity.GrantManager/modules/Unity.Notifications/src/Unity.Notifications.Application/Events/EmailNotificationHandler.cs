@@ -113,6 +113,12 @@ namespace Unity.GrantManager.Events
             {
                 case EmailAction.SendFailedSummary:
                 {
+                    if (eventData.EmailAddressList == null || eventData.EmailAddressList.Count == 0)
+                    {
+                        logger.LogWarning("SendFailedSummary: No email addresses provided for Application {ApplicationId}", eventData.ApplicationId);
+                        return null;
+                    }
+
                     string emailToAddress = String.Join(",", eventData.EmailAddressList);
 
                     return await InitializeEmailAndUploadAttachments(
@@ -128,6 +134,12 @@ namespace Unity.GrantManager.Events
 
                 case EmailAction.SendFsbNotification:
                 {
+                    if (eventData.EmailAddressList == null || eventData.EmailAddressList.Count == 0)
+                    {
+                        logger.LogWarning("SendFsbNotification: No email addresses provided for Application {ApplicationId}", eventData.ApplicationId);
+                        return null;
+                    }
+
                     string fsbEmailToAddress = String.Join(",", eventData.EmailAddressList);
                     var emailLog = await InitializeEmailAndUploadAttachments(
                         new EmailInitParams(fsbEmailToAddress, eventData.Body,
@@ -152,6 +164,12 @@ namespace Unity.GrantManager.Events
 
         private async Task<EmailLog?> HandleSendCustomEmail(EmailNotificationEvent eventData)
         {
+            if (eventData.EmailAddressList == null || eventData.EmailAddressList.Count == 0)
+            {
+                logger.LogWarning("SendCustom: No email addresses provided for Application {ApplicationId}", eventData.ApplicationId);
+                return null;
+            }
+
             string emailToAddress = String.Join(",", eventData.EmailAddressList);
             string? emailCC = eventData.Cc?.Any() == true ? String.Join(",", eventData.Cc) : null;
             string? emailBCC = eventData.Bcc?.Any() == true ? String.Join(",", eventData.Bcc) : null;
@@ -164,20 +182,24 @@ namespace Unity.GrantManager.Events
                         eventData.ApplicationId, eventData.EmailFrom, eventData.EmailTemplateName,
                         emailCC, emailBCC, eventData.SendOnDateTime),
                     eventData.EmailAttachments);
+                
+                // Set ScheduledNotificationId if provided
+                if (emailLog != null && eventData.ScheduledNotificationId.HasValue)
+                {
+                    emailLog.ScheduledNotificationId = eventData.ScheduledNotificationId.Value;
+                    await emailLogsRepository.UpdateAsync(emailLog, autoSave: true);
+                }
             }
             else
             {
+                var emailMessageParams = new EmailMessageParams(emailToAddress, eventData.Body, eventData.Subject,
+                        eventData.EmailFrom, eventData.EmailTemplateName, emailCC, emailBCC, eventData.SendOnDateTime);
+                        
                 emailLog = await emailNotificationService.UpdateEmailLog(
                     eventData.Id,
-                    new EmailMessageParams(emailToAddress, eventData.Body, eventData.Subject,
-                        eventData.EmailFrom, eventData.EmailTemplateName, emailCC, emailBCC, eventData.SendOnDateTime),
+                    emailMessageParams,
                     eventData.ApplicationId,
-                    EmailStatus.Initialized);
-
-                if (emailLog == null)
-                {
-                    throw new UserFriendlyException("Unable to update Email Log");
-                }
+                    EmailStatus.Initialized) ?? throw new UserFriendlyException("Unable to update Email Log");
             }
 
             return emailLog;
@@ -185,6 +207,12 @@ namespace Unity.GrantManager.Events
 
         private async Task HandleSaveDraftEmail(EmailNotificationEvent eventData)
         {
+                if (eventData.EmailAddressList == null || eventData.EmailAddressList.Count == 0)
+                {
+                    logger.LogWarning("SaveDraft: No email addresses provided for Application {ApplicationId}", eventData.ApplicationId);
+                    return;
+                }
+
                 string emailToAddress = String.Join(",", eventData.EmailAddressList);
                 string? emailCC = eventData.Cc?.Any() == true ? String.Join(",", eventData.Cc) : null;
                 string? emailBCC = eventData.Bcc?.Any() == true ? String.Join(",", eventData.Bcc) : null;

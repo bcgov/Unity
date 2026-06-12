@@ -14,6 +14,7 @@ public class EmailLog : AuditedAggregateRoot<Guid>, IMultiTenant
     public Guid AssessmentId { get; set; }
     public Guid ApplicationId { get; set; }
     public Guid ApplicantId { get; set; }
+    public Guid? ScheduledNotificationId { get; set; }
     public string FromAddress { get; set; } = string.Empty;
     public string ToAddress { get; set; } = string.Empty;
     public string CC { get; set; } = string.Empty;

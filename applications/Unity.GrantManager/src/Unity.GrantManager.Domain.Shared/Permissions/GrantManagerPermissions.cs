@@ -30,6 +30,12 @@ public static class GrantManagerPermissions
         public const string ManageEndpoints = Default + ".ManageEndpoints";
     }
 
+    public static class NotificationScheduler
+    {
+        public const string Default = GroupName + ".NotificationScheduler";
+        public const string ManageSchedules = Default + ".ManageSchedules";
+    }
+
     /// <summary>
     /// Permission constants for the generic contacts service.
     /// These are pre-wired for future HTTP endpoint exposure.

@@ -17,9 +17,9 @@ namespace Unity.Notifications.EmailNotifications
         Task<EmailLog?> CreateEmailLogAsync(EmailMessageParams email, Guid applicationId);
 
         /// <summary>
-        /// Creates and initializes a new email log with status
+        /// Creates and initializes a new email log with status and optional scheduled notification ID
         /// </summary>
-        Task<EmailLog?> CreateEmailLogAsync(EmailMessageParams email, Guid applicationId, string? status);
+        Task<EmailLog?> CreateEmailLogAsync(EmailMessageParams email, Guid applicationId, string? status, Guid? scheduledNotificationId = null);
 
         /// <summary>
         /// Updates an existing email log
