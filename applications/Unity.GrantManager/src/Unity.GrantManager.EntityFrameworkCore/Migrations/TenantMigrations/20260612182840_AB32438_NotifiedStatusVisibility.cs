@@ -15,6 +15,19 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                 table: "ApplicationStatuses",
                 type: "text",
                 nullable: true);
+
+            // Seed NotifiedStatus for existing records
+            migrationBuilder.Sql(@"
+                UPDATE ""ApplicationStatuses""
+                SET ""NotifiedStatus"" = 'Approved'
+                WHERE ""StatusCode"" = 'GRANT_APPROVED';
+            ");
+
+            migrationBuilder.Sql(@"
+                UPDATE ""ApplicationStatuses""
+                SET ""NotifiedStatus"" = 'Declined'
+                WHERE ""StatusCode"" = 'GRANT_NOT_APPROVED';
+            ");
         }
 
         /// <inheritdoc />
