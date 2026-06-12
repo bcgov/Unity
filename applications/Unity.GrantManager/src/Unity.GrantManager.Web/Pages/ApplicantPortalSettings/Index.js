@@ -23,8 +23,9 @@
     portalStatusTable.rows().every(function () {
         const $row = $(this.node());
         const id = $row.find('input[type="hidden"]').val();
-        const externalStatus = $row.find('input[type="text"]').val().trim();
-        originalValues.set(id, externalStatus);
+        const externalStatus = $row.find('input[id$=".ExternalStatus"]').val().trim();
+        const notifiedStatus = $row.find('input[id$=".NotifiedStatus"]').val().trim();
+        originalValues.set(id, { externalStatus, notifiedStatus });
     });
 
     // Check if any values have changed
@@ -33,8 +34,10 @@
         portalStatusTable.$('tbody tr').each(function () {
             const $row = $(this);
             const id = $row.find('input[type="hidden"]').val();
-            const currentValue = $row.find('input[type="text"]').val().trim();
-            if (originalValues.get(id) !== currentValue) {
+            const externalStatus = $row.find('input[id$=".ExternalStatus"]').val().trim();
+            const notifiedStatus = $row.find('input[id$=".NotifiedStatus"]').val().trim();
+            const originalValue = originalValues.get(id);
+            if (!originalValue || originalValue.externalStatus !== externalStatus || originalValue.notifiedStatus !== notifiedStatus) {
                 changed = true;
                 return false;
             }
@@ -74,7 +77,8 @@
             const $row = $(this);
             const id = $row.find('input[type="hidden"]').val();
             const originalValue = originalValues.get(id);
-            $row.find('input[type="text"]').val(originalValue);
+            $row.find('input[id$=".ExternalStatus"]').val(originalValue.externalStatus);
+            $row.find('input[id$=".NotifiedStatus"]').val(originalValue.notifiedStatus);
         });
 
         updateButtonStates();
@@ -102,10 +106,13 @@
             }
 
             // Only include if value has changed
-            if (originalValues.get(id) !== externalStatus) {
+            const notifiedStatus = $row.find('input[id$=".NotifiedStatus"]').val().trim();
+            const originalValue = originalValues.get(id);
+            if (originalValue.externalStatus !== externalStatus || originalValue.notifiedStatus !== notifiedStatus) {
                 statuses.push({
                     id: id,
-                    externalStatus: externalStatus
+                    externalStatus: externalStatus,
+                    notifiedStatus: notifiedStatus
                 });
             }
         });
@@ -129,7 +136,7 @@
 
                 // Update original values after successful save
                 statuses.forEach(function(status) {
-                    originalValues.set(status.id, status.externalStatus);
+                    originalValues.set(status.id, { externalStatus: status.externalStatus, notifiedStatus: status.notifiedStatus });
                 });
 
                 // Update button states after save
