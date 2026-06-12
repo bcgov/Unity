@@ -64,6 +64,34 @@
         dataType: null
       }, ajaxParams));
     };
+    unity.tenantManagement.tenant.getConnectionStrings = function(id, ajaxParams) {
+      return abp.ajax($.extend(true, {
+        url: abp.appPath + 'api/multi-tenancy/tenants/' + id + '/connection-strings',
+        type: 'GET'
+      }, ajaxParams));
+    };
+    unity.tenantManagement.tenant.updateConnectionStrings = function(id, input, ajaxParams) {
+      return abp.ajax($.extend(true, {
+        url: abp.appPath + 'api/multi-tenancy/tenants/' + id + '/connection-strings',
+        type: 'PUT',
+        data: JSON.stringify(input)
+      }, ajaxParams));
+    };
+
+  })();
+
+  // controller unity.tenantManagement.onboardingRequest
+
+  (function(){
+
+    abp.utils.createNamespace(window, 'unity.tenantManagement.onboardingRequest');
+
+    unity.tenantManagement.onboardingRequest.getList = function(input, ajaxParams) {
+      return abp.ajax($.extend(true, {
+        url: abp.appPath + 'api/multi-tenancy/onboarding-requests' + abp.utils.buildQueryString([{ name: 'sorting', value: input.sorting }, { name: 'skipCount', value: input.skipCount }, { name: 'maxResultCount', value: input.maxResultCount }]) + '',
+        type: 'GET'
+      }, ajaxParams));
+    };
 
   })();
 

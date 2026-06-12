@@ -74,6 +74,11 @@ namespace Unity.TenantManagement.Application
             return new TenantDbCredentials(dbName, dbName, GeneratePassword());
         }
 
+        public TenantDbCredentials GenerateReadOnlyCredentials(TenantDbCredentials credentials)
+        {
+            return new TenantDbCredentials(credentials.DbName, $"{credentials.Username}_readonly", GeneratePassword());
+        }
+
         private static string GenerateDbName()
         {
             // Format: T_XXX999 where X is A-Z and 9 is 0-9, e.g. T_ABC123
@@ -93,9 +98,11 @@ namespace Unity.TenantManagement.Application
 
         private static string GeneratePassword()
         {
-            // 6 random alphanumeric characters (A-Z, 0-9)
+            // 8 random alphanumeric characters (A-Z, 0-9)
             Span<char> chars =
             [
+                Alphanumeric[Random.Shared.Next(Alphanumeric.Length)],
+                Alphanumeric[Random.Shared.Next(Alphanumeric.Length)],
                 Alphanumeric[Random.Shared.Next(Alphanumeric.Length)],
                 Alphanumeric[Random.Shared.Next(Alphanumeric.Length)],
                 Alphanumeric[Random.Shared.Next(Alphanumeric.Length)],

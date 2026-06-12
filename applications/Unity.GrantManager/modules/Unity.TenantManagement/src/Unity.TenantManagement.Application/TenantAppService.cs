@@ -1,4 +1,5 @@
-﻿using System;
+﻿#nullable enable
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -15,10 +16,11 @@ using Volo.Abp.Security.Encryption;
 using Volo.Abp.TenantManagement;
 using Volo.Abp.Uow;
 using Volo.Abp.DependencyInjection;
+using Volo.Abp.Identity;
 
 namespace Unity.TenantManagement;
 
-[Authorize(TenantManagementPermissions.Tenants.Default)]
+[Authorize(TenantManagementPermissions.Policies.TenantsOrITOps)]
 [ExposeServices(typeof(ITenantAppService), typeof(TenantAppService))]
 public class TenantAppService(
      ICurrentTenant currentTenant,
@@ -29,6 +31,8 @@ public class TenantAppService(
     ITenantConnectionStringBuilder tenantConnectionStringBuilder,
     IStringEncryptionService stringEncryptionService) : TenantManagementAppServiceBase, ITenantAppService
 {
+    private IIdentityUserRepository IdentityUserRepository => LazyServiceProvider.LazyGetRequiredService<IIdentityUserRepository>();
+
     private const string ExtraPropDivision = "Division";
     private const string ExtraPropBranch = "Branch";
     private const string ExtraPropDescription = "Description";
@@ -133,10 +137,10 @@ public class TenantAppService(
         return entry.Value?.ToString() ?? string.Empty;
     }
 
-    [Authorize(TenantManagementPermissions.Tenants.Create)]
+    [Authorize(TenantManagementPermissions.Policies.TenantsCreateOrITOps)]
     public virtual async Task<TenantDto> CreateAsync(TenantCreateDto input)
     {
-        Tenant tenant = null;
+        Tenant? tenant = null;
 
         using (var uow = unitOfWorkManager.Begin(true, false))
         {
@@ -151,6 +155,15 @@ public class TenantAppService(
                 .Add(new TenantConnectionString(tenant.Id,
                     UnityTenantManagementConsts.TenantConnectionStringName,
                     encryptedConnectionString));
+
+            var readOnlyCredentials = tenantConnectionStringBuilder.GenerateReadOnlyCredentials(credentials);
+            var plainReadOnlyConnectionString = tenantConnectionStringBuilder.Build(tenant.Name, readOnlyCredentials);
+            var encryptedReadOnlyConnectionString = stringEncryptionService.Encrypt(plainReadOnlyConnectionString);
+
+            tenant.ConnectionStrings
+                .Add(new TenantConnectionString(tenant.Id,
+                    UnityTenantManagementConsts.TenantReadOnlyConnectionStringName,
+                    encryptedReadOnlyConnectionString));
 
             // Set ExtraProperties from input
             tenant.ExtraProperties[UnityTenantManagementConsts.TenantLicencePlateExtraPropertyKey] = credentials.DbName;
@@ -172,7 +185,8 @@ public class TenantAppService(
                     Name = tenant.Name,
                     Properties =
                     {
-                        { "UserIdentifier",  input.UserIdentifier }
+                        { "UserIdentifier", input.UserIdentifier },
+                        { "FeatureKeys", input.FeatureKeys ?? string.Empty }
                     }
                 }
             );
@@ -180,7 +194,7 @@ public class TenantAppService(
         return ObjectMapper.Map<Tenant, TenantDto>(tenant);
     }
 
-    [Authorize(TenantManagementPermissions.Tenants.Update)]
+    [Authorize(TenantManagementPermissions.Policies.TenantsUpdateOrITOps)]
     public virtual async Task<TenantDto> UpdateAsync(Guid id, TenantUpdateDto input)
     {
         var tenant = await tenantRepository.GetAsync(id);
@@ -216,7 +230,7 @@ public class TenantAppService(
     public virtual async Task<string> GetDefaultConnectionStringAsync(Guid id)
     {
         var tenant = await tenantRepository.GetAsync(id);
-        return tenant?.FindDefaultConnectionString();
+        return tenant?.FindDefaultConnectionString()!;
     }
 
     [Authorize(TenantManagementPermissions.Tenants.ManageConnectionStrings)]
@@ -240,7 +254,7 @@ public class TenantAppService(
     public async Task<string> GetCurrentTenantCasClientCodeAsync(Guid tenantId)
     {
         var tenant = tenantId != Guid.Empty ? await tenantRepository.GetAsync(tenantId) : null;
-        return tenant?.ExtraProperties.TryGetValue("CasClientCode", out var value) == true ? value?.ToString() : null;
+        return (tenant?.ExtraProperties.TryGetValue("CasClientCode", out var value) == true ? value?.ToString() : null)!;
     }
 
     public async Task<string> GetCurrentTenantName()
@@ -259,5 +273,69 @@ public class TenantAppService(
                  UserIdentifier = managerAssignment.UserIdentifier
              }
          );
+    }
+
+    [Authorize(TenantManagementPermissions.Tenants.ManageConnectionStrings)]
+    public async Task<TenantConnectionStringsDto> GetConnectionStringsAsync(Guid id)
+    {
+        var tenant = await tenantRepository.GetAsync(id, includeDetails: true);
+        return new TenantConnectionStringsDto
+        {
+            TenantConnectionString = TryDecryptConnectionString(
+                tenant.FindConnectionString(UnityTenantManagementConsts.TenantConnectionStringName)),
+            ReadOnlyConnectionString = TryDecryptConnectionString(
+                tenant.FindConnectionString(UnityTenantManagementConsts.TenantReadOnlyConnectionStringName))
+        };
+    }
+
+    [Authorize(TenantManagementPermissions.Tenants.ManageConnectionStrings)]
+    public async Task UpdateConnectionStringsAsync(Guid id, TenantConnectionStringsDto input)
+    {
+        var tenant = await tenantRepository.GetAsync(id, includeDetails: true);
+
+        if (!string.IsNullOrWhiteSpace(input.TenantConnectionString))
+        {
+            tenant.SetConnectionString(UnityTenantManagementConsts.TenantConnectionStringName,
+                stringEncryptionService.Encrypt(input.TenantConnectionString));
+        }
+
+        if (!string.IsNullOrWhiteSpace(input.ReadOnlyConnectionString))
+        {
+            tenant.SetConnectionString(UnityTenantManagementConsts.TenantReadOnlyConnectionStringName,
+                stringEncryptionService.Encrypt(input.ReadOnlyConnectionString));
+        }
+
+        await tenantRepository.UpdateAsync(tenant);
+    }
+
+    public async Task<List<TenantManagerDto>> GetManagersAsync(Guid id)
+    {
+        using (currentTenant.Change(id))
+        {
+            var users = await IdentityUserRepository.GetListByNormalizedRoleNameAsync("PROGRAM_MANAGER");
+            return users.Select(u =>
+            {
+                var displayName = $"{u.Name} {u.Surname}".Trim();
+                return new TenantManagerDto
+                {
+                    DisplayName = string.IsNullOrEmpty(displayName) ? u.UserName : displayName,
+                    Email = u.Email ?? string.Empty
+                };
+            }).ToList();
+        }
+    }
+
+    private string? TryDecryptConnectionString(string? rawValue)
+    {
+        if (rawValue == null) return null;
+        try
+        {
+            var decrypted = stringEncryptionService.Decrypt(rawValue);
+            return (decrypted != null && decrypted.Contains('=')) ? decrypted : rawValue;
+        }
+        catch
+        {
+            return rawValue;
+        }
     }
 }

@@ -1,0 +1,54 @@
+@page
+@using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal
+@using Unity.TenantManagement
+@using Unity.TenantManagement.Web.Pages.TenantManagement.Onboarding
+@model CreateTenantModalModel
+@{
+    Layout = null;
+}
+<abp-modal size="Large">
+    <abp-modal-header title="@($"Create Tenant — {Model.OnboardingRequest!.TenantName}")"></abp-modal-header>
+    <abp-modal-body>
+
+        <dl class="row small mb-3">
+            <dt class="col-sm-4">Ministry</dt>
+            <dd class="col-sm-8">@Model.OnboardingRequest.Ministry</dd>
+            <dt class="col-sm-4">Branch</dt>
+            <dd class="col-sm-8">@Model.OnboardingRequest.Branch</dd>
+            <dt class="col-sm-4">Program Area</dt>
+            <dd class="col-sm-8">@Model.OnboardingRequest.ProgramAreaName</dd>
+            <dt class="col-sm-4">Category</dt>
+            <dd class="col-sm-8">@Model.OnboardingRequest.Category</dd>
+            <dt class="col-sm-4">Features</dt>
+            <dd class="col-sm-8">@Model.OnboardingRequest.Features</dd>
+        </dl>
+
+        <hr class="my-3" />
+
+        <div id="onboarding-validation-loading" class="text-muted">
+            <span class="spinner-border spinner-border-sm me-2"></span>
+            Validating request...
+        </div>
+        <div id="onboarding-validation-result" class="d-none"></div>
+
+        <div id="onboarding-creating" class="d-none mt-3">
+            <div class="d-flex align-items-center text-muted mb-2">
+                <span class="spinner-border spinner-border-sm me-2"></span>
+                Creating tenant, please wait...
+            </div>
+            <div class="alert alert-info mb-0 small">
+                <strong>This may take a moment.</strong>
+                Tenant provisioning is in progress — please do not close this window or navigate away until the process completes.
+            </div>
+        </div>
+
+    </abp-modal-body>
+    <abp-modal-footer>
+        <button type="button" id="btn-confirm-create-tenant" class="btn btn-primary" disabled>
+            Create Tenant
+        </button>
+        <button type="button" id="btn-cancel-create-tenant" class="btn btn-secondary" data-bs-dismiss="modal">
+            Cancel
+        </button>
+    </abp-modal-footer>
+</abp-modal>

@@ -1,0 +1,41 @@
+@page
+@using Unity.TenantManagement.Web.Navigation
+@using Volo.Abp.AspNetCore.Mvc.UI.Layout
+@using Unity.TenantManagement.Web.Pages.TenantManagement.Onboarding
+@model IndexModel
+@inject IPageLayout PageLayout
+@{
+    PageLayout.Content.BreadCrumb.Add("Onboarding");
+    PageLayout.Content.MenuItemName = TenantManagementMenuNames.Onboarding;
+    ViewBag.PageTitle = "Onboarding";
+}
+@section styles {
+    <abp-style src="/Views/Shared/Components/ActionBar/Default.css" />
+    <style>
+        #OnboardingRequestsTable tbody tr { cursor: pointer; }
+    </style>
+}
+@section scripts {
+    <abp-script-bundle name="@typeof(IndexModel).FullName">
+        <abp-script src="/client-proxies/multi-tenancy-proxy.js" />
+        <abp-script src="/Pages/TenantManagement/Onboarding/Index.js" />
+    </abp-script-bundle>
+}
+<div class="container-fluid px-2">
+    <div class="action-bar p-2 search-action-bar">
+        <div class="search-action-bar_search-wrapper">
+            <input type="search" id="search" placeholder="Search" class="tbl-search">
+        </div>
+        <div class="btn-group">
+            <button id="btn-open-onboarding"
+                    data-selector="onboarding-table-actions"
+                    class="custom-table-btn flex-none btn btn-secondary action-bar-btn-unavailable">Open</button>
+            <button id="btn-create-tenant"
+                    data-selector="onboarding-table-actions"
+                    class="custom-table-btn flex-none btn btn-secondary action-bar-btn-unavailable">Create Tenant</button>
+            <button id="btn-toggle-filter" class="custom-table-btn flex-none btn btn-secondary">Filter</button>
+        </div>
+        <div id="dynamicButtonContainerId"></div>
+    </div>
+    <abp-table id="OnboardingRequestsTable" striped-rows="false" class="nowrap"></abp-table>
+</div>

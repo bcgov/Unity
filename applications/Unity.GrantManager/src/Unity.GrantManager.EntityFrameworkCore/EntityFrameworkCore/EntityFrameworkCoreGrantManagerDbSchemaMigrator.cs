@@ -37,31 +37,15 @@ public class EntityFrameworkCoreGrantManagerDbSchemaMigrator
 
         if (tenant != null)
         {
-            var connectionString = tenant.ConnectionStrings[0];
+            var connectionString = tenant.FindConnectionString(GrantManagerConsts.DefaultTenantConnectionStringName);
             if (connectionString != null)
             {
                 var configuration = _serviceProvider.GetRequiredService<IConfiguration>();
                 var adminConnectionString = configuration.GetConnectionString(GrantManagerConsts.DefaultConnectionStringName)
                     ?? throw new InvalidOperationException($"Connection string '{GrantManagerConsts.DefaultConnectionStringName}' is not configured.");
 
-                // Decrypt the stored value — plain-text rows (pre-encryption) fall back to their original value.
-                // A successful decrypt that produces non-connection-string output (wrong passphrase returning garbage)
-                // is also rejected by the Contains('=') check so we surface a meaningful error rather than a
-                // cryptic NpgsqlConnectionStringBuilder format exception.
-                var rawValue = connectionString.Value;
-                string plainValue;
-                try
-                {
-                    var decrypted = _encryptionService.Decrypt(rawValue);
-                    plainValue = (decrypted != null && decrypted.Contains('=')) ? decrypted : rawValue;
-                }
-                catch
-                {
-                    plainValue = rawValue;
-                }
-
                 // Parse the stored tenant connection string to get the DB name and role credentials
-                var tenantCsb = new NpgsqlConnectionStringBuilder(plainValue);
+                var tenantCsb = new NpgsqlConnectionStringBuilder(TryDecryptConnectionString(connectionString));
                 var dbName = tenantCsb.Database
                     ?? throw new InvalidOperationException("Tenant connection string is missing the Database value.");
                 var roleName = tenantCsb.Username
@@ -103,6 +87,20 @@ public class EntityFrameworkCoreGrantManagerDbSchemaMigrator
                 // Grant table and sequence privileges after migrations have created all objects
                 await GrantTablePrivilegesAsync(adminTenantConnectionString, roleName);
 
+                // Provision the readonly role/connection (if a readonly connection string was generated for this tenant)
+                var readOnlyConnectionString = tenant.FindConnectionString(GrantManagerConsts.DefaultTenantReadOnlyConnectionStringName);
+                if (readOnlyConnectionString != null)
+                {
+                    var readOnlyCsb = new NpgsqlConnectionStringBuilder(TryDecryptConnectionString(readOnlyConnectionString));
+                    var readOnlyRoleName = readOnlyCsb.Username
+                        ?? throw new InvalidOperationException("Tenant readonly connection string is missing the Username value.");
+                    var readOnlyPassword = readOnlyCsb.Password
+                        ?? throw new InvalidOperationException("Tenant readonly connection string is missing the Password value.");
+
+                    await CreateRoleIfNotExistsAsync(adminConnectionString, readOnlyRoleName, readOnlyPassword);
+                    await GrantReadOnlyPrivilegesAsync(adminConnectionString, adminTenantConnectionString, dbName, readOnlyRoleName);
+                }
+
                 /* The payments module is also migrated.
                    Currently the payments module also references the tenant connection string.
                    Changes to that may require inspecting the connection string here to resolve
@@ -115,6 +113,23 @@ public class EntityFrameworkCoreGrantManagerDbSchemaMigrator
                 .GetRequiredService<GrantManagerDbContext>()
                 .Database
                 .MigrateAsync();
+        }
+    }
+
+    // Decrypt the stored value — plain-text rows (pre-encryption) fall back to their original value.
+    // A successful decrypt that produces non-connection-string output (wrong passphrase returning garbage)
+    // is also rejected by the Contains('=') check so we surface a meaningful error rather than a
+    // cryptic NpgsqlConnectionStringBuilder format exception.
+    private string TryDecryptConnectionString(string rawValue)
+    {
+        try
+        {
+            var decrypted = _encryptionService.Decrypt(rawValue);
+            return (decrypted != null && decrypted.Contains('=')) ? decrypted : rawValue;
+        }
+        catch
+        {
+            return rawValue;
         }
     }
 
@@ -181,5 +196,45 @@ public class EntityFrameworkCoreGrantManagerDbSchemaMigrator
             $$;
             """;
         await cmd.ExecuteNonQueryAsync();
+    }
+
+    private static async Task GrantReadOnlyPrivilegesAsync(string adminConnectionString, string adminTenantConnectionString, string dbName, string roleName)
+    {
+        await using (var conn = new NpgsqlConnection(adminConnectionString))
+        {
+            await conn.OpenAsync();
+            await using var cmd = conn.CreateCommand();
+            cmd.CommandText = $"GRANT CONNECT ON DATABASE \"{dbName}\" TO \"{roleName}\"";
+            await cmd.ExecuteNonQueryAsync();
+        }
+
+        await using (var conn = new NpgsqlConnection(adminTenantConnectionString))
+        {
+            await conn.OpenAsync();
+            await using var cmd = conn.CreateCommand();
+
+            // Grant read-only access (USAGE/SELECT) on every non-system schema, including
+            // tables and sequences created by future migrations via ALTER DEFAULT PRIVILEGES.
+            cmd.CommandText = $"""
+                DO $$
+                DECLARE
+                    r RECORD;
+                BEGIN
+                    FOR r IN
+                        SELECT nspname FROM pg_namespace
+                        WHERE nspname NOT IN ('pg_catalog', 'information_schema', 'pg_toast')
+                          AND nspname NOT LIKE 'pg_%'
+                    LOOP
+                        EXECUTE format('GRANT USAGE ON SCHEMA %I TO "{roleName}"', r.nspname);
+                        EXECUTE format('GRANT SELECT ON ALL TABLES IN SCHEMA %I TO "{roleName}"', r.nspname);
+                        EXECUTE format('GRANT SELECT ON ALL SEQUENCES IN SCHEMA %I TO "{roleName}"', r.nspname);
+                        EXECUTE format('ALTER DEFAULT PRIVILEGES IN SCHEMA %I GRANT SELECT ON TABLES TO "{roleName}"', r.nspname);
+                        EXECUTE format('ALTER DEFAULT PRIVILEGES IN SCHEMA %I GRANT SELECT ON SEQUENCES TO "{roleName}"', r.nspname);
+                    END LOOP;
+                END
+                $$;
+                """;
+            await cmd.ExecuteNonQueryAsync();
+        }
     }
 }

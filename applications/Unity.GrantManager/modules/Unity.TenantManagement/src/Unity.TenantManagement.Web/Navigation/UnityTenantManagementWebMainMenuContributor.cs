@@ -1,4 +1,5 @@
 ﻿using System.Threading.Tasks;
+using Unity.Modules.Shared.Permissions;
 using Volo.Abp.TenantManagement.Localization;
 using Volo.Abp.UI.Navigation;
 using Volo.Abp.Authorization.Permissions;
@@ -21,7 +22,10 @@ public class AbpTenantManagementWebMainMenuContributor : IMenuContributor
         var tenantManagementMenuItem = new ApplicationMenuItem(TenantManagementMenuNames.GroupName, l["Menu:TenantManagement"], icon: "fa fa-users");
         administrationMenu.AddItem(tenantManagementMenuItem);
 
-        tenantManagementMenuItem.AddItem(new ApplicationMenuItem(TenantManagementMenuNames.Tenants, l["Tenants"], url: "~/TenantManagement/Tenants").RequirePermissions(TenantManagementPermissions.Tenants.Default));
+        tenantManagementMenuItem.AddItem(
+            new ApplicationMenuItem(TenantManagementMenuNames.Tenants, l["Tenants"], url: "~/TenantManagement/Tenants")
+            .RequirePermissions(TenantManagementPermissions.Tenants.Default, IdentityConsts.ITOperationsPermissionName)
+        );
 
         return Task.CompletedTask;
     }

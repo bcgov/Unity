@@ -125,7 +125,9 @@ namespace Unity.GrantManager.Identity
                     new ValidationResult("Only idir search is supported")
                 }); // for now
 
-            if (string.IsNullOrEmpty(importUserSearchDto.FirstName) && string.IsNullOrEmpty(importUserSearchDto.LastName))
+            if (string.IsNullOrEmpty(importUserSearchDto.FirstName) &&
+                string.IsNullOrEmpty(importUserSearchDto.LastName) &&
+                string.IsNullOrEmpty(importUserSearchDto.Email))
                 return users;
 
             if (!string.IsNullOrEmpty(importUserSearchDto.FirstName) && importUserSearchDto.FirstName.Length < 2)
@@ -146,7 +148,16 @@ namespace Unity.GrantManager.Identity
                     });
             }
 
-            var result = await _cssUsersApiService.SearchUsersAsync(importUserSearchDto.Directory, importUserSearchDto.FirstName, importUserSearchDto.LastName);
+            if (!string.IsNullOrEmpty(importUserSearchDto.Email) && importUserSearchDto.Email.Length < 2)
+            {
+                throw new AbpValidationException("Validation Error",
+                    new List<ValidationResult>()
+                    {
+                        new ValidationResult("Email length must be greater than 2")
+                    });
+            }
+
+            var result = await _cssUsersApiService.SearchUsersAsync(importUserSearchDto.Directory, importUserSearchDto.FirstName, importUserSearchDto.LastName, importUserSearchDto.Email);
 
             if (!result.Success) throw new UserFriendlyException("Error searching directory users");
 

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Services;
 
@@ -10,4 +11,7 @@ public interface ITenantAppService : ICrudAppService<TenantDto, Guid, GetTenants
     Task UpdateDefaultConnectionStringAsync(Guid id, string defaultConnectionString);
     Task DeleteDefaultConnectionStringAsync(Guid id);
     Task AssignManagerAsync(TenantAssignManagerDto managerAssignment);
+    Task<TenantConnectionStringsDto> GetConnectionStringsAsync(Guid id);
+    Task UpdateConnectionStringsAsync(Guid id, TenantConnectionStringsDto input);
+    Task<List<TenantManagerDto>> GetManagersAsync(Guid id);
 }

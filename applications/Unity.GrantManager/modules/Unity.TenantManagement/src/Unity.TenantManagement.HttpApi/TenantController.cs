@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Volo.Abp;
@@ -101,6 +102,17 @@ public class TenantController(ITenantAppService tenantAppService) : AbpControlle
         return TenantAppService.DeleteDefaultConnectionStringAsync(id);
     }
 
+    [HttpGet]
+    [Route("{id}/managers")]
+    public virtual Task<List<TenantManagerDto>> GetManagersAsync(Guid id)
+    {
+        if (!ModelState.IsValid)
+        {
+            throw new UserFriendlyException("TenantController->GetManagersAsync: ModelState Invalid");
+        }
+        return TenantAppService.GetManagersAsync(id);
+    }
+
     [HttpPut]
     [Route("assign-manager")]
     public virtual Task AssignManagerAsync(TenantAssignManagerDto managerAssignment)
@@ -110,5 +122,27 @@ public class TenantController(ITenantAppService tenantAppService) : AbpControlle
             throw new UserFriendlyException("TenantController->AssignManagerAsync: ModelState Invalid");
         }
         return TenantAppService.AssignManagerAsync(managerAssignment);
+    }
+
+    [HttpGet]
+    [Route("{id}/connection-strings")]
+    public virtual Task<TenantConnectionStringsDto> GetConnectionStringsAsync(Guid id)
+    {
+        if (!ModelState.IsValid)
+        {
+            throw new UserFriendlyException("TenantController->GetConnectionStringsAsync: ModelState Invalid");
+        }
+        return TenantAppService.GetConnectionStringsAsync(id);
+    }
+
+    [HttpPut]
+    [Route("{id}/connection-strings")]
+    public virtual Task UpdateConnectionStringsAsync(Guid id, [FromBody] TenantConnectionStringsDto input)
+    {
+        if (!ModelState.IsValid)
+        {
+            throw new UserFriendlyException("TenantController->UpdateConnectionStringsAsync: ModelState Invalid");
+        }
+        return TenantAppService.UpdateConnectionStringsAsync(id, input);
     }
 }

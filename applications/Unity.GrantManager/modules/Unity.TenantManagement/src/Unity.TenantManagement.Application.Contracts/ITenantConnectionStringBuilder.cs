@@ -7,6 +7,8 @@ namespace Unity.TenantManagement.Application.Contracts
     {
         Task<TenantDbCredentials> GenerateCredentialsAsync();
 
+        TenantDbCredentials GenerateReadOnlyCredentials(TenantDbCredentials credentials);
+
         string Build(string tenantName, TenantDbCredentials credentials);
     }
 }
