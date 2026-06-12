@@ -216,6 +216,7 @@ public partial class PersonToGrantApplicationAssigneeDtoMapper : MapperBase<Pers
 }
 
 [Mapper] public partial class ApplicationStatusToApplicationStatusDtoMapper : MapperBase<ApplicationStatus, ApplicationStatusDto> { public override partial ApplicationStatusDto Map(ApplicationStatus source); public override partial void Map(ApplicationStatus source, ApplicationStatusDto destination); }
+[Mapper] public partial class ApplicationStatusToApplicantPortalStatusDtoMapper : MapperBase<ApplicationStatus, ApplicantPortalStatusDto> { public override partial ApplicantPortalStatusDto Map(ApplicationStatus source); public override partial void Map(ApplicationStatus source, ApplicantPortalStatusDto destination); }
 
 [Mapper]
 public partial class AssessmentCommentToCommentDtoMapper : MapperBase<AssessmentComment, CommentDto>
