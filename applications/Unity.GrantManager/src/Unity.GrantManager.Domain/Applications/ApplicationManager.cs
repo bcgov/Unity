@@ -22,6 +22,9 @@ public class ApplicationManager : DomainService, IApplicationManager
     private readonly IPersonRepository _personRepository;
     private readonly IPermissionChecker _permissionChecker;
 
+    private const string DirectApprovalDescription = "Direct Approval Bypass";
+    private const string DirectDenialDescription = "Direct Denial Bypass";
+
     public ApplicationManager(
         IApplicationRepository applicationRepository,
         IApplicationStatusRepository applicationStatus,
@@ -46,9 +49,8 @@ public class ApplicationManager : DomainService, IApplicationManager
             .Permit(GrantApplicationAction.Withdraw, GrantApplicationState.WITHDRAWN)
             .Permit(GrantApplicationAction.Close, GrantApplicationState.CLOSED)
             .Permit(GrantApplicationAction.Internal_Unasign, GrantApplicationState.SUBMITTED)
-            .PermitIf(GrantApplicationAction.Approve, GrantApplicationState.GRANT_APPROVED, () => AllowDirectDecision(isDirectApproval, stateMachine, GrantApplicationState.GRANT_APPROVED), "Direct Approval Bypass")
-            .PermitIf(GrantApplicationAction.Deny, GrantApplicationState.GRANT_NOT_APPROVED, () => AllowDirectDecision(isDirectApproval, stateMachine, GrantApplicationState.GRANT_NOT_APPROVED), "Direct Denial Bypass");
-
+            .PermitIf(GrantApplicationAction.Approve, GrantApplicationState.GRANT_APPROVED, () => AllowDirectDecision(isDirectApproval, stateMachine, GrantApplicationState.GRANT_APPROVED), DirectApprovalDescription)
+            .PermitIf(GrantApplicationAction.Deny, GrantApplicationState.GRANT_NOT_APPROVED, () => AllowDirectDecision(isDirectApproval, stateMachine, GrantApplicationState.GRANT_NOT_APPROVED), DirectDenialDescription);
 
         stateMachine.Configure(GrantApplicationState.SUBMITTED)
             .SubstateOf(GrantApplicationState.OPEN)
@@ -90,7 +92,6 @@ public class ApplicationManager : DomainService, IApplicationManager
             .Permit(GrantApplicationAction.OnHold, GrantApplicationState.ON_HOLD)
             .Permit(GrantApplicationAction.Approve, GrantApplicationState.GRANT_APPROVED)
             .Permit(GrantApplicationAction.Deny, GrantApplicationState.GRANT_NOT_APPROVED);
-        // CHECK IF PERMITIF CONFLICTS
 
         stateMachine.Configure(GrantApplicationState.DEFER)
             .SubstateOf(GrantApplicationState.OPEN)
@@ -112,28 +113,35 @@ public class ApplicationManager : DomainService, IApplicationManager
         #endregion OPEN STATES
 
         #region CLOSED STATES
+        stateMachine.Configure(GrantApplicationState.RESOLVED);
+
         stateMachine.Configure(GrantApplicationState.CLOSED)
+            .SubstateOf(GrantApplicationState.RESOLVED)
             .Permit(GrantApplicationAction.Withdraw, GrantApplicationState.WITHDRAWN)
             .Permit(GrantApplicationAction.Defer, GrantApplicationState.DEFER)
             .Permit(GrantApplicationAction.OnHold, GrantApplicationState.ON_HOLD)
-            .PermitIf(GrantApplicationAction.Approve, GrantApplicationState.GRANT_APPROVED, () => AllowDirectDecision(isDirectApproval, stateMachine, GrantApplicationState.GRANT_APPROVED), "Direct Approval Bypass")
-            .PermitIf(GrantApplicationAction.Deny, GrantApplicationState.GRANT_NOT_APPROVED, () => AllowDirectDecision(isDirectApproval, stateMachine, GrantApplicationState.GRANT_NOT_APPROVED), "Direct Denial Bypass");
+            .PermitIf(GrantApplicationAction.Approve, GrantApplicationState.GRANT_APPROVED, () => isDirectApproval, DirectApprovalDescription)
+            .PermitIf(GrantApplicationAction.Deny, GrantApplicationState.GRANT_NOT_APPROVED, () => isDirectApproval, DirectDenialDescription);
 
         stateMachine.Configure(GrantApplicationState.WITHDRAWN)
-            .SubstateOf(GrantApplicationState.CLOSED)
+            .SubstateOf(GrantApplicationState.RESOLVED)
             .Permit(GrantApplicationAction.Close, GrantApplicationState.CLOSED)
             .Permit(GrantApplicationAction.Defer, GrantApplicationState.DEFER)
-            .Permit(GrantApplicationAction.OnHold, GrantApplicationState.ON_HOLD);
+            .Permit(GrantApplicationAction.OnHold, GrantApplicationState.ON_HOLD)
+            .PermitIf(GrantApplicationAction.Approve, GrantApplicationState.GRANT_APPROVED, () => isDirectApproval, DirectApprovalDescription)
+            .PermitIf(GrantApplicationAction.Deny, GrantApplicationState.GRANT_NOT_APPROVED, () => isDirectApproval, DirectDenialDescription);
 
         stateMachine.Configure(GrantApplicationState.GRANT_APPROVED)
-            .SubstateOf(GrantApplicationState.CLOSED)
+            .SubstateOf(GrantApplicationState.RESOLVED)
             .Permit(GrantApplicationAction.Withdraw, GrantApplicationState.WITHDRAWN)
             .Permit(GrantApplicationAction.Close, GrantApplicationState.CLOSED)
-            .PermitIf(GrantApplicationAction.Defer, GrantApplicationState.DEFER, () => HasPermission(GrantApplicationPermissions.Approvals.DeferAfterApproval));
+            .PermitIf(GrantApplicationAction.Defer, GrantApplicationState.DEFER, () => HasPermission(GrantApplicationPermissions.Approvals.DeferAfterApproval))
+            .PermitIf(GrantApplicationAction.Deny, GrantApplicationState.GRANT_NOT_APPROVED, () => isDirectApproval, DirectDenialDescription);
 
         stateMachine.Configure(GrantApplicationState.GRANT_NOT_APPROVED)
-            .SubstateOf(GrantApplicationState.CLOSED)
-            .Permit(GrantApplicationAction.Close, GrantApplicationState.CLOSED);
+            .SubstateOf(GrantApplicationState.RESOLVED)
+            .Permit(GrantApplicationAction.Close, GrantApplicationState.CLOSED)
+            .PermitIf(GrantApplicationAction.Approve, GrantApplicationState.GRANT_APPROVED, () => isDirectApproval, DirectApprovalDescription);
         #endregion CLOSED STATES
     }
 
