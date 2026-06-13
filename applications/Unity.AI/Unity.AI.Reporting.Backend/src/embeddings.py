@@ -106,7 +106,7 @@ class SchemaExtractor:
             pass  # No example value available for this column
         return None
     
-    def _should_skip_table(self, table: dict, schema_type: str) -> bool:
+    def _should_skip_table(self, table: dict) -> bool:
         """Check if a public table should be excluded based on exclusion rules."""
         if table["name"] in self.junk_tables:
             return True
@@ -126,6 +126,27 @@ class SchemaExtractor:
         except Exception:
             return False
 
+    def _format_column_line(self, col: str, schema_name: str, table_name: str,
+                            db_id: int, meta: dict, fallback: dict,
+                            tenant_id: Optional[str] = None) -> str:
+        col_name = col.split(' ')[0]
+        col_meta = meta.get(col_name, {})
+        label = col_meta.get("label") or fallback.get(col_name, "")
+        forms_type = col_meta.get("forms_type", "")
+        is_text = 'Text' in col or forms_type in ("textfield", "textarea")
+        example = self.get_column_example(is_text, schema_name, table_name, col_name, db_id,
+                                          tenant_id=tenant_id)
+
+        line = f"\n - {col}"
+        if label:
+            line += f" | {label}"
+        if forms_type and forms_type not in ("textfield", "textarea"):
+            line += f" ({forms_type})"
+        if example:
+            truncated = example[:50] + '...' if len(example) > 50 else example
+            line += f": '{truncated}'"
+        return line
+
     def _format_schema_with_examples(self, schema_name: str, table_name: str,
                                      columns: List[str], db_id: int,
                                      tenant_id: Optional[str] = None,
@@ -139,23 +160,10 @@ class SchemaExtractor:
         meta = view_metadata or {}
         fallback = custom_labels or {}
         for col in columns:
-            col_name = col.split(' ')[0]
-            col_meta = meta.get(col_name, {})
-            label = col_meta.get("label") or fallback.get(col_name, "")
-            forms_type = col_meta.get("forms_type", "")
-            is_text = 'Text' in col or forms_type in ("textfield", "textarea")
-            example = self.get_column_example(is_text, schema_name, table_name, col_name, db_id,
-                                              tenant_id=tenant_id)
-
-            line = f"\n - {col}"
-            if label:
-                line += f" | {label}"
-            if forms_type and forms_type not in ("textfield", "textarea"):
-                line += f" ({forms_type})"
-            if example:
-                truncated = example[:50] + '...' if len(example) > 50 else example
-                line += f": '{truncated}'"
-            page += line
+            page += self._format_column_line(
+                col, schema_name, table_name, db_id, meta, fallback,
+                tenant_id=tenant_id,
+            )
         return page
 
     def extract_schemas(self, db_id: int, schema_type: str = "public",
@@ -178,7 +186,7 @@ class SchemaExtractor:
         metadata = self.metabase.get_database_metadata(db_id, tenant_id=tenant_id)
         docs = []
         for table in metadata["tables"]:
-            if self._should_skip_table(table, schema_type):
+            if self._should_skip_table(table):
                 continue
             columns = [
                 f"{field['name']} ({field['base_type']})"
