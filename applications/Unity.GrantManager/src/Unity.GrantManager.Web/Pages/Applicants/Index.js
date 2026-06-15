@@ -734,7 +734,7 @@ $(function () {
         ["QC", "CO 1878"],
         ["QD", "CO 1890"],
         ["QE", "CO 1897"],
-        ["REG", "Registraton (Extra-pro)"],
+        ["REG", "Registration (Extra-pro)"],
         ["ULC", "BC Unlimited Liability Company"],
         ["XCP", "Extraprovincial Cooperative"],
         ["XL", "Extrapro Limited Liability Partnership"],
