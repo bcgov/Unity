@@ -452,7 +452,18 @@ class EmbeddingManager:
 
         sections: dict[str, list[str]] = {}
         for doc in schemas:
-            key = doc.metadata.get("correlation_type") or doc.metadata.get("schema_type", "public")
+            key = doc.metadata.get("correlation_type")
+            if not key:
+                # Backward-compatible fallback for embeddings persisted before
+                # correlation_type existed: infer worksheet vs scoresheet from
+                # the page content for "custom" docs.
+                schema_type = doc.metadata.get("schema_type", "public")
+                if schema_type == "custom":
+                    first_line = doc.page_content.split('\n')[0].lower()
+                    key = "scoresheet" if "scoresheet" in first_line else "worksheet"
+                else:
+                    key = schema_type
+            key = key.lower()
             sections.setdefault(key, []).append(doc.page_content)
 
         parts = []
