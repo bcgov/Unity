@@ -21,8 +21,8 @@ namespace Unity.GrantManager.Repositories
 #pragma warning restore CS8613 // Nullability of reference types in return type doesn't match implicitly implemented member.
     {
         public ApplicantRepository(IDbContextProvider<GrantTenantDbContext> dbContextProvider) : base(dbContextProvider)
-        {
-        }
+            {
+            }
 
         public async Task<List<Applicant>> GetUnmatchedApplicantsAsync()
         {
@@ -133,6 +133,41 @@ namespace Unity.GrantManager.Repositories
 
             var json = JsonSerializer.Serialize(filteredApplicants);
             return JsonDocument.Parse(json);
+        }
+
+        public async Task<List<ApplicantListRecord>> GetApplicantListRecordsAsync(IReadOnlyList<string>? requestedFields = null)
+        {
+            return await (await GetQueryableAsync())
+                .AsNoTracking()
+                .Where(a => !a.IsDeleted)
+                .OrderByDescending(a => a.CreationTime)
+                .Select(a => new ApplicantListRecord
+                {
+                    Id = a.Id,
+                    ApplicantName = a.ApplicantName,
+                    UnityApplicantId = a.UnityApplicantId,
+                    OrgName = a.OrgName,
+                    OrgNumber = a.OrgNumber,
+                    OrgStatus = a.OrgStatus,
+                    OrganizationType = a.OrganizationType,
+                    Status = a.Status,
+                    RedStop = a.RedStop,
+                    NonRegisteredBusinessName = a.NonRegisteredBusinessName,
+                    NonRegOrgName = a.NonRegOrgName,
+                    Sector = a.Sector,
+                    SubSector = a.SubSector,
+                    ApproxNumberOfEmployees = a.ApproxNumberOfEmployees,
+                    IndigenousOrgInd = a.IndigenousOrgInd,
+                    SectorSubSectorIndustryDesc = a.SectorSubSectorIndustryDesc,
+                    FiscalMonth = a.FiscalMonth,
+                    BusinessNumber = a.BusinessNumber,
+                    FiscalDay = a.FiscalDay,
+                    StartedOperatingDate = a.StartedOperatingDate,
+                    IsDuplicated = a.IsDuplicated,
+                    CreationTime = a.CreationTime,
+                    LastModificationTime = a.LastModificationTime
+                })
+                .ToListAsync();
         }
     }
 }

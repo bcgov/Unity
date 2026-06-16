@@ -1,11 +1,10 @@
 using System;
-using Volo.Abp.Application.Dtos;
 
-namespace Unity.GrantManager.Applicants;
+namespace Unity.GrantManager.Applications;
 
-public class ApplicantListDto : AuditedEntityDto<Guid>
+public class ApplicantListRecord
 {
-    // Default visible columns
+    public Guid Id { get; set; }
     public string? ApplicantName { get; set; }
     public string? UnityApplicantId { get; set; }
     public string? OrgName { get; set; }
@@ -14,8 +13,6 @@ public class ApplicantListDto : AuditedEntityDto<Guid>
     public string? OrganizationType { get; set; }
     public string? Status { get; set; }
     public bool? RedStop { get; set; }
-
-    // Additional columns (initially hidden)
     public string? NonRegisteredBusinessName { get; set; }
     public string? NonRegOrgName { get; set; }
     public string? Sector { get; set; }
@@ -26,6 +23,8 @@ public class ApplicantListDto : AuditedEntityDto<Guid>
     public string? FiscalMonth { get; set; }
     public string? BusinessNumber { get; set; }
     public int? FiscalDay { get; set; }
-    public DateTime? StartedOperatingDate { get; set; }
+    public DateOnly? StartedOperatingDate { get; set; }
     public bool IsDuplicated { get; set; }
+    public DateTime CreationTime { get; set; }
+    public DateTime? LastModificationTime { get; set; }
 }
