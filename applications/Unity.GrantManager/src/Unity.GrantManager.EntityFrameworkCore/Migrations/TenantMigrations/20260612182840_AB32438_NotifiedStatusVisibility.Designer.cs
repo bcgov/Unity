@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Unity.GrantManager.EntityFrameworkCore;
@@ -12,9 +13,11 @@ using Volo.Abp.EntityFrameworkCore;
 namespace Unity.GrantManager.Migrations.TenantMigrations
 {
     [DbContext(typeof(GrantTenantDbContext))]
-    partial class GrantTenantDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260612182840_AB32438_NotifiedStatusVisibility")]
+    partial class AB32438_NotifiedStatusVisibility
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -927,20 +930,7 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
 
                     b.HasIndex("ApplicantName");
 
-                    b.HasIndex("OrgName");
-
-                    b.HasIndex("OrgNumber");
-
-                    b.HasIndex("Status");
-
-                    b.HasIndex("SupplierId");
-
                     b.HasIndex("TenantId");
-
-                    b.HasIndex("UnityApplicantId");
-
-                    b.HasIndex("TenantId", "IsDeleted", "CreationTime")
-                        .HasFilter("\"IsDeleted\" = false");
 
                     b.ToTable("Applicants", (string)null);
                 });

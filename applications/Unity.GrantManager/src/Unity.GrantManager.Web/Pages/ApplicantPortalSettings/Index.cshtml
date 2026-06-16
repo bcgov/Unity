@@ -45,6 +45,7 @@
                                 <tr>
                                     <th>@L["ApplicantPortalSettings:InternalStatus"]</th>
                                     <th>@L["ApplicantPortalSettings:PortalStatusLabel"]</th>
+                                    <th>@L["ApplicantPortalSettings:PortalNotifiedStatusLabel"]</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -66,6 +67,15 @@
                                                    value="@status.ExternalStatus"
                                                    required
                                                    maxlength="@ApplicationStatusConsts.MaxNameLength" />
+                                        </td>
+                                        <td>
+                                            <input type="text"
+                                                   class="form-control"
+                                                   id="Statuses[@i].NotifiedStatus"
+                                                   name="Statuses[@i].NotifiedStatus"
+                                                   value="@status.NotifiedStatus"
+                                                   maxlength="@ApplicationStatusConsts.MaxNameLength"
+                                                   placeholder="-" />
                                         </td>
                                     </tr>
                                 }
