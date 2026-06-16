@@ -16,6 +16,7 @@ using Unity.GrantManager.Intakes;
 using Unity.GrantManager.Integrations;
 using Unity.GrantManager.Locality;
 using Unity.GrantManager.Zones;
+using Unity.AI.Operations;
 using Unity.Payments.Domain.AccountCodings;
 using Unity.Payments.PaymentRequests;
 using Volo.Abp.Mapperly;
@@ -216,6 +217,7 @@ public partial class PersonToGrantApplicationAssigneeDtoMapper : MapperBase<Pers
 }
 
 [Mapper] public partial class ApplicationStatusToApplicationStatusDtoMapper : MapperBase<ApplicationStatus, ApplicationStatusDto> { public override partial ApplicationStatusDto Map(ApplicationStatus source); public override partial void Map(ApplicationStatus source, ApplicationStatusDto destination); }
+[Mapper] public partial class ApplicationStatusToApplicantPortalStatusDtoMapper : MapperBase<ApplicationStatus, ApplicantPortalStatusDto> { public override partial ApplicantPortalStatusDto Map(ApplicationStatus source); public override partial void Map(ApplicationStatus source, ApplicantPortalStatusDto destination); }
 
 [Mapper]
 public partial class AssessmentCommentToCommentDtoMapper : MapperBase<AssessmentComment, CommentDto>
@@ -767,6 +769,16 @@ public partial class ReportsHistoryDtoToEntityMapper : MapperBase<ReportsHistory
     [MapperIgnoreTarget(nameof(ReportsHistory.TenantId))]
     [MapperIgnoreTarget(nameof(ReportsHistory.ConcurrencyStamp))]
     public override partial void Map(ReportsHistoryDto source, ReportsHistory destination);
+}
+
+[Mapper]
+public partial class ApplicationToAIApplicationPromptDataDtoMapper : MapperBase<Application, AIApplicationPromptDataDto>
+{
+    [MapProperty(nameof(Application.Id), nameof(AIApplicationPromptDataDto.ApplicationId))]
+    public override partial AIApplicationPromptDataDto Map(Application source);
+
+    [MapProperty(nameof(Application.Id), nameof(AIApplicationPromptDataDto.ApplicationId))]
+    public override partial void Map(Application source, AIApplicationPromptDataDto destination);
 }
 
 [Mapper]

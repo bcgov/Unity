@@ -11,6 +11,7 @@ using Volo.Abp.Domain.Repositories;
 using Volo.Abp.EventBus.Local;
 using Volo.Abp.MultiTenancy;
 using Volo.Abp.Uow;
+using Volo.Abp.ObjectMapping;
 
 namespace Unity.GrantManager.GrantApplications.Automation.BackgroundJobs;
 
@@ -18,6 +19,7 @@ public class GenerateApplicationScoringJob(
     IAIApplicationInputBuilder inputBuilder,
     IApplicationScoringService applicationScoringService,
     IApplicationRepository applicationRepository,
+    IObjectMapper objectMapper,
     IRepository<AIGenerationRequest, Guid> generationRequestRepository,
     ICurrentTenant currentTenant,
     IUnitOfWorkManager unitOfWorkManager,
@@ -42,9 +44,10 @@ public class GenerateApplicationScoringJob(
             try
             {
                 logger.LogInformation("Executing AI application scoring job for application {ApplicationId}.", args.ApplicationId);
-                var input = await inputBuilder.BuildApplicationScoringInputAsync(args.ApplicationId, args.PromptVersion);
-                var scoresheetAnswers = await applicationScoringService.RegenerateAsync(input);
                 var application = await applicationRepository.GetAsync(args.ApplicationId);
+                var applicationInput = objectMapper.Map<Application, AIApplicationPromptDataDto>(application);
+                var input = await inputBuilder.BuildApplicationScoringInputAsync(applicationInput, args.PromptVersion);
+                var scoresheetAnswers = await applicationScoringService.RegenerateAsync(input);
                 application.AIScoresheetAnswers = scoresheetAnswers;
                 await applicationRepository.UpdateAsync(application);
                 await localEventBus.PublishAsync(new ApplicationAIScoringGeneratedEvent
