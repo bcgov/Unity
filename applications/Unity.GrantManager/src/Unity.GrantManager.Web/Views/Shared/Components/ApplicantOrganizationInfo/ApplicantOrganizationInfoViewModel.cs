@@ -43,7 +43,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantOrganizationIn
         public string OrganizationType { get; set; } = string.Empty;
 
         [Display(Name = "Organization Size (Approximate Number of Employees)")]
-        public string OrganizationSize { get; set; } = string.Empty;
+        public string ApproxNumberOfEmployees { get; set; } = string.Empty;
         
         [Display(Name = "Non-Registered Organization Name")]
         public string NonRegOrgName { get; set; } = string.Empty;

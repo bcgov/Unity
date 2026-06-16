@@ -103,7 +103,7 @@ public class OrganizationEditHandlerTests
         updatedApplicant.NonRegOrgName.ShouldBe("Friendly Name");
         updatedApplicant.FiscalMonth.ShouldBe("April");
         updatedApplicant.FiscalDay.ShouldBe(15);
-        updatedApplicant.OrganizationSize.ShouldBe("Medium");
+        updatedApplicant.ApproxNumberOfEmployees.ShouldBe("Medium");
     }
 
     [Fact]

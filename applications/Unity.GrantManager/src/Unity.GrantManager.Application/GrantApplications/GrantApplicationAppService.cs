@@ -181,7 +181,7 @@ public class GrantApplicationAppService(
                     OrgStatus = rec.ApplicantOrgStatus ?? string.Empty,
                     BusinessNumber = rec.ApplicantBusinessNumber ?? string.Empty,
                     OrganizationType = rec.ApplicantOrganizationType ?? string.Empty,
-                    OrganizationSize = rec.ApplicantOrganizationSize ?? string.Empty,
+                    ApproxNumberOfEmployees = rec.ApplicantApproxNumberOfEmployees ?? string.Empty,
                     SectorSubSectorIndustryDesc = rec.ApplicantSectorSubSectorIndustryDesc ?? string.Empty,
                     RedStop = rec.ApplicantRedStop ?? false,
                     IndigenousOrgInd = rec.ApplicantIndigenousOrgInd ?? string.Empty,
@@ -195,7 +195,7 @@ public class GrantApplicationAppService(
                 OrgStatus = rec.ApplicantOrgStatus,
                 BusinessNumber = rec.ApplicantBusinessNumber,
                 OrgNumber = rec.ApplicantOrgNumber,
-                OrganizationSize = rec.ApplicantOrganizationSize,
+                ApproxNumberOfEmployees = rec.ApplicantApproxNumberOfEmployees,
                 SectorSubSectorIndustryDesc = rec.ApplicantSectorSubSectorIndustryDesc,
                 Sector = rec.ApplicantSector,
                 SubSector = rec.ApplicantSubSector,
@@ -344,7 +344,7 @@ public class GrantApplicationAppService(
         {
             appDto.OrganizationName = application.Applicant.OrgName;
             appDto.OrgNumber = application.Applicant.OrgNumber;
-            appDto.OrganizationSize = application.Applicant.OrganizationSize;
+            appDto.ApproxNumberOfEmployees = application.Applicant.ApproxNumberOfEmployees;
             appDto.OrgStatus = application.Applicant.OrgStatus;
             appDto.BusinessNumber = application.Applicant.BusinessNumber;
             appDto.NonRegOrgName = application.Applicant.NonRegOrgName;
@@ -829,7 +829,7 @@ public class GrantApplicationAppService(
         applicant.OrgName = input.OrgName ?? "";
         applicant.OrgNumber = input.OrgNumber ?? "";
         applicant.OrgStatus = input.OrgStatus ?? "";
-        applicant.OrganizationSize = input.OrganizationSize ?? "";
+        applicant.ApproxNumberOfEmployees = input.ApproxNumberOfEmployees ?? "";
         applicant.Sector = input.Sector ?? "";
         applicant.SubSector = input.SubSector ?? "";
         applicant.SectorSubSectorIndustryDesc = input.SectorSubSectorIndustryDesc ?? "";
