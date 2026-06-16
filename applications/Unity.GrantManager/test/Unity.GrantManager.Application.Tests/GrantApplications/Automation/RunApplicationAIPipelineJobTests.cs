@@ -16,6 +16,7 @@ using Volo.Abp.Domain.Repositories;
 using Volo.Abp.EventBus.Local;
 using Volo.Abp.Features;
 using Volo.Abp.MultiTenancy;
+using Volo.Abp.ObjectMapping;
 using Volo.Abp.Uow;
 using Xunit;
 using Xunit.Abstractions;
@@ -64,15 +65,23 @@ public class RunApplicationAIPipelineJobTests(ITestOutputHelper outputHelper) : 
         scoringService.RegenerateAsync(Arg.Any<ApplicationScoringOperationInputDto>(), Arg.Any<CancellationToken>())
             .Returns("{}");
         var inputBuilder = Substitute.For<IAIApplicationInputBuilder>();
-        inputBuilder.BuildApplicationScoringInputAsync(request.ApplicationId!.Value, Arg.Any<string?>())
+        inputBuilder.BuildApplicationScoringInputAsync(Arg.Any<AIApplicationPromptDataDto>(), Arg.Any<string?>())
             .Returns(new ApplicationScoringOperationInputDto { ApplicationId = request.ApplicationId!.Value });
         var applicationRepository = Substitute.For<IApplicationRepository>();
-        applicationRepository.GetAsync(request.ApplicationId!.Value).Returns(new Application
+        var application = new Application
         {
             ApplicationFormId = Guid.NewGuid()
-        });
+        };
+        applicationRepository.GetAsync(request.ApplicationId!.Value).Returns(application);
         applicationRepository.UpdateAsync(Arg.Any<Application>(), Arg.Any<bool>(), Arg.Any<CancellationToken>())
             .Returns(callInfo => Task.FromResult(callInfo.Arg<Application>()));
+        var objectMapper = Substitute.For<IObjectMapper>();
+        objectMapper.Map<Application, AIApplicationPromptDataDto>(Arg.Any<Application>())
+            .Returns(new AIApplicationPromptDataDto
+            {
+                ApplicationId = request.ApplicationId!.Value,
+                ApplicationFormId = application.ApplicationFormId
+            });
 
         var localEventBus = Substitute.For<ILocalEventBus>();
         var rateLimiter = Substitute.For<IAIRateLimiter>();
@@ -85,7 +94,8 @@ public class RunApplicationAIPipelineJobTests(ITestOutputHelper outputHelper) : 
             rateLimiter: rateLimiter,
             applicationScoringService: scoringService,
             inputBuilder: inputBuilder,
-            applicationRepository: applicationRepository);
+            applicationRepository: applicationRepository,
+            objectMapper: objectMapper);
 
         await job.ExecuteAsync(new RunApplicationAIPipelineJobArgs
         {
@@ -96,6 +106,7 @@ public class RunApplicationAIPipelineJobTests(ITestOutputHelper outputHelper) : 
         });
 
         request.Status.ShouldBe(AIGenerationRequestStatus.Completed);
+        await applicationRepository.Received(1).GetAsync(request.ApplicationId!.Value);
         await rateLimiter.Received(1).StampAsync(requestedByUserId);
         await localEventBus.Received(1).PublishAsync(
             Arg.Is<Automation.Events.ApplicationAIScoringGeneratedEvent>(x => x.ApplicationId == request.ApplicationId));
@@ -127,15 +138,23 @@ public class RunApplicationAIPipelineJobTests(ITestOutputHelper outputHelper) : 
         applicationAnalysisService.RegenerateAsync(Arg.Any<ApplicationAnalysisOperationInputDto>(), Arg.Any<CancellationToken>())
             .Returns("{}");
         var inputBuilder = Substitute.For<IAIApplicationInputBuilder>();
-        inputBuilder.BuildApplicationAnalysisInputAsync(request.ApplicationId!.Value, Arg.Any<string?>())
+        inputBuilder.BuildApplicationAnalysisInputAsync(Arg.Any<AIApplicationPromptDataDto>(), Arg.Any<string?>())
             .Returns(new ApplicationAnalysisOperationInputDto { ApplicationId = request.ApplicationId!.Value });
         var applicationRepository = Substitute.For<IApplicationRepository>();
-        applicationRepository.GetAsync(request.ApplicationId!.Value).Returns(new Application
+        var application = new Application
         {
             ApplicationFormId = Guid.NewGuid()
-        });
+        };
+        applicationRepository.GetAsync(request.ApplicationId!.Value).Returns(application);
         applicationRepository.UpdateAsync(Arg.Any<Application>(), Arg.Any<bool>(), Arg.Any<CancellationToken>())
             .Returns(callInfo => Task.FromResult(callInfo.Arg<Application>()));
+        var objectMapper = Substitute.For<IObjectMapper>();
+        objectMapper.Map<Application, AIApplicationPromptDataDto>(Arg.Any<Application>())
+            .Returns(new AIApplicationPromptDataDto
+            {
+                ApplicationId = request.ApplicationId!.Value,
+                ApplicationFormId = application.ApplicationFormId
+            });
 
         var job = BuildJob(
             featureChecker,
@@ -144,7 +163,8 @@ public class RunApplicationAIPipelineJobTests(ITestOutputHelper outputHelper) : 
             attachmentSummaryService: attachmentSummaryService,
             applicationAnalysisService: applicationAnalysisService,
             inputBuilder: inputBuilder,
-            applicationRepository: applicationRepository);
+            applicationRepository: applicationRepository,
+            objectMapper: objectMapper);
 
         await job.ExecuteAsync(new RunApplicationAIPipelineJobArgs
         {
@@ -155,6 +175,7 @@ public class RunApplicationAIPipelineJobTests(ITestOutputHelper outputHelper) : 
         });
 
         request.Status.ShouldBe(AIGenerationRequestStatus.Completed);
+        await applicationRepository.Received(1).GetAsync(request.ApplicationId!.Value);
         await attachmentSummaryService.Received(1).GenerateAndSaveAsync(Arg.Any<List<Guid>>(), Arg.Any<string?>());
         await applicationAnalysisService.Received(1).RegenerateAsync(Arg.Any<ApplicationAnalysisOperationInputDto>(), Arg.Any<CancellationToken>());
     }
@@ -180,18 +201,26 @@ public class RunApplicationAIPipelineJobTests(ITestOutputHelper outputHelper) : 
             .Returns("{}");
 
         var inputBuilder = Substitute.For<IAIApplicationInputBuilder>();
-        inputBuilder.BuildApplicationAnalysisInputAsync(request.ApplicationId!.Value, Arg.Any<string?>())
+        inputBuilder.BuildApplicationAnalysisInputAsync(Arg.Any<AIApplicationPromptDataDto>(), Arg.Any<string?>())
             .Returns(new ApplicationAnalysisOperationInputDto { ApplicationId = request.ApplicationId!.Value });
-        inputBuilder.BuildApplicationScoringInputAsync(request.ApplicationId!.Value, Arg.Any<string?>())
+        inputBuilder.BuildApplicationScoringInputAsync(Arg.Any<AIApplicationPromptDataDto>(), Arg.Any<string?>())
             .Returns(new ApplicationScoringOperationInputDto { ApplicationId = request.ApplicationId!.Value });
 
         var applicationRepository = Substitute.For<IApplicationRepository>();
-        applicationRepository.GetAsync(request.ApplicationId!.Value).Returns(new Application
+        var application = new Application
         {
             ApplicationFormId = Guid.NewGuid()
-        });
+        };
+        applicationRepository.GetAsync(request.ApplicationId!.Value).Returns(application);
         applicationRepository.UpdateAsync(Arg.Any<Application>(), Arg.Any<bool>(), Arg.Any<CancellationToken>())
             .Returns(callInfo => Task.FromResult(callInfo.Arg<Application>()));
+        var objectMapper = Substitute.For<IObjectMapper>();
+        objectMapper.Map<Application, AIApplicationPromptDataDto>(Arg.Any<Application>())
+            .Returns(new AIApplicationPromptDataDto
+            {
+                ApplicationId = request.ApplicationId!.Value,
+                ApplicationFormId = application.ApplicationFormId
+            });
 
         var localEventBus = Substitute.For<ILocalEventBus>();
         var rateLimiter = Substitute.For<IAIRateLimiter>();
@@ -205,7 +234,8 @@ public class RunApplicationAIPipelineJobTests(ITestOutputHelper outputHelper) : 
             applicationAnalysisService: analysisService,
             applicationScoringService: scoringService,
             inputBuilder: inputBuilder,
-            applicationRepository: applicationRepository);
+            applicationRepository: applicationRepository,
+            objectMapper: objectMapper);
 
         await job.ExecuteAsync(new RunApplicationAIPipelineJobArgs
         {
@@ -216,6 +246,7 @@ public class RunApplicationAIPipelineJobTests(ITestOutputHelper outputHelper) : 
         });
 
         request.Status.ShouldBe(AIGenerationRequestStatus.Completed);
+        await applicationRepository.Received(1).GetAsync(request.ApplicationId!.Value);
         await scoringService.Received(1).RegenerateAsync(Arg.Any<ApplicationScoringOperationInputDto>(), Arg.Any<CancellationToken>());
         await localEventBus.Received(1).PublishAsync(
             Arg.Is<Automation.Events.ApplicationAIScoringGeneratedEvent>(x => x.ApplicationId == request.ApplicationId));
@@ -231,6 +262,7 @@ public class RunApplicationAIPipelineJobTests(ITestOutputHelper outputHelper) : 
         IApplicationScoringService? applicationScoringService = null,
         IAIApplicationInputBuilder? inputBuilder = null,
         IApplicationRepository? applicationRepository = null,
+        IObjectMapper? objectMapper = null,
         IAIRateLimiter? rateLimiter = null)
     {
         return new RunApplicationAIPipelineJob(
@@ -244,6 +276,7 @@ public class RunApplicationAIPipelineJobTests(ITestOutputHelper outputHelper) : 
             localEventBus ?? Substitute.For<ILocalEventBus>(),
             generationRequestRepository,
             Substitute.For<ICurrentTenant>(),
+            objectMapper ?? Substitute.For<IObjectMapper>(),
             GetRequiredService<IUnitOfWorkManager>(),
             rateLimiter ?? Substitute.For<IAIRateLimiter>(),
             NullLogger<RunApplicationAIPipelineJob>.Instance);

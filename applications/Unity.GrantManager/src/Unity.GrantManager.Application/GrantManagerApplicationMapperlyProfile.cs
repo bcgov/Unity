@@ -16,6 +16,7 @@ using Unity.GrantManager.Intakes;
 using Unity.GrantManager.Integrations;
 using Unity.GrantManager.Locality;
 using Unity.GrantManager.Zones;
+using Unity.AI.Operations;
 using Unity.Payments.Domain.AccountCodings;
 using Unity.Payments.PaymentRequests;
 using Volo.Abp.Mapperly;
@@ -768,6 +769,16 @@ public partial class ReportsHistoryDtoToEntityMapper : MapperBase<ReportsHistory
     [MapperIgnoreTarget(nameof(ReportsHistory.TenantId))]
     [MapperIgnoreTarget(nameof(ReportsHistory.ConcurrencyStamp))]
     public override partial void Map(ReportsHistoryDto source, ReportsHistory destination);
+}
+
+[Mapper]
+public partial class ApplicationToAIApplicationPromptDataDtoMapper : MapperBase<Application, AIApplicationPromptDataDto>
+{
+    [MapProperty(nameof(Application.Id), nameof(AIApplicationPromptDataDto.ApplicationId))]
+    public override partial AIApplicationPromptDataDto Map(Application source);
+
+    [MapProperty(nameof(Application.Id), nameof(AIApplicationPromptDataDto.ApplicationId))]
+    public override partial void Map(Application source, AIApplicationPromptDataDto destination);
 }
 
 [Mapper]
