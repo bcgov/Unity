@@ -21,6 +21,7 @@ public enum GrantApplicationState
     GRANT_NOT_APPROVED = 12,
     DEFER = 13,
     ON_HOLD = 14,
+    RESOLVED = 15,
 }
 
 
@@ -31,5 +32,6 @@ public static class GrantApplicationStateGroups
         GrantApplicationState.GRANT_NOT_APPROVED,
         GrantApplicationState.CLOSED,
         GrantApplicationState.WITHDRAWN,
+        GrantApplicationState.RESOLVED
     };
 }

@@ -26,6 +26,13 @@ public class ApplicationStatusAppService : ApplicationService, IApplicationStatu
         return ObjectMapper.Map<List<ApplicationStatus>, List<ApplicationStatusDto>>(statuses.OrderBy(s => s.StatusCode).ToList());
     }
 
+    public virtual async Task<IList<ApplicantPortalStatusDto>> GetApplicantPortalStatusListAsync()
+    {
+        var statuses = await _applicationStatusRepository.GetListAsync();
+
+        return ObjectMapper.Map<List<ApplicationStatus>, List<ApplicantPortalStatusDto>>(statuses.OrderBy(s => s.StatusCode).ToList());
+    }
+
     public virtual async Task UpdateExternalStatusLabelsAsync(UpdateApplicationStatusExternalLabelsDto input)
     {
         // Load all statuses in a single query by IDs
@@ -38,6 +45,7 @@ public class ApplicationStatusAppService : ApplicationService, IApplicationStatu
             if (statusMap.TryGetValue(statusDto.Id, out var status))
             {
                 status.ExternalStatus = statusDto.ExternalStatus;
+                status.NotifiedStatus = string.IsNullOrWhiteSpace(statusDto.NotifiedStatus) ? null : statusDto.NotifiedStatus;
                 await _applicationStatusRepository.UpdateAsync(status);
             }
         }

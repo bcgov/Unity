@@ -181,7 +181,7 @@
     "ApplicationForms:Payable": "Payable",
     "ApplicationForms:RenderFormIoToHtml": "Render FormIO to HTML",
     "ApplicationForms:ConfigureWorksheets": "Configure Worksheets",
-    "ApplicationForms.Configuration.Notes:BypassAssessmentWorkflow": "Enabling this feature will bypass the Assessment workflow when you approve submissions associated with this form.",
+    "ApplicationForms.Configuration.Notes:BypassAssessmentWorkflow": "Enabling this feature will bypass the Assessment workflow when you approve or deny submissions associated with this form.",
     "ApplicationForms.Configuration.Notes:SelectedApplicantElectoralAddress": "The selected address type will determine which submitted applicant address is used to extract the electoral district.",
     "ApplicationForms.Configuration.Warnings:ApplicantElectoralAddressTypeChange": "Changing the address type will only affect new submissions. Existing applications will retain the electoral district extracted from their original address type.",
 
@@ -516,7 +516,8 @@
     "ApplicantPortalSettings:ManageStatuses": "Manage Statuses",
     "ApplicantPortalSettings:PortalStatusHeading": "Applicant Portal Status",
     "ApplicantPortalSettings:InternalStatus": "Internal Status",
-    "ApplicantPortalSettings:PortalStatusLabel": "Portal Status Label",
+    "ApplicantPortalSettings:PortalStatusLabel": "External Status",
+    "ApplicantPortalSettings:PortalNotifiedStatusLabel": "Notified Status",
     "ApplicantPortalSettings:SaveChanges": "Save Changes",
     "ApplicantPortalSettings:ResetChanges": "Reset",
     "ApplicantPortalSettings:NoChanges": "No changes to save.",

@@ -1,128 +1,75 @@
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Localization;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
-using Unity.AI;
-using Unity.AI.Features;
-using Unity.AI.Localization;
-using Unity.AI.Operations;
+using Unity.AI.Models;
 using Unity.AI.Prompts;
-using Unity.AI.Runtime;
-using Unity.AI.Permissions;
-using Unity.AI.Settings;
 using Unity.Flex.Domain.Scoresheets;
 using Unity.GrantManager.Applications;
-using Unity.GrantManager.GrantApplications.Automation.Events;
 using Volo.Abp;
-using Volo.Abp.EventBus.Local;
+using Volo.Abp.DependencyInjection;
 
-namespace Unity.GrantManager.GrantApplications;
+namespace Unity.AI.Operations;
 
-[Authorize(AIPermissions.Analysis.GenerateScoring)]
-public class ApplicationScoringAppService(
-    IApplicationScoringService applicationScoringService,
-    IApplicationRepository applicationRepository,
+public class AIApplicationInputBuilder(
     IApplicationFormRepository applicationFormRepository,
     IApplicationFormSubmissionRepository applicationFormSubmissionRepository,
     IApplicationFormVersionRepository applicationFormVersionRepository,
     IApplicationChefsFileAttachmentRepository applicationChefsFileAttachmentRepository,
     IScoresheetRepository scoresheetRepository,
-    AIFeatureGuard featureGuard,
-    ILocalEventBus localEventBus,
-    ILogger<ApplicationScoringAppService> logger,
-    IStringLocalizer<AIResource> localizer)
-    : AIAppService, IApplicationScoringAppService
+    ILogger<AIApplicationInputBuilder> logger) : IAIApplicationInputBuilder, ITransientDependency
 {
-    public virtual async Task<ApplicationScoringResultDto> GenerateApplicationScoringAsync(Guid applicationId, string? promptVersion = null)
+    public async Task<ApplicationAnalysisOperationInputDto> BuildApplicationAnalysisInputAsync(AIApplicationPromptDataDto application, string? promptVersion)
     {
-        await featureGuard.EnsureEnabledAsync(
-            AIFeatures.Scoring,
-            AILocalizationKeys.ScoringDisabled);
+        var formSubmission = await applicationFormSubmissionRepository.GetByApplicationAsync(application.ApplicationId);
+        var attachments = await applicationChefsFileAttachmentRepository.GetListAsync(a => a.ApplicationId == application.ApplicationId);
+        var formSchema = await GetFormSchemaAsync(formSubmission?.ApplicationFormVersionId);
 
-        var input = await BuildInputAsync(applicationId, promptVersion);
-        var scoresheetAnswers = await applicationScoringService.RegenerateAsync(input);
-        var application = await applicationRepository.GetAsync(applicationId);
-        application.AIScoresheetAnswers = scoresheetAnswers;
-        await applicationRepository.UpdateAsync(application);
-
-        if (UnitOfWorkManager.Current != null)
+        return new ApplicationAnalysisOperationInputDto
         {
-            var capturedId = applicationId;
-            UnitOfWorkManager.Current.OnCompleted(async () =>
-            {
-                await localEventBus.PublishAsync(new ApplicationAIScoringGeneratedEvent
-                {
-                    ApplicationId = capturedId
-                });
-            });
-        }
-        else
-        {
-            await localEventBus.PublishAsync(new ApplicationAIScoringGeneratedEvent
-            {
-                ApplicationId = applicationId
-            });
-        }
-
-        return new ApplicationScoringResultDto
-        {
-            Completed = true
+            ApplicationId = application.ApplicationId,
+            Schema = JsonSerializer.SerializeToElement(PromptDataPayloadBuilder.BuildFormFieldConfiguration(formSchema, logger)),
+            Data = PromptDataPayloadBuilder.BuildPromptDataPayload(application, formSubmission?.Submission, formSchema, logger),
+            Attachments = PromptDataPayloadBuilder.BuildAttachmentSummaries(attachments),
+            PromptVersion = promptVersion
         };
     }
 
-    // Internal-only: no HTTP endpoint, no auth check — safe for background job callers
-    [AllowAnonymous]
-    [RemoteService(IsEnabled = false)]
-    public virtual async Task<ApplicationScoringResultDto> GenerateApplicationScoringForPipelineAsync(Guid applicationId, string? promptVersion = null)
+    public async Task<ApplicationScoringOperationInputDto> BuildApplicationScoringInputAsync(AIApplicationPromptDataDto application, string? promptVersion)
     {
-        var input = await BuildInputAsync(applicationId, promptVersion);
-        var scoresheetAnswers = await applicationScoringService.RegenerateAsync(input);
-        var application = await applicationRepository.GetAsync(applicationId);
-        application.AIScoresheetAnswers = scoresheetAnswers;
-        await applicationRepository.UpdateAsync(application);
-        return new ApplicationScoringResultDto { Completed = true };
-    }
-
-    private async Task<ApplicationScoringOperationInputDto> BuildInputAsync(Guid applicationId, string? promptVersion)
-    {
-        var application = await applicationRepository.GetAsync(applicationId);
         var applicationForm = await applicationFormRepository.GetAsync(application.ApplicationFormId);
         if (applicationForm.ScoresheetId == null)
         {
-            throw new UserFriendlyException(localizer[AILocalizationKeys.ScoringRequiresScoresheet]);
+            throw new UserFriendlyException("Scoring requires a configured scoresheet.");
         }
 
         var scoresheet = await scoresheetRepository.GetWithChildrenAsync(applicationForm.ScoresheetId.Value);
         if (scoresheet == null || !scoresheet.Sections.Any() || !scoresheet.Sections.SelectMany(s => s.Fields).Any())
         {
-            throw new UserFriendlyException(localizer[AILocalizationKeys.ScoringRequiresScoresheetFields]);
+            throw new UserFriendlyException("Scoring requires a scoresheet with fields.");
         }
 
-        var attachments = await applicationChefsFileAttachmentRepository.GetListAsync(a => a.ApplicationId == applicationId);
-        var attachmentSummaries = PromptDataPayloadBuilder.BuildAttachmentSummaries(
-            attachments,
-            excludeWhitespaceOnlySummaries: false);
+        var attachments = await applicationChefsFileAttachmentRepository.GetListAsync(a => a.ApplicationId == application.ApplicationId);
+        var attachmentSummaries = PromptDataPayloadBuilder.BuildAttachmentSummaries(attachments);
 
-        var formSubmission = await applicationFormSubmissionRepository.GetByApplicationAsync(applicationId);
+        var formSubmission = await applicationFormSubmissionRepository.GetByApplicationAsync(application.ApplicationId);
         var formSchema = await GetFormSchemaAsync(formSubmission?.ApplicationFormVersionId);
-        var promptData = PromptDataPayloadBuilder.BuildPromptDataPayload(application, formSubmission, formSchema, logger);
+        var promptData = PromptDataPayloadBuilder.BuildPromptDataPayload(application, formSubmission?.Submission, formSchema, logger);
 
         var sections = scoresheet.Sections
             .OrderBy(s => s.Order)
             .Select(section => new ApplicationScoringSectionOperationInputDto
             {
                 SectionName = section.Name,
-                SectionSchema = JsonSerializer.SerializeToElement(BuildSectionQuestionsData(section), AIJsonDefaults.IndentedCamelCase)
+                SectionSchema = JsonSerializer.SerializeToElement(BuildSectionQuestionsData(section))
             })
             .ToList();
 
         return new ApplicationScoringOperationInputDto
         {
-            ApplicationId = applicationId,
+            ApplicationId = application.ApplicationId,
             Data = promptData,
             Attachments = attachmentSummaries,
             Sections = sections,
@@ -144,7 +91,7 @@ public class ApplicationScoringAppService(
         }
         catch (Exception ex)
         {
-            logger.LogWarning(ex, "Unable to load form schema for application scoring prompt data generation for form version {FormVersionId}.", formVersionId);
+            logger.LogWarning(ex, "Unable to load form schema for AI input generation for form version {FormVersionId}.", formVersionId);
             return null;
         }
     }

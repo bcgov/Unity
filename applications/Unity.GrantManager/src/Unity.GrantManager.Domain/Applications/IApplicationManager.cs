@@ -13,4 +13,5 @@ public interface IApplicationManager
     Task<Application> TriggerAction(Guid applicationId, GrantApplicationAction triggerAction);
     Task SetAssigneesAsync(Guid applicationId, List<(Guid? assigneeId, string? fullName)> assigneeSubs);
     bool IsActionAllowed(Application application, GrantApplicationAction triggerAction);
+    string? GetWorkflowDiagram(bool isDirectApproval);
 }
