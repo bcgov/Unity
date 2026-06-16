@@ -425,6 +425,7 @@
     "ApplicantInfoView:ApplicantInfo.OrgBookStatus": "Org book status ",
     "ApplicantInfoView:ApplicantInfo.OrganizationType": "Organization Type",
     "ApplicantInfoView:ApplicantInfo.OrganizationSize": "Organization Size",
+    "ApplicantInfoView:ApplicantInfo.ApproxNumberOfEmployees": "Organization Size (Approximate Number of Employees)",
     "ApplicantInfoView:ApplicantInfo.UnityApplicant": "Applicant Id",
     "ApplicantInfoView:ApplicantInfo.FiscalMonth": "Fiscal Year End Month",
     "ApplicantInfoView:ApplicantInfo.FiscalDay": "Fiscal Year End Day",

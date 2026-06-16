@@ -32,7 +32,7 @@ public class OrganizationEditHandler(
         applicant.OrgStatus = innerData.Status;
         applicant.NonRegOrgName = innerData.NonRegOrgName;
         applicant.FiscalMonth = innerData.FiscalMonth;
-        applicant.OrganizationSize = innerData.OrganizationSize;
+        applicant.ApproxNumberOfEmployees = innerData.ApproxNumberOfEmployees ?? innerData.OrganizationSize;
 
         if (int.TryParse(innerData.FiscalDay, out var fiscalDay))
         {

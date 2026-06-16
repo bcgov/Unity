@@ -113,7 +113,6 @@ namespace Unity.GrantManager.Repositories
                     a.OrgNumber,
                     a.NonRegOrgName,
                     a.OrganizationType,
-                    a.OrganizationSize,
                     a.ApproxNumberOfEmployees,
                     a.OrgStatus,
                     a.BusinessNumber,
