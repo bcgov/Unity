@@ -196,7 +196,7 @@ public class EmailConsumer(
         // Log SentDateTime on success
         if (response.IsSuccessStatusCode)
         {
-            // Get precise sent time from CHES response or use current time as fallback
+            // Use CHES response Date header (response time) or current time as fallback
             var sentDateTime = SanitizeResponseDateTime(response.Headers?.Date?.UtcDateTime);
             log.SentDateTime = sentDateTime;
 

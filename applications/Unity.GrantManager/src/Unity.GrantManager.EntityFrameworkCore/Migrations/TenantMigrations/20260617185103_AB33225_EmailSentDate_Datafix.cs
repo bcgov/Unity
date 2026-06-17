@@ -20,11 +20,7 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.Sql(@"
-                UPDATE ""Notifications"".""EmailLogs""
-                SET ""SentDateTime"" = NULL
-                WHERE ""Status"" = 'Sent'
-            ");
+            // Data backfill migration; no safe automatic rollback.
         }
     }
 }

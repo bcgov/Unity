@@ -58,7 +58,7 @@
                     className: 'data-table-header',
                     width: '12%',
                     render: function (data) {
-                        return data != null ? luxon.DateTime.fromISO(data, {
+                        return data ? luxon.DateTime.fromISO(data, {
                             locale: abp.localization.currentCulture.name,
                         }).toLocaleString({
                             day: "numeric",
@@ -76,7 +76,7 @@
                     className: 'data-table-header',
                     width: '12%',
                     render: function (data) {
-                        return data != null ? luxon.DateTime.fromISO(data, {
+                        return data ? luxon.DateTime.fromISO(data, {
                             locale: abp.localization.currentCulture.name,
                         }).toLocaleString({
                             day: "numeric",
