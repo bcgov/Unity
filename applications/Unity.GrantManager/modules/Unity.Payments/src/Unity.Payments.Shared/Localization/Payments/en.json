@@ -104,6 +104,8 @@
     "PaymentInfoView:ApplicationPaymentListTable.UpdatedOn": "Updated On",
     "PaymentInfoView:ApplicationPaymentListTable.PaidOn": "Paid On",
     "PaymentInfoView:ApplicationPaymentListTable.CASResponse": "CAS Response",
+    "PaymentInfoView:ApplicationPaymentListTable.InvoiceStatus": "Invoice Status",
+    "PaymentInfoView:ApplicationPaymentListTable.Category": "Category",
 
     "ApplicationPaymentStatusRequest:ApproveTitle": "Approve Payments",
     "ApplicationPaymentStatusRequest:DeclineTitle": "Decline Payments",
