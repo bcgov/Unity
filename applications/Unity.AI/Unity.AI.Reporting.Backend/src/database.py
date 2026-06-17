@@ -99,6 +99,35 @@ class DatabaseManager:
                         ON query_cache(tenant_id, db_id, schema_fingerprint);
                 """)
 
+                # Schema version tracking — drives conditional semantic-cache invalidation.
+                # One row per (db_id, collection_name) holds the structural fingerprint of
+                # the embedded schema; embed_schemas compares + purges on change.
+                cur.execute("""
+                    CREATE TABLE IF NOT EXISTS schema_versions (
+                        db_id           INTEGER NOT NULL,
+                        collection_name TEXT    NOT NULL,
+                        fingerprint     TEXT    NOT NULL,
+                        updated_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        PRIMARY KEY (db_id, collection_name)
+                    );
+                """)
+
+                # One-time migration: pre-fix cache rows pre-date the structural fingerprint
+                # and may encode SQL against a since-changed schema. Purge them once on
+                # first init after the fix lands; guarded by a sentinel row in
+                # schema_versions so it never repeats.
+                cur.execute("""
+                    INSERT INTO schema_versions (db_id, collection_name, fingerprint)
+                    VALUES (0, '__migration_v1__', 'done')
+                    ON CONFLICT (db_id, collection_name) DO NOTHING
+                    RETURNING db_id
+                """)
+                if cur.fetchone():
+                    cur.execute("DELETE FROM query_cache")
+                    logger.info(
+                        f"One-time cache migration: purged {cur.rowcount} pre-fix query_cache entries"
+                    )
+
                 # ivfflat index requires rows to exist first — created separately via evict_old
                 # or on first similarity search. Skip here to avoid error on empty table.
 
@@ -584,6 +613,57 @@ class CacheRepository:
                 deleted = cur.rowcount
                 conn.commit()
                 return deleted
+
+    def update_schema_fingerprint(self, db_id: int, collection_name: str,
+                                  fingerprint: str) -> int:
+        """Compare new structural fingerprint to the stored one for (db_id, collection_name).
+        If it differs, purge that db's query_cache. Always upsert the new fingerprint.
+
+        SELECT ... FOR UPDATE serializes against a concurrent embed-all run
+        (e.g. manual CLI vs. server startup).
+
+        Returns the number of query_cache rows purged (0 on first run or unchanged).
+        """
+        with self.db.get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    "SELECT fingerprint FROM schema_versions "
+                    "WHERE db_id = %s AND collection_name = %s FOR UPDATE",
+                    (db_id, collection_name),
+                )
+                row = cur.fetchone()
+                old = row[0] if row else None
+
+                purged = 0
+                # Only purge when we had a previous fingerprint and it differs.
+                # First-ever embed (old=None) has nothing valid to invalidate.
+                if old is not None and old != fingerprint:
+                    cur.execute("DELETE FROM query_cache WHERE db_id = %s", (db_id,))
+                    purged = cur.rowcount
+
+                cur.execute("""
+                    INSERT INTO schema_versions (db_id, collection_name, fingerprint, updated_at)
+                    VALUES (%s, %s, %s, NOW())
+                    ON CONFLICT (db_id, collection_name)
+                    DO UPDATE SET fingerprint = EXCLUDED.fingerprint, updated_at = NOW()
+                """, (db_id, collection_name, fingerprint))
+
+                conn.commit()
+
+                if old is None:
+                    logger.info(
+                        f"Schema fingerprint initialized for db_id={db_id}: {fingerprint}"
+                    )
+                elif old == fingerprint:
+                    logger.info(
+                        f"Schema unchanged for db_id={db_id} (fingerprint={fingerprint}); cache retained"
+                    )
+                else:
+                    logger.info(
+                        f"Schema changed for db_id={db_id}; "
+                        f"purged {purged} stale cache entries (old={old} new={fingerprint})"
+                    )
+                return purged
 
     def ensure_hnsw_index(self):
         """Create the hnsw index once the table has rows. hnsw supports up to 16000 dimensions,
