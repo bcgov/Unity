@@ -2,15 +2,16 @@
 Embeddings module for managing vector storage and retrieval.
 Handles schema embedding and similarity search for NL to SQL.
 """
+import hashlib
 import logging
 import time
-from typing import List, Optional
+from typing import List, Optional, Tuple
 from langchain_core.documents import Document
 from langchain_openai import AzureOpenAIEmbeddings
 from pydantic import SecretStr
 from langchain_postgres import PGVector
 from config import config, DEFAULT_TENANT
-from database import db_manager
+from database import db_manager, cache_repository
 from metabase import metabase_client
 
 # Configure logging
@@ -29,6 +30,11 @@ class SchemaExtractor:
             "CorrelationProvider", "AIScoresheetAnswers", "AIAnalysis"
         }
         self.junk_tables = {"ApplicationFormSubmissions", "__EFMigrationsHistory"}
+        # Set by helpers when a silent exception is swallowed during extraction.
+        # extract_schemas resets and checks this so we never advance the schema
+        # fingerprint based on a glitchy Metabase fetch (which would cause a
+        # spurious cache purge).
+        self._extraction_had_error = False
     
     def get_view_metadata(self, view_name: str, db_id: int,
                          tenant_id: Optional[str] = None) -> dict:
@@ -51,6 +57,7 @@ class SchemaExtractor:
             }
         except Exception as e:
             logger.warning(f"Could not fetch metadata for view {view_name}: {e}")
+            self._extraction_had_error = True
             return {}
 
     def get_custom_field_labels(self, db_id: int,
@@ -62,6 +69,7 @@ class SchemaExtractor:
             return {row[0]: row[1] for row in result["rows"] if row[0]}
         except Exception as e:
             logger.warning(f"Could not fetch custom field labels: {e}")
+            self._extraction_had_error = True
             return {}
 
     def get_column_example(self, is_text: bool, schema: str, table: str,
@@ -80,6 +88,20 @@ class SchemaExtractor:
             pass  # No example value available for this column
         return None
     
+    def _is_junk_column(self, field_name: str) -> bool:
+        """True if a column should be excluded from embedding.
+
+        Matches both top-level junk columns and Metabase's auto-unfolded nested
+        JSON fields, which arrive named like
+        'AIScoresheetAnswers → <uuid> → citation'. Exact-name matching alone
+        misses these nested expansions (so the embedded schema fills up with AI
+        result blobs), so we also check the root segment before the first ' → '.
+        """
+        if field_name in self.junk_columns:
+            return True
+        root = field_name.split("→", 1)[0].strip()
+        return root in self.junk_columns
+
     def _should_skip_table(self, table: dict, schema_type: str) -> bool:
         """Check if a table should be excluded based on schema type and exclusion rules."""
         if table["name"] in self.junk_tables:
@@ -105,6 +127,10 @@ class SchemaExtractor:
             result = self.metabase.execute_sql(sql, db_id, tenant_id=tenant_id)
             return bool(result["rows"])
         except Exception:
+            # A real "no rows" returns [] above; reaching here means the query
+            # itself failed — mark so the schema fingerprint isn't advanced
+            # based on a transiently dropped table.
+            self._extraction_had_error = True
             return False
 
     def _format_schema_with_examples(self, schema_name: str, table_name: str,
@@ -137,7 +163,7 @@ class SchemaExtractor:
         return page
 
     def extract_schemas(self, db_id: int, schema_type: str = "public",
-                        tenant_id: Optional[str] = None) -> List[str]:
+                        tenant_id: Optional[str] = None) -> Tuple[List[str], List[str], bool]:
         """
         Extract table schemas from database.
 
@@ -147,10 +173,19 @@ class SchemaExtractor:
             tenant_id: Optional tenant ID for tenant-specific Metabase API key
 
         Returns:
-            List of formatted schema descriptions
+            Tuple of (docs, sig_parts, extraction_ok):
+              - docs: formatted schema descriptions (with example values) for embedding
+              - sig_parts: structural signature lines (no sample values) for the
+                schema fingerprint — one per included table
+              - extraction_ok: False if any silent error was swallowed during the
+                run; callers must NOT advance the schema fingerprint when False
         """
+        # Reset the per-run error flag — helpers set it on swallowed exceptions.
+        self._extraction_had_error = False
+
         metadata = self.metabase.get_database_metadata(db_id, tenant_id=tenant_id)
-        docs = []
+        docs: List[str] = []
+        sig_parts: List[str] = []
         schema_name = "Reporting" if schema_type == "custom" else "public"
 
         # Fetch custom field labels once as fallback for old views without ReportColumnsMaps records
@@ -167,7 +202,7 @@ class SchemaExtractor:
             columns = [
                 f"{field['name']} ({field['base_type']})"
                 for field in table["fields"]
-                if field["name"] not in self.junk_columns
+                if not self._is_junk_column(field["name"])
             ]
 
             try:
@@ -180,17 +215,29 @@ class SchemaExtractor:
                     view_metadata = self.get_view_metadata(
                         table["name"], db_id, tenant_id=tenant_id
                     )
-                # Build schema description with examples
+                # Build schema description with examples (used for embedding only)
                 page = self._format_schema_with_examples(schema_name, table["name"], columns, db_id,
                                                          tenant_id=tenant_id,
                                                          view_metadata=view_metadata,
                                                          custom_labels=custom_labels)
                 docs.append(page)
+                # Structural signature line — sample values deliberately excluded so
+                # row-data churn doesn't shift the fingerprint. Sorting every list
+                # makes the line stable regardless of Metabase's response order.
+                sig_cols = ",".join(sorted(columns))
+                sig_meta = ";".join(
+                    f"{k}={v.get('label', '') or ''}|{v.get('forms_type', '') or ''}"
+                    for k, v in sorted(view_metadata.items())
+                )
+                sig_parts.append(f"{schema_name}.{table['name']}|{sig_cols}|{sig_meta}")
                 logger.debug(f"Extracted schema for {table['name']}")
             except Exception as e:
                 logger.exception(f"Error processing table {table['name']}: {e}")
+                # Per-table failure means the signature is missing this table —
+                # skip the fingerprint update for this run.
+                self._extraction_had_error = True
 
-        return docs
+        return docs, sig_parts, not self._extraction_had_error
 
 
 class EmbeddingManager:
@@ -253,15 +300,25 @@ class EmbeddingManager:
         # Default schema types if not specified
         if schema_types is None:
             schema_types = ['public']
-        
+
         # Purge existing embeddings for this db_id
         db_manager.purge_embeddings(db_id, config.app.collection_name)
 
         logger.info(f"Embedding schemas for db_id: {db_id}, types: {schema_types}")
 
+        # Accumulate structural signature pieces across all schema types so the
+        # fingerprint reflects the whole embedded surface for this db_id.
+        all_sig_parts: List[str] = []
+        all_extractions_ok = True
+
         # Extract and embed schemas for each type
         for schema_type in schema_types:
-            schemas = self.schema_extractor.extract_schemas(db_id, schema_type, tenant_id=tenant_id)
+            schemas, sig_parts, extraction_ok = self.schema_extractor.extract_schemas(
+                db_id, schema_type, tenant_id=tenant_id
+            )
+            all_sig_parts.extend(sig_parts)
+            if not extraction_ok:
+                all_extractions_ok = False
 
             # Create documents with metadata
             documents = [
@@ -278,6 +335,23 @@ class EmbeddingManager:
             if documents:
                 self.vector_store.add_documents(documents)
                 logger.info(f"Added {len(documents)} {schema_type} schema embeddings")
+
+        # Conditional cache invalidation — only after embeddings succeed.
+        # Skip when any silent extraction error was hit so a glitchy Metabase
+        # fetch can't trigger a spurious cache purge.
+        if not all_extractions_ok:
+            logger.warning(
+                f"Skipping schema fingerprint update for db_id={db_id} "
+                f"due to silent extraction error(s); cache retained, will retry next run"
+            )
+            return
+
+        fingerprint = hashlib.sha256(
+            "\n".join(sorted(all_sig_parts)).encode("utf-8")
+        ).hexdigest()[:16]
+        cache_repository.update_schema_fingerprint(
+            db_id, config.app.collection_name, fingerprint
+        )
     
     def _get_all_custom_schemas(self, query: str, db_id: int) -> List[Document]:
         """Retrieve ALL embedded custom/worksheet schemas for a db_id.
