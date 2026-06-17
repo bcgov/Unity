@@ -213,6 +213,29 @@ $(function () {
             });
         });
 
+        // Reposition the COLUMNS dropdown to open upward when there is not enough space below. Opens upward if there is no ample space in either direction.
+        $('#applicantPaymentsDynamicButtonContainerId').on('click', '.buttons-collection', function () {
+            const $btn = $(this);
+            setTimeout(function () {
+                const $collection = $('.dt-button-collection').filter(':visible').first();
+                if (!$collection.length) return;
+                const btnRect = $btn[0].getBoundingClientRect();
+                const collHeight = $collection.outerHeight();
+                const rightOffset = window.innerWidth - btnRect.right;
+                if (btnRect.bottom + collHeight > window.innerHeight) {
+                    $collection[0].style.setProperty('position', 'fixed', 'important');
+                    $collection[0].style.setProperty('bottom', (window.innerHeight - btnRect.top) + 'px', 'important');
+                    $collection[0].style.setProperty('top', '', 'important');
+                } else {
+                    $collection[0].style.setProperty('position', 'fixed', 'important');
+                    $collection[0].style.setProperty('top', btnRect.bottom + 'px', 'important');
+                    $collection[0].style.setProperty('bottom', '', 'important');
+                }
+                $collection[0].style.setProperty('left', 'auto', 'important');
+                $collection[0].style.setProperty('right', rightOffset + 'px', 'important');
+            }, 0);
+        });
+
         $('#nav-payments-tab').one('click', function () {
             dataTable.columns.adjust();
         });
