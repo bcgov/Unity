@@ -3,6 +3,7 @@ Embeddings module for managing vector storage and retrieval.
 Handles schema embedding and similarity search for NL to SQL.
 """
 import hashlib
+import json
 import logging
 import time
 from typing import List, Optional, Tuple
@@ -36,29 +37,54 @@ class SchemaExtractor:
         # spurious cache purge).
         self._extraction_had_error = False
     
-    def get_view_metadata(self, view_name: str, db_id: int,
-                         tenant_id: Optional[str] = None) -> dict:
-        """Returns {column_name: {label, forms_type}} from ReportColumnsMaps for a view."""
+    def get_all_custom_views(self, db_id: int,
+                             tenant_id: Optional[str] = None) -> List[dict]:
+        """
+        Returns all custom views from ReportColumnsMaps as the embedding entry point.
+        Each entry: {view_name, correlation_type, description, columns: {col: {label, forms_type}}}
+        """
+        correlation_types = (
+            "'worksheet','worksheet_consolidated','scoresheet'"
+        )
         sql = f"""
-        SELECT
-            row_data->>'ColumnName' AS column_name,
-            row_data->>'Label'      AS label,
-            row_data->>'Type'       AS forms_type
-        FROM "Reporting"."ReportColumnsMaps" rcm,
-             jsonb_array_elements(rcm."Mapping"->'Rows') AS row_data
-        WHERE rcm."ViewName" = '{view_name}'
+        SELECT "ViewName", "CorrelationProvider", "Mapping"
+        FROM "Reporting"."ReportColumnsMaps"
+        WHERE "CorrelationProvider" IN ({correlation_types})
         """
         try:
             result = self.metabase.execute_sql(sql, db_id, tenant_id=tenant_id)
-            return {
-                row[0]: {"label": row[1], "forms_type": row[2]}
-                for row in result["rows"]
-                if row[0]
-            }
         except Exception as e:
-            logger.warning(f"Could not fetch metadata for view {view_name}: {e}")
+            logger.warning(f"Could not fetch custom views from ReportColumnsMaps: {e}")
             self._extraction_had_error = True
-            return {}
+            return []
+
+        views = []
+        for row in result["rows"]:
+            view_name, correlation_type, mapping = row[0], row[1], row[2]
+            if not view_name:
+                continue
+            if isinstance(mapping, str):
+                try:
+                    mapping = json.loads(mapping)
+                except (ValueError, TypeError):
+                    logger.warning(f"Could not parse Mapping JSON for view {view_name}")
+                    continue
+            if not isinstance(mapping, dict):
+                continue
+            metadata = mapping.get("Metadata") or {}
+            description = (metadata.get("Description") or "").strip()
+            columns = {
+                r["ColumnName"]: {"label": r.get("Label", ""), "forms_type": r.get("Type", "")}
+                for r in (mapping.get("Rows") or [])
+                if r.get("ColumnName")
+            }
+            views.append({
+                "view_name": view_name,
+                "correlation_type": correlation_type,
+                "description": description,
+                "columns": columns,
+            })
+        return views
 
     def get_custom_field_labels(self, db_id: int,
                                tenant_id: Optional[str] = None) -> dict:
@@ -102,20 +128,13 @@ class SchemaExtractor:
         root = field_name.split("→", 1)[0].strip()
         return root in self.junk_columns
 
-    def _should_skip_table(self, table: dict, schema_type: str) -> bool:
-        """Check if a table should be excluded based on schema type and exclusion rules."""
+    def _should_skip_table(self, table: dict) -> bool:
+        """Check if a public table should be excluded based on exclusion rules."""
         if table["name"] in self.junk_tables:
             return True
-        if schema_type == "public" and table["schema"] != "public":
+        if table["schema"] != "public":
             return True
-        if schema_type == "public" and (
-            "scoresheet" in table["name"].lower() or "worksheet" in table["name"].lower()
-        ):
-            return True
-        if schema_type == "custom" and (
-            ("worksheet" not in table["name"].lower() and "scoresheet" not in table["name"].lower())
-            or table["schema"] != "Reporting"
-        ):
+        if "scoresheet" in table["name"].lower() or "worksheet" in table["name"].lower():
             return True
         return False
 
@@ -133,37 +152,63 @@ class SchemaExtractor:
             self._extraction_had_error = True
             return False
 
+    def _format_column_line(self, col: str, schema_name: str, table_name: str,
+                            db_id: int, meta: dict, fallback: dict,
+                            tenant_id: Optional[str] = None) -> str:
+        col_name = col.split(' ')[0]
+        col_meta = meta.get(col_name, {})
+        label = col_meta.get("label") or fallback.get(col_name, "")
+        forms_type = col_meta.get("forms_type", "")
+        is_text = 'Text' in col or forms_type in ("textfield", "textarea")
+        example = self.get_column_example(is_text, schema_name, table_name, col_name, db_id,
+                                          tenant_id=tenant_id)
+
+        line = f"\n - {col}"
+        if label:
+            line += f" | {label}"
+        if forms_type and forms_type not in ("textfield", "textarea"):
+            line += f" ({forms_type})"
+        if example:
+            truncated = example[:50] + '...' if len(example) > 50 else example
+            line += f": '{truncated}'"
+        return line
+
     def _format_schema_with_examples(self, schema_name: str, table_name: str,
                                      columns: List[str], db_id: int,
                                      tenant_id: Optional[str] = None,
                                      view_metadata: Optional[dict] = None,
-                                     custom_labels: Optional[dict] = None) -> str:
+                                     custom_labels: Optional[dict] = None,
+                                     description: str = "") -> str:
         """Build a schema description string with example values for each column."""
         page = f'# "{schema_name}"."{table_name}"'
+        if description:
+            page += f"\nDescription: {description}"
         meta = view_metadata or {}
         fallback = custom_labels or {}
         for col in columns:
-            col_name = col.split(' ')[0]
-            is_text = 'Text' in col
-            example = self.get_column_example(is_text, schema_name, table_name, col_name, db_id,
-                                              tenant_id=tenant_id)
-            col_meta = meta.get(col_name, {})
-            label = col_meta.get("label") or fallback.get(col_name, "")
-            forms_type = col_meta.get("forms_type", "")
-
-            line = f"\n - {col}"
-            if label:
-                line += f" | {label}"
-            if forms_type and forms_type not in ("textfield", "textarea"):
-                line += f" ({forms_type})"
-            if example:
-                truncated = example[:50] + '...' if len(example) > 50 else example
-                line += f": '{truncated}'"
-            page += line
+            page += self._format_column_line(
+                col, schema_name, table_name, db_id, meta, fallback,
+                tenant_id=tenant_id,
+            )
         return page
 
+    def _signature_line(self, schema_name: str, table_name: str,
+                        columns: List[str],
+                        view_metadata: Optional[dict] = None) -> str:
+        """Structural signature for one table/view, used for the schema
+        fingerprint that drives cache invalidation. Sample values are
+        deliberately excluded so row-data churn never shifts it; sorting keeps
+        the line stable regardless of Metabase's response order."""
+        sig_cols = ",".join(sorted(columns))
+        meta = view_metadata or {}
+        sig_meta = ";".join(
+            f"{k}={(v.get('label') or '')}|{(v.get('forms_type') or '')}"
+            for k, v in sorted(meta.items())
+        )
+        return f"{schema_name}.{table_name}|{sig_cols}|{sig_meta}"
+
     def extract_schemas(self, db_id: int, schema_type: str = "public",
-                        tenant_id: Optional[str] = None) -> Tuple[List[str], List[str], bool]:
+                        tenant_id: Optional[str] = None) -> Tuple[List[dict], List[str], bool]:
         """
         Extract table schemas from database.
 
@@ -174,70 +219,145 @@ class SchemaExtractor:
 
         Returns:
             Tuple of (docs, sig_parts, extraction_ok):
-              - docs: formatted schema descriptions (with example values) for embedding
+              - docs: list of dicts {page_content, correlation_type} for embedding
               - sig_parts: structural signature lines (no sample values) for the
-                schema fingerprint — one per included table
+                schema fingerprint — one per embedded table/view
               - extraction_ok: False if any silent error was swallowed during the
                 run; callers must NOT advance the schema fingerprint when False
         """
         # Reset the per-run error flag — helpers set it on swallowed exceptions.
         self._extraction_had_error = False
 
-        metadata = self.metabase.get_database_metadata(db_id, tenant_id=tenant_id)
-        docs: List[str] = []
-        sig_parts: List[str] = []
-        schema_name = "Reporting" if schema_type == "custom" else "public"
-
-        # Fetch custom field labels once as fallback for old views without ReportColumnsMaps records
-        custom_labels = {}
+        # Custom (worksheet/scoresheet) schemas use a separate ReportColumnsMaps
+        # path; derive sig_parts from the per-doc signatures it produces.
         if schema_type == "custom":
-            custom_labels = self.get_custom_field_labels(db_id, tenant_id=tenant_id)
+            docs = self._extract_custom_schemas(db_id, tenant_id=tenant_id)
+            return docs, [d["signature"] for d in docs], not self._extraction_had_error
 
+        # Public schema: use Metabase metadata as before
+        metadata = self.metabase.get_database_metadata(db_id, tenant_id=tenant_id)
+        docs = []
         for table in metadata["tables"]:
-            # Filter tables based on schema type and exclusion rules
-            if self._should_skip_table(table, schema_type):
+            if self._should_skip_table(table):
                 continue
-
-            # Extract non-junk columns
             columns = [
                 f"{field['name']} ({field['base_type']})"
                 for field in table["fields"]
                 if not self._is_junk_column(field["name"])
             ]
-
             try:
-                # Check if table has data
-                if not self._has_data(schema_name, table["name"], db_id, tenant_id=tenant_id):
+                if not self._has_data("public", table["name"], db_id, tenant_id=tenant_id):
                     continue
-                # Fetch column labels and forms types for worksheet views
-                view_metadata = {}
-                if schema_type == "custom":
-                    view_metadata = self.get_view_metadata(
-                        table["name"], db_id, tenant_id=tenant_id
-                    )
-                # Build schema description with examples (used for embedding only)
-                page = self._format_schema_with_examples(schema_name, table["name"], columns, db_id,
-                                                         tenant_id=tenant_id,
-                                                         view_metadata=view_metadata,
-                                                         custom_labels=custom_labels)
-                docs.append(page)
-                # Structural signature line — sample values deliberately excluded so
-                # row-data churn doesn't shift the fingerprint. Sorting every list
-                # makes the line stable regardless of Metabase's response order.
-                sig_cols = ",".join(sorted(columns))
-                sig_meta = ";".join(
-                    f"{k}={v.get('label', '') or ''}|{v.get('forms_type', '') or ''}"
-                    for k, v in sorted(view_metadata.items())
+                page = self._format_schema_with_examples(
+                    "public", table["name"], columns, db_id, tenant_id=tenant_id
                 )
-                sig_parts.append(f"{schema_name}.{table['name']}|{sig_cols}|{sig_meta}")
+                docs.append({
+                    "page_content": page,
+                    "correlation_type": "public",
+                    "signature": self._signature_line("public", table["name"], columns),
+                })
                 logger.debug(f"Extracted schema for {table['name']}")
             except Exception as e:
                 logger.exception(f"Error processing table {table['name']}: {e}")
-                # Per-table failure means the signature is missing this table —
-                # skip the fingerprint update for this run.
+                # Per-table failure leaves the signature incomplete — skip the
+                # fingerprint update for this run.
                 self._extraction_had_error = True
+        return docs, [d["signature"] for d in docs], not self._extraction_had_error
 
-        return docs, sig_parts, not self._extraction_had_error
+    def _get_legacy_custom_tables(self, db_id: int,
+                                  tenant_id: Optional[str] = None) -> List[dict]:
+        """Return Metabase metadata tables in the Reporting schema whose name
+        contains 'worksheet' or 'scoresheet' (legacy auto-generated views)."""
+        metadata = self.metabase.get_database_metadata(db_id, tenant_id=tenant_id)
+        tables = []
+        for table in metadata["tables"]:
+            if table["schema"] != "Reporting":
+                continue
+            name = table["name"].lower()
+            if "worksheet" in name or "scoresheet" in name:
+                tables.append(table)
+        return tables
+
+    def _build_custom_doc(self, db_id: int, view_name: str, correlation_type: str,
+                          columns: List[str], view_metadata: Optional[dict],
+                          custom_labels: dict, description: str,
+                          tenant_id: Optional[str] = None) -> Optional[dict]:
+        """Build one embedding doc for a Reporting view, skipping empty views."""
+        try:
+            if not self._has_data("Reporting", view_name, db_id, tenant_id=tenant_id):
+                return None
+            page = self._format_schema_with_examples(
+                "Reporting", view_name, columns, db_id,
+                tenant_id=tenant_id,
+                view_metadata=view_metadata,
+                custom_labels=custom_labels,
+                description=description,
+            )
+            logger.debug(f"Extracted schema for {view_name} ({correlation_type})")
+            return {
+                "page_content": page,
+                "correlation_type": correlation_type,
+                "signature": self._signature_line(
+                    "Reporting", view_name, columns, view_metadata
+                ),
+            }
+        except Exception as e:
+            logger.exception(f"Error processing view {view_name}: {e}")
+            self._extraction_had_error = True
+            return None
+
+    def _extract_custom_schemas(self, db_id: int,
+                                tenant_id: Optional[str] = None) -> List[dict]:
+        """Extract worksheet/scoresheet schemas.
+
+        Primary source is ReportColumnsMaps (richest metadata). The legacy
+        name-prefix sweep over Metabase metadata is a supplement that covers
+        legacy-generated views not yet registered in ReportColumnsMaps. Views
+        are de-duplicated by name, preferring the ReportColumnsMaps entry.
+        """
+        custom_labels = self.get_custom_field_labels(db_id, tenant_id=tenant_id)
+        views = self.get_all_custom_views(db_id, tenant_id=tenant_id)
+        covered = {view["view_name"] for view in views}
+        docs = []
+
+        # Primary: ReportColumnsMaps views
+        for view in views:
+            view_metadata = view["columns"]
+            columns = [
+                col_name
+                for col_name in view_metadata.keys()
+                if not self._is_junk_column(col_name)
+            ]
+            doc = self._build_custom_doc(
+                db_id, view["view_name"], view["correlation_type"], columns,
+                view_metadata=view_metadata, custom_labels=custom_labels,
+                description=view["description"], tenant_id=tenant_id,
+            )
+            if doc:
+                docs.append(doc)
+
+        # Supplement: legacy name-prefix sweep for views not in ReportColumnsMaps
+        for table in self._get_legacy_custom_tables(db_id, tenant_id=tenant_id):
+            view_name = table["name"]
+            if view_name in covered:
+                continue
+            correlation_type = (
+                "scoresheet" if "scoresheet" in view_name.lower() else "worksheet"
+            )
+            columns = [
+                f"{field['name']} ({field['base_type']})"
+                for field in table["fields"]
+                if not self._is_junk_column(field["name"])
+            ]
+            doc = self._build_custom_doc(
+                db_id, view_name, correlation_type, columns,
+                view_metadata=None, custom_labels=custom_labels,
+                description="", tenant_id=tenant_id,
+            )
+            if doc:
+                docs.append(doc)
+
+        return docs
 
 
 class EmbeddingManager:
@@ -323,10 +443,11 @@ class EmbeddingManager:
             # Create documents with metadata
             documents = [
                 Document(
-                    page_content=schema.strip(),
+                    page_content=schema["page_content"].strip(),
                     metadata={
                         "db_id": db_id,
-                        "schema_type": schema_type
+                        "schema_type": "custom" if schema["correlation_type"] != "public" else "public",
+                        "correlation_type": schema["correlation_type"],
                     }
                 )
                 for schema in schemas
@@ -414,23 +535,33 @@ class EmbeddingManager:
         schemas = self.search_similar_schemas(query, db_id, tenant_id=tenant_id)
 
         section_headers = {
-            "public": "=== PUBLIC TABLES ===",
-            "worksheet": "=== WORKSHEET VIEWS ===",
-            "scoresheet": "=== SCORESHEET VIEWS ===",
+            "public":                     "=== PUBLIC TABLES ===",
+            "worksheet":                  "=== WORKSHEET VIEWS ===",
+            "worksheet_consolidated":     "=== WORKSHEET VIEWS (CONSOLIDATED) ===",
+            "formversion":                "=== FORM VERSION VIEWS ===",
+            "formversion_consolidated":   "=== FORM VERSION VIEWS (CONSOLIDATED) ===",
+            "scoresheet":                 "=== SCORESHEET VIEWS ===",
         }
 
         sections: dict[str, list[str]] = {}
         for doc in schemas:
-            schema_type = doc.metadata.get("schema_type", "public")
-            if schema_type == "custom":
-                first_line = doc.page_content.split('\n')[0].lower()
-                key = "scoresheet" if "scoresheet" in first_line else "worksheet"
-            else:
-                key = schema_type
+            key = doc.metadata.get("correlation_type")
+            if not key:
+                # Backward-compatible fallback for embeddings persisted before
+                # correlation_type existed: infer worksheet vs scoresheet from
+                # the page content for "custom" docs.
+                schema_type = doc.metadata.get("schema_type", "public")
+                if schema_type == "custom":
+                    first_line = doc.page_content.split('\n')[0].lower()
+                    key = "scoresheet" if "scoresheet" in first_line else "worksheet"
+                else:
+                    key = schema_type
+            key = key.lower()
             sections.setdefault(key, []).append(doc.page_content)
 
         parts = []
-        for stype in ("public", "worksheet", "scoresheet"):
+        for stype in ("public", "worksheet", "worksheet_consolidated",
+                      "formversion", "formversion_consolidated", "scoresheet"):
             if stype in sections:
                 parts.append(section_headers[stype])
                 parts.extend(sections[stype])
