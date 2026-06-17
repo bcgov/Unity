@@ -18,7 +18,7 @@
 
 #ApplicationPaymentRequestListTable .error-row td {
     background-color: #FEEAEA;
-    color: #FF0909 !important;
+    color: #CC0000 !important;
 }
 
 .info-btn {

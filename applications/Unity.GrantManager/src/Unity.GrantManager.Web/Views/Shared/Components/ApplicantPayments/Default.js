@@ -114,6 +114,44 @@ function getPaymentStatusTextColor(status) {
     }
 }
 
+function getInvoiceStatusColumn() {
+    return {
+        title: 'Invoice Status',
+        name: 'invoiceStatus',
+        data: 'invoiceStatus',
+        className: 'data-table-header',
+        defaultContent: '',
+        index: 6,
+    };
+}
+
+function getCasResponseColumn() {
+    return {
+        title: 'CAS Response',
+        name: 'casResponse',
+        data: 'casResponse',
+        className: 'data-table-header notexport',
+        index: 7,
+        render: function (data) {
+            if (data + '' !== 'undefined' && data?.length > 0) {
+                return '<button class="btn btn-light info-btn" type="button" onclick="openApplicantCasResponseModal(\'' + data + '\');">View Response<i class="fl fl-mapinfo"></i></button>';
+            }
+            return null;
+        },
+    };
+}
+
+function getCategoryColumn() {
+    return {
+        title: 'Category',
+        name: 'category',
+        data: 'category',
+        className: 'data-table-header',
+        defaultContent: '',
+        index: 8,
+    };
+}
+
 $(function () {
     const l = abp.localization.getResource('Payments');
     $('.unity-currency-input').maskMoney({});
@@ -256,44 +294,6 @@ $(function () {
             getSupplierNameColumn(),
             getSiteNumberColumn(),
         ];
-    }
-
-    function getInvoiceStatusColumn() {
-        return {
-            title: 'Invoice Status',
-            name: 'invoiceStatus',
-            data: 'invoiceStatus',
-            className: 'data-table-header',
-            defaultContent: '',
-            index: 6,
-        };
-    }
-
-    function getCasResponseColumn() {
-        return {
-            title: 'CAS Response',
-            name: 'casResponse',
-            data: 'casResponse',
-            className: 'data-table-header notexport',
-            index: 7,
-            render: function (data) {
-                if (data + '' !== 'undefined' && data?.length > 0) {
-                    return '<button class="btn btn-light info-btn" type="button" onclick="openApplicantCasResponseModal(\'' + data + '\');">View Response<i class="fl fl-mapinfo"></i></button>';
-                }
-                return null;
-            },
-        };
-    }
-
-    function getCategoryColumn() {
-        return {
-            title: 'Category',
-            name: 'category',
-            data: 'category',
-            className: 'data-table-header',
-            defaultContent: '',
-            index: 8,
-        };
     }
 
     function getStatusColumn() {
