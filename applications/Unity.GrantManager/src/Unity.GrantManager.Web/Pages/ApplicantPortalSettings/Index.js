@@ -12,10 +12,11 @@
     let portalStatusTable = new DataTable("#PortalStatusTable", {
         paging: false,
         info: false,
-        order: {
-            idx: 0,
-            dir: 'asc'
-        }
+        order: [[0, 'asc']],
+        "columnDefs": [{
+            targets: [1, 2],
+            orderable: false,
+        }]
     });
 
     // Capture original values after DataTable initialization
