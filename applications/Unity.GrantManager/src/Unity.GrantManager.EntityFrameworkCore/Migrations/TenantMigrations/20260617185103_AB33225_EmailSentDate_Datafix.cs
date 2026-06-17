@@ -13,7 +13,7 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
             migrationBuilder.Sql(@"
                 UPDATE ""Notifications"".""EmailLogs""
                 SET ""SentDateTime"" = COALESCE(""LastModificationTime"", ""CreationTime"")
-                WHERE ""Status"" = 'Sent'
+                WHERE ""Status"" = 'Sent' AND ""SentDateTime"" IS NULL
             ");
         }
 
