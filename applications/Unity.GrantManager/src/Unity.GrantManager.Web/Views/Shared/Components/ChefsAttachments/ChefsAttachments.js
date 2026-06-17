@@ -452,13 +452,13 @@ function getChefsFileDownloadColumn() {
                 '<i class="fl fl-attachment-more"></i>' +
                 '</button>' +
                 '<div class="dropdown-content">' +
-                '<button class="btn fullWidth" style="margin:10px" type="button"' +
+                '<button class="btn fullWidth" style="margin:10px;margin-left:8px;" type="button"' +
                 ' chefs-submission-id="' + escapeHtmlAttribute(submissionId) + '"' +
                 ' chefs-data="' + escapeHtmlAttribute(fileId) + '"' +
                 ' chefs-file-name="' + escapeHtmlAttribute(fileName) + '"' +
                 ' chefs-display-name="' + escapeHtmlAttribute(displayName) + '"' +
                 ' onclick="previewChefsFile(event)">' +
-                '<i class="fa fa-eye"></i><span>Preview Attachment</span>' +
+                '<i class="fa fa-eye p-0"></i><span>Preview Attachment</span>' +
                 '</button>' +
                 '<button class="btn fullWidth" style="margin:10px" type="button"' +
                 ' chefs-submission-id="' + escapeHtmlAttribute(submissionId) + '"' +
