@@ -3,17 +3,22 @@ using System;
 using System.Threading.Tasks;
 using Unity.AI.Operations;
 using Unity.AI.RateLimit;
+using Unity.GrantManager.Applications;
 using Unity.GrantManager.GrantApplications;
 using Volo.Abp.BackgroundJobs;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.MultiTenancy;
 using Volo.Abp.Uow;
+using Volo.Abp.ObjectMapping;
 
 namespace Unity.GrantManager.GrantApplications.Automation.BackgroundJobs;
 
 public class GenerateApplicationAnalysisJob(
+    IAIApplicationInputBuilder inputBuilder,
     IApplicationAnalysisService applicationAnalysisService,
+    IApplicationRepository applicationRepository,
+    IObjectMapper objectMapper,
     IRepository<AIGenerationRequest, Guid> generationRequestRepository,
     ICurrentTenant currentTenant,
     IUnitOfWorkManager unitOfWorkManager,
@@ -22,13 +27,27 @@ public class GenerateApplicationAnalysisJob(
 {
     public override async Task ExecuteAsync(GenerateApplicationAnalysisBackgroundJobArgs args)
     {
+        using var logScope = AIGenerationLogScope.Begin(
+            logger,
+            AIGenerationRequestKeyHelper.ApplicationAnalysisOperationType,
+            args.ApplicationId,
+            args.TenantId,
+            args.RequestKey,
+            args.PromptVersion,
+            args.RequestedByUserId);
+
         using (currentTenant.Change(args.TenantId))
         {
             await AIGenerationRequestJobHelper.MarkRunningInNewUowAsync(unitOfWorkManager, generationRequestRepository, args.RequestKey);
             try
             {
                 logger.LogInformation("Executing AI application analysis job for application {ApplicationId}.", args.ApplicationId);
-                await applicationAnalysisService.RegenerateAndSaveAsync(args.ApplicationId, args.PromptVersion);
+                var application = await applicationRepository.GetAsync(args.ApplicationId);
+                var applicationInput = objectMapper.Map<Application, AIApplicationPromptDataDto>(application);
+                var input = await inputBuilder.BuildApplicationAnalysisInputAsync(applicationInput, args.PromptVersion);
+                var analysisJson = await applicationAnalysisService.RegenerateAsync(input);
+                application.AIAnalysis = analysisJson;
+                await applicationRepository.UpdateAsync(application);
                 logger.LogInformation("Completed AI application analysis job for application {ApplicationId}.", args.ApplicationId);
 
                 await AIGenerationRequestJobHelper.StampRateLimitBestEffortAsync(aiRateLimiter, logger, args.RequestedByUserId, args.ApplicationId, args.RequestKey);

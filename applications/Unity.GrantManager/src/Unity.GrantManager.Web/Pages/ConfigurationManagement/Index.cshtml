@@ -215,7 +215,7 @@
         <!-- Scoresheets -->
         @if (Model.ShowScoresheets)
         {
-            <div id="scoresheets-div" class="config-section input-area card mb-3 config-management hide">
+            <div id="scoresheets-div" class="config-section input-area card mb-3 config-management hide">                
                 @await Component.InvokeAsync(typeof(ScoresheetConfigurationViewComponent))
             </div>
         }

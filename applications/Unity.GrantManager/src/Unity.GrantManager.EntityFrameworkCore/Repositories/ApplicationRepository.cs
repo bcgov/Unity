@@ -223,6 +223,12 @@ public class ApplicationRepository
             .ToListAsync();
     }
 
+    public async Task<bool> HasApplicationsByApplicantIdAsync(Guid applicantId)
+    {
+        var query = await GetQueryableAsync();
+        return await query.AnyAsync(a => a.ApplicantId == applicantId);
+    }
+
     public async Task<List<ApplicationListRecord>> GetApplicationListRecordsAsync(
         int skipCount,
         int maxResultCount,
@@ -328,7 +334,7 @@ public class ApplicationRepository
                 ApplicantOrgNumber = a.Applicant.OrgNumber,
                 ApplicantOrgStatus = a.Applicant.OrgStatus,
                 ApplicantBusinessNumber = a.Applicant.BusinessNumber,
-                ApplicantOrganizationSize = a.Applicant.OrganizationSize,
+                ApplicantApproxNumberOfEmployees = a.Applicant.ApproxNumberOfEmployees,
                 ApplicantSectorSubSectorIndustryDesc = a.Applicant.SectorSubSectorIndustryDesc,
                 ApplicantRedStop = a.Applicant.RedStop,
                 ApplicantIndigenousOrgInd = a.Applicant.IndigenousOrgInd,
@@ -512,7 +518,7 @@ public class ApplicationRepository
                     ApplicantOrgNumber = a.ApplicantOrgNumber,
                     ApplicantOrgStatus = a.ApplicantOrgStatus,
                     ApplicantBusinessNumber = a.ApplicantBusinessNumber,
-                    ApplicantOrganizationSize = a.ApplicantOrganizationSize,
+                    ApplicantApproxNumberOfEmployees = a.ApplicantApproxNumberOfEmployees,
                     ApplicantSectorSubSectorIndustryDesc = a.ApplicantSectorSubSectorIndustryDesc,
                     ApplicantRedStop = a.ApplicantRedStop,
                     ApplicantIndigenousOrgInd = a.ApplicantIndigenousOrgInd,

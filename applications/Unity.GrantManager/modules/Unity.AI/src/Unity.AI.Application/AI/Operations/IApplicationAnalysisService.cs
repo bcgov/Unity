@@ -6,6 +6,6 @@ namespace Unity.AI.Operations
 {
     public interface IApplicationAnalysisService
     {
-        Task<string> RegenerateAndSaveAsync(Guid applicationId, string? promptVersion = null, CancellationToken cancellationToken = default);
+        Task<string> RegenerateAsync(ApplicationAnalysisOperationInputDto input, CancellationToken cancellationToken = default);
     }
 }

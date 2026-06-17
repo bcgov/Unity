@@ -14,7 +14,7 @@ public class ApplicantSummaryDto
     public string? OrgStatus { get; set; }
     public string? BusinessNumber { get; set; }
     public string? OrganizationType { get; set; }
-    public string? OrganizationSize { get; set; }
+    public string? ApproxNumberOfEmployees { get; set; }
     public string? SectorSubSectorIndustryDesc { get; set; }
     public bool? RedStop { get; set; }
     public bool? IndigenousOrgInd { get; set; }

@@ -1,14 +1,19 @@
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Localization;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Unity.AI.Extraction;
+using Unity.AI.Localization;
 using Unity.AI.Requests;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Intakes;
+using Volo.Abp;
 using Volo.Abp.DependencyInjection;
+using Volo.Abp.Uow;
 
 namespace Unity.AI.Operations;
 
@@ -17,18 +22,28 @@ public class AttachmentSummaryService(
     IChefsFileAttachmentStreamProvider chefsFileAttachmentStreamProvider,
     ITextExtractionService textExtractionService,
     IAIService aiService,
+    IAIGenerationPrerequisiteValidator aiGenerationPrerequisiteValidator,
     AIExecutionModeResolver executionModeResolver,
-    ILogger<AttachmentSummaryService> logger) : IAttachmentSummaryService, ITransientDependency
+    IUnitOfWorkManager unitOfWorkManager,
+    ILogger<AttachmentSummaryService> logger,
+    IStringLocalizer<AIResource> localizer) : IAttachmentSummaryService, ITransientDependency
 {
     private const string SummaryGenerationFailedMessage = "AI summary generation failed.";
+    private const string TextExtractionFailedSummary = "Attachment text could not be extracted for AI summary generation.";
 
     public async Task<string> GenerateAndSaveAsync(Guid attachmentId, string? promptVersion = null, CancellationToken cancellationToken = default)
     {
-        var attachment = await applicationChefsFileAttachmentRepository.GetAsync(attachmentId);
+        var attachment = await LoadAttachmentAsync(attachmentId);
         var fileName = string.IsNullOrWhiteSpace(attachment.FileName) ? "unknown" : attachment.FileName;
 
         await using var attachmentStream = await OpenAttachmentStreamAsync(attachment, fileName, cancellationToken);
         var extractedText = await textExtractionService.ExtractTextAsync(fileName, attachmentStream.Content, attachmentStream.ContentType, cancellationToken);
+        if (ShouldStopOnEmptyExtraction(fileName, extractedText))
+        {
+            LogEmptyExtraction(attachmentId, fileName, attachmentStream);
+            await SaveSummaryAsync(attachmentId, TextExtractionFailedSummary);
+            return TextExtractionFailedSummary;
+        }
 
         var summaryResponse = await aiService.GenerateAttachmentSummaryAsync(new AttachmentSummaryRequest
         {
@@ -38,8 +53,7 @@ public class AttachmentSummaryService(
             PromptVersion = promptVersion,
         }, cancellationToken);
 
-        attachment.AISummary = summaryResponse.Summary;
-        await applicationChefsFileAttachmentRepository.UpdateAsync(attachment);
+        await SaveSummaryAsync(attachmentId, summaryResponse.Summary);
 
         return summaryResponse.Summary;
     }
@@ -47,6 +61,11 @@ public class AttachmentSummaryService(
     public async Task<List<string>> GenerateAndSaveAsync(IEnumerable<Guid> attachmentIds, string? promptVersion = null, CancellationToken cancellationToken = default)
     {
         var ids = attachmentIds as IReadOnlyCollection<Guid> ?? attachmentIds.ToList();
+        if (ids.Count == 0)
+        {
+            throw new UserFriendlyException(localizer[AILocalizationKeys.SelectAttachmentForSummaries]);
+        }
+
         var mode = executionModeResolver.ResolveMode(AIExecutionModeResolver.AttachmentSummaryOperation);
         if (mode != AIExecutionMode.Sequential)
         {
@@ -103,9 +122,9 @@ public class AttachmentSummaryService(
         IReadOnlyCollection<Guid>? attachmentIds = null,
         CancellationToken cancellationToken = default)
     {
-        var applicationAttachmentIds = (await applicationChefsFileAttachmentRepository.GetListAsync(a => a.ApplicationId == applicationId))
-            .Select(a => a.Id)
-            .ToList();
+        await WithUnitOfWorkAsync(() => aiGenerationPrerequisiteValidator.EnsureAttachmentSummaryAvailableAsync(applicationId));
+
+        var applicationAttachmentIds = await LoadApplicationAttachmentIdsAsync(applicationId);
 
         if (attachmentIds is not { Count: > 0 })
         {
@@ -123,8 +142,47 @@ public class AttachmentSummaryService(
         return await GenerateAndSaveAsync(selectedIds, promptVersion, cancellationToken);
     }
 
+    private async Task<AttachmentSummarySource> LoadAttachmentAsync(Guid attachmentId)
+    {
+        using var uow = unitOfWorkManager.Begin(requiresNew: true, isTransactional: false);
+        var attachment = await applicationChefsFileAttachmentRepository.GetAsync(attachmentId);
+        var source = new AttachmentSummarySource(
+            attachment.Id,
+            attachment.FileName,
+            attachment.ChefsSubmissionId,
+            attachment.ChefsFileId);
+        await uow.CompleteAsync();
+        return source;
+    }
+
+    private async Task SaveSummaryAsync(Guid attachmentId, string summary)
+    {
+        using var uow = unitOfWorkManager.Begin(requiresNew: true);
+        var attachment = await applicationChefsFileAttachmentRepository.GetAsync(attachmentId);
+        attachment.AISummary = summary;
+        await applicationChefsFileAttachmentRepository.UpdateAsync(attachment);
+        await uow.CompleteAsync();
+    }
+
+    private async Task<List<Guid>> LoadApplicationAttachmentIdsAsync(Guid applicationId)
+    {
+        using var uow = unitOfWorkManager.Begin(requiresNew: true, isTransactional: false);
+        var ids = (await applicationChefsFileAttachmentRepository.GetListAsync(a => a.ApplicationId == applicationId))
+            .Select(a => a.Id)
+            .ToList();
+        await uow.CompleteAsync();
+        return ids;
+    }
+
+    private async Task WithUnitOfWorkAsync(Func<Task> operation)
+    {
+        using var uow = unitOfWorkManager.Begin(requiresNew: true, isTransactional: false);
+        await operation();
+        await uow.CompleteAsync();
+    }
+
     private async Task<ChefsFileAttachmentStream> OpenAttachmentStreamAsync(
-        ApplicationChefsFileAttachment attachment,
+        AttachmentSummarySource attachment,
         string fileName,
         CancellationToken cancellationToken)
     {
@@ -156,4 +214,52 @@ public class AttachmentSummaryService(
             return ChefsFileAttachmentStream.Empty;
         }
     }
+
+    private static bool ShouldStopOnEmptyExtraction(string fileName, string extractedText)
+    {
+        return string.IsNullOrWhiteSpace(extractedText) && IsSupportedOfficeOrPdf(fileName);
+    }
+
+    private static bool IsSupportedOfficeOrPdf(string fileName)
+    {
+        var extension = Path.GetExtension(fileName)?.ToLowerInvariant();
+        return extension is ".pdf" or ".docx" or ".xlsx" or ".xls" or ".pptx";
+    }
+
+    private void LogEmptyExtraction(
+        Guid attachmentId,
+        string fileName,
+        ChefsFileAttachmentStream attachmentStream)
+    {
+        logger.LogWarning(
+            "No text extracted for supported attachment {AttachmentId} ({FileName}). Skipping AI summary generation. ContentType: {ContentType}; StreamCanSeek: {StreamCanSeek}; StreamLength: {StreamLength}.",
+            attachmentId,
+            fileName,
+            attachmentStream.ContentType,
+            attachmentStream.Content.CanSeek,
+            TryGetStreamLength(attachmentStream.Content));
+    }
+
+    private static long? TryGetStreamLength(Stream stream)
+    {
+        if (!stream.CanSeek)
+        {
+            return null;
+        }
+
+        try
+        {
+            return stream.Length;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private sealed record AttachmentSummarySource(
+        Guid Id,
+        string? FileName,
+        string? ChefsSubmissionId,
+        string? ChefsFileId);
 }

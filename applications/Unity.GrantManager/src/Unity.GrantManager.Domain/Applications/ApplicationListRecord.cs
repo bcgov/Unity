@@ -76,7 +76,7 @@ public class ApplicationListRecord
     public string? ApplicantOrgNumber { get; init; }
     public string? ApplicantOrgStatus { get; init; }
     public string? ApplicantBusinessNumber { get; init; }
-    public string? ApplicantOrganizationSize { get; init; }
+    public string? ApplicantApproxNumberOfEmployees { get; init; }
     public string? ApplicantSectorSubSectorIndustryDesc { get; init; }
     public bool? ApplicantRedStop { get; init; }
     public string? ApplicantIndigenousOrgInd { get; init; }

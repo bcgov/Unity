@@ -1,4 +1,5 @@
-﻿@using Unity.Flex.Web.Views.Shared.Components.QuestionNumberWidget
+﻿@using Unity.GrantManager.Web.Utilities
+@using Unity.Flex.Web.Views.Shared.Components.QuestionNumberWidget
 @using Unity.Flex.Web.Views.Shared.Components.QuestionTextAreaWidget
 @using Unity.Flex.Web.Views.Shared.Components.QuestionTextWidget
 @using Unity.Flex.Web.Views.Shared.Components.QuestionYesNoWidget
@@ -76,7 +77,7 @@
                                                         <div class="accordion-item">
                                                             <h2 class="accordion-header" id="question-heading-@question.Id">
                                                                 <button class="accordion-button collapsed unt-accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#question-collapse-@question.Id" aria-expanded="true" aria-controls="question-collapse-@question.Id">
-                                                                    @sectionNumber.@questionNumber @question.Label
+                                                                    @sectionNumber.@questionNumber @Html.SanitizeRaw(question.Label)
                                                                     @if (question.Definition?.ConvertDefinition(question.Type)?.GetIsRequired() == true)
                                                                     {
                                                                         <span> *</span>
@@ -91,7 +92,7 @@
                                                             </h2>
                                                             <div id="question-collapse-@question.Id" class="accordion-collapse collapse" aria-labelledby="question-heading-@question.Id">
                                                                 <div class="accordion-body">
-                                                                    <p>@question.Description</p>
+                                                                    <p>@Html.SanitizeRaw(question.Description)</p>
 
                                                                     @switch (question.Type)
                                                                     {

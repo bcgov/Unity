@@ -1,5 +1,6 @@
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Unity.AI.Permissions;
 using Volo.Abp.MultiTenancy;
 using Volo.Abp.Settings;
@@ -7,6 +8,7 @@ using Volo.Abp.SettingManagement;
 
 namespace Unity.AI.Settings;
 
+[Route("api/app/ai/configuration")]
 public class AIConfigurationAppService(
     ISettingProvider settingProvider,
     ISettingManager settingManager,
@@ -16,6 +18,7 @@ public class AIConfigurationAppService(
     private readonly ISettingManager _settingManager = settingManager;
     private readonly ICurrentTenant _currentTenant = currentTenant;
 
+    [HttpGet("tenant")]
     public virtual async Task<AITenantConfigurationDto> GetTenantConfigurationAsync()
     {
         return new AITenantConfigurationDto
@@ -28,6 +31,7 @@ public class AIConfigurationAppService(
     }
 
     [Authorize(AIPermissions.Configuration.ConfigureAI)]
+    [HttpPut("tenant")]
     public virtual async Task UpdateTenantConfigurationAsync(UpdateAITenantConfigurationDto input)
     {
         await _settingManager.SetAsync(

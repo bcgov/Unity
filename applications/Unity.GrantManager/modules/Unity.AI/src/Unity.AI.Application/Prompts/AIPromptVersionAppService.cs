@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,6 +13,7 @@ using Volo.Abp.Domain.Repositories;
 namespace Unity.AI.Prompts;
 
 [Authorize(IdentityConsts.ITOperationsPolicyName)]
+[Route("api/app/ai/prompt-versions")]
 public class AIPromptVersionAppService :
     CrudAppService<
         AIPromptVersion,
@@ -31,6 +33,7 @@ public class AIPromptVersionAppService :
         DeletePolicyName = IdentityConsts.ITOperationsPolicyName;
     }
 
+    [HttpGet("by-prompt/{promptId}")]
     public async Task<ListResultDto<AIPromptVersionDto>> GetByPromptAsync(Guid promptId)
     {
         using (CurrentTenant.Change(null))
@@ -42,6 +45,7 @@ public class AIPromptVersionAppService :
         }
     }
 
+    [HttpGet("{id}")]
     public override async Task<AIPromptVersionDto> GetAsync(Guid id)
     {
         using (CurrentTenant.Change(null))
@@ -50,6 +54,7 @@ public class AIPromptVersionAppService :
         }
     }
 
+    [HttpGet]
     public override async Task<PagedResultDto<AIPromptVersionDto>> GetListAsync(PagedAndSortedResultRequestDto input)
     {
         using (CurrentTenant.Change(null))
@@ -58,6 +63,7 @@ public class AIPromptVersionAppService :
         }
     }
 
+    [HttpPost]
     public override async Task<AIPromptVersionDto> CreateAsync(CreateUpdateAIPromptVersionDto input)
     {
         using (CurrentTenant.Change(null))
@@ -66,6 +72,7 @@ public class AIPromptVersionAppService :
         }
     }
 
+    [HttpPut("{id}")]
     public override async Task<AIPromptVersionDto> UpdateAsync(Guid id, CreateUpdateAIPromptVersionDto input)
     {
         using (CurrentTenant.Change(null))
@@ -74,6 +81,7 @@ public class AIPromptVersionAppService :
         }
     }
 
+    [HttpDelete("{id}")]
     public override async Task DeleteAsync(Guid id)
     {
         using (CurrentTenant.Change(null))

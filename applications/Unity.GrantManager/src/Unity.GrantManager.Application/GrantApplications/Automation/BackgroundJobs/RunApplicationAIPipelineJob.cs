@@ -3,36 +3,49 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Unity.AI.Operations;
 using Unity.AI.RateLimit;
 using Unity.GrantManager.Applications;
-using Unity.GrantManager.Attachments;
-using Unity.GrantManager.GrantApplications;
 using Unity.GrantManager.GrantApplications.Automation.Events;
+using Volo.Abp;
 using Volo.Abp.BackgroundJobs;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.EventBus.Local;
 using Volo.Abp.Features;
 using Volo.Abp.MultiTenancy;
+using Volo.Abp.ObjectMapping;
 using Volo.Abp.Uow;
 
 namespace Unity.GrantManager.GrantApplications.Automation.BackgroundJobs;
 
 public class RunApplicationAIPipelineJob(
     IApplicationChefsFileAttachmentRepository applicationChefsFileAttachmentRepository,
-    IAttachmentSummaryAppService attachmentSummaryAppService,
-    IApplicationAnalysisAppService applicationAnalysisAppService,
-    IApplicationScoringAppService applicationScoringAppService,
+    IAIApplicationInputBuilder inputBuilder,
+    IAttachmentSummaryService attachmentSummaryService,
+    IApplicationAnalysisService applicationAnalysisService,
+    IApplicationScoringService applicationScoringService,
+    IApplicationRepository applicationRepository,
     IFeatureChecker featureChecker,
     ILocalEventBus localEventBus,
     IRepository<AIGenerationRequest, Guid> generationRequestRepository,
     ICurrentTenant currentTenant,
+    IObjectMapper objectMapper,
     IUnitOfWorkManager unitOfWorkManager,
     IAIRateLimiter aiRateLimiter,
     ILogger<RunApplicationAIPipelineJob> logger) : AsyncBackgroundJob<RunApplicationAIPipelineJobArgs>, ITransientDependency
 {
     public override async Task ExecuteAsync(RunApplicationAIPipelineJobArgs args)
     {
+        using var logScope = AIGenerationLogScope.Begin(
+            logger,
+            AIGenerationRequestKeyHelper.PipelineOperationType,
+            args.ApplicationId,
+            args.TenantId,
+            args.RequestKey,
+            args.PromptVersion,
+            args.RequestedByUserId);
+
         if (string.IsNullOrWhiteSpace(args.RequestKey))
         {
             throw new ArgumentException("RequestKey is required.", nameof(args));
@@ -47,22 +60,36 @@ public class RunApplicationAIPipelineJob(
                 var attachmentSummariesEnabled = await featureChecker.IsEnabledAsync("Unity.AI.AttachmentSummaries");
                 var applicationAnalysisEnabled = await featureChecker.IsEnabledAsync("Unity.AI.ApplicationAnalysis");
                 var scoringEnabled = await featureChecker.IsEnabledAsync("Unity.AI.Scoring");
+                AIApplicationPromptDataDto? applicationInput = null;
 
                 if (!attachmentSummariesEnabled && !applicationAnalysisEnabled && !scoringEnabled)
                 {
                     logger.LogDebug("All AI features are disabled, skipping queued AI generation for application {ApplicationId}.", args.ApplicationId);
-                    await AIGenerationRequestJobHelper.StampRateLimitBestEffortAsync(aiRateLimiter, logger, args.RequestedByUserId, args.ApplicationId, args.RequestKey);
                     await AIGenerationRequestJobHelper.MarkCompletedInNewUowAsync(unitOfWorkManager, generationRequestRepository, args.RequestKey);
+                    await AIGenerationRequestJobHelper.StampRateLimitBestEffortAsync(aiRateLimiter, logger, args.RequestedByUserId, args.ApplicationId, args.RequestKey);
                     return;
                 }
 
                 logger.LogInformation("Executing queued AI content pipeline for application {ApplicationId}.", args.ApplicationId);
+                var application = (applicationAnalysisEnabled || scoringEnabled)
+                    ? await applicationRepository.GetAsync(args.ApplicationId)
+                    : null;
+                applicationInput = application == null
+                    ? null
+                    : objectMapper.Map<Application, AIApplicationPromptDataDto>(application);
 
                 if (attachmentSummariesEnabled)
                 {
                     var attachmentIds = await GetAttachmentIdsAsync(args.ApplicationId);
-                    var attachmentResults = await attachmentSummaryAppService.GenerateAttachmentSummariesForPipelineAsync(attachmentIds, args.PromptVersion);
-                    logger.LogInformation("Completed AI attachment summaries for application {ApplicationId} with {AttachmentCount} result(s).", args.ApplicationId, attachmentResults.Count);
+                    if (attachmentIds.Count > 0)
+                    {
+                        var attachmentResults = await attachmentSummaryService.GenerateAndSaveAsync(attachmentIds, args.PromptVersion);
+                        logger.LogInformation("Completed AI attachment summaries for application {ApplicationId} with {AttachmentCount} result(s).", args.ApplicationId, attachmentResults.Count);
+                    }
+                    else
+                    {
+                        logger.LogDebug("Skipping AI attachment summaries for application {ApplicationId} because no attachments were available.", args.ApplicationId);
+                    }
                 }
 
                 Exception? analysisException = null;
@@ -72,11 +99,15 @@ public class RunApplicationAIPipelineJob(
                 {
                     try
                     {
-                        var analysisResult = await applicationAnalysisAppService.GenerateApplicationAnalysisForPipelineAsync(args.ApplicationId, args.PromptVersion);
-                        if (analysisResult.Completed)
-                        {
-                            logger.LogInformation("Completed AI application analysis stage for application {ApplicationId}.", args.ApplicationId);
-                        }
+                        var analysisInput = await inputBuilder.BuildApplicationAnalysisInputAsync(applicationInput!, args.PromptVersion);
+                        var analysisJson = await applicationAnalysisService.RegenerateAsync(analysisInput);
+                        application!.AIAnalysis = analysisJson;
+                        await applicationRepository.UpdateAsync(application);
+                        logger.LogInformation("Completed AI application analysis stage for application {ApplicationId}.", args.ApplicationId);
+                    }
+                    catch (UserFriendlyException ex)
+                    {
+                        logger.LogDebug(ex, "Skipping AI application analysis stage for application {ApplicationId}.", args.ApplicationId);
                     }
                     catch (Exception ex)
                     {
@@ -89,14 +120,18 @@ public class RunApplicationAIPipelineJob(
                 {
                     try
                     {
-                        var result = await applicationScoringAppService.GenerateApplicationScoringForPipelineAsync(args.ApplicationId, args.PromptVersion);
-                        if (result.Completed)
+                        var scoringInput = await inputBuilder.BuildApplicationScoringInputAsync(applicationInput!, args.PromptVersion);
+                        var scoresheetAnswers = await applicationScoringService.RegenerateAsync(scoringInput);
+                        application!.AIScoresheetAnswers = scoresheetAnswers;
+                        await applicationRepository.UpdateAsync(application);
+                        await localEventBus.PublishAsync(new ApplicationAIScoringGeneratedEvent
                         {
-                            await localEventBus.PublishAsync(new ApplicationAIScoringGeneratedEvent
-                            {
-                                ApplicationId = args.ApplicationId
-                            });
-                        }
+                            ApplicationId = args.ApplicationId
+                        });
+                    }
+                    catch (UserFriendlyException ex)
+                    {
+                        logger.LogDebug(ex, "Skipping AI application scoring stage for application {ApplicationId}.", args.ApplicationId);
                     }
                     catch (Exception ex)
                     {
