@@ -112,10 +112,6 @@ $(function () {
             }
         };
     }
-
-    $('#search').on('input', function () {
-        $('#NotificationListTable').DataTable().search($(this).val()).draw();
-    });
 });
 
 function responseCallback(result) {

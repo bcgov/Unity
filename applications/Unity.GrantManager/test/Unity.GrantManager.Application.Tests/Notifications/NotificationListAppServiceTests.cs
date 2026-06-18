@@ -30,8 +30,8 @@ public class NotificationListAppServiceTests : GrantManagerApplicationTestBase
     {
         SetFeatureEnabled("Unity.Notifications", true);
 
-        // Arrange: pick a seeded application and create an email log for it
-        var application = (await _applicationRepository.GetListAsync())[0];
+        // Arrange: use the known seeded application (ReferenceNo "TEST12345", Applicant1)
+        var application = await _applicationRepository.GetAsync(GrantManagerTestData.Application1_Id);
         var emailLog = await _emailLogsRepository.InsertAsync(new EmailLog
         {
             ApplicationId = application.Id,
@@ -52,7 +52,7 @@ public class NotificationListAppServiceTests : GrantManagerApplicationTestBase
         var row = result.Items.FirstOrDefault(i => i.Id == emailLog.Id);
         row.ShouldNotBeNull();
         row.Subject.ShouldBe("Test Notification Subject");
-        row.SubmissionReferenceNo.ShouldBe(application.ReferenceNo);
+        row.SubmissionReferenceNo.ShouldBe("TEST12345");
         row.Recipient.ShouldBe(RecipientType.External);
         row.EmailType.ShouldBe(EmailType.Manual);
         result.TotalCount.ShouldBeGreaterThanOrEqualTo(1);
