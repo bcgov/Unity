@@ -521,6 +521,9 @@ namespace Unity.GrantManager.Migrations.HostMigrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("Name")
+                        .IsUnique();
+
                     b.ToTable("AIPrompts", "AI");
                 });
 

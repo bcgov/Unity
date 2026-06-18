@@ -4,8 +4,11 @@ using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
 using NPOI.XWPF.UserModel;
 using Shouldly;
+using System.Collections.Generic;
 using System;
 using System.IO;
+using System.Linq;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Unity.AI;
@@ -246,6 +249,102 @@ public class AttachmentSummaryServiceTests
         await aiService.Received(1).GenerateAttachmentSummaryAsync(Arg.Any<AttachmentSummaryRequest>());
     }
 
+    [Fact]
+    public async Task GenerateAndSaveAsync_Should_Pass_Extracted_Text_From_Text_Attachment_To_AI()
+    {
+        var attachmentId = Guid.NewGuid();
+        var submissionId = Guid.NewGuid();
+        var fileId = Guid.NewGuid();
+        var attachmentText = "Mock CHEFS attachment content for extraction.";
+        var stream = new MemoryStream(Encoding.UTF8.GetBytes(attachmentText));
+        AttachmentSummaryRequest? capturedRequest = null;
+
+        var attachment = new ApplicationChefsFileAttachment
+        {
+            ApplicationId = Guid.NewGuid(),
+            FileName = "mock-attachment.txt",
+            ChefsSubmissionId = submissionId.ToString(),
+            ChefsFileId = fileId.ToString()
+        };
+
+        var attachmentRepository = Substitute.For<IApplicationChefsFileAttachmentRepository>();
+        attachmentRepository.GetAsync(attachmentId).Returns(attachment);
+
+        var streamProvider = Substitute.For<IChefsFileAttachmentStreamProvider>();
+        streamProvider.OpenAsync(submissionId, fileId, "mock-attachment.txt")
+            .Returns(new ChefsFileAttachmentStream(stream, "text/plain"));
+
+        var aiService = Substitute.For<IAIService>();
+        aiService.GenerateAttachmentSummaryAsync(Arg.Do<AttachmentSummaryRequest>(request => capturedRequest = request))
+            .Returns(new AttachmentSummaryResponse { Summary = "summary text" });
+
+        var service = new AttachmentSummaryService(
+            attachmentRepository,
+            streamProvider,
+            new TextExtractionService(NullLogger<TextExtractionService>.Instance),
+            aiService,
+            Substitute.For<IAIGenerationPrerequisiteValidator>(),
+            new AIExecutionModeResolver(new ConfigurationBuilder().Build()),
+            CreateUnitOfWorkManager(),
+            NullLogger<AttachmentSummaryService>.Instance,
+            Substitute.For<IStringLocalizer<AIResource>>());
+
+        var result = await service.GenerateAndSaveAsync(attachmentId, "v1");
+
+        result.ShouldBe("summary text");
+        capturedRequest.ShouldNotBeNull();
+        capturedRequest.ExtractedText.ShouldBe(attachmentText);
+        await aiService.Received(1).GenerateAttachmentSummaryAsync(Arg.Any<AttachmentSummaryRequest>());
+    }
+
+    [Fact]
+    public async Task GenerateAndSaveAsync_Should_Pass_Extracted_Pdf_Text_To_AI()
+    {
+        var attachmentId = Guid.NewGuid();
+        var submissionId = Guid.NewGuid();
+        var fileId = Guid.NewGuid();
+        var attachmentText = "Mock CHEFS PDF attachment content";
+        var stream = CreatePdfStream(attachmentText);
+        AttachmentSummaryRequest? capturedRequest = null;
+
+        var attachment = new ApplicationChefsFileAttachment
+        {
+            ApplicationId = Guid.NewGuid(),
+            FileName = "mock-attachment.pdf",
+            ChefsSubmissionId = submissionId.ToString(),
+            ChefsFileId = fileId.ToString()
+        };
+
+        var attachmentRepository = Substitute.For<IApplicationChefsFileAttachmentRepository>();
+        attachmentRepository.GetAsync(attachmentId).Returns(attachment);
+
+        var streamProvider = Substitute.For<IChefsFileAttachmentStreamProvider>();
+        streamProvider.OpenAsync(submissionId, fileId, "mock-attachment.pdf")
+            .Returns(new ChefsFileAttachmentStream(stream, "application/pdf"));
+
+        var aiService = Substitute.For<IAIService>();
+        aiService.GenerateAttachmentSummaryAsync(Arg.Do<AttachmentSummaryRequest>(request => capturedRequest = request))
+            .Returns(new AttachmentSummaryResponse { Summary = "summary text" });
+
+        var service = new AttachmentSummaryService(
+            attachmentRepository,
+            streamProvider,
+            new TextExtractionService(NullLogger<TextExtractionService>.Instance),
+            aiService,
+            Substitute.For<IAIGenerationPrerequisiteValidator>(),
+            new AIExecutionModeResolver(new ConfigurationBuilder().Build()),
+            CreateUnitOfWorkManager(),
+            NullLogger<AttachmentSummaryService>.Instance,
+            Substitute.For<IStringLocalizer<AIResource>>());
+
+        var result = await service.GenerateAndSaveAsync(attachmentId, "v1");
+
+        result.ShouldBe("summary text");
+        capturedRequest.ShouldNotBeNull();
+        capturedRequest.ExtractedText.ShouldContain(attachmentText);
+        await aiService.Received(1).GenerateAttachmentSummaryAsync(Arg.Any<AttachmentSummaryRequest>());
+    }
+
     private static MemoryStream CreateDocxStream(string paragraphText)
     {
         var writeStream = new MemoryStream();
@@ -256,6 +355,51 @@ public class AttachmentSummaryServiceTests
         }
 
         return new MemoryStream(writeStream.ToArray());
+    }
+
+    private static MemoryStream CreatePdfStream(string text)
+    {
+        static string EscapePdfText(string value) =>
+            value.Replace(@"\", @"\\").Replace("(", @"\(").Replace(")", @"\)");
+
+        var contentStream = $"BT /F1 18 Tf 72 144 Td ({EscapePdfText(text)}) Tj ET\n";
+        var contentBytes = Encoding.ASCII.GetBytes(contentStream);
+
+        var objects = new[]
+        {
+            "1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n",
+            "2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n",
+            "3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>\nendobj\n",
+            $"4 0 obj\n<< /Length {contentBytes.Length} >>\nstream\n{contentStream}endstream\nendobj\n",
+            "5 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj\n"
+        };
+
+        var builder = new StringBuilder();
+        builder.Append("%PDF-1.4\n");
+        var offsets = new List<int> { 0 };
+
+        foreach (var pdfObject in objects)
+        {
+            offsets.Add(Encoding.ASCII.GetByteCount(builder.ToString()));
+            builder.Append(pdfObject);
+        }
+
+        var xrefStart = Encoding.ASCII.GetByteCount(builder.ToString());
+        builder.Append("xref\n");
+        builder.Append("0 6\n");
+        builder.Append("0000000000 65535 f \n");
+        foreach (var offset in offsets.Skip(1))
+        {
+            builder.Append($"{offset:0000000000} 00000 n \n");
+        }
+
+        builder.Append("trailer\n");
+        builder.Append("<< /Size 6 /Root 1 0 R >>\n");
+        builder.Append("startxref\n");
+        builder.Append($"{xrefStart}\n");
+        builder.Append("%%EOF\n");
+
+        return new MemoryStream(Encoding.ASCII.GetBytes(builder.ToString()));
     }
 
     private static IUnitOfWorkManager CreateUnitOfWorkManager()
