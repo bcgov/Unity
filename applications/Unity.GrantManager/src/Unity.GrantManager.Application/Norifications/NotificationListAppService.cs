@@ -23,7 +23,7 @@ public class NotificationListAppService(
 {
     public virtual async Task<PagedResultDto<NotificationSummaryDto>> GetListAsync(PagedAndSortedResultRequestDto input)
     {
-        var sorting = string.IsNullOrWhiteSpace(input.Sorting) ? "SentDateTime DESC" : input.Sorting;
+        var sorting = ResolveSorting(input.Sorting);
 
         var totalCount = await emailLogsRepository.GetCountAsync();
         var logs = await emailLogsRepository.GetPagedListAsync(input.SkipCount, input.MaxResultCount, sorting);
@@ -67,5 +67,41 @@ public class NotificationListAppService(
         }).ToList();
 
         return new PagedResultDto<NotificationSummaryDto>(totalCount, items);
+    }
+
+    private const string DefaultSorting = "SentDateTime DESC";
+
+    // Only EmailLog-backed columns can be sorted at the database level. Joined columns
+    // (Submission Id, Applicant Name) are not sortable server-side; any unrecognized
+    // value falls back to the default so client input is never forwarded raw into the
+    // dynamic-LINQ ordering.
+    private static readonly HashSet<string> SortableColumns = new(StringComparer.OrdinalIgnoreCase)
+    {
+        nameof(EmailLog.SentDateTime),
+        nameof(EmailLog.Status),
+        nameof(EmailLog.FromAddress),
+        nameof(EmailLog.ToAddress),
+        nameof(EmailLog.Subject),
+        nameof(EmailLog.Recipient),
+        nameof(EmailLog.EmailType)
+    };
+
+    private static string ResolveSorting(string? requested)
+    {
+        if (string.IsNullOrWhiteSpace(requested))
+        {
+            return DefaultSorting;
+        }
+
+        var parts = requested.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        var column = parts[0].TrimEnd(',');
+
+        if (!SortableColumns.TryGetValue(column, out var canonicalColumn))
+        {
+            return DefaultSorting;
+        }
+
+        var descending = parts.Length > 1 && parts[1].StartsWith("DESC", StringComparison.OrdinalIgnoreCase);
+        return $"{canonicalColumn} {(descending ? "DESC" : "ASC")}";
     }
 }
