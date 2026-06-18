@@ -128,7 +128,7 @@ namespace Unity.GrantManager.Migrations.HostMigrations
             string systemPrompt,
             string userPromptTemplate,
             string developerNotes,
-            string? metadataJson)
+            string metadataJson)
         {
             migrationBuilder.Sql($"""
                 UPDATE "AI"."AIPromptVersions"
@@ -164,7 +164,7 @@ namespace Unity.GrantManager.Migrations.HostMigrations
             return value.Replace("'", "''", StringComparison.Ordinal);
         }
 
-        private static string FormatNullableSqlString(string? value)
+        private static string FormatNullableSqlString(string value)
         {
             if (value == null)
             {
