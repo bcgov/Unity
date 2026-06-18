@@ -1,5 +1,6 @@
 ﻿using Unity.Notifications.Localization;
 using Volo.Abp.Authorization.Permissions;
+using Volo.Abp.Features;
 using Volo.Abp.Localization;
 using Volo.Abp.SettingManagement;
 
@@ -18,6 +19,15 @@ public class NotificationsPermissionDefinitionProvider : PermissionDefinitionPro
         notificationsPermissions.AddChild(
             NotificationsPermissions.Email.Send,
             L($"Permission:{NotificationsPermissions.Email.Send}"));
+
+        var notificationListPermission = notificationsPermissionsGroup.AddPermission(
+                NotificationsPermissions.NotificationList.Default,
+                L($"Permission:{NotificationsPermissions.NotificationList.Default}"))
+            .RequireFeatures("Unity.Notifications");
+
+        notificationListPermission.AddChild(
+            NotificationsPermissions.NotificationList.View,
+            L($"Permission:{NotificationsPermissions.NotificationList.View}"));
 
         var settingManagement = context.GetGroup(SettingManagementPermissions.GroupName);
         settingManagement.AddPermission(NotificationsPermissions.Settings, L("Permission:NotificationsPermissions.Settings"));
