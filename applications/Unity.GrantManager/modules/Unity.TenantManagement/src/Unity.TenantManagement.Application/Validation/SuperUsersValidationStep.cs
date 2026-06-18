@@ -32,5 +32,5 @@ public class SuperUsersValidationStep(IOnboardingUserLookup userLookup)
     }
 
     internal static string[] ParseEmails(string superUsers) =>
-        [.. superUsers.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Where(e => e.Contains('@'))];
+        [.. superUsers.Split([',', ';', '|'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Where(e => e.Contains('@'))];
 }

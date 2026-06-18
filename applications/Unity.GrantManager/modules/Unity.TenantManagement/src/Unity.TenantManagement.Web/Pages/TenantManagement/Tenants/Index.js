@@ -1,5 +1,6 @@
 (function () {
     let l = abp.localization.getResource('AbpTenantManagement');
+    let lGm = abp.localization.getResource('GrantManager');
     let _tenantAppService = unity.tenantManagement.tenant;
     let _userImportService = unity.grantManager.identity.userImport;
     let _casClientCodeHash = {};
@@ -23,7 +24,7 @@
     function _buildActionsCell(id, name) {
         let items = [];
         if (abp.auth.isGranted('UnityTenantManagement.Tenants.Update') || abp.auth.isGranted('ITOperations')) {
-            items.push('<a href="javascript:;" class="dropdown-item tenant-action-config" data-id="' + id + '">Configuration</a>');
+            items.push('<a href="javascript:;" class="dropdown-item tenant-action-config" data-id="' + id + '">' + lGm('TenantList:ConfigurationAction') + '</a>');
         }
         if (abp.auth.isGranted('UnityTenantManagement.Tenants.Delete')) {
             items.push('<a href="javascript:;" class="dropdown-item tenant-action-delete" data-id="' + id + '" data-name="' + $('<span>').text(name || '').html() + '">' + l('Delete') + '</a>');
@@ -31,7 +32,7 @@
         if (!items.length) return '';
         return '<div class="text-center"><div class="dropdown d-inline-block">' +
             '<a href="javascript:;" class="btn btn-primary btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">' +
-            '<i class="fa fa-cog"></i></a>' +
+            '<i class="fa fa-cog"></i> ' + lGm('TenantList:ActionsButton') + '</a>' +
             '<div class="dropdown-menu">' + items.join('') + '</div>' +
             '</div></div>';
     }
@@ -51,12 +52,12 @@
             }
         },
         { title: l('TenantName'),  data: 'name',         name: 'name',         index: 1 },
-        { title: 'Licence Plate',  data: 'licencePlate', name: 'licencePlate', index: 2 },
+        { title: lGm('TenantList:LicencePlate'),  data: 'licencePlate', name: 'licencePlate', index: 2 },
         { title: l('Division'),    data: 'division',     name: 'division',     index: 3 },
         { title: l('Branch'),      data: 'branch',       name: 'branch',       index: 4 },
         { title: l('Description'), data: 'description',  name: 'description',  index: 5 },
         {
-            title: 'CAS Client Code',
+            title: lGm('TenantList:CasClientCode'),
             data: 'casClientCode',
             name: 'casClientCode',
             index: 6,
@@ -346,7 +347,7 @@
         $('#ConfigTenantAdminSearchButton').click(function (e) {
             e.preventDefault();
             if ($('#config-search-value').val().trim().length < 2) {
-                abp.notify.warn('Please enter at least 2 characters to search.');
+                abp.notify.warn(lGm('TenantList:SearchMinChars'));
                 return;
             }
             _configFilterDataTable.ajax.reloadEx();
@@ -437,6 +438,10 @@
             dynamicButtonContainerId: 'dynamicButtonContainerId',
             externalSearchId: 'search'
         });
+
+        // Disable interactive row selection (selection is only ever driven via the API),
+        // without needing a "selectable" option on the shared initializeDataTable helper.
+        _dataTable.select.style('api');
 
         _createModal.onResult(function () {
             _dataTable.ajax.reloadEx();

@@ -1,13 +1,16 @@
 @page
+@using Microsoft.AspNetCore.Mvc.Localization
+@using Unity.GrantManager.Localization
 @using Unity.TenantManagement.Web.Navigation
 @using Volo.Abp.AspNetCore.Mvc.UI.Layout
 @using Unity.TenantManagement.Web.Pages.TenantManagement.Onboarding
 @model IndexModel
+@inject IHtmlLocalizer<GrantManagerResource> L
 @inject IPageLayout PageLayout
 @{
-    PageLayout.Content.BreadCrumb.Add("Onboarding");
+    PageLayout.Content.BreadCrumb.Add(L["Menu:Onboarding"].Value);
     PageLayout.Content.MenuItemName = TenantManagementMenuNames.Onboarding;
-    ViewBag.PageTitle = "Onboarding";
+    ViewBag.PageTitle = L["Menu:Onboarding"].Value;
 }
 @section styles {
     <abp-style src="/Views/Shared/Components/ActionBar/Default.css" />
@@ -24,16 +27,20 @@
 <div class="container-fluid px-2">
     <div class="action-bar p-2 search-action-bar">
         <div class="search-action-bar_search-wrapper">
-            <input type="search" id="search" placeholder="Search" class="tbl-search">
+            <input type="search" id="search" placeholder="@L["Common:Command:Search"]" class="tbl-search">
+        </div>
+        <div class="d-flex align-items-center gap-2 ms-2">
+            <label for="onboarding-category-filter" class="form-label mb-0 text-nowrap small">@L["OnboardingList:CategoryLabel"]</label>
+            <select id="onboarding-category-filter" class="form-select form-select-sm" style="min-width:140px"></select>
         </div>
         <div class="btn-group">
             <button id="btn-open-onboarding"
                     data-selector="onboarding-table-actions"
-                    class="custom-table-btn flex-none btn btn-secondary action-bar-btn-unavailable">Open</button>
+                    class="custom-table-btn flex-none btn btn-secondary action-bar-btn-unavailable">@L["OnboardingList:OpenButton"]</button>
             <button id="btn-create-tenant"
                     data-selector="onboarding-table-actions"
-                    class="custom-table-btn flex-none btn btn-secondary action-bar-btn-unavailable">Create Tenant</button>
-            <button id="btn-toggle-filter" class="custom-table-btn flex-none btn btn-secondary">Filter</button>
+                    class="custom-table-btn flex-none btn btn-secondary action-bar-btn-unavailable">@L["OnboardingList:CreateTenantButton"]</button>
+            <button id="btn-toggle-filter" class="custom-table-btn flex-none btn btn-secondary">@L["OnboardingList:FilterButton"]</button>
         </div>
         <div id="dynamicButtonContainerId"></div>
     </div>

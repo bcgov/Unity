@@ -84,11 +84,65 @@
 
   (function(){
 
-    abp.utils.createNamespace(window, 'unity.tenantManagement.onboardingRequest');
+    abp.utils.createNamespace(globalThis, 'unity.tenantManagement.onboardingRequest');
 
     unity.tenantManagement.onboardingRequest.getList = function(input, ajaxParams) {
+      const qsParams = [
+        { name: 'sorting', value: input.sorting },
+        { name: 'skipCount', value: input.skipCount },
+        { name: 'maxResultCount', value: input.maxResultCount },
+        { name: 'category', value: input.category },
+        { name: 'filter', value: input.filter }
+      ];
+      (input.columnFilters || []).forEach(function(cf, i) {
+        qsParams.push(
+          { name: 'columnFilters[' + i + '].name', value: cf.name },
+          { name: 'columnFilters[' + i + '].value', value: cf.value }
+        );
+      });
       return abp.ajax($.extend(true, {
-        url: abp.appPath + 'api/multi-tenancy/onboarding-requests' + abp.utils.buildQueryString([{ name: 'sorting', value: input.sorting }, { name: 'skipCount', value: input.skipCount }, { name: 'maxResultCount', value: input.maxResultCount }]) + '',
+        url: abp.appPath + 'api/onboarding-requests' + abp.utils.buildQueryString(qsParams) + '',
+        type: 'GET'
+      }, ajaxParams));
+    };
+
+    unity.tenantManagement.onboardingRequest.get = function(id, ajaxParams) {
+      return abp.ajax($.extend(true, {
+        url: abp.appPath + 'api/onboarding-requests/' + id + '',
+        type: 'GET'
+      }, ajaxParams));
+    };
+
+    unity.tenantManagement.onboardingRequest.validate = function(id, input, ajaxParams) {
+      return abp.ajax($.extend(true, {
+        url: abp.appPath + 'api/onboarding-requests/' + id + '/validate' + abp.utils.buildQueryString([
+          { name: 'tenantNameFieldKey', value: input?.tenantNameFieldKey },
+          { name: 'superUsersFieldKey', value: input?.superUsersFieldKey }
+        ]) + '',
+        type: 'GET'
+      }, ajaxParams));
+    };
+
+    unity.tenantManagement.onboardingRequest.createTenant = function(id, input, ajaxParams) {
+      return abp.ajax($.extend(true, {
+        url: abp.appPath + 'api/onboarding-requests/' + id + '/create-tenant',
+        type: 'POST',
+        data: JSON.stringify(input)
+      }, ajaxParams));
+    };
+
+    unity.tenantManagement.onboardingRequest.getColumnSchema = function(input, ajaxParams) {
+      return abp.ajax($.extend(true, {
+        url: abp.appPath + 'api/onboarding-requests/column-schema' + abp.utils.buildQueryString([
+          { name: 'category', value: input?.category }
+        ]) + '',
+        type: 'GET'
+      }, ajaxParams));
+    };
+
+    unity.tenantManagement.onboardingRequest.getAvailableCategories = function(ajaxParams) {
+      return abp.ajax($.extend(true, {
+        url: abp.appPath + 'api/onboarding-requests/categories',
         type: 'GET'
       }, ajaxParams));
     };

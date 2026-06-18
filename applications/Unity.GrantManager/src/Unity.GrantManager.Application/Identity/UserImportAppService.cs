@@ -71,7 +71,7 @@ namespace Unity.GrantManager.Identity
             var displayName = cssUser.Attributes?.DisplayName?[0] ?? identityUser.NormalizedUserName.ToString();
 
             await UpdateAdditionalUserPropertiesAsync(identityUser, oidcSub, displayName);
-            await SyncUserToCurrentTenantAsync(newUserId, identityUser, oidcSub, displayName);
+            await SyncUserToCurrentTenantAsync(identityUser, oidcSub, displayName);
         }
 
         /// <summary>
@@ -104,7 +104,7 @@ namespace Unity.GrantManager.Identity
             }
             
             await UpdateAdditionalUserPropertiesAsync(identityUser, oidcSub, displayName);
-            await SyncUserToCurrentTenantAsync(newUserId, identityUser, oidcSub, displayName);
+            await SyncUserToCurrentTenantAsync(identityUser, oidcSub, displayName);
         }
 
         /// <summary>
@@ -238,14 +238,14 @@ namespace Unity.GrantManager.Identity
             return null;
         }       
 
-        private async Task SyncUserToCurrentTenantAsync(Guid userId, IdentityUser user, string oidcSub, string displayName)
+        private async Task SyncUserToCurrentTenantAsync(IdentityUser user, string oidcSub, string displayName)
         {
-            var existingUser = await _personRepository.FindByOidcSub(oidcSub);            
+            var existingUser = await _personRepository.FindByOidcSub(oidcSub);
             if (existingUser == null)
             {
                 await _personRepository.InsertAsync(new Person()
                 {
-                    Id = userId,
+                    Id = user.Id,
                     OidcSub = oidcSub.ToSubjectWithoutIdp(),
                     OidcDisplayName = displayName,
                     FullName = $"{user.Name} {user.Surname}",

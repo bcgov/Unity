@@ -1,10 +1,13 @@
-﻿using System;
+﻿#nullable enable
+using System;
+using System.Collections.Generic;
 
 namespace Unity.TenantManagement;
 
 public class OnboardingRequestDto
 {
     public Guid Id { get; set; }
+    public string SubmissionNumber { get; set; } = string.Empty;
     public string TenantName { get; set; } = string.Empty;
     public string TenantDescription { get; set; } = string.Empty;
     public string ProgramAreaName { get; set; } = string.Empty;
@@ -18,4 +21,5 @@ public class OnboardingRequestDto
     public string Status { get; set; } = string.Empty;
     public string Category { get; set; } = string.Empty;
     public DateTime? SubmissionDate { get; set; }
+    public Dictionary<string, object?> Fields { get; set; } = [];
 }
