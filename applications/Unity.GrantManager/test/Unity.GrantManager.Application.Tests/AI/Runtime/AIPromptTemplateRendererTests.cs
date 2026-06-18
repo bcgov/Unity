@@ -1,4 +1,5 @@
 using Shouldly;
+using System;
 using Unity.AI.Runtime;
 using Xunit;
 
@@ -121,5 +122,34 @@ public class AIPromptTemplateRendererTests
             metadataJson);
 
         result.ShouldContain("{ \"decision\": \"PROCEED\" }");
+    }
+
+    [Fact]
+    public void BuildApplicationAnalysisUserPrompt_Should_Throw_When_Template_Contains_NonPrompt_Placeholders()
+    {
+        const string template = "Bad template token: {{ item.label }}";
+
+        var exception = Should.Throw<InvalidOperationException>(() =>
+            AIPromptTemplateRenderer.BuildApplicationAnalysisUserPrompt(template, "{}", "{}", "[]"));
+
+        exception.Message.ShouldContain("Invalid prompt placeholders");
+        exception.Message.ShouldContain("item.label");
+    }
+
+    [Fact]
+    public void BuildApplicationAnalysisUserPrompt_Should_Throw_When_Metadata_Is_Invalid_Json()
+    {
+        const string template = "{{DATA}}";
+        const string invalidMetadataJson = "{ invalid json";
+
+        var exception = Should.Throw<InvalidOperationException>(() =>
+            AIPromptTemplateRenderer.BuildApplicationAnalysisUserPrompt(
+                template,
+                "{}",
+                "{}",
+                "[]",
+                invalidMetadataJson));
+
+        exception.Message.ShouldContain("Invalid prompt metadata JSON.");
     }
 }

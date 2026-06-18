@@ -1,9 +1,6 @@
 using NSubstitute;
 using Shouldly;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Linq.Expressions;
 using System.Threading.Tasks;
 using Unity.AI.Domain;
 using Unity.AI.Prompts;
@@ -62,29 +59,11 @@ public class AIPromptTemplateProviderTests
         var currentTenant = Substitute.For<ICurrentTenant>();
         currentTenant.Change(null).Returns(Substitute.For<IDisposable>());
 
-        promptRepository.GetListAsync(Arg.Any<Expression<Func<AIPrompt, bool>>>())
-            .Returns(call =>
-            {
-                if (prompt == null)
-                {
-                    return Task.FromResult(new List<AIPrompt>());
-                }
+        promptRepository.FindAsync(Arg.Any<System.Linq.Expressions.Expression<Func<AIPrompt, bool>>>())
+            .Returns(prompt);
 
-                var predicate = call.Arg<Expression<Func<AIPrompt, bool>>>();
-                return Task.FromResult(new List<AIPrompt> { prompt }.Where(predicate.Compile()).ToList());
-            });
-
-        promptVersionRepository.GetListAsync(Arg.Any<Expression<Func<AIPromptVersion, bool>>>())
-            .Returns(call =>
-            {
-                if (version == null)
-                {
-                    return Task.FromResult(new List<AIPromptVersion>());
-                }
-
-                var predicate = call.Arg<Expression<Func<AIPromptVersion, bool>>>();
-                return Task.FromResult(new List<AIPromptVersion> { version }.Where(predicate.Compile()).ToList());
-            });
+        promptVersionRepository.FindAsync(Arg.Any<System.Linq.Expressions.Expression<Func<AIPromptVersion, bool>>>())
+            .Returns(version);
 
         return new AIPromptTemplateProvider(promptRepository, promptVersionRepository, currentTenant);
     }

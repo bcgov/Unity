@@ -1,6 +1,4 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Unity.AI.Domain;
@@ -25,16 +23,14 @@ public class AIPromptTemplateProvider(
 
         using (currentTenant.Change(null))
         {
-            var prompts = await promptRepository.GetListAsync(p => p.Name == promptType);
-            var prompt = prompts.FirstOrDefault();
+            var prompt = await promptRepository.FindAsync(p => p.Name == promptType);
             if (prompt == null || !prompt.IsActive)
             {
                 throw new InvalidOperationException($"AI prompt '{promptType}' is not configured.");
             }
 
-            var versions = await promptVersionRepository.GetListAsync(
-                version => version.PromptId == prompt.Id && version.VersionNumber == versionNumber);
-            var version = versions.FirstOrDefault();
+            var version = await promptVersionRepository.FindAsync(
+                v => v.PromptId == prompt.Id && v.VersionNumber == versionNumber);
             if (version == null || !version.IsPublished || version.IsDeprecated)
             {
                 throw new InvalidOperationException(

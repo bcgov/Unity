@@ -123,9 +123,9 @@ public static class AIPromptTemplateRenderer
 
             return ExtractStringProperties(root);
         }
-        catch (JsonException)
+        catch (JsonException ex)
         {
-            return new Dictionary<string, string>(StringComparer.Ordinal);
+            throw new InvalidOperationException("Invalid prompt metadata JSON.", ex);
         }
     }
 
