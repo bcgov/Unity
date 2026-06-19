@@ -15,7 +15,6 @@ public class ApplicantListRecord
     public bool? RedStop { get; set; }
     public string? NonRegisteredBusinessName { get; set; }
     public string? NonRegOrgName { get; set; }
-    public string? OrganizationSize { get; set; }
     public string? Sector { get; set; }
     public string? SubSector { get; set; }
     public string? ApproxNumberOfEmployees { get; set; }

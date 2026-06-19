@@ -117,7 +117,7 @@
                         <abp-input asp-for="@Model.ApplicantSummary.NonRegOrgName" />
                     </abp-column>
                     <abp-column size="_4" class="px-1">
-                        <abp-input class="numeric-mask" asp-for="@Model.ApplicantSummary.OrganizationSize" />
+                        <abp-input class="numeric-mask" asp-for="@Model.ApplicantSummary.ApproxNumberOfEmployees" />
                     </abp-column>
                     <abp-column size="_4" class="px-1">
                         <div class="switch-container">
@@ -510,17 +510,17 @@
                                 </td>
                             </tr>
                             <tr>
-                                <td>@L["ApplicantInfoView:ApplicantInfo.OrganizationSize"].Value</td>
+                                <td>@L["ApplicantInfoView:ApplicantInfo.ApproxNumberOfEmployees"].Value</td>
                                 <td>
                                     <label class="d-flex align-items-center w-100 mb-0">
-                                        <input type="radio" name="merge_OrganizationSize" value="existing" class="me-2" />
-                                        <span id="existing_OrganizationSize"></span>
+                                        <input type="radio" name="merge_ApproxNumberOfEmployees" value="existing" class="me-2" />
+                                        <span id="existing_ApproxNumberOfEmployees"></span>
                                     </label>
                                 </td>
                                 <td>
                                     <label class="d-flex align-items-center w-100 mb-0">
-                                        <input type="radio" name="merge_OrganizationSize" value="new" class="me-2" />
-                                        <span id="new_OrganizationSize"></span>
+                                        <input type="radio" name="merge_ApproxNumberOfEmployees" value="new" class="me-2" />
+                                        <span id="new_ApproxNumberOfEmployees"></span>
                                     </label>
                                 </td>
                             </tr>

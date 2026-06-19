@@ -68,7 +68,7 @@ public class GrantApplicationDto : AuditedEntityDto<Guid>
     public GrantApplicationAssigneeDto? Owner { get; set; } = new();
     public string? OrgStatus { get; set; } = string.Empty;
     public string? BusinessNumber { get; set; } = string.Empty;
-    public string? OrganizationSize { get; set; } = string.Empty;
+    public string? ApproxNumberOfEmployees { get; set; } = string.Empty;
     public string? OrgNumber { get; set; } = string.Empty;
     public string? SectorSubSectorIndustryDesc { get; set; } = string.Empty;
     public string? SigningAuthorityFullName { get; set; }

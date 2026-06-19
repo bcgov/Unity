@@ -13,6 +13,12 @@ public static class NotificationsPermissions
         public const string Send = "Notifications.Email.Send";
     }
 
+    public static class NotificationList
+    {
+        public const string Default = "Notifications.NotificationList";
+        public const string View = "Notifications.NotificationList.View";
+    }
+
     public static string[] GetAll()
     {
         return ReflectionHelper.GetPublicConstantsRecursively(typeof(NotificationsPermissions));

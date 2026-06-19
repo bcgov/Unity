@@ -56,7 +56,6 @@ $(function () {
             getRedStopColumn(columnIndex++),
             getNonRegisteredBusinessNameColumn(columnIndex++),
             getNonRegOrgNameColumn(columnIndex++),
-            getOrganizationSizeColumn(columnIndex++),
             getSectorColumn(columnIndex++),
             getSubSectorColumn(columnIndex++),
             getApproxNumberOfEmployeesColumn(columnIndex++),
@@ -231,20 +230,6 @@ $(function () {
         }
     }
 
-    function getOrganizationSizeColumn(columnIndex) {
-        return {
-            title: 'Organization Size',
-            data: 'organizationSize',
-            name: 'organizationSize',
-            className: 'data-table-header',
-            visible: false,
-            render: function (data) {
-                return data ?? '';
-            },
-            index: columnIndex
-        }
-    }
-
     function getSectorColumn(columnIndex) {
         return {
             title: 'Sector',
@@ -275,7 +260,7 @@ $(function () {
 
     function getApproxNumberOfEmployeesColumn(columnIndex) {
         return {
-            title: 'Approx. Number of Employees',
+            title: 'Organization Size (Approximate Number of Employees)',
             data: 'approxNumberOfEmployees',
             name: 'approxNumberOfEmployees',
             className: 'data-table-header',
