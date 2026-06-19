@@ -231,13 +231,7 @@ public class OnboardingRequestAppService(
 
         await ResolveFieldMappings(request, tenantNameFieldKey, superUsersFieldKey, branchFieldKey, featuresFieldKey, ministryFieldKey, programAreaFieldKey);
 
-        var issues = new List<string>();
-        foreach (var step in _validationSteps.OrderBy(s => s.Order))
-        {
-            var stepResult = await step.ValidateAsync(request);
-            if (!stepResult.IsValid && stepResult.Issue is not null)
-                issues.Add($"[{step.StepName}] {stepResult.Issue}");
-        }
+        var issues = await RunValidationStepsAsync(request);
 
         return new OnboardingValidationResultDto { IsValid = issues.Count == 0, Issues = issues };
     }
@@ -251,6 +245,13 @@ public class OnboardingRequestAppService(
 
         if (input != null)
             await SaveFieldMappingAsync(input.TenantNameFieldKey, input.SuperUsersFieldKey, input.BranchFieldKey, input.FeaturesFieldKey, input.MinistryFieldKey, input.ProgramAreaFieldKey);
+
+        // Re-validate server-side even if the client already called ValidateAsync — the client
+        // cannot be trusted to have done so, and skipping this would let a duplicate tenant name
+        // or other validation-step failure slip through directly via this endpoint.
+        var validationIssues = await RunValidationStepsAsync(request);
+        if (validationIssues.Count > 0)
+            throw new UserFriendlyException(string.Join(" ", validationIssues));
 
         var emails = SuperUsersValidationStep.ParseEmails(request.SuperUsers);
 
@@ -290,6 +291,18 @@ public class OnboardingRequestAppService(
 
         if (ApplicationProvider != null)
             await ApplicationProvider.CloseApplicationAsync(id);
+    }
+
+    private async Task<List<string>> RunValidationStepsAsync(OnboardingRequestDto request)
+    {
+        var issues = new List<string>();
+        foreach (var step in _validationSteps.OrderBy(s => s.Order))
+        {
+            var stepResult = await step.ValidateAsync(request);
+            if (!stepResult.IsValid && stepResult.Issue is not null)
+                issues.Add($"[{step.StepName}] {stepResult.Issue}");
+        }
+        return issues;
     }
 
     private async Task ResolveFieldMappings(OnboardingRequestDto request,

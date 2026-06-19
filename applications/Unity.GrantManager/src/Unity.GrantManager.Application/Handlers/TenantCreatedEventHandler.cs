@@ -53,21 +53,27 @@ namespace Unity.GrantManager.Handlers
 
         private async Task EnableRequestedFeaturesAsync(TenantCreatedEto eto, Guid tenantId)
         {
-            if (!eto.Properties.TryGetValue("FeatureKeys", out var featureKeysRaw) ||
-                string.IsNullOrWhiteSpace(featureKeysRaw))
+            if (!eto.Properties.TryGetValue("FeatureKeys", out var featureKeysRaw))
                 return;
 
-            var featureUpdates = featureKeysRaw
-                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-                .Select(key => new UpdateFeatureDto { Name = key, Value = "true" })
-                .ToList();
-
+            var featureUpdates = BuildFeatureUpdates(featureKeysRaw);
             if (featureUpdates.Count == 0) return;
 
             await _featureAppService.UpdateAsync(
                 "T", // TenantFeatureValueProvider.ProviderName
                 tenantId.ToString(),
                 new UpdateFeaturesDto { Features = featureUpdates });
+        }
+
+        internal static List<UpdateFeatureDto> BuildFeatureUpdates(string? featureKeysRaw)
+        {
+            if (string.IsNullOrWhiteSpace(featureKeysRaw))
+                return [];
+
+            return featureKeysRaw
+                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Select(key => new UpdateFeatureDto { Name = key, Value = "true" })
+                .ToList();
         }
     }
 }

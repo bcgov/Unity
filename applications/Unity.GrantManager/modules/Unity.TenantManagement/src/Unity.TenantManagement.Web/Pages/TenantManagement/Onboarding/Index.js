@@ -90,7 +90,7 @@
         const keys = [];
         grid.rows.forEach(function (row) {
             (row.cells || []).forEach(function (cell) {
-                if (keys.indexOf(cell.key) === -1) keys.push(cell.key);
+                if (!keys.includes(cell.key)) keys.push(cell.key);
             });
         });
 

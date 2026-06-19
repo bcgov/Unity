@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Unity.Flex.Domain.WorksheetInstances;
 using Unity.Flex.Domain.Services;
+using Volo.Abp;
 using Volo.Abp.Application.Dtos;
 
 namespace Unity.Flex.WorksheetInstances
@@ -33,6 +34,7 @@ namespace Unity.Flex.WorksheetInstances
             await worksheetsManager.PersistWorksheetData(ObjectMapper.Map<PersistWorksheetIntanceValuesDto, PersistWorksheetIntanceValuesEto>(dto));
         }
 
+        [RemoteService(false)]
         public virtual async Task<List<WorksheetInstanceDataDto>> GetListByCorrelationIdsAsync(List<Guid> correlationIds, string correlationProvider)
         {
             var instances = await worksheetInstanceRepository.GetByCorrelationIdsAsync(correlationIds, correlationProvider);
@@ -44,16 +46,19 @@ namespace Unity.Flex.WorksheetInstances
             }).ToList();
         }
 
+        [RemoteService(false)]
         public virtual async Task<List<Guid>> GetDistinctWorksheetIdsByCorrelationProviderAsync(string correlationProvider)
         {
             return await worksheetInstanceRepository.GetDistinctWorksheetIdsByCorrelationProviderAsync(correlationProvider);
         }
 
+        [RemoteService(false)]
         public virtual async Task<List<Guid>> GetDistinctWorksheetIdsByCorrelationIdsAsync(List<Guid> correlationIds, string correlationProvider)
         {
             return await worksheetInstanceRepository.GetDistinctWorksheetIdsByCorrelationIdsAsync(correlationIds, correlationProvider);
         }
 
+        [RemoteService(false)]
         public virtual async Task<PagedResultDto<WorksheetInstanceDataDto>> GetPagedListByCorrelationProviderAsync(string correlationProvider, int skipCount, int maxResultCount)
         {
             var totalCount = await worksheetInstanceRepository.GetCountByCorrelationProviderAsync(correlationProvider);
@@ -69,6 +74,7 @@ namespace Unity.Flex.WorksheetInstances
             return new PagedResultDto<WorksheetInstanceDataDto>(totalCount, items);
         }
 
+        [RemoteService(false)]
         public virtual async Task<WorksheetInstanceDataDto?> GetDataByIdAsync(Guid id)
         {
             var wi = await worksheetInstanceRepository.FindAsync(id);

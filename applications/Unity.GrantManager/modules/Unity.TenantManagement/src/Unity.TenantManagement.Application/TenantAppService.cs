@@ -264,6 +264,7 @@ public class TenantAppService(
         return tenant?.Name ?? string.Empty;
     }
 
+    [Authorize(TenantManagementPermissions.Policies.TenantsUpdateOrITOps)]
     public async Task AssignManagerAsync(TenantAssignManagerDto managerAssignment)
     {
         await localEventBus.PublishAsync(
