@@ -14,6 +14,9 @@ public class ApplicantPaymentDetailsDto : EntityDto<Guid>
     public PaymentRequestStatus Status { get; set; }
     public decimal Amount { get; set; }
     public string? PaymentStatus { get; set; }
+    public string? InvoiceStatus { get; set; }
+    public string? CasResponse { get; set; }
+    public string Category { get; set; } = string.Empty;
     public string SupplierNumber { get; set; } = string.Empty;
     public string SupplierName { get; set; } = string.Empty;
     public SiteDto? Site { get; set; }

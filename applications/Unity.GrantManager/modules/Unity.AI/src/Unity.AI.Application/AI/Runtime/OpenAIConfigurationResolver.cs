@@ -7,9 +7,6 @@ namespace Unity.AI.Runtime;
 
 public class OpenAIConfigurationResolver(IConfiguration configuration) : ITransientDependency
 {
-    private static readonly string[] SupportedReasoningEfforts = ["minimal", "low", "medium", "high"];
-    private static readonly string[] SupportedVerbosityValues = ["low", "medium", "high"];
-
     private readonly IConfiguration _configuration = configuration;
 
     public string ResolveProviderName(string? operationName = null)
@@ -32,11 +29,26 @@ public class OpenAIConfigurationResolver(IConfiguration configuration) : ITransi
         return Required($"Azure:{providerName}:ApiKey");
     }
 
-    public string ResolveMaxTokensParameterNameForOperation(string? operationName = null)
+    public OpenAIOperationSettings ResolveOperationSettings(string operationName)
     {
         var providerName = ResolveProviderName(operationName);
         var profileName = ResolveProfileName(operationName);
-        return RequiredProfile(providerName, profileName, "MaxTokensParameter");
+        var apiKey = Required($"Azure:{providerName}:ApiKey");
+        var endpoint = ResolveEndpointUri(providerName);
+        var deploymentName = RequiredProfile(providerName, profileName, "DeploymentName");
+        var promptVersion = Optional($"Azure:Operations:{operationName}:PromptVersion")
+            ?? Required("Azure:Operations:Defaults:PromptVersion");
+
+        return new OpenAIOperationSettings(
+            providerName,
+            profileName,
+            apiKey,
+            endpoint,
+            deploymentName,
+            ResolveMaxOutputTokenCountSupported(operationName),
+            ResolveConfiguredTemperature(operationName),
+            ResolveCompletionTokens(operationName),
+            promptVersion);
     }
 
     public double? ResolveConfiguredTemperature(string? operationName = null)
@@ -53,14 +65,23 @@ public class OpenAIConfigurationResolver(IConfiguration configuration) : ITransi
         return null;
     }
 
-    public string? ResolveConfiguredReasoningEffort(string? operationName = null)
+    public bool ResolveMaxOutputTokenCountSupported(string? operationName = null)
     {
-        return ResolveOptionalProfileValue(operationName, "ReasoningEffort", SupportedReasoningEfforts);
-    }
+        var providerName = ResolveProviderName(operationName);
+        var profileName = ResolveProfileName(operationName);
+        var key = ProfileKey(providerName, profileName, "MaxOutputTokenCountSupported");
+        var configuredValue = Optional(key);
+        if (configuredValue == null)
+        {
+            return true;
+        }
 
-    public string? ResolveConfiguredVerbosity(string? operationName = null)
-    {
-        return ResolveOptionalProfileValue(operationName, "Verbosity", SupportedVerbosityValues);
+        if (bool.TryParse(configuredValue, out var parsedValue))
+        {
+            return parsedValue;
+        }
+
+        throw new InvalidOperationException($"{key} must be 'true' or 'false'.");
     }
 
     public int ResolveCompletionTokens(string operationName)
@@ -86,13 +107,17 @@ public class OpenAIConfigurationResolver(IConfiguration configuration) : ITransi
             ?? Required("Azure:Operations:Defaults:PromptVersion");
     }
 
-    public string ResolveApiUrl(string? operationName = null)
+    public Uri ResolveEndpoint(string? operationName = null)
     {
         var providerName = ResolveProviderName(operationName);
-        var endpoint = Required($"Azure:{providerName}:Endpoint");
+        return ResolveEndpointUri(providerName);
+    }
+
+    public string ResolveDeploymentName(string? operationName = null)
+    {
+        var providerName = ResolveProviderName(operationName);
         var profileName = ResolveProfileName(operationName);
-        var profileApiUrl = RequiredProfile(providerName, profileName, "ApiUrl");
-        return CombineEndpointAndPath(endpoint, profileApiUrl);
+        return RequiredProfile(providerName, profileName, "DeploymentName");
     }
 
     private string ResolveProfileName(string? operationName)
@@ -125,6 +150,21 @@ public class OpenAIConfigurationResolver(IConfiguration configuration) : ITransi
         return Optional(key) ?? throw new InvalidOperationException($"{key} is not configured.");
     }
 
+    private Uri ResolveEndpointUri(string providerName)
+    {
+        var key = $"Azure:{providerName}:Endpoint";
+        var endpoint = Required(key);
+
+        try
+        {
+            return new Uri(endpoint);
+        }
+        catch (UriFormatException ex)
+        {
+            throw new InvalidOperationException($"{key} must be a valid absolute URI.", ex);
+        }
+    }
+
     private string? Optional(string key)
     {
         var value = _configuration[key];
@@ -140,34 +180,5 @@ public class OpenAIConfigurationResolver(IConfiguration configuration) : ITransi
     private static string ProfileKey(string providerName, string profileName, string settingName)
     {
         return $"Azure:{providerName}:Profiles:{profileName}:{settingName}";
-    }
-
-    private string? ResolveOptionalProfileValue(string? operationName, string settingName, string[] supportedValues)
-    {
-        var providerName = ResolveProviderName(operationName);
-        var profileName = ResolveProfileName(operationName);
-        var configuredValue = OptionalProfile(providerName, profileName, settingName);
-        if (configuredValue == null)
-        {
-            return null;
-        }
-
-        var trimmedValue = configuredValue.Trim();
-        if (Array.Exists(supportedValues, supportedValue => string.Equals(supportedValue, trimmedValue, StringComparison.Ordinal)))
-        {
-            return trimmedValue;
-        }
-
-        throw new InvalidOperationException(
-            $"AI {settingName} value '{configuredValue}' is not supported. Use one of: {string.Join(", ", supportedValues)}.");
-    }
-
-    private static string CombineEndpointAndPath(string endpoint, string profilePath)
-    {
-        const char UrlPathSeparator = '/';
-
-        return endpoint.Trim().TrimEnd(UrlPathSeparator)
-            + UrlPathSeparator
-            + profilePath.Trim().TrimStart(UrlPathSeparator);
     }
 }

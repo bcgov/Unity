@@ -121,6 +121,7 @@ namespace Unity.GrantManager.Events
 
                     string emailToAddress = String.Join(",", eventData.EmailAddressList);
 
+<<<<<<< HEAD
                     return await InitializeEmailAndUploadAttachments(
                         new EmailInitParams(emailToAddress, eventData.Body, FAILED_PAYMENTS_SUBJECT,
                             eventData.ApplicationId, eventData.EmailFrom, eventData.EmailTemplateName));
@@ -151,10 +152,9 @@ namespace Unity.GrantManager.Events
                     if (eventData.PaymentRequestIds != null && eventData.PaymentRequestIds.Count != 0)
                     {
                         emailLog.PaymentRequestIds = string.Join(",", eventData.PaymentRequestIds);
-                        await emailLogsRepository.UpdateAsync(emailLog, autoSave: true);
                     }
 
-                    return emailLog;
+                    return await StampClassificationAsync(emailLog, EmailType.EventBased, RecipientType.Internal);
                 }
                 case EmailAction.Retry:
                 default:
@@ -174,6 +174,7 @@ namespace Unity.GrantManager.Events
             string? emailCC = eventData.Cc?.Any() == true ? String.Join(",", eventData.Cc) : null;
             string? emailBCC = eventData.Bcc?.Any() == true ? String.Join(",", eventData.Bcc) : null;
 
+<<<<<<< HEAD
             EmailLog? emailLog;
             if (eventData.Id == Guid.Empty)
             {
@@ -236,6 +237,14 @@ namespace Unity.GrantManager.Events
                 }
             }
 
+            return emailLog;
+        }
+
+        private async Task<EmailLog> StampClassificationAsync(EmailLog emailLog, EmailType emailType, RecipientType recipient)
+        {
+            emailLog.EmailType = emailType;
+            emailLog.Recipient = recipient;
+            await emailLogsRepository.UpdateAsync(emailLog, autoSave: true);
             return emailLog;
         }
 

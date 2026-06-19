@@ -19,6 +19,12 @@ public static class NotificationsPermissions
         public const string ScheduleCancel = "Notifications.Form.Email.Schedule.Cancel";
     }
 
+    public static class NotificationList
+    {
+        public const string Default = "Notifications.NotificationList";
+        public const string View = "Notifications.NotificationList.View";
+    }
+
     public static string[] GetAll()
     {
         return ReflectionHelper.GetPublicConstantsRecursively(typeof(NotificationsPermissions));

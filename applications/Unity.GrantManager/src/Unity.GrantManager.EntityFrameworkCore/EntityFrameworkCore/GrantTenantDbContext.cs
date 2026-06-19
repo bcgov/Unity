@@ -85,6 +85,12 @@ namespace Unity.GrantManager.EntityFrameworkCore
 
                 b.HasIndex(x => x.ApplicantName);
                 b.HasIndex(x => x.TenantId);
+                b.HasIndex(x => new { x.TenantId, x.IsDeleted, x.CreationTime }).HasFilter("\"IsDeleted\" = false");
+                b.HasIndex(x => x.UnityApplicantId);
+                b.HasIndex(x => x.OrgName);
+                b.HasIndex(x => x.OrgNumber);
+                b.HasIndex(x => x.Status);
+                b.HasIndex(x => x.SupplierId);
 
                 b.HasMany<ApplicantAddress>()
                     .WithOne(s => s.Applicant)

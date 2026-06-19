@@ -56,7 +56,7 @@ namespace Unity.GrantManager.ApplicantProfile
                         applicant.NonRegOrgName,
                         applicant.FiscalMonth,
                         applicant.FiscalDay,
-                        applicant.OrganizationSize,
+                        applicant.ApproxNumberOfEmployees,
                         applicant.Sector,
                         applicant.SubSector
                     })
@@ -75,7 +75,8 @@ namespace Unity.GrantManager.ApplicantProfile
                     NonRegOrgName = r.NonRegOrgName,
                     FiscalMonth = r.FiscalMonth,
                     FiscalDay = r.FiscalDay,
-                    OrganizationSize = r.OrganizationSize,
+                    OrganizationSize = r.ApproxNumberOfEmployees,
+                    ApproxNumberOfEmployees = r.ApproxNumberOfEmployees,
                     Sector = r.Sector,
                     SubSector = r.SubSector
                 }));

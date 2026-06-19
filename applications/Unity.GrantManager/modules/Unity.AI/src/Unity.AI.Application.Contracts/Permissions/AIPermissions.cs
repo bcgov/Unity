@@ -9,6 +9,7 @@ public static class AIPermissions
     public static class Reporting
     {
         public const string ReportingDefault = GroupName + ".Reporting";
+        public const string CreateEditDataModel = GroupName + ".Reporting.CreateEditDataModel";
     }
 
     public static class Analysis
