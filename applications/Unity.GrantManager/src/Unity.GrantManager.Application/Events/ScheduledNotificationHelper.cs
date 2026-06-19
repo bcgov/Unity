@@ -84,26 +84,6 @@ namespace Unity.GrantManager.Events
             });
         }
 
-        /// <summary>
-        /// Detects unresolved template parameters by looking for remaining {{token}} tags
-        /// in the rendered subject and body. These are tokens that couldn't be replaced
-        /// because they weren't found in tokenValues or resolved to empty/null values.
-        /// </summary>
-        public static List<string> GetMissingParameters(string subject, string body, Dictionary<string, string>? tokenValues = null)
-        {
-            var missingParams = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            var combinedText = $"{subject} {body}";
-            
-            // Find all remaining {{token}} patterns - these are unresolved tokens
-            var matches = TokenRegex().Matches(combinedText);
-            foreach (Match match in matches)
-            {
-                var token = match.Groups[1].Value;
-                missingParams.Add(token);
-            }
-
-            return missingParams.ToList();
-        }
 
         /// <summary>
         /// Internal category: RecipientIdentifier is a comma-separated list of email group names.

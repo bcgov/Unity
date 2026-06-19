@@ -306,32 +306,6 @@ namespace Unity.GrantManager.Events
                     string.IsNullOrWhiteSpace(template.BodyHTML) ? template.BodyText : template.BodyHTML,
                     tokenValues);
 
-                // Check if any template parameters are missing (remaining {{token}} tags after rendering)
-                var missingParams = ScheduledNotificationHelper.GetMissingParameters(subject, body);
-                if (missingParams.Count > 0)
-                {
-                    _logger.LogWarning(
-                        "DateBasedScheduledNotificationJob: Scheduled notification {NotificationId} has missing template parameters: {MissingParams}. Email saved as draft.",
-                        notification.Id, string.Join(", ", missingParams));
-                    
-                    // Determine recipient email for draft
-                    string toAddress = string.Empty;
-                    if (string.Equals(notification.RecipientCategory, "External", StringComparison.OrdinalIgnoreCase))
-                    {
-                        toAddress = !string.IsNullOrEmpty(applicantAgent?.Email) ? applicantAgent.Email : application.SigningAuthorityEmail ?? string.Empty;
-                    }
-                    else if (string.Equals(notification.RecipientCategory, "Internal", StringComparison.OrdinalIgnoreCase))
-                    {
-                        toAddress = await ScheduledNotificationHelper.GetInternalRecipientEmailAddressesAsync(
-                            notification, _emailGroupsAppService, _emailGroupUsersAppService, _identityUserIntegrationService, _logger);
-                    }
-                    
-                    // Create email as draft without sending
-                    await CreateDraftEmailAsync(notification, application, template, subject, body, emailFrom, toAddress);
-                    
-                    // Create tracking record to prevent re-processing this application for this notification
-                    return CreateTrackingRecord(notification, application, isDraft: true);
-                }
 
                 // Publish based on recipient category
                 if (string.Equals(notification.RecipientCategory, "Internal", StringComparison.OrdinalIgnoreCase))

@@ -113,31 +113,6 @@ namespace Unity.GrantManager.Events
                 string.IsNullOrWhiteSpace(template.BodyHTML) ? template.BodyText : template.BodyHTML,
                 tokenValues);
 
-            // Check if any template parameters are missing (remaining {{token}} tags after rendering)
-            var missingParams = ScheduledNotificationHelper.GetMissingParameters(subject, body);
-            if (missingParams.Count > 0)
-            {
-                logger.LogWarning(
-                    "ScheduledNotificationEventHandler: Scheduled notification {NotificationId} has missing template parameters: {MissingParams}. Email saved as draft.",
-                    notification.Id, string.Join(", ", missingParams));
-                
-                // Determine recipient email for draft
-                string toAddress = string.Empty;
-                if (string.Equals(notification.RecipientCategory, "External", StringComparison.OrdinalIgnoreCase))
-                {
-                    toAddress = !string.IsNullOrEmpty(applicantAgent?.Email) ? applicantAgent.Email : application.SigningAuthorityEmail ?? string.Empty;
-                }
-                else if (string.Equals(notification.RecipientCategory, "Internal", StringComparison.OrdinalIgnoreCase))
-                {
-                    toAddress = await ScheduledNotificationHelper.GetInternalRecipientEmailAddressesAsync(
-                        notification, emailGroupsAppService, emailGroupUsersAppService, identityUserIntegrationService, logger);
-                }
-                
-                
-                // Create email as draft without sending
-                await CreateDraftEmailAsync(notification, application, template, subject, body, emailFrom, toAddress);
-                return; // Do not send - email saved as draft
-            }
 
             if (string.Equals(notification.RecipientCategory, "Internal", StringComparison.OrdinalIgnoreCase))
             {
