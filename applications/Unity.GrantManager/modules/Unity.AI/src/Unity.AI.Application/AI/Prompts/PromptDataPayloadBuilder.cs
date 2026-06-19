@@ -4,7 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
-using System.Threading.Tasks;
+using Unity.AI.Operations;
 using Unity.AI.Models;
 using Unity.GrantManager.Applications;
 
@@ -53,13 +53,13 @@ namespace Unity.AI.Prompts
         };
 
         public static JsonElement BuildPromptDataPayload(
-            Application application,
-            ApplicationFormSubmission? formSubmission,
+            AIApplicationPromptDataDto application,
+            string? submissionJson,
             string? formSchema,
             ILogger logger)
         {
             var fallbackPayload = BuildFallbackPromptDataPayload(application);
-            if (TryBuildPromptDataValues(formSubmission?.Submission, formSchema, out var values, out var exception))
+            if (TryBuildPromptDataValues(submissionJson, formSchema, out var values, out var exception))
             {
                 return JsonSerializer.SerializeToElement(values);
             }
@@ -69,7 +69,7 @@ namespace Unity.AI.Prompts
                 logger.LogWarning(
                     exception,
                     "Failed to parse form submission JSON for prompt payload generation for application {ApplicationId}.",
-                    application.Id);
+                    application.ApplicationId);
             }
 
             return JsonSerializer.SerializeToElement(fallbackPayload);
@@ -91,25 +91,18 @@ namespace Unity.AI.Prompts
                 .ToList();
         }
 
-        public static async Task<object> BuildFormFieldConfigurationAsync(
-            IApplicationFormVersionRepository applicationFormVersionRepository,
-            Guid? formVersionId,
+        public static object BuildFormFieldConfiguration(
+            string? formSchema,
             ILogger logger)
         {
-            if (formVersionId == null)
+            if (string.IsNullOrWhiteSpace(formSchema))
             {
                 return new { message = "Form configuration not available." };
             }
 
             try
             {
-                var formVersion = await applicationFormVersionRepository.GetAsync(formVersionId.Value);
-                if (formVersion == null || string.IsNullOrWhiteSpace(formVersion.FormSchema))
-                {
-                    return new { message = "Form configuration not available." };
-                }
-
-                var schema = JObject.Parse(formVersion.FormSchema);
+                var schema = JObject.Parse(formSchema);
                 var components = schema[ComponentsKey] as JArray;
                 if (components == null || components.Count == 0)
                 {
@@ -128,12 +121,12 @@ namespace Unity.AI.Prompts
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Error extracting form field configuration for form version {FormVersionId}", formVersionId);
+                logger.LogError(ex, "Error extracting form field configuration from form schema.");
                 return new { message = "Form configuration could not be extracted." };
             }
         }
 
-        private static object BuildFallbackPromptDataPayload(Application application)
+        private static object BuildFallbackPromptDataPayload(AIApplicationPromptDataDto application)
         {
             var notSpecified = "Not specified";
             return new

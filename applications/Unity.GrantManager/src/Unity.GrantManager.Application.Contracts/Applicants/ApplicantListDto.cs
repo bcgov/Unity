@@ -14,11 +14,10 @@ public class ApplicantListDto : AuditedEntityDto<Guid>
     public string? OrganizationType { get; set; }
     public string? Status { get; set; }
     public bool? RedStop { get; set; }
-    
+
     // Additional columns (initially hidden)
     public string? NonRegisteredBusinessName { get; set; }
     public string? NonRegOrgName { get; set; }
-    public string? OrganizationSize { get; set; }
     public string? Sector { get; set; }
     public string? SubSector { get; set; }
     public string? ApproxNumberOfEmployees { get; set; }
@@ -28,10 +27,5 @@ public class ApplicantListDto : AuditedEntityDto<Guid>
     public string? BusinessNumber { get; set; }
     public int? FiscalDay { get; set; }
     public DateTime? StartedOperatingDate { get; set; }
-    public string? SupplierId { get; set; }
-    public string? SupplierNumber { get; set; }
-    public string? SupplierName { get; set; }
-    public string? SupplierStatus { get; set; }
-    public decimal? MatchPercentage { get; set; }
     public bool IsDuplicated { get; set; }
 }

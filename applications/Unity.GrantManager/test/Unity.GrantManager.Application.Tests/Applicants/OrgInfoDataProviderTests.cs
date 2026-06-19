@@ -138,7 +138,7 @@ namespace Unity.GrantManager.Applicants
                     a.NonRegOrgName = "Acme Trading";
                     a.FiscalMonth = "April";
                     a.FiscalDay = 1;
-                    a.OrganizationSize = "51-100";
+                    a.ApproxNumberOfEmployees = "51-100";
                     a.Sector = "Technology";
                     a.SubSector = "Software";
                 })]);

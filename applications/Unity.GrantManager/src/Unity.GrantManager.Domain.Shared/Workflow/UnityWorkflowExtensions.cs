@@ -25,10 +25,10 @@ public static class UnityWorkflowExtensions
     }
 
     /// <summary>
-    /// Generates a DOT graph from the workflow state machine configuration.
+    /// Generates a Mermaid graph from the workflow state machine configuration.
     /// </summary>
     public static string? GetWorkflowDiagram<TStates, TTriggers>(this UnityWorkflow<TStates, TTriggers> workflow)
     {
-        return UmlDotGraph.Format(workflow._stateMachine.GetInfo());
+        return MermaidGraph.Format(workflow._stateMachine.GetInfo());
     }
 }

@@ -21,21 +21,21 @@ namespace Unity.GrantManager.Repositories
 #pragma warning restore CS8613 // Nullability of reference types in return type doesn't match implicitly implemented member.
     {
         public ApplicantRepository(IDbContextProvider<GrantTenantDbContext> dbContextProvider) : base(dbContextProvider)
-        {
-        }
+            {
+            }
 
         public async Task<List<Applicant>> GetUnmatchedApplicantsAsync()
         {
             var dbContext = await GetDbContextAsync();
             return await dbContext.Applicants
-                .Where(x => x.MatchPercentage == null)
+                .Where(x => x.MatchPercentage == null && !x.IsDeleted)
                 .ToListAsync();
         }
 
         public async Task<Applicant?> GetByUnityApplicantIdAsync(string unityApplicantId)
         {
             var dbContext = await GetDbContextAsync();
-            return await dbContext.Applicants.FirstOrDefaultAsync(x => x.UnityApplicantId == unityApplicantId);
+            return await dbContext.Applicants.FirstOrDefaultAsync(x => x.UnityApplicantId == unityApplicantId && !x.IsDeleted);
         }
 
         public async Task<Applicant?> GetByUnityApplicantNameAsync(string unityApplicantName)
@@ -47,7 +47,8 @@ namespace Unity.GrantManager.Repositories
             // EF Core cannot translate StringComparison overloads to SQL, so we use ToLower() for database compatibility
             return await dbContext.Applicants
                 .FirstOrDefaultAsync(a => a.ApplicantName != null &&
-                                          a.ApplicantName.ToLower() == unityApplicantNameNormalized);
+                                          a.ApplicantName.ToLower() == unityApplicantNameNormalized &&
+                                          !a.IsDeleted);
 #pragma warning restore CA1862 // Use the 'StringComparison' method overloads to perform case-insensitive string comparisons
 
         }
@@ -55,7 +56,7 @@ namespace Unity.GrantManager.Repositories
         {
             var dbContext = await GetDbContextAsync();
             return await dbContext.Applicants
-                .Where(x => x.UnityApplicantId != null)
+                .Where(x => x.UnityApplicantId != null && !x.IsDeleted)
                 .ToListAsync();
         }
 
@@ -72,6 +73,7 @@ namespace Unity.GrantManager.Repositories
 
             var applicants = await dbContext.Applicants
             .AsNoTracking()
+            .Where(a => !a.IsDeleted)
             .ToListAsync();
 
             var filtered = applicants
@@ -111,7 +113,6 @@ namespace Unity.GrantManager.Repositories
                     a.OrgNumber,
                     a.NonRegOrgName,
                     a.OrganizationType,
-                    a.OrganizationSize,
                     a.ApproxNumberOfEmployees,
                     a.OrgStatus,
                     a.BusinessNumber,
@@ -132,6 +133,41 @@ namespace Unity.GrantManager.Repositories
 
             var json = JsonSerializer.Serialize(filteredApplicants);
             return JsonDocument.Parse(json);
+        }
+
+        public async Task<List<ApplicantListRecord>> GetApplicantListRecordsAsync(IReadOnlyList<string>? requestedFields = null)
+        {
+            return await (await GetQueryableAsync())
+                .AsNoTracking()
+                .Where(a => !a.IsDeleted)
+                .OrderByDescending(a => a.CreationTime)
+                .Select(a => new ApplicantListRecord
+                {
+                    Id = a.Id,
+                    ApplicantName = a.ApplicantName,
+                    UnityApplicantId = a.UnityApplicantId,
+                    OrgName = a.OrgName,
+                    OrgNumber = a.OrgNumber,
+                    OrgStatus = a.OrgStatus,
+                    OrganizationType = a.OrganizationType,
+                    Status = a.Status,
+                    RedStop = a.RedStop,
+                    NonRegisteredBusinessName = a.NonRegisteredBusinessName,
+                    NonRegOrgName = a.NonRegOrgName,
+                    Sector = a.Sector,
+                    SubSector = a.SubSector,
+                    ApproxNumberOfEmployees = a.ApproxNumberOfEmployees,
+                    IndigenousOrgInd = a.IndigenousOrgInd,
+                    SectorSubSectorIndustryDesc = a.SectorSubSectorIndustryDesc,
+                    FiscalMonth = a.FiscalMonth,
+                    BusinessNumber = a.BusinessNumber,
+                    FiscalDay = a.FiscalDay,
+                    StartedOperatingDate = a.StartedOperatingDate,
+                    IsDuplicated = a.IsDuplicated,
+                    CreationTime = a.CreationTime,
+                    LastModificationTime = a.LastModificationTime
+                })
+                .ToListAsync();
         }
     }
 }

@@ -12,24 +12,24 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
-using Unity.Flex.WorksheetInstances;
-using Unity.Flex.Worksheets;
+using Unity.AI.Automation;
 using Unity.AI.Models;
+using Unity.AI.Permissions;
 using Unity.AI.RateLimit;
 using Unity.AI.Responses;
+using Unity.Flex.WorksheetInstances;
+using Unity.Flex.Worksheets;
 using Unity.GrantManager.Applicants;
 using Unity.GrantManager.ApplicationForms;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Events;
 using Unity.GrantManager.Flex;
-using Unity.GrantManager.Identity;
 using Unity.GrantManager.GlobalTag;
+using Unity.GrantManager.Identity;
 using Unity.GrantManager.Payments;
 using Unity.Modules.Shared;
 using Unity.Modules.Shared.Correlation;
 using Unity.Payments.PaymentRequests;
-using Unity.AI.Automation;
-using Unity.AI.Permissions;
 using Volo.Abp;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Authorization;
@@ -182,7 +182,7 @@ public class GrantApplicationAppService(
                     OrgStatus = rec.ApplicantOrgStatus ?? string.Empty,
                     BusinessNumber = rec.ApplicantBusinessNumber ?? string.Empty,
                     OrganizationType = rec.ApplicantOrganizationType ?? string.Empty,
-                    OrganizationSize = rec.ApplicantOrganizationSize ?? string.Empty,
+                    ApproxNumberOfEmployees = rec.ApplicantApproxNumberOfEmployees ?? string.Empty,
                     SectorSubSectorIndustryDesc = rec.ApplicantSectorSubSectorIndustryDesc ?? string.Empty,
                     RedStop = rec.ApplicantRedStop ?? false,
                     IndigenousOrgInd = rec.ApplicantIndigenousOrgInd ?? string.Empty,
@@ -196,7 +196,7 @@ public class GrantApplicationAppService(
                 OrgStatus = rec.ApplicantOrgStatus,
                 BusinessNumber = rec.ApplicantBusinessNumber,
                 OrgNumber = rec.ApplicantOrgNumber,
-                OrganizationSize = rec.ApplicantOrganizationSize,
+                ApproxNumberOfEmployees = rec.ApplicantApproxNumberOfEmployees,
                 SectorSubSectorIndustryDesc = rec.ApplicantSectorSubSectorIndustryDesc,
                 Sector = rec.ApplicantSector,
                 SubSector = rec.ApplicantSubSector,
@@ -345,7 +345,7 @@ public class GrantApplicationAppService(
         {
             appDto.OrganizationName = application.Applicant.OrgName;
             appDto.OrgNumber = application.Applicant.OrgNumber;
-            appDto.OrganizationSize = application.Applicant.OrganizationSize;
+            appDto.ApproxNumberOfEmployees = application.Applicant.ApproxNumberOfEmployees;
             appDto.OrgStatus = application.Applicant.OrgStatus;
             appDto.BusinessNumber = application.Applicant.BusinessNumber;
             appDto.NonRegOrgName = application.Applicant.NonRegOrgName;
@@ -830,7 +830,7 @@ public class GrantApplicationAppService(
         applicant.OrgName = input.OrgName ?? "";
         applicant.OrgNumber = input.OrgNumber ?? "";
         applicant.OrgStatus = input.OrgStatus ?? "";
-        applicant.OrganizationSize = input.OrganizationSize ?? "";
+        applicant.ApproxNumberOfEmployees = input.ApproxNumberOfEmployees ?? "";
         applicant.Sector = input.Sector ?? "";
         applicant.SubSector = input.SubSector ?? "";
         applicant.SectorSubSectorIndustryDesc = input.SectorSubSectorIndustryDesc ?? "";
@@ -1182,6 +1182,14 @@ public class GrantApplicationAppService(
         );
 
         return ObjectMapper.Map<Application, GrantApplicationDto>(application);
+    }
+
+    /// <summary>
+    /// Generate a Mermaid graph from the Asssessment workflow.
+    /// </summary>
+    public string? GetWorkflowDiagram(bool isDirectApproval)
+    {
+        return applicationManager.GetWorkflowDiagram(isDirectApproval);
     }
 
     public async Task<AIGenerationStatusDto> QueueAIGenerationAsync(Guid applicationId, string? promptVersion = null)

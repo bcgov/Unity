@@ -3,6 +3,7 @@
   "texts": {
     "Permission:AI": "AI",
     "Permission:AI.Reporting": "AI Reporting",
+    "Permission:AI.Reporting.CreateEditDataModel": "Create/Edit Data Model",
     "Permission:AI.ViewApplicationAnalysis": "View AI Application Analysis",
     "Permission:AI.ViewAttachmentSummary": "View AI Attachment Summary",
     "Permission:AI.ViewScoringResult": "View AI Scoring Result",
