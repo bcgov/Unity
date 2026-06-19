@@ -1,5 +1,6 @@
 ﻿using Unity.Notifications.Localization;
 using Volo.Abp.Authorization.Permissions;
+using Volo.Abp.Features;
 using Volo.Abp.Localization;
 using Volo.Abp.SettingManagement;
 
@@ -14,10 +15,6 @@ public class NotificationsPermissionDefinitionProvider : PermissionDefinitionPro
         var notificationsPermissions = notificationsPermissionsGroup.AddPermission(
                 NotificationsPermissions.Email.Default,
                 L($"Permission:{NotificationsPermissions.Email.Default}"));
-
-        notificationsPermissions.AddChild(
-            NotificationsPermissions.Email.Send,
-            L($"Permission:{NotificationsPermissions.Email.Send}"));
 
         notificationsPermissions.AddChild(
             NotificationsPermissions.Email.Delete,
@@ -43,7 +40,6 @@ public class NotificationsPermissionDefinitionProvider : PermissionDefinitionPro
         scheduleNotificationsPermissions.AddChild(
             NotificationsPermissions.Email.ScheduleCancel,
             L($"Permission:{NotificationsPermissions.Email.ScheduleCancel}"));
-
 
         var settingManagement = context.GetGroup(SettingManagementPermissions.GroupName);
         settingManagement.AddPermission(NotificationsPermissions.Settings, L("Permission:NotificationsPermissions.Settings"));

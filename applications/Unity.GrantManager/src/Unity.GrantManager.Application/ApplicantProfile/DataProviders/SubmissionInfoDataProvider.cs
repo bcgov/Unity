@@ -67,7 +67,9 @@ namespace Unity.GrantManager.ApplicantProfile
                         submission.Submission,
                         application.ReferenceNo,
                         FormName = form.ApplicationFormName ?? string.Empty,
-                        Status = status.ExternalStatus
+                        Status = application.SubStatus == "NOTIFIED"
+                            ? status.NotifiedStatus ?? status.ExternalStatus
+                            : status.ExternalStatus
                     }).ToListAsync();
 
                 dto.Submissions.AddRange(results.Select(s => new SubmissionInfoItemDto

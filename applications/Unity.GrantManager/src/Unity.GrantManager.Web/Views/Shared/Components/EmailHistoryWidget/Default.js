@@ -53,15 +53,15 @@
                     title: 'Status',
                     data: 'status',
                     className: 'data-table-header',
-                    width: '13%'
+                    width: '12%'
                 },
                 {
                     title: 'Created',
                     data: 'creationTime',
                     className: 'data-table-header',
-                    width: '23%',
+                    width: '12%',
                     render: function (data) {
-                        return data != null ? luxon.DateTime.fromISO(data, {
+                        return data ? luxon.DateTime.fromISO(data, {
                             locale: abp.localization.currentCulture.name,
                         }).toLocaleString({
                             day: "numeric",
@@ -70,7 +70,25 @@
                             hour: "numeric",
                             minute: "numeric",
                             second: "numeric"
-                        }) : '';
+                        }) : '—';
+                    }
+                },
+                {
+                    title: 'Sent Date',
+                    data: 'sentDateTime',
+                    className: 'data-table-header',
+                    width: '12%',
+                    render: function (data) {
+                        return data ? luxon.DateTime.fromISO(data, {
+                            locale: abp.localization.currentCulture.name,
+                        }).toLocaleString({
+                            day: "numeric",
+                            year: "numeric",
+                            month: "numeric",
+                            hour: "numeric",
+                            minute: "numeric",
+                            second: "numeric"
+                        }) : '—';
                     }
                 },
                 {

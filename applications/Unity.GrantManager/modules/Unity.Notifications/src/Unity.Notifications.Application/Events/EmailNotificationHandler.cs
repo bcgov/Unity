@@ -151,10 +151,9 @@ namespace Unity.GrantManager.Events
                     if (eventData.PaymentRequestIds != null && eventData.PaymentRequestIds.Count != 0)
                     {
                         emailLog.PaymentRequestIds = string.Join(",", eventData.PaymentRequestIds);
-                        await emailLogsRepository.UpdateAsync(emailLog, autoSave: true);
                     }
 
-                    return emailLog;
+                    return await StampClassificationAsync(emailLog, EmailType.EventBased, RecipientType.Internal);
                 }
                 case EmailAction.Retry:
                 default:
@@ -239,6 +238,14 @@ namespace Unity.GrantManager.Events
             return emailLog;
         }
 
+        private async Task<EmailLog> StampClassificationAsync(EmailLog emailLog, EmailType emailType, RecipientType recipient)
+        {
+            emailLog.EmailType = emailType;
+            emailLog.Recipient = recipient;
+            await emailLogsRepository.UpdateAsync(emailLog, autoSave: true);
+            return emailLog;
+        }
+
         private async Task HandleSaveDraftEmail(EmailNotificationEvent eventData)
         {
                 if (eventData.EmailAddressList == null || eventData.EmailAddressList.Count == 0)
@@ -272,3 +279,4 @@ namespace Unity.GrantManager.Events
         }
     }
 }
+

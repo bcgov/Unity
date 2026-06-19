@@ -15,6 +15,22 @@
     "Permission:Notifications.Form.Tab": "Form Notifications Tab",
     "Permission:Notifications.Form.Email.Schedule.Create": "Create Scheduled Email",
     "Permission:Notifications.Form.Email.Schedule.Delete": "Delete Scheduled Email",
-    "Permission:Notifications.Form.Email.Schedule.Cancel": "Cancel Scheduled Email"    
+    "Permission:Notifications.Form.Email.Schedule.Cancel": "Cancel Scheduled Email",
+    "Permission:Notifications.NotificationList": "Notification List",
+    "Permission:Notifications.NotificationList.View": "View Notification List",
+    "Menu:Notifications": "Notifications",
+    "Search": "Search",
+    "Filter": "Filter",
+    "Export": "Export",
+    "NotificationList:NotificationId": "Notification Id",
+    "NotificationList:SubmissionId": "Submission Id",
+    "NotificationList:ApplicantName": "Applicant Name",
+    "NotificationList:SentDate": "Sent Date",
+    "NotificationList:Status": "Status",
+    "NotificationList:From": "From",
+    "NotificationList:To": "To",
+    "NotificationList:Subject": "Subject",
+    "NotificationList:Recipient": "Recipient",
+    "NotificationList:EmailType": "Email Type"
   }
 }

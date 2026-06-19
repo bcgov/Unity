@@ -64,8 +64,8 @@ public class GrantManagerDataSeederContributor(
             new() { StatusCode = GrantApplicationState.INITITAL_REVIEW_COMPLETED, ExternalStatus = GrantApplicationStates.UNDER_REVIEW, InternalStatus = GrantApplicationStates.INITITAL_REVIEW_COMPLETED },
             new() { StatusCode = GrantApplicationState.UNDER_ASSESSMENT, ExternalStatus = GrantApplicationStates.UNDER_REVIEW, InternalStatus = GrantApplicationStates.UNDER_ASSESSMENT },
             new() { StatusCode = GrantApplicationState.ASSESSMENT_COMPLETED, ExternalStatus = GrantApplicationStates.UNDER_REVIEW, InternalStatus = GrantApplicationStates.ASSESSMENT_COMPLETED },
-            new() { StatusCode = GrantApplicationState.GRANT_APPROVED, ExternalStatus = GrantApplicationStates.GRANT_APPROVED, InternalStatus = GrantApplicationStates.GRANT_APPROVED },
-            new() { StatusCode = GrantApplicationState.GRANT_NOT_APPROVED, ExternalStatus = GrantApplicationStates.DECLINED, InternalStatus = GrantApplicationStates.DECLINED },
+            new() { StatusCode = GrantApplicationState.GRANT_APPROVED, ExternalStatus = GrantApplicationStates.GRANT_APPROVED, InternalStatus = GrantApplicationStates.GRANT_APPROVED, NotifiedStatus = GrantApplicationStates.GRANT_APPROVED },
+            new() { StatusCode = GrantApplicationState.GRANT_NOT_APPROVED, ExternalStatus = GrantApplicationStates.DECLINED, InternalStatus = GrantApplicationStates.DECLINED, NotifiedStatus = GrantApplicationStates.DECLINED },
             new() { StatusCode = GrantApplicationState.DEFER, ExternalStatus = GrantApplicationStates.DEFER, InternalStatus = GrantApplicationStates.DEFER },
             new() { StatusCode = GrantApplicationState.ON_HOLD, ExternalStatus = GrantApplicationStates.ON_HOLD, InternalStatus = GrantApplicationStates.ON_HOLD },
         };

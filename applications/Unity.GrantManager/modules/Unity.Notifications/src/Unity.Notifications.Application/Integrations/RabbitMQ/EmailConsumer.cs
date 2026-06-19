@@ -1,22 +1,22 @@
+using Amazon.S3;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using System;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
-using Amazon.S3;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 using Unity.Modules.Shared.MessageBrokers.RabbitMQ.Interfaces;
 using Unity.Notifications.EmailNotifications;
+using Unity.Notifications.Emails;
 using Unity.Notifications.Events;
 using Unity.Notifications.Integrations.RabbitMQ.QueueMessages;
 using Volo.Abp;
 using Volo.Abp.Data;
+using Volo.Abp.EventBus.Local;
 using Volo.Abp.MultiTenancy;
 using Volo.Abp.Uow;
-using Unity.Notifications.Emails;
-using Volo.Abp.EventBus.Local;
 
 namespace Unity.Notifications.Integrations.RabbitMQ;
 
@@ -236,22 +236,45 @@ public class EmailConsumer(
             }
         }
 
-        // Publish local event for successful FSB payment notifications
-        if (response.IsSuccessStatusCode && !string.IsNullOrEmpty(log.PaymentRequestIds))
+        // Log SentDateTime on success
+        if (response.IsSuccessStatusCode)
         {
-            var paymentIds = log.PaymentRequestIds
-                .Split(',', StringSplitOptions.RemoveEmptyEntries)
-                .Select(id => Guid.Parse(id))
-                .ToList();
+            // Use CHES response Date header (response time) or current time as fallback
+            var sentDateTime = SanitizeResponseDateTime(response.Headers?.Date?.UtcDateTime);
+            log.SentDateTime = sentDateTime;
 
-            await localEventBus.PublishAsync(new FsbEmailSentEto
+            // Publish local event for successful FSB payment notifications
+            if (!string.IsNullOrEmpty(log.PaymentRequestIds))
             {
-                EmailLogId = log.Id,
-                PaymentRequestIds = paymentIds,
-                SentDate = DateTime.UtcNow,
-                TenantId = log.TenantId
-            });
+                var paymentIds = log.PaymentRequestIds
+                    .Split(',', StringSplitOptions.RemoveEmptyEntries)
+                    .Select(id => Guid.Parse(id))
+                    .ToList();
+
+                await localEventBus.PublishAsync(new FsbEmailSentEto
+                {
+                    EmailLogId = log.Id,
+                    PaymentRequestIds = paymentIds,
+                    SentDate = sentDateTime,
+                    TenantId = log.TenantId
+                });
+            }
         }
+    }
+
+    private static readonly TimeSpan _maxFutureSkew = TimeSpan.FromMinutes(5);
+    private static readonly TimeSpan _maxPastAge    = TimeSpan.FromMinutes(15);
+
+    // CHES may return a Date header that is incorrect due to clock skew or environment misconfiguration.
+    // We will sanitize it as an external value by ensuring it's not in the future or past beyond a reasonable threshold.
+    private static DateTime SanitizeResponseDateTime(DateTime? headerDate)
+    {
+        if (headerDate is null) return DateTime.UtcNow;
+
+        var now = DateTime.UtcNow;
+        return headerDate.Value >= now - _maxPastAge && headerDate.Value <= now + _maxFutureSkew
+            ? headerDate.Value
+            : now;
     }
 
     // -----------------------------
