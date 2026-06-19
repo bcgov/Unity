@@ -34,8 +34,32 @@ const DateUtils = (function () {
         );
     }
 
+    /**
+     * Formats a date-only UTC string without local timezone conversion.
+     * Use this for date-only fields (Due Date, Decision Date, Project Start/End Date)
+     * where the stored date should be displayed as-is regardless of browser timezone.
+     * @param {string} dateUtc - The UTC date string to format
+     * @param {string} type - The type of formatting (for DataTables compatibility)
+     * @returns {string|number|null} Formatted date string or timestamp for sorting, empty string if input is invalid
+     */
+    function formatDate(dateUtc, type) {
+        if (!dateUtc) return '';
+        if (type === 'sort' || type === 'type') {
+            return new Date(dateUtc).getTime();
+        }
+        try {
+            return luxon.DateTime.fromISO(dateUtc, {
+                locale: abp.localization.currentCulture.name,
+            }).toUTC().toLocaleString();
+        } catch (e) {
+            console.warn('Date parse error:', e);
+            return dateUtc;
+        }
+    }
+
     // Public API
     return {
-        formatUtcDateToLocal: formatUtcDateToLocal
+        formatUtcDateToLocal: formatUtcDateToLocal,
+        formatDate: formatDate
     };
 })();
