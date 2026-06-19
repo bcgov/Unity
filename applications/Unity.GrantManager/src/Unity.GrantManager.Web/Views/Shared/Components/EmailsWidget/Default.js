@@ -580,13 +580,24 @@
         const [m, d, y] = datePart.trim().split('/');
         const [h, min, s] = timePart.trim().split(':');
 
-        // Create a UTC date from the BC PST components
-        const utcDate = new Date(Date.UTC(parseInt(y), parseInt(m) - 1, parseInt(d), parseInt(h), parseInt(min), parseInt(s)));
+        // Create a local date from the user-entered components (not UTC)
+        const localDate = new Date(parseInt(y), parseInt(m) - 1, parseInt(d), parseInt(h), parseInt(min), parseInt(s));
+        
+        // Convert local time to UTC for storage
+        const utcDate = new Date(localDate.getTime() - localDate.getTimezoneOffset() * 60000);
         const utcIso = utcDate.toISOString();
 
         // Commit to hidden field
         UIElements.inputSendOnDateTime.val(utcIso);
-        UIElements.sendOnDisplay.text(DateUtils.formatUtcToBcPacificDateTime(utcIso));
+        
+        // Display as local time (no timezone conversion needed since we're storing as UTC)
+        const formattedDate = localDate.toLocaleDateString('en-CA'); // YYYY-MM-DD format
+        const formattedTime = localDate.toLocaleTimeString('en-US', { 
+            hour: 'numeric', 
+            minute: '2-digit', 
+            hour12: true 
+        });
+        UIElements.sendOnDisplay.text(`${formattedDate}, ${formattedTime}`);
         UIElements.btnClearSchedule.show();
         $('#scheduled-label-container').addClass('show');
         $('#scheduled-delay-section').show();
@@ -599,7 +610,15 @@
     function updateScheduledDateDisplay() {
         const dateTimeValue = UIElements.inputSendOnDateTime.val();
         if (dateTimeValue) {
-            UIElements.sendOnDisplay.text(DateUtils.formatUtcToBcPacificDateTime(dateTimeValue));
+            // Parse the ISO string and format as local time without timezone conversion
+            const date = new Date(dateTimeValue);
+            const formattedDate = date.toLocaleDateString('en-CA'); // YYYY-MM-DD format
+            const formattedTime = date.toLocaleTimeString('en-US', { 
+                hour: 'numeric', 
+                minute: '2-digit', 
+                hour12: true 
+            });
+            UIElements.sendOnDisplay.text(`${formattedDate}, ${formattedTime}`);
             UIElements.btnClearSchedule.show();
             $('#scheduled-label-container').addClass('show');
             $('#scheduled-delay-section').show();
@@ -1055,13 +1074,14 @@
             }
 
             let templateName = '';
-            if (isNewEmailDraft) {
-                templateName = $("#EmailTemplate option:selected").text().trim();
-                // Check for all placeholder variations
-                if (!templateName || templateName === '' || templateName === 'Please select' || templateName === 'Select a template' || templateName.toLowerCase().includes('select')) {
-                    templateName = "No Template Selected";
-                }
+            // Check the dropdown for the current selection (handles both new and edited drafts)
+            const selectedTemplate = $("#EmailTemplate option:selected").text().trim();
+            if (selectedTemplate && selectedTemplate !== '' && selectedTemplate !== 'Please select' && selectedTemplate !== 'Select a template' && !selectedTemplate.toLowerCase().includes('select')) {
+                templateName = selectedTemplate;
+            } else if (isNewEmailDraft) {
+                templateName = "No Template Selected";
             } else {
+                // For existing drafts without a valid template selected, keep the original
                 templateName = $('#EmailTemplateName').val();
             }
 
@@ -1575,7 +1595,8 @@
                 return $(this).text() === data.templateName;
             });
             if (option.length > 0) {
-                $('#EmailTemplate').val(option.val()).trigger('change');
+                // Set without triggering change to avoid overwriting form fields with template defaults
+                $('#EmailTemplate').val(option.val());
             }
         }
 

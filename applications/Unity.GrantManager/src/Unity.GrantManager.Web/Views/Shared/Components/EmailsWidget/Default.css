@@ -311,8 +311,10 @@
     margin-left: 0px !important;
 }
 
-.form-select {
-  margin-left: 8px;  
+/* When dropdown is not visible/enabled, apply right border radius to send button */
+#applicationEmailsWidget .btn-group:not(:has(.dropdown-toggle)) #btn-send-top {
+    border-top-right-radius: 3px !important;
+    border-bottom-right-radius: 3px !important;
 }
 
 #applicationEmailsWidget .form-select {
