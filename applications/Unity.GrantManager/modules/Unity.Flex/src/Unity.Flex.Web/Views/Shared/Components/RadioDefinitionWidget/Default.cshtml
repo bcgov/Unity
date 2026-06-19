@@ -12,7 +12,7 @@
             {
                 <div class="option-container" id="option@(Model.Options.IndexOf(option) + 1)Container">
                     <input type="radio" name="radio_input" />
-                    <input type="text" id="option@(Model.Options.IndexOf(option) + 1)" name="Options" class="form-control" value="@option" />
+                    <input type="text" id="option@(Model.Options.IndexOf(option) + 1)" name="Options" class="form-control" value="@option" minlength="1" maxlength="60" />
                     <button type="button" class="btn btn-danger btn-sm remove-option-btn" data-option-id="option@(Model.Options.IndexOf(option) + 1)Container">Delete Option</button>
                 </div>
             }
