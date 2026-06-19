@@ -192,14 +192,48 @@ namespace Unity.GrantManager.Events
             }
             else
             {
-                var emailMessageParams = new EmailMessageParams(emailToAddress, eventData.Body, eventData.Subject,
-                        eventData.EmailFrom, eventData.EmailTemplateName, emailCC, emailBCC, eventData.SendOnDateTime);
-                        
-                emailLog = await emailNotificationService.UpdateEmailLog(
-                    eventData.Id,
-                    emailMessageParams,
-                    eventData.ApplicationId,
-                    EmailStatus.Initialized) ?? throw new UserFriendlyException("Unable to update Email Log");
+                // Check if email exists first
+                var existingEmail = await emailLogsRepository.FindAsync(eventData.Id);
+                
+                if (existingEmail == null)
+                {
+                    // Email doesn't exist, create new one instead
+                    logger.LogWarning(
+                        "SendCustom: Email {EmailId} not found for Application {ApplicationId}, creating new email instead.",
+                        eventData.Id, eventData.ApplicationId);
+                    
+                    emailLog = await InitializeEmailAndUploadAttachments(
+                        new EmailInitParams(emailToAddress, eventData.Body, eventData.Subject,
+                            eventData.ApplicationId, eventData.EmailFrom, eventData.EmailTemplateName,
+                            emailCC, emailBCC, eventData.SendOnDateTime),
+                        eventData.EmailAttachments);
+                    
+                    // Set ScheduledNotificationId if provided
+                    if (emailLog != null && eventData.ScheduledNotificationId.HasValue)
+                    {
+                        emailLog.ScheduledNotificationId = eventData.ScheduledNotificationId.Value;
+                        await emailLogsRepository.UpdateAsync(emailLog, autoSave: true);
+                    }
+                }
+                else
+                {
+                    // Email exists, update it
+                    var emailMessageParams = new EmailMessageParams(emailToAddress, eventData.Body, eventData.Subject,
+                            eventData.EmailFrom, eventData.EmailTemplateName, emailCC, emailBCC, eventData.SendOnDateTime);
+                            
+                    emailLog = await emailNotificationService.UpdateEmailLog(
+                        eventData.Id,
+                        emailMessageParams,
+                        eventData.ApplicationId,
+                        EmailStatus.Initialized) ?? throw new UserFriendlyException("Unable to update Email Log");
+                    
+                    // Set ScheduledNotificationId if provided and not already set
+                    if (emailLog != null && eventData.ScheduledNotificationId.HasValue && !emailLog.ScheduledNotificationId.HasValue)
+                    {
+                        emailLog.ScheduledNotificationId = eventData.ScheduledNotificationId.Value;
+                        await emailLogsRepository.UpdateAsync(emailLog, autoSave: true);
+                    }
+                }
             }
 
             return emailLog;

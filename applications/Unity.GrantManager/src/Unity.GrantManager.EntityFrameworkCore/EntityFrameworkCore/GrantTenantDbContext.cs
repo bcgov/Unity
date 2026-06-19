@@ -54,7 +54,7 @@ namespace Unity.GrantManager.EntityFrameworkCore
         public DbSet<AuditHistory> AuditHistories { get; set; }
         public DbSet<ReportsHistory> ReportsHistories { get; set; }
         public DbSet<ScheduledNotification> ScheduledNotifications { get; set; }
-        public DbSet<ApplicationScheduledNotificationTracking> ApplicationScheduledNotificationTrackings { get; set; }
+        public DbSet<ScheduledNotificationTracking> ScheduledNotificationTrackings { get; set; }
         #endregion
 
         public GrantTenantDbContext(DbContextOptions<GrantTenantDbContext> options) : base(options)
@@ -429,9 +429,9 @@ namespace Unity.GrantManager.EntityFrameworkCore
                 b.TryConfigureExtraProperties();    
             });
 
-            modelBuilder.Entity<ApplicationScheduledNotificationTracking>(b =>
+            modelBuilder.Entity<ScheduledNotificationTracking>(b =>
             {
-                b.ToTable("ApplicationScheduledNotificationTracking", "Notifications");
+                b.ToTable("ScheduledNotificationTracking", "Notifications");
                 b.ConfigureByConvention();
                 b.HasKey(x => x.Id);
                 b.Property(x => x.ApplicationId).IsRequired();
@@ -440,7 +440,7 @@ namespace Unity.GrantManager.EntityFrameworkCore
                 b.HasIndex(x => x.ApplicationId);
                 b.HasIndex(x => x.ScheduledNotificationId);
                 b.HasIndex(x => x.CreationTime);
-                b.HasIndex(new[] { nameof(ApplicationScheduledNotificationTracking.ApplicationId), nameof(ApplicationScheduledNotificationTracking.ScheduledNotificationId), nameof(ApplicationScheduledNotificationTracking.DateField) }).IsUnique();
+                b.HasIndex(new[] { nameof(ScheduledNotificationTracking.ApplicationId), nameof(ScheduledNotificationTracking.ScheduledNotificationId), nameof(ScheduledNotificationTracking.DateField) }).IsUnique();
                 b.HasOne<Application>().WithMany().HasForeignKey(x => x.ApplicationId).IsRequired().OnDelete(DeleteBehavior.Cascade);
                 b.HasOne<ScheduledNotification>().WithMany().HasForeignKey(x => x.ScheduledNotificationId).IsRequired().OnDelete(DeleteBehavior.Cascade);
             });

@@ -22,6 +22,7 @@ namespace Unity.GrantManager.Events
     internal class ScheduledNotificationEventHandler(
         IRepository<ScheduledNotification, Guid> scheduledNotificationRepository,
         IRepository<EmailLog, Guid> emailLogRepository,
+        IRepository<ScheduledNotificationTracking, Guid> trackingRepository,
         IApplicationRepository applicationRepository,
         IApplicantAgentRepository applicantAgentRepository,
         ILocalEventBus localEventBus,
@@ -112,7 +113,7 @@ namespace Unity.GrantManager.Events
                 string.IsNullOrWhiteSpace(template.BodyHTML) ? template.BodyText : template.BodyHTML,
                 tokenValues);
 
-            // Check if any template parameters are missing (unresolved tokens remain)
+            // Check if any template parameters are missing (remaining {{token}} tags after rendering)
             var missingParams = ScheduledNotificationHelper.GetMissingParameters(subject, body);
             if (missingParams.Count > 0)
             {
@@ -120,8 +121,21 @@ namespace Unity.GrantManager.Events
                     "ScheduledNotificationEventHandler: Scheduled notification {NotificationId} has missing template parameters: {MissingParams}. Email saved as draft.",
                     notification.Id, string.Join(", ", missingParams));
                 
+                // Determine recipient email for draft
+                string toAddress = string.Empty;
+                if (string.Equals(notification.RecipientCategory, "External", StringComparison.OrdinalIgnoreCase))
+                {
+                    toAddress = !string.IsNullOrEmpty(applicantAgent?.Email) ? applicantAgent.Email : application.SigningAuthorityEmail ?? string.Empty;
+                }
+                else if (string.Equals(notification.RecipientCategory, "Internal", StringComparison.OrdinalIgnoreCase))
+                {
+                    toAddress = await ScheduledNotificationHelper.GetInternalRecipientEmailAddressesAsync(
+                        notification, emailGroupsAppService, emailGroupUsersAppService, identityUserIntegrationService, logger);
+                }
+                
+                
                 // Create email as draft without sending
-                await CreateDraftEmailAsync(notification, application, template, subject, body, emailFrom);
+                await CreateDraftEmailAsync(notification, application, template, subject, body, emailFrom, toAddress);
                 return; // Do not send - email saved as draft
             }
 
@@ -150,7 +164,8 @@ namespace Unity.GrantManager.Events
             EmailTemplate template,
             string subject,
             string body,
-            string emailFrom)
+            string emailFrom,
+            string toAddress = "")
         {
             try
             {
@@ -161,17 +176,31 @@ namespace Unity.GrantManager.Events
                     ApplicationId = application.Id,
                     ApplicantId = application.ApplicantId,
                     FromAddress = emailFrom,
-                    ToAddress = string.Empty, // No recipients - draft will be filled in when parameters are available
+                    ToAddress = toAddress, // Populated if recipient is available
                     Subject = subject,
                     Body = body,
                     BodyType = "HTML",
                     Priority = "Normal",
                     TemplateName = template.Name,
+                    Tag = "ScheduledNotificationEventHandler", // Identifies source as event handler
                     Status = EmailStatus.Draft,
                     RetryAttempts = 0
                 };
 
                 await emailLogRepository.InsertAsync(draftEmail);
+                
+                // Create tracking record to mark that this notification has been processed for this application
+                if (!string.IsNullOrEmpty(notification.DateField))
+                {
+                    var tracking = new ScheduledNotificationTracking(
+                        Guid.NewGuid(),
+                        application.Id,
+                        notification.Id,
+                        notification.DateField,
+                        DateTime.UtcNow);
+                    await trackingRepository.InsertAsync(tracking);
+                }
+                
                 logger.LogInformation(
                     "ScheduledNotificationEventHandler: Draft email created for scheduled notification {NotificationId} with subject '{Subject}'.",
                     notification.Id, subject);
@@ -183,7 +212,5 @@ namespace Unity.GrantManager.Events
                     notification.Id);
             }
         }
-
-
     }
 }

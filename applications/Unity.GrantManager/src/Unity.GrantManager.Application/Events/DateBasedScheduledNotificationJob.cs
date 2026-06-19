@@ -6,6 +6,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Notifications;
+using Unity.Notifications.Emails;
 using Unity.Notifications.EmailGroups;
 using Unity.Notifications.Settings;
 using Unity.Notifications.Templates;
@@ -31,7 +32,8 @@ namespace Unity.GrantManager.Events
     {
         private readonly IRepository<ScheduledNotification, Guid> _scheduledNotificationRepository;
         private readonly IApplicationRepository _applicationRepository;
-        private readonly IRepository<ApplicationScheduledNotificationTracking, Guid> _trackingRepository;
+        private readonly IRepository<ScheduledNotificationTracking, Guid> _trackingRepository;
+        private readonly IRepository<EmailLog, Guid> _emailLogRepository;
         private readonly IApplicantAgentRepository _applicantAgentRepository;
         private readonly ITenantRepository _tenantRepository;
         private readonly ILocalEventBus _localEventBus;
@@ -47,7 +49,8 @@ namespace Unity.GrantManager.Events
         public DateBasedScheduledNotificationJob(
             IRepository<ScheduledNotification, Guid> scheduledNotificationRepository,
             IApplicationRepository applicationRepository,
-            IRepository<ApplicationScheduledNotificationTracking, Guid> trackingRepository,
+            IRepository<ScheduledNotificationTracking, Guid> trackingRepository,
+            IRepository<EmailLog, Guid> emailLogRepository,
             IApplicantAgentRepository applicantAgentRepository,
             ITenantRepository tenantRepository,
             ILocalEventBus localEventBus,
@@ -63,6 +66,7 @@ namespace Unity.GrantManager.Events
             _scheduledNotificationRepository = scheduledNotificationRepository;
             _applicationRepository = applicationRepository;
             _trackingRepository = trackingRepository;
+            _emailLogRepository = emailLogRepository;
             _applicantAgentRepository = applicantAgentRepository;
             _tenantRepository = tenantRepository;
             _localEventBus = localEventBus;
@@ -150,12 +154,24 @@ namespace Unity.GrantManager.Events
 
                 _logger.LogInformation("DateBasedScheduledNotificationJob: Processing {Count} date-based notifications for current tenant.", notifications.Count);
 
-                // Extract unique FormIds from notifications
-                var formIds = notifications.Select(n => n.FormId).Distinct().ToList();
+                // Extract unique FormIds from date-based notifications only
+                // (notifications are already filtered to include only those with DateField set, meaning TriggerType is "Date")
+                var formIds = notifications
+                    .Where(n => !string.IsNullOrEmpty(n.DateField)) // Explicit check for Date trigger type
+                    .Select(n => n.FormId)
+                    .Distinct()
+                    .ToList();
+
+                if (formIds.Count == 0)
+                {
+                    _logger.LogDebug("DateBasedScheduledNotificationJob: No forms with date-based notifications found for current tenant.");
+                    return;
+                }
+
                 var today = DateTime.UtcNow.Date;
 
                 // OPTIMIZATION: Single query to get all applications for all forms with past dates
-                // instead of N separate queries (one per notification)
+                // Only queries applications where FormId exists in ScheduledNotifications with Date trigger type
                 var allApplications = (await _applicationRepository.GetListAsync(
                     a => formIds.Contains(a.ApplicationFormId)
                       && ((a.DueDate != null && a.DueDate <= today) ||
@@ -194,7 +210,7 @@ namespace Unity.GrantManager.Events
                 string emailFrom = defaultFromAddress ?? "NoReply@gov.bc.ca";
                 
                 // OPTIMIZATION: Collect all tracking records to batch insert at end
-                var trackingRecordsToInsert = new List<ApplicationScheduledNotificationTracking>();
+                var trackingRecordsToInsert = new List<ScheduledNotificationTracking>();
 
                 // Group by notification and process
                 foreach (var notification in notifications)
@@ -272,13 +288,13 @@ namespace Unity.GrantManager.Events
             }
         }
 
-        private async Task<ApplicationScheduledNotificationTracking?> ProcessApplicationForNotificationAsync(
+        private async Task<ScheduledNotificationTracking?> ProcessApplicationForNotificationAsync(
             ScheduledNotification notification,
             Application application,
             EmailTemplate template,
             string emailFrom,
             Dictionary<Guid, ApplicantAgent> applicantAgentsDict)
-        {
+      {
             try
             {
                 // Build token values and render template
@@ -289,6 +305,33 @@ namespace Unity.GrantManager.Events
                 string body = ScheduledNotificationHelper.RenderTemplate(
                     string.IsNullOrWhiteSpace(template.BodyHTML) ? template.BodyText : template.BodyHTML,
                     tokenValues);
+
+                // Check if any template parameters are missing (remaining {{token}} tags after rendering)
+                var missingParams = ScheduledNotificationHelper.GetMissingParameters(subject, body);
+                if (missingParams.Count > 0)
+                {
+                    _logger.LogWarning(
+                        "DateBasedScheduledNotificationJob: Scheduled notification {NotificationId} has missing template parameters: {MissingParams}. Email saved as draft.",
+                        notification.Id, string.Join(", ", missingParams));
+                    
+                    // Determine recipient email for draft
+                    string toAddress = string.Empty;
+                    if (string.Equals(notification.RecipientCategory, "External", StringComparison.OrdinalIgnoreCase))
+                    {
+                        toAddress = !string.IsNullOrEmpty(applicantAgent?.Email) ? applicantAgent.Email : application.SigningAuthorityEmail ?? string.Empty;
+                    }
+                    else if (string.Equals(notification.RecipientCategory, "Internal", StringComparison.OrdinalIgnoreCase))
+                    {
+                        toAddress = await ScheduledNotificationHelper.GetInternalRecipientEmailAddressesAsync(
+                            notification, _emailGroupsAppService, _emailGroupUsersAppService, _identityUserIntegrationService, _logger);
+                    }
+                    
+                    // Create email as draft without sending
+                    await CreateDraftEmailAsync(notification, application, template, subject, body, emailFrom, toAddress);
+                    
+                    // Create tracking record to prevent re-processing this application for this notification
+                    return CreateTrackingRecord(notification, application, isDraft: true);
+                }
 
                 // Publish based on recipient category
                 if (string.Equals(notification.RecipientCategory, "Internal", StringComparison.OrdinalIgnoreCase))
@@ -311,26 +354,7 @@ namespace Unity.GrantManager.Events
                 }
 
                 // Create tracking record to prevent duplicate notifications
-                if (string.IsNullOrEmpty(notification.DateField))
-                {
-                    _logger.LogWarning(
-                        "DateBasedScheduledNotificationJob: DateField is null or empty for notification {NotificationId}, cannot create tracking record.",
-                        notification.Id);
-                    return null;
-                }
-
-                var tracking = new ApplicationScheduledNotificationTracking(
-                    Guid.NewGuid(),
-                    application.Id,
-                    notification.Id,
-                    notification.DateField,
-                    DateTime.UtcNow);
-
-                // Return tracking record for batch insert instead of inserting immediately
-                _logger.LogInformation(
-                    "DateBasedScheduledNotificationJob: Notification {NotificationId} ready to be tracked for application {ApplicationId}.",
-                    notification.Id, application.Id);
-                return tracking;
+                return CreateTrackingRecord(notification, application, isDraft: false);
             }
             catch (Exception ex)
             {
@@ -339,6 +363,81 @@ namespace Unity.GrantManager.Events
                     application.Id, notification.Id);
                 return null;
             }
+        }
+
+        private async Task CreateDraftEmailAsync(
+            ScheduledNotification notification,
+            Application application,
+            EmailTemplate template,
+            string subject,
+            string body,
+            string emailFrom,
+            string toAddress = "")
+        {
+            try
+            {
+                var draftEmail = new EmailLog
+                {
+                    TenantId = _currentTenant.Id,
+                    ScheduledNotificationId = notification.Id,
+                    ApplicationId = application.Id,
+                    ApplicantId = application.ApplicantId,
+                    FromAddress = emailFrom,
+                    ToAddress = toAddress, // Populated if recipient is available
+                    Subject = subject,
+                    Body = body,
+                    BodyType = "HTML",
+                    Priority = "Normal",
+                    TemplateName = template.Name,
+                    Tag = "DateBasedScheduledNotificationJob", // Identifies source as background job
+                    Status = EmailStatus.Draft,
+                    RetryAttempts = 0
+                };
+
+                await _emailLogRepository.InsertAsync(draftEmail);
+                _logger.LogInformation(
+                    "DateBasedScheduledNotificationJob: Draft email created for scheduled notification {NotificationId} with subject '{Subject}'.",
+                    notification.Id, subject);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex,
+                    "DateBasedScheduledNotificationJob: Error creating draft email for scheduled notification {NotificationId}.",
+                    notification.Id);
+            }
+        }
+
+        private ScheduledNotificationTracking? CreateTrackingRecord(
+            ScheduledNotification notification,
+            Application application,
+            bool isDraft = false)
+        {
+            if (string.IsNullOrEmpty(notification.DateField))
+            {
+                if (!isDraft)
+                {
+                    _logger.LogWarning(
+                        "DateBasedScheduledNotificationJob: DateField is null or empty for notification {NotificationId}, cannot create tracking record.",
+                        notification.Id);
+                }
+                return null;
+            }
+
+            var tracking = new ScheduledNotificationTracking(
+                Guid.NewGuid(),
+                application.Id,
+                notification.Id,
+                notification.DateField,
+                DateTime.UtcNow);
+
+            if (!isDraft)
+            {
+                _logger.LogInformation(
+                    "DateBasedScheduledNotificationJob: Notification {NotificationId} ready to be tracked for application {ApplicationId}.",
+                    notification.Id, application.Id);
+            }
+
+            return tracking;
         }
     }
 }

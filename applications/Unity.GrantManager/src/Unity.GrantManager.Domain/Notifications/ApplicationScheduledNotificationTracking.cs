@@ -8,7 +8,7 @@ namespace Unity.GrantManager.Notifications
     /// Tracks which scheduled notifications have been sent for which applications.
     /// Prevents duplicate notifications from being sent for the same application and notification combination.
     /// </summary>
-    public class ApplicationScheduledNotificationTracking : Entity<Guid>
+    public class ScheduledNotificationTracking : Entity<Guid>
     {
         public Guid ApplicationId { get; set; }
         public Guid ScheduledNotificationId { get; set; }
@@ -17,10 +17,10 @@ namespace Unity.GrantManager.Notifications
         public DateTime CreationTime { get; set; }
         public Guid? CreatorId { get; set; }
 
-        protected ApplicationScheduledNotificationTracking() { }
+        protected ScheduledNotificationTracking() { }
 
         [SetsRequiredMembers]
-        public ApplicationScheduledNotificationTracking(
+        public ScheduledNotificationTracking(
             Guid id,
             Guid applicationId,
             Guid scheduledNotificationId,

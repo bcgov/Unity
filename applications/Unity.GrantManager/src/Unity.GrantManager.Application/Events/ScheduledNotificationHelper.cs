@@ -85,14 +85,16 @@ namespace Unity.GrantManager.Events
         }
 
         /// <summary>
-        /// Detects unresolved template parameters (tokens that couldn't be replaced).
-        /// Returns a list of missing parameter names found in the subject or body.
+        /// Detects unresolved template parameters by looking for remaining {{token}} tags
+        /// in the rendered subject and body. These are tokens that couldn't be replaced
+        /// because they weren't found in tokenValues or resolved to empty/null values.
         /// </summary>
-        public static List<string> GetMissingParameters(string subject, string body)
+        public static List<string> GetMissingParameters(string subject, string body, Dictionary<string, string>? tokenValues = null)
         {
             var missingParams = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             var combinedText = $"{subject} {body}";
             
+            // Find all remaining {{token}} patterns - these are unresolved tokens
             var matches = TokenRegex().Matches(combinedText);
             foreach (Match match in matches)
             {
@@ -185,6 +187,7 @@ namespace Unity.GrantManager.Events
                 Action = EmailAction.SendCustom,
                 TenantId = currentTenant.Id,
                 ApplicationId = applicationId,
+                ScheduledNotificationId = notification.Id,
                 TemplateId = template.Id,
                 EmailTemplateName = template.Name,
                 Subject = subject,
@@ -276,6 +279,7 @@ namespace Unity.GrantManager.Events
                 Action = EmailAction.SendCustom,
                 TenantId = currentTenant.Id,
                 ApplicationId = application.Id,
+                ScheduledNotificationId = notification.Id,
                 TemplateId = template.Id,
                 EmailTemplateName = template.Name,
                 Subject = subject,
@@ -288,6 +292,81 @@ namespace Unity.GrantManager.Events
             logger.LogInformation(
                 "ScheduledNotificationHelper: Published EmailNotificationEvent for application {ApplicationId}, template {TemplateName}, recipients '{RecipientIdentifiers}' ({Count} email addresses).",
                 application.Id, template.Name, notification.RecipientIdentifier, emailAddresses.Count);
+        }
+
+        /// <summary>
+        /// Resolves internal recipient email addresses by looking up email groups and their member email addresses.
+        /// Used for draft creation and other contexts where only a string list of emails is needed.
+        /// </summary>
+        public static async Task<string> GetInternalRecipientEmailAddressesAsync(
+            ScheduledNotification notification,
+            IEmailGroupsAppService emailGroupsAppService,
+            IEmailGroupUsersAppService emailGroupUsersAppService,
+            IIdentityUserIntegrationService identityUserIntegrationService,
+            ILogger logger)
+        {
+            try
+            {
+                var emailAddresses = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                var allGroups = await emailGroupsAppService.GetListAsync();
+
+                // Split comma-separated recipient identifiers and process each
+                var recipientIdentifiers = notification.RecipientIdentifier?
+                    .Split(',')
+                    .Select(r => r.Trim())
+                    .Where(r => !string.IsNullOrWhiteSpace(r))
+                    .ToList() ?? new List<string>();
+
+                foreach (var recipientId in recipientIdentifiers)
+                {
+                    var group = allGroups.FirstOrDefault(g =>
+                        string.Equals(g.Name, recipientId, StringComparison.OrdinalIgnoreCase));
+
+                    if (group == null)
+                    {
+                        logger.LogWarning(
+                            "ScheduledNotificationHelper: Email group '{GroupName}' not found for notification {NotificationId}.",
+                            recipientId, notification.Id);
+                        continue;
+                    }
+
+                    var groupUsers = await emailGroupUsersAppService.GetEmailGroupUsersByGroupIdAsync(group.Id);
+                    if (groupUsers.Count == 0)
+                    {
+                        logger.LogWarning(
+                            "ScheduledNotificationHelper: Email group '{GroupName}' has no members for notification {NotificationId}.",
+                            recipientId, notification.Id);
+                        continue;
+                    }
+
+                    foreach (var groupUser in groupUsers)
+                    {
+                        try
+                        {
+                            var userInfo = await identityUserIntegrationService.FindByIdAsync(groupUser.UserId);
+                            if (userInfo?.Email != null)
+                            {
+                                emailAddresses.Add(userInfo.Email);
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            logger.LogWarning(ex,
+                                "ScheduledNotificationHelper: Error retrieving email for user {UserId} in group '{GroupName}'.",
+                                groupUser.UserId, recipientId);
+                        }
+                    }
+                }
+
+                return string.Join("; ", emailAddresses);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex,
+                    "ScheduledNotificationHelper: Error getting internal recipient email addresses for notification {NotificationId}.",
+                    notification.Id);
+                return string.Empty;
+            }
         }           
     }
 }

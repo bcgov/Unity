@@ -256,10 +256,12 @@
 
 
         <!--Tab Content: Notifications -->
+         @if (await FeatureChecker.IsEnabledAsync("Unity.Notifications")) {
         <div class="tab-pane fade" id="nav-notifications" role="tabpanel"
             aria-labelledby="nav-notifications-tab">
             @await Component.InvokeAsync(typeof(Notifications), new { formid = Model?.ApplicationFormDto?.Id.ToString() })
         </div>
+        }
 
         @if (Model?.ShowAITab == true)
         {

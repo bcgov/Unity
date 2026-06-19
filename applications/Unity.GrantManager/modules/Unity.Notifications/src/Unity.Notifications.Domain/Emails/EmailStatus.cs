@@ -8,4 +8,5 @@ public static class EmailStatus
     public const string Draft = "Draft";
     public const string Initialized = "Initialized";
     public const string Cancelled = "Cancelled";
+    public const string Scheduled = "Scheduled";
 }

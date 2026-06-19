@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Dynamic;
@@ -48,8 +49,17 @@ namespace Unity.Notifications.EmailNotifications
             emailLog = UpdateMappedEmailLog(emailLog, emailObject);
             emailLog.ApplicationId = applicationId;
             emailLog.ScheduledNotificationId = scheduledNotificationId;
-            emailLog.Status = status ?? EmailStatus.Initialized;
             emailLog.SendOnDateTime = email.SendOnDateTime;
+            
+            // If SendOnDateTime is in the future, set status to Scheduled instead of the provided status
+            if (email.SendOnDateTime.HasValue && email.SendOnDateTime.Value > DateTime.UtcNow)
+            {
+                emailLog.Status = EmailStatus.Scheduled;
+            }
+            else
+            {
+                emailLog.Status = status ?? EmailStatus.Initialized;
+            }
 
             // When being called here the current tenant is in context - verified by looking at the tenant id
             EmailLog loggedEmail = await emailLogsRepository.InsertAsync(emailLog, autoSave: true);
@@ -68,8 +78,17 @@ namespace Unity.Notifications.EmailNotifications
             emailLog = UpdateMappedEmailLog(emailLog, emailObject);
             emailLog.ApplicationId = applicationId;
             emailLog.Id = emailId;
-            emailLog.Status = status ?? EmailStatus.Initialized;
             emailLog.SendOnDateTime = email.SendOnDateTime;
+            
+            // If SendOnDateTime is in the future, set status to Scheduled instead of the provided status
+            if (email.SendOnDateTime.HasValue && email.SendOnDateTime.Value > DateTime.UtcNow)
+            {
+                emailLog.Status = EmailStatus.Scheduled;
+            }
+            else
+            {
+                emailLog.Status = status ?? EmailStatus.Initialized;
+            }
 
             // When being called here the current tenant is in context - verified by looking at the tenant id
             EmailLog loggedEmail = await emailLogsRepository.UpdateAsync(emailLog, autoSave: true);
@@ -102,9 +121,103 @@ namespace Unity.Notifications.EmailNotifications
         public async Task DeleteEmailLogAsync(Guid id)
         {
             var emailLog = await emailLogsRepository.GetAsync(id);
-            if (emailLog.Status == EmailStatus.Sent)
+            if (emailLog.Status == EmailStatus.Sent && !emailLog.SendOnDateTime.HasValue)
             {
                 throw new UserFriendlyException("Sent emails cannot be deleted.");
+            }
+
+            // If email has a scheduled send date and a CHES message ID, check the status with CHES
+            if (emailLog.SendOnDateTime.HasValue && emailLog.ChesMsgId.HasValue)
+            {
+                try
+                {
+                    var statusResponse = await chesClientService.GetStatusAsync(emailLog.ChesMsgId.Value);
+                    if (statusResponse != null && statusResponse.IsSuccessStatusCode)
+                    {
+                        var responseContent = await statusResponse.Content.ReadAsStringAsync();
+                        Logger.LogInformation("CHES status check for MessageId {MessageId}: {StatusResponse}", emailLog.ChesMsgId, responseContent);
+                        
+                        // Parse the CHES status response to check message status
+                        try
+                        {
+                            dynamic? statusData = JsonConvert.DeserializeObject(responseContent);
+                            string? status = null;
+                            
+                            if (statusData != null)
+                            {
+                                // Handle array response - get first element if it's an array
+                                if (statusData is Newtonsoft.Json.Linq.JArray jArray && jArray.Count > 0)
+                                {
+                                    statusData = jArray[0];
+                                }
+                                
+                                status = statusData.status?.ToString();
+                            }
+
+                            if (!string.IsNullOrEmpty(status) && !status.Equals("pending", StringComparison.OrdinalIgnoreCase))
+                            {
+                                // Update email status with capitalized first character if status is not blank or pending
+                                var capitalizedStatus = char.ToUpper(status[0]) + status.Substring(1).ToLower();
+                                emailLog.ChesStatus = capitalizedStatus;
+                                await emailLogsRepository.UpdateAsync(emailLog);
+                                Logger.LogInformation("Updated email {EmailLogId} status to {Status}", id, capitalizedStatus);
+                            }                            
+                            
+                            // Check if the message has already been completed or is accepted
+                            if (!string.IsNullOrEmpty(status) && 
+                                (status.Equals("completed", StringComparison.OrdinalIgnoreCase) || 
+                                 status.Equals("accepted", StringComparison.OrdinalIgnoreCase)))
+                            {
+                                emailLog.ChesStatus = EmailStatus.Sent;
+                                await emailLogsRepository.UpdateAsync(emailLog);                            
+                                throw new UserFriendlyException("This scheduled email has already been sent and cannot be deleted.");
+                            }
+
+                            // If status is pending, attempt to cancel it via CHES
+                            if (!string.IsNullOrEmpty(status) && status.Equals("pending", StringComparison.OrdinalIgnoreCase))
+                            {
+                                try
+                                {
+                                    var cancelResponse = await chesClientService.CancelEmailAsync(emailLog.ChesMsgId.Value);
+                                    if (cancelResponse == null || !cancelResponse.IsSuccessStatusCode)
+                                    {
+                                        Logger.LogWarning("Failed to cancel pending email {EmailLogId} with MessageId {MessageId}. Status: {StatusCode}", id, emailLog.ChesMsgId, cancelResponse?.StatusCode);
+                                        throw new UserFriendlyException("Unable to cancel the pending scheduled email. Please try again.");
+                                    }
+                                    Logger.LogInformation("Successfully cancelled pending email {EmailLogId} with MessageId {MessageId}", id, emailLog.ChesMsgId);
+                                }
+                                catch (Exception cancelEx)
+                                {
+                                    Logger.LogError(cancelEx, "Error cancelling pending email {EmailLogId} with MessageId {MessageId}", id, emailLog.ChesMsgId);
+                                    throw new UserFriendlyException("Unable to cancel the pending scheduled email. Please try again.");
+                                }
+                            }
+
+                        }
+                        catch (UserFriendlyException)
+                        {
+                            throw;
+                        }
+                        catch (Exception parseEx)
+                        {
+                            Logger.LogError(parseEx, "Failed to parse or process CHES status response for MessageId {MessageId}. Response content: {ResponseContent}", emailLog.ChesMsgId, responseContent);
+                            throw new UserFriendlyException("Unable to verify the status of the scheduled email. Please try again.");
+                        }
+                    }
+                    else
+                    {
+                        Logger.LogWarning("CHES status check returned unsuccessful status code {StatusCode} for MessageId {MessageId}", statusResponse?.StatusCode, emailLog.ChesMsgId);
+                    }
+                }
+                catch (UserFriendlyException)
+                {
+                    throw;
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogError(ex, "Error checking CHES status for scheduled email {EmailLogId}", id);
+                    throw new UserFriendlyException("Unable to verify the status of the scheduled email. Please try again.");
+                }
             }
 
             var attachments = await emailAttachmentService.GetAttachmentsAsync(id);
@@ -352,7 +465,9 @@ namespace Unity.Notifications.EmailNotifications
             emailLog.BCC = dict.TryGetValue("bcc", out var bcc) && bcc is IEnumerable<string> bccList
                 ? string.Join(",", bccList)
                 : string.Empty;
-            emailLog.TemplateName = emailDynamicObject.templateName;
+            emailLog.TemplateName = dict.TryGetValue("templateName", out var templateName) && templateName is string templateNameStr
+                ? templateNameStr
+                : string.Empty;
             return emailLog;
         }
 

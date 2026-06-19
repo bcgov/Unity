@@ -17,6 +17,7 @@ public class EmailHistoryDto : ExtensibleAuditedEntityDto<Guid>
     public EmailHistoryUserDto? SentBy { get; set; }
     public string TemplateName { get; set; } = string.Empty;
     public DateTime? SendOnDateTime { get; set; }
+    public Guid? ScheduledNotificationId { get; set; }
 }
 
 public class EmailHistoryUserDto : EntityDto<Guid>

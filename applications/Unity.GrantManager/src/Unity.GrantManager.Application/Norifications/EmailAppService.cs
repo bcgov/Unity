@@ -21,7 +21,7 @@ namespace Unity.GrantManager.Notifications
         {
             return await emailNotificationService.InitializeDraftAsync(applicationId);
         }
-        public async Task<bool> CreateAsync(CreateEmailDto dto)
+        public async Task<bool> SendAsync(CreateEmailDto dto)
         {
             EmailNotificationEvent emailNotificationEvent = GetEmailNotificationEvent(dto);
             emailNotificationEvent.Action = EmailAction.SendCustom;

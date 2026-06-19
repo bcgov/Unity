@@ -13,8 +13,8 @@ using Volo.Abp.EntityFrameworkCore;
 namespace Unity.GrantManager.Migrations.TenantMigrations
 {
     [DbContext(typeof(GrantTenantDbContext))]
-    [Migration("20260609220000_AddApplicationScheduledNotificationTracking")]
-    partial class AddApplicationScheduledNotificationTracking
+    [Migration("20260609220000_AddScheduledNotificationTracking")]
+    partial class AddScheduledNotificationTracking
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -27,8 +27,8 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            // Snapshot of ApplicationScheduledNotificationTracking table
-            modelBuilder.Entity("Unity.GrantManager.Notifications.ApplicationScheduledNotificationTracking", b =>
+            // Snapshot of ScheduledNotificationTracking table
+            modelBuilder.Entity("Unity.GrantManager.Notifications.ScheduledNotificationTracking", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -65,7 +65,7 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.HasIndex(new[] { "ApplicationId", "ScheduledNotificationId", "DateField" })
                         .IsUnique();
 
-                    b.ToTable("ApplicationScheduledNotificationTracking", (string)null);
+                    b.ToTable("ScheduledNotificationTracking", (string)null);
                 });
 
 #pragma warning restore 612, 618
