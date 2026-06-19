@@ -5,10 +5,21 @@
     let _selectedRow = null;
     let _selectedCategory = 'Onboarding';
 
+    const CATEGORY_STORAGE_KEY = 'Onboarding_SelectedCategory';
+
     // ─── Fixed columns (always present) ──────────────────────────────────────
 
     const FIXED_COLUMNS = [
-        { title: l('Onboarding:ColumnSubmissionNumber'), data: 'submissionNumber', name: 'submissionNumber', index: 0 },
+        {
+            title: l('Onboarding:ColumnSubmissionNumber'),
+            data: 'submissionNumber',
+            name: 'submissionNumber',
+            index: 0,
+            render: function (data, type, row) {
+                if (type !== 'display') return data ?? '';
+                return '<a href="/GrantApplications/Details?ApplicationId=' + row.id + '">' + _escapeHtml(data) + '</a>';
+            }
+        },
         { title: l('Onboarding:ColumnStatus'),           data: 'status',           name: 'status',           index: 1 },
         {
             title: l('Onboarding:ColumnSubmissionDate'),
@@ -63,6 +74,38 @@
                 + _escapeHtml(_formatCheckboxKey(label))
                 + '</span>';
         }).join('');
+    }
+
+    // ─── Super Users DataGrid email extraction ───────────────────────────────
+
+    // Formio/CHEFS "Super Users" fields are submitted as a DataGrid: one row per super
+    // user, with columns such as name/email/title. The email column's key varies per
+    // worksheet (e.g. "s03_SuperUserEmail"), so it's matched by name rather than a fixed
+    // key — mirrors SuperUsersValidationStep.ParseEmails on the server.
+    // Returns null when `raw` isn't a DataGrid value at all (legacy plain-text field).
+    function _extractDataGridEmails(raw) {
+        if (!raw) return null;
+        let parsed;
+        try { parsed = typeof raw === 'string' ? JSON.parse(raw) : raw; } catch { return null; }
+        if (!parsed || !Array.isArray(parsed.rows)) return null;
+
+        return parsed.rows
+            .map(function (row) {
+                const cell = (row.cells || []).find(function (c) { return /email/i.test(c.key || ''); });
+                return cell ? String(cell.value || '').trim() : '';
+            })
+            .filter(function (v) { return v.includes('@'); });
+    }
+
+    function _renderSuperUsersPreview(data, type) {
+        const emails = _extractDataGridEmails(data);
+        if (emails === null) {
+            if (type === 'sort' || type === 'filter' || type === 'type') return data || '';
+            return data ? _escapeHtml(data) : '<span class="text-muted">—</span>';
+        }
+
+        if (type === 'sort' || type === 'filter' || type === 'type') return emails.join(', ');
+        return emails.length ? _escapeHtml(emails.join(', ')) : '<span class="text-muted">—</span>';
     }
 
     // ─── DataGrid cell renderer ───────────────────────────────────────────────
@@ -359,7 +402,7 @@
             _triggerValidation(applicationId);
         });
         $('#create-tenant-super-users-field').on('change', function () {
-            _updateFieldPreview('create-tenant-super-users-field', 'create-tenant-super-users-value');
+            _updateFieldPreview('create-tenant-super-users-field', 'create-tenant-super-users-value', _renderSuperUsersPreview);
             _triggerValidation(applicationId);
         });
     }
@@ -393,7 +436,7 @@
             _updateFieldPreview('create-tenant-program-area-field', 'create-tenant-program-area-value');
             _updateFieldPreview('create-tenant-features-field',    'create-tenant-features-value', _renderCheckboxGroup);
             _updateFieldPreview('create-tenant-tenant-name-field', 'create-tenant-tenant-name-value');
-            _updateFieldPreview('create-tenant-super-users-field', 'create-tenant-super-users-value');
+            _updateFieldPreview('create-tenant-super-users-field', 'create-tenant-super-users-value', _renderSuperUsersPreview);
             $('#create-tenant-field-mapping').show();
             _wireCreateTenantMappingHandlers(applicationId);
             _triggerValidation(applicationId);
@@ -469,12 +512,12 @@
         return jaro + prefix * 0.1 * (1 - jaro);
     }
 
-    const TENANT_NAME_CANONICALS  = ['tenant name', 'organization name', 'company name', 'program name', 'applicant name'];
+    const TENANT_NAME_CANONICALS  = ['tenant name', 'organization name', 'company name', 'program name', 'applicant name', 'tenant abbreviation'];
     const SUPER_USERS_CANONICALS  = ['super user', 'super users', 'admin email', 'program manager', 'manager email', 'administrator', 'user email'];
     const MINISTRY_CANONICALS     = ['ministry', 'ministry name', 'government ministry', 'responsible ministry'];
     const BRANCH_CANONICALS       = ['branch', 'division branch', 'ministry branch', 'business branch'];
     const PROGRAM_AREA_CANONICALS = ['program area', 'program area name', 'program name', 'program'];
-    const FEATURES_CANONICALS     = ['features', 'feature flags', 'program features', 'modules', 'enabled features'];
+    const FEATURES_CANONICALS     = ['features', 'feature flags', 'program features', 'modules', 'enabled features', 'features to be enabled'];
     const MATCH_THRESHOLD = 0.85;
 
     function _bestMatch(fields, canonicals) {
@@ -493,7 +536,8 @@
         fields.forEach(function (f) {
             $sel.append('<option value="' + $('<span>').text(f.key).html() + '">' + $('<span>').text(f.label).html() + '</option>');
         });
-        const pick = savedKey || _bestMatch(fields, canonicals);
+        const savedKeyValid = savedKey && fields.some(function (f) { return f.key === savedKey; });
+        const pick = (savedKeyValid ? savedKey : null) || _bestMatch(fields, canonicals);
         if (pick) $sel.val(pick);
     }
 
@@ -516,11 +560,15 @@
             url: abp.appPath + 'api/onboarding-requests/categories',
             type: 'GET'
         }).done(function (categories) {
+            const categoryList = categories || ['Onboarding'];
             const $sel = $('#onboarding-category-filter');
             $sel.empty();
-            (categories || ['Onboarding']).forEach(function (cat) {
+            categoryList.forEach(function (cat) {
                 $sel.append('<option value="' + _escapeHtml(cat) + '">' + _escapeHtml(cat) + '</option>');
             });
+
+            const savedCategory = localStorage.getItem(CATEGORY_STORAGE_KEY);
+            _selectedCategory = (savedCategory && categoryList.includes(savedCategory)) ? savedCategory : 'Onboarding';
             $sel.val(_selectedCategory);
         }).always(function () {
             _loadSchemaAndInitTable();
@@ -528,6 +576,7 @@
 
         $('#onboarding-category-filter').on('change', function () {
             _selectedCategory = $(this).val() || 'Onboarding';
+            localStorage.setItem(CATEGORY_STORAGE_KEY, _selectedCategory);
             _loadSchemaAndInitTable();
         });
 

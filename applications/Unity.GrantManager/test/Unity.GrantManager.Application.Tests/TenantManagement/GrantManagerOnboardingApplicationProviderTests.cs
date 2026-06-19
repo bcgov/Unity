@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Shouldly;
 using Unity.GrantManager.Applications;
@@ -17,7 +18,9 @@ public class GrantManagerOnboardingApplicationProviderTests : GrantManagerApplic
     private readonly IOnboardingApplicationProvider _provider;
     private readonly IRepository<Application, Guid> _applicationRepository;
     private readonly IRepository<ApplicationForm, Guid> _applicationFormRepository;
+    private readonly IRepository<ApplicationFormVersion, Guid> _applicationFormVersionRepository;
     private readonly IRepository<ApplicationStatus, Guid> _applicationStatusRepository;
+    private readonly IRepository<Applicant, Guid> _applicantRepository;
     private readonly IUnitOfWorkManager _unitOfWorkManager;
 
     public GrantManagerOnboardingApplicationProviderTests(ITestOutputHelper outputHelper) : base(outputHelper)
@@ -25,7 +28,9 @@ public class GrantManagerOnboardingApplicationProviderTests : GrantManagerApplic
         _provider = GetRequiredService<IOnboardingApplicationProvider>();
         _applicationRepository = GetRequiredService<IRepository<Application, Guid>>();
         _applicationFormRepository = GetRequiredService<IRepository<ApplicationForm, Guid>>();
+        _applicationFormVersionRepository = GetRequiredService<IRepository<ApplicationFormVersion, Guid>>();
         _applicationStatusRepository = GetRequiredService<IRepository<ApplicationStatus, Guid>>();
+        _applicantRepository = GetRequiredService<IRepository<Applicant, Guid>>();
         _unitOfWorkManager = GetRequiredService<IUnitOfWorkManager>();
     }
 
@@ -40,6 +45,16 @@ public class GrantManagerOnboardingApplicationProviderTests : GrantManagerApplic
         return form.Id;
     }
 
+    private async Task<Guid> CreateFormVersionAsync(
+        Guid applicationFormId, int? version, bool published, string? submissionHeaderMapping = null) =>
+        (await _applicationFormVersionRepository.InsertAsync(new ApplicationFormVersion
+        {
+            ApplicationFormId = applicationFormId,
+            Version = version,
+            Published = published,
+            SubmissionHeaderMapping = submissionHeaderMapping
+        }, autoSave: true)).Id;
+
     private async Task<Guid> CreateStatusAsync(string internalStatus, GrantApplicationState statusCode) =>
         (await _applicationStatusRepository.InsertAsync(new ApplicationStatus
         {
@@ -48,15 +63,24 @@ public class GrantManagerOnboardingApplicationProviderTests : GrantManagerApplic
             StatusCode = statusCode
         }, autoSave: true)).Id;
 
+    private async Task<Guid> CreateApplicantAsync(string applicantName) =>
+        (await _applicantRepository.InsertAsync(new Applicant
+        {
+            ApplicantName = applicantName
+        }, autoSave: true)).Id;
+
     private async Task<Application> CreateApplicationAsync(
-        Guid applicationFormId, Guid applicationStatusId, string referenceNo, DateTime submissionDate) =>
+        Guid applicationFormId, Guid applicationStatusId, string referenceNo, DateTime submissionDate,
+        Guid? applicantId = null, string? projectName = null, decimal? requestedAmount = null) =>
         await _applicationRepository.InsertAsync(new Application
         {
             ApplicationFormId = applicationFormId,
             ApplicationStatusId = applicationStatusId,
-            ApplicantId = GrantManagerTestData.Applicant1_Id,
+            ApplicantId = applicantId ?? GrantManagerTestData.Applicant1_Id,
             ReferenceNo = referenceNo,
-            SubmissionDate = submissionDate
+            SubmissionDate = submissionDate,
+            ProjectName = projectName ?? string.Empty,
+            RequestedAmount = requestedAmount ?? 0
         }, autoSave: true);
 
     [Fact]
@@ -154,6 +178,240 @@ public class GrantManagerOnboardingApplicationProviderTests : GrantManagerApplic
 
         result.TotalCount.ShouldBe(2);
         result.Items.ShouldContain(i => i.Id == staticMatch.Id);
+        result.Items.ShouldContain(i => i.Id == worksheetMatch.Id);
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task GetFormVersionIdsAsync_PicksHighestPublishedVersion_PerForm()
+    {
+        var category = $"OnboardingTest-{Guid.NewGuid()}";
+        var formId = await CreateFormAsync(category);
+        await CreateFormVersionAsync(formId, version: 1, published: true);
+        var latestPublished = await CreateFormVersionAsync(formId, version: 2, published: true);
+        await CreateFormVersionAsync(formId, version: 3, published: false);
+
+        using var uow = _unitOfWorkManager.Begin();
+        var result = await _provider.GetFormVersionIdsAsync(category);
+
+        result.ShouldBe([latestPublished]);
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task GetFormVersionIdsAsync_FormWithNoPublishedVersions_IsExcluded()
+    {
+        var category = $"OnboardingTest-{Guid.NewGuid()}";
+        var formId = await CreateFormAsync(category);
+        await CreateFormVersionAsync(formId, version: 1, published: false);
+
+        using var uow = _unitOfWorkManager.Begin();
+        var result = await _provider.GetFormVersionIdsAsync(category);
+
+        result.ShouldBeEmpty();
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task GetFormVersionIdsAsync_UnknownCategory_ReturnsEmpty()
+    {
+        using var uow = _unitOfWorkManager.Begin();
+        var result = await _provider.GetFormVersionIdsAsync($"OnboardingTest-{Guid.NewGuid()}");
+
+        result.ShouldBeEmpty();
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task GetMappedCoreFieldColumnsAsync_ReturnsOnlyFieldsWithASubmissionHeaderMapping()
+    {
+        var category = $"OnboardingTest-{Guid.NewGuid()}";
+        var formId = await CreateFormAsync(category);
+        await CreateFormVersionAsync(formId, version: 1, published: true,
+            submissionHeaderMapping: """{"ProjectName": "projectName", "RequestedAmount": "requestedAmount"}""");
+
+        using var uow = _unitOfWorkManager.Begin();
+        var result = await _provider.GetMappedCoreFieldColumnsAsync(category);
+
+        result.Select(c => c.Key).ShouldBe(["ProjectName", "RequestedAmount"], ignoreOrder: true);
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task GetMappedCoreFieldColumnsAsync_FieldNotInRegistry_IsExcluded()
+    {
+        var category = $"OnboardingTest-{Guid.NewGuid()}";
+        var formId = await CreateFormAsync(category);
+        await CreateFormVersionAsync(formId, version: 1, published: true,
+            submissionHeaderMapping: """{"ContactEmail": "contactEmail"}""");
+
+        using var uow = _unitOfWorkManager.Begin();
+        var result = await _provider.GetMappedCoreFieldColumnsAsync(category);
+
+        result.ShouldBeEmpty();
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task GetPagedListAndById_PopulateCoreFieldValues_ForMappedFields()
+    {
+        var category = $"OnboardingTest-{Guid.NewGuid()}";
+        var formId = await CreateFormAsync(category);
+        await CreateFormVersionAsync(formId, version: 1, published: true,
+            submissionHeaderMapping: """{"ProjectName": "projectName"}""");
+        var statusId = await CreateStatusAsync("Submitted", GrantApplicationState.ASSIGNED);
+        var applicantId = await CreateApplicantAsync("Test Applicant");
+
+        var application = await CreateApplicationAsync(formId, statusId, "REF-CORE", DateTime.UtcNow,
+            applicantId: applicantId, projectName: "Bridge Repair", requestedAmount: 5000m);
+
+        using var uow = _unitOfWorkManager.Begin();
+
+        var paged = await _provider.GetPagedListAsync(0, 10, sorting: null, category: category);
+        paged.Items[0].CoreFieldValues.ShouldContainKey("ProjectName");
+        paged.Items[0].CoreFieldValues["ProjectName"].ShouldBe("Bridge Repair");
+        paged.Items[0].CoreFieldValues.ShouldNotContainKey("RequestedAmount"); // not mapped for this form
+
+        var byId = await _provider.GetByIdAsync(application.Id);
+        byId!.CoreFieldValues["ProjectName"].ShouldBe("Bridge Repair");
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task GetPagedListAsync_SortsByCoreField()
+    {
+        var category = $"OnboardingTest-{Guid.NewGuid()}";
+        var formId = await CreateFormAsync(category);
+        var statusId = await CreateStatusAsync("Submitted", GrantApplicationState.ASSIGNED);
+
+        var bravo = await CreateApplicationAsync(formId, statusId, "REF-A", DateTime.UtcNow, projectName: "Bravo Project");
+        var alpha = await CreateApplicationAsync(formId, statusId, "REF-B", DateTime.UtcNow, projectName: "Alpha Project");
+
+        using var uow = _unitOfWorkManager.Begin();
+
+        var ascending = await _provider.GetPagedListAsync(0, 10, sorting: "ProjectName ASC", category: category);
+        ascending.Items[0].Id.ShouldBe(alpha.Id);
+        ascending.Items[1].Id.ShouldBe(bravo.Id);
+
+        var descending = await _provider.GetPagedListAsync(0, 10, sorting: "ProjectName DESC", category: category);
+        descending.Items[0].Id.ShouldBe(bravo.Id);
+        descending.Items[1].Id.ShouldBe(alpha.Id);
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task GetPagedListAsync_SortsByApplicantBackedCoreField()
+    {
+        var category = $"OnboardingTest-{Guid.NewGuid()}";
+        var formId = await CreateFormAsync(category);
+        var statusId = await CreateStatusAsync("Submitted", GrantApplicationState.ASSIGNED);
+
+        var zooApplicantId = await CreateApplicantAsync("Zoo Org");
+        var acmeApplicantId = await CreateApplicantAsync("Acme Org");
+
+        var zoo = await CreateApplicationAsync(formId, statusId, "REF-A", DateTime.UtcNow, applicantId: zooApplicantId);
+        var acme = await CreateApplicationAsync(formId, statusId, "REF-B", DateTime.UtcNow, applicantId: acmeApplicantId);
+
+        using var uow = _unitOfWorkManager.Begin();
+        var result = await _provider.GetPagedListAsync(0, 10, sorting: "ApplicantName ASC", category: category);
+
+        result.Items[0].Id.ShouldBe(acme.Id);
+        result.Items[1].Id.ShouldBe(zoo.Id);
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task GetPagedListAsync_FiltersByCoreFieldContains()
+    {
+        var category = $"OnboardingTest-{Guid.NewGuid()}";
+        var formId = await CreateFormAsync(category);
+        var statusId = await CreateStatusAsync("Submitted", GrantApplicationState.ASSIGNED);
+
+        var matching = await CreateApplicationAsync(formId, statusId, "REF-A", DateTime.UtcNow, projectName: "Bridge Repair");
+        await CreateApplicationAsync(formId, statusId, "REF-B", DateTime.UtcNow, projectName: "Road Resurfacing");
+
+        using var uow = _unitOfWorkManager.Begin();
+        var result = await _provider.GetPagedListAsync(0, 10, sorting: null, category: category,
+            staticColumnFilters: [new ColumnFilterDto { Name = "ProjectName", Value = "bridge" }]);
+
+        result.TotalCount.ShouldBe(1);
+        result.Items[0].Id.ShouldBe(matching.Id);
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task GetPagedListAsync_FiltersByNonTextCoreField_HasNoEffect()
+    {
+        var category = $"OnboardingTest-{Guid.NewGuid()}";
+        var formId = await CreateFormAsync(category);
+        var statusId = await CreateStatusAsync("Submitted", GrantApplicationState.ASSIGNED);
+        await CreateApplicationAsync(formId, statusId, "REF-A", DateTime.UtcNow, requestedAmount: 5000m);
+
+        using var uow = _unitOfWorkManager.Begin();
+        var result = await _provider.GetPagedListAsync(0, 10, sorting: null, category: category,
+            staticColumnFilters: [new ColumnFilterDto { Name = "RequestedAmount", Value = "5000" }]);
+
+        // Currency/Number fields aren't text-filterable yet — the filter is a no-op rather than an error.
+        result.TotalCount.ShouldBe(1);
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task GetPagedListAsync_GlobalFilter_MatchesMappedCoreFieldValue()
+    {
+        var category = $"OnboardingTest-{Guid.NewGuid()}";
+        var formId = await CreateFormAsync(category);
+        await CreateFormVersionAsync(formId, version: 1, published: true,
+            submissionHeaderMapping: """{"ProjectName": "projectName"}""");
+        var statusId = await CreateStatusAsync("Submitted", GrantApplicationState.ASSIGNED);
+
+        var matching = await CreateApplicationAsync(formId, statusId, "REF-A", DateTime.UtcNow, projectName: "Bridge Repair");
+        await CreateApplicationAsync(formId, statusId, "REF-B", DateTime.UtcNow, projectName: "Road Resurfacing");
+
+        using var uow = _unitOfWorkManager.Begin();
+        var result = await _provider.GetPagedListAsync(0, 10, sorting: null, category: category, filter: "bridge");
+
+        result.TotalCount.ShouldBe(1);
+        result.Items[0].Id.ShouldBe(matching.Id);
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task GetPagedListAsync_GlobalFilter_UnmappedCoreField_DoesNotMatch()
+    {
+        var category = $"OnboardingTest-{Guid.NewGuid()}";
+        var formId = await CreateFormAsync(category);
+        await CreateFormVersionAsync(formId, version: 1, published: true); // no SubmissionHeaderMapping
+        var statusId = await CreateStatusAsync("Submitted", GrantApplicationState.ASSIGNED);
+        await CreateApplicationAsync(formId, statusId, "REF-A", DateTime.UtcNow, projectName: "Bridge Repair");
+
+        using var uow = _unitOfWorkManager.Begin();
+        var result = await _provider.GetPagedListAsync(0, 10, sorting: null, category: category, filter: "bridge");
+
+        result.TotalCount.ShouldBe(0);
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task GetPagedListAsync_GlobalFilter_CombinesCoreFieldMatchesWithPrecomputedWorksheetMatchIds()
+    {
+        var category = $"OnboardingTest-{Guid.NewGuid()}";
+        var formId = await CreateFormAsync(category);
+        await CreateFormVersionAsync(formId, version: 1, published: true,
+            submissionHeaderMapping: """{"ProjectName": "projectName"}""");
+        var statusId = await CreateStatusAsync("Submitted", GrantApplicationState.ASSIGNED);
+
+        var coreMatch = await CreateApplicationAsync(formId, statusId, "REF-A", DateTime.UtcNow, projectName: "Bridge Repair");
+        var worksheetMatch = await CreateApplicationAsync(formId, statusId, "REF-B", DateTime.UtcNow);
+        await CreateApplicationAsync(formId, statusId, "REF-C", DateTime.UtcNow); // matches neither
+
+        using var uow = _unitOfWorkManager.Begin();
+        var result = await _provider.GetPagedListAsync(0, 10, sorting: null, category: category,
+            filter: "bridge",
+            globalDynamicMatchIds: [worksheetMatch.Id]);
+
+        result.TotalCount.ShouldBe(2);
+        result.Items.ShouldContain(i => i.Id == coreMatch.Id);
         result.Items.ShouldContain(i => i.Id == worksheetMatch.Id);
     }
 }

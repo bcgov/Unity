@@ -33,6 +33,8 @@ public class OnboardingRequestAppServiceTests : AbpTenantManagementApplicationTe
     {
         _applicationProvider = Substitute.For<IOnboardingApplicationProvider>();
         _applicationProvider.GetAllIdsAsync(Arg.Any<string>()).Returns(new List<Guid>());
+        _applicationProvider.GetFormVersionIdsAsync(Arg.Any<string>()).Returns(new List<Guid>());
+        _applicationProvider.GetMappedCoreFieldColumnsAsync(Arg.Any<string>()).Returns(new List<OnboardingColumnDto>());
         _applicationProvider.GetPagedListAsync(
                 Arg.Any<int>(), Arg.Any<int>(), Arg.Any<string?>(), Arg.Any<string>(), Arg.Any<string?>(),
                 Arg.Any<IReadOnlyList<Guid>?>(), Arg.Any<IReadOnlyList<ColumnFilterDto>?>(), Arg.Any<IReadOnlyList<Guid>?>())
@@ -147,37 +149,173 @@ public class OnboardingRequestAppServiceTests : AbpTenantManagementApplicationTe
     [Fact]
     public async Task GetColumnSchemaAsync_DedupesFieldsAcrossWorksheets_PreservesOrder()
     {
-        var appId = Guid.NewGuid();
+        var formVersionId = Guid.NewGuid();
         var ws1 = Guid.NewGuid();
         var ws2 = Guid.NewGuid();
 
-        _applicationProvider.GetAllIdsAsync("Onboarding").Returns(new List<Guid> { appId });
-        _worksheetInstanceAppService.GetDistinctWorksheetIdsByCorrelationIdsAsync(Arg.Any<List<Guid>>(), ApplicationCorrelationProvider)
-            .Returns(new List<Guid> { ws1, ws2 });
+        _applicationProvider.GetFormVersionIdsAsync("Onboarding").Returns(new List<Guid> { formVersionId });
 
-        _worksheetAppService.GetAsync(ws1).Returns(new WorksheetDto
+        _worksheetAppService.GetListByCorrelationAsync(formVersionId, "FormVersion").Returns(new List<WorksheetDto>
         {
-            Sections = [
-                new WorksheetSectionDto { Order = 0, Fields = [
-                    new CustomFieldDto { Key = "branch", Label = "Branch", Order = 0, Enabled = true },
-                    new CustomFieldDto { Key = "ministry", Label = "Ministry", Order = 1, Enabled = true }
-                ]}
-            ]
-        });
-        _worksheetAppService.GetAsync(ws2).Returns(new WorksheetDto
-        {
-            Sections = [
-                new WorksheetSectionDto { Order = 0, Fields = [
-                    new CustomFieldDto { Key = "branch", Label = "Branch", Order = 0, Enabled = true }, // duplicate
-                    new CustomFieldDto { Key = "hidden", Label = "Hidden", Order = 1, Enabled = false }, // disabled
-                    new CustomFieldDto { Key = "email", Label = "Email", Order = 2, Enabled = true }
-                ]}
-            ]
+            new() {
+                Id = ws1,
+                Sections = [
+                    new WorksheetSectionDto { Order = 0, Fields = [
+                        new CustomFieldDto { Key = "branch", Label = "Branch", Order = 0, Enabled = true },
+                        new CustomFieldDto { Key = "ministry", Label = "Ministry", Order = 1, Enabled = true }
+                    ]}
+                ]
+            },
+            new() {
+                Id = ws2,
+                Sections = [
+                    new WorksheetSectionDto { Order = 0, Fields = [
+                        new CustomFieldDto { Key = "branch", Label = "Branch", Order = 0, Enabled = true }, // duplicate
+                        new CustomFieldDto { Key = "hidden", Label = "Hidden", Order = 1, Enabled = false }, // disabled
+                        new CustomFieldDto { Key = "email", Label = "Email", Order = 2, Enabled = true }
+                    ]}
+                ]
+            }
         });
 
         var result = await _appService.GetColumnSchemaAsync();
 
         result.Columns!.Select(c => c.Key).ShouldBe(["branch", "ministry", "email"]);
+    }
+
+    [Fact]
+    public async Task GetColumnSchemaAsync_ReturnsColumns_WithNoApplicationsSubmittedYet()
+    {
+        var formVersionId = Guid.NewGuid();
+
+        _applicationProvider.GetFormVersionIdsAsync("Onboarding").Returns(new List<Guid> { formVersionId });
+
+        _worksheetAppService.GetListByCorrelationAsync(formVersionId, "FormVersion").Returns(new List<WorksheetDto>
+        {
+            new() {
+                Id = Guid.NewGuid(),
+                Sections = [
+                    new WorksheetSectionDto { Order = 0, Fields = [
+                        new CustomFieldDto { Key = "branch", Label = "Branch", Order = 0, Enabled = true }
+                    ]}
+                ]
+            }
+        });
+
+        var result = await _appService.GetColumnSchemaAsync();
+
+        result.Columns!.Select(c => c.Key).ShouldBe(["branch"]);
+    }
+
+    [Fact]
+    public async Task GetColumnSchemaAsync_AppendsMappedCoreFieldColumns_AfterWorksheetColumns()
+    {
+        var formVersionId = Guid.NewGuid();
+
+        _applicationProvider.GetFormVersionIdsAsync("Onboarding").Returns(new List<Guid> { formVersionId });
+        _worksheetAppService.GetListByCorrelationAsync(formVersionId, "FormVersion").Returns(new List<WorksheetDto>
+        {
+            new() {
+                Id = Guid.NewGuid(),
+                Sections = [
+                    new WorksheetSectionDto { Order = 0, Fields = [
+                        new CustomFieldDto { Key = "branch", Label = "Branch", Order = 0, Enabled = true }
+                    ]}
+                ]
+            }
+        });
+        _applicationProvider.GetMappedCoreFieldColumnsAsync("Onboarding").Returns(new List<OnboardingColumnDto>
+        {
+            new() { Key = "ProjectName", Label = "Project Name", Type = "String", Selected = true },
+            new() { Key = "branch", Label = "Branch", Type = "String", Selected = true } // duplicate key — should be deduped
+        });
+
+        var result = await _appService.GetColumnSchemaAsync();
+
+        result.Columns!.Select(c => c.Key).ShouldBe(["branch", "ProjectName"]);
+    }
+
+    [Fact]
+    public async Task GetListAsync_MergesCoreFieldValues_IntoFields()
+    {
+        var appId = Guid.NewGuid();
+
+        _applicationProvider.GetPagedListAsync(
+                Arg.Any<int>(), Arg.Any<int>(), Arg.Any<string?>(), "Onboarding", Arg.Any<string?>(),
+                Arg.Any<IReadOnlyList<Guid>?>(), Arg.Any<IReadOnlyList<ColumnFilterDto>?>(), Arg.Any<IReadOnlyList<Guid>?>())
+            .Returns(new PagedResultDto<OnboardingApplicationRecord>(1, [
+                new OnboardingApplicationRecord
+                {
+                    Id = appId,
+                    Category = "Onboarding",
+                    CoreFieldValues = new Dictionary<string, object?> { ["ProjectName"] = "Bridge Repair" }
+                }
+            ]));
+
+        var result = await _appService.GetListAsync(new OnboardingListRequestDto());
+
+        result.Items[0].Fields["ProjectName"].ShouldBe("Bridge Repair");
+    }
+
+    [Fact]
+    public async Task GetListAsync_SortByMappedCoreField_PassesThroughToProvider_NoInMemoryFetchAll()
+    {
+        _applicationProvider.GetMappedCoreFieldColumnsAsync("Onboarding").Returns(new List<OnboardingColumnDto>
+        {
+            new() { Key = "ProjectName", Label = "Project Name", Type = "String", Selected = true }
+        });
+
+        (int Skip, int Take, string? Sorting)? captured = null;
+        _applicationProvider
+            .When(p => p.GetPagedListAsync(
+                Arg.Any<int>(), Arg.Any<int>(), Arg.Any<string?>(), Arg.Any<string>(), Arg.Any<string?>(),
+                Arg.Any<IReadOnlyList<Guid>?>(), Arg.Any<IReadOnlyList<ColumnFilterDto>?>(), Arg.Any<IReadOnlyList<Guid>?>()))
+            .Do(call => captured = (call.ArgAt<int>(0), call.ArgAt<int>(1), call.ArgAt<string?>(2)));
+
+        await _appService.GetListAsync(new OnboardingListRequestDto
+        {
+            Sorting = "fields.ProjectName asc",
+            SkipCount = 5,
+            MaxResultCount = 10
+        });
+
+        // A core field is provider-handled: paging/sort go straight to SQL — no "fetch everything,
+        // sort in memory" fallback (which would show up as Skip=0, Take=int.MaxValue, Sorting=null).
+        captured.ShouldNotBeNull();
+        captured!.Value.Skip.ShouldBe(5);
+        captured.Value.Take.ShouldBe(10);
+        captured.Value.Sorting.ShouldBe("ProjectName ASC");
+    }
+
+    [Fact]
+    public async Task GetListAsync_ColumnFilterOnMappedCoreField_RoutedAsStaticFilter_NotWorksheetScan()
+    {
+        _applicationProvider.GetMappedCoreFieldColumnsAsync("Onboarding").Returns(new List<OnboardingColumnDto>
+        {
+            new() { Key = "ProjectName", Label = "Project Name", Type = "String", Selected = true }
+        });
+
+        IReadOnlyList<ColumnFilterDto>? capturedStaticFilters = null;
+        IReadOnlyList<Guid>? capturedDynamicMatchIds = null;
+        _applicationProvider
+            .When(p => p.GetPagedListAsync(
+                Arg.Any<int>(), Arg.Any<int>(), Arg.Any<string?>(), Arg.Any<string>(), Arg.Any<string?>(),
+                Arg.Any<IReadOnlyList<Guid>?>(), Arg.Any<IReadOnlyList<ColumnFilterDto>?>(), Arg.Any<IReadOnlyList<Guid>?>()))
+            .Do(call =>
+            {
+                capturedStaticFilters = call.ArgAt<IReadOnlyList<ColumnFilterDto>?>(6);
+                capturedDynamicMatchIds = call.ArgAt<IReadOnlyList<Guid>?>(7);
+            });
+
+        await _appService.GetListAsync(new OnboardingListRequestDto
+        {
+            ColumnFilters = [new ColumnFilterDto { Name = "ProjectName", Value = "bridge" }]
+        });
+
+        capturedStaticFilters.ShouldNotBeNull();
+        capturedStaticFilters!.ShouldContain(f => f.Name == "ProjectName" && f.Value == "bridge");
+        // Worksheet match precomputation never ran for this filter.
+        capturedDynamicMatchIds.ShouldBeNull();
     }
 
     [Fact]

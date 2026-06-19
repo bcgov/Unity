@@ -19,6 +19,8 @@ public interface IOnboardingApplicationProvider
         IReadOnlyList<Guid>? dynamicColumnMatchIds = null);
     Task<OnboardingApplicationRecord?> GetByIdAsync(Guid id);
     Task<List<Guid>> GetAllIdsAsync(string category);
+    Task<List<Guid>> GetFormVersionIdsAsync(string category);
+    Task<List<OnboardingColumnDto>> GetMappedCoreFieldColumnsAsync(string category);
     Task<List<string>> GetAvailableCategoriesAsync();
     Task CloseApplicationAsync(Guid applicationId);
 }

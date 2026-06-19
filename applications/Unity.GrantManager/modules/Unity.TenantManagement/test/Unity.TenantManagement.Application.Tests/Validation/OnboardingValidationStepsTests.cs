@@ -63,6 +63,51 @@ public class SuperUsersValidationStepTests
 
         result.ShouldBe(expected);
     }
+
+    [Fact]
+    public void ParseEmails_ExtractsEmailsFromFormioDataGridJson()
+    {
+        const string dataGridJson = """
+        {
+          "rows": [
+            {
+              "cells": [
+                { "key": "s03_SuperUserName", "value": "Kingsley Shacklebolt" },
+                { "key": "s03_SuperUserEmail", "value": "kingsley.shacklebolt@gov.bc.ca" },
+                { "key": "s03_SuperUserTitle", "value": "Minister for Magic" }
+              ]
+            },
+            {
+              "cells": [
+                { "key": "s03_SuperUserName", "value": "Minerva McGonagall" },
+                { "key": "s03_SuperUserEmail", "value": "m.mcgonagall@hogwarts.ac.uk" },
+                { "key": "s03_SuperUserTitle", "value": "External Liaison Officer" }
+              ]
+            }
+          ]
+        }
+        """;
+
+        var result = SuperUsersValidationStep.ParseEmails(dataGridJson);
+
+        result.ShouldBe(["kingsley.shacklebolt@gov.bc.ca", "m.mcgonagall@hogwarts.ac.uk"]);
+    }
+
+    [Fact]
+    public void ParseEmails_DataGridRowsWithoutEmailColumn_ReturnsEmpty()
+    {
+        const string dataGridJson = """
+        {
+          "rows": [
+            { "cells": [ { "key": "s03_SuperUserName", "value": "Kingsley Shacklebolt" } ] }
+          ]
+        }
+        """;
+
+        var result = SuperUsersValidationStep.ParseEmails(dataGridJson);
+
+        result.ShouldBeEmpty();
+    }
 }
 
 public class TenantNameUniquenessStepTests

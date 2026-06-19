@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Authorization;
 using Unity.Flex.Worksheets;
 using Unity.Flex.Worksheets.Values;
 using Unity.Flex.WorksheetInstances;
+using Unity.Modules.Shared.Correlation;
 using Unity.Modules.Shared.Permissions;
 using Unity.TenantManagement.Onboarding;
 using Unity.TenantManagement.Validation;
@@ -53,11 +54,19 @@ public class OnboardingRequestAppService(
 
         var category = string.IsNullOrWhiteSpace(input.Category) ? DefaultCategory : input.Category;
 
+        // Core fields are real Application/Applicant columns — the provider can filter/sort
+        // them directly in SQL, same as the always-static columns. Only worksheet fields (JSONB)
+        // need the in-memory scan below.
+        var coreFieldKeys = (await ApplicationProvider.GetMappedCoreFieldColumnsAsync(category))
+            .Select(c => c.Key)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        bool IsProviderColumn(string name) => IsStaticColumn(name) || coreFieldKeys.Contains(name);
+
         bool hasGlobalFilter = !string.IsNullOrWhiteSpace(input.Filter);
-        var staticColumnFilters = GetStaticColumnFilters(input.ColumnFilters);
-        var dynamicColumnFilters = GetDynamicColumnFilters(input.ColumnFilters);
+        var staticColumnFilters = GetStaticColumnFilters(input.ColumnFilters, IsProviderColumn);
+        var dynamicColumnFilters = GetDynamicColumnFilters(input.ColumnFilters, IsProviderColumn);
         var (sortField, sortDescending) = ParseSorting(input.Sorting);
-        bool isDynamicSort = sortField != null && !IsStaticColumn(sortField);
+        bool isDynamicSort = sortField != null && !IsProviderColumn(sortField);
 
         IReadOnlyList<Guid>? globalDynamicMatchIds = null;
         IReadOnlyList<Guid>? dynamicColumnMatchIds = null;
@@ -125,8 +134,13 @@ public class OnboardingRequestAppService(
         }
         else
         {
+            // Reconstruct from the already-parsed (prefix-stripped) field rather than passing
+            // input.Sorting raw — core-field columns are sent by the client as "fields.<key>",
+            // same as worksheet columns, and the provider only knows the bare field name.
+            var providerSorting = sortField != null ? $"{sortField} {(sortDescending ? "DESC" : "ASC")}" : null;
+
             appPage = await ApplicationProvider.GetPagedListAsync(
-                input.SkipCount, input.MaxResultCount, input.Sorting, category,
+                input.SkipCount, input.MaxResultCount, providerSorting, category,
                 hasGlobalFilter ? input.Filter : null,
                 globalDynamicMatchIds,
                 staticColumnFilters.Count > 0 ? staticColumnFilters : null,
@@ -175,37 +189,46 @@ public class OnboardingRequestAppService(
             return new OnboardingColumnSchemaDto { Columns = [] };
 
         var resolvedCategory = string.IsNullOrWhiteSpace(category) ? DefaultCategory : category;
-        var onboardingAppIds = await ApplicationProvider.GetAllIdsAsync(resolvedCategory);
+        var formVersionIds = await ApplicationProvider.GetFormVersionIdsAsync(resolvedCategory);
 
-        if (onboardingAppIds.Count == 0)
+        if (formVersionIds.Count == 0)
             return new OnboardingColumnSchemaDto { Columns = [] };
 
-        var worksheetIds = await WorksheetInstanceAppService
-            .GetDistinctWorksheetIdsByCorrelationIdsAsync(onboardingAppIds, ApplicationCorrelationProvider);
-
+        var seenWorksheetIds = new HashSet<Guid>();
         var seenKeys = new HashSet<string>();
         var columns = new List<OnboardingColumnDto>();
 
-        foreach (var worksheetId in worksheetIds)
+        foreach (var formVersionId in formVersionIds)
         {
-            WorksheetDto worksheet;
-            try { worksheet = await WorksheetAppService.GetAsync(worksheetId); }
+            List<WorksheetDto> worksheets;
+            try { worksheets = await WorksheetAppService.GetListByCorrelationAsync(formVersionId, CorrelationConsts.FormVersion); }
             catch { continue; }
 
-            foreach (var field in worksheet.Sections
-                .OrderBy(s => s.Order)
-                .SelectMany(s => s.Fields.OrderBy(f => f.Order))
-                .Where(f => f.Enabled))
+            foreach (var worksheet in worksheets)
             {
-                if (!seenKeys.Add($"{field.Key}|{field.Label}")) continue;
-                columns.Add(new OnboardingColumnDto
+                if (!seenWorksheetIds.Add(worksheet.Id)) continue;
+
+                foreach (var field in worksheet.Sections
+                    .OrderBy(s => s.Order)
+                    .SelectMany(s => s.Fields.OrderBy(f => f.Order))
+                    .Where(f => f.Enabled))
                 {
-                    Key = field.Key,
-                    Label = field.Label,
-                    Type = field.Type.ToString(),
-                    Selected = true
-                });
+                    if (!seenKeys.Add($"{field.Key}|{field.Label}")) continue;
+                    columns.Add(new OnboardingColumnDto
+                    {
+                        Key = field.Key,
+                        Label = field.Label,
+                        Type = field.Type.ToString(),
+                        Selected = true
+                    });
+                }
             }
+        }
+
+        foreach (var coreColumn in await ApplicationProvider.GetMappedCoreFieldColumnsAsync(resolvedCategory))
+        {
+            if (!seenKeys.Add($"{coreColumn.Key}|{coreColumn.Label}")) continue;
+            columns.Add(coreColumn);
         }
 
         var saved = await ReadTenantMappingAsync();
@@ -377,14 +400,14 @@ public class OnboardingRequestAppService(
         };
     }
 
-    private static List<ColumnFilterDto> GetStaticColumnFilters(List<ColumnFilterDto>? filters) =>
+    private static List<ColumnFilterDto> GetStaticColumnFilters(List<ColumnFilterDto>? filters, Func<string, bool> isProviderColumn) =>
         (filters ?? [])
-            .Where(cf => !string.IsNullOrWhiteSpace(cf.Value) && IsStaticColumn(cf.Name))
+            .Where(cf => !string.IsNullOrWhiteSpace(cf.Value) && isProviderColumn(cf.Name))
             .ToList();
 
-    private static List<ColumnFilterDto> GetDynamicColumnFilters(List<ColumnFilterDto>? filters) =>
+    private static List<ColumnFilterDto> GetDynamicColumnFilters(List<ColumnFilterDto>? filters, Func<string, bool> isProviderColumn) =>
         (filters ?? [])
-            .Where(cf => !string.IsNullOrWhiteSpace(cf.Value) && !IsStaticColumn(cf.Name))
+            .Where(cf => !string.IsNullOrWhiteSpace(cf.Value) && !isProviderColumn(cf.Name))
             .ToList();
 
     private static bool IsStaticColumn(string name) =>
@@ -474,6 +497,9 @@ public class OnboardingRequestAppService(
             Status = app.Status,
             Category = app.Category
         };
+
+        foreach (var (key, value) in app.CoreFieldValues)
+            dto.Fields[key] = value;
 
         foreach (var instance in worksheetInstances)
         {
