@@ -9,14 +9,15 @@ print('Python:', sys.version)
 print()
 
 # Test core packages
-import aiohttp
-print('aiohttp:', aiohttp.__version__)
 print('Flask:', version('flask'))
 
 import flask_cors
 print('flask-cors:', flask_cors.__version__)
 print('langchain-core:', version('langchain-core'))
 print('langchain-openai:', version('langchain-openai'))
+
+import openai
+print('openai:', version('openai'))
 
 import jwt
 print('PyJWT:', jwt.__version__)
@@ -47,16 +48,18 @@ print(f'Encoded payload: {payload}')
 print(f'Decoded payload: {decoded}')
 print('SUCCESS: PyJWT works correctly!')
 
-# Test aiohttp async client (pattern used in sql_generator.py)
+# Test openai Azure async client (pattern used in llm_client.py / sql_generator.py)
 print()
-print('Testing aiohttp...')
-import asyncio
-async def test_aiohttp():
-    async with aiohttp.ClientSession():
-        print('ClientSession created successfully')
-    return True
-asyncio.run(test_aiohttp())
-print('SUCCESS: aiohttp works correctly!')
+print('Testing openai AsyncAzureOpenAI...')
+from openai import AsyncAzureOpenAI
+# Construction is offline (no network call) — just verifies the client wires up.
+AsyncAzureOpenAI(
+    azure_endpoint='https://example.openai.azure.com',
+    api_key='test',
+    api_version='2024-10-21',
+)
+print('AsyncAzureOpenAI client created successfully')
+print('SUCCESS: openai works correctly!')
 
 print()
 print('='*50)

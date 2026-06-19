@@ -4,10 +4,11 @@ API module with Flask routes for the application.
 from flask import Flask, request, abort, jsonify
 from flask_cors import CORS
 import asyncio
-import aiohttp
 import logging
 import datetime
+import openai
 from config import config
+from llm_client import build_async_client
 from database import db_manager, chat_repository, feedback_repository, cache_repository
 from metabase import metabase_client
 from chat import chat_manager
@@ -118,6 +119,43 @@ def _classify_sql_generation_error(error):
     error_lower = error_str.lower()
     logger.error(f"SQL generation failed with error: {error}", exc_info=True)
     logger.debug(f"Error type: {type(error)}")
+
+    # Typed Azure OpenAI SDK exceptions map cleanly to categories — check these
+    # first, before the string-matching fallback below (which still covers
+    # non-OpenAI errors). This is what lets a real 429 surface as rate_limit
+    # rather than being silently downgraded to ai_failure.
+    if isinstance(error, openai.RateLimitError):
+        logger.warning("Azure OpenAI rate limit exceeded")
+        return _error_response(
+            "rate_limit",
+            "Azure OpenAI rate limit exceeded. Please try again in a few moments.",
+            429,
+            detail=error_str,
+        )
+    if isinstance(error, (openai.APITimeoutError, openai.APIConnectionError)):
+        logger.error("Connection/timeout error talking to Azure OpenAI")
+        return _error_response(
+            "connection_error",
+            "Connection error during SQL generation. Please try again.",
+            503,
+            detail=error_str,
+        )
+    if isinstance(error, (openai.AuthenticationError, openai.PermissionDeniedError)):
+        logger.error("Azure OpenAI auth error - check API key/permissions configuration")
+        return _error_response(
+            "server_error",
+            "Service configuration error. Please contact support.",
+            503,
+            detail=error_str,
+        )
+    if isinstance(error, openai.APIStatusError):
+        logger.error("Azure OpenAI returned an error status")
+        return _error_response(
+            "server_error",
+            "Something went wrong during SQL generation. Please try again.",
+            500,
+            detail=error_str,
+        )
 
     # Check if it's a rate limit
     if "429" in error_str or "rate limit" in error_lower:
@@ -490,10 +528,10 @@ async def _llm_judge_lookup(tenant_id, db_id, normalized_query, borderline):
         f"[cache:borderline] tenant={tenant_id} db={db_id} "
         f"count={len(borderline)} similarities=[{borderline_sims}]"
     )
-    async with aiohttp.ClientSession() as judge_session:
+    async with build_async_client() as judge_client:
         results = await asyncio.gather(*[
             cache_reranker.llm_judge.score_candidate(
-                normalized_query, candidate["query_text"], judge_session, config.ai
+                normalized_query, candidate["query_text"], judge_client
             )
             for candidate in borderline
         ])
