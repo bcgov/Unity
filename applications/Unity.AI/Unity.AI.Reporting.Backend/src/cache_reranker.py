@@ -177,10 +177,11 @@ class LLMJudge:
             finish_reason = choice.finish_reason or "unknown"
             text = choice.message.content or ""
             usage = response.usage
-            tokens = usage.total_tokens if usage else 0
+            tokens = getattr(usage, "total_tokens", 0) if usage else 0
             reasoning_tokens = 0
-            if usage and usage.completion_tokens_details:
-                reasoning_tokens = usage.completion_tokens_details.reasoning_tokens or 0
+            details = getattr(usage, "completion_tokens_details", None) if usage else None
+            if details:
+                reasoning_tokens = getattr(details, "reasoning_tokens", 0) or 0
             if finish_reason == "content_filter":
                 logger.warning(
                     "[llm_judge] content_filter triggered — defaulting score=0"

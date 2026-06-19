@@ -51,13 +51,20 @@ print('SUCCESS: PyJWT works correctly!')
 # Test openai Azure async client (pattern used in llm_client.py / sql_generator.py)
 print()
 print('Testing openai AsyncAzureOpenAI...')
+import asyncio
 from openai import AsyncAzureOpenAI
-# Construction is offline (no network call) — just verifies the client wires up.
-AsyncAzureOpenAI(
-    azure_endpoint='https://example.openai.azure.com',
-    api_key='test',
-    api_version='2024-10-21',
-)
+
+async def _verify_async_client():
+    # Construction is offline (no network call) — just verifies the client wires up.
+    client = AsyncAzureOpenAI(
+        azure_endpoint='https://example.openai.azure.com',
+        api_key='test',
+        api_version='2024-10-21',
+    )
+    # Close so httpx doesn't emit unclosed-client warnings / leak the pool.
+    await client.close()
+
+asyncio.run(_verify_async_client())
 print('AsyncAzureOpenAI client created successfully')
 print('SUCCESS: openai works correctly!')
 
