@@ -12,11 +12,16 @@ namespace Unity.GrantManager.Web.Identity.Policy;
 internal static class PolicyRegistrant
 {
     internal const string PermissionConstant = "Permission";
+    internal const string MetricsAccessPolicy = "MetricsAccess";
 
     internal static void Register(ServiceConfigurationContext context)
     {
         // Using AddAuthorizationBuilder to register authorization services and construct policies
         var authorizationBuilder = context.Services.AddAuthorizationBuilder();
+
+        // Metrics endpoint — allow only loopback / RFC-1918 (cluster-internal) callers
+        authorizationBuilder.AddPolicy(MetricsAccessPolicy,
+            policy => policy.AddRequirements(new InternalNetworkRequirement()));
 
         // Identity Role Policies
         authorizationBuilder.AddPolicy(IdentityPermissions.Roles.Default,

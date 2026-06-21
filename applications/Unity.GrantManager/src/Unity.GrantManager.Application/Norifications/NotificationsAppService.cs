@@ -1,12 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Integrations;
 using Unity.Notifications.TeamsNotifications;
 using Volo.Abp;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Repositories;
+using Volo.Abp.MultiTenancy;
 using Volo.Abp.Uow;
 
 namespace Unity.GrantManager.Notifications
@@ -14,26 +16,24 @@ namespace Unity.GrantManager.Notifications
     // This class is responsible for first lookup up the Teams channel URL from the database and then posting notifications to the Teams Service.
     [Dependency(ReplaceServices = true)]
     [ExposeServices(typeof(NotificationsAppService), typeof(INotificationsAppService))]
-    public class NotificationsAppService : INotificationsAppService, ITransientDependency
+    public class NotificationsAppService(IDynamicUrlRepository dynamicUrlRepository,
+        ILogger<NotificationsAppService> logger, ICurrentTenant currentTenant) : INotificationsAppService, ITransientDependency
     {
-        private readonly IDynamicUrlRepository _dynamicUrlRepository;
-        private readonly TeamsNotificationService _teamsNotificationService;
-
-        public NotificationsAppService(IDynamicUrlRepository dynamicUrlRepository)
-        {
-            _dynamicUrlRepository = dynamicUrlRepository;
-            _teamsNotificationService = new TeamsNotificationService();
-        }
 
         [UnitOfWork]
         public async Task<string> InitializeTeamsChannelAsync(string keyName)
         {
-            DynamicUrl? teamsChannel = await _dynamicUrlRepository.FirstOrDefaultAsync(q => q.KeyName == keyName);
-            if (teamsChannel?.Url == null)
+            using (currentTenant.Change(null))
             {
-                return "";
+                DynamicUrl? teamsChannel = await dynamicUrlRepository.FirstOrDefaultAsync(q => q.KeyName == keyName && q.TenantId == null);
+                if (teamsChannel?.Url == null)
+                {
+                    logger.LogWarning("Teams channel not found for key {KeyName}", keyName);
+                    return string.Empty;
+                }
+
+                return teamsChannel.Url;
             }
-            return teamsChannel.Url;
         }
 
         [RemoteService(false)]
@@ -48,8 +48,9 @@ namespace Unity.GrantManager.Notifications
             string? envInfo = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
             string activityTitle = "Chefs Submission Event Validation Error";
             string activitySubtitle = "Environment: " + envInfo;
-            _teamsNotificationService.AddFact(factName, factValue);
-            await _teamsNotificationService.PostFactsToTeamsAsync(teamsChannel, activityTitle, activitySubtitle);
+            TeamsNotificationService teamsNotificationService = new();
+            teamsNotificationService.AddFact(factName, factValue);
+            await teamsNotificationService.PostFactsToTeamsAsync(teamsChannel, activityTitle, activitySubtitle);
         }
 
         [UnitOfWork]
@@ -58,11 +59,19 @@ namespace Unity.GrantManager.Notifications
             string teamsChannel = await InitializeTeamsChannelAsync(TeamsNotificationService.TEAMS_NOTIFICATION);
             if (teamsChannel.IsNullOrEmpty())
             {
+                logger.LogWarning("PostToTeamsAsync: no Teams channel configured, skipping notification TeamsNotificationService.TEAMS_NOTIFICATION");
                 return;
             }
 
             string messageCard = TeamsNotificationService.InitializeMessageCard(activityTitle, activitySubtitle, facts);
-            await TeamsNotificationService.PostToTeamsChannelAsync(teamsChannel, messageCard);
+            try
+            {
+                await TeamsNotificationService.PostToTeamsChannelAsync(teamsChannel, messageCard);
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "Failed to post Teams notification to channel");
+            }
         }
 
         public async Task PostToTeamsAsync(string activityTitle, string activitySubtitle)
@@ -70,11 +79,20 @@ namespace Unity.GrantManager.Notifications
             string teamsChannel = await InitializeTeamsChannelAsync(TeamsNotificationService.TEAMS_NOTIFICATION);
             if (teamsChannel.IsNullOrEmpty())
             {
+                logger.LogWarning("PostToTeamsAsync (no-facts): no Teams channel configured, skipping notification");
                 return;
             }
+
             List<Fact> facts = new() { };
             string messageCard = TeamsNotificationService.InitializeMessageCard(activityTitle, activitySubtitle, facts);
-            await TeamsNotificationService.PostToTeamsChannelAsync(teamsChannel, messageCard);
+            try
+            {
+                await TeamsNotificationService.PostToTeamsChannelAsync(teamsChannel, messageCard);
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "Failed to post Teams notification to channel");
+            }
         }
 
         public async Task PostChefsEventToTeamsAsync(string subscriptionEvent, dynamic form, dynamic chefsFormVersion)
