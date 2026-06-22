@@ -129,16 +129,14 @@
 #applicationEmailsWidget .from-field-container .from-input {
     min-width: 150px;
     width: 100%;
-    margin-right: 0 !important;
-    margin-bottom: 0 !important;
     height: 36px;
     padding: 6px 8px !important;
-    display: inline-block;
-    vertical-align: baseline;
-    margin-top: 0;
+    display: inline-block;    
     position: relative;
     flex-grow: 1;
     padding-right: 75px !important;
+    display: block;
+    margin: 0px !important;
 }
 
 #applicationEmailsWidget .from-field-container .mb-3 {
@@ -849,10 +847,7 @@ input#EmailFrom.input-validation-error {
     margin-bottom: -20px !important;
 }
 
-#applicationEmailsWidget .from-field-container .from-input {
-  display: block;
-  margin: 0px;
-}
+
 
 .mt-14 {
     margin-top: 14px !important;
