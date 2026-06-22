@@ -512,8 +512,8 @@ namespace Unity.Notifications.EmailNotifications
                 {
                     Logger.LogError(
                         ex,
-                        "Failed to delete S3 attachment for EmailLog {EmailLogId}",
-                        emailLogId);
+                        "Failed to delete S3 attachment with key: {S3ObjectKey}",
+                        attachment.S3ObjectKey);
                 }
             }
         }
