@@ -1,6 +1,5 @@
 ﻿﻿@using Microsoft.AspNetCore.Mvc.Localization
 @using Unity.Flex.Localization;
-@using Unity.Flex.Web.Views.Shared.Components.Scoresheet;
 @using Volo.Abp.Authorization.Permissions;
 @inject IHtmlLocalizer<FlexResource> L
 @inject IPermissionChecker PermissionChecker
@@ -99,7 +98,8 @@
                                         data-maxlength="@question.GetMaxLength()" 
                                         data-yesvalue="@question.GetYesValue()" 
                                         data-novalue="@question.GetNoValue()" 
-                                        data-questiondesc="@question.Description" 
+                                        data-questionlabel="@question.Label"
+                                        data-questiondesc="@question.Description"
                                         data-definition="@question.Definition"
                                         data-rows="@question.GetRowsValue()"
                                         data-required="@question.GetIsRequiredValue()">
