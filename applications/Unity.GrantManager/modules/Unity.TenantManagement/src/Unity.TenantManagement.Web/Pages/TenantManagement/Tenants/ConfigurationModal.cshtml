@@ -18,8 +18,8 @@
     <abp-modal size="Large">
         <abp-modal-header title="@($"Configuration - {Model.Tenant.Name}")"></abp-modal-header>
         <abp-modal-body>
-            <input asp-for="Tenant.Id" />
-            <input asp-for="Tenant.ConcurrencyStamp" />
+            <input type="hidden" asp-for="Tenant.Id" />
+            <input type="hidden" asp-for="Tenant.ConcurrencyStamp" />
 
             <ul class="nav nav-tabs mb-3" id="configurationTabs">
                 <li class="nav-item">
@@ -71,7 +71,7 @@
 
                     <div class="form-group">
                         <label for="Tenant_CasClientCode">CAS Client Code</label>
-                        <select asp-for="Tenant.CasClientCode" class="form-control cas-client-select"
+                        <select asp-for="Tenant.CasClientCode" id="Tenant_CasClientCode" class="form-control cas-client-select"
                                 data-ministry-target="#selected-ministry">
                             <option value="">Select a Client Code</option>
                             @foreach (var option in Model.CasClientOptions)
@@ -129,13 +129,13 @@
 
                     <h6 class="text-secondary mb-2">Assign Program Manager</h6>
                     <div class="input-group mb-2">
-                        <select id="config-search-field" class="form-select" style="max-width: 170px;">
+                        <select id="config-search-field" class="form-select" style="max-width: 170px;" aria-label="Manager search field">
                             <option value="firstName">First Name</option>
                             <option value="lastName">Last Name</option>
                             <option value="firstAndLast">First &amp; Last Name</option>
                             <option value="email">Email</option>
                         </select>
-                        <input type="text" id="config-search-value" class="form-control" placeholder="At least 2 characters..." />
+                        <input type="text" id="config-search-value" class="form-control" placeholder="At least 2 characters..." aria-label="Manager search value" />
                     </div>
                     <input type="hidden" asp-for="SelectedManagerUserIdentifier" id="config-selected-user-identifier" />
 
