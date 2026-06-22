@@ -36,8 +36,8 @@ public class OnboardingRequestAppServiceTests : AbpTenantManagementApplicationTe
         _applicationProvider.GetFormVersionIdsAsync(Arg.Any<string>()).Returns(new List<Guid>());
         _applicationProvider.GetMappedCoreFieldColumnsAsync(Arg.Any<string>()).Returns(new List<OnboardingColumnDto>());
         _applicationProvider.GetPagedListAsync(
-                Arg.Any<int>(), Arg.Any<int>(), Arg.Any<string?>(), Arg.Any<string>(), Arg.Any<string?>(),
-                Arg.Any<IReadOnlyList<Guid>?>(), Arg.Any<IReadOnlyList<ColumnFilterDto>?>(), Arg.Any<IReadOnlyList<Guid>?>())
+                Arg.Any<int>(), Arg.Any<int>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(),
+                Arg.Any<IReadOnlyList<Guid>>(), Arg.Any<IReadOnlyList<ColumnFilterDto>>(), Arg.Any<IReadOnlyList<Guid>>())
             .Returns(new PagedResultDto<OnboardingApplicationRecord>(0, []));
 
         _worksheetInstanceAppService = Substitute.For<IWorksheetInstanceAppService>();
@@ -50,7 +50,7 @@ public class OnboardingRequestAppServiceTests : AbpTenantManagementApplicationTe
 
         _settingManager = Substitute.For<ISettingManager>();
         _settingManager.GetOrNullAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<bool>())
-            .Returns((string?)null);
+            .Returns((string)null);
 
         services.AddSingleton(_applicationProvider);
         services.AddSingleton(_worksheetInstanceAppService);
@@ -93,12 +93,12 @@ public class OnboardingRequestAppServiceTests : AbpTenantManagementApplicationTe
             WorksheetInstanceFor(wrongBranch, ("ministry", "Health"), ("branch", "South"))
         });
 
-        IReadOnlyList<Guid>? capturedMatchIds = null;
+        IReadOnlyList<Guid> capturedMatchIds = null;
         _applicationProvider
             .When(p => p.GetPagedListAsync(
-                Arg.Any<int>(), Arg.Any<int>(), Arg.Any<string?>(), Arg.Any<string>(), Arg.Any<string?>(),
-                Arg.Any<IReadOnlyList<Guid>?>(), Arg.Any<IReadOnlyList<ColumnFilterDto>?>(), Arg.Any<IReadOnlyList<Guid>?>()))
-            .Do(call => capturedMatchIds = call.ArgAt<IReadOnlyList<Guid>?>(7));
+                Arg.Any<int>(), Arg.Any<int>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(),
+                Arg.Any<IReadOnlyList<Guid>>(), Arg.Any<IReadOnlyList<ColumnFilterDto>>(), Arg.Any<IReadOnlyList<Guid>>()))
+            .Do(call => capturedMatchIds = call.ArgAt<IReadOnlyList<Guid>>(7));
 
         await _appService.GetListAsync(new OnboardingListRequestDto
         {
@@ -208,6 +208,48 @@ public class OnboardingRequestAppServiceTests : AbpTenantManagementApplicationTe
     }
 
     [Fact]
+    public async Task GetColumnSchemaAsync_CombinesFieldsAcrossFormVersions_ByKeyEvenWithDifferentLabel()
+    {
+        var oldFormVersionId = Guid.NewGuid();
+        var newFormVersionId = Guid.NewGuid();
+
+        // Both versions are published and mapped — GetFormVersionIdsAsync now returns every
+        // published version, not just the latest, so both contribute columns here.
+        _applicationProvider.GetFormVersionIdsAsync("Onboarding")
+            .Returns(new List<Guid> { oldFormVersionId, newFormVersionId });
+
+        _worksheetAppService.GetListByCorrelationAsync(oldFormVersionId, "FormVersion").Returns(new List<WorksheetDto>
+        {
+            new() {
+                Id = Guid.NewGuid(),
+                Sections = [
+                    new WorksheetSectionDto { Order = 0, Fields = [
+                        new CustomFieldDto { Key = "branch", Label = "Branch (old wording)", Order = 0, Enabled = true }
+                    ]}
+                ]
+            }
+        });
+        _worksheetAppService.GetListByCorrelationAsync(newFormVersionId, "FormVersion").Returns(new List<WorksheetDto>
+        {
+            new() {
+                Id = Guid.NewGuid(),
+                Sections = [
+                    new WorksheetSectionDto { Order = 0, Fields = [
+                        new CustomFieldDto { Key = "branch", Label = "Branch (new wording)", Order = 0, Enabled = true },
+                        new CustomFieldDto { Key = "ministry", Label = "Ministry", Order = 1, Enabled = true }
+                    ]}
+                ]
+            }
+        });
+
+        var result = await _appService.GetColumnSchemaAsync();
+
+        // Same key across versions collapses to one column — the first version encountered wins the label.
+        result.Columns!.Select(c => c.Key).ShouldBe(["branch", "ministry"]);
+        result.Columns!.First(c => c.Key == "branch").Label.ShouldBe("Branch (old wording)");
+    }
+
+    [Fact]
     public async Task GetColumnSchemaAsync_AppendsMappedCoreFieldColumns_AfterWorksheetColumns()
     {
         var formVersionId = Guid.NewGuid();
@@ -241,14 +283,14 @@ public class OnboardingRequestAppServiceTests : AbpTenantManagementApplicationTe
         var appId = Guid.NewGuid();
 
         _applicationProvider.GetPagedListAsync(
-                Arg.Any<int>(), Arg.Any<int>(), Arg.Any<string?>(), "Onboarding", Arg.Any<string?>(),
-                Arg.Any<IReadOnlyList<Guid>?>(), Arg.Any<IReadOnlyList<ColumnFilterDto>?>(), Arg.Any<IReadOnlyList<Guid>?>())
+                Arg.Any<int>(), Arg.Any<int>(), Arg.Any<string>(), "Onboarding", Arg.Any<string>(),
+                Arg.Any<IReadOnlyList<Guid>>(), Arg.Any<IReadOnlyList<ColumnFilterDto>>(), Arg.Any<IReadOnlyList<Guid>>())
             .Returns(new PagedResultDto<OnboardingApplicationRecord>(1, [
                 new OnboardingApplicationRecord
                 {
                     Id = appId,
                     Category = "Onboarding",
-                    CoreFieldValues = new Dictionary<string, object?> { ["ProjectName"] = "Bridge Repair" }
+                    CoreFieldValues = new Dictionary<string, object> { ["ProjectName"] = "Bridge Repair" }
                 }
             ]));
 
@@ -265,12 +307,12 @@ public class OnboardingRequestAppServiceTests : AbpTenantManagementApplicationTe
             new() { Key = "ProjectName", Label = "Project Name", Type = "String", Selected = true }
         });
 
-        (int Skip, int Take, string? Sorting)? captured = null;
+        (int Skip, int Take, string Sorting)? captured = null;
         _applicationProvider
             .When(p => p.GetPagedListAsync(
-                Arg.Any<int>(), Arg.Any<int>(), Arg.Any<string?>(), Arg.Any<string>(), Arg.Any<string?>(),
-                Arg.Any<IReadOnlyList<Guid>?>(), Arg.Any<IReadOnlyList<ColumnFilterDto>?>(), Arg.Any<IReadOnlyList<Guid>?>()))
-            .Do(call => captured = (call.ArgAt<int>(0), call.ArgAt<int>(1), call.ArgAt<string?>(2)));
+                Arg.Any<int>(), Arg.Any<int>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(),
+                Arg.Any<IReadOnlyList<Guid>>(), Arg.Any<IReadOnlyList<ColumnFilterDto>>(), Arg.Any<IReadOnlyList<Guid>>()))
+            .Do(call => captured = (call.ArgAt<int>(0), call.ArgAt<int>(1), call.ArgAt<string>(2)));
 
         await _appService.GetListAsync(new OnboardingListRequestDto
         {
@@ -295,16 +337,16 @@ public class OnboardingRequestAppServiceTests : AbpTenantManagementApplicationTe
             new() { Key = "ProjectName", Label = "Project Name", Type = "String", Selected = true }
         });
 
-        IReadOnlyList<ColumnFilterDto>? capturedStaticFilters = null;
-        IReadOnlyList<Guid>? capturedDynamicMatchIds = null;
+        IReadOnlyList<ColumnFilterDto> capturedStaticFilters = null;
+        IReadOnlyList<Guid> capturedDynamicMatchIds = null;
         _applicationProvider
             .When(p => p.GetPagedListAsync(
-                Arg.Any<int>(), Arg.Any<int>(), Arg.Any<string?>(), Arg.Any<string>(), Arg.Any<string?>(),
-                Arg.Any<IReadOnlyList<Guid>?>(), Arg.Any<IReadOnlyList<ColumnFilterDto>?>(), Arg.Any<IReadOnlyList<Guid>?>()))
+                Arg.Any<int>(), Arg.Any<int>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(),
+                Arg.Any<IReadOnlyList<Guid>>(), Arg.Any<IReadOnlyList<ColumnFilterDto>>(), Arg.Any<IReadOnlyList<Guid>>()))
             .Do(call =>
             {
-                capturedStaticFilters = call.ArgAt<IReadOnlyList<ColumnFilterDto>?>(6);
-                capturedDynamicMatchIds = call.ArgAt<IReadOnlyList<Guid>?>(7);
+                capturedStaticFilters = call.ArgAt<IReadOnlyList<ColumnFilterDto>>(6);
+                capturedDynamicMatchIds = call.ArgAt<IReadOnlyList<Guid>>(7);
             });
 
         await _appService.GetListAsync(new OnboardingListRequestDto

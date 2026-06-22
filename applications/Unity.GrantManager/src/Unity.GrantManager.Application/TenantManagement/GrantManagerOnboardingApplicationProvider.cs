@@ -31,6 +31,7 @@ public class GrantManagerOnboardingApplicationProvider(
             .Include(a => a.ApplicationForm)
             .Include(a => a.ApplicationStatus)
             .Include(a => a.Applicant)
+            .Include(a => a.ApplicantAgent)
             .Where(a => a.ApplicationForm.Category == category);
     }
 
@@ -125,7 +126,8 @@ public class GrantManagerOnboardingApplicationProvider(
             .AsNoTracking()
             .Include(a => a.ApplicationForm)
             .Include(a => a.ApplicationStatus)
-            .Include(a => a.Applicant);
+            .Include(a => a.Applicant)
+            .Include(a => a.ApplicantAgent);
 
         var entity = await query.FirstOrDefaultAsync(a => a.Id == id);
         if (entity == null) return null;
@@ -153,7 +155,7 @@ public class GrantManagerOnboardingApplicationProvider(
 
     public async Task<List<Guid>> GetFormVersionIdsAsync(string category)
     {
-        var versions = await GetCurrentPublishedVersionsAsync(category);
+        var versions = await GetFormVersionsAsync(category);
         return versions.Select(v => v.Id).ToList();
     }
 
@@ -167,7 +169,7 @@ public class GrantManagerOnboardingApplicationProvider(
 
     private async Task<List<CoreFieldDefinition>> GetMappedCoreFieldsAsync(string category)
     {
-        var versions = await GetCurrentPublishedVersionsAsync(category);
+        var versions = await GetFormVersionsAsync(category);
         if (versions.Count == 0) return [];
 
         return OnboardingCoreFieldRegistry.Fields
@@ -175,7 +177,14 @@ public class GrantManagerOnboardingApplicationProvider(
             .ToList();
     }
 
-    private async Task<List<ApplicationFormVersion>> GetCurrentPublishedVersionsAsync(string category)
+    // Returns every version across every form in the category — deliberately not filtered to
+    // Published==true. CHEFS sync auto-unpublishes a form's previous version the moment a new
+    // one is published (see ApplicationFormVersionAppService.UnPublishFormVersions), so at most
+    // one version per form is ever Published at a given time. Filtering on that flag would
+    // silently drop every prior version's field mappings/worksheet links as soon as a newer
+    // version goes live. A field mapped on any version (old or new) should still surface its
+    // column; columns are combined across versions by key (see GetColumnSchemaAsync).
+    private async Task<List<ApplicationFormVersion>> GetFormVersionsAsync(string category)
     {
         var formIds = await (await applicationFormRepository.GetQueryableAsync())
             .AsNoTracking()
@@ -185,15 +194,10 @@ public class GrantManagerOnboardingApplicationProvider(
 
         if (formIds.Count == 0) return [];
 
-        var versions = await (await applicationFormVersionRepository.GetQueryableAsync())
+        return await (await applicationFormVersionRepository.GetQueryableAsync())
             .AsNoTracking()
-            .Where(v => formIds.Contains(v.ApplicationFormId) && v.Published)
+            .Where(v => formIds.Contains(v.ApplicationFormId))
             .ToListAsync();
-
-        return versions
-            .GroupBy(v => v.ApplicationFormId)
-            .Select(g => g.OrderByDescending(v => v.Version).First())
-            .ToList();
     }
 
     public async Task CloseApplicationAsync(Guid applicationId)

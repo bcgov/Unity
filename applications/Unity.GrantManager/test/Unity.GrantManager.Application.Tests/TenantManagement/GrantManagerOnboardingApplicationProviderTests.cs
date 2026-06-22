@@ -183,27 +183,29 @@ public class GrantManagerOnboardingApplicationProviderTests : GrantManagerApplic
 
     [Fact]
     [Trait("Category", "Integration")]
-    public async Task GetFormVersionIdsAsync_PicksHighestPublishedVersion_PerForm()
+    public async Task GetFormVersionIdsAsync_IncludesEveryVersion_PerForm_RegardlessOfPublishedFlag()
     {
+        // CHEFS sync auto-unpublishes a form's previous version the moment a new one is
+        // published, so in practice only one version is ever Published==true at a time. Column
+        // discovery must not filter on that flag or it would silently drop every prior version's
+        // mappings — see GetFormVersionsAsync.
         var category = $"OnboardingTest-{Guid.NewGuid()}";
         var formId = await CreateFormAsync(category);
-        await CreateFormVersionAsync(formId, version: 1, published: true);
-        var latestPublished = await CreateFormVersionAsync(formId, version: 2, published: true);
-        await CreateFormVersionAsync(formId, version: 3, published: false);
+        var oldUnpublished = await CreateFormVersionAsync(formId, version: 1, published: false);
+        var currentPublished = await CreateFormVersionAsync(formId, version: 2, published: true);
 
         using var uow = _unitOfWorkManager.Begin();
         var result = await _provider.GetFormVersionIdsAsync(category);
 
-        result.ShouldBe([latestPublished]);
+        result.ShouldBe([oldUnpublished, currentPublished], ignoreOrder: true);
     }
 
     [Fact]
     [Trait("Category", "Integration")]
-    public async Task GetFormVersionIdsAsync_FormWithNoPublishedVersions_IsExcluded()
+    public async Task GetFormVersionIdsAsync_FormWithNoVersions_IsExcluded()
     {
         var category = $"OnboardingTest-{Guid.NewGuid()}";
-        var formId = await CreateFormAsync(category);
-        await CreateFormVersionAsync(formId, version: 1, published: false);
+        await CreateFormAsync(category);
 
         using var uow = _unitOfWorkManager.Begin();
         var result = await _provider.GetFormVersionIdsAsync(category);
@@ -238,7 +240,44 @@ public class GrantManagerOnboardingApplicationProviderTests : GrantManagerApplic
 
     [Fact]
     [Trait("Category", "Integration")]
+    public async Task GetMappedCoreFieldColumnsAsync_CombinesMappingsAcrossAllVersions()
+    {
+        var category = $"OnboardingTest-{Guid.NewGuid()}";
+        var formId = await CreateFormAsync(category);
+        // The older version got auto-unpublished when v2 went live (CHEFS sync behavior), and
+        // it maps a different core field than the current published version. Both should still
+        // surface — columns are combined by key across every version, published or not.
+        await CreateFormVersionAsync(formId, version: 1, published: false,
+            submissionHeaderMapping: """{"ProjectName": "projectName"}""");
+        await CreateFormVersionAsync(formId, version: 2, published: true,
+            submissionHeaderMapping: """{"RequestedAmount": "requestedAmount"}""");
+
+        using var uow = _unitOfWorkManager.Begin();
+        var result = await _provider.GetMappedCoreFieldColumnsAsync(category);
+
+        result.Select(c => c.Key).ShouldBe(["ProjectName", "RequestedAmount"], ignoreOrder: true);
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
     public async Task GetMappedCoreFieldColumnsAsync_FieldNotInRegistry_IsExcluded()
+    {
+        var category = $"OnboardingTest-{Guid.NewGuid()}";
+        var formId = await CreateFormAsync(category);
+        // TotalScore is grant-assessment workflow state, intentionally never added to the
+        // onboarding core-field registry — see OnboardingCoreFieldRegistry header comment.
+        await CreateFormVersionAsync(formId, version: 1, published: true,
+            submissionHeaderMapping: """{"TotalScore": "totalScore"}""");
+
+        using var uow = _unitOfWorkManager.Begin();
+        var result = await _provider.GetMappedCoreFieldColumnsAsync(category);
+
+        result.ShouldBeEmpty();
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task GetMappedCoreFieldColumnsAsync_IncludesApplicantAgentBackedContactEmail()
     {
         var category = $"OnboardingTest-{Guid.NewGuid()}";
         var formId = await CreateFormAsync(category);
@@ -248,7 +287,42 @@ public class GrantManagerOnboardingApplicationProviderTests : GrantManagerApplic
         using var uow = _unitOfWorkManager.Begin();
         var result = await _provider.GetMappedCoreFieldColumnsAsync(category);
 
-        result.ShouldBeEmpty();
+        result.Select(c => c.Key).ShouldBe(["ContactEmail"]);
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task GetPagedListAndById_PopulateContactEmail_FromApplicantAgent()
+    {
+        var category = $"OnboardingTest-{Guid.NewGuid()}";
+        var formId = await CreateFormAsync(category);
+        await CreateFormVersionAsync(formId, version: 1, published: true,
+            submissionHeaderMapping: """{"ContactEmail": "contactEmail"}""");
+        var statusId = await CreateStatusAsync("Submitted", GrantApplicationState.ASSIGNED);
+
+        var withAgent = await CreateApplicationAsync(formId, statusId, "REF-AGENT", DateTime.UtcNow);
+        var applicantAgentRepository = GetRequiredService<IRepository<ApplicantAgent, Guid>>();
+        await applicantAgentRepository.InsertAsync(new ApplicantAgent
+        {
+            ApplicantId = withAgent.ApplicantId,
+            ApplicationId = withAgent.Id,
+            Name = "Jane Contact",
+            Email = "jane.contact@example.com"
+        }, autoSave: true);
+
+        var withoutAgent = await CreateApplicationAsync(formId, statusId, "REF-NO-AGENT", DateTime.UtcNow);
+
+        using var uow = _unitOfWorkManager.Begin();
+
+        var paged = await _provider.GetPagedListAsync(0, 10, sorting: null, category: category);
+        paged.Items.First(i => i.Id == withAgent.Id).CoreFieldValues["ContactEmail"].ShouldBe("jane.contact@example.com");
+        paged.Items.First(i => i.Id == withoutAgent.Id).CoreFieldValues["ContactEmail"].ShouldBeNull();
+
+        var byId = await _provider.GetByIdAsync(withAgent.Id);
+        byId!.CoreFieldValues["ContactEmail"].ShouldBe("jane.contact@example.com");
+
+        var byIdNoAgent = await _provider.GetByIdAsync(withoutAgent.Id);
+        byIdNoAgent!.CoreFieldValues["ContactEmail"].ShouldBeNull();
     }
 
     [Fact]

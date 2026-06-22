@@ -21,8 +21,11 @@ public sealed record CoreFieldDefinition(string Key, string Label, string Type, 
 // mirrors (also used by ApplicationRepository.MapSortingField for the main Applications list).
 // Only fields with a confirmed assignment in IntakeFormSubmissionManager.CreateNewApplicationAsync
 // or ApplicantAppService.CreateOrRetrieveApplicantAsync/CreateApplicantAsync are listed here —
-// several IntakeMapping fields (Contact*, Mailing*, most Physical*, OrgStatus, IndigenousOrgInd)
-// are never persisted anywhere after intake and are intentionally omitted.
+// several IntakeMapping fields (Mailing*, most Physical*, OrgStatus, IndigenousOrgInd) are never
+// persisted anywhere after intake and are intentionally omitted. Contact* fields ARE persisted,
+// to the nullable Application.ApplicantAgent navigation (not Applicant) — see the ApplicantAgent-
+// backed entries below; querying them requires a `.Include(a => a.ApplicantAgent)`, added in
+// GrantManagerOnboardingApplicationProvider.BuildQueryAsync/GetByIdAsync.
 public static class OnboardingCoreFieldRegistry
 {
     public static readonly IReadOnlyList<CoreFieldDefinition> Fields =
@@ -64,5 +67,12 @@ public static class OnboardingCoreFieldRegistry
         new("ApproxNumberOfEmployees", "Approximate Number Of Employees", "Number", "Applicant.ApproxNumberOfEmployees", a => a.Applicant.ApproxNumberOfEmployees),
         new("FiscalDay", "Fiscal Year End (FYE) Day", "Number", "Applicant.FiscalDay", a => a.Applicant.FiscalDay),
         new("FiscalMonth", "Fiscal Year End (FYE) Month", "String", "Applicant.FiscalMonth", a => a.Applicant.FiscalMonth),
+
+        // ApplicantAgent-backed — nullable navigation, requires `.Include(a => a.ApplicantAgent)`.
+        new("ContactFullName", "Contact Full Name", "String", "ApplicantAgent.Name", a => a.ApplicantAgent?.Name),
+        new("ContactTitle", "Contact Title", "String", "ApplicantAgent.Title", a => a.ApplicantAgent?.Title),
+        new("ContactEmail", "Contact Email", "Email", "ApplicantAgent.Email", a => a.ApplicantAgent?.Email),
+        new("ContactBusinessPhone", "Contact Business Phone", "Phone", "ApplicantAgent.Phone", a => a.ApplicantAgent?.Phone),
+        new("ContactCellPhone", "Contact Cell Phone", "Phone", "ApplicantAgent.Phone2", a => a.ApplicantAgent?.Phone2),
     ];
 }

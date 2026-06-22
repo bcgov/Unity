@@ -9,9 +9,9 @@ public class OnboardingFeatureMapTests
     [InlineData(null)]
     [InlineData("")]
     [InlineData("   ")]
-    public void ResolveFeatureKeys_BlankInput_ReturnsEmpty(string? input)
+    public void ResolveFeatureKeys_BlankInput_ReturnsEmpty(string input)
     {
-        var result = OnboardingFeatureMap.ResolveFeatureKeys(input!);
+        var result = OnboardingFeatureMap.ResolveFeatureKeys(input);
 
         result.ShouldBeEmpty();
     }

@@ -30,7 +30,7 @@ public class SuperUsersValidationStepTests
     public async Task ValidateAsync_AnyParsedEmailResolves_ReturnsSuccess()
     {
         var lookup = Substitute.For<IOnboardingUserLookup>();
-        lookup.FindUserGuidByEmailAsync("first@example.com").Returns((string?)null);
+        lookup.FindUserGuidByEmailAsync("first@example.com").Returns((string)null);
         lookup.FindUserGuidByEmailAsync("second@example.com").Returns("guid-123");
         var step = new SuperUsersValidationStep(lookup);
 
@@ -43,7 +43,7 @@ public class SuperUsersValidationStepTests
     public async Task ValidateAsync_NoneOfTheParsedEmailsResolve_ReturnsFailure()
     {
         var lookup = Substitute.For<IOnboardingUserLookup>();
-        lookup.FindUserGuidByEmailAsync(Arg.Any<string>()).Returns((string?)null);
+        lookup.FindUserGuidByEmailAsync(Arg.Any<string>()).Returns((string)null);
         var step = new SuperUsersValidationStep(lookup);
 
         var result = await step.ValidateAsync(RequestWithSuperUsers("first@example.com,second@example.com"));
@@ -112,8 +112,8 @@ public class SuperUsersValidationStepTests
 
 public class TenantNameUniquenessStepTests
 {
-    private static OnboardingRequestDto RequestWithTenantName(string? tenantName) =>
-        new() { TenantName = tenantName ?? string.Empty };
+    private static OnboardingRequestDto RequestWithTenantName(string tenantName) =>
+        new() { TenantName = tenantName };
 
     // Tenant's (Guid, string, string) constructor is internal to the ABP assembly; reflection is the
     // only way to build a real instance here, since this test only needs a non-null "found" result.
@@ -154,7 +154,7 @@ public class TenantNameUniquenessStepTests
     {
         var tenantRepository = Substitute.For<ITenantRepository>();
         tenantRepository.FindByNameAsync(Arg.Any<string>(), Arg.Any<bool>(), Arg.Any<System.Threading.CancellationToken>())
-            .Returns((Tenant?)null);
+            .Returns((Tenant)null);
         var step = new TenantNameUniquenessStep(tenantRepository);
 
         var result = await step.ValidateAsync(RequestWithTenantName("Brand New Co"));

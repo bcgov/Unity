@@ -195,7 +195,10 @@ public class OnboardingRequestAppService(
             return new OnboardingColumnSchemaDto { Columns = [] };
 
         var seenWorksheetIds = new HashSet<Guid>();
-        var seenKeys = new HashSet<string>();
+        // Columns are combined across form versions by key alone — two versions mapping the
+        // same key are treated as the same column even if the label/worksheet differs between
+        // them. Whichever version is encountered first wins the displayed label/type.
+        var seenKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var columns = new List<OnboardingColumnDto>();
 
         foreach (var formVersionId in formVersionIds)
@@ -213,7 +216,7 @@ public class OnboardingRequestAppService(
                     .SelectMany(s => s.Fields.OrderBy(f => f.Order))
                     .Where(f => f.Enabled))
                 {
-                    if (!seenKeys.Add($"{field.Key}|{field.Label}")) continue;
+                    if (!seenKeys.Add(field.Key)) continue;
                     columns.Add(new OnboardingColumnDto
                     {
                         Key = field.Key,
@@ -227,7 +230,7 @@ public class OnboardingRequestAppService(
 
         foreach (var coreColumn in await ApplicationProvider.GetMappedCoreFieldColumnsAsync(resolvedCategory))
         {
-            if (!seenKeys.Add($"{coreColumn.Key}|{coreColumn.Label}")) continue;
+            if (!seenKeys.Add(coreColumn.Key)) continue;
             columns.Add(coreColumn);
         }
 

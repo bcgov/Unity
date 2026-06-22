@@ -1,4 +1,3 @@
-#nullable enable
 using System;
 using System.Linq;
 using System.Text.Json;
@@ -48,7 +47,7 @@ public class SuperUsersValidationStep(IOnboardingUserLookup userLookup)
     // "s03_SuperUserEmail"), so it's matched by name rather than a fixed key.
     private static string[] ParseDataGridEmails(string superUsers)
     {
-        DataGridRowsValue? grid;
+        DataGridRowsValue grid;
         try
         {
             grid = JsonSerializer.Deserialize<DataGridRowsValue>(superUsers);
