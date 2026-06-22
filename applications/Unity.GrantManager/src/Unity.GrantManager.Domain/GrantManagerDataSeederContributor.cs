@@ -1,4 +1,6 @@
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Assessments;
@@ -68,14 +70,28 @@ public class GrantManagerDataSeederContributor(
             new() { StatusCode = GrantApplicationState.ON_HOLD, ExternalStatus = GrantApplicationStates.ON_HOLD, InternalStatus = GrantApplicationStates.ON_HOLD },
         };
 
-        foreach (var status in statuses)
+        var existingCodes = (await applicationStatusRepository.GetListAsync())
+            .Select(s => s.StatusCode)
+            .ToHashSet();
+
+        foreach (var status in statuses.Where(s => !existingCodes.Contains(s.StatusCode)))
         {
-            var existing = await applicationStatusRepository.FirstOrDefaultAsync(s => s.StatusCode == status.StatusCode);
-            if (existing == null)
+            try
             {
-                await applicationStatusRepository.InsertAsync(status);
+                await applicationStatusRepository.InsertAsync(status, autoSave: true);
+            }
+            catch (Exception ex) when (IsDuplicateStatusCodeException(ex))
+            {
+                // Another concurrent seeder instance inserted this status first; safe to ignore.
             }
         }
+    }
+
+    private static bool IsDuplicateStatusCodeException(Exception ex)
+    {
+        var full = ex.ToString();
+        return full.Contains("IX_ApplicationStatuses_StatusCode")
+            || (full.Contains("23505") && full.Contains("ApplicationStatuses"));
     }
 
     private async Task SeedAiScoringPersonAsync(System.Guid? tenantId)

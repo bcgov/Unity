@@ -4,8 +4,9 @@
 @using Volo.Abp.AspNetCore.Mvc.UI.Layout;
 @using Unity.GrantManager.Web.Pages.ApplicationForms;
 @using Unity.GrantManager.Permissions;
-@using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal;
+
 @using Volo.Abp.Authorization.Permissions;
+@using Unity.GrantManager.Web.Views.Shared.Components.Notifications;
 @using Unity.GrantManager.Web.Views.Shared.Components.ApplicationFormConfigWidget;
 @using Volo.Abp.Features
 
@@ -21,6 +22,8 @@
 }
 @section scripts
 {
+    <abp-script src="/Views/Shared/Components/_Shared/string-utils.js" />
+    <abp-script src="/Pages/ApplicationForms/mapping-utils.js" />
     <abp-script src="/Pages/ApplicationForms/Mapping.js" />
     <abp-script src="/Pages/SettingManagement/zone-management.js" />
 }
@@ -73,6 +76,7 @@
             }
             <button class="nav-link" id="nav-other-configuration-tab" data-bs-toggle="tab"
                 data-bs-target="#nav-other-configuration" type="button" role="tab">Other Configuration</button>
+            <button class="nav-link" id="nav-notifications-tab" data-bs-toggle="tab" data-bs-target="#nav-notifications" type="button" role="tab">Notifications</button>
             @if (Model?.ShowAITab == true)
             {
                 <button class="nav-link" id="nav-ai-configuration-tab" data-bs-toggle="tab"
@@ -159,7 +163,7 @@
                         </div>
                     </div>
                     <div class="col-4">
-                        <div class="tab-content unt-tab-content" id="nav-tabContent">
+                        <div class="tab-content unt-tab-content" id="nav-tabContent-2">
                             <!--Tab Content: Mapping-->
                             <div class="tab-pane fade show active" id="nav-intake-fields" role="tabpanel"
                                 aria-labelledby="nav-intake-fields-tab">
@@ -212,8 +216,8 @@
             <div class="tab-pane fade" id="nav-custom-fields" role="tabpanel" aria-labelledby="nav-custom-fields-tab">
                 <div id="customFieldsWidget">
                     @await Component.InvokeAsync("CustomFields", 
-                        new {   formVersionId = @Model?.ApplicationFormVersionDto?.ChefsFormVersionGuid, 
-                                formName = @Model?.ApplicationFormDto?.ApplicationFormName 
+                        new {   formVersionId = Model?.ApplicationFormVersionDto?.ChefsFormVersionGuid?.ToString(), 
+                                formName = Model?.ApplicationFormDto?.ApplicationFormName 
                             }
                     )
                 </div>
@@ -251,6 +255,15 @@
             @await Component.InvokeAsync(typeof(ApplicationFormConfigWidget), new { configType = "Other",
             applicationForm = Model?.ApplicationFormDto })
         </div>
+
+
+        <!--Tab Content: Notifications -->
+         @if (await FeatureChecker.IsEnabledAsync("Unity.Notifications")) {
+        <div class="tab-pane fade" id="nav-notifications" role="tabpanel"
+            aria-labelledby="nav-notifications-tab">
+            @await Component.InvokeAsync(typeof(Notifications), new { formid = Model?.ApplicationFormDto?.Id.ToString() })
+        </div>
+        }
 
         @if (Model?.ShowAITab == true)
         {

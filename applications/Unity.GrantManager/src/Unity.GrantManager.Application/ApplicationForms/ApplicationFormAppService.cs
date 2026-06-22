@@ -220,11 +220,7 @@ public class ApplicationFormAppService
                     throw new BusinessException(GrantManagerDomainErrorCodes.ChildFormCannotReferenceSelf);
                 }
 
-                var parentForm = await Repository.FindAsync(dto.ParentFormId.Value);
-                if (parentForm is null)
-                {
-                    throw new BusinessException(GrantManagerDomainErrorCodes.ChildFormRequiresParentForm);
-                }
+                var parentForm = await Repository.FindAsync(dto.ParentFormId.Value) ?? throw new BusinessException(GrantManagerDomainErrorCodes.ChildFormRequiresParentForm);
             }
         }
 
