@@ -6,7 +6,6 @@ import re
 import json
 import hashlib
 import asyncio
-import aiohttp
 import tiktoken
 import datetime as dt
 import logging
@@ -14,11 +13,9 @@ from typing import Dict, Any, List, Optional, Tuple
 from collections import Counter
 from config import config
 from embeddings import embedding_manager
+from llm_client import build_async_client, chat_completion, usage_to_dict
 from metabase import metabase_client
 import time
-
-# Define constants
-CONTENT_TYPE = "application/json"
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -95,9 +92,14 @@ class SQLGenerator:
         winner, freq = counts.most_common(1)[0]
         return winner if freq > 1 else None
     
-    async def fetch_completion(self, prompt: str, session: aiohttp.ClientSession,
+    async def fetch_completion(self, prompt: str, client,
                               index: int, system_message: str = "You are a professional SQL programmer.") -> Optional[Tuple[str, Dict[str, int]]]:
-        """Fetch a single completion from the LLM
+        """Fetch a single completion from the LLM.
+
+        Typed SDK errors (RateLimitError, APITimeoutError, APIConnectionError,
+        APIStatusError) are NOT caught here — they propagate so the caller can
+        classify them (e.g. a 429 becomes ``rate_limit`` rather than being
+        silently swallowed). Returns None only when the model returns no content.
 
         Returns:
             Tuple of (completion_text, usage_dict) where usage_dict contains
@@ -105,36 +107,21 @@ class SQLGenerator:
         """
         logger.debug(f"[{index}] Tokens in prompt: {len(self.tokenizer.encode(prompt))}")
 
-        headers = {
-            "api-key": self.config.azure_api_key,
-            "Content-Type": CONTENT_TYPE
-        }
+        response = await chat_completion(
+            client,
+            system_message=system_message,
+            user_message=prompt,
+            temperature=self.config.temperature,
+        )
 
-        endpoint = f"{self.config.azure_endpoint}/openai/deployments/{self.config.azure_deployment}/chat/completions?api-version={self.config.azure_api_version}"
+        usage = usage_to_dict(response.usage)
+        logger.debug(f"[{index}] Tokens used: {usage.get('total_tokens', 0)}")
 
-        json_data: Dict[str, Any] = {
-            "messages": [
-                {"role": "system", "content": system_message},
-                {"role": "user", "content": prompt}
-            ]
-        }
-        if self.config.supports_temperature:
-            json_data["temperature"] = self.config.temperature
-        
-        async with session.post(
-            endpoint,
-            headers=headers,
-            json=json_data
-        ) as response:
-            if response.status != 200:
-                logger.error(f"[{index}] Error: {response.status}")
-                logger.error(await response.text())
-                return None
-
-            data = await response.json()
-            usage = data.get('usage', {})
-            logger.debug(f"[{index}] Tokens used: {usage.get('total_tokens', 0)}")
-            return data["choices"][0]["message"]["content"], usage
+        content = response.choices[0].message.content
+        if not content:
+            logger.error(f"[{index}] Completion returned no content")
+            return None
+        return content, usage
     
     def load_examples(self) -> List[str]:
         """Load example queries for few-shot prompting"""
@@ -346,8 +333,10 @@ class SQLGenerator:
             logger.error(f"No schemas found for db_id={db_id}. Embeddings may not have been generated yet.")
             return None, None, None, None
 
-        # Generate multiple completions in parallel
-        async with aiohttp.ClientSession() as session:
+        # Generate multiple completions in parallel. The client is built per
+        # request (not a module singleton) so its httpx pool stays bound to this
+        # request's event loop — every endpoint runs through its own asyncio.run.
+        async with build_async_client() as client:
             parsed_schema = await self.fetch_completion(
                 f'''Your ONLY task is to decide if the question is related to the database schema.
 DO NOT generate SQL.
@@ -357,7 +346,7 @@ Output EXACTLY one word: RELATED or UNRELATED.
 
 <question>{question}</question>
 <schema>{schemas}</schema>''',
-                session, 0,
+                client, 0,
                 system_message="You are a schema relevance filter. Output only RELATED or UNRELATED."
             )
 
@@ -378,10 +367,26 @@ Output EXACTLY one word: RELATED or UNRELATED.
                                        retry_error_type=retry_error_type, retry_error_detail=retry_error_detail)
             logger.debug(f"Prompt: {prompt[:200]}...")
             tasks = [
-                self.fetch_completion(prompt, session, i)
+                self.fetch_completion(prompt, client, i)
                 for i in range(self.config.k_samples)
             ]
-            completions = await asyncio.gather(*tasks)
+            # return_exceptions=True so one sample failing doesn't discard the
+            # others (matches the old "non-200 → skip" resilience). If EVERY
+            # sample failed, re-raise so the error can be classified upstream
+            # (e.g. a 429 → rate_limit instead of a generic ai_failure).
+            results = await asyncio.gather(*tasks, return_exceptions=True)
+
+        completions = []
+        first_error: Optional[BaseException] = None
+        for result in results:
+            if isinstance(result, BaseException):
+                first_error = first_error or result
+                logger.warning(f"Sample completion failed: {result}")
+            else:
+                completions.append(result)
+
+        if not completions and first_error is not None:
+            raise first_error
 
         # Aggregate token usage from all completions
         token_usage = self._aggregate_token_usage(completions)
@@ -560,45 +565,30 @@ ORDER BY
             Tuple of (explanation, token_usage) where token_usage contains
             prompt_tokens, completion_tokens, and total_tokens
         """
+        fallback = ("This query retrieves and analyzes your data.",
+                    {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0})
         try:
             prompt = f"""Please provide an extremely succinct explanation of this report you created. Start with "I've...":
 
 {sql}"""
-            
-            headers = {
-                "api-key": self.config.azure_api_key,
-                "Content-Type": CONTENT_TYPE
-            }
 
-            endpoint = f"{self.config.azure_endpoint}/openai/deployments/{self.config.azure_deployment}/chat/completions?api-version={self.config.azure_api_version}"
+            async with build_async_client() as client:
+                response = await chat_completion(
+                    client,
+                    system_message="You are a helpful assistant that explains SQL queries in simple terms.",
+                    user_message=prompt,
+                    temperature=0.3,
+                )
 
-            json_data: Dict[str, Any] = {
-                "messages": [
-                    {"role": "system", "content": "You are a helpful assistant that explains SQL queries in simple terms."},
-                    {"role": "user", "content": prompt}
-                ]
-            }
-            if self.config.supports_temperature:
-                json_data["temperature"] = 0.3
-            
-            async with aiohttp.ClientSession() as session:
-                async with session.post(
-                    endpoint,
-                    headers=headers,
-                    json=json_data
-                ) as response:
-                    if response.status != 200:
-                        logger.error(f"Error explaining SQL: {response.status}")
-                        return "This query retrieves and analyzes your data.", {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}
-
-                    data = await response.json()
-                    explanation = data["choices"][0]["message"]["content"].strip()
-                    usage = data.get('usage', {})
-                    return explanation, usage
+            content = response.choices[0].message.content
+            if not content:
+                logger.error("SQL explanation returned no content")
+                return fallback
+            return content.strip(), usage_to_dict(response.usage)
 
         except Exception as e:
             logger.exception(f"Error generating SQL explanation: {e}")
-            return "This query retrieves and analyzes your data.", {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}
+            return fallback
 
 
 # Global SQL generator instance

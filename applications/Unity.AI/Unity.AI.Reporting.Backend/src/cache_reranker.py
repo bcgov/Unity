@@ -6,10 +6,11 @@ Phase 3: LLMJudge — binary equivalence judge for borderline cosine zone.
 """
 import logging
 import re
-import aiohttp
 from typing import Optional, List, Dict
 
 from rapidfuzz import fuzz, process
+
+from llm_client import chat_completion
 
 logger = logging.getLogger(__name__)
 
@@ -161,53 +162,38 @@ class LLMJudge:
         self,
         q1: str,
         q2: str,
-        session: aiohttp.ClientSession,
-        ai_config,
+        client,
     ) -> tuple[int, int]:
         """Return (score, total_tokens). score in [0, 10]. Returns (0, 0) on any error."""
         try:
-            headers = {
-                "api-key": ai_config.azure_api_key,
-                "Content-Type": "application/json",
-            }
-            endpoint = (
-                f"{ai_config.azure_endpoint}/openai/deployments/"
-                f"{ai_config.azure_deployment}/chat/completions"
-                f"?api-version={ai_config.azure_api_version}"
+            response = await chat_completion(
+                client,
+                system_message=_SCORER_SYSTEM,
+                user_message=_SCORER_PROMPT.format(q1=q1, q2=q2),
+                temperature=0,
+                max_completion_tokens=1000,
             )
-            payload = {
-                "messages": [
-                    {"role": "system", "content": _SCORER_SYSTEM},
-                    {"role": "user", "content": _SCORER_PROMPT.format(q1=q1, q2=q2)},
-                ],
-                "max_completion_tokens": 1000,
-            }
-            if ai_config.supports_temperature:
-                payload["temperature"] = 0
-            async with session.post(endpoint, headers=headers, json=payload) as resp:
-                if resp.status != 200:
-                    error_body = await resp.text()
-                    logger.warning(f"[llm_judge] API error status={resp.status} body={error_body}")
-                    return 0, 0
-                data = await resp.json()
-                choice = data["choices"][0]
-                finish_reason = choice.get("finish_reason", "unknown")
-                text = choice["message"].get("content") or ""
-                usage = data.get("usage", {})
-                tokens = usage.get("total_tokens", 0)
-                reasoning_tokens = usage.get("completion_tokens_details", {}).get("reasoning_tokens", 0)
-                if finish_reason == "content_filter":
-                    logger.warning(
-                        "[llm_judge] content_filter triggered — defaulting score=0"
-                    )
-                    return 0, tokens
-                score = self._parse_score(text)
-                logger.debug(
-                    f"[llm_judge] finish_reason={finish_reason} "
-                    f"reasoning_tokens={reasoning_tokens} "
-                    f"raw_response={text!r} parsed_score={score}"
+            choice = response.choices[0]
+            finish_reason = choice.finish_reason or "unknown"
+            text = choice.message.content or ""
+            usage = response.usage
+            tokens = getattr(usage, "total_tokens", 0) if usage else 0
+            reasoning_tokens = 0
+            details = getattr(usage, "completion_tokens_details", None) if usage else None
+            if details:
+                reasoning_tokens = getattr(details, "reasoning_tokens", 0) or 0
+            if finish_reason == "content_filter":
+                logger.warning(
+                    "[llm_judge] content_filter triggered — defaulting score=0"
                 )
-                return score, tokens
+                return 0, tokens
+            score = self._parse_score(text)
+            logger.debug(
+                f"[llm_judge] finish_reason={finish_reason} "
+                f"reasoning_tokens={reasoning_tokens} "
+                f"raw_response={text!r} parsed_score={score}"
+            )
+            return score, tokens
         except Exception as exc:
             logger.warning(f"[llm_judge] Exception, defaulting score=0: {exc}")
             return 0, 0

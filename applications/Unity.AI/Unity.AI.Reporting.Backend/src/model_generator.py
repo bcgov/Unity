@@ -21,9 +21,8 @@ import re
 from collections import defaultdict
 from typing import Optional
 
-import aiohttp
-
 from config import config
+from llm_client import build_async_client, chat_completion
 from metabase import metabase_client
 from model_prompts import (
     ENHANCE_AND_NAME_PROMPT,
@@ -34,8 +33,6 @@ from model_prompts import (
     SYSTEM_PROMPT,
 )
 from schema_repository import SchemaRepository
-
-CONTENT_TYPE = "application/json"
 
 logger = logging.getLogger(__name__)
 
@@ -257,8 +254,8 @@ class DataModelGenerator:
         samples_text = self._format_samples_for_prompt(samples)
         prompt = ENHANCE_AND_NAME_PROMPT.format(sql=sql, samples=samples_text)
 
-        async with aiohttp.ClientSession() as session:
-            raw = await self._post_completion(session, SYSTEM_PROMPT, prompt)
+        async with build_async_client(max_retries=0) as client:
+            raw = await self._post_completion(client, SYSTEM_PROMPT, prompt)
 
         if not raw:
             return None, None, None
@@ -619,8 +616,8 @@ class DataModelGenerator:
         columns_preview = ", ".join(columns[:25])
         prompt = NAMING_PROMPT.format(source=source, columns=columns_preview)
 
-        async with aiohttp.ClientSession() as session:
-            raw = await self._post_completion(session, SYSTEM_PROMPT, prompt, max_tokens=300)
+        async with build_async_client(max_retries=0) as client:
+            raw = await self._post_completion(client, SYSTEM_PROMPT, prompt, max_tokens=300)
 
         if raw:
             try:
@@ -1317,8 +1314,8 @@ class DataModelGenerator:
             additional_views_text=additional_views_text,
         )
 
-        async with aiohttp.ClientSession() as session:
-            new_sql = await self._post_completion(session, SYSTEM_PROMPT, modify_request)
+        async with build_async_client(max_retries=0) as client:
+            new_sql = await self._post_completion(client, SYSTEM_PROMPT, modify_request)
         if not new_sql:
             raise RuntimeError(
                 "AI service failed to generate modified SQL — "
@@ -1572,9 +1569,9 @@ class DataModelGenerator:
 
     async def _generate_single(self, prompt: str) -> Optional[dict]:
         """Call AI to generate a single model definition."""
-        async with aiohttp.ClientSession() as session:
+        async with build_async_client(max_retries=0) as client:
             for attempt in range(3):
-                raw = await self._post_completion(session, SYSTEM_PROMPT, prompt)
+                raw = await self._post_completion(client, SYSTEM_PROMPT, prompt)
                 if not raw:
                     logger.warning(f"Generation attempt {attempt + 1} returned None")
                     continue
@@ -1591,46 +1588,29 @@ class DataModelGenerator:
             bad_sql=bad_sql, error=error, columns_text=columns_text,
             join_keys_text=join_keys_text, relationships_text=relationships_text,
         )
-        async with aiohttp.ClientSession() as session:
-            result = await self._post_completion(session, SYSTEM_PROMPT, prompt)
+        async with build_async_client(max_retries=0) as client:
+            result = await self._post_completion(client, SYSTEM_PROMPT, prompt)
         if not result:
             return None
         result = re.sub(r"^```sql\s*", "", result.strip(), flags=re.IGNORECASE)
         result = _strip_trailing_code_fence(result)
         return result.strip() or None
 
-    async def _post_completion(self, session: aiohttp.ClientSession,
+    async def _post_completion(self, client,
                                system_message: str, prompt: str,
                                max_tokens: int = 4000) -> Optional[str]:
         """Call the configured LLM. `max_tokens` caps completion length — naming-only
-        calls pass a small value to avoid paying for the full SQL-sized budget."""
-        ai_cfg = config.ai
+        calls pass a small value to avoid paying for the full SQL-sized budget.
 
-        headers = {
-            "api-key": ai_cfg.azure_api_key,
-            "Content-Type": CONTENT_TYPE,
-        }
-        endpoint = (
-            f"{ai_cfg.azure_endpoint}/openai/deployments/"
-            f"{ai_cfg.azure_deployment}/chat/completions"
-            f"?api-version={ai_cfg.azure_api_version}"
-        )
-        json_data = {
-            "messages": [
-                {"role": "system", "content": system_message},
-                {"role": "user", "content": prompt},
-            ],
-            "max_completion_tokens": max_tokens,
-        }
-
+        Fail-safe: returns None on any error; callers retry or fall back."""
         try:
-            timeout = aiohttp.ClientTimeout(total=120)
-            async with session.post(endpoint, headers=headers, json=json_data, timeout=timeout) as response:
-                if response.status != 200:
-                    logger.error(f"LLM error: {response.status} {await response.text()}")
-                    return None
-                data = await response.json()
-                return data["choices"][0]["message"]["content"]
+            response = await chat_completion(
+                client.with_options(timeout=120),
+                system_message=system_message,
+                user_message=prompt,
+                max_completion_tokens=max_tokens,
+            )
+            return response.choices[0].message.content
         except Exception as e:
             logger.exception(f"LLM request failed: {e}")
             return None
