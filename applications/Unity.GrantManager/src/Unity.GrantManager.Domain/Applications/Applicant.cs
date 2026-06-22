@@ -13,10 +13,6 @@ public class Applicant : AuditedAggregateRoot<Guid>, IMultiTenant
     public string? OrgNumber { get; set; }
     public string? OrgStatus { get; set; }
     public string? OrganizationType { get; set; }
-    // Retained to protect the DB column from being dropped by EF Core migrations.
-    // No longer read or written by Unity — ApproxNumberOfEmployees is the canonical field.
-    // Do not remove until a DB migration explicitly drops or consolidates the column.
-    public string? OrganizationSize { get; set; }
     public string? Sector { get; set; }
     public string? SubSector { get; set; }
     public string? Status { get; set; }

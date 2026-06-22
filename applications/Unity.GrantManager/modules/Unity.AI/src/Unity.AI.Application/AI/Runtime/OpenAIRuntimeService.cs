@@ -19,6 +19,7 @@ namespace Unity.AI.Runtime
         private readonly ILogger<OpenAIRuntimeService> _logger;
         private readonly OpenAITransportService _openAITransportService;
         private readonly OpenAIConfigurationResolver _openAIConfigurationResolver;
+        private readonly IAIPromptTemplateProvider _promptTemplateProvider;
         private readonly OpenAIPromptFileLogger _promptFileLogger;
         private const string ApplicationAnalysisPromptType = AIPromptTypes.ApplicationAnalysis;
         private const string AttachmentSummaryPromptType = AIPromptTypes.AttachmentSummary;
@@ -29,11 +30,13 @@ namespace Unity.AI.Runtime
             ILogger<OpenAIRuntimeService> logger,
             OpenAITransportService openAITransportService,
             OpenAIConfigurationResolver openAIConfigurationResolver,
+            IAIPromptTemplateProvider promptTemplateProvider,
             OpenAIPromptFileLogger promptFileLogger)
         {
             _logger = logger;
             _openAITransportService = openAITransportService;
             _openAIConfigurationResolver = openAIConfigurationResolver;
+            _promptTemplateProvider = promptTemplateProvider;
             _promptFileLogger = promptFileLogger;
         }
 
@@ -57,7 +60,11 @@ namespace Unity.AI.Runtime
             {
                 ArgumentNullException.ThrowIfNull(request);
                 var settings = _openAIConfigurationResolver.ResolveOperationSettings(ApplicationAnalysisPromptType);
-                var promptVersion = OpenAIPromptRenderer.ResolvePromptVersion(request.PromptVersion ?? settings.PromptVersion);
+                var promptTemplate = await _promptTemplateProvider.GetRequiredPromptAsync(
+                    ApplicationAnalysisPromptType,
+                    request.PromptVersion ?? settings.PromptVersion,
+                    cancellationToken);
+                var promptVersion = promptTemplate.PromptVersion;
                 var data = JsonSerializer.Serialize(request.Data, AIJsonDefaults.Indented);
                 var schema = JsonSerializer.Serialize(request.Schema, AIJsonDefaults.Indented);
 
@@ -70,12 +77,13 @@ namespace Unity.AI.Runtime
                     .Cast<object>();
 
                 var attachments = JsonSerializer.Serialize(attachmentsPayload, AIJsonDefaults.Indented);
-                var systemPrompt = OpenAIPromptRenderer.BuildApplicationAnalysisSystemPrompt(promptVersion);
-                var applicationAnalysisContent = OpenAIPromptRenderer.BuildApplicationAnalysisUserPrompt(
-                    promptVersion,
+                var systemPrompt = promptTemplate.SystemPrompt;
+                var applicationAnalysisContent = AIPromptTemplateRenderer.BuildApplicationAnalysisUserPrompt(
+                    promptTemplate.UserPromptTemplate,
                     schema,
                     data,
-                    attachments);
+                    attachments,
+                    promptTemplate.MetadataJson);
 
                 await _promptFileLogger.LogPromptInputAsync(ApplicationAnalysisPromptType, promptVersion, systemPrompt, applicationAnalysisContent, cancellationToken);
                 var result = await GenerateWithRetryAsync(
@@ -114,13 +122,17 @@ namespace Unity.AI.Runtime
             ArgumentNullException.ThrowIfNull(request);
             var fileName = request.FileName ?? string.Empty;
             var contentType = request.ContentType ?? "application/octet-stream";
-            var settings = _openAIConfigurationResolver.ResolveOperationSettings(AttachmentSummaryPromptType);
-            var promptVersion = OpenAIPromptRenderer.ResolvePromptVersion(request.PromptVersion ?? settings.PromptVersion);
 
             try
             {
+                var settings = _openAIConfigurationResolver.ResolveOperationSettings(AttachmentSummaryPromptType);
+                var promptTemplate = await _promptTemplateProvider.GetRequiredPromptAsync(
+                    AttachmentSummaryPromptType,
+                    request.PromptVersion ?? settings.PromptVersion,
+                    cancellationToken);
+                var promptVersion = promptTemplate.PromptVersion;
                 var extractedText = request.ExtractedText;
-                var prompt = OpenAIPromptRenderer.BuildAttachmentSummarySystemPrompt(promptVersion);
+                var prompt = promptTemplate.SystemPrompt;
 
                 var attachmentText = string.IsNullOrWhiteSpace(extractedText) ? null : extractedText;
                 if (attachmentText != null)
@@ -139,7 +151,10 @@ namespace Unity.AI.Runtime
                     text = attachmentText
                 };
                 var attachment = JsonSerializer.Serialize(attachmentPayload, AIJsonDefaults.Indented);
-                var contentToAnalyze = OpenAIPromptRenderer.BuildAttachmentSummaryUserPrompt(promptVersion, attachment);
+                var contentToAnalyze = AIPromptTemplateRenderer.BuildAttachmentSummaryUserPrompt(
+                    promptTemplate.UserPromptTemplate,
+                    attachment,
+                    promptTemplate.MetadataJson);
 
                 await _promptFileLogger.LogPromptInputAsync(AttachmentSummaryPromptType, promptVersion, prompt, contentToAnalyze, cancellationToken);
                 var result = await GenerateWithRetryAsync(
@@ -184,16 +199,20 @@ namespace Unity.AI.Runtime
         public async Task<ApplicationScoringResponse> GenerateApplicationScoringAsync(ApplicationScoringRequest request, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(request);
-            var settings = _openAIConfigurationResolver.ResolveOperationSettings(ApplicationScoringPromptType);
-            var promptVersion = OpenAIPromptRenderer.ResolvePromptVersion(request.PromptVersion ?? settings.PromptVersion);
-            var dataJson = JsonSerializer.Serialize(request.Data, AIJsonDefaults.Indented);
-            var sectionJson = JsonSerializer.Serialize(request.SectionSchema, AIJsonDefaults.Indented);
-
-            var attachmentSummaries = request.Attachments
-                .Select(a => $"{a.Name}: {a.Summary}")
-                .ToList();
             try
             {
+                var settings = _openAIConfigurationResolver.ResolveOperationSettings(ApplicationScoringPromptType);
+                var promptTemplate = await _promptTemplateProvider.GetRequiredPromptAsync(
+                    ApplicationScoringPromptType,
+                    request.PromptVersion ?? settings.PromptVersion,
+                    cancellationToken);
+                var promptVersion = promptTemplate.PromptVersion;
+                var dataJson = JsonSerializer.Serialize(request.Data, AIJsonDefaults.Indented);
+                var sectionJson = JsonSerializer.Serialize(request.SectionSchema, AIJsonDefaults.Indented);
+
+                var attachmentSummaries = request.Attachments
+                    .Select(a => $"{a.Name}: {a.Summary}")
+                    .ToList();
                 var attachments = attachmentSummaries.Count > 0
                     ? string.Join("\n- ", attachmentSummaries.Select((summary, index) => $"Attachment {index + 1}: {summary}"))
                     : "[]";
@@ -208,13 +227,14 @@ namespace Unity.AI.Runtime
                     return new ApplicationScoringResponse();
                 }
 
-                var applicationScoringContent = OpenAIPromptRenderer.BuildApplicationScoringUserPrompt(
-                    promptVersion,
+                var applicationScoringContent = AIPromptTemplateRenderer.BuildApplicationScoringUserPrompt(
+                    promptTemplate.UserPromptTemplate,
                     dataJson,
                     attachments,
                     section,
-                    response);
-                var systemPrompt = OpenAIPromptRenderer.BuildApplicationScoringSystemPrompt(promptVersion);
+                    response,
+                    promptTemplate.MetadataJson);
+                var systemPrompt = promptTemplate.SystemPrompt;
 
                 await _promptFileLogger.LogPromptInputAsync(ApplicationScoringPromptType, promptVersion, systemPrompt, applicationScoringContent, cancellationToken);
                 var result = await GenerateWithRetryAsync(

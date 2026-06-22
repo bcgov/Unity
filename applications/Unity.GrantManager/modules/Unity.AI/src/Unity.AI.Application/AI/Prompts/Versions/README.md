@@ -1,11 +1,9 @@
 # Runtime Prompt Templates
 
-These files are the source of truth for runtime prompts.
-`OpenAIRuntimeService` resolves templates from:
+Runtime prompts are now resolved from the database-backed `AIPrompts` and `AIPromptVersions` records seeded by the AI module.
+These files are retained as prompt asset references and seed inputs, not as the runtime source of truth.
 
-- `AI/Prompts/Versions/<version>/<template>.txt`
-
-Current templates:
+Current prompt asset references:
 
 - `application-analysis.system.txt`
 - `application-analysis.user.txt`
@@ -45,10 +43,6 @@ Version selection:
 
 Template loading is strict:
 
-- Core templates are required for each version.
-- Missing required templates fail fast at runtime with a configuration error.
-- Fragment templates are required when the corresponding placeholder is present in the parent template.
-- Fragment resolution is automatic using `<base>.<placeholder-lower>.txt` from the same version folder.
-  - Example: `application-analysis.user.txt` with `{{RULES}}` resolves `application-analysis.rules.txt`.
-- `{{COMMON_*}}` placeholders resolve to `common.<suffix>.txt` where suffix is lower-cased and `_` becomes `.`.
-  - Example: `{{COMMON_RULES}}` resolves `common.rules.txt`.
+- Core prompt records are required for each version.
+- Missing required prompt records fail fast at runtime with a configuration error.
+- Runtime prompt rendering resolves placeholders from the stored template text plus the version metadata sections.

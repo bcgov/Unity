@@ -65,7 +65,10 @@ $(function () {
     }
 
     function setGenerateSummariesEnabled() {
-        $('#generateAiSummaries').prop('disabled', selectedAttachmentIds.length === 0);
+        const disabled = selectedAttachmentIds.length === 0;
+        $('#generateAiSummaries')
+            .prop('disabled', disabled)
+            .attr('data-ai-local-disabled', disabled ? '1' : '0');
     }
 
     function setDownloadAllEnabled() {
@@ -168,6 +171,7 @@ $(function () {
     // Generate AI summaries for the current application attachments.
     const $generateAISummariesButton = $('#generateAiSummaries');
     if ($generateAISummariesButton.length > 0) {
+        setGenerateSummariesEnabled();
         $generateAISummariesButton.on('click', function () {
             const $button = $(this);
             const triggerButton = $button.data('trigger-button');
