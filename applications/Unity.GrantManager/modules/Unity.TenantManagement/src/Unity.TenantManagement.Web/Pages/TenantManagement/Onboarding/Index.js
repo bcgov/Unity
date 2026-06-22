@@ -281,13 +281,21 @@
 
     let _fieldValues = {};
 
+    function _sanitizePreviewHtml(html) {
+        const value = String(html || '');
+        const escaped = _escapeHtml(value);
+        return escaped
+            .replace(/&lt;span class=&quot;text-muted&quot;&gt;—&lt;\/span&gt;/g, '<span class="text-muted">—</span>');
+    }
+
     function _updateFieldPreview(selectId, previewId, renderer) {
         const key = $('#' + selectId).val();
         const raw = key ? (_fieldValues[key] ?? '') : '';
         const text = raw ? String(raw) : '';
         const $preview = $('#' + previewId);
         if (renderer) {
-            $preview.html(renderer(text, 'display') || '<span class="text-muted">—</span>');
+            const rendered = renderer(text, 'display') || '<span class="text-muted">—</span>';
+            $preview.html(_sanitizePreviewHtml(rendered));
         } else {
             $preview.text(text || '—').toggleClass('text-muted', !text);
         }
