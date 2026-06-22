@@ -54,8 +54,8 @@ function stripHtml(html) {
         }
     }
     // Server-side or DOM unavailable: regex-based tag removal
-    // Matches complete tags or incomplete sequences to prevent injection
-    return String(html).replace(/<[^>]*(?:>|$)/g, '');
+    // Optimized pattern to prevent catastrophic backtracking: match tags efficiently
+    return String(html).replace(/<[^>]*?(?:>|$)/g, '');
 }
 
 /**

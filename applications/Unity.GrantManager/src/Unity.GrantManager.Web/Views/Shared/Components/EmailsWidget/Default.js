@@ -1384,7 +1384,7 @@
     const refreshTodayDateSpans = (html) => {
         if (!html) return html;
         return html.replaceAll(
-            /<span[^>]*data-token="today_date"[^>]*>[\s\S]*?<\/span>/gi,
+            /<span\s[^>]*?data-token="today_date"[^>]*?>[\s\S]*?<\/span>/gi,
             buildTodayDateHtml()
         );
     };

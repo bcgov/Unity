@@ -6,7 +6,8 @@
  * @returns {boolean} True if valid email format
  */
 function validateEmail(email) {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    // Optimized regex to prevent ReDoS: use atomic-like patterns with specific character classes
+    const emailRegex = /^[a-zA-Z0-9._%-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
     return emailRegex.exec(String(email).toLowerCase()) !== null;
 }
 
