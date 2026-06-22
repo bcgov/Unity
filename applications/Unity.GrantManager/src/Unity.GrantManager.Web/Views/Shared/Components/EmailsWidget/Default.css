@@ -539,13 +539,12 @@
     display: none;
 }
 
-#applicationEmailsWidget .toast-top-center { 
+#applicationEmailsWidget .toast-top-center {
     top: 220px;
     margin: 0 auto;
     left: 50%;
     margin-left: -450px;
 }
-
 
 #applicationEmailsWidget #modal-background.active,
 #applicationEmailsWidget #modal-content.active {
@@ -563,7 +562,7 @@
 	border-radius: 50%;
 	border: 5px solid #eaf5fe;
 	border-right-color: #5597d4;
-	animation: rotateSpinner 800ms linear infinite;  
+	animation: rotateSpinner 800ms linear infinite;
 }
 
 #applicationEmailsWidget .email-spinner-text {
@@ -751,10 +750,6 @@
     gap: 1.5rem;
 }
 
-
-
-
-
 #schedule-date-input {
     width: 100%;
     box-sizing: border-box;
@@ -790,7 +785,7 @@
 .input-group-text {
     background: #f8f9fa;
     border-color: #ced4da;
-    color: #6c757d;
+    color: #495057;
 }
 
 /* Footer */
