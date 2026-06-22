@@ -285,7 +285,7 @@
         const value = String(html || '');
         const escaped = _escapeHtml(value);
         return escaped
-            .replace(/&lt;span class=&quot;text-muted&quot;&gt;—&lt;\/span&gt;/g, '<span class="text-muted">—</span>');
+            .replaceAll(/&lt;span class=&quot;text-muted&quot;&gt;—&lt;\/span&gt;/g, '<span class="text-muted">—</span>');
     }
 
     function _updateFieldPreview(selectId, previewId, renderer) {
