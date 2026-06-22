@@ -6,6 +6,7 @@ using Unity.GrantManager.Applications;
 using Unity.GrantManager.Notifications;
 using Unity.Notifications.EmailGroups;
 using Unity.Notifications.Emails;
+using Unity.Notifications.Events;
 using Unity.Notifications.Settings;
 using Unity.Notifications.Templates;
 using Volo.Abp.DependencyInjection;
@@ -33,6 +34,7 @@ namespace Unity.GrantManager.Events
         IFeatureChecker featureChecker,
         ISettingProvider settingProvider,
         ICurrentTenant currentTenant,
+        ScheduledNotificationHelper scheduledNotificationHelper,
         ILogger<ScheduledNotificationEventHandler> logger)
         : ILocalEventHandler<ApplicationChangedEvent>, ITransientDependency
     {
@@ -113,17 +115,32 @@ namespace Unity.GrantManager.Events
                 string.IsNullOrWhiteSpace(template.BodyHTML) ? template.BodyText : template.BodyHTML,
                 tokenValues);
 
+            // Build email event with common properties
+            var emailEvent = new EmailNotificationEvent
+            {
+                Action = EmailAction.SendEventDriven,
+                TenantId = currentTenant.Id,
+                ApplicationId = application.Id,
+                ScheduledNotificationId = notification.Id,
+                TemplateId = template.Id,
+                EmailTemplateName = template.Name,
+                Subject = subject,
+                Body = body,
+                EmailFrom = emailFrom,
+                RetryAttempts = 0
+            };
 
+            // Publish based on recipient category
             if (string.Equals(notification.RecipientCategory, "Internal", StringComparison.OrdinalIgnoreCase))
             {
-                await ScheduledNotificationHelper.PublishToEmailGroupAsync(
+                await scheduledNotificationHelper.PublishToEmailGroupAsync(
                     emailGroupsAppService, emailGroupUsersAppService, identityUserIntegrationService,
-                    currentTenant, localEventBus, notification, application.Id, template, subject, body, emailFrom, logger);
+                    localEventBus, notification, emailEvent);
             }
             else if (string.Equals(notification.RecipientCategory, "External", StringComparison.OrdinalIgnoreCase))
             {
-                await ScheduledNotificationHelper.PublishToExternalRecipientAsync(
-                    currentTenant, localEventBus, notification, application, applicantAgent, template, subject, body, emailFrom, logger);
+                await scheduledNotificationHelper.PublishToExternalRecipientAsync(
+                    localEventBus, notification, application, applicantAgent, emailEvent);
             }
             else
             {
@@ -159,6 +176,7 @@ namespace Unity.GrantManager.Events
                     TemplateName = template.Name,
                     Tag = "ScheduledNotificationEventHandler", // Identifies source as event handler
                     Status = EmailStatus.Draft,
+                    EmailType = EmailType.EventBased,
                     RetryAttempts = 0
                 };
 

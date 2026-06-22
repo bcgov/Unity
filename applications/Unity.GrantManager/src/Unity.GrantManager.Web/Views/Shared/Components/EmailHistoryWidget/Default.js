@@ -151,11 +151,11 @@
                     className: 'text-center',
                     render: function (data, _, full, meta) {
                         // Show delete button for drafts
-                        if (data === 'Draft' && abp.auth.isGranted('Notifications.Email.Send')) {
+                        if (data === 'Draft' && abp.auth.isGranted('Notifications.Email.DeleteDraft')) {
                             return generateDeleteButtonContent(full, meta.row);
                         }
                         // Show cancel button for scheduled sends that haven't passed yet
-                        else if (full.sendOnDateTime && abp.auth.isGranted('Notifications.Email.Send')) {
+                        else if (full.sendOnDateTime && abp.auth.isGranted('Notifications.Email.CancelScheduled')) {
                             const sendOnDateTime = new Date(full.sendOnDateTime);
                             const now = new Date();
                             if (sendOnDateTime > now) {

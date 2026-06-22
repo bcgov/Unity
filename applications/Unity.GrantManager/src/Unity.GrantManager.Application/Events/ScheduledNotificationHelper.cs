@@ -20,8 +20,10 @@ namespace Unity.GrantManager.Events
     /// Helper service for scheduled notification processing - shared logic between
     /// event-based (ScheduledNotificationEventHandler) and date-based (DateBasedScheduledNotificationJob) handlers.
     /// </summary>
-    public partial class ScheduledNotificationHelper
+    public partial class ScheduledNotificationHelper(ILoggerFactory loggerFactory)
     {
+        private readonly ILogger<ScheduledNotificationHelper> _logger = loggerFactory.CreateLogger<ScheduledNotificationHelper>();
+
         /// <summary>
         /// Generated regex for template token replacement - compiled at compile-time.
         /// Matches {{token}} patterns where token is one or more word characters.
@@ -89,19 +91,13 @@ namespace Unity.GrantManager.Events
         /// Internal category: RecipientIdentifier is a comma-separated list of email group names.
         /// Resolve the groups, their users, and their identity email addresses.
         /// </summary>
-        public static async Task PublishToEmailGroupAsync(
+        public async Task PublishToEmailGroupAsync(
             IEmailGroupsAppService emailGroupsAppService,
             IEmailGroupUsersAppService emailGroupUsersAppService,
             IIdentityUserIntegrationService identityUserIntegrationService,
-            ICurrentTenant currentTenant,
             ILocalEventBus localEventBus,
             ScheduledNotification notification,
-            Guid applicationId,
-            EmailTemplate template,
-            string subject,
-            string body,
-            string emailFrom,
-            ILogger logger)
+            EmailNotificationEvent emailEvent)
         {
             var allGroups = await emailGroupsAppService.GetListAsync();
             
@@ -114,7 +110,7 @@ namespace Unity.GrantManager.Events
 
             if (recipientIdentifiers.Count == 0)
             {
-                logger.LogWarning(
+                _logger.LogWarning(
                     "ScheduledNotificationHelper: No recipient identifiers provided for notification {NotificationId}, skipping.",
                     notification.Id);
                 return;
@@ -129,7 +125,7 @@ namespace Unity.GrantManager.Events
 
                 if (group == null)
                 {
-                    logger.LogWarning(
+                    _logger.LogWarning(
                         "ScheduledNotificationHelper: Email group '{GroupName}' not found for notification {NotificationId}, skipping group.",
                         recipientId, notification.Id);
                     continue;
@@ -138,7 +134,7 @@ namespace Unity.GrantManager.Events
                 var groupUsers = await emailGroupUsersAppService.GetEmailGroupUsersByGroupIdAsync(group.Id);
                 if (groupUsers.Count == 0)
                 {
-                    logger.LogWarning(
+                    _logger.LogWarning(
                         "ScheduledNotificationHelper: Email group '{GroupName}' has no members for notification {NotificationId}, skipping group.",
                         recipientId, notification.Id);
                     continue;
@@ -156,47 +152,28 @@ namespace Unity.GrantManager.Events
 
             if (emailAddresses.Count == 0)
             {
-                logger.LogWarning(
+                _logger.LogWarning(
                     "ScheduledNotificationHelper: No resolvable email addresses in any groups for notification {NotificationId}, skipping.",
                     notification.Id);
                 return;
             }
+            emailEvent.EmailAddressList = emailAddresses.ToList();            await localEventBus.PublishAsync(emailEvent);
 
-            await localEventBus.PublishAsync(new EmailNotificationEvent
-            {
-                Action = EmailAction.SendCustom,
-                TenantId = currentTenant.Id,
-                ApplicationId = applicationId,
-                ScheduledNotificationId = notification.Id,
-                TemplateId = template.Id,
-                EmailTemplateName = template.Name,
-                Subject = subject,
-                Body = body,
-                EmailAddressList = emailAddresses.ToList(),
-                EmailFrom = emailFrom,
-                RetryAttempts = 0
-            });
-
-            logger.LogInformation(
+            _logger.LogInformation(
                 "ScheduledNotificationHelper: Published EmailNotificationEvent for application {ApplicationId}, template {TemplateName}, groups '{GroupNames}' ({Count} recipients).",
-                applicationId, template.Name, notification.RecipientIdentifier, emailAddresses.Count);
+                emailEvent.ApplicationId, emailEvent.EmailTemplateName, notification.RecipientIdentifier, emailAddresses.Count);
         }
 
         /// <summary>
         /// External category: RecipientIdentifier is a comma-separated list of "ApplicationContact" and/or "SigningAuthority".
         /// Resolve the emails from the application record for each recipient type.
         /// </summary>
-        public static async Task PublishToExternalRecipientAsync(
-            ICurrentTenant currentTenant,
+        public async Task PublishToExternalRecipientAsync(
             ILocalEventBus localEventBus,
             ScheduledNotification notification,
             Application application,
             ApplicantAgent? applicantAgent,
-            EmailTemplate template,
-            string subject,
-            string body,
-            string emailFrom,
-            ILogger logger)
+            EmailNotificationEvent emailEvent)
         {
             // Split comma-separated recipient identifiers and collect unique email addresses
             var recipientIdentifiers = notification.RecipientIdentifier?
@@ -207,7 +184,7 @@ namespace Unity.GrantManager.Events
 
             if (recipientIdentifiers.Count == 0)
             {
-                logger.LogWarning(
+                _logger.LogWarning(
                     "ScheduledNotificationHelper: No recipient identifiers provided for notification {NotificationId}, skipping.",
                     notification.Id);
                 return;
@@ -229,7 +206,7 @@ namespace Unity.GrantManager.Events
                 }
                 else
                 {
-                    logger.LogWarning(
+                    _logger.LogWarning(
                         "ScheduledNotificationHelper: Unknown external RecipientIdentifier '{Identifier}' for notification {NotificationId}, skipping identifier.",
                         recipientId, notification.Id);
                     continue;
@@ -237,7 +214,7 @@ namespace Unity.GrantManager.Events
 
                 if (string.IsNullOrWhiteSpace(emailTo))
                 {
-                    logger.LogWarning(
+                    _logger.LogWarning(
                         "ScheduledNotificationHelper: No email address found for '{Identifier}' on application {ApplicationId}, skipping identifier.",
                         recipientId, application.Id);
                     continue;
@@ -248,42 +225,29 @@ namespace Unity.GrantManager.Events
 
             if (emailAddresses.Count == 0)
             {
-                logger.LogWarning(
+                _logger.LogWarning(
                     "ScheduledNotificationHelper: No resolvable email addresses for any recipients on application {ApplicationId}, skipping notification {NotificationId}.",
                     application.Id, notification.Id);
                 return;
             }
 
-            await localEventBus.PublishAsync(new EmailNotificationEvent
-            {
-                Action = EmailAction.SendCustom,
-                TenantId = currentTenant.Id,
-                ApplicationId = application.Id,
-                ScheduledNotificationId = notification.Id,
-                TemplateId = template.Id,
-                EmailTemplateName = template.Name,
-                Subject = subject,
-                Body = body,
-                EmailAddressList = emailAddresses.ToList(),
-                EmailFrom = emailFrom,
-                RetryAttempts = 0
-            });
+            emailEvent.EmailAddressList = emailAddresses.ToList();
+            await localEventBus.PublishAsync(emailEvent);
 
-            logger.LogInformation(
+            _logger.LogInformation(
                 "ScheduledNotificationHelper: Published EmailNotificationEvent for application {ApplicationId}, template {TemplateName}, recipients '{RecipientIdentifiers}' ({Count} email addresses).",
-                application.Id, template.Name, notification.RecipientIdentifier, emailAddresses.Count);
+                application.Id, emailEvent.EmailTemplateName, notification.RecipientIdentifier, emailAddresses.Count);
         }
 
         /// <summary>
         /// Resolves internal recipient email addresses by looking up email groups and their member email addresses.
         /// Used for draft creation and other contexts where only a string list of emails is needed.
         /// </summary>
-        public static async Task<string> GetInternalRecipientEmailAddressesAsync(
+        public async Task<string> GetInternalRecipientEmailAddressesAsync(
             ScheduledNotification notification,
             IEmailGroupsAppService emailGroupsAppService,
             IEmailGroupUsersAppService emailGroupUsersAppService,
-            IIdentityUserIntegrationService identityUserIntegrationService,
-            ILogger logger)
+            IIdentityUserIntegrationService identityUserIntegrationService)
         {
             try
             {
@@ -304,7 +268,7 @@ namespace Unity.GrantManager.Events
 
                     if (group == null)
                     {
-                        logger.LogWarning(
+                        _logger.LogWarning(
                             "ScheduledNotificationHelper: Email group '{GroupName}' not found for notification {NotificationId}.",
                             recipientId, notification.Id);
                         continue;
@@ -313,7 +277,7 @@ namespace Unity.GrantManager.Events
                     var groupUsers = await emailGroupUsersAppService.GetEmailGroupUsersByGroupIdAsync(group.Id);
                     if (groupUsers.Count == 0)
                     {
-                        logger.LogWarning(
+                        _logger.LogWarning(
                             "ScheduledNotificationHelper: Email group '{GroupName}' has no members for notification {NotificationId}.",
                             recipientId, notification.Id);
                         continue;
@@ -331,7 +295,7 @@ namespace Unity.GrantManager.Events
                         }
                         catch (Exception ex)
                         {
-                            logger.LogWarning(ex,
+                            _logger.LogWarning(ex,
                                 "ScheduledNotificationHelper: Error retrieving email for user {UserId} in group '{GroupName}'.",
                                 groupUser.UserId, recipientId);
                         }
@@ -342,7 +306,7 @@ namespace Unity.GrantManager.Events
             }
             catch (Exception ex)
             {
-                logger.LogError(ex,
+                _logger.LogError(ex,
                     "ScheduledNotificationHelper: Error getting internal recipient email addresses for notification {NotificationId}.",
                     notification.Id);
                 return string.Empty;

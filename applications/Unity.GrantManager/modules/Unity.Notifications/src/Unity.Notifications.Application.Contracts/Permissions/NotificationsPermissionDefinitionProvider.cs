@@ -17,8 +17,16 @@ public class NotificationsPermissionDefinitionProvider : PermissionDefinitionPro
                 L($"Permission:{NotificationsPermissions.Email.Default}"));
 
         notificationsPermissions.AddChild(
-            NotificationsPermissions.Email.Delete,
-            L($"Permission:{NotificationsPermissions.Email.Delete}"));
+            NotificationsPermissions.Email.Send,
+            L($"Permission:{NotificationsPermissions.Email.Send}"));
+
+        notificationsPermissions.AddChild(
+            NotificationsPermissions.Email.DeleteDraft,
+            L($"Permission:{NotificationsPermissions.Email.DeleteDraft}"));
+
+        notificationsPermissions.AddChild(
+            NotificationsPermissions.Email.CancelScheduled,
+            L($"Permission:{NotificationsPermissions.Email.CancelScheduled}"));
 
         notificationsPermissions.AddChild(
             NotificationsPermissions.Email.Schedule,
@@ -43,6 +51,14 @@ public class NotificationsPermissionDefinitionProvider : PermissionDefinitionPro
 
         var settingManagement = context.GetGroup(SettingManagementPermissions.GroupName);
         settingManagement.AddPermission(NotificationsPermissions.Settings, L("Permission:NotificationsPermissions.Settings"));
+
+        var notificationListPermissions = notificationsPermissionsGroup.AddPermission(
+                NotificationsPermissions.NotificationList.Default,
+                L($"Permission:{NotificationsPermissions.NotificationList.Default}"));
+
+        notificationListPermissions.AddChild(
+            NotificationsPermissions.NotificationList.View,
+            L($"Permission:{NotificationsPermissions.NotificationList.View}"));
     }
 
     private static LocalizableString L(string name)

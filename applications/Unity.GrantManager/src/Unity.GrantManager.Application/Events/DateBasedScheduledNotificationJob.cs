@@ -19,6 +19,7 @@ using Volo.Abp.Identity.Integration;
 using Volo.Abp.MultiTenancy;
 using Volo.Abp.Settings;
 using Volo.Abp.TenantManagement;
+using Unity.Notifications.Events;
 
 namespace Unity.GrantManager.Events
 {
@@ -44,6 +45,7 @@ namespace Unity.GrantManager.Events
         private readonly IFeatureChecker _featureChecker;
         private readonly ISettingProvider _settingProvider;
         private readonly ICurrentTenant _currentTenant;
+        private readonly ScheduledNotificationHelper _scheduledNotificationHelper;
         private readonly ILogger<DateBasedScheduledNotificationJob> _logger;
 
         public DateBasedScheduledNotificationJob(
@@ -61,6 +63,7 @@ namespace Unity.GrantManager.Events
             IFeatureChecker featureChecker,
             ISettingProvider settingProvider,
             ICurrentTenant currentTenant,
+            ScheduledNotificationHelper scheduledNotificationHelper,
             ILogger<DateBasedScheduledNotificationJob> logger)
         {
             _scheduledNotificationRepository = scheduledNotificationRepository;
@@ -77,6 +80,7 @@ namespace Unity.GrantManager.Events
             _featureChecker = featureChecker;
             _settingProvider = settingProvider;
             _currentTenant = currentTenant;
+            _scheduledNotificationHelper = scheduledNotificationHelper;
             _logger = logger;
 
             // Configure Quartz job: runs every 10 minutes for testing
@@ -307,17 +311,32 @@ namespace Unity.GrantManager.Events
                     tokenValues);
 
 
+                // Build email event with common properties
+                var emailEvent = new EmailNotificationEvent
+                {
+                    TenantId = _currentTenant.Id,
+                    ApplicationId = application.Id,
+                    ScheduledNotificationId = notification.Id,
+                    TemplateId = template.Id,
+                    EmailTemplateName = template.Name,
+                    Subject = subject,
+                    Body = body,
+                    EmailFrom = emailFrom,
+                    Action = EmailAction.SendDateDriven, // Default action, may be overridden in helper methods
+                    RetryAttempts = 0
+                };
+
                 // Publish based on recipient category
                 if (string.Equals(notification.RecipientCategory, "Internal", StringComparison.OrdinalIgnoreCase))
                 {
-                    await ScheduledNotificationHelper.PublishToEmailGroupAsync(
+                    await _scheduledNotificationHelper.PublishToEmailGroupAsync(
                         _emailGroupsAppService, _emailGroupUsersAppService, _identityUserIntegrationService,
-                        _currentTenant, _localEventBus, notification, application.Id, template, subject, body, emailFrom, _logger);
+                        _localEventBus, notification, emailEvent);
                 }
                 else if (string.Equals(notification.RecipientCategory, "External", StringComparison.OrdinalIgnoreCase))
                 {
-                    await ScheduledNotificationHelper.PublishToExternalRecipientAsync(
-                        _currentTenant, _localEventBus, notification, application, applicantAgent, template, subject, body, emailFrom, _logger);
+                    await _scheduledNotificationHelper.PublishToExternalRecipientAsync(
+                        _localEventBus, notification, application, applicantAgent, emailEvent);
                 }
                 else
                 {
@@ -365,6 +384,7 @@ namespace Unity.GrantManager.Events
                     TemplateName = template.Name,
                     Tag = "DateBasedScheduledNotificationJob", // Identifies source as background job
                     Status = EmailStatus.Draft,
+                    EmailType = EmailType.DateBased, // Distinguish from event-based emails created by event handler
                     RetryAttempts = 0
                 };
 

@@ -387,7 +387,17 @@
                     dragableDiv.id = 'unity_' + intakeFieldJson.Name;
                     dragableDiv.className = 'card mapping-field';
                     dragableDiv.setAttribute("draggable", "true");
-                    dragableDiv.innerHTML = `${setTypeIndicator(intakeField)}` + intakeFieldJson.Label + (intakeFieldJson.IsCustom ? " *" : "");
+                    
+                    // Set icon HTML (internal code, safe)
+                    dragableDiv.innerHTML = `${setTypeIndicator(intakeField)}`;
+                    
+                    // Append label as text node to prevent HTML injection
+                    dragableDiv.appendChild(document.createTextNode(intakeFieldJson.Label));
+                    
+                    // Append asterisk if custom
+                    if (intakeFieldJson.IsCustom) {
+                        dragableDiv.appendChild(document.createTextNode(" *"));
+                    }
                     if (intakeFieldJson.IsCustom) {
                         worksheetMapColumn.appendChild(dragableDiv);
                         dragableDiv.className += ' custom-field';
@@ -474,12 +484,6 @@
 
     function setTypeIndicatorText(text) {
         return `<span class="mapping-indicator-text">${text}</span>`;
-    }
-
-    function stripHtml(html) {
-        let tmp = document.createElement("DIV");
-        tmp.innerHTML = html;
-        return tmp.textContent || tmp.innerText || "";
     }
 
     document.addEventListener('dragstart', function (ev) {
@@ -699,3 +703,10 @@
         }
     }
 });
+
+
+function stripHtml(html) {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(String(html), 'text/html');
+    return doc.body.textContent || '';
+}

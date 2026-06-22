@@ -19,7 +19,6 @@ using Volo.Abp.Domain.Entities;
 using Volo.Abp.Domain.Services;
 using Volo.Abp.Settings;
 
-
 namespace Unity.Notifications.EmailNotifications
 {
     /// <summary>
@@ -44,26 +43,9 @@ namespace Unity.Notifications.EmailNotifications
             {
                 return null;
             }
-            var emailObject = await GetEmailObjectAsync(email, "html");
-            EmailLog emailLog = new() { Id = GuidGenerator.Create() };
-            emailLog = UpdateMappedEmailLog(emailLog, emailObject);
-            emailLog.ApplicationId = applicationId;
-            emailLog.ScheduledNotificationId = scheduledNotificationId;
-            emailLog.SendOnDateTime = email.SendOnDateTime;
-            
-            // If SendOnDateTime is in the future, set status to Scheduled instead of the provided status
-            if (email.SendOnDateTime.HasValue && email.SendOnDateTime.Value > DateTime.UtcNow)
-            {
-                emailLog.Status = EmailStatus.Scheduled;
-            }
-            else
-            {
-                emailLog.Status = status ?? EmailStatus.Initialized;
-            }
-
-            // When being called here the current tenant is in context - verified by looking at the tenant id
-            EmailLog loggedEmail = await emailLogsRepository.InsertAsync(emailLog, autoSave: true);
-            return loggedEmail;
+            var emailLog = new EmailLog { Id = GuidGenerator.Create() };
+            emailLog = await PopulateEmailLogAsync(emailLog, email, applicationId, status, scheduledNotificationId);
+            return await emailLogsRepository.InsertAsync(emailLog, autoSave: true);
         }
 
         public async Task<EmailLog?> UpdateEmailLogAsync(Guid emailId, EmailMessageParams email, Guid applicationId, string? status)
@@ -73,26 +55,19 @@ namespace Unity.Notifications.EmailNotifications
                 return null;
             }
 
-            var emailObject = await GetEmailObjectAsync(email, "html");
-            EmailLog emailLog = await emailLogsRepository.GetAsync(emailId);
-            emailLog = UpdateMappedEmailLog(emailLog, emailObject);
-            emailLog.ApplicationId = applicationId;
-            emailLog.Id = emailId;
-            emailLog.SendOnDateTime = email.SendOnDateTime;
+            var existingEmail = await emailLogsRepository.FindAsync(emailId);
             
-            // If SendOnDateTime is in the future, set status to Scheduled instead of the provided status
-            if (email.SendOnDateTime.HasValue && email.SendOnDateTime.Value > DateTime.UtcNow)
+            if (existingEmail == null)
             {
-                emailLog.Status = EmailStatus.Scheduled;
+                // Email doesn't exist, create a new one instead
+                var newEmailLog = new EmailLog { Id = emailId };
+                newEmailLog = await PopulateEmailLogAsync(newEmailLog, email, applicationId, status);
+                return await emailLogsRepository.InsertAsync(newEmailLog, autoSave: true);
             }
-            else
-            {
-                emailLog.Status = status ?? EmailStatus.Initialized;
-            }
-
-            // When being called here the current tenant is in context - verified by looking at the tenant id
-            EmailLog loggedEmail = await emailLogsRepository.UpdateAsync(emailLog, autoSave: true);
-            return loggedEmail;
+            
+            // Email exists, update it
+            existingEmail = await PopulateEmailLogAsync(existingEmail, email, applicationId, status);
+            return await emailLogsRepository.UpdateAsync(existingEmail, autoSave: true);
         }
 
         public async Task<EmailLog?> GetEmailLogByIdAsync(Guid id)
@@ -126,112 +101,19 @@ namespace Unity.Notifications.EmailNotifications
                 throw new UserFriendlyException("Sent emails cannot be deleted.");
             }
 
-            // If email has a scheduled send date and a CHES message ID, check the status with CHES
             if (emailLog.SendOnDateTime.HasValue && emailLog.ChesMsgId.HasValue)
             {
-                try
+                var shouldThrow = await SyncScheduledEmailStatusAsync(emailLog);
+                if (shouldThrow)
                 {
-                    var statusResponse = await chesClientService.GetStatusAsync(emailLog.ChesMsgId.Value);
-                    if (statusResponse != null && statusResponse.IsSuccessStatusCode)
-                    {
-                        var responseContent = await statusResponse.Content.ReadAsStringAsync();
-                        Logger.LogInformation("CHES status check for MessageId {MessageId}: {StatusResponse}", emailLog.ChesMsgId, responseContent);
-                        
-                        // Parse the CHES status response to check message status
-                        try
-                        {
-                            dynamic? statusData = JsonConvert.DeserializeObject(responseContent);
-                            string? status = null;
-                            
-                            if (statusData != null)
-                            {
-                                // Handle array response - get first element if it's an array
-                                if (statusData is Newtonsoft.Json.Linq.JArray jArray && jArray.Count > 0)
-                                {
-                                    statusData = jArray[0];
-                                }
-                                
-                                status = statusData.status?.ToString();
-                            }
-
-                            if (!string.IsNullOrEmpty(status) && !status.Equals("pending", StringComparison.OrdinalIgnoreCase))
-                            {
-                                // Update email status with capitalized first character if status is not blank or pending
-                                var capitalizedStatus = char.ToUpper(status[0]) + status.Substring(1).ToLower();
-                                emailLog.ChesStatus = capitalizedStatus;
-                                await emailLogsRepository.UpdateAsync(emailLog);
-                                Logger.LogInformation("Updated email {EmailLogId} status to {Status}", id, capitalizedStatus);
-                            }                            
-                            
-                            // Check if the message has already been completed or is accepted
-                            if (!string.IsNullOrEmpty(status) && 
-                                (status.Equals("completed", StringComparison.OrdinalIgnoreCase) || 
-                                 status.Equals("accepted", StringComparison.OrdinalIgnoreCase)))
-                            {
-                                emailLog.ChesStatus = EmailStatus.Sent;
-                                await emailLogsRepository.UpdateAsync(emailLog);                            
-                                throw new UserFriendlyException("This scheduled email has already been sent and cannot be deleted.");
-                            }
-
-                            // If status is pending, attempt to cancel it via CHES
-                            if (!string.IsNullOrEmpty(status) && status.Equals("pending", StringComparison.OrdinalIgnoreCase))
-                            {
-                                try
-                                {
-                                    var cancelResponse = await chesClientService.CancelEmailAsync(emailLog.ChesMsgId.Value);
-                                    if (cancelResponse == null || !cancelResponse.IsSuccessStatusCode)
-                                    {
-                                        Logger.LogWarning("Failed to cancel pending email {EmailLogId} with MessageId {MessageId}. Status: {StatusCode}", id, emailLog.ChesMsgId, cancelResponse?.StatusCode);
-                                        throw new UserFriendlyException("Unable to cancel the pending scheduled email. Please try again.");
-                                    }
-                                    Logger.LogInformation("Successfully cancelled pending email {EmailLogId} with MessageId {MessageId}", id, emailLog.ChesMsgId);
-                                }
-                                catch (Exception cancelEx)
-                                {
-                                    Logger.LogError(cancelEx, "Error cancelling pending email {EmailLogId} with MessageId {MessageId}", id, emailLog.ChesMsgId);
-                                    throw new UserFriendlyException("Unable to cancel the pending scheduled email. Please try again.");
-                                }
-                            }
-
-                        }
-                        catch (UserFriendlyException)
-                        {
-                            throw;
-                        }
-                        catch (Exception parseEx)
-                        {
-                            Logger.LogError(parseEx, "Failed to parse or process CHES status response for MessageId {MessageId}. Response content: {ResponseContent}", emailLog.ChesMsgId, responseContent);
-                            throw new UserFriendlyException("Unable to verify the status of the scheduled email. Please try again.");
-                        }
-                    }
-                    else
-                    {
-                        Logger.LogWarning("CHES status check returned unsuccessful status code {StatusCode} for MessageId {MessageId}", statusResponse?.StatusCode, emailLog.ChesMsgId);
-                    }
-                }
-                catch (UserFriendlyException)
-                {
-                    throw;
-                }
-                catch (Exception ex)
-                {
-                    Logger.LogError(ex, "Error checking CHES status for scheduled email {EmailLogId}", id);
-                    throw new UserFriendlyException("Unable to verify the status of the scheduled email. Please try again.");
+                    // Update the entity in the current context and persist it
+                    await emailLogsRepository.UpdateAsync(emailLog, autoSave: true);
+                    throw new UserFriendlyException(
+                        "This scheduled email has already been sent and cannot be deleted.");
                 }
             }
 
-            var attachments = await emailAttachmentService.GetAttachmentsAsync(id);
-            foreach (var s3Key in attachments.Select(attachment => attachment.S3ObjectKey))
-            {
-                try
-                {
-                    await emailAttachmentService.DeleteFromS3Async(s3Key);
-                }
-                catch (Exception ex)
-                {
-                    Logger.LogError(ex, "Failed to delete S3 attachment for EmailLog {EmailLogId}", id);
-                }
-            }
+            await DeleteEmailAttachmentsAsync(id);
             await emailLogsRepository.DeleteAsync(id);
         }
 
@@ -261,33 +143,18 @@ namespace Unity.Notifications.EmailNotifications
         /// <returns>HttpResponseMessage indicating the result of the operation</returns>
         public async Task<HttpResponseMessage> SendEmailAsync(EmailMessageParams email, string? emailBodyType = null)
         {
-            try
+            if (string.IsNullOrEmpty(email.EmailTo))
             {
-                if (string.IsNullOrEmpty(email.EmailTo))
+                Logger.LogError("EmailNotificationManager->SendEmailAsync: The 'emailTo' parameter is null or empty.");
+                return new HttpResponseMessage(HttpStatusCode.BadRequest)
                 {
-                    Logger.LogError("EmailNotificationManager->SendEmailAsync: The 'emailTo' parameter is null or empty.");
-                    return new HttpResponseMessage(HttpStatusCode.BadRequest)
-                    {
-                        Content = new StringContent("'emailTo' cannot be null or empty.")
-                    };
-                }
-
-                // Send the email using the CHES client service
-                var emailObject = await GetEmailObjectAsync(email, emailBodyType, excludeTemplate: true);
-
-                var response = await chesClientService.SendAsync(emailObject);
-
-                // Assuming SendAsync returns a HttpResponseMessage or equivalent:
-                return response;
-            }
-            catch (Exception ex)
-            {
-                Logger.LogError(ex, "EmailNotificationManager->SendEmailAsync: Exception occurred while sending email.");
-                return new HttpResponseMessage(HttpStatusCode.InternalServerError)
-                {
-                    Content = new StringContent($"An exception occurred while sending the email: {ex.Message}")
+                    Content = new StringContent("'emailTo' cannot be null or empty.")
                 };
             }
+
+            return await SendEmailInternalAsync(
+                () => GetEmailObjectAsync(email, emailBodyType, excludeTemplate: true),
+                "EmailNotificationManager->SendEmailAsync: Exception occurred while sending email.");
         }
 
         /// <summary>
@@ -298,33 +165,18 @@ namespace Unity.Notifications.EmailNotifications
         [RemoteService(false)]
         public async Task<HttpResponseMessage> SendEmailAsync(EmailLog emailLog)
         {
-            try
+            if (string.IsNullOrEmpty(emailLog.ToAddress))
             {
-                if (string.IsNullOrEmpty(emailLog.ToAddress))
+                Logger.LogError("EmailNotificationManager->SendEmailAsync: The 'emailLog.ToAddress' parameter is null or empty.");
+                return new HttpResponseMessage(HttpStatusCode.BadRequest)
                 {
-                    Logger.LogError("EmailNotificationManager->SendEmailAsync: The 'emailLog.ToAddress' parameter is null or empty.");
-                    return new HttpResponseMessage(HttpStatusCode.BadRequest)
-                    {
-                        Content = new StringContent("'emailLog.ToAddress' cannot be null or empty.")
-                    };
-                }
-
-                // Build email object with attachments from S3
-                var emailObject = await BuildEmailObjectWithAttachmentsAsync(emailLog);
-
-                // Send via CHES
-                var response = await chesClientService.SendAsync(emailObject);
-
-                return response;
-            }
-            catch (Exception ex)
-            {
-                Logger.LogError(ex, "EmailNotificationManager->SendEmailAsync: Exception occurred while sending email for EmailLog {EmailId}.", emailLog.Id);
-                return new HttpResponseMessage(HttpStatusCode.InternalServerError)
-                {
-                    Content = new StringContent($"An exception occurred while sending the email: {ex.Message}")
+                    Content = new StringContent("'emailLog.ToAddress' cannot be null or empty.")
                 };
             }
+
+            return await SendEmailInternalAsync(
+                () => BuildEmailObjectWithAttachmentsAsync(emailLog),
+                $"EmailNotificationManager->SendEmailAsync: Exception occurred while sending email for EmailLog {emailLog.Id}.");
         }
 
         /// <summary>
@@ -363,40 +215,26 @@ namespace Unity.Notifications.EmailNotifications
             // Get base email object (without attachments)
             var emailObject = await GetEmailObjectAsync(
                 new EmailMessageParams(emailLog.ToAddress, emailLog.Body, emailLog.Subject,
-                    emailLog.FromAddress, emailLog.TemplateName, emailLog.CC, emailLog.BCC),
+                    emailLog.FromAddress, emailLog.TemplateName, emailLog.CC, emailLog.BCC, emailLog.SendOnDateTime),
                 emailLog.BodyType,
                 excludeTemplate: true);
 
-            // Retrieve attachments from S3
+            // Retrieve and add attachments from S3
             var attachments = await emailAttachmentService.GetAttachmentsAsync(emailLog.Id);
-
             if (attachments.Count != 0)
             {
                 var attachmentList = new List<object>();
-
                 foreach (var attachment in attachments)
                 {
                     byte[]? content = await emailAttachmentService.DownloadFromS3Async(attachment.S3ObjectKey);
                     if (content != null)
                     {
-                        attachmentList.Add(new
-                        {
-                            content = Convert.ToBase64String(content),  // Convert to Base64 for CHES
-                            contentType = attachment.ContentType,
-                            encoding = "base64",
-                            filename = attachment.FileName
-                        });
+                        attachmentList.Add(CreateAttachmentObject(attachment, content));
                     }
                 }
 
                 var emailObjectDictionary = (IDictionary<string, object?>)emailObject;
                 emailObjectDictionary["attachments"] = attachmentList.ToArray();
-            }
-
-            if (emailLog.SendOnDateTime.HasValue)
-            {
-                var emailObjectDictionary = (IDictionary<string, object?>)emailObject;
-                emailObjectDictionary["delayTS"] = new DateTimeOffset(emailLog.SendOnDateTime.Value, TimeSpan.Zero).ToUnixTimeMilliseconds();
             }
 
             return emailObject;
@@ -474,6 +312,253 @@ namespace Unity.Notifications.EmailNotifications
         public async Task<List<EmailLog>> GetEmailLogsByApplicationIdAsync(Guid applicationId)
         {
             return await emailLogsRepository.GetByApplicationIdAsync(applicationId);
+        }
+
+        /// <summary>
+        /// Populates common email log fields used in create and update operations
+        /// </summary>
+        private async Task<EmailLog> PopulateEmailLogAsync(
+            EmailLog emailLog,
+            EmailMessageParams email,
+            Guid applicationId,
+            string? status,
+            Guid? scheduledNotificationId = null)
+        {
+            var emailObject = await GetEmailObjectAsync(email, "html");
+            emailLog = UpdateMappedEmailLog(emailLog, emailObject);
+            emailLog.ApplicationId = applicationId;
+            if (scheduledNotificationId.HasValue)
+            {
+                emailLog.ScheduledNotificationId = scheduledNotificationId.Value;
+            }
+            emailLog.SendOnDateTime = email.SendOnDateTime;
+            emailLog.Status = DetermineSendStatus(email.SendOnDateTime, status);
+            emailLog.EmailType = DetermineEmailType(email.SendOnDateTime);
+            return emailLog;
+        }
+
+        /// <summary>
+        /// Sends an email via CHES with unified exception handling
+        /// </summary>
+        private async Task<HttpResponseMessage> SendEmailInternalAsync(
+            Func<Task<dynamic>> buildEmailObject,
+            string errorMessage)
+        {
+            try
+            {
+                var emailObject = await buildEmailObject();
+                return await chesClientService.SendAsync(emailObject);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, errorMessage);
+                return new HttpResponseMessage(HttpStatusCode.InternalServerError)
+                {
+                    Content = new StringContent($"An exception occurred while sending the email: {ex.Message}")
+                };
+            }
+        }
+
+        /// <summary>
+        /// Synchronizes the status of a scheduled email with CHES
+        /// </summary>
+        /// <returns>True if the email has already been sent (completed/accepted), false otherwise</returns>
+        private async Task<bool> SyncScheduledEmailStatusAsync(EmailLog emailLog)
+        {
+            try
+            {
+                var statusResponse = await chesClientService.GetStatusAsync(emailLog.ChesMsgId!.Value);
+                if (statusResponse == null || !statusResponse.IsSuccessStatusCode)
+                {
+                    Logger.LogWarning(
+                        "CHES status check returned unsuccessful status code {StatusCode} for MessageId {MessageId}",
+                        statusResponse?.StatusCode,
+                        emailLog.ChesMsgId);
+                    return false;
+                }
+
+                var responseContent = await statusResponse.Content.ReadAsStringAsync();
+                Logger.LogInformation(
+                    "CHES status check for MessageId {MessageId}: {StatusResponse}",
+                    emailLog.ChesMsgId,
+                    responseContent);
+
+                var status = ExtractChesStatus(responseContent);
+                if (string.IsNullOrWhiteSpace(status))
+                {
+                    return false;
+                }
+
+                if (status.Equals("completed", StringComparison.OrdinalIgnoreCase) ||
+                    status.Equals("accepted", StringComparison.OrdinalIgnoreCase))
+                {
+                    Logger.LogInformation("Email {EmailLogId} CHES status is {ChesStatus}, marking as Sent", emailLog.Id, status);
+                    
+                    // Just update the entity properties - caller will persist it
+                    emailLog.Status = EmailStatus.Sent;
+                    emailLog.ChesStatus = status.Capitalize();
+                    
+                    return true;
+                }
+
+                await UpdateChesStatusAsync(emailLog, status);
+
+                if (status.Equals("pending", StringComparison.OrdinalIgnoreCase))
+                {
+                    await CancelPendingEmailAsync(emailLog);
+                }
+
+                return false;
+            }
+            catch (UserFriendlyException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(
+                    ex,
+                    "Error checking CHES status for scheduled email {EmailLogId}",
+                    emailLog.Id);
+                throw new UserFriendlyException(
+                    "Unable to verify the status of the scheduled email. Please try again.");
+            }
+        }
+
+        /// <summary>
+        /// Extracts the status from a CHES status response
+        /// </summary>
+        private static string? ExtractChesStatus(string responseContent)
+        {
+            dynamic? statusData = JsonConvert.DeserializeObject(responseContent);
+            if (statusData != null)
+            {
+                // Handle array response - get first element if it's an array
+                if (statusData is Newtonsoft.Json.Linq.JArray jArray && jArray.Count > 0)
+                {
+                    statusData = jArray[0];
+                }
+                return statusData.status?.ToString();
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Updates the CHES status in the email log
+        /// </summary>
+        private async Task UpdateChesStatusAsync(EmailLog emailLog, string status)
+        {
+            if (string.IsNullOrEmpty(status) || status.Equals("pending", StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
+
+            emailLog.ChesStatus = status.Capitalize();
+            await emailLogsRepository.UpdateAsync(emailLog);
+            Logger.LogInformation(
+                "Updated email {EmailLogId} status to {Status}",
+                emailLog.Id,
+                emailLog.ChesStatus);
+        }
+
+        /// <summary>
+        /// Cancels a pending email via CHES
+        /// </summary>
+        private async Task CancelPendingEmailAsync(EmailLog emailLog)
+        {
+            try
+            {
+                var cancelResponse = await chesClientService.CancelEmailAsync(emailLog.ChesMsgId!.Value);
+                if (cancelResponse == null || !cancelResponse.IsSuccessStatusCode)
+                {
+                    Logger.LogWarning(
+                        "Failed to cancel pending email {EmailLogId} with MessageId {MessageId}. Status: {StatusCode}",
+                        emailLog.Id,
+                        emailLog.ChesMsgId,
+                        cancelResponse?.StatusCode);
+                    throw new UserFriendlyException(
+                        "Unable to cancel the pending scheduled email. Please try again.");
+                }
+                Logger.LogInformation(
+                    "Successfully cancelled pending email {EmailLogId} with MessageId {MessageId}",
+                    emailLog.Id,
+                    emailLog.ChesMsgId);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(
+                    ex,
+                    "Error cancelling pending email {EmailLogId} with MessageId {MessageId}",
+                    emailLog.Id,
+                    emailLog.ChesMsgId);
+                throw new UserFriendlyException(
+                    "Unable to cancel the pending scheduled email. Please try again.");
+            }
+        }
+
+        /// <summary>
+        /// Deletes all S3 attachments for an email log
+        /// </summary>
+        private async Task DeleteEmailAttachmentsAsync(Guid emailLogId)
+        {
+            var attachments = await emailAttachmentService.GetAttachmentsAsync(emailLogId);
+            foreach (var attachment in attachments)
+            {
+                try
+                {
+                    await emailAttachmentService.DeleteFromS3Async(attachment.S3ObjectKey);
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogError(
+                        ex,
+                        "Failed to delete S3 attachment for EmailLog {EmailLogId}",
+                        emailLogId);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Creates an attachment object for CHES API submission
+        /// </summary>
+        private static object CreateAttachmentObject(EmailLogAttachment attachment, byte[] content)
+        {
+            return new
+            {
+                content = Convert.ToBase64String(content),
+                contentType = attachment.ContentType,
+                encoding = "base64",
+                filename = attachment.FileName
+            };
+        }
+
+        /// <summary>
+        /// Determines the appropriate email status based on scheduled send time
+        /// </summary>
+        /// <param name="sendOnDateTime">The scheduled send time, if any</param>
+        /// <param name="defaultStatus">The default status to use if not scheduled</param>
+        /// <returns>Either Scheduled (if future date) or the default status</returns>
+        private string DetermineSendStatus(DateTime? sendOnDateTime, string? defaultStatus)
+        {
+            if (sendOnDateTime.HasValue && sendOnDateTime.Value > DateTime.UtcNow)
+            {
+                return EmailStatus.Scheduled;
+            }
+            return defaultStatus ?? EmailStatus.Initialized;
+        }
+
+        /// <summary>
+        /// Determines the appropriate email type based on scheduled send time
+        /// </summary>
+        /// <param name="sendOnDateTime">The scheduled send time, if any</param>
+        /// <returns>EmailType.Delayed if future date is set, otherwise EmailType.Manual</returns>
+        private EmailType DetermineEmailType(DateTime? sendOnDateTime)
+        {
+            if (sendOnDateTime.HasValue && sendOnDateTime.Value > DateTime.UtcNow)
+            {
+                return EmailType.Delayed;
+            }
+            return EmailType.Manual;
         }
     }
 }
