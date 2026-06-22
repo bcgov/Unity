@@ -265,10 +265,6 @@ namespace Unity.GrantManager.Events
                     applicationId,
                     status);
             }
-
-            _logger.LogWarning(
-                "Email {EmailId} not found for Application {ApplicationId}, creating new email instead.",
-                emailId, applicationId);
             
             return await InitializeEmailAndUploadAttachments(
                 new EmailInitParams(

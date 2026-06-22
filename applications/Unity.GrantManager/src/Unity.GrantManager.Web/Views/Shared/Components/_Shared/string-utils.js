@@ -34,3 +34,37 @@ function compareStrings(str1, str2) {
     if (union === 0) return 0;
     return Math.round(Math.min(2 * intersection * 100 / union, 100) * 100) / 100;
 }
+
+/**
+ * Strips HTML tags from a string using safe DOMParser
+ * @param {string} html - HTML string to strip
+ * @returns {string} Plain text content
+ */
+function stripHtml(html) {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(String(html), 'text/html');
+    return doc.body.textContent || '';
+}
+
+/**
+ * Escapes HTML meta-characters in a string for safe use in HTML attributes
+ * @param {string} value - String to escape
+ * @returns {string} Escaped string safe for use in HTML attributes
+ */
+function escapeHtmlAttribute(value) {
+    return String(value ?? '')
+        .replaceAll('&', '&amp;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#39;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;');
+}
+
+/**
+ * Validates GUID format
+ * @param {string} textString - String to validate as GUID
+ * @returns {boolean} True if valid GUID format
+ */
+function validateGuid(textString) {
+    return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-5][0-9a-f]{3}-[089ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(textString);
+}

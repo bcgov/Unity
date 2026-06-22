@@ -1,26 +1,6 @@
 // Mapping Utilities - Reusable functions for form mapping and utilities
 
 /**
- * Strips HTML tags from a string using safe DOMParser
- * @param {string} html - HTML string to strip
- * @returns {string} Plain text content
- */
-function stripHtml(html) {
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(String(html), 'text/html');
-    return doc.body.textContent || '';
-}
-
-/**
- * Validates GUID format
- * @param {string} textString - String to validate as GUID
- * @returns {boolean} True if valid GUID format
- */
-function validateGuid(textString) {
-    return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-5][0-9a-f]{3}-[089ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(textString);
-}
-
-/**
  * Initializes DataTable for Application Forms mapping
  * Destroys existing instance if present
  * @returns {DataTable} Configured DataTable instance
@@ -41,7 +21,8 @@ function initializeApplicationFormsTable() {
         columnDefs: [
             {
                 render: function (data) {
-                    return '<div id="' + data + '" class="col map-div non-drag" draggable="false"></div>';
+                    const safeId = escapeHtmlAttribute(data);
+                    return '<div id="' + safeId + '" class="col map-div non-drag" draggable="false"></div>';
                 },
                 targets: 3
             }
