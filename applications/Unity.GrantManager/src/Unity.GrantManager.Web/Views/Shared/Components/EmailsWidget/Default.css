@@ -133,12 +133,13 @@
     margin-bottom: 0 !important;
     height: 36px;
     padding: 6px 8px !important;
-    display: inline-block;
+    display: block;
     vertical-align: baseline;
     margin-top: 0;
     position: relative;
     flex-grow: 1;
     padding-right: 75px !important;
+    margin: 0px;
 }
 
 
@@ -259,6 +260,7 @@
     padding-top: 0px;
     padding-bottom: 0px;
     box-sizing: border-box;
+    margin: 2px;
 }
 
 #user-dropdown > button {
@@ -294,11 +296,6 @@
 
 #applicationEmailsWidget .email-btn:hover {
     box-shadow: -3px 3px 11px -3px rgba(33, 33, 33, .2);
-}
-
-#applicationEmailsWidget .btn-send-close {
-    margin-top: 0px;
-    margin-bottom: 0px;
 }
 
 /* Send dropdown button styling */
@@ -461,7 +458,7 @@
     line-height: normal;
     text-align: center;
     word-wrap: break-word;
-    word-break: break-word;
+    overflow-wrap: break-word;
 }
 
 #btn-cancel-email {
@@ -572,10 +569,6 @@
 #applicationEmailsWidget .email-spinner-text {
     display: flex;
     padding-right: 100px;
-}
-
-#applicationEmailsWidget button {
-    margin: 2px;
 }
 
 #applicationEmailsWidget button:hover {
@@ -793,7 +786,7 @@
 .input-group-text {
     background: #f8f9fa;
     border-color: #ced4da;
-    color: #6c757d;
+    color: #495057;
 }
 
 /* Footer */
@@ -855,11 +848,6 @@
 
 input#EmailFrom.input-validation-error {
     margin-bottom: -20px !important;
-}
-
-#applicationEmailsWidget .from-field-container .from-input {
-  display: block;
-  margin: 0px;
 }
 
 .mt-14 {
