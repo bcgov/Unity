@@ -20,6 +20,9 @@ using Volo.Abp.MultiTenancy;
 using Volo.Abp.Settings;
 using Volo.Abp.TenantManagement;
 using Unity.Notifications.Events;
+using Unity.Modules.Shared.Utils;
+using Unity.GrantManager.Settings;
+using Volo.Abp.SettingManagement;
 
 namespace Unity.GrantManager.Events
 {
@@ -64,6 +67,7 @@ namespace Unity.GrantManager.Events
             ISettingProvider settingProvider,
             ICurrentTenant currentTenant,
             ScheduledNotificationHelper scheduledNotificationHelper,
+            SettingManager settingManager,
             ILogger<DateBasedScheduledNotificationJob> logger)
         {
             _scheduledNotificationRepository = scheduledNotificationRepository;
@@ -83,19 +87,48 @@ namespace Unity.GrantManager.Events
             _scheduledNotificationHelper = scheduledNotificationHelper;
             _logger = logger;
 
-            // Configure Quartz job: runs every 10 minutes for testing
-            // Production: change to "0 0 2 * * ?" for nightly 2:00 AM execution
-            JobDetail = JobBuilder
-                .Create<DateBasedScheduledNotificationJob>()
-                .WithIdentity(nameof(DateBasedScheduledNotificationJob))
-                .Build();
+            // 2 AM PST = 10 AM UTC
+            const string defaultCronExpression = "0 0 2 * * ?";
+            string cronExpression = defaultCronExpression;
 
-            Trigger = TriggerBuilder
-                .Create()
-                .WithIdentity(nameof(DateBasedScheduledNotificationJob))
-                .WithSchedule(CronScheduleBuilder.CronSchedule("0 */10 * * * ?")
-                    .WithMisfireHandlingInstructionIgnoreMisfires())
-                .Build();
+            try
+            {
+                var settingsValue = SettingDefinitions
+                    .GetSettingsValue(settingManager,
+                        SettingsConstants.BackgroundJobs.DateBasedNotificationSchedule_Expression);
+
+                if (!settingsValue.IsNullOrEmpty())
+                {
+                    if (CronExpression.IsValidExpression(settingsValue))
+                    {
+                        cronExpression = settingsValue;
+                    }
+                    else
+                    {
+                        _logger.LogWarning("Invalid cron expression '{CronExpression}' for date-based notifications, reverting to default '{DefaultCronExpression}'",
+                            settingsValue, defaultCronExpression);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Error reading cron setting for date-based notifications, reverting to default '{CronExpression}'", defaultCronExpression);
+            }
+
+            if (!cronExpression.IsNullOrEmpty())
+            {
+                JobDetail = JobBuilder
+                    .Create<DateBasedScheduledNotificationJob>()
+                    .WithIdentity(nameof(DateBasedScheduledNotificationJob))
+                    .Build();
+
+                Trigger = TriggerBuilder
+                    .Create()
+                    .WithIdentity(nameof(DateBasedScheduledNotificationJob))
+                    .WithSchedule(CronScheduleBuilder.CronSchedule(cronExpression)
+                        .WithMisfireHandlingInstructionIgnoreMisfires())
+                    .Build();
+                }
         }
 
         public override async Task Execute(IJobExecutionContext context)

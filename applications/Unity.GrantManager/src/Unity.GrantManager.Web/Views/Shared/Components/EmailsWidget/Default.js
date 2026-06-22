@@ -1,4 +1,4 @@
-﻿$(function () {    
+﻿$(document).ready(function () {  
     const UIElements = {
         applicationId: $('#DetailsViewApplicationId')[0].value,
         btnSend: $('#btn-send-top'),

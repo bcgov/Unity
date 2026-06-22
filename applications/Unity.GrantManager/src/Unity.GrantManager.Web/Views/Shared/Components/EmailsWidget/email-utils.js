@@ -5,7 +5,7 @@
  * @param {string} email - Email address to validate
  * @returns {boolean} True if valid email format
  */
-function validateEmail(email) {
+globalThis.validateEmail = function(email) {
     // Optimized regex to prevent ReDoS: use atomic-like patterns with specific character classes
     const emailRegex = /^[a-zA-Z0-9._%-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
     return emailRegex.exec(String(email).toLowerCase()) !== null;
@@ -16,7 +16,7 @@ function validateEmail(email) {
  * @param {string} str - String to escape
  * @returns {string} HTML-escaped string
  */
-function escapeHtml(str) {
+globalThis.escapeHtml = function(str) {
     return String(str)
         .replaceAll('&', '&amp;')
         .replaceAll('<', '&lt;')
@@ -30,7 +30,7 @@ function escapeHtml(str) {
  * @param {string} message - Error message to normalize
  * @returns {string} Normalized error message
  */
-function normalizeErrorMessage(message) {
+globalThis.normalizeErrorMessage = function(message) {
     if (!message) return message;
     
     // Handle "The {FieldName} field" format
@@ -62,7 +62,7 @@ function normalizeErrorMessage(message) {
  * Displays validation error toast using abp.notify or toastr
  * @param {string[]} errors - Array of error messages to display
  */
-function showValidationErrorToast(errors) {
+globalThis.showValidationErrorToast = function(errors) {
     if (!errors?.length) return;
     
     // Build error message with line breaks for each error
@@ -95,7 +95,7 @@ function showValidationErrorToast(errors) {
  * @param {object} bccResult - BCC field validation result
  * @returns {string[]} Array of error messages
  */
-function collectEmailFieldErrors(toResult, ccResult, bccResult) {
+globalThis.collectEmailFieldErrors = function(toResult, ccResult, bccResult) {
     let allErrors = [];
     if (!toResult.isValid && toResult.error) allErrors.push(toResult.error);
     if (!ccResult.isValid && ccResult.error) allErrors.push(ccResult.error);
@@ -111,7 +111,7 @@ function collectEmailFieldErrors(toResult, ccResult, bccResult) {
  * @param {string} tinymceContent - TinyMCE editor content
  * @returns {boolean} True if only TinyMCE has error
  */
-function checkOnlyErrorIsTinyMCE(isValid, errorList, fieldName, tinymceContent) {
+globalThis.checkOnlyErrorIsTinyMCE = function(isValid, errorList, fieldName, tinymceContent) {
     return !isValid && errorList.length === 1 && 
             errorList[0].element.name === fieldName && 
             tinymceContent.length > 0;
@@ -124,7 +124,7 @@ function checkOnlyErrorIsTinyMCE(isValid, errorList, fieldName, tinymceContent) 
  * @param {number} year - Year
  * @returns {boolean} True if valid date
  */
-function isValidDate(month, day, year) {
+globalThis.isValidDate = function(month, day, year) {
     const date = new Date(year, month - 1, day);
     return date.getFullYear() === year && date.getMonth() === month - 1 && date.getDate() === day;
 }
@@ -134,7 +134,7 @@ function isValidDate(month, day, year) {
  * @param {string} str - String to convert
  * @returns {string} Title-cased string
  */
-function toTitleCase(str) {
+globalThis.toTitleCase = function(str) {
     return str.replaceAll(/\b\w/, function (char) {
         return char.toUpperCase();
     }).replaceAll(/\B\w/, function (char) {
@@ -148,7 +148,7 @@ function toTitleCase(str) {
  * @param {string} path - Property path (e.g., "applicant.applicantName")
  * @returns {*} Value at path or undefined
  */
-function getValueByPath(obj, path) {
+globalThis.getValueByPath = function(obj, path) {
     return path.split('.').reduce((acc, key) => acc?.[key], obj);
 }
 
@@ -156,7 +156,7 @@ function getValueByPath(obj, path) {
  * Creates a currency formatter for Canadian dollars
  * @returns {Intl.NumberFormat} Formatter instance
  */
-function createCurrencyFormatter() {
+globalThis.createCurrencyFormatter = function() {
     return new Intl.NumberFormat('en-CA', {
         style: 'currency',
         currency: 'CAD',
@@ -169,7 +169,7 @@ function createCurrencyFormatter() {
  * Returns TinyMCE editor toolbar options
  * @returns {string} Toolbar configuration
  */
-function getToolbarOptions() {
+globalThis.getToolbarOptions = function() {
     return 'undo redo | styles | bold italic | alignleft aligncenter alignright alignjustify | bullist numlist | link image | code preview';
 }
 
@@ -177,7 +177,7 @@ function getToolbarOptions() {
  * Returns TinyMCE editor plugins
  * @returns {string} Comma-separated plugin names
  */
-function getPlugins() {
+globalThis.getPlugins = function() {
     return 'lists link image preview code';
 }
 
@@ -186,7 +186,7 @@ function getPlugins() {
  * @param {string} attachmentId - Attachment ID
  * @returns {string} HTML for attachment button
  */
-function generateEmailAttachmentButtonContent(attachmentId) {
+globalThis.generateEmailAttachmentButtonContent = function(attachmentId) {
     return `
         <div class="dropdown" style="float:right;">
             <button class="btn btn-light dropbtn" type="button">
@@ -205,7 +205,7 @@ function generateEmailAttachmentButtonContent(attachmentId) {
  * Deletes email attachment with confirmation
  * @param {string} attachmentId - Attachment ID to delete
  */
-function deleteEmailAttachment(attachmentId) {
+globalThis.deleteEmailAttachment = function(attachmentId) {
     abp.message.confirm(
         'Are you sure you want to delete this attachment?',
         'Delete Attachment',
@@ -230,7 +230,7 @@ function deleteEmailAttachment(attachmentId) {
  * Trims input value on keyup event
  * @param {event} e - Keyup event
  */
-function handleKeyUpTrim(e) {
+globalThis.handleKeyUpTrim = function(e) {
     let trimmedString = e.currentTarget.value.trim();
     e.currentTarget.value = trimmedString;
 }
@@ -242,7 +242,7 @@ function handleKeyUpTrim(e) {
  * @param {string} fieldName - Field name for error message
  * @returns {string|null} Error message or null if valid
  */
-function getEmailValidationError(emailStr, emailValue, fieldName) {
+globalThis.getEmailValidationError = function(emailStr, emailValue, fieldName) {
     if (emailStr === '' || !validateEmail(emailStr)) {
         let errorMessage;
         if (emailStr === '') {
