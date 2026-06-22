@@ -53,9 +53,10 @@ function stripHtml(html) {
             // Fall through to regex fallback if DOM is unavailable
         }
     }
-    // Server-side or DOM unavailable: regex-based tag removal
-    // Simple efficient pattern: match complete tags only (no alternation = no backtracking)
-    return String(html).replace(/<[^>]*>/g, '');
+    
+    // Server-side or DOM unavailable: remove HTML tag delimiters directly.
+    // Character-level replacement avoids incomplete multi-character sanitization bypasses.
+    return String(html).replace(/[<>]/g, '');
 }
 
 /**
