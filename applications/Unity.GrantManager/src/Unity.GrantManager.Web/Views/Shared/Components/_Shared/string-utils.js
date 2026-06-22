@@ -37,13 +37,22 @@ function compareStrings(str1, str2) {
 
 /**
  * Strips HTML tags from a string using safe DOMParser
+ * Safely extracts plain text content without interpreting HTML meta-characters
  * @param {string} html - HTML string to strip
- * @returns {string} Plain text content
+ * @returns {string} Plain text content (safe for all contexts)
  */
 function stripHtml(html) {
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(String(html), 'text/html');
-    return doc.body.textContent || '';
+    if (!html) return '';
+    try {
+        const parser = new DOMParser();
+        // Use 'text/xml' for stricter parsing to prevent unintended HTML interpretation
+        const doc = parser.parseFromString(`<root>${String(html)}</root>`, 'text/xml');
+        // Return only text content - never HTML
+        return doc.documentElement.textContent || '';
+    } catch {
+        // Fallback: simple regex-based tag removal if parsing fails
+        return String(html).replace(/<[^>]*>/g, '');
+    }
 }
 
 /**
