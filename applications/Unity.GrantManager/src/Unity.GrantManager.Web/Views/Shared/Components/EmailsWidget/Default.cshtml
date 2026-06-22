@@ -13,6 +13,9 @@
     var sendEmailGranted    = await PermissionChecker.IsGrantedAsync("Notifications.Email.Send");
     var emailFieldsetState  = sendEmailGranted ? string.Empty : "disabled";
     var enableEmailDelay = Model.EnableEmailDelay;
+    var scheduleEmailGranted = await PermissionChecker.IsGrantedAsync("Notifications.Email.Schedule");
+    var enableScheduleSend = enableEmailDelay && scheduleEmailGranted;
+
 }
 
 <div id=" emails-div@(Model.ApplicationId)" class="mt-2  emails-container" data-count="0" data-counttag="application_emails_count">
@@ -129,7 +132,7 @@
                 </abp-column>
             </abp-row>
 
-             <abp-row id="scheduled-delay-section"class="m-0 p-0 align-items-center" abp-if="enableEmailDelay">
+             <abp-row id="scheduled-delay-section"class="m-0 p-0 align-items-center" abp-if="enableScheduleSend">
                 <abp-row class="m-0 p-0 align-items-center">
                     <abp-column size="_12" class="px-1">
                         <div id="scheduled-display-container" class="d-flex align-items-center gap-2 flex-wrap">
