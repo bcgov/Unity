@@ -1,4 +1,4 @@
-﻿$(document).ready(function () {  
+﻿$(document).ready(function () {
     const UIElements = {
         applicationId: $('#DetailsViewApplicationId')[0].value,
         btnSend: $('#btn-send-top'),
@@ -81,20 +81,20 @@
         UIElements.btnCancelEmail.off('click');
         $('.btn-send-menu').off('click');
         $('.btn-schedule-send-menu').off('click');
-        
+
         // Bind button handlers
         UIElements.btnNewEmail.on('click', handleNewEmail);
         UIElements.btnSend.on('click', handleSendEmail);
         UIElements.btnSave.on('click', handleSaveEmail);
         UIElements.btnDiscard.on('click', handleDiscardEmail);
         UIElements.btnSendClose.on('click', handleCloseEmail);
-        
+
         // Send dropdown menu items
         $('.btn-send-menu').on('click', function (e) {
             e.preventDefault();
             handleSendEmail(e);
         });
-        
+
         $('.btn-schedule-send-menu').on('click', function (e) {
             e.preventDefault();
             // Reset schedule state and open modal
@@ -104,7 +104,7 @@
             scheduleState.selectedTime = null;
             openScheduleModal(scheduleState);
         });
-        
+
         UIElements.btnConfirmSend.on('click', handleConfirmSendEmail);
         UIElements.btnCancelEmail.on('click', handleCancelEmailSend);
         UIElements.inputEmailSubject.on('change', handleKeyUpTrim);
@@ -117,24 +117,24 @@
         UIElements.inputEmailBCC.on('change', validateEmailBCC);
 
         // Add real-time validation on input event (as user types) - show errors without toast
-        UIElements.inputEmailTo.on('input', function() {
+        UIElements.inputEmailTo.on('input', function () {
             validateEmailFieldWithOptions(UIElements.inputEmailToField, false, false, false); // showToast=false, onlyShowErrorsIfHasContent=false
         });
-        UIElements.inputEmailCC.on('input', function() {
+        UIElements.inputEmailCC.on('input', function () {
             validateEmailFieldWithOptions(UIElements.inputEmailCC[0], false, false, false);
         });
-        UIElements.inputEmailBCC.on('input', function() {
+        UIElements.inputEmailBCC.on('input', function () {
             validateEmailFieldWithOptions(UIElements.inputEmailBCC[0], false, false, false);
         });
 
         // Add blur event handler to validate and show errors when leaving field
-        UIElements.inputEmailTo.on('blur', function() {
+        UIElements.inputEmailTo.on('blur', function () {
             validateEmailFieldWithOptions(UIElements.inputEmailToField, false, false, false); // showToast=false
         });
-        UIElements.inputEmailCC.on('blur', function() {
+        UIElements.inputEmailCC.on('blur', function () {
             validateEmailFieldWithOptions(UIElements.inputEmailCC[0], false, false, false);
         });
-        UIElements.inputEmailBCC.on('blur', function() {
+        UIElements.inputEmailBCC.on('blur', function () {
             validateEmailFieldWithOptions(UIElements.inputEmailBCC[0], false, false, false);
         });
 
@@ -155,7 +155,7 @@
         $('.details-scrollable').on('scroll.emailWidget', function () {
             $('.tox-toolbar__overflow').hide();
         });
-        
+
         // Initialize BCC visibility on load
         toggleBCCVisibility();
     }
@@ -195,15 +195,15 @@
         $('#templateTextContainer').hide();
         $('#scheduled-delay-section').hide();
         UIElements.btnSave.hide();
-        UIElements.btnSend.hide();    
+        UIElements.btnSend.hide();
         UIElements.btnSendDropdown.hide();
         UIElements.btnDiscard.hide();
         UIElements.btnSendClose.hide();
     }
 
     async function initTemplateDetails() {
-       applicationDetails = await loadApplicationDetails();
-       mappingConfig = await getTemplateVariables();
+        applicationDetails = await loadApplicationDetails();
+        mappingConfig = await getTemplateVariables();
     }
 
     function disableEmail() {
@@ -217,7 +217,7 @@
         UIElements.inputEmailFrom.prop('disabled', true);
         UIElements.inputEmailSubject.prop('disabled', true);
         UIElements.inputEmailBody.prop('disabled', true);
-        
+
         // Make TinyMCE read-only if it exists
         const editor = tinymce.get('EmailBody');
         editor?.mode.set('readonly');
@@ -234,7 +234,7 @@
         UIElements.inputEmailFrom.prop('disabled', false);
         UIElements.inputEmailSubject.prop('disabled', false);
         UIElements.inputEmailBody.prop('disabled', false);
-        
+
         // Make TinyMCE editable if it exists
         const editor = tinymce.get('EmailBody');
         editor?.mode.set('design');
@@ -298,7 +298,7 @@
                 val = val.substring(0, 5) + '/' + val.substring(5);
             }
             UIElements.scheduleDateInput.val(val);
-            
+
             // Validate immediately when a complete date is entered (MM/DD/YYYY = 10 chars)
             if (val.length === 10) {
                 validateScheduleDate();
@@ -312,7 +312,7 @@
             const dateStr = UIElements.scheduleDateInput.val();
             // Clear any previous validation messages and error toasts
             UIElements.scheduleDateValidation.removeClass('text-success').removeClass('text-danger').text('').hide();
-            
+
             if (dateStr?.length === 10) {
                 const [month, day, year] = dateStr.split('/').map(Number);
                 if (isValidDate(month, day, year)) {
@@ -425,12 +425,12 @@
             if (isSelected) classes += ' selected';
 
             const $dayCell = $(`<div class="${classes}">${day}</div>`);
-            
+
             if (!isPast && !isFuture) {
                 $dayCell.on('click', function () {
                     // Clear error immediately when user clicks a date
                     UIElements.scheduleDateValidation.removeClass('text-success').removeClass('text-danger').text('').hide();
-                    
+
                     state.selectedDate = new Date(state.currentYear, state.currentMonth, day);
                     const month = (state.currentMonth + 1).toString().padStart(2, '0');
                     const dayStr = day.toString().padStart(2, '0');
@@ -448,7 +448,7 @@
         // Show modal and backdrop first
         UIElements.scheduleModalBackdrop.show();
         UIElements.scheduleModal.addClass('active');
-        
+
         // Bind Escape key only when modal is open
         $(document).off('keydown.scheduleModal').on('keydown.scheduleModal', function (e) {
             if (e.key === 'Escape') {
@@ -476,11 +476,11 @@
             const tomorrow = new Date();
             tomorrow.setDate(tomorrow.getDate() + 1);
             tomorrow.setHours(9, 0, 0, 0);
-            
+
             state.selectedDate = tomorrow;
             state.currentMonth = tomorrow.getMonth();
             state.currentYear = tomorrow.getFullYear();
-            
+
             const month = (tomorrow.getMonth() + 1).toString().padStart(2, '0');
             const day = tomorrow.getDate().toString().padStart(2, '0');
             UIElements.scheduleDateInput.val(`${month}/${day}/${tomorrow.getFullYear()}`);
@@ -551,20 +551,20 @@
 
         // Create a local date from the user-entered components (not UTC)
         const localDate = new Date(Number.parseInt(y), Number.parseInt(m) - 1, Number.parseInt(d), Number.parseInt(h), Number.parseInt(min), Number.parseInt(s));
-        
+
         // Convert local time to UTC for storage
         const utcDate = new Date(localDate.getTime() - localDate.getTimezoneOffset() * 60000);
         const utcIso = utcDate.toISOString();
 
         // Commit to hidden field
         UIElements.inputSendOnDateTime.val(utcIso);
-        
+
         // Display as local time (no timezone conversion needed since we're storing as UTC)
         const formattedDate = localDate.toLocaleDateString('en-CA'); // YYYY-MM-DD format
-        const formattedTime = localDate.toLocaleTimeString('en-US', { 
-            hour: 'numeric', 
-            minute: '2-digit', 
-            hour12: true 
+        const formattedTime = localDate.toLocaleTimeString('en-US', {
+            hour: 'numeric',
+            minute: '2-digit',
+            hour12: true
         });
         UIElements.sendOnDisplay.text(`${formattedDate}, ${formattedTime}`);
         UIElements.btnClearSchedule.show();
@@ -582,10 +582,10 @@
             // Parse the ISO string and format as local time without timezone conversion
             const date = new Date(dateTimeValue);
             const formattedDate = date.toLocaleDateString('en-CA'); // YYYY-MM-DD format
-            const formattedTime = date.toLocaleTimeString('en-US', { 
-                hour: 'numeric', 
-                minute: '2-digit', 
-                hour12: true 
+            const formattedTime = date.toLocaleTimeString('en-US', {
+                hour: 'numeric',
+                minute: '2-digit',
+                hour12: true
             });
             UIElements.sendOnDisplay.text(`${formattedDate}, ${formattedTime}`);
             UIElements.btnClearSchedule.show();
@@ -616,18 +616,18 @@
         dropdownIds.forEach(id => {
             bootstrap.Dropdown.getInstance(document.getElementById(id))?.hide();
         });
-        
+
         // Clear all validation errors
         UIElements.emailForm.find('.input-validation-error').removeClass('input-validation-error').addClass('field-validation-valid');
         UIElements.emailForm.find('.field-validation-error').html('').removeClass('field-validation-error').addClass('field-validation-valid');
-        
+
         // Reset jQuery validator state
         const validator = UIElements.emailForm.validate();
         validator?.resetForm();
-        
+
         // Clear toastr notifications
         toastr?.clear();
-        
+
         $('#modal-content, #modal-background').removeClass('active');
         UIElements.emailForm.removeClass('active');
         UIElements.btnNewEmail.removeClass('hide');
@@ -643,10 +643,10 @@
         UIElements.btnSendClose.hide();
         UIElements.bccInputRow.removeClass('show');
         UIElements.btnShowBCC.removeClass('hide');
-        
+
         // Clear the stored selected email data when form is closed
         selectedEmailData = null;
-        
+
         // Reset draft viewing flag
         isViewingDraft = false;
     }
@@ -655,7 +655,7 @@
         if (isNewEmailDraft && newDraftId) {
             $.ajax({ url: `/api/app/email-notification/${newDraftId}/email`, type: 'DELETE' })
                 .catch(e => console.warn('Failed to delete draft on close:', e));
-            isNewEmailDraft = false; 
+            isNewEmailDraft = false;
             newDraftId = null;
         }
         closeEmailFormUI();
@@ -664,80 +664,80 @@
     function handleDiscardEmail() {
         // If it's a new email draft, delete it and reset the form
         if (isNewEmailDraft && newDraftId) {
-            $.ajax({ 
-                url: `/api/app/email-notification/${newDraftId}/email`, 
-                type: 'DELETE' 
+            $.ajax({
+                url: `/api/app/email-notification/${newDraftId}/email`,
+                type: 'DELETE'
             })
-            .done(() => {
-                isNewEmailDraft = false;
-                newDraftId = null;
-                // Reset all fields to empty
-                UIElements.inputEmailTo.val('');
-                UIElements.inputEmailCC.val('');
-                UIElements.inputEmailBCC.val('');
-                UIElements.inputEmailFrom.val('');
-                UIElements.inputEmailSubject.val('');
-                UIElements.inputEmailBody.val('');
-                // Reset TinyMCE editor
-                if (tinymce.get("EmailBody")) {
-                    tinymce.get("EmailBody").setContent('');
-                }
-                // Reset original values
-                UIElements.inputOriginalEmailTo.val('');
-                UIElements.inputOriginalEmailCC.val('');
-                UIElements.inputOriginalEmailBCC.val('');
-                UIElements.inputOriginalEmailFrom.val('');
-                UIElements.inputOriginalEmailSubject.val('');
-                UIElements.inputOriginalEmailBody.val('');
-                // Clear template
-                $('#EmailTemplate').val('').trigger('change');
-                // Reset scheduled send
-                clearScheduleValue();
-                // Reset validation errors
-                resetValidationErrors();
-                // Reset draft change state
-                handleDraftChange();
-                // Reset BCC visibility
-                toggleBCCVisibility();
-                // Show success toast
-                if (globalThis.toastr) {
-                    toastr.success('Changes discarded', 'Email Reset');
-                }
-            })
-            .fail(e => {
-                console.warn('Failed to delete draft on discard:', e);
-                // Still reset the form even if delete fails
-                isNewEmailDraft = false;
-                newDraftId = null;
-                // Reset all fields to empty
-                UIElements.inputEmailTo.val('');
-                UIElements.inputEmailCC.val('');
-                UIElements.inputEmailBCC.val('');
-                UIElements.inputEmailFrom.val('');
-                UIElements.inputEmailSubject.val('');
-                UIElements.inputEmailBody.val('');
-                // Reset TinyMCE editor
-                if (tinymce.get("EmailBody")) {
-                    tinymce.get("EmailBody").setContent('');
-                }
-                // Reset original values
-                UIElements.inputOriginalEmailTo.val('');
-                UIElements.inputOriginalEmailCC.val('');
-                UIElements.inputOriginalEmailBCC.val('');
-                UIElements.inputOriginalEmailFrom.val('');
-                UIElements.inputOriginalEmailSubject.val('');
-                UIElements.inputOriginalEmailBody.val('');
-                // Clear template
-                $('#EmailTemplate').val('').trigger('change');
-                // Reset scheduled send
-                clearScheduleValue();
-                // Reset validation errors
-                resetValidationErrors();
-                // Reset draft change state
-                handleDraftChange();
-                // Reset BCC visibility
-                toggleBCCVisibility();
-            });
+                .done(() => {
+                    isNewEmailDraft = false;
+                    newDraftId = null;
+                    // Reset all fields to empty
+                    UIElements.inputEmailTo.val('');
+                    UIElements.inputEmailCC.val('');
+                    UIElements.inputEmailBCC.val('');
+                    UIElements.inputEmailFrom.val('');
+                    UIElements.inputEmailSubject.val('');
+                    UIElements.inputEmailBody.val('');
+                    // Reset TinyMCE editor
+                    if (tinymce.get("EmailBody")) {
+                        tinymce.get("EmailBody").setContent('');
+                    }
+                    // Reset original values
+                    UIElements.inputOriginalEmailTo.val('');
+                    UIElements.inputOriginalEmailCC.val('');
+                    UIElements.inputOriginalEmailBCC.val('');
+                    UIElements.inputOriginalEmailFrom.val('');
+                    UIElements.inputOriginalEmailSubject.val('');
+                    UIElements.inputOriginalEmailBody.val('');
+                    // Clear template
+                    $('#EmailTemplate').val('').trigger('change');
+                    // Reset scheduled send
+                    clearScheduleValue();
+                    // Reset validation errors
+                    resetValidationErrors();
+                    // Reset draft change state
+                    handleDraftChange();
+                    // Reset BCC visibility
+                    toggleBCCVisibility();
+                    // Show success toast
+                    if (globalThis.toastr) {
+                        toastr.success('Changes discarded', 'Email Reset');
+                    }
+                })
+                .fail(e => {
+                    console.warn('Failed to delete draft on discard:', e);
+                    // Still reset the form even if delete fails
+                    isNewEmailDraft = false;
+                    newDraftId = null;
+                    // Reset all fields to empty
+                    UIElements.inputEmailTo.val('');
+                    UIElements.inputEmailCC.val('');
+                    UIElements.inputEmailBCC.val('');
+                    UIElements.inputEmailFrom.val('');
+                    UIElements.inputEmailSubject.val('');
+                    UIElements.inputEmailBody.val('');
+                    // Reset TinyMCE editor
+                    if (tinymce.get("EmailBody")) {
+                        tinymce.get("EmailBody").setContent('');
+                    }
+                    // Reset original values
+                    UIElements.inputOriginalEmailTo.val('');
+                    UIElements.inputOriginalEmailCC.val('');
+                    UIElements.inputOriginalEmailBCC.val('');
+                    UIElements.inputOriginalEmailFrom.val('');
+                    UIElements.inputOriginalEmailSubject.val('');
+                    UIElements.inputOriginalEmailBody.val('');
+                    // Clear template
+                    $('#EmailTemplate').val('').trigger('change');
+                    // Reset scheduled send
+                    clearScheduleValue();
+                    // Reset validation errors
+                    resetValidationErrors();
+                    // Reset draft change state
+                    handleDraftChange();
+                    // Reset BCC visibility
+                    toggleBCCVisibility();
+                });
         } else {
             // Reset existing email to stored original data
             if (selectedEmailData) {
@@ -747,10 +747,10 @@
                 UIElements.inputEmailFrom.val(selectedEmailData.fromAddress);
                 UIElements.inputEmailSubject.val(selectedEmailData.subject);
                 UIElements.inputEmailBody.val(refreshTodayDateSpans(selectedEmailData.body));
-                
+
                 // Reset TinyMCE editor
                 tinymce.get("EmailBody")?.setContent(refreshTodayDateSpans(selectedEmailData.body));
-                
+
                 // Reset scheduled send date/time to original state
                 if (selectedEmailData.sendOnDateTime) {
                     UIElements.inputSendOnDateTime.val(selectedEmailData.sendOnDateTime);
@@ -766,22 +766,22 @@
                 UIElements.inputEmailFrom.val(UIElements.inputOriginalEmailFrom.val());
                 UIElements.inputEmailSubject.val(UIElements.inputOriginalEmailSubject.val());
                 UIElements.inputEmailBody.val(UIElements.inputOriginalEmailBody.val());
-                
+
                 // Reset TinyMCE editor
                 tinymce.get("EmailBody")?.setContent(UIElements.inputOriginalEmailBody.val());
-                
+
                 // Reset scheduled send date/time to original state
                 clearScheduleValue();
             }
-            
+
             // Clear validation errors
             resetValidationErrors();
-            
+
             // Show success toast
             if (globalThis.toastr) {
                 toastr.success('Changes discarded', 'Email Reset');
             }
-            
+
             // Disable save and discard buttons since no changes are present
             handleDraftChange();
         }
@@ -826,7 +826,7 @@
 
     function toggleBCCVisibility() {
         const bccValue = UIElements.inputEmailBCC.val().trim();
-        
+
         if (bccValue) {
             // If BCC has value, show row and hide button
             UIElements.bccInputRow.addClass('show');
@@ -907,8 +907,6 @@
         toggleBCCVisibility();
     }
 
-
-
     function validateEmailTo(suppressToast = false) {
         const result = validateEmailField(UIElements.inputEmailToField, true, !suppressToast);
         return suppressToast ? result : result.isValid; // For backward compatibility
@@ -924,10 +922,6 @@
         return suppressToast ? result : result.isValid; // For backward compatibility
     }
 
-    function validateEmailFieldWithOptions(fieldElement, isRequired = false, showToast = false, onlyShowErrorsIfHasContent = false) {
-        const result = validateEmailField(fieldElement, isRequired, showToast, onlyShowErrorsIfHasContent);
-        return result;
-    }
 
     function handleConfirmSendEmail() {
         UIElements.confirmationModal.hide();
@@ -1030,7 +1024,7 @@
             }
 
             UIElements.btnSave.prop('disabled', true);
-            
+
             // Ensure body content is synced from editor
             let emailBody = '';
             if (editorInstance) {
@@ -1040,7 +1034,7 @@
             } else {
                 emailBody = UIElements.inputEmailBody.val();
             }
-            
+
             $.ajax({
                 url: '/api/app/email/save-draft',
                 type: 'POST',
@@ -1107,7 +1101,7 @@
 
     function getOrCreateErrorSpan(fieldElement, fieldName) {
         let errorSpan = $(`span[data-valmsg-for*='${fieldName}']`)[0];
-        
+
         if (!errorSpan) {
             errorSpan = document.createElement('span');
             errorSpan.className = 'field-validation-valid';
@@ -1137,8 +1131,6 @@
         $(fieldElement).removeClass('input-validation-error');
         return { isValid: true, error: null };
     }
-
-    
 
     function updateErrorSpanDisplay(errorSpan, fieldElement, errorMessage, showToast) {
         $(errorSpan).addClass('field-validation-error').removeClass('field-validation-valid');
@@ -1172,7 +1164,7 @@
             }
             return true;
         }
-        
+
         if (isValid && allErrors.length === 0) return true;
 
         // Collect jQuery validator errors
@@ -1180,7 +1172,7 @@
         formErrors.forEach(err => {
             if (!allErrors.includes(err)) allErrors.push(err);
         });
-        
+
         if (allErrors.length > 0) {
             showValidationErrorToast(allErrors);
         }
@@ -1213,7 +1205,7 @@
         let validator = UIElements.emailForm.validate();
         let fieldName = 'EmailBody';
         let errorList = validator.errorList;
-        
+
         // Get TinyMCE content and check validation state
         let tinymceContent = getTinyMceContent();
         let onlyErrorIsTinyMCE = checkOnlyErrorIsTinyMCE(isValid, errorList, fieldName, tinymceContent);
@@ -1246,20 +1238,20 @@
 
     function checkDraftChanges() {
         return UIElements.inputEmailTo.val() !== UIElements.inputOriginalEmailTo.val() ||
-               UIElements.inputEmailCC.val() !== UIElements.inputOriginalEmailCC.val() ||
-               UIElements.inputEmailBCC.val() !== UIElements.inputOriginalEmailBCC.val() ||
-               UIElements.inputEmailFrom.val() !== UIElements.inputOriginalEmailFrom.val() ||
-               UIElements.inputEmailSubject.val() !== UIElements.inputOriginalEmailSubject.val() ||
-               UIElements.inputEmailBody.val() !== UIElements.inputOriginalEmailBody.val();
+            UIElements.inputEmailCC.val() !== UIElements.inputOriginalEmailCC.val() ||
+            UIElements.inputEmailBCC.val() !== UIElements.inputOriginalEmailBCC.val() ||
+            UIElements.inputEmailFrom.val() !== UIElements.inputOriginalEmailFrom.val() ||
+            UIElements.inputEmailSubject.val() !== UIElements.inputOriginalEmailSubject.val() ||
+            UIElements.inputEmailBody.val() !== UIElements.inputOriginalEmailBody.val();
     }
 
     function resetValidationErrors() {
-        UIElements.emailForm.find('.field-validation-error').each(function() {
+        UIElements.emailForm.find('.field-validation-error').each(function () {
             $(this).removeClass('field-validation-error').addClass('field-validation-valid').html('');
         });
     }
-   
- 
+
+
     $('#EmailTemplate').on('change', async function () {
         console.log(this.value);
 
@@ -1274,7 +1266,7 @@
             $('#EmailFrom').val(templateDetails.sendFrom)
             $('#EmailSubject').val(templateDetails.subject)
             editorInstance.setContent(renderedHtml);
-            
+
             // Only enable save button if we're viewing a draft
             if (isViewingDraft) {
                 UIElements.btnSave.attr('disabled', false);
@@ -1402,7 +1394,7 @@
 
             const value = getValueByPath(apiResponse, mapTo);
 
-            let formatValue = processString(token,value);
+            let formatValue = processString(token, value);
             templateData[token] = formatValue ?? "";
         });
 
@@ -1414,19 +1406,19 @@
 
     PubSub.subscribe('email_selected', (msg, data) => {
         console.log("EMAIL SELECTED EVENT FIRED", data);
-        
+
         // Determine if this is a draft FIRST, before any field population
         const isDraft = data?.status === 'Draft';
         isViewingDraft = isDraft; // Set flag early to prevent handleDraftChange from enabling buttons
         console.log('isViewingDraft set to:', isViewingDraft);
-        
+
         // Store the original selected email data for discard functionality
         selectedEmailData = structuredClone(data);
-        
+
         if (isNewEmailDraft && newDraftId) {
             $.ajax({ url: `/api/app/email-notification/${newDraftId}/email`, type: 'DELETE' })
                 .catch(e => console.warn('Failed to delete abandoned draft on email_selected:', e));
-            isNewEmailDraft = false; 
+            isNewEmailDraft = false;
             newDraftId = null;
         }
         resetValidationErrors();
@@ -1439,7 +1431,7 @@
         UIElements.inputOriginalEmailBCC.val(data.bcc?.replaceAll(',', '; ') ?? '');
         UIElements.inputOriginalEmailFrom.val(data.fromAddress);
         UIElements.inputOriginalEmailSubject.val(data.subject);
-         resetEmailBody(); 
+        resetEmailBody();
         tinymce.get("EmailBody")?.remove(); // remove existing instance
 
         tinymce.init({
@@ -1483,7 +1475,7 @@
         // Set the template dropdown to the current template if available
         // Find the option by its text (template name) since values are GUIDs
         if (data.templateName) {
-            const option = $('#EmailTemplate').find('option').filter(function() {
+            const option = $('#EmailTemplate').find('option').filter(function () {
                 return $(this).text() === data.templateName;
             });
             if (option.length > 0) {
@@ -1495,7 +1487,7 @@
         // Always show the template dropdown, but disable it for sent emails
         $('#templateListContainer').show();
         $('#EmailTemplate').prop('disabled', !isDraft);
-        
+
         if (isDraft) {
             enableEmail();
             handleDraftChange();
@@ -1505,7 +1497,7 @@
             $('#email_attachment_upload_btn').hide();
             // Don't show clear schedule button for sent emails
             UIElements.btnClearSchedule.hide();
-            
+
             // Extra safety: ensure buttons stay disabled for sent emails
             setTimeout(() => {
                 if (!isViewingDraft) {
@@ -1529,8 +1521,8 @@
     PubSub.subscribe(
         'applicant_info_updated',
         (_, ApplicantInfoObj) => {
-            if(ApplicantInfoObj+"" !== "undefined"
-                && ApplicantInfoObj.ContactEmail+"" != "undefined"
+            if (ApplicantInfoObj + "" !== "undefined"
+                && ApplicantInfoObj.ContactEmail + "" != "undefined"
                 && ApplicantInfoObj.ContactEmail !== "") {
                 UIElements.inputEmailTo[0].value = ApplicantInfoObj.ContactEmail;
             }
@@ -1777,3 +1769,271 @@
         });
     }
 });
+
+
+/**
+ * Returns TinyMCE editor toolbar options
+ * @returns {string} Toolbar configuration
+ */
+function getToolbarOptions() {
+    return 'undo redo | styles | bold italic | alignleft aligncenter alignright alignjustify | bullist numlist | link image | code preview';
+}
+
+/**
+ * Returns TinyMCE editor plugins
+ * @returns {string} Comma-separated plugin names
+ */
+function getPlugins() {
+    return 'lists link image preview code';
+}
+
+
+/**
+ * Displays validation error toast using abp.notify or toastr
+ * @param {string[]} errors - Array of error messages to display
+ */
+function showValidationErrorToast(errors) {
+    if (!errors?.length) return;
+
+    // Build error message with line breaks for each error
+    let errorMessage = errors.map((err, idx) => (idx === 0 ? '• ' : '') + err).join('<br>• ');
+
+    console.log('Showing validation errors:', errors);
+
+    // Use abp.notify if available, fallback to toastr if available
+    if (globalThis.abp?.notify) {
+        const errorTitle = 'Validation Error' + (errors.length > 1 ? 's' : '');
+        abp.notify.error(errorMessage, errorTitle);
+    } else if (globalThis.toastr) {
+        toastr.error(errorMessage, 'Validation Error' + (errors.length > 1 ? 's' : ''), {
+            timeOut: 0,
+            extendedTimeOut: 0,
+            closeButton: true,
+            escapeHtml: false
+        });
+    } else {
+        // Final fallback: alert
+        console.error('Validation Errors:', errors.join('\n'));
+        alert('Validation Error:\n\n' + errors.join('\n'));
+    }
+}
+
+/**
+ * Gets email validation error message
+ * @param {string} emailStr - Email string to validate
+ * @param {string} emailValue - Email value for error context
+ * @param {string} fieldName - Field name for error message
+ * @returns {string|null} Error message or null if valid
+ */
+function getEmailValidationError(emailStr, emailValue, fieldName) {
+    if (emailStr === '' || !validateEmail(emailStr)) {
+        let errorMessage;
+        if (emailStr === '') {
+            errorMessage = emailValue.length > 0
+                ? `An email is required after each comma or semicolon.`
+                : `The ${escapeHtml(fieldName)} field is required.`;
+        } else {
+            errorMessage = `Please enter a valid email in ${escapeHtml(fieldName)}: ${escapeHtml(emailStr)}`;
+        }
+        return normalizeErrorMessage(errorMessage);
+    }
+    return null;
+}
+
+/**
+ * Deletes email attachment with confirmation
+ * @param {string} attachmentId - Attachment ID to delete
+ */
+function deleteEmailAttachment(attachmentId) {
+    abp.message.confirm(
+        'Are you sure you want to delete this attachment?',
+        'Delete Attachment',
+        function (confirmed) {
+            if (confirmed) {
+                unity.notifications.emails.emailLogAttachment
+                    .delete(attachmentId)
+                    .then(function () {
+                        abp.notify.success('Attachment deleted successfully.');
+                        PubSub.publish('reload_email_attachments_table');
+                    })
+                    .catch(function (e) {
+                        console.warn('Failed to delete attachment:', e);
+                        abp.notify.error('Failed to delete attachment.');
+                    });
+            }
+        }
+    );
+}
+
+
+/**
+ * Generates HTML for email attachment button
+ * @param {string} attachmentId - Attachment ID
+ * @returns {string} HTML for attachment button
+ */
+function generateEmailAttachmentButtonContent(attachmentId) {
+    return `
+        <div class="dropdown" style="float:right;">
+            <button class="btn btn-light dropbtn" type="button">
+                <i class="fl fl-attachment-more"></i>
+            </button>
+            <div class="dropdown-content">
+                <button class="btn fullWidth" style="margin:10px" type="button"
+                        onclick="deleteEmailAttachment('${attachmentId}')">
+                    <i class="fl fl-cancel"></i><span>Delete Attachment</span>
+                </button>
+            </div>
+        </div>`;
+}
+
+/**
+ * Collects email field validation errors
+ * @param {object} toResult - To field validation result
+ * @param {object} ccResult - CC field validation result
+ * @param {object} bccResult - BCC field validation result
+ * @returns {string[]} Array of error messages
+ */
+function collectEmailFieldErrors(toResult, ccResult, bccResult) {
+    let allErrors = [];
+    if (!toResult.isValid && toResult.error) allErrors.push(toResult.error);
+    if (!ccResult.isValid && ccResult.error) allErrors.push(ccResult.error);
+    if (!bccResult.isValid && bccResult.error) allErrors.push(bccResult.error);
+    return allErrors;
+}
+
+/**
+ * Checks if only TinyMCE editor has validation error
+ * @param {boolean} isValid - Overall form validity
+ * @param {array} errorList - jQuery validator error list
+ * @param {string} fieldName - Field name to check
+ * @param {string} tinymceContent - TinyMCE editor content
+ * @returns {boolean} True if only TinyMCE has error
+ */
+function checkOnlyErrorIsTinyMCE(isValid, errorList, fieldName, tinymceContent) {
+    return !isValid && errorList.length === 1 &&
+        errorList[0].element.name === fieldName &&
+        tinymceContent.length > 0;
+}
+
+
+function validateEmailFieldWithOptions(fieldElement, isRequired = false, showToast = false, onlyShowErrorsIfHasContent = false) {
+    const result = validateEmailField(fieldElement, isRequired, showToast, onlyShowErrorsIfHasContent);
+    return result;
+}
+
+/**
+ * Trims input value on keyup event
+ * @param {event} e - Keyup event
+ */
+function handleKeyUpTrim(e) {
+    let trimmedString = e.currentTarget.value.trim();
+    e.currentTarget.value = trimmedString;
+}
+
+
+/**
+  * Validates email format
+  * @param {string} email - Email address to validate
+  * @returns {boolean} True if valid email format
+  */
+function validateEmail(email) {
+    // Optimized regex to prevent ReDoS: use atomic-like patterns with specific character classes
+    const emailRegex = /^[a-zA-Z0-9._%-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    return emailRegex.exec(String(email).toLowerCase()) !== null;
+}
+
+/**
+ * Escapes HTML special characters to prevent XSS
+ * @param {string} str - String to escape
+ * @returns {string} HTML-escaped string
+ */
+function escapeHtml(str) {
+    return String(str)
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#39;');
+}
+
+/**
+ * Normalizes error messages by replacing field names with user-friendly labels
+ * @param {string} message - Error message to normalize
+ * @returns {string} Normalized error message
+ */
+function normalizeErrorMessage(message) {
+    if (!message) return message;
+
+    // Handle "The {FieldName} field" format
+    message = message
+        .replaceAll(/The EmailTo field/gi, 'The To field')
+        .replaceAll(/The EmailCC field/gi, 'The CC field')
+        .replaceAll(/The EmailBCC field/gi, 'The BCC field')
+        .replaceAll(/The EmailFrom field/gi, 'The From field')
+        .replaceAll(/The EmailSubject field/gi, 'The Subject field')
+        .replaceAll(/The EmailBody field/gi, 'The Body field');
+
+    // Also handle just the field names themselves in case they appear elsewhere
+    message = message.replaceAll(/(EmailTo|EmailCC|EmailBCC|EmailFrom|EmailSubject|EmailBody)/g, (match) => {
+        const replacements = {
+            'EmailTo': 'To',
+            'EmailCC': 'CC',
+            'EmailBCC': 'BCC',
+            'EmailFrom': 'From',
+            'EmailSubject': 'Subject',
+            'EmailBody': 'Body'
+        };
+        return replacements[match] ?? match;
+    });
+
+    return message;
+}
+
+
+/**
+ * Validates date values
+ * @param {number} month - Month (1-12)
+ * @param {number} day - Day (1-31)
+ * @param {number} year - Year
+ * @returns {boolean} True if valid date
+ */
+function isValidDate(month, day, year) {
+    const date = new Date(year, month - 1, day);
+    return date.getFullYear() === year && date.getMonth() === month - 1 && date.getDate() === day;
+}
+
+/**
+ * Converts string to title case
+ * @param {string} str - String to convert
+ * @returns {string} Title-cased string
+ */
+function toTitleCase(str) {
+    return str.replaceAll(/\b\w/, function (char) {
+        return char.toUpperCase();
+    }).replaceAll(/\B\w/, function (char) {
+        return char.toLowerCase();
+    });
+}
+
+/**
+ * Gets nested object property by dot-notation path
+ * @param {object} obj - Object to traverse
+ * @param {string} path - Property path (e.g., "applicant.applicantName")
+ * @returns {*} Value at path or undefined
+ */
+function getValueByPath(obj, path) {
+    return path.split('.').reduce((acc, key) => acc?.[key], obj);
+}
+
+/**
+ * Creates a currency formatter for Canadian dollars
+ * @returns {Intl.NumberFormat} Formatter instance
+ */
+function createCurrencyFormatter() {
+    return new Intl.NumberFormat('en-CA', {
+        style: 'currency',
+        currency: 'CAD',
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+    });
+}
