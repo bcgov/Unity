@@ -82,10 +82,10 @@
     </nav>
     <div class="tab-content unt-tab-content" id="nav-tabContent">
         <!--Tab Content: Mapping-->
-        <div class="tab-pane fade show active" id="nav-mapping" role="tabpanel" aria-labelledby="nav-mapping-tab">
+        <div id="nav-mapping" class="tab-pane fade show active container-fluid" role="tabpanel" aria-labelledby="nav-mapping-tab">
             <input type="hidden" id="refresh_available_worksheets" value="" />
             <div class="configuration-action-bar row">
-                <div class="col-12 col-md-8">
+                <div class="col-12 col-md-8 px-0">
                     <h5>Mapping Configuration</h5>
                 </div>
                 <div class="col-12 col-md-4 btn-wrapper">
@@ -107,7 +107,7 @@
                 </div>
             </div>
             <div class="row">
-                <div class="col-12 col-md-4 p-3">
+                <div class="col-6 p-3">
                     <label for="applicationFormVersion" class="form-label">Version:</label>
                     <div class="select-icon-wrapper">
                         <select class="form-select form-control" id="applicationFormVersion" name="Version">
@@ -135,7 +135,7 @@
                         }
                     </div>
                 </div>
-                <div class="col-12 col-md-4 p-3">
+                <div class="col-6 p-3">
                     <label for="chefsFormVersionId" class="form-label">Form Version ID:</label>
                     <div class="input-button-wrapper ">
                         <input id="chefsFormVersionId" class="form-control input-width" type="text"
@@ -209,7 +209,7 @@
         <!--Tab Content: Worksheets-->
         @if (Model?.FlexEnabled == true)
         {
-            <div class="tab-pane fade" id="nav-custom-fields" role="tabpanel" aria-labelledby="nav-custom-fields-tab">
+            <div id="nav-custom-fields" class="tab-pane fade container-fluid" role="tabpanel" aria-labelledby="nav-custom-fields-tab">
                 <div id="customFieldsWidget">
                     @await Component.InvokeAsync("CustomFields", 
                         new {   formVersionId = @Model?.ApplicationFormVersionDto?.ChefsFormVersionGuid, 
@@ -226,7 +226,7 @@
         @if (await FeatureChecker.IsEnabledAsync("Unity.Payments"))
         {
         <!--Tab Content: Payment Configuration-->
-        <div class="tab-pane fade" id="nav-payment-configuration" role="tabpanel" aria-labelledby="nav-payment-configuration-tab">
+        <div id="nav-payment-configuration" class="tab-pane fade" role="tabpanel" aria-labelledby="nav-payment-configuration-tab">
             <div id="paymentConfigurationWidget">
                 @await Component.InvokeAsync("PaymentConfiguration", new { formid = @Model?.ApplicationFormDto?.Id})
             </div>
@@ -255,9 +255,9 @@
         @if (Model?.ShowAITab == true)
         {
             <!--Tab Content: AI Configuration-->
-            <div class="tab-pane fade" id="nav-ai-configuration" role="tabpanel" aria-labelledby="nav-ai-configuration-tab">
-                <div class="configuration-action-bar row">
-                    <div class="col-12 col-md-8">
+            <div id="nav-ai-configuration" class="tab-pane fade container-fluid" role="tabpanel" aria-labelledby="nav-ai-configuration-tab">
+                <div class="configuration-action-bar row px-0">
+                    <div class="col-12 col-md-8 px-0">
                         <h5>AI Configuration</h5>
                     </div>
                     <div class="col-12 col-md-4 btn-wrapper">
