@@ -625,8 +625,11 @@
         const validator = UIElements.emailForm.validate();
         validator?.resetForm();
 
+
         // Clear toastr notifications
-        toastr?.clear();
+        if (globalThis.toastr) {
+            toastr.clear();
+        }
 
         $('#modal-content, #modal-background').removeClass('active');
         UIElements.emailForm.removeClass('active');
@@ -2008,10 +2011,8 @@ function isValidDate(month, day, year) {
  * @returns {string} Title-cased string
  */
 function toTitleCase(str) {
-    return str.replaceAll(/\b\w/, function (char) {
+    return str.toLowerCase().replace(/\b\w/g, function (char) {
         return char.toUpperCase();
-    }).replaceAll(/\B\w/, function (char) {
-        return char.toLowerCase();
     });
 }
 
