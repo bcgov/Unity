@@ -8,7 +8,7 @@
 @inject IStringLocalizer<GrantManagerResource> L
 @inject IAuthorizationService AuthorizationService
 
-<div class="other-config-scrollable-content">
+<div class="other-config-scrollable-content container-fluid">
 <form id="otherConfigForm" autocomplete="off">
     <div class="configuration-action-bar row">
         <div class="col-12 col-md-8">
@@ -21,7 +21,7 @@
                         class="btn unt-btn-primary btn-primary"
                         abp-tooltip="Save Other Configuration"
                         button-type="Primary" />
-            <button type="reset"
+            <button type="button"
                     id="btn-cancel-other-config"
                     class="btn unt-btn-outline-primary btn-outline-primary"
                     abp-tooltip="Cancel changes">

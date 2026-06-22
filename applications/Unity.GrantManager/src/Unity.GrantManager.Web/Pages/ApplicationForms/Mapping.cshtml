@@ -85,7 +85,7 @@
         <div id="nav-mapping" class="tab-pane fade show active container-fluid" role="tabpanel" aria-labelledby="nav-mapping-tab">
             <input type="hidden" id="refresh_available_worksheets" value="" />
             <div class="configuration-action-bar row">
-                <div class="col-12 col-md-8 px-0">
+                <div class="col-12 col-md-8">
                     <h5>Mapping Configuration</h5>
                 </div>
                 <div class="col-12 col-md-4 btn-wrapper">
@@ -257,7 +257,7 @@
             <!--Tab Content: AI Configuration-->
             <div id="nav-ai-configuration" class="tab-pane fade container-fluid" role="tabpanel" aria-labelledby="nav-ai-configuration-tab">
                 <div class="configuration-action-bar row px-0">
-                    <div class="col-12 col-md-8 px-0">
+                    <div class="col-12 col-md-8">
                         <h5>AI Configuration</h5>
                     </div>
                     <div class="col-12 col-md-4 btn-wrapper">
@@ -269,7 +269,11 @@
                                     button-type="Primary" />
                         <abp-button id="btn-cancel-ai-config"
                                     class="btn unt-btn-outline-primary btn-outline-primary mx-1"
+                                    icon-type="Other" icon="fl fl-undo"
                                     abp-tooltip="Cancel changes">Cancel</abp-button>
+                        <abp-button id="btn-back-ai-config" text="Back"
+                                    class="btn unt-btn-outline-primary btn-outline-primary"
+                                    abp-tooltip="Navigate back to the Forms" />
                     </div>
                 </div>
                 <div class="row">
