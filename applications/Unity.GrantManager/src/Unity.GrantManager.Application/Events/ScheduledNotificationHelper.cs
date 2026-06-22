@@ -106,7 +106,7 @@ namespace Unity.GrantManager.Events
                 .Split(',')
                 .Select(r => r.Trim())
                 .Where(r => !string.IsNullOrWhiteSpace(r))
-                .ToList() ?? new List<string>();
+                .ToList() ?? [];
 
             if (recipientIdentifiers.Count == 0)
             {
@@ -157,11 +157,8 @@ namespace Unity.GrantManager.Events
                     notification.Id);
                 return;
             }
-            emailEvent.EmailAddressList = emailAddresses.ToList();            await localEventBus.PublishAsync(emailEvent);
-
-            _logger.LogInformation(
-                "ScheduledNotificationHelper: Published EmailNotificationEvent for application {ApplicationId}, template {TemplateName}, groups '{GroupNames}' ({Count} recipients).",
-                emailEvent.ApplicationId, emailEvent.EmailTemplateName, notification.RecipientIdentifier, emailAddresses.Count);
+            emailEvent.EmailAddressList = [.. emailAddresses];            
+            await localEventBus.PublishAsync(emailEvent);
         }
 
         /// <summary>
@@ -180,7 +177,7 @@ namespace Unity.GrantManager.Events
                 .Split(',')
                 .Select(r => r.Trim())
                 .Where(r => !string.IsNullOrWhiteSpace(r))
-                .ToList() ?? new List<string>();
+                .ToList() ?? [];
 
             if (recipientIdentifiers.Count == 0)
             {
@@ -231,12 +228,8 @@ namespace Unity.GrantManager.Events
                 return;
             }
 
-            emailEvent.EmailAddressList = emailAddresses.ToList();
+            emailEvent.EmailAddressList = [.. emailAddresses];
             await localEventBus.PublishAsync(emailEvent);
-
-            _logger.LogInformation(
-                "ScheduledNotificationHelper: Published EmailNotificationEvent for application {ApplicationId}, template {TemplateName}, recipients '{RecipientIdentifiers}' ({Count} email addresses).",
-                application.Id, emailEvent.EmailTemplateName, notification.RecipientIdentifier, emailAddresses.Count);
         }
 
         /// <summary>
@@ -259,7 +252,7 @@ namespace Unity.GrantManager.Events
                     .Split(',')
                     .Select(r => r.Trim())
                     .Where(r => !string.IsNullOrWhiteSpace(r))
-                    .ToList() ?? new List<string>();
+                    .ToList() ?? [];
 
                 foreach (var recipientId in recipientIdentifiers)
                 {
