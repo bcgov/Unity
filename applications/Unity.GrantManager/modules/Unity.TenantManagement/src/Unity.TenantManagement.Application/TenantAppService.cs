@@ -226,30 +226,7 @@ public class TenantAppService(
         await tenantRepository.DeleteAsync(tenant);
     }
 
-    [Authorize(TenantManagementPermissions.Tenants.ManageConnectionStrings)]
-    public virtual async Task<string> GetDefaultConnectionStringAsync(Guid id)
-    {
-        var tenant = await tenantRepository.GetAsync(id);
-        return tenant?.FindDefaultConnectionString()!;
-    }
-
-    [Authorize(TenantManagementPermissions.Tenants.ManageConnectionStrings)]
-    public virtual async Task UpdateDefaultConnectionStringAsync(Guid id, string defaultConnectionString)
-    {
-        var tenant = await tenantRepository.GetAsync(id);
-        tenant.SetDefaultConnectionString(defaultConnectionString);
-        await tenantRepository.UpdateAsync(tenant);
-    }
-
-    [Authorize(TenantManagementPermissions.Tenants.ManageConnectionStrings)]
-    public virtual async Task DeleteDefaultConnectionStringAsync(Guid id)
-    {
-        var tenant = await tenantRepository.GetAsync(id);
-        tenant.RemoveDefaultConnectionString();
-        await tenantRepository.UpdateAsync(tenant);
-    }
-
-    [RemoteService(false)]    
+    [RemoteService(false)]
     [AllowAnonymous]
     public async Task<string> GetCurrentTenantCasClientCodeAsync(Guid tenantId)
     {

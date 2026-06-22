@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Unity.TenantManagement.Application.Contracts;
@@ -15,7 +16,13 @@ namespace Unity.TenantManagement.Application
     {
         private static readonly char[] Letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".ToCharArray();
         private static readonly char[] Digits = "0123456789".ToCharArray();
-        private static readonly char[] Alphanumeric = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789".ToCharArray();
+
+        // Deliberately excludes quote/backslash characters — the password is interpolated into
+        // a single-quoted SQL literal by EntityFrameworkCoreGrantManagerDbSchemaMigrator, so
+        // restricting the charset here removes that injection surface at the source rather than
+        // relying solely on escaping at the consuming end.
+        private static readonly char[] PasswordAlphabet =
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789".ToCharArray();
 
         private readonly IConfiguration _configuration;
         private readonly ITenantRepository _tenantRepository;
@@ -86,30 +93,27 @@ namespace Unity.TenantManagement.Application
             [
                 'T',
                 '_',
-                Letters[Random.Shared.Next(Letters.Length)],
-                Letters[Random.Shared.Next(Letters.Length)],
-                Letters[Random.Shared.Next(Letters.Length)],
-                Digits[Random.Shared.Next(Digits.Length)],
-                Digits[Random.Shared.Next(Digits.Length)],
-                Digits[Random.Shared.Next(Digits.Length)]
+                Letters[RandomNumberGenerator.GetInt32(Letters.Length)],
+                Letters[RandomNumberGenerator.GetInt32(Letters.Length)],
+                Letters[RandomNumberGenerator.GetInt32(Letters.Length)],
+                Digits[RandomNumberGenerator.GetInt32(Digits.Length)],
+                Digits[RandomNumberGenerator.GetInt32(Digits.Length)],
+                Digits[RandomNumberGenerator.GetInt32(Digits.Length)]
             ];
             return new string(chars);
         }
 
         private static string GeneratePassword()
         {
-            // 8 random alphanumeric characters (A-Z, 0-9)
-            Span<char> chars =
-            [
-                Alphanumeric[Random.Shared.Next(Alphanumeric.Length)],
-                Alphanumeric[Random.Shared.Next(Alphanumeric.Length)],
-                Alphanumeric[Random.Shared.Next(Alphanumeric.Length)],
-                Alphanumeric[Random.Shared.Next(Alphanumeric.Length)],
-                Alphanumeric[Random.Shared.Next(Alphanumeric.Length)],
-                Alphanumeric[Random.Shared.Next(Alphanumeric.Length)],
-                Alphanumeric[Random.Shared.Next(Alphanumeric.Length)],
-                Alphanumeric[Random.Shared.Next(Alphanumeric.Length)]
-            ];
+            // 24 cryptographically random characters (mixed-case letters + digits) — generated
+            // via RandomNumberGenerator (CSPRNG), not the non-cryptographic Random.Shared, since
+            // this protects a live PostgreSQL login role's credentials.
+            const int length = 24;
+            Span<char> chars = new char[length];
+            for (var i = 0; i < length; i++)
+            {
+                chars[i] = PasswordAlphabet[RandomNumberGenerator.GetInt32(PasswordAlphabet.Length)];
+            }
             return new string(chars);
         }
     }

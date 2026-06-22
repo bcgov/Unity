@@ -44,26 +44,6 @@
         dataType: null
       }, ajaxParams));
     };
-    unity.tenantManagement.tenant.getDefaultConnectionString = function(id, ajaxParams) {
-      return abp.ajax($.extend(true, {
-        url: abp.appPath + 'api/multi-tenancy/tenants/' + id + '/default-connection-string',
-        type: 'GET'
-      }, { dataType: 'text' }, ajaxParams));
-    };
-    unity.tenantManagement.tenant.updateDefaultConnectionString = function(id, defaultConnectionString, ajaxParams) {
-      return abp.ajax($.extend(true, {
-        url: abp.appPath + 'api/multi-tenancy/tenants/' + id + '/default-connection-string' + abp.utils.buildQueryString([{ name: 'defaultConnectionString', value: defaultConnectionString }]) + '',
-        type: 'PUT',
-        dataType: null
-      }, ajaxParams));
-    };
-    unity.tenantManagement.tenant.deleteDefaultConnectionString = function(id, ajaxParams) {
-      return abp.ajax($.extend(true, {
-        url: abp.appPath + 'api/multi-tenancy/tenants/' + id + '/default-connection-string',
-        type: 'DELETE',
-        dataType: null
-      }, ajaxParams));
-    };
     unity.tenantManagement.tenant.getConnectionStrings = function(id, ajaxParams) {
       return abp.ajax($.extend(true, {
         url: abp.appPath + 'api/multi-tenancy/tenants/' + id + '/connection-strings',

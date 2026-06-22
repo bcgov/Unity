@@ -1,4 +1,5 @@
 using System;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
@@ -53,6 +54,13 @@ public class EntityFrameworkCoreGrantManagerDbSchemaMigrator
                 var rolePassword = tenantCsb.Password
                     ?? throw new InvalidOperationException("Tenant connection string is missing the Password value.");
 
+                // dbName/roleName get interpolated directly into admin DDL below (Postgres
+                // identifiers can't be parameterized) — enforce an allowlist so a connection
+                // string crafted via UpdateConnectionStringsAsync can't break out of an
+                // identifier and inject arbitrary SQL into this admin-privileged migration path.
+                EnsureSafeIdentifier(dbName, "database name");
+                EnsureSafeIdentifier(roleName, "role name");
+
                 // Build an admin-level connection string targeting the tenant database
                 var adminCsb = new NpgsqlConnectionStringBuilder(adminConnectionString) { Database = dbName };
                 var adminTenantConnectionString = adminCsb.ToString();
@@ -96,6 +104,7 @@ public class EntityFrameworkCoreGrantManagerDbSchemaMigrator
                         ?? throw new InvalidOperationException("Tenant readonly connection string is missing the Username value.");
                     var readOnlyPassword = readOnlyCsb.Password
                         ?? throw new InvalidOperationException("Tenant readonly connection string is missing the Password value.");
+                    EnsureSafeIdentifier(readOnlyRoleName, "readonly role name");
 
                     await CreateRoleIfNotExistsAsync(adminConnectionString, readOnlyRoleName, readOnlyPassword);
                     await GrantReadOnlyPrivilegesAsync(adminConnectionString, adminTenantConnectionString, dbName, readOnlyRoleName);
@@ -133,6 +142,24 @@ public class EntityFrameworkCoreGrantManagerDbSchemaMigrator
         }
     }
 
+    // Postgres identifiers (role/database/schema names) can't be parameterized via the wire
+    // protocol, so every call site that interpolates one into DDL must first validate it
+    // against this allowlist rather than relying on escaping alone.
+    private static readonly Regex SafeIdentifierPattern = new("^[A-Za-z0-9_]+$", RegexOptions.Compiled);
+
+    private static void EnsureSafeIdentifier(string value, string fieldName)
+    {
+        if (!SafeIdentifierPattern.IsMatch(value))
+        {
+            throw new InvalidOperationException(
+                $"Tenant connection string {fieldName} '{value}' contains characters that are not allowed in a PostgreSQL identifier.");
+        }
+    }
+
+    // Passwords are used as quoted string literals (not identifiers), so unlike role/database
+    // names they keep a richer allowed character set — escaped here instead of allowlisted.
+    private static string EscapeSqlLiteral(string value) => value.Replace("'", "''");
+
     private static async Task CreateRoleIfNotExistsAsync(string adminConnectionString, string roleName, string password)
     {
         await using var conn = new NpgsqlConnection(adminConnectionString);
@@ -142,7 +169,7 @@ public class EntityFrameworkCoreGrantManagerDbSchemaMigrator
             DO $$
             BEGIN
               IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = '{roleName}') THEN
-                CREATE ROLE "{roleName}" WITH LOGIN PASSWORD '{password}';
+                CREATE ROLE "{roleName}" WITH LOGIN PASSWORD '{EscapeSqlLiteral(password)}';
               END IF;
             END
             $$;

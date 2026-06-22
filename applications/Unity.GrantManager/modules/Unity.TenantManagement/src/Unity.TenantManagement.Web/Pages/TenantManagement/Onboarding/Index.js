@@ -49,19 +49,26 @@
             .replace(/\b\w/g, function (c) { return c.toUpperCase(); });
     }
 
-    function _renderCheckboxGroup(data, type) {
-        if (data === null || data === undefined || data === '') return '';
-
-        // Worksheet CheckboxGroup values are always serialized as [{key, value}, ...]
-        let labels = [];
+    // Worksheet CheckboxGroup values are always serialized as [{key, value}, ...].
+    function _extractCheckboxLabels(data) {
+        if (data === null || data === undefined || data === '') return [];
         try {
             const items = JSON.parse(data);
             if (Array.isArray(items)) {
-                labels = items.filter(function (i) { return i?.value === true; }).map(function (i) { return i.key; });
+                return items.filter(function (i) { return i?.value === true; }).map(function (i) { return i.key; });
             }
         } catch {
-            labels = [];
+            // not a CheckboxGroup value
         }
+        return [];
+    }
+
+    function _renderCheckboxGroup(data, type) {
+        // No value submitted at all for this field — leave the cell blank, as opposed to
+        // data being present but resolving to zero checked labels (handled below).
+        if (data === null || data === undefined || data === '') return '';
+
+        const labels = _extractCheckboxLabels(data);
 
         if (type === 'sort' || type === 'filter' || type === 'type') {
             return labels.join(', ');
@@ -97,15 +104,35 @@
             .filter(function (v) { return v.includes('@'); });
     }
 
-    function _renderSuperUsersPreview(data, type) {
+    // ─── DOM-based preview builders ──────────────────────────────────────────
+    // Used by _updateFieldPreview below, which injects these via DOM append rather than
+    // .html() — these build real elements with jQuery's .text() for any dynamic content
+    // (the worksheet field value), so there's no HTML-string sink for CodeQL/XSS scanners
+    // to flag, unlike the string-concatenation renderers above (which still serve the
+    // DataTables column-render path, where a string return is required).
+
+    function _buildMutedPlaceholder() {
+        return $('<span>').addClass('text-muted').text('—');
+    }
+
+    function _buildCheckboxBadgesPreview(data) {
+        const labels = _extractCheckboxLabels(data);
+        if (labels.length === 0) return _buildMutedPlaceholder();
+
+        return $(labels.map(function (label) {
+            return $('<span>')
+                .addClass('badge rounded-pill bg-light text-dark border me-1 onboarding-checkbox-badge')
+                .text(_formatCheckboxKey(label))
+                .get(0);
+        }));
+    }
+
+    function _buildSuperUsersPreview(data) {
         const emails = _extractDataGridEmails(data);
         if (emails === null) {
-            if (type === 'sort' || type === 'filter' || type === 'type') return data || '';
-            return data ? _escapeHtml(data) : '<span class="text-muted">—</span>';
+            return data ? $('<span>').text(data) : _buildMutedPlaceholder();
         }
-
-        if (type === 'sort' || type === 'filter' || type === 'type') return emails.join(', ');
-        return emails.length ? _escapeHtml(emails.join(', ')) : '<span class="text-muted">—</span>';
+        return emails.length ? $('<span>').text(emails.join(', ')) : _buildMutedPlaceholder();
     }
 
     // ─── DataGrid cell renderer ───────────────────────────────────────────────
@@ -281,21 +308,15 @@
 
     let _fieldValues = {};
 
-    function _sanitizePreviewHtml(html) {
-        const value = String(html || '');
-        const escaped = _escapeHtml(value);
-        return escaped
-            .replaceAll('&lt;span class=&quot;text-muted&quot;&gt;—&lt;/span&gt;', '<span class="text-muted">—</span>');
-    }
-
-    function _updateFieldPreview(selectId, previewId, renderer) {
+    function _updateFieldPreview(selectId, previewId, domBuilder) {
         const key = $('#' + selectId).val();
         const raw = key ? (_fieldValues[key] ?? '') : '';
         const text = raw ? String(raw) : '';
         const $preview = $('#' + previewId);
-        if (renderer) {
-            const rendered = renderer(text, 'display') || '<span class="text-muted">—</span>';
-            $preview.html(_sanitizePreviewHtml(rendered));
+        if (domBuilder) {
+            // domBuilder() returns real jQuery/DOM elements built with .text(), not an HTML
+            // string — appended directly so there's no .html()-of-untrusted-string sink.
+            $preview.empty().append(domBuilder(text));
         } else {
             $preview.text(text || '—').toggleClass('text-muted', !text);
         }
@@ -403,14 +424,14 @@
             _updateFieldPreview('create-tenant-program-area-field', 'create-tenant-program-area-value');
         });
         $('#create-tenant-features-field').on('change', function () {
-            _updateFieldPreview('create-tenant-features-field', 'create-tenant-features-value', _renderCheckboxGroup);
+            _updateFieldPreview('create-tenant-features-field', 'create-tenant-features-value', _buildCheckboxBadgesPreview);
         });
         $('#create-tenant-tenant-name-field').on('change', function () {
             _updateFieldPreview('create-tenant-tenant-name-field', 'create-tenant-tenant-name-value');
             _triggerValidation(applicationId);
         });
         $('#create-tenant-super-users-field').on('change', function () {
-            _updateFieldPreview('create-tenant-super-users-field', 'create-tenant-super-users-value', _renderSuperUsersPreview);
+            _updateFieldPreview('create-tenant-super-users-field', 'create-tenant-super-users-value', _buildSuperUsersPreview);
             _triggerValidation(applicationId);
         });
     }
@@ -442,9 +463,9 @@
             _updateFieldPreview('create-tenant-ministry-field',    'create-tenant-ministry-value');
             _updateFieldPreview('create-tenant-branch-field',      'create-tenant-branch-value');
             _updateFieldPreview('create-tenant-program-area-field', 'create-tenant-program-area-value');
-            _updateFieldPreview('create-tenant-features-field',    'create-tenant-features-value', _renderCheckboxGroup);
+            _updateFieldPreview('create-tenant-features-field',    'create-tenant-features-value', _buildCheckboxBadgesPreview);
             _updateFieldPreview('create-tenant-tenant-name-field', 'create-tenant-tenant-name-value');
-            _updateFieldPreview('create-tenant-super-users-field', 'create-tenant-super-users-value', _renderSuperUsersPreview);
+            _updateFieldPreview('create-tenant-super-users-field', 'create-tenant-super-users-value', _buildSuperUsersPreview);
             $('#create-tenant-field-mapping').show();
             _wireCreateTenantMappingHandlers(applicationId);
             _triggerValidation(applicationId);

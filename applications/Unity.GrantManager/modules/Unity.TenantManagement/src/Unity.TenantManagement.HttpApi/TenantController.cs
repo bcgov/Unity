@@ -70,39 +70,6 @@ public class TenantController(ITenantAppService tenantAppService) : AbpControlle
     }
 
     [HttpGet]
-    [Route("{id}/default-connection-string")]
-    public virtual Task<string> GetDefaultConnectionStringAsync(Guid id)
-    {
-        if (!ModelState.IsValid)
-        {
-            throw new UserFriendlyException("TenantController->GetDefaultConnectionStringAsync: ModelState Invalid");
-        }
-        return TenantAppService.GetDefaultConnectionStringAsync(id);
-    }
-
-    [HttpPut]
-    [Route("{id}/default-connection-string")]
-    public virtual Task UpdateDefaultConnectionStringAsync(Guid id, string defaultConnectionString)
-    {
-        if (!ModelState.IsValid)
-        {
-            throw new UserFriendlyException("TenantController->UpdateDefaultConnectionStringAsync: ModelState Invalid");
-        }
-        return TenantAppService.UpdateDefaultConnectionStringAsync(id, defaultConnectionString);
-    }
-
-    [HttpDelete]
-    [Route("{id}/default-connection-string")]
-    public virtual Task DeleteDefaultConnectionStringAsync(Guid id)
-    {
-        if (!ModelState.IsValid)
-        {
-            throw new UserFriendlyException("TenantController->DeleteDefaultConnectionStringAsync: ModelState Invalid");
-        }
-        return TenantAppService.DeleteDefaultConnectionStringAsync(id);
-    }
-
-    [HttpGet]
     [Route("{id}/managers")]
     public virtual Task<List<TenantManagerDto>> GetManagersAsync(Guid id)
     {
