@@ -257,10 +257,10 @@ namespace Unity.GrantManager.ApplicationForms
         public async Task<int> GetFormVersionByApplicationIdAsync(Guid applicationId)
         {
             var formSubmission = await formSubmissionRepository.GetByApplicationAsync(applicationId);
-            
-            if (formSubmission.FormVersionId == null)
+
+            if (formSubmission == null || formSubmission.FormVersionId == null)
             {
-                return await HandleEmptyFormVersionIdAsync(formSubmission);
+                return await HandleEmptyFormVersionIdAsync(formSubmission!);
             }
 
             return await GetVersion(formSubmission.FormVersionId ?? Guid.Empty);
