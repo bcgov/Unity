@@ -891,7 +891,7 @@ $(function () {
             data: 'projectStartDate',
             className: 'data-table-header',
             render: function (data, type) {
-                return DateUtils.formatUtcDateToLocal(data, type);
+                return DateUtils.formatDate(data, type);
             },
             index: columnIndex
         }
@@ -904,7 +904,7 @@ $(function () {
             data: 'projectEndDate',
             className: 'data-table-header',
             render: function (data, type) {
-                return DateUtils.formatUtcDateToLocal(data, type);
+                return DateUtils.formatDate(data, type);
             },
             index: columnIndex
         }
@@ -1169,7 +1169,7 @@ $(function () {
             data: 'dueDate',
             className: 'data-table-header',
             render: function (data, type) {
-                return DateUtils.formatUtcDateToLocal(data, type);
+                return DateUtils.formatDate(data, type);
             },
             index: columnIndex
         }
@@ -1196,7 +1196,7 @@ $(function () {
             data: 'finalDecisionDate',
             className: 'data-table-header',
             render: function (data, type) {
-                return DateUtils.formatUtcDateToLocal(data, type);
+                return DateUtils.formatDate(data, type);
             },
             index: columnIndex
         }

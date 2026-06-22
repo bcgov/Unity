@@ -118,13 +118,15 @@ namespace Unity.GrantManager.Events
                 {
                     string emailToAddress = String.Join(",", eventData.EmailAddressList);
 
-                    return await InitializeEmailAndUploadAttachments(
+                    var emailLog = await InitializeEmailAndUploadAttachments(
                         emailToAddress,
                         eventData.Body,
                         FAILED_PAYMENTS_SUBJECT,
                         eventData.ApplicationId,
                         eventData.EmailFrom,
                         eventData.EmailTemplateName);
+
+                    return await StampClassificationAsync(emailLog, EmailType.EventBased, RecipientType.Internal);
                 }
                 case EmailAction.SendCustom:
                     return await HandleSendCustomEmail(eventData);
@@ -151,10 +153,9 @@ namespace Unity.GrantManager.Events
                     if (eventData.PaymentRequestIds != null && eventData.PaymentRequestIds.Count != 0)
                     {
                         emailLog.PaymentRequestIds = string.Join(",", eventData.PaymentRequestIds);
-                        await emailLogsRepository.UpdateAsync(emailLog, autoSave: true);
                     }
 
-                    return emailLog;
+                    return await StampClassificationAsync(emailLog, EmailType.EventBased, RecipientType.Internal);
                 }
                 case EmailAction.Retry:
                 default:
@@ -167,10 +168,13 @@ namespace Unity.GrantManager.Events
             string emailToAddress = String.Join(",", eventData.EmailAddressList);
             string? emailCC = eventData.Cc?.Any() == true ? String.Join(",", eventData.Cc) : null;
             string? emailBCC = eventData.Bcc?.Any() == true ? String.Join(",", eventData.Bcc) : null;
-            
+
+            var emailType = eventData.EmailType ?? EmailType.Manual;
+            var recipient = eventData.Recipient ?? RecipientType.External;
+
             if (eventData.Id == Guid.Empty)
             {
-                return await InitializeEmailAndUploadAttachments(
+                var newEmailLog = await InitializeEmailAndUploadAttachments(
                     emailToAddress,
                     eventData.Body,
                     eventData.Subject,
@@ -180,6 +184,8 @@ namespace Unity.GrantManager.Events
                     emailCC,
                     emailBCC,
                     eventData.EmailAttachments);
+
+                return await StampClassificationAsync(newEmailLog, emailType, recipient);
             }
 
             EmailLog? emailLog = await emailNotificationService.UpdateEmailLog(
@@ -196,10 +202,18 @@ namespace Unity.GrantManager.Events
 
             if (emailLog != null)
             {
-                return emailLog;
+                return await StampClassificationAsync(emailLog, emailType, recipient);
             }
 
             throw new UserFriendlyException("Unable to update Email Log");
+        }
+
+        private async Task<EmailLog> StampClassificationAsync(EmailLog emailLog, EmailType emailType, RecipientType recipient)
+        {
+            emailLog.EmailType = emailType;
+            emailLog.Recipient = recipient;
+            await emailLogsRepository.UpdateAsync(emailLog, autoSave: true);
+            return emailLog;
         }
 
         private async Task HandleSaveDraftEmail(EmailNotificationEvent eventData)

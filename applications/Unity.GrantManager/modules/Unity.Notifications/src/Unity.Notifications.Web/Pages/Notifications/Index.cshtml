@@ -1,11 +1,21 @@
-﻿@page
+@page
 @using Microsoft.Extensions.Localization
 @using Unity.Notifications.Localization
-@using Unity.Notifications.Web.Pages.Notifications
 @model Unity.Notifications.Web.Pages.Notifications.IndexModel
 @inject IStringLocalizer<NotificationsResource> L
 
-@{
+@section scripts {
+    <abp-script-bundle>
+        <abp-script src="/Pages/Notifications/Index.js" />
+    </abp-script-bundle>
 }
-<h1>Notifications</h1>
-<p>@L["SamplePageMessage"]</p>
+
+<div class="container-fluid px-2">
+    <div class="action-bar p-2 search-action-bar d-flex align-items-center gap-2">
+        <abp-card-title class="mb-0">@L["Menu:Notifications"]</abp-card-title>
+        <label for="search" class="visually-hidden">@L["Search"]</label>
+        <input type="search" id="search" class="tbl-search" placeholder="@L["Search"]" aria-label="@L["Search"]" />
+        <span id="dynamicButtonContainerId" class="ms-auto"></span>
+    </div>
+    <abp-table id="NotificationListTable"></abp-table>
+</div>

@@ -27,5 +27,6 @@ namespace Unity.Payments.Web.Views.Shared.Components.PaymentInfo
         public Guid ApplicationId { get; set; }
         public Guid ApplicationFormVersionId { get; set; }
         public Guid ApplicantId { get; set; }
+        public string Category { get; set; } = string.Empty;
     }
 }
