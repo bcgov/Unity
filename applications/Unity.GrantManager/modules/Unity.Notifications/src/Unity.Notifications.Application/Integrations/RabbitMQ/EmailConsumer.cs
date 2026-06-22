@@ -215,11 +215,11 @@ public class EmailConsumer(
         {
             try
             {
-                dynamic chesResponse = JsonConvert.DeserializeObject(responseBody);
-                if (chesResponse?.messages != null && chesResponse.messages.Count > 0)
+                var chesResponse = JsonConvert.DeserializeObject<dynamic>(responseBody);
+                if (chesResponse?.messages != null && chesResponse?.messages.Count > 0)
                 {
-                    string msgId = chesResponse.messages[0].msgId;
-                    if (Guid.TryParse(msgId, out var msgIdGuid))
+                    string? msgId = chesResponse?.messages[0].msgId;
+                    if (msgId != null && Guid.TryParse(msgId, out var msgIdGuid))
                     {
                         log.ChesMsgId = msgIdGuid;
                     }
