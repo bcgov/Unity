@@ -16,7 +16,10 @@
 
 #applicationEmailsWidget .email-input {
     outline: 0;
-    margin: 2px 8px;
+    margin-right: 8px;
+    margin-left: 8px;
+    margin-top: 2px;
+    margin-bottom: 2px;
     height: 36px;
 }
 
@@ -92,6 +95,7 @@
     align-items: center;
     display: flex;
     height: 36px;
+    margin: 0px;
     flex-grow: 1;
     gap: 0.3rem;
     position: relative;
@@ -125,12 +129,16 @@
 #applicationEmailsWidget .from-field-container .from-input {
     min-width: 150px;
     width: 100%;
+    margin-right: 0 !important;
+    margin-bottom: 0 !important;
     height: 36px;
-    display: block;
+    padding: 6px 8px !important;
+    display: inline-block;
+    vertical-align: baseline;
+    margin-top: 0;
     position: relative;
     flex-grow: 1;
-    padding: 6px 75px 6px 8px !important;
-    margin: 0;
+    padding-right: 75px !important;
 }
 
 #applicationEmailsWidget .from-field-container .mb-3 {
@@ -165,7 +173,8 @@
     font-size: 1rem !important;
     font-family: 'BCSans', var(--bs-font-sans-serif) !important;
     font-weight: var(--bs-body-font-weight, 400);
-    margin: 0 !important;
+    margin-bottom: 0 !important;
+    margin-top: 0 !important;
 }
 
 /* Specific alignment fix for labels in horizontal layouts */
@@ -216,7 +225,10 @@
 
 /* Email template select styling */
 #applicationEmailsWidget #EmailTemplate {
-    margin: 2px 8px;
+    margin-right: 8px;
+    margin-left: 8px;
+    margin-top: 2px;
+    margin-bottom: 2px;
 }
 
 /* 1. Style the select itself when the empty value is selected */
@@ -231,33 +243,35 @@
 
 /* 3. Ensure valid selections return to your default text color (e.g., dark grey/black) */
 #applicationEmailsWidget #EmailTemplate option:not([value=""]) {
-    color: #212529;
+    color: #212529; 
 }
 
 #applicationEmailsWidget button {
+    margin-top: 0px;
+    margin-bottom: 0px;
     height: 36px;
     min-height: 36px;
-    max-height: 36px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    max-height: 36px;
     padding-top: 0px;
     padding-bottom: 0px;
     box-sizing: border-box;
-    margin: 2px;
 }
 
 #user-dropdown > button {
-    height: 36px;
-    min-height: 36px;
-    max-height: 36px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding-top: 0px;
-    padding-bottom: 0px;
-    box-sizing: border-box;
-    margin: 0;
+  height: 36px;
+  min-height: 36px;
+  max-height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-top: 0px;
+  padding-bottom: 0px;
+  box-sizing: border-box;
+  margin-top: 0px;
+  margin-bottom: 0px;
 }
 
 #applicationEmailsWidget .email-buttons-group {
@@ -267,7 +281,10 @@
 
 #applicationEmailsWidget .email-btn {
     margin-top: 10px;
-    padding: 6px 14px;
+    padding-left: 14px;
+    padding-right: 14px;
+    padding-top: 6px;
+    padding-bottom: 6px;
     background: #E6EFF7;
     border-radius: 3px;
     cursor: pointer;
@@ -276,6 +293,11 @@
 
 #applicationEmailsWidget .email-btn:hover {
     box-shadow: -3px 3px 11px -3px rgba(33, 33, 33, .2);
+}
+
+#applicationEmailsWidget .btn-send-close {
+    margin-top: 0px;
+    margin-bottom: 0px;
 }
 
 /* Send dropdown button styling */
@@ -418,9 +440,11 @@
     font-weight: 600;
     text-align: center;
     align-content: center;
-    margin: 30px auto;
+    margin: 30px;
     display: flex;
     max-width: fit-content;
+    margin-left: auto;
+    margin-right: auto;
     color: inherit;
 }
 
@@ -436,7 +460,7 @@
     line-height: normal;
     text-align: center;
     word-wrap: break-word;
-    overflow-wrap: break-word;
+    word-break: break-word;
 }
 
 #btn-cancel-email {
@@ -515,12 +539,13 @@
     display: none;
 }
 
-#applicationEmailsWidget .toast-top-center {
+#applicationEmailsWidget .toast-top-center { 
     top: 220px;
     margin: 0 auto;
     left: 50%;
     margin-left: -450px;
 }
+
 
 #applicationEmailsWidget #modal-background.active,
 #applicationEmailsWidget #modal-content.active {
@@ -528,22 +553,26 @@
 }
 
 #applicationEmailsWidget #email-spinner {
-    width: 40px;
+	width: 40px;
     height: 40px;
-    position: absolute;
-    top: 50%;
-    left: 50%;
+	position: absolute;
+	top: 50%;
+	left: 50%;
     margin-top: -20px;
     margin-left: 40px;
-    border-radius: 50%;
-    border: 5px solid #eaf5fe;
-    border-right-color: #5597d4;
-    animation: rotateSpinner 800ms linear infinite;
+	border-radius: 50%;
+	border: 5px solid #eaf5fe;
+	border-right-color: #5597d4;
+	animation: rotateSpinner 800ms linear infinite;  
 }
 
 #applicationEmailsWidget .email-spinner-text {
     display: flex;
     padding-right: 100px;
+}
+
+#applicationEmailsWidget button {
+    margin: 2px;
 }
 
 #applicationEmailsWidget button:hover {
@@ -722,6 +751,10 @@
     gap: 1.5rem;
 }
 
+
+
+
+
 #schedule-date-input {
     width: 100%;
     box-sizing: border-box;
@@ -757,7 +790,7 @@
 .input-group-text {
     background: #f8f9fa;
     border-color: #ced4da;
-    color: #495057;
+    color: #6c757d;
 }
 
 /* Footer */
@@ -821,12 +854,17 @@ input#EmailFrom.input-validation-error {
     margin-bottom: -20px !important;
 }
 
+#applicationEmailsWidget .from-field-container .from-input {
+  display: block;
+  margin: 0px;
+}
+
 .mt-14 {
     margin-top: 14px !important;
 }
 
 @keyframes rotateSpinner {
-    to {
-        transform: rotate(360deg);
-    }
+	to {
+		transform: rotate(360deg);
+	}
 }
