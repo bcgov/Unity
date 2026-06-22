@@ -22,10 +22,18 @@ function validateGuid(textString) {
 
 /**
  * Initializes DataTable for Application Forms mapping
+ * Destroys existing instance if present
  * @returns {DataTable} Configured DataTable instance
  */
-function initializeDataTable() {
-    return new DataTable('#ApplicationFormsTable', {
+function initializeApplicationFormsTable() {
+    const tableSelector = '#ApplicationFormsTable';
+    
+    // Destroy existing DataTable instance if it exists
+    if ($.fn.DataTable.isDataTable(tableSelector)) {
+        $(tableSelector).DataTable().destroy();
+    }
+    
+    return new DataTable(tableSelector, {
         info: false,
         ordering: false,
         fixedHeader: false,

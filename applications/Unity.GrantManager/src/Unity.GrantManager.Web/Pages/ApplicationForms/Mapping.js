@@ -77,7 +77,7 @@
     function init() {
         bindUIEvents();
         restoreActiveTab();
-        dataTable = initializeDataTable();
+        dataTable = initializeApplicationFormsTable();
         let availableChefsFields = availableChefFieldsString ? JSON.parse(availableChefFieldsString) : []
         initializeIntakeMap(availableChefsFields);
         bindExistingMaps();
