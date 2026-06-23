@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -5,10 +6,12 @@ using System.Threading.Tasks;
 using Unity.GrantManager.Repositories;
 using Volo.Abp.AspNetCore.Mvc.UI.RazorPages;
 using Volo.Abp.Authorization.Permissions;
+using Volo.Abp.Identity;
 using Volo.Abp.Localization;
 
 namespace Unity.GrantManager.Web.Pages.Identity.Roles;
 
+[Authorize(IdentityPermissions.Roles.ManagePermissions)]
 public class PermissionRoleMatrixModel(IPermissionRoleMatrixRepository repository, IPermissionDefinitionManager permissionDefinitionManager) : AbpPageModel
 {
     public bool IsExpanded { get; private set; }
