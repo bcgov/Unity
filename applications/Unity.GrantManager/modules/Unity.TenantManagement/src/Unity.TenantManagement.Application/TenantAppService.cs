@@ -286,6 +286,7 @@ public class TenantAppService(
         await tenantRepository.UpdateAsync(tenant);
     }
 
+    [Authorize(TenantManagementPermissions.Policies.TenantsUpdateOrITOps)]
     public async Task<List<TenantManagerDto>> GetManagersAsync(Guid id)
     {
         using (currentTenant.Change(id))

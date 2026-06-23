@@ -428,7 +428,6 @@
             defaultVisibleColumns: defaultVisibleColumns,
             defaultSortColumn: 1,
             dataEndpoint: _tenantAppService.getList,
-            data: { maxResultCount: 1000 },
             responseCallback: responseCallback,
             actionButtons: commonTableActionButtons('Tenants').filter(function (b) { return b.id !== 'btn-toggle-filter'; }),
             serverSideEnabled: false,
@@ -436,7 +435,8 @@
             reorderEnabled: true,
             languageSetValues: {},
             dynamicButtonContainerId: 'dynamicButtonContainerId',
-            externalSearchId: 'search'
+            externalSearchId: 'search',
+            fixedHeaders: true
         });
 
         // Disable interactive row selection (selection is only ever driven via the API),
@@ -451,7 +451,11 @@
             _dataTable.ajax.reloadEx();
         });
 
-        $('#AbpContentToolbar button[name=CreateTenant]').click(function (e) {
+        // Relocate the page-toolbar "New Tenant" button into the action bar, to the
+        // left of the Filter button, matching the Endpoints list layout.
+        $('#tenantCreateButtonContainer').append($('#AbpContentToolbar button[name=CreateTenant]'));
+
+        $('#tenantCreateButtonContainer button[name=CreateTenant]').click(function (e) {
             e.preventDefault();
             _createModal.open();
         });

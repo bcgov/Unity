@@ -72,6 +72,11 @@ public class OnboardingRequestAppService(
         IReadOnlyList<Guid>? dynamicColumnMatchIds = null;
         Dictionary<Guid, IReadOnlyList<WorksheetInstanceDataDto>>? allInstancesByApp = null;
 
+        // PERF: global filter, dynamic worksheet-field filters, and dynamic sort all require
+        // loading every application id + worksheet instance for the category into memory, since
+        // worksheet field values live in JSONB and can't be filtered/sorted in SQL. Fine at current
+        // onboarding-request volumes; revisit (e.g. bounded fetch, indexed projection) if this
+        // screen is reused/refactored for a larger dataset.
         if (hasGlobalFilter || dynamicColumnFilters.Count > 0 || isDynamicSort)
         {
             var allIds = await ApplicationProvider.GetAllIdsAsync(category);
@@ -114,6 +119,8 @@ public class OnboardingRequestAppService(
         {
             // Worksheet field values live in JSONB, not a queryable column, so the DB can't
             // sort by them — fetch every filtered match and sort/page in memory instead.
+            // PERF: int.MaxValue means no upper bound on this fetch — acceptable while onboarding
+            // request volume stays small; cap this if that changes.
             var filtered = await ApplicationProvider.GetPagedListAsync(
                 0, int.MaxValue, null, category,
                 hasGlobalFilter ? input.Filter : null,
