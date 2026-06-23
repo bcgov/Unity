@@ -5,7 +5,7 @@
     let dt = $('#ApplicationPaymentRequestListTable');
     let dataTable;
     const listColumns = getColumns();
-    const defaultVisibleColumns = ['id', 'amount', 'status', 'supplierName'];
+    const defaultVisibleColumns = ['id', 'amount', 'status', 'supplierName', 'invoiceStatus', 'cASResponse', 'category'];
 
     $('body').on('click', '#savePaymentInfoBtn', function () {
         let applicationId = document.getElementById(
@@ -218,6 +218,52 @@
 
     dataTable.on('search.dt', () => handleSearch());
 
+    dataTable.on('draw', function () {
+        dataTable.rows().every(function () {
+            let data = this.data();
+            let $row = $(this.node());
+            $row.removeClass('error-row');
+            if (data.casResponse && data.casResponse !== '' &&
+                data.casResponse.toUpperCase() !== 'SUCCEEDED') {
+                $row.addClass('error-row');
+            }
+        });
+    });
+
+    // Reposition the COLUMNS dropdown to open upward when there is not enough space below. Opens downward if there is no ample space in either direction.
+    $('#dynamicButtonContainerId').on('click', '.dt-button', function () {
+        if ($(this).closest('.dt-button-collection').length) return;
+        const $btn = $(this);
+        setTimeout(function () {
+            const $collection = $('#dynamicButtonContainerId .dt-button-collection').filter(':visible').first();
+            if (!$collection.length) return;
+            const btnRect = $btn[0].getBoundingClientRect();
+            const collHeight = $collection.outerHeight();
+            const rightOffset = window.innerWidth - btnRect.right;
+            if (btnRect.bottom + collHeight > window.innerHeight) {
+                $collection[0].style.setProperty('position', 'fixed', 'important');
+                $collection[0].style.setProperty('bottom', (window.innerHeight - btnRect.top) + 'px', 'important');
+                $collection[0].style.setProperty('top', '', 'important');
+            } else {
+                $collection[0].style.setProperty('position', 'fixed', 'important');
+                $collection[0].style.setProperty('top', btnRect.bottom + 'px', 'important');
+                $collection[0].style.setProperty('bottom', '', 'important');
+            }
+            $collection[0].style.setProperty('left', 'auto', 'important');
+            $collection[0].style.setProperty('right', rightOffset + 'px', 'important');
+        }, 0);
+    });
+
+    $('#ApplicationPaymentRequestListTable').on('click', 'tr td', function (e) {
+        let column = dataTable.column(this);
+        let columnName = dataTable.context[0].aoColumns[column.index()].sName;
+        if (columnName === 'cASResponse') {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            return false;
+        }
+    });
+
     dataTable.on('select', function (e, dt, type, indexes) {
         if (indexes?.length) {
             indexes.forEach((index) => {
@@ -279,6 +325,8 @@
             getApplicationPaymentPaidOnColumn(),
             getApplicationPaymentDescriptionColumn(),
             getApplicationPaymentCASResponseColumn(),
+            getApplicationPaymentInvoiceStatusColumn(),
+            getApplicationPaymentCategoryColumn(),
             getMailingAddressColumn(),
             getMaskedBankAccountColumn(),
             getSiteNumberColumn(),
@@ -382,18 +430,38 @@
             title: l('PaymentInfoView:ApplicationPaymentListTable.CASResponse'),
             name: 'cASResponse',
             data: 'casResponse',
-            className: 'data-table-header',
+            className: 'data-table-header notexport',
             index: 8,
             render: function (data) {
                 if (data + '' !== 'undefined' && data?.length > 0) {
-                    return (
-                        '<button id="cas-response-btn" class="btn btn-light info-btn cas-response-btn" type="button" onclick="openCasResponseModal(\'' +
-                        data +
-                        '\');">View Response<i class="fl fl-mapinfo"></i></button>'
-                    );
+                    return '<button class="btn btn-light info-btn" type="button" onclick="openCasResponseModal(\'' + data + '\');">View Response<i class="fl fl-mapinfo"></i></button>';
                 }
-                return '{Not Available}';
+                return null;
             },
+        };
+    }
+
+    function getApplicationPaymentInvoiceStatusColumn() {
+        return {
+            title: l('PaymentInfoView:ApplicationPaymentListTable.InvoiceStatus'),
+            name: 'invoiceStatus',
+            data: 'invoiceStatus',
+            className: 'data-table-header',
+            index: 9,
+            defaultContent: '',
+        };
+    }
+
+    function getApplicationPaymentCategoryColumn() {
+        const category = document.getElementById('PaymentInfoApplicationCategory')?.value || '';
+        return {
+            title: l('PaymentInfoView:ApplicationPaymentListTable.Category'),
+            name: 'category',
+            data: null,
+            className: 'data-table-header',
+            index: 10,
+            defaultContent: category,
+            render: function () { return category; },
         };
     }
 
@@ -406,6 +474,7 @@
             data: 'site.addressLine1',
             className: 'data-table-header',
             render: function (data, type, full, meta) {
+                if (!full.site) return '';
                 return (
                     nullToEmpty(full.site.addressLine1) +
                     ' ' +
@@ -420,7 +489,7 @@
                     nullToEmpty(full.site.postalCode)
                 );
             },
-            index: 9,
+            index: 11,
         };
     }
 
@@ -432,7 +501,7 @@
             name: 'bankAccount',
             data: 'site.bankAccount',
             className: 'data-table-header',
-            index: 10,
+            index: 12,
         };
     }
 
@@ -442,7 +511,7 @@
             name: 'number',
             data: 'site.number',
             className: 'data-table-header',
-            index: 11,
+            index: 13,
         };
     }
 
@@ -454,7 +523,7 @@
             name: 'supplierNumber',
             data: 'supplierNumber',
             className: 'data-table-header',
-            index: 12,
+            index: 14,
         };
     }
     function getSupplierNameColumn() {
@@ -465,7 +534,7 @@
             name: 'supplierName',
             data: 'supplierName',
             className: 'data-table-header',
-            index: 13,
+            index: 15,
         };
     }
 
@@ -571,6 +640,9 @@ function getPaymentStatusTextColor(status) {
             return '#5595D9';
 
         case 'Paid':
+            return '#42814A';
+
+        case 'HistoricalPayment':
             return '#42814A';
 
         case 'Failed':

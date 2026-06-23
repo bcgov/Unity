@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Unity.GrantManager.Applications;
 using Unity.Payments.Domain.PaymentRequests;
 using Unity.Payments.Domain.Suppliers;
 using Unity.Payments.Enums;
@@ -19,7 +20,8 @@ namespace Unity.Payments.Domain.Services
         ISiteRepository siteRepository,
         IExternalUserLookupServiceProvider externalUserLookupServiceProvider,
         CasPaymentRequestCoordinator casPaymentRequestCoordinator,
-        IObjectMapper objectMapper) : DomainService, IPaymentRequestQueryManager
+        IObjectMapper objectMapper,
+        IApplicationRepository applicationRepository) : DomainService, IPaymentRequestQueryManager
     {
         public Task<int> GetPaymentRequestCountBySiteIdAsync(Guid siteId)
         {
@@ -128,6 +130,23 @@ namespace Unity.Payments.Domain.Services
         {
             var paymentDtos = objectMapper.Map<List<PaymentRequest>, List<PaymentRequestDto>>(paymentsList);
 
+            // Batch-fetch applicant IDs for all unique correlation IDs (application IDs)
+            var applicationIds = paymentDtos
+                .Select(p => p.CorrelationId)
+                .Distinct()
+                .ToArray();
+
+            var applications = await applicationRepository.GetListByIdsAsync(applicationIds) ?? [];
+            var applicantIdByApplicationId = applications.ToDictionary(a => a.Id, a => a.ApplicantId);
+
+            foreach (var paymentDto in paymentDtos)
+            {
+                if (applicantIdByApplicationId.TryGetValue(paymentDto.CorrelationId, out var applicantId))
+                {
+                    paymentDto.ApplicantId = applicantId;
+                }
+            }
+
             // Flatten all DecisionUserIds from ExpenseApprovals across all PaymentRequestDtos
             List<Guid> paymentRequesterIds = [.. paymentDtos
                 .Select(payment => payment.CreatorId)
@@ -209,8 +228,11 @@ namespace Unity.Payments.Domain.Services
                 if (paymentRequest != null)
                 {
                     var paymentRequestDto = objectMapper.Map<PaymentRequest, PaymentRequestDto>(paymentRequest);
-                    Site site = await siteRepository.GetAsync(paymentRequest.SiteId);
-                    paymentRequestDto.Site = objectMapper.Map<Site, SiteDto>(site);
+                    if (paymentRequest.SiteId.HasValue)
+                    {
+                        Site site = await siteRepository.GetAsync(paymentRequest.SiteId.Value);
+                        paymentRequestDto.Site = objectMapper.Map<Site, SiteDto>(site);
+                    }
                     paymentRequestDtos.Add(paymentRequestDto);
                 }
             }

@@ -1,18 +1,27 @@
 (function (global) {
-    const generatingStyles = {
-        'background-color': '#f1f3f5',
-        'border-color': '#adb5bd',
-        color: '#495057',
-        opacity: '1',
-    };
-
-    function applyStyles($button, styles) {
-        $button.css(styles);
-    }
-
     function restoreButton($button, html) {
         global.AIGenerationButtonState.restore($button);
         $button.html(html).prop('disabled', false);
+    }
+
+    function restoreButtonForCooldownCheck($button, html) {
+        global.AIGenerationButtonState.restore($button);
+        $button
+            .html(html)
+            .attr('data-ai-cooldown-checking', '1')
+            .attr('data-ai-rate-limit-disabled', '1')
+            .prop('disabled', true);
+    }
+
+    function applyRateLimitState(generationStatus, options = {}) {
+        const request = generationStatus?.generationRequest;
+        global.applyAIRateLimitState?.(
+            {
+                isGenerating: generationStatus?.isGenerating === true || request?.isActive === true,
+                retryAfterSeconds: Number(generationStatus?.retryAfterSeconds) || 0
+            },
+            { pollWhenGenerating: options.pollWhenGenerating === true }
+        );
     }
 
     global.AIGenerationButtonState = {
@@ -31,27 +40,25 @@
             }
         },
         setGenerating($button) {
-            $button.removeAttr('data-ai-cooldown-active');
-            $button.attr('data-ai-generating', '1');
-            $button
-                .html('<span class="ai-button-content"><span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span><span>Generating...</span></span>')
-                .prop('disabled', true);
-            applyStyles($button, generatingStyles);
+            global.setAIGenerationButtonsGenerating?.({ poll: false });
         },
         restore($button) {
-            $button.removeAttr('data-ai-generating');
-            $button.css({
-                'background-color': '',
-                'border-color': '',
-                color: '',
-                opacity: '',
-            }).removeClass('disabled');
+            $button.removeClass('disabled');
+        },
+        restoreForCooldownCheck($button, html) {
+            restoreButtonForCooldownCheck($button, html);
+        },
+        applyStatusState(generationStatus) {
+            applyRateLimitState(generationStatus, { pollWhenGenerating: true });
         },
         monitor(options) {
-            const intervalMs = options.intervalMs || 15000;
+            const intervalMs = options.intervalMs || 5000;
+            const activeIntervalMs = options.activeIntervalMs || 1000;
+            const activePollCount = options.activePollCount || 30;
             const maxFailures = options.maxFailures || 3;
             let timeoutId = null;
             let failures = 0;
+            let pollCount = 0;
 
             const stop = () => {
                 if (timeoutId) {
@@ -60,28 +67,48 @@
                 }
             };
 
+            const scheduleNextPoll = () => {
+                pollCount += 1;
+                const nextIntervalMs = pollCount <= activePollCount
+                    ? activeIntervalMs
+                    : intervalMs;
+
+                timeoutId = setTimeout(poll, nextIntervalMs);
+            };
+
             const poll = () => {
                 options.getStatus()
-                    .done((request) => {
+                    .done((generationStatus) => {
                         failures = 0;
+                        const request = generationStatus?.generationRequest;
                         const status = this.resolveStatus(request?.status);
 
                         if (status === 'Failed') {
                             stop();
                             restoreButton(options.$button, options.originalHtml);
+                            applyRateLimitState(generationStatus, { pollWhenGenerating: true });
                             options.onFailed?.(request);
                             return;
                         }
 
-                        if (!request || request.isActive === false || status === 'Completed') {
+                        if (!request) {
                             stop();
                             restoreButton(options.$button, options.originalHtml);
-                            options.onComplete?.(request);
                             global.refreshAIRateLimitState?.();
+                            options.onMissing?.();
                             return;
                         }
 
-                        timeoutId = setTimeout(poll, intervalMs);
+                        if (request.isActive === false || status === 'Completed') {
+                            stop();
+                            restoreButtonForCooldownCheck(options.$button, options.originalHtml);
+                            applyRateLimitState(generationStatus, { pollWhenGenerating: true });
+                            options.onComplete?.(request);
+                            return;
+                        }
+
+                        applyRateLimitState(generationStatus);
+                        scheduleNextPoll();
                     })
                     .fail((error) => {
                         failures += 1;
@@ -92,7 +119,7 @@
                             return;
                         }
 
-                        timeoutId = setTimeout(poll, intervalMs);
+                        scheduleNextPoll();
                     });
             };
 

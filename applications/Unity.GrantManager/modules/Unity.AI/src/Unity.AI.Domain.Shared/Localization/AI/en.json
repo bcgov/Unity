@@ -3,6 +3,7 @@
   "texts": {
     "Permission:AI": "AI",
     "Permission:AI.Reporting": "AI Reporting",
+    "Permission:AI.Reporting.CreateEditDataModel": "Create/Edit Data Model",
     "Permission:AI.ViewApplicationAnalysis": "View AI Application Analysis",
     "Permission:AI.ViewAttachmentSummary": "View AI Attachment Summary",
     "Permission:AI.ViewScoringResult": "View AI Scoring Result",
@@ -23,6 +24,11 @@
     "AI:ApplicationAnalysisDisabled": "AI application analysis is not enabled.",
     "AI:ScoringDisabled": "AI scoring is not enabled.",
     "AI:GenerateAllDisabled": "AI generation is not enabled.",
+    "AI:NoAttachmentsAvailable": "No attachments are available to summarize.",
+    "AI:ApplicationAnalysisRequiresSubmission": "AI application analysis requires application submission data.",
+    "AI:ScoringRequiresScoresheet": "AI scoring requires a configured scoresheet.",
+    "AI:ScoringRequiresScoresheetFields": "AI scoring requires a scoresheet with scoring fields.",
+    "AI:SelectAttachmentForSummaries": "Select at least one attachment to generate summaries.",
 
     "AIPrompts": "AI Prompts",
     "AIPrompt": "AI Prompt",

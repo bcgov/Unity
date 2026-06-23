@@ -78,7 +78,7 @@ table.dataTable thead th {
 table.dataTable td {
     word-wrap: break-word;
     max-width: 250px;
-    font-size: 15px;
+    font-size: 15px !important;
 }
 
 .odd {
@@ -120,10 +120,6 @@ tr:nth-child(even) {background-color: #f2f2f2;}
     padding: 4px;
     white-space: nowrap;
     color: var(--bc-colors-blue-background, #38598A);
-}
-
-.form-select {
-    width: 400px !important;
 }
 
 .toast-top-center { 

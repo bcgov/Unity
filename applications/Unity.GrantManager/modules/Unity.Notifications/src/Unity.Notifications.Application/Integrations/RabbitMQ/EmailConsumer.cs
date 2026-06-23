@@ -1,22 +1,22 @@
+using Amazon.S3;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using System;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
-using Amazon.S3;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 using Unity.Modules.Shared.MessageBrokers.RabbitMQ.Interfaces;
 using Unity.Notifications.EmailNotifications;
+using Unity.Notifications.Emails;
 using Unity.Notifications.Events;
 using Unity.Notifications.Integrations.RabbitMQ.QueueMessages;
 using Volo.Abp;
 using Volo.Abp.Data;
+using Volo.Abp.EventBus.Local;
 using Volo.Abp.MultiTenancy;
 using Volo.Abp.Uow;
-using Unity.Notifications.Emails;
-using Volo.Abp.EventBus.Local;
 
 namespace Unity.Notifications.Integrations.RabbitMQ;
 
@@ -178,37 +178,103 @@ public class EmailConsumer(
     // -----------------------------
     private async Task UpdateEmailLogStatus(EmailLog log, HttpResponseMessage response)
     {
+        var responseBody = response.Content != null ? await response.Content.ReadAsStringAsync() : null;
+
         log.ChesResponse = JsonConvert.SerializeObject(new
         {
             response.StatusCode,
             Headers = response.Headers?.ToString(),
-            Body = response.Content != null ? await response.Content.ReadAsStringAsync() : null
+            Body = responseBody
         });
 
         log.ChesHttpStatusCode = response.StatusCode.ToString("D");
 
         log.ChesStatus = response.StatusCode.ToString();
 
-        log.Status = response.IsSuccessStatusCode
-            ? EmailStatus.Sent
-            : EmailStatus.Failed;
-
-        // Publish local event for successful FSB payment notifications
-        if (response.IsSuccessStatusCode && !string.IsNullOrEmpty(log.PaymentRequestIds))
+        // Update status based on response, but preserve Scheduled status unless send date has passed
+        if (log.Status == EmailStatus.Scheduled)
         {
-            var paymentIds = log.PaymentRequestIds
-                .Split(',', StringSplitOptions.RemoveEmptyEntries)
-                .Select(id => Guid.Parse(id))
-                .ToList();
-
-            await localEventBus.PublishAsync(new FsbEmailSentEto
+            // If scheduled and send date has passed, update to Sent or Failed based on response
+            if (log.SendOnDateTime.HasValue && log.SendOnDateTime.Value <= DateTime.UtcNow)
             {
-                EmailLogId = log.Id,
-                PaymentRequestIds = paymentIds,
-                SentDate = DateTime.UtcNow,
-                TenantId = log.TenantId
-            });
+                log.Status = response.IsSuccessStatusCode
+                    ? EmailStatus.Sent
+                    : EmailStatus.Failed;
+            }
         }
+        else
+        {
+            // For non-scheduled emails, update status based on response
+            log.Status = response.IsSuccessStatusCode
+                ? EmailStatus.Sent
+                : EmailStatus.Failed;
+        }
+
+        // Extract msgId from CHES response if successful
+        if (response.IsSuccessStatusCode && !string.IsNullOrEmpty(responseBody))
+        {
+            try
+            {
+                var chesResponse = JsonConvert.DeserializeObject<dynamic>(responseBody);
+                if (chesResponse?.messages != null && chesResponse?.messages.Count > 0)
+                {
+                    string? msgId = chesResponse?.messages[0].msgId;
+                    if (msgId != null && Guid.TryParse(msgId, out var msgIdGuid))
+                    {
+                        log.ChesMsgId = msgIdGuid;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(
+                    ex,
+                    "Failed to extract msgId from CHES response for Email {EmailId}. Response: {Response}",
+                    log.Id,
+                    responseBody
+                );
+            }
+        }
+
+        // Log SentDateTime on success
+        if (response.IsSuccessStatusCode)
+        {
+            // Use CHES response Date header (response time) or current time as fallback
+            var sentDateTime = SanitizeResponseDateTime(response.Headers?.Date?.UtcDateTime);
+            log.SentDateTime = sentDateTime;
+
+            // Publish local event for successful FSB payment notifications
+            if (!string.IsNullOrEmpty(log.PaymentRequestIds))
+            {
+                var paymentIds = log.PaymentRequestIds
+                    .Split(',', StringSplitOptions.RemoveEmptyEntries)
+                    .Select(id => Guid.Parse(id))
+                    .ToList();
+
+                await localEventBus.PublishAsync(new FsbEmailSentEto
+                {
+                    EmailLogId = log.Id,
+                    PaymentRequestIds = paymentIds,
+                    SentDate = sentDateTime,
+                    TenantId = log.TenantId
+                });
+            }
+        }
+    }
+
+    private static readonly TimeSpan _maxFutureSkew = TimeSpan.FromMinutes(5);
+    private static readonly TimeSpan _maxPastAge    = TimeSpan.FromMinutes(15);
+
+    // CHES may return a Date header that is incorrect due to clock skew or environment misconfiguration.
+    // We will sanitize it as an external value by ensuring it's not in the future or past beyond a reasonable threshold.
+    private static DateTime SanitizeResponseDateTime(DateTime? headerDate)
+    {
+        if (headerDate is null) return DateTime.UtcNow;
+
+        var now = DateTime.UtcNow;
+        return headerDate.Value >= now - _maxPastAge && headerDate.Value <= now + _maxFutureSkew
+            ? headerDate.Value
+            : now;
     }
 
     // -----------------------------
@@ -278,5 +344,5 @@ public class EmailConsumer(
     }
 
     private static bool ShouldProcessEmail(EmailLog log)
-        => log != null && log.Status != EmailStatus.Sent;
+        => log != null && log.Status != EmailStatus.Sent && log.Status != EmailStatus.Cancelled;
 }

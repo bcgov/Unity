@@ -22,8 +22,8 @@ public interface IAIRateLimiter
     Task StampAsync(Guid? userId);
 
     /// <summary>
-    /// Returns the remaining cooldown for the current user. RetryAfterSeconds is 0 when
-    /// the user can generate immediately.
+    /// Returns the current user's shared AI generation state. RetryAfterSeconds is 0 when
+    /// the user can generate immediately, unless a generation is still active.
     /// </summary>
     Task<AIRateLimitStateDto> GetStateAsync();
 }

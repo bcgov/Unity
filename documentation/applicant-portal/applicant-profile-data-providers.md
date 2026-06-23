@@ -389,6 +389,7 @@ flowchart LR
       "fiscalMonth": "April",
       "fiscalDay": 1,
       "organizationSize": "51-100",
+      "approxNumberOfEmployees": "51-100",
       "sector": "Technology",
       "subSector": "Software"
     }
@@ -410,13 +411,14 @@ flowchart LR
 | `NonRegOrgName` | `Applicant.NonRegOrgName` | `string?` | Non-registered organization name |
 | `FiscalMonth` | `Applicant.FiscalMonth` | `string?` | Fiscal year start month |
 | `FiscalDay` | `Applicant.FiscalDay` | `int?` | Fiscal year start day |
-| `OrganizationSize` | `Applicant.OrganizationSize` | `string?` | Size category |
+| `OrganizationSize` | `Applicant.ApproxNumberOfEmployees` | `string?` | Sourced from `ApproxNumberOfEmployees` for backward portal compatibility; `Applicant.OrganizationSize` column retained in DB pending migration but no longer read or displayed |
+| `ApproxNumberOfEmployees` | `Applicant.ApproxNumberOfEmployees` | `string?` | Approximate number of employees (replaces OrganizationSize in UI) |
 | `Sector` | `Applicant.Sector` | `string?` | Industry sector |
 | `SubSector` | `Applicant.SubSector` | `string?` | Industry sub-sector |
 
 **Multiple Applicants**: It is possible for a single OIDC subject to be linked to multiple distinct `Applicant` records (via different `ApplicationFormSubmission` rows). The provider returns all of them. When the same applicant is linked by multiple submissions, each join result is returned — the UI handles presentation and any eventual deduplication is a process-level concern.
 
-**Relationship to OrganizationEditHandler**: The `ORGANIZATION_EDIT_COMMAND` handler (see [RabbitMQ integration](./grants-portal-rabbitmq-integration.md)) updates a single `Applicant` entity by its ID. The `Id` field in the org info response corresponds to the `organizationId` expected by the edit command payload.
+**Relationship to OrganizationEditHandler**: The `ORGANIZATION_EDIT_COMMAND` handler (see [RabbitMQ integration](./grants-portal-rabbitmq-integration.md)) updates a single `Applicant` entity by its ID. The `Id` field in the org info response corresponds to the `organizationId` expected by the edit command payload. The inbound JSON field `organizationSize` is kept for external API compatibility but is now stored in `Applicant.ApproxNumberOfEmployees`, not `Applicant.OrganizationSize`.
 
 ---
 

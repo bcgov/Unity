@@ -15,8 +15,8 @@ namespace Unity.Payments.Repositories
 {
     public class PaymentRequestRepository : EfCoreRepository<PaymentsDbContext, PaymentRequest, Guid>, IPaymentRequestRepository
     {
-        private List<string> ReCheckStatusList { get; set; } = new List<string>();
-        private List<string> FailedStatusList { get; set; } = new List<string>();
+        private List<string> ReCheckStatusList { get; set; } = [];
+        private List<string> FailedStatusList { get; set; } = [];
 
         public PaymentRequestRepository(IDbContextProvider<PaymentsDbContext> dbContextProvider) : base(dbContextProvider)
         {
@@ -103,10 +103,10 @@ namespace Unity.Payments.Repositories
 
         public async Task<List<PaymentRequest>> GetPaymentPendingListByCorrelationIdsAsync(IEnumerable<Guid> correlationIds)
         {
-            var idList = correlationIds?.ToList() ?? new List<Guid>();
+            var idList = correlationIds?.ToList() ?? [];
             if (idList.Count == 0)
             {
-                return new List<PaymentRequest>();
+                return [];
             }
 
             var dbSet = await GetDbSetAsync();
@@ -140,8 +140,9 @@ namespace Unity.Payments.Repositories
                 {
                     ApplicationId = g.Key,
                     TotalPaid = g
-                        .Where(p => p.PaymentStatus != null
-                            && p.PaymentStatus.Trim().ToUpper() == CasPaymentRequestStatus.FullyPaid.ToUpper())
+                        .Where(p => (p.PaymentStatus != null
+                                && p.PaymentStatus.Trim().ToUpper() == CasPaymentRequestStatus.FullyPaid.ToUpper())
+                            || p.Status == PaymentRequestStatus.HistoricalPayment)
                         .Sum(p => p.Amount),
                     TotalPending = g
                         .Where(p => p.Status == PaymentRequestStatus.L1Pending

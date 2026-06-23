@@ -56,7 +56,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantOrganizationIn
                     BusinessNumber = applicant.BusinessNumber ?? string.Empty,
                     OrgStatus = applicant.OrgStatus ?? string.Empty,
                     OrganizationType = applicant.OrganizationType ?? string.Empty,
-                    OrganizationSize = applicant.OrganizationSize ?? string.Empty,                    
+                    ApproxNumberOfEmployees = applicant.ApproxNumberOfEmployees ?? string.Empty,
                     NonRegOrgName = applicant.NonRegOrgName ?? string.Empty,
                     
                     // Sector Information

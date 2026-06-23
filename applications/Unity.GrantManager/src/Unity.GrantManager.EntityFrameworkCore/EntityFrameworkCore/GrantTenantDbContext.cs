@@ -6,6 +6,7 @@ using Unity.GrantManager.Intakes;
 using Unity.GrantManager.Assessments;
 using Unity.GrantManager.Comments;
 using Unity.GrantManager.GrantApplications;
+using Unity.GrantManager.Notifications;
 using Volo.Abp.Data;
 using Volo.Abp.EntityFrameworkCore;
 using Volo.Abp.EntityFrameworkCore.Modeling;
@@ -52,6 +53,8 @@ namespace Unity.GrantManager.EntityFrameworkCore
         public DbSet<IssueTracking> IssueTrackings { get; set; }
         public DbSet<AuditHistory> AuditHistories { get; set; }
         public DbSet<ReportsHistory> ReportsHistories { get; set; }
+        public DbSet<ScheduledNotification> ScheduledNotifications { get; set; }
+        public DbSet<ScheduledNotificationTracking> ScheduledNotificationTrackings { get; set; }
         #endregion
 
         public GrantTenantDbContext(DbContextOptions<GrantTenantDbContext> options) : base(options)
@@ -82,6 +85,12 @@ namespace Unity.GrantManager.EntityFrameworkCore
 
                 b.HasIndex(x => x.ApplicantName);
                 b.HasIndex(x => x.TenantId);
+                b.HasIndex(x => new { x.TenantId, x.IsDeleted, x.CreationTime }).HasFilter("\"IsDeleted\" = false");
+                b.HasIndex(x => x.UnityApplicantId);
+                b.HasIndex(x => x.OrgName);
+                b.HasIndex(x => x.OrgNumber);
+                b.HasIndex(x => x.Status);
+                b.HasIndex(x => x.SupplierId);
 
                 b.HasMany<ApplicantAddress>()
                     .WithOne(s => s.Applicant)
@@ -398,6 +407,8 @@ namespace Unity.GrantManager.EntityFrameworkCore
                 b.ToTable(GrantManagerConsts.TenantTablePrefix + "AuditHistories", GrantManagerConsts.DbSchema);
                 b.ConfigureByConvention();
                 b.HasOne<Applicant>().WithMany().HasForeignKey(x => x.ApplicantId).IsRequired(false);
+                b.Property(x => x.AuditStatus)
+                    .HasConversion(new EnumToStringConverter<AuditHistoryStatus>());
             });
 
             modelBuilder.Entity<ReportsHistory>(b =>
@@ -405,6 +416,39 @@ namespace Unity.GrantManager.EntityFrameworkCore
                 b.ToTable(GrantManagerConsts.TenantTablePrefix + "ReportsHistories", GrantManagerConsts.DbSchema);
                 b.ConfigureByConvention();
                 b.HasOne<Applicant>().WithMany().HasForeignKey(x => x.ApplicantId).IsRequired(false);
+            });
+
+            modelBuilder.Entity<ScheduledNotification>(b =>
+            {
+                b.ToTable("ScheduledNotifications", "Notifications");
+                b.ConfigureByConvention();
+                b.HasKey(x => x.Id);
+                b.Property(x => x.FormId).IsRequired();
+                b.Property(x => x.EmailTemplateId).IsRequired();
+                b.Property(x => x.TriggerType).IsRequired().HasMaxLength(64);
+                b.Property(x => x.TriggerDetail).HasMaxLength(1000);
+                b.Property(x => x.EventType).HasMaxLength(128);
+                b.Property(x => x.ApplicationStatus).HasMaxLength(128);
+                b.Property(x => x.DateField).HasMaxLength(128);
+                b.Property(x => x.TenantId).HasColumnName("TenantId");
+                b.HasIndex(x => x.TenantId);
+                b.TryConfigureExtraProperties();    
+            });
+
+            modelBuilder.Entity<ScheduledNotificationTracking>(b =>
+            {
+                b.ToTable("ScheduledNotificationTracking", "Notifications");
+                b.ConfigureByConvention();
+                b.HasKey(x => x.Id);
+                b.Property(x => x.ApplicationId).IsRequired();
+                b.Property(x => x.ScheduledNotificationId).IsRequired();
+                b.Property(x => x.DateField).IsRequired().HasMaxLength(50);
+                b.HasIndex(x => x.ApplicationId);
+                b.HasIndex(x => x.ScheduledNotificationId);
+                b.HasIndex(x => x.CreationTime);
+                b.HasIndex(new[] { nameof(ScheduledNotificationTracking.ApplicationId), nameof(ScheduledNotificationTracking.ScheduledNotificationId), nameof(ScheduledNotificationTracking.DateField) }).IsUnique();
+                b.HasOne<Application>().WithMany().HasForeignKey(x => x.ApplicationId).IsRequired().OnDelete(DeleteBehavior.Cascade);
+                b.HasOne<ScheduledNotification>().WithMany().HasForeignKey(x => x.ScheduledNotificationId).IsRequired().OnDelete(DeleteBehavior.Cascade);
             });
 
             var allEntityTypes = modelBuilder.Model.GetEntityTypes();

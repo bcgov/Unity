@@ -32,7 +32,7 @@ namespace Unity.GrantManager.Intakes
             try
             {
                 Applicant? applicant = await applicantRepository.GetByUnityApplicantIdAsync(unityApplicantId);
-                if (applicant == null)
+                if (applicant == null || applicant.IsDeleted)
                 {
                     throw new KeyNotFoundException("Applicant not found.");
                 }

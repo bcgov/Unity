@@ -1,0 +1,221 @@
+@page
+@using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal
+@using Unity.Payments.Localization
+@using Microsoft.Extensions.Localization
+@model Unity.Payments.Web.Pages.Payments.CreateHistoricalPaymentsModel
+
+@inject IStringLocalizer<PaymentsResource> L
+@{
+    Layout = null;
+}
+
+<style>
+    .payment-note-prefix {
+        font-weight: 700;
+        color: var(--bc-colors-blue-text-links);
+        text-transform: uppercase;
+        border: 3px solid var(--bc-colors-blue-text-links);
+        border-radius: 1rem;
+        font-size: 0.8rem;
+        padding: 0.025rem 0.5rem;
+        line-height: 1.75rem;
+    }
+
+    .payment-note-error {
+        color: var(--lpx-danger);
+        border-color: var(--lpx-danger);
+    }
+
+    .parent-child-group {
+        padding: 0;
+        margin-bottom: 16px;
+        overflow: hidden;
+    }
+
+    .parent-child-group.has-error {
+        border: 1px solid var(--lpx-danger);
+    }
+
+    .parent-child-group.has-error .single-payment {
+        border: none;
+        border-bottom: 1px solid var(--bs-border-color);
+    }
+
+    .parent-child-group-error {
+        padding: 4px 12px 4px 12px;
+        background-color: #FEEAEA;
+    }
+</style>
+
+<form method="post" asp-page-handler="OnPostAsync" id="historicalpaymentform">
+    <abp-modal size="ExtraLarge" id="historical-payment-modal">
+        <abp-modal-header class="payment-modal-header" title="@L["ApplicationHistoricalPaymentRequest:Title"].Value"></abp-modal-header>
+        <abp-modal-body>
+            @if (ViewData["Error"] != null)
+            {
+                <div class="alert alert-warning" role="alert">
+                    <i class="fa fa-exclamation-triangle"></i> @ViewData["Error"]
+                </div>
+            }
+            else
+            {
+            <abp-card class="pt-0">
+                <abp-card-body class="payment-card">
+                    @{
+                        string? currentGroupKey = null;
+                        bool groupOpen = false;
+                    }
+                    @for (var i = 0; i < Model.ApplicationPaymentRequestForm?.Count; i++)
+                    {
+                        var item = Model.ApplicationPaymentRequestForm[i];
+                        var itemParentReference = !string.IsNullOrEmpty(item.ParentReferenceNo)
+                            ? item.ParentReferenceNo
+                            : item.SubmissionConfirmationCode;
+                        string? itemGroupKey = item.IsPartOfParentChildGroup
+                            ? itemParentReference
+                            : null;
+
+                        string? nextGroupKey = null;
+                        if (i + 1 < Model.ApplicationPaymentRequestForm.Count)
+                        {
+                            var next = Model.ApplicationPaymentRequestForm[i + 1];
+                            var nextParentReference = !string.IsNullOrEmpty(next.ParentReferenceNo)
+                                ? next.ParentReferenceNo
+                                : next.SubmissionConfirmationCode;
+                            nextGroupKey = next.IsPartOfParentChildGroup
+                                ? nextParentReference
+                                : null;
+                        }
+
+                        if (itemGroupKey != null && itemGroupKey != currentGroupKey)
+                        {
+                            @:<div class="parent-child-group" data-group-key="@itemGroupKey">
+                            groupOpen = true;
+                        }
+
+                        <div id="@($"{item.CorrelationId}_container")" class="single-payment payment-item">
+                            <abp-row class="m-0 p-2">
+                                <abp-column size="_12" class="d-flex justify-content-between align-items-center px-1">
+                                    <h6 class="single-payment-card-application-name mb-0">
+                                        <span class="fw-bold">@item.ApplicantName/@item.InvoiceNumber</span>
+                                    @if (!string.IsNullOrEmpty(item.ParentReferenceNo))
+                                    {
+                                        <span>&nbsp;&nbsp;(Parent Id: <strong>@item.ParentReferenceNo</strong>)</span>
+                                    }
+                                    </h6>
+                                    <abp-button onclick='removeHistoricalPaymentRequest("@item.CorrelationId" + "_container")'
+                                                onkeydown='if(event.key==="Enter") removeHistoricalPaymentRequest("@item.CorrelationId" + "_container")'
+                                                size="Small"
+                                                icon-type="Other"
+                                                class="m-0 p-0 remove-single-payment"
+                                                icon="fa fa-times"
+                                                data-parameter="@item.CorrelationId" />
+                                </abp-column>
+                            </abp-row>
+
+                            <input name="ApplicationPaymentRequestForm.Index" type="hidden" value="@i" />
+                            <input type="hidden" asp-for="@Model.ApplicationPaymentRequestForm[i].CorrelationId" />
+                            <input type="hidden" asp-for="@Model.ApplicationPaymentRequestForm[i].ContractNumber" />
+                            <input type="hidden" asp-for="@Model.ApplicationPaymentRequestForm[i].ApplicantName" />
+                            <input type="hidden" asp-for="@Model.ApplicationPaymentRequestForm[i].SubmissionConfirmationCode" />
+                            <input type="hidden" asp-for="@Model.ApplicationPaymentRequestForm[i].SupplierName" />
+                            <input type="hidden" asp-for="@Model.ApplicationPaymentRequestForm[i].SupplierNumber" />
+                            <input type="hidden" asp-for="@Model.ApplicationPaymentRequestForm[i].RemainingAmount" />
+                            <input type="hidden" asp-for="@Model.ApplicationPaymentRequestForm[i].SiteId" />
+                            <input type="hidden" asp-for="@Model.ApplicationPaymentRequestForm[i].AccountCodingId" />
+                            <input type="hidden" asp-for="@Model.ApplicationPaymentRequestForm[i].ParentReferenceNo" />
+                            <input type="hidden" asp-for="@Model.ApplicationPaymentRequestForm[i].MaximumAllowedAmount" />
+                            <input type="hidden" asp-for="@Model.ApplicationPaymentRequestForm[i].ParentApprovedAmount" />
+                            <input type="hidden" asp-for="@Model.ApplicationPaymentRequestForm[i].IsPartOfParentChildGroup" />
+
+                            <abp-row class="m-0 p-3">
+                                <abp-column size="_2" class="px-1">
+                                    <abp-input asp-for="@Model.ApplicationPaymentRequestForm[i].InvoiceNumber" disabled="@item.DisableFields" />
+                                </abp-column>
+                                <abp-column size="_2" class="px-1">
+                                    <div class="unity-input-group">
+                                        <span class="unity-input-prepend">$</span>
+                                        <abp-input asp-for="@Model.ApplicationPaymentRequestForm[i].Amount"
+                                                   class="unity-currency-input amount"
+                                                   disabled="@item.DisableFields"
+                                                   onchange='checkHistoricalMaxValueRequest("@item.CorrelationId", this, @item.RemainingAmount)' />
+                                    </div>
+                                </abp-column>
+                                <abp-column size="_2" class="px-1">
+                                    <label class="form-label unt-form-label-primary" for="ApplicationPaymentRequestForm_@(i)__PaidDate">@L["ApplicationHistoricalPaymentRequest:PaidDate"] *</label>
+                                    <input type="date"
+                                           name="ApplicationPaymentRequestForm[@i].PaidDate"
+                                           id="ApplicationPaymentRequestForm_@(i)__PaidDate"
+                                           class="form-control"
+                                           required
+                                           disabled="@(item.DisableFields ? "disabled" : null)"
+                                           max="@DateTime.Today.ToString("yyyy-MM-dd")" />
+                                </abp-column>
+                                <abp-column size="_2" class="px-1">
+                                    <abp-input asp-for="@Model.ApplicationPaymentRequestForm[i].SiteName" alt="@item.SiteName" title="@item.SiteName" disabled="true"/>
+                                </abp-column>
+                                <abp-column size="_4" class="px-1">
+                                    <abp-input asp-for="@Model.ApplicationPaymentRequestForm[i].Description" disabled="@item.DisableFields" />
+                                </abp-column>
+                                <abp-column size="_12"
+                                            class="payment-error-column"
+                                            id="error_column_@($"{item.CorrelationId}")"
+                                            style="display: none;">
+                                    <span><span class="payment-note-prefix payment-note-error">Error</span>&nbsp; Amount exceeds remaining amount of @item.RemainingAmount</span>
+                                </abp-column>
+
+                                @for (var j = 0; j < item.ErrorList?.Count; j++)
+                                {
+                                <abp-column size="_12" class="payment-error-column">
+                                    <span><span class="payment-note-prefix payment-note-error">Error</span>&nbsp; @item.ErrorList[j]</span>
+                                </abp-column>
+                                }
+                                @if (!item.SiteId.HasValue || item.SiteId == Guid.Empty)
+                                {
+                                <abp-column size="_12" class="payment-note-column">
+                                    <span><span class="payment-note-prefix">Note</span>&nbsp; No site selected for this payment. You can still add the payment.</span>
+                                </abp-column>
+                                }
+                            </abp-row>
+                        </div>
+
+                        if (groupOpen && nextGroupKey != itemGroupKey)
+                        {
+                            @:<div class="parent-child-group-error payment-error-column" data-role="group-error" style="display: none;">
+                            @:    <span><span class="payment-note-prefix payment-note-error">Error</span>&nbsp; <span data-role="group-error-message"></span></span>
+                            @:</div>
+                            @:</div>
+                            groupOpen = false;
+                        }
+
+                        currentGroupKey = itemGroupKey;
+                    }
+                    <abp-row class="m-0 p-2 no-payment-msg text-center" id="no-payment-msg" style="display: none;">
+                        <abp-column size="_12" class="px-1"><p>No Payments Selected</p></abp-column>
+                    </abp-row>
+                </abp-card-body>
+            </abp-card>
+            }
+        </abp-modal-body>
+        <abp-modal-footer>
+            <abp-button id="btnSubmitHistoricalPayment" class="btn btn-primary" text="@L["ApplicationHistoricalPaymentRequest:SubmitButtonText"].Value" onclick="submitHistoricalPayments()" onkeydown='if(event.key==="Enter") { event.preventDefault(); submitHistoricalPayments(); }' disabled="@Model.DisableSubmit" type="button"></abp-button>
+            <abp-button class="btn btn-secondary" text="@L["ApplicationHistoricalPaymentRequest:CancelButtonText"].Value" data-dismiss="modal" onclick="closeHistoricalPaymentModal()" onkeydown='if(event.key==="Enter") { event.preventDefault(); closeHistoricalPaymentModal(); }'></abp-button>
+        </abp-modal-footer>
+    </abp-modal>
+</form>
+
+<script defer>
+    (function () {
+        if (window.jQuery) {
+            $('.unity-currency-input').maskMoney();
+
+            $('.unity-currency-input').each(function () {
+                let $currencyField = $(this);
+                let fieldVal = $currencyField.val();
+                if (fieldVal) {
+                    $currencyField.maskMoney('mask', fieldVal);
+                }
+            });
+        }
+    })();
+</script>

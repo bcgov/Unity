@@ -46,6 +46,8 @@ namespace Unity.Payments.Web.Views.Shared.Components.PaymentInfo
                     ApplicantId = application.Applicant.Id
                 };
 
+                model.Category = application.ApplicationForm?.Category ?? string.Empty;
+
                 var rollup = await _paymentRequestService.GetApplicationPaymentRollupAsync(applicationId);
                 model.TotalPaid = rollup.TotalPaid;
                 model.TotalPendingAmounts = rollup.TotalPending;

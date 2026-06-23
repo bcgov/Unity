@@ -41,6 +41,9 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ActionBar
               .AddIfNotContains("/Pages/AssigneeSelection/AssigneeSelection.js");
             context.Files
               .AddIfNotContains("/Pages/PaymentRequests/CreatePaymentRequestsModal.js");
+            // NOTE: CreateHistoricalPaymentsModal.js depends on helpers defined in CreatePaymentRequestsModal.js — must remain after it.
+            context.Files
+              .AddIfNotContains("/Pages/PaymentRequests/CreateHistoricalPaymentsModal.js");
             context.Files
               .AddIfNotContains("/Pages/BulkApprovals/ApproveApplicationsModal.js");
         }

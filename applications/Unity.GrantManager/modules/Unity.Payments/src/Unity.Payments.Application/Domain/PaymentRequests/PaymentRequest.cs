@@ -9,6 +9,7 @@ using System.Linq;
 using Volo.Abp;
 using Unity.Payments.Domain.Exceptions;
 using Unity.Payments.PaymentRequests;
+using Unity.Payments.Codes;
 using Unity.Payments.Domain.PaymentTags;
 using Unity.Payments.Domain.AccountCodings;
 
@@ -17,14 +18,8 @@ namespace Unity.Payments.Domain.PaymentRequests
     public class PaymentRequest : FullAuditedAggregateRoot<Guid>, IMultiTenant, ICorrelationEntity
     {
         public Guid? TenantId { get; set; }
-        public virtual Guid SiteId { get; set; }
-        public virtual Site Site
-        {
-            set => _site = value;
-            get => _site
-                   ?? throw new InvalidOperationException("Uninitialized property: " + nameof(Site));
-        }
-        private Site? _site;
+        public virtual Guid? SiteId { get; set; }
+        public virtual Site? Site { get; set; }
 
         public virtual string InvoiceNumber { get; private set; } = string.Empty;
         public virtual decimal Amount { get; private set; }
@@ -108,6 +103,35 @@ namespace Unity.Payments.Domain.PaymentRequests
             Note = createPaymentRequestDto.Note;
             ExpenseApprovals = GenerateExpenseApprovals();
             ValidatePaymentRequest();
+        }
+
+        public PaymentRequest(Guid id, CreateHistoricalPaymentRequestDto dto) : base(id)
+        {
+            InvoiceNumber = dto.InvoiceNumber;
+            Amount = dto.Amount;
+            PayeeName = dto.PayeeName;
+            ContractNumber = dto.ContractNumber;
+            SupplierNumber = dto.SupplierNumber ?? string.Empty;
+            SupplierName = dto.SupplierName;
+            SiteId = dto.SiteId;
+            Description = dto.Description;
+            CorrelationId = dto.CorrelationId;
+            CorrelationProvider = dto.CorrelationProvider;
+            ReferenceNumber = dto.ReferenceNumber;
+            SubmissionConfirmationCode = dto.SubmissionConfirmationCode;
+            BatchName = dto.BatchName;
+            BatchNumber = dto.BatchNumber;
+            AccountCodingId = dto.AccountCodingId;
+            Note = dto.Note;
+            Status = PaymentRequestStatus.HistoricalPayment;
+            PaymentStatus = CasPaymentRequestStatus.Paid;
+            InvoiceStatus = CasPaymentRequestStatus.Paid;
+            PaymentDate = dto.PaidDate;
+            ExpenseApprovals = [];
+            PaymentTags = null;
+
+            if (Amount <= 0)
+                throw new BusinessException(ErrorConsts.ZeroPayment);
         }
 
         public PaymentRequest SetNote(string note)
@@ -208,6 +232,16 @@ namespace Unity.Payments.Domain.PaymentRequests
             if (string.IsNullOrWhiteSpace(SupplierNumber))
             {
                 throw new BusinessException(ErrorConsts.MissingSupplierNumber);
+            }
+
+            if (!SiteId.HasValue || SiteId.Value == Guid.Empty)
+            {
+                throw new BusinessException(ErrorConsts.MissingSite);
+            }
+
+            if (!AccountCodingId.HasValue || AccountCodingId.Value == Guid.Empty)
+            {
+                throw new BusinessException(ErrorConsts.MissingAccountCoding);
             }
 
             return this;

@@ -35,8 +35,7 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
                                  IApplicantAddressRepository addressRepository,
                                  IOrgBookService orgBookService,
                                  IApplicantAgentRepository applicantAgentRepository,
-                                 IApplicationRepository applicationRepository,
-                                 IRepository<Supplier, Guid> supplierRepository) : GrantManagerAppService, IApplicantAppService
+                                 IApplicationRepository applicationRepository) : GrantManagerAppService, IApplicantAppService
 {                                   
 
     private const string ApplicantIdDataKey = "ApplicantId";
@@ -233,6 +232,19 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
         }
 
         return await applicantRepository.UpdateAsync(applicant);
+    }
+
+    [Authorize(GrantApplicationPermissions.Applicants.Edit)]
+    public async Task UpdateApplicantStatusAsync(Guid applicantId, string status)
+    {
+        if (status != "Active" && status != "Inactive")
+        {
+            throw new UserFriendlyException($"Invalid applicant status '{status}'. Allowed values are Active or Inactive.");
+        }
+
+        var applicant = await applicantRepository.GetAsync(applicantId);
+        applicant.Status = status;
+        await applicantRepository.UpdateAsync(applicant);
     }
 
     public async Task UpdateApplicantContactAddressesAsync(Guid applicantId, UpdateApplicantContactAddressesDto input)
@@ -640,6 +652,15 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
     [RemoteService(true)]
     public async Task TransferApplicantApplicationsAsync(TransferApplicantApplicationsDto dto)
     {
+        var principal = await applicantRepository.GetAsync(dto.PrincipalApplicantId);
+        var nonPrincipal = await applicantRepository.GetAsync(dto.NonPrincipalApplicantId);
+
+        if ((principal != null && principal.IsDeleted) || (nonPrincipal != null && nonPrincipal.IsDeleted))
+        {
+            throw new UserFriendlyException(
+                "One or more selected applicants have been deleted. Please refresh the applicant list to update the view.");
+        }
+
         var applications = await applicationRepository.GetByApplicantIdAsync(dto.NonPrincipalApplicantId);
         foreach (var application in applications)
         {
@@ -656,6 +677,14 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
     {
         // Set principal as not duplicated
         var principal = await applicantRepository.GetAsync(dto.PrincipalApplicantId);
+        var nonPrincipal = await applicantRepository.GetAsync(dto.NonPrincipalApplicantId);
+
+        if ((principal != null && principal.IsDeleted) || (nonPrincipal != null && nonPrincipal.IsDeleted))
+        {
+            throw new UserFriendlyException(
+                "One or more selected applicants have been deleted. Please refresh the applicant list to update the view.");
+        }
+
         if (principal != null && principal.IsDuplicated)
         {
             principal.IsDuplicated = false;
@@ -663,12 +692,35 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
         }
 
         // Set non-principal as duplicated
-        var nonPrincipal = await applicantRepository.GetAsync(dto.NonPrincipalApplicantId);
         if (nonPrincipal != null && !nonPrincipal.IsDuplicated)
         {
             nonPrincipal.IsDuplicated = true;
             await applicantRepository.UpdateAsync(nonPrincipal);
         }
+    }
+
+    [RemoteService(true)]
+    [Authorize(GrantApplicationPermissions.Applicants.Delete)]
+    public async Task<bool> HasSubmissionsAsync(Guid id)
+    {
+        return await applicationRepository.HasApplicationsByApplicantIdAsync(id);
+    }
+
+    [RemoteService(true)]
+    [Authorize(GrantApplicationPermissions.Applicants.Delete)]
+    public async Task DeleteApplicantAsync(Guid id)
+    {
+        if (await applicationRepository.HasApplicationsByApplicantIdAsync(id))
+        {
+            throw new UserFriendlyException(
+                "This applicant cannot be deleted because it is associated with one or more submissions.");
+        }
+
+        var applicant = await applicantRepository.GetAsync(id);
+        applicant.IsDeleted = true;
+        applicant.DeletionTime = Clock.Now;
+        applicant.DeleterId = CurrentUser.Id;
+        await applicantRepository.UpdateAsync(applicant, autoSave: true);
     }
 
     private async Task UpdateApplicationFormSubmissionsAsync(Guid applicationId, Guid newApplicantId)
@@ -718,71 +770,38 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
     [RemoteService(true)]
     public async Task<PagedResultDto<ApplicantListDto>> GetListAsync(ApplicantListRequestDto input)
     {
-        var query = await applicantRepository.GetQueryableAsync();
+        var listRecords = await applicantRepository.GetApplicantListRecordsAsync(input.RequestedFields);
 
-        // Apply default sorting (client-side DataTable handles search, sorting, and paging)
-        query = query.OrderByDescending(a => a.CreationTime);
-
-        // Get total count
-        var totalCount = await query.CountAsync();
-
-        // Execute query
-        var applicants = await query.ToListAsync();
-
-        // Batch-load supplier data for all applicants in one query
-        var supplierIds = applicants
-            .Where(a => a.SupplierId.HasValue)
-            .Select(a => a.SupplierId!.Value)
-            .Distinct()
-            .ToList();
-
-        Dictionary<Guid, Supplier> supplierMap = new();
-        if (supplierIds.Count > 0)
-        {
-            var suppliers = await supplierRepository.GetListAsync(s => supplierIds.Contains(s.Id));
-            supplierMap = suppliers.ToDictionary(s => s.Id);
-        }
-
-        // Map to DTOs
-        var items = applicants.Select(applicant =>
+        var items = listRecords.Select(applicant => new ApplicantListDto
             {
-                supplierMap.TryGetValue(applicant.SupplierId ?? Guid.Empty, out var supplier);
-                return new ApplicantListDto
-                {
-                    Id = applicant.Id,
-                    ApplicantName = applicant.ApplicantName,
-                    UnityApplicantId = applicant.UnityApplicantId,
-                    OrgName = applicant.OrgName,
-                    OrgNumber = applicant.OrgNumber,
-                    OrgStatus = applicant.OrgStatus,
-                    OrganizationType = applicant.OrganizationType,
-                    Status = applicant.Status,
-                    RedStop = applicant.RedStop,
-                    NonRegisteredBusinessName = applicant.NonRegisteredBusinessName,
-                    NonRegOrgName = applicant.NonRegOrgName,
-                    OrganizationSize = applicant.OrganizationSize,
-                    Sector = applicant.Sector,
-                    SubSector = applicant.SubSector,
-                    ApproxNumberOfEmployees = applicant.ApproxNumberOfEmployees,
-                    IndigenousOrgInd = applicant.IndigenousOrgInd,
-                    SectorSubSectorIndustryDesc = applicant.SectorSubSectorIndustryDesc,
-                    FiscalMonth = applicant.FiscalMonth,
-                    BusinessNumber = applicant.BusinessNumber,
-                    FiscalDay = applicant.FiscalDay,
-                    StartedOperatingDate = applicant.StartedOperatingDate.HasValue
-                        ? applicant.StartedOperatingDate.Value.ToDateTime(TimeOnly.MinValue)
-                        : null,
-                    SupplierId = applicant.SupplierId?.ToString(),
-                    SupplierNumber = supplier?.Number,
-                    SupplierName = supplier?.Name,
-                    SupplierStatus = supplier?.Status,
-                    MatchPercentage = applicant.MatchPercentage,
-                    IsDuplicated = applicant.IsDuplicated,
-                    CreationTime = applicant.CreationTime,
-                    LastModificationTime = applicant.LastModificationTime
-                };
+                Id = applicant.Id,
+                ApplicantName = applicant.ApplicantName,
+                UnityApplicantId = applicant.UnityApplicantId,
+                OrgName = applicant.OrgName,
+                OrgNumber = applicant.OrgNumber,
+                OrgStatus = applicant.OrgStatus,
+                OrganizationType = applicant.OrganizationType,
+                Status = applicant.Status,
+                RedStop = applicant.RedStop,
+                NonRegisteredBusinessName = applicant.NonRegisteredBusinessName,
+                NonRegOrgName = applicant.NonRegOrgName,
+                Sector = applicant.Sector,
+                SubSector = applicant.SubSector,
+                ApproxNumberOfEmployees = applicant.ApproxNumberOfEmployees,
+                IndigenousOrgInd = applicant.IndigenousOrgInd,
+                SectorSubSectorIndustryDesc = applicant.SectorSubSectorIndustryDesc,
+                FiscalMonth = applicant.FiscalMonth,
+                BusinessNumber = applicant.BusinessNumber,
+                FiscalDay = applicant.FiscalDay,
+                StartedOperatingDate = applicant.StartedOperatingDate.HasValue
+                    ? applicant.StartedOperatingDate.Value.ToDateTime(TimeOnly.MinValue)
+                    : null,
+                IsDuplicated = applicant.IsDuplicated,
+                CreationTime = applicant.CreationTime,
+                LastModificationTime = applicant.LastModificationTime
             }).ToList();
-
-        return new PagedResultDto<ApplicantListDto>(totalCount, items);
+        // Use items.Count while client side datatables are used. When going to server
+        // side actually query the correct amount with paging enabled.
+        return new PagedResultDto<ApplicantListDto>(items.Count, items);
     }
 }

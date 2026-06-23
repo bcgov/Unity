@@ -46,6 +46,13 @@
     width: 95%;
 }
 
+#tags-div.config-management,
+#tags-div .dt-scroll-body,
+#tags-div .dt-container {
+    overflow-y: visible !important;
+    max-height: none !important;
+}
+
 /* When scroll-managed components are embedded in the config container,
    constrain their height so the container's padding is visible at the bottom */
 .config-management .scoresheet-scrollable-content,
@@ -57,6 +64,11 @@
     margin: auto;
     display: flex;
     align-items: flex-start;
+}
+
+.unity-app-container:has(.config-page-layout) {
+    height: auto;
+    min-height: 100%;
 }
 
 .hide {

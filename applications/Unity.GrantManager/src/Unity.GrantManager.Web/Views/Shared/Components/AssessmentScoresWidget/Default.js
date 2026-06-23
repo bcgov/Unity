@@ -85,6 +85,7 @@ abp.widgets.AssessmentScoresWidget = function ($wrapper) {
         init: function () {
             restoreAssessmentScoresWidgetState($wrapper[0]);
             updateSubtotal();
+            globalThis.syncAIRateLimitButtons?.();
         },
     };
 };
@@ -693,14 +694,14 @@ function queueApplicationScoring(triggerButton = null) {
 
     unity.grantManager.grantApplications.grantApplication
         .queueApplicationScoring(applicationId)
-        .done(function (request) {
+        .done(function (generationStatus) {
+            const request = generationStatus?.generationRequest;
             const status = globalThis.AIGenerationButtonState?.resolveStatus(request?.status) ?? '';
 
             if (status === 'Completed') {
-                globalThis.AIGenerationButtonState?.restore($button);
-                $button.html(existingHtml).prop('disabled', false);
+                globalThis.AIGenerationButtonState?.restoreForCooldownCheck($button, existingHtml);
+                globalThis.AIGenerationButtonState?.applyStatusState(generationStatus);
                 PubSub.publish('refresh_assessment_scores', null);
-                globalThis.refreshAIRateLimitState?.();
                 return;
             }
 
@@ -712,5 +713,30 @@ function queueApplicationScoring(triggerButton = null) {
             );
             globalThis.AIGenerationButtonState?.restore($button);
             $button.html(existingHtml).prop('disabled', false);
+            globalThis.syncAIRateLimitButtons?.();
         });
 }
+
+$(function () {
+    // Static buttons
+    $(document).on('click', '#regenerateAiScoresheetBtn', function () {
+        queueApplicationScoring();
+    });
+    $(document).on('click', '#btn-expand-all', function () {
+        expandAllAccordions('assessment-scoresheet');
+    });
+    $(document).on('click', '#btn-collapse-all', function () {
+        collapseAllAccordions('assessment-scoresheet');
+    });
+    $(document).on('click', '#saveAssessmentScoresBtn', function () {
+        saveAssessmentScores();
+    });
+
+    // Dynamically-generated section buttons (event delegation)
+    $(document).on('click', '[id^="scoresheet-section-save-"]', function () {
+        saveScoresSection($(this).data('form-id'), $(this).data('section-id'));
+    });
+    $(document).on('click', '[id^="scoresheet-section-discard-"]', function () {
+        discardChangesScoresSection($(this).data('form-id'), $(this).data('section-id'));
+    });
+});

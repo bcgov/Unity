@@ -220,8 +220,8 @@ public class GrantManagerWebModule : AbpModule
 
         Configure<SettingManagementPageOptions>(options =>
         {
-            options.Contributors.Add(new BackgroundJobsPageContributor());
             options.Contributors.Add(new TagManagementPageContributor());
+            options.Contributors.Add(new ApplicationUiSettingPageContributor());
         });
 
         context.Services.AddHealthChecks()
@@ -232,11 +232,6 @@ public class GrantManagerWebModule : AbpModule
 
         context.Services.AddHealthChecks()
             .AddCheck<StartupHealthCheck>("startup", tags: _startupHealthCheckTags);
-
-        Configure<SettingManagementPageOptions>(options =>
-        {
-            options.Contributors.Add(new ApplicationUiSettingPageContributor());
-        });
     }
 
     private static void ConfigureDataProtection(ServiceConfigurationContext context, IConfiguration configuration)

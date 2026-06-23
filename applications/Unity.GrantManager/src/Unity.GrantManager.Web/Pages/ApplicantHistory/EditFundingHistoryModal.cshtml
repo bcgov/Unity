@@ -78,6 +78,13 @@
             </div>
 
             <div class="mb-3">
+                <label class="form-label" for="FundingHistoryForm_PaidDate">Paid Date</label>
+                <input type="date" id="FundingHistoryForm_PaidDate" name="FundingHistoryForm.PaidDate"
+                       class="form-control" data-datepicker="false"
+                       value="@(Model.FundingHistoryForm?.PaidDate?.ToString("yyyy-MM-dd"))" />
+            </div>
+
+            <div class="mb-3">
                 <label class="form-label" for="FundingHistoryForm_FundingNotes">Funding Notes</label>
                 <input type="text" id="FundingHistoryForm_FundingNotes" name="FundingHistoryForm.FundingNotes"
                        class="form-control" value="@Model.FundingHistoryForm?.FundingNotes" />

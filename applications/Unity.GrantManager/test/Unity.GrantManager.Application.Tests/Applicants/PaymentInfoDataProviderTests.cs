@@ -10,6 +10,7 @@ using Unity.GrantManager.Applications;
 using Unity.GrantManager.TestHelpers;
 using Unity.Payments.Codes;
 using Unity.Payments.Domain.PaymentRequests;
+using Unity.Payments.Enums;
 using Unity.Payments.PaymentRequests;
 using Volo.Abp.Domain.Entities;
 using Volo.Abp.Domain.Repositories;
@@ -84,6 +85,22 @@ namespace Unity.GrantManager.Applicants
             return entity;
         }
 
+        private static PaymentRequest CreateHistoricalPaymentRequest(Guid correlationId, decimal amount = 1000m)
+        {
+            var dto = new CreateHistoricalPaymentRequestDto
+            {
+                InvoiceNumber = "HIST-INV-001",
+                Amount = amount,
+                PayeeName = "Test Payee",
+                ContractNumber = "C-001",
+                CorrelationId = correlationId,
+                CorrelationProvider = "Application",
+                PaidDate = "2025-01-15"
+                // SiteId, SupplierNumber, AccountCodingId intentionally omitted
+            };
+            return new PaymentRequest(Guid.NewGuid(), dto);
+        }
+
         private static PaymentRequest CreatePaymentRequest(Guid correlationId, decimal amount = 1000m, string invoiceNumber = "INV-001", string? paymentStatus = CasPaymentRequestStatus.FullyPaid)
         {
             var siteId = Guid.NewGuid();
@@ -97,7 +114,8 @@ namespace Unity.GrantManager.Applicants
                 SupplierName = "Test Supplier",
                 SiteId = siteId,
                 CorrelationId = correlationId,
-                CorrelationProvider = "Application"
+                CorrelationProvider = "Application",
+                AccountCodingId = Guid.NewGuid()
             };
             var paymentRequest = new PaymentRequest(Guid.NewGuid(), dto);
             if (paymentStatus is not null)
@@ -347,6 +365,46 @@ namespace Unity.GrantManager.Applicants
             dto.Payments.Count.ShouldBe(1);
             dto.Payments[0].Amount.ShouldBe(1500m);
             dto.Payments[0].PaymentStatus.ShouldBe(CasPaymentRequestStatus.FullyPaid);
+        }
+
+        [Fact]
+        public async Task GetDataAsync_ShouldIncludeHistoricalPayment()
+        {
+            var request = CreateRequest();
+            var applicationId = Guid.NewGuid();
+
+            var historical = CreateHistoricalPaymentRequest(applicationId, 800m);
+
+            SetupQueryables(
+                [CreateSubmission(applicationId, "TESTUSER")],
+                [CreateApplication(applicationId, "REF-001")],
+                [historical]);
+
+            var result = await _provider.GetDataAsync(request);
+
+            var dto = result.ShouldBeOfType<ApplicantPaymentInfoDto>();
+            dto.Payments.Count.ShouldBe(1);
+            dto.Payments[0].Amount.ShouldBe(800m);
+        }
+
+        [Fact]
+        public async Task GetDataAsync_HistoricalPayment_ShouldHavePaidStatus()
+        {
+            var request = CreateRequest();
+            var applicationId = Guid.NewGuid();
+
+            var historical = CreateHistoricalPaymentRequest(applicationId);
+
+            SetupQueryables(
+                [CreateSubmission(applicationId, "TESTUSER")],
+                [CreateApplication(applicationId, "REF-001")],
+                [historical]);
+
+            var result = await _provider.GetDataAsync(request);
+
+            var dto = result.ShouldBeOfType<ApplicantPaymentInfoDto>();
+            dto.Payments.Count.ShouldBe(1);
+            dto.Payments[0].PaymentStatus.ShouldBe(CasPaymentRequestStatus.Paid);
         }
 
         [Fact]
