@@ -61,7 +61,7 @@ $(function () {
                             _identityRoleAppService
                                 .delete(data.record.id)
                                 .then(function () {
-                                    _dataTable.ajax.reloadEx();
+                                    _dataTable.ajax.reload();
                                     abp.notify.success(l('SuccessfullyDeleted'));
                                 });
                         },
@@ -173,10 +173,10 @@ $(function () {
     });
 
     _createModal.onResult(function () {
-        _dataTable.ajax.reloadEx();
+        _dataTable.ajax.reload();
     });
 
     _editModal.onResult(function () {
-        _dataTable.ajax.reloadEx();
+        _dataTable.ajax.reload();
     });
 });

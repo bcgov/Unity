@@ -403,7 +403,7 @@
             }).done(function () {
                 abp.notify.success(l('OnboardingModal:CreateSuccess'));
                 _createTenantModal.close();
-                _dataTable.ajax.reloadEx();
+                _dataTable.ajax.reload();
             }).fail(function () {
                 $('#onboarding-creating').addClass('d-none');
                 $btn.prop('disabled', false);
