@@ -45,6 +45,9 @@
             left: 50%;
             text-align: center;
         }
+        #permissionUserTable .pum-roles { display: none; }
+        #permissionUserTable.show-roles .pum-value { display: none; }
+        #permissionUserTable.show-roles .pum-roles { display: inline; }
     </style>
 }
 
@@ -97,8 +100,9 @@
                                 <td>@(L[permission.PermissionDisplayName].Value)</td>
                                 @foreach (var user in Model.Users)
                                 {
-                                    var hasPermission = permission.UserPermissions.TryGetValue(user.UserId, out var val) && val;
-                                    <td>@(hasPermission ? "TRUE" : string.Empty)</td>
+                                    permission.UserPermissions.TryGetValue(user.UserId, out var summary);
+                                    var hasPermission = summary?.HasPermission ?? false;
+                                    <td class="@(hasPermission ? "pum-has-permission" : "")"><span class="pum-value">@(hasPermission ? "TRUE" : string.Empty)</span>@if (hasPermission) {<span class="pum-roles">@summary!.GrantSources</span>}</td>
                                 }
                             </tr>
                         }
@@ -153,8 +157,9 @@
 
                                 @foreach (var user in Model.Users)
                                 {
-                                    var hasPermission = permission.UserPermissions.TryGetValue(user.UserId, out var val) && val;
-                                    <td>@(hasPermission ? "TRUE" : string.Empty)</td>
+                                    permission.UserPermissions.TryGetValue(user.UserId, out var summary);
+                                    var hasPermission = summary?.HasPermission ?? false;
+                                    <td class="@(hasPermission ? "pum-has-permission" : "")"><span class="pum-value">@(hasPermission ? "TRUE" : string.Empty)</span>@if (hasPermission) {<span class="pum-roles">@summary!.GrantSources</span>}</td>
                                 }
                             </tr>
                         }

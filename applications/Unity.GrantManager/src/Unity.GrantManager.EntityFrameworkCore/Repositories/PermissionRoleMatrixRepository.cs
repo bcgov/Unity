@@ -126,22 +126,31 @@ public class PermissionRoleMatrixRepository(IDbContextProvider<GrantManagerDbCon
                     user => user.Id.ToString(),
                     user =>
                     {
-                        // Check for direct user grant
+                        var sources = new List<string>();
+
                         var hasDirectGrant = permissionGrants.Any(pg =>
                             pg.Name == permission.Name &&
                             pg.ProviderName == "U" &&
                             pg.ProviderKey == user.Id.ToString());
 
-                        if (hasDirectGrant) return true;
+                        if (hasDirectGrant)
+                        {
+                            sources.Add("DIRECT");
+                        }
 
-                        // Check for inherited grant via any of the user's roles
-                        if (!userRoleNames.TryGetValue(user.Id, out var roleNamesForUser))
-                            return false;
+                        if (userRoleNames.TryGetValue(user.Id, out var roleNamesForUser))
+                        {
+                            sources.AddRange(roleNamesForUser.Where(rn => rn != null).Where(roleName => permissionGrants.Any(pg =>
+                                    pg.Name == permission.Name &&
+                                    pg.ProviderName == "R" &&
+                                    pg.ProviderKey.Equals(roleName, StringComparison.OrdinalIgnoreCase))).Select(roleName => roleName!));
+                        }
 
-                        return permissionGrants.Any(pg =>
-                            pg.Name == permission.Name &&
-                            pg.ProviderName == "R" &&
-                            roleNamesForUser.Contains(pg.ProviderKey, StringComparer.OrdinalIgnoreCase));
+                        return new PermissionGrantSummary
+                        {
+                            HasPermission = sources.Count > 0,
+                            GrantSources = string.Join(", ", sources)
+                        };
                     })
             })
             .OrderBy(p => p.GroupName)
@@ -184,8 +193,14 @@ public class PermissionUserMatrixRowDto
     public required string PermissionName { get; set; }
     public required string PermissionDisplayName { get; set; }
     public int Depth { get; set; }
-    public required Dictionary<string, bool> UserPermissions { get; set; }
+    public required Dictionary<string, PermissionGrantSummary> UserPermissions { get; set; }
     public bool IsDefined { get; set; } = false;
+}
+
+public class PermissionGrantSummary
+{
+    public bool HasPermission { get; set; }
+    public string GrantSources { get; set; } = string.Empty;
 }
 
 public class UserInfoDto

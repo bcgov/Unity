@@ -32,6 +32,8 @@ $(document).ready(function () {
         });
     }
 
+    let showingRoles = false;
+
     $.fn.dataTable.Buttons.defaults.dom.button.className = 'btn flex-none';
     let localTable = $('#permissionUserTable').DataTable({
         paging: false,
@@ -47,6 +49,20 @@ $(document).ready(function () {
         dom: 'Blfrtip',
         columnDefs: columnDefs,
         buttons: [
+            {
+                text: '<i class="fl fl-review-user align-middle"></i> <span>View Expanded</span> <span>Show Roles</span>',
+                className: 'btn-light rounded-1',
+                action: function (e, dt, button) {
+                    showingRoles = !showingRoles;
+                    if (showingRoles) {
+                        $('#permissionUserTable').addClass('show-roles');
+                        $(button).find('span').text('Hide Roles');
+                    } else {
+                        $('#permissionUserTable').removeClass('show-roles');
+                        $(button).find('span').text('Show Roles');
+                    }
+                }
+            },
             {
                 text: isExpanded
                     ? '<i class="fl fl-back-to-window align-middle"></i> <span>View Simple</span>'
@@ -78,13 +94,7 @@ $(document).ready(function () {
             }
         ],
         createdRow: function (row) {
-            $('td', row).each(function () {
-                const cellText = $(this).text().trim();
-
-                if (cellText === 'TRUE') {
-                    $(this).addClass('bg-success text-dark bg-opacity-25 fw-bold border border-success dt-center');
-                }
-            });
+            $('td.pum-has-permission', row).addClass('bg-success text-dark bg-opacity-25 fw-bold border border-success dt-center');
         },
         initComplete: function () {
             const table = this.api();
