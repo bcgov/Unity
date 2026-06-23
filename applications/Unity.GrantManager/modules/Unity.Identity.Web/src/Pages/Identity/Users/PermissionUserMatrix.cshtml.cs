@@ -11,7 +11,7 @@ using Volo.Abp.Localization;
 
 namespace Unity.Identity.Web.Pages.Identity.Users;
 
-[Authorize(IdentityPermissions.Users.ManagePermissions)]
+[Authorize(IdentityPermissions.Users.Default)]
 public class PermissionUserMatrixModel(IPermissionRoleMatrixRepository repository, IPermissionDefinitionManager permissionDefinitionManager) : AbpPageModel
 {
     public bool IsExpanded { get; private set; }
