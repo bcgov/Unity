@@ -225,6 +225,13 @@ $(function () {
     $.fn.dataTable.Buttons.defaults.dom.button.className = 'btn flex-none';
     let actionButtons = [
         {
+            text: '<i class="fl fl-multi-select align-middle"></i><span>View User Matrix</span>',
+            className: 'btn-light rounded-1',
+            action: function (e, dt, button, config) {
+                globalThis.location = '/Identity/Users/PermissionUserMatrix';
+            }
+        },
+        {
             text: '<i class="fl fl-add-to align-middle"></i> <span>' + lg('Common:Command:Create') + '</span>',
             titleAttr: lg('Common:Command:Create'),
             id: 'CreateIntakeButton',
