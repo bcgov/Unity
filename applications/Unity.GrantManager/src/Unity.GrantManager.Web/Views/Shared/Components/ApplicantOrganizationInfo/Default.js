@@ -35,8 +35,6 @@
 
         zoneForm.init();
 
-        debugger;
-
         zoneForm.form.find('#ApplicantOrganizationInfo_FiscalMonth, #ApplicantOrganizationInfo_FiscalDay').on('change', function () {
             calculateApplicantFiscalYearEnd(zoneForm.form);
         });
@@ -343,17 +341,33 @@
         };
 
         const month = monthMap[monthVal];
-        const day = parseInt(dayVal, 10);
+        const day = Number.parseInt(dayVal, 10);
 
-        if (!month || isNaN(day)) {
+        if (!month || Number.isNaN(day)) {
             $yearEndField.val('');
             return;
         }
 
         const today = new Date();
-        let year = today.getFullYear();
-        if (new Date(year, month - 1, day) < today) {
+        const todayDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+        let year = todayDate.getFullYear();
+        const isValidMonthDay = (y) => {
+            const d = new Date(y, month - 1, day);
+            return d.getMonth() === month - 1 && d.getDate() === day;
+        };
+
+        if (!isValidMonthDay(year)) {
+            $yearEndField.val('');
+            return;
+        }
+
+        const candidate = new Date(year, month - 1, day);
+        if (candidate < todayDate) {
             year += 1;
+            if (!isValidMonthDay(year)) {
+                $yearEndField.val('');
+                return;
+            }
         }
 
         const mm = String(month).padStart(2, '0');
