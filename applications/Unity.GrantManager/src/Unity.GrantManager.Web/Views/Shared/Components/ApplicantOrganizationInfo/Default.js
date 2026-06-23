@@ -35,6 +35,14 @@
 
         zoneForm.init();
 
+        debugger;
+
+        zoneForm.form.find('#ApplicantOrganizationInfo_FiscalMonth, #ApplicantOrganizationInfo_FiscalDay').on('change', function () {
+            calculateApplicantFiscalYearEnd(zoneForm.form);
+        });
+
+        calculateApplicantFiscalYearEnd(zoneForm.form);
+
         saveButton.on('click', async function (event) {
             event.preventDefault();
 
@@ -317,5 +325,39 @@
             orgBookSelect.val(null).trigger('change');
             populateRegisteredFields('', '', '', '', '');
         });
+    }
+    function calculateApplicantFiscalYearEnd($container) {
+        const monthVal = $container.find('#ApplicantOrganizationInfo_FiscalMonth').val();
+        const dayVal = $container.find('#ApplicantOrganizationInfo_FiscalDay').val();
+        const $yearEndField = $container.find('#ApplicantOrganizationInfo_FiscalYearEnd');
+
+        if (!monthVal || !dayVal) {
+            $yearEndField.val('');
+            return;
+        }
+
+        const monthMap = {
+            'Jan': 1, 'Feb': 2, 'Mar': 3, 'Apr': 4,
+            'May': 5, 'Jun': 6, 'Jul': 7, 'Aug': 8,
+            'Sep': 9, 'Oct': 10, 'Nov': 11, 'Dec': 12
+        };
+
+        const month = monthMap[monthVal];
+        const day = parseInt(dayVal, 10);
+
+        if (!month || isNaN(day)) {
+            $yearEndField.val('');
+            return;
+        }
+
+        const today = new Date();
+        let year = today.getFullYear();
+        if (new Date(year, month - 1, day) < today) {
+            year += 1;
+        }
+
+        const mm = String(month).padStart(2, '0');
+        const dd = String(day).padStart(2, '0');
+        $yearEndField.val(`${year}-${mm}-${dd}`);
     }
 })();
