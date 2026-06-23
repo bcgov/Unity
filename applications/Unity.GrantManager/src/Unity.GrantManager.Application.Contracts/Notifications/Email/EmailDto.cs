@@ -1,7 +1,7 @@
 using System;
 using Volo.Abp.Application.Dtos;
 
-namespace Unity.GrantManager.Emails
+namespace Unity.GrantManager.Notifications.Email
 {
     public class EmailDto : EntityDto<Guid>
     {

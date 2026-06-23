@@ -7,4 +7,6 @@ public static class EmailStatus
     public const string Failed = "Failed";
     public const string Draft = "Draft";
     public const string Initialized = "Initialized";
+    public const string Cancelled = "Cancelled";
+    public const string Scheduled = "Scheduled";
 }

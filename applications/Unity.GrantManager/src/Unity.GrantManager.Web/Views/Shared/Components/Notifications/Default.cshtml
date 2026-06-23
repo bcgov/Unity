@@ -1,0 +1,137 @@
+@model Unity.GrantManager.Web.Views.Shared.Components.Notifications.NotificationsViewModel
+@using Volo.Abp.Authorization.Permissions
+@using Unity.Notifications.Permissions;
+@inject IPermissionChecker PermissionChecker
+
+<link rel="stylesheet" href="/libs/select2/dist/css/select2.min.css" />
+<link rel="stylesheet" href="/libs/select2-bootstrap-5-theme/dist/select2-bootstrap-5-theme.min.css" />
+<link rel="stylesheet" href="/Views/Shared/Components/Notifications/Default.css" />
+
+<!-- Select2 and component scripts loaded in Default.js after jQuery is available -->
+<script src="/Views/Shared/Components/Notifications/Default.js"></script>
+
+<div class="notifications-widget p-3">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h6 class="mb-0"><label for="NotificationsTable" class="form-label">Scheduled &amp; Event Based Notifications</label></h6>
+        @if (await PermissionChecker.IsGrantedAsync(NotificationsPermissions.Email.ScheduleCreate)) 
+        {   
+        <button id="btn-add-notification" class="btn unt-btn-primary btn-primary btn-sm">Create Automated Notification</button>
+        }
+    </div>
+
+    <div id="notifications-list" class="mb-3">
+        <table id="NotificationsTable" class="table table-striped notification-table">
+            <th></th>
+        </table>
+    </div>
+
+    <template id="notification-actions-template">
+        <div class="button-group">
+            @if (await PermissionChecker.IsGrantedAsync(NotificationsPermissions.Email.ScheduleCreate)) 
+            {              
+            <button class="btn unt-btn-primary btn-sm abp-action-button js-edit-notification notification-action-btn" type="button">
+                <span>Edit</span>
+            </button>
+            }
+            @if (await PermissionChecker.IsGrantedAsync(NotificationsPermissions.Email.ScheduleCancel)) 
+            {            
+            <button class="btn unt-btn-outline-primary btn-sm abp-action-button js-cancel-notification notification-action-btn" type="button">
+                <span>Cancel</span>
+            </button>
+            }
+            @if (await PermissionChecker.IsGrantedAsync(NotificationsPermissions.Email.ScheduleDelete)) 
+            {                         
+            <button class="btn unt-btn-outline-primary btn-sm abp-action-button js-delete-notification notification-action-btn" type="button">
+                <i class="fl fl-cancel"></i>
+            </button>
+            }
+        </div>
+    </template>
+
+    <!-- Create/Edit Modal -->
+    <div id="notificationModal" class="modal" tabindex="-1">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content notification-modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Create Scheduled Notification</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body notification-modal-body">
+                    <form id="notificationForm" novalidate>
+                        <div id="modalColumns">
+
+                            <div id="leftColumn" class="left-col">
+                                <div class="mb-3">
+                                    <label for="templateSelect" class="form-label">Email Template</label>
+                                    <select id="templateSelect" class="form-select" required></select>
+                                    <div class="invalid-feedback">Please select an email template.</div>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="triggerType" class="form-label">Trigger Type</label>
+                                    <select id="triggerType" class="form-select" required>
+                                        <option value=""></option>
+                                        <option value="Date">Date</option>
+                                        <option value="Event">Event</option>
+                                    </select>
+                                    <div class="invalid-feedback">Please select a trigger type.</div>
+                                </div>
+                                <div id="dateOptions" class="hidden-section">
+                                    <div class="mb-3">
+                                        <label for="dateType" class="form-label">Notification Date Type</label>
+                                        <select id="dateType" class="form-select" required>
+                                            <option value=""></option>
+                                            <option value="NotificationDate">Notification Date</option>
+                                            <option value="DueDate">Due Date</option>
+                                            <option value="ProjectStartDate">Project Start Date</option>
+                                            <option value="ProjectEndDate">Project End Date</option>
+                                            <option value="ContractExecutionDate">Contract Execution Date</option>
+                                        </select>
+                                        <div class="invalid-feedback">Please select a date type.</div>
+                                    </div>
+                                </div>
+                                <div id="eventOptions" class="hidden-section">
+                                    <div class="mb-3">
+                                        <label for="statusSelect" class="form-label">Application Status Trigger</label>
+                                        <select id="statusSelect" class="form-select" required></select>
+                                        <div class="invalid-feedback">Please select an application status.</div>
+                                    </div>
+                                </div>
+                                <div id="recipientOptions" class="hidden-section">
+                                    <div class="mb-3">
+                                        <label for="recipientCategory" class="form-label">Recipient Category</label>
+                                        <select id="recipientCategory" class="form-select" required>
+                                            <option value=""></option>
+                                            <option value="Internal">Internal</option>
+                                            <option value="External">External</option>
+                                        </select>
+                                        <div class="invalid-feedback">Please select a recipient category.</div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="recipientSelect" class="form-label">Recipient</label>
+                                        <select id="recipientSelect" class="form-select" name="recipients[]" multiple data-placeholder="Select recipients..." required></select>
+                                        <div class="invalid-feedback">Please select at least one recipient.</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div id="rightColumn" class="right-col">
+                                <label for="templatePreview" class="form-label">Template Preview</label>
+                                <div class="template-preview-container">
+                                    <div id="templatePreview" class="p-2 template-preview-text"></div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </form>
+                </div>
+                <div class="notification-info-note">
+                    <strong>Note:</strong> If Recipients are not found, then no email will be drafted or sent.
+                </div>
+                <div class="modal-footer notification-modal-footer">
+                    <button id="btn-save-notification" type="button" class="btn unt-btn-primary btn-primary">Save</button>
+                    <button type="button" class="btn unt-btn-outline-primary btn-outline-primary" data-bs-dismiss="modal">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

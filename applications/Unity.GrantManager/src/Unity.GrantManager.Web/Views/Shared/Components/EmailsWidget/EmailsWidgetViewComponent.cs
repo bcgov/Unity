@@ -27,12 +27,17 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.EmailsWidget
             Application application = await applicationRepository.WithBasicDetailsAsync(applicationId);
 
             var defaultFromAddress = await settingProvider.GetOrNullAsync(NotificationsSettings.Mailing.DefaultFromAddress);
+            var enableEmailDelay = string.Equals(
+                await settingProvider.GetOrNullAsync(NotificationsSettings.Mailing.EnableEmailDelay),
+                "true", StringComparison.OrdinalIgnoreCase);
+
             EmailsWidgetViewModel model = new()
             {
                 ApplicationId = applicationId,
                 CurrentUserId = currentUserId,
                 EmailTo = application?.ApplicantAgent?.Email ?? string.Empty,
                 EmailFrom = defaultFromAddress ?? "NoReply@gov.bc.ca",
+                EnableEmailDelay = enableEmailDelay
             };
             await PopulateTemplates(model);
 

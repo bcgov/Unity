@@ -30,6 +30,7 @@ public class EmailQueueService : ApplicationService
             var message = new EmailMessages
             {
                 TimeToLive = TimeSpan.FromMinutes(TwentyMintues),
+                TenantId = emailNotificationEvent.TenantId ?? Guid.Empty,
                 EmailNotificationEvent = emailNotificationEvent
             };
 
@@ -51,6 +52,7 @@ public class EmailQueueService : ApplicationService
             var message = new EmailMessages
             {
                 TimeToLive = TimeSpan.FromMinutes(TenMintues),
+                TenantId = emailNotificationEvent.TenantId ?? Guid.Empty,
                 EmailNotificationEvent = emailNotificationEvent
             };
             _queueProducer.PublishMessage(message);

@@ -103,10 +103,10 @@ namespace Unity.Payments.Repositories
 
         public async Task<List<PaymentRequest>> GetPaymentPendingListByCorrelationIdsAsync(IEnumerable<Guid> correlationIds)
         {
-            var idList = correlationIds?.ToList() ?? new List<Guid>();
+            var idList = correlationIds?.ToList() ?? [];
             if (idList.Count == 0)
             {
-                return new List<PaymentRequest>();
+                return [];
             }
 
             var dbSet = await GetDbSetAsync();

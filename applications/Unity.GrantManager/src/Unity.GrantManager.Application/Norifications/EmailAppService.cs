@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using System;
 using System.Threading.Tasks;
+using Unity.GrantManager.Notifications.Email;
 using Unity.Modules.Shared.Utils;
 using Unity.Notifications.EmailNotifications;
 using Unity.Notifications.Emails;
@@ -9,7 +10,7 @@ using Volo.Abp.Application.Services;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.EventBus.Local;
 
-namespace Unity.GrantManager.Emails
+namespace Unity.GrantManager.Notifications
 {
     [Authorize]
     [Dependency(ReplaceServices = true)]
@@ -20,7 +21,7 @@ namespace Unity.GrantManager.Emails
         {
             return await emailNotificationService.InitializeDraftAsync(applicationId);
         }
-        public async Task<bool> CreateAsync(CreateEmailDto dto)
+        public async Task<bool> SendAsync(CreateEmailDto dto)
         {
             EmailNotificationEvent emailNotificationEvent = GetEmailNotificationEvent(dto);
             emailNotificationEvent.Action = EmailAction.SendCustom;
@@ -55,7 +56,8 @@ namespace Unity.GrantManager.Emails
                 Bcc = bccList,
                 Subject = dto.EmailSubject,
                 Body = dto.EmailBody,
-                EmailTemplateName = dto.EmailTemplateName
+                EmailTemplateName = dto.EmailTemplateName,
+                SendOnDateTime = dto.SendOnDateTime
             };
         }
     }

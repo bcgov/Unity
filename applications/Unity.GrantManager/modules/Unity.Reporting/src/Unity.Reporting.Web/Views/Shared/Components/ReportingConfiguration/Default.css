@@ -111,7 +111,7 @@
     }
 
     .column-name-input.is-invalid:focus {
-        border-color: #dc3545;
+        border-color: var(--bs-danger);
         box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
     }
 
@@ -120,8 +120,7 @@
     width: 100%;
     margin-top: 0.25rem;
     font-size: 0.875rem;
-    color: #dc3545;
-    display: block;
+    color: var(--bs-danger);
 }
 
 .valid-feedback {
