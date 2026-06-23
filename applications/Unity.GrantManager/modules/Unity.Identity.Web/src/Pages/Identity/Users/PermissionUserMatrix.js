@@ -34,6 +34,16 @@ $(document).ready(function () {
 
     let showingRoles = false;
 
+    const adjustTableLayout = function () {
+        globalThis.requestAnimationFrame(function () {
+            localTable.columns.adjust();
+
+            if (localTable.fixedHeader) {
+                localTable.fixedHeader.adjust();
+            }
+        });
+    };
+
     $.fn.dataTable.Buttons.defaults.dom.button.className = 'btn flex-none';
     let localTable = $('#permissionUserTable').DataTable({
         paging: false,
@@ -61,6 +71,8 @@ $(document).ready(function () {
                         $('#permissionUserTable').removeClass('show-roles');
                         $(button).find('span').text('Show Roles');
                     }
+
+                    adjustTableLayout();
                 }
             },
             {
@@ -127,6 +139,11 @@ $(document).ready(function () {
     // Hide spinner and show table after initialization
     $('.loading-spinner').hide();
     $('#permissionUserTable').show();
+    adjustTableLayout();
+
+    $(globalThis).on('resize', function () {
+        adjustTableLayout();
+    });
 
     // Click on user column header → open ABP permissions modal for that user
     $(document).on('click', 'th[data-user-header]', function () {

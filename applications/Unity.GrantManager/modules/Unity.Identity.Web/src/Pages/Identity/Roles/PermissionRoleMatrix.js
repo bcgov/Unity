@@ -34,6 +34,16 @@
         });
     }
 
+    const adjustTableLayout = function () {
+        globalThis.requestAnimationFrame(function () {
+            localTable.columns.adjust();
+
+            if (localTable.fixedHeader) {
+                localTable.fixedHeader.adjust();
+            }
+        });
+    };
+
     $.fn.dataTable.Buttons.defaults.dom.button.className = 'btn flex-none';
     let localTable = $('#permissionTable').DataTable({
         paging: false,
@@ -122,6 +132,11 @@
     // Hide spinner and show table after initialization
     $('.loading-spinner').hide();
     $('#permissionTable').show();
+    adjustTableLayout();
+
+    $(globalThis).on('resize', function () {
+        adjustTableLayout();
+    });
 
     // Add click handlers to role column headers using data-role-header attribute
     $(document).on('click', 'th[data-role-header]', function () {
