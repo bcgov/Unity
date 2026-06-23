@@ -93,12 +93,14 @@ public class PermissionRoleMatrixRepository(IDbContextProvider<GrantManagerDbCon
             .Where(ur => userIds.Contains(ur.UserId))
             .ToListAsync();
 
+        var roleIds = userRoles.Select(ur => ur.RoleId).ToHashSet();
         var roles = await dbContext.Set<IdentityRole>()
+            .Where(r => roleIds.Contains(r.Id))
             .ToListAsync();
 
         var roleIdToName = roles.ToDictionary(r => r.Id, r => r.Name);
 
-        // Build a lookup: userId → set of role names
+        // Build a lookup: userId to set of role names
         var userRoleNames = userRoles
             .GroupBy(ur => ur.UserId)
             .ToDictionary(
@@ -112,7 +114,9 @@ public class PermissionRoleMatrixRepository(IDbContextProvider<GrantManagerDbCon
         {
             UserId = u.Id.ToString(),
             UserName = u.UserName,
-            DisplayLabel = $"{u.Surname}, {u.Name}".Trim() ?? u.UserName
+            DisplayLabel = string.IsNullOrWhiteSpace(u.Surname) && string.IsNullOrWhiteSpace(u.Name)
+                 ? u.UserName
+                 : $"{u.Surname}, {u.Name}".Trim(' ', ',')
         }).ToList();
 
         var rows = permissions

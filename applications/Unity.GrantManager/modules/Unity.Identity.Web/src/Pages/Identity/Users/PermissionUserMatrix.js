@@ -86,10 +86,10 @@ $(document).ready(function () {
                     showingRoles = !showingRoles;
                     if (showingRoles) {
                         $('#permissionUserTable').addClass('show-roles');
-                        $(button).find('span').text('Hide Roles');
+                        $(button).find('.toggle-roles-text').text('Hide Roles');
                     } else {
                         $('#permissionUserTable').removeClass('show-roles');
-                        $(button).find('span').text('Show Roles');
+                        $(button).find('.toggle-roles-text').text('Show Roles');
                     }
 
                     adjustTableLayout();
