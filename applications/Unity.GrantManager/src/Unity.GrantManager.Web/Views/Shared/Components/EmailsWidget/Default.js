@@ -240,7 +240,32 @@
         editor?.mode.set('design');
     }
 
+    function validateScheduleDate() {
+        const dateStr = UIElements.scheduleDateInput.val();
+        // Clear any previous validation messages and error toasts
+        UIElements.scheduleDateValidation.removeClass('text-success').removeClass('text-danger').text('').hide();
 
+        if (dateStr?.length === 10) {
+            const [month, day, year] = dateStr.split('/').map(Number);
+            if (isValidDate(month, day, year)) {
+                scheduleState.selectedDate = new Date(year, month - 1, day);
+                scheduleState.currentMonth = month - 1;
+                scheduleState.currentYear = year;
+                renderCalendarGrid(scheduleState);
+                UIElements.scheduleDateValidation.text('✓ Valid date').removeClass('text-danger').addClass('text-success').show();
+            } else {
+                const errorMsg = '✗ Invalid date';
+                UIElements.scheduleDateValidation.text(errorMsg).removeClass('text-success').addClass('text-danger').show();
+                showValidationErrorToast([errorMsg]);
+            }
+        } else if (dateStr) {
+            const errorMsg = '✗ Invalid date format (use MM/DD/YYYY)';
+            UIElements.scheduleDateValidation.text(errorMsg).removeClass('text-success').addClass('text-danger').show();
+            showValidationErrorToast([errorMsg]);
+        } else {
+            UIElements.scheduleDateValidation.hide();
+        }
+    }
 
     function bindDelayModeEvents() {
         // Use global scheduleState
@@ -307,34 +332,7 @@
                 UIElements.scheduleDateValidation.hide();
             }
         });
-
-        function validateScheduleDate() {
-            const dateStr = UIElements.scheduleDateInput.val();
-            // Clear any previous validation messages and error toasts
-            UIElements.scheduleDateValidation.removeClass('text-success').removeClass('text-danger').text('').hide();
-
-            if (dateStr?.length === 10) {
-                const [month, day, year] = dateStr.split('/').map(Number);
-                if (isValidDate(month, day, year)) {
-                    scheduleState.selectedDate = new Date(year, month - 1, day);
-                    scheduleState.currentMonth = month - 1;
-                    scheduleState.currentYear = year;
-                    renderCalendarGrid(scheduleState);
-                    UIElements.scheduleDateValidation.text('✓ Valid date').removeClass('text-danger').addClass('text-success').show();
-                } else {
-                    const errorMsg = '✗ Invalid date';
-                    UIElements.scheduleDateValidation.text(errorMsg).removeClass('text-success').addClass('text-danger').show();
-                    showValidationErrorToast([errorMsg]);
-                }
-            } else if (dateStr) {
-                const errorMsg = '✗ Invalid date format (use MM/DD/YYYY)';
-                UIElements.scheduleDateValidation.text(errorMsg).removeClass('text-success').addClass('text-danger').show();
-                showValidationErrorToast([errorMsg]);
-            } else {
-                UIElements.scheduleDateValidation.hide();
-            }
-        }
-
+    
         UIElements.scheduleDateInput.on('blur', function () {
             validateScheduleDate();
         });
