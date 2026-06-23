@@ -10,7 +10,7 @@ $(function () {
     }
 
     // Initialize DataTable for tenant view role management
-    $('#TenantViewRoleTable').DataTable({
+    let tenantViewRoleTable = $('#TenantViewRoleTable').DataTable({
         order: [[0, 'asc']], // Sort by tenant name
         processing: false,
         serverSide: false,
@@ -18,6 +18,8 @@ $(function () {
         searching: true,
         pageLength: 25,
         autoWidth: false,
+        scrollY: 'calc(100vh - 325px)',
+        scrollCollapse: true,
         columnDefs: [
             {
                 targets: [2], // Actions column
@@ -36,6 +38,13 @@ $(function () {
             initializeTooltips();
         }
     });
+
+    // Keep the scroll body sized so the header/pagination stay within the viewport
+    // instead of the table overflowing past the bottom of the screen (same plugin
+    // used by initializeDataTable's fixedHeaders option elsewhere in the app).
+    if ($.fn.dataTable.ScrollResize) {
+        new $.fn.dataTable.ScrollResize(tenantViewRoleTable);
+    }
 
     // Initialize tooltips on page load
     initializeTooltips();
