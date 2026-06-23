@@ -80,7 +80,7 @@ $(document).ready(function () {
         columnDefs: columnDefs,
         buttons: [
             {
-                text: '<i class="fl fl-review-user align-middle"></i> <span>Show Roles</span>',
+                text: '<i class="fl fl-review-user align-middle"></i> <span class="toggle-roles-text">Show Roles</span>',
                 className: 'btn-light rounded-1',
                 action: function (e, dt, button) {
                     showingRoles = !showingRoles;

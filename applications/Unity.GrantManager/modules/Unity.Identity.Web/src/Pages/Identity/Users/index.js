@@ -227,6 +227,7 @@ $(function () {
         {
             text: '<i class="fl fl-multi-select align-middle"></i> <span>View User Matrix</span>',
             className: 'btn-light rounded-1',
+            available: () => abp.auth.isGranted('AbpIdentity.Users'),
             action: function (e, dt, button, config) {
                 globalThis.location = '/Identity/Users/PermissionUserMatrix';
             }
