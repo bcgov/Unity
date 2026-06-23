@@ -26,4 +26,5 @@ public class OpenAIPromptRendererTests
     {
         Should.Throw<InvalidOperationException>(() => OpenAIPromptRenderer.ResolvePromptVersion(version));
     }
+
 }

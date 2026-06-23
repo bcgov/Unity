@@ -1,4 +1,5 @@
 - Any narrative text response must be at least 12 words.
+- If ATTACHMENTS is empty, use DATA only and do not mention missing attachments unless their absence is material to the specific conclusion or question.
 - Return values exactly as specified in OUTPUT.
 - Do not return keys outside OUTPUT.
 - Return valid JSON only.

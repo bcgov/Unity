@@ -1,5 +1,4 @@
-﻿using Unity.GrantManager.Applications;
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authorization.Infrastructure;
 using System;
 using System.Collections.Generic;
@@ -12,6 +11,7 @@ using Unity.Flex.Scoresheets;
 using Unity.Flex.Scoresheets.Enums;
 using Unity.Flex.Scoresheets.Events;
 using Unity.Flex.Worksheets.Definitions;
+using Unity.GrantManager.Applications;
 using Unity.GrantManager.Comments;
 using Unity.GrantManager.Exceptions;
 using Unity.GrantManager.Workflow;
@@ -278,7 +278,7 @@ namespace Unity.GrantManager.Assessments
         }
 
         /// <summary>
-        /// Generate a DOT graph from the Asssessment workflow.
+        /// Generate a Mermaid graph from the Asssessment workflow.
         /// </summary>
         public static string? GetWorkflowDiagram()
         {

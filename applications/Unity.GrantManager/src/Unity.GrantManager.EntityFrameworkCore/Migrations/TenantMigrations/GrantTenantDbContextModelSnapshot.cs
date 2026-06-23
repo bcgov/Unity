@@ -270,6 +270,9 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .HasColumnType("text")
                         .HasColumnName("ExtraProperties");
 
+                    b.Property<bool>("IsArchived")
+                        .HasColumnType("boolean");
+
                     b.Property<bool>("IsDeleted")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
@@ -825,6 +828,12 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .HasColumnType("uuid")
                         .HasColumnName("CreatorId");
 
+                    b.Property<Guid?>("DeleterId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("DeletionTime")
+                        .HasColumnType("timestamp without time zone");
+
                     b.Property<string>("ExtraProperties")
                         .IsRequired()
                         .HasColumnType("text")
@@ -841,6 +850,9 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
 
                     b.Property<string>("IndigenousOrgInd")
                         .HasColumnType("text");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
 
                     b.Property<bool>("IsDuplicated")
                         .HasColumnType("boolean");
@@ -872,9 +884,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .HasColumnType("text");
 
                     b.Property<string>("OrgStatus")
-                        .HasColumnType("text");
-
-                    b.Property<string>("OrganizationSize")
                         .HasColumnType("text");
 
                     b.Property<string>("OrganizationType")
@@ -915,7 +924,20 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
 
                     b.HasIndex("ApplicantName");
 
+                    b.HasIndex("OrgName");
+
+                    b.HasIndex("OrgNumber");
+
+                    b.HasIndex("Status");
+
+                    b.HasIndex("SupplierId");
+
                     b.HasIndex("TenantId");
+
+                    b.HasIndex("UnityApplicantId");
+
+                    b.HasIndex("TenantId", "IsDeleted", "CreationTime")
+                        .HasFilter("\"IsDeleted\" = false");
 
                     b.ToTable("Applicants", (string)null);
                 });
@@ -2053,6 +2075,9 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .HasColumnType("uuid")
                         .HasColumnName("LastModifierId");
 
+                    b.Property<string>("NotifiedStatus")
+                        .HasColumnType("text");
+
                     b.Property<string>("StatusCode")
                         .IsRequired()
                         .HasMaxLength(250)
@@ -2300,6 +2325,9 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
 
                     b.Property<decimal?>("OneTimeConsideration")
                         .HasColumnType("numeric");
+
+                    b.Property<DateTime?>("PaidDate")
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<decimal?>("ReconsiderationAmount")
                         .HasColumnType("numeric");
@@ -3185,6 +3213,10 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .HasColumnType("uuid")
                         .HasColumnName("CreatorId");
 
+                    b.Property<string>("EmailType")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
                     b.Property<string>("ExtraProperties")
                         .IsRequired()
                         .HasColumnType("text")
@@ -3209,6 +3241,10 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<string>("Priority")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<string>("Recipient")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
 
                     b.Property<int>("RetryAttempts")
                         .HasColumnType("integer");

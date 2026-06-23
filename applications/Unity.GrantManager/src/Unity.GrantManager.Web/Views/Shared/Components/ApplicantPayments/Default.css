@@ -21,7 +21,6 @@
 .applicant-payments-toolbar .dynamic-buttons-div .dt-button-collection {
     left: auto !important;
     right: 0 !important;
-    top: 100% !important;
 }
 
 #ApplicantPaymentRequestListTable_wrapper {
@@ -36,4 +35,15 @@
     max-height: clamp(180px, calc(100vh - 540px), 350px) !important;
     overflow-y: auto !important;
     overflow-x: auto !important;
+}
+
+#ApplicantPaymentRequestListTable .error-row td {
+    background-color: #FEEAEA;
+    color: #CC0000 !important;
+}
+
+.info-btn {
+    font-size: 13pt;
+    font-family: BCSans, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", "Liberation Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+    font-weight: 100;
 }

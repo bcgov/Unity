@@ -27,6 +27,9 @@ public static class AIDbContextModelCreatingExtensions
             b.Property(x => x.Type)
                 .IsRequired();
 
+            b.HasIndex(x => x.Name)
+                .IsUnique();
+
             b.HasMany(x => x.Versions)
                 .WithOne(x => x.Prompt)
                 .HasForeignKey(x => x.PromptId)

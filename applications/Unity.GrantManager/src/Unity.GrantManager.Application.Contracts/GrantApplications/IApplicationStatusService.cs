@@ -7,6 +7,6 @@ namespace Unity.GrantManager.GrantApplications;
 public interface IApplicationStatusService : IApplicationService
 {
     Task<IList<ApplicationStatusDto>> GetListAsync();
-
+    Task<IList<ApplicantPortalStatusDto>> GetApplicantPortalStatusListAsync();
     Task UpdateExternalStatusLabelsAsync(UpdateApplicationStatusExternalLabelsDto input);
 }

@@ -18,15 +18,16 @@ public interface IGrantApplicationAppService
     Task<IList<GrantApplicationDto>> GetApplicationDetailsListAsync(List<Guid> applicationIds);
     Task<GrantApplicationDto> GetAsync(Guid id);
     Task<GrantApplicationDto> TriggerAction(Guid applicationId, GrantApplicationAction triggerAction);
-    Task<AIGenerationRequestDto> QueueAIGenerationAsync(Guid applicationId, string? promptVersion = null);
-    Task<AIGenerationRequestDto> QueueApplicationAnalysisAsync(Guid applicationId, string? promptVersion = null);
-    Task<AIGenerationRequestDto> QueueAttachmentSummaryAsync(QueueAttachmentSummaryRequestDto input, string? promptVersion = null);
-    Task<AIGenerationRequestDto> QueueApplicationScoringAsync(Guid applicationId, string? promptVersion = null);
-    Task<AIGenerationRequestDto?> GetAIGenerationStatusAsync(Guid applicationId, string operationType, string? promptVersion = null);
-    Task<AIGenerationRequestDto> QueueAllAIStagesAsync(Guid applicationId, string? promptVersion = null);
+    Task<AIGenerationStatusDto> QueueAIGenerationAsync(Guid applicationId, string? promptVersion = null);
+    Task<AIGenerationStatusDto> QueueApplicationAnalysisAsync(Guid applicationId, string? promptVersion = null);
+    Task<AIGenerationStatusDto> QueueAttachmentSummaryAsync(QueueAttachmentSummaryRequestDto input, string? promptVersion = null);
+    Task<AIGenerationStatusDto> QueueApplicationScoringAsync(Guid applicationId, string? promptVersion = null);
+    Task<AIGenerationStatusDto> GetAIGenerationStatusAsync(Guid applicationId, string operationType, string? promptVersion = null);
+    Task<AIGenerationStatusDto> QueueAllAIStagesAsync(Guid applicationId, string? promptVersion = null);
     Task<Guid?> GetAccountCodingIdFromFormIdAsync(Guid formId);
     Task<string> DismissAIAnalysisItemAsync(Guid applicationId, string itemId);
     Task<string> RestoreAIAnalysisItemAsync(Guid applicationId, string itemId);
     Task<PagedResultDto<GrantApplicationDto>> GetListAsync(GrantApplicationListInputDto input);
     Task<bool> IsApplicantRedStopAsync(Guid applicationId);
+    string? GetWorkflowDiagram(bool isDirectApproval);
 }

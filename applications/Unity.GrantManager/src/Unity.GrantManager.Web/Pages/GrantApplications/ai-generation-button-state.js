@@ -13,6 +13,17 @@
             .prop('disabled', true);
     }
 
+    function applyRateLimitState(generationStatus, options = {}) {
+        const request = generationStatus?.generationRequest;
+        global.applyAIRateLimitState?.(
+            {
+                isGenerating: generationStatus?.isGenerating === true || request?.isActive === true,
+                retryAfterSeconds: Number(generationStatus?.retryAfterSeconds) || 0
+            },
+            { pollWhenGenerating: options.pollWhenGenerating === true }
+        );
+    }
+
     global.AIGenerationButtonState = {
         resolveStatus(status) {
             switch (Number(status)) {
@@ -29,7 +40,7 @@
             }
         },
         setGenerating($button) {
-            global.setAIGenerationButtonsGenerating?.();
+            global.setAIGenerationButtonsGenerating?.({ poll: false });
         },
         restore($button) {
             $button.removeClass('disabled');
@@ -37,11 +48,17 @@
         restoreForCooldownCheck($button, html) {
             restoreButtonForCooldownCheck($button, html);
         },
+        applyStatusState(generationStatus) {
+            applyRateLimitState(generationStatus, { pollWhenGenerating: true });
+        },
         monitor(options) {
-            const intervalMs = options.intervalMs || 15000;
+            const intervalMs = options.intervalMs || 5000;
+            const activeIntervalMs = options.activeIntervalMs || 1000;
+            const activePollCount = options.activePollCount || 30;
             const maxFailures = options.maxFailures || 3;
             let timeoutId = null;
             let failures = 0;
+            let pollCount = 0;
 
             const stop = () => {
                 if (timeoutId) {
@@ -50,28 +67,48 @@
                 }
             };
 
+            const scheduleNextPoll = () => {
+                pollCount += 1;
+                const nextIntervalMs = pollCount <= activePollCount
+                    ? activeIntervalMs
+                    : intervalMs;
+
+                timeoutId = setTimeout(poll, nextIntervalMs);
+            };
+
             const poll = () => {
                 options.getStatus()
-                    .done((request) => {
+                    .done((generationStatus) => {
                         failures = 0;
+                        const request = generationStatus?.generationRequest;
                         const status = this.resolveStatus(request?.status);
 
                         if (status === 'Failed') {
                             stop();
                             restoreButton(options.$button, options.originalHtml);
+                            applyRateLimitState(generationStatus, { pollWhenGenerating: true });
                             options.onFailed?.(request);
                             return;
                         }
 
-                        if (!request || request.isActive === false || status === 'Completed') {
+                        if (!request) {
                             stop();
-                            restoreButtonForCooldownCheck(options.$button, options.originalHtml);
-                            options.onComplete?.(request);
-                            global.syncAIRateLimitButtons?.();
+                            restoreButton(options.$button, options.originalHtml);
+                            global.refreshAIRateLimitState?.();
+                            options.onMissing?.();
                             return;
                         }
 
-                        timeoutId = setTimeout(poll, intervalMs);
+                        if (request.isActive === false || status === 'Completed') {
+                            stop();
+                            restoreButtonForCooldownCheck(options.$button, options.originalHtml);
+                            applyRateLimitState(generationStatus, { pollWhenGenerating: true });
+                            options.onComplete?.(request);
+                            return;
+                        }
+
+                        applyRateLimitState(generationStatus);
+                        scheduleNextPoll();
                     })
                     .fail((error) => {
                         failures += 1;
@@ -82,7 +119,7 @@
                             return;
                         }
 
-                        timeoutId = setTimeout(poll, intervalMs);
+                        scheduleNextPoll();
                     });
             };
 

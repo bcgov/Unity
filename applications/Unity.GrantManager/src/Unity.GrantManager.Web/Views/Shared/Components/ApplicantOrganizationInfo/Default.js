@@ -14,7 +14,7 @@
         'BusinessNumber',
         'OrgStatus',
         'OrganizationType',
-        'OrganizationSize',
+        'ApproxNumberOfEmployees',
         'NonRegOrgName',
         'Sector',
         'SubSector',

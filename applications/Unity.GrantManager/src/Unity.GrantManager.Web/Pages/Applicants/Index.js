@@ -2,6 +2,9 @@ $(function () {
     let dt = $('#ApplicantsTable');
     let dataTable;
     const guidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    const requestedFieldsStorageKey = 'Applicants_RequestedFields';
+    const dtTextRenderer = $.fn.dataTable.render.text();
+    const currentCultureName = abp.localization.currentCulture.name;
 
     // Default visible columns as per requirements
     const defaultVisibleColumns = [
@@ -27,13 +30,10 @@ $(function () {
 
     // Format items with rowCount for selection
     let formatItems = function (items) {
-        const newData = items.map((item, index) => {
-            return {
-                ...item,
-                rowCount: index
-            };
+        items.forEach((item, index) => {
+            item.rowCount = index;
         });
-        return newData;
+        return items;
     };
 
     // Complete column definitions following GrantApplications pattern
@@ -56,7 +56,6 @@ $(function () {
             getRedStopColumn(columnIndex++),
             getNonRegisteredBusinessNameColumn(columnIndex++),
             getNonRegOrgNameColumn(columnIndex++),
-            getOrganizationSizeColumn(columnIndex++),
             getSectorColumn(columnIndex++),
             getSubSectorColumn(columnIndex++),
             getApproxNumberOfEmployeesColumn(columnIndex++),
@@ -90,26 +89,21 @@ $(function () {
             className: 'data-table-header',
             index: columnIndex,
             render: function (data, type, row) {
-                let applicantName = (typeof data !== 'string' || data.trim() === '') ? 'Applicant Name' : data;
+                const applicantName = (typeof data !== 'string' || data.trim() === '') ? 'Applicant Name' : data;
 
-                if (type === 'sort' || type === 'filter') {
+                if (type !== 'display') {
                     return applicantName;
                 }
 
-                const safeApplicantName = $.fn.dataTable.render.text().display(applicantName);
+                const safeApplicantName = dtTextRenderer.display(applicantName);
+                const applicantId = row?.id;
+                const isGuid = applicantId && guidPattern.test(applicantId);
 
-                if (type === 'display') {
-                    const applicantId = row?.id;
-                    const isGuid = applicantId && guidPattern.test(applicantId);
-
-                    if (isGuid) {
-                        return `<a href="/GrantApplicants/Details?ApplicantId=${encodeURIComponent(applicantId)}">${safeApplicantName}</a>`;
-                    }
-
-                    return safeApplicantName;
+                if (isGuid) {
+                    return `<a href="/GrantApplicants/Details?ApplicantId=${encodeURIComponent(applicantId)}">${safeApplicantName}</a>`;
                 }
 
-                return applicantName;
+                return safeApplicantName;
             }
         }
     }
@@ -121,8 +115,11 @@ $(function () {
             name: 'unityApplicantId',
             className: 'data-table-header text-nowrap',
             render: function (data, type, row) {
+                if (type !== 'display') {
+                    return (data && String(data).trim() !== '') ? data : '';
+                }
                 const displayValue = (data && String(data).trim() !== '') ? data : 'blank';
-                return `<a href="/GrantApplicants/Details?ApplicantId=${row.id}">${displayValue}</a>`;
+                return `<a href="/GrantApplicants/Details?ApplicantId=${row.id}">${dtTextRenderer.display(displayValue)}</a>`;
             },
             index: columnIndex
         }
@@ -161,13 +158,9 @@ $(function () {
             name: 'orgStatus',
             className: 'data-table-header',
             render: function (data) {
-                if (data != null && data == 'ACTIVE') {
-                    return 'Active';
-                } else if (data != null && data == 'HISTORICAL') {
-                    return 'Historical';
-                } else {
-                    return data ?? '';
-                }
+                if (data === 'ACTIVE') return 'Active';
+                if (data === 'HISTORICAL') return 'Historical';
+                return data ?? '';
             },
             index: columnIndex
         }
@@ -237,20 +230,6 @@ $(function () {
         }
     }
 
-    function getOrganizationSizeColumn(columnIndex) {
-        return {
-            title: 'Organization Size',
-            data: 'organizationSize',
-            name: 'organizationSize',
-            className: 'data-table-header',
-            visible: false,
-            render: function (data) {
-                return data ?? '';
-            },
-            index: columnIndex
-        }
-    }
-
     function getSectorColumn(columnIndex) {
         return {
             title: 'Sector',
@@ -281,7 +260,7 @@ $(function () {
 
     function getApproxNumberOfEmployeesColumn(columnIndex) {
         return {
-            title: 'Approx. Number of Employees',
+            title: 'Organization Size (Approximate Number of Employees)',
             data: 'approxNumberOfEmployees',
             name: 'approxNumberOfEmployees',
             className: 'data-table-header',
@@ -376,7 +355,7 @@ $(function () {
             visible: false,
             render: function (data) {
                 return data != null ? luxon.DateTime.fromISO(data, {
-                    locale: abp.localization.currentCulture.name,
+                    locale: currentCultureName,
                 }).toUTC().toLocaleString() : '';
             },
             index: columnIndex
@@ -404,7 +383,7 @@ $(function () {
             name: 'creationTime',
             className: 'data-table-header',
             visible: false,
-            render: DataTable.render.date('YYYY-MM-DD', abp.localization.currentCulture.name),
+            render: DataTable.render.date('YYYY-MM-DD', currentCultureName),
             index: columnIndex
         }
     }
@@ -416,7 +395,7 @@ $(function () {
             name: 'lastModificationTime',
             className: 'data-table-header',
             visible: false,
-            render: DataTable.render.date('YYYY-MM-DD', abp.localization.currentCulture.name),
+            render: DataTable.render.date('YYYY-MM-DD', currentCultureName),
             index: columnIndex
         }
     }
@@ -536,6 +515,43 @@ $(function () {
         };
     };    
 
+    function getRequestedFields() {
+        let requestedFields;
+
+        if (dataTable) {
+            try {
+                const cols = dataTable.settings()[0].aoColumns;
+                requestedFields = cols
+                    .filter(function (col, idx) { return dataTable.column(idx).visible(); })
+                    .map(function (col) { return col.sName; })
+                    .filter(function (name) { return !!name; });
+
+                if (requestedFields.length > 0) {
+                    localStorage.setItem(requestedFieldsStorageKey, JSON.stringify(requestedFields));
+                }
+            } catch {
+                // DataTable may not be fully initialized yet.
+            }
+        }
+
+        if (!requestedFields || requestedFields.length === 0) {
+            try {
+                const saved = localStorage.getItem(requestedFieldsStorageKey);
+                if (saved) {
+                    requestedFields = JSON.parse(saved);
+                }
+            } catch {
+                // Ignore invalid localStorage values.
+            }
+        }
+
+        if (!requestedFields || requestedFields.length === 0) {
+            requestedFields = defaultVisibleColumns;
+        }
+
+        return requestedFields;
+    }
+
     // Initialize DataTable with server-side processing
     dataTable = initializeDataTable({
         dt,
@@ -544,9 +560,14 @@ $(function () {
         maxRowsPerPage: 10,
         defaultSortColumn: defaultSortOrderColumn,
         dataEndpoint: unity.grantManager.applicants.applicant.getList,
-        data: {},
+        data: function () {
+            return {
+                requestedFields: getRequestedFields()
+            };
+        },
         responseCallback,
         actionButtons,
+        deferRender: true,
         serverSideEnabled: false, // Switch to client-side processing to enable filter functionality
         pagingEnabled: true,
         reorderEnabled: true,
@@ -617,6 +638,11 @@ $(function () {
         }
     });
 
+
+    dataTable.on('column-visibility.dt', function () {
+        getRequestedFields();
+    });
+
     // Handle search from ActionBar
     $('#search').on('input', function () {
         dataTable.search($(this).val()).draw();
@@ -664,44 +690,44 @@ $(function () {
         }
     }
 
+    const COMPANY_TYPE_MAP = new Map([
+        ["BC", "BC Company"],
+        ["CP", "Cooperative"],
+        ["GP", "General Partnership"],
+        ["S", "Society"],
+        ["SP", "Sole Proprietorship"],
+        ["A", "Extraprovincial Company"],
+        ["B", "Extraprovincial"],
+        ["BEN", "Benefit Company"],
+        ["C", "Continuation In"],
+        ["CC", "BC Community Contribution Company"],
+        ["CS", "Continued In Society"],
+        ["CUL", "Continuation In as a BC ULC"],
+        ["EPR", "Extraprovincial Registration"],
+        ["FI", "Financial Institution"],
+        ["FOR", "Foreign Registration"],
+        ["LIB", "Public Library Association"],
+        ["LIC", "Licensed (Extra-Pro)"],
+        ["LL", "Limited Liability Partnership"],
+        ["LLC", "Limited Liability Company"],
+        ["LP", "Limited Partnership"],
+        ["MF", "Miscellaneous Firm"],
+        ["PA", "Private Act"],
+        ["PAR", "Parish"],
+        ["QA", "CO 1860"],
+        ["QB", "CO 1862"],
+        ["QC", "CO 1878"],
+        ["QD", "CO 1890"],
+        ["QE", "CO 1897"],
+        ["REG", "Registration (Extra-pro)"],
+        ["ULC", "BC Unlimited Liability Company"],
+        ["XCP", "Extraprovincial Cooperative"],
+        ["XL", "Extrapro Limited Liability Partnership"],
+        ["XP", "Extraprovincial Limited Partnership"],
+        ["XS", "Extraprovincial Society"]
+    ]);
+
     function getFullType(code) {
-        const companyTypes = [
-            { code: "BC", name: "BC Company" },
-            { code: "CP", name: "Cooperative" },
-            { code: "GP", name: "General Partnership" },
-            { code: "S", name: "Society" },
-            { code: "SP", name: "Sole Proprietorship" },
-            { code: "A", name: "Extraprovincial Company" },
-            { code: "B", name: "Extraprovincial" },
-            { code: "BEN", name: "Benefit Company" },
-            { code: "C", name: "Continuation In" },
-            { code: "CC", name: "BC Community Contribution Company" },
-            { code: "CS", name: "Continued In Society" },
-            { code: "CUL", name: "Continuation In as a BC ULC" },
-            { code: "EPR", name: "Extraprovincial Registration" },
-            { code: "FI", name: "Financial Institution" },
-            { code: "FOR", name: "Foreign Registration" },
-            { code: "LIB", name: "Public Library Association" },
-            { code: "LIC", name: "Licensed (Extra-Pro)" },
-            { code: "LL", name: "Limited Liability Partnership" },
-            { code: "LLC", name: "Limited Liability Company" },
-            { code: "LP", name: "Limited Partnership" },
-            { code: "MF", name: "Miscellaneous Firm" },
-            { code: "PA", name: "Private Act" },
-            { code: "PAR", name: "Parish" },
-            { code: "QA", name: "CO 1860" },
-            { code: "QB", name: "CO 1862" },
-            { code: "QC", name: "CO 1878" },
-            { code: "QD", name: "CO 1890" },
-            { code: "QE", name: "CO 1897" },
-            { code: "REG", name: "Registraton (Extra-pro)" },
-            { code: "ULC", name: "BC Unlimited Liability Company" },
-            { code: "XCP", name: "Extraprovincial Cooperative" },
-            { code: "XL", name: "Extrapro Limited Liability Partnership" },
-            { code: "XP", name: "Extraprovincial Limited Partnership" },
-            { code: "XS", name: "Extraprovincial Society" }
-        ];
-        const match = companyTypes.find(entry => entry.code === code);
-        return match ? match.name : "Unknown";
+        return COMPANY_TYPE_MAP.get(code) ?? 'Unknown';
     }
 });

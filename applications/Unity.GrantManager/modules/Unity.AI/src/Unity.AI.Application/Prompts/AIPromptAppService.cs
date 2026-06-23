@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Threading.Tasks;
 using Unity.AI.Domain;
@@ -10,6 +11,7 @@ using Volo.Abp.Domain.Repositories;
 namespace Unity.AI.Prompts;
 
 [Authorize(IdentityConsts.ITOperationsPolicyName)]
+[Route("api/app/ai/prompts")]
 public class AIPromptAppService :
     CrudAppService<
         AIPrompt,
@@ -29,6 +31,7 @@ public class AIPromptAppService :
         DeletePolicyName = IdentityConsts.ITOperationsPolicyName;
     }
 
+    [HttpGet("{id}")]
     public override async Task<AIPromptDto> GetAsync(Guid id)
     {
         using (CurrentTenant.Change(null))
@@ -37,6 +40,7 @@ public class AIPromptAppService :
         }
     }
 
+    [HttpGet]
     public override async Task<PagedResultDto<AIPromptDto>> GetListAsync(PagedAndSortedResultRequestDto input)
     {
         using (CurrentTenant.Change(null))
@@ -45,6 +49,7 @@ public class AIPromptAppService :
         }
     }
 
+    [HttpPost]
     public override async Task<AIPromptDto> CreateAsync(CreateUpdateAIPromptDto input)
     {
         using (CurrentTenant.Change(null))
@@ -53,6 +58,7 @@ public class AIPromptAppService :
         }
     }
 
+    [HttpPut("{id}")]
     public override async Task<AIPromptDto> UpdateAsync(Guid id, CreateUpdateAIPromptDto input)
     {
         using (CurrentTenant.Change(null))
@@ -61,6 +67,7 @@ public class AIPromptAppService :
         }
     }
 
+    [HttpDelete("{id}")]
     public override async Task DeleteAsync(Guid id)
     {
         using (CurrentTenant.Change(null))

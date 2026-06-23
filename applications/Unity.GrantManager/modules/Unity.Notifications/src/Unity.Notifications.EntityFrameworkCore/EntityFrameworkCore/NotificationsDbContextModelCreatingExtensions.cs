@@ -20,6 +20,9 @@ public static class NotificationsDbContextModelCreatingExtensions
                 NotificationsDbProperties.DbSchema);
 
             b.ConfigureByConvention();
+
+            b.Property(x => x.Recipient).HasConversion<string>().HasMaxLength(32);
+            b.Property(x => x.EmailType).HasConversion<string>().HasMaxLength(32);
         });
 
         modelBuilder.Entity<EmailLogAttachment>(b =>
