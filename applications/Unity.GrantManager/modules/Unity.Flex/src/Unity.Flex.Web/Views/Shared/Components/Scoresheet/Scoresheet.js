@@ -1,45 +1,50 @@
+const _SANITIZE_ALLOWED_TAGS = new Set([
+    'a', 'b', 'blockquote', 'br', 'code', 'del', 'em',
+    'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'hr', 'i',
+    'li', 'ol', 'p', 'pre', 's', 'span', 'strong', 'u', 'ul'
+]);
+const _SANITIZE_ALLOWED_ATTRS = new Set(['href', 'rel', 'target', 'title']);
+const _SANITIZE_ALLOWED_SCHEMES = new Set(['http:', 'https:', 'mailto:']);
+const _SANITIZE_STRIP_WITH_CONTENT = new Set(['script', 'style', 'iframe', 'noscript', 'object', 'embed']);
+
+function _isSafeHref(href) {
+    try {
+        const url = new URL(href, location.href);
+        return _SANITIZE_ALLOWED_SCHEMES.has(url.protocol);
+    } catch (e) {
+        console.warn('sanitizeHtml: invalid href removed:', e);
+        return false;
+    }
+}
+
+function _sanitizeElement(el) {
+    for (const attr of Array.from(el.attributes)) {
+        if (_SANITIZE_ALLOWED_ATTRS.has(attr.name)) {
+            if (attr.name === 'href' && !_isSafeHref(el.getAttribute('href'))) {
+                el.removeAttribute('href');
+            }
+        } else {
+            el.removeAttribute(attr.name);
+        }
+    }
+}
+
 function sanitizeHtml(html) {
     if (!html) return '';
-
-    const ALLOWED_TAGS = new Set([
-        'a', 'b', 'blockquote', 'br', 'code', 'del', 'em',
-        'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'hr', 'i',
-        'li', 'ol', 'p', 'pre', 's', 'span', 'strong', 'u', 'ul'
-    ]);
-    const ALLOWED_ATTRS = new Set(['href', 'rel', 'target', 'title']);
-    const ALLOWED_SCHEMES = ['http:', 'https:', 'mailto:'];
-    const STRIP_WITH_CONTENT = new Set(['script', 'style', 'iframe', 'noscript', 'object', 'embed']);
-
     const template = document.createElement('template');
     template.innerHTML = html;
-
     // Process bottom-up so children are handled before their parent is unwrapped/removed
     const elements = Array.from(template.content.querySelectorAll('*')).reverse();
     for (const el of elements) {
         const tag = el.tagName.toLowerCase();
-        if (STRIP_WITH_CONTENT.has(tag)) {
+        if (_SANITIZE_STRIP_WITH_CONTENT.has(tag)) {
             el.remove();
-        } else if (!ALLOWED_TAGS.has(tag)) {
-            el.replaceWith(...Array.from(el.childNodes));
+        } else if (_SANITIZE_ALLOWED_TAGS.has(tag)) {
+            _sanitizeElement(el);
         } else {
-            for (const attr of Array.from(el.attributes)) {
-                if (!ALLOWED_ATTRS.has(attr.name)) {
-                    el.removeAttribute(attr.name);
-                } else if (attr.name === 'href') {
-                    try {
-                        const url = new URL(el.getAttribute('href'), location.href);
-                        if (!ALLOWED_SCHEMES.includes(url.protocol)) {
-                            el.removeAttribute('href');
-                        }
-                    } catch (e) {
-                        console.warn('sanitizeHtml: invalid href removed:', e);
-                        el.removeAttribute('href');
-                    }
-                }
-            }
+            el.replaceWith(...Array.from(el.childNodes));
         }
     }
-
     const wrapper = document.createElement('div');
     wrapper.appendChild(template.content);
     return wrapper.innerHTML;
@@ -47,10 +52,10 @@ function sanitizeHtml(html) {
 
 function escapeHtml(text) {
     return String(text)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;');
 }
 
 $(function () {
