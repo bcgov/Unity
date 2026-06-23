@@ -32,6 +32,26 @@ $(document).ready(function () {
         });
     }
 
+    const exportOptions = {
+        columns: ':visible:not(.notexport)',
+        format: {
+            body: function (data, row, column, node) {
+                if (!node) {
+                    return data;
+                }
+
+                const $cell = $(node).clone();
+                if (showingRoles) {
+                    $cell.find('.pum-value').remove();
+                } else {
+                    $cell.find('.pum-roles').remove();
+                }
+
+                return $cell.text().trim();
+            }
+        }
+    };
+
     let showingRoles = false;
 
     const adjustTableLayout = function () {
@@ -60,7 +80,7 @@ $(document).ready(function () {
         columnDefs: columnDefs,
         buttons: [
             {
-                text: '<i class="fl fl-review-user align-middle"></i> <span>View Expanded</span> <span>Show Roles</span>',
+                text: '<i class="fl fl-review-user align-middle"></i> <span>Show Roles</span>',
                 className: 'btn-light rounded-1',
                 action: function (e, dt, button) {
                     showingRoles = !showingRoles;
@@ -91,18 +111,14 @@ $(document).ready(function () {
                 text: 'Copy',
                 title: exportTitle,
                 className: 'custom-table-btn flex-none btn btn-secondary',
-                exportOptions: {
-                    columns: ':visible:not(.notexport)'
-                }
+                exportOptions: exportOptions
             },
             {
                 extend: 'csv',
                 text: 'Export',
                 title: exportTitle,
                 className: 'custom-table-btn flex-none btn btn-secondary',
-                exportOptions: {
-                    columns: ':visible:not(.notexport)'
-                }
+                exportOptions: exportOptions
             }
         ],
         createdRow: function (row) {
