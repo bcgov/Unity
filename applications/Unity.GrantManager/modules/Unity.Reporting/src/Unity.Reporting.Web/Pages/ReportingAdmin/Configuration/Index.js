@@ -42,9 +42,9 @@ $(function () {
     // Keep the scroll body sized so the header/pagination stay within the viewport
     // instead of the table overflowing past the bottom of the screen (same plugin
     // used by initializeDataTable's fixedHeaders option elsewhere in the app).
-    let tenantViewRoleTableScrollResize = null;
+    // Stashed on the settings object, matching table-utils.js's own usage of the plugin.
     if ($.fn.dataTable.ScrollResize) {
-        tenantViewRoleTableScrollResize = new $.fn.dataTable.ScrollResize(tenantViewRoleTable);
+        tenantViewRoleTable.settings()[0]._scrollResize = new $.fn.dataTable.ScrollResize(tenantViewRoleTable);
     }
 
     // Initialize tooltips on page load
