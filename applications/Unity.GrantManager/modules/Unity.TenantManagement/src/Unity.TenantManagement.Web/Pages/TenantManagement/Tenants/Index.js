@@ -140,7 +140,7 @@
 
         $('#TenantAdminSearchButton').click(function (e) {
             e.preventDefault();
-            _filterDataTable.ajax.reloadEx();
+            _filterDataTable.ajax.reload();
             $('#create-tenant-btn').attr('disabled', true);
         });
 
@@ -350,7 +350,7 @@
                 abp.notify.warn(lGm('TenantList:SearchMinChars'));
                 return;
             }
-            _configFilterDataTable.ajax.reloadEx();
+            _configFilterDataTable.ajax.reload();
             $('#config-selected-user-identifier').val('');
             $('#config-selected-user-display').hide();
         });
@@ -400,7 +400,7 @@
         return function (confirmed) {
             if (confirmed) {
                 _tenantAppService.delete(id).then(function () {
-                    _dataTable.ajax.reloadEx();
+                    _dataTable.ajax.reload();
                     abp.notify.success(l('SuccessfullyDeleted'));
                 });
             }
@@ -444,11 +444,11 @@
         _dataTable.select.style('api');
 
         _createModal.onResult(function () {
-            _dataTable.ajax.reloadEx();
+            _dataTable.ajax.reload();
         });
 
         _configurationModal.onResult(function () {
-            _dataTable.ajax.reloadEx();
+            _dataTable.ajax.reload();
         });
 
         // Relocate the page-toolbar "New Tenant" button into the action bar, to the
