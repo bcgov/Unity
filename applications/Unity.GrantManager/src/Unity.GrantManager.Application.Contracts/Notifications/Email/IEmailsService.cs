@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace Unity.GrantManager.Emails
+namespace Unity.GrantManager.Notifications.Email
 {
     public interface IEmailsService
     {

@@ -6,11 +6,11 @@
     let formVersionId = document.getElementById('formVersionId').value;
     let intakeMapColumn = document.querySelector('#intake-map-available-fields-column');
     let worksheetMapColumn = document.querySelector('#worksheet-map-available-fields-column');
-    let excludedIntakeMappings = ['ConfirmationId', 'SubmissionId', 'SubmissionDate'];
+    let excludedIntakeMappings = new Set(['ConfirmationId', 'SubmissionId', 'SubmissionDate']);
     let dataTable;
     if (globalThis.toastr) { toastr.options.positionClass = 'toast-top-center'; }
 
-    let allowableTypes = ['textarea',
+    let allowableTypes = new Set(['textarea',
         'orgbook',
         'textfield',
         'currency',
@@ -51,7 +51,7 @@
         'simpletextarea',
         'simpletextareaadvanced',
         'bcaddress',
-        'datagrid'];
+        'datagrid']);
 
     const UIElements = {
         btnBack: $('#btn-back'),
@@ -65,7 +65,7 @@
         inputSearchBar: $('#search-bar'),
         selectVersionList: $('#applicationFormVersion'),
         editMappingModal: $('#editMappingModal'),
-        uiConfigurationTab: $('#nav-ui-configuration'),        
+        uiConfigurationTab: $('#nav-ui-configuration'),
         mappingTab: $('#nav-mapping-tab'),
         customFieldsTab: $('#nav-worksheet-fields-tab'),
         intakeFieldsTab: $('#nav-intake-fields-tab'),
@@ -76,7 +76,8 @@
 
     function init() {
         bindUIEvents();
-        dataTable = initializeDataTable();
+        restoreActiveTab();
+        dataTable = initializeApplicationFormsTable();
         let availableChefsFields = availableChefFieldsString ? JSON.parse(availableChefFieldsString) : []
         initializeIntakeMap(availableChefsFields);
         bindExistingMaps();
@@ -100,8 +101,27 @@
         UIElements.btnCancel.on('click', handleCancelMapping);
         UIElements.btnClose.on('click', handleCancelMapping);
         UIElements.inputSearchBar.on('keyup', handleSeearchBar);
-        UIElements.selectVersionList.on('change', handleSelectVersion);  
+        UIElements.selectVersionList.on('change', handleSelectVersion);
         UIElements.mappingTab.on('click', handleMappingTabClick);
+
+        // Persist active tab to localStorage on switch
+        $('#nav-tab').on('shown.bs.tab', 'button[data-bs-toggle="tab"]', function () {
+            const formId = document.getElementById('applicationFormId')?.value;
+            if (formId) {
+                localStorage.setItem('mapping-active-tab:' + formId, this.id);
+            }
+        });
+    }
+
+    function restoreActiveTab() {
+        const formId = document.getElementById('applicationFormId')?.value;
+        if (!formId) return;
+        const savedTabId = localStorage.getItem('mapping-active-tab:' + formId);
+        if (!savedTabId) return;
+        const tabEl = document.getElementById(savedTabId);
+        if (tabEl) {
+            bootstrap.Tab.getOrCreateInstance(tabEl).show();
+        }
     }
 
     function initializeUIConfiguration() {
@@ -219,23 +239,7 @@
         }
     }
 
-    function initializeDataTable() {
-        return new DataTable('#ApplicationFormsTable', {
-            info: false,
-            ordering: false,
-            fixedHeader: false,
-            paging: false,
-            columnDefs: [
-                {
-                    render: function (data) {
-                        const safeId = String(data).replaceAll('&', '&amp;').replaceAll('"', '&quot;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
-                        return '<div id="' + safeId + '" class="col map-div non-drag" draggable="false"></div>';
-                    },
-                    targets: 3
-                }
-            ]
-        });
-    }
+
 
     function handleSync() {
         let chefsFormVersionId = document.getElementById('chefsFormVersionId').value;
@@ -263,7 +267,7 @@
                         let updatedApplicationFormName = data.updatedFormName;
                         let updatedNameMessage = updatedApplicationFormName ? 'Form name updated to ' + updatedApplicationFormName : 'Form name is unchanged';
                         if (updatedApplicationFormName) {
-                            document.getElementById('applicationFormName').textContent = updatedApplicationFormName;                            
+                            document.getElementById('applicationFormName').textContent = updatedApplicationFormName;
                         }
 
                         let availableChefsFields = JSON.parse(formVersion.availableChefsFields)
@@ -272,7 +276,7 @@
 
                         abp.notify.success(
                             '',
-                            'Synchronized Successful' + updatedNameMessage 
+                            'Synchronized Successful' + updatedNameMessage
                         );
                         navigateToVersion(formVersion.chefsFormVersionGuid);
                     },
@@ -287,9 +291,7 @@
         }
     }
 
-    function validateGuid(textString) {
-        return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-5][0-9a-f]{3}-[089ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(textString);
-    }
+
 
     function handleSave() {
         let mappingDivs = $('.map-div');
@@ -352,9 +354,6 @@
         bindExistingMaps();
     }
 
-    function handleBack() {
-        location.href = '/ApplicationForms';
-    }
 
     function initializeIntakeMap(availableChefsFields) {
         try {
@@ -363,13 +362,22 @@
 
             for (let intakeField of intakeFields) {
                 let intakeFieldJson = intakeField;
-                if (!excludedIntakeMappings.includes(intakeFieldJson.Name)) {
+                if (!excludedIntakeMappings.has(intakeFieldJson.Name)) {
                     let dragableDiv = document.createElement('div');
                     dragableDiv.id = 'unity_' + intakeFieldJson.Name;
                     dragableDiv.className = 'card mapping-field';
                     dragableDiv.setAttribute("draggable", "true");
-                    dragableDiv.innerHTML = setTypeIndicator(intakeField);
-                    dragableDiv.appendChild(document.createTextNode(intakeFieldJson.Label + (intakeFieldJson.IsCustom ? ' *' : '')));
+
+                    // Set icon HTML (internal code, safe)
+                    dragableDiv.innerHTML = `${setTypeIndicator(intakeField)}`;
+
+                    // Append label as text node to prevent HTML injection
+                    dragableDiv.appendChild(document.createTextNode(intakeFieldJson.Label));
+
+                    // Append asterisk if custom
+                    if (intakeFieldJson.IsCustom) {
+                        dragableDiv.appendChild(document.createTextNode(" *"));
+                    }
                     if (intakeFieldJson.IsCustom) {
                         worksheetMapColumn.appendChild(dragableDiv);
                         dragableDiv.className += ' custom-field';
@@ -385,7 +393,7 @@
             let rowsToAdd = [];
             for (let key of keys) {
                 let jsonObj = JSON.parse(availableChefsFields[key]);
-                if (allowableTypes.includes(jsonObj.type.trim())) {
+                if (allowableTypes.has(jsonObj.type.trim())) {
                     rowsToAdd.push([stripHtml(jsonObj.label), key, jsonObj.type, key]);
                 }
             }
@@ -400,63 +408,6 @@
         }
     }
 
-    function setTypeIndicator(intakeField) {
-        switch (intakeField.Type) {
-            case 'String':
-            case 'Phone':
-            case 'Date':
-            case 'Email':
-            case 'Radio':
-            case 'Checkbox':
-            case 'CheckboxGroup':
-            case 'SelectList':
-            case 'BCAddress':
-            case 'TextArea':
-            case 'DataGrid':
-                return `<i class="${setTypeIcon(intakeField)}"></i> `;
-            case 'Number':
-                return setTypeIndicatorText('123');
-            case 'Currency':
-                return setTypeIndicatorText('$');
-            case 'YesNo':
-                return setTypeIndicatorText('Y/N');
-            default:
-                return '';
-        }
-    }
-
-    function setTypeIcon(intakeField) {
-        switch (intakeField.Type) {
-            case 'String':
-                return 'fl fl-font';
-            case 'Phone':
-                return 'fl fl-phone';
-            case 'Date':
-                return 'fl fl-datetime';
-            case 'Email':
-                return 'fl fl-mail';
-            case 'Radio':
-                return 'fl fl-radio';
-            case 'Checkbox':
-                return 'fl fl-checkbox-checked';
-            case 'CheckboxGroup':
-                return 'fl fl-multi-select';
-            case 'SelectList':
-                return 'fl fl-list';
-            case 'BCAddress':
-                return 'fl fl-globe';
-            case 'TextArea':
-                return 'fl fl-text-area';
-            case 'DataGrid':
-                return 'fl fl-datagrid';
-            default:
-                return '';
-        }
-    }
-
-    function setTypeIndicatorText(text) {
-        return `<span class="mapping-indicator-text">${text}</span>`;
-    }
 
     document.addEventListener('dragstart', function (ev) {
         if (ev.target.classList.contains('non-drag')) {
@@ -495,19 +446,7 @@
         }
     });
 
-    function beingDragged(ev) {
-        let draggedEl = ev.target;
-        if (draggedEl.classList + "" !== "undefined") {
-            draggedEl.classList.add('dragging');
-        }
-    }
 
-    function dragEnd(ev) {
-        let draggedEl = ev.target;
-        if (draggedEl.classList + "" !== "undefined") {
-            draggedEl.classList.remove('dragging');
-        }
-    }
 
     function allowDrop(ev) {
         ev.preventDefault();
@@ -522,15 +461,12 @@
 
         if (draggedParent === dragOverParent) {
             if (draggedIndex < dragOverIndex) {
-                draggedParent.insertBefore(dragOver, beingDragged);
+                beingDragged.before(dragOver);
+            } else if (draggedIndex > dragOverIndex) {
+                beingDragged.after(dragOver);
             }
-
-            if (draggedIndex > dragOverIndex) {
-                draggedParent.insertBefore(dragOver, beingDragged.nextSibling);
-            }
-        }
-        if (draggedParent !== dragOverParent) {
-            dragOverParent.insertBefore(beingDragged, dragOver);
+        } else {
+            dragOver.before(beingDragged);
         }
     }
 
@@ -549,73 +485,15 @@
         }
     }
 
-    function whichChild(el) {
-        let i = 0;
-        while ((el = el.previousSibling) != null) ++i;
-        return i;
-    }
 
-    function prettyJson(jsonText) {
-        if (!jsonText) {
-            return jsonText;
-        }
 
-        let prettyJson = new Array();
-        let depth = 0;
-        let currChar;
-        let prevChar;
-        let doubleQuoteIn = false;
 
-        for (let i = 0; i < jsonText.length; i++) {
-            currChar = jsonText.charAt(i);
 
-            if (currChar === '"' && prevChar !== '\\') {
-                doubleQuoteIn = !doubleQuoteIn;
-            }
 
-            switch (currChar) {
-                case '{':
-                    prettyJson.push(currChar);
-                    if (!doubleQuoteIn) {
-                        prettyJson.push('\n');
-                        insertTab(prettyJson, ++depth);
-                    }
-                    break;
-                case '}':
-                    if (!doubleQuoteIn) {
-                        prettyJson.push('\n');
-                        insertTab(prettyJson, --depth);
-                    }
-                    prettyJson.push(currChar);
-                    break;
-                case ',':
-                    prettyJson.push(currChar);
-                    if (!doubleQuoteIn) {
-                        prettyJson.push('\n');
-                        insertTab(prettyJson, depth);
-                    }
-                    break;
-                default:
-                    prettyJson.push(currChar);
-                    break;
-            }
-
-            prevChar = currChar;
-        }
-        return prettyJson.join('');
-    }
-
-    function insertTab(prettyJson, depth) {
-        const TAB = '    ';
-        for (let i = 0; i < depth; i++) {
-            prettyJson.push(TAB);
-        }
-    }
-    
     function handleMappingTabClick() {
         // Refresh the hidden field with the latest form version ID
         let refreshAvailableWorkSheets = UIElements.refreshAvailableWorksheetsHidden.val();
-        if(refreshAvailableWorkSheets && refreshAvailableWorkSheets !== "undefined" ) {
+        if (refreshAvailableWorkSheets && refreshAvailableWorkSheets !== "undefined") {
             navigateToVersion(refreshAvailableWorkSheets);
         }
     }
@@ -652,19 +530,19 @@
                 }),
                 contentType: 'application/json'
             })
-            .done(function () {
-                lastSavedAIValues = {
-                    automaticallyGenerateAIAnalysis: automaticCheckbox ? automaticCheckbox.checked : false,
-                    manuallyInitiateAIAnalysis: manualCheckbox ? manualCheckbox.checked : false
-                };
-                abp.notify.success('AI configuration saved successfully.');
-            })
-            .fail(function () {
-                abp.notify.error('Failed to save AI configuration.');
-            })
-            .always(function () {
-                btnSaveAIConfig.disabled = false;
-            });
+                .done(function () {
+                    lastSavedAIValues = {
+                        automaticallyGenerateAIAnalysis: automaticCheckbox ? automaticCheckbox.checked : false,
+                        manuallyInitiateAIAnalysis: manualCheckbox ? manualCheckbox.checked : false
+                    };
+                    abp.notify.success('AI configuration saved successfully.');
+                })
+                .fail(function () {
+                    abp.notify.error('Failed to save AI configuration.');
+                })
+                .always(function () {
+                    btnSaveAIConfig.disabled = false;
+                });
         });
 
         if (btnCancelAIConfig) {
@@ -676,9 +554,21 @@
     }
 });
 
-function stripHtml(html) {
-    return String(html)
-        .replaceAll('&', '&amp;')
-        .replaceAll('<', '&lt;')
-        .replaceAll('>', '&gt;');
+
+function handleBack() {
+    location.href = '/ApplicationForms';
+}
+
+function beingDragged(ev) {
+    let draggedEl = ev.target;
+    if (draggedEl.classList + "" !== "undefined") {
+        draggedEl.classList.add('dragging');
+    }
+}
+
+function dragEnd(ev) {
+    let draggedEl = ev.target;
+    if (draggedEl.classList + "" !== "undefined") {
+        draggedEl.classList.remove('dragging');
+    }
 }

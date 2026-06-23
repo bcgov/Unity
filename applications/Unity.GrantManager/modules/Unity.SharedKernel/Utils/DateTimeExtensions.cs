@@ -5,20 +5,17 @@ using System.Runtime.InteropServices;
 namespace Unity.Modules.Shared.Utils;
 public static class DateTimeExtensions
 {
-    private const string WindowsPacificId = "Pacific Standard Time";
-    private const string IanaPacificId = "America/Los_Angeles";
+    // BC Pacific timezone: PST does NOT observe DST in 2026 — fixed UTC-8 year-round.
+    private static readonly TimeSpan BcPstOffset = TimeSpan.FromHours(-8);
 
-    // Lazy-initialized cached timezone to avoid repeated OS lookups.
-    private static readonly Lazy<TimeZoneInfo> PacificTimeZone = new(GetPacificTimeZone, isThreadSafe: true);
+    // BC Mountain timezone: Peace River / NE BC region — MST/MDT, DST still applies.
+    private const string WindowsMountainId = "Mountain Standard Time";
+    private const string IanaMountainId = "America/Edmonton";
+    private static readonly Lazy<TimeZoneInfo> MountainTimeZone = new(GetMountainTimeZone, isThreadSafe: true);
 
     /// <summary>
     /// Formats a nullable <see cref="DateTime"/> value as an ISO 8601-compliant UTC timestamp.
     /// </summary>
-    /// <remarks>If the provided <paramref name="utcTime"/> is not already in UTC, it will be treated as a
-    /// local time and converted to UTC before formatting.</remarks>
-    /// <param name="utcTime">The nullable <see cref="DateTime"/> to format. If the value is not in UTC, it will be converted to UTC.</param>
-    /// <returns>A string representation of the <paramref name="utcTime"/> in ISO 8601 format, or an empty string if <paramref
-    /// name="utcTime"/> is <see langword="null"/>.</returns>
     public static string FormatTimestamp(DateTime? utcTime)
     {
         if (!utcTime.HasValue)
@@ -32,16 +29,13 @@ public static class DateTimeExtensions
     }
 
     /// <summary>
-    /// Converts a given UTC time to Pacific Time and formats it as a string with the appropriate time zone
-    /// abbreviation.
+    /// Converts a given UTC time to BC Pacific Standard Time and formats it as a string.
+    /// BC's Pacific timezone does NOT observe Daylight Saving Time in 2026; PST (UTC-8)
+    /// is applied year-round. For the Peace River / NE BC region (Mountain Time), use
+    /// <see cref="FormatMountainTime"/> instead.
     /// </summary>
-    /// <remarks>The method ensures that the input <paramref name="utcTime"/> is treated as UTC. If the input
-    /// time is not explicitly marked as UTC, it is converted to UTC before performing the time zone
-    /// conversion.</remarks>
     /// <param name="utcTime">The UTC time to convert. If <see langword="null"/>, an empty string is returned.</param>
-    /// <returns>A string representing the Pacific Time equivalent of the provided UTC time, formatted as "yyyy-MM-dd h:mm tt"
-    /// followed by the time zone abbreviation "(PDT)" for daylight saving time or "(PST)" for standard time. Returns an
-    /// empty string if <paramref name="utcTime"/> is <see langword="null"/>.</returns>
+    /// <returns>A string formatted as "yyyy-MM-dd h:mm tt (PST)".</returns>
     public static string FormatPacificTime(DateTime? utcTime)
     {
         if (!utcTime.HasValue)
@@ -51,30 +45,52 @@ public static class DateTimeExtensions
             ? utcTime.Value
             : DateTime.SpecifyKind(utcTime.Value, DateTimeKind.Utc);
 
-        var pacificTimeZone = PacificTimeZone.Value;
-        var pacificDateTime = TimeZoneInfo.ConvertTimeFromUtc(utcTimeValue, pacificTimeZone);
+        // BC PST is a fixed UTC-8 offset — no DST adjustment in 2026.
+        var bcPstDateTime = new DateTimeOffset(utcTimeValue, TimeSpan.Zero).ToOffset(BcPstOffset);
 
-        string timeZoneAbbreviation = pacificTimeZone.IsDaylightSavingTime(pacificDateTime) ? "(PDT)" : "(PST)";
-        return $"{pacificDateTime.ToString("yyyy-MM-dd h:mm tt", CultureInfo.InvariantCulture)} {timeZoneAbbreviation}";
+        return $"{bcPstDateTime.ToString("yyyy-MM-dd h:mm tt", CultureInfo.InvariantCulture)} (PST)";
     }
 
-    private static TimeZoneInfo GetPacificTimeZone()
+    /// <summary>
+    /// Converts a given UTC time to BC Mountain Time (Peace River / NE BC region) and formats it.
+    /// Unlike BC's Pacific zone, the Mountain timezone in BC DOES observe Daylight Saving Time in 2026:
+    /// MST (UTC-7) in winter, MDT (UTC-6) in summer.
+    /// </summary>
+    /// <param name="utcTime">The UTC time to convert. If <see langword="null"/>, an empty string is returned.</param>
+    /// <returns>A string formatted as "yyyy-MM-dd h:mm tt (MST)" or "yyyy-MM-dd h:mm tt (MDT)".</returns>
+    public static string FormatMountainTime(DateTime? utcTime)
     {
-        // If running on Windows, attempt Windows ID first; otherwise attempt IANA first.
+        if (!utcTime.HasValue)
+            return string.Empty;
+
+        var utcTimeValue = utcTime.Value.Kind == DateTimeKind.Utc
+            ? utcTime.Value
+            : DateTime.SpecifyKind(utcTime.Value, DateTimeKind.Utc);
+
+        var mountainTz = MountainTimeZone.Value;
+        var mtDateTime = TimeZoneInfo.ConvertTimeFromUtc(utcTimeValue, mountainTz);
+        string abbr = mountainTz.IsDaylightSavingTime(mtDateTime) ? "(MDT)" : "(MST)";
+
+        return $"{mtDateTime.ToString("yyyy-MM-dd h:mm tt", CultureInfo.InvariantCulture)} {abbr}";
+    }
+
+    private static TimeZoneInfo GetMountainTimeZone()
+    {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
-            if (TryFindTimeZone(WindowsPacificId, out var tz)) return tz;
-            if (TryFindTimeZone(IanaPacificId, out tz)) return tz;
+            if (TryFindTimeZone(WindowsMountainId, out var tz)) return tz;
+            if (TryFindTimeZone(IanaMountainId, out tz)) return tz;
         }
         else
         {
-            if (TryFindTimeZone(IanaPacificId, out var tz)) return tz;
-            if (TryFindTimeZone(WindowsPacificId, out tz)) return tz;
+            if (TryFindTimeZone(IanaMountainId, out var tz)) return tz;
+            if (TryFindTimeZone(WindowsMountainId, out tz)) return tz;
         }
 
         throw new TimeZoneNotFoundException(
-            $"Neither '{WindowsPacificId}' nor '{IanaPacificId}' time zone IDs were found on this system.");
+            $"Neither '{WindowsMountainId}' nor '{IanaMountainId}' time zone IDs were found on this system.");
     }
+
     private static bool TryFindTimeZone(string id, out TimeZoneInfo tz)
     {
         try
