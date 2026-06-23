@@ -286,7 +286,7 @@
         let field = $('#config-search-field').val();
         let value = $('#config-search-value').val();
         if (field === 'firstAndLast') {
-            let parts = value.trim().replace(/\s+/g, ' ').split(' ');
+            let parts = value.trim().replaceAll(/\s+/g, ' ').split(' ');
             return {
                 directory: 'IDIR',
                 firstName: parts[0] || '',

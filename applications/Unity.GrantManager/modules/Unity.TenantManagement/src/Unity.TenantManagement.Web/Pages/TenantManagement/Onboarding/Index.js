@@ -45,8 +45,8 @@
 
     function _formatCheckboxKey(key) {
         return String(key)
-            .replace(/([a-z])([A-Z])/g, '$1 $2')
-            .replace(/\b\w/g, function (c) { return c.toUpperCase(); });
+            .replaceAll(/([a-z])([A-Z])/g, '$1 $2')
+            .replaceAll(/\b\w/g, function (c) { return c.toUpperCase(); });
     }
 
     // Worksheet CheckboxGroup values are always serialized as [{key, value}, ...].
@@ -494,8 +494,8 @@
 
     function _normalizeLabel(s) {
         return s
-            .replace(/([a-z])([A-Z])/g, '$1 $2')
-            .replace(/[_-]+/g, ' ')
+            .replaceAll(/([a-z])([A-Z])/g, '$1 $2')
+            .replaceAll(/[_-]+/g, ' ')
             .toLowerCase()
             .trim();
     }
