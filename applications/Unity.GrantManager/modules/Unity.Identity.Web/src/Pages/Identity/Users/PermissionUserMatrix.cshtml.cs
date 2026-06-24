@@ -9,27 +9,29 @@ using Volo.Abp.Authorization.Permissions;
 using Volo.Abp.Identity;
 using Volo.Abp.Localization;
 
-namespace Unity.GrantManager.Web.Pages.Identity.Roles;
+namespace Unity.Identity.Web.Pages.Identity.Users;
 
-[Authorize(IdentityPermissions.Roles.Default)]
-public class PermissionRoleMatrixModel(IPermissionRoleMatrixRepository repository, IPermissionDefinitionManager permissionDefinitionManager) : AbpPageModel
+[Authorize(IdentityPermissions.Users.Default)]
+public class PermissionUserMatrixModel(IPermissionRoleMatrixRepository repository, IPermissionDefinitionManager permissionDefinitionManager) : AbpPageModel
 {
     public bool IsExpanded { get; private set; }
     public bool ShowNotDefined { get; private set; } = false;
-    public required IList<PermissionRoleMatrixDto> PermissionRoleMatrix { get; set; }
+    public required IList<PermissionUserMatrixRowDto> PermissionUserMatrix { get; set; }
+    public required IList<UserInfoDto> Users { get; set; }
 
     public async Task OnGetAsync()
     {
-        // Check if the query parameter "Render" is set to "Expanded"
         IsExpanded = Request.Query["Render"].ToString().Equals("Expanded", StringComparison.OrdinalIgnoreCase);
         ShowNotDefined = Request.Query["Show"].ToString().Equals("NotDefined", StringComparison.OrdinalIgnoreCase);
 
-        PermissionRoleMatrix = await repository.GetPermissionRoleMatrixAsync();
+        var result = await repository.GetPermissionUserMatrixAsync();
+        PermissionUserMatrix = result.Rows;
+        Users = result.Users;
 
         var definedPermissionSet = await permissionDefinitionManager.GetPermissionsAsync();
         var definedPermissionNames = new HashSet<string>(definedPermissionSet.Select(x => x.Name));
 
-        foreach (var item in PermissionRoleMatrix)
+        foreach (var item in PermissionUserMatrix)
         {
             item.IsDefined = definedPermissionNames.Contains(item.PermissionName);
 
