@@ -1,3 +1,63 @@
+const _SANITIZE_ALLOWED_TAGS = new Set([
+    'a', 'b', 'blockquote', 'br', 'code', 'del', 'em',
+    'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'hr', 'i',
+    'li', 'ol', 'p', 'pre', 's', 'span', 'strong', 'u', 'ul'
+]);
+const _SANITIZE_ALLOWED_ATTRS = new Set(['href', 'rel', 'target', 'title']);
+const _SANITIZE_ALLOWED_SCHEMES = new Set(['http:', 'https:', 'mailto:']);
+const _SANITIZE_STRIP_WITH_CONTENT = new Set(['script', 'style', 'iframe', 'noscript', 'object', 'embed']);
+
+function _isSafeHref(href) {
+    try {
+        const url = new URL(href, location.href);
+        return _SANITIZE_ALLOWED_SCHEMES.has(url.protocol);
+    } catch (e) {
+        console.warn('sanitizeHtml: invalid href removed:', e);
+        return false;
+    }
+}
+
+function _sanitizeElement(el) {
+    for (const attr of Array.from(el.attributes)) {
+        if (_SANITIZE_ALLOWED_ATTRS.has(attr.name)) {
+            if (attr.name === 'href' && !_isSafeHref(el.getAttribute('href'))) {
+                el.removeAttribute('href');
+            }
+        } else {
+            el.removeAttribute(attr.name);
+        }
+    }
+}
+
+function sanitizeHtml(html) {
+    if (!html) return '';
+    const template = document.createElement('template');
+    template.innerHTML = html;
+    // Process bottom-up so children are handled before their parent is unwrapped/removed
+    const elements = Array.from(template.content.querySelectorAll('*')).reverse();
+    for (const el of elements) {
+        const tag = el.tagName.toLowerCase();
+        if (_SANITIZE_STRIP_WITH_CONTENT.has(tag)) {
+            el.remove();
+        } else if (_SANITIZE_ALLOWED_TAGS.has(tag)) {
+            _sanitizeElement(el);
+        } else {
+            el.replaceWith(...Array.from(el.childNodes));
+        }
+    }
+    const wrapper = document.createElement('div');
+    wrapper.appendChild(template.content);
+    return wrapper.innerHTML;
+}
+
+function escapeHtml(text) {
+    return String(text)
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;');
+}
+
 $(function () {
 
     function makeScoresheetsSortable() {
@@ -149,7 +209,7 @@ $(function () {
                 <form method="post" id="section-form-${hashCode(item.innerText)}" onSubmit="return false;">
                 <h2 class="accordion-header" id="panel-${hashCode(item.innerText)}">
                     <button class="accordion-button preview-btn unt-accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-${hashCode(item.innerText)}" aria-expanded="true" aria-controls="collapse-${hashCode(item.innerText)}">
-                        ${sectionNumber}.  ${item.dataset.label}
+                        ${sectionNumber}.  ${escapeHtml(item.dataset.label)}
                     </button>
                 </h2>
                 <div id="collapse-${hashCode(item.innerText)}" class="accordion-collapse collapse show" aria-labelledby="panel-${hashCode(item.innerText)}">
@@ -163,7 +223,7 @@ $(function () {
                     <div class="accordion-item">
                         <h2 class="accordion-header" id="nested-panel${hashCode(item.innerText)}">
                             <button class="accordion-button question-btn collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#nested-collapse${hashCode(item.innerText)}" aria-expanded="true" aria-controls="nested-collapse${hashCode(item.innerText)}">
-                                ${sectionNumber}.${questionNumber}  ${item.innerText} ${item.dataset.required == 'True' ? '*' : ''}
+                                ${sectionNumber}.${questionNumber}  ${sanitizeHtml(item.dataset.questionlabel)} ${item.dataset.required == 'True' ? '*' : ''}
                             </button>
                         </h2>
                         <div id="nested-collapse${hashCode(item.innerText)}" class="accordion-collapse collapse" aria-labelledby="nested-panel${hashCode(item.innerText)}">
@@ -219,7 +279,7 @@ $(function () {
     function buildTextAreaFieldPreview(item) {
         let req = item.dataset.required ? "required" : null;
         return `
-                    <p>${item.dataset.questiondesc}</p>
+                    <p>${sanitizeHtml(item.dataset.questiondesc)}</p>
                     <div class="mb-3">
                         <label for="answer-text-${item.dataset.id}" class="form-label unt-form-label">Answer</label>
                         <textarea rows="${item.dataset.rows}" type="text" ${req} class="form-control answer-text-input" minlength="${item.dataset.minlength}" maxlength="${item.dataset.maxlength}" 
@@ -238,7 +298,7 @@ $(function () {
         }).join('');
 
         return `
-                    <p>${item.dataset.questiondesc}</p>
+                    <p>${sanitizeHtml(item.dataset.questiondesc)}</p>
                     <div class="mb-3">
                         <label for="answer-selectlist-${item.dataset.id}" class="form-label unt-form-label">Answer</label>
                         <select id="answer-selectlist-${item.dataset.id}"
@@ -254,7 +314,7 @@ $(function () {
     function buildNumberFieldPreview(item) {
         let req = item.dataset.required ? "required" : null;
         return `
-                    <p>${item.dataset.questiondesc}</p>
+                    <p>${sanitizeHtml(item.dataset.questiondesc)}</p>
                     <div class="mb-3">
                         <label for="answer-number-${item.dataset.id}" class="form-label unt-form-label">Answer</label>
                         <input type="number" ${req} class="form-control answer-number-input" min="${item.dataset.min}" max="${item.dataset.max}" 
@@ -266,7 +326,7 @@ $(function () {
 
     function buildYesNoFieldPreview(item) {
         return `
-                    <p>${item.dataset.questiondesc}</p>
+                    <p>${sanitizeHtml(item.dataset.questiondesc)}</p>
                     <div class="mb-3">
                         <label for="answer-yesno-${item.dataset.id}" class="form-label unt-form-label">Answer</label>
                         <select id="answer-yesno-${item.dataset.id}"
@@ -287,7 +347,7 @@ $(function () {
         let req = item.dataset.required ? "required" : null;
 
         return `
-                    <p>${item.dataset.questiondesc}</p>
+                    <p>${sanitizeHtml(item.dataset.questiondesc)}</p>
                     <div class="mb-3">
                         <label for="answer-text-${item.dataset.id}" class="form-label unt-form-label">Answer</label>
                         <input type="text" ${req} class="form-control answer-text-input" minlength="${item.dataset.minlength}" maxlength="${item.dataset.maxlength}" 
