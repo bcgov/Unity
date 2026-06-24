@@ -21,7 +21,7 @@ public class Application : FullAuditedAggregateRoot<Guid>, IMultiTenant
     {
         set => _applicationForm = value;
         get => _applicationForm
-            ?? throw new InvalidOperationException("Uninitialized property: " + nameof(Applicant));
+            ?? throw new InvalidOperationException("Uninitialized property: " + nameof(ApplicationForm));
     }
 
     private ApplicationForm? _applicationForm;

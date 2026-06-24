@@ -6,7 +6,7 @@ namespace Unity.Notifications.Emails;
 public enum EmailType
 {
     Manual,
-    Scheduled,
     EventBased,
+    DateBased,
     Delayed
 }

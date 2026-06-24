@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
-using Unity.Notifications.TeamsNotifications;
+using Unity.GrantManager.Notifications.Teams;
 
 namespace Unity.GrantManager.Notifications
 {

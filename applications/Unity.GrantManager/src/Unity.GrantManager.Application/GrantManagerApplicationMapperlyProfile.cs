@@ -1,6 +1,7 @@
 using Riok.Mapperly.Abstractions;
 using System;
 using System.Reflection;
+using Unity.AI.Operations;
 using Unity.GrantManager.ApplicantProfile;
 using Unity.GrantManager.ApplicationForms;
 using Unity.GrantManager.Applications;
@@ -16,7 +17,6 @@ using Unity.GrantManager.Intakes;
 using Unity.GrantManager.Integrations;
 using Unity.GrantManager.Locality;
 using Unity.GrantManager.Zones;
-using Unity.AI.Operations;
 using Unity.Payments.Domain.AccountCodings;
 using Unity.Payments.PaymentRequests;
 using Volo.Abp.Mapperly;
@@ -978,6 +978,13 @@ public class UpdateApplicantSummaryDtoToApplicantMapper : MapperBase<UpdateAppli
         if (source.IndigenousOrgInd != null)
         {
             destination.IndigenousOrgInd = GrantManagerMapperlyHelpers.BoolToIndigenousOrgInd(source.IndigenousOrgInd);
+        }
+
+        // FiscalDay: DTO is string?, entity is int? — CopyNonDefault skips mismatched
+        // types entirely, so the value is never written without this explicit conversion.
+        if (source.FiscalDay != null)
+        {
+            destination.FiscalDay = int.TryParse(source.FiscalDay, out var d) ? d : null;
         }
     }
 }

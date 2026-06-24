@@ -11,6 +11,7 @@ namespace Unity.Notifications.Events
         public Guid? TenantId { get; set; }
         public Guid TemplateId { get; set; }
         public Guid ApplicationId { get; set; }
+        public Guid? ScheduledNotificationId { get; set; }
         public int RetryAttempts { get; set; } = 0;
         public string Body { get; set; } = string.Empty;
         public string Subject { get; set; } = string.Empty;
@@ -27,6 +28,11 @@ namespace Unity.Notifications.Events
         public EmailType? EmailType { get; set; }
         public List<EmailAttachmentData>? EmailAttachments { get; set; }
         public List<Guid>? PaymentRequestIds { get; set; }
+
+        /// <summary>
+        /// Optional specific UTC date/time to send the email.
+        /// </summary>
+        public DateTime? SendOnDateTime { get; set; }
     }
 
     public class EmailAttachmentData
