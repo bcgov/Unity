@@ -1,4 +1,5 @@
 using System;
+using System.Security.Cryptography;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Options;
 using Volo.Abp.Data;
@@ -28,13 +29,21 @@ public class EncryptedTenantConnectionStringResolver : MultiTenantConnectionStri
     {
         var value = await base.ResolveAsync(connectionStringName);
         if (string.IsNullOrEmpty(value)) return value;
+        if (PlainConnectionStringDetector.LooksLikePlainConnectionString(value)) return value;
+
         try
         {
-            var decrypted = _encryptionService.Decrypt(value);
-            return (decrypted != null && decrypted.Contains('=')) ? decrypted : value;
+            return _encryptionService.Decrypt(value);
         }
-        catch
+        catch (FormatException)
         {
+            // Not valid base64, so it can't be ciphertext - it's plain text.
+            return value;
+        }
+        catch (CryptographicException)
+        {
+            // Valid base64 but failed to decrypt (wrong passphrase/corrupted ciphertext) -
+            // fall back to the raw value rather than breaking connection resolution.
             return value;
         }
     }

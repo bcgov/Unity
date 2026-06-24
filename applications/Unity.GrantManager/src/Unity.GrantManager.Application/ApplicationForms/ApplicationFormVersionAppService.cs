@@ -258,7 +258,12 @@ namespace Unity.GrantManager.ApplicationForms
         {
             var formSubmission = await formSubmissionRepository.GetByApplicationAsync(applicationId);
 
-            if (formSubmission == null || formSubmission.FormVersionId == null)
+            if (formSubmission == null)
+            {
+                return 0;
+            }
+            
+            if (formSubmission.FormVersionId == null)
             {
                 return await HandleEmptyFormVersionIdAsync(formSubmission!);
             }

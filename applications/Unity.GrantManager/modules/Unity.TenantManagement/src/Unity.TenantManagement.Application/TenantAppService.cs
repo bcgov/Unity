@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Unity.TenantManagement.Abstractions;
@@ -307,13 +308,21 @@ public class TenantAppService(
     private string? TryDecryptConnectionString(string? rawValue)
     {
         if (rawValue == null) return null;
+        if (PlainConnectionStringDetector.LooksLikePlainConnectionString(rawValue)) return rawValue;
+
         try
         {
-            var decrypted = stringEncryptionService.Decrypt(rawValue);
-            return (decrypted != null && decrypted.Contains('=')) ? decrypted : rawValue;
+            return stringEncryptionService.Decrypt(rawValue);
         }
-        catch
+        catch (FormatException)
         {
+            // Not valid base64, so it can't be ciphertext - it's plain text.
+            return rawValue;
+        }
+        catch (CryptographicException)
+        {
+            // Valid base64 but failed to decrypt (wrong passphrase/corrupted ciphertext) -
+            // fall back to the raw value rather than breaking the admin UI.
             return rawValue;
         }
     }
