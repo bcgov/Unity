@@ -264,6 +264,43 @@ class SchemaExtractor:
                 self._extraction_had_error = True
         return docs, [d["signature"] for d in docs], not self._extraction_had_error
 
+    def extract_signatures(self, db_id: int, schema_type: str = "public",
+                           tenant_id: Optional[str] = None) -> Tuple[List[str], bool]:
+        """Cheap structural-signature pass for the fingerprint-first fast-path.
+
+        Mirrors extract_schemas but skips per-column sample-value queries and
+        doc construction — only does what's needed to compute the schema
+        fingerprint. On a quiet night this lets embed_schemas skip the entire
+        Azure-embedding + DB-write workload when nothing changed.
+
+        Returns (sig_parts, extraction_ok). extraction_ok=False if any silent
+        error was swallowed — callers must NOT treat the resulting fingerprint
+        as authoritative.
+        """
+        self._extraction_had_error = False
+
+        if schema_type == "custom":
+            return self._extract_custom_signatures(db_id, tenant_id=tenant_id)
+
+        sig_parts: List[str] = []
+        metadata = self.metabase.get_database_metadata(db_id, tenant_id=tenant_id)
+        for table in metadata["tables"]:
+            if self._should_skip_table(table):
+                continue
+            columns = [
+                f"{field['name']} ({field['base_type']})"
+                for field in table["fields"]
+                if not self._is_junk_column(field["name"])
+            ]
+            try:
+                if not self._has_data("public", table["name"], db_id, tenant_id=tenant_id):
+                    continue
+                sig_parts.append(self._signature_line("public", table["name"], columns))
+            except Exception as e:
+                logger.exception(f"Error reading signature for table {table['name']}: {e}")
+                self._extraction_had_error = True
+        return sig_parts, not self._extraction_had_error
+
     def _get_legacy_custom_tables(self, db_id: int,
                                   tenant_id: Optional[str] = None) -> List[dict]:
         """Return Metabase metadata tables in the Reporting schema whose name
@@ -359,6 +396,58 @@ class SchemaExtractor:
 
         return docs
 
+    def _extract_custom_signatures(self, db_id: int,
+                                   tenant_id: Optional[str] = None) -> Tuple[List[str], bool]:
+        """Cheap signature pass for custom (worksheet/scoresheet) schemas.
+
+        Mirrors _extract_custom_schemas but skips _format_schema_with_examples
+        (the per-column sample-value queries) — only enough to build the
+        structural signature line per view. Note: unlike the full pass, this
+        does not fetch Flex.CustomFields labels — they feed embedded document
+        text, not the structural signature, so they're irrelevant here.
+        """
+        views = self.get_all_custom_views(db_id, tenant_id=tenant_id)
+        covered = {view["view_name"] for view in views}
+        sig_parts: List[str] = []
+
+        # Primary: ReportColumnsMaps views
+        for view in views:
+            view_metadata = view["columns"]
+            columns = [
+                col_name
+                for col_name in view_metadata.keys()
+                if not self._is_junk_column(col_name)
+            ]
+            try:
+                if not self._has_data("Reporting", view["view_name"], db_id, tenant_id=tenant_id):
+                    continue
+                sig_parts.append(
+                    self._signature_line("Reporting", view["view_name"], columns, view_metadata)
+                )
+            except Exception as e:
+                logger.exception(f"Error reading signature for view {view['view_name']}: {e}")
+                self._extraction_had_error = True
+
+        # Supplement: legacy name-prefix sweep
+        for table in self._get_legacy_custom_tables(db_id, tenant_id=tenant_id):
+            view_name = table["name"]
+            if view_name in covered:
+                continue
+            columns = [
+                f"{field['name']} ({field['base_type']})"
+                for field in table["fields"]
+                if not self._is_junk_column(field["name"])
+            ]
+            try:
+                if not self._has_data("Reporting", view_name, db_id, tenant_id=tenant_id):
+                    continue
+                sig_parts.append(self._signature_line("Reporting", view_name, columns))
+            except Exception as e:
+                logger.exception(f"Error reading signature for legacy view {view_name}: {e}")
+                self._extraction_had_error = True
+
+        return sig_parts, not self._extraction_had_error
+
 
 class EmbeddingManager:
     """Manages vector embeddings for schema similarity search"""
@@ -412,26 +501,127 @@ class EmbeddingManager:
         """
         Embed database schemas for a specific database.
 
+        Flow:
+          1. Cheap signature pass — compute the structural fingerprint without
+             per-column sample queries or Azure embedding calls. If it matches
+             the stored fingerprint, return early (no DB writes, no API spend).
+          2. Otherwise, full extract → add new embeddings → delete the old ones
+             captured up-front. This add-then-delete swap means a live query
+             during the refresh always sees a complete embedding set (worst
+             case: old + new superset), never the empty window the old
+             delete-then-add path created.
+          3. Update the schema fingerprint, which conditionally invalidates the
+             semantic query_cache when the structural fingerprint changed.
+
         Args:
             db_id: Database ID to embed schemas for
             schema_types: List of schema types to embed (e.g., ['public', 'custom'])
             tenant_id: Optional tenant ID for tenant-specific Metabase API key
         """
-        # Default schema types if not specified
         if schema_types is None:
             schema_types = ['public']
 
-        # Purge existing embeddings for this db_id
-        db_manager.purge_embeddings(db_id, config.app.collection_name)
+        collection_name = config.app.collection_name
 
+        # --- Phase 1: cheap fingerprint check ---
+        if self._schema_unchanged(db_id, schema_types, collection_name,
+                                  tenant_id=tenant_id):
+            return
+
+        # --- Phase 2: full extract → add-then-delete swap ---
         logger.info(f"Embedding schemas for db_id: {db_id}, types: {schema_types}")
 
-        # Accumulate structural signature pieces across all schema types so the
-        # fingerprint reflects the whole embedded surface for this db_id.
+        # Capture the existing row set BEFORE adding fresh embeddings so we
+        # can delete them after the new rows are committed (atomic-ish swap).
+        old_ids = db_manager.get_embedding_ids(db_id, collection_name)
+
+        all_documents, all_sig_parts, all_extractions_ok = self._extract_documents(
+            db_id, schema_types, tenant_id=tenant_id
+        )
+
+        # Bail out without touching the DB on partial extraction or no docs —
+        # leaves the existing embeddings + cache intact for the next run.
+        if not all_extractions_ok:
+            logger.warning(
+                f"Skipping embed for db_id={db_id} due to silent extraction "
+                f"error(s); existing embeddings + cache retained, will retry next run"
+            )
+            return
+        if not all_documents:
+            logger.warning(
+                f"No documents extracted for db_id={db_id}; "
+                f"existing embeddings left untouched"
+            )
+            return
+
+        # Add new first, then delete old. Between these the running app sees a
+        # superset (old + new) — safe. If add_documents fails, old rows remain
+        # and the next run retries (no destructive failure mode).
+        self.vector_store.add_documents(all_documents)
+        logger.info(f"Added {len(all_documents)} embeddings for db_id={db_id}")
+
+        if old_ids:
+            db_manager.purge_embeddings_by_ids(old_ids, collection_name)
+
+        # Conditional cache invalidation — purges query_cache only on real change.
+        fingerprint = hashlib.sha256(
+            "\n".join(sorted(all_sig_parts)).encode("utf-8")
+        ).hexdigest()[:16]
+        cache_repository.update_schema_fingerprint(db_id, collection_name, fingerprint)
+
+    def _schema_unchanged(self, db_id: int, schema_types: List[str],
+                          collection_name: str,
+                          tenant_id: Optional[str] = None) -> bool:
+        """Cheap structural-fingerprint pass for the embed fast-path.
+
+        Computes the schema fingerprint without per-column sample queries or
+        Azure embedding calls. Returns True when it matches the stored
+        fingerprint, letting the caller skip the full embed (no DB writes, no
+        API spend).
+
+        Only trusts the fast-path fingerprint when the cheap pass had no
+        swallowed errors AND produced something. An empty signature would let a
+        transiently broken Metabase look like "schema unchanged" if a prior
+        empty run had stored the same empty hash.
+        """
+        cheap_sig_parts: List[str] = []
+        cheap_ok = True
+        for schema_type in schema_types:
+            sig_parts, extraction_ok = self.schema_extractor.extract_signatures(
+                db_id, schema_type, tenant_id=tenant_id
+            )
+            cheap_sig_parts.extend(sig_parts)
+            if not extraction_ok:
+                cheap_ok = False
+
+        if not (cheap_ok and cheap_sig_parts):
+            return False
+
+        fingerprint = hashlib.sha256(
+            "\n".join(sorted(cheap_sig_parts)).encode("utf-8")
+        ).hexdigest()[:16]
+        stored = cache_repository.get_schema_fingerprint(db_id, collection_name)
+        if stored == fingerprint:
+            logger.info(
+                f"Schema unchanged for db_id={db_id} "
+                f"(fingerprint={fingerprint}); skipping embed"
+            )
+            return True
+        return False
+
+    def _extract_documents(self, db_id: int, schema_types: List[str],
+                           tenant_id: Optional[str] = None
+                           ) -> Tuple[List[Document], List[str], bool]:
+        """Full schema extract → embedding Documents + signature parts.
+
+        Returns (documents, signature_parts, all_extractions_ok). A False
+        all_extractions_ok flags a silently-swallowed extraction error so the
+        caller can skip the destructive swap and retry on the next run.
+        """
+        all_documents: List[Document] = []
         all_sig_parts: List[str] = []
         all_extractions_ok = True
 
-        # Extract and embed schemas for each type
         for schema_type in schema_types:
             schemas, sig_parts, extraction_ok = self.schema_extractor.extract_schemas(
                 db_id, schema_type, tenant_id=tenant_id
@@ -439,40 +629,19 @@ class EmbeddingManager:
             all_sig_parts.extend(sig_parts)
             if not extraction_ok:
                 all_extractions_ok = False
-
-            # Create documents with metadata
-            documents = [
-                Document(
-                    page_content=schema["page_content"].strip(),
-                    metadata={
-                        "db_id": db_id,
-                        "schema_type": "custom" if schema["correlation_type"] != "public" else "public",
-                        "correlation_type": schema["correlation_type"],
-                    }
+            for schema in schemas:
+                all_documents.append(
+                    Document(
+                        page_content=schema["page_content"].strip(),
+                        metadata={
+                            "db_id": db_id,
+                            "schema_type": "custom" if schema["correlation_type"] != "public" else "public",
+                            "correlation_type": schema["correlation_type"],
+                        }
+                    )
                 )
-                for schema in schemas
-            ]
 
-            if documents:
-                self.vector_store.add_documents(documents)
-                logger.info(f"Added {len(documents)} {schema_type} schema embeddings")
-
-        # Conditional cache invalidation — only after embeddings succeed.
-        # Skip when any silent extraction error was hit so a glitchy Metabase
-        # fetch can't trigger a spurious cache purge.
-        if not all_extractions_ok:
-            logger.warning(
-                f"Skipping schema fingerprint update for db_id={db_id} "
-                f"due to silent extraction error(s); cache retained, will retry next run"
-            )
-            return
-
-        fingerprint = hashlib.sha256(
-            "\n".join(sorted(all_sig_parts)).encode("utf-8")
-        ).hexdigest()[:16]
-        cache_repository.update_schema_fingerprint(
-            db_id, config.app.collection_name, fingerprint
-        )
+        return all_documents, all_sig_parts, all_extractions_ok
     
     def _get_all_custom_schemas(self, query: str, db_id: int) -> List[Document]:
         """Retrieve ALL embedded custom/worksheet schemas for a db_id.
