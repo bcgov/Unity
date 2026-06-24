@@ -3,6 +3,8 @@ Database module for managing PostgreSQL connections and operations.
 """
 import psycopg
 import logging
+import zlib
+from contextlib import contextmanager
 from typing import Any, List, Dict, Optional
 import json
 from config import config
@@ -219,6 +221,37 @@ class DatabaseManager:
                 conn.commit()
                 logger.info(f"Purged {deleted} stale embeddings by id")
                 return deleted
+
+    @contextmanager
+    def embed_lock(self, db_id: int, collection_name: str = "embedded_schema"):
+        """Advisory lock serializing the embed swap per (db_id, collection_name).
+
+        Stops two overlapping embed runs from racing the add-then-delete swap
+        and leaving duplicate embeddings. Yields True if the caller owns the
+        swap, or False if another run holds it (caller should skip). Released on
+        exit, or when the connection closes if unlock is skipped.
+        """
+        # Two int4 keys: a namespace from the collection name + the db_id.
+        # crc32 is unsigned; shift into Postgres's signed int4 range.
+        key1 = zlib.crc32(collection_name.encode("utf-8")) - 2**31
+        key2 = db_id
+        conn = self.get_connection()
+        try:
+            with conn.cursor() as cur:
+                cur.execute("SELECT pg_try_advisory_lock(%s, %s)", (key1, key2))
+                acquired = cur.fetchone()[0]
+            conn.commit()
+            if not acquired:
+                yield False
+                return
+            try:
+                yield True
+            finally:
+                with conn.cursor() as cur:
+                    cur.execute("SELECT pg_advisory_unlock(%s, %s)", (key1, key2))
+                conn.commit()
+        finally:
+            conn.close()
 
 
 class ChatRepository:

@@ -531,43 +531,55 @@ class EmbeddingManager:
         # --- Phase 2: full extract → add-then-delete swap ---
         logger.info(f"Embedding schemas for db_id: {db_id}, types: {schema_types}")
 
-        # Capture the existing row set BEFORE adding fresh embeddings so we
-        # can delete them after the new rows are committed (atomic-ish swap).
-        old_ids = db_manager.get_embedding_ids(db_id, collection_name)
+        # Serialize the swap per (db_id, collection). The capture-then-delete
+        # below is not safe under concurrent runs (overlapping CronJob + manual
+        # embed, etc.): each would capture the same old_ids and leave the
+        # other's fresh rows behind as duplicates. Skip if another run owns it.
+        with db_manager.embed_lock(db_id, collection_name) as acquired:
+            if not acquired:
+                logger.info(
+                    f"Another embed for db_id={db_id} is already in flight; "
+                    f"skipping this concurrent run"
+                )
+                return
 
-        all_documents, all_sig_parts, all_extractions_ok = self._extract_documents(
-            db_id, schema_types, tenant_id=tenant_id
-        )
+            # Capture the existing row set BEFORE adding fresh embeddings so we
+            # can delete them after the new rows are committed (atomic-ish swap).
+            old_ids = db_manager.get_embedding_ids(db_id, collection_name)
 
-        # Bail out without touching the DB on partial extraction or no docs —
-        # leaves the existing embeddings + cache intact for the next run.
-        if not all_extractions_ok:
-            logger.warning(
-                f"Skipping embed for db_id={db_id} due to silent extraction "
-                f"error(s); existing embeddings + cache retained, will retry next run"
+            all_documents, all_sig_parts, all_extractions_ok = self._extract_documents(
+                db_id, schema_types, tenant_id=tenant_id
             )
-            return
-        if not all_documents:
-            logger.warning(
-                f"No documents extracted for db_id={db_id}; "
-                f"existing embeddings left untouched"
-            )
-            return
 
-        # Add new first, then delete old. Between these the running app sees a
-        # superset (old + new) — safe. If add_documents fails, old rows remain
-        # and the next run retries (no destructive failure mode).
-        self.vector_store.add_documents(all_documents)
-        logger.info(f"Added {len(all_documents)} embeddings for db_id={db_id}")
+            # Bail out without touching the DB on partial extraction or no docs —
+            # leaves the existing embeddings + cache intact for the next run.
+            if not all_extractions_ok:
+                logger.warning(
+                    f"Skipping embed for db_id={db_id} due to silent extraction "
+                    f"error(s); existing embeddings + cache retained, will retry next run"
+                )
+                return
+            if not all_documents:
+                logger.warning(
+                    f"No documents extracted for db_id={db_id}; "
+                    f"existing embeddings left untouched"
+                )
+                return
 
-        if old_ids:
-            db_manager.purge_embeddings_by_ids(old_ids, collection_name)
+            # Add new first, then delete old. Between these the running app sees a
+            # superset (old + new) — safe. If add_documents fails, old rows remain
+            # and the next run retries (no destructive failure mode).
+            self.vector_store.add_documents(all_documents)
+            logger.info(f"Added {len(all_documents)} embeddings for db_id={db_id}")
 
-        # Conditional cache invalidation — purges query_cache only on real change.
-        fingerprint = hashlib.sha256(
-            "\n".join(sorted(all_sig_parts)).encode("utf-8")
-        ).hexdigest()[:16]
-        cache_repository.update_schema_fingerprint(db_id, collection_name, fingerprint)
+            if old_ids:
+                db_manager.purge_embeddings_by_ids(old_ids, collection_name)
+
+            # Conditional cache invalidation — purges query_cache only on real change.
+            fingerprint = hashlib.sha256(
+                "\n".join(sorted(all_sig_parts)).encode("utf-8")
+            ).hexdigest()[:16]
+            cache_repository.update_schema_fingerprint(db_id, collection_name, fingerprint)
 
     def _schema_unchanged(self, db_id: int, schema_types: List[str],
                           collection_name: str,
