@@ -48,6 +48,7 @@ namespace Unity.Payments.PaymentRequests
         public string? FsbApNotified { get; set; }
 
         public Guid? ApplicantId { get; set; }
+        public string? Category { get; set; }
         public Guid? TenantId { get; set; }
 
         public static explicit operator PaymentRequestDto(CreatePaymentRequestDto v)

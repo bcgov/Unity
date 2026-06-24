@@ -67,6 +67,7 @@
     "ApplicationPaymentListTable:PaymentStatus": "CAS Payment Status",
     "ApplicationPaymentListTable:Note": "Note",
     "ApplicationPaymentListTable:FsbApNotified": "FSB-AP Notified",
+    "ApplicationPaymentListTable:Category": "Category",
 
     "ApplicantInfoView:SupplierInfoTitle": "Supplier Info",
     "ApplicantInfoView:ApplicantInfo:SupplierNumber": "Supplier #",
