@@ -1,0 +1,30 @@
+/* The shared initializeDataTable helper enables scrollX, and layout.css forces
+   a permanent vertical scrollbar on the scroll body. Together DataTables bakes
+   ~25px of vertical-scrollbar reservation into the computed column widths, so
+   the inner table ends up wider than its container and renders a phantom
+   horizontal scrollbar even when there is free space.
+
+   `width: 100%` alone does nothing here because the table is table-layout: auto,
+   where the columns' content widths win over the width hint. Switching the
+   inner head/body tables to table-layout: fixed makes width: 100% authoritative,
+   so the table matches the container exactly; over-long values (full email
+   addresses) wrap inside their column instead of forcing a horizontal scroll.
+   Restoring overflow-y: auto lets the vertical scrollbar appear only when rows
+   actually overflow, removing the reserved gutter when they fit.
+
+   Scoped to this table so the intentionally wide, horizontally scrolling tables
+   elsewhere are unaffected. */
+#NotificationListTable_wrapper .dt-scroll-head .dt-scroll-headInner {
+    width: 100% !important;
+}
+
+#NotificationListTable_wrapper .dt-scroll-body {
+    overflow-y: auto !important;
+}
+
+#NotificationListTable_wrapper .dt-scroll-head .dt-scroll-headInner table,
+#NotificationListTable_wrapper .dt-scroll-body table,
+#NotificationListTable {
+    table-layout: fixed !important;
+    width: 100% !important;
+}
