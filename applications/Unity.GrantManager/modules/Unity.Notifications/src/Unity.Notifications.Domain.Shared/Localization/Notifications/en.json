@@ -24,7 +24,7 @@
     "Filter": "Filter",
     "Export": "Export",
     "NotificationList:NotificationId": "Notification Id",
-    "NotificationList:SubmissionId": "Submission Id",
+    "NotificationList:SubmissionId": "Submission #",
     "NotificationList:ApplicantName": "Applicant Name",
     "NotificationList:SentDate": "Sent Date",
     "NotificationList:Status": "Status",
