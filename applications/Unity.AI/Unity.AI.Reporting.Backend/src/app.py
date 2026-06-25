@@ -40,8 +40,14 @@ def embed_schemas_command(db_id: Optional[int] = None):
     logger.info("Finished embedding process.")
 
 
-def embed_all_tenants():
-    """Embed database schemas for ALL tenants defined in tenant_config.json"""
+def embed_all_tenants() -> tuple[int, int]:
+    """Embed database schemas for ALL tenants defined in tenant_config.json.
+
+    Returns (success_count, failure_count). Per-db failures are caught and
+    logged so one bad tenant doesn't block the rest; the CronJob/CLI wrapper
+    in main() uses the counts to set the exit code so a total failure is
+    visible (Job pod shows failed) while a partial success stays exit 0.
+    """
     # Collect unique db_ids with their schema_types
     db_configs = {}
     for tenant_id, cfg in config.tenant_mappings.items():
@@ -55,6 +61,9 @@ def embed_all_tenants():
 
     logger.info(f"Embedding schemas for {len(db_configs)} unique database(s): {list(db_configs.keys())}")
 
+    success_count = 0
+    failure_count = 0
+
     # Embed schemas for each unique db_id
     for db_id, db_cfg in db_configs.items():
         tenants = ", ".join(db_cfg["tenants"])
@@ -64,10 +73,15 @@ def embed_all_tenants():
         try:
             embedding_manager.embed_schemas(db_id, db_cfg["schema_types"], tenant_id=first_tenant_id)
             logger.info(f"Successfully embedded db_id={db_id}")
+            success_count += 1
         except Exception as e:
             logger.exception(f"Failed to embed db_id={db_id}: {e}")
+            failure_count += 1
 
-    logger.info("Finished embedding all tenant databases.")
+    logger.info(
+        f"Finished embedding all tenant databases "
+        f"(success={success_count}, failure={failure_count})."
+    )
 
     # Evict stale cache entries (older than 30 days) after re-embedding
     try:
@@ -76,6 +90,8 @@ def embed_all_tenants():
             logger.info(f"Evicted {deleted} stale semantic cache entries")
     except Exception as e:
         logger.warning(f"Cache eviction failed (non-fatal): {e}")
+
+    return success_count, failure_count
 
 
 def run_server():
@@ -101,8 +117,12 @@ def main():
             embed_schemas_command(db_id)
 
         elif command == "embed-all":
-            # Embed schemas for ALL tenants
-            embed_all_tenants()
+            # Embed schemas for ALL tenants. Exit non-zero only when *every*
+            # db failed so the CronJob surfaces a total failure as a failed
+            # Job pod (partial success stays exit 0).
+            success_count, failure_count = embed_all_tenants()
+            if failure_count > 0 and success_count == 0:
+                sys.exit(1)
 
         elif command == "help":
             print("""
@@ -129,6 +149,16 @@ Commands:
 # Use environment variable to ensure this only runs ONCE in parent process
 _initialized = os.environ.get('_APP_INITIALIZED')
 
+# True when launched as `python app.py <cli-command>` rather than as the server.
+# Under gunicorn sys.argv[1] is `--preload`, so this stays False — the server
+# still runs its startup seed-embed. CLI commands (the OpenShift re-embed
+# CronJob included) run their own embed in main(), so the import-time embed
+# is skipped to avoid double work.
+_is_cli_command = (
+    len(sys.argv) > 1
+    and sys.argv[1] in {"embed", "g", "embed-all", "help"}
+)
+
 if not _initialized and os.environ.get('WERKZEUG_RUN_MAIN') != 'true':
     # Mark as initialized before doing anything to prevent race conditions
     os.environ['_APP_INITIALIZED'] = '1'
@@ -141,14 +171,16 @@ if not _initialized and os.environ.get('WERKZEUG_RUN_MAIN') != 'true':
         logger.exception(f"Error initializing database schema: {e}")
         # Don't exit - let the app try to run anyway
 
-    # Embed schemas for ALL tenants on startup (runs once with --preload before forking workers)
-    try:
-        logger.info("Embedding database schemas for all tenants...")
-        embed_all_tenants()
-        logger.info("Schema embedding completed successfully for all tenants")
-    except Exception as e:
-        logger.warning(f"Schema embedding failed: {e}", exc_info=True)
-        # Don't exit - app can still run without embeddings
+    # Startup seed-embed for the server only — first-deploy safety net before
+    # the nightly CronJob's first run. CLI commands embed in main() themselves.
+    if not _is_cli_command:
+        try:
+            logger.info("Embedding database schemas for all tenants...")
+            embed_all_tenants()
+            logger.info("Schema embedding completed successfully for all tenants")
+        except Exception as e:
+            logger.warning(f"Schema embedding failed: {e}", exc_info=True)
+            # Don't exit - app can still run without embeddings
 
 
 if __name__ == "__main__":
