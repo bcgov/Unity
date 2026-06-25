@@ -13,7 +13,7 @@ $(function () {
         'toAddress',
         'subject',
         'recipient',
-        'emailType'
+        'emailTypeText'
     ];
 
     let actionButtons = [
@@ -63,7 +63,7 @@ $(function () {
             getTextColumn(columnIndex++, l('NotificationList:To'), 'toAddress'),
             getTextColumn(columnIndex++, l('NotificationList:Subject'), 'subject'),
             getTextColumn(columnIndex++, l('NotificationList:Recipient'), 'recipient', { width: '8rem', className: 'data-table-header text-nowrap' }),
-            getTextColumn(columnIndex++, l('NotificationList:EmailType'), 'emailType', { width: '9rem', className: 'data-table-header text-nowrap' })
+            getTextColumn(columnIndex++, l('NotificationList:EmailType'), 'emailTypeText', { width: '9rem', className: 'data-table-header text-nowrap' })
         ];
         return columns.map((column) => ({ ...column, targets: [column.index], orderData: [column.index, 0] }));
     }
