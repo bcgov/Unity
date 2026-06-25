@@ -1,9 +1,61 @@
+function getDatagridActionsRowButtonTemplate(actions) {
+    if (actions.length === 0) return '';
+
+    if (actions.length === 1) {
+        if (actions.includes('EDIT'))
+            return '<input type="button" class="btn btn-edit row-edit-btn" value="Edit">';
+        if (actions.includes('DELETE'))
+            return '<input type="button" class="btn btn-delete row-delete-btn" value="Delete">';
+        return '';
+    }
+
+    let items = '';
+    if (actions.includes('EDIT'))
+        items += '<li><button type="button" class="dropdown-item row-edit-btn">Edit</button></li>';
+    if (actions.includes('DELETE'))
+        items += '<li><button type="button" class="dropdown-item row-delete-btn">Delete</button></li>';
+
+    return `<div class="dropdown">` +
+               `<button type="button" class="btn btn-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">&hellip;</button>` +
+               `<ul class="dropdown-menu">${items}</ul>` +
+           `</div>`;
+}
+
+// Function to set data attributes on the row
+function setRowDataAttributes(row, rowIndex) {
+    row.attr('data-row-no', rowIndex);
+}
+
+// Function to format currency as CAD
+function formatDatagridCurrency(value) {
+    return new Intl.NumberFormat('en-CA',
+        { style: 'currency', currency: 'CAD', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value);
+}
+
+// Function to check if a value is numeric
+function isDatagridCellNumeric(value) {
+    return !Number.isNaN(value) && Number.isFinite(value);
+}
+
+// Function to calculate sum for a specific column
+function calculateDatagridColumnSum(table, columnIndex) {
+    let total = 0;
+    table.column(columnIndex).data().each(function (value) {
+        // Remove currency symbols and commas for numeric check
+        let cleanedValue = value.replace(/[^\d.-]/g, '');
+        if (isNumeric(cleanedValue)) {
+            total += Number.parseFloat(cleanedValue);
+        }
+    });
+    return total;
+}
+
 $(function () {
     const UIElements = {
         tables: $('.custom-dynamic-table'),
         tableSearches: $('.custom-tbl-search')
     };
-
+    
     let editDatagridRowModal = new abp.ModalManager({
         viewUrl: '../Components/DataGrid/EditDataRowModal'
     });
@@ -19,21 +71,11 @@ $(function () {
         // Refresh any update table level attributes
         resetTableAttributes($(newRowNode), response);
 
-        // Create the edit button HTML and append it to the last cell of the new row
-        $(newRowNode).find('td:last').html(getEditRowButtonTemplate());
-
-        // Attach click event handler to the newly added button 
-        $(newRowNode).find('.row-edit-btn').on('click', function () {
-            let button = this; // `this` refers to the button element 
-            editDataRow(button);
-        });
+        // Configure action buttons on the last cell of the new row
+        let fieldId = $(newRowNode).closest('table')[0].id;
+        configureActionButtonsForCell($(newRowNode).find('td:last')[0], getTableActions(fieldId));
 
         abp.notify.success('Row added successfully.', 'New Row');
-    }
-
-    // Function to set data attributes on the row
-    function setRowDataAttributes(row, rowIndex) {
-        row.attr('data-row-no', rowIndex);
     }
 
     // Function to reset the table level attributes
@@ -62,10 +104,10 @@ $(function () {
     function updateRow(table, dataToUpdate, rowIndex) {
         $.each(dataToUpdate, function (columnName, newValue) {
             let columnIndex = getColumnIndex(table, columnName);
-            if (columnIndex !== -1) {
-                table.cell(rowIndex, columnIndex).data(newValue);
-            } else {
+            if (columnIndex === -1) {
                 console.warn('Column not found:', columnName);
+            } else {
+                table.cell(rowIndex, columnIndex).data(newValue);
             }
         });
 
@@ -105,18 +147,6 @@ $(function () {
         handleEditDatagridRowModalResult(response);
     });
 
-    // Function to calculate sum for a specific column
-    function calculateColumnSum(table, columnIndex) {
-        let total = 0;
-        table.column(columnIndex).data().each(function (value) {
-            // Remove currency symbols and commas for numeric check
-            let cleanedValue = value.replace(/[^\d.-]/g, '');
-            if (isNumeric(cleanedValue)) {
-                total += parseFloat(cleanedValue);
-            }
-        });
-        return total;
-    }
 
     // Function to update totals
     function updateTotals(table, fieldId) {
@@ -129,27 +159,16 @@ $(function () {
             let columnIndex = getColumnIndex(table, key);
             
             if (columnIndex !== -1) {
-                let total = calculateColumnSum(table, columnIndex);
+                let total = calculateDatagridColumnSum(table, columnIndex);
                 
                 // Update the input field with the calculated total
                 if ($(this).data('field-type') === 'Currency') {
-                    $(this).val(formatCurrency(total));
+                    $(this).val(formatDatagridCurrency(total));
                 } else {
                     $(this).val(total);
                 }
             }
         });
-    }
-
-    // Function to format currency as CAD 
-    function formatCurrency(value) {
-        return new Intl.NumberFormat('en-CA',
-            { style: 'currency', currency: 'CAD', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value);
-    }
-
-    // Function to check if a value is numeric
-    function isNumeric(value) {
-        return !isNaN(value) && isFinite(value);
     }
 
     // Function to get the index of a column by its key
@@ -274,28 +293,37 @@ $(function () {
     }
 
     function configureButtons(fieldId) {
-        let options = ($(`#table-options-${fieldId}`).val()).split(',');
+        let options = new Set(($(`#table-options-${fieldId}`).val()).split(','));
         // Always include ColumnVisibility button regardless of options
-        let availableOptions = actionButtons.filter(item => options.includes(item.id) || item.id === 'ColumnVisibility');
+        let availableOptions = actionButtons.filter(item => options.has(item.id) || item.id === 'ColumnVisibility');
         return availableOptions;
     }
 
-    // Function to configure action buttons for a table cell
-    function configureActionButtonForCell(cell) {
-        cell.innerHTML = getEditRowButtonTemplate(); // Add edit button to each cell
+    function getTableActions(fieldId) {
+        let options = new Set(($(`#table-options-${fieldId}`).val()).split(','));
+        let actions = ['EDIT'];
+        if (options.has('AddRecord')) actions.push('DELETE');
+        return actions;
+    }
 
-        // Attach click event handler to the newly added button 
+    // Function to configure action buttons for a table cell
+    function configureActionButtonsForCell(cell, actions) {
+        cell.innerHTML = getDatagridActionsRowButtonTemplate(actions);
+
         $(cell).find('.row-edit-btn').on('click', function () {
-            let button = this; // `this` refers to the button element 
-            editDataRow(button);
+            editDataRow(this);
+        });
+
+        $(cell).find('.row-delete-btn').on('click', function () {
+            deleteDataRow(this);
         });
     }
 
     // Function to setup the actions column
-    function setupActionsColumn(table, columnIndex) {
-        table.column(columnIndex).header().innerHTML = 'Actions'; // Update column header if needed
+    function setupActionsColumn(table, columnIndex, actions) {
+        table.column(columnIndex).header().innerHTML = 'Actions';
         table.column(columnIndex).nodes().each(function (cell) {
-            configureActionButtonForCell(cell);
+            configureActionButtonsForCell(cell, actions);
         });
     }
 
@@ -303,16 +331,13 @@ $(function () {
         // Move buttons to custom container
         table.buttons().container().prependTo(`#btn-container-${fieldId}`);
 
-        // Add edit buttons to the last column (Actions)
+        let actions = getTableActions(fieldId);
+
         table.columns().every(function (index) {
-            if (index === table.columns().count() - 1) { // Check if it is the last column
-                setupActionsColumn(table, index);
+            if (index === table.columns().count() - 1) {
+                setupActionsColumn(table, index, actions);
             }
         });
-    }
-
-    function getEditRowButtonTemplate() {
-        return '<input type="button" class="btn btn-edit row-edit-btn" value="Edit"></input>';
     }
 
     function editDataRow(button) {
@@ -334,6 +359,27 @@ $(function () {
             uiAnchor: tableDataSet.uiAnchor,
             columnOrder: getColumnOrder(table.DataTable())
         });
+    }
+
+    function deleteDataRow(button) {
+        // Get the parent <tr> element of the button
+        let row = $(button).closest('tr');
+        let rowDataSet = row[0].dataset;
+
+        // Retrieve the data attributes from the <tr> element
+        let table = $(button).closest('table');
+        let tableDataSet = table[0].dataset;
+
+        abp.message.confirm(
+            'Are you sure you want to delete this row?',
+            'Delete Row',
+            function (confirmed) {
+                if (confirmed) {
+                    // TODO: replace with real API call
+                    console.log('Calling off to API to delete row', { fieldId: tableDataSet.fieldId, row: rowDataSet.rowNo });
+                }
+            }
+        );
     }
 
     PubSub.subscribe(
