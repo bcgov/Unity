@@ -10,12 +10,17 @@
     </abp-script-bundle>
 }
 
+@section styles {
+    <abp-style src="/Pages/Notifications/Index.css" />
+}
+
 <div class="container-fluid px-2">
-    <div class="action-bar p-2 search-action-bar d-flex align-items-center gap-2">
-        <abp-card-title class="mb-0">@L["Menu:Notifications"]</abp-card-title>
-        <label for="search" class="visually-hidden">@L["Search"]</label>
-        <input type="search" id="search" class="tbl-search" placeholder="@L["Search"]" aria-label="@L["Search"]" />
-        <span id="dynamicButtonContainerId" class="ms-auto"></span>
+    <div class="action-bar p-2 search-action-bar d-flex align-items-center">
+        <div class="search-action-bar_search-wrapper flex-grow-1">
+            <label for="search" class="visually-hidden">@L["Search"]</label>
+            <input type="search" id="search" class="tbl-search" placeholder="@L["Search"]" aria-label="@L["Search"]" />
+        </div>
+        <span id="dynamicButtonContainerId"></span>
     </div>
     <abp-table id="NotificationListTable"></abp-table>
 </div>

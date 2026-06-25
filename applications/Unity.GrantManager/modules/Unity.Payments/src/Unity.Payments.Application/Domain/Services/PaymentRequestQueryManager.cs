@@ -138,12 +138,17 @@ namespace Unity.Payments.Domain.Services
 
             var applications = await applicationRepository.GetListByIdsAsync(applicationIds) ?? [];
             var applicantIdByApplicationId = applications.ToDictionary(a => a.Id, a => a.ApplicantId);
+            var categoryByApplicationId = applications.ToDictionary(a => a.Id, a => a.ApplicationForm?.Category);
 
             foreach (var paymentDto in paymentDtos)
             {
                 if (applicantIdByApplicationId.TryGetValue(paymentDto.CorrelationId, out var applicantId))
                 {
                     paymentDto.ApplicantId = applicantId;
+                }
+                if (categoryByApplicationId.TryGetValue(paymentDto.CorrelationId, out var category))
+                {
+                    paymentDto.Category = category;
                 }
             }
 

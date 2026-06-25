@@ -86,10 +86,32 @@
     </nav>
     <div class="tab-content unt-tab-content" id="nav-tabContent">
         <!--Tab Content: Mapping-->
-        <div class="tab-pane fade show active" id="nav-mapping" role="tabpanel" aria-labelledby="nav-mapping-tab">
+        <div id="nav-mapping" class="tab-pane fade show active container-fluid" role="tabpanel" aria-labelledby="nav-mapping-tab">
             <input type="hidden" id="refresh_available_worksheets" value="" />
+            <div class="configuration-action-bar row">
+                <div class="col-12 col-md-8">
+                    <h5>Mapping Configuration</h5>
+                </div>
+                <div class="col-12 col-md-4 btn-wrapper">
+                    <abp-button id="btn-save" text="Save" icon-type="Other" icon="fl fl-save"
+                                class="btn unt-btn-primary btn-primary"
+                                style="pointer-events: all;"
+                                abp-tooltip="Save the Scoresheet and the Mapping of CHEFS fields to Unity Fields"
+                                button-type="Primary" />
+                    <abp-button id="btn-edit" text="Edit Mapping" icon-type="Other" data-target="#editMappingModal"
+                                icon="fl fl-edit" class="btn unt-btn-primary btn-primary" data-toggle="modal"
+                                style="pointer-events: all;" abp-tooltip="Edit the Mapping JSON Manually"
+                                button-type="Primary" />
+                    <abp-button id="btn-reset" text="Reset Mapping" icon-type="Other" icon="fl fl-undo"
+                                class="btn unt-btn-outline-primary btn-outline-primary"
+                                abp-tooltip="This button resets the mapping to the last saved state" />
+                    <abp-button id="btn-back" text="Back"
+                                class="btn unt-btn-outline-primary btn-outline-primary"
+                                abp-tooltip="Navigate back to the Forms" />
+                </div>
+            </div>
             <div class="row">
-                <div class="col-4 p-3">
+                <div class="col-6 p-3">
                     <label for="applicationFormVersion" class="form-label">Version:</label>
                     <div class="select-icon-wrapper">
                         <select class="form-select form-control" id="applicationFormVersion" name="Version">
@@ -117,7 +139,7 @@
                         }
                     </div>
                 </div>
-                <div class="col-4 p-3">
+                <div class="col-6 p-3">
                     <label for="chefsFormVersionId" class="form-label">Form Version ID:</label>
                     <div class="input-button-wrapper ">
                         <input id="chefsFormVersionId" class="form-control input-width" type="text"
@@ -186,34 +208,12 @@
                     </div>
                 </div>
             </div>
-            <div class="row">
-                <div class="col-12">
-                    <div class="buttons">
-                        <div class="buttons-div">
-                            <abp-button id="btn-save" text="Save" icon-type="Other"
-                                class="btn unt-btn-primary btn-primary mx-1" style="pointer-events: all;"
-                                abp-tooltip="Save the Scoresheet and the Mapping of CHEFS fields to Unity Fields"
-                                button-type="Primary" />
-                            <abp-button id="btn-edit" text="Edit Mapping" icon-type="Other" data-target="#editMappingModal"
-                                icon="fl fl-edit" class="btn unt-btn-primary btn-primary mx-1" data-toggle="modal"
-                                style="pointer-events: all;" abp-tooltip="Edit the Mapping JSON Manually"
-                                button-type="Primary" />
-                            <abp-button id="btn-reset" text="Reset Mapping" icon-type="Other" icon="fl fl-undo"
-                                class="btn unt-btn-outline-primary btn-outline-primary mx-1"
-                                abp-tooltip="This button resets the mapping to the last saved state" />
-                            <abp-button id="btn-back" text="Back"
-                                class="btn unt-btn-outline-primary btn-outline-primary mx-1"
-                                abp-tooltip="Navigate back to the Forms" />
-                        </div>
-                    </div>
-                </div>
-            </div>        
-        </div>      
+        </div>
 
         <!--Tab Content: Worksheets-->
         @if (Model?.FlexEnabled == true)
         {
-            <div class="tab-pane fade" id="nav-custom-fields" role="tabpanel" aria-labelledby="nav-custom-fields-tab">
+            <div id="nav-custom-fields" class="tab-pane fade container-fluid" role="tabpanel" aria-labelledby="nav-custom-fields-tab">
                 <div id="customFieldsWidget">
                     @await Component.InvokeAsync("CustomFields", 
                         new {   formVersionId = Model?.ApplicationFormVersionDto?.ChefsFormVersionGuid?.ToString(), 
@@ -230,7 +230,7 @@
         @if (await FeatureChecker.IsEnabledAsync("Unity.Payments"))
         {
         <!--Tab Content: Payment Configuration-->
-        <div class="tab-pane fade" id="nav-payment-configuration" role="tabpanel" aria-labelledby="nav-payment-configuration-tab">
+        <div id="nav-payment-configuration" class="tab-pane fade" role="tabpanel" aria-labelledby="nav-payment-configuration-tab">
             <div id="paymentConfigurationWidget">
                 @await Component.InvokeAsync("PaymentConfiguration", new { formid = @Model?.ApplicationFormDto?.Id})
             </div>
@@ -268,19 +268,38 @@
         @if (Model?.ShowAITab == true)
         {
             <!--Tab Content: AI Configuration-->
-            <div class="tab-pane fade" id="nav-ai-configuration" role="tabpanel"
-                aria-labelledby="nav-ai-configuration-tab">
-                <div class="p-3">
-                    <h6 class="mb-3"><b>AI Configuration</b></h6>
-
+            <div id="nav-ai-configuration" class="tab-pane fade container-fluid" role="tabpanel" aria-labelledby="nav-ai-configuration-tab">
+                <div class="configuration-action-bar row px-0">
+                    <div class="col-12 col-md-8">
+                        <h5>AI Configuration</h5>
+                    </div>
+                    <div class="col-12 col-md-4 btn-wrapper">
+                        <abp-button id="btn-save-ai-config"
+                                    text="Save"
+                                    icon-type="Other"
+                                    icon="fl fl-save"
+                                    class="btn unt-btn-primary btn-primary"
+                                    button-type="Primary" />
+                        <abp-button id="btn-cancel-ai-config"
+                                    class="btn unt-btn-outline-primary btn-outline-primary mx-1"
+                                    icon-type="Other" icon="fl fl-undo"
+                                    text="Cancel"
+                                    abp-tooltip="Cancel changes"></abp-button>
+                        <abp-button id="btn-back-ai-config" text="Back"
+                                    class="btn unt-btn-outline-primary btn-outline-primary"
+                                    abp-tooltip="Navigate back to the Forms" />
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-12 p-3">
                     @if (Model?.ShowAutomatic == true)
                     {
                         <div class="form-check form-switch mb-3">
                             <input class="form-check-input"
-                                   type="checkbox"
-                                   id="AutomaticallyGenerateAIAnalysis"
-                                   name="AutomaticallyGenerateAIAnalysis"
-                                   @(Model.ApplicationFormDto?.AutomaticallyGenerateAIAnalysis == true ? "checked" : "") />
+                                    type="checkbox"
+                                    id="AutomaticallyGenerateAIAnalysis"
+                                    name="AutomaticallyGenerateAIAnalysis"
+                                    @(Model.ApplicationFormDto?.AutomaticallyGenerateAIAnalysis == true ? "checked" : "") />
                             <label class="form-check-label fw-bold" for="AutomaticallyGenerateAIAnalysis">
                                 Automatically Generate AI Analysis
                             </label>
@@ -295,10 +314,10 @@
                     {
                         <div class="form-check form-switch mb-3">
                             <input class="form-check-input"
-                                   type="checkbox"
-                                   id="ManuallyInitiateAIAnalysis"
-                                   name="ManuallyInitiateAIAnalysis"
-                                   @(Model.ApplicationFormDto?.ManuallyInitiateAIAnalysis == true ? "checked" : "") />
+                                    type="checkbox"
+                                    id="ManuallyInitiateAIAnalysis"
+                                    name="ManuallyInitiateAIAnalysis"
+                                    @(Model.ApplicationFormDto?.ManuallyInitiateAIAnalysis == true ? "checked" : "") />
                             <label class="form-check-label fw-bold" for="ManuallyInitiateAIAnalysis">
                                 Manually Initiate AI Analysis
                             </label>
@@ -308,17 +327,6 @@
                             </div>
                         </div>
                     }
-
-                    <div class="d-flex justify-content-start mt-3">
-                        <abp-button id="btn-save-ai-config"
-                                    text="Save"
-                                    icon-type="Other"
-                                    icon="fl fl-save"
-                                    class="btn unt-btn-primary btn-primary"
-                                    button-type="Primary" />
-                        <abp-button id="btn-cancel-ai-config"
-                                    class="btn unt-btn-outline-primary btn-outline-primary mx-1"
-                                    abp-tooltip="Cancel changes">Cancel</abp-button>
                     </div>
                 </div>
             </div>

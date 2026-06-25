@@ -17,6 +17,7 @@
 		<PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.3" />
 		<!-- Explicit reference to fix vulnerable transitive dependency -->
 		<PackageReference Include="System.IO.Packaging" Version="10.0.7" />
+		<PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="3.0.3" />
 	</ItemGroup>
 
 	<ItemGroup>
