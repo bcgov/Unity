@@ -10,6 +10,7 @@ $(function () {
 
     const listColumns = getColumns();
     const defaultVisibleColumns = [
+        'select',
         'referenceNumber',
         'batchName',
         'applicantName',
