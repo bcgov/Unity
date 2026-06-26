@@ -326,8 +326,7 @@ namespace Unity.Payments.PaymentRequests
         }
 
         public async Task<PagedResultDto<PaymentRequestDto>> GetListAsync(PaymentRequestListInputDto input)
-        {
-            var totalCount = await paymentRequestQueryManager.GetPaymentRequestCountAsync();
+        {   
             using (dataFilter.Disable<ISoftDelete>())
             {
                 var paymentWithIncludes = await paymentRequestQueryManager.GetPagedPaymentRequestsWithIncludesAsync(
@@ -342,7 +341,12 @@ namespace Unity.Payments.PaymentRequests
 
                 paymentRequestQueryManager.ApplyErrorSummary(mappedPayments);
 
-                return new PagedResultDto<PaymentRequestDto>(totalCount, mappedPayments);
+#pragma warning disable S125
+                //While the DataTable is client side, server side count query is not necessary.
+                //var totalCount = await paymentRequestQueryManager.GetPaymentRequestCountAsync();
+#pragma warning restore S125
+                return new PagedResultDto<PaymentRequestDto>(paymentWithIncludes.Count, mappedPayments);
+
             }
         }
 
