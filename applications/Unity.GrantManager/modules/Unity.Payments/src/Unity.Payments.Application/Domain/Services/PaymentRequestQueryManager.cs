@@ -23,6 +23,42 @@ namespace Unity.Payments.Domain.Services
         IObjectMapper objectMapper,
         IApplicationRepository applicationRepository) : DomainService, IPaymentRequestQueryManager
     {
+        private static readonly HashSet<string> SiteFields = new(StringComparer.OrdinalIgnoreCase)
+        {
+            "siteNumber",
+            "payGroup"
+        };
+
+        private static readonly HashSet<string> AccountCodingFields = new(StringComparer.OrdinalIgnoreCase)
+        {
+            "accountCodingDisplay"
+        };
+
+        private static readonly HashSet<string> TagFields = new(StringComparer.OrdinalIgnoreCase)
+        {
+            "paymentTags"
+        };
+
+        private static readonly HashSet<string> RequesterFields = new(StringComparer.OrdinalIgnoreCase)
+        {
+            "paymentRequesterName"
+        };
+
+        private static readonly HashSet<string> ExpenseApprovalFields = new(StringComparer.OrdinalIgnoreCase)
+        {
+            "l1ApproverName",
+            "l1ApprovalDate",
+            "l2ApproverName",
+            "l2ApprovalDate",
+            "l3ApproverName",
+            "l3ApprovalDate"
+        };
+
+        private static readonly HashSet<string> ApplicantFields = new(StringComparer.OrdinalIgnoreCase)
+        {
+            "applicantName"
+        };
+
         public Task<int> GetPaymentRequestCountBySiteIdAsync(Guid siteId)
         {
             return paymentRequestRepository.GetPaymentRequestCountBySiteId(siteId);
@@ -43,17 +79,40 @@ namespace Unity.Payments.Domain.Services
             return await paymentRequestRepository.GetListAsync(x => paymentRequestIds.Contains(x.Id), includeDetails: includeDetails);
         }
 
-        public async Task<List<PaymentRequest>> GetPagedPaymentRequestsWithIncludesAsync(int skipCount, int maxResultCount, string sorting)
+        public async Task<List<PaymentRequest>> GetPagedPaymentRequestsWithIncludesAsync(int skipCount, int maxResultCount, string sorting, IReadOnlyList<string>? requestedFields = null)
         {
-            await paymentRequestRepository.GetPagedListAsync(skipCount, maxResultCount, sorting, includeDetails: true);
-
             var paymentsQueryable = await paymentRequestRepository.GetQueryableAsync();
+            var includeSite = IncludesAny(requestedFields, SiteFields);
+            var includeAccountCoding = IncludesAny(requestedFields, AccountCodingFields);
+            var includeTags = IncludesAny(requestedFields, TagFields);
+            var includeExpenseApprovals = IncludesAny(requestedFields, ExpenseApprovalFields);
+
+            paymentsQueryable = paymentsQueryable.AsNoTracking();
+
+            if (includeSite)
+            {
+                paymentsQueryable = paymentsQueryable.Include(pr => pr.Site);
+            }
+
+            if (includeAccountCoding)
+            {
+                paymentsQueryable = paymentsQueryable.Include(pr => pr.AccountCoding);
+            }
+
+            if (includeTags)
+            {
+                paymentsQueryable = paymentsQueryable
+                    .Include(pr => pr.PaymentTags)
+                    .ThenInclude(pt => pt.Tag);
+            }
+
+            if (includeExpenseApprovals)
+            {
+                paymentsQueryable = paymentsQueryable.Include(pr => pr.ExpenseApprovals);
+            }
+
 #pragma warning disable CS8620 // Argument cannot be used for parameter due to differences in the nullability of reference types.
-            var paymentWithIncludes = await paymentsQueryable
-                .Include(pr => pr.AccountCoding)
-                .Include(pr => pr.PaymentTags)
-                    .ThenInclude(pt => pt.Tag)
-                .ToListAsync();
+            var paymentWithIncludes = await paymentsQueryable.ToListAsync();
 #pragma warning restore CS8620 // Argument cannot be used for parameter due to differences in the nullability of reference types.
 
             return paymentWithIncludes;
@@ -126,67 +185,82 @@ namespace Unity.Payments.Domain.Services
             return await paymentRequestRepository.GetTotalPaymentRequestAmountByCorrelationIdAsync(correlationId);
         }
 
-        public async Task<List<PaymentRequestDto>> MapToDtoAndLoadDetailsAsync(List<PaymentRequest> paymentsList)
+        public async Task<List<PaymentRequestDto>> MapToDtoAndLoadDetailsAsync(List<PaymentRequest> paymentsList, IReadOnlyList<string>? requestedFields = null)
         {
+            var includeApplicant = IncludesAny(requestedFields, ApplicantFields);
+            var includeRequester = IncludesAny(requestedFields, RequesterFields);
+            var includeExpenseApprovals = IncludesAny(requestedFields, ExpenseApprovalFields);
+            var includeAccountCoding = IncludesAny(requestedFields, AccountCodingFields);
+
             var paymentDtos = objectMapper.Map<List<PaymentRequest>, List<PaymentRequestDto>>(paymentsList);
 
-            // Batch-fetch applicant IDs for all unique correlation IDs (application IDs)
-            var applicationIds = paymentDtos
-                .Select(p => p.CorrelationId)
-                .Distinct()
-                .ToArray();
-
-            var applications = await applicationRepository.GetListByIdsAsync(applicationIds) ?? [];
-            var applicantIdByApplicationId = applications.ToDictionary(a => a.Id, a => a.ApplicantId);
-
-            foreach (var paymentDto in paymentDtos)
+            if (includeApplicant)
             {
-                if (applicantIdByApplicationId.TryGetValue(paymentDto.CorrelationId, out var applicantId))
+                // Batch-fetch applicant IDs for all unique correlation IDs (application IDs)
+                var applicationIds = paymentDtos
+                    .Select(p => p.CorrelationId)
+                    .Distinct()
+                    .ToArray();
+
+                var applications = await applicationRepository.GetListByIdsAsync(applicationIds) ?? [];
+                var applicantIdByApplicationId = applications.ToDictionary(a => a.Id, a => a.ApplicantId);
+
+                foreach (var paymentDto in paymentDtos)
                 {
-                    paymentDto.ApplicantId = applicantId;
+                    if (applicantIdByApplicationId.TryGetValue(paymentDto.CorrelationId, out var applicantId))
+                    {
+                        paymentDto.ApplicantId = applicantId;
+                    }
                 }
             }
 
-            // Flatten all DecisionUserIds from ExpenseApprovals across all PaymentRequestDtos
-            List<Guid> paymentRequesterIds = [.. paymentDtos
-                .Select(payment => payment.CreatorId)
-                .OfType<Guid>()
-                .Distinct()];
-
-            List<Guid> expenseApprovalCreatorIds = [.. paymentDtos
-                .SelectMany(payment => payment.ExpenseApprovals)
-                .Where(expenseApproval => expenseApproval.Status != ExpenseApprovalStatus.Requested)
-                .Select(expenseApproval => expenseApproval.DecisionUserId)
-                .OfType<Guid>()
-                .Distinct()];
-
-            // Call external lookup for each distinct User Id and store in a dictionary.
             var userDictionary = new Dictionary<Guid, PaymentUserDto>();
-            var allUserIds = paymentRequesterIds.Concat(expenseApprovalCreatorIds).Distinct();
-            foreach (var userId in allUserIds)
+            if (includeRequester || includeExpenseApprovals)
             {
-                var userInfo = await externalUserLookupServiceProvider.FindByIdAsync(userId);
-                if (userInfo != null)
+                var paymentRequesterIds = includeRequester
+                    ? paymentDtos
+                        .Select(payment => payment.CreatorId)
+                        .OfType<Guid>()
+                        .Distinct()
+                    : [];
+
+                var expenseApprovalCreatorIds = includeExpenseApprovals
+                    ? paymentDtos
+                        .SelectMany(payment => payment.ExpenseApprovals ?? [])
+                        .Where(expenseApproval => expenseApproval.Status != ExpenseApprovalStatus.Requested)
+                        .Select(expenseApproval => expenseApproval.DecisionUserId)
+                        .OfType<Guid>()
+                        .Distinct()
+                    : [];
+
+                // Call external lookup for each distinct User Id and store in a dictionary.
+                var allUserIds = paymentRequesterIds.Concat(expenseApprovalCreatorIds).Distinct();
+                foreach (var userId in allUserIds)
                 {
-                    userDictionary[userId] = objectMapper.Map<IUserData, PaymentUserDto>(userInfo);
+                    var userInfo = await externalUserLookupServiceProvider.FindByIdAsync(userId);
+                    if (userInfo != null)
+                    {
+                        userDictionary[userId] = objectMapper.Map<IUserData, PaymentUserDto>(userInfo);
+                    }
                 }
             }
 
             // Map UserInfo details to each ExpenseApprovalDto
             foreach (var paymentRequestDto in paymentDtos)
             {
-                if (paymentRequestDto.CreatorId.HasValue
+                if (includeRequester
+                        && paymentRequestDto.CreatorId.HasValue
                         && userDictionary.TryGetValue(paymentRequestDto.CreatorId.Value, out var paymentRequestUserDto))
                 {
                     paymentRequestDto.CreatorUser = paymentRequestUserDto;
                 }
 
-                if (paymentRequestDto.AccountCoding != null)
+                if (includeAccountCoding && paymentRequestDto.AccountCoding != null)
                 {
                     paymentRequestDto.AccountCodingDisplay = await GetAccountDistributionCodeAsync(paymentRequestDto.AccountCoding);
                 }
 
-                if (paymentRequestDto.ExpenseApprovals != null)
+                if (includeExpenseApprovals && paymentRequestDto.ExpenseApprovals != null)
                 {
                     foreach (var expenseApproval in paymentRequestDto.ExpenseApprovals)
                     {
@@ -200,6 +274,16 @@ namespace Unity.Payments.Domain.Services
             }
 
             return paymentDtos;
+        }
+
+        private static bool IncludesAny(IReadOnlyList<string>? requestedFields, IReadOnlySet<string> fieldsToCheck)
+        {
+            if (requestedFields == null || requestedFields.Count == 0)
+            {
+                return true;
+            }
+
+            return requestedFields.Any(fieldsToCheck.Contains);
         }
 
         public Task<string> GetAccountDistributionCodeAsync(AccountCodingDto? accountCoding)

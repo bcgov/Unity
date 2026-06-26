@@ -10,7 +10,7 @@ namespace Unity.Payments.PaymentRequests
     {
         Task<List<PaymentRequestDto>> CreateAsync(List<CreatePaymentRequestDto> paymentRequests);
         Task<List<PaymentRequestDto>> CreateHistoricalAsync(List<CreateHistoricalPaymentRequestDto> paymentRequests);
-        Task<PagedResultDto<PaymentRequestDto>> GetListAsync(PagedAndSortedResultRequestDto input);
+        Task<PagedResultDto<PaymentRequestDto>> GetListAsync(PaymentRequestListInputDto input);
         Task<decimal> GetTotalPaymentRequestAmountByCorrelationIdAsync(Guid correlationId);
         Task<List<PaymentDetailsDto>> GetListByApplicationIdAsync(Guid applicationId);
         Task<List<PaymentDetailsDto>> GetListByPaymentIdsAsync(List<Guid> paymentIds);

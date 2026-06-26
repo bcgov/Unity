@@ -1,6 +1,7 @@
 $(function () {
     const l = abp.localization.getResource('Payments');
     const nullPlaceholder = '—';
+    const requestedFieldsStorageKey = 'PaymentRequests_RequestedFields';
     const formatter = createNumberFormatter();
     const guidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     let dt = $('#PaymentRequestListTable');
@@ -13,7 +14,6 @@ $(function () {
         'batchName',
         'applicantName',
         'supplierNumber',
-        'creationTime',
         'siteNumber',
         'contactNumber',
         'invoiceNumber',
@@ -29,6 +29,30 @@ $(function () {
         'CASResponse',
         'accountCodingDisplay'
     ];
+    let initialLoad = true;
+    let isRestoringState = false;
+    let refreshDataTimeout = null;
+
+    let languageSetValues = {
+        buttons: {
+            stateRestore: 'View %d'
+        },
+        stateRestore: {
+            creationModal: {
+                title: 'Create View',
+                name: 'Name',
+                button: 'Save',
+            },
+            emptyStates: 'No saved views',
+            renameTitle: 'Rename View',
+            renameLabel: 'New name for "%s"',
+            removeTitle: 'Delete View',
+            removeConfirm: 'Are you sure you want to delete "%s"?',
+            removeSubmit: 'Delete',
+            duplicateError: 'A view with this name already exists.',
+            removeError: 'Failed to remove view.',
+        }
+    };
 
     let paymentRequestStatusModal = new abp.ModalManager({
         viewUrl: 'PaymentApprovals/UpdatePaymentRequestStatus',
@@ -128,6 +152,66 @@ $(function () {
             }
         },
         {
+            extend: 'savedStates',
+            className: 'custom-table-btn flex-none btn btn-secondary grp-savedStates',
+            config: {
+                creationModal: true,
+                splitSecondaries: [
+                    { extend: 'updateState', text: '<i class="fa-regular fa-floppy-disk"></i> Update' },
+                    { extend: 'renameState', text: '<i class="fa-regular fa-pen-to-square"></i> Rename' },
+                    { extend: 'removeState', text: '<i class="fa-regular fa-trash-can"></i> Delete' }
+                ]
+            },
+            buttons: [
+                { extend: 'createState', text: 'Save As View' },
+                {
+                    text: 'Reset to Default View',
+                    action: function (e, dt, node, config) {
+                        let dtInit = dt.init();
+                        let initialSortOrder = dtInit?.order ?? [];
+
+                        dt.columns().visible(false);
+
+                        const allColumnNames = dt.settings()[0].aoColumns
+                            .map(col => col.name)
+                            .filter(colName => !defaultVisibleColumns.includes(colName));
+
+                        const orderedIndexes = [];
+                        defaultVisibleColumns.forEach((colName) => {
+                            const colIdx = dt.column(`${colName}:name`).index();
+                            if (colIdx !== undefined && colIdx !== -1) {
+                                dt.column(colIdx).visible(true);
+                                orderedIndexes.push(colIdx);
+                            }
+                        });
+
+                        allColumnNames.forEach((colName) => {
+                            const colIdx = dt.column(`${colName}:name`).index();
+                            if (colIdx !== undefined && colIdx !== -1) {
+                                orderedIndexes.push(colIdx);
+                            }
+                        });
+
+                        dt.colReorder.order(orderedIndexes);
+                        dt.columns.adjust();
+
+                        if (typeof dt.filterRow === 'function') {
+                            const filterRowApi = dt.filterRow();
+                            if (filterRowApi && typeof filterRowApi?.clearFilters === 'function') {
+                                filterRowApi.clearFilters();
+                            }
+                        }
+
+                        $('.dt-search input').val('');
+                        $('#search').val('');
+                        dt.search('').order(initialSortOrder).draw();
+                    }
+                },
+                { extend: 'removeAllStates', text: 'Delete All Views' },
+                { extend: 'spacer', style: 'bar' }
+            ]
+        },
+        {
             extend: 'csv',
             text: 'Export',
             title: 'Payment Requests',
@@ -172,16 +256,96 @@ $(function () {
             dir: 'desc'
         },
         dataEndpoint: unity.payments.paymentRequests.paymentRequest.getList,
-        data: {},
+        data: function () {
+            let requestedFields;
+            if (dataTable) {
+                try {
+                    const cols = dataTable.settings()[0].aoColumns;
+                    requestedFields = cols
+                        .filter(function (col, idx) { return dataTable.column(idx).visible(); })
+                        .map(function (col) { return col.sName; })
+                        .filter(function (name) { return !!name; });
+                    if (requestedFields.length > 0) {
+                        localStorage.setItem(requestedFieldsStorageKey, JSON.stringify(requestedFields));
+                    }
+                } catch {
+                    // DataTable may still be initializing.
+                }
+            }
+
+            if (!requestedFields || requestedFields.length === 0) {
+                try {
+                    const saved = localStorage.getItem(requestedFieldsStorageKey);
+                    if (saved) {
+                        requestedFields = JSON.parse(saved);
+                    }
+                } catch {
+                    // Ignore local storage parse errors and use defaults.
+                }
+            }
+
+            if (!requestedFields || requestedFields.length === 0) {
+                requestedFields = defaultVisibleColumns;
+            }
+
+            return {
+                requestedFields: requestedFields
+            };
+        },
         responseCallback,
         actionButtons,
+        deferRender: true,
         pagingEnabled: true,
         reorderEnabled: true,
-        languageSetValues: {},
+        languageSetValues,
         dataTableName: 'PaymentRequestListTable',
         dynamicButtonContainerId: 'dynamicButtonContainerId',
         useNullPlaceholder: true,
-        fixedHeaders: true
+        fixedHeaders: true,
+        onStateSaveParams: function (settings, data) {
+            data.customFilters = {
+                externalSearchValue: $('#search').val() || ''
+            };
+        },
+        onStateLoadParams: function (settings, data) {
+            if (!initialLoad) {
+                isRestoringState = true;
+                if (data?.customFilters) {
+                    $('#search').val(data.customFilters.externalSearchValue || '');
+                }
+            }
+        },
+        onStateLoaded: function (dtApi, data) {
+            if (!initialLoad) {
+                isRestoringState = false;
+                dtApi.ajax.reload(null, false);
+            }
+            initialLoad = false;
+        }
+    });
+
+    $('.grp-savedStates').text('Save View');
+    $('.grp-savedStates').closest('.btn-group').addClass('cstm-save-view');
+
+    dataTable.on('column-visibility.dt', function (e, settings, columnIdx) {
+        try {
+            const cols = dataTable.settings()[0].aoColumns;
+            const visibleFields = cols
+                .filter(function (col, idx) { return dataTable.column(idx).visible(); })
+                .map(function (col) { return col.sName; })
+                .filter(function (name) { return !!name; });
+            if (visibleFields.length > 0) {
+                localStorage.setItem(requestedFieldsStorageKey, JSON.stringify(visibleFields));
+            }
+            // During a saved-view restore, isRestoringState is true and onStateLoaded
+            // fires a single authoritative reload after all columns are applied.
+            if (!isRestoringState && cols[columnIdx]?.refreshData) {
+                clearTimeout(refreshDataTimeout);
+                refreshDataTimeout = setTimeout(function () {
+                    dataTable.ajax.reload(null, false);
+                }, 300);
+            }
+        } catch { }
     });
 
     // Attach the draw event to add custom row coloring logic
@@ -378,6 +542,7 @@ $(function () {
             name: 'applicantName',
             data: 'payeeName',
             className: 'data-table-header',
+            refreshData: true,
             index: columnIndex,
             render: function (data, type, row) {
                 let applicantName = (typeof data !== 'string' || data.trim() === '') ? 'Applicant Name' : data;
@@ -464,6 +629,7 @@ $(function () {
             name: 'siteNumber',
             data: 'site',
             className: 'data-table-header',
+            refreshData: true,
             index: columnIndex,
             render: function (data) {
                 return data?.number;
@@ -497,6 +663,7 @@ $(function () {
             name: 'payGroup',
             data: 'site',
             className: 'data-table-header',
+            refreshData: true,
             index: columnIndex,
             render: function (data) {
                 if (!data) return '';
@@ -619,6 +786,7 @@ $(function () {
             name: 'paymentRequesterName',
             data: 'creatorUser',
             className: 'data-table-header',
+            refreshData: true,
             index: columnIndex,
             render: function (data) {
                 return formatName(data);
@@ -632,6 +800,7 @@ $(function () {
             name: `l${level}ApproverName`,
             data: 'expenseApprovals',
             className: 'data-table-header',
+            refreshData: true,
             index: columnIndex,
             render: function (data) {
                 const approval = getExpenseApprovalsDetails(data, level);
@@ -650,6 +819,7 @@ $(function () {
             name: `l${level}ApprovalDate`,
             data: 'expenseApprovals',
             className: 'data-table-header text-nowrap',
+            refreshData: true,
             index: columnIndex,
             render: function (data, type) {
                 let approval = getExpenseApprovalsDetails(data, level);
@@ -727,9 +897,10 @@ $(function () {
             name: 'paymentTags',
             data: 'paymentTags',
             className: '',
+            refreshData: true,
             index: columnIndex,
             render: function (data) {
-                let tagNames = data
+                let tagNames = (data ?? [])
                     .filter(x => x?.tag?.name)
                     .map(x => x.tag.name);
                 return tagNames.join(', ') ?? '';
@@ -754,6 +925,7 @@ $(function () {
             name: 'accountCodingDisplay',
             data: 'accountCodingDisplay',
             className: 'data-table-header',
+            refreshData: true,
             index: columnIndex,
             render: function (data) {
                 if (data + "" !== "undefined" && data?.length > 0) {
@@ -783,10 +955,13 @@ $(function () {
     }
 
     function getExpenseApprovalsDetails(expenseApprovals, type) {
-        return expenseApprovals.find(x => x.type == type);
+        return (expenseApprovals ?? []).find(x => x.type == type);
     }
 
     $('#search').on('input', function () {
+        if (isRestoringState) {
+            return;
+        }
         let table = $('#PaymentRequestListTable').DataTable();
         table.search($(this).val()).draw();
     });

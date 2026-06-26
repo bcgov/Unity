@@ -51,3 +51,36 @@
     background-color: #FEEAEA;
     color: #FF0909 !important;
 }
+
+/* DataTables stateRestore - Save View */
+.container-fluid .dtsr-background {
+    background: rgba(0, 0, 0, 0.5) !important;
+}
+
+.cstm-save-view .dt-button-collection {
+    width: 230px;
+}
+
+.cstm-save-view .dt-button-split a {
+    line-height: 35px;
+}
+
+.container-fluid .dtsr-creation-title,
+.container-fluid .dtsr-confirmation-title {
+    font-weight: 700;
+    font-size: 1.25rem;
+}
+
+.container-fluid .dtsr-creation input,
+.container-fluid .dtsr-rename-modal input {
+    font-size: var(--bc-font-size);
+    color: var(--bc-colors-grey-text-500);
+    border-radius: 4px !important;
+    border: 2px solid var(--bc-colors-blue-primary);
+}
+
+.container-fluid div.dtsr-confirmation button,
+.container-fluid div.dtsr-creation button {
+    color: var(--bc-colors-white-primary-500);
+    background-color: var(--bc-colors-blue-primary);
+}

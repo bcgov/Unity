@@ -325,14 +325,20 @@ namespace Unity.Payments.PaymentRequests
             return await paymentRequestQueryManager.GetListByApplicationIdsAsync(applicationIds);
         }
 
-        public async Task<PagedResultDto<PaymentRequestDto>> GetListAsync(PagedAndSortedResultRequestDto input)
+        public async Task<PagedResultDto<PaymentRequestDto>> GetListAsync(PaymentRequestListInputDto input)
         {
             var totalCount = await paymentRequestQueryManager.GetPaymentRequestCountAsync();
             using (dataFilter.Disable<ISoftDelete>())
             {
-                var paymentWithIncludes = await paymentRequestQueryManager.GetPagedPaymentRequestsWithIncludesAsync(input.SkipCount, input.MaxResultCount, input.Sorting ?? string.Empty);
+                var paymentWithIncludes = await paymentRequestQueryManager.GetPagedPaymentRequestsWithIncludesAsync(
+                    input.SkipCount,
+                    input.MaxResultCount,
+                    input.Sorting ?? string.Empty,
+                    input.RequestedFields);
 
-                var mappedPayments = await paymentRequestQueryManager.MapToDtoAndLoadDetailsAsync(paymentWithIncludes);
+                var mappedPayments = await paymentRequestQueryManager.MapToDtoAndLoadDetailsAsync(
+                    paymentWithIncludes,
+                    input.RequestedFields);
 
                 paymentRequestQueryManager.ApplyErrorSummary(mappedPayments);
 
