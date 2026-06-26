@@ -54,6 +54,7 @@ public class NotificationListAppServiceTests : GrantManagerApplicationTestBase
         row.Subject.ShouldBe("Test Notification Subject");
         row.SubmissionReferenceNo.ShouldBe("TEST12345");
         row.Recipient.ShouldBe(RecipientType.External);
+        row.EmailType.ShouldBe(EmailType.Manual);
         result.TotalCount.ShouldBeGreaterThanOrEqualTo(1);
     }
 
@@ -88,6 +89,7 @@ public class NotificationListAppServiceTests : GrantManagerApplicationTestBase
         // Assert
         var row = result.Items.FirstOrDefault(i => i.Id == emailLog.Id);
         row.ShouldNotBeNull();
+        row.EmailType.ShouldBe(emailType);
         row.EmailTypeText.ShouldBe(expectedLabel);
     }
 

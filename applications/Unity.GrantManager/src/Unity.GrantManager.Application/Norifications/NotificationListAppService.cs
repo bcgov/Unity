@@ -65,6 +65,7 @@ public class NotificationListAppService(
                 ToAddress = log.ToAddress,
                 Subject = log.Subject,
                 Recipient = log.Recipient,
+                EmailType = log.EmailType,
                 EmailTypeText = GetEmailTypeText(log.EmailType)
             };
         }).ToList();
@@ -81,7 +82,8 @@ public class NotificationListAppService(
             EmailType.DateBased => notificationsLocalizer["NotificationList:EmailType:Scheduled"].Value,
             EmailType.EventBased => notificationsLocalizer["NotificationList:EmailType:EventBased"].Value,
             EmailType.Delayed => notificationsLocalizer["NotificationList:EmailType:Delayed"].Value,
-            _ => string.Empty
+            // Fallback for any future unmapped value: show the raw enum name rather than a blank cell.
+            _ => emailType?.ToString() ?? string.Empty
         };
     }
 

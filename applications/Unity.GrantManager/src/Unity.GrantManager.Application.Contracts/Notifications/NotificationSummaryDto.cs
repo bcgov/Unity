@@ -15,5 +15,6 @@ public class NotificationSummaryDto : EntityDto<Guid>
     public string ToAddress { get; set; } = string.Empty;
     public string Subject { get; set; } = string.Empty;
     public RecipientType? Recipient { get; set; }
+    public EmailType? EmailType { get; set; }
     public string EmailTypeText { get; set; } = string.Empty;
 }
