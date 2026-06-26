@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using Unity.AI.Domain;
 using Unity.GrantManager.GrantApplications;
 using Volo.Abp.Application.Services;
 using Volo.Abp.Domain.Repositories;
@@ -10,18 +11,32 @@ namespace Unity.GrantManager.GrantApplications;
 
 public class AIGenerationStatusAppService(
     IRepository<AIGenerationRequest, Guid> generationRequestRepository,
+    IRepository<AIOperation, Guid> operationRepository,
     ICurrentTenant currentTenant)
     : ApplicationService, IAIGenerationStatusAppService
 {
     public virtual async Task<AIGenerationRequestDto?> GetLatestAsync(Guid applicationId, string operationType, Guid? tenantId = null)
     {
+        var operationName = AIGenerationRequestKeyHelper.ResolveOperationName(operationType);
+
+        if (operationName == null)
+        {
+            return null;
+        }
+
+        var operation = await ResolveOperationAsync(operationName);
+        if (operation == null)
+        {
+            return null;
+        }
+
         var query = await generationRequestRepository.GetQueryableAsync();
         var resolvedTenantId = tenantId ?? currentTenant.Id;
 
         var item = query
             .Where(x =>
                 x.ApplicationId == applicationId &&
-                x.OperationType == operationType &&
+                x.OperationId == operation.Id &&
                 x.TenantId == resolvedTenantId)
             .OrderByDescending(x => x.CreationTime)
             .ThenByDescending(x => x.Id)
@@ -33,7 +48,8 @@ public class AIGenerationStatusAppService(
             {
                 Id = item.Id,
                 ApplicationId = item.ApplicationId,
-                OperationType = item.OperationType,
+                OperationId = item.OperationId,
+                OperationType = operationType,
                 RequestKey = item.RequestKey,
                 Status = item.Status,
                 StartedAt = item.StartedAt,
@@ -41,5 +57,18 @@ public class AIGenerationStatusAppService(
                 FailureReason = item.FailureReason,
                 IsActive = item.IsActive
             };
+    }
+
+    private async Task<AIOperation?> ResolveOperationAsync(string operationName)
+    {
+        var operations = await operationRepository.GetQueryableAsync();
+        var activeOperations = operations
+            .Where(operation => operation.IsActive)
+            .ToList();
+
+        return activeOperations.FirstOrDefault(operation =>
+                   string.Equals(operation.Name, operationName, StringComparison.OrdinalIgnoreCase))
+               ?? activeOperations.FirstOrDefault(operation =>
+                   string.Equals(operation.Name, "Default", StringComparison.OrdinalIgnoreCase));
     }
 }

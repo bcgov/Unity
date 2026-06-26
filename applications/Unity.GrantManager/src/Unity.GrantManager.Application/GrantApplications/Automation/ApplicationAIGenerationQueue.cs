@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Unity.AI.Domain;
 using Unity.AI.Automation;
 using Unity.AI.Features;
 using Unity.AI.Localization;
@@ -24,6 +25,7 @@ namespace Unity.GrantManager.GrantApplications.Automation;
 public class ApplicationAIGenerationQueue(
     IBackgroundJobManager backgroundJobManager,
     IRepository<AIGenerationRequest, Guid> generationRequestRepository,
+    IRepository<AIOperation, Guid> operationRepository,
     IDistributedLockProvider distributedLockProvider,
     IAIGenerationPrerequisiteValidator aiGenerationPrerequisiteValidator,
     IFeatureChecker featureChecker,
@@ -155,10 +157,12 @@ public class ApplicationAIGenerationQueue(
             // The limiter is a no-op for system/background callers without an authenticated user.
             await aiRateLimiter.EnsureAsync();
 
+            var operation = await ResolveOperationAsync(operationType);
+
             var request = new AIGenerationRequest(
                 Guid.NewGuid(),
                 tenantId,
-                operationType,
+                operation.Id,
                 applicationId,
                 requestKey);
 
@@ -174,6 +178,28 @@ public class ApplicationAIGenerationQueue(
                 throw;
             }
         }
+    }
+
+    private static string ResolveOperationName(string operationType)
+        => AIGenerationRequestKeyHelper.ResolveOperationName(operationType)
+            ?? throw new UserFriendlyException($"AI operation '{operationType}' is not configured.");
+
+    private async Task<AIOperation> ResolveOperationAsync(string operationType)
+    {
+        var operationName = ResolveOperationName(operationType);
+        var activeOperations = await operationRepository.GetListAsync(operation => operation.IsActive);
+
+        var operation = activeOperations.FirstOrDefault(operation =>
+            string.Equals(operation.Name, operationName, StringComparison.OrdinalIgnoreCase))
+            ?? activeOperations.FirstOrDefault(operation =>
+                string.Equals(operation.Name, "Default", StringComparison.OrdinalIgnoreCase));
+
+        if (operation == null)
+        {
+            throw new UserFriendlyException($"AI operation '{operationType}' is not configured.");
+        }
+
+        return operation;
     }
 
     private async Task EnsureAnyPipelineStageAvailableAsync(Guid applicationId)
