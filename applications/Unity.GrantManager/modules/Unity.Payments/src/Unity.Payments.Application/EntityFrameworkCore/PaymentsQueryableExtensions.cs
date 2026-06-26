@@ -11,7 +11,7 @@ namespace Unity.Payments.EntityFrameworkCore
         {
             return !include ? queryable : queryable
                 .Include(s => s.Site)
-                    .ThenInclude(site => site.Supplier)
+                    .ThenInclude(site => site!.Supplier)
                 .Include(p => p.AccountCoding)
                 .Include(y => y.ExpenseApprovals);
         }

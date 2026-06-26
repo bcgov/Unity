@@ -15,6 +15,12 @@ public static class GrantManagerConsts
 
     public const string DefaultTenantConnectionStringName = "Tenant";
 
+    public const string DefaultTenantReadOnlyConnectionStringName = "Tenant_Readonly";
+
+    public const string OnboardingTenantName = "Onboarding";
+    public static string NormalizedOnboardingTenantName => OnboardingTenantName.ToUpper();
+    public const string OnboardingTenantConnectionStringConfigKey = "Onboarding";
+
     public const string DefaultConnectionStringName = "Default";
 
     public const string UnknownValue = "Unknown";

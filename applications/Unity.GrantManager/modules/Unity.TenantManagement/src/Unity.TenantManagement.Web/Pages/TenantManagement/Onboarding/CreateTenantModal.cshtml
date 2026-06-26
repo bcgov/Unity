@@ -1,0 +1,103 @@
+@page
+@using Microsoft.AspNetCore.Mvc.Localization
+@using Unity.GrantManager.Localization
+@using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal
+@using Unity.TenantManagement
+@using Unity.TenantManagement.Web.Pages.TenantManagement.Onboarding
+@model CreateTenantModalModel
+@inject IHtmlLocalizer<GrantManagerResource> L
+@{
+    Layout = null;
+}
+<abp-modal size="Large">
+    <abp-modal-header title="@L["CreateTenantModal:Title"].Value"></abp-modal-header>
+    <abp-modal-body>
+
+        <script id="create-tenant-fields-json" type="application/json">@Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.OnboardingRequest!.Fields))</script>
+
+        <div id="create-tenant-field-mapping" style="display:none;">
+            <div class="row g-2 mb-3">
+                <div class="col-12">
+                    <label for="create-tenant-ministry-field" class="form-label small mb-1">@L["CreateTenantModal:Ministry"]</label>
+                    <div class="input-group input-group-sm">
+                        <select id="create-tenant-ministry-field" class="form-select form-select-sm" style="flex:0 0 50%;">
+                            <option value="">@L["CreateTenantModal:MappingPlaceholder"]</option>
+                        </select>
+                        <span id="create-tenant-ministry-value" class="input-group-text text-muted fst-italic" style="flex:0 0 50%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"></span>
+                    </div>
+                </div>
+                <div class="col-12">
+                    <label for="create-tenant-branch-field" class="form-label small mb-1">@L["CreateTenantModal:Branch"]</label>
+                    <div class="input-group input-group-sm">
+                        <select id="create-tenant-branch-field" class="form-select form-select-sm" style="flex:0 0 50%;">
+                            <option value="">@L["CreateTenantModal:MappingPlaceholder"]</option>
+                        </select>
+                        <span id="create-tenant-branch-value" class="input-group-text text-muted fst-italic" style="flex:0 0 50%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"></span>
+                    </div>
+                </div>
+                <div class="col-12">
+                    <label for="create-tenant-program-area-field" class="form-label small mb-1">@L["CreateTenantModal:ProgramArea"]</label>
+                    <div class="input-group input-group-sm">
+                        <select id="create-tenant-program-area-field" class="form-select form-select-sm" style="flex:0 0 50%;">
+                            <option value="">@L["CreateTenantModal:MappingPlaceholder"]</option>
+                        </select>
+                        <span id="create-tenant-program-area-value" class="input-group-text text-muted fst-italic" style="flex:0 0 50%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"></span>
+                    </div>
+                </div>
+                <div class="col-12">
+                    <label for="create-tenant-features-field" class="form-label small mb-1">@L["CreateTenantModal:Features"]</label>
+                    <div class="input-group input-group-sm" style="align-items:flex-start;">
+                        <select id="create-tenant-features-field" class="form-select form-select-sm" style="flex:0 0 50%;">
+                            <option value="">@L["CreateTenantModal:MappingPlaceholder"]</option>
+                        </select>
+                        <span id="create-tenant-features-value" class="input-group-text" style="flex:0 0 50%; height:auto; flex-wrap:wrap; row-gap:4px;"></span>
+                    </div>
+                </div>
+                <div class="col-12">
+                    <label for="create-tenant-tenant-name-field" class="form-label small mb-1">@L["CreateTenantModal:TenantNameFieldLabel"]</label>
+                    <div class="input-group input-group-sm">
+                        <select id="create-tenant-tenant-name-field" class="form-select form-select-sm" style="flex:0 0 50%;">
+                            <option value="">@L["CreateTenantModal:MappingPlaceholder"]</option>
+                        </select>
+                        <span id="create-tenant-tenant-name-value" class="input-group-text text-muted fst-italic" style="flex:0 0 50%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"></span>
+                    </div>
+                </div>
+                <div class="col-12">
+                    <label for="create-tenant-super-users-field" class="form-label small mb-1">@L["CreateTenantModal:SuperUsersFieldLabel"]</label>
+                    <div class="input-group input-group-sm" style="align-items:flex-start;">
+                        <select id="create-tenant-super-users-field" class="form-select form-select-sm" style="flex:0 0 50%;">
+                            <option value="">@L["CreateTenantModal:MappingPlaceholder"]</option>
+                        </select>
+                        <span id="create-tenant-super-users-value" class="input-group-text text-muted fst-italic" style="flex:0 0 50%; display:block; height:auto; white-space:normal; overflow-wrap:break-word;"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="onboarding-validation-loading" class="text-muted">
+            <span class="spinner-border spinner-border-sm me-2"></span>
+            @L["CreateTenantModal:Validating"]
+        </div>
+        <div id="onboarding-validation-result" class="d-none"></div>
+
+        <div id="onboarding-creating" class="d-none mt-3">
+            <div class="d-flex align-items-center text-muted mb-2">
+                <span class="spinner-border spinner-border-sm me-2"></span>
+                @L["CreateTenantModal:CreatingSpinner"]
+            </div>
+            <div class="alert alert-info mb-0 small">
+                <strong>@L["CreateTenantModal:CreatingWarningTitle"]</strong>
+                @L["CreateTenantModal:CreatingWarningBody"]
+            </div>
+        </div>
+
+    </abp-modal-body>
+    <abp-modal-footer>
+        <button type="button" id="btn-confirm-create-tenant" class="btn btn-primary" disabled>
+            @L["CreateTenantModal:ConfirmButton"]
+        </button>
+        <button type="button" id="btn-cancel-create-tenant" class="btn btn-secondary" data-bs-dismiss="modal">
+            @L["Common:Command:Cancel"]
+        </button>
+    </abp-modal-footer>
+</abp-modal>
