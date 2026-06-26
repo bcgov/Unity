@@ -1,16 +1,19 @@
+﻿using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
 namespace Unity.GrantManager.Migrations.HostMigrations
 {
-    [Migration("20260618210000_RefreshBuiltInAIPromptVersions")]
-    public partial class RefreshBuiltInAIPromptVersions : Migration
+    /// <inheritdoc />
+    public partial class RefreshAiSchema : Migration
     {
+        /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
         }
 
+        /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
         }

@@ -10,11 +10,22 @@ namespace Unity.GrantManager.Migrations.HostMigrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.Sql(
+                """
+                ALTER TABLE "AI"."AIPrompts"
+                ADD COLUMN IF NOT EXISTS "VersionNumber" integer NOT NULL DEFAULT 1;
+                """);
+
+            migrationBuilder.Sql(
+                """
+                DROP INDEX IF EXISTS "AI"."IX_AIPrompts_Name";
+                """);
+
             migrationBuilder.CreateIndex(
-                name: "IX_AIPrompts_Name",
+                name: "IX_AIPrompts_TenantId_Name_VersionNumber",
                 schema: "AI",
                 table: "AIPrompts",
-                column: "Name",
+                columns: new[] { "TenantId", "Name", "VersionNumber" },
                 unique: true);
         }
 
@@ -22,7 +33,7 @@ namespace Unity.GrantManager.Migrations.HostMigrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropIndex(
-                name: "IX_AIPrompts_Name",
+                name: "IX_AIPrompts_TenantId_Name_VersionNumber",
                 schema: "AI",
                 table: "AIPrompts");
         }
