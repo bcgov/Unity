@@ -11,13 +11,13 @@ function getDatagridActionsRowButtonTemplate(actions) {
 
     let items = '';
     if (actions.includes('EDIT'))
-        items += '<li><button type="button" class="dropdown-item row-edit-btn">Edit</button></li>';
+        items += '<button type="button" class="btn fullWidth row-edit-btn"><i class="fl fl-edit"></i><span>Edit</span></button>';
     if (actions.includes('DELETE'))
-        items += '<li><button type="button" class="dropdown-item row-delete-btn">Delete</button></li>';
+        items += '<button type="button" class="btn fullWidth row-delete-btn"><i class="fl fl-cancel"></i><span>Delete</span></button>';
 
-    return `<div class="dropdown">` +
-               `<button type="button" class="btn btn-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">&hellip;</button>` +
-               `<ul class="dropdown-menu">${items}</ul>` +
+    return `<div class="dropdown" style="float:right;">` +
+               `<button type="button" class="btn btn-light dropbtn"><i class="fl fl-attachment-more"></i></button>` +
+               `<div class="dropdown-content">${items}</div>` +
            `</div>`;
 }
 
@@ -362,25 +362,72 @@ $(function () {
     }
 
     function deleteDataRow(button) {
-        // Get the parent <tr> element of the button
         let row = $(button).closest('tr');
         let rowDataSet = row[0].dataset;
-
-        // Retrieve the data attributes from the <tr> element
         let table = $(button).closest('table');
         let tableDataSet = table[0].dataset;
+        let fieldId = tableDataSet.fieldId;
+        let container = table.closest('.custom-grid-container');
 
         abp.message.confirm(
             'Are you sure you want to delete this row?',
             'Delete Row',
             function (confirmed) {
-                if (confirmed) {
-                    // TODO: replace with real API call
-                    console.log('Calling off to API to delete row', { fieldId: tableDataSet.fieldId, row: rowDataSet.rowNo });
-                }
+                if (!confirmed) return;
+
+                container.append('<div class="grid-loading-overlay"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></div>');
+
+                $.ajax({
+                    url: abp.appPath + 'Flex/Widgets/DataGrid/DeleteRow',
+                    type: 'POST',
+                    data: {
+                        fieldId: fieldId,
+                        valueId: tableDataSet.valueId,
+                        row: rowDataSet.rowNo,
+                        worksheetId: tableDataSet.wsId,
+                        worksheetInstanceId: tableDataSet.wsiId,
+                        applicationId: $('#DetailsViewApplicationId').val()
+                    },
+                    success: function () {
+                        $.ajax({
+                            url: abp.appPath + 'Flex/Widgets/DataGrid/RefreshByField',
+                            type: 'GET',
+                            data: {
+                                valueId: tableDataSet.valueId,
+                                fieldId: fieldId,
+                                modelName: fieldId,
+                                worksheetId: tableDataSet.wsId,
+                                worksheetInstanceId: tableDataSet.wsiId,
+                                uiAnchor: tableDataSet.wsAnchor
+                            },
+                            success: function (html) {
+                                $('#' + fieldId).DataTable().destroy();
+                                $('#table-options-' + fieldId).parent().html(html);
+                                buildDataTables($('#' + fieldId));
+                                abp.notify.success('Row deleted successfully.', 'Delete Row');
+                            },
+                            error: function () {
+                                container.find('.grid-loading-overlay').remove();
+                                abp.notify.error('Failed to refresh the grid.', 'Delete Row');
+                            }
+                        });
+                    },
+                    error: function () {
+                        container.find('.grid-loading-overlay').remove();
+                        abp.notify.error('Failed to delete the row.', 'Delete Row');
+                    }
+                });
             }
         );
     }
+
+    $(document).on('mouseenter', '.custom-dynamic-table .dropdown', function () {
+        let rect = this.getBoundingClientRect();
+        $(this).find('.dropdown-content').css({
+            top: rect.bottom + 'px',
+            left: rect.left + 'px'
+        });
+    });
 
     PubSub.subscribe(
         'worksheet_preview_datagrid_refresh',
