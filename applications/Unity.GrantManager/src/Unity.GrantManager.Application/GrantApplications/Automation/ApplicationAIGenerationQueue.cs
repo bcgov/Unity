@@ -187,7 +187,10 @@ public class ApplicationAIGenerationQueue(
     private async Task<AIOperation> ResolveOperationAsync(string operationType)
     {
         var operationName = ResolveOperationName(operationType);
-        var activeOperations = await operationRepository.GetListAsync(operation => operation.IsActive);
+        var operations = await operationRepository.GetQueryableAsync();
+        var activeOperations = (operations ?? Enumerable.Empty<AIOperation>())
+            .Where(operation => operation.IsActive)
+            .ToList();
 
         var operation = activeOperations.FirstOrDefault(operation =>
             string.Equals(operation.Name, operationName, StringComparison.OrdinalIgnoreCase))
