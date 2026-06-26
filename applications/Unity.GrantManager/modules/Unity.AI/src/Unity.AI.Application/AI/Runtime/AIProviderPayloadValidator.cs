@@ -26,12 +26,12 @@ namespace Unity.AI.Runtime
                 return AIResponseValidationResult.Invalid($"Application analysis response is missing or invalid required field '{AIJsonKeys.Decision}' (expected string).");
             }
 
-             var normalizedDecision = (decision.GetString() ?? string.Empty).Trim().ToUpperInvariant();
-             if (normalizedDecision != "PROCEED" && normalizedDecision != "HOLD")
-             {
-                 return AIResponseValidationResult.Invalid(
-                     $"Application analysis response has invalid '{AIJsonKeys.Decision}' value. Expected 'PROCEED' or 'HOLD'.");
-             }
+            var normalizedDecision = (decision.GetString() ?? string.Empty).Trim().ToUpperInvariant();
+            if (normalizedDecision != "PROCEED" && normalizedDecision != "HOLD")
+            {
+                return AIResponseValidationResult.Invalid(
+                    $"Application analysis response has invalid '{AIJsonKeys.Decision}' value. Expected 'PROCEED' or 'HOLD'.");
+            }
 
             if (!root.TryGetProperty(AIJsonKeys.Errors, out var errors) || errors.ValueKind != JsonValueKind.Array)
             {
