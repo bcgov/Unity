@@ -47,13 +47,11 @@ namespace Unity.Flex.Web.Views.Shared.Components.DataGridWidget
         [Route("DeleteRow")]
         public async Task<IActionResult> DeleteRow(
             Guid valueId,
-            Guid fieldId,
             uint row,
-            Guid worksheetInstanceId,
-            Guid applicationId)
+            Guid worksheetInstanceId)
         {
             await dataGridWriteService.DeleteRowAsync(valueId, row, worksheetInstanceId);
-            return new OkObjectResult(new { fieldId, row, worksheetInstanceId });
+            return new OkObjectResult(new { row, worksheetInstanceId });
         }
 
         [Authorize]

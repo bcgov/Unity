@@ -34,7 +34,7 @@ function formatDatagridCurrency(value) {
 
 // Function to check if a value is numeric
 function isDatagridCellNumeric(value) {
-    return !Number.isNaN(value) && Number.isFinite(value);
+    return Number.isFinite(parseFloat(value));
 }
 
 // Function to calculate sum for a specific column
@@ -43,7 +43,7 @@ function calculateDatagridColumnSum(table, columnIndex) {
     table.column(columnIndex).data().each(function (value) {
         // Remove currency symbols and commas for numeric check
         let cleanedValue = value.replace(/[^\d.-]/g, '');
-        if (isNumeric(cleanedValue)) {
+        if (isDatagridCellNumeric(cleanedValue)) {
             total += Number.parseFloat(cleanedValue);
         }
     });
@@ -361,6 +361,31 @@ $(function () {
         });
     }
 
+    function refreshGridAfterDelete(fieldId, tableDataSet, container) {
+        $.ajax({
+            url: abp.appPath + 'Flex/Widgets/DataGrid/RefreshByField',
+            type: 'GET',
+            data: {
+                valueId: tableDataSet.valueId,
+                fieldId: fieldId,
+                modelName: fieldId,
+                worksheetId: tableDataSet.wsId,
+                worksheetInstanceId: tableDataSet.wsiId,
+                uiAnchor: tableDataSet.wsAnchor
+            },
+            success: function (html) {
+                $('#' + fieldId).DataTable().destroy();
+                $('#table-options-' + fieldId).parent().html(html);
+                buildDataTables($('#' + fieldId));
+                abp.notify.success('Row deleted successfully.', 'Delete Row');
+            },
+            error: function () {
+                container.find('.grid-loading-overlay').remove();
+                abp.notify.error('Failed to refresh the grid.', 'Delete Row');
+            }
+        });
+    }
+
     function deleteDataRow(button) {
         let row = $(button).closest('tr');
         let rowDataSet = row[0].dataset;
@@ -381,36 +406,12 @@ $(function () {
                     url: abp.appPath + 'Flex/Widgets/DataGrid/DeleteRow',
                     type: 'POST',
                     data: {
-                        fieldId: fieldId,
                         valueId: tableDataSet.valueId,
                         row: rowDataSet.rowNo,
-                        worksheetId: tableDataSet.wsId,
                         worksheetInstanceId: tableDataSet.wsiId,
-                        applicationId: $('#DetailsViewApplicationId').val()
                     },
                     success: function () {
-                        $.ajax({
-                            url: abp.appPath + 'Flex/Widgets/DataGrid/RefreshByField',
-                            type: 'GET',
-                            data: {
-                                valueId: tableDataSet.valueId,
-                                fieldId: fieldId,
-                                modelName: fieldId,
-                                worksheetId: tableDataSet.wsId,
-                                worksheetInstanceId: tableDataSet.wsiId,
-                                uiAnchor: tableDataSet.wsAnchor
-                            },
-                            success: function (html) {
-                                $('#' + fieldId).DataTable().destroy();
-                                $('#table-options-' + fieldId).parent().html(html);
-                                buildDataTables($('#' + fieldId));
-                                abp.notify.success('Row deleted successfully.', 'Delete Row');
-                            },
-                            error: function () {
-                                container.find('.grid-loading-overlay').remove();
-                                abp.notify.error('Failed to refresh the grid.', 'Delete Row');
-                            }
-                        });
+                        refreshGridAfterDelete(fieldId, tableDataSet, container);
                     },
                     error: function () {
                         container.find('.grid-loading-overlay').remove();
