@@ -12,5 +12,10 @@ namespace Unity.Flex.Domain.WorksheetInstances
         Task<WorksheetInstance?> GetWithValuesAsync(Guid worksheetInstanceId);
         Task<bool> ExistsAsync(Guid worksheetId, Guid instanceCorrelationId, string instanceCorrelationProvider, Guid sheetCorrelationId, string sheetCorrelationProvider, string? uiAnchor);
         Task<bool> AnyByWorksheetAndFormVersionAsync(Guid worksheetId, Guid formVersionId);
+        Task<List<WorksheetInstance>> GetByCorrelationIdsAsync(IEnumerable<Guid> correlationIds, string correlationProvider);
+        Task<List<Guid>> GetDistinctWorksheetIdsByCorrelationProviderAsync(string correlationProvider);
+        Task<List<Guid>> GetDistinctWorksheetIdsByCorrelationIdsAsync(IEnumerable<Guid> correlationIds, string correlationProvider);
+        Task<List<WorksheetInstance>> GetPagedListByCorrelationProviderAsync(string correlationProvider, int skipCount, int maxResultCount);
+        Task<int> GetCountByCorrelationProviderAsync(string correlationProvider);
     }
 }

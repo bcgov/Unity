@@ -3,8 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.Extensions.Localization;
 using Unity.GrantManager.Applications;
 using Unity.Notifications.Emails;
+using Unity.Notifications.Localization;
 using Unity.Notifications.Permissions;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
@@ -18,7 +20,8 @@ namespace Unity.GrantManager.Notifications;
 public class NotificationListAppService(
     IEmailLogsRepository emailLogsRepository,
     IRepository<Application, Guid> applicationRepository,
-    IRepository<Applicant, Guid> applicantRepository)
+    IRepository<Applicant, Guid> applicantRepository,
+    IStringLocalizer<NotificationsResource> notificationsLocalizer)
     : ApplicationService, INotificationListAppService
 {
     public virtual async Task<PagedResultDto<NotificationSummaryDto>> GetListAsync(PagedAndSortedResultRequestDto input)
@@ -62,11 +65,26 @@ public class NotificationListAppService(
                 ToAddress = log.ToAddress,
                 Subject = log.Subject,
                 Recipient = log.Recipient,
-                EmailType = log.EmailType
+                EmailType = log.EmailType,
+                EmailTypeText = GetEmailTypeText(log.EmailType)
             };
         }).ToList();
 
         return new PagedResultDto<NotificationSummaryDto>(totalCount, items);
+    }
+
+    // Maps the EmailType enum to the user-facing label shown on the Notification List
+    private string GetEmailTypeText(EmailType? emailType)
+    {
+        return emailType switch
+        {
+            EmailType.Manual => notificationsLocalizer["NotificationList:EmailType:Manual"].Value,
+            EmailType.DateBased => notificationsLocalizer["NotificationList:EmailType:Scheduled"].Value,
+            EmailType.EventBased => notificationsLocalizer["NotificationList:EmailType:EventBased"].Value,
+            EmailType.Delayed => notificationsLocalizer["NotificationList:EmailType:Delayed"].Value,
+            // Fallback for any future unmapped value: show the raw enum name rather than a blank cell.
+            _ => emailType?.ToString() ?? string.Empty
+        };
     }
 
     private const string DefaultSorting = "SentDateTime DESC";

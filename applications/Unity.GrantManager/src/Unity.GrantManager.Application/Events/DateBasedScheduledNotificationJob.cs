@@ -37,7 +37,6 @@ namespace Unity.GrantManager.Events
         private readonly IRepository<ScheduledNotification, Guid> _scheduledNotificationRepository;
         private readonly IApplicationRepository _applicationRepository;
         private readonly IRepository<ScheduledNotificationTracking, Guid> _trackingRepository;
-        private readonly IRepository<EmailLog, Guid> _emailLogRepository;
         private readonly IApplicantAgentRepository _applicantAgentRepository;
         private readonly ITenantRepository _tenantRepository;
         private readonly ILocalEventBus _localEventBus;
@@ -55,7 +54,6 @@ namespace Unity.GrantManager.Events
             IRepository<ScheduledNotification, Guid> scheduledNotificationRepository,
             IApplicationRepository applicationRepository,
             IRepository<ScheduledNotificationTracking, Guid> trackingRepository,
-            IRepository<EmailLog, Guid> emailLogRepository,
             IApplicantAgentRepository applicantAgentRepository,
             ITenantRepository tenantRepository,
             ILocalEventBus localEventBus,
@@ -73,7 +71,6 @@ namespace Unity.GrantManager.Events
             _scheduledNotificationRepository = scheduledNotificationRepository;
             _applicationRepository = applicationRepository;
             _trackingRepository = trackingRepository;
-            _emailLogRepository = emailLogRepository;
             _applicantAgentRepository = applicantAgentRepository;
             _tenantRepository = tenantRepository;
             _localEventBus = localEventBus;
@@ -380,7 +377,7 @@ namespace Unity.GrantManager.Events
                 }
 
                 // Create tracking record to prevent duplicate notifications
-                return CreateTrackingRecord(notification, application, isDraft: false);
+                return CreateTrackingRecord(notification, application);
             }
             catch (Exception ex)
             {
@@ -391,62 +388,15 @@ namespace Unity.GrantManager.Events
             }
         }
 
-        private async Task CreateDraftEmailAsync(
-            ScheduledNotification notification,
-            Application application,
-            EmailTemplate template,
-            string subject,
-            string body,
-            string emailFrom,
-            string toAddress = "")
-        {
-            try
-            {
-                var draftEmail = new EmailLog
-                {
-                    TenantId = _currentTenant.Id,
-                    ScheduledNotificationId = notification.Id,
-                    ApplicationId = application.Id,
-                    ApplicantId = application.ApplicantId,
-                    FromAddress = emailFrom,
-                    ToAddress = toAddress, // Populated if recipient is available
-                    Subject = subject,
-                    Body = body,
-                    BodyType = "HTML",
-                    Priority = "Normal",
-                    TemplateName = template.Name,
-                    Tag = "DateBasedScheduledNotificationJob", // Identifies source as background job
-                    Status = EmailStatus.Draft,
-                    EmailType = EmailType.DateBased, // Distinguish from event-based emails created by event handler
-                    RetryAttempts = 0
-                };
-
-                await _emailLogRepository.InsertAsync(draftEmail);
-                _logger.LogInformation(
-                    "DateBasedScheduledNotificationJob: Draft email created for scheduled notification {NotificationId} with subject '{Subject}'.",
-                    notification.Id, subject);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex,
-                    "DateBasedScheduledNotificationJob: Error creating draft email for scheduled notification {NotificationId}.",
-                    notification.Id);
-            }
-        }
-
         private ScheduledNotificationTracking? CreateTrackingRecord(
             ScheduledNotification notification,
-            Application application,
-            bool isDraft = false)
+            Application application)
         {
             if (string.IsNullOrEmpty(notification.DateField))
             {
-                if (!isDraft)
-                {
-                    _logger.LogWarning(
-                        "DateBasedScheduledNotificationJob: DateField is null or empty for notification {NotificationId}, cannot create tracking record.",
-                        notification.Id);
-                }
+                _logger.LogWarning(
+                    "DateBasedScheduledNotificationJob: DateField is null or empty for notification {NotificationId}, cannot create tracking record.",
+                    notification.Id);
                 return null;
             }
 
@@ -457,12 +407,9 @@ namespace Unity.GrantManager.Events
                 notification.DateField,
                 DateTime.UtcNow);
 
-            if (!isDraft)
-            {
-                _logger.LogInformation(
-                    "DateBasedScheduledNotificationJob: Notification {NotificationId} ready to be tracked for application {ApplicationId}.",
-                    notification.Id, application.Id);
-            }
+            _logger.LogInformation(
+                "DateBasedScheduledNotificationJob: Notification {NotificationId} ready to be tracked for application {ApplicationId}.",
+                notification.Id, application.Id);
 
             return tracking;
         }

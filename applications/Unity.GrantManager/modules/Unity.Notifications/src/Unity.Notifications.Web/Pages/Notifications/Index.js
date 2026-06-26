@@ -13,7 +13,7 @@ $(function () {
         'toAddress',
         'subject',
         'recipient',
-        'emailType'
+        'emailTypeText'
     ];
 
     let actionButtons = [
@@ -58,12 +58,12 @@ $(function () {
             getSubmissionIdColumn(columnIndex++),
             getTextColumn(columnIndex++, l('NotificationList:ApplicantName'), 'applicantName'),
             getSentDateColumn(columnIndex++),
-            getTextColumn(columnIndex++, l('NotificationList:Status'), 'status'),
+            getTextColumn(columnIndex++, l('NotificationList:Status'), 'status', { width: '7rem', className: 'data-table-header text-nowrap' }),
             getTextColumn(columnIndex++, l('NotificationList:From'), 'fromAddress'),
             getTextColumn(columnIndex++, l('NotificationList:To'), 'toAddress'),
             getTextColumn(columnIndex++, l('NotificationList:Subject'), 'subject'),
-            getTextColumn(columnIndex++, l('NotificationList:Recipient'), 'recipient'),
-            getTextColumn(columnIndex++, l('NotificationList:EmailType'), 'emailType')
+            getTextColumn(columnIndex++, l('NotificationList:Recipient'), 'recipient', { width: '8rem', className: 'data-table-header text-nowrap' }),
+            getTextColumn(columnIndex++, l('NotificationList:EmailType'), 'emailTypeText', { width: '9rem', className: 'data-table-header text-nowrap' })
         ];
         return columns.map((column) => ({ ...column, targets: [column.index], orderData: [column.index, 0] }));
     }
@@ -84,7 +84,8 @@ $(function () {
             title: l('NotificationList:SubmissionId'),
             name: 'submissionReferenceNo',
             data: 'submissionReferenceNo',
-            className: 'data-table-header',
+            className: 'data-table-header text-nowrap',
+            width: '8rem',
             index: columnIndex,
             render: function (data, type, row) {
                 if (type !== 'display') {
@@ -106,6 +107,7 @@ $(function () {
             name: 'sentDateTime',
             data: 'sentDateTime',
             className: 'data-table-header text-nowrap',
+            width: '8rem',
             index: columnIndex,
             render: function (data, type) {
                 return DateUtils.formatUtcDateToLocal(data, type);
@@ -122,12 +124,13 @@ function responseCallback(result) {
     };
 }
 
-function getTextColumn(columnIndex, title, dataField) {
+function getTextColumn(columnIndex, title, dataField, options = {}) {
     return {
         title: title,
         name: dataField,
         data: dataField,
-        className: 'data-table-header',
+        className: options.className ?? 'data-table-header',
+        ...(options.width ? { width: options.width } : {}),
         index: columnIndex
     };
 }

@@ -71,7 +71,7 @@ namespace Unity.GrantManager.Identity
             var displayName = cssUser.Attributes?.DisplayName?[0] ?? identityUser.NormalizedUserName.ToString();
 
             await UpdateAdditionalUserPropertiesAsync(identityUser, oidcSub, displayName);
-            await SyncUserToCurrentTenantAsync(newUserId, identityUser, oidcSub, displayName);
+            await SyncUserToCurrentTenantAsync(identityUser, oidcSub, displayName);
         }
 
         /// <summary>
@@ -104,7 +104,7 @@ namespace Unity.GrantManager.Identity
             }
             
             await UpdateAdditionalUserPropertiesAsync(identityUser, oidcSub, displayName);
-            await SyncUserToCurrentTenantAsync(newUserId, identityUser, oidcSub, displayName);
+            await SyncUserToCurrentTenantAsync(identityUser, oidcSub, displayName);
         }
 
         /// <summary>
@@ -125,7 +125,9 @@ namespace Unity.GrantManager.Identity
                     new ValidationResult("Only idir search is supported")
                 }); // for now
 
-            if (string.IsNullOrEmpty(importUserSearchDto.FirstName) && string.IsNullOrEmpty(importUserSearchDto.LastName))
+            if (string.IsNullOrEmpty(importUserSearchDto.FirstName) &&
+                string.IsNullOrEmpty(importUserSearchDto.LastName) &&
+                string.IsNullOrEmpty(importUserSearchDto.Email))
                 return users;
 
             if (!string.IsNullOrEmpty(importUserSearchDto.FirstName) && importUserSearchDto.FirstName.Length < 2)
@@ -146,7 +148,16 @@ namespace Unity.GrantManager.Identity
                     });
             }
 
-            var result = await _cssUsersApiService.SearchUsersAsync(importUserSearchDto.Directory, importUserSearchDto.FirstName, importUserSearchDto.LastName);
+            if (!string.IsNullOrEmpty(importUserSearchDto.Email) && importUserSearchDto.Email.Length < 2)
+            {
+                throw new AbpValidationException("Validation Error",
+                    new List<ValidationResult>()
+                    {
+                        new ValidationResult("Email length must be greater than 2")
+                    });
+            }
+
+            var result = await _cssUsersApiService.SearchUsersAsync(importUserSearchDto.Directory, importUserSearchDto.FirstName, importUserSearchDto.LastName, importUserSearchDto.Email);
 
             if (!result.Success) throw new UserFriendlyException("Error searching directory users");
 
@@ -227,14 +238,14 @@ namespace Unity.GrantManager.Identity
             return null;
         }       
 
-        private async Task SyncUserToCurrentTenantAsync(Guid userId, IdentityUser user, string oidcSub, string displayName)
+        private async Task SyncUserToCurrentTenantAsync(IdentityUser user, string oidcSub, string displayName)
         {
-            var existingUser = await _personRepository.FindByOidcSub(oidcSub);            
+            var existingUser = await _personRepository.FindByOidcSub(oidcSub);
             if (existingUser == null)
             {
                 await _personRepository.InsertAsync(new Person()
                 {
-                    Id = userId,
+                    Id = user.Id,
                     OidcSub = oidcSub.ToSubjectWithoutIdp(),
                     OidcDisplayName = displayName,
                     FullName = $"{user.Name} {user.Surname}",

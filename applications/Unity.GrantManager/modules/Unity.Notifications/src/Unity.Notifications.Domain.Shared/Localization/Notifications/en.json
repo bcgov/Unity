@@ -24,7 +24,7 @@
     "Filter": "Filter",
     "Export": "Export",
     "NotificationList:NotificationId": "Notification Id",
-    "NotificationList:SubmissionId": "Submission Id",
+    "NotificationList:SubmissionId": "Submission #",
     "NotificationList:ApplicantName": "Applicant Name",
     "NotificationList:SentDate": "Sent Date",
     "NotificationList:Status": "Status",
@@ -32,6 +32,10 @@
     "NotificationList:To": "To",
     "NotificationList:Subject": "Subject",
     "NotificationList:Recipient": "Recipient",
-    "NotificationList:EmailType": "Email Type"
+    "NotificationList:EmailType": "Email Type",
+    "NotificationList:EmailType:Manual": "Manual",
+    "NotificationList:EmailType:Scheduled": "Scheduled",
+    "NotificationList:EmailType:EventBased": "Event Based",
+    "NotificationList:EmailType:Delayed": "Delayed"
   }
 }
