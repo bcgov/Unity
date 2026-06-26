@@ -34,7 +34,7 @@ function formatDatagridCurrency(value) {
 
 // Function to check if a value is numeric
 function isDatagridCellNumeric(value) {
-    return Number.isFinite(parseFloat(value));
+    return Number.isFinite(Number.parseFloat(value));
 }
 
 // Function to calculate sum for a specific column
