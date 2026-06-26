@@ -27,18 +27,12 @@ public class EditVersionModalModel : AbpPageModel
         var dto = await _versionAppService.GetAsync(Id);
         Version = new CreateUpdateAIPromptVersionDto
         {
-            PromptId = dto.PromptId,
+            PromptId = dto.Id,
             VersionNumber = dto.VersionNumber,
             SystemPrompt = dto.SystemPrompt,
-            UserPromptTemplate = dto.UserPromptTemplate,
-            DeveloperNotes = dto.DeveloperNotes,
-            TargetModel = dto.TargetModel,
-            TargetProvider = dto.TargetProvider,
-            Temperature = dto.Temperature,
-            MaxTokens = dto.MaxTokens,
-            IsPublished = dto.IsPublished,
-            IsDeprecated = dto.IsDeprecated,
-            MetadataJson = dto.MetadataJson
+            UserPrompt = dto.UserPrompt,
+            MetadataJson = dto.MetadataJson,
+            IsActive = dto.IsActive
         };
     }
 

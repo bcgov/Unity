@@ -4,9 +4,11 @@ using System;
 using System.Threading.Tasks;
 using Unity.AI.Domain;
 using Unity.Modules.Shared.Permissions;
+using Volo.Abp.Data;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
 using Volo.Abp.Domain.Repositories;
+using Volo.Abp.MultiTenancy;
 
 namespace Unity.AI.Prompts;
 
@@ -21,9 +23,14 @@ public class AIPromptAppService :
         CreateUpdateAIPromptDto>,
     IAIPromptAppService
 {
-    public AIPromptAppService(IRepository<AIPrompt, Guid> repository)
+    private readonly IDataFilter<IMultiTenant> _multiTenantDataFilter;
+
+    public AIPromptAppService(
+        IRepository<AIPrompt, Guid> repository,
+        IDataFilter<IMultiTenant> multiTenantDataFilter)
         : base(repository)
     {
+        _multiTenantDataFilter = multiTenantDataFilter;
         GetPolicyName = IdentityConsts.ITOperationsPolicyName;
         GetListPolicyName = IdentityConsts.ITOperationsPolicyName;
         CreatePolicyName = IdentityConsts.ITOperationsPolicyName;
@@ -34,7 +41,7 @@ public class AIPromptAppService :
     [HttpGet("{id}")]
     public override async Task<AIPromptDto> GetAsync(Guid id)
     {
-        using (CurrentTenant.Change(null))
+        using (_multiTenantDataFilter.Disable())
         {
             return await base.GetAsync(id);
         }
@@ -43,7 +50,7 @@ public class AIPromptAppService :
     [HttpGet]
     public override async Task<PagedResultDto<AIPromptDto>> GetListAsync(PagedAndSortedResultRequestDto input)
     {
-        using (CurrentTenant.Change(null))
+        using (_multiTenantDataFilter.Disable())
         {
             return await base.GetListAsync(input);
         }
@@ -52,7 +59,7 @@ public class AIPromptAppService :
     [HttpPost]
     public override async Task<AIPromptDto> CreateAsync(CreateUpdateAIPromptDto input)
     {
-        using (CurrentTenant.Change(null))
+        using (_multiTenantDataFilter.Disable())
         {
             return await base.CreateAsync(input);
         }
@@ -61,7 +68,7 @@ public class AIPromptAppService :
     [HttpPut("{id}")]
     public override async Task<AIPromptDto> UpdateAsync(Guid id, CreateUpdateAIPromptDto input)
     {
-        using (CurrentTenant.Change(null))
+        using (_multiTenantDataFilter.Disable())
         {
             return await base.UpdateAsync(id, input);
         }
@@ -70,7 +77,7 @@ public class AIPromptAppService :
     [HttpDelete("{id}")]
     public override async Task DeleteAsync(Guid id)
     {
-        using (CurrentTenant.Change(null))
+        using (_multiTenantDataFilter.Disable())
         {
             await base.DeleteAsync(id);
         }

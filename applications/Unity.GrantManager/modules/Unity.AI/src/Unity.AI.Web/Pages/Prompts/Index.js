@@ -1,7 +1,7 @@
 $(function () {
     const l = abp.localization.getResource('AI');
 
-    // Prompt-level modals (create / edit prompt metadata only)
+    // Prompt-level modals (create / edit prompt rows)
     let createModal = new abp.ModalManager(abp.appPath + 'Prompts/CreateModal');
     let editModal   = new abp.ModalManager(abp.appPath + 'Prompts/EditModal');
 
@@ -19,27 +19,32 @@ $(function () {
             index: 0
         },
         {
-            title: l('PromptType'),
-            name: 'type',
-            data: 'type',
+            title: l('VersionNumber'),
+            name: 'versionNumber',
+            data: 'versionNumber',
             index: 1,
-            render: (data) => {
-                const types = ['Orchestrator', 'Skill', 'Instruction', 'Agent'];
-                return types[data] ?? data;
-            }
         },
         {
-            title: l('PromptDescription'),
-            name: 'description',
-            data: 'description',
+            title: l('SystemPrompt'),
+            name: 'systemPrompt',
+            data: 'systemPrompt',
             index: 2,
-            defaultContent: ''
+            defaultContent: '',
+            render: (data) => (data ?? '').slice(0, 80)
+        },
+        {
+            title: l('UserPrompt'),
+            name: 'userPrompt',
+            data: 'userPrompt',
+            index: 3,
+            defaultContent: '',
+            render: (data) => (data ?? '').slice(0, 80)
         },
         {
             title: l('PromptIsActive'),
             name: 'isActive',
             data: 'isActive',
-            index: 3,
+            index: 4,
             render: (data) => data
                 ? '<span class="badge bg-success">Active</span>'
                 : '<span class="badge bg-secondary">Inactive</span>'
@@ -50,7 +55,7 @@ $(function () {
             orderable: false,
             className: 'text-center',
             name: 'rowActions',
-            index: 4,
+            index: 5,
             rowAction: {
                 items: [
                     {
@@ -78,7 +83,7 @@ $(function () {
         }
     ];
 
-    const defaultVisibleColumns = ['name', 'type', 'description', 'isActive', 'rowActions'];
+    const defaultVisibleColumns = ['name', 'versionNumber', 'systemPrompt', 'userPrompt', 'isActive', 'rowActions'];
     const dt = $('#AIPromptsTable');
 
     const dataTable = initializeDataTable({
@@ -177,15 +182,9 @@ $(function () {
 
         $('#versionId').val(v.id);
         $('#versionNumber').val(v.versionNumber);
-        $('#versionTargetModel').val(v.targetModel ?? '');
-        $('#versionTargetProvider').val(v.targetProvider ?? '');
-        $('#versionTemperature').val(v.temperature ?? 0.2);
-        $('#versionMaxTokens').val(v.maxTokens ?? '');
-        $('#versionIsPublished').prop('checked', v.isPublished ?? false);
-        $('#versionIsDeprecated').prop('checked', v.isDeprecated ?? false);
         $('#versionSystemPrompt').val(v.systemPrompt ?? '').removeClass('is-invalid');
-        $('#versionUserPromptTemplate').val(v.userPromptTemplate ?? '').removeClass('is-invalid');
-        $('#versionDeveloperNotes').val(v.developerNotes ?? '');
+        $('#versionUserPrompt').val(v.userPrompt ?? '').removeClass('is-invalid');
+        $('#versionIsActive').prop('checked', v.isActive ?? true);
 
         // Pretty-print MetadataJson if valid
         let meta = v.metadataJson ?? '';
@@ -204,15 +203,9 @@ $(function () {
         currentVersionId = null;
 
         $('#versionId').val('');
-        $('#versionTargetModel').val('');
-        $('#versionTargetProvider').val('');
-        $('#versionTemperature').val(0.2);
-        $('#versionMaxTokens').val('');
-        $('#versionIsPublished').prop('checked', false);
-        $('#versionIsDeprecated').prop('checked', false);
         $('#versionSystemPrompt').val('');
-        $('#versionUserPromptTemplate').val('');
-        $('#versionDeveloperNotes').val('');
+        $('#versionUserPrompt').val('');
+        $('#versionIsActive').prop('checked', true);
         $('#versionMetadataJson').val('');
 
         clearJsonError();
@@ -239,8 +232,8 @@ $(function () {
         if (!promptId) return;
 
         // Required-field validation
-        const systemPrompt       = $('#versionSystemPrompt').val().trim();
-        const userPromptTemplate = $('#versionUserPromptTemplate').val().trim();
+        const systemPrompt = $('#versionSystemPrompt').val().trim();
+        const userPrompt   = $('#versionUserPrompt').val().trim();
         let valid = true;
         if (systemPrompt) {
             $('#versionSystemPrompt').removeClass('is-invalid');
@@ -248,14 +241,14 @@ $(function () {
             $('#versionSystemPrompt').addClass('is-invalid');
             valid = false;
         }
-        if (userPromptTemplate) {
-            $('#versionUserPromptTemplate').removeClass('is-invalid');
+        if (userPrompt) {
+            $('#versionUserPrompt').removeClass('is-invalid');
         } else {
-            $('#versionUserPromptTemplate').addClass('is-invalid');
+            $('#versionUserPrompt').addClass('is-invalid');
             valid = false;
         }
         if (!valid) {
-            $('#versionSystemPrompt.is-invalid, #versionUserPromptTemplate.is-invalid')[0]?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            $('#versionSystemPrompt.is-invalid, #versionUserPrompt.is-invalid')[0]?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
             return;
         }
 
@@ -263,18 +256,12 @@ $(function () {
         if (metaRaw && !validateJson(metaRaw)) return;
 
         const dto = {
-            promptId:            promptId,
-            versionNumber:       Number.parseInt($('#versionNumber').val()) || 0,
-            systemPrompt:        systemPrompt,
-            userPromptTemplate:  userPromptTemplate,
-            developerNotes:      $('#versionDeveloperNotes').val() || null,
-            targetModel:         $('#versionTargetModel').val() || null,
-            targetProvider:      $('#versionTargetProvider').val() || null,
-            temperature:         Number.parseFloat($('#versionTemperature').val()) || 0.2,
-            maxTokens:           $('#versionMaxTokens').val() ? Number.parseInt($('#versionMaxTokens').val()) : null,
-            isPublished:         $('#versionIsPublished').is(':checked'),
-            isDeprecated:        $('#versionIsDeprecated').is(':checked'),
-            metadataJson:        metaRaw || null
+            promptId:     promptId,
+            versionNumber: Number.parseInt($('#versionNumber').val()) || 0,
+            systemPrompt:  systemPrompt,
+            userPrompt:    userPrompt,
+            metadataJson:  metaRaw || null,
+            isActive:      $('#versionIsActive').is(':checked')
         };
 
         if (isNewVersion) {

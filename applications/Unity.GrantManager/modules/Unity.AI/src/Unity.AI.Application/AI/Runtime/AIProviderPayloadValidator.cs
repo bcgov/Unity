@@ -26,6 +26,13 @@ namespace Unity.AI.Runtime
                 return AIResponseValidationResult.Invalid($"Application analysis response is missing or invalid required field '{AIJsonKeys.Decision}' (expected string).");
             }
 
+             var normalizedDecision = (decision.GetString() ?? string.Empty).Trim().ToUpperInvariant();
+             if (normalizedDecision != "PROCEED" && normalizedDecision != "HOLD")
+             {
+                 return AIResponseValidationResult.Invalid(
+                     $"Application analysis response has invalid '{AIJsonKeys.Decision}' value. Expected 'PROCEED' or 'HOLD'.");
+             }
+
             if (!root.TryGetProperty(AIJsonKeys.Errors, out var errors) || errors.ValueKind != JsonValueKind.Array)
             {
                 return AIResponseValidationResult.Invalid($"Application analysis response is missing or invalid required field '{AIJsonKeys.Errors}' (expected array).");
@@ -44,6 +51,18 @@ namespace Unity.AI.Runtime
             if (!root.TryGetProperty(AIJsonKeys.Recommendations, out var recommendations) || recommendations.ValueKind != JsonValueKind.Array)
             {
                 return AIResponseValidationResult.Invalid($"Application analysis response is missing or invalid required field '{AIJsonKeys.Recommendations}' (expected array).");
+            }
+
+            var hasAnyFindings =
+                errors.GetArrayLength() > 0
+                || warnings.GetArrayLength() > 0
+                || summaries.GetArrayLength() > 0
+                || recommendations.GetArrayLength() > 0;
+
+            if (!hasAnyFindings)
+            {
+                return AIResponseValidationResult.Invalid(
+                    "Application analysis response did not include any findings. At least one finding is required.");
             }
 
             return AIResponseValidationResult.Success();

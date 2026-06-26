@@ -27,10 +27,8 @@ public class AIPromptTemplateRendererTests
 
         const string metadataJson = """
             {
-              "sections": {
-                "RULES": "- Use only provided input sections as evidence.",
-                "COMMON_RULES": "- If ATTACHMENTS is empty, use DATA only and do not mention missing attachments unless their absence is material."
-              }
+              "RULES": "- Use only provided input sections as evidence.",
+              "COMMON_RULES": "- If ATTACHMENTS is empty, use DATA only and do not mention missing attachments unless their absence is material."
             }
             """;
 
@@ -79,10 +77,8 @@ public class AIPromptTemplateRendererTests
 
         const string metadataJson = """
             {
-              "sections": {
-                "RULES": "- Use only DATA and ATTACHMENTS as evidence.",
-                "COMMON_RULES": "- Return valid JSON only."
-              }
+              "RULES": "- Use only DATA and ATTACHMENTS as evidence.",
+              "COMMON_RULES": "- Return valid JSON only."
             }
             """;
 
@@ -108,9 +104,7 @@ public class AIPromptTemplateRendererTests
 
         const string metadataJson = """
             {
-              "sections": {
-                "OUTPUT": "{ \"decision\": \"PROCEED\" }"
-              }
+              "OUTPUT": "{ \"decision\": \"PROCEED\" }"
             }
             """;
 

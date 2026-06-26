@@ -22,8 +22,7 @@ public class CreateVersionModalModel : AbpPageModel
     {
         Version = new CreateUpdateAIPromptVersionDto
         {
-            PromptId = promptId,
-            Temperature = 0.2
+            PromptId = promptId
         };
     }
 

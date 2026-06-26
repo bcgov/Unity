@@ -21,41 +21,81 @@ public static class AIDbContextModelCreatingExtensions
                 .IsRequired()
                 .HasMaxLength(200);
 
-            b.Property(x => x.Description)
-                .HasMaxLength(2000);
+            b.Property(x => x.VersionNumber)
+                .IsRequired();
 
-            b.Property(x => x.Type)
+            b.Property(x => x.SystemPrompt)
+                .IsRequired()
+                .HasColumnType("text");
+
+            b.Property(x => x.UserPrompt)
+                .IsRequired()
+                .HasColumnType("text");
+
+            b.Property(x => x.MetadataJson)
+                .HasColumnType("jsonb");
+
+            b.Property(x => x.IsActive)
+                .IsRequired();
+
+            b.HasIndex(x => new { x.TenantId, x.Name, x.VersionNumber })
+                .IsUnique();
+        });
+
+        modelBuilder.Entity<AIModel>(b =>
+        {
+            b.ToTable(AIDbProperties.DbTablePrefix + "AIModels", AIDbProperties.DbSchema);
+
+            b.ConfigureByConvention();
+
+            b.Property(x => x.Name)
+                .IsRequired()
+                .HasMaxLength(200);
+
+            b.Property(x => x.IsActive)
+                .IsRequired();
+
+            b.Property(x => x.SettingsJson)
+                .IsRequired()
+                .HasColumnType("jsonb");
+
+            b.HasIndex(x => x.Name)
+                .IsUnique();
+        });
+
+        modelBuilder.Entity<AIOperation>(b =>
+        {
+            b.ToTable(AIDbProperties.DbTablePrefix + "AIOperations", AIDbProperties.DbSchema);
+
+            b.ConfigureByConvention();
+
+            b.Property(x => x.Name)
+                .IsRequired()
+                .HasMaxLength(200);
+
+            b.Property(x => x.ExecutionMode)
+                .IsRequired()
+                .HasConversion<string>()
+                .HasMaxLength(20);
+
+            b.Property(x => x.CompletionTokens)
+                .IsRequired();
+
+            b.Property(x => x.IsActive)
                 .IsRequired();
 
             b.HasIndex(x => x.Name)
                 .IsUnique();
 
-            b.HasMany(x => x.Versions)
-                .WithOne(x => x.Prompt)
-                .HasForeignKey(x => x.PromptId)
-                .OnDelete(DeleteBehavior.Cascade);
-        });
+            b.HasOne(x => x.AIModel)
+                .WithMany()
+                .HasForeignKey(x => x.AIModelId)
+                .OnDelete(DeleteBehavior.Restrict);
 
-        modelBuilder.Entity<AIPromptVersion>(b =>
-        {
-            b.ToTable(AIDbProperties.DbTablePrefix + "AIPromptVersions", AIDbProperties.DbSchema);
-
-            b.ConfigureByConvention();
-
-            b.Property(x => x.SystemPrompt).IsRequired().HasColumnType("text");
-            b.Property(x => x.UserPromptTemplate).IsRequired().HasColumnType("text");
-
-            b.Property(x => x.TargetModel)
-                .HasMaxLength(100);
-
-            b.Property(x => x.TargetProvider)
-                .HasMaxLength(100);
-
-            b.Property(x => x.MetadataJson)
-                .HasColumnType("jsonb");
-
-            b.HasIndex(x => new { x.PromptId, x.VersionNumber })
-                .IsUnique();
+            b.HasOne(x => x.AIPrompt)
+                .WithMany()
+                .HasForeignKey(x => x.AIPromptId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
     }
 }

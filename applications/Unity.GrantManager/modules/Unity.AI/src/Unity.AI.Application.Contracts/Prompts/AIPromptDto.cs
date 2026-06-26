@@ -7,8 +7,9 @@ namespace Unity.AI.Prompts;
 public class AIPromptDto : AuditedEntityDto<Guid>
 {
     public string Name { get; set; } = string.Empty;
-    public string? Description { get; set; }
-    public PromptType Type { get; set; }
+    public int VersionNumber { get; set; }
+    public string SystemPrompt { get; set; } = string.Empty;
+    public string UserPrompt { get; set; } = string.Empty;
+    public string? MetadataJson { get; set; }
     public bool IsActive { get; set; }
-    public List<AIPromptVersionDto> Versions { get; set; } = new();
 }

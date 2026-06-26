@@ -6,9 +6,11 @@ using System.Linq;
 using System.Threading.Tasks;
 using Unity.AI.Domain;
 using Unity.Modules.Shared.Permissions;
+using Volo.Abp.Data;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
 using Volo.Abp.Domain.Repositories;
+using Volo.Abp.MultiTenancy;
 
 namespace Unity.AI.Prompts;
 
@@ -16,16 +18,21 @@ namespace Unity.AI.Prompts;
 [Route("api/app/ai/prompt-versions")]
 public class AIPromptVersionAppService :
     CrudAppService<
-        AIPromptVersion,
+        AIPrompt,
         AIPromptVersionDto,
         Guid,
         PagedAndSortedResultRequestDto,
         CreateUpdateAIPromptVersionDto>,
     IAIPromptVersionAppService
 {
-    public AIPromptVersionAppService(IRepository<AIPromptVersion, Guid> repository)
+    private readonly IDataFilter<IMultiTenant> _multiTenantDataFilter;
+
+    public AIPromptVersionAppService(
+        IRepository<AIPrompt, Guid> repository,
+        IDataFilter<IMultiTenant> multiTenantDataFilter)
         : base(repository)
     {
+        _multiTenantDataFilter = multiTenantDataFilter;
         GetPolicyName = IdentityConsts.ITOperationsPolicyName;
         GetListPolicyName = IdentityConsts.ITOperationsPolicyName;
         CreatePolicyName = IdentityConsts.ITOperationsPolicyName;
@@ -36,19 +43,20 @@ public class AIPromptVersionAppService :
     [HttpGet("by-prompt/{promptId}")]
     public async Task<ListResultDto<AIPromptVersionDto>> GetByPromptAsync(Guid promptId)
     {
-        using (CurrentTenant.Change(null))
+        using (_multiTenantDataFilter.Disable())
         {
-            var items = await Repository.GetListAsync(v => v.PromptId == promptId);
+            var selected = await Repository.GetAsync(promptId);
+            var items = await Repository.GetListAsync(v => v.TenantId == selected.TenantId && v.Name == selected.Name);
             var sorted = items.OrderBy(v => v.VersionNumber).ToList();
             return new ListResultDto<AIPromptVersionDto>(
-                ObjectMapper.Map<List<AIPromptVersion>, List<AIPromptVersionDto>>(sorted));
+                ObjectMapper.Map<List<AIPrompt>, List<AIPromptVersionDto>>(sorted));
         }
     }
 
     [HttpGet("{id}")]
     public override async Task<AIPromptVersionDto> GetAsync(Guid id)
     {
-        using (CurrentTenant.Change(null))
+        using (_multiTenantDataFilter.Disable())
         {
             return await base.GetAsync(id);
         }
@@ -57,7 +65,7 @@ public class AIPromptVersionAppService :
     [HttpGet]
     public override async Task<PagedResultDto<AIPromptVersionDto>> GetListAsync(PagedAndSortedResultRequestDto input)
     {
-        using (CurrentTenant.Change(null))
+        using (_multiTenantDataFilter.Disable())
         {
             return await base.GetListAsync(input);
         }
@@ -66,25 +74,46 @@ public class AIPromptVersionAppService :
     [HttpPost]
     public override async Task<AIPromptVersionDto> CreateAsync(CreateUpdateAIPromptVersionDto input)
     {
-        using (CurrentTenant.Change(null))
+        using (_multiTenantDataFilter.Disable())
         {
-            return await base.CreateAsync(input);
+            var prompt = await Repository.GetAsync(input.PromptId);
+            var entity = await Repository.InsertAsync(
+                new AIPrompt(
+                    Guid.CreateVersion7(),
+                    prompt.Name,
+                    input.VersionNumber,
+                    input.SystemPrompt,
+                    input.UserPrompt)
+                {
+                    TenantId = prompt.TenantId,
+                    MetadataJson = input.MetadataJson,
+                    IsActive = input.IsActive
+                });
+
+            return ObjectMapper.Map<AIPrompt, AIPromptVersionDto>(entity);
         }
     }
 
     [HttpPut("{id}")]
     public override async Task<AIPromptVersionDto> UpdateAsync(Guid id, CreateUpdateAIPromptVersionDto input)
     {
-        using (CurrentTenant.Change(null))
+        using (_multiTenantDataFilter.Disable())
         {
-            return await base.UpdateAsync(id, input);
+            var entity = await Repository.GetAsync(id);
+            entity.VersionNumber = input.VersionNumber;
+            entity.SystemPrompt = input.SystemPrompt;
+            entity.UserPrompt = input.UserPrompt;
+            entity.MetadataJson = input.MetadataJson;
+            entity.IsActive = input.IsActive;
+            entity = await Repository.UpdateAsync(entity);
+            return ObjectMapper.Map<AIPrompt, AIPromptVersionDto>(entity);
         }
     }
 
     [HttpDelete("{id}")]
     public override async Task DeleteAsync(Guid id)
     {
-        using (CurrentTenant.Change(null))
+        using (_multiTenantDataFilter.Disable())
         {
             await base.DeleteAsync(id);
         }

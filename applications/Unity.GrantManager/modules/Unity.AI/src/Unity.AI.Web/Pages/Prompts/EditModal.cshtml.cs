@@ -28,8 +28,10 @@ public class EditModalModel : AbpPageModel
         Prompt = new CreateUpdateAIPromptDto
         {
             Name = dto.Name,
-            Description = dto.Description,
-            Type = dto.Type,
+            VersionNumber = dto.VersionNumber,
+            SystemPrompt = dto.SystemPrompt,
+            UserPrompt = dto.UserPrompt,
+            MetadataJson = dto.MetadataJson,
             IsActive = dto.IsActive
         };
     }

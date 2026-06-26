@@ -5,16 +5,10 @@ namespace Unity.AI.Prompts;
 
 public class AIPromptVersionDto : AuditedEntityDto<Guid>
 {
-    public Guid PromptId { get; set; }
+    public string Name { get; set; } = string.Empty;
     public int VersionNumber { get; set; }
     public string SystemPrompt { get; set; } = string.Empty;
-    public string UserPromptTemplate { get; set; } = string.Empty;
-    public string? DeveloperNotes { get; set; }
-    public string? TargetModel { get; set; }
-    public string? TargetProvider { get; set; }
-    public double Temperature { get; set; }
-    public int? MaxTokens { get; set; }
-    public bool IsPublished { get; set; }
-    public bool IsDeprecated { get; set; }
+    public string UserPrompt { get; set; } = string.Empty;
     public string? MetadataJson { get; set; }
+    public bool IsActive { get; set; }
 }

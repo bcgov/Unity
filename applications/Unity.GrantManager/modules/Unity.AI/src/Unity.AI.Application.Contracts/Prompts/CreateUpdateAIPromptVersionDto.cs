@@ -16,32 +16,12 @@ public class CreateUpdateAIPromptVersionDto
     public string SystemPrompt { get; set; } = string.Empty;
 
     [Required]
-    [DisplayName("UserPromptTemplate")]
-    public string UserPromptTemplate { get; set; } = string.Empty;
-
-    [DisplayName("DeveloperNotes")]
-    public string? DeveloperNotes { get; set; }
-
-    [MaxLength(100)]
-    [DisplayName("TargetModel")]
-    public string? TargetModel { get; set; }
-
-    [MaxLength(100)]
-    [DisplayName("TargetProvider")]
-    public string? TargetProvider { get; set; }
-
-    [DisplayName("Temperature")]
-    public double Temperature { get; set; } = 0.2;
-
-    [DisplayName("MaxTokens")]
-    public int? MaxTokens { get; set; }
-
-    [DisplayName("IsPublished")]
-    public bool IsPublished { get; set; }
-
-    [DisplayName("IsDeprecated")]
-    public bool IsDeprecated { get; set; }
+    [DisplayName("UserPrompt")]
+    public string UserPrompt { get; set; } = string.Empty;
 
     [DisplayName("MetadataJson")]
     public string? MetadataJson { get; set; }
+
+    [DisplayName("PromptIsActive")]
+    public bool IsActive { get; set; } = true;
 }

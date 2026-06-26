@@ -13,20 +13,12 @@ namespace Unity.AI.DataSeed;
 
 /// <summary>
 /// Seeds the built-in AI prompts (application analysis, attachment summary, application scoring) into the host database.
-/// Each prompt is seeded with two versions — v0 (original single-file prompts) and v1 (modular
-/// prompts with separate rubric, score, output, and rules sections stored in MetadataJson).
-/// The seeder is idempotent: it inserts fixed records when missing and does not overwrite existing records.
+/// Each prompt family is represented as versioned rows in AIPrompts.
 /// </summary>
 public class AIPromptDataSeeder(
     IRepository<AIPrompt, Guid> promptRepository,
-    IRepository<AIPromptVersion, Guid> versionRepository,
     ICurrentTenant currentTenant) : IDataSeedContributor, ITransientDependency
 {
-    // Fixed deterministic GUIDs — never change these; they ensure idempotent re-seeding
-    private static readonly Guid AnalysisPromptId   = new("4a100001-1000-4000-a000-000000000001");
-    private static readonly Guid AttachmentPromptId = new("4a100001-1000-4000-a000-000000000002");
-    private static readonly Guid ScoresheetPromptId = new("4a100001-1000-4000-a000-000000000003");
-
     public async Task SeedAsync(DataSeedContext context)
     {
         if (context.TenantId != null) return; // host database only
@@ -43,24 +35,12 @@ public class AIPromptDataSeeder(
 
     private async Task SeedAnalysisPromptAsync()
     {
+        await EnsurePromptAsync(AIPromptTypes.ApplicationAnalysis, 0, AnalysisSystemV0, AnalysisUserV0);
         await EnsurePromptAsync(
-            AnalysisPromptId,
             AIPromptTypes.ApplicationAnalysis,
-            "Grant application analysis and review");
-
-        await EnsureVersionAsync(
-            AnalysisPromptId,
-            0,
-            AnalysisSystemV0,
-            AnalysisUserV0,
-            "v0 — initial single-file analysis prompt");
-
-        await EnsureVersionAsync(
-            AnalysisPromptId,
             1,
             AnalysisSystemV1,
             AnalysisUserV1,
-            "v1 — modular prompt with separate rubric, score, output, and rules sections",
             BuildSections(
                 rubric: AnalysisRubric,
                 score: AnalysisScore,
@@ -73,24 +53,12 @@ public class AIPromptDataSeeder(
 
     private async Task SeedAttachmentPromptAsync()
     {
+        await EnsurePromptAsync(AIPromptTypes.AttachmentSummary, 0, AttachmentSystemV0, AttachmentUserV0);
         await EnsurePromptAsync(
-            AttachmentPromptId,
             AIPromptTypes.AttachmentSummary,
-            "Attachment summarization for grant review");
-
-        await EnsureVersionAsync(
-            AttachmentPromptId,
-            0,
-            AttachmentSystemV0,
-            AttachmentUserV0,
-            "v0 — initial single-file attachment prompt");
-
-        await EnsureVersionAsync(
-            AttachmentPromptId,
             1,
             AttachmentSystemV1,
             AttachmentUserV1,
-            "v1 — modular prompt with separate output and rules sections",
             BuildSections(
                 output: AttachmentOutput,
                 rules: AttachmentRules,
@@ -101,24 +69,12 @@ public class AIPromptDataSeeder(
 
     private async Task SeedScoresheetPromptAsync()
     {
+        await EnsurePromptAsync(AIPromptTypes.ApplicationScoring, 0, ScoresheetSystemV0, ScoresheetUserV0);
         await EnsurePromptAsync(
-            ScoresheetPromptId,
             AIPromptTypes.ApplicationScoring,
-            "Scoresheet section answering assistant");
-
-        await EnsureVersionAsync(
-            ScoresheetPromptId,
-            0,
-            ScoresheetSystemV0,
-            ScoresheetUserV0,
-            "v0 — initial single-file scoresheet prompt");
-
-        await EnsureVersionAsync(
-            ScoresheetPromptId,
             1,
             ScoresheetSystemV1,
             ScoresheetUserV1,
-            "v1 — modular prompt with separate output and rules sections",
             BuildSections(
                 output: ScoresheetOutput,
                 rules: ScoresheetRules,
@@ -137,50 +93,37 @@ public class AIPromptDataSeeder(
         if (output != null)      dict["OUTPUT"]       = output;
         if (rules != null)       dict["RULES"]        = rules;
         if (commonRules != null) dict["COMMON_RULES"] = commonRules;
-        return JsonSerializer.Serialize(new { sections = dict });
+        return JsonSerializer.Serialize(dict);
     }
 
-    private async Task EnsurePromptAsync(Guid promptId, string promptName, string? description)
-    {
-        var prompt = await promptRepository.FirstOrDefaultAsync(p => p.Id == promptId);
-        if (prompt != null)
-        {
-            return;
-        }
-
-        await promptRepository.InsertAsync(new AIPrompt(promptId, promptName, PromptType.Skill)
-        {
-            Description = description,
-            IsActive = true
-        });
-    }
-
-    private async Task EnsureVersionAsync(
-        Guid promptId,
+    private async Task EnsurePromptAsync(
+        string promptName,
         int versionNumber,
         string systemPrompt,
-        string userPromptTemplate,
-        string developerNotes,
+        string userPrompt,
         string? metadataJson = null)
     {
-        var version = await versionRepository.FirstOrDefaultAsync(
-            v => v.PromptId == promptId && v.VersionNumber == versionNumber);
-        if (version != null)
+        var prompt = await promptRepository.FirstOrDefaultAsync(
+            p => p.Name == promptName && p.VersionNumber == versionNumber);
+        if (prompt != null)
         {
+            prompt.SystemPrompt = systemPrompt;
+            prompt.UserPrompt = userPrompt;
+            prompt.MetadataJson = metadataJson;
+            prompt.IsActive = true;
+            await promptRepository.UpdateAsync(prompt, autoSave: true);
             return;
         }
 
-        await versionRepository.InsertAsync(new AIPromptVersion(
+        await promptRepository.InsertAsync(new AIPrompt(
             Guid.CreateVersion7(),
-            promptId,
+            promptName,
             versionNumber,
             systemPrompt,
-            userPromptTemplate)
+            userPrompt)
         {
-            DeveloperNotes = developerNotes,
-            IsPublished = true,
-            IsDeprecated = false,
-            MetadataJson = metadataJson
+            MetadataJson = metadataJson,
+            IsActive = true
         });
     }
 
