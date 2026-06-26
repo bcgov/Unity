@@ -188,16 +188,20 @@ public class ApplicationAIGenerationQueue(
     {
         var operationName = ResolveOperationName(operationType);
         var operations = await operationRepository.GetQueryableAsync();
-        var activeOperations = (operations ?? Enumerable.Empty<AIOperation>())
-            .Where(operation => operation.IsActive)
+        var allOperations = (operations ?? Enumerable.Empty<AIOperation>())
             .ToList();
 
-        var operation = activeOperations.FirstOrDefault(operation =>
+        var operation = allOperations.FirstOrDefault(operation =>
             string.Equals(operation.Name, operationName, StringComparison.OrdinalIgnoreCase))
-            ?? activeOperations.FirstOrDefault(operation =>
+            ?? allOperations.FirstOrDefault(operation =>
                 string.Equals(operation.Name, "Default", StringComparison.OrdinalIgnoreCase));
 
         if (operation == null)
+        {
+            throw new UserFriendlyException($"AI operation '{operationType}' is not configured.");
+        }
+
+        if (!operation.IsActive)
         {
             throw new UserFriendlyException($"AI operation '{operationType}' is not configured.");
         }

@@ -83,7 +83,8 @@ public class AIPromptVersionAppService :
                     prompt.Name,
                     input.VersionNumber,
                     input.SystemPrompt,
-                    input.UserPrompt)
+                    input.UserPrompt,
+                    prompt.TenantId)
                 {
                     MetadataJson = input.MetadataJson,
                     IsActive = input.IsActive

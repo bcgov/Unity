@@ -23,7 +23,8 @@ public class AIPromptTemplateProvider(
 
         using (multiTenantDataFilter.Disable())
         {
-            var prompt = await promptRepository.FindAsync(p => p.Name == promptType && p.VersionNumber == versionNumber);
+            var prompt = await promptRepository.FindAsync(p =>
+                p.TenantId == null && p.Name == promptType && p.VersionNumber == versionNumber);
             if (prompt == null || !prompt.IsActive)
             {
                 throw new InvalidOperationException(
