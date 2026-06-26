@@ -145,7 +145,7 @@ public class EntityFrameworkCoreGrantManagerDbSchemaMigrator
     // Postgres identifiers (role/database/schema names) can't be parameterized via the wire
     // protocol, so every call site that interpolates one into DDL must first validate it
     // against this allowlist rather than relying on escaping alone.
-    private static readonly Regex SafeIdentifierPattern = new("^[A-Za-z0-9_]+$", RegexOptions.Compiled);
+    private static readonly Regex SafeIdentifierPattern = new("^[A-Za-z0-9_-]+$", RegexOptions.Compiled);
 
     private static void EnsureSafeIdentifier(string value, string fieldName)
     {
