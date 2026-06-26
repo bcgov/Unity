@@ -58,6 +58,41 @@ public class NotificationListAppServiceTests : GrantManagerApplicationTestBase
         result.TotalCount.ShouldBeGreaterThanOrEqualTo(1);
     }
 
+    [Theory]
+    [Trait("Category", "Integration")]
+    [InlineData(EmailType.Manual, "Manual")]
+    [InlineData(EmailType.DateBased, "Scheduled")]
+    [InlineData(EmailType.EventBased, "Event Based")]
+    [InlineData(EmailType.Delayed, "Delayed")]
+    public async Task GetListAsync_Should_Label_EmailType_Per_Taxonomy(EmailType emailType, string expectedLabel)
+    {
+        SetFeatureEnabled("Unity.Notifications", true);
+
+        // Arrange: Manual, Scheduled (DateBased), Event Based (EventBased), Delayed
+        var application = await _applicationRepository.GetAsync(GrantManagerTestData.Application1_Id);
+        var emailLog = await _emailLogsRepository.InsertAsync(new EmailLog
+        {
+            ApplicationId = application.Id,
+            ApplicantId = application.ApplicantId,
+            Subject = "Email Type Label Test",
+            ToAddress = "applicant@example.com",
+            FromAddress = "noreply@gov.bc.ca",
+            Status = "Sent",
+            Recipient = RecipientType.Internal,
+            EmailType = emailType
+        }, autoSave: true);
+
+        // Act
+        var result = await _notificationListAppService.GetListAsync(
+            new PagedAndSortedResultRequestDto { MaxResultCount = 1000 });
+
+        // Assert
+        var row = result.Items.FirstOrDefault(i => i.Id == emailLog.Id);
+        row.ShouldNotBeNull();
+        row.EmailType.ShouldBe(emailType);
+        row.EmailTypeText.ShouldBe(expectedLabel);
+    }
+
     [Fact]
     [Trait("Category", "Integration")]
     public async Task GetListAsync_Should_Return_Row_Even_When_Application_Missing()

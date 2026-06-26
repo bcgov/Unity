@@ -32,6 +32,10 @@
     "NotificationList:To": "To",
     "NotificationList:Subject": "Subject",
     "NotificationList:Recipient": "Recipient",
-    "NotificationList:EmailType": "Email Type"
+    "NotificationList:EmailType": "Email Type",
+    "NotificationList:EmailType:Manual": "Manual",
+    "NotificationList:EmailType:Scheduled": "Scheduled",
+    "NotificationList:EmailType:EventBased": "Event Based",
+    "NotificationList:EmailType:Delayed": "Delayed"
   }
 }
