@@ -212,11 +212,12 @@ namespace Unity.Payments.Domain.Services
                     {
                         paymentDto.ApplicantId = applicantId;
                     }
+                    if (categoryByApplicationId.TryGetValue(paymentDto.CorrelationId, out var category))
+                    {
+                        paymentDto.Category = category;
+                    }
                 }
-                if (categoryByApplicationId.TryGetValue(paymentDto.CorrelationId, out var category))
-                {
-                    paymentDto.Category = category;
-                }
+
             }
 
             var userDictionary = new Dictionary<Guid, PaymentUserDto>();
