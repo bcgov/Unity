@@ -8,6 +8,7 @@
     const ATTR_COOLDOWN = 'data-ai-cooldown-active';
     const ATTR_CHECKING = 'data-ai-cooldown-checking';
     const ATTR_OWNED_DISABLED = 'data-ai-rate-limit-disabled';
+    const ATTR_LOCAL_DISABLED = 'data-ai-local-disabled';
     const ATTR_SHARED_GENERATING = 'data-ai-shared-generating';
 
     let countdownTimer = null;
@@ -60,7 +61,9 @@
         btn.removeAttribute(ATTR_SHARED_GENERATING);
         if (btn.getAttribute(ATTR_OWNED_DISABLED) === '1') {
             btn.removeAttribute(ATTR_OWNED_DISABLED);
-            btn.removeAttribute('disabled');
+            if (btn.getAttribute(ATTR_LOCAL_DISABLED) !== '1') {
+                btn.removeAttribute('disabled');
+            }
         }
         btn.classList.remove('disabled');
         const original = btn.getAttribute(ATTR_LABEL);
@@ -87,7 +90,9 @@
         btn.removeAttribute(ATTR_CHECKING);
         if (btn.getAttribute(ATTR_OWNED_DISABLED) === '1') {
             btn.removeAttribute(ATTR_OWNED_DISABLED);
-            btn.removeAttribute('disabled');
+            if (btn.getAttribute(ATTR_LOCAL_DISABLED) !== '1') {
+                btn.removeAttribute('disabled');
+            }
         }
     }
 

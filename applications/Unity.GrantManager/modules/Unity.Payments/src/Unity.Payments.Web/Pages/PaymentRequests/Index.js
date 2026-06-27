@@ -28,7 +28,8 @@ $(function () {
         'l2ApprovalDate',
         'l3ApprovalDate',
         'CASResponse',
-        'accountCodingDisplay'
+        'accountCodingDisplay',
+        'category'
     ];
     let initialLoad = true;
     let isRestoringState = false;
@@ -489,6 +490,7 @@ $(function () {
             getBatchNameColumn(columnIndex++),
             getSubmissionConfirmationCodeColumn(columnIndex++),
             getApplicantNameColumn(columnIndex++),
+            getCategoryColumn(columnIndex++),
             getSupplierNumberColumn(columnIndex++),
             getSupplierNameColumn(columnIndex++),
             getSiteNumberColumn(columnIndex++),
@@ -951,6 +953,19 @@ $(function () {
                 }
                 // Show placeholder for null/empty
                 return nullPlaceholder;
+            }
+        };
+    }
+
+    function getCategoryColumn(columnIndex) {
+        return {
+            title: l('ApplicationPaymentListTable:Category'),
+            name: 'category',
+            data: 'category',
+            className: 'data-table-header',
+            index: columnIndex,
+            render: function (data) {
+                return data ?? nullPlaceholder;
             }
         };
     }

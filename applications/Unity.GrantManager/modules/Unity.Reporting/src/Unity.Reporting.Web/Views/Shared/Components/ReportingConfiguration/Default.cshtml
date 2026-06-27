@@ -7,7 +7,7 @@
 @inject IFeatureChecker FeatureChecker
 @model ReportingConfigurationViewModel
 
-<div class="report-config-component">
+<div class="report-config-component container-fluid">
     <input type="hidden" id="reportingFormId" value="@Model.FormId" />
     <input type="hidden" id="reportingVersionId" value="@Model.SelectedVersionId" />
     <input type="hidden" id="reportingCorrelationId" value="@Model.CorrelationId" />
@@ -73,7 +73,7 @@
                             data-bs-toggle="tooltip"
                             data-bs-placement="top"
                             data-bs-original-title="Generate view"
-                            class="btn unt-btn-primary btn-primary @(Model.HasSavedConfiguration ? "" : "generate-view-btn-hidden")"></abp-button>
+                            class="btn unt-btn-primary btn-primary btn-compact @(Model.HasSavedConfiguration ? "" : "generate-view-btn-hidden")"></abp-button>
 
             }
 
@@ -86,7 +86,7 @@
                             data-bs-toggle="tooltip"
                             data-bs-placement="top"
                             data-bs-original-title="Delete this configuration and associated view"
-                            class="btn unt-btn-danger btn-danger report-config-btn-height-fix @(Model.HasSavedConfiguration ? "" : "delete-config-btn-hidden")"></abp-button>
+                            class="btn unt-btn-danger btn-danger btn-compact @(Model.HasSavedConfiguration ? "" : "delete-config-btn-hidden")"></abp-button>
             }
 
             @if (await PermissionChecker.IsGrantedAsync(ReportingPermissions.Configuration.Update))
@@ -98,7 +98,7 @@
                             data-bs-toggle="tooltip"
                             data-bs-placement="top"
                             data-bs-original-title="Save changes"
-                            class="btn unt-btn-primary btn-primary"></abp-button>
+                            class="btn unt-btn-primary btn-primary btn-compact"></abp-button>
             }
 
             <abp-button id="btn-undo-report-configuration"
@@ -108,14 +108,14 @@
                         data-bs-toggle="tooltip"
                         data-bs-placement="top"
                         data-bs-original-title="Cancel changes"
-                        class="btn unt-btn-outline-primary btn-outline-primary mx-1"
+                        class="btn unt-btn-outline-primary btn-outline-primary btn-compact mx-1"
                         style="display: none;"></abp-button>
 
             @if (await PermissionChecker.IsGrantedAsync(ReportingPermissions.Configuration.Update))
             {
                 <fieldset class="btn-group">
                     <button type="button"
-                            class="btn unt-btn-outline-primary btn-outline-primary dropdown-toggle"
+                                class="btn unt-btn-outline-primary btn-outline-primary dropdown-toggle btn-compact"
                             data-bs-toggle="dropdown"
                             aria-expanded="false">
                         <i class="fl fl-code me-1"></i> JSON
@@ -151,7 +151,7 @@
                         data-bs-toggle="tooltip"
                         data-bs-placement="top"
                         data-bs-original-title="Navigate back to the Forms"
-                        class="btn unt-btn-outline-primary btn-outline-primary mx-1 report-config-btn-height-fix"></abp-button>
+                            class="btn unt-btn-outline-primary btn-outline-primary btn-compact mx-1"></abp-button>
             </div>
         </div>
 

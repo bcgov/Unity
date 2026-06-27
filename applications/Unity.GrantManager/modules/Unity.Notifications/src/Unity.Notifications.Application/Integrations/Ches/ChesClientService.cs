@@ -9,6 +9,7 @@ using System.Net.Http;
 using Volo.Abp.Caching;
 using Unity.GrantManager.Integrations;
 using Unity.GrantManager.Integrations.Css;
+using System;
 
 namespace Unity.Notifications.Integrations.Ches
 {
@@ -37,6 +38,35 @@ namespace Unity.Notifications.Integrations.Ches
             );
             return response;
         }
+
+        public async Task<HttpResponseMessage?> GetStatusAsync(Guid messageId)
+        {
+            string authToken = await GetAuthTokenAsync();
+            string notificationsApiUrl = await endpointManagementAppService.GetUgmUrlByKeyNameAsync(DynamicUrlKeyNames.NOTIFICATION_API_BASE);
+            var resource = $"{notificationsApiUrl}/status?msgId={messageId}";
+            var response = await resilientHttpRequest.HttpAsync(
+                HttpMethod.Get,
+                resource,
+                null,
+                authToken
+            );
+            return response;
+        }
+
+        public async Task<HttpResponseMessage?> CancelEmailAsync(Guid messageId)
+        {
+            string authToken = await GetAuthTokenAsync();
+            string notificationsApiUrl = await endpointManagementAppService.GetUgmUrlByKeyNameAsync(DynamicUrlKeyNames.NOTIFICATION_API_BASE);
+            var resource = $"{notificationsApiUrl}/cancel/{messageId}";
+            var response = await resilientHttpRequest.HttpAsync(
+                HttpMethod.Delete,
+                resource,
+                null,
+                authToken
+            );
+            return response;
+        }
+
         private async Task<string> GetAuthTokenAsync()
         {
             string notificationsAuthUrl = await endpointManagementAppService.GetUgmUrlByKeyNameAsync(DynamicUrlKeyNames.NOTIFICATION_AUTH);

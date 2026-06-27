@@ -1,0 +1,194 @@
+@page
+@using Microsoft.AspNetCore.Mvc.Localization
+@using Microsoft.Extensions.Localization
+@using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal
+@using Volo.Abp.Data
+@using Volo.Abp.Localization
+@using Volo.Abp.ObjectExtending
+@using Volo.Abp.TenantManagement.Localization
+@using Unity.TenantManagement
+@using Unity.TenantManagement.Web.Pages.TenantManagement.Tenants
+@model ConfigurationModalModel
+@inject IHtmlLocalizer<AbpTenantManagementResource> L
+@inject IStringLocalizerFactory StringLocalizerFactory
+@{
+    Layout = null;
+}
+<form method="post" asp-page="/TenantManagement/Tenants/ConfigurationModal" autocomplete="off">
+    <abp-modal size="Large">
+        <abp-modal-header title="@($"Configuration - {Model.Tenant.Name}")"></abp-modal-header>
+        <abp-modal-body>
+            <input type="hidden" asp-for="Tenant.Id" />
+            <input type="hidden" asp-for="Tenant.ConcurrencyStamp" />
+
+            <ul class="nav nav-tabs mb-3" id="configurationTabs">
+                <li class="nav-item">
+                    <button class="nav-link active" id="tab-details" data-bs-toggle="tab"
+                            data-bs-target="#pane-details" type="button"
+                            aria-controls="pane-details">
+                        Details
+                    </button>
+                </li>
+                @if (Model.CanManageManagers)
+                {
+                    <li class="nav-item">
+                        <button class="nav-link" id="tab-managers" data-bs-toggle="tab"
+                                data-bs-target="#pane-managers" type="button"
+                                aria-controls="pane-managers">
+                            Program Managers
+                        </button>
+                    </li>
+                }
+                @if (Model.CanManageConnectionStrings)
+                {
+                    <li class="nav-item">
+                        <button class="nav-link" id="tab-connections" data-bs-toggle="tab"
+                                data-bs-target="#pane-connections" type="button"
+                                aria-controls="pane-connections">
+                            Connection Strings
+                        </button>
+                    </li>
+                }
+                @if (Model.CanManageFeatures)
+                {
+                    <li class="nav-item">
+                        <button class="nav-link" id="tab-features" data-bs-toggle="tab"
+                                data-bs-target="#pane-features" type="button"
+                                aria-controls="pane-features">
+                            Features
+                        </button>
+                    </li>
+                }
+            </ul>
+
+            <div class="tab-content" id="configurationTabContent">
+
+                <div class="tab-pane fade show active" id="pane-details" aria-labelledby="tab-details">
+                    <abp-input asp-for="Tenant.Name" label="@L["TenantName"].Value" />
+                    <abp-input asp-for="Tenant.Division" label="Division" />
+                    <abp-input asp-for="Tenant.Branch" label="Branch" />
+                    <abp-input asp-for="Tenant.Description" label="Description" />
+
+                    <div class="form-group">
+                        <label for="Tenant_CasClientCode">CAS Client Code</label>
+                        <select asp-for="Tenant.CasClientCode" id="Tenant_CasClientCode" class="form-control cas-client-select"
+                                data-ministry-target="#selected-ministry">
+                            <option value="">Select a Client Code</option>
+                            @foreach (var option in Model.CasClientOptions)
+                            {
+                                <option value="@option.Code" data-ministry="@option.Ministry">@option.DisplayName</option>
+                            }
+                        </select>
+                    </div>
+
+                    @foreach (var propertyInfo in ObjectExtensionManager.Instance.GetProperties<ConfigurationModalModel.TenantInfoModel>().Where(p => !p.Name.EndsWith("_Text")))
+                    {
+                        if (propertyInfo.Type.IsEnum || !propertyInfo.Lookup.Url.IsNullOrEmpty())
+                        {
+                            if (propertyInfo.Type.IsEnum)
+                            {
+                                Model.Tenant.ExtraProperties.ToEnum(propertyInfo.Name, propertyInfo.Type);
+                            }
+                            <abp-select asp-for="Tenant.ExtraProperties[propertyInfo.Name]"
+                                        label="@propertyInfo.GetLocalizedDisplayName(StringLocalizerFactory)"
+                                        autocomplete-api-url="@propertyInfo.Lookup.Url"
+                                        autocomplete-selected-item-name="@Model.Tenant.GetProperty(propertyInfo.Name+"_Text")"
+                                        autocomplete-selected-item-value="@Model.Tenant.GetProperty(propertyInfo.Name)"
+                                        autocomplete-filter-param-name="@propertyInfo.Lookup.FilterParamName"
+                                        autocomplete-items-property-name="@propertyInfo.Lookup.ResultListPropertyName"
+                                        autocomplete-display-property-name="@propertyInfo.Lookup.DisplayPropertyName"
+                                        autocomplete-value-property-name="@propertyInfo.Lookup.ValuePropertyName"></abp-select>
+                        }
+                        else
+                        {
+                            <abp-input type="@propertyInfo.GetInputType()"
+                                       asp-for="Tenant.ExtraProperties[propertyInfo.Name]"
+                                       label="@propertyInfo.GetLocalizedDisplayName(StringLocalizerFactory)"
+                                       asp-format="@propertyInfo.GetInputFormatOrNull()"
+                                       value="@propertyInfo.GetInputValueOrNull(Model.Tenant.GetProperty(propertyInfo.Name))" />
+                        }
+                    }
+                </div>
+
+                @if (Model.CanManageManagers)
+                {
+                <div class="tab-pane fade" id="pane-managers" aria-labelledby="tab-managers">
+
+                    <div class="mb-3">
+                        <h6 class="text-secondary mb-2">
+                            Current Program Managers
+                            <span id="config-managers-count" class="badge bg-secondary ms-1"></span>
+                        </h6>
+                        <div id="config-managers-loading" class="text-muted small">
+                            <span class="spinner-border spinner-border-sm me-1"></span>Loading...
+                        </div>
+                        <div id="config-managers-content" style="max-height: 200px; overflow-y: auto;"></div>
+                    </div>
+
+                    <hr class="my-3" />
+
+                    <h6 class="text-secondary mb-2">Assign Program Manager</h6>
+                    <div class="input-group mb-2">
+                        <select id="config-search-field" class="form-select" style="max-width: 170px;" aria-label="Manager search field">
+                            <option value="firstName">First Name</option>
+                            <option value="lastName">Last Name</option>
+                            <option value="firstAndLast">First &amp; Last Name</option>
+                            <option value="email">Email</option>
+                        </select>
+                        <input type="text" id="config-search-value" class="form-control" placeholder="At least 2 characters..." aria-label="Manager search value" />
+                    </div>
+                    <input type="hidden" asp-for="SelectedManagerUserIdentifier" id="config-selected-user-identifier" />
+
+                    <abp-button id="ConfigTenantAdminSearchButton"
+                                text="@L["Search"].Value"
+                                icon-type="Other"
+                                icon="fl fl-search"
+                                button-type="Light"
+                                class="mb-2" />
+                    <abp-table id="ConfigUserSearchTable"></abp-table>
+
+                    <div id="config-selected-user-display" class="text-muted small mt-2" style="display:none">
+                        Selected: <span id="config-selected-user-name" class="fw-semibold text-body"></span>
+                    </div>
+                </div>
+                }
+
+                @if (Model.CanManageConnectionStrings)
+                {
+                    <div class="tab-pane fade" id="pane-connections" aria-labelledby="tab-connections">
+                        <div class="form-group mb-3">
+                            <label asp-for="ConnectionStrings.TenantConnectionString">Tenant Connection String</label>
+                            <textarea asp-for="ConnectionStrings.TenantConnectionString"
+                                      class="form-control font-monospace"
+                                      rows="3"></textarea>
+                            <small class="form-text text-muted">Displayed decrypted. Saved encrypted automatically.</small>
+                        </div>
+                        <div class="form-group mb-3">
+                            <label asp-for="ConnectionStrings.ReadOnlyConnectionString">Read-Only Connection String</label>
+                            <textarea asp-for="ConnectionStrings.ReadOnlyConnectionString"
+                                      class="form-control font-monospace"
+                                      rows="3"></textarea>
+                            <small class="form-text text-muted">Displayed decrypted. Saved encrypted automatically.</small>
+                        </div>
+                    </div>
+                }
+
+                @if (Model.CanManageFeatures)
+                {
+                    <div class="tab-pane fade" id="pane-features" aria-labelledby="tab-features">
+                        <div id="config-features-loading" class="text-center py-3 text-muted" style="display:none">
+                            <span class="spinner-border spinner-border-sm me-2"></span>Loading features...
+                        </div>
+                        <div id="config-features-content"></div>
+                        <input type="hidden" id="config-features-json" asp-for="FeaturesJson" />
+                    </div>
+                }
+
+            </div>
+        </abp-modal-body>
+        <abp-modal-footer>
+            <button class="btn btn-primary" data-busy-text="Saving..." type="submit">Save</button>
+            <button class="btn btn-secondary" data-bs-dismiss="modal" type="button">Cancel</button>
+        </abp-modal-footer>
+    </abp-modal>
+</form>

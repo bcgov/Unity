@@ -6,6 +6,6 @@ namespace Unity.GrantManager.Integrations.Css
     public interface ICssUsersApiService : IApplicationService
     {
         Task<UserSearchResult> FindUserAsync(string directory, string guid);
-        Task<UserSearchResult> SearchUsersAsync(string directory, string? firstName = null, string? lastName = null);
+        Task<UserSearchResult> SearchUsersAsync(string directory, string? firstName = null, string? lastName = null, string? email = null);
     }
 }

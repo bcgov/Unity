@@ -4,6 +4,8 @@
     {
         public const string TenantConnectionStringName = "Tenant";
 
-        public const string TenantConnectionStringTenantDb = "UnityGrantTenant";
+        public const string TenantReadOnlyConnectionStringName = "Tenant_Readonly";
+
+        public const string TenantLicencePlateExtraPropertyKey = "LicencePlate";
     }
 }

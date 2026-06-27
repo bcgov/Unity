@@ -37,6 +37,7 @@ using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Entities;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Features;
+using Unity.Modules.Shared.Specializations;
 
 namespace Unity.GrantManager.GrantApplications;
 
@@ -1106,6 +1107,16 @@ public class GrantApplicationAppService(
     /// <returns>A list of application actions with their state machine permitted and authorization status.</returns>
     public async Task<ListResultDto<ApplicationActionDto>> GetActions(Guid applicationId, bool includeInternal = false)
     {
+        if (await featureChecker.IsEnabledAsync(SpecializationConsts.Onboarding))
+        {
+            var onboardingManager = LazyServiceProvider.LazyGetRequiredService<OnboardingApplicationManager>();
+            var onboardingActionList = await onboardingManager.GetActions(applicationId);
+            var onboardingDtos = ObjectMapper.Map<List<ApplicationActionResultItem>, List<ApplicationActionDto>>(onboardingActionList);
+            foreach (var item in onboardingDtos)
+                item.IsAuthorized = true;
+            return new ListResultDto<ApplicationActionDto>(onboardingDtos);
+        }
+
         var actionList = await applicationManager.GetActions(applicationId);
         var application = await applicationRepository.GetAsync(applicationId, true);
 
@@ -1139,6 +1150,14 @@ public class GrantApplicationAppService(
     /// <param name="triggerAction">The action to be invoked on an Application</param>
     public async Task<GrantApplicationDto> TriggerAction(Guid applicationId, GrantApplicationAction triggerAction)
     {
+        if (await featureChecker.IsEnabledAsync(SpecializationConsts.Onboarding))
+        {
+            var onboardingManager = LazyServiceProvider.LazyGetRequiredService<OnboardingApplicationManager>();
+            var onboardingApplication = await onboardingManager.TriggerAction(applicationId, triggerAction);
+            await LocalEventBus.PublishAsync(new ApplicationChangedEvent { Action = triggerAction, ApplicationId = applicationId });
+            return ObjectMapper.Map<Application, GrantApplicationDto>(onboardingApplication);
+        }
+
         // AUTHORIZATION HANDLING
         var application = await applicationRepository.GetAsync(applicationId, true);
         if (!await AuthorizationService.IsGrantedAsync(application, GetActionAuthorizationRequirement(triggerAction)))
@@ -1154,11 +1173,13 @@ public class GrantApplicationAppService(
 
         application = await applicationManager.TriggerAction(applicationId, triggerAction);
 
+        // After the workflow state change, publish to the local event bus
         await LocalEventBus.PublishAsync(
             new ApplicationChangedEvent
             {
-                Action = triggerAction,
-                ApplicationId = applicationId
+                ApplicationId = applicationId,
+                Action = triggerAction,  // e.g. GrantApplicationAction.Approve / Deny
+                TenantId = CurrentTenant.Id
             }
         );
 

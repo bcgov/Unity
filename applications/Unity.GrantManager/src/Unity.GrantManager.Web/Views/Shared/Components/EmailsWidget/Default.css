@@ -20,8 +20,131 @@
     margin-left: 8px;
     margin-top: 2px;
     margin-bottom: 2px;
+    height: 36px;
 }
 
+#applicationEmailsWidget .label-column-aligned {
+    display: flex;
+    align-items: flex-start;
+    height: 100%;
+    padding-bottom: 0px;
+    flex-direction: column;
+    justify-content: flex-end;
+}
+
+#applicationEmailsWidget .col-1 {
+    width: 44px;
+}
+
+#applicationEmailsWidget .col-auto {
+    flex: 0 0 auto;
+    width: auto;
+}
+
+/* Uniform label width for To, Cc, Bcc fields */
+#applicationEmailsWidget .row.align-items-start > .col-auto,
+#applicationEmailsWidget .row.align-items-center > .col-auto {
+    flex: 0 0 46px !important;
+    width: 46px !important;
+}
+
+#applicationEmailsWidget .col {
+    flex: 1 0 0%;
+    width: 100%;
+}
+
+#applicationEmailsWidget .email-to-container {
+    position: relative;
+}
+
+#applicationEmailsWidget .email-to-container .email-input {
+    padding-right: 60px;
+}
+
+#applicationEmailsWidget .email-bcc-button {
+    position: absolute;
+    right: 8px;
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+    white-space: nowrap;
+    z-index: 10;
+}
+
+#applicationEmailsWidget #bcc-input-row {
+    display: none;
+}
+
+#applicationEmailsWidget #bcc-input-row.show {
+    display: flex;
+}
+
+
+#applicationEmailsWidget #scheduled-delay-section #send-on-display:empty {
+    display: none;
+}
+
+#applicationEmailsWidget #scheduled-delay-section #send-on-display:empty ~ #btn-clear-schedule {
+    display: none !important;
+}
+
+#applicationEmailsWidget .email-bcc-button.hide {
+    display: none;
+}
+
+#applicationEmailsWidget .from-field-container {
+    align-items: center;
+    display: flex;
+    height: 36px;
+    margin: 0px;
+    flex-grow: 1;
+    gap: 0.3rem;
+    position: relative;
+    width: 100%;
+    margin-top: 4px;
+}
+
+#applicationEmailsWidget .from-field-container .btn-send-from {
+    position: absolute;
+    right: 0;
+    top: 0;
+    height: 100%;
+    padding: 0 12px !important;
+    white-space: nowrap;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#applicationEmailsWidget .from-label {
+    font-size: 1rem !important;
+    font-weight: 500;
+    white-space: nowrap;
+    margin-left: 0px !important;
+    margin-bottom: 0;
+    color: var(--bc-colors-grey-text-300);
+    min-width: 40px;
+}
+
+#applicationEmailsWidget .from-field-container .from-input {
+    min-width: 150px;
+    width: 100%;
+    height: 36px;
+    padding: 6px 8px !important;
+    position: relative;
+    flex-grow: 1;
+    padding-right: 75px !important;
+    display: block;
+    margin: 0px !important;
+}
+
+#applicationEmailsWidget .from-field-container .mb-3 {
+    display: inline-block;
+    vertical-align: middle;
+    margin-top: 9px;
+    margin-bottom: 0px;
+    flex-grow: 1;
+}
 
 #applicationEmailsWidget .email-form label {
     color: var(--bc-colors-grey-text-300);
@@ -30,6 +153,40 @@
     text-overflow: ellipsis;
     margin-left: 8px;
     margin-bottom: 0;
+    display: inline-block;
+}
+
+/* Override margin-top for labels in row layouts (To, Cc, Bcc) */
+#applicationEmailsWidget .row.align-items-start label,
+#applicationEmailsWidget .row.align-items-center label {
+    margin-top: 15px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+#applicationEmailsWidget .form-label {
+    display: inline-block;
+    color: var(--bc-colors-grey-text-300, #666666);
+    font-size: 1rem !important;
+    font-family: 'BCSans', var(--bs-font-sans-serif) !important;
+    font-weight: var(--bs-body-font-weight, 400);
+    margin-bottom: 0 !important;
+    margin-top: 0 !important;
+}
+
+/* Specific alignment fix for labels in horizontal layouts */
+#applicationEmailsWidget #scheduled-label-container {
+    display: none;
+    padding-top: 8px; /* Adjust this value to perfectly center label with the first line of input */
+}
+
+#applicationEmailsWidget #scheduled-label-container.show {
+    display: inline;
+}
+
+/* Ensure the parent row aligns to the top to prevent shifting when errors appear */
+#applicationEmailsWidget .row.align-items-start {
+    align-items: flex-start !important;
 }
 
 #applicationEmailsWidget .email-input:hover {
@@ -63,6 +220,61 @@
     color: #b9b9b9 !important;
 }
 
+/* Email template select styling */
+#applicationEmailsWidget #EmailTemplate {
+    margin-right: 8px;
+    margin-left: 8px;
+    margin-top: 2px;
+    margin-bottom: 2px;
+}
+
+/* 1. Style the select itself when the empty value is selected */
+#applicationEmailsWidget #EmailTemplate:has(option[value=""]:checked) {
+    color: #b9b9b9 !important;
+}
+
+/* 2. Style the placeholder option inside the dropdown list */
+#applicationEmailsWidget #EmailTemplate option[value=""] {
+    color: #b9b9b9 !important;
+}
+
+/* 3. Ensure valid selections return to your default text color (e.g., dark grey/black) */
+#applicationEmailsWidget #EmailTemplate option:not([value=""]) {
+    color: #212529; 
+}
+
+#applicationEmailsWidget button {
+    margin-top: 0px;
+    margin-bottom: 0px;
+    height: 36px;
+    min-height: 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    max-height: 36px;
+    padding-top: 0px;
+    padding-bottom: 0px;
+    box-sizing: border-box;
+}
+
+#user-dropdown > button {
+  height: 36px;
+  min-height: 36px;
+  max-height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-top: 0px;
+  padding-bottom: 0px;
+  box-sizing: border-box;
+  margin-top: 0px;
+  margin-bottom: 0px;
+}
+
+#applicationEmailsWidget .email-buttons-group {
+    display: flex;
+    align-items: center;
+}
 
 #applicationEmailsWidget .email-btn {
     margin-top: 10px;
@@ -78,6 +290,97 @@
 
 #applicationEmailsWidget .email-btn:hover {
     box-shadow: -3px 3px 11px -3px rgba(33, 33, 33, .2);
+}
+
+#applicationEmailsWidget .btn-send-close {
+    margin-top: 0px;
+    margin-bottom: 0px;
+}
+
+/* Send dropdown button styling */
+#applicationEmailsWidget .btn-group .dropdown-toggle {
+    padding-left: 1px !important;
+    padding-right: 1px !important;
+    border-left: 1px solid rgba(255, 255, 255, 0.2) !important;
+    min-width: 20px;
+    width: 20px;
+    margin-left: 0px !important;
+}
+
+/* When dropdown is not visible/enabled, apply right border radius to send button */
+#applicationEmailsWidget .btn-group:not(:has(.dropdown-toggle)) #btn-send-top {
+    border-top-right-radius: 3px !important;
+    border-bottom-right-radius: 3px !important;
+}
+
+#applicationEmailsWidget .form-select {
+    height: 36px;
+}
+
+#applicationEmailsWidget .btn-group .dropdown-toggle.show {
+    background-color: inherit !important;
+    color: inherit !important;
+    border-color: inherit !important;
+}
+
+#applicationEmailsWidget .btn-group .dropdown-toggle::after {
+    display: none;
+}
+
+#applicationEmailsWidget .btn-group .dropdown-toggle i {
+    font-size: 0.85rem;
+}
+
+/* Dropdown menu positioning */
+#applicationEmailsWidget .btn-group .dropdown-menu {
+    left: 0 !important;
+    right: auto !important;
+    margin-top: 0.25rem !important;
+    transform: translate(0px, 36px) !important;
+}
+
+.dropdown-menu .btn-send-menu,
+.dropdown-menu .btn-schedule-send-menu {
+    display: block;
+    width: 100%;
+    text-align: left;
+}
+
+/* Email buttons row - sticky at top */
+#applicationEmailsWidget #EmailForm .row:has(.email-buttons-container) {
+    position: sticky;
+    top: 0;
+    background-color: white;
+    z-index: 980;
+    padding-bottom: 0.8rem !important;
+}
+
+#scheduled-display-container {
+    padding-bottom: 10px;
+}
+
+/* Email buttons container */
+.email-buttons-container {
+    display: flex !important;
+    align-items: center;
+    gap: 0.5rem;
+    width: 100%;
+    overflow: visible;
+}
+
+.email-buttons-container abp-modal-footer {
+    display: contents;
+}
+
+.email-buttons-container .ms-auto {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    overflow: visible;
+}
+
+.email-buttons-container .dropdown-menu {
+    z-index: 1070;
 }
 
 #applicationEmailsWidget .email-lbl {
@@ -109,7 +412,24 @@
 }
 
 #applicationEmailsWidget .field-validation-error {
+    display: inline-block;
     margin-left: 8px;
+    white-space: nowrap;
+    font-size: 0.875rem;
+    color: #dc3545;
+}
+
+#applicationEmailsWidget .input-validation-error {
+    border-color: #dc3545 !important;
+    border-width: 1px !important;
+    box-shadow: inset 0 1px 1px rgba(0,0,0,.075), 0 0 0.2rem rgba(220, 53, 69, 0.5) !important;
+}
+
+#applicationEmailsWidget .from-field-container .field-validation-error {
+    position: absolute;
+    top: 85%;
+    margin-left: 0;
+    display: inline-block;
 }
 
 #applicationEmailsWidget .confirmation-label {
@@ -204,8 +524,6 @@
     justify-content: center;
 }
 
-
-
 #EmailForm {
     display: none;
 }
@@ -218,13 +536,12 @@
     display: none;
 }
 
-#applicationEmailsWidget .toast-top-center { 
+#applicationEmailsWidget .toast-top-center {
     top: 220px;
     margin: 0 auto;
     left: 50%;
     margin-left: -450px;
 }
-
 
 #applicationEmailsWidget #modal-background.active,
 #applicationEmailsWidget #modal-content.active {
@@ -242,7 +559,7 @@
 	border-radius: 50%;
 	border: 5px solid #eaf5fe;
 	border-right-color: #5597d4;
-	animation: rotateSpinner 800ms linear infinite;  
+	animation: rotateSpinner 800ms linear infinite;
 }
 
 #applicationEmailsWidget .email-spinner-text {
@@ -264,6 +581,275 @@
 
 #applicationEmailsWidget .btn-delete-draft {
     background-color: white !important;
+}
+
+#schedule-modal-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    z-index: 1060;
+}
+
+#schedule-send-modal {
+    display: none !important;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 600px;
+    max-width: 90vw;
+    max-height: 90vh;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+    z-index: 1061;
+    padding: 24px;
+    flex-direction: column;
+    overflow: auto;
+}
+
+#schedule-send-modal.active {
+    display: flex !important;
+}
+
+/* Header */
+.schedule-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.schedule-modal-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin: 0;
+    color: #212529;
+}
+
+.btn-close-modal {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: #6c757d;
+    padding: 0;
+    width: auto;
+    height: auto;
+}
+
+.btn-close-modal:hover {
+    color: #212529;
+}
+
+/* Body Layout */
+.schedule-modal-body {
+    display: flex;
+    gap: 2rem;
+    flex: 1;
+    min-height: 350px;
+}
+
+/* Calendar Section */
+.schedule-calendar-section {
+    flex: 1;
+    min-width: 300px;
+}
+
+.calendar-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.calendar-month-year {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #212529;
+    min-width: 150px;
+    text-align: center;
+}
+
+.calendar-nav button {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    font-size: 1rem;
+}
+
+/* Calendar Grid */
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 2px;
+}
+
+.calendar-day-header {
+    text-align: center;
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: #6c757d;
+    padding: 8px 0;
+    border-bottom: 1px solid #e9ecef;
+    margin-bottom: 4px;
+    grid-column: span 1;
+}
+
+.calendar-day {
+    text-align: center;
+    padding: 8px;
+    cursor: pointer;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+    border: 2px solid transparent;
+}
+
+.calendar-day.past {
+    color: #adb5bd;
+    cursor: not-allowed;
+    background: transparent;
+}
+
+.calendar-day.today {
+    background: #0d6efd;
+    color: #fff;
+    border-radius: 50%;
+    font-weight: 600;
+}
+
+.calendar-day.selected {
+    border-color: #0d6efd;
+    font-weight: 600;
+    background: #e7f1ff;
+}
+
+.calendar-day:not(.past):hover {
+    background: #f8f9fa;
+    border-color: #0d6efd;
+}
+
+.calendar-day.today.selected {
+    border-color: #fff;
+    background: #0d6efd;
+}
+
+/* Inputs Section */
+.schedule-inputs-section {
+    flex: 1;
+    min-width: 240px;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+#schedule-date-input {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.schedule-input-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.schedule-input-group label {
+    font-size: 0.95rem;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+    color: #495057;
+}
+
+#schedule-date-input,
+#schedule-time-select {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.95rem;
+    border: 1px solid #ced4da;
+    border-radius: 0.25rem;
+}
+
+#schedule-date-input:focus,
+#schedule-time-select:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+    outline: none;
+}
+
+.input-group-text {
+    background: #f8f9fa;
+    border-color: #ced4da;
+    color: #495057;
+}
+
+/* Footer */
+.schedule-modal-footer {
+    margin-top: auto;
+    padding-top: 16px;
+    border-top: 1px solid #dee2e6;
+}
+
+.schedule-modal-footer button {
+    min-width: 100px;
+}
+
+#schedule-modal-validation {
+    font-size: 0.85rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    #schedule-send-modal {
+        width: 95vw;
+        max-height: 95vh;
+        padding: 16px;
+    }
+
+    .schedule-modal-body {
+        flex-direction: column;
+        gap: 1rem;
+        min-height: auto;
+    }
+
+    .schedule-calendar-section,
+    .schedule-inputs-section {
+        min-width: auto;
+        width: 100%;
+    }
+}
+
+#btn-picker-ok {
+    display: none;
+}
+
+#send-on-display {
+    font-size: 0.9em;
+}
+
+#btn-clear-schedule {
+    display: none;
+}
+
+#delay-datetime-validation {
+    display: none;
+    font-size: 0.85em;
+}
+
+.send-date-hint {
+    font-size: 0.85em;
+}
+
+input#EmailFrom.input-validation-error {
+    margin-bottom: -20px !important;
+}
+
+
+
+.mt-14 {
+    margin-top: 14px !important;
 }
 
 @keyframes rotateSpinner {
