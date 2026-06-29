@@ -771,7 +771,19 @@
   margin-bottom: 14px;
 }
 
-.dm-search-input { padding-right: 36px; }
+.dm-search-input {
+  padding: 6px 32px 6px 10px;
+  font-size: 0.82rem;
+}
+
+.dm-search-icon {
+  position: absolute;
+  right: 10px;
+  display: flex;
+  align-items: center;
+  color: #94a3b8;
+  pointer-events: none;
+}
 
 .dm-search-clear {
   position: absolute;
