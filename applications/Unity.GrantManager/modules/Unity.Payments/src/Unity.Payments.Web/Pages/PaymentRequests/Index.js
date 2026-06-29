@@ -962,6 +962,7 @@ $(function () {
             title: l('ApplicationPaymentListTable:Category'),
             name: 'category',
             data: 'category',
+            refreshData: true,
             className: 'data-table-header',
             index: columnIndex,
             render: function (data) {
