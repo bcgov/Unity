@@ -88,6 +88,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentResults
                     NotificationDate = application.NotificationDate,
                     DueDate = application.DueDate,
                     ProjectSummary = application.ProjectSummary,
+                    ExternalStatusVisibility = application.ExternalStatusVisibility,
                 };
             }
 

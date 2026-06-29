@@ -380,7 +380,8 @@ public class GrantApplicationAppService(
             input.LikelihoodOfFunding,
             input.TotalProjectBudget,
             input.NotificationDate,
-            input.RiskRanking
+            input.RiskRanking,
+            input.ExternalStatusVisibility
         );
 
         if (application.IsInFinalDecisionState())
@@ -508,6 +509,7 @@ public class GrantApplicationAppService(
             input.DueDiligenceStatus ??= application.DueDiligenceStatus;
             input.AssessmentResultStatus ??= application.AssessmentResultStatus;
             input.DeclineRational ??= application.DeclineRational;
+            input.ExternalStatusVisibility = application.ExternalStatusVisibility;
 
             input.NotificationDate ??= application.NotificationDate;
             input.DueDate ??= application.DueDate;
@@ -522,6 +524,7 @@ public class GrantApplicationAppService(
                 input.DueDiligenceStatus ??= application.DueDiligenceStatus;
                 input.AssessmentResultStatus ??= application.AssessmentResultStatus;
                 input.DeclineRational ??= application.DeclineRational;
+                input.ExternalStatusVisibility = application.ExternalStatusVisibility;
             }
         }
     }

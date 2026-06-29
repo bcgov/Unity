@@ -88,6 +88,9 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentResults
             [Display(Name = "AssessmentResultsView:AssessmentResultsForm.RiskRanking")]
             [SelectItems(nameof(RiskRankingList))]
             public string? RiskRanking { get; set; }
+
+            [Display(Name = "AssessmentResultsView:AssessmentResultsForm.Published")]
+            public bool ExternalStatusVisibility { get; set; } = false;
         }
 
         public List<SelectListItem> FundingRiskList { get; set; } = FormatOptionsList(AssessmentResultsOptionsList.FundingList);

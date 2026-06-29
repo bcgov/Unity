@@ -84,6 +84,8 @@ public class Application : FullAuditedAggregateRoot<Guid>, IMultiTenant
 
     public string? SubStatus { get; set; }
 
+    public bool ExternalStatusVisibility { get; set; } = false;
+
     public string? DeclineRational { get; set; }
 
     public string? Notes { get; set; }
@@ -150,7 +152,7 @@ public class Application : FullAuditedAggregateRoot<Guid>, IMultiTenant
         return GrantApplicationStateGroups.FinalDecisionStates.Contains(ApplicationStatus.StatusCode);
     }
 
-    public void UpdateAlwaysChangeableFields(string? notes, string? subStatus, string? likelihoodOfFunding, decimal? totalProjectBudget, DateTime? notificationDate, string? riskRanking)
+    public void UpdateAlwaysChangeableFields(string? notes, string? subStatus, string? likelihoodOfFunding, decimal? totalProjectBudget, DateTime? notificationDate, string? riskRanking, bool externalStatusVisibility)
     {
         Notes = notes;
         SubStatus = subStatus;
@@ -158,6 +160,7 @@ public class Application : FullAuditedAggregateRoot<Guid>, IMultiTenant
         TotalProjectBudget = totalProjectBudget ?? 0;
         NotificationDate = notificationDate;
         RiskRanking = riskRanking;
+        ExternalStatusVisibility = externalStatusVisibility;
 
         // Recalculate percentage when TotalProjectBudget changes
         UpdatePercentageTotalProjectBudget();

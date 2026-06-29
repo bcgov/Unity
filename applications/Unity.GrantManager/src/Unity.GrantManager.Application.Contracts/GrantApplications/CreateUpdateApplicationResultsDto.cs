@@ -20,6 +20,7 @@ namespace Unity.GrantManager.GrantApplications
         public decimal? RecommendedAmount { get; set; }
         public string? DeclineRational { get; set; }
         public string? AssessmentResultStatus { get; set; }
-        public string? RiskRanking { get; set;} 
+        public string? RiskRanking { get; set; }
+        public bool ExternalStatusVisibility { get; set; } = false;
     }
 }
