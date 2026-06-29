@@ -29,7 +29,11 @@
             }
         </div>
         <div class="form-version pr-1">@Model.SubmissionFormDescription</div>
-        <div class="application-status">@Model.ApplicationStatus</div>    
+        <div class="application-status">@Model.ApplicationStatus</div>
+        @if (Model.ExternalStatusVisibility)
+        {
+            <div class="published-status">Status Published</div>
+        }
     </div>
 </div>
 

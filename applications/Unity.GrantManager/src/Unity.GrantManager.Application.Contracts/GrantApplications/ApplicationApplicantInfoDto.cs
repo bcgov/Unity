@@ -20,6 +20,7 @@ public class ApplicationApplicantInfoDto : GrantApplicationApplicantDto
     public string SigningAuthorityCellPhone { get; set; } = string.Empty;
     public string ApplicationReferenceNo { get; set; } = string.Empty;
     public string ApplicationStatus { get; set; } = string.Empty;
+    public bool ExternalStatusVisibility { get; set; } = false;
     public GrantApplicationState ApplicationStatusCode { get; set; }
     public List<ApplicantAddressDto> ApplicantAddresses { get; set; } = [];
     public Guid ApplicationFormId { get; set; }
