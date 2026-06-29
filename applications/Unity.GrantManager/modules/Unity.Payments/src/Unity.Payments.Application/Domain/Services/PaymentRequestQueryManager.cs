@@ -56,7 +56,8 @@ namespace Unity.Payments.Domain.Services
 
         private static readonly HashSet<string> ApplicantFields = new(StringComparer.OrdinalIgnoreCase)
         {
-            "applicantName"
+            "applicantName",
+            "category"
         };
 
         public Task<int> GetPaymentRequestCountBySiteIdAsync(Guid siteId)
