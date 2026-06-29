@@ -164,7 +164,5 @@ public class ProjectInfoScriptBundleContributor : BundleContributor
     {
         context.Files
           .AddIfNotContains("/Views/Shared/Components/ProjectInfo/Default.js");
-        context.Files
-          .AddIfNotContains("/libs/jquery-maskmoney/dist/jquery.maskMoney.min.js");
     }
 }

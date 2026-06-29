@@ -174,10 +174,7 @@
 </form>
 <script defer>
     (function () {
-        $('.custom-currency-input').maskMoney({
-            thousands: ',',
-            decimal: '.'
-        }).maskMoney('mask');
+        initCurrencyInputs(document);
 
         let fieldId = $('#fieldId').val();
         let formId = `editRowData-${fieldId}`;

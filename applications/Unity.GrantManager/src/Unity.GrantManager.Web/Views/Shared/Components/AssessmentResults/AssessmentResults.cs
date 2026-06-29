@@ -110,8 +110,6 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentResults
         {
             context.Files
               .AddIfNotContains("/Views/Shared/Components/AssessmentResults/Default.js");
-            context.Files
-              .AddIfNotContains("/libs/jquery-maskmoney/dist/jquery.maskMoney.min.js");
         }
     }
 }
