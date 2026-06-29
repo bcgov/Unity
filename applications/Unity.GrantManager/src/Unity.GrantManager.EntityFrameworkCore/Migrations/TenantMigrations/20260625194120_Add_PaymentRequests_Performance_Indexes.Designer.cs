@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Unity.GrantManager.EntityFrameworkCore;
@@ -12,9 +13,11 @@ using Volo.Abp.EntityFrameworkCore;
 namespace Unity.GrantManager.Migrations.TenantMigrations
 {
     [DbContext(typeof(GrantTenantDbContext))]
-    partial class GrantTenantDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260625194120_Add_PaymentRequests_Performance_Indexes")]
+    partial class Add_PaymentRequests_Performance_Indexes
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -884,6 +887,9 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .HasColumnType("text");
 
                     b.Property<string>("OrgStatus")
+                        .HasColumnType("text");
+
+                    b.Property<string>("OrganizationSize")
                         .HasColumnType("text");
 
                     b.Property<string>("OrganizationType")
@@ -3213,10 +3219,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .HasColumnType("uuid")
                         .HasColumnName("CreatorId");
 
-                    b.Property<string>("EmailType")
-                        .HasMaxLength(32)
-                        .HasColumnType("character varying(32)");
-
                     b.Property<string>("ExtraProperties")
                         .IsRequired()
                         .HasColumnType("text")
@@ -3241,10 +3243,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<string>("Priority")
                         .IsRequired()
                         .HasColumnType("text");
-
-                    b.Property<string>("Recipient")
-                        .HasMaxLength(32)
-                        .HasColumnType("character varying(32)");
 
                     b.Property<int>("RetryAttempts")
                         .HasColumnType("integer");
@@ -3356,102 +3354,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.HasIndex("S3ObjectKey");
 
                     b.ToTable("EmailLogAttachments", "Notifications");
-                });
-
-            modelBuilder.Entity("Unity.GrantManager.Notifications.ScheduledNotification", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("ConcurrencyStamp")
-                        .IsConcurrencyToken()
-                        .IsRequired()
-                        .HasMaxLength(40)
-                        .HasColumnType("character varying(40)")
-                        .HasColumnName("ConcurrencyStamp");
-
-                    b.Property<string>("ExtraProperties")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("ExtraProperties");
-
-                    b.Property<Guid>("FormId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("EmailTemplateId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("TriggerType")
-                        .IsRequired()
-                        .HasMaxLength(64)
-                        .HasColumnType("text");
-
-                    b.Property<string>("TriggerDetail")
-                        .HasMaxLength(1000)
-                        .HasColumnType("text");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("EventType")
-                        .HasMaxLength(128)
-                        .HasColumnType("text");
-
-                    b.Property<Guid?>("ApplicationStatusId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("ApplicationStatus")
-                        .HasMaxLength(128)
-                        .HasColumnType("text");
-
-                    b.Property<string>("RecipientCategory")
-                        .HasColumnType("text");
-
-                    b.Property<string>("RecipientIdentifier")
-                        .HasColumnType("text");
-
-                    b.Property<string>("DateField")
-                        .HasMaxLength(128)
-                        .HasColumnType("text");
-
-                    b.Property<Guid>("TenantId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("TenantId");
-
-                    b.Property<bool>("IsDeleted")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(false)
-                        .HasColumnName("IsDeleted");
-
-                    b.Property<Guid?>("DeleterId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("DeleterId");
-
-                    b.Property<DateTime?>("DeletionTime")
-                        .HasColumnType("timestamp without time zone")
-                        .HasColumnName("DeletionTime");
-
-                    b.Property<DateTime>("CreationTime")
-                        .HasColumnType("timestamp without time zone")
-                        .HasColumnName("CreationTime");
-
-                    b.Property<Guid?>("CreatorId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("CreatorId");
-
-                    b.Property<DateTime?>("LastModificationTime")
-                        .HasColumnType("timestamp without time zone")
-                        .HasColumnName("LastModificationTime");
-
-                    b.Property<Guid?>("LastModifierId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("LastModifierId");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("ScheduledNotifications", "Notifications");
                 });
 
             modelBuilder.Entity("Unity.Notifications.Templates.EmailTemplate", b =>

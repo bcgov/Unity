@@ -121,7 +121,7 @@ public class PaymentRequestAppService_Tests : PaymentsApplicationTestBase
         _ = await _paymentRequestRepository.InsertAsync(new PaymentRequest(Guid.NewGuid(), paymentRequestDto), true);
 
         // Act
-        var paymentRequests = await _paymentRequestAppService.GetListAsync(new Volo.Abp.Application.Dtos.PagedAndSortedResultRequestDto()
+        var paymentRequests = await _paymentRequestAppService.GetListAsync(new PaymentRequestListInputDto()
         {
             MaxResultCount = 100
         });
@@ -158,7 +158,7 @@ public class PaymentRequestAppService_Tests : PaymentsApplicationTestBase
         _ = await _paymentRequestRepository.InsertAsync(new PaymentRequest(Guid.NewGuid(), paymentRequestDto), true);
 
         // Act
-        var paymentRequests = await _paymentRequestAppService.GetListAsync(new Volo.Abp.Application.Dtos.PagedAndSortedResultRequestDto
+        var paymentRequests = await _paymentRequestAppService.GetListAsync(new PaymentRequestListInputDto
         {
             MaxResultCount = 10,
             SkipCount = 0,
