@@ -525,7 +525,7 @@
     "ApplicantPortalSettings:PortalStatusHeading": "Applicant Portal Status",
     "ApplicantPortalSettings:InternalStatus": "Internal Status",
     "ApplicantPortalSettings:PortalStatusLabel": "External Status",
-    "ApplicantPortalSettings:PortalNotifiedStatusLabel": "Notified Status",
+    "ApplicantPortalSettings:PortalPublishedStatusLabel": "Published Status",
     "ApplicantPortalSettings:SaveChanges": "Save Changes",
     "ApplicantPortalSettings:ResetChanges": "Reset",
     "ApplicantPortalSettings:NoChanges": "No changes to save.",
