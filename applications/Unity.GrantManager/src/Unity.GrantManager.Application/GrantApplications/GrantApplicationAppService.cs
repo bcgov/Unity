@@ -380,8 +380,7 @@ public class GrantApplicationAppService(
             input.LikelihoodOfFunding,
             input.TotalProjectBudget,
             input.NotificationDate,
-            input.RiskRanking,
-            input.ExternalStatusVisibility
+            input.RiskRanking
         );
 
         if (application.IsInFinalDecisionState())
@@ -419,6 +418,15 @@ public class GrantApplicationAppService(
             await PublishCustomFieldsAsync(application.Id, input);
         }
 
+        await applicationRepository.UpdateAsync(application);
+        return ObjectMapper.Map<Application, GrantApplicationDto>(application);
+    }
+
+    [Authorize(UnitySelector.Review.AssessmentResults.Update.Default)]
+    public async Task<GrantApplicationDto> UpdateExternalStatusVisibilityAsync(Guid id, bool externalStatusVisibility)
+    {
+        var application = await applicationRepository.GetAsync(id);
+        application.ExternalStatusVisibility = externalStatusVisibility;
         await applicationRepository.UpdateAsync(application);
         return ObjectMapper.Map<Application, GrantApplicationDto>(application);
     }
@@ -509,7 +517,6 @@ public class GrantApplicationAppService(
             input.DueDiligenceStatus ??= application.DueDiligenceStatus;
             input.AssessmentResultStatus ??= application.AssessmentResultStatus;
             input.DeclineRational ??= application.DeclineRational;
-            input.ExternalStatusVisibility = application.ExternalStatusVisibility;
 
             input.NotificationDate ??= application.NotificationDate;
             input.DueDate ??= application.DueDate;
@@ -524,7 +531,6 @@ public class GrantApplicationAppService(
                 input.DueDiligenceStatus ??= application.DueDiligenceStatus;
                 input.AssessmentResultStatus ??= application.AssessmentResultStatus;
                 input.DeclineRational ??= application.DeclineRational;
-                input.ExternalStatusVisibility = application.ExternalStatusVisibility;
             }
         }
     }

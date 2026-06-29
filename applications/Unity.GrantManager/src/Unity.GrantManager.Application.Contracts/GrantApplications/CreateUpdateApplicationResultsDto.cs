@@ -21,6 +21,5 @@ namespace Unity.GrantManager.GrantApplications
         public string? DeclineRational { get; set; }
         public string? AssessmentResultStatus { get; set; }
         public string? RiskRanking { get; set; }
-        public bool ExternalStatusVisibility { get; set; } = false;
     }
 }
