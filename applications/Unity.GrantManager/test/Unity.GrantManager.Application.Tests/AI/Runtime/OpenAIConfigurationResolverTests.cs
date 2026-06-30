@@ -53,6 +53,17 @@ public class OpenAIConfigurationResolverTests
             });
 
         operationRepository
+            .GetListAsync()
+            .Returns(Task.FromResult(new List<AIOperation>
+            {
+                new(Guid.NewGuid(), AIPromptTypes.ApplicationAnalysis, modelId, promptId)
+                {
+                    ExecutionMode = AIExecutionMode.Sequential,
+                    CompletionTokens = 2222,
+                    IsActive = true
+                }
+            }));
+        operationRepository
             .GetListAsync(Arg.Any<Expression<Func<AIOperation, bool>>>())
             .Returns(callInfo =>
             {
@@ -117,6 +128,17 @@ public class OpenAIConfigurationResolverTests
                 })
             });
 
+        operationRepository
+            .GetListAsync()
+            .Returns(Task.FromResult(new List<AIOperation>
+            {
+                new(Guid.NewGuid(), "Default", modelId, promptId)
+                {
+                    ExecutionMode = AIExecutionMode.Sequential,
+                    CompletionTokens = 2000,
+                    IsActive = true
+                }
+            }));
         operationRepository
             .GetListAsync(Arg.Any<Expression<Func<AIOperation, bool>>>())
             .Returns(callInfo =>
@@ -245,6 +267,16 @@ public class OpenAIConfigurationResolverTests
             });
 
         operationRepository
+            .GetListAsync()
+            .Returns(Task.FromResult(new List<AIOperation>
+            {
+                new(Guid.NewGuid(), AIPromptTypes.ApplicationAnalysis, modelId, promptId)
+                {
+                    IsActive = true,
+                    CompletionTokens = 2000
+                }
+            }));
+        operationRepository
             .GetListAsync(Arg.Any<Expression<Func<AIOperation, bool>>>())
             .Returns(callInfo =>
             {
@@ -334,6 +366,9 @@ public class OpenAIConfigurationResolverTests
     private static IRepository<AIOperation, Guid> CreateEmptyOperationRepository()
     {
         var operationRepository = Substitute.For<IRepository<AIOperation, Guid>>();
+        operationRepository
+            .GetListAsync()
+            .Returns(Task.FromResult(new List<AIOperation>()));
         operationRepository
             .GetListAsync(Arg.Any<Expression<Func<AIOperation, bool>>>())
             .Returns(Task.FromResult(new List<AIOperation>()));

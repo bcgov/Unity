@@ -1,4 +1,3 @@
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
 using Shouldly;
@@ -12,6 +11,7 @@ using Unity.AI;
 using Unity.AI.DataSeed;
 using Unity.AI.Domain;
 using Unity.AI.Prompts;
+using Unity.GrantManager.GrantApplications;
 using Volo.Abp.Data;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.MultiTenancy;
@@ -22,26 +22,36 @@ namespace Unity.GrantManager.AI.DataSeed;
 public class AIOperationDataSeederTests
 {
     [Fact]
-    public async Task Should_Seed_Configured_Default_Profile_Model_When_Missing()
+    public async Task Should_Seed_BuiltIn_Model_And_Operations()
     {
         var operationRepository = Substitute.For<IRepository<AIOperation, Guid>>();
         operationRepository
             .GetQueryableAsync()
             .Returns(Task.FromResult(new List<AIOperation>().AsQueryable()));
+        operationRepository
+            .GetListAsync(Arg.Any<System.Linq.Expressions.Expression<Func<AIOperation, bool>>>())
+            .Returns(Task.FromResult(new List<AIOperation>()));
 
         var modelRepository = Substitute.For<IRepository<AIModel, Guid>>();
-        var insertedModels = new List<AIModel>();
+        var model = new AIModel(Guid.NewGuid(), "Gpt5Mini")
+        {
+            IsActive = true,
+            SettingsJson = """
+            {
+              "MaxOutputTokenCountSupported": true,
+              "Temperature": null
+            }
+            """
+        };
         modelRepository
             .GetQueryableAsync()
-            .Returns(Task.FromResult(new List<AIModel>().AsQueryable()));
+            .Returns(Task.FromResult(new List<AIModel> { model }.AsQueryable()));
         modelRepository
-            .InsertAsync(Arg.Any<AIModel>(), Arg.Any<bool>(), Arg.Any<CancellationToken>())
-            .Returns(callInfo =>
-            {
-                var model = callInfo.Arg<AIModel>();
-                insertedModels.Add(model);
-                return Task.FromResult(model);
-            });
+            .GetListAsync()
+            .Returns(Task.FromResult(new List<AIModel> { model }));
+        modelRepository
+            .GetListAsync(Arg.Any<System.Linq.Expressions.Expression<Func<AIModel, bool>>>())
+            .Returns(Task.FromResult(new List<AIModel> { model }));
 
         var insertedOperations = new List<AIOperation>();
         operationRepository
@@ -68,46 +78,25 @@ public class AIOperationDataSeederTests
                 return Task.FromResult(prompts.Where(predicate).ToList());
             });
 
+        var requestRepository = Substitute.For<IRepository<AIGenerationRequest, Guid>>();
+        requestRepository
+            .GetListAsync(Arg.Any<System.Linq.Expressions.Expression<Func<AIGenerationRequest, bool>>>())
+            .Returns(Task.FromResult(new List<AIGenerationRequest>()));
         var currentTenant = Substitute.For<ICurrentTenant>();
-        var configuration = BuildConfiguration(new Dictionary<string, string?>
-        {
-            ["Azure:Operations:Defaults:Provider"] = "OpenAI",
-            ["Azure:Operations:Defaults:Profile"] = "Gpt5Mini",
-            ["Azure:OpenAI:Profiles:Gpt5Mini:DeploymentName"] = "gpt-5-mini",
-            ["Azure:OpenAI:Endpoint"] = "https://example.test",
-            ["Azure:Operations:ApplicationAnalysis:MaxCompletionTokens"] = "4000",
-            ["Azure:Operations:AttachmentSummary:MaxCompletionTokens"] = "2000",
-            ["Azure:Operations:ApplicationScoring:MaxCompletionTokens"] = "8000"
-        });
-
         var seeder = new AIOperationDataSeeder(
             operationRepository,
             modelRepository,
             promptRepository,
-            configuration,
+            requestRepository,
             currentTenant,
             Substitute.For<ILogger<AIOperationDataSeeder>>());
 
         await seeder.SeedAsync(new DataSeedContext());
 
-        insertedModels.Count.ShouldBe(1);
-        insertedModels[0].Name.ShouldBe("Gpt5Mini");
-        DeserializeSettings(insertedModels[0].SettingsJson).MaxOutputTokenCountSupported.ShouldBeTrue();
-        DeserializeSettings(insertedModels[0].SettingsJson).Temperature.ShouldBeNull();
-
-    }
-
-    private static IConfiguration BuildConfiguration(IReadOnlyDictionary<string, string?> values)
-    {
-        return new ConfigurationBuilder()
-            .AddInMemoryCollection(values)
-            .Build();
-    }
-
-    private static AIModelSettings DeserializeSettings(string settingsJson)
-    {
-        var settings = JsonSerializer.Deserialize<AIModelSettings>(settingsJson);
-        settings.ShouldNotBeNull();
-        return settings;
+        insertedOperations.Count.ShouldBe(4);
+        insertedOperations.ShouldContain(operation => operation.Name == "Default" && operation.IsActive);
+        insertedOperations.ShouldContain(operation => operation.Name == AIPromptTypes.ApplicationAnalysis && operation.CompletionTokens == 4000);
+        insertedOperations.ShouldContain(operation => operation.Name == AIPromptTypes.AttachmentSummary && operation.CompletionTokens == 2000);
+        insertedOperations.ShouldContain(operation => operation.Name == AIPromptTypes.ApplicationScoring && operation.CompletionTokens == 8000);
     }
 }
