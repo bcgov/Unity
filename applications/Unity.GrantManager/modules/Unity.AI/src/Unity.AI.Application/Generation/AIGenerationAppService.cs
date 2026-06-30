@@ -18,7 +18,6 @@ namespace Unity.AI.Generation;
 
 [Route("api/app/ai/generation")]
 public class AIGenerationAppService(
-    IAttachmentSummaryService attachmentSummaryService,
     IApplicationAIGenerationQueue aiGenerationQueue,
     AIFeatureGuard featureGuard,
     ICurrentTenant currentTenant)
@@ -37,12 +36,15 @@ public class AIGenerationAppService(
             return [];
         }
 
-        var summaries = await attachmentSummaryService.GenerateForApplicationAsync(
+        await aiGenerationQueue.QueueAttachmentSummaryAsync(
             input.ApplicationId,
+            currentTenant.Id,
             input.PromptVersion,
             input.AttachmentIds);
 
-        return summaries.Select(_ => new AttachmentSummaryResultDto { Completed = true }).ToList();
+        return input.AttachmentIds
+            .Select(_ => new AttachmentSummaryResultDto { Completed = false })
+            .ToList();
     }
 
     [Authorize(AIPermissions.Analysis.GenerateApplicationAnalysis)]
@@ -79,8 +81,10 @@ public class AIGenerationAppService(
         await featureGuard.EnsureEnabledAsync(AIFeatures.ApplicationAnalysis, AILocalizationKeys.GenerateAllDisabled);
         await featureGuard.EnsureEnabledAsync(AIFeatures.Scoring, AILocalizationKeys.GenerateAllDisabled);
 
-        await aiGenerationQueue.QueueAllAIStagesAsync(applicationId, currentTenant.Id, promptVersion);
+        await aiGenerationQueue.QueueAttachmentSummaryAsync(applicationId, currentTenant.Id, promptVersion);
+        await aiGenerationQueue.QueueApplicationAnalysisAsync(applicationId, currentTenant.Id, promptVersion);
+        await aiGenerationQueue.QueueApplicationScoringAsync(applicationId, currentTenant.Id, promptVersion);
 
-        return new ApplicationContentResultDto { Completed = true };
+        return new ApplicationContentResultDto { Completed = false };
     }
 }
