@@ -488,15 +488,7 @@ Output EXACTLY one word: RELATED or UNRELATED.
                         f"[SelfCorrection] iter={iteration}/{max_iter} k={k} "
                         f"elapsed_ms={elapsed_ms} total_ms={total_ms} outcome=success"
                     )
-                    # Only annotate when the correction loop actually re-prompted.
-                    # Iteration 1 is the normal path (some samples may fail
-                    # validation and get dropped by majority voting, but that is
-                    # not self-correction), so don't tag it.
-                    if iteration > 1:
-                        metadata = {
-                            **metadata,
-                            "self_correction": {"iterations": iteration},
-                        }
+                    metadata = self._annotate_self_correction(metadata, iteration)
                     return sql, metadata, self._sum_token_usages(attempt_tokens), None
 
                 last_validation_error = error_detail
@@ -519,7 +511,17 @@ Output EXACTLY one word: RELATED or UNRELATED.
             f"final_error={final_error_detail!r}"
         )
         return None, None, self._sum_token_usages(attempt_tokens), final_error_detail
-    
+
+    @staticmethod
+    def _annotate_self_correction(metadata: Dict, iteration: int) -> Dict:
+        """Tag metadata with the iteration count when self-correction kicked in.
+
+        Iteration 1 succeeded on the first try, so it carries no annotation.
+        """
+        if iteration > 1:
+            return {**metadata, "self_correction": {"iterations": iteration}}
+        return metadata
+
     def _check_hardcoded_examples(self, question: str) -> Optional[Tuple[str, Dict]]:
         """Check for hardcoded example queries (for demo/testing)"""
         examples = {

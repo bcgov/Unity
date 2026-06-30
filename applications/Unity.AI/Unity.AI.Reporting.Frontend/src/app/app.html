@@ -91,13 +91,12 @@
                         <div class="failure-actions">
                           @if ((turn.retryCount ?? 0) < MAX_RETRIES && turn.canRetry) {
                             <button class="retry-btn" (click)="retryQuestion(turn)">Try Again</button>
+                          } @else if (turn.errorType === 'ai_failure') {
+                            <button class="retry-btn" (click)="editQuestion(turn)">Edit question</button>
+                            <p class="retry-hint">Try rephrasing your question or adding more detail.</p>
                           } @else {
                             <button class="retry-btn retry-btn--disabled" disabled>Try Again</button>
-                            @if (turn.errorType === 'ai_failure') {
-                              <p class="retry-hint">Try rephrasing your question or adding more detail.</p>
-                            } @else {
-                              <p class="retry-hint">Please start a new question.</p>
-                            }
+                            <p class="retry-hint">Please start a new question.</p>
                           }
                         </div>
                       </div>
@@ -195,6 +194,7 @@
           <div class="ask-row-container">
             <div class="ask-row">
               <input type="text"
+                #questionInput
                 [(ngModel)]="question"
                 placeholder="Refine the report..."
                 (keyup.enter)="askQuestion()" />
