@@ -27,7 +27,6 @@ public class EditModalModel : AbpPageModel
         var dto = await _promptAppService.GetAsync(Id);
         Prompt = new CreateUpdateAIPromptDto
         {
-            Name = dto.Name,
             VersionNumber = dto.VersionNumber,
             SystemPrompt = dto.SystemPrompt,
             UserPrompt = dto.UserPrompt,
