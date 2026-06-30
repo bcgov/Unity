@@ -27,6 +27,7 @@ public partial class CreateUpdateAIPromptDtoToAIPromptMapper : MapperBase<Create
     [MapperIgnoreTarget(nameof(AIPrompt.CreatorId))]
     [MapperIgnoreTarget(nameof(AIPrompt.LastModificationTime))]
     [MapperIgnoreTarget(nameof(AIPrompt.LastModifierId))]
+    [MapperIgnoreTarget(nameof(AIPrompt.Name))]
     public override partial AIPrompt Map(CreateUpdateAIPromptDto source);
 
     [MapperIgnoreTarget(nameof(AIPrompt.TenantId))]
@@ -35,13 +36,7 @@ public partial class CreateUpdateAIPromptDtoToAIPromptMapper : MapperBase<Create
     [MapperIgnoreTarget(nameof(AIPrompt.CreatorId))]
     [MapperIgnoreTarget(nameof(AIPrompt.LastModificationTime))]
     [MapperIgnoreTarget(nameof(AIPrompt.LastModifierId))]
+    [MapperIgnoreTarget(nameof(AIPrompt.Name))]
     public override partial void Map(CreateUpdateAIPromptDto source, AIPrompt destination);
 }
 
-[Mapper]
-public partial class AIPromptToAIPromptVersionDtoMapper : MapperBase<AIPrompt, AIPromptVersionDto>
-{
-    public override partial AIPromptVersionDto Map(AIPrompt source);
-
-    public override partial void Map(AIPrompt source, AIPromptVersionDto destination);
-}

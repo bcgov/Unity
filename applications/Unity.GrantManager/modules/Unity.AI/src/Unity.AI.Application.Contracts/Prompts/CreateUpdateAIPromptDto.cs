@@ -1,3 +1,4 @@
+using System;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 
@@ -5,10 +6,7 @@ namespace Unity.AI.Prompts;
 
 public class CreateUpdateAIPromptDto
 {
-    [Required]
-    [MaxLength(200)]
-    [DisplayName("PromptName")]
-    public string Name { get; set; } = string.Empty;
+    public Guid PromptId { get; set; }
 
     [DisplayName("VersionNumber")]
     public int VersionNumber { get; set; }

@@ -1,17 +1,17 @@
 @page
 @using Unity.AI.Localization
-@using Unity.AI.Web.Pages.Prompts.Versions
+@using Unity.AI.Web.Pages.Prompts.Entries
 @using Microsoft.Extensions.Localization
 @using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal
-@model CreateVersionModalModel
+@model CreateEntryModalModel
 @inject IStringLocalizer<AIResource> L
 @{
     Layout = null;
 }
 
-<abp-dynamic-form abp-model="Version" asp-page="/Prompts/Versions/CreateVersionModal">
+<abp-dynamic-form abp-model="Prompt" asp-page="/Prompts/Entries/CreateEntryModal">
     <abp-modal>
-        <abp-modal-header title="@L["AIPromptVersion"].Value"></abp-modal-header>
+        <abp-modal-header title="@L["AIPrompt"].Value"></abp-modal-header>
         <abp-modal-body>
             <abp-form-content />
         </abp-modal-body>

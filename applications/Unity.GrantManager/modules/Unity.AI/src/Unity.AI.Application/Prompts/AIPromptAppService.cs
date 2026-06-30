@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Unity.AI.Domain;
 using Unity.Modules.Shared.Permissions;
@@ -38,6 +40,19 @@ public class AIPromptAppService :
         DeletePolicyName = IdentityConsts.ITOperationsPolicyName;
     }
 
+    [HttpGet("by-prompt/{promptId}")]
+    public async Task<ListResultDto<AIPromptDto>> GetByPromptAsync(Guid promptId)
+    {
+        using (_multiTenantDataFilter.Disable())
+        {
+            var selected = await Repository.GetAsync(promptId);
+            var items = await Repository.GetListAsync(v => v.TenantId == selected.TenantId && v.Name == selected.Name);
+            var sorted = items.OrderBy(v => v.VersionNumber).ToList();
+            return new ListResultDto<AIPromptDto>(
+                ObjectMapper.Map<List<AIPrompt>, List<AIPromptDto>>(sorted));
+        }
+    }
+
     [HttpGet("{id}")]
     public override async Task<AIPromptDto> GetAsync(Guid id)
     {
@@ -61,7 +76,21 @@ public class AIPromptAppService :
     {
         using (_multiTenantDataFilter.Disable())
         {
-            return await base.CreateAsync(input);
+            var prompt = await Repository.GetAsync(input.PromptId);
+            var entity = await Repository.InsertAsync(
+                new AIPrompt(
+                    Guid.CreateVersion7(),
+                    prompt.Name,
+                    input.VersionNumber,
+                    input.SystemPrompt,
+                    input.UserPrompt,
+                    prompt.TenantId)
+                {
+                    MetadataJson = input.MetadataJson,
+                    IsActive = input.IsActive
+                });
+
+            return ObjectMapper.Map<AIPrompt, AIPromptDto>(entity);
         }
     }
 
@@ -70,7 +99,14 @@ public class AIPromptAppService :
     {
         using (_multiTenantDataFilter.Disable())
         {
-            return await base.UpdateAsync(id, input);
+            var entity = await Repository.GetAsync(id);
+            entity.VersionNumber = input.VersionNumber;
+            entity.SystemPrompt = input.SystemPrompt;
+            entity.UserPrompt = input.UserPrompt;
+            entity.MetadataJson = input.MetadataJson;
+            entity.IsActive = input.IsActive;
+            entity = await Repository.UpdateAsync(entity);
+            return ObjectMapper.Map<AIPrompt, AIPromptDto>(entity);
         }
     }
 

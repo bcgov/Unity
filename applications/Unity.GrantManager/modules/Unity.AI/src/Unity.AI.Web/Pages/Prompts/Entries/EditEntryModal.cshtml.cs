@@ -4,28 +4,28 @@ using System.Threading.Tasks;
 using Unity.AI.Prompts;
 using Volo.Abp.AspNetCore.Mvc.UI.RazorPages;
 
-namespace Unity.AI.Web.Pages.Prompts.Versions;
+namespace Unity.AI.Web.Pages.Prompts.Entries;
 
-public class EditVersionModalModel : AbpPageModel
+public class EditEntryModalModel : AbpPageModel
 {
     [HiddenInput]
     [BindProperty(SupportsGet = true)]
     public Guid Id { get; set; }
 
     [BindProperty]
-    public CreateUpdateAIPromptVersionDto Version { get; set; } = new();
+    public CreateUpdateAIPromptDto Prompt { get; set; } = new();
 
-    private readonly IAIPromptVersionAppService _versionAppService;
+    private readonly IAIPromptAppService _promptAppService;
 
-    public EditVersionModalModel(IAIPromptVersionAppService versionAppService)
+    public EditEntryModalModel(IAIPromptAppService promptAppService)
     {
-        _versionAppService = versionAppService;
+        _promptAppService = promptAppService;
     }
 
     public async Task OnGetAsync()
     {
-        var dto = await _versionAppService.GetAsync(Id);
-        Version = new CreateUpdateAIPromptVersionDto
+        var dto = await _promptAppService.GetAsync(Id);
+        Prompt = new CreateUpdateAIPromptDto
         {
             PromptId = dto.Id,
             VersionNumber = dto.VersionNumber,
@@ -38,7 +38,7 @@ public class EditVersionModalModel : AbpPageModel
 
     public async Task<IActionResult> OnPostAsync()
     {
-        await _versionAppService.UpdateAsync(Id, Version);
+        await _promptAppService.UpdateAsync(Id, Prompt);
         return NoContent();
     }
 }
