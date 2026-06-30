@@ -256,8 +256,7 @@ public class OpenAIConfigurationResolver(
             }
         }
 
-        return activeModels.FirstOrDefault(model =>
-            string.Equals(model.Name, "Default", StringComparison.OrdinalIgnoreCase));
+        return null;
     }
 
     private string Required(string key)

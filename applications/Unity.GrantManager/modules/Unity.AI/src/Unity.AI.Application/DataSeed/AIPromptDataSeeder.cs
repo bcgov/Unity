@@ -17,7 +17,7 @@ namespace Unity.AI.DataSeed;
 /// </summary>
 public class AIPromptDataSeeder(
     IRepository<AIPrompt, Guid> promptRepository,
-    ICurrentTenant currentTenant) : IDataSeedContributor, ITransientDependency
+    ICurrentTenant currentTenant) : ITransientDependency
 {
     public async Task SeedAsync(DataSeedContext context)
     {
