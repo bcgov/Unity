@@ -6,6 +6,7 @@ namespace Unity.GrantManager.GrantApplications;
 public class AIGenerationRequestDto : EntityDto<Guid>
 {
     public Guid? ApplicationId { get; set; }
+    public Guid? OperationId { get; set; }
     public string OperationType { get; set; } = string.Empty;
     public string RequestKey { get; set; } = string.Empty;
     public AIGenerationRequestStatus Status { get; set; }

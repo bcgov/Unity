@@ -140,14 +140,22 @@ public class RunApplicationAIPipelineJob(
                     }
                 }
 
-                if (scoringException != null)
+                if (analysisException != null && scoringException != null)
                 {
-                    throw scoringException;
+                    throw new AggregateException(
+                        $"AI pipeline failed for application {args.ApplicationId} in multiple stages.",
+                        analysisException,
+                        scoringException);
                 }
 
                 if (analysisException != null)
                 {
                     throw analysisException;
+                }
+
+                if (scoringException != null)
+                {
+                    throw scoringException;
                 }
 
                 await AIGenerationRequestJobHelper.StampRateLimitBestEffortAsync(aiRateLimiter, logger, args.RequestedByUserId, args.ApplicationId, args.RequestKey);

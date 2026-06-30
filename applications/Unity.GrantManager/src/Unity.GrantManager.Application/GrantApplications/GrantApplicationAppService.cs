@@ -1211,8 +1211,12 @@ public class GrantApplicationAppService(
             AIGenerationRequestKeyHelper.ApplicationAnalysisOperationType,
             CurrentTenant.Id);
 
-        return await CreateGenerationStatusAsync(
-            request ?? throw new UserFriendlyException("Unable to queue AI analysis request."));
+        if (request == null)
+        {
+            throw new UserFriendlyException("Unable to queue AI analysis request.");
+        }
+
+        return await CreateGenerationStatusAsync(request);
     }
 
     [Authorize(AIPermissions.Analysis.GenerateAttachmentSummaries)]
@@ -1227,8 +1231,12 @@ public class GrantApplicationAppService(
             AIGenerationRequestKeyHelper.AttachmentSummaryOperationType,
             CurrentTenant.Id);
 
-        return await CreateGenerationStatusAsync(
-            request ?? throw new UserFriendlyException("Unable to queue AI attachment summary request."));
+        if (request == null)
+        {
+            throw new UserFriendlyException("Unable to queue AI attachment summary request.");
+        }
+
+        return await CreateGenerationStatusAsync(request);
     }
 
     [Authorize(AIPermissions.Analysis.GenerateScoring)]
@@ -1242,8 +1250,12 @@ public class GrantApplicationAppService(
             AIGenerationRequestKeyHelper.ApplicationScoringOperationType,
             CurrentTenant.Id);
 
-        return await CreateGenerationStatusAsync(
-            request ?? throw new UserFriendlyException("Unable to queue AI scoring request."));
+        if (request == null)
+        {
+            throw new UserFriendlyException("Unable to queue AI scoring request.");
+        }
+
+        return await CreateGenerationStatusAsync(request);
     }
 
     public async Task<AIGenerationStatusDto> GetAIGenerationStatusAsync(Guid applicationId, string operationType, string? promptVersion = null)
@@ -1268,8 +1280,12 @@ public class GrantApplicationAppService(
             AIGenerationRequestKeyHelper.PipelineOperationType,
             CurrentTenant.Id);
 
-        return await CreateGenerationStatusAsync(
-            request ?? throw new UserFriendlyException("Unable to queue AI generation request."));
+        if (request == null)
+        {
+            throw new UserFriendlyException("Unable to queue AI generation request.");
+        }
+
+        return await CreateGenerationStatusAsync(request);
     }
 
     private async Task<AIGenerationStatusDto> CreateGenerationStatusAsync(AIGenerationRequestDto? request)

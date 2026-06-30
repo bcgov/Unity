@@ -303,7 +303,7 @@ public class RunApplicationAIPipelineJobTests(ITestOutputHelper outputHelper) : 
         return new AIGenerationRequest(
             Guid.NewGuid(),
             tenantId,
-            AIGenerationRequestKeyHelper.PipelineOperationType,
+            Guid.NewGuid(),
             applicationId,
             AIGenerationRequestKeyHelper.BuildRequestKey(tenantId, applicationId, AIGenerationRequestKeyHelper.PipelineOperationType));
     }

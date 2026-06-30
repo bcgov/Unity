@@ -8,7 +8,7 @@ public class AIGenerationRequest : FullAuditedAggregateRoot<Guid>, IMultiTenant
 {
     public Guid? TenantId { get; set; }
     public Guid? ApplicationId { get; set; }
-    public string OperationType { get; set; } = string.Empty;
+    public Guid? OperationId { get; set; }
     public string RequestKey { get; set; } = string.Empty;
     public AIGenerationRequestStatus Status { get; set; }
     public DateTime? StartedAt { get; set; }
@@ -23,13 +23,13 @@ public class AIGenerationRequest : FullAuditedAggregateRoot<Guid>, IMultiTenant
     public AIGenerationRequest(
         Guid id,
         Guid? tenantId,
-        string operationType,
+        Guid operationId,
         Guid? applicationId,
         string requestKey)
         : base(id)
     {
         TenantId = tenantId;
-        OperationType = operationType;
+        OperationId = operationId;
         ApplicationId = applicationId;
         RequestKey = requestKey;
         Status = AIGenerationRequestStatus.Queued;

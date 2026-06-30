@@ -4,9 +4,9 @@ using System.Threading.Tasks;
 using Unity.AI.Prompts;
 using Volo.Abp.AspNetCore.Mvc.UI.RazorPages;
 
-namespace Unity.AI.Web.Pages.Prompts;
+namespace Unity.AI.Web.Pages.Prompts.Entries;
 
-public class EditModalModel : AbpPageModel
+public class EditEntryModalModel : AbpPageModel
 {
     [HiddenInput]
     [BindProperty(SupportsGet = true)]
@@ -17,7 +17,7 @@ public class EditModalModel : AbpPageModel
 
     private readonly IAIPromptAppService _promptAppService;
 
-    public EditModalModel(IAIPromptAppService promptAppService)
+    public EditEntryModalModel(IAIPromptAppService promptAppService)
     {
         _promptAppService = promptAppService;
     }
@@ -27,6 +27,7 @@ public class EditModalModel : AbpPageModel
         var dto = await _promptAppService.GetAsync(Id);
         Prompt = new CreateUpdateAIPromptDto
         {
+            PromptId = dto.Id,
             VersionNumber = dto.VersionNumber,
             SystemPrompt = dto.SystemPrompt,
             UserPrompt = dto.UserPrompt,
