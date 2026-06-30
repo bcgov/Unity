@@ -84,6 +84,8 @@ public class Application : FullAuditedAggregateRoot<Guid>, IMultiTenant
 
     public string? SubStatus { get; set; }
 
+    public bool ExternalStatusVisibility { get; set; } = false;
+
     public string? DeclineRational { get; set; }
 
     public string? Notes { get; set; }

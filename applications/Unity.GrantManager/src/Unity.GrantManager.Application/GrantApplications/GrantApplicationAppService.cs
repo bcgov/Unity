@@ -422,6 +422,15 @@ public class GrantApplicationAppService(
         return ObjectMapper.Map<Application, GrantApplicationDto>(application);
     }
 
+    [Authorize(UnitySelector.Review.AssessmentResults.Update.Default)]
+    public async Task<GrantApplicationDto> UpdateExternalStatusVisibilityAsync(Guid id, bool externalStatusVisibility)
+    {
+        var application = await applicationRepository.GetAsync(id);
+        application.ExternalStatusVisibility = externalStatusVisibility;
+        await applicationRepository.UpdateAsync(application);
+        return ObjectMapper.Map<Application, GrantApplicationDto>(application);
+    }
+
     private async Task PublishCustomFieldsAsync(Guid applicationId, UpdateProjectInfoDto dto)
     {
         if (dto.WorksheetIds?.Count > 0)
