@@ -13,6 +13,9 @@ namespace Unity.GrantManager.Migrations.HostMigrations
         {
             migrationBuilder.Sql(
                 """
+                DROP TABLE IF EXISTS "AI"."AIRequests";
+                DROP TABLE IF EXISTS "AI"."AIOperations";
+                DROP TABLE IF EXISTS "AI"."AIModels";
                 DROP TABLE IF EXISTS "AI"."AIPromptVersions";
                 DROP TABLE IF EXISTS "AI"."AIPrompts";
                 """);
@@ -136,24 +139,27 @@ namespace Unity.GrantManager.Migrations.HostMigrations
 
             migrationBuilder.Sql(
                 """
-                DROP TABLE IF EXISTS "AI"."AIPromptVersions";
-                """);
-
-            migrationBuilder.Sql(
-                """
-                DO $$
-                BEGIN
-                    IF NOT EXISTS (
-                        SELECT 1
-                        FROM information_schema.columns
-                        WHERE table_schema = 'AI'
-                          AND table_name = 'AIRequests'
-                          AND column_name = 'OperationId'
-                    ) THEN
-                        ALTER TABLE "AI"."AIRequests"
-                        ADD COLUMN "OperationId" uuid NULL;
-                    END IF;
-                END $$;
+                CREATE TABLE "AI"."AIRequests" (
+                    "Id" uuid NOT NULL,
+                    "TenantId" uuid NULL,
+                    "ApplicationId" uuid NULL,
+                    "OperationId" uuid NULL,
+                    "RequestKey" character varying(255) NOT NULL,
+                    "Status" integer NOT NULL,
+                    "StartedAt" timestamp without time zone NULL,
+                    "CompletedAt" timestamp without time zone NULL,
+                    "FailureReason" character varying(2000) NULL,
+                    "IsDeleted" boolean NOT NULL DEFAULT FALSE,
+                    "DeleterId" uuid NULL,
+                    "DeletionTime" timestamp without time zone NULL,
+                    "ExtraProperties" text NOT NULL,
+                    "ConcurrencyStamp" character varying(40) NOT NULL,
+                    "CreationTime" timestamp without time zone NOT NULL,
+                    "CreatorId" uuid NULL,
+                    "LastModificationTime" timestamp without time zone NULL,
+                    "LastModifierId" uuid NULL,
+                    PRIMARY KEY ("Id")
+                );
                 """);
 
             migrationBuilder.Sql(
@@ -186,7 +192,7 @@ namespace Unity.GrantManager.Migrations.HostMigrations
 
             migrationBuilder.Sql(
                 """
-                CREATE INDEX "IX_AIRequests_TenantId_ApplicationId_OperationId_Status"
+                CREATE INDEX IF NOT EXISTS "IX_AIRequests_TenantId_ApplicationId_OperationId_Status"
                 ON "AI"."AIRequests" ("TenantId", "ApplicationId", "OperationId", "Status");
                 """);
         }
@@ -197,6 +203,8 @@ namespace Unity.GrantManager.Migrations.HostMigrations
             migrationBuilder.Sql(
                 """
                 DROP TABLE IF EXISTS "AI"."AIRequests";
+                DROP TABLE IF EXISTS "AI"."AIOperations";
+                DROP TABLE IF EXISTS "AI"."AIModels";
                 DROP TABLE IF EXISTS "AI"."AIPromptVersions";
                 DROP TABLE IF EXISTS "AI"."AIPrompts";
                 """);
