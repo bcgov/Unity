@@ -51,6 +51,8 @@ class AIConfig:
     azure_embedding_deployment: str = "text-embedding-3-large"
     temperature: float = 0.2
     k_samples: int = 7
+    max_self_correction_iterations: int = 3
+    retry_k_samples: int = 1
 
     @property
     def supports_temperature(self) -> bool:
@@ -105,6 +107,8 @@ class Config:
         self.ai = AIConfig(
             azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT", ""),
             azure_api_key=os.getenv("AZURE_OPENAI_API_KEY", ""),
+            max_self_correction_iterations=int(os.getenv("MAX_SELF_CORRECTION_ITERATIONS", "3")),
+            retry_k_samples=int(os.getenv("RETRY_K_SAMPLES", "1")),
         )
 
         flask_env = os.getenv("FLASK_ENV", "development")
