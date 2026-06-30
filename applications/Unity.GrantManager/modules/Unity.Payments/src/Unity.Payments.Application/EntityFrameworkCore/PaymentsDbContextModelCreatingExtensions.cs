@@ -55,6 +55,11 @@ public static class PaymentsDbContextModelCreatingExtensions
             b.Property(x => x.FsbNotificationSentDate).IsRequired(false);
             b.Property(x => x.FsbApNotified).IsRequired(false).HasMaxLength(10);
             b.HasIndex(x => x.FsbNotificationEmailLogId);
+
+            // Cancellation tracking
+            b.Property(x => x.CancelledOn).HasColumnName("CancelledOn").IsRequired(false);
+            b.Property(x => x.CancelledById).HasColumnName("CancelledById").IsRequired(false);
+            b.Property(x => x.CancelledBy).HasColumnName("CancelledBy").HasMaxLength(256).IsRequired(false);
         });
 
 
