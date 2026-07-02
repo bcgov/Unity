@@ -588,7 +588,7 @@ $(function () {
 
                 const safeCode = $.fn.dataTable.render.text().display(code);
 
-                if (type === 'display' && abp.auth.isGranted('GrantApplicationManagement.Applicants.ViewList')) {
+                if (type === 'display' && abp.auth.isGranted('GrantApplicationManagement.Applications')) {
                     const applicationId = row?.correlationId;
                     const isGuid = applicationId && guidPattern.test(applicationId);
 
