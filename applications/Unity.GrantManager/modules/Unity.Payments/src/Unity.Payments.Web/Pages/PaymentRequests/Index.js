@@ -28,8 +28,7 @@ $(function () {
         'l2ApprovalDate',
         'l3ApprovalDate',
         'CASResponse',
-        'accountCodingDisplay',
-        'category'
+        'accountCodingDisplay'
     ];
     let initialLoad = true;
     let isRestoringState = false;
