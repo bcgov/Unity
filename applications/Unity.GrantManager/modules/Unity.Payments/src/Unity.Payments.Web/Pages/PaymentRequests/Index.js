@@ -142,7 +142,7 @@ $(function () {
             text: 'Cancel',
             className: 'custom-table-btn flex-none btn btn-secondary payment-cancel',
             action: function (e, dt, node, config) {
-                if (!selectedPaymentIds || selectedPaymentIds.length !== 1) return;
+                if (selectedPaymentIds?.length !== 1) return;
                 const rowData = dt.rows({ selected: true }).data().toArray()[0];
                 abp.message.confirm(
                     `Are you sure you want to cancel the payment: "${rowData.referenceNumber}"?`,
@@ -490,22 +490,17 @@ $(function () {
         }
         let hasHistoricalPayment = dataTable.rows('.selected').data().toArray().some(row => row.status === 'HistoricalPayment');
         let hasCancelledPayment = dataTable.rows('.selected').data().toArray().some(row => row.status === 'Cancelled');
-        if (dataTable.rows({ selected: true }).indexes().length > 0 && !isInSentState && !hasHistoricalPayment && !hasCancelledPayment) {
-            if (abp.auth.isGranted('PaymentsPermissions.Payments.L1ApproveOrDecline')
+        const hasSelection = dataTable.rows({ selected: true }).indexes().length > 0;
+        const canApprove = hasSelection && !isInSentState && !hasHistoricalPayment && !hasCancelledPayment
+            && (abp.auth.isGranted('PaymentsPermissions.Payments.L1ApproveOrDecline')
                 || abp.auth.isGranted('PaymentsPermissions.Payments.L2ApproveOrDecline')
-                || abp.auth.isGranted('PaymentsPermissions.Payments.L3ApproveOrDecline')) {
-                payment_approve_buttons.enable();
-
-            } else {
-                payment_approve_buttons.disable();
-            }
-
-            checkEnableHistoryButton(dataTable, history_button);
-        }
-        else {
+                || abp.auth.isGranted('PaymentsPermissions.Payments.L3ApproveOrDecline'));
+        if (canApprove) {
+            payment_approve_buttons.enable();
+        } else {
             payment_approve_buttons.disable();
-            checkEnableHistoryButton(dataTable, history_button);
         }
+        checkEnableHistoryButton(dataTable, history_button);
 
         if (cancel_button) {
             const eligibleCancelStatuses = ['HistoricalPayment', 'L1Pending', 'L2Pending', 'L3Pending'];
@@ -576,45 +571,6 @@ $(function () {
         ]
 
         return columns.map((column) => ({ ...column, targets: [column.index], orderData: [column.index, 0] }));
-    }
-
-    function getCancelledColumn(columnIndex) {
-        return {
-            title: 'Cancelled',
-            name: 'cancelled',
-            data: null,
-            className: 'data-table-header',
-            index: columnIndex,
-            render: function (data, type, row) {
-                return row.status === 'Cancelled' ? 'Cancelled' : '';
-            }
-        };
-    }
-
-    function getCancelledByColumn(columnIndex) {
-        return {
-            title: 'Cancelled By',
-            name: 'cancelledBy',
-            data: 'cancelledBy',
-            className: 'data-table-header',
-            index: columnIndex,
-            render: function (data) {
-                return data ?? '';
-            }
-        };
-    }
-
-    function getCancelledOnColumn(columnIndex) {
-        return {
-            title: 'Cancelled On',
-            name: 'cancelledOn',
-            data: 'cancelledOn',
-            className: 'data-table-header',
-            index: columnIndex,
-            render: function (data, type) {
-                return DateUtils.formatUtcDateToLocal(data, type);
-            }
-        };
     }
 
     function getPaymentReferenceColumn(columnIndex) {
@@ -1157,6 +1113,45 @@ $(function () {
     );
 
 });
+
+function getCancelledColumn(columnIndex) {
+    return {
+        title: 'Cancelled',
+        name: 'cancelled',
+        data: null,
+        className: 'data-table-header',
+        index: columnIndex,
+        render: function (data, type, row) {
+            return row.status === 'Cancelled' ? 'Cancelled' : '';
+        }
+    };
+}
+
+function getCancelledByColumn(columnIndex) {
+    return {
+        title: 'Cancelled By',
+        name: 'cancelledBy',
+        data: 'cancelledBy',
+        className: 'data-table-header',
+        index: columnIndex,
+        render: function (data) {
+            return data ?? '';
+        }
+    };
+}
+
+function getCancelledOnColumn(columnIndex) {
+    return {
+        title: 'Cancelled On',
+        name: 'cancelledOn',
+        data: 'cancelledOn',
+        className: 'data-table-header',
+        index: columnIndex,
+        render: function (data, type) {
+            return DateUtils.formatUtcDateToLocal(data, type);
+        }
+    };
+}
 
 let casPaymentResponseModal = new abp.ModalManager({
     viewUrl: '../PaymentRequests/CasPaymentRequestResponse'
