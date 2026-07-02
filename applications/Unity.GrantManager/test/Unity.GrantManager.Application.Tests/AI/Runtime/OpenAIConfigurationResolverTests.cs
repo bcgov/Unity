@@ -83,6 +83,7 @@ public class OpenAIConfigurationResolverTests
             .GetAsync(promptId, cancellationToken: Arg.Any<CancellationToken>())
             .Returns(Task.FromResult(new AIPrompt(promptId, AIPromptTypes.ApplicationAnalysis, 1, "system", "user")
             {
+                MetadataJson = "{}",
                 IsActive = true
             }));
 
@@ -159,6 +160,7 @@ public class OpenAIConfigurationResolverTests
             .GetAsync(promptId, cancellationToken: Arg.Any<CancellationToken>())
             .Returns(Task.FromResult(new AIPrompt(promptId, AIPromptTypes.ApplicationAnalysis, 1, "system", "user")
             {
+                MetadataJson = "{}",
                 IsActive = true
             }));
 
@@ -295,6 +297,7 @@ public class OpenAIConfigurationResolverTests
             .GetAsync(promptId, cancellationToken: Arg.Any<CancellationToken>())
             .Returns(Task.FromResult(new AIPrompt(promptId, AIPromptTypes.ApplicationAnalysis, 1, "system", "user")
             {
+                MetadataJson = "{}",
                 IsActive = true
             }));
 
@@ -380,7 +383,10 @@ public class OpenAIConfigurationResolverTests
         var promptRepository = Substitute.For<IRepository<AIPrompt, Guid>>();
         promptRepository
             .GetAsync(Arg.Any<Guid>(), cancellationToken: Arg.Any<CancellationToken>())
-            .Returns(callInfo => Task.FromResult(new AIPrompt(callInfo.Arg<Guid>(), "Default", 1, "system", "user")));
+            .Returns(callInfo => Task.FromResult(new AIPrompt(callInfo.Arg<Guid>(), "Default", 1, "system", "user")
+            {
+                MetadataJson = "{}"
+            }));
         return promptRepository;
     }
 }
