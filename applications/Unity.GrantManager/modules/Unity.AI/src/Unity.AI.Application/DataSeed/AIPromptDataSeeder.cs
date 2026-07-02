@@ -109,7 +109,7 @@ public class AIPromptDataSeeder(
         {
             prompt.SystemPrompt = systemPrompt;
             prompt.UserPrompt = userPrompt;
-            prompt.MetadataJson = metadataJson;
+            prompt.MetadataJson = metadataJson ?? "{}";
             prompt.IsActive = true;
             await promptRepository.UpdateAsync(prompt, autoSave: true);
             return;
@@ -122,7 +122,7 @@ public class AIPromptDataSeeder(
             systemPrompt,
             userPrompt)
         {
-            MetadataJson = metadataJson,
+            MetadataJson = metadataJson ?? "{}",
             IsActive = true
         });
     }
