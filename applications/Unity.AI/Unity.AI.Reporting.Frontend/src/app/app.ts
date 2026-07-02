@@ -56,6 +56,7 @@ export class App implements OnInit, OnDestroy {
   @ViewChild('turnsContainer') private readonly turnsContainer!: ElementRef<HTMLDivElement>;
   @ViewChild('sqlAnimationContainer') private readonly sqlAnimationContainer!: ElementRef<HTMLDivElement>;
   @ViewChild('sidebar') private readonly sidebar!: SidebarComponent;
+  @ViewChild('questionInput') private readonly questionInput?: ElementRef<HTMLInputElement>;
 
   /** Whether to show the "Build a data model" entry point (Create/Edit Data Model permission). */
   get canEditDataModel(): boolean {
@@ -424,6 +425,14 @@ export class App implements OnInit, OnDestroy {
     this.question = turn.question;
     this.conversation = this.conversation.filter(t => t !== turn);
     this.askQuestion(nextRetryCount, errorType, turn.errorDetail);
+  }
+
+  editQuestion(turn: Turn): void {
+    // ai_failure already exhausted the backend self-correction loop, so the
+    // productive next step is to rephrase. Prefill the previous question and
+    // focus the input so the user can edit and resubmit.
+    this.question = turn.question;
+    setTimeout(() => this.questionInput?.nativeElement?.focus(), 0);
   }
 
   getFreshAnswer(turn: Turn): void {

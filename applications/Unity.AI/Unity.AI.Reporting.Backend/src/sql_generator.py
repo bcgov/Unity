@@ -30,7 +30,9 @@ class SQLGenerator:
         self.tokenizer = tiktoken.encoding_for_model("gpt-4o-mini")
         
         # Regex patterns for extraction
-        self.sql_pattern = re.compile(r"```sql\s*(.+?)```", re.I | re.S)
+        # Backtrack-free: body is any run of non-backtick chars, or 1-2 backticks
+        # not followed by a third (the closing fence). Possessive quantifiers (3.11+).
+        self.sql_pattern = re.compile(r"```sql\s*+((?:[^`]++|`(?!``))*+)```", re.I)
         self.metadata_pattern = re.compile(
             r"""(?:\#\#\#\s*)?Metadata:\s*
                 (?:```json\s*)?
@@ -81,7 +83,7 @@ class SQLGenerator:
             for c in data["cols"]
         )
         head = rows[:5]
-        digest = hashlib.md5(json.dumps(head, default=str).encode()).hexdigest()
+        digest = hashlib.md5(json.dumps(head, default=str).encode(), usedforsecurity=False).hexdigest()
         return str(len(rows)), cols, digest
     
     def find_majority(self, items: List) -> Optional[Any]:
@@ -280,6 +282,14 @@ class SQLGenerator:
             "total_tokens": total
         }
 
+    def _sum_token_usages(self, usages: List[Dict[str, int]]) -> Dict[str, int]:
+        """Sum a list of per-attempt token-usage dicts into one."""
+        return {
+            "prompt_tokens": sum(u.get("prompt_tokens", 0) for u in usages),
+            "completion_tokens": sum(u.get("completion_tokens", 0) for u in usages),
+            "total_tokens": sum(u.get("total_tokens", 0) for u in usages),
+        }
+
     def _select_best_candidate(self, candidates: List[Tuple]) -> Tuple[str, Dict]:
         """Pick the majority-vote winner or fall back to the first candidate."""
         fingerprints = [fp for fp, _, _ in candidates]
@@ -296,28 +306,115 @@ class SQLGenerator:
         logger.info("No majority, using first candidate")
         return candidates[0][1], candidates[0][2]
 
+    async def _attempt_generation(
+        self, question: str, schemas: str, past_questions: List[Dict],
+        client, *, db_id: int, tenant_id: Optional[str],
+        is_retry: bool, retry_error_type: Optional[str],
+        retry_error_detail: Optional[str], k_samples: int,
+    ) -> Tuple[Optional[str], Optional[Dict], Dict[str, int], Optional[str]]:
+        """Run one SQL generation attempt: fan out k completions, validate, pick best.
+
+        Iteration-agnostic — the caller owns retry logic. Raises if every
+        completion raised (so a 429 from the first attempt can still be
+        classified as rate_limit upstream).
+        """
+        prompt = self.build_prompt(
+            question, schemas, past_questions,
+            is_retry=is_retry,
+            retry_error_type=retry_error_type,
+            retry_error_detail=retry_error_detail,
+        )
+        logger.debug(f"Prompt: {prompt[:200]}...")
+        tasks = [self.fetch_completion(prompt, client, i) for i in range(k_samples)]
+        # return_exceptions=True so one sample failing doesn't discard the
+        # others. If EVERY sample failed, re-raise so the error can be
+        # classified upstream (e.g. a 429 → rate_limit).
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+
+        completions = []
+        first_error: Optional[BaseException] = None
+        for result in results:
+            if isinstance(result, BaseException):
+                first_error = first_error or result
+                logger.warning(f"Sample completion failed: {result}")
+            else:
+                completions.append(result)
+
+        if not completions and first_error is not None:
+            raise first_error
+
+        token_usage = self._aggregate_token_usage(completions)
+
+        validation_errors: List[str] = []
+        candidates = [
+            c for completion_result in completions
+            if (c := self._process_completion(completion_result, db_id, tenant_id=tenant_id, errors=validation_errors)) is not None
+        ]
+
+        MAX_ERROR_DETAIL_LENGTH = 200
+        combined_error = "; ".join(validation_errors[:2]) if validation_errors else None
+        error_detail = combined_error[:MAX_ERROR_DETAIL_LENGTH] if combined_error else None
+
+        if not candidates:
+            return None, None, token_usage, error_detail
+
+        sql, metadata = self._select_best_candidate(candidates)
+        return sql, metadata, token_usage, None
+
+    async def _check_question_relevance(self, question: str, schemas: str, client) -> bool:
+        """One-shot RELATED/UNRELATED schema-relevance filter. Logs and
+        returns False on UNRELATED, parse-failure, or empty completion."""
+        parsed_schema = await self.fetch_completion(
+            f'''Your ONLY task is to decide if the question is related to the database schema.
+DO NOT generate SQL.
+DO NOT explain anything.
+DO NOT infer missing information.
+Output EXACTLY one word: RELATED or UNRELATED.
+
+<question>{question}</question>
+<schema>{schemas}</schema>''',
+            client, 0,
+            system_message="You are a schema relevance filter. Output only RELATED or UNRELATED."
+        )
+
+        if not parsed_schema:
+            logger.error("Schema parsing failed — no completion returned")
+            return False
+
+        logger.info(f"[RelevanceCheck] Q: {question!r} | Raw: {parsed_schema[0]!r}")
+
+        if parsed_schema[0].strip().upper() != "RELATED":
+            logger.warning(f"[RelevanceCheck] UNRELATED | Raw: {parsed_schema[0]!r}")
+            return False
+        return True
+
     async def generate_sql(self, question: str, past_questions: List[Dict],
                           db_id: int, tenant_id: Optional[str] = None,
                           is_retry: bool = False, retry_error_type: Optional[str] = None,
                           retry_error_detail: Optional[str] = None) -> Tuple[Optional[str], Optional[Dict], Optional[Dict], Optional[str]]:
         """
-        Generate SQL from natural language question using majority voting.
+        Generate SQL from natural language question using majority voting plus
+        an internal self-correction loop: after a failed validation
+        the loop regenerates with the error fed back into the prompt, up to
+        ``config.ai.max_self_correction_iterations`` attempts.
 
         Args:
             question: Natural language question
             past_questions: List of past questions and SQL
             db_id: Database ID
             tenant_id: Optional tenant ID for tenant-specific Metabase API key
-            is_retry: Whether this call is a retry of a previously failed attempt
-            retry_error_type: Error type from the previous attempt, if retrying
-            retry_error_detail: Validation error detail from the previous attempt,
-                fed back into the prompt to guide a corrected query
+            is_retry: Caller-driven retry flag — seeds iteration 1's prompt
+            retry_error_type: Error type from a caller-driven retry
+            retry_error_detail: Validation error from a caller-driven retry,
+                fed into iteration 1's prompt
 
         Returns:
             Tuple of (sql, metadata, token_usage, error_detail). On failure the
-            leading elements are None; error_detail carries any validation error
-            text when no valid candidate could be generated.
-            token_usage contains prompt_tokens, completion_tokens, total_tokens.
+            leading elements are None; error_detail carries the most actionable
+            validation error (preferred over infra exceptions) when no valid
+            candidate could be generated within the iteration limit.
+            token_usage aggregates prompt/completion tokens across every
+            iteration's LLM calls.
         """
 
         # Check for hardcoded examples first (can be removed in production)
@@ -333,84 +430,96 @@ class SQLGenerator:
             logger.error(f"No schemas found for db_id={db_id}. Embeddings may not have been generated yet.")
             return None, None, None, None
 
-        # Generate multiple completions in parallel. The client is built per
-        # request (not a module singleton) so its httpx pool stays bound to this
-        # request's event loop — every endpoint runs through its own asyncio.run.
+        max_iter = max(1, self.config.max_self_correction_iterations)
+        retry_k = max(1, self.config.retry_k_samples)
+        first_k = self.config.k_samples
+
+        effective_is_retry = is_retry
+        effective_error_type = retry_error_type
+        effective_error_detail = retry_error_detail
+        attempt_tokens: List[Dict[str, int]] = []
+        last_validation_error: Optional[str] = None
+        last_exception: Optional[Exception] = None
+
+        loop_start = time.monotonic()
+
+        # The client is built per request (not a module singleton) so its httpx
+        # pool stays bound to this request's event loop — every endpoint runs
+        # through its own asyncio.run. The relevance check + every iteration
+        # share the same client to avoid per-attempt connection setup.
         async with build_async_client() as client:
-            parsed_schema = await self.fetch_completion(
-                f'''Your ONLY task is to decide if the question is related to the database schema.
-DO NOT generate SQL.
-DO NOT explain anything.
-DO NOT infer missing information.
-Output EXACTLY one word: RELATED or UNRELATED.
-
-<question>{question}</question>
-<schema>{schemas}</schema>''',
-                client, 0,
-                system_message="You are a schema relevance filter. Output only RELATED or UNRELATED."
-            )
-
-            if not parsed_schema:
-                logger.error("Schema parsing failed — no completion returned")
+            if not await self._check_question_relevance(question, schemas, client):
                 return None, None, None, None
 
-            print("Schema:", schemas)
-            print("Parsed Schema:", parsed_schema[0])
-            logger.info(f"[RelevanceCheck] Q: {question!r} | Raw: {parsed_schema[0]!r}")
+            for iteration in range(1, max_iter + 1):
+                k = first_k if iteration == 1 else retry_k
+                attempt_start = time.monotonic()
+                try:
+                    sql, metadata, tokens, error_detail = await self._attempt_generation(
+                        question, schemas, past_questions, client,
+                        db_id=db_id, tenant_id=tenant_id,
+                        is_retry=effective_is_retry,
+                        retry_error_type=effective_error_type,
+                        retry_error_detail=effective_error_detail,
+                        k_samples=k,
+                    )
+                except Exception as e:
+                    elapsed_ms = int((time.monotonic() - attempt_start) * 1000)
+                    if iteration == 1:
+                        # Let the API route classify (rate_limit / connection_error / …)
+                        raise
+                    # Infra failure mid-loop: stop. Retrying after 429/timeout
+                    # rarely helps and would lose validation-error telemetry.
+                    last_exception = e
+                    logger.warning(
+                        f"[SelfCorrection] iter={iteration}/{max_iter} k={k} "
+                        f"elapsed_ms={elapsed_ms} outcome=exception err={e!r}"
+                    )
+                    break
 
-            if parsed_schema[0].strip().upper() != "RELATED":
-                logger.error("Error: NSFW or irrelevant question.", exc_info=True)
-                return None, None, None, None
+                attempt_tokens.append(tokens)
+                elapsed_ms = int((time.monotonic() - attempt_start) * 1000)
 
-            # Build prompt
-            prompt = self.build_prompt(question, schemas, past_questions, is_retry=is_retry,
-                                       retry_error_type=retry_error_type, retry_error_detail=retry_error_detail)
-            logger.debug(f"Prompt: {prompt[:200]}...")
-            tasks = [
-                self.fetch_completion(prompt, client, i)
-                for i in range(self.config.k_samples)
-            ]
-            # return_exceptions=True so one sample failing doesn't discard the
-            # others (matches the old "non-200 → skip" resilience). If EVERY
-            # sample failed, re-raise so the error can be classified upstream
-            # (e.g. a 429 → rate_limit instead of a generic ai_failure).
-            results = await asyncio.gather(*tasks, return_exceptions=True)
+                if sql is not None:
+                    total_ms = int((time.monotonic() - loop_start) * 1000)
+                    logger.info(
+                        f"[SelfCorrection] iter={iteration}/{max_iter} k={k} "
+                        f"elapsed_ms={elapsed_ms} total_ms={total_ms} outcome=success"
+                    )
+                    metadata = self._annotate_self_correction(metadata, iteration)
+                    return sql, metadata, self._sum_token_usages(attempt_tokens), None
 
-        completions = []
-        first_error: Optional[BaseException] = None
-        for result in results:
-            if isinstance(result, BaseException):
-                first_error = first_error or result
-                logger.warning(f"Sample completion failed: {result}")
-            else:
-                completions.append(result)
+                last_validation_error = error_detail
+                # Feed ONLY the latest error into the next prompt — accumulating
+                # iteration history would clutter the prompt and dilute the signal.
+                effective_is_retry = True
+                effective_error_type = "ai_failure"
+                effective_error_detail = error_detail
+                logger.warning(
+                    f"[SelfCorrection] iter={iteration}/{max_iter} k={k} "
+                    f"elapsed_ms={elapsed_ms} outcome=validation_failed err={error_detail!r}"
+                )
 
-        if not completions and first_error is not None:
-            raise first_error
+        # Prefer the validation error: a SQL-level message ("Unknown column abc")
+        # is more actionable than a transient infra exception from a late iteration.
+        final_error_detail = last_validation_error or (repr(last_exception) if last_exception else None)
+        logger.error(
+            f"[SelfCorrection] exhausted max_iter={max_iter} "
+            f"total_ms={int((time.monotonic() - loop_start) * 1000)} "
+            f"final_error={final_error_detail!r}"
+        )
+        return None, None, self._sum_token_usages(attempt_tokens), final_error_detail
 
-        # Aggregate token usage from all completions
-        token_usage = self._aggregate_token_usage(completions)
+    @staticmethod
+    def _annotate_self_correction(metadata: Dict, iteration: int) -> Dict:
+        """Tag metadata with the iteration count when self-correction kicked in.
 
-        # Process completions and extract valid candidates, collecting validation errors
-        validation_errors: List[str] = []
-        candidates = [
-            c for completion_result in completions
-            if (c := self._process_completion(completion_result, db_id, tenant_id=tenant_id, errors=validation_errors)) is not None
-        ]
+        Iteration 1 succeeded on the first try, so it carries no annotation.
+        """
+        if iteration > 1:
+            return {**metadata, "self_correction": {"iterations": iteration}}
+        return metadata
 
-        # Join top 2 errors, truncate to keep prompt focused
-        MAX_ERROR_DETAIL_LENGTH = 200
-        combined_error = "; ".join(validation_errors[:2]) if validation_errors else None
-        error_detail = combined_error[:MAX_ERROR_DETAIL_LENGTH] if combined_error else None
-
-        if not candidates:
-            logger.warning(f"No valid candidates generated. Error detail: {error_detail}")
-            return None, None, token_usage, error_detail
-
-        # Majority voting on fingerprints
-        sql, metadata = self._select_best_candidate(candidates)
-        return sql, metadata, token_usage, None
-    
     def _check_hardcoded_examples(self, question: str) -> Optional[Tuple[str, Dict]]:
         """Check for hardcoded example queries (for demo/testing)"""
         examples = {
