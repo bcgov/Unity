@@ -44,6 +44,10 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<InternalsVisibleTo Include="Unity.Flex.Application.Tests" />
+	</ItemGroup>
+
+	<ItemGroup>
 		<Content Update="Views\Shared\Components\RadioDefinitionWidget\Default.cshtml">
 			<ExcludeFromSingleFile>true</ExcludeFromSingleFile>
 			<CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>

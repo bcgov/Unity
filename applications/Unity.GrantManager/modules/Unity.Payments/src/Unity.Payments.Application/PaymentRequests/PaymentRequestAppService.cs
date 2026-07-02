@@ -325,18 +325,28 @@ namespace Unity.Payments.PaymentRequests
             return await paymentRequestQueryManager.GetListByApplicationIdsAsync(applicationIds);
         }
 
-        public async Task<PagedResultDto<PaymentRequestDto>> GetListAsync(PagedAndSortedResultRequestDto input)
-        {
-            var totalCount = await paymentRequestQueryManager.GetPaymentRequestCountAsync();
+        public async Task<PagedResultDto<PaymentRequestDto>> GetListAsync(PaymentRequestListInputDto input)
+        {   
             using (dataFilter.Disable<ISoftDelete>())
             {
-                var paymentWithIncludes = await paymentRequestQueryManager.GetPagedPaymentRequestsWithIncludesAsync(input.SkipCount, input.MaxResultCount, input.Sorting ?? string.Empty);
+                var paymentWithIncludes = await paymentRequestQueryManager.GetPagedPaymentRequestsWithIncludesAsync(
+                    input.SkipCount,
+                    input.MaxResultCount,
+                    input.Sorting ?? string.Empty,
+                    input.RequestedFields);
 
-                var mappedPayments = await paymentRequestQueryManager.MapToDtoAndLoadDetailsAsync(paymentWithIncludes);
+                var mappedPayments = await paymentRequestQueryManager.MapToDtoAndLoadDetailsAsync(
+                    paymentWithIncludes,
+                    input.RequestedFields);
 
                 paymentRequestQueryManager.ApplyErrorSummary(mappedPayments);
 
-                return new PagedResultDto<PaymentRequestDto>(totalCount, mappedPayments);
+#pragma warning disable S125
+                //While the DataTable is client side, server side count query is not necessary.
+                //var totalCount = await paymentRequestQueryManager.GetPaymentRequestCountAsync();
+#pragma warning restore S125
+                return new PagedResultDto<PaymentRequestDto>(paymentWithIncludes.Count, mappedPayments);
+
             }
         }
 
