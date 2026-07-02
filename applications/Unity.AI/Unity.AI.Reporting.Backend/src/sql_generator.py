@@ -362,7 +362,7 @@ class SQLGenerator:
         return sql, metadata, token_usage, None
 
     async def _check_question_relevance(self, question: str, schemas: str, client) -> bool:
-        """One-shot RELATED/UNRELATED schema-relevance + NSFW filter. Logs and
+        """One-shot RELATED/UNRELATED schema-relevance filter. Logs and
         returns False on UNRELATED, parse-failure, or empty completion."""
         parsed_schema = await self.fetch_completion(
             f'''Your ONLY task is to decide if the question is related to the database schema.
@@ -381,12 +381,10 @@ Output EXACTLY one word: RELATED or UNRELATED.
             logger.error("Schema parsing failed — no completion returned")
             return False
 
-        print("Schema:", schemas)
-        print("Parsed Schema:", parsed_schema[0])
         logger.info(f"[RelevanceCheck] Q: {question!r} | Raw: {parsed_schema[0]!r}")
 
         if parsed_schema[0].strip().upper() != "RELATED":
-            logger.error("Error: NSFW or irrelevant question.", exc_info=True)
+            logger.warning(f"[RelevanceCheck] UNRELATED | Raw: {parsed_schema[0]!r}")
             return False
         return True
 
