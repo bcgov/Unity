@@ -51,6 +51,29 @@ public class AIProviderPayloadValidatorTests
     }
 
     [Fact]
+    public void ValidateApplicationScoringJson_Should_Return_Success_For_Decimal_Confidence()
+    {
+        var sectionJson = JsonSerializer.Serialize(new[]
+        {
+            new { id = "q1" }
+        });
+
+        var result = AIProviderPayloadValidator.ValidateApplicationScoringJson(
+            """
+            {
+              "q1": {
+                "answer": "No",
+                "rationale": "The record does not directly confirm the condition.",
+                "confidence": 0.30
+              }
+            }
+            """,
+            sectionJson);
+
+        result.IsValid.ShouldBeTrue();
+    }
+
+    [Fact]
     public void ValidateApplicationAnalysisJson_Should_Return_InvalidOutput_When_Decision_Is_Not_Proceed_Or_Hold()
     {
         var result = AIProviderPayloadValidator.ValidateApplicationAnalysisJson(

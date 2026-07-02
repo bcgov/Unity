@@ -210,13 +210,22 @@ $(function () {
                 }),
                 contentType: 'application/json',
                 type: 'POST',
-                success: function () {
-                    resetAttachmentSelection();
-                    chefsDataTable.ajax.reload();
-                    abp.notify.success('AI summaries generated successfully.');
-                    globalThis.AIGenerationButtonState?.restore($activeButton);
-                    globalThis.refreshAIRateLimitState?.();
-                    $activeButton.html(existingHTML).prop('disabled', false);
+                success: function (generationStatus) {
+                    const request = generationStatus?.generationRequest;
+                    const status = globalThis.AIGenerationButtonState?.resolveStatus(request?.status) ?? '';
+
+                    if (status === 'Completed') {
+                        globalThis.AIGenerationButtonState?.restoreForCooldownCheck(
+                            $activeButton,
+                            existingHTML
+                        );
+                        globalThis.AIGenerationButtonState?.applyStatusState(generationStatus);
+                        refreshAttachmentSummaryResults();
+                        return;
+                    }
+
+                    globalThis.AIGenerationButtonState?.setGenerating($activeButton);
+                    pollAttachmentSummaryGeneration(applicationId, $activeButton);
                 },
                 error: function (error) {
                     console.error('Error generating AI summaries:', error);
@@ -228,6 +237,26 @@ $(function () {
                 },
             });
         });
+    }
+
+    function pollAttachmentSummaryGeneration(applicationId, $button) {
+        globalThis.AIGenerationButtonState.monitor({
+            $button,
+            originalHtml: $button.html(),
+            getStatus: () => unity.grantManager.grantApplications.grantApplication
+                .getAIGenerationStatus(applicationId, 'attachment-summary'),
+            onComplete: refreshAttachmentSummaryResults,
+            onFailed: (request) => {
+                abp.message.error(request?.failureReason || 'AI attachment summary generation failed.');
+            }
+        });
+    }
+
+    function refreshAttachmentSummaryResults() {
+        resetAttachmentSelection();
+        chefsDataTable.ajax.reload();
+        abp.notify.success('AI summaries generated successfully.');
+        globalThis.refreshAIRateLimitState?.();
     }
 
     // Toggle all AI summaries (only if feature is enabled)

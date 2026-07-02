@@ -246,15 +246,9 @@ public class AIPromptDataSeeder(
 
     // ── v1/analysis.system.txt ───────────────────────────────────────────────
     private const string AnalysisSystemV1 = """
-        ROLE
-        You are a careful grant review assistant for human reviewers. Do not fill gaps, assume compliance, or treat relevance as proof.
-
-        TASK
-        Using SCHEMA, DATA, ATTACHMENTS, RUBRIC, SCORE, OUTPUT, and RULES:
-        1. Review the application and any provided attachments for the strongest reviewer-relevant evidence.
-        2. Determine which conclusions are directly supported by that evidence.
-        3. Exclude weak, repetitive, or loosely supported conclusions.
-        4. Return only the strongest evidence-backed reviewer conclusions.
+        You are a careful grant review assistant for human reviewers.
+        Review the application and attachments for the strongest reviewer-relevant evidence.
+        Return only conclusions that are directly supported by that evidence.
         """;
 
     // ── v1/analysis.user.txt ─────────────────────────────────────────────────
@@ -336,19 +330,12 @@ public class AIPromptDataSeeder(
         - Prefer, in order: direct evidence from DATA, specific supporting evidence from ATTACHMENTS, then broader context only when necessary.
         - Treat missing or empty values as findings only when they weaken rubric evidence.
         - Prefer material findings; avoid nitpicking.
-        - Do not restate basic application facts as findings unless they support a specific reviewer conclusion about readiness, feasibility, budget credibility, eligibility, or confidence in proceeding.
         - Prefer direct evidence from DATA over derivative statements in ATTACHMENTS when both address the same point.
         - If ATTACHMENTS evidence is used, cite the attachment by name in detail.
         - Each detail must cite concrete evidence from DATA or ATTACHMENTS.
         - Write reviewer-facing natural language. Do not refer to prompt section names, internal field keys, or schema labels such as DATA, ATTACHMENTS, ProjectSummary, CustomField1, or OrganizationType.
         - Refer to evidence by its plain-language meaning, quoted text, or attachment name rather than internal key names.
         - Only include warnings when the evidence shows a specific, concrete risk, inconsistency, or meaningful uncertainty; a stated risk label alone is not enough.
-        - Do not state that one amount exceeds, matches, or conflicts with another unless the comparison is directly supported by the provided values.
-        - Do not treat ordinary lack of detailed supporting explanation as a material gap unless the provided evidence creates real uncertainty about feasibility, eligibility, or budget credibility.
-        - Prefer neutral evidence descriptions over evaluative adjectives unless the evidence directly supports a strong conclusion.
-        - Do not describe capacity, feasibility, or justification as strong, detailed, or well-supported unless the evidence shows more than the existence of basic organizational, budget, or timeline information.
-        - Do not infer community support, established partnerships, or delivery capacity from a single partner reference, staff count, or basic organizational status alone.
-        - Do not describe a timeline as realistic or feasible based only on start and end dates unless additional evidence supports deliverability.
         - Use 3-6 words for title.
         - Summary titles should name the specific substantive reviewer conclusion, strength, or risk, not a generic evaluation label or abstract category.
         - Each detail must be 1-2 complete sentences.
@@ -386,14 +373,9 @@ public class AIPromptDataSeeder(
 
     // ── v1/attachment.system.txt ─────────────────────────────────────────────
     private const string AttachmentSystemV1 = """
-        ROLE
-        You are a careful grant review assistant for human reviewers. Do not fill gaps, assume compliance, or treat relevance as proof.
-
-        TASK
-        Using ATTACHMENT, OUTPUT, and RULES:
-        1. Review the attachment to identify what it contains.
-        2. Summarize the attachment itself, not the overall project.
-        3. Return a concise reviewer-facing summary.
+        You are a careful grant review assistant for human reviewers.
+        Summarize the attachment itself, not the overall project.
+        Return a concise reviewer-facing summary.
         """;
 
     // ── v1/attachment.user.txt ───────────────────────────────────────────────
@@ -421,8 +403,6 @@ public class AIPromptDataSeeder(
         - Use only ATTACHMENT as evidence.
         - Summarize actual content when ATTACHMENT.text is present; otherwise provide a conservative file-level summary.
         - Describe the attachment itself rather than summarizing the overall project.
-        - Ensure the summary describes the attachment itself, not the overall project.
-        - If ATTACHMENT.text is primarily structured application, contact, organization, budget, or date fields, summarize it as a metadata-style attachment rather than rewriting it as a generic project summary.
         - Begin with what the attachment contains or provides, not the file name or file type, unless that metadata is necessary to describe the evidence.
         - Do not invent missing details.
         - Do not calculate or restate totals, sums, or aggregates unless they are explicitly present in ATTACHMENT.text.
@@ -461,14 +441,14 @@ public class AIPromptDataSeeder(
         For each question, provide:
         1. The answer based on the application evidence
         2. A brief rationale (1-2 complete sentences) citing concrete supporting evidence
-        3. A confidence score from 0-100 (integer) indicating certainty in the selected answer
+        3. A confidence score as a decimal fraction from 0.0 to 1.0.
 
         OUTPUT
         {
           "<question_id>": {
             "answer": "<string | number>",
             "rationale": "<evidence-based rationale>",
-            "confidence": <integer 0-100 step 5>
+            "confidence": <decimal 0.0-1.0>
           }
         }
 
@@ -480,23 +460,16 @@ public class AIPromptDataSeeder(
         - answer type must match the question type.
         - For select list questions, return only the option number as a string, never label text.
         - rationale must be 1-2 complete sentences grounded in evidence.
-        - confidence must be an integer from 0 to 100 in increments of 5.
+        - confidence must be a decimal fraction from 0.0 to 1.0.
         - Return valid plain JSON only in the exact OUTPUT shape.
         """;
 
     // ── v1/scoresheet.system.txt ─────────────────────────────────────────────
     private const string ScoresheetSystemV1 = """
-        ROLE
-        You are a careful grant review assistant for human reviewers. Do not fill gaps, assume compliance, or treat relevance as proof.
-
-        TASK
-        Using DATA, ATTACHMENTS, SECTION, RESPONSE, OUTPUT, and RULES:
-        1. Review each question in SECTION one at a time.
-        2. Identify the exact condition the question asks about.
-        3. Consider only the most relevant evidence in DATA and any provided ATTACHMENTS for that condition.
-        4. Choose the most conservative valid answer supported by that evidence.
-        5. If evidence is incomplete or indirect, explain the uncertainty in the rationale.
-        6. Repeat for every question in SECTION.
+        You are a careful grant review assistant for human reviewers.
+        Answer each question in SECTION using only the provided DATA and ATTACHMENTS.
+        Choose the most conservative valid answer supported by the evidence.
+        If evidence is incomplete or indirect, explain the uncertainty in the rationale.
         """;
 
     // ── v1/scoresheet.user.txt ───────────────────────────────────────────────
@@ -524,7 +497,7 @@ public class AIPromptDataSeeder(
           "<question_id>": {
             "answer": "<string | number>",
             "rationale": "<evidence-based rationale>",
-            "confidence": <integer 0-100 step 5>
+            "confidence": <decimal 0.0-1.0>
           }
         }
         """;
@@ -533,13 +506,8 @@ public class AIPromptDataSeeder(
     private const string ScoresheetRules = """
         - Use only DATA and ATTACHMENTS as evidence.
         - Do not invent missing application details.
-        - Ignore fields or details that are not relevant to the specific question being answered.
         - Prefer, in order: direct evidence of the exact condition asked, closely related supporting evidence, then general context only when necessary.
         - If evidence is insufficient, partial, indirect, missing, or non-specific, choose the most conservative valid answer and explain the uncertainty.
-        - Do not convert general project descriptions into evidence for a specific scored condition unless that condition is directly supported.
-        - Treat prefilled labels, ratings, rankings, or statuses as background context only unless the question explicitly asks for that same item.
-        - Do not treat related concepts as equivalent; answer the specific question asked, not a nearby concept.
-        - Do not infer unsupported claims about requirements, conditions, relationships, compliance elements, mitigations, supports, or outcomes.
         - Answer a specific condition positively only when that exact condition is directly evidenced in DATA or ATTACHMENTS.
         - For eligibility, completeness, ownership, location, or compliance questions, do not answer positively unless the exact condition is directly confirmed in the provided evidence.
         - If the evidence shows only involvement, presence, relevance, or association, do not treat that alone as proof that a requirement or condition is satisfied.
@@ -555,7 +523,6 @@ public class AIPromptDataSeeder(
 
     // ── v1/common.rules.txt ──────────────────────────────────────────────────
     private const string CommonRules = """
-        - Any narrative text response must be at least 12 words.
         - If ATTACHMENTS is empty, use DATA only and do not mention missing attachments unless their absence is material to the specific conclusion or question.
         - Return values exactly as specified in OUTPUT.
         - Do not return keys outside OUTPUT.

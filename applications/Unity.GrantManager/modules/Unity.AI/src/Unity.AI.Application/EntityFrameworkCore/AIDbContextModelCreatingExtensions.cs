@@ -33,7 +33,9 @@ public static class AIDbContextModelCreatingExtensions
                 .HasColumnType("text");
 
             b.Property(x => x.MetadataJson)
-                .HasColumnType("jsonb");
+                .IsRequired()
+                .HasColumnType("jsonb")
+                .HasDefaultValue("{}");
 
             b.Property(x => x.IsActive)
                 .IsRequired();

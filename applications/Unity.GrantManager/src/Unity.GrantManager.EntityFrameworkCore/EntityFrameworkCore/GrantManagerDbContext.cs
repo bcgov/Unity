@@ -243,15 +243,14 @@ public class GrantManagerDbContext :
         {
             b.ToTable(GrantManagerConsts.DbTablePrefix + "AIRequests", AIDbProperties.DbSchema);
             b.ConfigureByConvention();
-            b.Property(x => x.OperationId);
-            b.Property(x => x.RequestKey).IsRequired().HasMaxLength(256);
+            b.Property(x => x.ApplicationId).IsRequired();
+            b.Property(x => x.OperationId).IsRequired();
             b.Property(x => x.FailureReason).HasMaxLength(2000);
             b.Property(x => x.Status).IsRequired();
             b.HasOne<AIOperation>()
                 .WithMany()
                 .HasForeignKey(x => x.OperationId)
                 .OnDelete(DeleteBehavior.Restrict);
-            b.HasIndex(x => x.RequestKey);
             b.HasIndex(x => x.OperationId);
             b.HasIndex(x => new { x.TenantId, x.ApplicationId, x.OperationId, x.Status });
         });

@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Unity.AI.Domain;
 using Unity.AI.Operations;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.GrantApplications.Automation.BackgroundJobs;
@@ -25,28 +26,31 @@ namespace Unity.GrantManager.GrantApplications.Automation;
 
 public class RunApplicationAIPipelineJobTests(ITestOutputHelper outputHelper) : GrantManagerApplicationTestBase(outputHelper)
 {
+    private static readonly Guid AttachmentSummaryOperationId = Guid.Parse("11111111-1111-1111-1111-111111111111");
+    private static readonly Guid ApplicationAnalysisOperationId = Guid.Parse("22222222-2222-2222-2222-222222222222");
+    private static readonly Guid ApplicationScoringOperationId = Guid.Parse("33333333-3333-3333-3333-333333333333");
+    private static readonly Guid PipelineOperationId = Guid.Parse("44444444-4444-4444-4444-444444444444");
+    private static readonly Guid DefaultOperationId = Guid.Parse("55555555-5555-5555-5555-555555555555");
+
     [Fact]
     public async Task ExecuteAsync_Should_Mark_Request_Completed_When_Features_Disabled()
     {
         var featureChecker = Substitute.For<IFeatureChecker>();
         featureChecker.IsEnabledAsync(Arg.Any<string>()).Returns(false);
 
-        var repository = BuildRequestRepository(out var requests);
-        var request = CreateRequest();
-        requests.Add(request);
+        var applicationId = Guid.NewGuid();
+        var tenantId = Guid.NewGuid();
 
-        var job = BuildJob(featureChecker, repository);
+        var job = BuildJob(featureChecker);
         var requestedByUserId = Guid.NewGuid();
 
         await job.ExecuteAsync(new RunApplicationAIPipelineJobArgs
         {
-            ApplicationId = request.ApplicationId!.Value,
-            RequestKey = request.RequestKey,
+            ApplicationId = applicationId,
             RequestedByUserId = requestedByUserId,
-            TenantId = request.TenantId
+            TenantId = tenantId
         });
 
-        request.Status.ShouldBe(AIGenerationRequestStatus.Completed);
     }
 
     [Fact]
@@ -57,41 +61,37 @@ public class RunApplicationAIPipelineJobTests(ITestOutputHelper outputHelper) : 
         featureChecker.IsEnabledAsync("Unity.AI.ApplicationAnalysis").Returns(false);
         featureChecker.IsEnabledAsync("Unity.AI.Scoring").Returns(true);
 
-        var repository = BuildRequestRepository(out var requests);
-        var request = CreateRequest();
-        requests.Add(request);
+        var applicationId = Guid.NewGuid();
+        var tenantId = Guid.NewGuid();
 
         var scoringService = Substitute.For<IApplicationScoringService>();
         scoringService.RegenerateAsync(Arg.Any<ApplicationScoringOperationInputDto>(), Arg.Any<CancellationToken>())
             .Returns("{}");
         var inputBuilder = Substitute.For<IAIApplicationInputBuilder>();
         inputBuilder.BuildApplicationScoringInputAsync(Arg.Any<AIApplicationPromptDataDto>(), Arg.Any<string?>())
-            .Returns(new ApplicationScoringOperationInputDto { ApplicationId = request.ApplicationId!.Value });
+            .Returns(new ApplicationScoringOperationInputDto { ApplicationId = applicationId });
         var applicationRepository = Substitute.For<IApplicationRepository>();
         var application = new Application
         {
             ApplicationFormId = Guid.NewGuid()
         };
-        applicationRepository.GetAsync(request.ApplicationId!.Value).Returns(application);
+        applicationRepository.GetAsync(applicationId).Returns(application);
         applicationRepository.UpdateAsync(Arg.Any<Application>(), Arg.Any<bool>(), Arg.Any<CancellationToken>())
             .Returns(callInfo => Task.FromResult(callInfo.Arg<Application>()));
         var objectMapper = Substitute.For<IObjectMapper>();
         objectMapper.Map<Application, AIApplicationPromptDataDto>(Arg.Any<Application>())
             .Returns(new AIApplicationPromptDataDto
             {
-                ApplicationId = request.ApplicationId!.Value,
+                ApplicationId = applicationId,
                 ApplicationFormId = application.ApplicationFormId
             });
 
         var localEventBus = Substitute.For<ILocalEventBus>();
-        var rateLimiter = Substitute.For<IAIRateLimiter>();
         var requestedByUserId = Guid.NewGuid();
 
         var job = BuildJob(
             featureChecker,
-            repository,
             localEventBus: localEventBus,
-            rateLimiter: rateLimiter,
             applicationScoringService: scoringService,
             inputBuilder: inputBuilder,
             applicationRepository: applicationRepository,
@@ -99,17 +99,14 @@ public class RunApplicationAIPipelineJobTests(ITestOutputHelper outputHelper) : 
 
         await job.ExecuteAsync(new RunApplicationAIPipelineJobArgs
         {
-            ApplicationId = request.ApplicationId!.Value,
-            RequestKey = request.RequestKey,
+            ApplicationId = applicationId,
             RequestedByUserId = requestedByUserId,
-            TenantId = request.TenantId
+            TenantId = tenantId
         });
 
-        request.Status.ShouldBe(AIGenerationRequestStatus.Completed);
-        await applicationRepository.Received(1).GetAsync(request.ApplicationId!.Value);
-        await rateLimiter.Received(1).StampAsync(requestedByUserId);
+        await applicationRepository.Received(1).GetAsync(applicationId);
         await localEventBus.Received(1).PublishAsync(
-            Arg.Is<Automation.Events.ApplicationAIScoringGeneratedEvent>(x => x.ApplicationId == request.ApplicationId));
+            Arg.Is<Automation.Events.ApplicationAIScoringGeneratedEvent>(x => x.ApplicationId == applicationId));
     }
 
     [Fact]
@@ -120,14 +117,13 @@ public class RunApplicationAIPipelineJobTests(ITestOutputHelper outputHelper) : 
         featureChecker.IsEnabledAsync("Unity.AI.ApplicationAnalysis").Returns(true);
         featureChecker.IsEnabledAsync("Unity.AI.Scoring").Returns(false);
 
-        var repository = BuildRequestRepository(out var requests);
-        var request = CreateRequest();
-        requests.Add(request);
+        var applicationId = Guid.NewGuid();
+        var tenantId = Guid.NewGuid();
         var attachmentRepository = Substitute.For<IApplicationChefsFileAttachmentRepository>();
         attachmentRepository.GetListAsync(Arg.Any<System.Linq.Expressions.Expression<Func<ApplicationChefsFileAttachment, bool>>>())
             .Returns(new List<ApplicationChefsFileAttachment>
             {
-                CreateAttachment(request.ApplicationId!.Value)
+                CreateAttachment(applicationId)
             });
 
         var attachmentSummaryService = Substitute.For<IAttachmentSummaryService>();
@@ -139,26 +135,25 @@ public class RunApplicationAIPipelineJobTests(ITestOutputHelper outputHelper) : 
             .Returns("{}");
         var inputBuilder = Substitute.For<IAIApplicationInputBuilder>();
         inputBuilder.BuildApplicationAnalysisInputAsync(Arg.Any<AIApplicationPromptDataDto>(), Arg.Any<string?>())
-            .Returns(new ApplicationAnalysisOperationInputDto { ApplicationId = request.ApplicationId!.Value });
+            .Returns(new ApplicationAnalysisOperationInputDto { ApplicationId = applicationId });
         var applicationRepository = Substitute.For<IApplicationRepository>();
         var application = new Application
         {
             ApplicationFormId = Guid.NewGuid()
         };
-        applicationRepository.GetAsync(request.ApplicationId!.Value).Returns(application);
+        applicationRepository.GetAsync(applicationId).Returns(application);
         applicationRepository.UpdateAsync(Arg.Any<Application>(), Arg.Any<bool>(), Arg.Any<CancellationToken>())
             .Returns(callInfo => Task.FromResult(callInfo.Arg<Application>()));
         var objectMapper = Substitute.For<IObjectMapper>();
         objectMapper.Map<Application, AIApplicationPromptDataDto>(Arg.Any<Application>())
             .Returns(new AIApplicationPromptDataDto
             {
-                ApplicationId = request.ApplicationId!.Value,
+                ApplicationId = applicationId,
                 ApplicationFormId = application.ApplicationFormId
             });
 
         var job = BuildJob(
             featureChecker,
-            repository,
             attachmentRepository: attachmentRepository,
             attachmentSummaryService: attachmentSummaryService,
             applicationAnalysisService: applicationAnalysisService,
@@ -168,14 +163,12 @@ public class RunApplicationAIPipelineJobTests(ITestOutputHelper outputHelper) : 
 
         await job.ExecuteAsync(new RunApplicationAIPipelineJobArgs
         {
-            ApplicationId = request.ApplicationId.Value,
-            RequestKey = request.RequestKey,
+            ApplicationId = applicationId,
             RequestedByUserId = Guid.NewGuid(),
-            TenantId = request.TenantId
+            TenantId = tenantId
         });
 
-        request.Status.ShouldBe(AIGenerationRequestStatus.Completed);
-        await applicationRepository.Received(1).GetAsync(request.ApplicationId!.Value);
+        await applicationRepository.Received(1).GetAsync(applicationId);
         await attachmentSummaryService.Received(1).GenerateAndSaveAsync(Arg.Any<List<Guid>>(), Arg.Any<string?>());
         await applicationAnalysisService.Received(1).RegenerateAsync(Arg.Any<ApplicationAnalysisOperationInputDto>(), Arg.Any<CancellationToken>());
     }
@@ -188,9 +181,8 @@ public class RunApplicationAIPipelineJobTests(ITestOutputHelper outputHelper) : 
         featureChecker.IsEnabledAsync("Unity.AI.ApplicationAnalysis").Returns(true);
         featureChecker.IsEnabledAsync("Unity.AI.Scoring").Returns(true);
 
-        var repository = BuildRequestRepository(out var requests);
-        var request = CreateRequest();
-        requests.Add(request);
+        var applicationId = Guid.NewGuid();
+        var tenantId = Guid.NewGuid();
 
         var analysisService = Substitute.For<IApplicationAnalysisService>();
         analysisService.RegenerateAsync(Arg.Any<ApplicationAnalysisOperationInputDto>(), Arg.Any<CancellationToken>())
@@ -202,35 +194,32 @@ public class RunApplicationAIPipelineJobTests(ITestOutputHelper outputHelper) : 
 
         var inputBuilder = Substitute.For<IAIApplicationInputBuilder>();
         inputBuilder.BuildApplicationAnalysisInputAsync(Arg.Any<AIApplicationPromptDataDto>(), Arg.Any<string?>())
-            .Returns(new ApplicationAnalysisOperationInputDto { ApplicationId = request.ApplicationId!.Value });
+            .Returns(new ApplicationAnalysisOperationInputDto { ApplicationId = applicationId });
         inputBuilder.BuildApplicationScoringInputAsync(Arg.Any<AIApplicationPromptDataDto>(), Arg.Any<string?>())
-            .Returns(new ApplicationScoringOperationInputDto { ApplicationId = request.ApplicationId!.Value });
+            .Returns(new ApplicationScoringOperationInputDto { ApplicationId = applicationId });
 
         var applicationRepository = Substitute.For<IApplicationRepository>();
         var application = new Application
         {
             ApplicationFormId = Guid.NewGuid()
         };
-        applicationRepository.GetAsync(request.ApplicationId!.Value).Returns(application);
+        applicationRepository.GetAsync(applicationId).Returns(application);
         applicationRepository.UpdateAsync(Arg.Any<Application>(), Arg.Any<bool>(), Arg.Any<CancellationToken>())
             .Returns(callInfo => Task.FromResult(callInfo.Arg<Application>()));
         var objectMapper = Substitute.For<IObjectMapper>();
         objectMapper.Map<Application, AIApplicationPromptDataDto>(Arg.Any<Application>())
             .Returns(new AIApplicationPromptDataDto
             {
-                ApplicationId = request.ApplicationId!.Value,
+                ApplicationId = applicationId,
                 ApplicationFormId = application.ApplicationFormId
             });
 
         var localEventBus = Substitute.For<ILocalEventBus>();
-        var rateLimiter = Substitute.For<IAIRateLimiter>();
         var requestedByUserId = Guid.NewGuid();
 
         var job = BuildJob(
             featureChecker,
-            repository,
             localEventBus: localEventBus,
-            rateLimiter: rateLimiter,
             applicationAnalysisService: analysisService,
             applicationScoringService: scoringService,
             inputBuilder: inputBuilder,
@@ -239,22 +228,19 @@ public class RunApplicationAIPipelineJobTests(ITestOutputHelper outputHelper) : 
 
         await job.ExecuteAsync(new RunApplicationAIPipelineJobArgs
         {
-            ApplicationId = request.ApplicationId.Value,
-            RequestKey = request.RequestKey,
+            ApplicationId = applicationId,
             RequestedByUserId = requestedByUserId,
-            TenantId = request.TenantId
+            TenantId = tenantId
         });
 
-        request.Status.ShouldBe(AIGenerationRequestStatus.Completed);
-        await applicationRepository.Received(1).GetAsync(request.ApplicationId!.Value);
+        await applicationRepository.Received(1).GetAsync(applicationId);
         await scoringService.Received(1).RegenerateAsync(Arg.Any<ApplicationScoringOperationInputDto>(), Arg.Any<CancellationToken>());
         await localEventBus.Received(1).PublishAsync(
-            Arg.Is<Automation.Events.ApplicationAIScoringGeneratedEvent>(x => x.ApplicationId == request.ApplicationId));
+            Arg.Is<Automation.Events.ApplicationAIScoringGeneratedEvent>(x => x.ApplicationId == applicationId));
     }
 
     private RunApplicationAIPipelineJob BuildJob(
         IFeatureChecker featureChecker,
-        IRepository<AIGenerationRequest, Guid> generationRequestRepository,
         ILocalEventBus? localEventBus = null,
         IApplicationChefsFileAttachmentRepository? attachmentRepository = null,
         IAttachmentSummaryService? attachmentSummaryService = null,
@@ -262,8 +248,7 @@ public class RunApplicationAIPipelineJobTests(ITestOutputHelper outputHelper) : 
         IApplicationScoringService? applicationScoringService = null,
         IAIApplicationInputBuilder? inputBuilder = null,
         IApplicationRepository? applicationRepository = null,
-        IObjectMapper? objectMapper = null,
-        IAIRateLimiter? rateLimiter = null)
+        IObjectMapper? objectMapper = null)
     {
         return new RunApplicationAIPipelineJob(
             attachmentRepository ?? Substitute.For<IApplicationChefsFileAttachmentRepository>(),
@@ -274,38 +259,9 @@ public class RunApplicationAIPipelineJobTests(ITestOutputHelper outputHelper) : 
             applicationRepository ?? Substitute.For<IApplicationRepository>(),
             featureChecker,
             localEventBus ?? Substitute.For<ILocalEventBus>(),
-            generationRequestRepository,
             Substitute.For<ICurrentTenant>(),
             objectMapper ?? Substitute.For<IObjectMapper>(),
-            GetRequiredService<IUnitOfWorkManager>(),
-            rateLimiter ?? Substitute.For<IAIRateLimiter>(),
             NullLogger<RunApplicationAIPipelineJob>.Instance);
-    }
-
-    private static IRepository<AIGenerationRequest, Guid> BuildRequestRepository(out List<AIGenerationRequest> requests)
-    {
-        var requestList = new List<AIGenerationRequest>();
-        requests = requestList;
-        var repository = Substitute.For<IRepository<AIGenerationRequest, Guid>>();
-
-        repository.GetQueryableAsync()
-            .Returns(Task.FromResult<IQueryable<AIGenerationRequest>>(requestList.AsQueryable()));
-        repository.UpdateAsync(Arg.Any<AIGenerationRequest>(), Arg.Any<bool>(), Arg.Any<CancellationToken>())
-            .Returns(callInfo => Task.FromResult(callInfo.Arg<AIGenerationRequest>()));
-
-        return repository;
-    }
-
-    private static AIGenerationRequest CreateRequest()
-    {
-        var applicationId = Guid.NewGuid();
-        var tenantId = Guid.NewGuid();
-        return new AIGenerationRequest(
-            Guid.NewGuid(),
-            tenantId,
-            Guid.NewGuid(),
-            applicationId,
-            AIGenerationRequestKeyHelper.BuildRequestKey(tenantId, applicationId, AIGenerationRequestKeyHelper.PipelineOperationType));
     }
 
     private static ApplicationChefsFileAttachment CreateAttachment(Guid applicationId)

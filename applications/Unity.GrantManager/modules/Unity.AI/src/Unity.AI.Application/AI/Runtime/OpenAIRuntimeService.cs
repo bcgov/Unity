@@ -117,7 +117,6 @@ namespace Unity.AI.Runtime
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error generating application analysis.");
                 throw;
             }
         }
@@ -140,15 +139,6 @@ namespace Unity.AI.Runtime
                 var prompt = promptTemplate.SystemPrompt;
 
                 var attachmentText = string.IsNullOrWhiteSpace(extractedText) ? null : extractedText;
-                if (attachmentText != null)
-                {
-                    _logger.LogDebug("Received {TextLength} extracted characters for {FileName}", attachmentText.Length, fileName);
-                }
-                else
-                {
-                    _logger.LogDebug("No text extracted from {FileName}, analyzing metadata only", fileName);
-                }
-
                 var attachmentPayload = new
                 {
                     name = fileName,
@@ -193,7 +183,6 @@ namespace Unity.AI.Runtime
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error generating attachment summary for {FileName}", fileName);
                 return new AttachmentSummaryResponse
                 {
                     Summary = $"AI analysis not available for this attachment ({fileName})."
@@ -267,7 +256,6 @@ namespace Unity.AI.Runtime
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error generating application scoring answers for section {SectionName}", request.SectionName);
                 return new ApplicationScoringResponse();
             }
         }

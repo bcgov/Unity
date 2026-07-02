@@ -16,7 +16,7 @@ public class AIPrompt : AuditedAggregateRoot<Guid>, IMultiTenant
 
     public string UserPrompt { get; set; } = default!;
 
-    public string? MetadataJson { get; set; }
+    public string MetadataJson { get; set; } = "{}";
 
     public bool IsActive { get; set; } = true;
 
@@ -35,6 +35,7 @@ public class AIPrompt : AuditedAggregateRoot<Guid>, IMultiTenant
         VersionNumber = versionNumber;
         SystemPrompt = systemPrompt;
         UserPrompt = userPrompt;
+        MetadataJson = "{}";
         TenantId = tenantId;
         IsActive = true;
     }

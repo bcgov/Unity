@@ -769,11 +769,6 @@ namespace Unity.GrantManager.Migrations.HostMigrations
                     b.Property<Guid>("OperationId")
                         .HasColumnType("uuid");
 
-                    b.Property<string>("RequestKey")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
-
                     b.Property<DateTime?>("StartedAt")
                         .HasColumnType("timestamp without time zone");
 
@@ -787,8 +782,6 @@ namespace Unity.GrantManager.Migrations.HostMigrations
                     b.HasKey("Id");
 
                     b.HasIndex("OperationId");
-
-                    b.HasIndex("RequestKey");
 
                     b.HasIndex("TenantId", "ApplicationId", "OperationId", "Status");
 

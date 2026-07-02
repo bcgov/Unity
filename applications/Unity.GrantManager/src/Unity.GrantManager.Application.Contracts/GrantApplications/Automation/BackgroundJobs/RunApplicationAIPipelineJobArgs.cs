@@ -8,5 +8,4 @@ public class RunApplicationAIPipelineJobArgs
     public Guid? TenantId { get; set; }
     public Guid? RequestedByUserId { get; set; }
     public string? PromptVersion { get; set; }
-    public string RequestKey { get; set; } = string.Empty;
 }

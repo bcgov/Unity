@@ -10,5 +10,4 @@ public class GenerateAttachmentSummaryBackgroundJobArgs
     public Guid? RequestedByUserId { get; set; }
     public List<Guid>? AttachmentIds { get; set; }
     public string? PromptVersion { get; set; }
-    public string RequestKey { get; set; } = string.Empty;
 }

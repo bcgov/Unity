@@ -37,9 +37,7 @@ public class ApplicationAIGenerationQueue(
 {
     public async Task QueueAttachmentSummaryAsync(Guid applicationId, Guid? tenantId, string? promptVersion = null, List<Guid>? attachmentIds = null)
     {
-        var requestKey = AIGenerationRequestKeyHelper.BuildRequestKey(tenantId, applicationId, AIGenerationRequestKeyHelper.AttachmentSummaryOperationType);
         await EnsureRequestAndEnqueueAsync(
-            requestKey,
             tenantId,
             AIGenerationRequestKeyHelper.AttachmentSummaryOperationType,
             applicationId,
@@ -52,17 +50,14 @@ public class ApplicationAIGenerationQueue(
                     AttachmentIds = attachmentIds,
                     PromptVersion = promptVersion,
                     RequestedByUserId = currentUser.Id,
-                    TenantId = tenantId,
-                    RequestKey = requestKey
+                    TenantId = tenantId
                 });
             });
     }
 
     public async Task QueueApplicationAnalysisAsync(Guid applicationId, Guid? tenantId, string? promptVersion = null)
     {
-        var requestKey = AIGenerationRequestKeyHelper.BuildRequestKey(tenantId, applicationId, AIGenerationRequestKeyHelper.ApplicationAnalysisOperationType);
         await EnsureRequestAndEnqueueAsync(
-            requestKey,
             tenantId,
             AIGenerationRequestKeyHelper.ApplicationAnalysisOperationType,
             applicationId,
@@ -74,17 +69,14 @@ public class ApplicationAIGenerationQueue(
                     ApplicationId = applicationId,
                     PromptVersion = promptVersion,
                     RequestedByUserId = currentUser.Id,
-                    TenantId = tenantId,
-                    RequestKey = requestKey
+                    TenantId = tenantId
                 });
             });
     }
 
     public async Task QueueApplicationScoringAsync(Guid applicationId, Guid? tenantId, string? promptVersion = null)
     {
-        var requestKey = AIGenerationRequestKeyHelper.BuildRequestKey(tenantId, applicationId, AIGenerationRequestKeyHelper.ApplicationScoringOperationType);
         await EnsureRequestAndEnqueueAsync(
-            requestKey,
             tenantId,
             AIGenerationRequestKeyHelper.ApplicationScoringOperationType,
             applicationId,
@@ -96,49 +88,47 @@ public class ApplicationAIGenerationQueue(
                     ApplicationId = applicationId,
                     PromptVersion = promptVersion,
                     RequestedByUserId = currentUser.Id,
-                    TenantId = tenantId,
-                    RequestKey = requestKey
+                    TenantId = tenantId
                 });
             });
     }
 
     public async Task QueueAllAIStagesAsync(Guid applicationId, Guid? tenantId, string? promptVersion = null)
     {
-        var requestKey = AIGenerationRequestKeyHelper.BuildRequestKey(tenantId, applicationId, AIGenerationRequestKeyHelper.PipelineOperationType);
-        await EnsureRequestAndEnqueueAsync(
-            requestKey,
-            tenantId,
-            AIGenerationRequestKeyHelper.PipelineOperationType,
-            applicationId,
-            () => EnsureAnyPipelineStageAvailableAsync(applicationId),
-            () =>
+        var requestLock = distributedLockProvider.CreateLock($"ai-generation:{tenantId}:{applicationId}:pipeline");
+
+        using (await requestLock.AcquireAsync())
+        {
+            await EnsureAnyPipelineStageAvailableAsync(applicationId);
+            await aiRateLimiter.EnsureAsync();
+
+            await backgroundJobManager.EnqueueAsync(new RunApplicationAIPipelineJobArgs
             {
-                return backgroundJobManager.EnqueueAsync(new RunApplicationAIPipelineJobArgs
-                {
-                    ApplicationId = applicationId,
-                    PromptVersion = promptVersion,
-                    RequestedByUserId = currentUser.Id,
-                    TenantId = tenantId,
-                    RequestKey = requestKey
-                });
+                ApplicationId = applicationId,
+                PromptVersion = promptVersion,
+                RequestedByUserId = currentUser.Id,
+                TenantId = tenantId
             });
+        }
     }
 
     private async Task EnsureRequestAndEnqueueAsync(
-        string requestKey,
         Guid? tenantId,
         string operationType,
         Guid? applicationId,
         Func<Task> validateInput,
         Func<Task> enqueue)
     {
-        var requestLock = distributedLockProvider.CreateLock($"ai-generation:{requestKey}");
+        var operation = await ResolveOperationAsync(operationType);
+        var requestLock = distributedLockProvider.CreateLock($"ai-generation:{tenantId}:{applicationId}:{operation.Id}");
 
         using (await requestLock.AcquireAsync())
         {
             var query = await generationRequestRepository.GetQueryableAsync();
             var existingRequests = query.Where(x =>
-                x.RequestKey == requestKey
+                x.TenantId == tenantId
+                && x.ApplicationId == applicationId
+                && x.OperationId == operation.Id
                 && (x.Status == AIGenerationRequestStatus.Queued || x.Status == AIGenerationRequestStatus.Running));
 
             var existing = existingRequests
@@ -157,14 +147,11 @@ public class ApplicationAIGenerationQueue(
             // The limiter is a no-op for system/background callers without an authenticated user.
             await aiRateLimiter.EnsureAsync();
 
-            var operation = await ResolveOperationAsync(operationType);
-
             var request = new AIGenerationRequest(
                 Guid.NewGuid(),
                 tenantId,
                 operation.Id,
-                applicationId,
-                requestKey);
+                applicationId);
 
             await generationRequestRepository.InsertAsync(request, autoSave: true);
 

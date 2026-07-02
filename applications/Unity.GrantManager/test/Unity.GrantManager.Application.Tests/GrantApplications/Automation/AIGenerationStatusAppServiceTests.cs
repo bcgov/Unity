@@ -20,7 +20,6 @@ public class AIGenerationStatusAppServiceTests(ITestOutputHelper outputHelper) :
         var applicationId = Guid.NewGuid();
         var tenantId = Guid.NewGuid();
         var otherTenantId = Guid.NewGuid();
-        var requestKey = AIGenerationRequestKeyHelper.BuildRequestKey(tenantId, applicationId, AIGenerationRequestKeyHelper.ApplicationAnalysisOperationType);
         var operationId = Guid.NewGuid();
 
         var operations = new[]
@@ -33,8 +32,8 @@ public class AIGenerationStatusAppServiceTests(ITestOutputHelper outputHelper) :
 
         var requests = new[]
         {
-            new AIGenerationRequest(Guid.NewGuid(), otherTenantId, operationId, applicationId, requestKey),
-            new AIGenerationRequest(Guid.NewGuid(), tenantId, operationId, applicationId, requestKey)
+            new AIGenerationRequest(Guid.NewGuid(), otherTenantId, operationId, applicationId),
+            new AIGenerationRequest(Guid.NewGuid(), tenantId, operationId, applicationId)
         };
 
         var repository = Substitute.For<IRepository<AIGenerationRequest, Guid>>();
@@ -58,7 +57,6 @@ public class AIGenerationStatusAppServiceTests(ITestOutputHelper outputHelper) :
     {
         var applicationId = Guid.NewGuid();
         var tenantId = Guid.NewGuid();
-        var requestKey = AIGenerationRequestKeyHelper.BuildRequestKey(tenantId, applicationId, AIGenerationRequestKeyHelper.ApplicationAnalysisOperationType);
         var operationId = Guid.NewGuid();
 
         var operations = new[]
@@ -71,7 +69,7 @@ public class AIGenerationStatusAppServiceTests(ITestOutputHelper outputHelper) :
 
         var requests = new[]
         {
-            new AIGenerationRequest(Guid.NewGuid(), tenantId, operationId, applicationId, requestKey)
+            new AIGenerationRequest(Guid.NewGuid(), tenantId, operationId, applicationId)
         };
 
         var repository = Substitute.For<IRepository<AIGenerationRequest, Guid>>();
@@ -105,7 +103,7 @@ public class AIGenerationStatusAppServiceTests(ITestOutputHelper outputHelper) :
 
         var requests = new[]
         {
-            new AIGenerationRequest(Guid.NewGuid(), tenantId, operationId, applicationId, "legacy-operation-name")
+            new AIGenerationRequest(Guid.NewGuid(), tenantId, operationId, applicationId)
         };
 
         var repository = Substitute.For<IRepository<AIGenerationRequest, Guid>>();

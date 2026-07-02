@@ -32,13 +32,16 @@ public class AIGenerationAppServiceTests(ITestOutputHelper outputHelper) : Grant
         var featureGuard = new AIFeatureGuard(featureChecker, localizer);
 
         var queue = Substitute.For<IApplicationAIGenerationQueue>();
-        queue.QueueAllAIStagesAsync(Arg.Any<Guid>(), Arg.Any<Guid?>(), Arg.Any<string?>())
+        queue.QueueAttachmentSummaryAsync(Arg.Any<Guid>(), Arg.Any<Guid?>(), Arg.Any<string?>(), Arg.Any<List<Guid>?>())
+            .Returns(Task.CompletedTask);
+        queue.QueueApplicationAnalysisAsync(Arg.Any<Guid>(), Arg.Any<Guid?>(), Arg.Any<string?>())
+            .Returns(Task.CompletedTask);
+        queue.QueueApplicationScoringAsync(Arg.Any<Guid>(), Arg.Any<Guid?>(), Arg.Any<string?>())
             .Returns(Task.CompletedTask);
         var currentTenant = Substitute.For<Volo.Abp.MultiTenancy.ICurrentTenant>();
         currentTenant.Id.Returns(Guid.NewGuid());
 
         var service = new AIGenerationAppService(
-            Substitute.For<IAttachmentSummaryService>(),
             queue,
             featureGuard,
             currentTenant);
@@ -46,8 +49,10 @@ public class AIGenerationAppServiceTests(ITestOutputHelper outputHelper) : Grant
         var result = await service.GenerateContentAsync(Guid.NewGuid());
 
         result.ShouldNotBeNull();
-        result.Completed.ShouldBeTrue();
-        await queue.Received(1).QueueAllAIStagesAsync(Arg.Any<Guid>(), Arg.Any<Guid?>(), Arg.Any<string?>());
+        result.Completed.ShouldBeFalse();
+        await queue.Received(1).QueueAttachmentSummaryAsync(Arg.Any<Guid>(), Arg.Any<Guid?>(), Arg.Any<string?>(), Arg.Any<List<Guid>?>());
+        await queue.Received(1).QueueApplicationAnalysisAsync(Arg.Any<Guid>(), Arg.Any<Guid?>(), Arg.Any<string?>());
+        await queue.Received(1).QueueApplicationScoringAsync(Arg.Any<Guid>(), Arg.Any<Guid?>(), Arg.Any<string?>());
     }
 
     [Fact]
@@ -60,16 +65,8 @@ public class AIGenerationAppServiceTests(ITestOutputHelper outputHelper) : Grant
 
         var applicationId = Guid.NewGuid();
         var attachmentIds = new List<Guid> { Guid.NewGuid(), Guid.NewGuid() };
-        var attachmentSummaryService = Substitute.For<IAttachmentSummaryService>();
-        attachmentSummaryService.GenerateForApplicationAsync(
-                applicationId,
-                "v1",
-                Arg.Is<IReadOnlyCollection<Guid>>(ids => ids.SequenceEqual(attachmentIds)),
-                Arg.Any<System.Threading.CancellationToken>())
-            .Returns(new List<string> { "summary-1", "summary-2" });
 
         var service = new AIGenerationAppService(
-            attachmentSummaryService,
             Substitute.For<IApplicationAIGenerationQueue>(),
             featureGuard,
             Substitute.For<Volo.Abp.MultiTenancy.ICurrentTenant>());
@@ -82,11 +79,7 @@ public class AIGenerationAppServiceTests(ITestOutputHelper outputHelper) : Grant
         });
 
         result.Count.ShouldBe(2);
-        await attachmentSummaryService.Received(1).GenerateForApplicationAsync(
-            applicationId,
-            "v1",
-            Arg.Is<IReadOnlyCollection<Guid>>(ids => ids.SequenceEqual(attachmentIds)),
-            Arg.Any<System.Threading.CancellationToken>());
+        result.ShouldAllBe(x => x.Completed == false);
     }
 }
 

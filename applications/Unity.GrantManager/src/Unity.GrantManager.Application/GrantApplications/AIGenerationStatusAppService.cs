@@ -36,7 +36,7 @@ public class AIGenerationStatusAppService(
         var item = query
             .Where(x =>
                 x.ApplicationId == applicationId &&
-            x.OperationId == operation.Id &&
+                x.OperationId == operation.Id &&
                 x.TenantId == resolvedTenantId)
             .OrderByDescending(x => x.CreationTime)
             .ThenByDescending(x => x.Id)
@@ -50,7 +50,6 @@ public class AIGenerationStatusAppService(
                 ApplicationId = item.ApplicationId,
                 OperationId = item.OperationId,
                 OperationType = operationType,
-                RequestKey = item.RequestKey,
                 Status = item.Status,
                 StartedAt = item.StartedAt,
                 CompletedAt = item.CompletedAt,

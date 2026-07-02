@@ -100,9 +100,9 @@ namespace Unity.AI.Runtime
 
                 if (!answerObject.TryGetProperty(AIJsonKeys.Confidence, out var confidenceValue)
                     || confidenceValue.ValueKind != JsonValueKind.Number
-                    || !confidenceValue.TryGetInt32(out var confidence)
-                    || confidence < 0
-                    || confidence > 100)
+                    || !confidenceValue.TryGetDecimal(out var confidence)
+                    || confidence < 0m
+                    || confidence > 1m)
                 {
                     return AIResponseValidationResult.Invalid(
                         $"Application scoring response is missing a valid confidence score for question id '{questionId}'.");

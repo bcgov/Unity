@@ -55,7 +55,7 @@ namespace Unity.GrantManager.Migrations.HostMigrations
                     "VersionNumber" integer NOT NULL,
                     "SystemPrompt" text NOT NULL,
                     "UserPrompt" text NOT NULL,
-                    "MetadataJson" jsonb NULL,
+                    "MetadataJson" jsonb NOT NULL DEFAULT '{}'::jsonb,
                     "IsActive" boolean NOT NULL,
                     "ExtraProperties" text NOT NULL,
                     "ConcurrencyStamp" character varying(40) NOT NULL,
@@ -142,9 +142,8 @@ namespace Unity.GrantManager.Migrations.HostMigrations
                 CREATE TABLE "AI"."AIRequests" (
                     "Id" uuid NOT NULL,
                     "TenantId" uuid NULL,
-                    "ApplicationId" uuid NULL,
-                    "OperationId" uuid NULL,
-                    "RequestKey" character varying(255) NOT NULL,
+                    "ApplicationId" uuid NOT NULL,
+                    "OperationId" uuid NOT NULL,
                     "Status" integer NOT NULL,
                     "StartedAt" timestamp without time zone NULL,
                     "CompletedAt" timestamp without time zone NULL,
@@ -160,12 +159,6 @@ namespace Unity.GrantManager.Migrations.HostMigrations
                     "LastModifierId" uuid NULL,
                     PRIMARY KEY ("Id")
                 );
-                """);
-
-            migrationBuilder.Sql(
-                """
-                CREATE INDEX IF NOT EXISTS "IX_AIRequests_RequestKey"
-                ON "AI"."AIRequests" ("RequestKey");
                 """);
 
             migrationBuilder.Sql(

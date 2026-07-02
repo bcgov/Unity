@@ -37,7 +37,6 @@ namespace Unity.AI.Extraction
         {
             if (fileContent == null)
             {
-                _logger.LogDebug("File content stream is null for {FileName}", fileName);
                 return Task.FromResult(string.Empty);
             }
 
@@ -49,7 +48,6 @@ namespace Unity.AI.Extraction
 
                 if (extension == ".doc")
                 {
-                    _logger.LogDebug("Legacy .doc extraction is not supported for {FileName}", fileName);
                     return Task.FromResult(string.Empty);
                 }
 
@@ -62,12 +60,6 @@ namespace Unity.AI.Extraction
                     ".pptx" => ExtractTextFromPowerPointFile(fileName, fileContent, cancellationToken),
                     _ => ExtractByContentType(fileName, fileContent, normalizedContentType, cancellationToken)
                 };
-
-                if (string.IsNullOrEmpty(rawText))
-                {
-                    _logger.LogDebug("No text extraction available for content type {ContentType} with extension {Extension}",
-                        contentType, extension);
-                }
 
                 return Task.FromResult(NormalizeAndLimitText(rawText, fileName));
             }
@@ -138,12 +130,9 @@ namespace Unity.AI.Extraction
                     builder.Append(buffer, 0, Math.Min(read, remaining));
                     if (builder.Length >= MaxExtractedTextLength)
                     {
-                        _logger.LogDebug("Truncated text content to {MaxLength} characters", MaxExtractedTextLength);
                         break;
                     }
                 }
-
-                _logger.LogDebug("Extracted {CharacterCount} characters from text-based content.", builder.Length);
                 return builder.ToString();
             }
             catch (Exception ex)
@@ -180,7 +169,6 @@ namespace Unity.AI.Extraction
                     }
                 }
 
-                _logger.LogDebug("Extracted PDF text from {ProcessedPageCount} pages for {FileName}", processedPageCount, fileName);
                 return builder.ToString();
             }
             catch (Exception ex)
@@ -200,11 +188,6 @@ namespace Unity.AI.Extraction
                 var processedParagraphCount = AppendDocxParagraphText(document, builder, cancellationToken);
                 var processedTableRowCount = AppendDocxTableText(document, builder, cancellationToken);
 
-                _logger.LogDebug(
-                    "Extracted Word text from {ProcessedParagraphCount} paragraphs and {ProcessedTableRowCount} table rows for {FileName}",
-                    processedParagraphCount,
-                    processedTableRowCount,
-                    fileName);
                 return builder.ToString();
             }
             catch (Exception ex)
@@ -324,11 +307,6 @@ namespace Unity.AI.Extraction
                     }
                 }
 
-                _logger.LogDebug(
-                    "Extracted Excel text from {ProcessedSheetCount} sheets and {ProcessedRowCount} rows for {FileName}",
-                    processedSheetCount,
-                    processedRowCount,
-                    fileName);
                 return builder.ToString();
             }
             catch (Exception ex)
@@ -371,7 +349,6 @@ namespace Unity.AI.Extraction
                     }
                 }
 
-                _logger.LogDebug("Extracted PowerPoint text from {ProcessedSlideCount} slides for {FileName}", processedSlideCount, fileName);
                 return builder.ToString();
             }
             catch (Exception ex)
@@ -390,14 +367,12 @@ namespace Unity.AI.Extraction
 
             if (slideEntriesByName.Count == 0)
             {
-                _logger.LogDebug("No slide entries found in PowerPoint archive.");
                 return Enumerable.Empty<ZipArchiveEntry>();
             }
 
             var orderedSlideNames = TryGetPowerPointSlideOrder(archive);
             if (orderedSlideNames.Count == 0)
             {
-                _logger.LogDebug("Using PowerPoint part-name order fallback for {SlideCount} slides.", slideEntriesByName.Count);
                 return slideEntriesByName.Values
                     .OrderBy(entry => GetPowerPointSlideNumber(entry.FullName))
                     .ToList();
@@ -417,8 +392,6 @@ namespace Unity.AI.Extraction
             {
                 orderedEntries.AddRange(slideEntriesByName.Values.OrderBy(entry => GetPowerPointSlideNumber(entry.FullName)));
             }
-
-            _logger.LogDebug("Resolved PowerPoint presentation order for {SlideCount} slides.", orderedEntries.Count);
             return orderedEntries;
         }
 
@@ -581,9 +554,8 @@ namespace Unity.AI.Extraction
                     .Cast<string>()
                     .ToList();
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogDebug(ex, "Falling back to part-name slide order for PowerPoint extraction.");
                 return new List<string>();
             }
         }
@@ -691,7 +663,6 @@ namespace Unity.AI.Extraction
             if (normalized.Length > MaxExtractedTextLength)
             {
                 normalized = normalized.Substring(0, MaxExtractedTextLength);
-                _logger.LogDebug("Truncated extracted content to {MaxLength} characters", MaxExtractedTextLength);
             }
 
             return normalized;
