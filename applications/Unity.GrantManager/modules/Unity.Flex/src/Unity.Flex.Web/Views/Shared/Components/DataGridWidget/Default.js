@@ -1,9 +1,61 @@
+function getDatagridActionsRowButtonTemplate(actions) {
+    if (actions.length === 0) return '';
+
+    if (actions.length === 1) {
+        if (actions.includes('EDIT'))
+            return '<input type="button" class="btn btn-edit row-edit-btn" value="Edit">';
+        if (actions.includes('DELETE'))
+            return '<input type="button" class="btn btn-delete row-delete-btn" value="Delete">';
+        return '';
+    }
+
+    let items = '';
+    if (actions.includes('EDIT'))
+        items += '<button type="button" class="btn fullWidth row-edit-btn"><i class="fl fl-edit"></i><span>Edit</span></button>';
+    if (actions.includes('DELETE'))
+        items += '<button type="button" class="btn fullWidth row-delete-btn"><i class="fl fl-cancel"></i><span>Delete</span></button>';
+
+    return `<div class="dropdown" style="float:right;">` +
+               `<button type="button" class="btn btn-light dropbtn"><i class="fl fl-attachment-more"></i></button>` +
+               `<div class="dropdown-content">${items}</div>` +
+           `</div>`;
+}
+
+// Function to set data attributes on the row
+function setRowDataAttributes(row, rowIndex) {
+    row.attr('data-row-no', rowIndex);
+}
+
+// Function to format currency as CAD
+function formatDatagridCurrency(value) {
+    return new Intl.NumberFormat('en-CA',
+        { style: 'currency', currency: 'CAD', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value);
+}
+
+// Function to check if a value is numeric
+function isDatagridCellNumeric(value) {
+    return Number.isFinite(Number.parseFloat(value));
+}
+
+// Function to calculate sum for a specific column
+function calculateDatagridColumnSum(table, columnIndex) {
+    let total = 0;
+    table.column(columnIndex).data().each(function (value) {
+        // Remove currency symbols and commas for numeric check
+        let cleanedValue = value.replace(/[^\d.-]/g, '');
+        if (isDatagridCellNumeric(cleanedValue)) {
+            total += Number.parseFloat(cleanedValue);
+        }
+    });
+    return total;
+}
+
 $(function () {
     const UIElements = {
         tables: $('.custom-dynamic-table'),
         tableSearches: $('.custom-tbl-search')
     };
-
+    
     let editDatagridRowModal = new abp.ModalManager({
         viewUrl: '../Components/DataGrid/EditDataRowModal'
     });
@@ -19,21 +71,11 @@ $(function () {
         // Refresh any update table level attributes
         resetTableAttributes($(newRowNode), response);
 
-        // Create the edit button HTML and append it to the last cell of the new row
-        $(newRowNode).find('td:last').html(getEditRowButtonTemplate());
-
-        // Attach click event handler to the newly added button 
-        $(newRowNode).find('.row-edit-btn').on('click', function () {
-            let button = this; // `this` refers to the button element 
-            editDataRow(button);
-        });
+        // Configure action buttons on the last cell of the new row
+        let fieldId = $(newRowNode).closest('table')[0].id;
+        configureActionButtonsForCell($(newRowNode).find('td:last')[0], getTableActions(fieldId));
 
         abp.notify.success('Row added successfully.', 'New Row');
-    }
-
-    // Function to set data attributes on the row
-    function setRowDataAttributes(row, rowIndex) {
-        row.attr('data-row-no', rowIndex);
     }
 
     // Function to reset the table level attributes
@@ -62,10 +104,10 @@ $(function () {
     function updateRow(table, dataToUpdate, rowIndex) {
         $.each(dataToUpdate, function (columnName, newValue) {
             let columnIndex = getColumnIndex(table, columnName);
-            if (columnIndex !== -1) {
-                table.cell(rowIndex, columnIndex).data(newValue);
-            } else {
+            if (columnIndex === -1) {
                 console.warn('Column not found:', columnName);
+            } else {
+                table.cell(rowIndex, columnIndex).data(newValue);
             }
         });
 
@@ -105,18 +147,6 @@ $(function () {
         handleEditDatagridRowModalResult(response);
     });
 
-    // Function to calculate sum for a specific column
-    function calculateColumnSum(table, columnIndex) {
-        let total = 0;
-        table.column(columnIndex).data().each(function (value) {
-            // Remove currency symbols and commas for numeric check
-            let cleanedValue = value.replace(/[^\d.-]/g, '');
-            if (isNumeric(cleanedValue)) {
-                total += parseFloat(cleanedValue);
-            }
-        });
-        return total;
-    }
 
     // Function to update totals
     function updateTotals(table, fieldId) {
@@ -129,27 +159,16 @@ $(function () {
             let columnIndex = getColumnIndex(table, key);
             
             if (columnIndex !== -1) {
-                let total = calculateColumnSum(table, columnIndex);
+                let total = calculateDatagridColumnSum(table, columnIndex);
                 
                 // Update the input field with the calculated total
                 if ($(this).data('field-type') === 'Currency') {
-                    $(this).val(formatCurrency(total));
+                    $(this).val(formatDatagridCurrency(total));
                 } else {
                     $(this).val(total);
                 }
             }
         });
-    }
-
-    // Function to format currency as CAD 
-    function formatCurrency(value) {
-        return new Intl.NumberFormat('en-CA',
-            { style: 'currency', currency: 'CAD', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value);
-    }
-
-    // Function to check if a value is numeric
-    function isNumeric(value) {
-        return !isNaN(value) && isFinite(value);
     }
 
     // Function to get the index of a column by its key
@@ -274,28 +293,37 @@ $(function () {
     }
 
     function configureButtons(fieldId) {
-        let options = ($(`#table-options-${fieldId}`).val()).split(',');
+        let options = new Set(($(`#table-options-${fieldId}`).val()).split(','));
         // Always include ColumnVisibility button regardless of options
-        let availableOptions = actionButtons.filter(item => options.includes(item.id) || item.id === 'ColumnVisibility');
+        let availableOptions = actionButtons.filter(item => options.has(item.id) || item.id === 'ColumnVisibility');
         return availableOptions;
     }
 
-    // Function to configure action buttons for a table cell
-    function configureActionButtonForCell(cell) {
-        cell.innerHTML = getEditRowButtonTemplate(); // Add edit button to each cell
+    function getTableActions(fieldId) {
+        let options = new Set(($(`#table-options-${fieldId}`).val()).split(','));
+        let actions = ['EDIT'];
+        if (options.has('AddRecord')) actions.push('DELETE');
+        return actions;
+    }
 
-        // Attach click event handler to the newly added button 
+    // Function to configure action buttons for a table cell
+    function configureActionButtonsForCell(cell, actions) {
+        cell.innerHTML = getDatagridActionsRowButtonTemplate(actions);
+
         $(cell).find('.row-edit-btn').on('click', function () {
-            let button = this; // `this` refers to the button element 
-            editDataRow(button);
+            editDataRow(this);
+        });
+
+        $(cell).find('.row-delete-btn').on('click', function () {
+            deleteDataRow(this);
         });
     }
 
     // Function to setup the actions column
-    function setupActionsColumn(table, columnIndex) {
-        table.column(columnIndex).header().innerHTML = 'Actions'; // Update column header if needed
+    function setupActionsColumn(table, columnIndex, actions) {
+        table.column(columnIndex).header().innerHTML = 'Actions';
         table.column(columnIndex).nodes().each(function (cell) {
-            configureActionButtonForCell(cell);
+            configureActionButtonsForCell(cell, actions);
         });
     }
 
@@ -303,16 +331,13 @@ $(function () {
         // Move buttons to custom container
         table.buttons().container().prependTo(`#btn-container-${fieldId}`);
 
-        // Add edit buttons to the last column (Actions)
+        let actions = getTableActions(fieldId);
+
         table.columns().every(function (index) {
-            if (index === table.columns().count() - 1) { // Check if it is the last column
-                setupActionsColumn(table, index);
+            if (index === table.columns().count() - 1) {
+                setupActionsColumn(table, index, actions);
             }
         });
-    }
-
-    function getEditRowButtonTemplate() {
-        return '<input type="button" class="btn btn-edit row-edit-btn" value="Edit"></input>';
     }
 
     function editDataRow(button) {
@@ -335,6 +360,75 @@ $(function () {
             columnOrder: getColumnOrder(table.DataTable())
         });
     }
+
+    function refreshGridAfterDelete(fieldId, tableDataSet, container) {
+        $.ajax({
+            url: abp.appPath + 'Flex/Widgets/DataGrid/RefreshByField',
+            type: 'GET',
+            data: {
+                valueId: tableDataSet.valueId,
+                fieldId: fieldId,
+                modelName: fieldId,
+                worksheetId: tableDataSet.wsId,
+                worksheetInstanceId: tableDataSet.wsiId,
+                uiAnchor: tableDataSet.wsAnchor
+            },
+            success: function (html) {
+                $('#' + fieldId).DataTable().destroy();
+                $('#table-options-' + fieldId).parent().html(html);
+                buildDataTables($('#' + fieldId));
+                abp.notify.success('Row deleted successfully.', 'Delete Row');
+            },
+            error: function () {
+                container.find('.grid-loading-overlay').remove();
+                abp.notify.error('Failed to refresh the grid.', 'Delete Row');
+            }
+        });
+    }
+
+    function deleteDataRow(button) {
+        let row = $(button).closest('tr');
+        let rowDataSet = row[0].dataset;
+        let table = $(button).closest('table');
+        let tableDataSet = table[0].dataset;
+        let fieldId = tableDataSet.fieldId;
+        let container = table.closest('.custom-grid-container');
+
+        abp.message.confirm(
+            'Are you sure you want to delete this row?',
+            'Delete Row',
+            function (confirmed) {
+                if (!confirmed) return;
+
+                container.append('<div class="grid-loading-overlay"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></div>');
+
+                $.ajax({
+                    url: abp.appPath + 'Flex/Widgets/DataGrid/DeleteRow',
+                    type: 'POST',
+                    data: {
+                        valueId: tableDataSet.valueId,
+                        row: rowDataSet.rowNo,
+                        worksheetInstanceId: tableDataSet.wsiId,
+                    },
+                    success: function () {
+                        refreshGridAfterDelete(fieldId, tableDataSet, container);
+                    },
+                    error: function () {
+                        container.find('.grid-loading-overlay').remove();
+                        abp.notify.error('Failed to delete the row.', 'Delete Row');
+                    }
+                });
+            }
+        );
+    }
+
+    $(document).on('mouseenter', '.custom-dynamic-table .dropdown', function () {
+        let rect = this.getBoundingClientRect();
+        $(this).find('.dropdown-content').css({
+            top: rect.bottom + 'px',
+            left: rect.left + 'px'
+        });
+    });
 
     PubSub.subscribe(
         'worksheet_preview_datagrid_refresh',

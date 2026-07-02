@@ -10,6 +10,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Unity.Flex.Application\Unity.Flex.Application.csproj" />
+    <ProjectReference Include="..\..\src\Unity.Flex.Web\Unity.Flex.Web.csproj" />
     <ProjectReference Include="..\Unity.Flex.TestBase\Unity.Flex.TestBase.csproj" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.3" />
     <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="10.0.3" />
