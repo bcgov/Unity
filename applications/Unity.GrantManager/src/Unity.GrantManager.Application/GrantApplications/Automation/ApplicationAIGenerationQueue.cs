@@ -115,7 +115,7 @@ public class ApplicationAIGenerationQueue(
     private async Task EnsureRequestAndEnqueueAsync(
         Guid? tenantId,
         string operationType,
-        Guid? applicationId,
+        Guid applicationId,
         Func<Task> validateInput,
         Func<Task> enqueue)
     {
