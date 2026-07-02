@@ -4,6 +4,7 @@
 @using Volo.Abp.AspNetCore.Mvc.UI.Layout;
 @using Unity.GrantManager.Web.Pages.ApplicationForms;
 @using Unity.GrantManager.Permissions;
+@using Unity.Notifications.Permissions;
 
 @using Volo.Abp.Authorization.Permissions;
 @using Unity.GrantManager.Web.Views.Shared.Components.Notifications;
@@ -76,7 +77,11 @@
             }
             <button class="nav-link" id="nav-other-configuration-tab" data-bs-toggle="tab"
                 data-bs-target="#nav-other-configuration" type="button" role="tab">Other Configuration</button>
+                
+            @if (await PermissionChecker.IsGrantedAsync(NotificationsPermissions.Email.NotificationsTab))
+            {    
             <button class="nav-link" id="nav-notifications-tab" data-bs-toggle="tab" data-bs-target="#nav-notifications" type="button" role="tab">Notifications</button>
+            }
             @if (Model?.ShowAITab == true)
             {
                 <button class="nav-link" id="nav-ai-configuration-tab" data-bs-toggle="tab"

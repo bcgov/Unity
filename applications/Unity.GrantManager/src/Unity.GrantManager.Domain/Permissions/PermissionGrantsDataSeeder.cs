@@ -70,7 +70,15 @@ namespace Unity.GrantManager.Permissions
         public readonly List<string> Notifications_CommonPermissions = [
             NotificationsPermissions.Email.Default,
             NotificationsPermissions.Email.Send,
+            NotificationsPermissions.Email.DeleteDraft
         ];
+
+        public readonly List<string> NotificationsScheduling_CommonPermissions = [
+            NotificationsPermissions.Email.CancelScheduled,
+            NotificationsPermissions.Email.ScheduleCreate,
+            NotificationsPermissions.Email.ScheduleDelete,
+            NotificationsPermissions.Email.ScheduleCancel
+        ];        
 
         public readonly List<string> Dashboard_CommonPermissions = [
             GrantApplicationPermissions.Dashboard.Default,
@@ -132,6 +140,7 @@ namespace Unity.GrantManager.Permissions
                     .. PaymentInfo_CommonPermissions,
                     UnitySelector.Payment.Supplier.Update,
                     .. Notifications_CommonPermissions,
+                    .. NotificationsScheduling_CommonPermissions,
                     .. Dashboard_CommonPermissions,
                     .. Tags_CommonPermissions,
                     AIPermissions.Configuration.ConfigureAI,
@@ -196,6 +205,7 @@ namespace Unity.GrantManager.Permissions
                     .. PaymentInfo_CommonPermissions,
                     UnitySelector.Payment.Supplier.Update,
                     .. Notifications_CommonPermissions,
+                    .. NotificationsScheduling_CommonPermissions,
                     .. Dashboard_CommonPermissions,
                     .. Tags_CommonPermissions,
 
@@ -239,6 +249,7 @@ namespace Unity.GrantManager.Permissions
                     .. PaymentInfo_CommonPermissions,
                     UnitySelector.Payment.Supplier.Update,
                     .. Notifications_CommonPermissions,
+                    .. NotificationsScheduling_CommonPermissions,
                     NotificationsPermissions.Settings,
                     .. Dashboard_CommonPermissions,
                     .. Tags_CommonPermissions,

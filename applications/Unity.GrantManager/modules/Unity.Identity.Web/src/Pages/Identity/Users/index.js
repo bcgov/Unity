@@ -65,7 +65,7 @@ $(function () {
 
         $('#ImportUserSearchButton').click(function (e) {
             e.preventDefault();
-            _filterDataTable.ajax.reloadEx();
+            _filterDataTable.ajax.reload();
             $('#import-user-btn').attr('disabled', true);
         });
 
@@ -87,7 +87,7 @@ $(function () {
         });
 
         _importModal.onResult(function () {
-            dataTable.ajax.reloadEx();
+            dataTable.ajax.reload();
         });
     }
 

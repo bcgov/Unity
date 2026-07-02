@@ -2,6 +2,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Unity.AI.Localization;
 using Unity.AI.Permissions;
+using Unity.Modules.Shared.Specializations;
 using Unity.Modules.Shared.Permissions;
 using Volo.Abp.Features;
 using Volo.Abp.UI.Navigation;
@@ -23,14 +24,18 @@ public class AIMenuContributor : IMenuContributor
         var l = context.GetLocalizer<AIResource>();
         var featureChecker = context.ServiceProvider.GetRequiredService<IFeatureChecker>();
 
-        context.Menu.AddItem(new ApplicationMenuItem(
-            name: AIMenus.Prompts,
-            displayName: "AI Prompts",
-            url: "~/Prompts",
-            icon: "fl fl-ai-prompts",
-            order: 900,
-            requiredPermissionName: IdentityConsts.ITOperationsPermissionName
-        ));
+        var specializationChecker = context.ServiceProvider.GetRequiredService<ISpecializationChecker>();
+        if (!await specializationChecker.IsEnabledAsync(SpecializationConsts.Onboarding))
+        {
+            context.Menu.AddItem(new ApplicationMenuItem(
+                name: AIMenus.Prompts,
+                displayName: "AI Prompts",
+                url: "~/Prompts",
+                icon: "fl fl-ai-prompts",
+                order: 900,
+                requiredPermissionName: IdentityConsts.ITOperationsPermissionName
+            ));
+        }
 
         if (await featureChecker.IsEnabledAsync("Unity.AIReporting"))
         {

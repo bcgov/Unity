@@ -22,8 +22,6 @@ namespace Unity.GrantManager.Events
 {
     internal class ScheduledNotificationEventHandler(
         IRepository<ScheduledNotification, Guid> scheduledNotificationRepository,
-        IRepository<EmailLog, Guid> emailLogRepository,
-        IRepository<ScheduledNotificationTracking, Guid> trackingRepository,
         IApplicationRepository applicationRepository,
         IApplicantAgentRepository applicantAgentRepository,
         ILocalEventBus localEventBus,
@@ -147,62 +145,6 @@ namespace Unity.GrantManager.Events
                 logger.LogWarning(
                     "ScheduledNotificationEventHandler: Unknown RecipientCategory '{Category}' on notification {NotificationId}, skipping.",
                     notification.RecipientCategory, notification.Id);
-            }
-        }
-
-        private async Task CreateDraftEmailAsync(
-            ScheduledNotification notification,
-            Application application,
-            EmailTemplate template,
-            string subject,
-            string body,
-            string emailFrom,
-            string toAddress = "")
-        {
-            try
-            {
-                var draftEmail = new EmailLog
-                {
-                    TenantId = currentTenant.Id,
-                    ScheduledNotificationId = notification.Id,
-                    ApplicationId = application.Id,
-                    ApplicantId = application.ApplicantId,
-                    FromAddress = emailFrom,
-                    ToAddress = toAddress, // Populated if recipient is available
-                    Subject = subject,
-                    Body = body,
-                    BodyType = "HTML",
-                    Priority = "Normal",
-                    TemplateName = template.Name,
-                    Tag = "ScheduledNotificationEventHandler", // Identifies source as event handler
-                    Status = EmailStatus.Draft,
-                    EmailType = EmailType.EventBased,
-                    RetryAttempts = 0
-                };
-
-                await emailLogRepository.InsertAsync(draftEmail);
-                
-                // Create tracking record to mark that this notification has been processed for this application
-                if (!string.IsNullOrEmpty(notification.DateField))
-                {
-                    var tracking = new ScheduledNotificationTracking(
-                        Guid.NewGuid(),
-                        application.Id,
-                        notification.Id,
-                        notification.DateField,
-                        DateTime.UtcNow);
-                    await trackingRepository.InsertAsync(tracking);
-                }
-                
-                logger.LogInformation(
-                    "ScheduledNotificationEventHandler: Draft email created for scheduled notification {NotificationId} with subject '{Subject}'.",
-                    notification.Id, subject);
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex,
-                    "ScheduledNotificationEventHandler: Error creating draft email for scheduled notification {NotificationId}.",
-                    notification.Id);
             }
         }
     }

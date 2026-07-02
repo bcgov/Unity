@@ -416,7 +416,7 @@ function highlightSelected(dropdownId,title) {
 }
 
 function initDropdown(dropdownId, title) {
-    $('#' + dropdownId).selectpicker();
+    $('#' + dropdownId).selectpicker({ actionsBox: true });
     $('#' + dropdownId).closest('.bootstrap-select').find('.btn .filter-option-inner-inner').html(title);
     $('#' + dropdownId).closest('.bootstrap-select').find('.btn .filter-option').addClass('button-align-center');
 }

@@ -19,5 +19,6 @@ namespace Unity.Payments.Enums
         Failed = 11,        
         FSB = 12, // Financial Services Branch - Prevent CAS Payment
         HistoricalPayment = 13,
+        Cancelled = 14,
     }
 }

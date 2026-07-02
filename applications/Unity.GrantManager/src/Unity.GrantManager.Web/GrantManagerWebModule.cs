@@ -609,6 +609,7 @@ public class GrantManagerWebModule : AbpModule
         });
         app.UseAuditing();
         app.UseAbpSerilogEnrichers();
+        app.UseMiddleware<OnboardingRedirectMiddleware>();
         app.UseConfiguredEndpoints();
 
         var supportedCultures = new[]

@@ -34,3 +34,17 @@
     font-size: 14px;
     font-weight: bold;
 }
+
+.bs-actionsbox {
+    margin-top: 4px;
+}
+
+.bs-actionsbox .btn-group {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.bs-actionsbox .btn-group button {
+    width: auto;
+}

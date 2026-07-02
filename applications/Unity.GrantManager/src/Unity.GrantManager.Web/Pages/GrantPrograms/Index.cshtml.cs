@@ -5,6 +5,8 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Threading.Tasks;
+using Unity.Modules.Shared.Specializations;
+using Volo.Abp.Features;
 using Volo.Abp.Security.Claims;
 
 namespace Unity.GrantManager.Web.Pages.GrantPrograms
@@ -16,12 +18,15 @@ namespace Unity.GrantManager.Web.Pages.GrantPrograms
 
         private readonly ICurrentPrincipalAccessor _currentPrincipalAccessor;
         private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly IFeatureChecker _featureChecker;
 
         public IndexModel(ICurrentPrincipalAccessor currentPrincipalAccessor,
-            IHttpContextAccessor httpContextAccessor)
+            IHttpContextAccessor httpContextAccessor,
+            IFeatureChecker featureChecker)
         {
             _currentPrincipalAccessor = currentPrincipalAccessor;
             _httpContextAccessor = httpContextAccessor;
+            _featureChecker = featureChecker;
         }
 
         public void OnGet()
@@ -31,20 +36,33 @@ namespace Unity.GrantManager.Web.Pages.GrantPrograms
 
         public async Task<IActionResult> OnPostAsync()
         {
-            // Try update claims principal on the fly? - seems to cause some issues, so far only reliable way to do this is signout and go through the auth process again            
-            if (_httpContextAccessor != null && _httpContextAccessor.HttpContext != null)
+            // Determine landing page for the target tenant before signing out
+            var redirectUrl = "/GrantApplications";
+            if (SwapTenantId.HasValue)
+            {
+                using (CurrentTenant.Change(SwapTenantId))
+                {
+                    if (await _featureChecker.IsEnabledAsync(SpecializationConsts.Onboarding))
+                    {
+                        redirectUrl = "/TenantManagement/Onboarding";
+                    }
+                }
+            }
+
+            // Signout and re-auth is the only reliable way to swap tenant claims
+            if (_httpContextAccessor?.HttpContext != null)
             {
                 await _httpContextAccessor.HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
                 await _httpContextAccessor.HttpContext.SignOutAsync(OpenIdConnectDefaults.AuthenticationScheme);
             }
 
-            if (_currentPrincipalAccessor != null && _currentPrincipalAccessor.Principal != null)
+            if (_currentPrincipalAccessor?.Principal != null)
             {
                 Response.Cookies.Append("set_tenant", SwapTenantId?.ToString() ?? Guid.Empty.ToString(), new CookieOptions()
-                { Secure = true, SameSite = SameSiteMode.None, HttpOnly = true });                
-            }            
+                { Secure = true, SameSite = SameSiteMode.None, HttpOnly = true });
+            }
 
-            return Redirect("/GrantApplications");
+            return Redirect(redirectUrl);
         }
     }
 }
