@@ -49,10 +49,20 @@ namespace Unity.Payments.Domain.Services
 
             paymentStateMachine.Configure(PaymentRequestStatus.L3Pending)
                 .PermitIf(PaymentApprovalAction.Submit, PaymentRequestStatus.Submitted, () => HasPermissionAsync(PaymentsPermissions.Payments.L3ApproveOrDecline).GetAwaiter().GetResult())
-                .PermitIf(PaymentApprovalAction.L3Decline, PaymentRequestStatus.L3Declined, () => HasPermissionAsync(PaymentsPermissions.Payments.L3ApproveOrDecline).GetAwaiter().GetResult());
+                .PermitIf(PaymentApprovalAction.L3Decline, PaymentRequestStatus.L3Declined, () => HasPermissionAsync(PaymentsPermissions.Payments.L3ApproveOrDecline).GetAwaiter().GetResult())
+                .PermitIf(PaymentApprovalAction.Cancel, PaymentRequestStatus.Cancelled, () => HasPermissionAsync(PaymentsPermissions.Payments.CancelPayment).GetAwaiter().GetResult());
 
             paymentStateMachine.Configure(PaymentRequestStatus.L2Declined)
                 .PermitIf(PaymentApprovalAction.Submit, PaymentRequestStatus.Submitted, () => HasPermissionAsync(PaymentsPermissions.Payments.L2ApproveOrDecline).GetAwaiter().GetResult());
+
+            paymentStateMachine.Configure(PaymentRequestStatus.L1Pending)
+                .PermitIf(PaymentApprovalAction.Cancel, PaymentRequestStatus.Cancelled, () => HasPermissionAsync(PaymentsPermissions.Payments.CancelPayment).GetAwaiter().GetResult());
+
+            paymentStateMachine.Configure(PaymentRequestStatus.L2Pending)
+                .PermitIf(PaymentApprovalAction.Cancel, PaymentRequestStatus.Cancelled, () => HasPermissionAsync(PaymentsPermissions.Payments.CancelPayment).GetAwaiter().GetResult());
+
+            paymentStateMachine.Configure(PaymentRequestStatus.HistoricalPayment)
+                .PermitIf(PaymentApprovalAction.Cancel, PaymentRequestStatus.Cancelled, () => HasPermissionAsync(PaymentsPermissions.Payments.CancelPayment).GetAwaiter().GetResult());
         }
 
         private async Task<bool> HasPermissionAsync(string permission)
@@ -193,6 +203,26 @@ namespace Unity.Payments.Domain.Services
             await TriggerAction(paymentRequestId, triggerAction);
 
             await uow.SaveChangesAsync();
+        }
+
+        [Volo.Abp.Uow.UnitOfWork]
+        public virtual async Task<PaymentRequest> CancelPaymentAsync(Guid paymentRequestId)
+        {
+            var paymentRequest = await paymentRequestRepository.GetAsync(paymentRequestId, true);
+            var statusChange = paymentRequest.Status;
+
+            var workflow = new PaymentsWorkflow<PaymentRequestStatus, PaymentApprovalAction>(
+                () => statusChange, s => statusChange = s, ConfigureWorkflow);
+
+            await workflow.ExecuteActionAsync(PaymentApprovalAction.Cancel);
+
+            paymentRequest.SetPaymentRequestStatus(PaymentRequestStatus.Cancelled);
+            paymentRequest.SetCancellation(
+                Clock.Now,
+                currentUser.GetId(),
+                $"{currentUser.Name} {currentUser.SurName}".Trim());
+
+            return await paymentRequestRepository.UpdateAsync(paymentRequest);
         }
     }
 }
