@@ -122,6 +122,7 @@ namespace Unity.AI.Runtime
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Application analysis generation failed.");
                 throw;
             }
         }
@@ -188,6 +189,7 @@ namespace Unity.AI.Runtime
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Attachment summary generation failed for {FileName}.", fileName);
                 return new AttachmentSummaryResponse
                 {
                     Summary = $"AI analysis not available for this attachment ({fileName})."
@@ -261,6 +263,7 @@ namespace Unity.AI.Runtime
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Application scoring generation failed for section {SectionName}.", request.SectionName);
                 return new ApplicationScoringResponse();
             }
         }

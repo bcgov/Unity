@@ -20,7 +20,6 @@ public class OpenAIConfigurationResolver(
     IConfiguration configuration,
     IDataFilter<IMultiTenant> multiTenantDataFilter) : ITransientDependency
 {
-    private const string DefaultOperationName = "Default";
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         PropertyNameCaseInsensitive = true
@@ -202,8 +201,6 @@ public class OpenAIConfigurationResolver(
     private async Task<AIOperation?> ResolveOperationAsync(string operationName, CancellationToken cancellationToken)
     {
         var operations = await _operationRepository.GetListAsync();
-        var activeOperations = operations.Where(operation => operation.IsActive).ToList();
-
         var configuredOperation = operations.FirstOrDefault(operation =>
             string.Equals(operation.Name, operationName, StringComparison.OrdinalIgnoreCase));
         if (configuredOperation != null)
@@ -216,8 +213,7 @@ public class OpenAIConfigurationResolver(
             return configuredOperation;
         }
 
-        return activeOperations.FirstOrDefault(operation =>
-            string.Equals(operation.Name, DefaultOperationName, StringComparison.OrdinalIgnoreCase));
+        return null;
     }
 
     private static AIModelSettings ResolveModelSettings(AIModel model)

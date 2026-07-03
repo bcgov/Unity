@@ -71,9 +71,9 @@ public class AIGenerationAppService(
         return new ApplicationScoringResultDto { Completed = false };
     }
 
-    [Authorize(AIPermissions.Analysis.ViewAttachmentSummary)]
-    [Authorize(AIPermissions.Analysis.ViewApplicationAnalysis)]
-    [Authorize(AIPermissions.Analysis.ViewScoringResult)]
+    [Authorize(AIPermissions.Analysis.GenerateAttachmentSummaries)]
+    [Authorize(AIPermissions.Analysis.GenerateApplicationAnalysis)]
+    [Authorize(AIPermissions.Analysis.GenerateScoring)]
     [HttpPost("all")]
     public virtual async Task<ApplicationContentResultDto> GenerateContentAsync(Guid applicationId, string? promptVersion = null)
     {
