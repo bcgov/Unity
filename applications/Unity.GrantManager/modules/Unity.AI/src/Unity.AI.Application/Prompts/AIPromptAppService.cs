@@ -41,7 +41,7 @@ public class AIPromptAppService :
     }
 
     [HttpGet("by-prompt/{promptId}")]
-    public async Task<ListResultDto<AIPromptDto>> GetByPromptAsync(Guid promptId)
+    public virtual async Task<ListResultDto<AIPromptDto>> GetByPromptAsync(Guid promptId)
     {
         using (_multiTenantDataFilter.Disable())
         {
