@@ -25,7 +25,6 @@ public class AIOperationDataSeeder(
 
     private static readonly BuiltInOperationDefinition[] BuiltInOperations =
     [
-        new("Default", AIPromptTypes.ApplicationAnalysis, 1, 4000, true),
         new(AIPromptTypes.ApplicationAnalysis, AIPromptTypes.ApplicationAnalysis, 1, 4000),
         new(AIPromptTypes.AttachmentSummary, AIPromptTypes.AttachmentSummary, 1, 2000),
         new(AIPromptTypes.ApplicationScoring, AIPromptTypes.ApplicationScoring, 1, 8000)
@@ -59,21 +58,11 @@ public class AIOperationDataSeeder(
         var prompt = await ResolvePromptAsync(definition.PromptName, definition.PromptVersionNumber);
         if (prompt == null)
         {
-            if (definition.IsDefaultOperation)
-            {
-                logger.LogWarning(
-                    "AI default operation seeding skipped: no active prompt found for '{PromptName}' version '{PromptVersionNumber}'.",
-                    definition.PromptName,
-                    definition.PromptVersionNumber);
-            }
-            else
-            {
-                logger.LogWarning(
-                    "AI operation seeding skipped: no active prompt found for operation '{OperationName}' and prompt '{PromptName}' version '{PromptVersionNumber}'.",
-                    definition.OperationName,
-                    definition.PromptName,
-                    definition.PromptVersionNumber);
-            }
+            logger.LogWarning(
+                "AI operation seeding skipped: no active prompt found for operation '{OperationName}' and prompt '{PromptName}' version '{PromptVersionNumber}'.",
+                definition.OperationName,
+                definition.PromptName,
+                definition.PromptVersionNumber);
             return;
         }
 
@@ -117,6 +106,5 @@ public class AIOperationDataSeeder(
         string OperationName,
         string PromptName,
         int PromptVersionNumber,
-        int CompletionTokens,
-        bool IsDefaultOperation = false);
+        int CompletionTokens);
 }

@@ -146,12 +146,6 @@ public static class AIGenerationRequestJobHelper
         var operation = operations.FirstOrDefault(item =>
             string.Equals(item.Name, operationName, StringComparison.OrdinalIgnoreCase));
 
-        if (operation == null && !string.Equals(operationName, "Default", StringComparison.OrdinalIgnoreCase))
-        {
-            operation = operations.FirstOrDefault(item =>
-                string.Equals(item.Name, "Default", StringComparison.OrdinalIgnoreCase));
-        }
-
         return operation ?? throw new InvalidOperationException($"AI operation '{operationType}' is not configured.");
     }
 

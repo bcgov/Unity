@@ -61,11 +61,6 @@ public class AIGenerationStatusAppService(
     private async Task<AIOperation?> ResolveOperationAsync(string operationName)
     {
         var operations = await operationRepository.GetQueryableAsync();
-        var allOperations = (operations ?? Enumerable.Empty<AIOperation>()).ToList();
-
-        return allOperations.FirstOrDefault(operation =>
-                   string.Equals(operation.Name, operationName, StringComparison.OrdinalIgnoreCase))
-               ?? allOperations.FirstOrDefault(operation =>
-                   string.Equals(operation.Name, "Default", StringComparison.OrdinalIgnoreCase));
+        return operations.FirstOrDefault(operation => operation.Name == operationName);
     }
 }

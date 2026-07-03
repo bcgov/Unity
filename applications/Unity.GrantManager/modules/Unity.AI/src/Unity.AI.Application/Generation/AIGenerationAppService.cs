@@ -102,7 +102,7 @@ public class AIGenerationAppService(
 
         if (!hasQueuedStage)
         {
-            throw new UserFriendlyException(AILocalizationKeys.GenerateAllDisabled);
+            throw new UserFriendlyException(L[AILocalizationKeys.GenerateAllDisabled]);
         }
 
         return new ApplicationContentResultDto { Completed = false };
