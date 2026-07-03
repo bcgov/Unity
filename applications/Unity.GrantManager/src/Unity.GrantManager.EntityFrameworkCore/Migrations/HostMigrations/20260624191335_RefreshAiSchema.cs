@@ -13,6 +13,7 @@ namespace Unity.GrantManager.Migrations.HostMigrations
         {
             migrationBuilder.Sql(
                 """
+                CREATE SCHEMA IF NOT EXISTS "AI";
                 DROP TABLE IF EXISTS "AI"."AIRequests";
                 DROP TABLE IF EXISTS "AI"."AIOperations";
                 DROP TABLE IF EXISTS "AI"."AIModels";

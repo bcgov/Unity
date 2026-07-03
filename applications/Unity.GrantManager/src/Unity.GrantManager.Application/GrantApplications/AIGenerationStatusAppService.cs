@@ -6,13 +6,15 @@ using Unity.GrantManager.GrantApplications;
 using Volo.Abp.Application.Services;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.MultiTenancy;
+using Volo.Abp.Linq;
 
 namespace Unity.GrantManager.GrantApplications;
 
 public class AIGenerationStatusAppService(
     IRepository<AIGenerationRequest, Guid> generationRequestRepository,
     IRepository<AIOperation, Guid> operationRepository,
-    ICurrentTenant currentTenant)
+    ICurrentTenant currentTenant,
+    IAsyncQueryableExecuter asyncQueryableExecuter)
     : ApplicationService, IAIGenerationStatusAppService
 {
     public virtual async Task<AIGenerationRequestDto?> GetLatestAsync(Guid applicationId, string operationType, Guid? tenantId = null)
@@ -33,14 +35,14 @@ public class AIGenerationStatusAppService(
         var query = await generationRequestRepository.GetQueryableAsync();
         var resolvedTenantId = tenantId ?? currentTenant.Id;
 
-        var item = query
+        var item = await asyncQueryableExecuter.FirstOrDefaultAsync(
+            query
             .Where(x =>
                 x.ApplicationId == applicationId &&
                 x.OperationId == operation.Id &&
                 x.TenantId == resolvedTenantId)
             .OrderByDescending(x => x.CreationTime)
-            .ThenByDescending(x => x.Id)
-            .FirstOrDefault();
+            .ThenByDescending(x => x.Id));
 
         return item == null
             ? null
@@ -61,6 +63,7 @@ public class AIGenerationStatusAppService(
     private async Task<AIOperation?> ResolveOperationAsync(string operationName)
     {
         var operations = await operationRepository.GetQueryableAsync();
-        return operations.FirstOrDefault(operation => operation.Name == operationName);
+        return await asyncQueryableExecuter.FirstOrDefaultAsync(
+            operations.Where(operation => operation.Name == operationName));
     }
 }

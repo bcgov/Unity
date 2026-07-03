@@ -63,7 +63,6 @@ public class AIPermissionDefinitionProvider : PermissionDefinitionProvider
             "Unity.AI.Scoring",
             "Unity.AI.AttachmentSummaries",
             "Unity.AI.ApplicationAnalysis"));
-
     }
 
     private static LocalizableString L(string name)

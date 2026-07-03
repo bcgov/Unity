@@ -142,9 +142,7 @@ public static class AIGenerationRequestJobHelper
             throw new ArgumentException($"Unknown AI operation type '{operationType}'.", nameof(operationType));
         }
 
-        var operations = await operationRepository.GetListAsync();
-        var operation = operations.FirstOrDefault(item =>
-            string.Equals(item.Name, operationName, StringComparison.OrdinalIgnoreCase));
+        var operation = await operationRepository.FirstOrDefaultAsync(item => item.Name == operationName);
 
         return operation ?? throw new InvalidOperationException($"AI operation '{operationType}' is not configured.");
     }

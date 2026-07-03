@@ -75,36 +75,4 @@ public class AIGenerationAppService(
         await aiGenerationQueue.QueueApplicationScoringAsync(applicationId, currentTenant.Id, promptVersion);
         return new ApplicationScoringResultDto { Completed = false };
     }
-
-    [Authorize(AIPermissions.Analysis.GenerateAll)]
-    [HttpPost("all")]
-    public virtual async Task<ApplicationContentResultDto> GenerateContentAsync(Guid applicationId, string? promptVersion = null)
-    {
-        var hasQueuedStage = false;
-
-        if (await _featureChecker.IsEnabledAsync(AIFeatures.AttachmentSummaries))
-        {
-            await aiGenerationQueue.QueueAttachmentSummaryAsync(applicationId, currentTenant.Id, promptVersion);
-            hasQueuedStage = true;
-        }
-
-        if (await _featureChecker.IsEnabledAsync(AIFeatures.ApplicationAnalysis))
-        {
-            await aiGenerationQueue.QueueApplicationAnalysisAsync(applicationId, currentTenant.Id, promptVersion);
-            hasQueuedStage = true;
-        }
-
-        if (await _featureChecker.IsEnabledAsync(AIFeatures.Scoring))
-        {
-            await aiGenerationQueue.QueueApplicationScoringAsync(applicationId, currentTenant.Id, promptVersion);
-            hasQueuedStage = true;
-        }
-
-        if (!hasQueuedStage)
-        {
-            throw new UserFriendlyException(L[AILocalizationKeys.GenerateAllDisabled]);
-        }
-
-        return new ApplicationContentResultDto { Completed = false };
-    }
 }

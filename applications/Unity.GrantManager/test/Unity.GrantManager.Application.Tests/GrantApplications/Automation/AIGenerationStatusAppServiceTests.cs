@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Unity.AI.Domain;
 using Unity.GrantManager.GrantApplications;
 using Volo.Abp.Domain.Repositories;
+using Volo.Abp.Linq;
 using Volo.Abp.MultiTenancy;
 using Xunit;
 using Xunit.Abstractions;
@@ -40,11 +41,12 @@ public class AIGenerationStatusAppServiceTests(ITestOutputHelper outputHelper) :
         repository.GetQueryableAsync().Returns(Task.FromResult<IQueryable<AIGenerationRequest>>(requests.AsQueryable()));
         var operationRepository = Substitute.For<IRepository<AIOperation, Guid>>();
         operationRepository.GetQueryableAsync().Returns(Task.FromResult<IQueryable<AIOperation>>(operations.AsQueryable()));
+        var asyncQueryableExecuter = new AsyncQueryableExecuter(Array.Empty<IAsyncQueryableProvider>());
 
         var currentTenant = Substitute.For<ICurrentTenant>();
         currentTenant.Id.Returns(tenantId);
 
-        var service = new AIGenerationStatusAppService(repository, operationRepository, currentTenant);
+        var service = new AIGenerationStatusAppService(repository, operationRepository, currentTenant, asyncQueryableExecuter);
 
         var result = await service.GetLatestAsync(applicationId, AIGenerationRequestKeyHelper.ApplicationAnalysisOperationType);
 
@@ -76,11 +78,12 @@ public class AIGenerationStatusAppServiceTests(ITestOutputHelper outputHelper) :
         repository.GetQueryableAsync().Returns(Task.FromResult<IQueryable<AIGenerationRequest>>(requests.AsQueryable()));
         var operationRepository = Substitute.For<IRepository<AIOperation, Guid>>();
         operationRepository.GetQueryableAsync().Returns(Task.FromResult<IQueryable<AIOperation>>(operations.AsQueryable()));
+        var asyncQueryableExecuter = new AsyncQueryableExecuter(Array.Empty<IAsyncQueryableProvider>());
 
         var currentTenant = Substitute.For<ICurrentTenant>();
         currentTenant.Id.Returns(tenantId);
 
-        var service = new AIGenerationStatusAppService(repository, operationRepository, currentTenant);
+        var service = new AIGenerationStatusAppService(repository, operationRepository, currentTenant, asyncQueryableExecuter);
 
         var result = await service.GetLatestAsync(applicationId, AIGenerationRequestKeyHelper.ApplicationAnalysisOperationType);
 
@@ -110,11 +113,12 @@ public class AIGenerationStatusAppServiceTests(ITestOutputHelper outputHelper) :
         repository.GetQueryableAsync().Returns(Task.FromResult<IQueryable<AIGenerationRequest>>(requests.AsQueryable()));
         var operationRepository = Substitute.For<IRepository<AIOperation, Guid>>();
         operationRepository.GetQueryableAsync().Returns(Task.FromResult<IQueryable<AIOperation>>(operations.AsQueryable()));
+        var asyncQueryableExecuter = new AsyncQueryableExecuter(Array.Empty<IAsyncQueryableProvider>());
 
         var currentTenant = Substitute.For<ICurrentTenant>();
         currentTenant.Id.Returns(tenantId);
 
-        var service = new AIGenerationStatusAppService(repository, operationRepository, currentTenant);
+        var service = new AIGenerationStatusAppService(repository, operationRepository, currentTenant, asyncQueryableExecuter);
 
         var result = await service.GetLatestAsync(applicationId, "legacy-operation-name");
 

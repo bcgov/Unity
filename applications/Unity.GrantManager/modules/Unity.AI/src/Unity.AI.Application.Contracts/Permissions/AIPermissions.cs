@@ -21,7 +21,6 @@ public static class AIPermissions
         public const string GenerateApplicationAnalysis = GroupName + ".GenerateApplicationAnalysis";
         public const string GenerateAttachmentSummaries = GroupName + ".GenerateAttachmentSummaries";
         public const string GenerateScoring             = GroupName + ".GenerateScoring";
-        public const string GenerateAll                 = GroupName + ".GenerateAll";
     }
 
     public static class Configuration
