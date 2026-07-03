@@ -14,7 +14,6 @@ using Unity.AI.Runtime;
 using Volo.Abp.Data;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.MultiTenancy;
-using Volo.Abp.Linq;
 using Xunit;
 
 namespace Unity.GrantManager.AI.Runtime;
@@ -46,20 +45,11 @@ public class OpenAIRuntimeServiceTests
         var configuration = new Microsoft.Extensions.Configuration.ConfigurationBuilder().Build();
         var multiTenantDataFilter = Substitute.For<IDataFilter<IMultiTenant>>();
         multiTenantDataFilter.Disable().Returns(Substitute.For<IDisposable>());
-        var asyncQueryableExecuter = Substitute.For<IAsyncQueryableExecuter>();
-        asyncQueryableExecuter.FirstOrDefaultAsync(Arg.Any<IQueryable<AIOperation>>(), Arg.Any<CancellationToken>())
-            .Returns(callInfo => Task.FromResult(callInfo.Arg<IQueryable<AIOperation>>().FirstOrDefault()));
-        asyncQueryableExecuter.FirstOrDefaultAsync(Arg.Any<IQueryable<AIModel>>(), Arg.Any<CancellationToken>())
-            .Returns(callInfo => Task.FromResult(callInfo.Arg<IQueryable<AIModel>>().FirstOrDefault()));
-        asyncQueryableExecuter.FirstOrDefaultAsync(Arg.Any<IQueryable<AIPrompt>>(), Arg.Any<CancellationToken>())
-            .Returns(callInfo => Task.FromResult(callInfo.Arg<IQueryable<AIPrompt>>().FirstOrDefault()));
-
         return new OpenAIConfigurationResolver(
             modelRepository,
             operationRepository,
             promptRepository,
             configuration,
-            multiTenantDataFilter,
-            asyncQueryableExecuter);
+            multiTenantDataFilter);
     }
 }

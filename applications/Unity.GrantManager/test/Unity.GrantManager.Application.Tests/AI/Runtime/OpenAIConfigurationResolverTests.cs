@@ -15,7 +15,6 @@ using Unity.AI.Runtime;
 using Volo.Abp.Data;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.MultiTenancy;
-using Volo.Abp.Linq;
 using Xunit;
 
 namespace Unity.GrantManager.AI.Runtime;
@@ -304,17 +303,12 @@ public class OpenAIConfigurationResolverTests
 
         var filter = multiTenantDataFilter ?? Substitute.For<IDataFilter<IMultiTenant>>();
         filter.Disable().Returns(Substitute.For<IDisposable>());
-        var asyncQueryableExecuter = Substitute.For<IAsyncQueryableExecuter>();
-        asyncQueryableExecuter.FirstOrDefaultAsync(Arg.Any<IQueryable<AIOperation>>(), Arg.Any<CancellationToken>())
-            .Returns(callInfo => Task.FromResult(callInfo.Arg<IQueryable<AIOperation>>().FirstOrDefault()));
-
         return new OpenAIConfigurationResolver(
             modelRepository ?? CreateEmptyModelRepository(),
             operationRepository ?? CreateEmptyOperationRepository(),
             promptRepository ?? CreateEmptyPromptRepository(),
             configuration,
-            filter,
-            asyncQueryableExecuter);
+            filter);
     }
 
     private static IRepository<AIModel, Guid> CreateEmptyModelRepository()
