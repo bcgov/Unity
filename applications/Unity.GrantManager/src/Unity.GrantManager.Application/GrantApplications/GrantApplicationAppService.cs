@@ -1256,17 +1256,11 @@ public class GrantApplicationAppService(
         await EnsureScoringEnabledAsync();
         await aiGenerationQueue.QueueAllAIStagesAsync(applicationId, CurrentTenant.Id, promptVersion);
 
-        var request = await aiGenerationStatusAppService.GetLatestAsync(
-            applicationId,
-            AIGenerationRequestKeyHelper.PipelineOperationType,
-            CurrentTenant.Id);
-
-        if (request == null)
-        {
-            throw new UserFriendlyException("Unable to queue AI generation request.");
-        }
-
-        return await CreateGenerationStatusAsync(request);
+        return await CreateGenerationStatusAsync(
+            await aiGenerationStatusAppService.GetLatestAsync(
+                applicationId,
+                AIGenerationRequestKeyHelper.ApplicationAnalysisOperationType,
+                CurrentTenant.Id));
     }
 
     private async Task<AIGenerationStatusDto> CreateGenerationStatusAsync(AIGenerationRequestDto? request)

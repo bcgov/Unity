@@ -47,6 +47,17 @@ public class AIPromptDataSeeder(
                 output: AnalysisOutput,
                 rules: AnalysisRules,
                 commonRules: CommonRules));
+        await EnsurePromptAsync(
+            AIPromptTypes.ApplicationAnalysis,
+            2,
+            AnalysisSystemV2,
+            AnalysisUserV2,
+            BuildSections(
+                rubric: AnalysisRubricV2,
+                score: AnalysisScoreV2,
+                output: AnalysisOutputV2,
+                rules: AnalysisRulesV2,
+                commonRules: CommonRules));
     }
 
     // ─── ATTACHMENT ───────────────────────────────────────────────────────────
@@ -63,6 +74,15 @@ public class AIPromptDataSeeder(
                 output: AttachmentOutput,
                 rules: AttachmentRules,
                 commonRules: CommonRules));
+        await EnsurePromptAsync(
+            AIPromptTypes.AttachmentSummary,
+            2,
+            AttachmentSystemV2,
+            AttachmentUserV2,
+            BuildSections(
+                output: AttachmentOutputV2,
+                rules: AttachmentRulesV2,
+                commonRules: CommonRules));
     }
 
     // ─── SCORESHEET ───────────────────────────────────────────────────────────
@@ -78,6 +98,15 @@ public class AIPromptDataSeeder(
             BuildSections(
                 output: ScoresheetOutput,
                 rules: ScoresheetRules,
+                commonRules: CommonRules));
+        await EnsurePromptAsync(
+            AIPromptTypes.ApplicationScoring,
+            2,
+            ScoresheetSystemV2,
+            ScoresheetUserV2,
+            BuildSections(
+                output: ScoresheetOutputV2,
+                rules: ScoresheetRulesV2,
                 commonRules: CommonRules));
     }
 
@@ -246,9 +275,15 @@ public class AIPromptDataSeeder(
 
     // ── v1/analysis.system.txt ───────────────────────────────────────────────
     private const string AnalysisSystemV1 = """
-        You are a careful grant review assistant for human reviewers.
-        Review the application and attachments for the strongest reviewer-relevant evidence.
-        Return only conclusions that are directly supported by that evidence.
+        ROLE
+        You are a careful grant review assistant for human reviewers. Do not fill gaps, assume compliance, or treat relevance as proof.
+
+        TASK
+        Using SCHEMA, DATA, ATTACHMENTS, RUBRIC, SCORE, OUTPUT, and RULES:
+        1. Review the application and any provided attachments for the strongest reviewer-relevant evidence.
+        2. Determine which conclusions are directly supported by that evidence.
+        3. Exclude weak, repetitive, or loosely supported conclusions.
+        4. Return only the strongest evidence-backed reviewer conclusions.
         """;
 
     // ── v1/analysis.user.txt ─────────────────────────────────────────────────
@@ -351,6 +386,113 @@ public class AIPromptDataSeeder(
         - Return an empty array only when no concrete next action would help the reviewer.
         """;
 
+    // ── v2/analysis.system.txt ───────────────────────────────────────────────
+    private const string AnalysisSystemV2 = """
+        You are a careful grant review assistant for human reviewers.
+        Review the application and attachments for the strongest evidence-backed reviewer conclusions.
+        Do not fill gaps, assume compliance, or treat relevance as proof.
+        """;
+
+    // ── v2/analysis.user.txt ─────────────────────────────────────────────────
+    private const string AnalysisUserV2 = """
+        SCHEMA
+        {{SCHEMA}}
+
+        DATA
+        {{DATA}}
+
+        ATTACHMENTS
+        {{ATTACHMENTS}}
+
+        RUBRIC
+        {{RUBRIC}}
+
+        SCORE
+        {{SCORE}}
+
+        RESPONSE
+        {{RESPONSE}}
+
+        RULES
+        {{RULES}}
+        {{COMMON_RULES}}
+        """;
+
+    // ── v2/analysis.rubric.txt ───────────────────────────────────────────────
+    private const string AnalysisRubricV2 = """
+        ELIGIBILITY REQUIREMENTS: Project aligns with program objectives; Applicant is an eligible entity; Budget is reasonable and justified; Timeline is realistic.
+        COMPLETENESS CHECKS: Required information is present; Supporting materials are provided where applicable; Description is clear.
+        FINANCIAL REVIEW: Requested amount is within limits; Budget matches scope; Matching funds or contributions are identified.
+        RISK ASSESSMENT: Applicant capacity; Feasibility; Compliance considerations; Delivery risks.
+        QUALITY INDICATORS: Clear objectives; Defined beneficiaries; Appropriate approach; Long-term sustainability.
+        """;
+
+    // ── v2/analysis.score.txt ────────────────────────────────────────────────
+    private const string AnalysisScoreV2 = """
+        HIGH: Application demonstrates strong evidence across most rubric areas with few or no issues.
+        MEDIUM: Application has some gaps or weaknesses that require reviewer attention.
+        LOW: Application has significant gaps or risks across key rubric areas.
+        """;
+
+    // ── v2/analysis.output.txt ───────────────────────────────────────────────
+    private const string AnalysisOutputV2 = """
+        {
+          "decision": "<PROCEED|HOLD>",
+          "errors": [
+            {
+              "title": "<string>",
+              "detail": "<string>"
+            }
+          ],
+          "warnings": [
+            {
+              "title": "<string>",
+              "detail": "<string>"
+            }
+          ],
+          "summaries": [
+            {
+              "title": "<string>",
+              "detail": "<string>"
+            }
+          ],
+          "recommendations": [
+            {
+              "title": "<string>",
+              "detail": "<string>"
+            }
+          ]
+        }
+        """;
+
+    // ── v2/analysis.rules.txt ────────────────────────────────────────────────
+    private const string AnalysisRulesV2 = """
+        - Use only provided input sections as evidence.
+        - Do not invent fields, documents, requirements, or facts.
+        - Prefer, in order: direct evidence from DATA, specific supporting evidence from ATTACHMENTS, then broader context only when necessary.
+        - Treat missing or empty values as findings only when they weaken rubric evidence.
+        - Prefer material findings; avoid nitpicking.
+        - Prefer direct evidence from DATA over derivative statements in ATTACHMENTS when both address the same point.
+        - If ATTACHMENTS evidence is used, cite the attachment by name in detail.
+        - Each detail must cite concrete evidence from DATA or ATTACHMENTS.
+        - Write reviewer-facing natural language. Do not refer to prompt section names, internal field keys, or schema labels such as DATA, ATTACHMENTS, ProjectSummary, CustomField1, or OrganizationType.
+        - Refer to evidence by its plain-language meaning, quoted text, or attachment name rather than internal key names.
+        - Only include warnings when the evidence shows a specific, concrete risk, inconsistency, or meaningful uncertainty; a stated risk label alone is not enough.
+        - Use 3-6 words for title.
+        - Summary titles should name the specific substantive reviewer conclusion, strength, or risk, not a generic evaluation label or abstract category.
+        - Each detail must be 1-2 complete sentences.
+        - Summaries and recommendations must be concrete, distinct, reviewer-relevant, and specific to this application's evidence.
+        - Avoid generic praise, checklist language, and repeated conclusions across lists.
+        - Do not use a summary merely to say that supporting documents were provided; summarize the specific substantive evidence they add, or omit the finding.
+        - If no findings exist, return empty arrays.
+        - Decision must be PROCEED or HOLD.
+        - Use summaries for overall application quality/readiness synthesis.
+        - Use recommendations for concrete reviewer-facing next actions based on the provided evidence.
+        - Recommendations may include proceeding with the normal review process when the application appears ready for that step.
+        - When evidence shows a meaningful gap, inconsistency, or uncertainty, use recommendations for specific follow-up or verification actions.
+        - Return an empty array only when no concrete next action would help the reviewer.
+        """;
+
     // ── v0/attachment.system.txt ─────────────────────────────────────────────
     private const string AttachmentSystemV0 = """
         You are a professional grant analyst for the BC Government.
@@ -373,9 +515,14 @@ public class AIPromptDataSeeder(
 
     // ── v1/attachment.system.txt ─────────────────────────────────────────────
     private const string AttachmentSystemV1 = """
-        You are a careful grant review assistant for human reviewers.
-        Summarize the attachment itself, not the overall project.
-        Return a concise reviewer-facing summary.
+        ROLE
+        You are a careful grant review assistant for human reviewers. Do not fill gaps, assume compliance, or treat relevance as proof.
+
+        TASK
+        Using ATTACHMENT, OUTPUT, and RULES:
+        1. Review the attachment to identify what it contains.
+        2. Summarize the attachment itself, not the overall project.
+        3. Return a concise reviewer-facing summary.
         """;
 
     // ── v1/attachment.user.txt ───────────────────────────────────────────────
@@ -400,6 +547,50 @@ public class AIPromptDataSeeder(
 
     // ── v1/attachment.rules.txt ──────────────────────────────────────────────
     private const string AttachmentRules = """
+        - Use only ATTACHMENT as evidence.
+        - Summarize actual content when ATTACHMENT.text is present; otherwise provide a conservative file-level summary.
+        - Describe the attachment itself rather than summarizing the overall project.
+        - Ensure the summary describes the attachment itself, not the overall project.
+        - If ATTACHMENT.text is primarily structured application, contact, organization, budget, or date fields, summarize it as a metadata-style attachment rather than rewriting it as a generic project summary.
+        - Begin with what the attachment contains or provides, not the file name or file type, unless that metadata is necessary to describe the evidence.
+        - Do not invent missing details.
+        - Do not calculate or restate totals, sums, or aggregates unless they are explicitly present in ATTACHMENT.text.
+        - Write reviewer-facing natural language. Do not refer to prompt section names, internal field keys, or schema labels such as ATTACHMENT or ATTACHMENT.text.
+        - Refer to evidence by its plain-language meaning, quoted text, or file name rather than internal key names.
+        - Write 1-2 complete sentences.
+        - Summary must be grounded in concrete ATTACHMENT evidence.
+        - Return exactly one object with only the key: summary.
+        """;
+
+    // ── v2/attachment.system.txt ─────────────────────────────────────────────
+    private const string AttachmentSystemV2 = """
+        You are a careful grant review assistant for human reviewers.
+        Summarize the attachment itself, not the overall project.
+        Return a concise reviewer-facing summary.
+        """;
+
+    // ── v2/attachment.user.txt ───────────────────────────────────────────────
+    private const string AttachmentUserV2 = """
+        ATTACHMENT
+        {{ATTACHMENT}}
+
+        RESPONSE
+        {{RESPONSE}}
+
+        RULES
+        {{RULES}}
+        {{COMMON_RULES}}
+        """;
+
+    // ── v2/attachment.output.txt ─────────────────────────────────────────────
+    private const string AttachmentOutputV2 = """
+        {
+          "summary": "<string>"
+        }
+        """;
+
+    // ── v2/attachment.rules.txt ──────────────────────────────────────────────
+    private const string AttachmentRulesV2 = """
         - Use only ATTACHMENT as evidence.
         - Summarize actual content when ATTACHMENT.text is present; otherwise provide a conservative file-level summary.
         - Describe the attachment itself rather than summarizing the overall project.
@@ -445,7 +636,7 @@ public class AIPromptDataSeeder(
 
         OUTPUT
         {
-          "<question_id>": {
+            "<question_id>": {
             "answer": "<string | number>",
             "rationale": "<evidence-based rationale>",
             "confidence": <decimal 0.0-1.0>
@@ -464,12 +655,73 @@ public class AIPromptDataSeeder(
         - Return valid plain JSON only in the exact OUTPUT shape.
         """;
 
-    // ── v1/scoresheet.system.txt ─────────────────────────────────────────────
-    private const string ScoresheetSystemV1 = """
+    // ── v2/scoresheet.system.txt ─────────────────────────────────────────────
+    private const string ScoresheetSystemV2 = """
         You are a careful grant review assistant for human reviewers.
         Answer each question in SECTION using only the provided DATA and ATTACHMENTS.
         Choose the most conservative valid answer supported by the evidence.
         If evidence is incomplete or indirect, explain the uncertainty in the rationale.
+        """;
+
+    // ── v2/scoresheet.user.txt ───────────────────────────────────────────────
+    private const string ScoresheetUserV2 = """
+        DATA
+        {{DATA}}
+
+        ATTACHMENTS
+        {{ATTACHMENTS}}
+
+        SECTION
+        {{SECTION}}
+
+        RESPONSE
+        {{RESPONSE}}
+
+        RULES
+        {{RULES}}
+        {{COMMON_RULES}}
+        """;
+
+    // ── v2/scoresheet.output.txt ─────────────────────────────────────────────
+    private const string ScoresheetOutputV2 = """
+        {
+          "<question_id>": {
+            "answer": "<string | number>",
+            "rationale": "<evidence-based rationale>",
+            "confidence": <decimal 0.0-1.0>
+          }
+        }
+        """;
+
+    // ── v2/scoresheet.rules.txt ──────────────────────────────────────────────
+    private const string ScoresheetRulesV2 = """
+        - Use only DATA and ATTACHMENTS as evidence.
+        - Do not invent missing application details.
+        - Prefer direct evidence of the exact condition asked.
+        - If evidence is insufficient, partial, indirect, missing, or non-specific, choose the most conservative valid answer and explain the uncertainty.
+        - Return exactly one answer object per question ID in SECTION.questions.
+        - Do not omit any question IDs from SECTION.questions.
+        - Do not add keys that are not question IDs from SECTION.questions.
+        - Use the exact question IDs from RESPONSE and SECTION.questions without alteration.
+        - Use RESPONSE as the output contract and fill every placeholder value.
+        - Each answer object must include: "answer", "rationale", and "confidence".
+        - Confidence is mandatory for every question and must always be a numeric decimal between 0.0 and 1.0.
+        - The "answer" value type must match question type: Number => numeric; YesNo/SelectList/Text/TextArea => string.
+        """;
+
+    // ── v1/scoresheet.system.txt ─────────────────────────────────────────────
+    private const string ScoresheetSystemV1 = """
+        ROLE
+        You are a careful grant review assistant for human reviewers. Do not fill gaps, assume compliance, or treat relevance as proof.
+
+        TASK
+        Using DATA, ATTACHMENTS, SECTION, RESPONSE, OUTPUT, and RULES:
+        1. Review each question in SECTION one at a time.
+        2. Identify the exact condition the question asks about.
+        3. Consider only the most relevant evidence in DATA and any provided ATTACHMENTS for that condition.
+        4. Choose the most conservative valid answer supported by that evidence.
+        5. If evidence is incomplete or indirect, explain the uncertainty in the rationale.
+        6. Repeat for every question in SECTION.
         """;
 
     // ── v1/scoresheet.user.txt ───────────────────────────────────────────────
@@ -506,8 +758,13 @@ public class AIPromptDataSeeder(
     private const string ScoresheetRules = """
         - Use only DATA and ATTACHMENTS as evidence.
         - Do not invent missing application details.
+        - Ignore fields or details that are not relevant to the specific question being answered.
         - Prefer, in order: direct evidence of the exact condition asked, closely related supporting evidence, then general context only when necessary.
         - If evidence is insufficient, partial, indirect, missing, or non-specific, choose the most conservative valid answer and explain the uncertainty.
+        - Do not convert general project descriptions into evidence for a specific scored condition unless that condition is directly supported.
+        - Treat prefilled labels, ratings, rankings, or statuses as background context only unless the question explicitly asks for that same item.
+        - Do not treat related concepts as equivalent; answer the specific question asked, not a nearby concept.
+        - Do not infer unsupported claims about requirements, conditions, relationships, compliance elements, mitigations, supports, or outcomes.
         - Answer a specific condition positively only when that exact condition is directly evidenced in DATA or ATTACHMENTS.
         - For eligibility, completeness, ownership, location, or compliance questions, do not answer positively unless the exact condition is directly confirmed in the provided evidence.
         - If the evidence shows only involvement, presence, relevance, or association, do not treat that alone as proof that a requirement or condition is satisfied.
@@ -523,6 +780,7 @@ public class AIPromptDataSeeder(
 
     // ── v1/common.rules.txt ──────────────────────────────────────────────────
     private const string CommonRules = """
+        - Any narrative text response must be at least 12 words.
         - If ATTACHMENTS is empty, use DATA only and do not mention missing attachments unless their absence is material to the specific conclusion or question.
         - Return values exactly as specified in OUTPUT.
         - Do not return keys outside OUTPUT.

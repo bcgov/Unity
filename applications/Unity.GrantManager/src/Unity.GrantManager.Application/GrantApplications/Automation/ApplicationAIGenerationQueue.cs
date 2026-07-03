@@ -95,20 +95,60 @@ public class ApplicationAIGenerationQueue(
 
     public async Task QueueAllAIStagesAsync(Guid applicationId, Guid? tenantId, string? promptVersion = null)
     {
-        var requestLock = distributedLockProvider.CreateLock($"ai-generation:{tenantId}:{applicationId}:pipeline");
+        var hasEnabledStage = false;
+        var enqueuedStage = false;
+        UserFriendlyException? lastStageException = null;
 
-        using (await requestLock.AcquireAsync())
+        if (await featureChecker.IsEnabledAsync(AIFeatures.AttachmentSummaries))
         {
-            await EnsureAnyPipelineStageAvailableAsync(applicationId);
-            await aiRateLimiter.EnsureAsync();
-
-            await backgroundJobManager.EnqueueAsync(new RunApplicationAIPipelineJobArgs
+            hasEnabledStage = true;
+            try
             {
-                ApplicationId = applicationId,
-                PromptVersion = promptVersion,
-                RequestedByUserId = currentUser.Id,
-                TenantId = tenantId
-            });
+                await QueueAttachmentSummaryAsync(applicationId, tenantId, promptVersion);
+                enqueuedStage = true;
+            }
+            catch (UserFriendlyException ex)
+            {
+                lastStageException = ex;
+            }
+        }
+
+        if (await featureChecker.IsEnabledAsync(AIFeatures.ApplicationAnalysis))
+        {
+            hasEnabledStage = true;
+            try
+            {
+                await QueueApplicationAnalysisAsync(applicationId, tenantId, promptVersion);
+                enqueuedStage = true;
+            }
+            catch (UserFriendlyException ex)
+            {
+                lastStageException = ex;
+            }
+        }
+
+        if (await featureChecker.IsEnabledAsync(AIFeatures.Scoring))
+        {
+            hasEnabledStage = true;
+            try
+            {
+                await QueueApplicationScoringAsync(applicationId, tenantId, promptVersion);
+                enqueuedStage = true;
+            }
+            catch (UserFriendlyException ex)
+            {
+                lastStageException = ex;
+            }
+        }
+
+        if (!hasEnabledStage)
+        {
+            throw new UserFriendlyException(localizer[AILocalizationKeys.GenerateAllDisabled]);
+        }
+
+        if (!enqueuedStage && lastStageException != null)
+        {
+            throw lastStageException;
         }
     }
 
@@ -194,58 +234,6 @@ public class ApplicationAIGenerationQueue(
         }
 
         return operation;
-    }
-
-    private async Task EnsureAnyPipelineStageAvailableAsync(Guid applicationId)
-    {
-        var hasEnabledStage = false;
-        var hasAvailableStage = false;
-        UserFriendlyException? lastPrerequisiteException = null;
-
-        async Task CheckStageAsync(bool isEnabled, Func<Task> ensurePrerequisite)
-        {
-            if (!isEnabled)
-            {
-                return;
-            }
-
-            hasEnabledStage = true;
-
-            try
-            {
-                await ensurePrerequisite();
-                hasAvailableStage = true;
-            }
-            catch (UserFriendlyException ex)
-            {
-                lastPrerequisiteException = ex;
-            }
-        }
-
-        await CheckStageAsync(
-            await featureChecker.IsEnabledAsync(AIFeatures.AttachmentSummaries),
-            () => aiGenerationPrerequisiteValidator.EnsureAttachmentSummaryAvailableAsync(applicationId));
-        await CheckStageAsync(
-            await featureChecker.IsEnabledAsync(AIFeatures.ApplicationAnalysis),
-            () => aiGenerationPrerequisiteValidator.EnsureApplicationAnalysisAvailableAsync(applicationId));
-        await CheckStageAsync(
-            await featureChecker.IsEnabledAsync(AIFeatures.Scoring),
-            () => aiGenerationPrerequisiteValidator.EnsureApplicationScoringAvailableAsync(applicationId));
-
-        if (hasAvailableStage)
-        {
-            return;
-        }
-
-        if (lastPrerequisiteException != null)
-        {
-            throw lastPrerequisiteException;
-        }
-
-        if (!hasEnabledStage)
-        {
-            throw new UserFriendlyException(localizer[AILocalizationKeys.GenerateAllDisabled]);
-        }
     }
 
     private async Task MarkFailedBestEffortAsync(AIGenerationRequest request, Exception exception)

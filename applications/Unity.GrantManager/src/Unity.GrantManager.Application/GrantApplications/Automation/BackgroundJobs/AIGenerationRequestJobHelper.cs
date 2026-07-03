@@ -142,12 +142,13 @@ public static class AIGenerationRequestJobHelper
             throw new ArgumentException($"Unknown AI operation type '{operationType}'.", nameof(operationType));
         }
 
-        var operation = await operationRepository.FirstOrDefaultAsync(item =>
+        var operations = await operationRepository.GetListAsync();
+        var operation = operations.FirstOrDefault(item =>
             string.Equals(item.Name, operationName, StringComparison.OrdinalIgnoreCase));
 
         if (operation == null && !string.Equals(operationName, "Default", StringComparison.OrdinalIgnoreCase))
         {
-            operation = await operationRepository.FirstOrDefaultAsync(item =>
+            operation = operations.FirstOrDefault(item =>
                 string.Equals(item.Name, "Default", StringComparison.OrdinalIgnoreCase));
         }
 

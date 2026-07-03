@@ -40,11 +40,25 @@ public class AIGenerationQueueTests(ITestOutputHelper outputHelper) : GrantManag
         var applicationId = Guid.NewGuid();
         var tenantId = Guid.NewGuid();
         var backgroundJobManager = Substitute.For<IBackgroundJobManager>();
-        RunApplicationAIPipelineJobArgs? capturedArgs = null;
-        backgroundJobManager.EnqueueAsync<RunApplicationAIPipelineJobArgs>(Arg.Any<RunApplicationAIPipelineJobArgs>(), Arg.Any<BackgroundJobPriority>(), Arg.Any<TimeSpan?>())
+        var attachmentJobs = new List<GenerateAttachmentSummaryBackgroundJobArgs>();
+        var analysisJobs = new List<GenerateApplicationAnalysisBackgroundJobArgs>();
+        var scoringJobs = new List<GenerateApplicationScoringBackgroundJobArgs>();
+        backgroundJobManager.EnqueueAsync(Arg.Any<GenerateAttachmentSummaryBackgroundJobArgs>(), Arg.Any<BackgroundJobPriority>(), Arg.Any<TimeSpan?>())
             .Returns(callInfo =>
             {
-                capturedArgs = callInfo.Arg<RunApplicationAIPipelineJobArgs>();
+                attachmentJobs.Add(callInfo.Arg<GenerateAttachmentSummaryBackgroundJobArgs>());
+                return Task.FromResult(string.Empty);
+            });
+        backgroundJobManager.EnqueueAsync(Arg.Any<GenerateApplicationAnalysisBackgroundJobArgs>(), Arg.Any<BackgroundJobPriority>(), Arg.Any<TimeSpan?>())
+            .Returns(callInfo =>
+            {
+                analysisJobs.Add(callInfo.Arg<GenerateApplicationAnalysisBackgroundJobArgs>());
+                return Task.FromResult(string.Empty);
+            });
+        backgroundJobManager.EnqueueAsync(Arg.Any<GenerateApplicationScoringBackgroundJobArgs>(), Arg.Any<BackgroundJobPriority>(), Arg.Any<TimeSpan?>())
+            .Returns(callInfo =>
+            {
+                scoringJobs.Add(callInfo.Arg<GenerateApplicationScoringBackgroundJobArgs>());
                 return Task.FromResult(string.Empty);
             });
 
@@ -52,12 +66,12 @@ public class AIGenerationQueueTests(ITestOutputHelper outputHelper) : GrantManag
 
         await queue.QueueAllAIStagesAsync(applicationId, tenantId, "v1");
 
-        capturedArgs.ShouldNotBeNull();
-        capturedArgs!.ApplicationId.ShouldBe(applicationId);
-        capturedArgs.TenantId.ShouldBe(tenantId);
-        capturedArgs.PromptVersion.ShouldBe("v1");
-        capturedArgs.RequestedByUserId.ShouldBe(CreateQueueCurrentUserId);
-        await backgroundJobManager.Received(1).EnqueueAsync(Arg.Any<RunApplicationAIPipelineJobArgs>(), Arg.Any<BackgroundJobPriority>(), Arg.Any<TimeSpan?>());
+        attachmentJobs.Single().ApplicationId.ShouldBe(applicationId);
+        analysisJobs.Single().ApplicationId.ShouldBe(applicationId);
+        scoringJobs.Single().ApplicationId.ShouldBe(applicationId);
+        attachmentJobs.Single().TenantId.ShouldBe(tenantId);
+        analysisJobs.Single().TenantId.ShouldBe(tenantId);
+        scoringJobs.Single().TenantId.ShouldBe(tenantId);
     }
 
     [Fact]
@@ -66,18 +80,35 @@ public class AIGenerationQueueTests(ITestOutputHelper outputHelper) : GrantManag
         var applicationId = Guid.NewGuid();
         var tenantId = Guid.NewGuid();
         var backgroundJobManager = Substitute.For<IBackgroundJobManager>();
-        var prerequisiteValidator = Substitute.For<IAIGenerationPrerequisiteValidator>();
-        prerequisiteValidator.EnsureAttachmentSummaryAvailableAsync(applicationId)
-            .Returns<Task>(_ => throw new UserFriendlyException("No attachments are available to summarize."));
-        prerequisiteValidator.EnsureApplicationAnalysisAvailableAsync(applicationId).Returns(Task.CompletedTask);
-        prerequisiteValidator.EnsureApplicationScoringAvailableAsync(applicationId)
-            .Returns<Task>(_ => throw new UserFriendlyException("AI scoring requires a configured scoresheet."));
+        var attachmentJobs = new List<GenerateAttachmentSummaryBackgroundJobArgs>();
+        var analysisJobs = new List<GenerateApplicationAnalysisBackgroundJobArgs>();
+        var scoringJobs = new List<GenerateApplicationScoringBackgroundJobArgs>();
+        backgroundJobManager.EnqueueAsync(Arg.Any<GenerateAttachmentSummaryBackgroundJobArgs>(), Arg.Any<BackgroundJobPriority>(), Arg.Any<TimeSpan?>())
+            .Returns(callInfo =>
+            {
+                attachmentJobs.Add(callInfo.Arg<GenerateAttachmentSummaryBackgroundJobArgs>());
+                return Task.FromResult(string.Empty);
+            });
+        backgroundJobManager.EnqueueAsync(Arg.Any<GenerateApplicationAnalysisBackgroundJobArgs>(), Arg.Any<BackgroundJobPriority>(), Arg.Any<TimeSpan?>())
+            .Returns(callInfo =>
+            {
+                analysisJobs.Add(callInfo.Arg<GenerateApplicationAnalysisBackgroundJobArgs>());
+                return Task.FromResult(string.Empty);
+            });
+        backgroundJobManager.EnqueueAsync(Arg.Any<GenerateApplicationScoringBackgroundJobArgs>(), Arg.Any<BackgroundJobPriority>(), Arg.Any<TimeSpan?>())
+            .Returns(callInfo =>
+            {
+                scoringJobs.Add(callInfo.Arg<GenerateApplicationScoringBackgroundJobArgs>());
+                return Task.FromResult(string.Empty);
+            });
 
-        var queue = CreateQueue(backgroundJobManager, prerequisiteValidator: prerequisiteValidator);
+        var queue = CreateQueue(backgroundJobManager);
 
         await queue.QueueAllAIStagesAsync(applicationId, tenantId);
 
-        await backgroundJobManager.Received(1).EnqueueAsync(Arg.Any<RunApplicationAIPipelineJobArgs>(), Arg.Any<BackgroundJobPriority>(), Arg.Any<TimeSpan?>());
+        attachmentJobs.Count.ShouldBe(1);
+        analysisJobs.Count.ShouldBe(1);
+        scoringJobs.Count.ShouldBe(1);
     }
 
     [Fact]
@@ -101,7 +132,9 @@ public class AIGenerationQueueTests(ITestOutputHelper outputHelper) : GrantManag
         await Should.ThrowAsync<UserFriendlyException>(() => queue.QueueAllAIStagesAsync(applicationId, tenantId));
 
         await rateLimiter.DidNotReceive().EnsureAsync();
-        await backgroundJobManager.DidNotReceive().EnqueueAsync(Arg.Any<RunApplicationAIPipelineJobArgs>(), Arg.Any<BackgroundJobPriority>(), Arg.Any<TimeSpan?>());
+        await backgroundJobManager.DidNotReceive().EnqueueAsync(Arg.Any<GenerateAttachmentSummaryBackgroundJobArgs>(), Arg.Any<BackgroundJobPriority>(), Arg.Any<TimeSpan?>());
+        await backgroundJobManager.DidNotReceive().EnqueueAsync(Arg.Any<GenerateApplicationAnalysisBackgroundJobArgs>(), Arg.Any<BackgroundJobPriority>(), Arg.Any<TimeSpan?>());
+        await backgroundJobManager.DidNotReceive().EnqueueAsync(Arg.Any<GenerateApplicationScoringBackgroundJobArgs>(), Arg.Any<BackgroundJobPriority>(), Arg.Any<TimeSpan?>());
     }
 
     [Fact]

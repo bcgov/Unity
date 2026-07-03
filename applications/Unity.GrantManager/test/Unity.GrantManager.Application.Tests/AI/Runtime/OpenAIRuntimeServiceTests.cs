@@ -23,7 +23,7 @@ public class OpenAIRuntimeServiceTests
     {
         var resolver = CreateResolverWithNoOperations();
 
-        await Should.ThrowAsync<Exception>(() =>
+        await Should.ThrowAsync<ArgumentNullException>(() =>
             resolver.ResolveOperationSettingsAsync(AIPromptTypes.ApplicationAnalysis));
     }
 

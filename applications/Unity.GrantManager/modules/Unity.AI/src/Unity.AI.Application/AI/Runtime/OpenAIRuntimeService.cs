@@ -9,6 +9,7 @@ using Unity.AI.Models;
 using Unity.AI.Prompts;
 using Unity.AI.Requests;
 using Unity.AI.Responses;
+using Volo.Abp;
 using Volo.Abp.DependencyInjection;
 
 namespace Unity.AI.Runtime
@@ -103,10 +104,14 @@ namespace Unity.AI.Runtime
                         providerDetails = providerDetails[..400];
                     }
 
-                    throw new InvalidOperationException(
-                        $"Application analysis generation failed with outcome '{result.Outcome}' and failure category '{result.FailureCategory}'. " +
-                        $"HTTP status: {(result.Response?.HttpStatusCode?.ToString() ?? "n/a")}. " +
-                        $"Provider details: {providerDetails ?? "n/a"}");
+                    _logger.LogError(
+                        "Application analysis generation failed with outcome {Outcome} and failure category {FailureCategory}. HTTP status {HttpStatusCode}. Provider details: {ProviderDetails}",
+                        result.Outcome,
+                        result.FailureCategory,
+                        result.Response?.HttpStatusCode?.ToString() ?? "n/a",
+                        providerDetails ?? "n/a");
+
+                    throw new UserFriendlyException("Application analysis generation failed.");
                 }
 
                 return OpenAIResponseParser.ParseApplicationAnalysisResponse(result.Content);
