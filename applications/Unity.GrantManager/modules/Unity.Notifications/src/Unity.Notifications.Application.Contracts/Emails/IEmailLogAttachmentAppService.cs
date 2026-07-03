@@ -8,5 +8,6 @@ namespace Unity.Notifications.Emails;
 public interface IEmailLogAttachmentAppService : IApplicationService
 {
     Task<List<EmailLogAttachmentDto>> GetListByEmailLogIdAsync(Guid emailLogId);
+    Task<List<EmailLogAttachmentDto>> GetListByTemplateIdAsync(Guid templateId);
     Task DeleteAsync(Guid id);
 }

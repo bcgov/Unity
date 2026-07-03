@@ -148,17 +148,19 @@
     }
 
     function renderTriggerDetail(data, type, row) {
+        let detail = '';
         if (row.triggerType === 'Date') {
-            let detail = row.dateType ? row.dateType : '';
-            if (row.recipientCategory) {
-                detail += (detail ? ' → ' : '') + 'Category: ' + row.recipientCategory;
-            }
-            if (row.recipientIdentifier) {
-                detail += (detail ? ', ' : '') + 'Recipients: ' + row.recipientIdentifier;
-            }
-            return detail;
+            detail = row.dateType ? row.dateType : '';
+        } else {
+            detail = row.eventStatus ? row.eventStatus : '';
         }
-        return row.eventStatus ? row.eventStatus : '';
+        if (row.recipientCategory) {
+            detail += (detail ? ' → ' : '') + 'Category: ' + row.recipientCategory;
+        }
+        if (row.recipientIdentifier) {
+            detail += (detail ? ', ' : '') + 'Recipients: ' + row.recipientIdentifier;
+        }
+        return detail;
     }
 
     function getNotificationColumns() {

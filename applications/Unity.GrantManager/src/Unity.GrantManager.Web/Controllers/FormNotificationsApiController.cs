@@ -30,7 +30,7 @@ namespace Unity.GrantManager.Web.Controllers
         [HttpGet("templates")]
         public async Task<ActionResult<List<EmailTemplateDto>>> GetTemplates()
         {
-            var templates = await _templateService.GetTemplatesByTenent();
+            var templates = await _templateService.GetTemplatesByTenant();
             var list = templates.Select(t => new EmailTemplateDto
             {
                 Id = t.Id,
@@ -179,6 +179,26 @@ namespace Unity.GrantManager.Web.Controllers
             if (!Guid.TryParse(formId, out _)) return BadRequest("Invalid form id");
             await _automatedNotificationAppService.CancelAsync(id);
             return NoContent();
+        }
+
+        [HttpGet("can-delete-template/{templateId:guid}")]
+        public async Task<ActionResult<object>> CanDeleteTemplate(Guid templateId)
+        {
+            var result = await _automatedNotificationAppService.GetListAsync(
+                new Notifications.GetNotificationsInput { MaxResultCount = 1000 });
+
+            var inUse = result.Items.Any(n => n.EmailTemplateId == templateId);
+
+            if (inUse)
+            {
+                return Ok(new
+                {
+                    canDelete = false,
+                    errorMessage = "This template cannot be deleted because it is assigned to one or more Scheduled Notifications. Please remove the template from all Scheduled Notifications before deleting."
+                });
+            }
+
+            return Ok(new { canDelete = true, errorMessage = (string?)null });
         }
 
         [HttpPut("{formId}/{id:guid}")]

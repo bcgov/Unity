@@ -1873,18 +1873,9 @@ function deleteEmailAttachment(attachmentId) {
  * @returns {string} HTML for attachment button
  */
 function generateEmailAttachmentButtonContent(attachmentId) {
-    return `
-        <div class="dropdown" style="float:right;">
-            <button class="btn btn-light dropbtn" type="button">
-                <i class="fl fl-attachment-more"></i>
-            </button>
-            <div class="dropdown-content">
-                <button class="btn fullWidth" style="margin:10px" type="button"
-                        onclick="deleteEmailAttachment('${attachmentId}')">
-                    <i class="fl fl-cancel"></i><span>Delete Attachment</span>
-                </button>
-            </div>
-        </div>`;
+    return `<button class="btn fullWidth" style="margin:10px" type="button" onclick="deleteEmailAttachment('${attachmentId}')">
+                <i class="fl fl-cancel"></i>
+            </button>`;
 }
 
 /**

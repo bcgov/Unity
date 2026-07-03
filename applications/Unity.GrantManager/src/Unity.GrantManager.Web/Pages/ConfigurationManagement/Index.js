@@ -2,6 +2,7 @@
     const menuItems = $('#ConfigurationManagementSideMenu .nav-item');
     const configSections = $('.config-section');
     const ACTIVE_MENU_KEY = 'ConfigurationManagement_ActiveMenu';
+    const ACTIVE_PAYMENTS_TAB_KEY = 'payments-active-tab';
 
     init();
 
@@ -11,6 +12,10 @@
         // Adjust DataTables when Payments internal tabs are shown
         $('button[data-bs-toggle="tab"]').on('shown.bs.tab', function () {
             adjustDataTables();
+            // Save active payments tab
+            if ($(this).closest('#payments-nav-tab').length) {
+                localStorage.setItem(ACTIVE_PAYMENTS_TAB_KEY, this.id);
+            }
         });
 
         // Restore the last active menu item from localStorage, fallback to first
@@ -23,14 +28,18 @@
             $('#' + targetId).removeClass('hide');
         }
 
-        // Auto-activate the first Payment tab (if rendered)
-        const firstPaymentTab = $('#payments-nav-tab .nav-link').first();
-        if (firstPaymentTab.length) {
-            firstPaymentTab.addClass('active');
-            const targetPane = $(firstPaymentTab.data('bs-target'));
-            if (targetPane.length) {
-                targetPane.addClass('show active');
-            }
+        // Auto-activate saved Payment tab or first tab
+        const savedPaymentTabId = localStorage.getItem(ACTIVE_PAYMENTS_TAB_KEY);
+        const paymentTabContainer = $('#payments-nav-tab');
+        let paymentTabToActivate = paymentTabContainer.find(`#${savedPaymentTabId}`);
+        
+        if (!paymentTabToActivate.length) {
+            paymentTabToActivate = paymentTabContainer.find('.nav-link').first();
+        }
+        
+        if (paymentTabToActivate.length) {
+            const tab = new bootstrap.Tab(paymentTabToActivate[0]);
+            tab.show();
         }
     }
 

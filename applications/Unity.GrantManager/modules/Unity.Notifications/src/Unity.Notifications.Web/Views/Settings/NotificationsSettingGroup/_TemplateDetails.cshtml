@@ -1,0 +1,52 @@
+<div class="card-header editor-header py-2">
+    <div class="d-flex align-items-center gap-2 flex-wrap">                          
+        <button id="saveTemplateBtn" class="btn btn-sm btn-primary ms-auto">Save</button>                                         
+        <button id="discardTemaplateBtn" type="button" class="btn btn-outline-secondary btn-action-gray">Discard</button>
+        <button id="closeTemplateBtn" type="button" class="btn btn-sm btn-outline-secondary btn-action-gray">Close</button>
+        <button id="deleteTeamplateBtn" type="button" class="btn btn-sm btn-outline-secondary btn-action-gray btn-hidden"><i class="fl fl-cancel"></i></button>
+    </div>
+</div>
+
+<div class="card mb-3 shadow-sm">
+    <input type="hidden" id="templateId">
+    <div class="mb-3">
+        <div class="d-flex template-field-div">
+            <label for="templateName" class="form-label template-field">Template Name</label>
+            <div class="flex-grow-1">
+                <input id="templateName" type="text" class="form-control form-input" name="templateName" required>
+                <div id="templateName-error" class="invalid-feedback d-block" style="display: none;"></div>
+            </div>
+        </div>
+    </div>
+    <div class="mb-3">
+        <div class="d-flex template-field-div">
+            <label for="sendFrom" class="form-label template-field">Send From</label>
+            <div class="flex-grow-1">
+                <input id="sendFrom" type="text" class="form-control form-input" name="sendFrom" required>
+                <div id="sendFrom-error" class="invalid-feedback d-block" style="display: none;"></div>
+            </div>
+        </div>
+    </div>
+    <div class="mb-3">
+        <div class="d-flex template-field-div">
+            <label for="subject" class="form-label template-field">Subject</label>
+            <div class="flex-grow-1">
+                <input id="subject" type="text" class="form-control form-input" name="subject" required>
+                <div id="subject-error" class="invalid-feedback d-block" style="display: none;"></div>
+            </div>
+        </div>
+    </div>
+    <div class="mb-3">
+        <div class="d-flex">
+            <label for="templateBody" class="d-none">Body</label>
+            <div class="flex-grow-1">
+                <textarea id="templateBody" required></textarea>
+                <div id="templateBody-error" class="invalid-feedback d-block" style="display: none;"></div>
+            </div>
+        </div>
+    </div>
+    <div class="mb-3 info-note">
+        <b>NOTE</b>: <span class="note-text">Selecting text will let you customize it: replace it with a
+            variable, make it bold, italic, change the alignment, add a link, create a list, etc.</span>
+    </div>
+</div>

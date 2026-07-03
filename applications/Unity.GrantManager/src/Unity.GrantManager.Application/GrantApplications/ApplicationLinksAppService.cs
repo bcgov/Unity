@@ -15,10 +15,10 @@ namespace Unity.GrantManager.GrantApplications;
 
 [Authorize]
 [ExposeServices(typeof(ApplicationLinksAppService), typeof(IApplicationLinksService))]
-public class ApplicationLinksAppService : CrudAppService<
+public class ApplicationLinksAppService(IRepository<ApplicationLink, Guid> repository) : CrudAppService<
         ApplicationLink,
         ApplicationLinksDto,
-        Guid>, IApplicationLinksService
+        Guid>(repository), IApplicationLinksService
 {
     // Validation Error Messages
     private const string ERROR_MULTIPLE_PARENTS = "Error: A submission can not have two parents. Please revise the link type.";
@@ -32,8 +32,6 @@ public class ApplicationLinksAppService : CrudAppService<
     public IApplicationRepository ApplicationRepository { get; set; } = null!;
     public IApplicantRepository ApplicantRepository { get; set; } = null!;
     public IApplicationFormAppService ApplicationFormAppService { get; set; } = null!;
-
-    public ApplicationLinksAppService(IRepository<ApplicationLink, Guid> repository) : base(repository) { }
 
     public async Task<List<ApplicationLinksInfoDto>> GetListByApplicationAsync(Guid applicationId)
     {
