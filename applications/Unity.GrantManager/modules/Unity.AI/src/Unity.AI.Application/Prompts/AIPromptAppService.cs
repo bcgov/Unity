@@ -97,7 +97,7 @@ public class AIPromptAppService :
                     input.UserPrompt,
                     prompt.TenantId)
                 {
-                    MetadataJson = input.MetadataJson,
+                    MetadataJson = string.IsNullOrWhiteSpace(input.MetadataJson) ? "{}" : input.MetadataJson,
                     IsActive = input.IsActive
                 });
 
@@ -125,7 +125,7 @@ public class AIPromptAppService :
             entity.VersionNumber = input.VersionNumber;
             entity.SystemPrompt = input.SystemPrompt;
             entity.UserPrompt = input.UserPrompt;
-            entity.MetadataJson = input.MetadataJson;
+            entity.MetadataJson = string.IsNullOrWhiteSpace(input.MetadataJson) ? "{}" : input.MetadataJson;
             entity.IsActive = input.IsActive;
             entity = await Repository.UpdateAsync(entity);
             return ObjectMapper.Map<AIPrompt, AIPromptDto>(entity);
