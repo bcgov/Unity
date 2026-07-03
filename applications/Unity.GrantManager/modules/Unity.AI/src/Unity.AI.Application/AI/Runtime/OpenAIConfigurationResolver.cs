@@ -229,7 +229,7 @@ public class OpenAIConfigurationResolver(
 
     private async Task<AIModel?> ResolveModelAsync(string? modelName, CancellationToken cancellationToken)
     {
-        var activeModels = await _modelRepository.GetListAsync(model => model.IsActive);
+        var activeModels = await _modelRepository.GetListAsync(model => model.IsActive, cancellationToken: cancellationToken);
         if (activeModels.Count == 0)
         {
             return null;

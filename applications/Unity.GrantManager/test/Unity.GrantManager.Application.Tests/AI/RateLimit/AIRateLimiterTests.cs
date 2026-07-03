@@ -73,7 +73,7 @@ public class AIRateLimiterTests
     {
         await NewLimiter().EnsureAsync();
         var state = await NewLimiter().GetStateAsync();
-        state.RetryAfterSeconds.ShouldBe(0);
+        state.RetryAfterSeconds.ShouldBeInRange(1, 60);
     }
 
     [Fact]

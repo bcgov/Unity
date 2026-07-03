@@ -32,7 +32,11 @@ public class AIGenerationAppServiceTests(ITestOutputHelper outputHelper) : Grant
         var featureGuard = new AIFeatureGuard(featureChecker, localizer);
 
         var queue = Substitute.For<IApplicationAIGenerationQueue>();
-        queue.QueueAllAIStagesAsync(Arg.Any<Guid>(), Arg.Any<Guid?>(), Arg.Any<string?>())
+        queue.QueueAttachmentSummaryAsync(Arg.Any<Guid>(), Arg.Any<Guid?>(), Arg.Any<string?>(), Arg.Any<List<Guid>?>())
+            .Returns(Task.CompletedTask);
+        queue.QueueApplicationAnalysisAsync(Arg.Any<Guid>(), Arg.Any<Guid?>(), Arg.Any<string?>())
+            .Returns(Task.CompletedTask);
+        queue.QueueApplicationScoringAsync(Arg.Any<Guid>(), Arg.Any<Guid?>(), Arg.Any<string?>())
             .Returns(Task.CompletedTask);
         var currentTenant = Substitute.For<Volo.Abp.MultiTenancy.ICurrentTenant>();
         currentTenant.Id.Returns(Guid.NewGuid());
@@ -40,13 +44,16 @@ public class AIGenerationAppServiceTests(ITestOutputHelper outputHelper) : Grant
         var service = new AIGenerationAppService(
             queue,
             featureGuard,
+            featureChecker,
             currentTenant);
 
         var result = await service.GenerateContentAsync(Guid.NewGuid());
 
         result.ShouldNotBeNull();
         result.Completed.ShouldBeFalse();
-        await queue.Received(1).QueueAllAIStagesAsync(Arg.Any<Guid>(), Arg.Any<Guid?>(), Arg.Any<string?>());
+        await queue.Received(1).QueueAttachmentSummaryAsync(Arg.Any<Guid>(), Arg.Any<Guid?>(), Arg.Any<string?>(), Arg.Any<List<Guid>?>());
+        await queue.Received(1).QueueApplicationAnalysisAsync(Arg.Any<Guid>(), Arg.Any<Guid?>(), Arg.Any<string?>());
+        await queue.Received(1).QueueApplicationScoringAsync(Arg.Any<Guid>(), Arg.Any<Guid?>(), Arg.Any<string?>());
     }
 
     [Fact]
@@ -63,6 +70,7 @@ public class AIGenerationAppServiceTests(ITestOutputHelper outputHelper) : Grant
         var service = new AIGenerationAppService(
             Substitute.For<IApplicationAIGenerationQueue>(),
             featureGuard,
+            featureChecker,
             Substitute.For<Volo.Abp.MultiTenancy.ICurrentTenant>());
 
         var result = await service.GenerateAttachmentSummariesAsync(new GenerateAttachmentSummariesInputDto

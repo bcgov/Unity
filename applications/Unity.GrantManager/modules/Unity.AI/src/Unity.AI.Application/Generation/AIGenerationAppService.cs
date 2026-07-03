@@ -13,6 +13,8 @@ using Unity.AI.Settings;
 using Unity.GrantManager.Attachments;
 using Unity.GrantManager.GrantApplications;
 using Volo.Abp.MultiTenancy;
+using Volo.Abp;
+using Volo.Abp.Features;
 
 namespace Unity.AI.Generation;
 
@@ -20,9 +22,12 @@ namespace Unity.AI.Generation;
 public class AIGenerationAppService(
     IApplicationAIGenerationQueue aiGenerationQueue,
     AIFeatureGuard featureGuard,
+    IFeatureChecker featureChecker,
     ICurrentTenant currentTenant)
     : AIAppService, IAIGenerationAppService
 {
+    private readonly IFeatureChecker _featureChecker = featureChecker;
+
     [Authorize(AIPermissions.Analysis.GenerateAttachmentSummaries)]
     [HttpPost("attachment-summary")]
     public virtual async Task<List<AttachmentSummaryResultDto>> GenerateAttachmentSummariesAsync(GenerateAttachmentSummariesInputDto input)
@@ -71,13 +76,34 @@ public class AIGenerationAppService(
         return new ApplicationScoringResultDto { Completed = false };
     }
 
-    [Authorize(AIPermissions.Analysis.GenerateAttachmentSummaries)]
-    [Authorize(AIPermissions.Analysis.GenerateApplicationAnalysis)]
-    [Authorize(AIPermissions.Analysis.GenerateScoring)]
+    [Authorize(AIPermissions.Analysis.GenerateAll)]
     [HttpPost("all")]
     public virtual async Task<ApplicationContentResultDto> GenerateContentAsync(Guid applicationId, string? promptVersion = null)
     {
-        await aiGenerationQueue.QueueAllAIStagesAsync(applicationId, currentTenant.Id, promptVersion);
+        var hasQueuedStage = false;
+
+        if (await _featureChecker.IsEnabledAsync(AIFeatures.AttachmentSummaries))
+        {
+            await aiGenerationQueue.QueueAttachmentSummaryAsync(applicationId, currentTenant.Id, promptVersion);
+            hasQueuedStage = true;
+        }
+
+        if (await _featureChecker.IsEnabledAsync(AIFeatures.ApplicationAnalysis))
+        {
+            await aiGenerationQueue.QueueApplicationAnalysisAsync(applicationId, currentTenant.Id, promptVersion);
+            hasQueuedStage = true;
+        }
+
+        if (await _featureChecker.IsEnabledAsync(AIFeatures.Scoring))
+        {
+            await aiGenerationQueue.QueueApplicationScoringAsync(applicationId, currentTenant.Id, promptVersion);
+            hasQueuedStage = true;
+        }
+
+        if (!hasQueuedStage)
+        {
+            throw new UserFriendlyException(AILocalizationKeys.GenerateAllDisabled);
+        }
 
         return new ApplicationContentResultDto { Completed = false };
     }
