@@ -14,7 +14,7 @@ public class AIOperation : AuditedAggregateRoot<Guid>
 
     public Guid AIPromptId { get; set; }
 
-    public AIPrompt AIPrompt { get; set; } = default!;
+    public AIPrompt? AIPrompt { get; set; }
 
     public AIExecutionMode ExecutionMode { get; set; } = AIExecutionMode.Sequential;
 

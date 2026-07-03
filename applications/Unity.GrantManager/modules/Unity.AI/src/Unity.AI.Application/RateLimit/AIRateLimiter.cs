@@ -59,8 +59,6 @@ public class AIRateLimiter(
                 throw new UserFriendlyException(
                     $"AI generation is rate limited. Try again in {remaining} second{(remaining == 1 ? "" : "s")}.");
             }
-
-            await StampAsync(userId, CooldownSeconds);
         }
     }
 

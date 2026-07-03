@@ -74,7 +74,7 @@ public class AIOperationDataSeeder(
             existing.ExecutionMode = AIExecutionMode.Sequential;
             existing.CompletionTokens = definition.CompletionTokens;
             existing.IsActive = true;
-            await operationRepository.UpdateAsync(existing);
+            await operationRepository.UpdateAsync(existing, autoSave: true);
             return;
         }
 
