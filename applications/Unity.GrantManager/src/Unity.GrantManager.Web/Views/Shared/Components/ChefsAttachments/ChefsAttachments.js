@@ -240,6 +240,11 @@ $(function () {
     }
 
     function pollAttachmentSummaryGeneration(applicationId, $button) {
+        if (!globalThis.AIGenerationButtonState?.monitor) {
+            console.error('AIGenerationButtonState is not available; cannot poll attachment summary generation.');
+            return;
+        }
+
         globalThis.AIGenerationButtonState.monitor({
             $button,
             originalHtml: $button.html(),

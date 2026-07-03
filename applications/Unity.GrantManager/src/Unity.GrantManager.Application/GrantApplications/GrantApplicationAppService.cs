@@ -1249,18 +1249,12 @@ public class GrantApplicationAppService(
     [Authorize(AIPermissions.Analysis.GenerateApplicationAnalysis)]
     [Authorize(AIPermissions.Analysis.GenerateAttachmentSummaries)]
     [Authorize(AIPermissions.Analysis.GenerateScoring)]
-    public async Task<AIGenerationStatusDto> QueueAllAIStagesAsync(Guid applicationId, string? promptVersion = null)
+    public async Task QueueAllAIStagesAsync(Guid applicationId, string? promptVersion = null)
     {
         await EnsureAttachmentSummariesEnabledAsync();
         await EnsureAIAnalysisEnabledAsync();
         await EnsureScoringEnabledAsync();
         await aiGenerationQueue.QueueAllAIStagesAsync(applicationId, CurrentTenant.Id, promptVersion);
-
-        return await CreateGenerationStatusAsync(
-            await aiGenerationStatusAppService.GetLatestAsync(
-                applicationId,
-                AIGenerationRequestKeyHelper.ApplicationAnalysisOperationType,
-                CurrentTenant.Id));
     }
 
     private async Task<AIGenerationStatusDto> CreateGenerationStatusAsync(AIGenerationRequestDto? request)

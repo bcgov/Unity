@@ -708,7 +708,7 @@ namespace Unity.GrantManager.Migrations.HostMigrations
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid?>("ApplicationId")
+                    b.Property<Guid>("ApplicationId")
                         .HasColumnType("uuid");
 
                     b.Property<DateTime?>("CompletedAt")
@@ -729,14 +729,6 @@ namespace Unity.GrantManager.Migrations.HostMigrations
                         .HasColumnType("uuid")
                         .HasColumnName("CreatorId");
 
-                    b.Property<Guid?>("DeleterId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("DeleterId");
-
-                    b.Property<DateTime?>("DeletionTime")
-                        .HasColumnType("timestamp without time zone")
-                        .HasColumnName("DeletionTime");
-
                     b.Property<string>("ExtraProperties")
                         .IsRequired()
                         .HasColumnType("text")
@@ -745,12 +737,6 @@ namespace Unity.GrantManager.Migrations.HostMigrations
                     b.Property<string>("FailureReason")
                         .HasMaxLength(2000)
                         .HasColumnType("character varying(2000)");
-
-                    b.Property<bool>("IsDeleted")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(false)
-                        .HasColumnName("IsDeleted");
 
                     b.Property<DateTime?>("LastModificationTime")
                         .HasColumnType("timestamp without time zone")
