@@ -14,7 +14,9 @@ public class AIProviderPayloadValidatorTests
 
         result.IsValid.ShouldBeFalse();
         result.FailureCategory.ShouldBe(AIFailureCategory.InvalidOutput);
-        result.Reason.ShouldContain("not valid JSON");
+        var reason = result.Reason;
+        reason.ShouldNotBeNull();
+        reason.ShouldContain("not valid JSON");
     }
 
     [Fact]
@@ -32,7 +34,9 @@ public class AIProviderPayloadValidatorTests
 
         result.IsValid.ShouldBeFalse();
         result.FailureCategory.ShouldBe(AIFailureCategory.InvalidOutput);
-        result.Reason.ShouldContain("decision");
+        var reason = result.Reason;
+        reason.ShouldNotBeNull();
+        reason.ShouldContain("decision");
     }
 
     [Fact]
@@ -110,7 +114,9 @@ public class AIProviderPayloadValidatorTests
 
         result.IsValid.ShouldBeFalse();
         result.FailureCategory.ShouldBe(AIFailureCategory.InvalidOutput);
-        result.Reason.ShouldContain("summaries");
+        var reason = result.Reason;
+        reason.ShouldNotBeNull();
+        reason.ShouldContain("summaries");
     }
 
     [Fact]
@@ -131,7 +137,9 @@ public class AIProviderPayloadValidatorTests
 
         result.IsValid.ShouldBeFalse();
         result.FailureCategory.ShouldBe(AIFailureCategory.InvalidOutput);
-        result.Reason.ShouldContain("recommendations");
+        var reason = result.Reason;
+        reason.ShouldNotBeNull();
+        reason.ShouldContain("recommendations");
     }
 
     [Fact]
@@ -162,6 +170,8 @@ public class AIProviderPayloadValidatorTests
 
         result.IsValid.ShouldBeFalse();
         result.FailureCategory.ShouldBe(AIFailureCategory.InvalidOutput);
-        result.Reason.ShouldContain("empty");
+        var reason = result.Reason;
+        reason.ShouldNotBeNull();
+        reason.ShouldContain("empty");
     }
 }

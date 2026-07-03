@@ -121,7 +121,9 @@ public class OpenAIResponseParserTests
         result.Answers.ShouldContainKey("q3");
         result.Answers["q1"].Answer.GetInt32().ShouldBe(0);
         result.Answers["q2"].Answer.GetString().ShouldBe("4");
-        result.Answers["q3"].Answer.GetString().ShouldContain("food security");
+        var q3Answer = result.Answers["q3"].Answer.GetString();
+        q3Answer.ShouldNotBeNull();
+        q3Answer.ShouldContain("food security");
     }
 
     [Fact]
