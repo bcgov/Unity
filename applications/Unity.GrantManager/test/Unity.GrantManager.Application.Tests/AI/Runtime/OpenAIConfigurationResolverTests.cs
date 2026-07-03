@@ -15,6 +15,7 @@ using Unity.AI.Runtime;
 using Volo.Abp.Data;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.MultiTenancy;
+using Volo.Abp.Linq;
 using Xunit;
 
 namespace Unity.GrantManager.AI.Runtime;
@@ -53,8 +54,8 @@ public class OpenAIConfigurationResolverTests
             });
 
         operationRepository
-            .GetListAsync()
-            .Returns(Task.FromResult(new List<AIOperation>
+            .GetQueryableAsync()
+            .Returns(Task.FromResult<IQueryable<AIOperation>>(new List<AIOperation>
             {
                 new(Guid.NewGuid(), AIPromptTypes.ApplicationAnalysis, modelId, promptId)
                 {
@@ -62,22 +63,7 @@ public class OpenAIConfigurationResolverTests
                     CompletionTokens = 2222,
                     IsActive = true
                 }
-            }));
-        operationRepository
-            .GetListAsync(Arg.Any<Expression<Func<AIOperation, bool>>>())
-            .Returns(callInfo =>
-            {
-                var predicate = callInfo.Arg<Expression<Func<AIOperation, bool>>>();
-                return Task.FromResult(new List<AIOperation>
-                {
-                    new(Guid.NewGuid(), AIPromptTypes.ApplicationAnalysis, modelId, promptId)
-                    {
-                        ExecutionMode = AIExecutionMode.Sequential,
-                        CompletionTokens = 2222,
-                        IsActive = true
-                    }
-                }.Where(predicate.Compile()).ToList());
-            });
+            }.AsQueryable()));
 
         promptRepository
             .GetAsync(promptId, cancellationToken: Arg.Any<CancellationToken>())
@@ -130,8 +116,8 @@ public class OpenAIConfigurationResolverTests
             });
 
         operationRepository
-            .GetListAsync()
-            .Returns(Task.FromResult(new List<AIOperation>
+            .GetQueryableAsync()
+            .Returns(Task.FromResult<IQueryable<AIOperation>>(new List<AIOperation>
             {
                 new(Guid.NewGuid(), "Default", modelId, promptId)
                 {
@@ -139,22 +125,7 @@ public class OpenAIConfigurationResolverTests
                     CompletionTokens = 2000,
                     IsActive = true
                 }
-            }));
-        operationRepository
-            .GetListAsync(Arg.Any<Expression<Func<AIOperation, bool>>>())
-            .Returns(callInfo =>
-            {
-                var predicate = callInfo.Arg<Expression<Func<AIOperation, bool>>>();
-                return Task.FromResult(new List<AIOperation>
-                {
-                    new(Guid.NewGuid(), "Default", modelId, promptId)
-                    {
-                        ExecutionMode = AIExecutionMode.Sequential,
-                        CompletionTokens = 2000,
-                        IsActive = true
-                    }
-                }.Where(predicate.Compile()).ToList());
-            });
+            }.AsQueryable()));
 
         promptRepository
             .GetAsync(promptId, cancellationToken: Arg.Any<CancellationToken>())
@@ -268,29 +239,15 @@ public class OpenAIConfigurationResolverTests
             });
 
         operationRepository
-            .GetListAsync()
-            .Returns(Task.FromResult(new List<AIOperation>
+            .GetQueryableAsync()
+            .Returns(Task.FromResult<IQueryable<AIOperation>>(new List<AIOperation>
             {
                 new(Guid.NewGuid(), AIPromptTypes.ApplicationAnalysis, modelId, promptId)
                 {
                     IsActive = true,
                     CompletionTokens = 2000
                 }
-            }));
-        operationRepository
-            .GetListAsync(Arg.Any<Expression<Func<AIOperation, bool>>>())
-            .Returns(callInfo =>
-            {
-                var predicate = callInfo.Arg<Expression<Func<AIOperation, bool>>>();
-                return Task.FromResult(new List<AIOperation>
-                {
-                    new(Guid.NewGuid(), AIPromptTypes.ApplicationAnalysis, modelId, promptId)
-                    {
-                        IsActive = true,
-                        CompletionTokens = 2000
-                    }
-                }.Where(predicate.Compile()).ToList());
-            });
+            }.AsQueryable()));
 
         promptRepository
             .GetAsync(promptId, cancellationToken: Arg.Any<CancellationToken>())
@@ -347,13 +304,17 @@ public class OpenAIConfigurationResolverTests
 
         var filter = multiTenantDataFilter ?? Substitute.For<IDataFilter<IMultiTenant>>();
         filter.Disable().Returns(Substitute.For<IDisposable>());
+        var asyncQueryableExecuter = Substitute.For<IAsyncQueryableExecuter>();
+        asyncQueryableExecuter.FirstOrDefaultAsync(Arg.Any<IQueryable<AIOperation>>(), Arg.Any<CancellationToken>())
+            .Returns(callInfo => Task.FromResult(callInfo.Arg<IQueryable<AIOperation>>().FirstOrDefault()));
 
         return new OpenAIConfigurationResolver(
             modelRepository ?? CreateEmptyModelRepository(),
             operationRepository ?? CreateEmptyOperationRepository(),
             promptRepository ?? CreateEmptyPromptRepository(),
             configuration,
-            filter);
+            filter,
+            asyncQueryableExecuter);
     }
 
     private static IRepository<AIModel, Guid> CreateEmptyModelRepository()

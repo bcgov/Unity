@@ -34,7 +34,6 @@ public class AIGenerationAppServiceTests(ITestOutputHelper outputHelper) : Grant
         var service = new AIGenerationAppService(
             Substitute.For<IApplicationAIGenerationQueue>(),
             featureGuard,
-            featureChecker,
             Substitute.For<Volo.Abp.MultiTenancy.ICurrentTenant>());
 
         var result = await service.GenerateAttachmentSummariesAsync(new GenerateAttachmentSummariesInputDto

@@ -34,7 +34,7 @@ public class RunApplicationAIPipelineJob(
     {
         using var logScope = AIGenerationLogScope.Begin(
             logger,
-            "pipeline",
+            AIGenerationRequestKeyHelper.PipelineOperationType,
             args.ApplicationId,
             args.TenantId,
             args.PromptVersion,

@@ -22,12 +22,9 @@ namespace Unity.AI.Generation;
 public class AIGenerationAppService(
     IApplicationAIGenerationQueue aiGenerationQueue,
     AIFeatureGuard featureGuard,
-    IFeatureChecker featureChecker,
     ICurrentTenant currentTenant)
     : AIAppService, IAIGenerationAppService
 {
-    private readonly IFeatureChecker _featureChecker = featureChecker;
-
     [Authorize(AIPermissions.Analysis.GenerateAttachmentSummaries)]
     [HttpPost("attachment-summary")]
     public virtual async Task<List<AttachmentSummaryResultDto>> GenerateAttachmentSummariesAsync(GenerateAttachmentSummariesInputDto input)

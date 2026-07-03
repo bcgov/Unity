@@ -45,7 +45,7 @@ public class AIModelDataSeeder(
         {
             existing.IsActive = true;
             existing.SettingsJson = JsonSerializer.Serialize(settings);
-            await modelRepository.UpdateAsync(existing);
+            await modelRepository.UpdateAsync(existing, autoSave: true);
             return;
         }
 

@@ -10,6 +10,7 @@ using Volo.Abp.Data;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.MultiTenancy;
+using Volo.Abp.Linq;
 
 namespace Unity.AI.Runtime;
 
@@ -18,7 +19,8 @@ public class OpenAIConfigurationResolver(
     IRepository<AIOperation, Guid> operationRepository,
     IRepository<AIPrompt, Guid> promptRepository,
     IConfiguration configuration,
-    IDataFilter<IMultiTenant> multiTenantDataFilter) : ITransientDependency
+    IDataFilter<IMultiTenant> multiTenantDataFilter,
+    IAsyncQueryableExecuter asyncQueryableExecuter) : ITransientDependency
 {
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -30,6 +32,7 @@ public class OpenAIConfigurationResolver(
     private readonly IRepository<AIPrompt, Guid> _promptRepository = promptRepository;
     private readonly IConfiguration _configuration = configuration;
     private readonly IDataFilter<IMultiTenant> _multiTenantDataFilter = multiTenantDataFilter;
+    private readonly IAsyncQueryableExecuter _asyncQueryableExecuter = asyncQueryableExecuter;
 
     public string ResolveProviderName() => Required("Azure:Operations:Defaults:Provider");
 
@@ -58,6 +61,10 @@ public class OpenAIConfigurationResolver(
         var modelSettings = ResolveModelSettings(model);
         var providerName = Required("Azure:Operations:Defaults:Provider");
         var endpoint = Required($"Azure:{providerName}:Endpoint");
+        if (!Uri.TryCreate(endpoint, UriKind.Absolute, out _))
+        {
+            throw new InvalidOperationException($"Azure:{providerName}:Endpoint must be a valid absolute URI.");
+        }
         var prompt = await LoadPromptAsync(operation.AIPromptId, cancellationToken);
         if (!prompt.IsActive)
         {
@@ -200,16 +207,14 @@ public class OpenAIConfigurationResolver(
 
     private async Task<AIOperation?> ResolveOperationAsync(string operationName, CancellationToken cancellationToken)
     {
-        var operations = await _operationRepository.GetListAsync(cancellationToken: cancellationToken);
-        var configuredOperation = operations.FirstOrDefault(operation =>
-            string.Equals(operation.Name, operationName, StringComparison.OrdinalIgnoreCase));
+        var operations = await _operationRepository.GetQueryableAsync();
+        var configuredOperation = await _asyncQueryableExecuter.FirstOrDefaultAsync(
+            operations.Where(operation =>
+                operation.IsActive &&
+                operation.Name == operationName),
+            cancellationToken);
         if (configuredOperation != null)
         {
-            if (!configuredOperation.IsActive)
-            {
-                return null;
-            }
-
             return configuredOperation;
         }
 

@@ -3,7 +3,9 @@ using NSubstitute;
 using Shouldly;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Linq.Expressions;
+using System.Threading;
 using System.Threading.Tasks;
 using Unity.AI.Domain;
 using Unity.AI.Operations;
@@ -12,6 +14,7 @@ using Unity.AI.Runtime;
 using Volo.Abp.Data;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.MultiTenancy;
+using Volo.Abp.Linq;
 using Xunit;
 
 namespace Unity.GrantManager.AI.Runtime;
@@ -23,7 +26,7 @@ public class OpenAIRuntimeServiceTests
     {
         var resolver = CreateResolverWithNoOperations();
 
-        await Should.ThrowAsync<ArgumentNullException>(() =>
+        await Should.ThrowAsync<InvalidOperationException>(() =>
             resolver.ResolveOperationSettingsAsync(AIPromptTypes.ApplicationAnalysis));
     }
 
@@ -36,19 +39,27 @@ public class OpenAIRuntimeServiceTests
 
         var operationRepository = Substitute.For<IRepository<AIOperation, Guid>>();
         operationRepository
-            .GetListAsync(Arg.Any<Expression<Func<AIOperation, bool>>>())
-            .Returns(Task.FromResult(new List<AIOperation>()));
+            .GetQueryableAsync()
+            .Returns(Task.FromResult<IQueryable<AIOperation>>(new List<AIOperation>().AsQueryable()));
 
         var promptRepository = Substitute.For<IRepository<AIPrompt, Guid>>();
         var configuration = new Microsoft.Extensions.Configuration.ConfigurationBuilder().Build();
         var multiTenantDataFilter = Substitute.For<IDataFilter<IMultiTenant>>();
         multiTenantDataFilter.Disable().Returns(Substitute.For<IDisposable>());
+        var asyncQueryableExecuter = Substitute.For<IAsyncQueryableExecuter>();
+        asyncQueryableExecuter.FirstOrDefaultAsync(Arg.Any<IQueryable<AIOperation>>(), Arg.Any<CancellationToken>())
+            .Returns(callInfo => Task.FromResult(callInfo.Arg<IQueryable<AIOperation>>().FirstOrDefault()));
+        asyncQueryableExecuter.FirstOrDefaultAsync(Arg.Any<IQueryable<AIModel>>(), Arg.Any<CancellationToken>())
+            .Returns(callInfo => Task.FromResult(callInfo.Arg<IQueryable<AIModel>>().FirstOrDefault()));
+        asyncQueryableExecuter.FirstOrDefaultAsync(Arg.Any<IQueryable<AIPrompt>>(), Arg.Any<CancellationToken>())
+            .Returns(callInfo => Task.FromResult(callInfo.Arg<IQueryable<AIPrompt>>().FirstOrDefault()));
 
         return new OpenAIConfigurationResolver(
             modelRepository,
             operationRepository,
             promptRepository,
             configuration,
-            multiTenantDataFilter);
+            multiTenantDataFilter,
+            asyncQueryableExecuter);
     }
 }
