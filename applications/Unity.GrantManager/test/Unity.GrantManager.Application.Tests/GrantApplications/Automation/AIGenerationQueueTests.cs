@@ -33,8 +33,6 @@ public class AIGenerationQueueTests(ITestOutputHelper outputHelper) : GrantManag
     private static readonly Guid AttachmentSummaryOperationId = Guid.Parse("11111111-1111-1111-1111-111111111111");
     private static readonly Guid ApplicationAnalysisOperationId = Guid.Parse("22222222-2222-2222-2222-222222222222");
     private static readonly Guid ApplicationScoringOperationId = Guid.Parse("33333333-3333-3333-3333-333333333333");
-    private static readonly Guid DefaultOperationId = Guid.Parse("55555555-5555-5555-5555-555555555555");
-
     [Fact]
     public async Task QueueAllAIStagesAsync_Should_Enqueue_Pipeline_Job_When_None_Exists()
     {
@@ -383,6 +381,8 @@ public class AIGenerationQueueTests(ITestOutputHelper outputHelper) : GrantManag
         asyncQueryableExecuter ??= Substitute.For<IAsyncQueryableExecuter>();
         asyncQueryableExecuter.ToListAsync(Arg.Any<IQueryable<AIOperation>>(), Arg.Any<CancellationToken>())
             .Returns(callInfo => Task.FromResult(callInfo.Arg<IQueryable<AIOperation>>().ToList()));
+        asyncQueryableExecuter.FirstOrDefaultAsync(Arg.Any<IQueryable<AIOperation>>(), Arg.Any<CancellationToken>())
+            .Returns(callInfo => Task.FromResult(callInfo.Arg<IQueryable<AIOperation>>().FirstOrDefault()));
         asyncQueryableExecuter.FirstOrDefaultAsync(Arg.Any<IQueryable<AIGenerationRequest>>(), Arg.Any<CancellationToken>())
             .Returns(callInfo => Task.FromResult(callInfo.Arg<IQueryable<AIGenerationRequest>>().FirstOrDefault()));
 
@@ -408,8 +408,7 @@ public class AIGenerationQueueTests(ITestOutputHelper outputHelper) : GrantManag
         {
             new(AttachmentSummaryOperationId, "AttachmentSummary", Guid.NewGuid(), Guid.NewGuid()) { IsActive = true },
             new(ApplicationAnalysisOperationId, "ApplicationAnalysis", Guid.NewGuid(), Guid.NewGuid()) { IsActive = true },
-            new(ApplicationScoringOperationId, "ApplicationScoring", Guid.NewGuid(), Guid.NewGuid()) { IsActive = true },
-            new(DefaultOperationId, "Default", Guid.NewGuid(), Guid.NewGuid()) { IsActive = true }
+            new(ApplicationScoringOperationId, "ApplicationScoring", Guid.NewGuid(), Guid.NewGuid()) { IsActive = true }
         };
 
         var repository = Substitute.For<IRepository<AIOperation, Guid>>();

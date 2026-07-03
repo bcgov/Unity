@@ -242,6 +242,9 @@ $(function () {
     function pollAttachmentSummaryGeneration(applicationId, $button, originalHtml) {
         if (!globalThis.AIGenerationButtonState?.monitor) {
             console.error('AIGenerationButtonState is not available; cannot poll attachment summary generation.');
+            abp.message.error('AI attachment summary polling is unavailable. Please refresh and try again.');
+            globalThis.AIGenerationButtonState?.restore($button);
+            $button.html(originalHtml ?? $button.html()).prop('disabled', false);
             return;
         }
 

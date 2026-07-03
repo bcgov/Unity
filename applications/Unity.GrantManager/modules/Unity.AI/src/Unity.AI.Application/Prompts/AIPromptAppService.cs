@@ -11,6 +11,7 @@ using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.MultiTenancy;
+using Volo.Abp;
 
 namespace Unity.AI.Prompts;
 
@@ -77,6 +78,16 @@ public class AIPromptAppService :
         using (_multiTenantDataFilter.Disable())
         {
             var prompt = await Repository.GetAsync(input.PromptId);
+            var existingVersion = await Repository.FirstOrDefaultAsync(p =>
+                p.TenantId == prompt.TenantId &&
+                p.Name == prompt.Name &&
+                p.VersionNumber == input.VersionNumber);
+            if (existingVersion != null)
+            {
+                throw new UserFriendlyException(
+                    $"AI prompt '{prompt.Name}' already has version {input.VersionNumber}.");
+            }
+
             var entity = await Repository.InsertAsync(
                 new AIPrompt(
                     Guid.CreateVersion7(),
@@ -100,6 +111,17 @@ public class AIPromptAppService :
         using (_multiTenantDataFilter.Disable())
         {
             var entity = await Repository.GetAsync(id);
+            var conflictingVersion = await Repository.FirstOrDefaultAsync(p =>
+                p.Id != id &&
+                p.TenantId == entity.TenantId &&
+                p.Name == entity.Name &&
+                p.VersionNumber == input.VersionNumber);
+            if (conflictingVersion != null)
+            {
+                throw new UserFriendlyException(
+                    $"AI prompt '{entity.Name}' already has version {input.VersionNumber}.");
+            }
+
             entity.VersionNumber = input.VersionNumber;
             entity.SystemPrompt = input.SystemPrompt;
             entity.UserPrompt = input.UserPrompt;

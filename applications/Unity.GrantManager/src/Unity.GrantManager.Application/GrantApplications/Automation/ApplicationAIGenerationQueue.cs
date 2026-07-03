@@ -218,10 +218,10 @@ public class ApplicationAIGenerationQueue(
     {
         var operationName = ResolveOperationName(operationType);
         var operations = await operationRepository.GetQueryableAsync();
-        var allOperations = await _asyncQueryableExecuter.ToListAsync(operations);
-
-        var operation = allOperations.FirstOrDefault(operation =>
-            string.Equals(operation.Name, operationName, StringComparison.OrdinalIgnoreCase));
+        var operation = await _asyncQueryableExecuter.FirstOrDefaultAsync(
+            operations.Where(operation =>
+                operation.IsActive &&
+                operation.Name == operationName));
 
         if (operation == null)
         {

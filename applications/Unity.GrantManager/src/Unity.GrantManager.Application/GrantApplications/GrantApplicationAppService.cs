@@ -1273,15 +1273,15 @@ public class GrantApplicationAppService(
                 await AuthorizationService.CheckAsync(AIPermissions.Analysis.ViewApplicationAnalysis);
                 return;
             case AIGenerationRequestKeyHelper.AttachmentSummaryOperationType:
-        await AuthorizationService.CheckAsync(AIPermissions.Analysis.ViewAttachmentSummary);
+                await AuthorizationService.CheckAsync(AIPermissions.Analysis.ViewAttachmentSummary);
                 return;
             case AIGenerationRequestKeyHelper.ApplicationScoringOperationType:
-        await AuthorizationService.CheckAsync(AIPermissions.Analysis.ViewScoringResult);
+                await AuthorizationService.CheckAsync(AIPermissions.Analysis.ViewScoringResult);
                 return;
             case AIGenerationRequestKeyHelper.PipelineOperationType:
                 await AuthorizationService.CheckAsync(AIPermissions.Analysis.ViewApplicationAnalysis);
-        await AuthorizationService.CheckAsync(AIPermissions.Analysis.ViewAttachmentSummary);
-        await AuthorizationService.CheckAsync(AIPermissions.Analysis.ViewScoringResult);
+                await AuthorizationService.CheckAsync(AIPermissions.Analysis.ViewAttachmentSummary);
+                await AuthorizationService.CheckAsync(AIPermissions.Analysis.ViewScoringResult);
                 return;
             default:
                 throw new UserFriendlyException("Unknown AI generation operation type.");
