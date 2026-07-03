@@ -137,7 +137,7 @@ $(function () {
     }
 
     function loadVersions(promptId) {
-        unity.aI.prompts.aIPromptVersion.getByPrompt(promptId).then(function (result) {
+        unity.aI.prompts.aIPrompt.getByPrompt(promptId).then(function (result) {
             cachedVersions = result.items || [];
             const $select  = $('#versionSelect');
             $select.empty();
@@ -171,7 +171,7 @@ $(function () {
             populateVersionForm(v);
         } else {
             // fallback: fetch from server
-            unity.aI.prompts.aIPromptVersion.get(id).then(populateVersionForm);
+            unity.aI.prompts.aIPrompt.get(id).then(populateVersionForm);
         }
     });
 
@@ -268,7 +268,7 @@ $(function () {
             const newOpt = $('#versionSelect option[data-new]');
             dto.versionNumber = newOpt.length ? Number.parseInt(newOpt.data('num')) : 0;
 
-            unity.aI.prompts.aIPromptVersion.create(dto)
+            unity.aI.prompts.aIPrompt.create(dto)
                 .then(function () {
                     abp.notify.success('Version created');
                     loadVersions(promptId);
@@ -277,7 +277,7 @@ $(function () {
                     abp.notify.error(err?.message || 'Failed to create version');
                 });
         } else {
-            unity.aI.prompts.aIPromptVersion.update(currentVersionId, dto)
+            unity.aI.prompts.aIPrompt.update(currentVersionId, dto)
                 .then(function () {
                     abp.notify.success('Version saved');
                     loadVersions(promptId);
