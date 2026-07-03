@@ -77,13 +77,7 @@ public class AIGenerationAppService(
     [HttpPost("all")]
     public virtual async Task<ApplicationContentResultDto> GenerateContentAsync(Guid applicationId, string? promptVersion = null)
     {
-        await featureGuard.EnsureEnabledAsync(AIFeatures.AttachmentSummaries, AILocalizationKeys.GenerateAllDisabled);
-        await featureGuard.EnsureEnabledAsync(AIFeatures.ApplicationAnalysis, AILocalizationKeys.GenerateAllDisabled);
-        await featureGuard.EnsureEnabledAsync(AIFeatures.Scoring, AILocalizationKeys.GenerateAllDisabled);
-
-        await aiGenerationQueue.QueueAttachmentSummaryAsync(applicationId, currentTenant.Id, promptVersion);
-        await aiGenerationQueue.QueueApplicationAnalysisAsync(applicationId, currentTenant.Id, promptVersion);
-        await aiGenerationQueue.QueueApplicationScoringAsync(applicationId, currentTenant.Id, promptVersion);
+        await aiGenerationQueue.QueueAllAIStagesAsync(applicationId, currentTenant.Id, promptVersion);
 
         return new ApplicationContentResultDto { Completed = false };
     }

@@ -32,11 +32,7 @@ public class AIGenerationAppServiceTests(ITestOutputHelper outputHelper) : Grant
         var featureGuard = new AIFeatureGuard(featureChecker, localizer);
 
         var queue = Substitute.For<IApplicationAIGenerationQueue>();
-        queue.QueueAttachmentSummaryAsync(Arg.Any<Guid>(), Arg.Any<Guid?>(), Arg.Any<string?>(), Arg.Any<List<Guid>?>())
-            .Returns(Task.CompletedTask);
-        queue.QueueApplicationAnalysisAsync(Arg.Any<Guid>(), Arg.Any<Guid?>(), Arg.Any<string?>())
-            .Returns(Task.CompletedTask);
-        queue.QueueApplicationScoringAsync(Arg.Any<Guid>(), Arg.Any<Guid?>(), Arg.Any<string?>())
+        queue.QueueAllAIStagesAsync(Arg.Any<Guid>(), Arg.Any<Guid?>(), Arg.Any<string?>())
             .Returns(Task.CompletedTask);
         var currentTenant = Substitute.For<Volo.Abp.MultiTenancy.ICurrentTenant>();
         currentTenant.Id.Returns(Guid.NewGuid());
@@ -50,9 +46,7 @@ public class AIGenerationAppServiceTests(ITestOutputHelper outputHelper) : Grant
 
         result.ShouldNotBeNull();
         result.Completed.ShouldBeFalse();
-        await queue.Received(1).QueueAttachmentSummaryAsync(Arg.Any<Guid>(), Arg.Any<Guid?>(), Arg.Any<string?>(), Arg.Any<List<Guid>?>());
-        await queue.Received(1).QueueApplicationAnalysisAsync(Arg.Any<Guid>(), Arg.Any<Guid?>(), Arg.Any<string?>());
-        await queue.Received(1).QueueApplicationScoringAsync(Arg.Any<Guid>(), Arg.Any<Guid?>(), Arg.Any<string?>());
+        await queue.Received(1).QueueAllAIStagesAsync(Arg.Any<Guid>(), Arg.Any<Guid?>(), Arg.Any<string?>());
     }
 
     [Fact]

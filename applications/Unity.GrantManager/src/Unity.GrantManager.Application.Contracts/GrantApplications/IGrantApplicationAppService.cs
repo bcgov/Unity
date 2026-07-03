@@ -23,7 +23,7 @@ public interface IGrantApplicationAppService
     Task<AIGenerationStatusDto> QueueAttachmentSummaryAsync(QueueAttachmentSummaryRequestDto input, string? promptVersion = null);
     Task<AIGenerationStatusDto> QueueApplicationScoringAsync(Guid applicationId, string? promptVersion = null);
     Task<AIGenerationStatusDto> GetAIGenerationStatusAsync(Guid applicationId, string operationType, string? promptVersion = null);
-    Task<AIGenerationStatusDto> QueueAllAIStagesAsync(Guid applicationId, string? promptVersion = null);
+    Task QueueAllAIStagesAsync(Guid applicationId, string? promptVersion = null);
     Task<Guid?> GetAccountCodingIdFromFormIdAsync(Guid formId);
     Task<string> DismissAIAnalysisItemAsync(Guid applicationId, string itemId);
     Task<string> RestoreAIAnalysisItemAsync(Guid applicationId, string itemId);

@@ -22,7 +22,7 @@ namespace Unity.GrantManager.AI.Runtime;
 public class OpenAIConfigurationResolverTests
 {
     [Fact]
-    public async Task Should_Throw_When_Operation_Is_Missing()
+    public async Task Should_Resolve_Operation_From_Default_When_Named_Operation_Is_Present()
     {
         var resolver = CreateResolver();
 
@@ -109,7 +109,7 @@ public class OpenAIConfigurationResolverTests
     }
 
     [Fact]
-    public async Task Should_Fallback_To_Default_Operation_When_Override_Is_Missing()
+    public async Task Should_Throw_When_Operation_Is_Missing()
     {
         var modelRepository = Substitute.For<IRepository<AIModel, Guid>>();
         var operationRepository = Substitute.For<IRepository<AIOperation, Guid>>();
@@ -174,11 +174,10 @@ public class OpenAIConfigurationResolverTests
             operationRepository,
             promptRepository);
 
-        var settings = await resolver.ResolveOperationSettingsAsync(AIPromptTypes.ApplicationAnalysis);
+        var exception = await Should.ThrowAsync<InvalidOperationException>(
+            () => resolver.ResolveOperationSettingsAsync(AIPromptTypes.ApplicationAnalysis));
 
-        settings.ProviderName.ShouldBe("OpenAI");
-        settings.PromptVersion.ShouldBe("v1");
-        settings.CompletionTokens.ShouldBe(2000);
+        exception.Message.ShouldContain("AI operation 'ApplicationAnalysis' is not configured.");
     }
 
     [Fact]
