@@ -607,9 +607,10 @@ $(function () {
                 }
             }
             return null;
-        }
+        },
+        enableContextMenu: true,
+        contextMenuActionsSelector: '[data-selector="applicants-table-actions"]'
     });
-
 
     // Handle row selection and publish events for ActionBar
     dataTable.on('select', function (e, dt, type, indexes) {

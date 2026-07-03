@@ -573,6 +573,11 @@
     "TenantList:ConfigurationAction": "Configuration",
     "TenantList:LicencePlate": "Licence Plate",
     "TenantList:CasClientCode": "CAS Client Code",
-    "TenantList:SearchMinChars": "Please enter at least 2 characters to search."
+    "TenantList:SearchMinChars": "Please enter at least 2 characters to search.",
+
+    "DataTable:ContextMenu:Copy": "Copy",
+    "DataTable:ContextMenu:CopiedToClipboard": "Copied to clipboard",
+    "DataTable:ContextMenu:Filter": "Filter",
+    "DataTable:ContextMenu:ClearFilter": "Clear Filters"
   }
 }
