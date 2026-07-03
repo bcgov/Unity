@@ -33,9 +33,6 @@ namespace Unity.GrantManager.Migrations.HostMigrations
                     "CreatorId" uuid NULL,
                     "LastModificationTime" timestamp without time zone NULL,
                     "LastModifierId" uuid NULL,
-                    "DeleterId" uuid NULL,
-                    "DeletionTime" timestamp without time zone NULL,
-                    "IsDeleted" boolean NOT NULL DEFAULT FALSE,
                     PRIMARY KEY ("Id")
                 );
                 """);
@@ -63,9 +60,6 @@ namespace Unity.GrantManager.Migrations.HostMigrations
                     "CreatorId" uuid NULL,
                     "LastModificationTime" timestamp without time zone NULL,
                     "LastModifierId" uuid NULL,
-                    "DeleterId" uuid NULL,
-                    "DeletionTime" timestamp without time zone NULL,
-                    "IsDeleted" boolean NOT NULL DEFAULT FALSE,
                     PRIMARY KEY ("Id")
                 );
                 """);
@@ -92,9 +86,6 @@ namespace Unity.GrantManager.Migrations.HostMigrations
                     "CreatorId" uuid NULL,
                     "LastModificationTime" timestamp without time zone NULL,
                     "LastModifierId" uuid NULL,
-                    "DeleterId" uuid NULL,
-                    "DeletionTime" timestamp without time zone NULL,
-                    "IsDeleted" boolean NOT NULL DEFAULT FALSE,
                     PRIMARY KEY ("Id")
                 );
                 """);

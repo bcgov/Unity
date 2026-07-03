@@ -377,7 +377,8 @@ public class AIPromptDataSeeder(
         - Summaries and recommendations must be concrete, distinct, reviewer-relevant, and specific to this application's evidence.
         - Avoid generic praise, checklist language, and repeated conclusions across lists.
         - Do not use a summary merely to say that supporting documents were provided; summarize the specific substantive evidence they add, or omit the finding.
-        - If no findings exist, return empty arrays.
+        - Errors and warnings may be empty.
+        - Summaries and recommendations must each include at least one item.
         - Decision must be PROCEED or HOLD.
         - Use summaries for overall application quality/readiness synthesis.
         - Use recommendations for concrete reviewer-facing next actions based on the provided evidence.
@@ -484,7 +485,8 @@ public class AIPromptDataSeeder(
         - Summaries and recommendations must be concrete, distinct, reviewer-relevant, and specific to this application's evidence.
         - Avoid generic praise, checklist language, and repeated conclusions across lists.
         - Do not use a summary merely to say that supporting documents were provided; summarize the specific substantive evidence they add, or omit the finding.
-        - If no findings exist, return empty arrays.
+        - Errors and warnings may be empty.
+        - Summaries and recommendations must each include at least one item.
         - Decision must be PROCEED or HOLD.
         - Use summaries for overall application quality/readiness synthesis.
         - Use recommendations for concrete reviewer-facing next actions based on the provided evidence.

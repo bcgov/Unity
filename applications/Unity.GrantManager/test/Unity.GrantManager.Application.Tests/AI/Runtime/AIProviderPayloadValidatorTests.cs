@@ -110,7 +110,28 @@ public class AIProviderPayloadValidatorTests
 
         result.IsValid.ShouldBeFalse();
         result.FailureCategory.ShouldBe(AIFailureCategory.InvalidOutput);
-        result.Reason.ShouldContain("At least one finding is required");
+        result.Reason.ShouldContain("summaries");
+    }
+
+    [Fact]
+    public void ValidateApplicationAnalysisJson_Should_Return_InvalidOutput_When_Recommendations_Are_Empty()
+    {
+        var result = AIProviderPayloadValidator.ValidateApplicationAnalysisJson(
+            """
+            {
+              "decision": "PROCEED",
+              "errors": [],
+              "warnings": [],
+              "summaries": [
+                { "title": "Summary", "detail": "Looks complete." }
+              ],
+              "recommendations": []
+            }
+            """);
+
+        result.IsValid.ShouldBeFalse();
+        result.FailureCategory.ShouldBe(AIFailureCategory.InvalidOutput);
+        result.Reason.ShouldContain("recommendations");
     }
 
     [Fact]
@@ -125,7 +146,9 @@ public class AIProviderPayloadValidatorTests
               "summaries": [
                 { "title": "Summary", "detail": "Looks complete." }
               ],
-              "recommendations": []
+              "recommendations": [
+                { "title": "Proceed", "detail": "No blocking issues remain." }
+              ]
             }
             """);
 

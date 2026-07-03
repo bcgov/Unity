@@ -225,7 +225,7 @@ $(function () {
                     }
 
                     globalThis.AIGenerationButtonState?.setGenerating($activeButton);
-                    pollAttachmentSummaryGeneration(applicationId, $activeButton);
+                    pollAttachmentSummaryGeneration(applicationId, $activeButton, existingHTML);
                 },
                 error: function (error) {
                     console.error('Error generating AI summaries:', error);
@@ -239,7 +239,7 @@ $(function () {
         });
     }
 
-    function pollAttachmentSummaryGeneration(applicationId, $button) {
+    function pollAttachmentSummaryGeneration(applicationId, $button, originalHtml) {
         if (!globalThis.AIGenerationButtonState?.monitor) {
             console.error('AIGenerationButtonState is not available; cannot poll attachment summary generation.');
             return;
@@ -247,7 +247,7 @@ $(function () {
 
         globalThis.AIGenerationButtonState.monitor({
             $button,
-            originalHtml: $button.html(),
+            originalHtml: originalHtml ?? $button.html(),
             getStatus: () => unity.grantManager.grantApplications.grantApplication
                 .getAIGenerationStatus(applicationId, 'attachment-summary'),
             onComplete: refreshAttachmentSummaryResults,

@@ -53,16 +53,16 @@ namespace Unity.AI.Runtime
                 return AIResponseValidationResult.Invalid($"Application analysis response is missing or invalid required field '{AIJsonKeys.Recommendations}' (expected array).");
             }
 
-            var hasAnyFindings =
-                errors.GetArrayLength() > 0
-                || warnings.GetArrayLength() > 0
-                || summaries.GetArrayLength() > 0
-                || recommendations.GetArrayLength() > 0;
-
-            if (!hasAnyFindings)
+            if (summaries.GetArrayLength() == 0)
             {
                 return AIResponseValidationResult.Invalid(
-                    "Application analysis response did not include any findings. At least one finding is required.");
+                    $"Application analysis response must include at least one item in '{AIJsonKeys.Summaries}'.");
+            }
+
+            if (recommendations.GetArrayLength() == 0)
+            {
+                return AIResponseValidationResult.Invalid(
+                    $"Application analysis response must include at least one item in '{AIJsonKeys.Recommendations}'.");
             }
 
             return AIResponseValidationResult.Success();
