@@ -554,8 +554,9 @@ namespace Unity.AI.Extraction
                     .Cast<string>()
                     .ToList();
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                _logger.LogDebug(ex, "Could not determine PowerPoint slide order from relationships; falling back to part-name order.");
                 return new List<string>();
             }
         }
