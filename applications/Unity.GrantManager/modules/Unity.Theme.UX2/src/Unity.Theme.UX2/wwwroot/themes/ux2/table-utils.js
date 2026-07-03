@@ -457,7 +457,7 @@ function initializeDataTable(options) {
     }
 
     // Initialize Context Menu plugin if enabled
-    if (enableContextMenu && typeof window.initializeTableContextMenu === 'function') {
+    if (enableContextMenu && typeof globalThis.initializeTableContextMenu === 'function') {
         initializeTableContextMenu(iDt, {
             enabled: true,
             actionsSelector: contextMenuActionsSelector,
