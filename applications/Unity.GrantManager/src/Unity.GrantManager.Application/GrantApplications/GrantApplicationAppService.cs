@@ -1175,9 +1175,9 @@ public class GrantApplicationAppService(
         return applicationManager.GetWorkflowDiagram(isDirectApproval);
     }
 
+    [Authorize(AIPermissions.Analysis.GenerateApplicationAnalysis)]
     public async Task<AIGenerationStatusDto> QueueAIGenerationAsync(Guid applicationId, string? promptVersion = null)
     {
-        await EnsureAIAnalysisEnabledAsync();
         return await QueueApplicationAnalysisAsync(applicationId, promptVersion);
     }
 
@@ -1251,9 +1251,6 @@ public class GrantApplicationAppService(
     [Authorize(AIPermissions.Analysis.GenerateScoring)]
     public async Task QueueAllAIStagesAsync(Guid applicationId, string? promptVersion = null)
     {
-        await EnsureAttachmentSummariesEnabledAsync();
-        await EnsureAIAnalysisEnabledAsync();
-        await EnsureScoringEnabledAsync();
         await aiGenerationQueue.QueueAllAIStagesAsync(applicationId, CurrentTenant.Id, promptVersion);
     }
 
