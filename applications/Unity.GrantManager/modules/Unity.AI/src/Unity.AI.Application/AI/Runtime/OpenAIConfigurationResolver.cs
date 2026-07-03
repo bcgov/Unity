@@ -200,7 +200,7 @@ public class OpenAIConfigurationResolver(
 
     private async Task<AIOperation?> ResolveOperationAsync(string operationName, CancellationToken cancellationToken)
     {
-        var operations = await _operationRepository.GetListAsync();
+        var operations = await _operationRepository.GetListAsync(cancellationToken: cancellationToken);
         var configuredOperation = operations.FirstOrDefault(operation =>
             string.Equals(operation.Name, operationName, StringComparison.OrdinalIgnoreCase));
         if (configuredOperation != null)

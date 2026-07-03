@@ -21,6 +21,7 @@ using Volo.Abp.DependencyInjection;
 using Volo.Abp.DistributedLocking;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Features;
+using Volo.Abp.Linq;
 using Volo.Abp.Users;
 using Xunit;
 using Xunit.Abstractions;
@@ -351,7 +352,8 @@ public class AIGenerationQueueTests(ITestOutputHelper outputHelper) : GrantManag
         IAIRateLimiter? rateLimiter = null,
         IAIGenerationPrerequisiteValidator? prerequisiteValidator = null,
         IFeatureChecker? featureChecker = null,
-        IRepository<AIOperation, Guid>? operationRepository = null)
+        IRepository<AIOperation, Guid>? operationRepository = null,
+        IAsyncQueryableExecuter? asyncQueryableExecuter = null)
     {
         repository ??= Substitute.For<IRepository<AIGenerationRequest, Guid>>();
         repository.GetQueryableAsync().Returns(Task.FromResult<IQueryable<AIGenerationRequest>>(Array.Empty<AIGenerationRequest>().AsQueryable()));
@@ -378,6 +380,12 @@ public class AIGenerationQueueTests(ITestOutputHelper outputHelper) : GrantManag
             featureChecker.IsEnabledAsync(AIFeatures.Scoring).Returns(Task.FromResult(true));
         }
 
+        asyncQueryableExecuter ??= Substitute.For<IAsyncQueryableExecuter>();
+        asyncQueryableExecuter.ToListAsync(Arg.Any<IQueryable<AIOperation>>(), Arg.Any<CancellationToken>())
+            .Returns(callInfo => Task.FromResult(callInfo.Arg<IQueryable<AIOperation>>().ToList()));
+        asyncQueryableExecuter.FirstOrDefaultAsync(Arg.Any<IQueryable<AIGenerationRequest>>(), Arg.Any<CancellationToken>())
+            .Returns(callInfo => Task.FromResult(callInfo.Arg<IQueryable<AIGenerationRequest>>().FirstOrDefault()));
+
         return new ApplicationAIGenerationQueue(
             backgroundJobManager,
             repository,
@@ -386,6 +394,7 @@ public class AIGenerationQueueTests(ITestOutputHelper outputHelper) : GrantManag
             prerequisiteValidator,
             featureChecker,
             rateLimiter,
+            asyncQueryableExecuter,
             CreateCurrentUser(),
             Substitute.For<ILogger<ApplicationAIGenerationQueue>>(),
             Substitute.For<IStringLocalizer<AIResource>>());

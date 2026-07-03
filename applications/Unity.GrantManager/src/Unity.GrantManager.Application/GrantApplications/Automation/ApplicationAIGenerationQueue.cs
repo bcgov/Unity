@@ -18,6 +18,7 @@ using Volo.Abp.Domain.Repositories;
 using Volo.Abp.BackgroundJobs;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Features;
+using Volo.Abp.Linq;
 using Volo.Abp.Users;
 
 namespace Unity.GrantManager.GrantApplications.Automation;
@@ -30,11 +31,13 @@ public class ApplicationAIGenerationQueue(
     IAIGenerationPrerequisiteValidator aiGenerationPrerequisiteValidator,
     IFeatureChecker featureChecker,
     IAIRateLimiter aiRateLimiter,
+    IAsyncQueryableExecuter asyncQueryableExecuter,
     ICurrentUser currentUser,
     ILogger<ApplicationAIGenerationQueue> logger,
     IStringLocalizer<AIResource> localizer)
     : IApplicationAIGenerationQueue, ITransientDependency
 {
+    private readonly IAsyncQueryableExecuter _asyncQueryableExecuter = asyncQueryableExecuter;
     public async Task QueueAttachmentSummaryAsync(Guid applicationId, Guid? tenantId, string? promptVersion = null, List<Guid>? attachmentIds = null)
     {
         await EnsureRequestAndEnqueueAsync(
@@ -171,10 +174,10 @@ public class ApplicationAIGenerationQueue(
                 && x.OperationId == operation.Id
                 && (x.Status == AIGenerationRequestStatus.Queued || x.Status == AIGenerationRequestStatus.Running));
 
-            var existing = existingRequests
-                .OrderByDescending(x => x.CreationTime)
-                .ThenByDescending(x => x.Id)
-                .FirstOrDefault();
+            var existing = await _asyncQueryableExecuter.FirstOrDefaultAsync(
+                existingRequests
+                    .OrderByDescending(x => x.CreationTime)
+                    .ThenByDescending(x => x.Id));
 
             if (existing != null)
             {
@@ -215,13 +218,10 @@ public class ApplicationAIGenerationQueue(
     {
         var operationName = ResolveOperationName(operationType);
         var operations = await operationRepository.GetQueryableAsync();
-        var allOperations = (operations ?? Enumerable.Empty<AIOperation>())
-            .ToList();
+        var allOperations = await _asyncQueryableExecuter.ToListAsync(operations);
 
         var operation = allOperations.FirstOrDefault(operation =>
-            string.Equals(operation.Name, operationName, StringComparison.OrdinalIgnoreCase))
-            ?? allOperations.FirstOrDefault(operation =>
-                string.Equals(operation.Name, "Default", StringComparison.OrdinalIgnoreCase));
+            string.Equals(operation.Name, operationName, StringComparison.OrdinalIgnoreCase));
 
         if (operation == null)
         {
