@@ -26,12 +26,6 @@ namespace Unity.GrantManager.GrantApplications.Automation;
 
 public class RunApplicationAIPipelineJobTests(ITestOutputHelper outputHelper) : GrantManagerApplicationTestBase(outputHelper)
 {
-    private static readonly Guid AttachmentSummaryOperationId = Guid.Parse("11111111-1111-1111-1111-111111111111");
-    private static readonly Guid ApplicationAnalysisOperationId = Guid.Parse("22222222-2222-2222-2222-222222222222");
-    private static readonly Guid ApplicationScoringOperationId = Guid.Parse("33333333-3333-3333-3333-333333333333");
-    private static readonly Guid PipelineOperationId = Guid.Parse("44444444-4444-4444-4444-444444444444");
-    private static readonly Guid DefaultOperationId = Guid.Parse("55555555-5555-5555-5555-555555555555");
-
     [Fact]
     public async Task ExecuteAsync_Should_Mark_Request_Completed_When_Features_Disabled()
     {
@@ -40,8 +34,17 @@ public class RunApplicationAIPipelineJobTests(ITestOutputHelper outputHelper) : 
 
         var applicationId = Guid.NewGuid();
         var tenantId = Guid.NewGuid();
+        var attachmentSummaryService = Substitute.For<IAttachmentSummaryService>();
+        var applicationAnalysisService = Substitute.For<IApplicationAnalysisService>();
+        var applicationScoringService = Substitute.For<IApplicationScoringService>();
+        var applicationRepository = Substitute.For<IApplicationRepository>();
 
-        var job = BuildJob(featureChecker);
+        var job = BuildJob(
+            featureChecker,
+            attachmentSummaryService: attachmentSummaryService,
+            applicationAnalysisService: applicationAnalysisService,
+            applicationScoringService: applicationScoringService,
+            applicationRepository: applicationRepository);
         var requestedByUserId = Guid.NewGuid();
 
         await job.ExecuteAsync(new RunApplicationAIPipelineJobArgs
@@ -51,6 +54,11 @@ public class RunApplicationAIPipelineJobTests(ITestOutputHelper outputHelper) : 
             TenantId = tenantId
         });
 
+        await attachmentSummaryService.DidNotReceive().GenerateAndSaveAsync(Arg.Any<List<Guid>>(), Arg.Any<string?>(), Arg.Any<CancellationToken>());
+        await applicationAnalysisService.DidNotReceive().RegenerateAsync(Arg.Any<ApplicationAnalysisOperationInputDto>(), Arg.Any<CancellationToken>());
+        await applicationScoringService.DidNotReceive().RegenerateAsync(Arg.Any<ApplicationScoringOperationInputDto>(), Arg.Any<CancellationToken>());
+        await applicationRepository.DidNotReceive().GetAsync(Arg.Any<Guid>(), Arg.Any<bool>(), Arg.Any<CancellationToken>());
+        await applicationRepository.DidNotReceive().UpdateAsync(Arg.Any<Application>(), Arg.Any<bool>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]

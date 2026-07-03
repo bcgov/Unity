@@ -23,7 +23,7 @@ namespace Unity.GrantManager.AI.Runtime;
 public class OpenAIConfigurationResolverTests
 {
     [Fact]
-    public async Task Should_Resolve_Operation_From_Default_When_Named_Operation_Is_Present()
+    public async Task Should_Throw_When_No_Operations_Are_Configured()
     {
         var resolver = CreateResolver();
 
