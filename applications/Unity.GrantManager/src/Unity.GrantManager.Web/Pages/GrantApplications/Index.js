@@ -462,7 +462,9 @@ $(function () {
                     dtApi.ajax.reload(null, false);
                 }
                 initialLoad = false; // Reset flag after use
-            }
+            },
+            enableContextMenu: true,
+            contextMenuActionsSelector: '[data-selector="applications-table-actions"]'
         });
 
         dataTable.on('select', function (e, dt, type, indexes) {

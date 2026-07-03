@@ -99,6 +99,9 @@ $(function () {
         {
             text: 'Approve',
             className: 'custom-table-btn flex-none btn btn-secondary payment-status',
+            attr: {
+                'data-selector': 'batch-payment-table-actions'
+            },
             action: function (e, dt, node, config) {
                 // Store payment IDs in distributed cache to avoid URL length limits
                 unity.payments.paymentRequests.paymentBulkActions
@@ -119,6 +122,9 @@ $(function () {
         {
             text: 'Decline',
             className: 'custom-table-btn flex-none btn btn-secondary payment-status',
+            attr: {
+                'data-selector': 'batch-payment-table-actions'
+            },
             action: function (e, dt, node, config) {
                 // Store payment IDs in distributed cache to avoid URL length limits
                 unity.payments.paymentRequests.paymentBulkActions
@@ -139,6 +145,9 @@ $(function () {
         {
             text: 'History',
             className: 'custom-table-btn flex-none btn btn-secondary history',
+            attr: {
+                'data-selector': 'batch-payment-table-actions'
+            },
             action: function (e, dt, node, config) {
                 location.href = '/PaymentHistory/Details?PaymentId=' + selectedPaymentIds[0];
             }
@@ -322,7 +331,9 @@ $(function () {
                 dtApi.ajax.reload(null, false);
             }
             initialLoad = false;
-        }
+        },
+        enableContextMenu: true,
+        contextMenuActionsSelector: '[data-selector="batch-payment-table-actions"]'
     });
 
     $('.grp-savedStates').text('Save View');
