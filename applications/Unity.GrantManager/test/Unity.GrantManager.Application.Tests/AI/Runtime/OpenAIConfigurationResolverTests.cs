@@ -53,16 +53,20 @@ public class OpenAIConfigurationResolverTests
             });
 
         operationRepository
-            .GetQueryableAsync()
-            .Returns(Task.FromResult<IQueryable<AIOperation>>(new List<AIOperation>
+            .GetListAsync(Arg.Any<Expression<Func<AIOperation, bool>>>())
+            .Returns(callInfo =>
             {
-                new(Guid.NewGuid(), AIPromptTypes.ApplicationAnalysis, modelId, promptId)
+                var predicate = callInfo.Arg<Expression<Func<AIOperation, bool>>>();
+                return Task.FromResult(new List<AIOperation>
                 {
-                    ExecutionMode = AIExecutionMode.Sequential,
-                    CompletionTokens = 2222,
-                    IsActive = true
-                }
-            }.AsQueryable()));
+                    new(Guid.NewGuid(), AIPromptTypes.ApplicationAnalysis, modelId, promptId)
+                    {
+                        ExecutionMode = AIExecutionMode.Sequential,
+                        CompletionTokens = 2222,
+                        IsActive = true
+                    }
+                }.Where(predicate.Compile()).ToList());
+            });
 
         promptRepository
             .GetAsync(promptId, cancellationToken: Arg.Any<CancellationToken>())
@@ -115,16 +119,20 @@ public class OpenAIConfigurationResolverTests
             });
 
         operationRepository
-            .GetQueryableAsync()
-            .Returns(Task.FromResult<IQueryable<AIOperation>>(new List<AIOperation>
+            .GetListAsync(Arg.Any<Expression<Func<AIOperation, bool>>>())
+            .Returns(callInfo =>
             {
-                new(Guid.NewGuid(), "Default", modelId, promptId)
+                var predicate = callInfo.Arg<Expression<Func<AIOperation, bool>>>();
+                return Task.FromResult(new List<AIOperation>
                 {
-                    ExecutionMode = AIExecutionMode.Sequential,
-                    CompletionTokens = 2000,
-                    IsActive = true
-                }
-            }.AsQueryable()));
+                    new(Guid.NewGuid(), "Default", modelId, promptId)
+                    {
+                        ExecutionMode = AIExecutionMode.Sequential,
+                        CompletionTokens = 2000,
+                        IsActive = true
+                    }
+                }.Where(predicate.Compile()).ToList());
+            });
 
         promptRepository
             .GetAsync(promptId, cancellationToken: Arg.Any<CancellationToken>())
@@ -238,15 +246,19 @@ public class OpenAIConfigurationResolverTests
             });
 
         operationRepository
-            .GetQueryableAsync()
-            .Returns(Task.FromResult<IQueryable<AIOperation>>(new List<AIOperation>
+            .GetListAsync(Arg.Any<Expression<Func<AIOperation, bool>>>())
+            .Returns(callInfo =>
             {
-                new(Guid.NewGuid(), AIPromptTypes.ApplicationAnalysis, modelId, promptId)
+                var predicate = callInfo.Arg<Expression<Func<AIOperation, bool>>>();
+                return Task.FromResult(new List<AIOperation>
                 {
-                    IsActive = true,
-                    CompletionTokens = 2000
-                }
-            }.AsQueryable()));
+                    new(Guid.NewGuid(), AIPromptTypes.ApplicationAnalysis, modelId, promptId)
+                    {
+                        IsActive = true,
+                        CompletionTokens = 2000
+                    }
+                }.Where(predicate.Compile()).ToList());
+            });
 
         promptRepository
             .GetAsync(promptId, cancellationToken: Arg.Any<CancellationToken>())
@@ -323,9 +335,6 @@ public class OpenAIConfigurationResolverTests
     private static IRepository<AIOperation, Guid> CreateEmptyOperationRepository()
     {
         var operationRepository = Substitute.For<IRepository<AIOperation, Guid>>();
-        operationRepository
-            .GetListAsync()
-            .Returns(Task.FromResult(new List<AIOperation>()));
         operationRepository
             .GetListAsync(Arg.Any<Expression<Func<AIOperation, bool>>>())
             .Returns(Task.FromResult(new List<AIOperation>()));

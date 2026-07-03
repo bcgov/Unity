@@ -38,8 +38,8 @@ public class OpenAIRuntimeServiceTests
 
         var operationRepository = Substitute.For<IRepository<AIOperation, Guid>>();
         operationRepository
-            .GetQueryableAsync()
-            .Returns(Task.FromResult<IQueryable<AIOperation>>(new List<AIOperation>().AsQueryable()));
+            .GetListAsync(Arg.Any<Expression<Func<AIOperation, bool>>>())
+            .Returns(Task.FromResult(new List<AIOperation>()));
 
         var promptRepository = Substitute.For<IRepository<AIPrompt, Guid>>();
         var configuration = new Microsoft.Extensions.Configuration.ConfigurationBuilder().Build();
