@@ -18,6 +18,7 @@ public interface IGrantApplicationAppService
     Task<List<GrantApplicationLiteDto>> GetAllApplicationsAsync();
     Task<IList<GrantApplicationDto>> GetApplicationDetailsListAsync(List<Guid> applicationIds);
     Task<GrantApplicationDto> GetAsync(Guid id);
+    Task<GrantApplicationLiteDto> GetBasicAsync(Guid id);
     Task<GrantApplicationDto> TriggerAction(Guid applicationId, GrantApplicationAction triggerAction);
     Task<AIGenerationStatusDto> QueueAIGenerationAsync(Guid applicationId, string? promptVersion = null);
     Task<AIGenerationStatusDto> QueueApplicationAnalysisAsync(Guid applicationId, string? promptVersion = null);

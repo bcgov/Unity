@@ -29,6 +29,7 @@ using Unity.GrantManager.Identity;
 using Unity.GrantManager.Payments;
 using Unity.Modules.Shared;
 using Unity.Modules.Shared.Correlation;
+using Unity.Modules.Shared.Specializations;
 using Unity.Payments.PaymentRequests;
 using Volo.Abp;
 using Volo.Abp.Application.Dtos;
@@ -37,7 +38,6 @@ using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Entities;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Features;
-using Unity.Modules.Shared.Specializations;
 
 namespace Unity.GrantManager.GrantApplications;
 
@@ -1393,10 +1393,35 @@ public class GrantApplicationAppService(
                         UnityApplicationId = applications.UnityApplicationId ?? string.Empty,
                         ApplicantName = applicant != null ? (applicant.ApplicantName ?? GrantManagerConsts.UnknownValue) : GrantManagerConsts.UnknownValue,
                         OrganizationName = applicant != null ? (applicant.OrgName ?? string.Empty) : string.Empty,
-                        UnityApplicantId = applicant != null ? (applicant.UnityApplicantId ?? string.Empty) : string.Empty
+                        UnityApplicantId = applicant != null ? (applicant.UnityApplicantId ?? string.Empty) : string.Empty,
+                        ExternalStatusVisibility = applications.ExternalStatusVisibility
                     };
 
         return await query.ToListAsync();
+    }
+
+    public async Task<GrantApplicationLiteDto> GetBasicAsync(Guid id)
+    {
+        var applicationsQuery = await applicationRepository.GetQueryableAsync();
+        var applicantsQuery = await applicantRepository.GetQueryableAsync();
+
+        var query = from applications in applicationsQuery
+                    join applicant in applicantsQuery on applications.ApplicantId equals applicant.Id into applicantGroup
+                    from applicant in applicantGroup.DefaultIfEmpty()
+                    where applications.Id == id
+                    select new GrantApplicationLiteDto
+                    {
+                        Id = applications.Id,
+                        ProjectName = applications.ProjectName,
+                        ReferenceNo = applications.ReferenceNo,
+                        UnityApplicationId = applications.UnityApplicationId ?? string.Empty,
+                        ApplicantName = applicant != null ? (applicant.ApplicantName ?? GrantManagerConsts.UnknownValue) : GrantManagerConsts.UnknownValue,
+                        OrganizationName = applicant != null ? (applicant.OrgName ?? string.Empty) : string.Empty,
+                        UnityApplicantId = applicant != null ? (applicant.UnityApplicantId ?? string.Empty) : string.Empty,
+                        ExternalStatusVisibility = applications.ExternalStatusVisibility
+                    };
+
+        return await query.FirstOrDefaultAsync() ?? throw new EntityNotFoundException();
     }
 
     private static Dictionary<string, object> ExtractCustomFieldsForWorksheet(dynamic customFields, Guid worksheetId)
