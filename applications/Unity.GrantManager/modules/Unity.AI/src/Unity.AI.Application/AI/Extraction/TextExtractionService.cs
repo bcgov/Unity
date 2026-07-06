@@ -659,7 +659,6 @@ namespace Unity.AI.Extraction
         private string NormalizeAndLimitText(string text, string fileName)
         {
             var normalized = NormalizeExtractedText(text);
-            normalized = RemoveLeadingFileNameArtifact(normalized, fileName);
 
             if (normalized.Length > MaxExtractedTextLength)
             {
@@ -681,66 +680,12 @@ namespace Unity.AI.Extraction
                 .Replace("\r\n", "\n")
                 .Replace('\r', '\n');
 
-            normalized = LowerToUpperWordBoundaryRegex().Replace(normalized, " ");
-            normalized = PunctuationToWordBoundaryRegex().Replace(normalized, " ");
-            normalized = ColonDashSpacingRegex().Replace(normalized, ": - ");
-            normalized = HyphenSpacingRegex().Replace(normalized, " - ");
-            normalized = KeywordBoundaryRegex().Replace(normalized, " ");
             normalized = MultipleSpacesRegex().Replace(normalized, " ");
             normalized = NewlineWhitespaceRegex().Replace(normalized, "\n");
             normalized = MultipleNewlinesRegex().Replace(normalized, "\n");
 
             return normalized.Trim();
         }
-
-        private static string RemoveLeadingFileNameArtifact(string text, string fileName)
-        {
-            if (string.IsNullOrWhiteSpace(text) || string.IsNullOrWhiteSpace(fileName))
-            {
-                return text;
-            }
-
-            var rawStem = Path.GetFileNameWithoutExtension(fileName)?.Trim();
-            if (string.IsNullOrWhiteSpace(rawStem))
-            {
-                return text;
-            }
-
-            var decodedStem = Uri.UnescapeDataString(rawStem);
-            foreach (var candidate in new[] { rawStem, decodedStem })
-            {
-                if (string.IsNullOrWhiteSpace(candidate))
-                {
-                    continue;
-                }
-
-                if (text.StartsWith(candidate, StringComparison.OrdinalIgnoreCase))
-                {
-                    var stripped = text.Substring(candidate.Length).TrimStart(' ', '-', ':', '.', '\t');
-                    if (!string.IsNullOrWhiteSpace(stripped))
-                    {
-                        return stripped;
-                    }
-                }
-            }
-
-            return text;
-        }
-
-        [GeneratedRegex(@"(?<=[a-z])(?=[A-Z])")]
-        private static partial Regex LowerToUpperWordBoundaryRegex();
-
-        [GeneratedRegex(@"(?<=[\.\,\:\;\)])(?=[A-Za-z0-9])")]
-        private static partial Regex PunctuationToWordBoundaryRegex();
-
-        [GeneratedRegex(@":-")]
-        private static partial Regex ColonDashSpacingRegex();
-
-        [GeneratedRegex(@"(?<=\S)- (?=[A-Za-z])")]
-        private static partial Regex HyphenSpacingRegex();
-
-        [GeneratedRegex(@"(?<=[a-z])(?=(project|funding|budget|community|summary|notes|details|planning|outcomes|background|services)\b)", RegexOptions.IgnoreCase)]
-        private static partial Regex KeywordBoundaryRegex();
 
         [GeneratedRegex(@"[ \t]+")]
         private static partial Regex MultipleSpacesRegex();
