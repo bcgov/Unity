@@ -25,5 +25,6 @@ namespace Unity.Payments.PaymentRequests
         Task<List<PaymentRequestDto>> GetPaymentPendingListByCorrelationIdsAsync(IEnumerable<Guid> correlationIds);
         Task<ApplicationPaymentRollupDto> GetApplicationPaymentRollupAsync(Guid applicationId);
         Task<Dictionary<Guid, ApplicationPaymentRollupDto>> GetApplicationPaymentRollupBatchAsync(List<Guid> applicationIds);
+        Task<PaymentRequestDto> CancelAsync(Guid paymentRequestId);
     }
 }

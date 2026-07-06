@@ -28,8 +28,7 @@ $(function () {
         'l2ApprovalDate',
         'l3ApprovalDate',
         'CASResponse',
-        'accountCodingDisplay',
-        'category'
+        'accountCodingDisplay'
     ];
     let initialLoad = true;
     let isRestoringState = false;
@@ -91,6 +90,7 @@ $(function () {
                     payment_approve_buttons.disable();
                     payment_check_status_buttons.disable();
                     history_button.disable();
+                    if (cancel_button) cancel_button.disable();
                     selectedPaymentIds = [];
                     PubSub.publish("deselect_batchpayment_application", "reset_data");
                 })
@@ -100,6 +100,9 @@ $(function () {
         {
             text: 'Approve',
             className: 'custom-table-btn flex-none btn btn-secondary payment-status',
+            attr: {
+                'data-selector': 'batch-payment-table-actions'
+            },
             action: function (e, dt, node, config) {
                 // Store payment IDs in distributed cache to avoid URL length limits
                 unity.payments.paymentRequests.paymentBulkActions
@@ -120,6 +123,9 @@ $(function () {
         {
             text: 'Decline',
             className: 'custom-table-btn flex-none btn btn-secondary payment-status',
+            attr: {
+                'data-selector': 'batch-payment-table-actions'
+            },
             action: function (e, dt, node, config) {
                 // Store payment IDs in distributed cache to avoid URL length limits
                 unity.payments.paymentRequests.paymentBulkActions
@@ -137,9 +143,44 @@ $(function () {
                     });
             }
         },
+        ...(abp.auth.isGranted('PaymentsPermissions.Payments.CancelPayment') ? [{
+            text: 'Cancel',
+            className: 'custom-table-btn flex-none btn btn-secondary payment-cancel',
+            action: function (e, dt, node, config) {
+                if (selectedPaymentIds?.length !== 1) return;
+                const rowData = dt.rows({ selected: true }).data().toArray()[0];
+                abp.message.confirm(
+                    `Are you sure you want to cancel the payment: "${rowData.referenceNumber}"?`,
+                    'Cancel Payment',
+                    function (confirmed) {
+                        if (!confirmed) return;
+                        unity.payments.paymentRequests.paymentRequest
+                            .cancel(selectedPaymentIds[0])
+                            .then(function () {
+                                abp.notify.success('Payment has been cancelled successfully.');
+                                $(".select-all-payments").prop("checked", false);
+                                payment_approve_buttons.disable();
+                                payment_check_status_buttons.disable();
+                                history_button.disable();
+                                if (cancel_button) cancel_button.disable();
+                                selectedPaymentIds = [];
+                                PubSub.publish("deselect_batchpayment_application", "reset_data");
+                                dataTable.ajax.reload(null, false);
+                            })
+                            .catch(function (err) {
+                                abp.notify.error('Failed to cancel payment. Please try again.');
+                                console.warn('Cancel payment error:', err);
+                            });
+                    }
+                );
+            }
+        }] : []),
         {
             text: 'History',
             className: 'custom-table-btn flex-none btn btn-secondary history',
+            attr: {
+                'data-selector': 'batch-payment-table-actions'
+            },
             action: function (e, dt, node, config) {
                 location.href = '/PaymentHistory/Details?PaymentId=' + selectedPaymentIds[0];
             }
@@ -323,7 +364,9 @@ $(function () {
                 dtApi.ajax.reload(null, false);
             }
             initialLoad = false;
-        }
+        },
+        enableContextMenu: true,
+        contextMenuActionsSelector: '[data-selector="batch-payment-table-actions"]'
     });
 
     $('.grp-savedStates').text('Save View');
@@ -366,10 +409,14 @@ $(function () {
     let payment_approve_buttons = dataTable.buttons(['.payment-status']);
     let payment_check_status_buttons = dataTable.buttons(['.payment-check-status']);
     let history_button = dataTable.buttons(['.history']);
+    let cancel_button = abp.auth.isGranted('PaymentsPermissions.Payments.CancelPayment')
+        ? dataTable.buttons(['.payment-cancel'])
+        : null;
 
     payment_approve_buttons.disable();
     payment_check_status_buttons.disable();
     history_button.disable();
+    if (cancel_button) cancel_button.disable();
     dataTable.on('search.dt', () => handleSearch());
 
     function checkAllRowsHaveState(states) {
@@ -452,21 +499,32 @@ $(function () {
             payment_check_status_buttons.disable();
         }
         let hasHistoricalPayment = dataTable.rows('.selected').data().toArray().some(row => row.status === 'HistoricalPayment');
-        if (dataTable.rows({ selected: true }).indexes().length > 0 && !isInSentState && !hasHistoricalPayment) {
-            if (abp.auth.isGranted('PaymentsPermissions.Payments.L1ApproveOrDecline')
+        let hasCancelledPayment = dataTable.rows('.selected').data().toArray().some(row => row.status === 'Cancelled');
+        const hasSelection = dataTable.rows({ selected: true }).indexes().length > 0;
+        const canApprove = hasSelection && !isInSentState && !hasHistoricalPayment && !hasCancelledPayment
+            && (abp.auth.isGranted('PaymentsPermissions.Payments.L1ApproveOrDecline')
                 || abp.auth.isGranted('PaymentsPermissions.Payments.L2ApproveOrDecline')
-                || abp.auth.isGranted('PaymentsPermissions.Payments.L3ApproveOrDecline')) {
-                payment_approve_buttons.enable();
-
-            } else {
-                payment_approve_buttons.disable();
-            }
-
-            checkEnableHistoryButton(dataTable, history_button);
-        }
-        else {
+                || abp.auth.isGranted('PaymentsPermissions.Payments.L3ApproveOrDecline'));
+        if (canApprove) {
+            payment_approve_buttons.enable();
+        } else {
             payment_approve_buttons.disable();
-            checkEnableHistoryButton(dataTable, history_button);
+        }
+        checkEnableHistoryButton(dataTable, history_button);
+
+        if (cancel_button) {
+            const eligibleCancelStatuses = ['HistoricalPayment', 'L1Pending', 'L2Pending', 'L3Pending'];
+            const selectedCount = dataTable.rows({ selected: true }).indexes().length;
+            if (selectedCount === 1) {
+                const rowData = dataTable.rows({ selected: true }).data().toArray()[0];
+                if (eligibleCancelStatuses.includes(rowData.status)) {
+                    cancel_button.enable();
+                } else {
+                    cancel_button.disable();
+                }
+            } else {
+                cancel_button.disable();
+            }
         }
     }
 
@@ -517,6 +575,9 @@ $(function () {
             getNoteColumn(columnIndex++),
             getAccountDistributionColumn(columnIndex++),
             getFsbNotifiedColumn(columnIndex++),
+            getCancelledColumn(columnIndex++),
+            getCancelledByColumn(columnIndex++),
+            getCancelledOnColumn(columnIndex++),
         ]
 
         return columns.map((column) => ({ ...column, targets: [column.index], orderData: [column.index, 0] }));
@@ -588,7 +649,7 @@ $(function () {
 
                 const safeCode = $.fn.dataTable.render.text().display(code);
 
-                if (type === 'display' && abp.auth.isGranted('GrantApplicationManagement.Applicants.ViewList')) {
+                if (type === 'display' && abp.auth.isGranted('GrantApplicationManagement.Applications')) {
                     const applicationId = row?.correlationId;
                     const isGuid = applicationId && guidPattern.test(applicationId);
 
@@ -994,6 +1055,7 @@ $(function () {
         payment_approve_buttons.disable();
         payment_check_status_buttons.disable();
         history_button.disable();
+        if (cancel_button) cancel_button.disable();
         selectedPaymentIds = [];
         PubSub.publish("deselect_batchpayment_application", "reset_data");
     });
@@ -1028,6 +1090,9 @@ $(function () {
             case "Failed":
                 return "#CE3E39";
 
+            case "Cancelled":
+                return "#6c757d";
+
             default:
                 return "#053662";
         }
@@ -1050,6 +1115,7 @@ $(function () {
             payment_approve_buttons.disable();
             payment_check_status_buttons.disable();
             history_button.disable();
+            if (cancel_button) cancel_button.disable();
             selectedPaymentIds = [];
             PubSub.publish("deselect_batchpayment_application", "reset_data");
             PubSub.publish('clear_selected_payment');
@@ -1057,6 +1123,45 @@ $(function () {
     );
 
 });
+
+function getCancelledColumn(columnIndex) {
+    return {
+        title: 'Cancelled',
+        name: 'cancelled',
+        data: null,
+        className: 'data-table-header',
+        index: columnIndex,
+        render: function (data, type, row) {
+            return row.status === 'Cancelled' ? 'Cancelled' : '';
+        }
+    };
+}
+
+function getCancelledByColumn(columnIndex) {
+    return {
+        title: 'Cancelled By',
+        name: 'cancelledBy',
+        data: 'cancelledBy',
+        className: 'data-table-header',
+        index: columnIndex,
+        render: function (data) {
+            return data ?? '';
+        }
+    };
+}
+
+function getCancelledOnColumn(columnIndex) {
+    return {
+        title: 'Cancelled On',
+        name: 'cancelledOn',
+        data: 'cancelledOn',
+        className: 'data-table-header',
+        index: columnIndex,
+        render: function (data, type) {
+            return DateUtils.formatUtcDateToLocal(data, type);
+        }
+    };
+}
 
 let casPaymentResponseModal = new abp.ModalManager({
     viewUrl: '../PaymentRequests/CasPaymentRequestResponse'
