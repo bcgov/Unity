@@ -209,6 +209,7 @@ namespace Unity.Payments.Domain.Services
         public virtual async Task<PaymentRequest> CancelPaymentAsync(Guid paymentRequestId)
         {
             var paymentRequest = await paymentRequestRepository.GetAsync(paymentRequestId, true);
+            var isHistoricalPayment = paymentRequest.Status == PaymentRequestStatus.HistoricalPayment;
             var statusChange = paymentRequest.Status;
 
             var workflow = new PaymentsWorkflow<PaymentRequestStatus, PaymentApprovalAction>(
@@ -221,6 +222,12 @@ namespace Unity.Payments.Domain.Services
                 Clock.Now,
                 currentUser.GetId(),
                 $"{currentUser.Name} {currentUser.SurName}".Trim());
+
+            if (isHistoricalPayment)
+            {
+                paymentRequest.SetInvoiceStatus(CasPaymentRequestStatus.Cancelled);
+                paymentRequest.SetPaymentStatus(CasPaymentRequestStatus.NotPaid);
+            }
 
             return await paymentRequestRepository.UpdateAsync(paymentRequest);
         }
