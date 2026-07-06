@@ -8,5 +8,7 @@ public interface IApplicationStatusService : IApplicationService
 {
     Task<IList<ApplicationStatusDto>> GetListAsync();
     Task<IList<ApplicantPortalStatusDto>> GetApplicantPortalStatusListAsync();
+    Task<ApplicantPortalProgramDetailsDto> GetApplicantPortalProgramDetailsAsync();
     Task UpdateExternalStatusLabelsAsync(UpdateApplicationStatusExternalLabelsDto input);
+    Task UpdateApplicantPortalProgramDetailsAsync(UpdateApplicantPortalProgramDetailsDto input);
 }
