@@ -21,10 +21,16 @@ namespace Unity.AI.Generation;
 [Route("api/app/ai/generation")]
 public class AIGenerationAppService(
     IApplicationAIGenerationQueue aiGenerationQueue,
+    IAIGenerationStatusAppService aiGenerationStatusAppService,
+    IAIRateLimiter aiRateLimiter,
     AIFeatureGuard featureGuard,
     ICurrentTenant currentTenant)
     : AIAppService, IAIGenerationAppService
 {
+    private const string ApplicationAnalysisOperationType = "application-analysis";
+    private const string AttachmentSummaryOperationType = "attachment-summary";
+    private const string ApplicationScoringOperationType = "application-scoring";
+
     [Authorize(AIPermissions.Analysis.GenerateAttachmentSummaries)]
     [HttpPost("attachment-summary")]
     public virtual async Task<List<AttachmentSummaryResultDto>> GenerateAttachmentSummariesAsync(GenerateAttachmentSummariesInputDto input)
@@ -71,5 +77,34 @@ public class AIGenerationAppService(
 
         await aiGenerationQueue.QueueApplicationScoringAsync(applicationId, currentTenant.Id, promptVersion);
         return new ApplicationScoringResultDto { Completed = false };
+    }
+
+    [HttpGet("status")]
+    public virtual async Task<AIGenerationStatusDto> GetStatusAsync(Guid applicationId, string operationType)
+    {
+        await EnsureStatusAccessAsync(operationType);
+
+        var request = await aiGenerationStatusAppService.GetLatestAsync(applicationId, operationType, currentTenant.Id);
+        var state = await aiRateLimiter.GetStateAsync();
+
+        return new AIGenerationStatusDto
+        {
+            GenerationRequest = request,
+            IsGenerating = state.IsGenerating,
+            RetryAfterSeconds = state.RetryAfterSeconds
+        };
+    }
+
+    private async Task EnsureStatusAccessAsync(string operationType)
+    {
+        var permission = operationType switch
+        {
+            ApplicationAnalysisOperationType => AIPermissions.Analysis.ViewApplicationAnalysis,
+            AttachmentSummaryOperationType => AIPermissions.Analysis.ViewAttachmentSummary,
+            ApplicationScoringOperationType => AIPermissions.Analysis.ViewScoringResult,
+            _ => throw new UserFriendlyException($"Unsupported AI generation operation type: {operationType}")
+        };
+
+        await CheckPolicyAsync(permission);
     }
 }
