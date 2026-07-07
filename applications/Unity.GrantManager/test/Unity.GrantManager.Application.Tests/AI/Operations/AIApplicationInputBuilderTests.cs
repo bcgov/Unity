@@ -51,14 +51,10 @@ public class AIApplicationInputBuilderTests
                 }
             })
         });
-        dataProvider.GetAttachmentSummariesAsync(applicationId).Returns(
-        [
-            new AIAttachmentItem
-            {
-                Name = "summary.pdf",
-                Summary = "Summary text"
-            }
-        ]);
+        dataProvider.GetAttachmentSummariesAsync(applicationId).Returns(Task.FromResult(new List<AttachmentSummarySnapshot>
+        {
+            new("summary.pdf", "Summary text")
+        }));
 
         var input = await builder.BuildApplicationAnalysisInputAsync(CreatePromptData(applicationId), "v1");
 
@@ -107,14 +103,10 @@ public class AIApplicationInputBuilderTests
                 }
             })
         });
-        dataProvider.GetAttachmentSummariesAsync(applicationId).Returns(
-        [
-            new AIAttachmentItem
-            {
-                Name = "summary.pdf",
-                Summary = "Summary text"
-            }
-        ]);
+        dataProvider.GetAttachmentSummariesAsync(applicationId).Returns(Task.FromResult(new List<AttachmentSummarySnapshot>
+        {
+            new("summary.pdf", "Summary text")
+        }));
         dataProvider.GetScoresheetAsync(scoresheetId).Returns(new ScoresheetSnapshot
         {
             Sections =

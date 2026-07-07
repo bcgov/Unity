@@ -18,7 +18,7 @@ public class AIApplicationInputBuilder(
     public async Task<ApplicationAnalysisOperationInputDto> BuildApplicationAnalysisInputAsync(AIApplicationPromptDataDto application, string? promptVersion)
     {
         var formSubmission = await dataProvider.GetApplicationSubmissionAsync(application.ApplicationId);
-        var attachments = await dataProvider.GetAttachmentSummariesAsync(application.ApplicationId);
+        var attachments = PromptDataPayloadBuilder.BuildAttachmentSummaries(await dataProvider.GetAttachmentSummariesAsync(application.ApplicationId));
         var formSchema = await GetFormSchemaAsync(formSubmission?.ApplicationFormVersionId);
 
         return new ApplicationAnalysisOperationInputDto
@@ -46,7 +46,7 @@ public class AIApplicationInputBuilder(
         }
 
         var attachments = await dataProvider.GetAttachmentSummariesAsync(application.ApplicationId);
-        var attachmentSummaries = attachments;
+        var attachmentSummaries = PromptDataPayloadBuilder.BuildAttachmentSummaries(attachments);
 
         var formSubmission = await dataProvider.GetApplicationSubmissionAsync(application.ApplicationId);
         var formSchema = await GetFormSchemaAsync(formSubmission?.ApplicationFormVersionId);
@@ -65,7 +65,7 @@ public class AIApplicationInputBuilder(
         {
             ApplicationId = application.ApplicationId,
             Data = promptData,
-            Attachments = attachmentSummaries,
+            Attachments = attachments,
             Sections = sections,
             PromptVersion = promptVersion
         };
@@ -135,7 +135,6 @@ public class AIApplicationInputBuilder(
         }
         catch (JsonException)
         {
-            // Ignore malformed definition and return null options.
         }
 
         return null;

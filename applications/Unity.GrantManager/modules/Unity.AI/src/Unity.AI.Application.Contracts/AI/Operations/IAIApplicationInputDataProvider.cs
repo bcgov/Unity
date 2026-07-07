@@ -13,7 +13,7 @@ public interface IAIApplicationInputDataProvider
 
     Task<ApplicationFormVersionSnapshot?> GetApplicationFormVersionAsync(Guid? formVersionId);
 
-    Task<List<AIAttachmentItem>> GetAttachmentSummariesAsync(Guid applicationId);
+    Task<List<AttachmentSummarySnapshot>> GetAttachmentSummariesAsync(Guid applicationId);
 
     Task<ScoresheetSnapshot?> GetScoresheetAsync(Guid scoresheetId);
 }
@@ -34,6 +34,10 @@ public sealed class ApplicationFormVersionSnapshot
 {
     public string? FormSchema { get; set; }
 }
+
+public sealed record AttachmentSummarySnapshot(
+    string? FileName,
+    string? Summary);
 
 public sealed class ScoresheetSnapshot
 {
