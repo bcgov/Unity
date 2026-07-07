@@ -46,16 +46,14 @@ public class AIApplicationInputDataProvider(
         return version == null ? null : new ApplicationFormVersionSnapshot { FormSchema = version.FormSchema };
     }
 
-    public async Task<List<AIAttachmentItem>> GetAttachmentSummariesAsync(Guid applicationId)
+    public async Task<List<AttachmentSummarySnapshot>> GetAttachmentSummariesAsync(Guid applicationId)
     {
         var attachments = await applicationChefsFileAttachmentRepository.GetListAsync(a => a.ApplicationId == applicationId);
         return attachments
-            .Where(attachment => !string.IsNullOrWhiteSpace(attachment.AISummary))
-            .Select(attachment => new AIAttachmentItem
-            {
-                Name = attachment.FileName ?? string.Empty,
-                Summary = attachment.AISummary ?? string.Empty
-            })
+            .Select(a => new AttachmentSummarySnapshot(
+                string.IsNullOrWhiteSpace(a.FileName) ? "attachment" : a.FileName.Trim(),
+                string.IsNullOrWhiteSpace(a.AISummary) ? null : a.AISummary.Trim()))
+            .Where(a => !string.IsNullOrWhiteSpace(a.Summary))
             .ToList();
     }
 
@@ -88,5 +86,17 @@ public class AIApplicationInputDataProvider(
                 })
                 .ToList()
         };
+    }
+
+    public async Task<bool> HasAttachmentsAsync(Guid applicationId)
+    {
+        var attachments = await applicationChefsFileAttachmentRepository.GetListAsync(a => a.ApplicationId == applicationId);
+        return attachments.Count > 0;
+    }
+
+    public async Task<bool> HasSubmissionAsync(Guid applicationId)
+    {
+        var submission = await applicationFormSubmissionRepository.GetByApplicationAsync(applicationId);
+        return submission != null && !string.IsNullOrWhiteSpace(submission.Submission);
     }
 }
