@@ -1,5 +1,6 @@
 ﻿using Unity.Flex.Localization;
 using Unity.GrantManager.Localization;
+using Unity.Modules.Shared.Specializations;
 using Unity.Notifications.Localization;
 using Unity.Payments.Localization;
 using Volo.Abp.Features;
@@ -67,6 +68,14 @@ namespace Unity.GrantManager
                 defaultValue: defaultValue,
                     displayName: LocalizableString
                                     .Create<GrantManagerResource>("Analytics"),
+                valueType: new ToggleStringValueType());
+
+            var specializationGroup = context.AddGroup(SpecializationConsts.GroupName);
+
+            specializationGroup.AddFeature(SpecializationConsts.Onboarding,
+                defaultValue: defaultValue,
+                displayName: LocalizableString
+                                .Create<GrantManagerResource>("Onboarding"),
                 valueType: new ToggleStringValueType());
         }
     }

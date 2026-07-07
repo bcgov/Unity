@@ -1,9 +1,9 @@
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 using Unity.GrantManager.ApplicantProfile.ProfileData;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Integrations;
@@ -67,7 +67,9 @@ namespace Unity.GrantManager.ApplicantProfile
                         submission.Submission,
                         application.ReferenceNo,
                         FormName = form.ApplicationFormName ?? string.Empty,
-                        Status = status.ExternalStatus
+                        Status = application.ExternalStatusVisibility
+                            ? status.NotifiedStatus ?? status.ExternalStatus
+                            : status.ExternalStatus
                     }).ToListAsync();
 
                 dto.Submissions.AddRange(results.Select(s => new SubmissionInfoItemDto

@@ -11,6 +11,7 @@ public interface ICommentsManager
     Task<IReadOnlyList<CommentListItem>> GetCommentsDisplayListAsync(Guid ownerId, CommentType type);
     Task<CommentBase> UpdateCommentAsync(Guid ownerId, Guid commentId, string comment, CommentType type);
     Task<CommentBase?> GetCommentAsync(Guid ownerId, Guid commentId, CommentType type);
+    Task DeleteCommentAsync(Guid ownerId, Guid commentId, CommentType type);
     Task PinCommentAsync(Guid ownerId, Guid commentId, CommentType type);
     Task UnpinCommentAsync(Guid ownerId, Guid commentId, CommentType type);
 }

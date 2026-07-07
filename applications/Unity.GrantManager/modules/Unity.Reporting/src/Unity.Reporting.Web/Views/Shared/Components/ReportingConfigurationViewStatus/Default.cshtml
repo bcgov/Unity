@@ -48,7 +48,7 @@
 
     <div class="view-status-compact d-flex align-items-center" style="gap: 8px; margin-right: 10px; @(Model.HasMapping ? "" : "display: none;")">
 
-        <span>View Name: </span><span class="view-name-text">@Model.ViewName</span>
+        <span class="view-name-text">@Model.ViewName</span>
 
         @if (!string.IsNullOrEmpty(statusIcon))
         {

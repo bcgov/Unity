@@ -14,7 +14,7 @@ internal static class AIJsonDefaults
 
     static AIJsonDefaults()
     {
-        Indented.MakeReadOnly();
-        IndentedCamelCase.MakeReadOnly();
+        Indented.MakeReadOnly(populateMissingResolver: true);
+        IndentedCamelCase.MakeReadOnly(populateMissingResolver: true);
     }
 }

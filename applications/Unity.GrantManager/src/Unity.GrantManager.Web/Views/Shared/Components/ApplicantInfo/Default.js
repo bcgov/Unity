@@ -285,7 +285,7 @@ function getExistingApplicantData() {
         NonRegOrgName: getVal('ApplicantSummary_NonRegOrgName'),
         OrganizationType: getVal('ApplicantSummary_OrganizationType'),
         BusinessNumber: getVal('ApplicantSummary_BusinessNumber'),
-        OrganizationSize: getVal('ApplicantSummary_OrganizationSize'),
+        ApproxNumberOfEmployees: getVal('ApplicantSummary_ApproxNumberOfEmployees'),
         OrgStatus: getVal('ApplicantSummary_OrgStatus'),
         IndigenousOrgInd: $activeWidget.find('#ApplicantSummary_IndigenousOrgInd').is(':checked') ? 'Yes' : 'No',
         Sector: getVal('ApplicantSummary_Sector'),
@@ -316,7 +316,7 @@ function createNewApplicantDataObject(selectedData) {
         NonRegOrgName: selectedData.NonRegOrgName || '',
         OrganizationType: selectedData.OrganizationType || '',
         BusinessNumber: selectedData.BusinessNumber || '',
-        OrganizationSize: selectedData.OrganizationSize || '',
+        ApproxNumberOfEmployees: selectedData.ApproxNumberOfEmployees || '',
         OrgStatus: selectedData.OrgStatus || '',
         IndigenousOrgInd: selectedData.IndigenousOrgInd || '',
         Sector: selectedData.Sector || '',
@@ -528,7 +528,7 @@ function initializeApplicantLookup() {
                         OrgNumber: item.OrgNumber,
                         NonRegOrgName: item.NonRegOrgName,
                         OrganizationType: item.OrganizationType,
-                        OrganizationSize: item.OrganizationSize,
+                        ApproxNumberOfEmployees: item.ApproxNumberOfEmployees,
                         OrgStatus: item.OrgStatus,
                         BusinessNumber: item.BusinessNumber,
                         IndigenousOrgInd: item.IndigenousOrgInd,
@@ -679,6 +679,57 @@ function registerElectoralDistrictControls($container) {
     });
 }
 
+function calculateFiscalYearEnd($container) {
+    const monthVal = $container.find('#ApplicantSummary_FiscalMonth').val();
+    const dayVal = $container.find('#ApplicantSummary_FiscalDay').val();
+    const $yearEndField = $container.find('#ApplicantSummary_FiscalYearEnd');
+
+    if (!monthVal || !dayVal) {
+        $yearEndField.val('');
+        return;
+    }
+
+    const monthMap = {
+        'Jan': 1, 'Feb': 2, 'Mar': 3, 'Apr': 4,
+        'May': 5, 'Jun': 6, 'Jul': 7, 'Aug': 8,
+        'Sep': 9, 'Oct': 10, 'Nov': 11, 'Dec': 12
+    };
+
+    const month = monthMap[monthVal];
+    const day = Number.parseInt(dayVal, 10);
+
+    if (!month || Number.isNaN(day)) {
+        $yearEndField.val('');
+        return;
+    }
+
+    const today = new Date();
+    const todayDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    let year = todayDate.getFullYear();
+    const isValidMonthDay = (y) => {
+        const d = new Date(y, month - 1, day);
+        return d.getMonth() === month - 1 && d.getDate() === day;
+    };
+
+    if (!isValidMonthDay(year)) {
+        $yearEndField.val('');
+        return;
+    }
+
+    const candidate = new Date(year, month - 1, day);
+    if (candidate < todayDate) {
+        year += 1;
+        if (!isValidMonthDay(year)) {
+            $yearEndField.val('');
+            return;
+        }
+    }
+
+    const mm = String(month).padStart(2, '0');
+    const dd = String(day).padStart(2, '0');
+    $yearEndField.val(`${year}-${mm}-${dd}`);
+}
+
 function registerApplicantInfoSummaryDropdowns($container) {
     $container.find('#ApplicantSummary_Sector').on('change', function () {
         const selectedValue = $(this).val();
@@ -722,6 +773,12 @@ function registerApplicantInfoSummaryDropdowns($container) {
             $container.find('#ApplicantSummary_BusinessNumber').val(business_number.text).trigger('change');
         });
     });
+
+    $container.find('#ApplicantSummary_FiscalMonth, #ApplicantSummary_FiscalDay').on('change', function () {
+        calculateFiscalYearEnd($container);
+    });
+
+    calculateFiscalYearEnd($container);
 }
 
 function getAttributeObjectByType(type, attributes) {

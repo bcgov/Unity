@@ -30,17 +30,42 @@ public class AIRateLimiterTests
         _configuration = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
             {
-                ["AI:RateLimit:CooldownSeconds"] = "60"
+                ["Azure:Generation:CooldownSeconds"] = "60"
             }).Build();
     }
 
-    private AIRateLimiter NewLimiter() => new(_cache, _currentUser, _configuration, new TestDistributedLockProvider());
+    private AIRateLimiter NewLimiter(params IAIGenerationActivityProvider[] activityProviders) =>
+        new(_cache, _currentUser, _configuration, new TestDistributedLockProvider(), activityProviders);
 
     [Fact]
     public async Task GetStateAsync_Returns_Zero_When_NoCooldown()
     {
         var state = await NewLimiter().GetStateAsync();
         state.RetryAfterSeconds.ShouldBe(0);
+        state.IsGenerating.ShouldBeFalse();
+    }
+
+    [Fact]
+    public async Task GetStateAsync_Returns_Generating_When_ActivityProvider_HasActiveGeneration()
+    {
+        var activityProvider = Substitute.For<IAIGenerationActivityProvider>();
+        activityProvider.HasActiveGenerationAsync().Returns(true);
+
+        var state = await NewLimiter(activityProvider).GetStateAsync();
+
+        state.RetryAfterSeconds.ShouldBe(0);
+        state.IsGenerating.ShouldBeTrue();
+    }
+
+    [Fact]
+    public async Task GetStateAsync_Does_Not_Acquire_Cooldown_Lock()
+    {
+        var lockProvider = new CountingDistributedLockProvider();
+        var limiter = new AIRateLimiter(_cache, _currentUser, _configuration, lockProvider, []);
+
+        await limiter.GetStateAsync();
+
+        lockProvider.CreatedLockCount.ShouldBe(0);
     }
 
     [Fact]
@@ -117,18 +142,51 @@ public class AIRateLimiterTests
         var config = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
             {
-                ["AI:RateLimit:CooldownSeconds"] = "1"
+                ["Azure:Generation:CooldownSeconds"] = "1"
             }).Build();
-        var limiter = new AIRateLimiter(_cache, _currentUser, config, new TestDistributedLockProvider());
+        var limiter = new AIRateLimiter(_cache, _currentUser, config, new TestDistributedLockProvider(), []);
 
         await limiter.StampAsync();
         await Task.Delay(TimeSpan.FromSeconds(1.2), CancellationToken.None);
         await limiter.EnsureAsync(); // Should not throw.
     }
 
+    [Theory]
+    [InlineData(null)]
+    [InlineData("0")]
+    [InlineData("-1")]
+    public async Task StampAsync_Throws_When_Cooldown_Config_Is_Missing_Or_Invalid(string? configuredCooldownSeconds)
+    {
+        var values = new Dictionary<string, string?>();
+        if (configuredCooldownSeconds != null)
+        {
+            values["Azure:Generation:CooldownSeconds"] = configuredCooldownSeconds;
+        }
+
+        var config = new ConfigurationBuilder()
+            .AddInMemoryCollection(values)
+            .Build();
+
+        var limiter = new AIRateLimiter(_cache, _currentUser, config, new TestDistributedLockProvider(), []);
+
+        var ex = await Should.ThrowAsync<AbpException>(() => limiter.StampAsync());
+        ex.Message.ShouldContain("Azure:Generation:CooldownSeconds");
+    }
+
     private sealed class TestDistributedLockProvider : IDistributedLockProvider
     {
         public IDistributedLock CreateLock(string name) => new TestDistributedLock(name);
+    }
+
+    private sealed class CountingDistributedLockProvider : IDistributedLockProvider
+    {
+        public int CreatedLockCount { get; private set; }
+
+        public IDistributedLock CreateLock(string name)
+        {
+            CreatedLockCount++;
+            return new TestDistributedLock(name);
+        }
     }
 
     private sealed class TestDistributedLock(string name) : IDistributedLock

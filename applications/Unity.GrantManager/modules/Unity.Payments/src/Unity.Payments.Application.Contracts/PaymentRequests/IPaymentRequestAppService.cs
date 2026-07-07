@@ -9,7 +9,8 @@ namespace Unity.Payments.PaymentRequests
     public interface IPaymentRequestAppService : IApplicationService
     {
         Task<List<PaymentRequestDto>> CreateAsync(List<CreatePaymentRequestDto> paymentRequests);
-        Task<PagedResultDto<PaymentRequestDto>> GetListAsync(PagedAndSortedResultRequestDto input);
+        Task<List<PaymentRequestDto>> CreateHistoricalAsync(List<CreateHistoricalPaymentRequestDto> paymentRequests);
+        Task<PagedResultDto<PaymentRequestDto>> GetListAsync(PaymentRequestListInputDto input);
         Task<decimal> GetTotalPaymentRequestAmountByCorrelationIdAsync(Guid correlationId);
         Task<List<PaymentDetailsDto>> GetListByApplicationIdAsync(Guid applicationId);
         Task<List<PaymentDetailsDto>> GetListByPaymentIdsAsync(List<Guid> paymentIds);
@@ -24,5 +25,6 @@ namespace Unity.Payments.PaymentRequests
         Task<List<PaymentRequestDto>> GetPaymentPendingListByCorrelationIdsAsync(IEnumerable<Guid> correlationIds);
         Task<ApplicationPaymentRollupDto> GetApplicationPaymentRollupAsync(Guid applicationId);
         Task<Dictionary<Guid, ApplicationPaymentRollupDto>> GetApplicationPaymentRollupBatchAsync(List<Guid> applicationIds);
+        Task<PaymentRequestDto> CancelAsync(Guid paymentRequestId);
     }
 }

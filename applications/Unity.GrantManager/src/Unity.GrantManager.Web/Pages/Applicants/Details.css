@@ -1,5 +1,17 @@
 /* Applicant Details Page Styles */
 
+.action-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid #dee2e6;
+    min-height: 56px;
+}
+
+.margin-left-auto {
+    margin-left: auto;
+}
+
 /* Main container */
 .applicant-details-container {
     width: 100%;
@@ -64,6 +76,7 @@
 
 #main-divider {
     width: 10px;
+    min-width: 10px;
     flex: 0 0 10px;
     background-color: #ccc;
     cursor: col-resize;

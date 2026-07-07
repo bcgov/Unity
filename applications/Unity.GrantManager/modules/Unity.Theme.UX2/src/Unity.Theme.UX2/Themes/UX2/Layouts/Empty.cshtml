@@ -64,6 +64,8 @@
         @await Component.InvokeLayoutHookAsync(LayoutHooks.PageContent.Last, StandardLayouts.Empty)
     </div>
 
+    <script src="~/js/jquery-polyfills.js"></script>
+
     <abp-script-bundle name="@UnityThemeUX2Bundles.Scripts.Global" />
 
     <script src="~/Abp/ApplicationLocalizationScript?cultureName=@CultureInfo.CurrentUICulture.Name"></script>

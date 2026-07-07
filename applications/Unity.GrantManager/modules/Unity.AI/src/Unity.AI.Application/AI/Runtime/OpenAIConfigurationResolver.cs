@@ -1,146 +1,289 @@
 using Microsoft.Extensions.Configuration;
 using System;
-using System.Globalization;
+using System.Linq;
+using System.Text.Json;
+using System.Threading;
+using System.Threading.Tasks;
+using Unity.AI.Domain;
+using Unity.AI.Operations;
+using Volo.Abp.Data;
 using Volo.Abp.DependencyInjection;
+using Volo.Abp.Domain.Repositories;
+using Volo.Abp.MultiTenancy;
 
 namespace Unity.AI.Runtime;
 
-public class OpenAIConfigurationResolver(IConfiguration configuration) : ITransientDependency
+public class OpenAIConfigurationResolver(
+    IRepository<AIModel, Guid> modelRepository,
+    IRepository<AIOperation, Guid> operationRepository,
+    IRepository<AIPrompt, Guid> promptRepository,
+    IConfiguration configuration,
+    IDataFilter<IMultiTenant> multiTenantDataFilter) : ITransientDependency
 {
-    private const string DefaultMaxTokensParameterName = "max_completion_tokens";
-    private const string LegacyMaxTokensParameterName = "max_tokens";
-    private const string DefaultProviderName = "OpenAI";
-
-    private readonly IConfiguration _configuration = configuration;
-
-    public string ResolveProviderName(string? operationName = null)
+    private static readonly JsonSerializerOptions JsonOptions = new()
     {
-        if (!string.IsNullOrWhiteSpace(operationName))
+        PropertyNameCaseInsensitive = true
+    };
+
+    private readonly IRepository<AIModel, Guid> _modelRepository = modelRepository;
+    private readonly IRepository<AIOperation, Guid> _operationRepository = operationRepository;
+    private readonly IRepository<AIPrompt, Guid> _promptRepository = promptRepository;
+    private readonly IConfiguration _configuration = configuration;
+    private readonly IDataFilter<IMultiTenant> _multiTenantDataFilter = multiTenantDataFilter;
+
+    public string ResolveProviderName() => Required("Azure:Operations:Defaults:Provider");
+
+    public Task<string> ResolveApiKeyAsync(string? modelName = null, CancellationToken cancellationToken = default)
+    {
+        var providerName = Required("Azure:Operations:Defaults:Provider");
+        return Task.FromResult(Required($"Azure:{providerName}:ApiKey"));
+    }
+
+    public async Task<OpenAIOperationSettings> ResolveOperationSettingsAsync(
+        string operationName,
+        CancellationToken cancellationToken = default)
+    {
+        var operation = await ResolveOperationAsync(operationName, cancellationToken);
+        if (operation == null)
         {
-            var configuredProvider = _configuration[$"Azure:Operations:{operationName}:Provider"];
-            if (!string.IsNullOrWhiteSpace(configuredProvider))
-            {
-                return configuredProvider.Trim();
-            }
+            throw new InvalidOperationException($"AI operation '{operationName}' is not configured.");
         }
 
-        var defaultProvider = _configuration["Azure:Operations:Defaults:Provider"];
-        return string.IsNullOrWhiteSpace(defaultProvider) ? DefaultProviderName : defaultProvider.Trim();
-    }
-
-    public string ResolveApiKey(string? operationName = null)
-    {
-        var providerName = ResolveProviderName(operationName);
-        return _configuration[$"Azure:{providerName}:ApiKey"] ?? string.Empty;
-    }
-
-    public string ResolveMaxTokensParameterNameForOperation(string? operationName = null)
-    {
-        var providerName = ResolveProviderName(operationName);
-        var profileName = ResolveProfileName(operationName);
-        var profileParameterName = ResolveProfileSetting(providerName, profileName, "MaxTokensParameter");
-        return ResolveMaxTokensParameterName(profileParameterName);
-    }
-
-    public double? ResolveConfiguredTemperature(string? operationName = null)
-    {
-        var providerName = ResolveProviderName(operationName);
-        var profileName = ResolveProfileName(operationName);
-        var profileTemperature = ResolveProfileSetting(providerName, profileName, "Temperature");
-        if (profileTemperature != null
-            && double.TryParse(profileTemperature, NumberStyles.Float, CultureInfo.InvariantCulture, out var parsedTemperature))
+        var model = await _modelRepository.GetAsync(operation.AIModelId, cancellationToken: cancellationToken);
+        if (!model.IsActive)
         {
-            return parsedTemperature;
+            throw new InvalidOperationException($"AI model '{model.Name}' is inactive.");
+        }
+
+        var modelSettings = ResolveModelSettings(model);
+        var providerName = Required("Azure:Operations:Defaults:Provider");
+        var endpoint = Required($"Azure:{providerName}:Endpoint");
+        if (!Uri.TryCreate(endpoint, UriKind.Absolute, out _))
+        {
+            throw new InvalidOperationException($"Azure:{providerName}:Endpoint must be a valid absolute URI.");
+        }
+        var prompt = await LoadPromptAsync(operation.AIPromptId, cancellationToken);
+        if (!prompt.IsActive)
+        {
+            throw new InvalidOperationException($"AI prompt '{prompt.Name}' v{prompt.VersionNumber} is not active.");
+        }
+
+        if (operation.CompletionTokens <= 0)
+        {
+            throw new InvalidOperationException($"AI operation '{operation.Name}' must define a positive CompletionTokens value.");
+        }
+
+        var apiKey = Required($"Azure:{providerName}:ApiKey");
+        return new OpenAIOperationSettings(
+            providerName,
+            model.Name,
+            apiKey,
+            new Uri(endpoint),
+            Required($"Azure:{providerName}:Profiles:{model.Name}:DeploymentName"),
+            modelSettings.MaxOutputTokenCountSupported,
+            modelSettings.Temperature,
+            operation.CompletionTokens,
+            $"v{prompt.VersionNumber}");
+    }
+
+    public async Task<double?> ResolveConfiguredTemperatureAsync(string? modelName = null, CancellationToken cancellationToken = default)
+    {
+        var modelConfiguration = await ResolveModelConfigurationAsync(modelName, cancellationToken);
+        if (modelConfiguration != null)
+        {
+            return modelConfiguration.Value.Settings.Temperature;
+        }
+
+        throw new InvalidOperationException("AI model is not configured.");
+    }
+
+    public async Task<bool> ResolveMaxOutputTokenCountSupportedAsync(string? modelName = null, CancellationToken cancellationToken = default)
+    {
+        var modelConfiguration = await ResolveModelConfigurationAsync(modelName, cancellationToken);
+        if (modelConfiguration != null)
+        {
+            var providerName = Required("Azure:Operations:Defaults:Provider");
+            var profileName = modelConfiguration.Value.Model.Name;
+            var configuredValue = Optional($"Azure:{providerName}:Profiles:{profileName}:MaxOutputTokenCountSupported");
+            if (configuredValue != null)
+            {
+                if (bool.TryParse(configuredValue, out var parsedValue))
+                {
+                    return parsedValue;
+                }
+
+                throw new InvalidOperationException($"Azure:{providerName}:Profiles:{profileName}:MaxOutputTokenCountSupported is not a valid boolean.");
+            }
+
+            return modelConfiguration.Value.Settings.MaxOutputTokenCountSupported;
+        }
+
+        throw new InvalidOperationException("AI model is not configured.");
+    }
+
+    public async Task<int> ResolveCompletionTokensAsync(string operationName, CancellationToken cancellationToken = default)
+    {
+        var operation = await ResolveOperationAsync(operationName, cancellationToken);
+        if (operation == null)
+        {
+            throw new InvalidOperationException($"AI operation '{operationName}' is not configured.");
+        }
+
+        var model = await _modelRepository.GetAsync(operation.AIModelId, cancellationToken: cancellationToken);
+        if (!model.IsActive)
+        {
+            throw new InvalidOperationException($"AI model '{model.Name}' is inactive.");
+        }
+
+        if (operation.CompletionTokens <= 0)
+        {
+            throw new InvalidOperationException($"AI operation '{operation.Name}' must define a positive CompletionTokens value.");
+        }
+
+        return operation.CompletionTokens;
+    }
+
+    public Task<string> ResolvePromptVersionAsync(string operationName, CancellationToken cancellationToken = default)
+    {
+        return ResolvePromptVersionAsyncCore(operationName, cancellationToken);
+    }
+
+    public async Task<Uri> ResolveEndpointAsync(string? modelName = null, CancellationToken cancellationToken = default)
+    {
+        var modelConfiguration = await ResolveModelConfigurationAsync(modelName, cancellationToken);
+        if (modelConfiguration != null)
+        {
+            var providerName = Required("Azure:Operations:Defaults:Provider");
+            return new Uri(Required($"Azure:{providerName}:Endpoint"));
+        }
+
+        throw new InvalidOperationException("AI model is not configured.");
+    }
+
+    public async Task<string> ResolveDeploymentNameAsync(string? modelName = null, CancellationToken cancellationToken = default)
+    {
+        var modelConfiguration = await ResolveModelConfigurationAsync(modelName, cancellationToken);
+        if (modelConfiguration != null)
+        {
+            var providerName = Required("Azure:Operations:Defaults:Provider");
+            return Required($"Azure:{providerName}:Profiles:{modelConfiguration.Value.Model.Name}:DeploymentName");
+        }
+
+        throw new InvalidOperationException("AI model is not configured.");
+    }
+
+    public async Task<string> ResolveProfileNameAsync(string? modelName = null, CancellationToken cancellationToken = default)
+    {
+        var modelConfiguration = await ResolveModelConfigurationAsync(modelName, cancellationToken);
+        if (modelConfiguration != null)
+        {
+            return modelConfiguration.Value.Model.Name;
+        }
+
+        throw new InvalidOperationException("AI model is not configured.");
+    }
+
+    private async Task<(AIModel Model, AIModelSettings Settings)?> ResolveModelConfigurationAsync(
+        string? modelName,
+        CancellationToken cancellationToken)
+    {
+        var model = await ResolveModelAsync(modelName, cancellationToken);
+        if (model == null)
+        {
+            return null;
+        }
+
+        var settings = JsonSerializer.Deserialize<AIModelSettings>(model.SettingsJson, JsonOptions);
+        if (settings == null)
+        {
+            throw new InvalidOperationException($"AI model '{model.Name}' has invalid settings JSON.");
+        }
+
+        return (model, settings);
+    }
+
+    private async Task<AIOperation?> ResolveOperationAsync(string operationName, CancellationToken cancellationToken)
+    {
+        var operations = await _operationRepository.GetListAsync(
+            operation => operation.IsActive,
+            cancellationToken: cancellationToken);
+
+        return operations.FirstOrDefault(operation =>
+            string.Equals(operation.Name, operationName, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static AIModelSettings ResolveModelSettings(AIModel model)
+    {
+        var settings = JsonSerializer.Deserialize<AIModelSettings>(model.SettingsJson, JsonOptions);
+        if (settings == null)
+        {
+            throw new InvalidOperationException($"AI model '{model.Name}' has invalid settings JSON.");
+        }
+
+        return settings;
+    }
+
+    private async Task<AIModel?> ResolveModelAsync(string? modelName, CancellationToken cancellationToken)
+    {
+        var activeModels = await _modelRepository.GetListAsync(model => model.IsActive, cancellationToken: cancellationToken);
+        if (activeModels.Count == 0)
+        {
+            return null;
+        }
+
+        if (!string.IsNullOrWhiteSpace(modelName))
+        {
+            return activeModels.FirstOrDefault(model =>
+                string.Equals(model.Name, modelName, StringComparison.OrdinalIgnoreCase));
+        }
+
+        var configuredDefaultProfile = Optional("Azure:Operations:Defaults:Profile");
+        if (!string.IsNullOrWhiteSpace(configuredDefaultProfile))
+        {
+            var configuredDefaultModel = activeModels.FirstOrDefault(model =>
+                string.Equals(model.Name, configuredDefaultProfile, StringComparison.OrdinalIgnoreCase));
+            if (configuredDefaultModel != null)
+            {
+                return configuredDefaultModel;
+            }
         }
 
         return null;
     }
 
-    public int ResolveCompletionTokens(string operationName, int defaultValue)
+    private string Required(string key)
     {
-        var configuredValue = _configuration.GetValue<int?>($"Azure:Operations:{operationName}:MaxCompletionTokens");
-        if (configuredValue is > 0)
-        {
-            return configuredValue.Value;
-        }
-
-        var defaultConfiguredValue = _configuration.GetValue<int?>("Azure:Operations:Defaults:MaxCompletionTokens");
-        return defaultConfiguredValue is > 0 ? defaultConfiguredValue.Value : defaultValue;
+        return Optional(key) ?? throw new InvalidOperationException($"{key} is not configured.");
     }
 
-    public string ResolveApiUrl(string? operationName = null)
+    private string? Optional(string key)
     {
-        var providerName = ResolveProviderName(operationName);
-        var profileName = ResolveProfileName(operationName);
-        var profileApiUrl = ResolveProfileSetting(providerName, profileName, "ApiUrl");
-        var injectedEndpoint = ResolveInjectedEndpoint(providerName);
-        var legacyOpenAiApiUrl = _configuration["Azure:OpenAI:ApiUrl"];
-
-        if (!string.IsNullOrWhiteSpace(injectedEndpoint) && !string.IsNullOrWhiteSpace(profileApiUrl))
-        {
-            return CombineEndpointAndPath(injectedEndpoint, profileApiUrl);
-        }
-
-        if (!string.IsNullOrWhiteSpace(profileApiUrl))
-        {
-            return profileApiUrl;
-        }
-
-        if (!string.IsNullOrWhiteSpace(legacyOpenAiApiUrl))
-        {
-            return legacyOpenAiApiUrl;
-        }
-
-        throw new InvalidOperationException($"AI API URL is not configured for provider '{providerName}'.");
+        var value = _configuration[key];
+        return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
     }
 
-    private static string ResolveMaxTokensParameterName(string? configuredParameterName)
+    private async Task<string> ResolvePromptVersionAsyncCore(string operationName, CancellationToken cancellationToken)
     {
-        if (string.Equals(configuredParameterName, LegacyMaxTokensParameterName, StringComparison.Ordinal))
+        var operation = await ResolveOperationAsync(operationName, cancellationToken);
+        if (operation == null)
         {
-            return LegacyMaxTokensParameterName;
+            throw new InvalidOperationException($"AI operation '{operationName}' is not configured.");
         }
 
-        return DefaultMaxTokensParameterName;
-    }
-
-    private string? ResolveInjectedEndpoint(string providerName)
-    {
-        return _configuration[$"Azure:{providerName}:Endpoint"];
-    }
-
-    private string? ResolveProfileName(string? operationName)
-    {
-        if (!string.IsNullOrWhiteSpace(operationName))
+        var prompt = await LoadPromptAsync(operation.AIPromptId, cancellationToken);
+        if (!prompt.IsActive)
         {
-            var operationProfile = _configuration[$"Azure:Operations:{operationName}:Profile"];
-            if (!string.IsNullOrWhiteSpace(operationProfile))
-            {
-                return operationProfile.Trim();
-            }
+            throw new InvalidOperationException($"AI prompt '{prompt.Name}' v{prompt.VersionNumber} is not active.");
         }
 
-        var defaultProfile = _configuration["Azure:Operations:Defaults:Profile"];
-        return string.IsNullOrWhiteSpace(defaultProfile) ? null : defaultProfile.Trim();
+        return $"v{prompt.VersionNumber}";
     }
 
-    private string? ResolveProfileSetting(string providerName, string? profileName, string settingName)
+    private async Task<AIPrompt> LoadPromptAsync(Guid promptId, CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(profileName))
+        using (_multiTenantDataFilter.Disable())
         {
-            return null;
+            return await _promptRepository.GetAsync(promptId, cancellationToken: cancellationToken);
         }
-
-        var profileSetting = _configuration[$"Azure:{providerName}:Profiles:{profileName}:{settingName}"];
-        return string.IsNullOrWhiteSpace(profileSetting) ? null : profileSetting;
-    }
-
-    private static string CombineEndpointAndPath(string endpoint, string profilePath)
-    {
-        const char UrlPathSeparator = '/';
-
-        return endpoint.Trim().TrimEnd(UrlPathSeparator)
-            + UrlPathSeparator
-            + profilePath.Trim().TrimStart(UrlPathSeparator);
     }
 }

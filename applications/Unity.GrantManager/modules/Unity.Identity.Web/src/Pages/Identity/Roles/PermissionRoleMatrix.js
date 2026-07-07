@@ -1,5 +1,5 @@
 ﻿$(document).ready(function () {
-    const urlParams = new URLSearchParams(window.location.search);
+    const urlParams = new URLSearchParams(globalThis.location.search);
     const isExpanded = urlParams.get('Render') === 'Expanded';
     const exportTitle = `${abp.currentTenant.name}_${(new Date()).toISOString().slice(0, 10)}_Permission-Role Matrix`;
 
@@ -11,7 +11,7 @@
     );
     _permissionsModal.onClose(function () {
         // Refresh the page to show updated permissions
-        window.location.reload();
+        globalThis.location.reload();
     });
 
     const roleColumnIndexes = [];
@@ -34,6 +34,16 @@
         });
     }
 
+    const adjustTableLayout = function () {
+        globalThis.requestAnimationFrame(function () {
+            localTable.columns.adjust();
+
+            if (localTable.fixedHeader) {
+                localTable.fixedHeader.adjust();
+            }
+        });
+    };
+
     $.fn.dataTable.Buttons.defaults.dom.button.className = 'btn flex-none';
     let localTable = $('#permissionTable').DataTable({
         paging: false,
@@ -55,7 +65,7 @@
                     : '<i class="fl fl-fullscreen align-middle"></i> <span>View Expanded</span>',
                 className: 'btn-light rounded-1',
                 action: function (e, dt, button, config) {
-                    window.location = isExpanded
+                    globalThis.location = isExpanded
                         ? '/Identity/Roles/PermissionRoleMatrix'
                         : '/Identity/Roles/PermissionRoleMatrix?Render=Expanded';
                 }
@@ -122,6 +132,11 @@
     // Hide spinner and show table after initialization
     $('.loading-spinner').hide();
     $('#permissionTable').show();
+    adjustTableLayout();
+
+    $(globalThis).on('resize', function () {
+        adjustTableLayout();
+    });
 
     // Add click handlers to role column headers using data-role-header attribute
     $(document).on('click', 'th[data-role-header]', function () {

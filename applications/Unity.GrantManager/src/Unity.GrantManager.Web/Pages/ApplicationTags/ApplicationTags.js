@@ -51,8 +51,6 @@ $(function () {
 
         this.arr.push({ Id: id, Name: tagText });
 
-        let tagInput = this;
-
         let tag = document.createElement('span');
         tag.className = this.options.tagClass + ' ' + tagClass;
         tag.innerText = tagText;
@@ -61,13 +59,13 @@ $(function () {
             let closeIcon = document.createElement('a');
             closeIcon.innerHTML = '&times;';
 
-            closeIcon.addEventListener('click', function (e) {
+            closeIcon.addEventListener('click', (e) => {
                 e.preventDefault();
-                let tag = this.parentNode;
+                let tag = e.currentTarget.parentNode;
 
-                let tagIndex = Array.from(tagInput.wrapper.childNodes).indexOf(tag);
+                let tagIndex = Array.from(this.wrapper.childNodes).indexOf(tag);
                 if (tagIndex !== -1) {
-                    tagInput.deleteTag(tag, tagIndex);
+                    this.deleteTag(tag, tagIndex);
                 }
             })
 
@@ -82,23 +80,21 @@ $(function () {
     }
 
     TagsInput.prototype.deleteTag = function (tag, i) {
-        let self = this;
-
-        if (this.arr[i] && this.arr[i].Name === 'Uncommon Tags') {
+        if (this.arr[i]?.Name === 'Uncommon Tags') {
             abp.message.confirm('Are you sure you want to delete all the uncommon tags?')
-                .then(function (confirmed) {
+                .then((confirmed) => {
                     if (confirmed) {
                         tag.remove();
-                        self.arr.splice(i, 1);
-                        self.orignal_input.value = JSON.stringify(self.arr);
-                        updateSelectedTagsInput(self.arr);
+                        this.arr.splice(i, 1);
+                        this.orignal_input.value = JSON.stringify(this.arr);
+                        updateSelectedTagsInput(this.arr);
                         
                         // Expand input if no tags remain
-                        if (self.arr.length === 0) {
-                            self.input.classList.add('expanded');
+                        if (this.arr.length === 0) {
+                            this.input.classList.add('expanded');
                         }
                         
-                        return self;
+                        return this;
                     }
                 });
         } else {
@@ -134,10 +130,8 @@ $(function () {
     }
 
     TagsInput.prototype.addData = function (array) {
-        let plugin = this;
-
-        array.forEach(function (string) {
-            plugin.addTag(string);
+        array.forEach((string) => {
+            this.addTag(string);
         })
         return this;
     }
@@ -154,14 +148,13 @@ $(function () {
         this.orignal_input.removeAttribute('hidden');
 
         delete this.orignal_input;
-        let self = this;
 
-        Object.keys(this).forEach(function (key) {
-            if (self[key] instanceof HTMLElement)
-                self[key].remove();
+        Object.keys(this).forEach((key) => {
+            if (this[key] instanceof HTMLElement)
+                this[key].remove();
 
             if (key != 'options')
-                delete self[key];
+                delete this[key];
         });
 
         this.initialized = false;
@@ -353,5 +346,5 @@ $(function () {
         duplicate: false
     }
 
-    window.TagsInput = TagsInput;
+    globalThis.TagsInput = TagsInput;
 });

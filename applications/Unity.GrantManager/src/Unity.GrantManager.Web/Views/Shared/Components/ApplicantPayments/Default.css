@@ -1,0 +1,49 @@
+.applicant-payments-summary {
+    border-bottom: 0.25rem solid var(--bc-colors-white-background);
+}
+
+.applicant-payments-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.applicant-payments-toolbar .tbl-search {
+    max-width: 280px;
+}
+
+.applicant-payments-toolbar .dynamic-buttons-div {
+    margin-left: auto;
+    position: relative;
+}
+
+.applicant-payments-toolbar .dynamic-buttons-div .dt-button-collection {
+    left: auto !important;
+    right: 0 !important;
+}
+
+#ApplicantPaymentRequestListTable_wrapper {
+    overflow: visible !important;
+}
+
+.applicant-payments-container .dt-container {
+    overflow: visible !important;
+}
+
+#ApplicantPaymentRequestListTable_wrapper .dt-scroll-body {
+    max-height: clamp(180px, calc(100vh - 540px), 350px) !important;
+    overflow-y: auto !important;
+    overflow-x: auto !important;
+}
+
+#ApplicantPaymentRequestListTable .error-row td {
+    background-color: #FEEAEA;
+    color: #CC0000 !important;
+}
+
+.info-btn {
+    font-size: 13pt;
+    font-family: BCSans, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", "Liberation Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+    font-weight: 100;
+}

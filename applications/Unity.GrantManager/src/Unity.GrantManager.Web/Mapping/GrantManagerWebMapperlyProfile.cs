@@ -34,13 +34,11 @@ public partial class CreateUpdateApplicationFormViewModelToDtoMapper : MapperBas
     [MapperIgnoreTarget(nameof(CreateUpdateApplicationFormDto.ChefsCriteriaFormGuid))]
     [MapperIgnoreTarget(nameof(CreateUpdateApplicationFormDto.Version))]
     [MapperIgnoreTarget(nameof(CreateUpdateApplicationFormDto.Payable))]
-    [MapperIgnoreTarget(nameof(CreateUpdateApplicationFormDto.RenderFormIoToHtml))]
     public override partial CreateUpdateApplicationFormDto Map(CreateUpdateApplicationFormViewModel source);
 
     [MapperIgnoreTarget(nameof(CreateUpdateApplicationFormDto.ChefsCriteriaFormGuid))]
     [MapperIgnoreTarget(nameof(CreateUpdateApplicationFormDto.Version))]
     [MapperIgnoreTarget(nameof(CreateUpdateApplicationFormDto.Payable))]
-    [MapperIgnoreTarget(nameof(CreateUpdateApplicationFormDto.RenderFormIoToHtml))]
     public override partial void Map(CreateUpdateApplicationFormViewModel source, CreateUpdateApplicationFormDto destination); 
 }
 
@@ -78,7 +76,7 @@ public partial class ApplicationToGrantApplicationDtoWebMapper : MapperBase<Appl
     [MapperIgnoreTarget(nameof(GrantApplicationDto.OrganizationType))]
     [MapperIgnoreTarget(nameof(GrantApplicationDto.OrgStatus))]
     [MapperIgnoreTarget(nameof(GrantApplicationDto.BusinessNumber))]
-    [MapperIgnoreTarget(nameof(GrantApplicationDto.OrganizationSize))]
+    [MapperIgnoreTarget(nameof(GrantApplicationDto.ApproxNumberOfEmployees))]
     [MapperIgnoreTarget(nameof(GrantApplicationDto.OrgNumber))]
     [MapperIgnoreTarget(nameof(GrantApplicationDto.SectorSubSectorIndustryDesc))]
     [MapperIgnoreTarget(nameof(GrantApplicationDto.PaymentInfo))]
@@ -107,7 +105,7 @@ public partial class ApplicationToGrantApplicationDtoWebMapper : MapperBase<Appl
     [MapperIgnoreTarget(nameof(GrantApplicationDto.OrganizationType))]
     [MapperIgnoreTarget(nameof(GrantApplicationDto.OrgStatus))]
     [MapperIgnoreTarget(nameof(GrantApplicationDto.BusinessNumber))]
-    [MapperIgnoreTarget(nameof(GrantApplicationDto.OrganizationSize))]
+    [MapperIgnoreTarget(nameof(GrantApplicationDto.ApproxNumberOfEmployees))]
     [MapperIgnoreTarget(nameof(GrantApplicationDto.OrgNumber))]
     [MapperIgnoreTarget(nameof(GrantApplicationDto.SectorSubSectorIndustryDesc))]
     [MapperIgnoreTarget(nameof(GrantApplicationDto.PaymentInfo))]

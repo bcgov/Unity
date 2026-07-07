@@ -9,6 +9,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Unity.GrantManager.Assessments;
 using Unity.GrantManager.Attachments;
+using Unity.GrantManager.Events;
 using Unity.GrantManager.Intake;
 using Unity.GrantManager.Integrations.Css;
 using Unity.TenantManagement;
@@ -149,6 +150,7 @@ public class GrantManagerApplicationModule : AbpModule
         context.Services.AddScoped<IGeocoderApiService, GeocoderApiService>();    
         context.Services.AddScoped<IAnalyticsUrlProvider, MatomoUrlProvider>();
         context.Services.AddScoped<GeocoderApiService>();
+        context.Services.AddScoped<ScheduledNotificationHelper>();
 
         context.Services.Configure<CasClientOptions>(configuration.GetSection("Payments"));
         context.Services.Configure<CssApiOptions>(configuration.GetSection("CssApi"));

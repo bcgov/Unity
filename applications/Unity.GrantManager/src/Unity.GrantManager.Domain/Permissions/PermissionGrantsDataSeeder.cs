@@ -4,7 +4,6 @@ using Unity.AI.Permissions;
 using Unity.Flex.Permissions;
 using Unity.GrantManager.Identity;
 using Unity.Modules.Shared;
-using Unity.Modules.Shared.Permissions;
 using Unity.Notifications.Permissions;
 using Unity.Payments.Permissions;
 using Volo.Abp.Authorization.Permissions;
@@ -71,7 +70,15 @@ namespace Unity.GrantManager.Permissions
         public readonly List<string> Notifications_CommonPermissions = [
             NotificationsPermissions.Email.Default,
             NotificationsPermissions.Email.Send,
+            NotificationsPermissions.Email.DeleteDraft
         ];
+
+        public readonly List<string> NotificationsScheduling_CommonPermissions = [
+            NotificationsPermissions.Email.CancelScheduled,
+            NotificationsPermissions.Email.ScheduleCreate,
+            NotificationsPermissions.Email.ScheduleDelete,
+            NotificationsPermissions.Email.ScheduleCancel
+        ];        
 
         public readonly List<string> Dashboard_CommonPermissions = [
             GrantApplicationPermissions.Dashboard.Default,
@@ -100,12 +107,6 @@ namespace Unity.GrantManager.Permissions
 
         public async Task SeedAsync(DataSeedContext context)
         {
-            if (context.TenantId == null)
-            {
-                await SeedHostPermissionsAsync();
-                return;
-            }
-
             // Default permission grants based on role
 
             // - Program Manager
@@ -139,6 +140,7 @@ namespace Unity.GrantManager.Permissions
                     .. PaymentInfo_CommonPermissions,
                     UnitySelector.Payment.Supplier.Update,
                     .. Notifications_CommonPermissions,
+                    .. NotificationsScheduling_CommonPermissions,
                     .. Dashboard_CommonPermissions,
                     .. Tags_CommonPermissions,
                     AIPermissions.Configuration.ConfigureAI,
@@ -203,6 +205,7 @@ namespace Unity.GrantManager.Permissions
                     .. PaymentInfo_CommonPermissions,
                     UnitySelector.Payment.Supplier.Update,
                     .. Notifications_CommonPermissions,
+                    .. NotificationsScheduling_CommonPermissions,
                     .. Dashboard_CommonPermissions,
                     .. Tags_CommonPermissions,
 
@@ -246,6 +249,7 @@ namespace Unity.GrantManager.Permissions
                     .. PaymentInfo_CommonPermissions,
                     UnitySelector.Payment.Supplier.Update,
                     .. Notifications_CommonPermissions,
+                    .. NotificationsScheduling_CommonPermissions,
                     NotificationsPermissions.Settings,
                     .. Dashboard_CommonPermissions,
                     .. Tags_CommonPermissions,
@@ -338,30 +342,6 @@ namespace Unity.GrantManager.Permissions
                     NotificationsPermissions.Email.Default
                 ], context.TenantId);
 
-        }
-
-        private async Task SeedHostPermissionsAsync()
-        {
-            // ITAdministrator host-level permissions (previously stamped at login)
-            await _permissionDataSeeder.SeedAsync(RolePermissionValueProvider.ProviderName, IdentityConsts.ITAdminRoleName,
-            [
-                "UnityTenantManagement.Tenants",
-                "UnityTenantManagement.Tenants.Create",
-                "UnityTenantManagement.Tenants.Update",
-                "UnityTenantManagement.Tenants.Delete",
-                "AbpTenantManagement.Tenants.ManageFeatures",
-                "UnityTenantManagement.Tenants.ManageConnectionStrings",
-                IdentitySeedPermissions.Users.Create,
-                IdentitySeedPermissions.UserLookup.Default,
-                IdentityConsts.ITAdminPermissionName
-            ], tenantId: null);
-
-            // ITOperations host-level permissions (previously stamped at login)
-            await _permissionDataSeeder.SeedAsync(RolePermissionValueProvider.ProviderName, IdentityConsts.ITOperationsRoleName,
-            [
-                GrantManagerPermissions.Endpoints.ManageEndpoints,
-                IdentityConsts.ITOperationsPermissionName
-            ], tenantId: null);
         }
     }
 }

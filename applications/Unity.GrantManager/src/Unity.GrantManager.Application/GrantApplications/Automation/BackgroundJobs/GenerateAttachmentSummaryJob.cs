@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using System;
 using System.Threading.Tasks;
+using Unity.AI.Domain;
 using Unity.AI.Operations;
 using Unity.AI.RateLimit;
 using Unity.GrantManager.GrantApplications;
@@ -15,6 +16,7 @@ namespace Unity.GrantManager.GrantApplications.Automation.BackgroundJobs;
 public class GenerateAttachmentSummaryJob(
     IAttachmentSummaryService attachmentSummaryService,
     IRepository<AIGenerationRequest, Guid> generationRequestRepository,
+    IRepository<AIOperation, Guid> operationRepository,
     ICurrentTenant currentTenant,
     IUnitOfWorkManager unitOfWorkManager,
     IAIRateLimiter aiRateLimiter,
@@ -22,22 +24,46 @@ public class GenerateAttachmentSummaryJob(
 {
     public override async Task ExecuteAsync(GenerateAttachmentSummaryBackgroundJobArgs args)
     {
+        using var logScope = AIGenerationLogScope.Begin(
+            logger,
+            AIGenerationRequestKeyHelper.AttachmentSummaryOperationType,
+            args.ApplicationId,
+            args.TenantId,
+            args.PromptVersion,
+            args.RequestedByUserId);
+
         using (currentTenant.Change(args.TenantId))
         {
-            await AIGenerationRequestJobHelper.MarkRunningInNewUowAsync(unitOfWorkManager, generationRequestRepository, args.RequestKey);
+            await AIGenerationRequestJobHelper.MarkRunningInNewUowAsync(
+                unitOfWorkManager,
+                generationRequestRepository,
+                operationRepository,
+                args.TenantId,
+                args.ApplicationId,
+                AIGenerationRequestKeyHelper.AttachmentSummaryOperationType);
             try
             {
-                logger.LogInformation(
-                    "Executing AI attachment summary job for application {ApplicationId}.",
-                    args.ApplicationId);
-                await attachmentSummaryService.GenerateForApplicationAsync(args.ApplicationId, args.PromptVersion);
+                await attachmentSummaryService.GenerateForApplicationAsync(args.ApplicationId, args.PromptVersion, args.AttachmentIds);
 
-                await AIGenerationRequestJobHelper.MarkCompletedInNewUowAsync(unitOfWorkManager, generationRequestRepository, args.RequestKey);
-                await AIGenerationRequestJobHelper.StampRateLimitBestEffortAsync(aiRateLimiter, logger, args.RequestedByUserId, args.ApplicationId, args.RequestKey);
+                await AIGenerationRequestJobHelper.StampRateLimitBestEffortAsync(aiRateLimiter, logger, args.RequestedByUserId, args.ApplicationId, AIGenerationRequestKeyHelper.AttachmentSummaryOperationType);
+                await AIGenerationRequestJobHelper.MarkCompletedInNewUowAsync(
+                    unitOfWorkManager,
+                    generationRequestRepository,
+                    operationRepository,
+                    args.TenantId,
+                    args.ApplicationId,
+                    AIGenerationRequestKeyHelper.AttachmentSummaryOperationType);
             }
             catch (Exception ex)
             {
-                await AIGenerationRequestJobHelper.MarkFailedInNewUowAsync(unitOfWorkManager, generationRequestRepository, args.RequestKey, ex.Message);
+                await AIGenerationRequestJobHelper.MarkFailedInNewUowAsync(
+                    unitOfWorkManager,
+                    generationRequestRepository,
+                    operationRepository,
+                    args.TenantId,
+                    args.ApplicationId,
+                    AIGenerationRequestKeyHelper.AttachmentSummaryOperationType,
+                    ex.Message);
                 throw;
             }
         }

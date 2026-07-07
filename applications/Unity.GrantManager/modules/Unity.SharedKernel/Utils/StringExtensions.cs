@@ -61,5 +61,18 @@ namespace Unity.Modules.Shared.Utils
 
             return emailAddressList.Count > 0 ? emailAddressList : null;
         }
+
+        /// <summary>
+        /// Capitalizes the first character and lowercases the remaining characters.
+        /// </summary>
+        /// <param name="inputString">The string to capitalize</param>
+        /// <returns>String with first character uppercase and rest lowercase, or empty if input is null/empty</returns>
+        public static string Capitalize(this string? inputString)
+        {
+            if (string.IsNullOrEmpty(inputString))
+                return string.Empty;
+
+            return char.ToUpper(inputString[0]) + inputString.Substring(1).ToLower();
+        }
     }
 }

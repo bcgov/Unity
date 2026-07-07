@@ -10,8 +10,14 @@ const dismissedSectionVisibility = {
     recommendation: false
 };
 
-const aiAnalysisPollIntervalMs = 15000;
-const aiAnalysisMaxPollFailures = 3;
+// Preserve the user's collapse choice across analysis rerenders.
+const sectionCollapseState = {
+    error: false,
+    warning: false,
+    summary: false,
+    recommendation: false
+};
+
 let aiAnalysisMonitor = null;
 
 function getAnalysisLabels() {
@@ -134,12 +140,18 @@ function createFindingItem(item, type, hidden) {
 
 function updateVisibleItemLayout($items) {
     const $allItems = $items.children('.ai-analysis-detail-item');
-    const $visibleItems = $allItems.filter(function() {
-        return this.style.display !== 'none';
-    });
+    const $visibleItems = getVisibleAnalysisItems($items);
 
     $allItems.removeClass('last-visible');
     $visibleItems.last().addClass('last-visible');
+}
+
+function getVisibleAnalysisItems($items) {
+    return $items
+        .children('.ai-analysis-detail-item')
+        .filter(function() {
+            return this.style.display !== 'none';
+        });
 }
 
 function formatSectionTitle(title, count) {
@@ -164,21 +176,60 @@ function configureSectionStatus($status, text, statusClass) {
         .show();
 }
 
-function configureCollapseToggle($section, $collapseToggle) {
+function setSectionCollapsed($section, $collapseToggle, isCollapsed, itemType) {
     const labels = getAnalysisLabels();
+    const $icon = $collapseToggle.find('i');
+
+    if (itemType) {
+        sectionCollapseState[itemType] = isCollapsed;
+    }
+
+    $section.toggleClass('collapsed', isCollapsed);
+    $collapseToggle
+        .attr('aria-expanded', (!isCollapsed).toString())
+        .attr('title', isCollapsed ? labels.expandTitle : labels.collapseTitle);
+
+    $icon
+        .toggleClass('fa-chevron-down', !isCollapsed)
+        .toggleClass('fa-chevron-up', isCollapsed);
+}
+
+function setSectionAutoCollapsed($section, $collapseToggle, isCollapsed) {
+    const labels = getAnalysisLabels();
+    const $icon = $collapseToggle.find('i');
+
+    $section.toggleClass('collapsed', isCollapsed);
+    $collapseToggle
+        .attr('aria-expanded', (!isCollapsed).toString())
+        .attr('title', isCollapsed ? labels.expandTitle : labels.collapseTitle);
+
+    $icon
+        .toggleClass('fa-chevron-down', !isCollapsed)
+        .toggleClass('fa-chevron-up', isCollapsed);
+}
+
+function applySectionCollapseState($section, $items, $collapseToggle, itemType) {
+    const hasVisibleItems = getVisibleAnalysisItems($items).length > 0;
+    const isCollapsed = hasVisibleItems ? sectionCollapseState[itemType] === true : true;
+
+    $collapseToggle.prop('disabled', !hasVisibleItems);
+    if (hasVisibleItems) {
+        setSectionCollapsed($section, $collapseToggle, isCollapsed, itemType);
+    } else {
+        setSectionAutoCollapsed($section, $collapseToggle, true);
+    }
+}
+
+function configureCollapseToggle($section, $collapseToggle, itemType) {
     $collapseToggle
         .off('click')
         .on('click', function() {
+            if ($(this).prop('disabled')) {
+                return;
+            }
+
             const isCollapsed = $section.toggleClass('collapsed').hasClass('collapsed');
-            const $icon = $(this).find('i');
-
-            $(this)
-                .attr('aria-expanded', (!isCollapsed).toString())
-                .attr('title', isCollapsed ? labels.expandTitle : labels.collapseTitle);
-
-            $icon
-                .toggleClass('fa-chevron-down', !isCollapsed)
-                .toggleClass('fa-chevron-up', isCollapsed);
+            setSectionCollapsed($section, $(this), isCollapsed, itemType);
         });
 }
 
@@ -214,7 +265,7 @@ function appendSectionItems($items, section, isDismissedVisible) {
     updateVisibleItemLayout($items);
 }
 
-function configureDismissedItemsToggle($items, $toggle, section, isDismissedVisible) {
+function configureDismissedItemsToggle($section, $items, $toggle, $collapseToggle, section, isDismissedVisible) {
     const labels = getAnalysisLabels();
     const hiddenCount = section.hiddenItems.length;
 
@@ -239,6 +290,11 @@ function configureDismissedItemsToggle($items, $toggle, section, isDismissedVisi
             dismissedSectionVisibility[section.itemType] = shouldShow;
             $items.find('.dismissed-item').toggle(shouldShow);
             updateVisibleItemLayout($items);
+            if (shouldShow) {
+                // Showing dismissed items should reveal the section body.
+                setSectionCollapsed($section, $collapseToggle, false, section.itemType);
+            }
+            applySectionCollapseState($section, $items, $collapseToggle, section.itemType);
             $toggle.text(shouldShow ? labels.hideDismissed : labels.showDismissed);
         });
 }
@@ -250,7 +306,6 @@ function renderSection(section) {
 
     $section
         .addClass(section.sectionClass)
-        .toggleClass('compact', section.activeItems.length === 0)
         .toggleClass('header-only', !section.hasItems);
 
     const $items = $section.find('[data-element="items"]');
@@ -260,11 +315,12 @@ function renderSection(section) {
     const isDismissedVisible = dismissedSectionVisibility[section.itemType] === true;
 
     configureSectionStatus($status, section.statusText, section.statusClass);
-    configureCollapseToggle($section, $collapseToggle);
+    configureCollapseToggle($section, $collapseToggle, section.itemType);
     $collapseToggle.toggle(section.hasItems);
 
     appendSectionItems($items, section, isDismissedVisible);
-    configureDismissedItemsToggle($items, $toggle, section, isDismissedVisible);
+    configureDismissedItemsToggle($section, $items, $toggle, $collapseToggle, section, isDismissedVisible);
+    applySectionCollapseState($section, $items, $collapseToggle, section.itemType);
 
     return $section;
 }
@@ -428,14 +484,14 @@ globalThis.queueApplicationAnalysis = function(triggerButton = null) {
 
     unity.grantManager.grantApplications.grantApplication
         .queueApplicationAnalysis(applicationId)
-        .done(function(request) {
+        .done(function(generationStatus) {
+            const request = generationStatus?.generationRequest;
             const status = globalThis.AIGenerationButtonState?.resolveStatus(request?.status) ?? '';
 
             if (status === 'Completed') {
-                globalThis.AIGenerationButtonState?.restore($button);
-                $button.html(existingHtml).prop('disabled', false);
+                globalThis.AIGenerationButtonState?.restoreForCooldownCheck($button, existingHtml);
+                globalThis.AIGenerationButtonState?.applyStatusState(generationStatus);
                 loadAIAnalysis();
-                globalThis.refreshAIRateLimitState?.();
                 return;
             }
 
@@ -446,6 +502,7 @@ globalThis.queueApplicationAnalysis = function(triggerButton = null) {
             aiAnalysisMonitor?.stop();
             globalThis.AIGenerationButtonState?.restore($button);
             $button.html(existingHtml).prop('disabled', false);
+            globalThis.syncAIRateLimitButtons?.();
             abp.message.error('Failed to queue AI analysis. Please try again.');
         });
 }
@@ -455,8 +512,6 @@ function monitorAIAnalysisGeneration(applicationId, $button, existingHtml) {
     aiAnalysisMonitor = globalThis.AIGenerationButtonState.monitor({
         $button,
         originalHtml: existingHtml,
-        intervalMs: aiAnalysisPollIntervalMs,
-        maxFailures: aiAnalysisMaxPollFailures,
         getStatus: () => unity.grantManager.grantApplications.grantApplication
             .getAIGenerationStatus(applicationId, 'application-analysis'),
         onComplete: loadAIAnalysis,
@@ -517,7 +572,8 @@ $(function() {
 
         unity.grantManager.grantApplications.grantApplication
             .getAIGenerationStatus(applicationId, 'application-analysis')
-            .done(function(request) {
+            .done(function(generationStatus) {
+                const request = generationStatus?.generationRequest;
                 if (request?.isActive !== true) {
                     return;
                 }

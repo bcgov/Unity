@@ -7,7 +7,7 @@
 @inject IFeatureChecker FeatureChecker
 @model ReportingConfigurationViewModel
 
-<div class="report-config-component">
+<div class="report-config-component container-fluid">
     <input type="hidden" id="reportingFormId" value="@Model.FormId" />
     <input type="hidden" id="reportingVersionId" value="@Model.SelectedVersionId" />
     <input type="hidden" id="reportingCorrelationId" value="@Model.CorrelationId" />
@@ -15,63 +15,47 @@
     <input type="hidden" id="hasDuplicateKeys" value="@Model.HasDuplicateKeys.ToString().ToLower()" />
     <input type="hidden" id="reportingViewStatus" value="@Model.ViewStatus" />
 
-    <!-- Provider Toggle Section -->
-    <div class="provider-toggle-section mb-1">
-        <div class="d-flex align-items-center gap-3">
-            <fieldset class="btn-group" aria-label="Provider toggle">
-                <input type="radio" class="btn-check" name="provider-toggle" id="provider-submissions" value="formversion" @(Model.Provider == "formversion" ? "checked" : "")>
-                <label class="btn btn-outline-primary" for="provider-submissions">Submissions</label>
+    <!-- Provider Toggle + Action Buttons Row -->
+    <div class="provider-toggle-section">
+        <div class="d-flex justify-content-between align-items-center">
+            <div class="d-flex flex-wrap align-items-center gap-3">
+                <fieldset class="btn-group provider-toggle-group" aria-label="Provider toggle">
+                    <input type="radio" class="btn-check" name="provider-toggle" id="provider-submissions" value="formversion" @((Model.Provider == "formversion" || Model.Provider == "formversion_consolidated") ? "checked" : "")>
+                    <label class="btn btn-outline-primary" for="provider-submissions">Submissions</label>
+
+                    @if (await FeatureChecker.IsEnabledAsync("Unity.Flex"))
+                    {
+                        <input type="radio" class="btn-check" name="provider-toggle" id="provider-worksheets" value="worksheet" @((Model.Provider == "worksheet" || Model.Provider == "worksheet_consolidated") ? "checked" : "")>
+                        <label class="btn btn-outline-primary" for="provider-worksheets">Worksheets</label>
+
+                        <input type="radio" class="btn-check" name="provider-toggle" id="provider-scoresheets" value="scoresheet" @(Model.Provider == "scoresheet" ? "checked" : "")>
+                        <label class="btn btn-outline-primary" for="provider-scoresheets">Scoresheets</label>
+                    }
+                </fieldset>
+
+                <div id="submissions-mode-toggle" style="@((Model.Provider == "formversion" || Model.Provider == "formversion_consolidated") ? "" : "display:none;")">
+                    <fieldset class="btn-group btn-group-sm provider-toggle-group" aria-label="Submissions mode">
+                        <input type="radio" class="btn-check" name="submissions-mode" id="submissions-mode-consolidated" value="formversion_consolidated" @(Model.Provider == "formversion_consolidated" ? "checked" : "")>
+                        <label class="btn btn-outline-primary" for="submissions-mode-consolidated">Consolidated</label>
+                        <input type="radio" class="btn-check" name="submissions-mode" id="submissions-mode-perversion" value="formversion" @(Model.Provider == "formversion" ? "checked" : "")>
+                        <label class="btn btn-outline-primary" for="submissions-mode-perversion">Per Version</label>
+                    </fieldset>
+                </div>
 
                 @if (await FeatureChecker.IsEnabledAsync("Unity.Flex"))
                 {
-                    <input type="radio" class="btn-check" name="provider-toggle" id="provider-worksheets" value="worksheet" @(Model.Provider == "worksheet" ? "checked" : "")>
-                    <label class="btn btn-outline-primary" for="provider-worksheets">Worksheets</label>
-
-                    <input type="radio" class="btn-check" name="provider-toggle" id="provider-scoresheets" value="scoresheet" @(Model.Provider == "scoresheet" ? "checked" : "")>
-                    <label class="btn btn-outline-primary" for="provider-scoresheets">Scoresheets</label>
-                }
-            </fieldset>
-
-            <!-- Development Banner -->
-            <div class="alert alert-info d-inline-flex align-items-center mb-0 py-2 px-3" role="alert">
-                <i class="fa fa-info-circle me-2" aria-hidden="true"></i>
-                <span class="small">
-                    <strong>Note:</strong> This feature is under development
-                </span>
-            </div>
-        </div>
-    </div>
-
-    <div class="report-config-controls">
-        @if (Model.IsVersionSelectorVisible)
-        {
-            <div>
-                <abp-select asp-for="SelectedVersionId"
-                            asp-items="@Model.FormVersions"
-                            label="Version Selector"
-                            id="versionSelector" />
-            </div>
-        }
-        else
-        {
-            <!-- Hidden version selector for scoresheet mode -->
-            <div style="display: none;">
-                <abp-select asp-for="SelectedVersionId"
-                            asp-items="@Model.FormVersions"
-                            label="Version Selector"
-                            id="versionSelector" />
-            </div>
-            <!-- Show form info for scoresheet mode -->
-            <div class="form-info-display">
-                <div class="form-group">
-                    <label class="form-label">Form Configuration</label>
-                    <div class="form-control-static">
-                        <strong>Form ID:</strong> @Model.FormId
+                    <div id="worksheet-mode-toggle" style="@((Model.Provider == "worksheet" || Model.Provider == "worksheet_consolidated") ? "" : "display:none;")">
+                        <fieldset class="btn-group btn-group-sm provider-toggle-group" aria-label="Worksheet mode">
+                            <input type="radio" class="btn-check" name="worksheet-mode" id="worksheet-mode-consolidated" value="worksheet_consolidated" @(Model.Provider == "worksheet_consolidated" ? "checked" : "")>
+                            <label class="btn btn-outline-primary" for="worksheet-mode-consolidated">Consolidated</label>
+                            <input type="radio" class="btn-check" name="worksheet-mode" id="worksheet-mode-perversion" value="worksheet" @(Model.Provider == "worksheet" ? "checked" : "")>
+                            <label class="btn btn-outline-primary" for="worksheet-mode-perversion">Per Version</label>
+                        </fieldset>
                     </div>
-                </div>
+                }
             </div>
-        }
-        <div class="d-flex" style="gap:5px; align-items: center;">
+
+            <div class="d-flex align-items-center flex-shrink-0" style="gap:5px;">
 
             @if (Model.CorrelationId.HasValue)
             {
@@ -83,36 +67,15 @@
             @if (await PermissionChecker.IsGrantedAsync(ReportingPermissions.Configuration.Update))
             {
                 <abp-button id="btn-generate-view-report-configuration"
-                            text="Generate View"
+                            text="Generate"
                             icon-type="Other"
                             icon="fl fl-datagrid"
                             data-bs-toggle="tooltip"
                             data-bs-placement="top"
                             data-bs-original-title="Generate view"
-                            class="btn unt-btn-primary btn-primary @(Model.HasSavedConfiguration ? "" : "generate-view-btn-hidden")"></abp-button>
+                            class="btn unt-btn-primary btn-primary btn-compact @(Model.HasSavedConfiguration ? "" : "generate-view-btn-hidden")"></abp-button>
+
             }
-
-            <div id="div-duplicate-keys-warning"
-                 class="duplicate-keys-warning report-config-btn-height-fix d-flex align-items-center @(Model.HasDuplicateKeys ? "" : "duplicate-keys-div-hidden")"
-                 data-bs-toggle="tooltip"
-                 data-bs-placement="top"
-                 data-bs-original-title="There are duplicate keys detected and catered for, this may affect the view generation and resulting data">
-                <i class="fa fa-exclamation-triangle text-warning me-2" style="font-size: 1.2em;"></i>
-                <small class="text-warning">
-                    <strong>Warning</strong>
-                </small>
-            </div>
-
-            <div id="div-dynamic-columns-warning"
-                 class="dynamic-columns-warning report-config-btn-height-fix d-flex align-items-center dynamic-columns-div-hidden"
-                 data-bs-toggle="tooltip"
-                 data-bs-placement="top"
-                 data-bs-original-title="A DataGrid has dynamic columns but no matching field mapping was found in the form submission schema. Map the worksheet DataGrid to a CHEFS form field to resolve the individual columns.">
-                <i class="fa fa-info-circle text-info me-2" style="font-size: 1.2em;"></i>
-                <small class="text-info">
-                    <strong>Unmapped DataGrid</strong>
-                </small>
-            </div>
 
             @if (await PermissionChecker.IsGrantedAsync(ReportingPermissions.Configuration.Delete))
             {
@@ -123,7 +86,7 @@
                             data-bs-toggle="tooltip"
                             data-bs-placement="top"
                             data-bs-original-title="Delete this configuration and associated view"
-                            class="btn unt-btn-danger btn-danger report-config-btn-height-fix @(Model.HasSavedConfiguration ? "" : "delete-config-btn-hidden")"></abp-button>
+                            class="btn unt-btn-danger btn-danger btn-compact @(Model.HasSavedConfiguration ? "" : "delete-config-btn-hidden")"></abp-button>
             }
 
             @if (await PermissionChecker.IsGrantedAsync(ReportingPermissions.Configuration.Update))
@@ -135,7 +98,7 @@
                             data-bs-toggle="tooltip"
                             data-bs-placement="top"
                             data-bs-original-title="Save changes"
-                            class="btn unt-btn-primary btn-primary"></abp-button>
+                            class="btn unt-btn-primary btn-primary btn-compact"></abp-button>
             }
 
             <abp-button id="btn-undo-report-configuration"
@@ -145,15 +108,58 @@
                         data-bs-toggle="tooltip"
                         data-bs-placement="top"
                         data-bs-original-title="Cancel changes"
-                        class="btn unt-btn-outline-primary btn-outline-primary mx-1"
+                        class="btn unt-btn-outline-primary btn-outline-primary btn-compact mx-1"
                         style="display: none;"></abp-button>
+
+            @if (await PermissionChecker.IsGrantedAsync(ReportingPermissions.Configuration.Update))
+            {
+                <fieldset class="btn-group">
+                    <button type="button"
+                                class="btn unt-btn-outline-primary btn-outline-primary dropdown-toggle btn-compact"
+                            data-bs-toggle="dropdown"
+                            aria-expanded="false">
+                        <i class="fl fl-code me-1"></i> JSON
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li>
+                            <a class="dropdown-item" href="#" id="btn-export-json-mapping">
+                                <i class="fl fl-arrow-export me-2"></i> Export
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="#" id="btn-import-json-mapping">
+                                <i class="fl fl-arrow-import me-2"></i> Import
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="#" id="btn-edit-json-mapping">
+                                <i class="fl fl-code me-2"></i> Edit JSON
+                            </a>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <a class="dropdown-item" href="#" id="btn-edit-description">
+                                <i class="fl fl-info me-2"></i> Description
+                            </a>
+                        </li>
+                    </ul>
+                </fieldset>
+            }
 
             <abp-button id="btn-back-report-configuration"
                         text="Back"
                         data-bs-toggle="tooltip"
                         data-bs-placement="top"
                         data-bs-original-title="Navigate back to the Forms"
-                        class="btn unt-btn-outline-primary btn-outline-primary mx-1 report-config-btn-height-fix"></abp-button>
+                            class="btn unt-btn-outline-primary btn-outline-primary btn-compact mx-1"></abp-button>
+            </div>
+        </div>
+
+        <div id="version-selector-container" class="mt-2" style="@(Model.IsVersionSelectorVisible ? "" : "display:none;")">
+            <div class="d-flex align-items-center gap-2">
+                <label for="versionSelector" class="form-label mb-0 text-nowrap">Version</label>
+                <select asp-for="SelectedVersionId" asp-items="@Model.FormVersions" id="versionSelector" class="form-select form-select-sm"></select>
+            </div>
         </div>
     </div>
 
@@ -164,45 +170,43 @@
             <div class="filter-search-action-bar_search-wrapper">
                 <input type="search" id="search-report-config" placeholder="Search" class="tbl-search">
             </div>
-            @if (await PermissionChecker.IsGrantedAsync(ReportingPermissions.Configuration.Update))
-            {
-                <div id="reportConfigDynamicButtons" class="dynamic-buttons-div button-gap-1">
-                    <abp-button id="btn-generate-unique-column-names"
-                                text="Column Helper"
-                                icon-type="Other"
-                                icon="fl fl-font"
-                                data-bs-toggle="tooltip"
-                                data-bs-placement="top"
-                                data-bs-original-title="Generate unique column names for all fields with duplicate names"
-                                class="btn unt-btn-outline-primary btn-outline-primary"></abp-button>
-
-                    <fieldset class="btn-group">
-                        <button type="button"
-                                class="btn unt-btn-outline-primary btn-outline-primary dropdown-toggle"
-                                data-bs-toggle="dropdown"
-                                aria-expanded="false">
-                            <i class="fl fl-code me-1"></i> JSON Mapping
-                        </button>
-                        <ul class="dropdown-menu">
-                            <li>
-                                <a class="dropdown-item" href="#" id="btn-export-json-mapping">
-                                    <i class="fl fl-arrow-export me-2"></i> Export
-                                </a>
-                            </li>
-                            <li>
-                                <a class="dropdown-item" href="#" id="btn-import-json-mapping">
-                                    <i class="fl fl-arrow-import me-2"></i> Import
-                                </a>
-                            </li>
-                            <li>
-                                <a class="dropdown-item" href="#" id="btn-edit-json-mapping">
-                                    <i class="fl fl-code me-2"></i> Edit JSON
-                                </a>
-                            </li>
-                        </ul>
-                    </fieldset>
+            <div class="d-flex align-items-center gap-2">
+                <div id="div-duplicate-keys-warning"
+                     class="duplicate-keys-warning report-config-btn-height-fix d-flex align-items-center @(Model.HasDuplicateKeys ? "" : "duplicate-keys-div-hidden")"
+                     data-bs-toggle="tooltip"
+                     data-bs-placement="top"
+                     data-bs-original-title="There are duplicate keys detected and catered for, this may affect the view generation and resulting data">
+                    <i class="fa fa-exclamation-triangle text-warning me-2"></i>
+                    <small class="text-warning">
+                        <strong>Duplicate Keys</strong>
+                    </small>
                 </div>
-            }
+
+                <div id="div-dynamic-columns-warning"
+                     class="dynamic-columns-warning report-config-btn-height-fix d-flex align-items-center dynamic-columns-div-hidden"
+                     data-bs-toggle="tooltip"
+                     data-bs-placement="top"
+                     data-bs-original-title="A DataGrid has dynamic columns but no matching field mapping was found in the form submission schema. Map the worksheet DataGrid to a CHEFS form field to resolve the individual columns.">
+                    <i class="fa fa-exclamation-triangle text-warning me-2"></i>
+                    <small class="text-warning">
+                        <strong>Unmapped DataGrid</strong>
+                    </small>
+                </div>
+
+                @if (await PermissionChecker.IsGrantedAsync(ReportingPermissions.Configuration.Update))
+                {
+                    <div id="reportConfigDynamicButtons" class="dynamic-buttons-div button-gap-1">
+                        <abp-button id="btn-generate-unique-column-names"
+                                    text="Column Helper"
+                                    icon-type="Other"
+                                    icon="fl fl-font"
+                                    data-bs-toggle="tooltip"
+                                    data-bs-placement="top"
+                                    data-bs-original-title="Generate unique column names for all fields with duplicate names"
+                                    class="btn unt-btn-outline-primary btn-outline-primary"></abp-button>
+                    </div>
+                }
+            </div>
         </div>
 
         <!-- Table Container -->
@@ -224,9 +228,9 @@
                 <form id="generateViewForm">
                     <div class="mb-3">
                         <label for="viewNameInput" class="form-label">View Name</label>
-                        <input type="text" class="form-control" id="viewNameInput" placeholder="Enter view name" required>
+                        <input type="text" class="form-control" id="viewNameInput" placeholder="Enter view name" required aria-describedby="viewNameFeedback viewNameHint">
                         <div class="invalid-feedback" id="viewNameFeedback"></div>
-                        <div class="form-text">
+                        <div class="form-text" id="viewNameHint">
                             View name must start with a letter or underscore, contain only letters, numbers, and underscores,
                             and be between 1-63 characters long.
                         </div>
@@ -242,6 +246,39 @@
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                 <button type="button" class="btn btn-primary" id="confirmGenerateView" disabled>Generate View</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Description Modal -->
+<div class="modal fade" id="descriptionModal" tabindex="-1" aria-labelledby="descriptionModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="descriptionModalLabel">Configuration Description</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info py-2 px-3 mb-3">
+                    <i class="fa fa-info-circle me-2" aria-hidden="true"></i>
+                    <small>This description provides context for external tools — such as AI-assisted reporting — to better understand the purpose of this view.</small>
+                </div>
+                <div class="mb-3">
+                    <label for="reportingDescription" class="form-label">Description</label>
+                    <textarea id="reportingDescription"
+                              class="form-control"
+                              maxlength="500"
+                              rows="5"
+                              placeholder="Optional description for this reporting configuration (max 500 characters)"></textarea>
+                    <div class="d-flex justify-content-end mt-1">
+                        <small class="text-muted" id="descriptionCharCount">0 / 500</small>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="confirmDescription">Apply</button>
             </div>
         </div>
     </div>

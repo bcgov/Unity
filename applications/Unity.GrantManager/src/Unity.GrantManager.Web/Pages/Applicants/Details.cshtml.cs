@@ -22,6 +22,7 @@ namespace Unity.GrantManager.Web.Pages.Applicants
         public Guid? ApplicationId { get; set; } = null;
 
         public Applicant? Applicant { get; set; }
+        public bool ApplicantIsDeleted { get; set; }
         public string ApplicantDisplayName { get; set; } = string.Empty;
         public string UnityApplicantId { get; set; } = string.Empty;
         public string Status { get; set; } = string.Empty;
@@ -69,13 +70,18 @@ namespace Unity.GrantManager.Web.Pages.Applicants
             {
                 Applicant = await _applicantRepository.GetAsync(ApplicantId);
 
-                // Set properties for breadcrumb and display
                 ApplicantDisplayName = !string.IsNullOrEmpty(Applicant.ApplicantName)
                     ? Applicant.ApplicantName
                     : "Applicant Name";
 
+                if (Applicant.IsDeleted)
+                {
+                    ApplicantIsDeleted = true;
+                    return Page();
+                }
+
                 UnityApplicantId = Applicant.UnityApplicantId ?? "N/A";
-                Status = Applicant.Status ?? "Active";
+                Status = Applicant.Status ?? string.Empty;
 
                 return Page();
             }

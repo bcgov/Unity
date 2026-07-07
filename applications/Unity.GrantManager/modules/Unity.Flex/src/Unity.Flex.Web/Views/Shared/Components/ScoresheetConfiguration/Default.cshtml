@@ -1,0 +1,66 @@
+@using Microsoft.Extensions.Localization
+@using Unity.Flex.Localization
+@using Volo.Abp.Features
+@model Unity.Flex.Web.Views.Shared.Components.ScoresheetConfiguration.ScoresheetConfigurationViewModel
+
+@inject IStringLocalizer<FlexResource> L
+@inject IFeatureChecker FeatureChecker
+
+@if (await FeatureChecker.IsEnabledAsync("Unity.Flex"))
+{
+    <input type="hidden" id="MaxFileSize" value="@Model.MaxFileSize" />
+    <div class="scoresheet-scrollable-content">
+        <abp-row class="m-0 h-100 scoresheet-configuration-container">
+            <abp-column id="scoresheet-left-col" class="p-0 d-flex flex-column">
+                <div class="scoresheet-left-header">
+                    <form id="scoresheet-import-form" name="scoresheet-import-form" action="/uploader" enctype="multipart/form-data" method="post" class="d-none">
+                        <input id="scoresheet_import_upload" name="scoresheet_import_upload" type="file" size="1" onchange="importScoresheetFile('scoresheet_import_upload');" />
+                    </form>
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h4 class="mb-0"><b>Scoresheets</b></h4>
+                        <div class="d-flex gap-2">
+                            <abp-button text="Add"
+                                        id="add_scoresheet_btn"
+                                        icon-type="Other"
+                                        icon="fl fl-plus"
+                                        onclick="openScoresheetModal(null,'Add Scoresheet');"
+                                        onkeydown="if(event.key==='Enter'||event.key===' ')openScoresheetModal(null,'Add Scoresheet');"
+                                        button-type="Light" />
+                            <abp-button text="Import"
+                                        id="scoresheet_import_upload_btn"
+                                        icon-type="Other"
+                                        icon="fl fl-import"
+                                        button-type="Light" />
+                        </div>
+                    </div>
+                    <div class="scoresheet-filters d-flex gap-2 mb-2 align-items-center px-1">
+                        <input type="text" id="scoresheet-name-filter" class="form-control form-control-sm" placeholder="Filter by title or name..." />
+                        <fieldset class="btn-group btn-group-sm flex-shrink-0" id="scoresheet-published-toggle">
+                            <legend class="visually-hidden">Scoresheet filter</legend>
+                            <button type="button" class="btn btn-outline-secondary active" data-filter="all">All</button>
+                            <button type="button" class="btn btn-outline-secondary" data-filter="published">Published</button>
+                            <button type="button" class="btn btn-outline-secondary" data-filter="unpublished">Unpublished</button>
+                            <button type="button" class="btn btn-outline-secondary" data-filter="archived">Archived</button>
+                        </fieldset>
+                    </div>
+                </div>
+                <div class="scoresheet-left-body">
+                    <div id="scoresheet-info-widget">
+                        @await Component.InvokeAsync("Scoresheet")
+                    </div>
+                    <p id="scoresheet-no-results" class="text-muted text-center py-4" style="display:none">No scoresheets match the current filters.</p>
+                </div>
+            </abp-column>
+            <div class="column-resizer" id="scoresheet-column-resizer"></div>
+            <abp-column id="scoresheet-right-col" class="pe-0 ps-2 preview-scrollable">
+                <abp-card class="right-card sticky-preview">
+                    <abp-card-body>
+                        <h4><b>Preview</b></h4>
+                        <div id="scoresheet-preview">
+                        </div>
+                    </abp-card-body>
+                </abp-card>
+            </abp-column>
+        </abp-row>
+    </div>
+}

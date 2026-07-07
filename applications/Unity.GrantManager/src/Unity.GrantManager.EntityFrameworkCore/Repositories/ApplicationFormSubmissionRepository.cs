@@ -18,11 +18,11 @@ namespace Unity.GrantManager.Repositories
         {
         }
 
-        public async Task<ApplicationFormSubmission> GetByApplicationAsync(Guid applicationId)
+        public async Task<ApplicationFormSubmission?> GetByApplicationAsync(Guid applicationId)
         {
             var dbContext = await GetDbContextAsync();
             return await dbContext.ApplicationFormSubmissions
-                .FirstAsync(s => s.ApplicationId == applicationId);
+                .FirstOrDefaultAsync(s => s.ApplicationId == applicationId);
         }
 
         public async Task<ApplicationFormDetails> GetFormDetailsByApplicationIdAsync(Guid applicationId)

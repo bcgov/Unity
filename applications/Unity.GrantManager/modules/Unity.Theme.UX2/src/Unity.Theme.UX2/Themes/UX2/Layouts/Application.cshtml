@@ -130,6 +130,28 @@
                 AnalyticsUtils.initMatomo(window.MATOMO_URL, 1);
             }
         })();
+
+        (function () {
+            var timezoneReloadGuardKey = 'unity.theme.ux2.timezone-reload-attempted';
+            var shouldReload = TimezoneUtils.setTimezoneCookie();
+            if (!shouldReload) {
+                try {
+                    sessionStorage.removeItem(timezoneReloadGuardKey);
+                } catch (e) {
+                    // Ignore storage access failures and continue without a guard reset.
+                }
+                return;
+            }
+            try {
+                if (sessionStorage.getItem(timezoneReloadGuardKey) === 'true') {
+                    return;
+                }
+                sessionStorage.setItem(timezoneReloadGuardKey, 'true');
+            } catch (e) {
+                // Ignore storage access failures; reloading once is still preferable to a hard failure.
+            }
+            location.reload();
+        })();
     </script>
 
     @await Component.InvokeLayoutHookAsync(LayoutHooks.Body.Last, StandardLayouts.Application)

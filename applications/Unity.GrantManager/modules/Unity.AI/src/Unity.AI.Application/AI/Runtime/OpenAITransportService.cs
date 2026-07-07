@@ -1,9 +1,9 @@
 using Microsoft.Extensions.Logging;
+using OpenAI.Chat;
 using System;
+using System.ClientModel;
 using System.Collections.Generic;
 using System.Net;
-using System.Net.Http;
-using System.Text;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -12,123 +12,159 @@ using Volo.Abp.DependencyInjection;
 namespace Unity.AI.Runtime;
 
 public class OpenAITransportService(
-    HttpClient httpClient,
-    OpenAIConfigurationResolver configurationResolver,
+    OpenAIChatClientFactory chatClientFactory,
     ILogger<OpenAITransportService> logger) : ITransientDependency
 {
-    private readonly HttpClient _httpClient = httpClient;
-    private readonly OpenAIConfigurationResolver _configurationResolver = configurationResolver;
+    private readonly OpenAIChatClientFactory _chatClientFactory = chatClientFactory;
     private readonly ILogger<OpenAITransportService> _logger = logger;
 
     public async Task<AIOperationResult> GenerateSummaryAsync(
         string content,
         string? systemPrompt,
+        OpenAIOperationSettings settings,
         int maxTokens = 150,
-        double? temperature = null,
-        string? operationName = null,
-        string? promptVersion = null,
-        string? fileName = null,
         CancellationToken cancellationToken = default)
     {
-        var providerName = _configurationResolver.ResolveProviderName(operationName);
-        if (!string.Equals(providerName, "OpenAI", StringComparison.Ordinal))
-        {
-            _logger.LogWarning("Provider {ProviderName} is not supported by OpenAI transport.", providerName);
-            return AIOperationResult.PermanentFailure(new AIProviderResult($"Unsupported provider: {providerName}"));
-        }
-
-        var apiKey = _configurationResolver.ResolveApiKey(operationName);
-        if (string.IsNullOrEmpty(apiKey))
-        {
-            _logger.LogWarning("Error: OpenAI API key is not configured");
-            return AIOperationResult.PermanentFailure(new AIProviderResult("OpenAI API key is not configured"));
-        }
-
         try
         {
+            if (!string.Equals(settings.ProviderName, "OpenAI", StringComparison.Ordinal))
+            {
+                _logger.LogWarning("Provider {ProviderName} is not supported by OpenAI transport.", settings.ProviderName);
+                return AIOperationResult.PermanentFailure(new AIProviderResult($"Unsupported provider: {settings.ProviderName}"));
+            }
+
             var resolvedSystemPrompt = string.IsNullOrWhiteSpace(systemPrompt)
                 ? "You are a professional grant analyst for the BC Government."
                 : systemPrompt;
 
-            var requestPayload = new Dictionary<string, object?>
+            var messages = new List<ChatMessage>
             {
-                ["messages"] = new[]
-                {
-                    new { role = "system", content = resolvedSystemPrompt },
-                    new { role = "user", content = content ?? string.Empty }
-                },
-                [_configurationResolver.ResolveMaxTokensParameterNameForOperation(operationName)] = maxTokens
+                new SystemChatMessage(resolvedSystemPrompt),
+                new UserChatMessage(content ?? string.Empty)
             };
 
-            var resolvedTemperature = temperature ?? _configurationResolver.ResolveConfiguredTemperature(operationName);
-            if (resolvedTemperature.HasValue)
-            {
-                requestPayload["temperature"] = resolvedTemperature.Value;
-            }
+            var result = await CompleteChatWithTemperatureFallbackAsync(
+                settings,
+                messages,
+                maxTokens,
+                cancellationToken);
 
-            var json = JsonSerializer.Serialize(requestPayload);
-            var httpContent = new StringContent(json, Encoding.UTF8, "application/json");
-
-            using var request = new HttpRequestMessage(HttpMethod.Post, _configurationResolver.ResolveApiUrl(operationName))
-            {
-                Content = httpContent
-            };
-            request.Headers.TryAddWithoutValidation("Authorization", apiKey);
-
-            using var response = await _httpClient.SendAsync(request, cancellationToken);
-            var responseContent = await response.Content.ReadAsStringAsync(cancellationToken);
-            var metadata = TryExtractProviderMetadata(responseContent);
+            var completion = result.Value;
+            var rawResponse = result.GetRawResponse();
+            var responseContent = rawResponse.Content.ToString();
+            var modelOutput = ExtractModelOutput(completion, responseContent);
             var providerResponse = BuildProviderResponseFromMetadata(
-                string.Empty,
+                modelOutput ?? string.Empty,
                 responseContent,
-                metadata,
-                (int)response.StatusCode);
+                TryExtractProviderMetadata(responseContent),
+                rawResponse.Status);
 
-            if (!response.IsSuccessStatusCode)
+            if (string.IsNullOrWhiteSpace(modelOutput))
             {
-                _logger.LogError("OpenAI API request failed: {StatusCode} - {Content}", response.StatusCode, responseContent);
-                return MapFailureOutcome(response.StatusCode, providerResponse);
+                LogEmptyModelOutput(completion, providerResponse, rawResponse.Status);
             }
 
-            if (string.IsNullOrWhiteSpace(responseContent))
-            {
-                return AIOperationResult.InvalidOutput(providerResponse);
-            }
-
-            try
-            {
-                using var jsonDoc = JsonDocument.Parse(responseContent);
-                var choices = jsonDoc.RootElement.GetProperty("choices");
-                if (choices.GetArrayLength() > 0)
-                {
-                    var message = choices[0].GetProperty("message");
-                    var modelOutput = message.GetProperty("content").GetString();
-                    return string.IsNullOrWhiteSpace(modelOutput)
-                        ? AIOperationResult.InvalidOutput(providerResponse)
-                        : AIOperationResult.Success(BuildProviderResponseFromMetadata(
-                            modelOutput,
-                            responseContent,
-                            metadata,
-                            (int)response.StatusCode));
-                }
-
-                return AIOperationResult.InvalidOutput(providerResponse);
-            }
-            catch (Exception ex) when (ex is JsonException || ex is KeyNotFoundException || ex is InvalidOperationException)
-            {
-                _logger.LogWarning(ex, "AI response payload had an invalid output shape");
-                return AIOperationResult.InvalidOutput(providerResponse);
-            }
+            return string.IsNullOrWhiteSpace(modelOutput)
+                ? AIOperationResult.InvalidOutput(providerResponse)
+                : AIOperationResult.Success(providerResponse);
         }
         catch (OperationCanceledException)
         {
             throw;
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogError(ex, "AI request configuration is invalid.");
+            return AIOperationResult.PermanentFailure(new AIProviderResult(ex.Message));
+        }
+        catch (ClientResultException ex)
+        {
+            int? statusCode = ex.Status > 0 ? ex.Status : null;
+            var responseContent = ex.GetRawResponse()?.Content?.ToString() ?? ex.Message;
+            var providerResponse = BuildProviderResponseFromMetadata(
+                string.Empty,
+                responseContent,
+                TryExtractProviderMetadata(responseContent),
+                statusCode);
+
+            _logger.LogError(
+                ex,
+                "OpenAI API request failed with status {StatusCode}. Response body length: {ResponseLength}.",
+                statusCode,
+                responseContent.Length);
+            return statusCode.HasValue
+                ? MapFailureOutcome((HttpStatusCode)statusCode.Value, providerResponse)
+                : AIOperationResult.TransientFailure(providerResponse);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error generating AI summary");
             return AIOperationResult.TransientFailure(new AIProviderResult(ex.Message));
         }
+    }
+
+    private async Task<ClientResult<ChatCompletion>> CompleteChatWithTemperatureFallbackAsync(
+        OpenAIOperationSettings settings,
+        IReadOnlyList<ChatMessage> messages,
+        int maxTokens,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            return await _chatClientFactory.Create(settings).CompleteChatAsync(
+                messages,
+                BuildOptions(settings, maxTokens, includeTemperature: true),
+                cancellationToken);
+        }
+        catch (ClientResultException ex)
+        {
+            var responseContent = ex.GetRawResponse()?.Content?.ToString() ?? ex.Message;
+            if (!ShouldRetryWithoutTemperature(settings, ex.Status, responseContent))
+            {
+                throw;
+            }
+
+            _logger.LogWarning(
+                ex,
+                "Retrying OpenAI request without temperature after provider rejected the temperature parameter for profile {ProfileName}.",
+                settings.ProfileName);
+
+            return await _chatClientFactory.Create(settings).CompleteChatAsync(
+                messages,
+                BuildOptions(settings, maxTokens, includeTemperature: false),
+                cancellationToken);
+        }
+    }
+
+    private static ChatCompletionOptions BuildOptions(OpenAIOperationSettings settings, int maxTokens, bool includeTemperature)
+    {
+        var options = new ChatCompletionOptions();
+        if (settings.MaxOutputTokenCountSupported)
+        {
+            options.MaxOutputTokenCount = maxTokens;
+        }
+
+        if (includeTemperature && settings.Temperature.HasValue)
+        {
+            options.Temperature = (float)settings.Temperature.Value;
+        }
+
+        return options;
+    }
+
+    private static bool ShouldRetryWithoutTemperature(OpenAIOperationSettings settings, int statusCode, string responseContent)
+    {
+        if (!settings.Temperature.HasValue || statusCode != 400 || string.IsNullOrWhiteSpace(responseContent))
+        {
+            return false;
+        }
+
+        var lowered = responseContent.ToLowerInvariant();
+        return lowered.Contains("temperature")
+            && (lowered.Contains("unsupported")
+                || lowered.Contains("not supported")
+                || lowered.Contains("not allowed")
+                || lowered.Contains("invalid"));
     }
 
     private static AIOperationResult MapFailureOutcome(HttpStatusCode statusCode, AIProviderResult response)
@@ -158,6 +194,103 @@ public class OpenAITransportService(
             metadata?.CompletionTokens,
             metadata?.TotalTokens,
             metadata?.ReasoningTokens);
+    }
+
+    private void LogEmptyModelOutput(ChatCompletion completion, AIProviderResult response, int statusCode)
+    {
+        _logger.LogWarning(
+            "AI model output was empty. StatusCode: {StatusCode}; FinishReason: {FinishReason}; ContentPartCount: {ContentPartCount}; PromptTokens: {PromptTokens}; CompletionTokens: {CompletionTokens}; TotalTokens: {TotalTokens}; ReasoningTokens: {ReasoningTokens}.",
+            statusCode,
+            response.FinishReason,
+            completion.Content.Count,
+            response.PromptTokens,
+            response.CompletionTokens,
+            response.TotalTokens,
+            response.ReasoningTokens);
+    }
+
+    private static string? ExtractModelOutput(ChatCompletion completion, string? responseContent)
+    {
+        var contentParts = new List<string>();
+        foreach (var part in completion.Content)
+        {
+            if (!string.IsNullOrWhiteSpace(part.Text))
+            {
+                contentParts.Add(part.Text!);
+            }
+        }
+
+        if (contentParts.Count > 0)
+        {
+            return string.Concat(contentParts);
+        }
+
+        return TryExtractMessageContent(responseContent);
+    }
+
+    private static string? TryExtractMessageContent(string? responseContent)
+    {
+        if (string.IsNullOrWhiteSpace(responseContent))
+        {
+            return null;
+        }
+
+        try
+        {
+            using var jsonDoc = JsonDocument.Parse(responseContent);
+            if (!TryGetFirstChoice(jsonDoc.RootElement, out var firstChoice)
+                || !firstChoice.TryGetProperty("message", out var message)
+                || !message.TryGetProperty("content", out var content))
+            {
+                return null;
+            }
+
+            if (content.ValueKind == JsonValueKind.String)
+            {
+                return content.GetString();
+            }
+
+            if (content.ValueKind == JsonValueKind.Array)
+            {
+                return ExtractTextContentParts(content);
+            }
+        }
+        catch (JsonException)
+        {
+            return null;
+        }
+
+        return null;
+    }
+
+    private static bool TryGetFirstChoice(JsonElement root, out JsonElement firstChoice)
+    {
+        firstChoice = default;
+        if (!root.TryGetProperty("choices", out var choices)
+            || choices.ValueKind != JsonValueKind.Array
+            || choices.GetArrayLength() == 0)
+        {
+            return false;
+        }
+
+        firstChoice = choices[0];
+        return true;
+    }
+
+    private static string? ExtractTextContentParts(JsonElement content)
+    {
+        var parts = new List<string>();
+        foreach (var part in content.EnumerateArray())
+        {
+            if (part.ValueKind == JsonValueKind.Object
+                && part.TryGetProperty("text", out var text)
+                && text.ValueKind == JsonValueKind.String)
+            {
+                parts.Add(text.GetString() ?? string.Empty);
+            }
+        }
+
+        return parts.Count > 0 ? string.Concat(parts) : null;
     }
 
     private static AIProviderResponseMetadata? TryExtractProviderMetadata(string? responseContent)

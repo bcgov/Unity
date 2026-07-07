@@ -13,12 +13,25 @@
 
 .search-action-bar {
     display: flex;
+    flex-wrap: wrap;
     justify-content: flex-end;
     align-items: center;
+    row-gap: 6px;
 }
 
 .search-action-bar_search-wrapper {
     flex: 1;
+    min-width: 220px;
+}
+
+#app_custom_buttons {
+    flex-shrink: 0;
+}
+
+#dynamicButtonContainerId {
+    flex-shrink: 0;
+    display: flex;
+    align-items: flex-end;
 }
 
 .action-bar-btn-unavailable {

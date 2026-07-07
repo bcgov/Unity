@@ -43,18 +43,7 @@ namespace Unity.Payments.PaymentRequests
         public virtual async Task<List<PaymentRequestDto>> CreateAsync(List<CreatePaymentRequestDto> paymentRequests)
         {
             List<PaymentRequestDto> createdPayments = [];
-            var paymentConfig = await paymentRequestConfigurationManager.GetPaymentConfigurationAsync();
-            var paymentIdPrefix = string.Empty;
-
-            if (paymentConfig != null && !paymentConfig.PaymentIdPrefix.IsNullOrEmpty())
-            {
-                paymentIdPrefix = paymentConfig.PaymentIdPrefix;
-            }
-
-            var batchNumber = await paymentRequestConfigurationManager.GetMaxBatchNumberAsync();
-            var batchName = $"{paymentIdPrefix}_UNITY_BATCH_{batchNumber}";
-            var currentYear = DateTime.UtcNow.Year;
-            var nextSequenceNumber = await paymentRequestConfigurationManager.GetNextSequenceNumberAsync(currentYear);
+            var (batchName, batchNumber, nextSequenceNumber, paymentIdPrefix) = await GetBatchSetupAsync();
 
             foreach (var paymentRequestItem in paymentRequests.Select((value, i) => new { i, value }))
             {
@@ -62,10 +51,7 @@ namespace Unity.Payments.PaymentRequests
                 {
                     // referenceNumber + Chefs Confirmation ID + 6 digit sequence based on sequence number and index
                     CreatePaymentRequestDto paymentRequestDto = paymentRequestItem.value;
-                    string referenceNumberPrefix = paymentRequestConfigurationManager.GenerateReferenceNumberPrefix(paymentIdPrefix);
-                    string sequenceNumber = paymentRequestConfigurationManager.GenerateSequenceNumber(nextSequenceNumber, paymentRequestItem.i);
-                    string referenceNumber = paymentRequestConfigurationManager.GenerateReferenceNumber(referenceNumberPrefix, sequenceNumber);
-                    string invoiceNumber = paymentRequestConfigurationManager.GenerateInvoiceNumber(referenceNumberPrefix, paymentRequestDto.InvoiceNumber, sequenceNumber);
+                    var (invoiceNumber, referenceNumber) = GeneratePaymentNumbers(paymentIdPrefix, paymentRequestDto.InvoiceNumber, nextSequenceNumber, paymentRequestItem.i);
 
                     paymentRequestDto.InvoiceNumber = invoiceNumber;
                     paymentRequestDto.ReferenceNumber = referenceNumber;
@@ -74,30 +60,94 @@ namespace Unity.Payments.PaymentRequests
 
                     var payment = new PaymentRequest(Guid.NewGuid(), paymentRequestDto);
                     var result = await paymentRequestQueryManager.InsertPaymentRequestAsync(payment);
-                    createdPayments.Add(new PaymentRequestDto()
-                    {
-                        Id = result.Id,
-                        InvoiceNumber = result.InvoiceNumber,
-                        InvoiceStatus = result.InvoiceStatus,
-                        Amount = result.Amount,
-                        PayeeName = result.PayeeName,
-                        SupplierNumber = result.SupplierNumber,
-                        ContractNumber = result.ContractNumber,
-                        CorrelationId = result.CorrelationId,
-                        CorrelationProvider = result.CorrelationProvider,
-                        Description = result.Description,
-                        CreationTime = result.CreationTime,
-                        Status = result.Status,
-                        ReferenceNumber = result.ReferenceNumber,
-                        SubmissionConfirmationCode = result.SubmissionConfirmationCode
-                    });
+                    createdPayments.Add(MapToPaymentRequestDto(result));
                 }
                 catch (Exception ex)
                 {
                     Logger.LogException(ex);
+                    throw;
                 }
             }
             return createdPayments;
+        }
+
+        [Authorize(PaymentsPermissions.Payments.AddHistoricalPayment)]
+        public virtual async Task<List<PaymentRequestDto>> CreateHistoricalAsync(List<CreateHistoricalPaymentRequestDto> paymentRequests)
+        {
+            List<PaymentRequestDto> createdPayments = [];
+            var (batchName, batchNumber, nextSequenceNumber, paymentIdPrefix) = await GetBatchSetupAsync();
+
+            foreach (var paymentRequestItem in paymentRequests.Select((value, i) => new { i, value }))
+            {
+                try
+                {
+                    CreateHistoricalPaymentRequestDto paymentRequestDto = paymentRequestItem.value;
+                    var (invoiceNumber, referenceNumber) = GeneratePaymentNumbers(paymentIdPrefix, paymentRequestDto.InvoiceNumber, nextSequenceNumber, paymentRequestItem.i);
+
+                    paymentRequestDto.InvoiceNumber = invoiceNumber;
+                    paymentRequestDto.ReferenceNumber = referenceNumber;
+                    paymentRequestDto.BatchName = batchName;
+                    paymentRequestDto.BatchNumber = batchNumber;
+
+                    var payment = new PaymentRequest(Guid.NewGuid(), paymentRequestDto);
+                    var result = await paymentRequestQueryManager.InsertPaymentRequestAsync(payment);
+                    createdPayments.Add(MapToPaymentRequestDto(result));
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogException(ex);
+                    throw;
+                }
+            }
+            return createdPayments;
+        }
+
+        private async Task<(string batchName, decimal batchNumber, int nextSequenceNumber, string paymentIdPrefix)> GetBatchSetupAsync()
+        {
+            var paymentConfig = await paymentRequestConfigurationManager.GetPaymentConfigurationAsync();
+            var paymentIdPrefix = string.Empty;
+            if (paymentConfig != null && !paymentConfig.PaymentIdPrefix.IsNullOrEmpty())
+            {
+                paymentIdPrefix = paymentConfig.PaymentIdPrefix;
+            }
+            var batchNumber = await paymentRequestConfigurationManager.GetMaxBatchNumberAsync();
+            var batchName = $"{paymentIdPrefix}_UNITY_BATCH_{batchNumber}";
+            var nextSequenceNumber = await paymentRequestConfigurationManager.GetNextSequenceNumberAsync(DateTime.UtcNow.Year);
+            return (batchName, batchNumber, nextSequenceNumber, paymentIdPrefix);
+        }
+
+        private (string invoiceNumber, string referenceNumber) GeneratePaymentNumbers(
+            string paymentIdPrefix, string originalInvoiceNumber, int nextSequenceNumber, int index)
+        {
+            string referenceNumberPrefix = paymentRequestConfigurationManager.GenerateReferenceNumberPrefix(paymentIdPrefix);
+            string sequenceNumber = paymentRequestConfigurationManager.GenerateSequenceNumber(nextSequenceNumber, index);
+            string referenceNumber = paymentRequestConfigurationManager.GenerateReferenceNumber(referenceNumberPrefix, sequenceNumber);
+            string invoiceNumber = paymentRequestConfigurationManager.GenerateInvoiceNumber(referenceNumberPrefix, originalInvoiceNumber, sequenceNumber);
+            return (invoiceNumber, referenceNumber);
+        }
+
+        private static PaymentRequestDto MapToPaymentRequestDto(PaymentRequest result)
+        {
+            return new PaymentRequestDto()
+            {
+                Id = result.Id,
+                InvoiceNumber = result.InvoiceNumber,
+                InvoiceStatus = result.InvoiceStatus,
+                Amount = result.Amount,
+                PayeeName = result.PayeeName,
+                SupplierNumber = result.SupplierNumber,
+                ContractNumber = result.ContractNumber,
+                CorrelationId = result.CorrelationId,
+                CorrelationProvider = result.CorrelationProvider,
+                Description = result.Description,
+                CreationTime = result.CreationTime,
+                Status = result.Status,
+                ReferenceNumber = result.ReferenceNumber,
+                SubmissionConfirmationCode = result.SubmissionConfirmationCode,
+                CancelledOn = result.CancelledOn,
+                CancelledById = result.CancelledById,
+                CancelledBy = result.CancelledBy
+            };
         }
 
         public async Task<string> GetNextBatchInfoAsync()
@@ -278,18 +328,28 @@ namespace Unity.Payments.PaymentRequests
             return await paymentRequestQueryManager.GetListByApplicationIdsAsync(applicationIds);
         }
 
-        public async Task<PagedResultDto<PaymentRequestDto>> GetListAsync(PagedAndSortedResultRequestDto input)
-        {
-            var totalCount = await paymentRequestQueryManager.GetPaymentRequestCountAsync();
+        public async Task<PagedResultDto<PaymentRequestDto>> GetListAsync(PaymentRequestListInputDto input)
+        {   
             using (dataFilter.Disable<ISoftDelete>())
             {
-                var paymentWithIncludes = await paymentRequestQueryManager.GetPagedPaymentRequestsWithIncludesAsync(input.SkipCount, input.MaxResultCount, input.Sorting ?? string.Empty);
+                var paymentWithIncludes = await paymentRequestQueryManager.GetPagedPaymentRequestsWithIncludesAsync(
+                    input.SkipCount,
+                    input.MaxResultCount,
+                    input.Sorting ?? string.Empty,
+                    input.RequestedFields);
 
-                var mappedPayments = await paymentRequestQueryManager.MapToDtoAndLoadDetailsAsync(paymentWithIncludes);
+                var mappedPayments = await paymentRequestQueryManager.MapToDtoAndLoadDetailsAsync(
+                    paymentWithIncludes,
+                    input.RequestedFields);
 
                 paymentRequestQueryManager.ApplyErrorSummary(mappedPayments);
 
-                return new PagedResultDto<PaymentRequestDto>(totalCount, mappedPayments);
+#pragma warning disable S125
+                //While the DataTable is client side, server side count query is not necessary.
+                //var totalCount = await paymentRequestQueryManager.GetPaymentRequestCountAsync();
+#pragma warning restore S125
+                return new PagedResultDto<PaymentRequestDto>(paymentWithIncludes.Count, mappedPayments);
+
             }
         }
 
@@ -367,6 +427,29 @@ namespace Unity.Payments.PaymentRequests
         {
             var childApplicationIdsByParent = await applicationLinksService.Value.GetChildApplicationIdsByParentIdsAsync(applicationIds);
             return await paymentRequestQueryManager.GetApplicationPaymentRollupBatchAsync(applicationIds, childApplicationIdsByParent);
+        }
+
+        [Authorize(PaymentsPermissions.Payments.CancelPayment)]
+        public virtual async Task<PaymentRequestDto> CancelAsync(Guid paymentRequestId)
+        {
+            var payment = await paymentRequestQueryManager.GetPaymentRequestByIdAsync(paymentRequestId)
+                ?? throw new BusinessException("Payments:PaymentRequestNotFound")
+                    .WithData("Id", paymentRequestId);
+
+            PaymentRequestStatus[] eligibleStatuses =
+            [
+                PaymentRequestStatus.HistoricalPayment,
+                PaymentRequestStatus.L1Pending,
+                PaymentRequestStatus.L2Pending,
+                PaymentRequestStatus.L3Pending
+            ];
+
+            if (!eligibleStatuses.Contains(payment.Status))
+                throw new BusinessException("Payments:CancellationNotAllowed")
+                    .WithData("Status", payment.Status.ToString());
+
+            var result = await paymentsManager.CancelPaymentAsync(paymentRequestId);
+            return MapToPaymentRequestDto(result);
         }
     }
 }

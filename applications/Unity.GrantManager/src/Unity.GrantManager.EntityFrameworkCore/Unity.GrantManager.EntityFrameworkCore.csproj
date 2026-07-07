@@ -19,6 +19,10 @@
 	  <None Remove="Scripts\safe_to_timestamp.sql" />
 	  <None Remove="Scripts\safe_to_date.sql" />
 	  <None Remove="Scripts\safe_to_jsonb.sql" />
+	  <None Remove="Scripts\get_consolidated_worksheet_data.sql" />
+	  <None Remove="Scripts\generate_consolidated_worksheet_view.sql" />
+	  <None Remove="Scripts\get_consolidated_formversion_data.sql" />
+	  <None Remove="Scripts\generate_consolidated_formversion_view.sql" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -47,6 +51,18 @@
 		<CopyToOutputDirectory>Never</CopyToOutputDirectory>
 	  </EmbeddedResource>
 	  <EmbeddedResource Include="Scripts\safe_to_jsonb.sql">
+		<CopyToOutputDirectory>Never</CopyToOutputDirectory>
+	  </EmbeddedResource>
+	  <EmbeddedResource Include="Scripts\get_consolidated_worksheet_data.sql">
+		<CopyToOutputDirectory>Never</CopyToOutputDirectory>
+	  </EmbeddedResource>
+	  <EmbeddedResource Include="Scripts\generate_consolidated_worksheet_view.sql">
+		<CopyToOutputDirectory>Never</CopyToOutputDirectory>
+	  </EmbeddedResource>
+	  <EmbeddedResource Include="Scripts\get_consolidated_formversion_data.sql">
+		<CopyToOutputDirectory>Never</CopyToOutputDirectory>
+	  </EmbeddedResource>
+	  <EmbeddedResource Include="Scripts\generate_consolidated_formversion_view.sql">
 		<CopyToOutputDirectory>Never</CopyToOutputDirectory>
 	  </EmbeddedResource>
 	</ItemGroup>
@@ -78,7 +94,5 @@
 		<PackageReference Include="System.IO.Packaging" Version="10.0.7" />
 		<ProjectReference Include="..\..\modules\Unity.Notifications\src\Unity.Notifications.EntityFrameworkCore\Unity.Notifications.EntityFrameworkCore.csproj" /></ItemGroup>
 
-	<ItemGroup>
-		<Folder Include="Migrations\HostMigrations\" />
-	</ItemGroup>
+
 </Project>

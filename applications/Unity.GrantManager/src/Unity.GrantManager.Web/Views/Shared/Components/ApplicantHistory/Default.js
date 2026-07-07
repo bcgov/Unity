@@ -53,6 +53,18 @@ $(function () {
             { title: 'Reconsideration Amount', data: 'reconsiderationAmount', name: 'reconsiderationAmount', className: 'data-table-header currency-display', render: (d) => formatCurrency(d) },            
             { title: 'Total Grant Amount', data: 'totalGrantAmount', name: 'totalGrantAmount', className: 'data-table-header currency-display', render: (d) => formatCurrency(d) },
             {
+                title: 'Paid Date', data: 'paidDate', name: 'paidDate', className: 'data-table-header', width: '90px',
+                createdCell: function (td) { $(td).css('min-width', '90px'); },
+                render: function (d) {
+                    if (!d) return nullPlaceholder;
+                    try {
+                        return luxon.DateTime.fromISO(d, {
+                            locale: abp.localization.currentCulture.name,
+                        }).toUTC().toLocaleString();
+                    } catch (e) { console.warn('Paid date parse error:', e); return d; }
+                }
+            },
+            {
                 title: 'Notes', data: 'fundingNotes', name: 'fundingNotes', className: 'data-table-header', width: '200px',
                 createdCell: function (td) { $(td).css('min-width', '200px'); },
                 render: (d) => d ?? nullPlaceholder
@@ -128,6 +140,14 @@ $(function () {
                     } catch (e) { console.warn('Audit date parse error:', e); return d; }
                 }
             },
+            {
+                title: 'Status', data: 'auditStatus', name: 'auditStatus', className: 'data-table-header',
+                render: function (d) {
+                    if (!d) return nullPlaceholder;
+                    return d === 'InProgress' ? 'In Progress' : d;
+                }
+            },
+            { title: "Auditor's Name", data: 'auditorName', name: 'auditorName', className: 'data-table-header', render: (d) => d ?? nullPlaceholder },
             { title: 'Audit Note', data: 'auditNote', name: 'auditNote', className: 'data-table-header', render: (d) => d ?? nullPlaceholder },
             {
                 title: 'Actions', data: null, name: 'actions', orderable: false, className: 'data-table-header', width: '70px',
@@ -216,7 +236,7 @@ $(function () {
 
     const fundingHistoryTable = initializeDataTable({
         dt: $('#FundingHistoryTable'),
-        defaultVisibleColumns: ['grantCategory', 'fundingYear', 'renewedFunding', 'approvedAmount', 'reconsiderationAmount', 'oneTimeConsideration', 'totalGrantAmount', 'fundingNotes', 'actions'],
+        defaultVisibleColumns: ['grantCategory', 'fundingYear', 'renewedFunding', 'approvedAmount', 'reconsiderationAmount', 'oneTimeConsideration', 'totalGrantAmount', 'paidDate', 'fundingNotes', 'actions'],
         listColumns: getFundingHistoryColumns(),
         dataEndpoint: () => unity.grantManager.applicantProfile.applicantHistory.getFundingHistoryList(getApplicantId()),
         data: () => ({}),

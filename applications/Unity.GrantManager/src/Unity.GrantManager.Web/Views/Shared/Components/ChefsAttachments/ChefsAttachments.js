@@ -13,10 +13,13 @@ $(function () {
     const nullPlaceholder = '—';
 
     let inputAction = function (requestData, dataTableSettings) {
-        const urlParams = new URL(globalThis.location.toLocaleString()).searchParams;
-        const applicationId = urlParams.get('ApplicationId');
-        return applicationId;
+        return getApplicationId();
     };
+
+    function getApplicationId() {
+        const urlParams = new URL(globalThis.location.toLocaleString()).searchParams;
+        return urlParams.get('ApplicationId');
+    }
 
     let responseCallback = function (result) {
         if (result.length <= 0) {
@@ -30,7 +33,7 @@ $(function () {
                 });
             }, 10);
 
-            $(downloadAll).prop('disabled', result.length === 0);
+            $(downloadAll).prop('disabled', true);
             selectedAttachmentIds = [];
             setGenerateSummariesEnabled();
 
@@ -62,7 +65,14 @@ $(function () {
     }
 
     function setGenerateSummariesEnabled() {
-        $('#generateAiSummaries').prop('disabled', selectedAttachmentIds.length === 0);
+        const disabled = selectedAttachmentIds.length === 0;
+        $('#generateAiSummaries')
+            .prop('disabled', disabled)
+            .attr('data-ai-local-disabled', disabled ? '1' : '0');
+    }
+
+    function setDownloadAllEnabled() {
+        $(downloadAll).prop('disabled', selectedAttachmentIds.length === 0);
     }
 
     function setSelectAllState() {
@@ -80,6 +90,7 @@ $(function () {
         chefsDataTable.$('.chkbox').prop('checked', false);
         $('.select-all-chefs-files').prop('checked', false);
         setGenerateSummariesEnabled();
+        setDownloadAllEnabled();
     }
 
     function setAllAttachmentSelections(isSelected) {
@@ -160,6 +171,7 @@ $(function () {
     // Generate AI summaries for the current application attachments.
     const $generateAISummariesButton = $('#generateAiSummaries');
     if ($generateAISummariesButton.length > 0) {
+        setGenerateSummariesEnabled();
         $generateAISummariesButton.on('click', function () {
             const $button = $(this);
             const triggerButton = $button.data('trigger-button');
@@ -168,6 +180,7 @@ $(function () {
                 ? chefsDataTable.rows().data().toArray()
                 : chefsDataTable.rows({ selected: true }).data().toArray();
             const summaryAttachmentIds = rows.map((row) => row.id);
+            const applicationId = getApplicationId();
 
             $button.removeData('trigger-button');
 
@@ -182,34 +195,76 @@ $(function () {
 
             const existingHTML = $activeButton.html();
 
+            globalThis.AIGenerationButtonState?.setGenerating($activeButton);
             $activeButton
                 .html(
                     '<span class="ai-button-content"><span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span><span>Generating...</span></span>'
                 )
                 .prop('disabled', true);
-            globalThis.AIGenerationButtonState?.setGenerating($activeButton);
 
             $.ajax({
-                url: '/api/app/attachment-summary/generate-attachment-summaries',
-                data: JSON.stringify(summaryAttachmentIds),
+                url: '/api/app/ai/generation/attachment-summary',
+                data: JSON.stringify({
+                    applicationId: applicationId,
+                    attachmentIds: summaryAttachmentIds,
+                }),
                 contentType: 'application/json',
                 type: 'POST',
-                success: function () {
-                    resetAttachmentSelection();
-                    chefsDataTable.ajax.reload();
-                    abp.notify.success('AI summaries generated successfully.');
-                    globalThis.AIGenerationButtonState?.restore($activeButton);
-                    $activeButton.html(existingHTML).prop('disabled', false);
+                success: function (generationStatus) {
+                    const request = generationStatus?.generationRequest;
+                    const status = globalThis.AIGenerationButtonState?.resolveStatus(request?.status) ?? '';
+
+                    if (status === 'Completed') {
+                        globalThis.AIGenerationButtonState?.restoreForCooldownCheck(
+                            $activeButton,
+                            existingHTML
+                        );
+                        globalThis.AIGenerationButtonState?.applyStatusState(generationStatus);
+                        refreshAttachmentSummaryResults();
+                        return;
+                    }
+
+                    globalThis.AIGenerationButtonState?.setGenerating($activeButton);
+                    pollAttachmentSummaryGeneration(applicationId, $activeButton, existingHTML);
                 },
                 error: function (error) {
                     console.error('Error generating AI summaries:', error);
                     abp.message.error('An error occurred while generating AI summaries. Please try again.');
                     globalThis.AIGenerationButtonState?.restore($activeButton);
+                    globalThis.refreshAIRateLimitState?.();
                     $activeButton.html(existingHTML).prop('disabled', false);
                     setGenerateSummariesEnabled();
                 },
             });
         });
+    }
+
+    function pollAttachmentSummaryGeneration(applicationId, $button, originalHtml) {
+        if (!globalThis.AIGenerationButtonState?.monitor) {
+            console.error('AIGenerationButtonState is not available; cannot poll attachment summary generation.');
+            abp.message.error('AI attachment summary polling is unavailable. Please refresh and try again.');
+            globalThis.AIGenerationButtonState?.restore($button);
+            $button.html(originalHtml ?? $button.html()).prop('disabled', false);
+            return;
+        }
+
+        globalThis.AIGenerationButtonState.monitor({
+            $button,
+            originalHtml: originalHtml ?? $button.html(),
+            getStatus: () => unity.grantManager.grantApplications.grantApplication
+                .getAIGenerationStatus(applicationId, 'attachment-summary'),
+            onComplete: refreshAttachmentSummaryResults,
+            onFailed: (request) => {
+                abp.message.error(request?.failureReason || 'AI attachment summary generation failed.');
+            }
+        });
+    }
+
+    function refreshAttachmentSummaryResults() {
+        resetAttachmentSelection();
+        chefsDataTable.ajax.reload();
+        abp.notify.success('AI summaries generated successfully.');
+        globalThis.refreshAIRateLimitState?.();
     }
 
     // Toggle all AI summaries (only if feature is enabled)
@@ -316,6 +371,7 @@ $(function () {
         });
         setGenerateSummariesEnabled();
         setSelectAllState();
+        setDownloadAllEnabled();
     });
 
     chefsDataTable.on('deselect', function (e, dt, type, indexes) {
@@ -333,6 +389,7 @@ $(function () {
         });
         setGenerateSummariesEnabled();
         setSelectAllState();
+        setDownloadAllEnabled();
     });
 
     $('#resyncSubmissionAttachments').on('click', function () {
@@ -362,7 +419,7 @@ $(function () {
         const _this = $(this);
         const existingHTML = _this.html();
         const zip = new JSZip();
-        const tempFiles = chefsDataTable.rows().data().toArray().map((row) => ({
+        const tempFiles = chefsDataTable.rows({ selected: true }).data().toArray().map((row) => ({
             FormSubmissionId: row.chefsSubmissionId,
             ChefsFileId: row.chefsFileId,
             Filename: row.fileName,
@@ -436,13 +493,13 @@ function getChefsFileDownloadColumn() {
                 '<i class="fl fl-attachment-more"></i>' +
                 '</button>' +
                 '<div class="dropdown-content">' +
-                '<button class="btn fullWidth" style="margin:10px" type="button"' +
+                '<button class="btn fullWidth" style="margin:10px;margin-left:8px;" type="button"' +
                 ' chefs-submission-id="' + escapeHtmlAttribute(submissionId) + '"' +
                 ' chefs-data="' + escapeHtmlAttribute(fileId) + '"' +
                 ' chefs-file-name="' + escapeHtmlAttribute(fileName) + '"' +
                 ' chefs-display-name="' + escapeHtmlAttribute(displayName) + '"' +
                 ' onclick="previewChefsFile(event)">' +
-                '<i class="fa fa-eye"></i><span>Preview Attachment</span>' +
+                '<i class="fa fa-eye p-0"></i><span>Preview Attachment</span>' +
                 '</button>' +
                 '<button class="btn fullWidth" style="margin:10px" type="button"' +
                 ' chefs-submission-id="' + escapeHtmlAttribute(submissionId) + '"' +

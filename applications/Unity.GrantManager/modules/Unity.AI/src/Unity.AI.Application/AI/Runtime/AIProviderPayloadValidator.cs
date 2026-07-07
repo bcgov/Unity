@@ -5,94 +5,111 @@ using Unity.AI.Models;
 
 namespace Unity.AI.Runtime
 {
-    internal static class AIProviderPayloadValidator
+    public static class AIProviderPayloadValidator
     {
-        public static bool IsValidAttachmentSummaryText(string response)
+        public static AIResponseValidationResult ValidateAttachmentSummaryText(string response)
         {
-            return !string.IsNullOrWhiteSpace(response);
+            return !string.IsNullOrWhiteSpace(response)
+                ? AIResponseValidationResult.Success()
+                : AIResponseValidationResult.Invalid("Attachment summary response was empty.");
         }
 
-        public static bool IsValidApplicationAnalysisJson(string response)
+        public static AIResponseValidationResult ValidateApplicationAnalysisJson(string response)
         {
             if (!TryParseRootObject(response, out var root))
             {
-                return false;
+                return AIResponseValidationResult.Invalid("Application analysis response was not valid JSON.");
             }
 
-            return HasStringProperty(root, AIJsonKeys.Decision) &&
-                   HasArrayProperty(root, AIJsonKeys.Errors) &&
-                   HasArrayProperty(root, AIJsonKeys.Warnings) &&
-                   HasArrayProperty(root, AIJsonKeys.Summaries) &&
-                   HasArrayProperty(root, AIJsonKeys.Recommendations);
+            if (!root.TryGetProperty(AIJsonKeys.Decision, out var decision) || decision.ValueKind != JsonValueKind.String)
+            {
+                return AIResponseValidationResult.Invalid($"Application analysis response is missing or invalid required field '{AIJsonKeys.Decision}' (expected string).");
+            }
+
+            var normalizedDecision = (decision.GetString() ?? string.Empty).Trim().ToUpperInvariant();
+            if (normalizedDecision != "PROCEED" && normalizedDecision != "HOLD")
+            {
+                return AIResponseValidationResult.Invalid(
+                    $"Application analysis response has invalid '{AIJsonKeys.Decision}' value. Expected 'PROCEED' or 'HOLD'.");
+            }
+
+            if (!root.TryGetProperty(AIJsonKeys.Errors, out var errors) || errors.ValueKind != JsonValueKind.Array)
+            {
+                return AIResponseValidationResult.Invalid($"Application analysis response is missing or invalid required field '{AIJsonKeys.Errors}' (expected array).");
+            }
+
+            if (!root.TryGetProperty(AIJsonKeys.Warnings, out var warnings) || warnings.ValueKind != JsonValueKind.Array)
+            {
+                return AIResponseValidationResult.Invalid($"Application analysis response is missing or invalid required field '{AIJsonKeys.Warnings}' (expected array).");
+            }
+
+            if (!root.TryGetProperty(AIJsonKeys.Summaries, out var summaries) || summaries.ValueKind != JsonValueKind.Array)
+            {
+                return AIResponseValidationResult.Invalid($"Application analysis response is missing or invalid required field '{AIJsonKeys.Summaries}' (expected array).");
+            }
+
+            if (!root.TryGetProperty(AIJsonKeys.Recommendations, out var recommendations) || recommendations.ValueKind != JsonValueKind.Array)
+            {
+                return AIResponseValidationResult.Invalid($"Application analysis response is missing or invalid required field '{AIJsonKeys.Recommendations}' (expected array).");
+            }
+
+            if (summaries.GetArrayLength() == 0)
+            {
+                return AIResponseValidationResult.Invalid(
+                    $"Application analysis response must include at least one item in '{AIJsonKeys.Summaries}'.");
+            }
+
+            if (recommendations.GetArrayLength() == 0)
+            {
+                return AIResponseValidationResult.Invalid(
+                    $"Application analysis response must include at least one item in '{AIJsonKeys.Recommendations}'.");
+            }
+
+            return AIResponseValidationResult.Success();
         }
 
-        public static bool IsValidApplicationScoringJson(string response, string sectionJson)
+        public static AIResponseValidationResult ValidateApplicationScoringJson(string response, string sectionJson)
         {
             if (!TryParseRootObject(response, out var root))
             {
-                return false;
+                return AIResponseValidationResult.Invalid("Application scoring response was not valid JSON.");
             }
 
             var expectedQuestionIds = ExtractQuestionIds(sectionJson);
             if (expectedQuestionIds.Count == 0)
             {
-                return false;
+                return AIResponseValidationResult.Invalid("Application scoring section schema could not be parsed or did not contain any question ids.");
             }
 
             foreach (var questionId in expectedQuestionIds)
             {
-                if (!TryGetRequiredObject(root, questionId, out var answerObject))
+                if (!root.TryGetProperty(questionId, out var answerObject) || answerObject.ValueKind != JsonValueKind.Object)
                 {
-                    return false;
+                    return AIResponseValidationResult.Invalid(
+                        $"Application scoring response is missing required answer object for question id '{questionId}'.");
                 }
 
-                if (!HasPrimitiveProperty(answerObject, AIJsonKeys.Answer))
+                if (!answerObject.TryGetProperty(AIJsonKeys.Answer, out var answerValue)
+                    || answerValue.ValueKind == JsonValueKind.Null
+                    || answerValue.ValueKind == JsonValueKind.Object
+                    || answerValue.ValueKind == JsonValueKind.Array)
                 {
-                    return false;
+                    return AIResponseValidationResult.Invalid(
+                        $"Application scoring response is missing a valid answer for question id '{questionId}'.");
                 }
 
-                if (!IsValidConfidenceProperty(answerObject, AIJsonKeys.Confidence))
+                if (!answerObject.TryGetProperty(AIJsonKeys.Confidence, out var confidenceValue)
+                    || confidenceValue.ValueKind != JsonValueKind.Number
+                    || !confidenceValue.TryGetDecimal(out var confidence)
+                    || confidence < 0m
+                    || confidence > 1m)
                 {
-                    return false;
+                    return AIResponseValidationResult.Invalid(
+                        $"Application scoring response is missing a valid confidence score for question id '{questionId}'.");
                 }
             }
 
-            return true;
-        }
-
-        private static bool HasStringProperty(JsonElement element, string name)
-        {
-            return element.TryGetProperty(name, out var property) &&
-                   property.ValueKind == JsonValueKind.String;
-        }
-
-        private static bool HasArrayProperty(JsonElement element, string name)
-        {
-            return element.TryGetProperty(name, out var property) &&
-                   property.ValueKind == JsonValueKind.Array;
-        }
-
-        private static bool TryGetRequiredObject(JsonElement element, string name, out JsonElement value)
-        {
-            return element.TryGetProperty(name, out value) &&
-                   value.ValueKind == JsonValueKind.Object;
-        }
-
-        private static bool HasPrimitiveProperty(JsonElement element, string name)
-        {
-            return element.TryGetProperty(name, out var property) &&
-                   property.ValueKind != JsonValueKind.Null &&
-                   property.ValueKind != JsonValueKind.Object &&
-                   property.ValueKind != JsonValueKind.Array;
-        }
-
-        private static bool IsValidConfidenceProperty(JsonElement element, string name)
-        {
-            return element.TryGetProperty(name, out var property) &&
-                   property.ValueKind == JsonValueKind.Number &&
-                   property.TryGetInt32(out var confidence) &&
-                   confidence >= 0 &&
-                   confidence <= 100;
+            return AIResponseValidationResult.Success();
         }
 
         private static HashSet<string> ExtractQuestionIds(string sectionJson)
@@ -169,5 +186,6 @@ namespace Unity.AI.Runtime
                 return false;
             }
         }
+
     }
 }

@@ -16,4 +16,10 @@
     <Content Remove="$(UserProfile)\.nuget\packages\*\*\contentFiles\any\*\*.abppkg*.json" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- Add direct reference to the patched Scriban to ensure all projects importing common.props
+         use the safe version (pins transitive consumers that do not specify a version). -->
+    <PackageReference Include="Scriban" Version="7.2.0" />
+  </ItemGroup>
+
 </Project>

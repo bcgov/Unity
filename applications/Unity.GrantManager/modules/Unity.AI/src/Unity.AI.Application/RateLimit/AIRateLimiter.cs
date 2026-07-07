@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Threading.Tasks;
 using Medallion.Threading;
@@ -20,18 +21,24 @@ public class AIRateLimiter(
     IDistributedCache cache,
     ICurrentUser currentUser,
     IConfiguration configuration,
-    IDistributedLockProvider distributedLockProvider) : IAIRateLimiter, ITransientDependency
+    IDistributedLockProvider distributedLockProvider,
+    IEnumerable<IAIGenerationActivityProvider> generationActivityProviders) : IAIRateLimiter, ITransientDependency
 {
-    private const string KeyPrefix = "AI:Cooldown:";
-    private const string LockPrefix = "AI:CooldownLock:";
-    private const int DefaultCooldownSeconds = 60;
+    private const string CooldownKeyPrefix = "ai-generation:cooldown:";
+    private const string CooldownLockPrefix = "ai-generation:cooldown-lock:";
+    private const string CooldownSecondsConfigurationKey = "Azure:Generation:CooldownSeconds";
 
     private int CooldownSeconds
     {
         get
         {
-            var configured = configuration.GetValue<int?>("AI:RateLimit:CooldownSeconds");
-            return configured > 0 ? configured.Value : DefaultCooldownSeconds;
+            var configured = configuration.GetValue<int?>(CooldownSecondsConfigurationKey);
+            if (configured is > 0)
+            {
+                return configured.Value;
+            }
+
+            throw new AbpException($"{CooldownSecondsConfigurationKey} must be configured with a positive value.");
         }
     }
 
@@ -43,7 +50,7 @@ public class AIRateLimiter(
             return;
         }
 
-        var userLock = distributedLockProvider.CreateLock(LockPrefix + userId);
+        var userLock = distributedLockProvider.CreateLock(CooldownLockPrefix + userId);
         using (await userLock.AcquireAsync())
         {
             var remaining = await GetRemainingSecondsAsync(userId);
@@ -64,7 +71,7 @@ public class AIRateLimiter(
     {
         if (userId is Guid resolvedUserId)
         {
-            var userLock = distributedLockProvider.CreateLock(LockPrefix + resolvedUserId);
+            var userLock = distributedLockProvider.CreateLock(CooldownLockPrefix + resolvedUserId);
             using (await userLock.AcquireAsync())
             {
                 await StampAsync(resolvedUserId, CooldownSeconds);
@@ -76,17 +83,27 @@ public class AIRateLimiter(
     {
         if (currentUser.Id is not Guid userId)
         {
-            return new AIRateLimitStateDto { RetryAfterSeconds = 0 };
+            return new AIRateLimitStateDto { RetryAfterSeconds = 0, IsGenerating = false };
         }
 
-        var userLock = distributedLockProvider.CreateLock(LockPrefix + userId);
-        using (await userLock.AcquireAsync())
+        return new AIRateLimitStateDto
         {
-            return new AIRateLimitStateDto
+            RetryAfterSeconds = await GetRemainingSecondsAsync(userId),
+            IsGenerating = await HasActiveGenerationAsync()
+        };
+    }
+
+    private async Task<bool> HasActiveGenerationAsync()
+    {
+        foreach (var provider in generationActivityProviders)
+        {
+            if (await provider.HasActiveGenerationAsync())
             {
-                RetryAfterSeconds = await GetRemainingSecondsAsync(userId)
-            };
+                return true;
+            }
         }
+
+        return false;
     }
 
     private async Task<int> GetRemainingSecondsAsync(Guid userId)
@@ -113,5 +130,5 @@ public class AIRateLimiter(
             new DistributedCacheEntryOptions { AbsoluteExpiration = until });
     }
 
-    private static string KeyFor(Guid userId) => KeyPrefix + userId;
+    private static string KeyFor(Guid userId) => CooldownKeyPrefix + userId;
 }

@@ -270,6 +270,9 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .HasColumnType("text")
                         .HasColumnName("ExtraProperties");
 
+                    b.Property<bool>("IsArchived")
+                        .HasColumnType("boolean");
+
                     b.Property<bool>("IsDeleted")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
@@ -825,6 +828,12 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .HasColumnType("uuid")
                         .HasColumnName("CreatorId");
 
+                    b.Property<Guid?>("DeleterId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("DeletionTime")
+                        .HasColumnType("timestamp without time zone");
+
                     b.Property<string>("ExtraProperties")
                         .IsRequired()
                         .HasColumnType("text")
@@ -841,6 +850,9 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
 
                     b.Property<string>("IndigenousOrgInd")
                         .HasColumnType("text");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
 
                     b.Property<bool>("IsDuplicated")
                         .HasColumnType("boolean");
@@ -872,9 +884,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .HasColumnType("text");
 
                     b.Property<string>("OrgStatus")
-                        .HasColumnType("text");
-
-                    b.Property<string>("OrganizationSize")
                         .HasColumnType("text");
 
                     b.Property<string>("OrganizationType")
@@ -915,7 +924,20 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
 
                     b.HasIndex("ApplicantName");
 
+                    b.HasIndex("OrgName");
+
+                    b.HasIndex("OrgNumber");
+
+                    b.HasIndex("Status");
+
+                    b.HasIndex("SupplierId");
+
                     b.HasIndex("TenantId");
+
+                    b.HasIndex("UnityApplicantId");
+
+                    b.HasIndex("TenantId", "IsDeleted", "CreationTime")
+                        .HasFilter("\"IsDeleted\" = false");
 
                     b.ToTable("Applicants", (string)null);
                 });
@@ -1267,6 +1289,9 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
 
                     b.Property<string>("ElectoralDistrict")
                         .HasColumnType("text");
+
+                    b.Property<bool>("ExternalStatusVisibility")
+                        .HasColumnType("boolean");
 
                     b.Property<string>("ExtraProperties")
                         .IsRequired()
@@ -1772,9 +1797,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<bool>("PreventPayment")
                         .HasColumnType("boolean");
 
-                    b.Property<bool>("RenderFormIoToHtml")
-                        .HasColumnType("boolean");
-
                     b.Property<Guid?>("ScoresheetId")
                         .HasColumnType("uuid");
 
@@ -1854,9 +1876,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
 
                     b.Property<string>("OidcSub")
                         .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("RenderedHTML")
                         .HasColumnType("text");
 
                     b.Property<string>("ReportData")
@@ -2059,6 +2078,9 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .HasColumnType("uuid")
                         .HasColumnName("LastModifierId");
 
+                    b.Property<string>("NotifiedStatus")
+                        .HasColumnType("text");
+
                     b.Property<string>("StatusCode")
                         .IsRequired()
                         .HasMaxLength(250)
@@ -2208,7 +2230,13 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<string>("AuditNote")
                         .HasColumnType("text");
 
+                    b.Property<string>("AuditStatus")
+                        .HasColumnType("text");
+
                     b.Property<string>("AuditTrackingNumber")
+                        .HasColumnType("text");
+
+                    b.Property<string>("AuditorName")
                         .HasColumnType("text");
 
                     b.Property<string>("ConcurrencyStamp")
@@ -2300,6 +2328,9 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
 
                     b.Property<decimal?>("OneTimeConsideration")
                         .HasColumnType("numeric");
+
+                    b.Property<DateTime?>("PaidDate")
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<decimal?>("ReconsiderationAmount")
                         .HasColumnType("numeric");
@@ -3019,6 +3050,142 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.ToTable("Intakes", (string)null);
                 });
 
+            modelBuilder.Entity("Unity.GrantManager.Notifications.ScheduledNotification", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ApplicationStatus")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<Guid?>("ApplicationStatusId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("ConcurrencyStamp");
+
+                    b.Property<DateTime>("CreationTime")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("CreationTime");
+
+                    b.Property<Guid?>("CreatorId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("CreatorId");
+
+                    b.Property<string>("DateField")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<Guid?>("DeleterId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("DeleterId");
+
+                    b.Property<DateTime?>("DeletionTime")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("DeletionTime");
+
+                    b.Property<Guid>("EmailTemplateId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("EventType")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("ExtraProperties")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("ExtraProperties");
+
+                    b.Property<Guid>("FormId")
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("IsDeleted");
+
+                    b.Property<DateTime?>("LastModificationTime")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("LastModificationTime");
+
+                    b.Property<Guid?>("LastModifierId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("LastModifierId");
+
+                    b.Property<string>("RecipientCategory")
+                        .HasColumnType("text");
+
+                    b.Property<string>("RecipientIdentifier")
+                        .HasColumnType("text");
+
+                    b.Property<Guid?>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("TenantId");
+
+                    b.Property<string>("TriggerDetail")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<string>("TriggerType")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TenantId");
+
+                    b.ToTable("ScheduledNotifications", "Notifications");
+                });
+
+            modelBuilder.Entity("Unity.GrantManager.Notifications.ScheduledNotificationTracking", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ApplicationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreationTime")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<Guid?>("CreatorId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("DateField")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<DateTime>("NotificationSentDate")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<Guid>("ScheduledNotificationId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ApplicationId");
+
+                    b.HasIndex("CreationTime");
+
+                    b.HasIndex("ScheduledNotificationId");
+
+                    b.HasIndex("ApplicationId", "ScheduledNotificationId", "DateField")
+                        .IsUnique();
+
+                    b.ToTable("ScheduledNotificationTracking", "Notifications");
+                });
+
             modelBuilder.Entity("Unity.Notifications.EmailGroups.EmailGroup", b =>
                 {
                     b.Property<Guid>("Id")
@@ -3185,6 +3352,10 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .HasColumnType("uuid")
                         .HasColumnName("CreatorId");
 
+                    b.Property<string>("EmailType")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
                     b.Property<string>("ExtraProperties")
                         .IsRequired()
                         .HasColumnType("text")
@@ -3210,8 +3381,15 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<string>("Recipient")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
                     b.Property<int>("RetryAttempts")
                         .HasColumnType("integer");
+
+                    b.Property<Guid?>("ScheduledNotificationId")
+                        .HasColumnType("uuid");
 
                     b.Property<DateTime?>("SendOnDateTime")
                         .HasColumnType("timestamp without time zone");
@@ -3937,6 +4115,19 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<decimal>("BatchNumber")
                         .HasColumnType("numeric");
 
+                    b.Property<string>("CancelledBy")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)")
+                        .HasColumnName("CancelledBy");
+
+                    b.Property<Guid?>("CancelledById")
+                        .HasColumnType("uuid")
+                        .HasColumnName("CancelledById");
+
+                    b.Property<DateTime?>("CancelledOn")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("CancelledOn");
+
                     b.Property<int?>("CasHttpStatusCode")
                         .HasColumnType("integer");
 
@@ -4043,7 +4234,7 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<Guid>("SiteId")
+                    b.Property<Guid?>("SiteId")
                         .HasColumnType("uuid");
 
                     b.Property<int>("Status")
@@ -4068,12 +4259,21 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
 
                     b.HasIndex("AccountCodingId");
 
+                    b.HasIndex("CorrelationId");
+
+                    b.HasIndex("CreationTime");
+
                     b.HasIndex("FsbNotificationEmailLogId");
 
                     b.HasIndex("ReferenceNumber")
                         .IsUnique();
 
                     b.HasIndex("SiteId");
+
+                    b.HasIndex("Status");
+
+                    b.HasIndex("TenantId", "CreationTime")
+                        .HasFilter("\"IsDeleted\" = false");
 
                     b.ToTable("PaymentRequests", "Payments");
                 });
@@ -4837,6 +5037,21 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("Unity.GrantManager.Notifications.ScheduledNotificationTracking", b =>
+                {
+                    b.HasOne("Unity.GrantManager.Applications.Application", null)
+                        .WithMany()
+                        .HasForeignKey("ApplicationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Unity.GrantManager.Notifications.ScheduledNotification", null)
+                        .WithMany()
+                        .HasForeignKey("ScheduledNotificationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Unity.Notifications.EmailGroups.EmailGroupUser", b =>
                 {
                     b.HasOne("Unity.Notifications.EmailGroups.EmailGroup", null)
@@ -4918,8 +5133,7 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.HasOne("Unity.Payments.Domain.Suppliers.Site", "Site")
                         .WithMany()
                         .HasForeignKey("SiteId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.NoAction);
 
                     b.Navigation("AccountCoding");
 
