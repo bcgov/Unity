@@ -16,6 +16,10 @@ public interface IAIApplicationInputDataProvider
     Task<List<AttachmentSummarySnapshot>> GetAttachmentSummariesAsync(Guid applicationId);
 
     Task<ScoresheetSnapshot?> GetScoresheetAsync(Guid scoresheetId);
+
+    Task<bool> HasAttachmentsAsync(Guid applicationId);
+
+    Task<bool> HasSubmissionAsync(Guid applicationId);
 }
 
 public sealed class ApplicationFormSnapshot
