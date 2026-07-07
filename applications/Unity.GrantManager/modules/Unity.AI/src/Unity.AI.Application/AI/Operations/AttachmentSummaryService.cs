@@ -9,7 +9,6 @@ using System.Threading.Tasks;
 using Unity.AI.Extraction;
 using Unity.AI.Localization;
 using Unity.AI.Requests;
-using Unity.GrantManager.Applications;
 using Unity.GrantManager.Intakes;
 using Volo.Abp;
 using Volo.Abp.DependencyInjection;
@@ -18,7 +17,7 @@ using Volo.Abp.Uow;
 namespace Unity.AI.Operations;
 
 public class AttachmentSummaryService(
-    IApplicationChefsFileAttachmentRepository applicationChefsFileAttachmentRepository,
+    IAttachmentSummaryPersistence attachmentSummaryPersistence,
     IChefsFileAttachmentStreamProvider chefsFileAttachmentStreamProvider,
     ITextExtractionService textExtractionService,
     IAIService aiService,
@@ -33,7 +32,7 @@ public class AttachmentSummaryService(
 
     public async Task<string> GenerateAndSaveAsync(Guid attachmentId, string? promptVersion = null, CancellationToken cancellationToken = default)
     {
-        var attachment = await LoadAttachmentAsync(attachmentId);
+        var attachment = await attachmentSummaryPersistence.LoadAsync(attachmentId);
         var fileName = string.IsNullOrWhiteSpace(attachment.FileName) ? "unknown" : attachment.FileName;
 
         await using var attachmentStream = await OpenAttachmentStreamAsync(attachment, fileName, cancellationToken);
@@ -41,8 +40,8 @@ public class AttachmentSummaryService(
         if (ShouldStopOnEmptyExtraction(fileName, extractedText))
         {
             LogEmptyExtraction(attachmentId, fileName, attachmentStream);
-            await SaveSummaryAsync(attachmentId, TextExtractionFailedSummary);
-            return TextExtractionFailedSummary;
+        await attachmentSummaryPersistence.SaveSummaryAsync(attachmentId, TextExtractionFailedSummary);
+        return TextExtractionFailedSummary;
         }
 
         var summaryResponse = await aiService.GenerateAttachmentSummaryAsync(new AttachmentSummaryRequest
@@ -53,7 +52,7 @@ public class AttachmentSummaryService(
             PromptVersion = promptVersion,
         }, cancellationToken);
 
-        await SaveSummaryAsync(attachmentId, summaryResponse.Summary);
+        await attachmentSummaryPersistence.SaveSummaryAsync(attachmentId, summaryResponse.Summary);
 
         return summaryResponse.Summary;
     }
@@ -124,7 +123,7 @@ public class AttachmentSummaryService(
     {
         await WithUnitOfWorkAsync(() => aiGenerationPrerequisiteValidator.EnsureAttachmentSummaryAvailableAsync(applicationId));
 
-        var applicationAttachmentIds = await LoadApplicationAttachmentIdsAsync(applicationId);
+        var applicationAttachmentIds = await attachmentSummaryPersistence.LoadApplicationAttachmentIdsAsync(applicationId);
 
         if (attachmentIds is not { Count: > 0 })
         {
@@ -140,38 +139,6 @@ public class AttachmentSummaryService(
         }
 
         return await GenerateAndSaveAsync(selectedIds, promptVersion, cancellationToken);
-    }
-
-    private async Task<AttachmentSummarySource> LoadAttachmentAsync(Guid attachmentId)
-    {
-        using var uow = unitOfWorkManager.Begin(requiresNew: true, isTransactional: false);
-        var attachment = await applicationChefsFileAttachmentRepository.GetAsync(attachmentId);
-        var source = new AttachmentSummarySource(
-            attachment.Id,
-            attachment.FileName,
-            attachment.ChefsSubmissionId,
-            attachment.ChefsFileId);
-        await uow.CompleteAsync();
-        return source;
-    }
-
-    private async Task SaveSummaryAsync(Guid attachmentId, string summary)
-    {
-        using var uow = unitOfWorkManager.Begin(requiresNew: true);
-        var attachment = await applicationChefsFileAttachmentRepository.GetAsync(attachmentId);
-        attachment.AISummary = summary;
-        await applicationChefsFileAttachmentRepository.UpdateAsync(attachment);
-        await uow.CompleteAsync();
-    }
-
-    private async Task<List<Guid>> LoadApplicationAttachmentIdsAsync(Guid applicationId)
-    {
-        using var uow = unitOfWorkManager.Begin(requiresNew: true, isTransactional: false);
-        var ids = (await applicationChefsFileAttachmentRepository.GetListAsync(a => a.ApplicationId == applicationId))
-            .Select(a => a.Id)
-            .ToList();
-        await uow.CompleteAsync();
-        return ids;
     }
 
     private async Task WithUnitOfWorkAsync(Func<Task> operation)
@@ -257,9 +224,4 @@ public class AttachmentSummaryService(
         }
     }
 
-    private sealed record AttachmentSummarySource(
-        Guid Id,
-        string? FileName,
-        string? ChefsSubmissionId,
-        string? ChefsFileId);
 }
