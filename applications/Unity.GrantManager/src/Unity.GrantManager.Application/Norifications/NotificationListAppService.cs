@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Dynamic.Core;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Localization;
@@ -24,12 +25,30 @@ public class NotificationListAppService(
     IStringLocalizer<NotificationsResource> notificationsLocalizer)
     : ApplicationService, INotificationListAppService
 {
-    public virtual async Task<PagedResultDto<NotificationSummaryDto>> GetListAsync(PagedAndSortedResultRequestDto input)
+    private static readonly TimeZoneInfo VancouverTimeZone =
+        TimeZoneInfo.FindSystemTimeZoneById("Pacific Standard Time");
+
+    public virtual async Task<PagedResultDto<NotificationSummaryDto>> GetListAsync(NotificationListInputDto input)
     {
         var sorting = ResolveSorting(input.Sorting);
+        var (fromUtc, toUtc) = ConvertToUtcRange(input.DateFrom, input.DateTo);
 
-        var totalCount = await emailLogsRepository.GetCountAsync();
-        var logs = await emailLogsRepository.GetPagedListAsync(input.SkipCount, input.MaxResultCount, sorting);
+        var query = await emailLogsRepository.GetQueryableAsync();
+
+        if (fromUtc.HasValue)
+        {
+            query = query.Where(e => e.SentDateTime >= fromUtc.Value);
+        }
+
+        if (toUtc.HasValue)
+        {
+            query = query.Where(e => e.SentDateTime <= toUtc.Value);
+        }
+
+        query = query.OrderBy(sorting);
+
+        var logs = await AsyncExecuter.ToListAsync(query);
+        var totalCount = logs.Count;
 
         var applicationIds = logs.Select(l => l.ApplicationId).Distinct().ToArray();
         var applications = await applicationRepository.GetListAsync(a => applicationIds.Contains(a.Id));
@@ -71,6 +90,28 @@ public class NotificationListAppService(
         }).ToList();
 
         return new PagedResultDto<NotificationSummaryDto>(totalCount, items);
+    }
+
+    // Converts a Vancouver-local date range (date-only) to an inclusive UTC range:
+    // From -> start of local day, To -> end of local day (23:59:59.9999999). Mirrors ApplicationRepository.
+    private static (DateTime? FromUtc, DateTime? ToUtc) ConvertToUtcRange(DateTime? fromLocal, DateTime? toLocal)
+    {
+        DateTime? fromUtc = null;
+        DateTime? toUtc = null;
+
+        if (fromLocal.HasValue)
+        {
+            var localFrom = DateTime.SpecifyKind(fromLocal.Value.Date, DateTimeKind.Unspecified);
+            fromUtc = TimeZoneInfo.ConvertTimeToUtc(localFrom, VancouverTimeZone);
+        }
+
+        if (toLocal.HasValue)
+        {
+            var localToEndOfDay = DateTime.SpecifyKind(toLocal.Value.Date.AddDays(1).AddTicks(-1), DateTimeKind.Unspecified);
+            toUtc = TimeZoneInfo.ConvertTimeToUtc(localToEndOfDay, VancouverTimeZone);
+        }
+
+        return (fromUtc, toUtc);
     }
 
     // Maps the EmailType enum to the user-facing label shown on the Notification List

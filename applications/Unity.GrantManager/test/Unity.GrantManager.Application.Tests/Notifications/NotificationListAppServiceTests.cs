@@ -4,7 +4,6 @@ using System.Threading.Tasks;
 using Shouldly;
 using Unity.GrantManager.Applications;
 using Unity.Notifications.Emails;
-using Volo.Abp.Application.Dtos;
 using Volo.Abp.Domain.Repositories;
 using Xunit;
 using Xunit.Abstractions;
@@ -46,7 +45,7 @@ public class NotificationListAppServiceTests : GrantManagerApplicationTestBase
 
         // Act
         var result = await _notificationListAppService.GetListAsync(
-            new PagedAndSortedResultRequestDto { MaxResultCount = 1000 });
+            new NotificationListInputDto { MaxResultCount = 1000 });
 
         // Assert
         var row = result.Items.FirstOrDefault(i => i.Id == emailLog.Id);
@@ -84,7 +83,7 @@ public class NotificationListAppServiceTests : GrantManagerApplicationTestBase
 
         // Act
         var result = await _notificationListAppService.GetListAsync(
-            new PagedAndSortedResultRequestDto { MaxResultCount = 1000 });
+            new NotificationListInputDto { MaxResultCount = 1000 });
 
         // Assert
         var row = result.Items.FirstOrDefault(i => i.Id == emailLog.Id);
@@ -113,12 +112,105 @@ public class NotificationListAppServiceTests : GrantManagerApplicationTestBase
 
         // Act
         var result = await _notificationListAppService.GetListAsync(
-            new PagedAndSortedResultRequestDto { MaxResultCount = 1000 });
+            new NotificationListInputDto { MaxResultCount = 1000 });
 
         // Assert: row still present, with empty (not crashing) reference/applicant
         var row = result.Items.FirstOrDefault(i => i.Id == emailLog.Id);
         row.ShouldNotBeNull();
         row.SubmissionReferenceNo.ShouldBe(string.Empty);
         row.ApplicantName.ShouldBe(string.Empty);
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task GetListAsync_Should_Only_Return_Rows_When_Sent_Within_The_Date_Range()
+    {
+        SetFeatureEnabled("Unity.Notifications", true);
+        var application = await _applicationRepository.GetAsync(GrantManagerTestData.Application1_Id);
+
+        var inRange = await _emailLogsRepository.InsertAsync(new EmailLog
+        {
+            ApplicationId = application.Id,
+            ApplicantId = application.ApplicantId,
+            Subject = "In Range",
+            Status = "Sent",
+            SentDateTime = new DateTime(2026, 3, 15, 12, 0, 0, DateTimeKind.Utc)
+        }, autoSave: true);
+
+        var outOfRange = await _emailLogsRepository.InsertAsync(new EmailLog
+        {
+            ApplicationId = application.Id,
+            ApplicantId = application.ApplicantId,
+            Subject = "Out Of Range",
+            Status = "Sent",
+            SentDateTime = new DateTime(2026, 1, 1, 12, 0, 0, DateTimeKind.Utc)
+        }, autoSave: true);
+
+        var result = await _notificationListAppService.GetListAsync(new NotificationListInputDto
+        {
+            DateFrom = new DateTime(2026, 3, 1, 0, 0, 0, DateTimeKind.Unspecified),
+            DateTo = new DateTime(2026, 3, 31, 0, 0, 0, DateTimeKind.Unspecified)
+        });
+
+        result.Items.ShouldContain(i => i.Id == inRange.Id);
+        result.Items.ShouldNotContain(i => i.Id == outOfRange.Id);
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task GetListAsync_Should_Include_Emails_Sent_Late_On_The_To_Date_Local_Time()
+    {
+        SetFeatureEnabled("Unity.Notifications", true);
+        var application = await _applicationRepository.GetAsync(GrantManagerTestData.Application1_Id);
+
+        // 2026-03-31 23:30 Vancouver (PDT, UTC-7) == 2026-04-01 06:30 UTC — still the 31st locally.
+        var lateOnToDate = await _emailLogsRepository.InsertAsync(new EmailLog
+        {
+            ApplicationId = application.Id,
+            ApplicantId = application.ApplicantId,
+            Subject = "Late On To Date",
+            Status = "Sent",
+            SentDateTime = new DateTime(2026, 4, 1, 6, 30, 0, DateTimeKind.Utc)
+        }, autoSave: true);
+
+        // 2026-04-01 00:30 Vancouver == 2026-04-01 07:30 UTC — the next local day.
+        var nextLocalDay = await _emailLogsRepository.InsertAsync(new EmailLog
+        {
+            ApplicationId = application.Id,
+            ApplicantId = application.ApplicantId,
+            Subject = "Next Local Day",
+            Status = "Sent",
+            SentDateTime = new DateTime(2026, 4, 1, 7, 30, 0, DateTimeKind.Utc)
+        }, autoSave: true);
+
+        var result = await _notificationListAppService.GetListAsync(new NotificationListInputDto
+        {
+            DateFrom = new DateTime(2026, 3, 1, 0, 0, 0, DateTimeKind.Unspecified),
+            DateTo = new DateTime(2026, 3, 31, 0, 0, 0, DateTimeKind.Unspecified)
+        });
+
+        result.Items.ShouldContain(i => i.Id == lateOnToDate.Id);
+        result.Items.ShouldNotContain(i => i.Id == nextLocalDay.Id);
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task GetListAsync_Should_Return_All_Rows_When_No_Date_Range_Provided()
+    {
+        SetFeatureEnabled("Unity.Notifications", true);
+        var application = await _applicationRepository.GetAsync(GrantManagerTestData.Application1_Id);
+
+        var veryOld = await _emailLogsRepository.InsertAsync(new EmailLog
+        {
+            ApplicationId = application.Id,
+            ApplicantId = application.ApplicantId,
+            Subject = "Very Old",
+            Status = "Sent",
+            SentDateTime = new DateTime(2000, 1, 1, 0, 0, 0, DateTimeKind.Utc)
+        }, autoSave: true);
+
+        var result = await _notificationListAppService.GetListAsync(new NotificationListInputDto());
+
+        result.Items.ShouldContain(i => i.Id == veryOld.Id);
     }
 }
