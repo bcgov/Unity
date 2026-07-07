@@ -1,12 +1,5 @@
-using System.Threading;
-using System.Threading.Tasks;
-
 namespace Unity.AI.Runtime;
 
-public interface IAIPromptTemplateProvider
+public interface IAIPromptTemplateProvider : IAIPromptTemplateStore
 {
-    Task<AIPromptTemplateSnapshot> GetRequiredPromptAsync(
-        string promptType,
-        string promptVersion,
-        CancellationToken cancellationToken = default);
 }
