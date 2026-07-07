@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Unity.AI.Generation;
 using Unity.AI.Localization;
 using Unity.AI.Operations;
+using Unity.AI.RateLimit;
 using Unity.AI.Settings;
 using Unity.GrantManager.GrantApplications;
 using Unity.GrantManager.GrantApplications.Automation.BackgroundJobs;
@@ -33,6 +34,8 @@ public class AIGenerationAppServiceTests(ITestOutputHelper outputHelper) : Grant
 
         var service = new AIGenerationAppService(
             Substitute.For<IApplicationAIGenerationQueue>(),
+            Substitute.For<IAIGenerationStatusAppService>(),
+            Substitute.For<IAIRateLimiter>(),
             featureGuard,
             Substitute.For<Volo.Abp.MultiTenancy.ICurrentTenant>());
 

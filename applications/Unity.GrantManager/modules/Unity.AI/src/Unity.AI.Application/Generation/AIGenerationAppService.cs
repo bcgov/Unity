@@ -9,6 +9,7 @@ using Unity.AI.Features;
 using Unity.AI.Localization;
 using Unity.AI.Operations;
 using Unity.AI.Permissions;
+using Unity.AI.RateLimit;
 using Unity.AI.Settings;
 using Unity.GrantManager.Attachments;
 using Unity.GrantManager.GrantApplications;
