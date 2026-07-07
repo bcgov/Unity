@@ -38,7 +38,8 @@
 
         // Update checkboxes which are serialized if unchecked
         $(`#assessmentResultForm input:checkbox`).each(function () {
-            assessmentResultObj[this.name] = (this.checked).toString();
+            let propertyName = this.name.includes('.') ? this.name.split('.').pop() : this.name;
+            assessmentResultObj[propertyName] = this.checked;
         });
 
 

@@ -217,7 +217,7 @@ namespace Unity.GrantManager.Applicants
                 [CreateApplication(applicationId, statusId, a =>
                 {
                     a.ApplicationFormId = formId;
-                    a.SubStatus = "NOTIFIED";
+                    a.ExternalStatusVisibility = true;
                 })],
                 [CreateForm(formId, "Form")],
                 [CreateStatus(statusId, "Under Review", "Approved")]);
@@ -245,7 +245,7 @@ namespace Unity.GrantManager.Applicants
                 [CreateApplication(applicationId, statusId, a =>
                 {
                     a.ApplicationFormId = formId;
-                    a.SubStatus = "COMPLETE";
+                    a.ExternalStatusVisibility = false;
                 })],
                 [CreateForm(formId, "Form")],
                 [CreateStatus(statusId, "Under Review", "Approved")]);

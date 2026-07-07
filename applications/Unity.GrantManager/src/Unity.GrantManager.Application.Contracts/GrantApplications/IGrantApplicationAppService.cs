@@ -13,10 +13,12 @@ public interface IGrantApplicationAppService
     Task<GrantApplicationDto> UpdateProjectInfoAsync(Guid id, CreateUpdateProjectInfoDto input);
     Task<GrantApplicationDto> UpdatePartialProjectInfoAsync(Guid id, PartialUpdateDto<UpdateProjectInfoDto> input);        
     Task<GrantApplicationDto> UpdateAssessmentResultsAsync(Guid id, CreateUpdateAssessmentResultsDto input);
+    Task<GrantApplicationDto> UpdateExternalStatusVisibilityAsync(Guid id, bool externalStatusVisibility);
     Task UpdateSupplierNumberAsync(Guid applicationId, string supplierNumber);
     Task<List<GrantApplicationLiteDto>> GetAllApplicationsAsync();
     Task<IList<GrantApplicationDto>> GetApplicationDetailsListAsync(List<Guid> applicationIds);
     Task<GrantApplicationDto> GetAsync(Guid id);
+    Task<GrantApplicationLiteDto> GetBasicAsync(Guid id);
     Task<GrantApplicationDto> TriggerAction(Guid applicationId, GrantApplicationAction triggerAction);
     Task<AIGenerationStatusDto> QueueAIGenerationAsync(Guid applicationId, string? promptVersion = null);
     Task<AIGenerationStatusDto> QueueApplicationAnalysisAsync(Guid applicationId, string? promptVersion = null);
