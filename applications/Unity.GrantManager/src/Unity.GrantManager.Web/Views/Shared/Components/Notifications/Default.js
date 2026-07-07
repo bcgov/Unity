@@ -15,10 +15,6 @@
 
         const script = document.createElement('script');
         script.src = '/libs/select2/dist/js/select2.min.js';
-        script.onload = function() {
-            console.debug('Select2 library loaded successfully');
-            // Initialization will happen in waitForSelect2()
-        };
         script.onerror = function() {
             console.error('Failed to load Select2 library');
             select2Loading = false;
@@ -51,7 +47,6 @@
                         closeOnSelect: true,
                         allowClear: false
                     });
-                    console.log('Select2 initialized successfully');
                 } catch (e) {
                     console.error('Failed to initialize Select2:', e);
                     select2Ready = false;
@@ -426,6 +421,82 @@
         refreshSelect2();
     }
 
+    function decodeHtmlEntities(value) {
+        if (!value || typeof value !== 'string') {
+            return '';
+        }
+
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(value, 'text/html');
+        return doc.documentElement.textContent || '';
+    }
+
+    function decodeHtmlEntitiesRecursively(value, maxPasses = 12) {
+        let current = value || '';
+        for (let i = 0; i < maxPasses; i++) {
+            const decoded = decodeHtmlEntities(current);
+            if (!decoded || decoded === current) {
+                break;
+            }
+            current = decoded;
+
+            if (/<[a-z][\s\S]*>/i.test(current)) {
+                break;
+            }
+        }
+        return current;
+    }
+
+    function resolveTemplatePreviewBody(template) {
+        const rawBody =
+            template?.body ||
+            template?.bodyHtml ||
+            template?.bodyHTML ||
+            template?.Body ||
+            template?.BodyHtml ||
+            template?.BodyHTML ||
+            '';
+
+        const decodedBody = decodeHtmlEntitiesRecursively(rawBody);
+
+        // Prefer decoded content when it results in actual HTML tags.
+        if (/<[a-z][\s\S]*>/i.test(decodedBody)) {
+            return decodedBody;
+        }
+
+        // Fall back to raw body when it already contains HTML tags.
+        if (/<[a-z][\s\S]*>/i.test(rawBody)) {
+            return rawBody;
+        }
+
+        // Plain text body (no tags) still displays correctly.
+        return decodedBody || rawBody;
+    }
+
+    function renderTemplatePreview(previewElement, template) {
+        if (!previewElement) {
+            return;
+        }
+
+        previewElement.replaceChildren();
+
+        if (!template) {
+            return;
+        }
+
+        const subjectRow = document.createElement('div');
+        const subjectLabel = document.createElement('strong');
+        subjectLabel.textContent = 'Subject: ';
+        const subjectValue = document.createElement('span');
+        subjectValue.textContent = template.subject || template.Subject || '';
+        subjectRow.append(subjectLabel, subjectValue);
+
+        const bodyRow = document.createElement('div');
+        bodyRow.innerHTML = resolveTemplatePreviewBody(template);
+
+        previewElement.append(subjectRow, document.createElement('br'), bodyRow);
+    }
+
     function updatePreview() {
         const sel = document.getElementById('templateSelect');
         const preview = document.getElementById('templatePreview');
@@ -433,7 +504,7 @@
         const val = sel.value;
         fetch('/api/form-notifications/templates').then(r => r.json()).then(list => {
             const t = list.find(x => String(x.id) === String(val));
-            preview.innerText = t ? `${t.subject}\n\n${t.body}` : '';
+            renderTemplatePreview(preview, t);
         });
     }
 
@@ -451,7 +522,7 @@
         document.getElementById('dateOptions')?.classList.add('hidden-section');
         document.getElementById('eventOptions')?.classList.add('hidden-section');
         document.getElementById('recipientOptions')?.classList.add('hidden-section');
-        document.getElementById('templatePreview').innerText = '';
+        renderTemplatePreview(document.getElementById('templatePreview'), null);
 
         const modalEl = document.getElementById('notificationModal');
         if (modalEl === null) return;

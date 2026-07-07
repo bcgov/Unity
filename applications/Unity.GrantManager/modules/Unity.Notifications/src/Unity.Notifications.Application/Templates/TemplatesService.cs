@@ -40,7 +40,10 @@ public class TemplateService : ApplicationService, ITemplateService
             templateDto.Description,
             templateDto.Subject,
             templateDto.BodyText,
-            templateDto.BodyHTML, templateDto.SendFrom));
+            templateDto.BodyHTML,
+            templateDto.SendFrom,
+            templateDto.RecipientCategory,
+            templateDto.RecipientIdentifier));
     }
 
     public async Task<EmailTemplate?> UpdateTemplate(Guid id, EmailTempateDto templateDto)
@@ -54,6 +57,8 @@ public class TemplateService : ApplicationService, ITemplateService
         template.BodyHTML = templateDto.BodyHTML != null ? templateDto.BodyHTML : "";
         template.Name = templateDto.Name;
         template.SendFrom = templateDto.SendFrom;
+        template.RecipientCategory = templateDto.RecipientCategory;
+        template.RecipientIdentifier = templateDto.RecipientIdentifier;
 
         // When being called here the current tenant is in context - verified by looking at the tenant id
         EmailTemplate updatedTemplate = await _templatesRepository.UpdateAsync(template, autoSave: true);

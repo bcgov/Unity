@@ -17,10 +17,14 @@
 #applicationEmailsWidget .email-input {
     outline: 0;
     margin-right: 8px;
-    margin-left: 8px;
+    margin-left: 10px;
     margin-top: 2px;
     margin-bottom: 2px;
     height: 36px;
+}
+
+#applicationEmailsWidget input.form-control {
+    width: 99%;
 }
 
 #applicationEmailsWidget .label-column-aligned {
@@ -420,8 +424,19 @@
 }
 
 #applicationEmailsWidget .input-validation-error {
+    border: 1px solid #dc3545 !important;
+    border-style: solid !important;
     border-color: #dc3545 !important;
     border-width: 1px !important;
+    box-shadow: inset 0 1px 1px rgba(0,0,0,.075), 0 0 0.2rem rgba(220, 53, 69, 0.5) !important;
+}
+
+#applicationEmailsWidget .input-validation-error:focus,
+#applicationEmailsWidget input.input-validation-error:focus,
+#applicationEmailsWidget textarea.input-validation-error:focus,
+#applicationEmailsWidget select.input-validation-error:focus {
+    border: 1px solid #dc3545 !important;
+    border-color: #dc3545 !important;
     box-shadow: inset 0 1px 1px rgba(0,0,0,.075), 0 0 0.2rem rgba(220, 53, 69, 0.5) !important;
 }
 
@@ -857,3 +872,199 @@ input#EmailFrom.input-validation-error {
 		transform: rotate(360deg);
 	}
 }
+
+/* ============================================
+   TinyMCE Email Composer Styling
+   ============================================ */
+
+/* Hide TinyMCE toolbar completely */
+.tox-tinymce:has(#EmailBody) .tox-toolbar__primary {
+    display: none !important;
+}
+
+/* Container for template label and menu buttons */
+.tinymce-template-label-top-right {
+    position: static !important;
+    font-size: 13px;
+    color: #444;
+    user-select: none;
+    display: flex;
+    gap: 5px;
+    align-items: center;
+    justify-content: flex-end;
+    margin: 0 0 8px;
+    width: 100%;
+}
+
+/* Template label text */
+
+.template-label-text {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 6px 14px;
+  font-size: 18px;
+  font-weight: 700 !important;
+  line-height: 18px;
+  color: #6c757d !important;
+  background-color: transparent;
+  border: 1px solid #6c757d !important;
+  border-radius: 3px;
+  cursor: pointer !important;
+  transition: all 0.15s ease-in-out;
+}
+
+.template-label-text:hover {
+  background-color: #6c757d;
+  color: #fff !important;
+}
+
+
+
+.template-label-text.no-permission {
+    cursor: default;
+    background: #f9f9f9;
+}
+
+/* TinyMCE-style toolbar group for templates button */
+.templates-toolbar-group {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    padding: 0;
+    margin: 0;
+}
+
+/* TinyMCE-style menu button */
+.tinymce-menu-button {
+    display: inline-flex;
+    align-items: center;
+    padding: 0;
+    background: #f0f0f0;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 14px;
+    white-space: nowrap;
+    user-select: none;
+    position: relative;
+    height: 32px;
+    min-width: 60px;
+    transition: background-color 0.1s ease-in-out;
+}
+
+.tinymce-menu-button:hover {
+    background: #e0e0e0;
+}
+
+.tinymce-menu-button:active {
+    background: #d0d0d0;
+}
+
+.tinymce-menu-button.tox-tbtn--select {
+    justify-content: space-between;
+    padding: 0 8px;
+    gap: 4px;
+}
+
+.tox-tbtn__select-label {
+    display: inline-block;
+    font-weight: 500;
+    color: #333;
+    font-size: 13px;
+}
+
+.tox-tbtn__select-chevron {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+}
+
+.tox-tbtn__select-chevron svg {
+    width: 10px;
+    height: 10px;
+    display: block;
+}
+
+/* Dropdown menu styling */
+.templates-dropdown-menu {
+    position: fixed !important;
+    background: #fff;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    z-index: 9999 !important;
+    min-width: 250px;
+    max-height: 300px;
+    overflow-y: auto;
+    margin-top: 2px;
+}
+
+/* Custom dropdown menu styling (not Bootstrap) */
+.custom-dropdown-menu {
+    list-style: none;
+    padding: 0 !important;
+    margin: 0 !important;
+    display: block !important;
+}
+
+.custom-dropdown-item {
+    padding: 8px 12px;
+    cursor: pointer;
+    border-bottom: 1px solid #eee;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: background 0.15s ease-in-out;
+    display: block !important;
+}
+
+.custom-dropdown-item:hover {
+    background: #f5f5f5;
+}
+
+.custom-dropdown-item:last-child {
+    border-bottom: none !important;
+}
+
+/* Position Templates button in top right of toolbar */
+.tox:has(#EmailBody) .templates-button-container {
+    position: absolute !important;
+    top: 5px !important;
+    right: 10px !important;
+    z-index: 10 !important;
+}
+
+.tox *:not(svg):not(rect)& {
+    background-color: initial;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+    font-size: 14px !important;
+    font-weight: 400 !important;
+    font-style: normal;
+    color: rgb(34, 47, 62) !important;
+}
+
+/* Style the Templates select element */
+.templates-select {
+    background: #f7f7f7 !important;
+    padding: 4px 8px !important;
+    border: 1px solid #ccc !important;
+    border-radius: 3px !important;
+    cursor: pointer !important;
+    font-size: 13px !important;
+    white-space: nowrap !important;
+    user-select: none !important;
+    height: 37px !important;
+}
+
+
+
+
+.templates-select:active,
+.templates-select:focus {
+    outline: none !important;
+}
+

@@ -1,4 +1,12 @@
 ﻿$(document).ready(function () {
+    const BC_PERMANENT_DST_ZONE = 'UTC-7';
+    // Close dropdown menus when clicking outside
+    $(document).on('click', function (e) {
+        if (!$(e.target).closest('.tinymce-menu-button, .custom-dropdown-menu').length) {
+            $('.custom-dropdown-menu').remove();
+        }
+    });
+
     const UIElements = {
         applicationId: $('#DetailsViewApplicationId')[0].value,
         btnSend: $('#btn-send-top'),
@@ -10,6 +18,13 @@
         btnCancelEmail: $('#btn-cancel-email'),
         btnNewEmail: $('#btn-new-email'),
         btnShowBCC: $('#btn-show-bcc'),
+        btnEmailTypeMail: $('#email-type-mail'),
+        btnEmailTypeTemplate: $('#email-type-template'),
+        templateModalBackdrop: $('#template-modal-backdrop'),
+        templateModal: $('#template-selection-modal'),
+        templateSelectionDropdown: $('#TemplateSelectionDropdown'),
+        btnTemplateCancel: $('#btn-template-cancel'),
+        btnTemplateModalClose: $('#btn-template-modal-close'),
         emailForm: $('#EmailForm'),
         inputEmailId: $('#EmailId'),
         inputEmailTo: $($('#EmailTo')[0]),
@@ -62,6 +77,10 @@
     let newDraftId = null;
     let selectedEmailData = null; // Store original email data when selected from table
     let emailAttachmentsTable = null;
+    let activeTemplateId = null; // Track if a template has been applied to the current draft
+    let originalTemplateState = { name: '', id: '' }; // Baseline template for discard restore
+    let activeTemplateAttachmentCount = 0; // Track how many attachments were copied from the active template
+    let isApplicationEmailContext = true; // Flag to track if we're in application email or template preview context
     let scheduleState = {
         currentMonth: new Date().getMonth(),
         currentYear: new Date().getFullYear(),
@@ -79,11 +98,16 @@
         UIElements.btnSendClose.off('click');
         UIElements.btnConfirmSend.off('click');
         UIElements.btnCancelEmail.off('click');
+        UIElements.btnTemplateCancel.off('click');
+        UIElements.btnTemplateModalClose.off('click');
         $('.btn-send-menu').off('click');
         $('.btn-schedule-send-menu').off('click');
 
         // Bind button handlers
-        UIElements.btnNewEmail.on('click', handleNewEmail);
+        UIElements.btnNewEmail.on('click', function (e) {
+            e.preventDefault();
+            handleNewEmail(false);
+        });
         UIElements.btnSend.on('click', handleSendEmail);
         UIElements.btnSave.on('click', handleSaveEmail);
         UIElements.btnDiscard.on('click', handleDiscardEmail);
@@ -107,6 +131,9 @@
 
         UIElements.btnConfirmSend.on('click', handleConfirmSendEmail);
         UIElements.btnCancelEmail.on('click', handleCancelEmailSend);
+        UIElements.btnTemplateCancel.on('click', closeTemplateSelectionModal);
+        UIElements.btnTemplateModalClose.on('click', closeTemplateSelectionModal);
+        UIElements.templateSelectionDropdown.on('change', handleTemplateSelection);
         UIElements.inputEmailSubject.on('change', handleKeyUpTrim);
         UIElements.inputEmailFrom.on('change', handleKeyUpTrim);
         UIElements.inputEmailCC.on('change', handleKeyUpTrim);
@@ -139,11 +166,17 @@
         });
 
         UIElements.inputEmailTo.on('input', handleDraftChange);
+        UIElements.inputEmailTo.on('change', handleDraftChange);
         UIElements.inputEmailCC.on('input', handleDraftChange);
+        UIElements.inputEmailCC.on('change', handleDraftChange);
         UIElements.inputEmailBCC.on('input', handleDraftChange);
+        UIElements.inputEmailBCC.on('change', handleDraftChange);
         UIElements.inputEmailFrom.on('input', handleDraftChange);
+        UIElements.inputEmailFrom.on('change', handleDraftChange);
         UIElements.inputEmailSubject.on('input', handleDraftChange);
+        UIElements.inputEmailSubject.on('change', handleDraftChange);
         UIElements.inputEmailBody.on('input', handleDraftChange);
+        UIElements.inputEmailBody.on('change', handleDraftChange);
 
         // BCC button and input handlers
         UIElements.btnShowBCC.on('click', handleShowBCC);
@@ -332,7 +365,7 @@
                 UIElements.scheduleDateValidation.hide();
             }
         });
-    
+
         UIElements.scheduleDateInput.on('blur', function () {
             validateScheduleDate();
         });
@@ -457,8 +490,8 @@
         // Pre-populate with existing value if set, otherwise default to today
         const existing = UIElements.inputSendOnDateTime.val();
         if (existing) {
-            const existingDate = new Date(existing);
-            const bcPstDate = new Date(existingDate.toLocaleString('en-US', { timeZone: 'America/Vancouver' }));
+            const existingDateTime = luxon.DateTime.fromISO(existing, { zone: 'utc' }).setZone(BC_PERMANENT_DST_ZONE);
+            const bcPstDate = existingDateTime.isValid ? existingDateTime.toJSDate() : new Date(existing);
             state.selectedDate = bcPstDate;
             state.currentMonth = bcPstDate.getMonth();
             state.currentYear = bcPstDate.getFullYear();
@@ -511,14 +544,31 @@
             return; // Keep modal open on validation error
         }
 
-        // Combine date and time
+        // Build selected date/time in BC Pacific timezone.
         const [hours, minutes] = state.selectedTime.split(':').map(Number);
-        const bcPstDate = new Date(state.selectedDate);
-        bcPstDate.setHours(hours, minutes, 0, 0);
+        const bcSelection = luxon.DateTime.fromObject(
+            {
+                year: state.selectedDate.getFullYear(),
+                month: state.selectedDate.getMonth() + 1,
+                day: state.selectedDate.getDate(),
+                hour: hours,
+                minute: minutes,
+                second: 0,
+                millisecond: 0
+            },
+            { zone: BC_PERMANENT_DST_ZONE }
+        );
+
+        if (!bcSelection.isValid) {
+            const errorMsg = 'Invalid date/time selection.';
+            UIElements.scheduleModalValidation.text(errorMsg).show();
+            showValidationErrorToast([errorMsg]);
+            return;
+        }
 
         // Validate future date/time
-        const now = new Date();
-        if (bcPstDate <= now) {
+        const now = luxon.DateTime.now().setZone(BC_PERMANENT_DST_ZONE);
+        if (bcSelection <= now) {
             const errorMsg = 'Please select a future date and time.';
             UIElements.scheduleModalValidation.text(errorMsg).show();
             showValidationErrorToast([errorMsg]);
@@ -527,43 +577,22 @@
 
         // Validate max date (50 years from today)
         const maxDate = getMaxScheduleDate();
-        if (bcPstDate > maxDate) {
+        if (bcSelection.toJSDate() > maxDate) {
             const errorMsg = 'Please select a date within 50 years from today.';
             UIElements.scheduleModalValidation.text(errorMsg).show();
             showValidationErrorToast([errorMsg]);
             return; // Keep modal open on validation error
         }
 
-        // Convert BC PST time to UTC ISO string
-        // First, get the offset between BC PST and UTC
-        const formatter = new Intl.DateTimeFormat('en-US', {
-            timeZone: 'America/Vancouver',
-            year: 'numeric', month: '2-digit', day: '2-digit',
-            hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false
-        });
-
-        const bcPstString = formatter.format(bcPstDate);
-        const [datePart, timePart] = bcPstString.split(',');
-        const [m, d, y] = datePart.trim().split('/');
-        const [h, min, s] = timePart.trim().split(':');
-
-        // Create a local date from the user-entered components (not UTC)
-        const localDate = new Date(Number.parseInt(y), Number.parseInt(m) - 1, Number.parseInt(d), Number.parseInt(h), Number.parseInt(min), Number.parseInt(s));
-
-        // Convert local time to UTC for storage
-        const utcDate = new Date(localDate.getTime() - localDate.getTimezoneOffset() * 60000);
-        const utcIso = utcDate.toISOString();
+        // Convert BC Pacific wall time to UTC for storage/submission.
+        const utcIso = bcSelection.toUTC().toISO({ suppressMilliseconds: true });
 
         // Commit to hidden field
         UIElements.inputSendOnDateTime.val(utcIso);
 
-        // Display as local time (no timezone conversion needed since we're storing as UTC)
-        const formattedDate = localDate.toLocaleDateString('en-CA'); // YYYY-MM-DD format
-        const formattedTime = localDate.toLocaleTimeString('en-US', {
-            hour: 'numeric',
-            minute: '2-digit',
-            hour12: true
-        });
+        // Display in BC Pacific timezone.
+        const formattedDate = bcSelection.toFormat('yyyy-MM-dd');
+        const formattedTime = bcSelection.toFormat('h:mm a');
         UIElements.sendOnDisplay.text(`${formattedDate}, ${formattedTime}`);
         UIElements.btnClearSchedule.show();
         $('#scheduled-label-container').addClass('show');
@@ -577,15 +606,13 @@
     function updateScheduledDateDisplay() {
         const dateTimeValue = UIElements.inputSendOnDateTime.val();
         if (dateTimeValue) {
-            // Parse the ISO string and format as local time without timezone conversion
-            const date = new Date(dateTimeValue);
-            const formattedDate = date.toLocaleDateString('en-CA'); // YYYY-MM-DD format
-            const formattedTime = date.toLocaleTimeString('en-US', {
-                hour: 'numeric',
-                minute: '2-digit',
-                hour12: true
-            });
-            UIElements.sendOnDisplay.text(`${formattedDate}, ${formattedTime}`);
+            // Stored value is UTC; render in BC Pacific timezone.
+            const dt = luxon.DateTime.fromISO(dateTimeValue, { zone: 'utc' }).setZone(BC_PERMANENT_DST_ZONE);
+            if (dt.isValid) {
+                UIElements.sendOnDisplay.text(`${dt.toFormat('yyyy-MM-dd')}, ${dt.toFormat('h:mm a')}`);
+            } else {
+                UIElements.sendOnDisplay.text('');
+            }
             UIElements.btnClearSchedule.show();
             $('#scheduled-label-container').addClass('show');
             $('#scheduled-delay-section').show();
@@ -631,6 +658,7 @@
 
         $('#modal-content, #modal-background').removeClass('active');
         UIElements.emailForm.removeClass('active');
+        $('#EmailTemplateName').val('');
         UIElements.btnNewEmail.removeClass('hide');
         UIElements.alertEmailReadonly.removeClass('hide');
         UIElements.emailForm.trigger("reset");
@@ -659,6 +687,9 @@
             isNewEmailDraft = false;
             newDraftId = null;
         }
+        activeTemplateId = null;
+        originalTemplateState = { name: '', id: '' };
+        activeTemplateAttachmentCount = 0;
         closeEmailFormUI();
     }
 
@@ -692,6 +723,10 @@
                     UIElements.inputOriginalEmailBody.val('');
                     // Clear template
                     $('#EmailTemplate').val('').trigger('change');
+                    $('#EmailTemplateName').val('');
+                    activeTemplateId = null;
+                    originalTemplateState = { name: '', id: '' };
+                    updateSelectedTemplateLabel('', '');
                     // Reset scheduled send
                     clearScheduleValue();
                     // Reset validation errors
@@ -730,6 +765,10 @@
                     UIElements.inputOriginalEmailBody.val('');
                     // Clear template
                     $('#EmailTemplate').val('').trigger('change');
+                    $('#EmailTemplateName').val('');
+                    activeTemplateId = null;
+                    originalTemplateState = { name: '', id: '' };
+                    updateSelectedTemplateLabel('', '');
                     // Reset scheduled send
                     clearScheduleValue();
                     // Reset validation errors
@@ -742,15 +781,22 @@
         } else {
             // Reset existing email to stored original data
             if (selectedEmailData) {
+                const originalTemplateName = originalTemplateState.name;
+                const originalTemplateId = originalTemplateState.id;
+
                 UIElements.inputEmailTo.val(selectedEmailData.toAddress);
                 UIElements.inputEmailCC.val(selectedEmailData.cc?.replaceAll(',', '; ') ?? '');
                 UIElements.inputEmailBCC.val(selectedEmailData.bcc?.replaceAll(',', '; ') ?? '');
                 UIElements.inputEmailFrom.val(selectedEmailData.fromAddress);
                 UIElements.inputEmailSubject.val(selectedEmailData.subject);
                 UIElements.inputEmailBody.val(refreshTodayDateSpans(selectedEmailData.body));
+                $('#EmailTemplateName').val(originalTemplateName);
+                activeTemplateId = originalTemplateId || null;
+                updateSelectedTemplateLabel(originalTemplateName, originalTemplateId);
 
                 // Reset TinyMCE editor
-                tinymce.get("EmailBody")?.setContent(refreshTodayDateSpans(selectedEmailData.body));
+                const resetBodyContent = selectedEmailData.body ? refreshTodayDateSpans(selectedEmailData.body) : '';
+                tinymce.get("EmailBody")?.setContent(resetBodyContent || '');
 
                 // Reset scheduled send date/time to original state
                 if (selectedEmailData.sendOnDateTime) {
@@ -767,9 +813,13 @@
                 UIElements.inputEmailFrom.val(UIElements.inputOriginalEmailFrom.val());
                 UIElements.inputEmailSubject.val(UIElements.inputOriginalEmailSubject.val());
                 UIElements.inputEmailBody.val(UIElements.inputOriginalEmailBody.val());
+                $('#EmailTemplateName').val(originalTemplateState.name || '');
+                activeTemplateId = originalTemplateState.id || null;
+                updateSelectedTemplateLabel(originalTemplateState.name || '', originalTemplateState.id || '');
 
                 // Reset TinyMCE editor
-                tinymce.get("EmailBody")?.setContent(UIElements.inputOriginalEmailBody.val());
+                const fallbackBodyContent = UIElements.inputOriginalEmailBody.val() || '';
+                tinymce.get("EmailBody")?.setContent(fallbackBodyContent);
 
                 // Reset scheduled send date/time to original state
                 clearScheduleValue();
@@ -818,6 +868,375 @@
         });
     }
 
+    function closeTemplateSelectionModal() {
+        UIElements.templateModalBackdrop.hide();
+        UIElements.templateModal.hide();
+        UIElements.templateSelectionDropdown.val('');
+    }
+
+    async function copyTemplateAttachments(templateId, emailLogId) {
+        try {
+            const response = await $.ajax({
+                url: `/api/form-notifications/email-template/${templateId}/copy-attachments`,
+                type: 'POST',
+                data: JSON.stringify({ emailLogId: emailLogId }),
+                contentType: 'application/json'
+            });
+            return response?.attachmentCount || 0;
+        } catch (e) {
+            console.warn('Failed to copy template attachments:', e);
+            return 0;
+        }
+    }
+
+    async function deleteOriginAttachments(emailLogId) {
+        try {
+            const response = await $.ajax({
+                url: `/api/form-notifications/email-log/${emailLogId}/origin-attachments`,
+                type: 'DELETE'
+            });
+            return response?.attachmentCount || 0;
+        } catch (e) {
+            console.warn('Failed to delete origin attachments:', e);
+            return 0;
+        }
+    }
+
+    function populateTemplatesSelectOptions($select, templates) {
+        const $placeholder = $select.find('option[value=""]').first();
+
+        // Always rebuild non-placeholder options to avoid duplicate entries.
+        $select.find('option').not($placeholder).remove();
+
+        const seenTemplateIds = new Set();
+        templates.forEach((template) => {
+            const templateName = template.name || template.Name || 'Unnamed Template';
+            const templateId = (template.id || template.Id || '').toString();
+            if (!templateId || seenTemplateIds.has(templateId)) {
+                return;
+            }
+
+            seenTemplateIds.add(templateId);
+
+            const $option = $('<option>')
+                .val(templateId)
+                .text(templateName);
+
+            if (activeTemplateId && templateId === activeTemplateId.toString()) {
+                $option.prop('selected', true);
+            }
+
+            $option.appendTo($select);
+        });
+    }
+
+    function hasLoadedTemplateOptions($select) {
+        return $select.find('option').toArray().some(option => {
+            return ($(option).val() || '').toString().trim() !== '';
+        });
+    }
+
+    async function ensureTemplatesSelectOptionsLoaded($select) {
+        if (hasLoadedTemplateOptions($select)) {
+            return;
+        }
+
+        const templates = await $.ajax({
+            url: `/api/form-notifications/templates`,
+            type: 'GET'
+        });
+
+        if (templates?.length > 0) {
+            populateTemplatesSelectOptions($select, templates);
+        }
+    }
+
+    function updateSelectedTemplateLabel(templateName, templateId) {
+        const normalizedTemplateName = normalizeTemplateName(templateName);
+        const dropdownLabel = normalizedTemplateName || 'Templates';
+        const selectedTemplateValue = (templateId || activeTemplateId || '').toString();
+
+        const $templateNameInput = $('#EmailTemplateName');
+        if ($templateNameInput.length) {
+            $templateNameInput.val(normalizedTemplateName);
+        }
+
+        // Keep the disabled placeholder option text in sync with the selected template.
+        $('.templates-select').each(function () {
+            const $select = $(this);
+            let $placeholder = $select.find('option[value=""]').first();
+
+            if (!$placeholder.length) {
+                $placeholder = $('<option>')
+                    .val('')
+                    .prependTo($select);
+            }
+
+            $placeholder
+                .text(dropdownLabel)
+                .prop('disabled', true)
+                .prop('hidden', true);
+
+            // Never delete template options; hide only the currently selected one.
+            // This avoids list shrinking and allows previously selected options to reappear.
+            $select.find('option').not($placeholder).each(function () {
+                const $option = $(this);
+                const optionText = ($option.text() || '').trim();
+                const optionValue = ($option.val() || '').toString();
+                const matchesByValue = !!selectedTemplateValue && optionValue === selectedTemplateValue;
+                const matchesByName = !!normalizedTemplateName && optionText === normalizedTemplateName;
+
+                $option.prop('hidden', matchesByValue || matchesByName);
+            });
+
+            if (!$select.val()) {
+                $placeholder.prop('selected', true);
+            }
+        });
+
+        const $labelContainer = (typeof getSelectedTemplateLabelContainer === 'function')
+            ? getSelectedTemplateLabelContainer()
+            : $('.selected-template-label-container').first();
+
+        if (!$labelContainer.length) {
+            return;
+        }
+
+        const $existingLabel = $labelContainer.find('.template-label-text');
+
+        if (!normalizedTemplateName) {
+            $existingLabel.remove();
+            return;
+        }
+
+        if ($existingLabel.length) {
+            $existingLabel.html(`📄 ${$('<div>').text(normalizedTemplateName).html()}`);
+            return;
+        }
+
+        const hasPermission = abp.auth.isGranted('SettingManagement.Notifications');
+        const $templateLabel = $('<button type="button">')
+            .addClass('template-label-text')
+            .html(`📄 ${$('<div>').text(normalizedTemplateName).html()}`);
+
+        if (!hasPermission) {
+            $templateLabel.addClass('no-permission');
+        }
+
+        if (hasPermission) {
+            $templateLabel.attr('title', 'Open template in settings')
+                .on('click', async function (e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    localStorage.setItem('ConfigurationManagement_ActiveMenu', 'notifications-menu-item');
+                    localStorage.setItem('notifications-active-tab', 'nav-template-tab');
+                    localStorage.setItem('notifications-template-to-select', templateId || activeTemplateId || '');
+                    await new Promise(resolve => setTimeout(resolve, 50));
+                    window.location.href = '/ConfigurationManagement';
+                });
+        }
+
+        $labelContainer.empty().append($templateLabel);
+    }
+
+    function resolveTemplateRecipientEmails(template) {
+        if (!template) {
+            return '';
+        }
+
+        const directRecipients = [
+            template.emailTo,
+            template.EmailTo,
+            template.toAddress,
+            template.ToAddress,
+            template.to,
+            template.To
+        ].find(value => typeof value === 'string' && value.trim());
+
+        if (directRecipients) {
+            return directRecipients.trim();
+        }
+
+        const recipientCategory = (template.recipientCategory || template.RecipientCategory || '').trim().toLowerCase();
+        const recipientIdentifier = (template.recipientIdentifier || template.RecipientIdentifier || '').trim();
+        if (!recipientIdentifier) {
+            return '';
+        }
+
+        const identifiers = recipientIdentifier
+            .split(',')
+            .map(value => value.trim())
+            .filter(Boolean);
+
+        const emails = new Set();
+        identifiers.forEach((identifier) => {
+            if (validateEmail(identifier)) {
+                emails.add(identifier);
+                return;
+            }
+
+            if (recipientCategory === 'external') {
+                if (identifier.toLowerCase() === 'applicationcontact' && applicationDetails?.contactEmail) {
+                    emails.add(applicationDetails.contactEmail);
+                }
+
+                if (identifier.toLowerCase() === 'signingauthority' && applicationDetails?.signingAuthorityEmail) {
+                    emails.add(applicationDetails.signingAuthorityEmail);
+                }
+            }
+        });
+
+        return Array.from(emails).join('; ');
+    }
+
+    async function resolveTemplateRecipientEmailsFromApi(template, templateId) {
+        const localRecipients = resolveTemplateRecipientEmails(template);
+        const resolvedTemplateId = (templateId || template?.id || template?.Id || '').toString().trim();
+        const applicationId = (UIElements.applicationId || '').toString().trim();
+
+        if (!resolvedTemplateId) {
+            return localRecipients;
+        }
+
+        try {
+            const response = await $.ajax({
+                url: `/api/form-notifications/templates/${resolvedTemplateId}/resolved-recipients`,
+                type: 'GET',
+                data: applicationId ? { applicationId } : {}
+            });
+
+            const apiRecipients = (response?.emailTo || response?.EmailTo || '').trim();
+            return apiRecipients || localRecipients;
+        } catch (e) {
+            console.warn('Failed to resolve template recipients from API, using local fallback:', e);
+            return localRecipients;
+        }
+    }
+
+    async function handleTemplateSelection() {
+        const selectedTemplateId = UIElements.templateSelectionDropdown.val();
+
+        if (!selectedTemplateId) {
+            return;
+        }
+
+        closeTemplateSelectionModal();
+
+        try {
+            // Load all templates and find the selected one
+            const response = await $.ajax({
+                url: `/api/form-notifications/templates`,
+                type: 'GET'
+            });
+
+            console.log('API Response:', response);
+            console.log('Selected Template ID:', selectedTemplateId);
+
+            // Try to find template with either camelCase or PascalCase property names
+            let selectedTemplate = response.find(t => t.id === selectedTemplateId);
+            let useUpperCase = false;
+
+            if (!selectedTemplate) {
+                console.warn('Template not found with camelCase, checking with PascalCase...');
+                console.log('Available template IDs:', response.map(t => t.id || t.Id));
+                selectedTemplate = response.find(t => t.Id === selectedTemplateId);
+                useUpperCase = true;
+            }
+
+            if (!selectedTemplate) {
+                abp.notify.error('Selected template not found.');
+                return;
+            }
+
+            console.log('Selected template:', selectedTemplate);
+
+            // Get property values with fallback for case differences
+            const subject = useUpperCase ? selectedTemplate.Subject : selectedTemplate.subject;
+            let body = useUpperCase ? (selectedTemplate.Body || selectedTemplate.BodyHTML) : (selectedTemplate.body || selectedTemplate.bodyHTML);
+            const sendFrom = useUpperCase ? selectedTemplate.SendFrom : selectedTemplate.sendFrom;
+
+            console.log('Template values - Subject:', subject, 'Body length:', body?.length, 'SendFrom:', sendFrom);
+
+            // Process template variables using Handlebars if applicationDetails is available
+            if (body && applicationDetails && mappingConfig) {
+                try {
+                    const templateData = extractTemplateData(applicationDetails, mappingConfig);
+                    const template = Handlebars.compile(body);
+                    body = template(templateData);
+                    console.log('Template variables replaced, rendered body length:', body?.length);
+                } catch (e) {
+                    console.warn('Failed to process template variables:', e);
+                    // Continue with unprocessed body if Handlebars fails
+                }
+            } else {
+                console.log('Handlebars processing skipped - applicationDetails or mappingConfig not available');
+            }
+
+            const templateName = useUpperCase ? selectedTemplate.Name : selectedTemplate.name;
+            const templateRecipients = await resolveTemplateRecipientEmailsFromApi(selectedTemplate, selectedTemplateId);
+
+            // If an email draft is already open, show confirmation before re-applying a template
+            if (newDraftId) {
+                let confirmMessage = 'Any changes to the email will be reverted to the template defaults.';
+                if (activeTemplateAttachmentCount > 0) {
+                    confirmMessage += `\n\nThe ${activeTemplateAttachmentCount} attachment${activeTemplateAttachmentCount === 1 ? '' : 's'} copied from the previous template will also be removed.`;
+                }
+                const confirm = await Swal.fire({
+                    title: 'Apply Template?',
+                    text: confirmMessage,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'Apply Template',
+                    cancelButtonText: 'Cancel'
+                });
+                if (!confirm.isConfirmed) {
+                    return;
+                }
+                // Remove previous template attachments if any
+                if (activeTemplateAttachmentCount > 0) {
+                    await deleteOriginAttachments(newDraftId);
+                    activeTemplateAttachmentCount = 0;
+                    if (emailAttachmentsTable) {
+                        emailAttachmentsTable.ajax.reload();
+                    }
+                }
+            }
+
+            // Initialize email with template data
+            const draftId = await handleNewEmail(true, subject, body, sendFrom, templateName, selectedTemplateId);
+            activeTemplateId = selectedTemplateId;
+            activeTemplateAttachmentCount = 0;
+            updateSelectedTemplateLabel(templateName, selectedTemplateId);
+            if (templateRecipients) {
+                UIElements.inputEmailTo.val(templateRecipients).trigger('change');
+                UIElements.inputOriginalEmailTo.val(templateRecipients);
+            }
+
+            // Copy template attachments to the email log
+            const attachmentCount = await copyTemplateAttachments(selectedTemplateId, draftId);
+            activeTemplateAttachmentCount = attachmentCount;
+
+            if (emailAttachmentsTable) {
+                emailAttachmentsTable.ajax.reload();
+            }
+
+            await Swal.fire({
+                title: 'Template Applied',
+                text: attachmentCount > 0
+                    ? `${attachmentCount} attachment${attachmentCount === 1 ? '' : 's'} from the template ${attachmentCount === 1 ? 'has' : 'have'} been copied to this email.`
+                    : 'Template applied successfully. No attachments were copied.',
+                icon: 'success',
+                confirmButtonText: 'OK'
+            });
+        } catch (e) {
+            console.error('Failed to load template - Full error:', e);
+            console.error('Response text:', e.responseText);
+            console.error('Status:', e.status);
+            abp.notify.error('Failed to load template. Please try again.');
+        }
+    }
+
+
     function handleShowBCC() {
         // Show BCC input row and hide the button
         UIElements.bccInputRow.addClass('show');
@@ -839,18 +1258,30 @@
         }
     }
 
-    async function handleNewEmail() {
+    async function handleNewEmail(fromTemplate = false, templateSubject = '', templateBody = '', templateFrom = '', templateName = '', templateId = '') {
+        // Set context flag - if loaded from template, it's not application email context
+        isApplicationEmailContext = !fromTemplate;
+
+        // Update body class for CSS visibility control
+        if (isApplicationEmailContext) {
+            document.body.classList.add('application-email-context');
+        } else {
+            document.body.classList.remove('application-email-context');
+        }
+
         isViewingDraft = true; // New emails are drafts
         resetEmailBody();
-        $('#templateListContainer').show();
-        $('#templateTextContainer').hide();
-        $('#EmailTemplate').prop('disabled', false);
+        const normalizedTemplateName = normalizeTemplateName(templateName);
+        const normalizedTemplateId = (templateId || '').toString();
+        $('#EmailTemplateName').val(normalizedTemplateName);
+        originalTemplateState = { name: normalizedTemplateName, id: normalizedTemplateId };
+        activeTemplateId = normalizedTemplateId || null;
         UIElements.inputOriginalEmailTo.val(defaultValues.emailTo);
         UIElements.inputOriginalEmailCC.val(defaultValues.emailCC);
         UIElements.inputOriginalEmailBCC.val(defaultValues.emailBCC);
         UIElements.inputOriginalEmailFrom.val(defaultValues.emailFrom);
-        UIElements.inputOriginalEmailSubject.val("");
-        UIElements.inputOriginalEmailBody.val("");
+        UIElements.inputOriginalEmailSubject.val(templateSubject);
+        UIElements.inputOriginalEmailBody.val(templateBody);
 
         try {
             const draftId = await initializeDraft(UIElements.applicationId);
@@ -865,11 +1296,19 @@
 
         tinymce.get("EmailBody")?.remove();
 
+        console.log('Initializing TinyMCE with template body:', templateBody?.substring(0, 50) + '...');
+
+        // Show modal FIRST so element is in DOM
+        UIElements.inputEmailSubject.val(templateSubject);
+        UIElements.inputEmailFrom.val(templateFrom || defaultValues.emailFrom);
+        showModalEmail();
+
+        // Then initialize TinyMCE
         tinymce.init({
             license_key: 'gpl',
             selector: '#EmailBody',
             plugins: getPlugins(),
-            toolbar: getToolbarOptions(),
+            menubar: 'file edit view insert format tools',
             resize: true,
             statusbar: true,
             elementpath: false,
@@ -879,21 +1318,111 @@
             skin: false,
             ui_container: '.details-scrollable',
             setup: function (editor) {
+                // Register Variables menu button - only in TEMPLATE context (not application)
+                if (!isApplicationEmailContext) {
+                    registerVariablesMenuButton(editor);
+                }
+
                 editor.on("input", (e) => {
                     UIElements.inputEmailBody.val(editor.getContent());
                     handleDraftChange();
                 });
                 editorInstance = editor;
-                editorInstance.setContent('');
+            },
+            init_instance_callback: function (editor) {
+                console.log('TinyMCE init_instance_callback - editor ready, setting content');
+                console.log('Template body:', templateBody);
+                try {
+                    if (templateBody) {
+                        const sanitizedTemplateBody = sanitizeTinyMceHtml(templateBody);
+                        editor.setContent(sanitizedTemplateBody, { format: 'html' });
+                        console.log('Content set successfully. Editor content now:', editor.getContent().substring(0, 50));
+                        UIElements.inputEmailBody.val(sanitizedTemplateBody);
+                    } else {
+                        console.warn('Template body is empty');
+                        editor.setContent('');
+                    }
+                } catch (e) {
+                    console.error('Error setting TinyMCE content:', e);
+                }
+
+                // Create label/button container unconditionally
+                setTimeout(() => {
+                    const $menubar = $(editor.getContainer()).find('.tox-menubar');
+                    if (!$menubar.length) return;
+
+                    updateSelectedTemplateLabel(templateName, templateId);
+
+                    // Templates button - add to TinyMCE menu bar at bottom
+                    if (!$menubar.find('.templates-button-container').length) {
+                        // Create select element for templates
+                        const $templatesSelect = $('<select>')
+                            .addClass('templates-select templates-button-container')
+                            .attr('title', 'Select a template to apply');
+
+                        // Keep "Templates" as the control label, but not as a selectable option.
+                        $('<option>')
+                            .val('')
+                            .text('Templates')
+                            .prop('selected', true)
+                            .prop('disabled', true)
+                            .prop('hidden', true)
+                            .appendTo($templatesSelect);
+
+
+                        // Load templates and populate select
+                        $templatesSelect.on('change', async function () {
+                            const selectedTemplateId = $(this).val();
+
+                            if (!selectedTemplateId) {
+                                return;
+                            }
+
+                            // Reset select to default
+                            $(this).val('');
+
+                            try {
+                                const response = await $.ajax({
+                                    url: `/api/form-notifications/templates`,
+                                    type: 'GET'
+                                });
+
+                                const template = response.find(t => t.id === selectedTemplateId || t.Id === selectedTemplateId);
+
+                                if (template) {
+                                    await applyTemplateToEmail(template);
+                                } else {
+                                    abp.notify.error('Template not found.');
+                                }
+                            } catch (e) {
+                                console.error('Failed to apply template:', e);
+                                abp.notify.error('Failed to apply template.');
+                            }
+                        });
+
+                        // Load templates lazily when opened.
+                        $templatesSelect.on('click', async function (e) {
+                            try {
+                                await ensureTemplatesSelectOptionsLoaded($(this));
+                            } catch (err) {
+                                console.error('Failed to load templates:', err);
+                                abp.notify.error('Failed to load templates.');
+                            }
+                        });
+
+                        $menubar.append($templatesSelect);
+                    }
+                }, 0);  // setTimeout for rendering after editor init
             }
         });
 
         $('#email-attachments-section').show();
         $('#email_attachment_upload_btn').show();
         initEmailAttachmentsTable(UIElements.inputEmailId.val(), true);
-        handleDraftChange();
-        showModalEmail();
         resetValidationErrors();
+
+        // Return the draft ID so it can be used by the caller (e.g., for copying template attachments)
+        return newDraftId;
     }
 
     function showModalEmail() {
@@ -923,20 +1452,12 @@
         return suppressToast ? result : result.isValid; // For backward compatibility
     }
 
-
     function handleConfirmSendEmail() {
         UIElements.confirmationModal.hide();
         UIElements.emailSpinner.show();
-        let templateName = '';
-        if (isNewEmailDraft) {
-            templateName = $("#EmailTemplate option:selected").text().trim();
-            // Check for all placeholder variations
-            if (!templateName || templateName === '' || templateName === 'Please select' || templateName === 'Select a template' || templateName.toLowerCase().includes('select')) {
-                templateName = "No Template Selected";
-            }
-        } else {
-            templateName = $('#EmailTemplateName').val();
-        }
+        const templateName =
+            normalizeTemplateName($('#EmailTemplateName').val()) ||
+            normalizeTemplateName($("#EmailTemplate option:selected").text());
 
         const rawDateTime = UIElements.inputSendOnDateTime.length ? UIElements.inputSendOnDateTime.val() : '';
         // Hidden field already holds the UTC ISO string set when the modal was confirmed.
@@ -1012,17 +1533,9 @@
                 return;
             }
 
-            let templateName = '';
-            // Check the dropdown for the current selection (handles both new and edited drafts)
-            const selectedTemplate = $("#EmailTemplate option:selected").text().trim();
-            if (selectedTemplate && selectedTemplate !== '' && selectedTemplate !== 'Please select' && selectedTemplate !== 'Select a template' && !selectedTemplate.toLowerCase().includes('select')) {
-                templateName = selectedTemplate;
-            } else if (isNewEmailDraft) {
-                templateName = "No Template Selected";
-            } else {
-                // For existing drafts without a valid template selected, keep the original
-                templateName = $('#EmailTemplateName').val();
-            }
+            const templateName =
+                normalizeTemplateName($('#EmailTemplateName').val()) ||
+                normalizeTemplateName($("#EmailTemplate option:selected").text());
 
             UIElements.btnSave.prop('disabled', true);
 
@@ -1090,6 +1603,8 @@
         return validationResult;
     }
 
+    globalThis.validateEmailField = validateEmailField;
+
     function clearFieldErrors(fieldElement) {
         let errorSpan = $(`span[data-valmsg-for*='${fieldElement.name}']`)[0];
         if (errorSpan) {
@@ -1106,8 +1621,8 @@
         if (!errorSpan) {
             errorSpan = document.createElement('span');
             errorSpan.className = 'field-validation-valid';
-            errorSpan.dataset.valmsigFor = fieldName;
-            errorSpan.dataset.valmsigReplace = 'true';
+            errorSpan.dataset.valmsgFor = fieldName;
+            errorSpan.dataset.valmsgReplace = 'true';
             fieldElement.parentNode.appendChild(errorSpan);
         }
         return errorSpan;
@@ -1185,15 +1700,6 @@
         e.stopPropagation();
         e.preventDefault();
 
-        // Collect all errors without showing toasts immediately
-        let toResult = validateEmailTo(true); // suppressToast = true
-        let ccResult = validateEmailCC(true);
-        let bccResult = validateEmailBCC(true);
-        let allErrors = collectEmailFieldErrors(toResult, ccResult, bccResult);
-
-        console.log('Email field validation results:', { toResult, ccResult, bccResult });
-        console.log('Collected email errors:', allErrors);
-
         // Sync TinyMCE content to textarea BEFORE running jQuery validation
         if (editorInstance) {
             UIElements.inputEmailBody.val(editorInstance.getContent());
@@ -1206,6 +1712,15 @@
         let validator = UIElements.emailForm.validate();
         let fieldName = 'EmailBody';
         let errorList = validator.errorList;
+
+        // Run custom email validations after jQuery validation so jQuery does not clear custom field errors.
+        let toResult = validateEmailTo(true); // suppressToast = true
+        let ccResult = validateEmailCC(true);
+        let bccResult = validateEmailBCC(true);
+        let allErrors = collectEmailFieldErrors(toResult, ccResult, bccResult);
+
+        console.log('Email field validation results:', { toResult, ccResult, bccResult });
+        console.log('Collected email errors:', allErrors);
 
         // Get TinyMCE content and check validation state
         let tinymceContent = getTinyMceContent();
@@ -1238,12 +1753,16 @@
     }
 
     function checkDraftChanges() {
+        const currentTemplateName = normalizeTemplateName($('#EmailTemplateName').val());
+        const originalTemplateName = normalizeTemplateName(originalTemplateState.name);
+
         return UIElements.inputEmailTo.val() !== UIElements.inputOriginalEmailTo.val() ||
             UIElements.inputEmailCC.val() !== UIElements.inputOriginalEmailCC.val() ||
             UIElements.inputEmailBCC.val() !== UIElements.inputOriginalEmailBCC.val() ||
             UIElements.inputEmailFrom.val() !== UIElements.inputOriginalEmailFrom.val() ||
             UIElements.inputEmailSubject.val() !== UIElements.inputOriginalEmailSubject.val() ||
-            UIElements.inputEmailBody.val() !== UIElements.inputOriginalEmailBody.val();
+            UIElements.inputEmailBody.val() !== UIElements.inputOriginalEmailBody.val() ||
+            currentTemplateName !== originalTemplateName;
     }
 
     function resetValidationErrors() {
@@ -1266,7 +1785,9 @@
             const renderedHtml = template(templateData);
             $('#EmailFrom').val(templateDetails.sendFrom)
             $('#EmailSubject').val(templateDetails.subject)
-            editorInstance.setContent(renderedHtml);
+            if (renderedHtml) {
+                editorInstance.setContent(renderedHtml);
+            }
 
             // Only enable save button if we're viewing a draft
             if (isViewingDraft) {
@@ -1366,7 +1887,7 @@
 
     const buildTodayDateHtml = () => {
         const formatted = new Intl.DateTimeFormat('en-CA', {
-            timeZone: 'America/Vancouver',
+            timeZone: 'Etc/GMT+7',
             year: 'numeric',
             month: 'long',
             day: 'numeric'
@@ -1381,6 +1902,15 @@
             buildTodayDateHtml()
         );
     };
+
+    function registerVariablesMenuButton(editor) {
+        editor.ui.registry.addMenuButton('variablesButton', {
+            text: 'Variables',
+            fetch: (callback) => {
+                callback(buildVariablesMenuItems(mappingConfig, editor));
+            }
+        });
+    }
 
     function extractTemplateData(apiResponse, mappingConfig) {
         const templateData = {};
@@ -1402,14 +1932,110 @@
         return templateData;
     }
 
+    // Helper function to apply a template to the current email
+    async function applyTemplateToEmail(template) {
+        try {
+            // Get the current email ID from the form field
+            const currentEmailId = UIElements.inputEmailId.val();
+
+            // Show confirmation dialog
+            let confirmMessage = 'Selecting a template will revert any changes made to this email.';
+            if (activeTemplateAttachmentCount > 0) {
+                confirmMessage += `\n\nThe ${activeTemplateAttachmentCount} attachment${activeTemplateAttachmentCount === 1 ? '' : 's'} from the previous template will be removed and replaced with any new template attachments.`;
+            }
+
+            const result = await Swal.fire({
+                title: 'Apply Template?',
+                text: confirmMessage,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Apply Template',
+                cancelButtonText: 'Cancel'
+            });
+
+            if (!result.isConfirmed) {
+                return;
+            }
+
+            // Always clear existing template-origin attachments before applying a new template.
+            // This prevents accumulation when tracking state gets out of sync.
+            if (currentEmailId) {
+                await deleteOriginAttachments(currentEmailId);
+                activeTemplateAttachmentCount = 0;
+                if (emailAttachmentsTable) {
+                    emailAttachmentsTable.ajax.reload();
+                }
+            }
+
+            // Apply the template
+            const subject = template.subject || template.Subject || '';
+            let body = template.body || template.bodyHTML || template.Body || template.BodyHTML || '';
+            const sendFrom = template.sendFrom || template.SendFrom || '';
+
+            // Process template variables using Handlebars if available
+            if (body && applicationDetails && mappingConfig) {
+                try {
+                    const templateData = extractTemplateData(applicationDetails, mappingConfig);
+                    const handlebarsTemplate = Handlebars.compile(body);
+                    body = handlebarsTemplate(templateData);
+                } catch (e) {
+                    console.warn('Failed to process template variables:', e);
+                }
+            }
+
+            // Apply template to current email being edited
+            UIElements.inputEmailSubject.val(subject);
+            if (body) {
+                editorInstance.setContent(body);
+            }
+            UIElements.inputEmailBody.val(body || '');
+            UIElements.inputEmailFrom.val(sendFrom || defaultValues.emailFrom);
+            const templateRecipients = await resolveTemplateRecipientEmailsFromApi(template, template.id || template.Id);
+            if (templateRecipients) {
+                UIElements.inputEmailTo.val(templateRecipients).trigger('change');
+            }
+            activeTemplateId = template.id || template.Id;
+            activeTemplateAttachmentCount = 0;
+
+            updateSelectedTemplateLabel(template.name || template.Name || 'Unnamed Template', template.id || template.Id);
+
+            // Programmatic field updates do not fire input events; re-evaluate dirty state.
+            handleDraftChange();
+
+            // Copy template attachments to the email log
+            const attachmentCount = await copyTemplateAttachments(template.id || template.Id, currentEmailId);
+            activeTemplateAttachmentCount = attachmentCount;
+
+            if (emailAttachmentsTable) {
+                emailAttachmentsTable.ajax.reload();
+            }
+
+            await Swal.fire({
+                title: 'Template Applied',
+                text: attachmentCount > 0
+                    ? `${attachmentCount} attachment${attachmentCount === 1 ? '' : 's'} from the template ${attachmentCount === 1 ? 'has' : 'have'} been copied to this email.`
+                    : 'Template applied successfully. No attachments were copied.',
+                icon: 'success',
+                confirmButtonText: 'OK'
+            });
+        } catch (e) {
+            console.error('Failed to apply template:', e);
+            abp.notify.error('Failed to apply template. Please try again.');
+        }
+    }
 
     let isViewingDraft = false; // Track if we're viewing a draft email
 
     PubSub.subscribe('email_selected', (msg, data) => {
         console.log("EMAIL SELECTED EVENT FIRED", data);
 
+        // Set application context (editing existing emails, not templates)
+        isApplicationEmailContext = true;
+        document.body.classList.add('application-email-context');
+
         // Determine if this is a draft FIRST, before any field population
-        const isDraft = data?.status === 'Draft';
+        const status = (data?.status || '').toString().trim().toLowerCase();
+        const isDraft = status === 'draft';
         isViewingDraft = isDraft; // Set flag early to prevent handleDraftChange from enabling buttons
         console.log('isViewingDraft set to:', isViewingDraft);
 
@@ -1422,10 +2048,17 @@
             isNewEmailDraft = false;
             newDraftId = null;
         }
+
+        const selectedRecordTemplateName = resolveEmailRecordTemplateName(data);
+        activeTemplateId = data?.templateId || data?.emailTemplateId || data?.TemplateId || data?.EmailTemplateId || activeTemplateId;
+        originalTemplateState = {
+            name: selectedRecordTemplateName,
+            id: (activeTemplateId || '').toString()
+        };
+
         resetValidationErrors();
         console.log("data", data)
-        $('#EmailTemplateName').val(data.templateName);
-        $('#EmailTemplateName').prop('disabled', true);
+        $('#EmailTemplateName').val(selectedRecordTemplateName);
         UIElements.inputEmailId.val(data.id);
         UIElements.inputOriginalEmailTo.val(data.toAddress);
         UIElements.inputOriginalEmailCC.val(data.cc?.replaceAll(',', '; ') ?? '');
@@ -1439,7 +2072,7 @@
             license_key: 'gpl',
             selector: '#EmailBody',
             plugins: getPlugins(),
-            toolbar: getToolbarOptions(),
+            menubar: 'file edit view insert format tools',
             resize: true,
             statusbar: true,
             elementpath: false,
@@ -1454,7 +2087,96 @@
                     handleDraftChange();
                 });
                 editorInstance = editor;
-                editorInstance.setContent(refreshTodayDateSpans(data.body));
+            },
+            init_instance_callback: function (editor) {
+                // Set initial content
+                const bodyContent = data.body ? refreshTodayDateSpans(data.body) : '';
+                if (bodyContent) {
+                    const sanitizedBodyContent = sanitizeTinyMceHtml(bodyContent);
+                    editorInstance.setContent(sanitizedBodyContent);
+                }
+
+                // Create template label and buttons in label container
+                setTimeout(() => {
+                    const $menubar = $(editor.getContainer()).find('.tox-menubar');
+
+                    updateSelectedTemplateLabel(selectedRecordTemplateName, activeTemplateId || '');
+
+                    // Templates select - add to TinyMCE menu bar at bottom
+                    if (!$menubar.find('.templates-button-container').length) {
+                        // Create select element for templates
+                        const $templatesSelect = $('<select>')
+                            .addClass('templates-select templates-button-container')
+                            .attr('title', 'Select a template to apply');
+
+                        // Disable template selection for non-draft emails.
+                        $templatesSelect.prop('disabled', !isDraft);
+
+                        // Keep "Templates" as the control label, but not as a selectable option.
+                        $('<option>')
+                            .val('')
+                            .text(selectedRecordTemplateName || 'Templates')
+                            .prop('selected', true)
+                            .prop('disabled', true)
+                            .prop('hidden', !selectedRecordTemplateName)
+                            .appendTo($templatesSelect);
+
+                        // Load templates and populate select
+                        $templatesSelect.on('change', async function () {
+                            if (!isDraft) {
+                                return;
+                            }
+
+                            const selectedTemplateId = $(this).val();
+
+                            if (!selectedTemplateId) {
+                                return;
+                            }
+
+                            // Reset select to default
+                            $(this).val('');
+
+                            try {
+                                const response = await $.ajax({
+                                    url: `/api/form-notifications/templates`,
+                                    type: 'GET'
+                                });
+
+                                const template = response.find(t => t.id === selectedTemplateId || t.Id === selectedTemplateId);
+
+                                if (template) {
+                                    // Route all template changes through one apply flow so confirmation UX is consistent.
+                                    await applyTemplateToEmail(template);
+                                } else {
+                                    abp.notify.error('Template not found.');
+                                }
+                            } catch (e) {
+                                console.error('Failed to apply template:', e);
+                                abp.notify.error('Failed to apply template.');
+                            }
+                        });
+
+                        // Load templates on first click
+                        $templatesSelect.on('click', async function (e) {
+                            if (!isDraft || $(this).prop('disabled')) {
+                                e.preventDefault();
+                                return;
+                            }
+
+                            try {
+                                await ensureTemplatesSelectOptionsLoaded($(this));
+                            } catch (err) {
+                                console.error('Failed to load templates:', err);
+                                abp.notify.error('Failed to load templates.');
+                            }
+                        });
+
+                        $menubar.append($templatesSelect);
+                    }
+
+                    // Ensure disabled option text matches selected record after select exists.
+                    updateSelectedTemplateLabel(selectedRecordTemplateName, activeTemplateId || '');
+                }, 100);
             }
         });
         UIElements.inputEmailTo.val(data.toAddress);
@@ -1462,7 +2184,9 @@
         UIElements.inputEmailBCC.val(data.bcc?.replaceAll(',', '; ') ?? '');
         UIElements.inputEmailFrom.val(data.fromAddress);
         UIElements.inputEmailSubject.val(data.subject);
-        UIElements.inputEmailBody.val(refreshTodayDateSpans(data.body));
+        const bodyContentWithRefresh = refreshTodayDateSpans(data.body);
+        UIElements.inputEmailBody.val(bodyContentWithRefresh);
+        UIElements.inputOriginalEmailBody.val(bodyContentWithRefresh);
 
         // Load scheduled send date/time if available
         if (data.sendOnDateTime) {
@@ -1788,6 +2512,89 @@ function getPlugins() {
     return 'lists link image preview code';
 }
 
+/**
+ * Returns a valid template name, or empty when placeholder/sentinel values are selected.
+ * @param {string} value - Candidate template name
+ * @returns {string} Normalized template name
+ */
+function normalizeTemplateName(value) {
+    const name = (value || '').trim();
+    if (!name) {
+        return '';
+    }
+
+    const lowerName = name.toLowerCase();
+    if (
+        lowerName === 'please select' ||
+        lowerName === 'select a template' ||
+        lowerName === 'templates' ||
+        lowerName === 'no template selected' ||
+        lowerName.includes('select')
+    ) {
+        return '';
+    }
+
+    return name;
+}
+
+function resolveEmailRecordTemplateName(emailRecord) {
+    const rawName = [
+        emailRecord?.templateName,
+        emailRecord?.emailTemplateName,
+        emailRecord?.template,
+        emailRecord?.templateTitle,
+        emailRecord?.TemplateName,
+        emailRecord?.EmailTemplateName,
+        emailRecord?.Template,
+        emailRecord?.TemplateTitle
+    ].find(value => normalizeTemplateName(value));
+
+    return normalizeTemplateName(rawName || '');
+}
+
+/**
+ * TinyMCE can throw when loading persisted blob: URIs without a matching blob cache entry.
+ * Strip blob URLs from HTML before setContent to avoid editor initialization crashes.
+ * @param {string} html - Raw HTML
+ * @returns {string} Sanitized HTML safe for TinyMCE setContent
+ */
+function sanitizeTinyMceHtml(html) {
+    if (!html || typeof html !== 'string') {
+        return html || '';
+    }
+
+    try {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(`<div id="tinymce-sanitize-root">${html}</div>`, 'text/html');
+        const root = doc.getElementById('tinymce-sanitize-root');
+        if (!root) {
+            return html;
+        }
+
+        root.querySelectorAll('[src], [href], [style]').forEach((element) => {
+            const src = element.getAttribute('src');
+            if (src?.trim().toLowerCase().startsWith('blob:')) {
+                element.removeAttribute('src');
+            }
+
+            const href = element.getAttribute('href');
+            if (href?.trim().toLowerCase().startsWith('blob:')) {
+                element.removeAttribute('href');
+            }
+
+            const style = element.getAttribute('style');
+            if (style?.toLowerCase().includes('blob:')) {
+                element.setAttribute('style', style.replaceAll(/url\([^)]*blob:[^)]*\)/gi, 'url("")'));
+            }
+        });
+
+        return root.innerHTML;
+    } catch (e) {
+        console.warn('Failed to sanitize TinyMCE HTML content:', e);
+        return html;
+    }
+}
+
 
 /**
  * Displays validation error toast using abp.notify or toastr
@@ -1909,7 +2716,7 @@ function checkOnlyErrorIsTinyMCE(isValid, errorList, fieldName, tinymceContent) 
 
 
 function validateEmailFieldWithOptions(fieldElement, isRequired = false, showToast = false, onlyShowErrorsIfHasContent = false) {
-    const result = validateEmailField(fieldElement, isRequired, showToast, onlyShowErrorsIfHasContent);
+    const result = globalThis.validateEmailField(fieldElement, isRequired, showToast, onlyShowErrorsIfHasContent);
     return result;
 }
 
@@ -1981,6 +2788,16 @@ function normalizeErrorMessage(message) {
     return message;
 }
 
+
+function buildVariablesMenuItems(config, editor) {
+    return (config || []).map(item => ({
+        type: 'menuitem',
+        text: item.name,
+        onAction: () => {
+            editor.insertContent(`{{${item.token}}}`);
+        }
+    }));
+}
 
 /**
  * Validates date values

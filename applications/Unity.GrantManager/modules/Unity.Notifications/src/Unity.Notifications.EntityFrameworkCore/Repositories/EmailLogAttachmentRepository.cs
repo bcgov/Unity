@@ -25,5 +25,11 @@ namespace Unity.Notifications.Repositories
             var dbSet = await GetDbSetAsync();
             return await dbSet.Where(x => x.TemplateId == templateId).ToListAsync();
         }
+
+        public async Task<List<EmailLogAttachment>> GetOriginAttachmentsByEmailLogIdAsync(Guid emailLogId)
+        {
+            var dbSet = await GetDbSetAsync();
+            return await dbSet.Where(x => x.EmailLogId == emailLogId && x.OriginTemplateId != null).ToListAsync();
+        }
     }
 }

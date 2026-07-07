@@ -184,7 +184,7 @@ span.tooltip-wrapper {
 
 .template-field {
     flex: 0 0 135px !important;
-    width: 132px !important;
+    min-width: 140px !important;
     white-space: nowrap;
     margin: 0.5rem;    
 }
@@ -221,7 +221,7 @@ body.split-dragging {
 
 /* Update Column Widths via colgroup/col (essential for DataTables-style tables) */
 #TemplatesTable col:nth-child(1) { 
-    width: 25% !important; /* Name */
+    width: 20% !important; /* Name */
 }
 
 #TemplatesTable col:nth-child(2) { 
@@ -229,8 +229,7 @@ body.split-dragging {
 }
 
 #TemplatesTable col:nth-child(3) { 
-    width: 15% !important; /* Actions */
-    min-width: 150px !important;
+    width: 20% !important; /* Actions */
 }
 
 /* Handle text truncation for the content columns */
@@ -278,3 +277,155 @@ body.split-dragging {
     display: none !important;
 }
 
+/* ── Form Control Styling ────────────────────────────────────────────────────── */
+
+input.form-control,
+textarea.form-control,
+.form-select {
+    font-size: var(--bc-font-size);
+    color: var(--bc-colors-grey-text-500);
+    border-radius: var(--bc-layout-margin-small) !important;
+    border: 2px solid var(--bc-colors-blue-primary);
+    text-overflow: ellipsis;
+}
+
+.form-select {
+    --bs-form-select-bg-img: url(data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e);
+    display: block;
+    width: 100%;
+    padding: 0.375rem 2.25rem 0.375rem 0.75rem;
+    font-size: 1rem;
+    font-weight: 400;
+    line-height: 1.5;
+    color: var(--bs-body-color);
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background-color: var(--bs-body-bg);
+    background-image: var(--bs-form-select-bg-img), var(--bs-form-select-bg-icon, none);
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    background-size: 16px 12px;
+    border: var(--bs-border-width) solid var(--bs-border-color);
+    border-radius: var(--bs-border-radius);
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.select2-container--default.select2-container--focus .select2-selection--multiple {
+  border-radius: 8px;
+  min-height: 40px;
+  border: 2px solid rgb(46, 93, 215);
+  display: flex;
+  align-items: center;
+}
+
+.select2-container--default .select2-search--inline .select2-search__field {
+  margin-top: 0px;
+  margin-bottom: 0px;
+}
+
+select {
+    word-wrap: normal;
+}
+
+button,
+select {
+    text-transform: none;
+}
+
+input,
+button,
+select,
+optgroup,
+textarea {
+    margin: 0;
+    font-family: inherit;
+    font-size: inherit;
+    line-height: inherit;
+}
+
+
+
+#templateRecipientSelect + .select2-container .select2-selection {
+    border: 2px solid #2e5dd7 !important;
+    border-radius: 8px !important;
+    min-height: 40px !important;
+    display: flex;
+    align-items: center;
+}
+
+/* Match native select elements to the Send From input style */
+#templateRecipientCategory {
+    border: 2px solid #2e5dd7 !important;
+    border-radius: 8px !important;
+    height: 40px !important;
+}
+
+/* Optional: Adjust Select2 search field margins for multi-selects */
+#templateRecipientSelect + .select2-container .select2-search__field {
+    margin-top: 0;
+    margin-bottom: 0;
+}
+
+/* ── Select2 Selection Choice Refinement ────────────────────────────────────── */
+
+/* Reusable Remove Icon Button */
+.icon-remove,
+.select2-selection__choice__remove {
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    width: 16px !important;
+    height: 16px !important;
+    padding: 0 !important;
+    margin-right: 0.5rem;
+    margin-left: 0.25rem;
+    cursor: pointer;
+    background-color: transparent !important;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath stroke='%23676a6d' stroke-width='2' stroke-linecap='round' d='M2 2l12 12M14 2L2 14'/%3e%3c/svg%3e") !important;
+    background-repeat: no-repeat !important;
+    background-position: center !important;
+    background-size: contain !important;
+    border: none !important;
+    box-shadow: none !important;
+    outline: none !important;
+    appearance: none !important;
+    -webkit-appearance: none !important;
+}
+
+/* Selected Item Container */
+.select2-selection__choice {
+    display: inline-flex !important;
+    align-items: center;
+    padding: 0.3em 0.8em;
+    margin: 0.375rem;
+    font-family: "BCSans", sans-serif;
+    font-size: 1rem;
+    color: #212529;
+    background-color: transparent !important;
+    border: 1px solid var(--bs-border-color) !important;
+    border-radius: 0.25rem;
+    line-height: 1.5;
+    list-style-type: none;
+    white-space: nowrap;
+}
+
+/* Accessibility Fallback */
+.select2-selection__choice__remove span,
+.icon-remove span {
+    display: none !important;
+}
+
+/* ── DataTable Styling (only when right panel is displayed) ────────────────── */
+.split-container.split-active div.dt-scroll-body {
+    overflow-y: auto;
+    padding-right: 15px;
+}
+
+.split-container.split-active td {
+    min-width: 160px;
+    width: 200px;
+    position: relative;
+    margin-left: -20px;
+    transform: translateX(-10px);
+}

@@ -29,6 +29,29 @@
     </div>
     <div class="mb-3">
         <div class="d-flex template-field-div">
+            <label for="templateRecipientCategory" class="form-label template-field">Recipient Category</label>
+            <div class="flex-grow-1">
+                <select id="templateRecipientCategory" class="form-control form-select" name="templateRecipientCategory">
+                    <option value=""></option>
+                    <option value="Internal">Internal</option>
+                    <option value="External">External</option>
+                </select>
+                <div id="templateRecipientCategory-error" class="invalid-feedback d-block" style="display: none;"></div>
+            </div>
+        </div>
+    </div>
+    <div class="mb-3">
+        <div class="d-flex template-field-div">
+            <label for="templateRecipientSelect" class="form-label template-field">Recipients</label>
+            <div class="flex-grow-1">
+                <select id="templateRecipientSelect" class="form-control form-select" name="templateRecipientSelect" multiple>
+                </select>
+                <div id="templateRecipientSelect-error" class="invalid-feedback d-block" style="display: none;"></div>
+            </div>
+        </div>
+    </div>
+    <div class="mb-3">
+        <div class="d-flex template-field-div">
             <label for="subject" class="form-label template-field">Subject</label>
             <div class="flex-grow-1">
                 <input id="subject" type="text" class="form-control form-input" name="subject" required>

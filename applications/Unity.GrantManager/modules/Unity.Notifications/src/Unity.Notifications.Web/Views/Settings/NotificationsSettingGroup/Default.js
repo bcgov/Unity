@@ -20,6 +20,7 @@ $(function () {
         initializeTemplateDataTables();
         initializeDivider();
         initializeTabPersistence();
+        initializeRecipientSelect();
     }
 
     init();
@@ -28,19 +29,44 @@ $(function () {
     function initializeTabPersistence() {
         const tabContainer = $('#nav-tab');
         
-        // Restore saved tab on page load
-        const savedTabId = localStorage.getItem('notifications-active-tab');
-        if (savedTabId) {
-            const tabButton = tabContainer.find(`#${savedTabId}`);
-            if (tabButton.length) {
-                const tab = new bootstrap.Tab(tabButton[0]);
-                tab.show();
-            }
-        }
-        
         // Save tab selection when tab changes
         tabContainer.on('shown.bs.tab', 'button[data-bs-toggle="tab"]', function () {
             localStorage.setItem('notifications-active-tab', this.id);
+        });
+        
+        // Handle Templates tab visibility - redraw and reinitialize if needed
+        const templateTabButton = tabContainer.find('#nav-template-tab');
+        if (templateTabButton.length) {
+            templateTabButton.on('show.bs.tab', function () {
+                // Redraw the DataTable when tab is about to show
+                if (templatesDataTable) {
+                    setTimeout(() => {
+                        templatesDataTable.columns.adjust().draw();
+                    }, 0);
+                }
+            });
+        }
+        
+        // Restore saved tab on page load - but delay to ensure DOM is ready
+        const savedTabId = localStorage.getItem('notifications-active-tab');
+        if (savedTabId) {
+            setTimeout(() => {
+                const tabButton = tabContainer.find(`#${savedTabId}`);
+                if (tabButton.length) {
+                    const tab = new bootstrap.Tab(tabButton[0]);
+                    tab.show();
+                }
+            }, 100);
+        }
+    }
+
+    // ── Select2 Initialization ─────────────────────────────────────────────
+    function initializeRecipientSelect() {
+        $('#templateRecipientSelect').select2({
+            theme: 'bootstrap-5',
+            placeholder: 'Select recipients...',
+            allowClear: false,
+            width: '100%'
         });
     }
 
@@ -71,17 +97,62 @@ $(function () {
     }
 
     function clearAllErrors() {
-        $('#templateName, #sendFrom, #subject, #templateBody').removeClass('is-invalid');
-        $('#templateName-error, #sendFrom-error, #subject-error, #templateBody-error').text('').hide();
+        $('#templateName, #sendFrom, #subject, #templateBody, #templateRecipientCategory, #templateRecipientSelect').removeClass('is-invalid');
+        $('#templateName-error, #sendFrom-error, #subject-error, #templateBody-error, #templateRecipientCategory-error, #templateRecipientSelect-error').text('').hide();
     }
 
     // Listen for user input to clear error styling
-    $('#templateName, #sendFrom, #subject').on('input', function () {
+    $('#templateName, #sendFrom, #subject, #templateRecipientCategory').on('input change', function () {
         clearFieldError(this.id);
     });
 
-    $('#templateBody').on('input change', function () {
+    $('#templateBody, #templateRecipientSelect').on('input change', function () {
         clearFieldError(this.id);
+    });
+
+    // ── Recipient helpers ──────────────────────────────────────────────────
+    function fetchRecipients(category) {
+        return $.ajax({
+            url: `/api/form-notifications/recipients?category=${encodeURIComponent(category)}`,
+            type: 'GET',
+            dataType: 'json'
+        });
+    }
+
+    function getSelectedTemplateRecipients() {
+        const val = $('#templateRecipientSelect').val();
+        if (Array.isArray(val)) return val.filter(v => v && v.trim() !== '');
+        return val ? [val] : [];
+    }
+
+    function setSelectedTemplateRecipients(values) {
+        let valueArr = Array.isArray(values) ? values : (values ? [values] : []);
+        $('#templateRecipientSelect').val(valueArr).trigger('change');
+    }
+
+    function populateTemplateRecipients(list) {
+        const sel = $('#templateRecipientSelect');
+        sel.empty();
+        list.forEach(r => {
+            const opt = $('<option></option>').attr('value', r.id).text(r.displayName);
+            sel.append(opt);
+        });
+    }
+
+    // Load recipients when category changes
+    $('#templateRecipientCategory').on('change', function () {
+        const category = $(this).val();
+        if (category) {
+            fetchRecipients(category)
+                .done(function (data) {
+                    populateTemplateRecipients(data);
+                })
+                .fail(function (err) {
+                    console.warn('Failed to load recipients:', err);
+                });
+        } else {
+            $('#templateRecipientSelect').empty();
+        }
     });
 
     // ── Open / close right panel ──────────────────────────────────────────
@@ -114,13 +185,33 @@ $(function () {
             sendFrom: data.sendFrom,
             subject: data.subject,
             bodyText: data.bodyText || '',
-            bodyHTML: data.bodyHTML
+            bodyHTML: data.bodyHTML,
+            recipientCategory: data.recipientCategory || '',
+            recipientIdentifier: data.recipientIdentifier || ''
         };
         
         $('#templateId').val(data.id);
         $('#templateName').val(data.name);
         $('#sendFrom').val(data.sendFrom);
         $('#subject').val(data.subject);
+        $('#templateRecipientCategory').val(data.recipientCategory || '');
+        
+        // Load recipients if category is set
+        if (data.recipientCategory) {
+            fetchRecipients(data.recipientCategory)
+                .done(function (list) {
+                    populateTemplateRecipients(list);
+                    const values = data.recipientIdentifier ? data.recipientIdentifier.split(',').map(v => v.trim()) : [];
+                    setSelectedTemplateRecipients(values);
+                })
+                .fail(function (err) {
+                    console.warn('Failed to load recipients for edit:', err);
+                });
+        } else {
+            $('#templateRecipientSelect').empty();
+            setSelectedTemplateRecipients([]);
+        }
+        
         UiElements.deleteButton.show();
         $('#email-attachments-section').show();
         initEmailAttachmentsTable(data.id);
@@ -135,13 +226,17 @@ $(function () {
             sendFrom: '',
             subject: '',
             bodyText: '',
-            bodyHTML: ''
+            bodyHTML: '',
+            recipientCategory: '',
+            recipientIdentifier: ''
         };
         
         $('#templateId').val('');
         $('#templateName').val('');
         $('#sendFrom').val('');
         $('#subject').val('');
+        $('#templateRecipientCategory').val('');
+        $('#templateRecipientSelect').empty().val([]).trigger('change');
         UiElements.deleteButton.hide();
         $('#email-attachments-section').hide();
         // Don't load attachments for new templates - they have no ID yet
@@ -153,9 +248,26 @@ $(function () {
             $('#templateName').val(originalFormValues.name);
             $('#sendFrom').val(originalFormValues.sendFrom);
             $('#subject').val(originalFormValues.subject);
+            $('#templateRecipientCategory').val(originalFormValues.recipientCategory || '');
+            
             const editor = tinymce.get('templateBody');
             if (editor) {
                 editor.setContent(originalFormValues.bodyHTML || '');
+            }
+            
+            // Restore recipients
+            if (originalFormValues.recipientCategory) {
+                fetchRecipients(originalFormValues.recipientCategory)
+                    .done(function (list) {
+                        populateTemplateRecipients(list);
+                        const values = originalFormValues.recipientIdentifier ? originalFormValues.recipientIdentifier.split(',').map(v => v.trim()) : [];
+                        setSelectedTemplateRecipients(values);
+                    })
+                    .fail(function (err) {
+                        console.warn('Failed to restore recipients:', err);
+                    });
+            } else {
+                $('#templateRecipientSelect').empty().val([]).trigger('change');
             }
         }
     });
@@ -169,6 +281,7 @@ $(function () {
         const templateName = $('#templateName').val();
         const sendFrom = $('#sendFrom').val();
         const subject = $('#subject').val();
+        const recipientCategory = $('#templateRecipientCategory').val();
         const editor = tinymce.get('templateBody');
         const bodyHTML = editor ? editor.getContent().trim() : '';
 
@@ -198,6 +311,13 @@ $(function () {
             markFieldError('templateBody', 'Template body is required.');
         }
 
+        // Validate recipients: if category is selected, recipients must be selected
+        const selectedRecipients = getSelectedTemplateRecipients();
+        if (recipientCategory && selectedRecipients.length === 0) {
+            validationErrors.push('Recipients are required when Recipient Category is selected.');
+            markFieldError('templateRecipientSelect', 'Recipients are required when Recipient Category is selected.');
+        }
+
         // Show single error popup if there are validation errors
         if (validationErrors.length > 0) {
             return abp.notify.error(validationErrors.join('<br>'));
@@ -209,7 +329,9 @@ $(function () {
             sendFrom: sendFrom,
             subject: subject,
             bodyText: '',
-            bodyHTML: bodyHTML
+            bodyHTML: bodyHTML,
+            recipientCategory: recipientCategory || null,
+            recipientIdentifier: selectedRecipients.length > 0 ? selectedRecipients.join(',') : null
         };
 
         const isNewTemplate = !templateId || templateId.trim() === '';
@@ -241,7 +363,9 @@ $(function () {
                         sendFrom: sendFrom,
                         subject: subject,
                         bodyText: '',
-                        bodyHTML: bodyHTML
+                        bodyHTML: bodyHTML,
+                        recipientCategory: templateData.recipientCategory || '',
+                        recipientIdentifier: templateData.recipientIdentifier || ''
                     };
                     // Now show attachments section and initialize table
                     $('#email-attachments-section').show();
@@ -360,13 +484,15 @@ $(function () {
                 title: 'Name',
                 name: 'name',
                 data: 'name',
-                index: 1
+                index: 1,
+                width: '20%'
             },
             {
                 title: 'Subject',
                 name: 'subject',
                 data: 'subject',
-                index: 2
+                index: 2,
+                width: '60%'
             },
             {
                 title: 'Actions',
@@ -375,7 +501,7 @@ $(function () {
                 orderable: false,
                 searchable: false,
                 index: 3,
-                width: '210px',
+                width: '20%',
                 render: function (data, type, row) {
                     return `
                         <div class="d-inline-flex gap-2">
@@ -425,6 +551,54 @@ $(function () {
             useNullPlaceholder: true,
             externalSearchId: 'search-prompts',
             fixedHeaders: true
+        });
+
+        // ── Auto-select template from localStorage if navigating from email editor ──
+        let hasCheckedAutoSelect = false;
+        $('#TemplatesTable').on('draw.dt', function () {
+            if (hasCheckedAutoSelect) return; // Only check once
+            
+            const templateToSelectId = localStorage.getItem('notifications-template-to-select');
+            if (!templateToSelectId) return;
+            
+            hasCheckedAutoSelect = true;
+            localStorage.removeItem('notifications-template-to-select');
+            
+            // Ensure Templates tab is active
+            const templateTab = document.getElementById('nav-template-tab');
+            if (templateTab && !templateTab.classList.contains('active')) {
+                const tab = new bootstrap.Tab(templateTab);
+                tab.show();
+            }
+            
+            // Wait for tab transition to complete, then find and select the template
+            setTimeout(() => {
+                const rows = templatesDataTable.rows().data();
+                for (let i = 0; i < rows.length; i++) {
+                    if (rows[i].id === templateToSelectId) {
+                        const $row = $(templatesDataTable.row(i).node());
+                        
+                        // Trigger the same selection logic
+                        const rowData = templatesDataTable.row(i).data();
+                        if (rowData) {
+                            initializeTemplateVariables();
+                            initializeEditor(rowData, dropdownItems);
+                            populateFields(rowData);
+                            
+                            // Highlight selected row
+                            $('#TemplatesTable tbody tr').removeClass('template-selected');
+                            $row.addClass('template-selected');
+                            openRightPanel();
+                            
+                            // Publish event for pub/sub listeners
+                            PubSub.publish('template_selected_from_email_editor', {
+                                templateId: templateToSelectId
+                            });
+                        }
+                        break;
+                    }
+                }
+            }, 150);
         });
 
         // ── Row click → open version panel ──────────────────────────────────────
@@ -815,7 +989,8 @@ function initializeEditor(data, dropdownItems) {
         license_key: 'gpl',
         selector: `#${templateId}`,
         plugins: 'lists link image preview code',
-        toolbar: 'undo redo | styles | bold italic | alignleft aligncenter alignright alignjustify | bullist numlist | link image | code preview | variablesDropdownButton',
+        menubar: 'file edit view insert format tools',
+        toolbar: 'variablesButton | undo redo | styles | bold italic | alignleft aligncenter alignright alignjustify | bullist numlist | link image | code preview',
         resize: true,
         statusbar: true,
         elementpath: false,
@@ -830,9 +1005,18 @@ function initializeEditor(data, dropdownItems) {
 }
 
 function setupEditor(editor, id, editorId, data, dropdownItems) {
-    editor.ui.registry.addMenuButton('variablesDropdownButton', {
-        text: 'VARIABLES',
-        fetch: fetchVariablesMenuItems(dropdownItems, editor)
+    editor.ui.registry.addMenuButton('variablesButton', {
+        text: 'Variables',
+        fetch: (callback) => {
+            const items = dropdownItems.map(item => ({
+                type: 'menuitem',
+                text: item.text,
+                onAction: () => {
+                    editor.insertContent(`{{${item.value}}}`);
+                }
+            }));
+            callback(items);
+        }
     });
 
     editor.on('init', function () {

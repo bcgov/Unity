@@ -9,4 +9,5 @@ public interface IEmailLogAttachmentRepository : IBasicRepository<EmailLogAttach
 {
     Task<List<EmailLogAttachment>> GetByEmailLogIdAsync(Guid emailLogId);
     Task<List<EmailLogAttachment>> GetByTemplateIdAsync(Guid templateId);
+    Task<List<EmailLogAttachment>> GetOriginAttachmentsByEmailLogIdAsync(Guid emailLogId);
 }

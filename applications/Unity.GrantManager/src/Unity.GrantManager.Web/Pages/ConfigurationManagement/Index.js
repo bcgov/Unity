@@ -3,18 +3,23 @@
     const configSections = $('.config-section');
     const ACTIVE_MENU_KEY = 'ConfigurationManagement_ActiveMenu';
     const ACTIVE_PAYMENTS_TAB_KEY = 'payments-active-tab';
+    const ACTIVE_NOTIFICATIONS_TAB_KEY = 'notifications-active-tab';
 
     init();
 
     function init() {
         menuItems.on('click', menuItemClick);
 
-        // Adjust DataTables when Payments internal tabs are shown
+        // Adjust DataTables when tabs are shown
         $('button[data-bs-toggle="tab"]').on('shown.bs.tab', function () {
             adjustDataTables();
             // Save active payments tab
             if ($(this).closest('#payments-nav-tab').length) {
                 localStorage.setItem(ACTIVE_PAYMENTS_TAB_KEY, this.id);
+            }
+            // Save active notifications tab
+            if ($(this).closest('#nav-tab').length) {
+                localStorage.setItem(ACTIVE_NOTIFICATIONS_TAB_KEY, this.id);
             }
         });
 
@@ -39,6 +44,20 @@
         
         if (paymentTabToActivate.length) {
             const tab = new bootstrap.Tab(paymentTabToActivate[0]);
+            tab.show();
+        }
+
+        // Auto-activate saved Notifications tab or first tab
+        const savedNotificationsTabId = localStorage.getItem(ACTIVE_NOTIFICATIONS_TAB_KEY);
+        const notificationsTabContainer = $('#nav-tab');
+        let notificationsTabToActivate = notificationsTabContainer.find('#' + savedNotificationsTabId);
+        
+        if (!notificationsTabToActivate.length) {
+            notificationsTabToActivate = notificationsTabContainer.find('.nav-link').first();
+        }
+        
+        if (notificationsTabToActivate.length) {
+            const tab = new bootstrap.Tab(notificationsTabToActivate[0]);
             tab.show();
         }
     }

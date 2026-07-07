@@ -8,6 +8,7 @@ using Unity.Notifications.Permissions;
 using Volo.Abp;
 using Volo.Abp.Application.Services;
 using Volo.Abp.DependencyInjection;
+using Volo.Abp.Domain.Entities;
 using Volo.Abp.Users;
 
 namespace Unity.Notifications.Emails;
@@ -65,17 +66,24 @@ public class EmailLogAttachmentAppService(
 
     public async Task DeleteAsync(Guid id)
     {
-        var attachment = await emailLogAttachmentRepository.GetAsync(id);
-
+        // Idempotent delete: if already removed by another request, treat as success.
+        var attachment = await emailLogAttachmentRepository.FindAsync(id);
         if (attachment == null)
         {
-            throw new UserFriendlyException("Attachment not found.");
+            return;
         }
 
         if (attachment.TemplateId.HasValue)
         {
             await emailAttachmentService.DeleteFromS3Async(attachment.S3ObjectKey);
-            await emailLogAttachmentRepository.DeleteAsync(id);
+            try
+            {
+                await emailLogAttachmentRepository.DeleteAsync(attachment, autoSave: true);
+            }
+            catch (EntityNotFoundException)
+            {
+                // Already deleted by another request.
+            }
             return;
         }
 
@@ -98,7 +106,15 @@ public class EmailLogAttachmentAppService(
         {
             Logger.LogError(ex, "Failed to delete S3 object {S3ObjectKey} for attachment {AttachmentId}", attachment.S3ObjectKey, id);
         }
-        await emailLogAttachmentRepository.DeleteAsync(id);
+
+        try
+        {
+            await emailLogAttachmentRepository.DeleteAsync(attachment, autoSave: true);
+        }
+        catch (EntityNotFoundException)
+        {
+            // Already deleted by another request.
+        }
     }
 
     public async Task<long> GetTotalFileSizeByEmailLogIdAsync(Guid? emailLogId, Guid? templateId)
