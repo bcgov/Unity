@@ -1203,9 +1203,9 @@ public class GrantApplicationAppService(
         return applicationManager.GetWorkflowDiagram(isDirectApproval);
     }
 
+    [Authorize(AIPermissions.Analysis.GenerateApplicationAnalysis)]
     public async Task<AIGenerationStatusDto> QueueAIGenerationAsync(Guid applicationId, string? promptVersion = null)
     {
-        await EnsureAIAnalysisEnabledAsync();
         return await QueueApplicationAnalysisAsync(applicationId, promptVersion);
     }
 
@@ -1220,8 +1220,12 @@ public class GrantApplicationAppService(
             AIGenerationRequestKeyHelper.ApplicationAnalysisOperationType,
             CurrentTenant.Id);
 
-        return await CreateGenerationStatusAsync(
-            request ?? throw new UserFriendlyException("Unable to queue AI analysis request."));
+        if (request == null)
+        {
+            throw new UserFriendlyException("Unable to queue AI analysis request.");
+        }
+
+        return await CreateGenerationStatusAsync(request);
     }
 
     [Authorize(AIPermissions.Analysis.GenerateAttachmentSummaries)]
@@ -1236,8 +1240,12 @@ public class GrantApplicationAppService(
             AIGenerationRequestKeyHelper.AttachmentSummaryOperationType,
             CurrentTenant.Id);
 
-        return await CreateGenerationStatusAsync(
-            request ?? throw new UserFriendlyException("Unable to queue AI attachment summary request."));
+        if (request == null)
+        {
+            throw new UserFriendlyException("Unable to queue AI attachment summary request.");
+        }
+
+        return await CreateGenerationStatusAsync(request);
     }
 
     [Authorize(AIPermissions.Analysis.GenerateScoring)]
@@ -1251,8 +1259,12 @@ public class GrantApplicationAppService(
             AIGenerationRequestKeyHelper.ApplicationScoringOperationType,
             CurrentTenant.Id);
 
-        return await CreateGenerationStatusAsync(
-            request ?? throw new UserFriendlyException("Unable to queue AI scoring request."));
+        if (request == null)
+        {
+            throw new UserFriendlyException("Unable to queue AI scoring request.");
+        }
+
+        return await CreateGenerationStatusAsync(request);
     }
 
     public async Task<AIGenerationStatusDto> GetAIGenerationStatusAsync(Guid applicationId, string operationType, string? promptVersion = null)
@@ -1265,20 +1277,9 @@ public class GrantApplicationAppService(
     [Authorize(AIPermissions.Analysis.GenerateApplicationAnalysis)]
     [Authorize(AIPermissions.Analysis.GenerateAttachmentSummaries)]
     [Authorize(AIPermissions.Analysis.GenerateScoring)]
-    public async Task<AIGenerationStatusDto> QueueAllAIStagesAsync(Guid applicationId, string? promptVersion = null)
+    public async Task QueueAllAIStagesAsync(Guid applicationId, string? promptVersion = null)
     {
-        await EnsureAttachmentSummariesEnabledAsync();
-        await EnsureAIAnalysisEnabledAsync();
-        await EnsureScoringEnabledAsync();
         await aiGenerationQueue.QueueAllAIStagesAsync(applicationId, CurrentTenant.Id, promptVersion);
-
-        var request = await aiGenerationStatusAppService.GetLatestAsync(
-            applicationId,
-            AIGenerationRequestKeyHelper.PipelineOperationType,
-            CurrentTenant.Id);
-
-        return await CreateGenerationStatusAsync(
-            request ?? throw new UserFriendlyException("Unable to queue AI generation request."));
     }
 
     private async Task<AIGenerationStatusDto> CreateGenerationStatusAsync(AIGenerationRequestDto? request)

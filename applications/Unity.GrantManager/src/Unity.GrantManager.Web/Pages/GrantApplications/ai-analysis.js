@@ -18,8 +18,6 @@ const sectionCollapseState = {
     recommendation: false
 };
 
-const aiAnalysisPollIntervalMs = 15000;
-const aiAnalysisMaxPollFailures = 3;
 let aiAnalysisMonitor = null;
 
 function getAnalysisLabels() {
@@ -514,8 +512,6 @@ function monitorAIAnalysisGeneration(applicationId, $button, existingHtml) {
     aiAnalysisMonitor = globalThis.AIGenerationButtonState.monitor({
         $button,
         originalHtml: existingHtml,
-        intervalMs: aiAnalysisPollIntervalMs,
-        maxFailures: aiAnalysisMaxPollFailures,
         getStatus: () => unity.grantManager.grantApplications.grantApplication
             .getAIGenerationStatus(applicationId, 'application-analysis'),
         onComplete: loadAIAnalysis,

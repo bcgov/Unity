@@ -91,10 +91,11 @@ public class TenantAppService(
         }
 
         // In-memory path: needed when filtering on ExtraProperties or sorting on ExtraProperties
+        // Keep native name filtering in SQL and only layer ExtraProperties matching on top.
         var dbSorting = dbSortFields.Contains(sortField) ? input.Sorting : nameof(Tenant.Name);
-        var allTenants = await tenantRepository.GetListAsync(dbSorting, int.MaxValue, 0, null);
+        var filteredTenants = await tenantRepository.GetListAsync(dbSorting, int.MaxValue, 0, input.Filter);
 
-        IEnumerable<Tenant> result = allTenants;
+        IEnumerable<Tenant> result = filteredTenants;
 
         // Apply ExtraProperties filter
         if (hasFilter)

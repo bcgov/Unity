@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using System;
 using System.Threading.Tasks;
+using Unity.AI.Domain;
 using Unity.AI.Operations;
 using Unity.AI.RateLimit;
 using Unity.GrantManager.Applications;
@@ -21,6 +22,7 @@ public class GenerateApplicationScoringJob(
     IApplicationRepository applicationRepository,
     IObjectMapper objectMapper,
     IRepository<AIGenerationRequest, Guid> generationRequestRepository,
+    IRepository<AIOperation, Guid> operationRepository,
     ICurrentTenant currentTenant,
     IUnitOfWorkManager unitOfWorkManager,
     ILocalEventBus localEventBus,
@@ -34,16 +36,20 @@ public class GenerateApplicationScoringJob(
             AIGenerationRequestKeyHelper.ApplicationScoringOperationType,
             args.ApplicationId,
             args.TenantId,
-            args.RequestKey,
             args.PromptVersion,
             args.RequestedByUserId);
 
         using (currentTenant.Change(args.TenantId))
         {
-            await AIGenerationRequestJobHelper.MarkRunningInNewUowAsync(unitOfWorkManager, generationRequestRepository, args.RequestKey);
+            await AIGenerationRequestJobHelper.MarkRunningInNewUowAsync(
+                unitOfWorkManager,
+                generationRequestRepository,
+                operationRepository,
+                args.TenantId,
+                args.ApplicationId,
+                AIGenerationRequestKeyHelper.ApplicationScoringOperationType);
             try
             {
-                logger.LogInformation("Executing AI application scoring job for application {ApplicationId}.", args.ApplicationId);
                 var application = await applicationRepository.GetAsync(args.ApplicationId);
                 var applicationInput = objectMapper.Map<Application, AIApplicationPromptDataDto>(application);
                 var input = await inputBuilder.BuildApplicationScoringInputAsync(applicationInput, args.PromptVersion);
@@ -54,14 +60,25 @@ public class GenerateApplicationScoringJob(
                 {
                     ApplicationId = args.ApplicationId
                 });
-                logger.LogInformation("Completed AI application scoring job for application {ApplicationId}.", args.ApplicationId);
-
-                await AIGenerationRequestJobHelper.StampRateLimitBestEffortAsync(aiRateLimiter, logger, args.RequestedByUserId, args.ApplicationId, args.RequestKey);
-                await AIGenerationRequestJobHelper.MarkCompletedInNewUowAsync(unitOfWorkManager, generationRequestRepository, args.RequestKey);
+                await AIGenerationRequestJobHelper.StampRateLimitBestEffortAsync(aiRateLimiter, logger, args.RequestedByUserId, args.ApplicationId, AIGenerationRequestKeyHelper.ApplicationScoringOperationType);
+                await AIGenerationRequestJobHelper.MarkCompletedInNewUowAsync(
+                    unitOfWorkManager,
+                    generationRequestRepository,
+                    operationRepository,
+                    args.TenantId,
+                    args.ApplicationId,
+                    AIGenerationRequestKeyHelper.ApplicationScoringOperationType);
             }
             catch (Exception ex)
             {
-                await AIGenerationRequestJobHelper.MarkFailedInNewUowAsync(unitOfWorkManager, generationRequestRepository, args.RequestKey, ex.Message);
+                await AIGenerationRequestJobHelper.MarkFailedInNewUowAsync(
+                    unitOfWorkManager,
+                    generationRequestRepository,
+                    operationRepository,
+                    args.TenantId,
+                    args.ApplicationId,
+                    AIGenerationRequestKeyHelper.ApplicationScoringOperationType,
+                    ex.Message);
                 throw;
             }
         }

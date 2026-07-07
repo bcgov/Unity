@@ -19,4 +19,20 @@ public static class AIGenerationRequestKeyHelper
             applicationId.ToString("D"),
             operationType.Trim().ToLowerInvariant());
     }
+
+    /// <summary>
+    /// Maps an operation type key (e.g. "application-analysis") to the canonical operation name
+    /// stored in the AIOperations table (e.g. "ApplicationAnalysis").
+    /// </summary>
+    public static string? ResolveOperationName(string operationType)
+    {
+        return operationType switch
+        {
+            ApplicationAnalysisOperationType => "ApplicationAnalysis",
+            AttachmentSummaryOperationType => "AttachmentSummary",
+            ApplicationScoringOperationType => "ApplicationScoring",
+            PipelineOperationType => "Default",
+            _ => null
+        };
+    }
 }
