@@ -1,5 +1,5 @@
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Localization;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -17,7 +17,7 @@ using Volo.Abp.Uow;
 namespace Unity.AI.Operations;
 
 public class AttachmentSummaryService(
-    IAttachmentSummaryPersistence attachmentSummaryPersistence,
+    IAttachmentSummaryDataProvider attachmentSummaryDataProvider,
     IChefsFileAttachmentStreamProvider chefsFileAttachmentStreamProvider,
     ITextExtractionService textExtractionService,
     IAIService aiService,
@@ -32,7 +32,7 @@ public class AttachmentSummaryService(
 
     public async Task<string> GenerateAndSaveAsync(Guid attachmentId, string? promptVersion = null, CancellationToken cancellationToken = default)
     {
-        var attachment = await attachmentSummaryPersistence.LoadAsync(attachmentId);
+        var attachment = await LoadAttachmentAsync(attachmentId);
         var fileName = string.IsNullOrWhiteSpace(attachment.FileName) ? "unknown" : attachment.FileName;
 
         await using var attachmentStream = await OpenAttachmentStreamAsync(attachment, fileName, cancellationToken);
@@ -40,8 +40,8 @@ public class AttachmentSummaryService(
         if (ShouldStopOnEmptyExtraction(fileName, extractedText))
         {
             LogEmptyExtraction(attachmentId, fileName, attachmentStream);
-        await attachmentSummaryPersistence.SaveSummaryAsync(attachmentId, TextExtractionFailedSummary);
-        return TextExtractionFailedSummary;
+            await SaveSummaryAsync(attachmentId, TextExtractionFailedSummary);
+            return TextExtractionFailedSummary;
         }
 
         var summaryResponse = await aiService.GenerateAttachmentSummaryAsync(new AttachmentSummaryRequest
@@ -52,7 +52,7 @@ public class AttachmentSummaryService(
             PromptVersion = promptVersion,
         }, cancellationToken);
 
-        await attachmentSummaryPersistence.SaveSummaryAsync(attachmentId, summaryResponse.Summary);
+        await SaveSummaryAsync(attachmentId, summaryResponse.Summary);
 
         return summaryResponse.Summary;
     }
@@ -213,7 +213,7 @@ public class AttachmentSummaryService(
     {
         await WithUnitOfWorkAsync(() => aiGenerationPrerequisiteValidator.EnsureAttachmentSummaryAvailableAsync(applicationId));
 
-        var applicationAttachmentIds = await attachmentSummaryPersistence.LoadApplicationAttachmentIdsAsync(applicationId);
+        var applicationAttachmentIds = await LoadApplicationAttachmentIdsAsync(applicationId);
 
         if (attachmentIds is not { Count: > 0 })
         {
@@ -229,6 +229,22 @@ public class AttachmentSummaryService(
         }
 
         return await GenerateAndSaveAsync(selectedIds, promptVersion, cancellationToken);
+    }
+
+    private async Task<AttachmentSummarySource> LoadAttachmentAsync(Guid attachmentId)
+    {
+        var attachment = await attachmentSummaryDataProvider.GetAttachmentAsync(attachmentId);
+        return attachment ?? throw new UserFriendlyException("Attachment not found.");
+    }
+
+    private async Task SaveSummaryAsync(Guid attachmentId, string summary)
+    {
+        await attachmentSummaryDataProvider.UpdateAttachmentSummaryAsync(attachmentId, summary);
+    }
+
+    private async Task<List<Guid>> LoadApplicationAttachmentIdsAsync(Guid applicationId)
+    {
+        return await attachmentSummaryDataProvider.GetApplicationAttachmentIdsAsync(applicationId);
     }
 
     private async Task WithUnitOfWorkAsync(Func<Task> operation)
@@ -313,5 +329,4 @@ public class AttachmentSummaryService(
             return null;
         }
     }
-
 }
