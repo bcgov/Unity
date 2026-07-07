@@ -29,6 +29,7 @@ using Unity.GrantManager.Identity;
 using Unity.GrantManager.Payments;
 using Unity.Modules.Shared;
 using Unity.Modules.Shared.Correlation;
+using Unity.Modules.Shared.Specializations;
 using Unity.Payments.PaymentRequests;
 using Volo.Abp;
 using Volo.Abp.Application.Dtos;
@@ -37,7 +38,6 @@ using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Entities;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Features;
-using Unity.Modules.Shared.Specializations;
 
 namespace Unity.GrantManager.GrantApplications;
 
@@ -418,6 +418,15 @@ public class GrantApplicationAppService(
             await PublishCustomFieldsAsync(application.Id, input);
         }
 
+        await applicationRepository.UpdateAsync(application);
+        return ObjectMapper.Map<Application, GrantApplicationDto>(application);
+    }
+
+    [Authorize(UnitySelector.Review.AssessmentResults.Update.Default)]
+    public async Task<GrantApplicationDto> UpdateExternalStatusVisibilityAsync(Guid id, bool externalStatusVisibility)
+    {
+        var application = await applicationRepository.GetAsync(id);
+        application.ExternalStatusVisibility = externalStatusVisibility;
         await applicationRepository.UpdateAsync(application);
         return ObjectMapper.Map<Application, GrantApplicationDto>(application);
     }
@@ -1194,9 +1203,9 @@ public class GrantApplicationAppService(
         return applicationManager.GetWorkflowDiagram(isDirectApproval);
     }
 
+    [Authorize(AIPermissions.Analysis.GenerateApplicationAnalysis)]
     public async Task<AIGenerationStatusDto> QueueAIGenerationAsync(Guid applicationId, string? promptVersion = null)
     {
-        await EnsureAIAnalysisEnabledAsync();
         return await QueueApplicationAnalysisAsync(applicationId, promptVersion);
     }
 
@@ -1211,8 +1220,12 @@ public class GrantApplicationAppService(
             AIGenerationRequestKeyHelper.ApplicationAnalysisOperationType,
             CurrentTenant.Id);
 
-        return await CreateGenerationStatusAsync(
-            request ?? throw new UserFriendlyException("Unable to queue AI analysis request."));
+        if (request == null)
+        {
+            throw new UserFriendlyException("Unable to queue AI analysis request.");
+        }
+
+        return await CreateGenerationStatusAsync(request);
     }
 
     [Authorize(AIPermissions.Analysis.GenerateAttachmentSummaries)]
@@ -1227,8 +1240,12 @@ public class GrantApplicationAppService(
             AIGenerationRequestKeyHelper.AttachmentSummaryOperationType,
             CurrentTenant.Id);
 
-        return await CreateGenerationStatusAsync(
-            request ?? throw new UserFriendlyException("Unable to queue AI attachment summary request."));
+        if (request == null)
+        {
+            throw new UserFriendlyException("Unable to queue AI attachment summary request.");
+        }
+
+        return await CreateGenerationStatusAsync(request);
     }
 
     [Authorize(AIPermissions.Analysis.GenerateScoring)]
@@ -1242,8 +1259,12 @@ public class GrantApplicationAppService(
             AIGenerationRequestKeyHelper.ApplicationScoringOperationType,
             CurrentTenant.Id);
 
-        return await CreateGenerationStatusAsync(
-            request ?? throw new UserFriendlyException("Unable to queue AI scoring request."));
+        if (request == null)
+        {
+            throw new UserFriendlyException("Unable to queue AI scoring request.");
+        }
+
+        return await CreateGenerationStatusAsync(request);
     }
 
     public async Task<AIGenerationStatusDto> GetAIGenerationStatusAsync(Guid applicationId, string operationType, string? promptVersion = null)
@@ -1256,20 +1277,9 @@ public class GrantApplicationAppService(
     [Authorize(AIPermissions.Analysis.GenerateApplicationAnalysis)]
     [Authorize(AIPermissions.Analysis.GenerateAttachmentSummaries)]
     [Authorize(AIPermissions.Analysis.GenerateScoring)]
-    public async Task<AIGenerationStatusDto> QueueAllAIStagesAsync(Guid applicationId, string? promptVersion = null)
+    public async Task QueueAllAIStagesAsync(Guid applicationId, string? promptVersion = null)
     {
-        await EnsureAttachmentSummariesEnabledAsync();
-        await EnsureAIAnalysisEnabledAsync();
-        await EnsureScoringEnabledAsync();
         await aiGenerationQueue.QueueAllAIStagesAsync(applicationId, CurrentTenant.Id, promptVersion);
-
-        var request = await aiGenerationStatusAppService.GetLatestAsync(
-            applicationId,
-            AIGenerationRequestKeyHelper.PipelineOperationType,
-            CurrentTenant.Id);
-
-        return await CreateGenerationStatusAsync(
-            request ?? throw new UserFriendlyException("Unable to queue AI generation request."));
     }
 
     private async Task<AIGenerationStatusDto> CreateGenerationStatusAsync(AIGenerationRequestDto? request)
@@ -1384,10 +1394,35 @@ public class GrantApplicationAppService(
                         UnityApplicationId = applications.UnityApplicationId ?? string.Empty,
                         ApplicantName = applicant != null ? (applicant.ApplicantName ?? GrantManagerConsts.UnknownValue) : GrantManagerConsts.UnknownValue,
                         OrganizationName = applicant != null ? (applicant.OrgName ?? string.Empty) : string.Empty,
-                        UnityApplicantId = applicant != null ? (applicant.UnityApplicantId ?? string.Empty) : string.Empty
+                        UnityApplicantId = applicant != null ? (applicant.UnityApplicantId ?? string.Empty) : string.Empty,
+                        ExternalStatusVisibility = applications.ExternalStatusVisibility
                     };
 
         return await query.ToListAsync();
+    }
+
+    public async Task<GrantApplicationLiteDto> GetBasicAsync(Guid id)
+    {
+        var applicationsQuery = await applicationRepository.GetQueryableAsync();
+        var applicantsQuery = await applicantRepository.GetQueryableAsync();
+
+        var query = from applications in applicationsQuery
+                    join applicant in applicantsQuery on applications.ApplicantId equals applicant.Id into applicantGroup
+                    from applicant in applicantGroup.DefaultIfEmpty()
+                    where applications.Id == id
+                    select new GrantApplicationLiteDto
+                    {
+                        Id = applications.Id,
+                        ProjectName = applications.ProjectName,
+                        ReferenceNo = applications.ReferenceNo,
+                        UnityApplicationId = applications.UnityApplicationId ?? string.Empty,
+                        ApplicantName = applicant != null ? (applicant.ApplicantName ?? GrantManagerConsts.UnknownValue) : GrantManagerConsts.UnknownValue,
+                        OrganizationName = applicant != null ? (applicant.OrgName ?? string.Empty) : string.Empty,
+                        UnityApplicantId = applicant != null ? (applicant.UnityApplicantId ?? string.Empty) : string.Empty,
+                        ExternalStatusVisibility = applications.ExternalStatusVisibility
+                    };
+
+        return await query.FirstOrDefaultAsync() ?? throw new EntityNotFoundException();
     }
 
     private static Dictionary<string, object> ExtractCustomFieldsForWorksheet(dynamic customFields, Guid worksheetId)

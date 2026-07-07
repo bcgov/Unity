@@ -143,7 +143,10 @@ namespace Unity.Payments.PaymentRequests
                 CreationTime = result.CreationTime,
                 Status = result.Status,
                 ReferenceNumber = result.ReferenceNumber,
-                SubmissionConfirmationCode = result.SubmissionConfirmationCode
+                SubmissionConfirmationCode = result.SubmissionConfirmationCode,
+                CancelledOn = result.CancelledOn,
+                CancelledById = result.CancelledById,
+                CancelledBy = result.CancelledBy
             };
         }
 
@@ -424,6 +427,29 @@ namespace Unity.Payments.PaymentRequests
         {
             var childApplicationIdsByParent = await applicationLinksService.Value.GetChildApplicationIdsByParentIdsAsync(applicationIds);
             return await paymentRequestQueryManager.GetApplicationPaymentRollupBatchAsync(applicationIds, childApplicationIdsByParent);
+        }
+
+        [Authorize(PaymentsPermissions.Payments.CancelPayment)]
+        public virtual async Task<PaymentRequestDto> CancelAsync(Guid paymentRequestId)
+        {
+            var payment = await paymentRequestQueryManager.GetPaymentRequestByIdAsync(paymentRequestId)
+                ?? throw new BusinessException("Payments:PaymentRequestNotFound")
+                    .WithData("Id", paymentRequestId);
+
+            PaymentRequestStatus[] eligibleStatuses =
+            [
+                PaymentRequestStatus.HistoricalPayment,
+                PaymentRequestStatus.L1Pending,
+                PaymentRequestStatus.L2Pending,
+                PaymentRequestStatus.L3Pending
+            ];
+
+            if (!eligibleStatuses.Contains(payment.Status))
+                throw new BusinessException("Payments:CancellationNotAllowed")
+                    .WithData("Status", payment.Status.ToString());
+
+            var result = await paymentsManager.CancelPaymentAsync(paymentRequestId);
+            return MapToPaymentRequestDto(result);
         }
     }
 }

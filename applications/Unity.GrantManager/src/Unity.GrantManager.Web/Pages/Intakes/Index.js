@@ -108,7 +108,9 @@
         dynamicButtonContainerId: 'dynamicButtonContainerId',
         useNullPlaceholder: true,
         externalSearchId: 'search-intakes',
-        fixedHeaders: true
+        fixedHeaders: true,
+        enableContextMenu: true,
+        contextMenuActionsSelector: '[data-selector="intakes-table-actions"]'
     });
 
     createModal.onResult(function () {

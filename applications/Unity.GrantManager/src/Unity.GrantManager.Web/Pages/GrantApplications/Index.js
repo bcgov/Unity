@@ -462,7 +462,9 @@ $(function () {
                     dtApi.ajax.reload(null, false);
                 }
                 initialLoad = false; // Reset flag after use
-            }
+            },
+            enableContextMenu: true,
+            contextMenuActionsSelector: '[data-selector="applications-table-actions"]'
         });
 
         dataTable.on('select', function (e, dt, type, indexes) {
@@ -599,6 +601,7 @@ $(function () {
             getOrganizationTypeColumn(columnIndex++),
             getOrganizationNameColumn(columnIndex++),
             getBusinessNumberColumn(columnIndex++),
+            getApproxNumberOfEmployeesColumn(columnIndex++),
             getDueDiligenceStatusColumn(columnIndex++),
             getDeclineRationaleColumn(columnIndex++),
             getContactFullNameColumn(columnIndex++),
@@ -1246,6 +1249,19 @@ $(function () {
             title: l('Summary:Application.BusinessNumber'),
             name: 'businessNumber',
             data: 'applicant.businessNumber',
+            className: 'data-table-header',
+            render: function (data) {
+                return data ?? '';
+            },
+            index: columnIndex
+        }
+    }
+
+    function getApproxNumberOfEmployeesColumn(columnIndex) {
+        return {
+            title: l('Summary:Application.ApproxNumberOfEmployees'),
+            name: 'approxNumberOfEmployees',
+            data: 'applicant.approxNumberOfEmployees',
             className: 'data-table-header',
             render: function (data) {
                 return data ?? '';

@@ -14,6 +14,7 @@ using Unity.GrantManager.Payments;
 using Unity.Payments.PaymentRequests;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Features;
+using Volo.Abp;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -52,9 +53,47 @@ public class GrantApplicationAIGenerationStatusTests(ITestOutputHelper outputHel
         await aiRateLimiter.Received(1).GetStateAsync();
     }
 
+    [Fact]
+    public async Task QueueApplicationAnalysisAsync_Should_Throw_When_Latest_Request_Is_Null()
+    {
+        var applicationId = Guid.NewGuid();
+        var aiGenerationStatusAppService = Substitute.For<IAIGenerationStatusAppService>();
+        aiGenerationStatusAppService
+            .GetLatestAsync(applicationId, AIGenerationRequestKeyHelper.ApplicationAnalysisOperationType, null)
+            .Returns((AIGenerationRequestDto?)null);
+
+        var aiRateLimiter = Substitute.For<IAIRateLimiter>();
+        aiRateLimiter.GetStateAsync().Returns(new AIRateLimitStateDto
+        {
+            IsGenerating = true,
+            RetryAfterSeconds = 11
+        });
+
+        var queue = Substitute.For<IApplicationAIGenerationQueue>();
+        queue
+            .QueueApplicationAnalysisAsync(applicationId, null, null)
+            .Returns(Task.CompletedTask);
+
+        var featureChecker = Substitute.For<IFeatureChecker>();
+        featureChecker
+            .IsEnabledAsync("Unity.AI.ApplicationAnalysis")
+            .Returns(true);
+
+        var appService = CreateAppService(aiGenerationStatusAppService, aiRateLimiter, queue, featureChecker);
+
+        await Should.ThrowAsync<UserFriendlyException>(() => appService.QueueApplicationAnalysisAsync(applicationId));
+
+        await queue.Received(1).QueueApplicationAnalysisAsync(applicationId, null, null);
+        await aiGenerationStatusAppService.Received(1)
+            .GetLatestAsync(applicationId, AIGenerationRequestKeyHelper.ApplicationAnalysisOperationType, null);
+        await aiRateLimiter.DidNotReceive().GetStateAsync();
+    }
+
     private GrantApplicationAppService CreateAppService(
         IAIGenerationStatusAppService aiGenerationStatusAppService,
-        IAIRateLimiter aiRateLimiter)
+        IAIRateLimiter aiRateLimiter,
+        IApplicationAIGenerationQueue? aiGenerationQueue = null,
+        IFeatureChecker? featureChecker = null)
     {
         var appService = new GrantApplicationAppService(
             Substitute.For<IApplicationManager>(),
@@ -68,10 +107,10 @@ public class GrantApplicationAIGenerationStatusTests(ITestOutputHelper outputHel
             Substitute.For<IApplicantAddressRepository>(),
             Substitute.For<IApplicantSupplierAppService>(),
             Substitute.For<IPaymentRequestAppService>(),
-            Substitute.For<IApplicationAIGenerationQueue>(),
+            aiGenerationQueue ?? Substitute.For<IApplicationAIGenerationQueue>(),
             aiGenerationStatusAppService,
             aiRateLimiter,
-            Substitute.For<IFeatureChecker>());
+            featureChecker ?? Substitute.For<IFeatureChecker>());
 
         appService.LazyServiceProvider = GetRequiredService<IAbpLazyServiceProvider>();
         return appService;

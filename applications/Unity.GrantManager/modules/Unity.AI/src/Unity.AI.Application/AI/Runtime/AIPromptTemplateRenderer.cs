@@ -116,11 +116,6 @@ public static class AIPromptTemplateRenderer
                 return new Dictionary<string, string>(StringComparer.Ordinal);
             }
 
-            if (root.TryGetProperty("sections", out var sections) && sections.ValueKind == JsonValueKind.Object)
-            {
-                return ExtractStringProperties(sections);
-            }
-
             return ExtractStringProperties(root);
         }
         catch (JsonException ex)

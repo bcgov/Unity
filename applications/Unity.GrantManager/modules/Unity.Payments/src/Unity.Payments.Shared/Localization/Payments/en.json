@@ -130,6 +130,8 @@
     "Permission:Payments.AccountCodingOverride": "Override Account Coding",
     "Permission:Payments.EditFormPaymentConfiguration": "Edit Form Payment Configuration",
     "Permission:Payments.AddHistoricalPayment": "Add Historical Payment",
+    "Permission:Payments.CancelPayment": "Cancel Payment",
+    "Enum:PaymentRequestStatus.Cancelled": "Cancelled",
     "Enum:PaymentRequestStatus.L1Pending": "L1 Pending",
     "Enum:PaymentRequestStatus.L1Approved": "L1 Approved",
     "Enum:PaymentRequestStatus.L1Declined": "L1 Declined",

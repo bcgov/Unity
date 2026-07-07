@@ -4,12 +4,11 @@ using Volo.Abp.MultiTenancy;
 
 namespace Unity.GrantManager.GrantApplications;
 
-public class AIGenerationRequest : FullAuditedAggregateRoot<Guid>, IMultiTenant
+public class AIGenerationRequest : AuditedAggregateRoot<Guid>, IMultiTenant
 {
     public Guid? TenantId { get; set; }
-    public Guid? ApplicationId { get; set; }
-    public string OperationType { get; set; } = string.Empty;
-    public string RequestKey { get; set; } = string.Empty;
+    public Guid ApplicationId { get; set; }
+    public Guid OperationId { get; set; }
     public AIGenerationRequestStatus Status { get; set; }
     public DateTime? StartedAt { get; set; }
     public DateTime? CompletedAt { get; set; }
@@ -23,15 +22,13 @@ public class AIGenerationRequest : FullAuditedAggregateRoot<Guid>, IMultiTenant
     public AIGenerationRequest(
         Guid id,
         Guid? tenantId,
-        string operationType,
-        Guid? applicationId,
-        string requestKey)
+        Guid operationId,
+        Guid applicationId)
         : base(id)
     {
         TenantId = tenantId;
-        OperationType = operationType;
+        OperationId = operationId;
         ApplicationId = applicationId;
-        RequestKey = requestKey;
         Status = AIGenerationRequestStatus.Queued;
     }
 
