@@ -16,7 +16,8 @@ Host.CreateDefaultBuilder(args)
     ...
 ```
 
-`AddAppSettingsSecretsJson()` is a helper from the ABP Framework (`Volo.Abp.Core`) that adds an **optional** `appsettings.secrets.json` file to the configuration pipeline. Because it's chained onto the host builder after `Host.CreateDefaultBuilder` has already added its default sources, it loads *after* environment variables and command-line arguments — so any value it defines will override an environment variable of the same key. This is the supported way to layer local secrets on top of whatever environment configuration is already in place.
+`AddAppSettingsSecretsJson()` is a helper from the ABP Framework (`Volo.Abp.Core`) that adds an **optional** `appsettings.secrets.json` file to the configuration pipeline. Because it's chained onto the host builder after `Host.CreateDefaultBuilder` has already added its default sources, it loads *after* those sources (including environment variables and command-line arguments).
+As a result, any value it defines will override values from earlier providers (including env vars and command-line) when the keys match.
 
 Create an `appsettings.secrets.json` file in this project directory with your local connection strings and any other overrides:
 

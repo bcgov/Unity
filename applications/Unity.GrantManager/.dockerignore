@@ -3,6 +3,9 @@
 # these files in the first place, since they are gitignored).
 **/appsettings.secrets.json
 **/appsettings.Development.json
+**/.env
+**/.env.*
+**/*.env
 
 # Build artifacts and local tooling state - not needed in the build
 # context and only bloat it / risk copying stale output.
