@@ -7,7 +7,7 @@ namespace Unity.AI.Operations;
 
 public interface IAIApplicationInputDataProvider
 {
-    Task<ApplicationFormSnapshot?> GetApplicationFormAsync(Guid applicationFormId);
+    Task<ApplicationFormSnapshot?> GetApplicationFormAsync(Guid applicationId);
 
     Task<ApplicationSubmissionSnapshot?> GetApplicationSubmissionAsync(Guid applicationId);
 

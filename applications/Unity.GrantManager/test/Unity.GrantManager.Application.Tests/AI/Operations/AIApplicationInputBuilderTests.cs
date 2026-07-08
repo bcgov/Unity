@@ -72,12 +72,11 @@ public class AIApplicationInputBuilderTests
     public async Task BuildApplicationScoringInputAsync_Uses_Shared_Input_Data_And_Builds_Section_Schema()
     {
         var applicationId = Guid.NewGuid();
-        var formId = Guid.NewGuid();
         var formVersionId = Guid.NewGuid();
         var scoresheetId = Guid.NewGuid();
         var builder = CreateBuilder(out var dataProvider);
 
-        dataProvider.GetApplicationFormAsync(formId).Returns(new ApplicationFormSnapshot
+        dataProvider.GetApplicationFormAsync(applicationId).Returns(new ApplicationFormSnapshot
         {
             ScoresheetId = scoresheetId
         });
@@ -131,7 +130,7 @@ public class AIApplicationInputBuilderTests
             ]
         });
 
-        var input = await builder.BuildApplicationScoringInputAsync(CreatePromptData(applicationId, formId), "v2");
+        var input = await builder.BuildApplicationScoringInputAsync(CreatePromptData(applicationId), "v2");
 
         input.ApplicationId.ShouldBe(applicationId);
         input.PromptVersion.ShouldBe("v2");

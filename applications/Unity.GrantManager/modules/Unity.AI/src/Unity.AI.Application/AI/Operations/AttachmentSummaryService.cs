@@ -234,7 +234,7 @@ public class AttachmentSummaryService(
     private async Task<AttachmentSummarySource> LoadAttachmentAsync(Guid attachmentId)
     {
         var attachment = await attachmentSummaryDataProvider.GetAttachmentAsync(attachmentId);
-        return attachment ?? throw new UserFriendlyException("Attachment not found.");
+        return attachment ?? throw new UserFriendlyException(localizer[AILocalizationKeys.AttachmentNotFound]);
     }
 
     private async Task SaveSummaryAsync(Guid attachmentId, string summary)

@@ -1,9 +1,12 @@
 using System;
+using Microsoft.Extensions.Localization;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Unity.AI.Operations;
+using Unity.AI.Localization;
 using Unity.GrantManager.Applications;
+using Volo.Abp;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Uow;
 
@@ -11,13 +14,19 @@ namespace Unity.GrantManager.GrantApplications.Automation;
 
 public class AttachmentSummaryDataProvider(
     IApplicationChefsFileAttachmentRepository applicationChefsFileAttachmentRepository,
-    IUnitOfWorkManager unitOfWorkManager) : IAttachmentSummaryDataProvider, ITransientDependency
+    IUnitOfWorkManager unitOfWorkManager,
+    IStringLocalizer<AIResource> localizer) : IAttachmentSummaryDataProvider, ITransientDependency
 {
     public async Task<AttachmentSummarySource?> GetAttachmentAsync(Guid attachmentId)
     {
         using var uow = unitOfWorkManager.Begin(requiresNew: true, isTransactional: false);
-        var attachment = await applicationChefsFileAttachmentRepository.GetAsync(attachmentId);
+        var attachment = await applicationChefsFileAttachmentRepository.FindAsync(attachmentId);
         await uow.CompleteAsync();
+
+        if (attachment == null)
+        {
+            return null;
+        }
 
         return new AttachmentSummarySource(
             attachment.Id,
@@ -29,7 +38,8 @@ public class AttachmentSummaryDataProvider(
     public async Task UpdateAttachmentSummaryAsync(Guid attachmentId, string summary)
     {
         using var uow = unitOfWorkManager.Begin(requiresNew: true);
-        var attachment = await applicationChefsFileAttachmentRepository.GetAsync(attachmentId);
+        var attachment = await applicationChefsFileAttachmentRepository.FindAsync(attachmentId)
+            ?? throw new UserFriendlyException(localizer[AILocalizationKeys.AttachmentNotFound]);
         attachment.AISummary = summary;
         await applicationChefsFileAttachmentRepository.UpdateAsync(attachment);
         await uow.CompleteAsync();

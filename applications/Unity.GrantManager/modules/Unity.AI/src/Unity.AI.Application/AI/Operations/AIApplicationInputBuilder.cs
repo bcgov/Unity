@@ -33,7 +33,7 @@ public class AIApplicationInputBuilder(
 
     public async Task<ApplicationScoringOperationInputDto> BuildApplicationScoringInputAsync(AIApplicationPromptDataDto application, string? promptVersion)
     {
-        var applicationForm = await dataProvider.GetApplicationFormAsync(application.ApplicationFormId);
+        var applicationForm = await dataProvider.GetApplicationFormAsync(application.ApplicationId);
         if (applicationForm?.ScoresheetId == null)
         {
             throw new UserFriendlyException("Scoring requires a configured scoresheet.");
