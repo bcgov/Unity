@@ -53,9 +53,9 @@ namespace Unity.GrantManager.Events
                 ["submission_number"]           = application.ReferenceNo,
                 ["submission_date"]             = application.SubmissionDate.ToString("yyyy-MM-dd"),
                 ["status"]                      = applicationStatus?.StatusCode.ToString() ?? string.Empty,
-                ["approved_amount"]             = application.ApprovedAmount.ToString("N2"),
-                ["requested_amount"]            = application.RequestedAmount.ToString("N2"),
-                ["recommended_amount"]          = application.RecommendedAmount.ToString("N2"),
+                ["approved_amount"]             = application.ApprovedAmount.ToString("$#,##0.00"),
+                ["requested_amount"]            = application.RequestedAmount.ToString("$#,##0.00"),
+                ["recommended_amount"]          = application.RecommendedAmount.ToString("$#,##0.00"),
                 ["approval_date"]               = application.FinalDecisionDate?.ToString("yyyy-MM-dd") ?? string.Empty,
                 ["decline_rationale"]           = application.DeclineRational ?? string.Empty,
                 ["community"]                   = application.Community ?? string.Empty,
@@ -68,6 +68,8 @@ namespace Unity.GrantManager.Events
                 ["contact_full_name"]           = applicantAgent?.Name ?? string.Empty,
                 ["contact_title"]               = applicantAgent?.Title ?? string.Empty,
                 ["category"]                    = applicationForm?.Category ?? string.Empty,
+                ["today_date"]                  = $"Today, {DateTime.Today.ToString("MMMM d, yyyy")}",
+                ["unity_application_id"]        = application.UnityApplicationId ?? string.Empty
             };
         }
 
