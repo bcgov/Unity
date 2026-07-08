@@ -1,0 +1,65 @@
+/* Date-filter controls for the Notification list. Mirrors the shared ActionBar component
+   styling (Views/Shared/Components/ActionBar/Default.css) and the Applications date-control
+   label sizing, because this module page cannot reference those main-app page stylesheets. */
+
+.search-action-bar {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    align-items: center;
+    row-gap: 6px;
+}
+
+.search-action-bar_search-wrapper {
+    flex: 1;
+    min-width: 220px;
+}
+
+.date-input-filter-div {
+    display: inline-block;
+    padding: 10px;
+    padding-top: 0px;
+    margin-top: -10px;
+    margin-bottom: -10px;
+    padding-bottom: 0px !important;
+}
+
+.date-input-filter-div label.form-label {
+    font-size: 13.6px;
+    margin-bottom: 0.3rem;
+}
+
+.custom-date-range-container-div {
+    display: inline-block;
+    padding: 0px;
+    margin: 0px;
+}
+
+.quick-date-input {
+    font-size: var(--bc-font-size);
+    color: var(--bc-colors-grey-text-500);
+    border-radius: var(--bc-layout-margin-small) !important;
+    border: 2px solid var(--bc-colors-blue-primary);
+    text-overflow: ellipsis;
+}
+
+#dynamicButtonContainerId {
+    flex-shrink: 0;
+    display: flex;
+    align-items: flex-end;
+}
+
+/* Match the Applications action-bar height: zero the row padding and reset the base
+   negative top-margin, letting the date controls' mb-3 provide the spacing. */
+.action-bar-date-controls .search-action-bar {
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+}
+
+.action-bar-date-controls .date-input-filter-div {
+    margin-top: 10px;
+}
+
+.action-bar-date-controls #dynamicButtonContainerId {
+    margin-top: 0;
+}
