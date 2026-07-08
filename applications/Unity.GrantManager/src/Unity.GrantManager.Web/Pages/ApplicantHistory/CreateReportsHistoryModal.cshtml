@@ -40,6 +40,17 @@
             <div class="mb-3">
                 <div class="switch-container">
                     <div class="form-check unt-form-switch form-switch">
+                        <input class="form-check-input" type="checkbox" id="ReportsHistoryForm_SignedOff"
+                               name="ReportsHistoryForm.SignedOff" value="true"
+                               @(Model.ReportsHistoryForm?.SignedOff == true ? "checked" : "") />
+                        <label class="form-check-label" for="ReportsHistoryForm_SignedOff">Signed-Off</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <div class="switch-container">
+                    <div class="form-check unt-form-switch form-switch">
                         <input class="form-check-input" type="checkbox" id="ReportsHistoryForm_IncompleteReport"
                                name="ReportsHistoryForm.IncompleteReport" value="true"
                                @(Model.ReportsHistoryForm?.IncompleteReport == true ? "checked" : "") />
