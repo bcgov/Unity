@@ -76,12 +76,12 @@ $(function () {
 
                     let $editBtn = $('<button>')
                         .addClass('btn btn-sm edit-button px-0 funding-edit-btn')
-                        .attr({ 'aria-label': 'Edit', 'title': 'Edit' })
+                        .attr({ 'type': 'button', 'aria-label': 'Edit', 'title': 'Edit' })
                         .append($('<i>').addClass('fl fl-edit'));
 
                     let $deleteBtn = $('<button>')
                         .addClass('btn btn-link p-0 funding-delete-btn')
-                        .attr({ 'title': 'Delete Funding History', 'data-id': row.id })
+                        .attr({ 'type': 'button', 'title': 'Delete Funding History', 'data-id': row.id })
                         .css({ 'color': '#0066cc', 'text-decoration': 'none' })
                         .append($('<i>').addClass('fa fa-times'));
 
@@ -110,12 +110,12 @@ $(function () {
 
                     let $editBtn = $('<button>')
                         .addClass('btn btn-sm edit-button px-0 issue-edit-btn')
-                        .attr({ 'aria-label': 'Edit', 'title': 'Edit' })
+                        .attr({ 'type': 'button', 'aria-label': 'Edit', 'title': 'Edit' })
                         .append($('<i>').addClass('fl fl-edit'));
 
                     let $deleteBtn = $('<button>')
                         .addClass('btn btn-link p-0 issue-delete-btn')
-                        .attr({ 'title': 'Delete Issue Tracking', 'data-id': row.id })
+                        .attr({ 'type': 'button', 'title': 'Delete Issue Tracking', 'data-id': row.id })
                         .css({ 'color': '#0066cc', 'text-decoration': 'none' })
                         .append($('<i>').addClass('fa fa-times'));
 
@@ -156,12 +156,12 @@ $(function () {
 
                     let $editBtn = $('<button>')
                         .addClass('btn btn-sm edit-button px-0 audit-edit-btn')
-                        .attr({ 'aria-label': 'Edit', 'title': 'Edit' })
+                        .attr({ 'type': 'button', 'aria-label': 'Edit', 'title': 'Edit' })
                         .append($('<i>').addClass('fl fl-edit'));
 
                     let $deleteBtn = $('<button>')
                         .addClass('btn btn-link p-0 audit-delete-btn')
-                        .attr({ 'title': 'Delete Audit History', 'data-id': row.id })
+                        .attr({ 'type': 'button', 'title': 'Delete Audit History', 'data-id': row.id })
                         .css({ 'color': '#0066cc', 'text-decoration': 'none' })
                         .append($('<i>').addClass('fa fa-times'));
 
@@ -201,12 +201,12 @@ $(function () {
 
                     let $editBtn = $('<button>')
                         .addClass('btn btn-sm edit-button px-0 reports-edit-btn')
-                        .attr({ 'aria-label': 'Edit', 'title': 'Edit' })
+                        .attr({ 'type': 'button', 'aria-label': 'Edit', 'title': 'Edit' })
                         .append($('<i>').addClass('fl fl-edit'));
 
                     let $deleteBtn = $('<button>')
                         .addClass('btn btn-link p-0 reports-delete-btn')
-                        .attr({ 'title': 'Delete Reports History', 'data-id': row.id })
+                        .attr({ 'type': 'button', 'title': 'Delete Reports History', 'data-id': row.id })
                         .css({ 'color': '#0066cc', 'text-decoration': 'none' })
                         .append($('<i>').addClass('fa fa-times'));
 
