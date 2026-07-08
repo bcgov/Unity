@@ -145,16 +145,19 @@ namespace Unity.AI.Runtime
                 var prompt = promptTemplate.SystemPrompt;
 
                 var attachmentText = string.IsNullOrWhiteSpace(extractedText) ? null : extractedText;
-                var attachmentPayload = new
+                var attachmentPayload = new[]
                 {
-                    name = fileName,
-                    contentType,
-                    text = attachmentText
+                    new
+                    {
+                        name = fileName,
+                        contentType,
+                        text = attachmentText
+                    }
                 };
-                var attachment = JsonSerializer.Serialize(attachmentPayload, AIJsonDefaults.Indented);
-                var contentToAnalyze = AIPromptTemplateRenderer.BuildAttachmentSummaryUserPrompt(
+                var attachments = JsonSerializer.Serialize(attachmentPayload, AIJsonDefaults.Indented);
+                var contentToAnalyze = AIPromptTemplateRenderer.BuildAttachmentSummaryBatchUserPrompt(
                     promptTemplate.UserPrompt,
-                    attachment,
+                    attachments,
                     promptTemplate.MetadataJson);
 
                 await _promptFileLogger.LogPromptInputAsync(AttachmentSummaryPromptType, promptVersion, prompt, contentToAnalyze, cancellationToken);

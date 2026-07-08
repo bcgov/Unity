@@ -25,7 +25,7 @@ public class AIOperationDataSeeder(
 
     private static readonly BuiltInOperationDefinition[] BuiltInOperations =
     [
-        new(AIPromptTypes.ApplicationAnalysis, AIPromptTypes.ApplicationAnalysis, 1, 4000),
+        new(AIPromptTypes.ApplicationAnalysis, AIPromptTypes.ApplicationAnalysis, 1, 4000, AIExecutionMode.Single),
         new(AIPromptTypes.AttachmentSummary, AIPromptTypes.AttachmentSummary, 1, 2000),
         new(AIPromptTypes.ApplicationScoring, AIPromptTypes.ApplicationScoring, 1, 8000)
     ];
@@ -71,7 +71,7 @@ public class AIOperationDataSeeder(
         {
             existing.AIModelId = model.Id;
             existing.AIPromptId = prompt.Id;
-            existing.ExecutionMode = AIExecutionMode.Sequential;
+            existing.ExecutionMode = definition.ExecutionMode;
             existing.CompletionTokens = definition.CompletionTokens;
             existing.IsActive = true;
             await operationRepository.UpdateAsync(existing, autoSave: true);
@@ -81,7 +81,7 @@ public class AIOperationDataSeeder(
         await operationRepository.InsertAsync(
             new AIOperation(Guid.CreateVersion7(), definition.OperationName, model.Id, prompt.Id)
             {
-                ExecutionMode = AIExecutionMode.Sequential,
+                ExecutionMode = definition.ExecutionMode,
                 CompletionTokens = definition.CompletionTokens,
                 IsActive = true
             },
@@ -106,5 +106,6 @@ public class AIOperationDataSeeder(
         string OperationName,
         string PromptName,
         int PromptVersionNumber,
-        int CompletionTokens);
+        int CompletionTokens,
+        AIExecutionMode ExecutionMode = AIExecutionMode.Sequential);
 }

@@ -6,6 +6,9 @@ namespace Unity.AI.Operations;
 /// </summary>
 public enum AIExecutionMode
 {
+    /// <summary>Single request with no item fan-out.</summary>
+    Single,
+
     /// <summary>One item at a time, in order. Default; preserves legacy behavior.</summary>
     Sequential,
 
