@@ -213,4 +213,31 @@ public class NotificationListAppServiceTests : GrantManagerApplicationTestBase
 
         result.Items.ShouldContain(i => i.Id == veryOld.Id);
     }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task GetListAsync_Should_Include_Unsent_Rows_By_Creation_Date_Within_Range()
+    {
+        SetFeatureEnabled("Unity.Notifications", true);
+        var application = await _applicationRepository.GetAsync(GrantManagerTestData.Application1_Id);
+
+        // A draft / unsent notification has no SentDateTime. It must still appear in a bounded
+        // window based on when it was created (CreationTime is stamped on insert), not vanish.
+        var draft = await _emailLogsRepository.InsertAsync(new EmailLog
+        {
+            ApplicationId = application.Id,
+            ApplicantId = application.ApplicantId,
+            Subject = "Unsent Draft",
+            Status = "Draft",
+            SentDateTime = null
+        }, autoSave: true);
+
+        var result = await _notificationListAppService.GetListAsync(new NotificationListInputDto
+        {
+            DateFrom = DateTime.Today.AddDays(-2),
+            DateTo = DateTime.Today.AddDays(2)
+        });
+
+        result.Items.ShouldContain(i => i.Id == draft.Id);
+    }
 }

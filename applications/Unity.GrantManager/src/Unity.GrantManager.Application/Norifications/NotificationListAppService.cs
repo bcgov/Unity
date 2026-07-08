@@ -35,14 +35,17 @@ public class NotificationListAppService(
 
         var query = await emailLogsRepository.GetQueryableAsync();
 
+        // Filter on the sent date, falling back to the creation date for rows that were never
+        // sent (drafts, failures, scheduled emails). Otherwise their null SentDateTime would
+        // drop them from every window except "All time".
         if (fromUtc.HasValue)
         {
-            query = query.Where(e => e.SentDateTime >= fromUtc.Value);
+            query = query.Where(e => (e.SentDateTime ?? e.CreationTime) >= fromUtc.Value);
         }
 
         if (toUtc.HasValue)
         {
-            query = query.Where(e => e.SentDateTime <= toUtc.Value);
+            query = query.Where(e => (e.SentDateTime ?? e.CreationTime) <= toUtc.Value);
         }
 
         query = query.OrderBy(sorting);
