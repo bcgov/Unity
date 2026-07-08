@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Unity.AI.Automation;
 using Unity.AI.Domain;
+using Unity.AI.Generation;
 using Unity.AI.Localization;
 using Unity.AI.Generation;
 using Unity.AI.Operations;

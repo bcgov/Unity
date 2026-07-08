@@ -573,7 +573,6 @@ $(function() {
             if (request?.isActive !== true) {
                 return;
             }
-
             const existingHtml = $regenerateButton.html();
             globalThis.AIGenerationButtonState?.setGenerating($regenerateButton);
             monitorAIAnalysisGeneration(applicationId, $regenerateButton, existingHtml);
