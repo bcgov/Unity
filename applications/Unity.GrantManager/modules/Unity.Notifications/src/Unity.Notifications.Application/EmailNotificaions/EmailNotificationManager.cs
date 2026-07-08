@@ -15,6 +15,7 @@ using Unity.Notifications.Integrations.Ches;
 using Unity.Notifications.Integrations.RabbitMQ;
 using Unity.Notifications.Settings;
 using Volo.Abp;
+using Volo.Abp.Data;
 using Volo.Abp.Domain.Entities;
 using Volo.Abp.Domain.Services;
 using Volo.Abp.Settings;
@@ -31,6 +32,8 @@ namespace Unity.Notifications.EmailNotifications
         EmailAttachmentService emailAttachmentService,
         ISettingProvider settingProvider) : DomainService, IEmailNotificationManager
     {
+        private static readonly TimeSpan BcPermanentDstOffset = TimeSpan.FromHours(-7);
+
         public async Task<EmailLog?> CreateEmailLogAsync(EmailMessageParams email, Guid applicationId)
         {
             return await CreateEmailLogAsync(email, applicationId, EmailStatus.Initialized);
@@ -114,7 +117,22 @@ namespace Unity.Notifications.EmailNotifications
             }
 
             await DeleteEmailAttachmentsAsync(id);
-            await emailLogsRepository.DeleteAsync(id);
+            
+            try
+            {
+                await emailLogsRepository.DeleteAsync(id);
+            }
+            catch (AbpDbConcurrencyException)
+            {
+                // Handle concurrency exception - entity may have been deleted by another request
+                // Try to get fresh entity and delete it, or silently succeed if it's already gone
+                var freshEmailLog = await emailLogsRepository.FindAsync(id);
+                if (freshEmailLog != null)
+                {
+                    await emailLogsRepository.DeleteAsync(freshEmailLog, autoSave: true);
+                }
+                // If entity doesn't exist, that's fine - it was already deleted
+            }
         }
 
         public async Task CancelEmailLogAsync(Guid id)
@@ -276,7 +294,8 @@ namespace Unity.Notifications.EmailNotifications
             // delayTS: desired UTC send time as Unix milliseconds; 0 = send immediately.
             if (email.SendOnDateTime.HasValue)
             {
-                emailObjectDictionary["delayTS"] = new DateTimeOffset(email.SendOnDateTime.Value, TimeSpan.Zero).ToUnixTimeMilliseconds();
+                var normalizedUtcSendOn = NormalizeToUtc(email.SendOnDateTime.Value);
+                emailObjectDictionary["delayTS"] = new DateTimeOffset(normalizedUtcSendOn).ToUnixTimeMilliseconds();
             }
 
             // templateName is not part of the CHES MessageObject schema
@@ -287,6 +306,16 @@ namespace Unity.Notifications.EmailNotifications
             }
 
             return emailObject;
+        }
+
+        private static DateTime NormalizeToUtc(DateTime sendOnDateTime)
+        {
+            return sendOnDateTime.Kind switch
+            {
+                DateTimeKind.Utc => sendOnDateTime,
+                DateTimeKind.Local => sendOnDateTime.ToUniversalTime(),
+                _ => new DateTimeOffset(sendOnDateTime, BcPermanentDstOffset).UtcDateTime
+            };
         }
 
         protected virtual EmailLog UpdateMappedEmailLog(EmailLog emailLog, dynamic emailDynamicObject)
@@ -331,9 +360,13 @@ namespace Unity.Notifications.EmailNotifications
             {
                 emailLog.ScheduledNotificationId = scheduledNotificationId.Value;
             }
-            emailLog.SendOnDateTime = email.SendOnDateTime;
-            emailLog.Status = DetermineSendStatus(email.SendOnDateTime, status);
-            emailLog.EmailType = DetermineEmailType(email.SendOnDateTime);
+            var normalizedSendOnDateTime = email.SendOnDateTime.HasValue
+                ? NormalizeToUtc(email.SendOnDateTime.Value)
+                : (DateTime?)null;
+
+            emailLog.SendOnDateTime = normalizedSendOnDateTime;
+            emailLog.Status = DetermineSendStatus(normalizedSendOnDateTime, status);
+            emailLog.EmailType = DetermineEmailType(normalizedSendOnDateTime);
             return emailLog;
         }
 

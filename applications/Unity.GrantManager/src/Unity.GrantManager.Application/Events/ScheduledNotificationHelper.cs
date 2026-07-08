@@ -99,65 +99,26 @@ namespace Unity.GrantManager.Events
             ScheduledNotification notification,
             EmailNotificationEvent emailEvent)
         {
-            var allGroups = await emailGroupsAppService.GetListAsync();
-            
-            // Split comma-separated recipient identifiers and process each
-            var recipientIdentifiers = notification.RecipientIdentifier?
-                .Split(',')
-                .Select(r => r.Trim())
-                .Where(r => !string.IsNullOrWhiteSpace(r))
-                .ToList() ?? [];
+            var recipientEmails = await GetInternalRecipientEmailAddressesAsync(
+                notification,
+                emailGroupsAppService,
+                emailGroupUsersAppService,
+                identityUserIntegrationService);
 
-            if (recipientIdentifiers.Count == 0)
-            {
-                _logger.LogWarning(
-                    "ScheduledNotificationHelper: No recipient identifiers provided for notification {NotificationId}, skipping.",
-                    notification.Id);
-                return;
-            }
+            var recipients = recipientEmails
+                .Split(';', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
 
-            var emailAddresses = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-
-            foreach (var recipientId in recipientIdentifiers)
-            {
-                var group = allGroups.FirstOrDefault(g =>
-                    string.Equals(g.Name, recipientId, StringComparison.OrdinalIgnoreCase));
-
-                if (group == null)
-                {
-                    _logger.LogWarning(
-                        "ScheduledNotificationHelper: Email group '{GroupName}' not found for notification {NotificationId}, skipping group.",
-                        recipientId, notification.Id);
-                    continue;
-                }
-
-                var groupUsers = await emailGroupUsersAppService.GetEmailGroupUsersByGroupIdAsync(group.Id);
-                if (groupUsers.Count == 0)
-                {
-                    _logger.LogWarning(
-                        "ScheduledNotificationHelper: Email group '{GroupName}' has no members for notification {NotificationId}, skipping group.",
-                        recipientId, notification.Id);
-                    continue;
-                }
-
-                foreach (var groupUser in groupUsers)
-                {
-                    var user = await identityUserIntegrationService.FindByIdAsync(groupUser.UserId);
-                    if (user != null && !string.IsNullOrWhiteSpace(user.Email))
-                    {
-                        emailAddresses.Add(user.Email);
-                    }
-                }
-            }
-
-            if (emailAddresses.Count == 0)
+            if (recipients.Count == 0)
             {
                 _logger.LogWarning(
                     "ScheduledNotificationHelper: No resolvable email addresses in any groups for notification {NotificationId}, skipping.",
                     notification.Id);
                 return;
             }
-            emailEvent.EmailAddressList = [.. emailAddresses];            
+
+            emailEvent.EmailAddressList = [.. recipients];
             await localEventBus.PublishAsync(emailEvent);
         }
 
