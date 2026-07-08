@@ -61,7 +61,7 @@ namespace Unity.AI.Extraction
                     _ => ExtractByContentType(fileName, fileContent, normalizedContentType, cancellationToken)
                 };
 
-                return Task.FromResult(NormalizeAndLimitText(rawText, fileName));
+                return Task.FromResult(NormalizeAndLimitText(rawText));
             }
             catch (OperationCanceledException)
             {
@@ -656,7 +656,7 @@ namespace Unity.AI.Extraction
             }) ?? string.Empty;
         }
 
-        private string NormalizeAndLimitText(string text, string fileName)
+        private string NormalizeAndLimitText(string text)
         {
             var normalized = NormalizeExtractedText(text);
 
