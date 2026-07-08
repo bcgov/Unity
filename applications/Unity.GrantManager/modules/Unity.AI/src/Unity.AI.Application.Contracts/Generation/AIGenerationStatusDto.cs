@@ -2,7 +2,7 @@ namespace Unity.AI.Generation;
 
 public class AIGenerationStatusDto
 {
-    public object? GenerationRequest { get; set; }
+    public AIGenerationStatusRequestDto? GenerationRequest { get; set; }
 
     public bool IsGenerating { get; set; }
 

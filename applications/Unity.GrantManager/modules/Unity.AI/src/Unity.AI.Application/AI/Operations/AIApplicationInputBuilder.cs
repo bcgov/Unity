@@ -78,8 +78,16 @@ public class AIApplicationInputBuilder(
             return null;
         }
 
-        var formVersion = await dataProvider.GetApplicationFormVersionAsync(formVersionId);
-        return string.IsNullOrWhiteSpace(formVersion?.FormSchema) ? null : formVersion.FormSchema;
+        try
+        {
+            var formVersion = await dataProvider.GetApplicationFormVersionAsync(formVersionId);
+            return string.IsNullOrWhiteSpace(formVersion?.FormSchema) ? null : formVersion.FormSchema;
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "Unable to load form schema for AI input generation for form version {FormVersionId}.", formVersionId);
+            return null;
+        }
     }
 
     private static List<object> BuildSectionQuestionsData(ScoresheetSectionSnapshot section)

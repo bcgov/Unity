@@ -19,7 +19,7 @@ public class AIApplicationInputDataProvider(
 {
     public async Task<ApplicationFormSnapshot?> GetApplicationFormAsync(Guid applicationFormId)
     {
-        var form = await applicationFormRepository.GetAsync(applicationFormId);
+        var form = await applicationFormRepository.FindAsync(applicationFormId);
         return form == null ? null : new ApplicationFormSnapshot { ScoresheetId = form.ScoresheetId };
     }
 
@@ -42,7 +42,7 @@ public class AIApplicationInputDataProvider(
             return null;
         }
 
-        var version = await applicationFormVersionRepository.GetAsync(formVersionId.Value);
+        var version = await applicationFormVersionRepository.FindAsync(formVersionId.Value);
         return version == null ? null : new ApplicationFormVersionSnapshot { FormSchema = version.FormSchema };
     }
 

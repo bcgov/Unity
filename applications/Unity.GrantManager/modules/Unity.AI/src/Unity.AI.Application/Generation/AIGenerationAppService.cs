@@ -90,7 +90,20 @@ public class AIGenerationAppService(
 
         return new AIGenerationStatusDto
         {
-            GenerationRequest = request,
+            GenerationRequest = request == null
+                ? null
+                : new AIGenerationStatusRequestDto
+                {
+                    Id = request.Id,
+                    ApplicationId = request.ApplicationId,
+                    OperationId = request.OperationId,
+                    OperationType = operationType,
+                    Status = request.Status.ToString(),
+                    StartedAt = request.StartedAt,
+                    CompletedAt = request.CompletedAt,
+                    FailureReason = request.FailureReason,
+                    IsActive = request.IsActive
+                },
             IsGenerating = state.IsGenerating,
             RetryAfterSeconds = state.RetryAfterSeconds
         };
