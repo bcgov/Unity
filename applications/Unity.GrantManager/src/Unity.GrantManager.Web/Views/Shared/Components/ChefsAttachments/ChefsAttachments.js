@@ -238,10 +238,7 @@ $(function () {
         globalThis.AIGenerationButtonState.monitor({
             $button,
             originalHtml: originalHtml ?? $button.html(),
-            getStatus: () => abp.ajax({
-                url: `/api/app/ai/generation/status?applicationId=${encodeURIComponent(applicationId)}&operationType=attachment-summary`,
-                type: 'GET'
-            }),
+            getStatus: () => globalThis.AIGenerationApi.getStatus(applicationId, 'attachment-summary'),
             onComplete: refreshAttachmentSummaryResults,
             onFailed: (request) => {
                 abp.message.error(request?.failureReason || 'AI attachment summary generation failed.');

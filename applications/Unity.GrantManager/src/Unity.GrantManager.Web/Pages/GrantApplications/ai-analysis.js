@@ -482,10 +482,7 @@ globalThis.queueApplicationAnalysis = function(triggerButton = null) {
 
     globalThis.AIGenerationButtonState?.setGenerating($button);
 
-    abp.ajax({
-        url: `/api/app/ai/generation/application-analysis?applicationId=${encodeURIComponent(applicationId)}`,
-        type: 'POST'
-    })
+    unity.ai.generation.aIGeneration.generateApplicationAnalysis(applicationId)
         .done(function(generationStatus) {
             const request = generationStatus?.generationRequest;
             const status = String(request?.status ?? '').trim();
@@ -514,10 +511,7 @@ function monitorAIAnalysisGeneration(applicationId, $button, existingHtml) {
     aiAnalysisMonitor = globalThis.AIGenerationButtonState.monitor({
         $button,
         originalHtml: existingHtml,
-        getStatus: () => abp.ajax({
-            url: `/api/app/ai/generation/status?applicationId=${encodeURIComponent(applicationId)}&operationType=application-analysis`,
-            type: 'GET'
-        }),
+        getStatus: () => unity.ai.generation.aIGeneration.getStatus(applicationId, 'application-analysis'),
         onComplete: loadAIAnalysis,
         onFailed: (request) => {
             loadAIAnalysis();
@@ -574,10 +568,7 @@ $(function() {
             return;
         }
 
-        abp.ajax({
-            url: `/api/app/ai/generation/status?applicationId=${encodeURIComponent(applicationId)}&operationType=application-analysis`,
-            type: 'GET'
-        })
+        unity.ai.generation.aIGeneration.getStatus(applicationId, 'application-analysis')
             .done(function(generationStatus) {
                 const request = generationStatus?.generationRequest;
                 if (request?.isActive !== true) {

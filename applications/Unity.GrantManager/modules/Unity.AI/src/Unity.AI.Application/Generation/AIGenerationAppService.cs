@@ -117,8 +117,17 @@ public class AIGenerationAppService(
             ApplicationAnalysisOperationType => AIPermissions.Analysis.ViewApplicationAnalysis,
             AttachmentSummaryOperationType => AIPermissions.Analysis.ViewAttachmentSummary,
             ApplicationScoringOperationType => AIPermissions.Analysis.ViewScoringResult,
+            AIGenerationRequestKeyHelper.PipelineOperationType => null,
             _ => throw new UserFriendlyException($"Unsupported AI generation operation type: {operationType}")
         };
+
+        if (permission is null)
+        {
+            await CheckPolicyAsync(AIPermissions.Analysis.ViewApplicationAnalysis);
+            await CheckPolicyAsync(AIPermissions.Analysis.ViewAttachmentSummary);
+            await CheckPolicyAsync(AIPermissions.Analysis.ViewScoringResult);
+            return;
+        }
 
         await CheckPolicyAsync(permission);
     }

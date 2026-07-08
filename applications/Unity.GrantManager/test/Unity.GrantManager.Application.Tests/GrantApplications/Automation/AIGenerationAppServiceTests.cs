@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Unity.AI.Automation;
+using Unity.AI.Domain;
 using Unity.AI.Generation;
 using Unity.AI.Localization;
 using Unity.AI.Operations;
@@ -12,10 +13,10 @@ using Unity.AI.RateLimit;
 using Unity.AI.Settings;
 using Unity.GrantManager.GrantApplications;
 using Unity.GrantManager.GrantApplications.Automation.BackgroundJobs;
-using Volo.Abp.EventBus.Local;
-using Volo.Abp.Features;
 using Volo.Abp;
 using Volo.Abp.DependencyInjection;
+using Volo.Abp.EventBus.Local;
+using Volo.Abp.Features;
 using Volo.Abp.MultiTenancy;
 using Xunit;
 using Xunit.Abstractions;
@@ -40,7 +41,7 @@ public class AIGenerationAppServiceTests(ITestOutputHelper outputHelper) : Grant
             Substitute.For<IAIGenerationStatusAppService>(),
             Substitute.For<IAIRateLimiter>(),
             featureGuard,
-            Substitute.For<Volo.Abp.MultiTenancy.ICurrentTenant>());
+            Substitute.For<ICurrentTenant>());
         service.LazyServiceProvider = GetRequiredService<IAbpLazyServiceProvider>();
 
         var result = await service.GenerateAttachmentSummariesAsync(new GenerateAttachmentSummariesInputDto
@@ -64,7 +65,7 @@ public class AIGenerationAppServiceTests(ITestOutputHelper outputHelper) : Grant
         var requestId = Guid.NewGuid();
 
         var statusService = Substitute.For<IAIGenerationStatusAppService>();
-        statusService.GetLatestAsync(applicationId, operationType, tenantId).Returns(new Unity.GrantManager.GrantApplications.AIGenerationRequestDto
+        statusService.GetLatestAsync(applicationId, operationType, tenantId).Returns(new AIGenerationRequestDto
         {
             Id = requestId,
             ApplicationId = applicationId,
@@ -134,6 +135,4 @@ public class AIGenerationAppServiceTests(ITestOutputHelper outputHelper) : Grant
         var localizer = Substitute.For<IStringLocalizer<AIResource>>();
         return new AIFeatureGuard(featureChecker, localizer);
     }
-
 }
-
