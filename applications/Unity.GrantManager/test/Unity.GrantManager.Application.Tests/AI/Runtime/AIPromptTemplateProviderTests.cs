@@ -6,6 +6,7 @@ using Unity.AI.Domain;
 using Unity.AI.Prompts;
 using Unity.AI.Runtime;
 using Unity.AI;
+using Volo.Abp.Data;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.MultiTenancy;
 using Xunit;
@@ -17,26 +18,25 @@ public class AIPromptTemplateProviderTests
     [Fact]
     public async Task GetRequiredPromptAsync_Should_Return_Prompt_Definition_From_Database()
     {
-        var prompt = new AIPrompt(Guid.NewGuid(), AIPromptTypes.ApplicationAnalysis, PromptType.Skill);
-        var version = new AIPromptVersion(
+        var prompt = new AIPrompt(
             Guid.NewGuid(),
-            prompt.Id,
+            AIPromptTypes.ApplicationAnalysis,
             1,
             "SYSTEM",
             "USER")
         {
-            MetadataJson = "{\"sections\":{\"RULES\":\"- rule\"}}",
-            IsPublished = true
+            MetadataJson = "{\"RULES\":\"- rule\"}",
+            IsActive = true
         };
 
-        var provider = CreateProvider(prompt, version);
+        var provider = CreateProvider(prompt);
 
         var snapshot = await provider.GetRequiredPromptAsync(AIPromptTypes.ApplicationAnalysis, "v1");
 
         snapshot.PromptVersion.ShouldBe("v1");
         snapshot.SystemPrompt.ShouldBe("SYSTEM");
-        snapshot.UserPromptTemplate.ShouldBe("USER");
-        snapshot.MetadataJson.ShouldBe("{\"sections\":{\"RULES\":\"- rule\"}}");
+        snapshot.UserPrompt.ShouldBe("USER");
+        snapshot.MetadataJson.ShouldBe("{\"RULES\":\"- rule\"}");
     }
 
     [Fact]
@@ -51,20 +51,19 @@ public class AIPromptTemplateProviderTests
     }
 
     private static AIPromptTemplateProvider CreateProvider(
-        AIPrompt? prompt = null,
-        AIPromptVersion? version = null)
+        AIPrompt? prompt = null)
     {
         var promptRepository = Substitute.For<IRepository<AIPrompt, Guid>>();
-        var promptVersionRepository = Substitute.For<IRepository<AIPromptVersion, Guid>>();
-        var currentTenant = Substitute.For<ICurrentTenant>();
-        currentTenant.Change(null).Returns(Substitute.For<IDisposable>());
+        var multiTenantDataFilter = Substitute.For<IDataFilter<IMultiTenant>>();
+        multiTenantDataFilter.Disable().Returns(Substitute.For<IDisposable>());
 
         promptRepository.FindAsync(Arg.Any<System.Linq.Expressions.Expression<Func<AIPrompt, bool>>>())
-            .Returns(prompt);
+            .Returns(callInfo =>
+            {
+                var predicate = callInfo.Arg<System.Linq.Expressions.Expression<Func<AIPrompt, bool>>>();
+                return Task.FromResult(prompt != null && predicate.Compile()(prompt) ? prompt : null);
+            });
 
-        promptVersionRepository.FindAsync(Arg.Any<System.Linq.Expressions.Expression<Func<AIPromptVersion, bool>>>())
-            .Returns(version);
-
-        return new AIPromptTemplateProvider(promptRepository, promptVersionRepository, currentTenant);
+        return new AIPromptTemplateProvider(promptRepository, multiTenantDataFilter);
     }
 }

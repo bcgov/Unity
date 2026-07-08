@@ -1,0 +1,42 @@
+<div class="container mt-3">
+
+    <abp-button id="CreateNewTemplate"
+                text="+ Add Template"
+                button-type="Primary"
+                class="mb-2 me-2 ms-auto" />
+
+
+    <div id="splitContainer" class="split-container px-3 pb-3">
+
+        <!-- Left pane: prompts table -->
+        <div id="leftPane" class="left-pane">
+            <div class="card h-100">
+                <div class="card-body p-2">
+                    <abp-table id="TemplatesTable" striped-rows="false" class="nowrap"></abp-table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Drag divider (shown when a row is selected) -->
+        <div id="divider" class="split-divider" title="Drag to resize"></div>
+
+        <!-- Right pane: editor (hidden until a row is selected) -->
+        <div id="rightPane" class="right-pane" style="display:none;">
+            <div class="card h-100 d-flex flex-column">
+                <div class="card-body editor-body overflow-auto">
+                    @await Html.PartialAsync("/Views/Settings/NotificationsSettingGroup/_TemplateDetails.cshtml")          
+                    @await Html.PartialAsync("/Views/Shared/Components/EmailsWidget/_EmailAttachments.cshtml")
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <input type="hidden" id="Extensions" value="[ &quot;exe&quot; , &quot;sh&quot; , &quot;ksh&quot; , &quot;bat&quot; , &quot;cmd&quot; ]">
+    <input type="hidden" id="MaxFileSize" value="25">
+    <input type="hidden" id="EmailAttachmentMaxFileSize" value="20">
+    <input type="hidden" id="TotalEmailAttachmentMaxFileSize" value="25">
+    <input type="hidden" id="EmailId" value="">
+
+    
+</div>

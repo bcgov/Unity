@@ -106,6 +106,7 @@ public class ApplicationApplicantAppService(
             ApplicantName = applicantInfo.Applicant?.ApplicantName ?? string.Empty,
             ApplicationReferenceNo = applicantInfo.ReferenceNo,
             ApplicationStatus = applicantInfo.ApplicationStatus.InternalStatus,
+            ExternalStatusVisibility = applicantInfo.ExternalStatusVisibility,
             ApplicationStatusCode = applicantInfo.ApplicationStatus.StatusCode
         };
     }

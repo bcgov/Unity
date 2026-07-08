@@ -5,6 +5,10 @@ using System.Linq;
 using Unity.GrantManager.GrantApplications;
 using Unity.Notifications.EmailGroups;
 using System.Threading.Tasks;
+using Unity.Notifications.Emails;
+using Volo.Abp.Users;
+using Unity.GrantManager.Events;
+using Volo.Abp.Identity.Integration;
 
 namespace Unity.GrantManager.Web.Controllers
 {
@@ -16,13 +20,25 @@ namespace Unity.GrantManager.Web.Controllers
         private readonly IEmailGroupsAppService _emailGroupsAppService;
         private readonly Unity.Notifications.Templates.ITemplateService _templateService;
         private readonly Notifications.IAutomatedNotificationAppService _automatedNotificationAppService;
+        private readonly IEmailLogAttachmentRepository _emailLogAttachmentRepository;
+        private readonly ICurrentUser _currentUser;
+        private readonly IEmailGroupUsersAppService _emailGroupUsersAppService;
+        private readonly IIdentityUserIntegrationService _identityUserIntegrationService;
+        private readonly IGrantApplicationAppService _grantApplicationAppService;
+        private readonly ScheduledNotificationHelper _scheduledNotificationHelper;
 
-        public FormNotificationsApiController(IApplicationStatusService statusService, IEmailGroupsAppService emailGroupsAppService, Unity.Notifications.Templates.ITemplateService templateService, Unity.GrantManager.Notifications.IAutomatedNotificationAppService automatedNotificationAppService)
+        public FormNotificationsApiController(IApplicationStatusService statusService, IEmailGroupsAppService emailGroupsAppService, Unity.Notifications.Templates.ITemplateService templateService, Unity.GrantManager.Notifications.IAutomatedNotificationAppService automatedNotificationAppService, IEmailLogAttachmentRepository emailLogAttachmentRepository, ICurrentUser currentUser, IEmailGroupUsersAppService emailGroupUsersAppService, IIdentityUserIntegrationService identityUserIntegrationService, IGrantApplicationAppService grantApplicationAppService, ScheduledNotificationHelper scheduledNotificationHelper)
         {
             _statusService = statusService;
             _emailGroupsAppService = emailGroupsAppService;
             _templateService = templateService;
             _automatedNotificationAppService = automatedNotificationAppService;
+            _emailLogAttachmentRepository = emailLogAttachmentRepository;
+            _currentUser = currentUser;
+            _emailGroupUsersAppService = emailGroupUsersAppService;
+            _identityUserIntegrationService = identityUserIntegrationService;
+            _grantApplicationAppService = grantApplicationAppService;
+            _scheduledNotificationHelper = scheduledNotificationHelper;
         }
         // In-memory storage removed; persisting to ScheduledNotifications table via IAutomatedNotificationAppService
 
@@ -30,16 +46,148 @@ namespace Unity.GrantManager.Web.Controllers
         [HttpGet("templates")]
         public async Task<ActionResult<List<EmailTemplateDto>>> GetTemplates()
         {
-            var templates = await _templateService.GetTemplatesByTenent();
+            var templates = await _templateService.GetTemplatesByTenant();
             var list = templates.Select(t => new EmailTemplateDto
             {
                 Id = t.Id,
                 Name = t.Name,
                 Subject = t.Subject,
-                Body = t.BodyText
+                Body = t.BodyHTML,
+                SendFrom = t.SendFrom,
+                RecipientCategory = t.RecipientCategory,
+                RecipientIdentifier = t.RecipientIdentifier
             }).ToList();
 
             return Ok(list);
+        }
+
+        [HttpGet("templates/{templateId:guid}/resolved-recipients")]
+        public async Task<ActionResult<ResolvedRecipientsDto>> GetResolvedTemplateRecipients(Guid templateId, [FromQuery] Guid? applicationId = null)
+        {
+            var template = await _templateService.GetTemplateById(templateId);
+            if (template == null)
+            {
+                return NotFound();
+            }
+
+            var recipientCategory = template.RecipientCategory?.Trim();
+            var recipientIdentifier = template.RecipientIdentifier?.Trim();
+            if (string.IsNullOrWhiteSpace(recipientCategory) || string.IsNullOrWhiteSpace(recipientIdentifier))
+            {
+                return Ok(new ResolvedRecipientsDto { EmailTo = string.Empty });
+            }
+
+            if (string.Equals(recipientCategory, "Internal", StringComparison.OrdinalIgnoreCase))
+            {
+                var notification = new Notifications.ScheduledNotification
+                {
+                    RecipientCategory = recipientCategory,
+                    RecipientIdentifier = recipientIdentifier
+                };
+
+                var emailTo = await _scheduledNotificationHelper.GetInternalRecipientEmailAddressesAsync(
+                    notification,
+                    _emailGroupsAppService,
+                    _emailGroupUsersAppService,
+                    _identityUserIntegrationService);
+
+                return Ok(new ResolvedRecipientsDto { EmailTo = emailTo });
+            }
+
+            if (string.Equals(recipientCategory, "External", StringComparison.OrdinalIgnoreCase))
+            {
+                if (!applicationId.HasValue || applicationId.Value == Guid.Empty)
+                {
+                    return Ok(new ResolvedRecipientsDto { EmailTo = string.Empty });
+                }
+
+                var application = await _grantApplicationAppService.GetAsync(applicationId.Value);
+                var identifiers = recipientIdentifier
+                    .Split(',')
+                    .Select(r => r.Trim())
+                    .Where(r => !string.IsNullOrWhiteSpace(r))
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .ToList();
+
+                var emailAddresses = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+                foreach (var identifier in identifiers)
+                {
+                    if (identifier.Contains('@'))
+                    {
+                        emailAddresses.Add(identifier);
+                        continue;
+                    }
+
+                    if (string.Equals(identifier, "ApplicationContact", StringComparison.OrdinalIgnoreCase) &&
+                        !string.IsNullOrWhiteSpace(application.ContactEmail))
+                    {
+                        emailAddresses.Add(application.ContactEmail);
+                        continue;
+                    }
+
+                    if (string.Equals(identifier, "SigningAuthority", StringComparison.OrdinalIgnoreCase) &&
+                        !string.IsNullOrWhiteSpace(application.SigningAuthorityEmail))
+                    {
+                        emailAddresses.Add(application.SigningAuthorityEmail);
+                    }
+                }
+
+                return Ok(new ResolvedRecipientsDto { EmailTo = string.Join("; ", emailAddresses) });
+            }
+
+            return Ok(new ResolvedRecipientsDto { EmailTo = string.Empty });
+        }
+
+        [HttpPost("email-template/{templateId}/copy-attachments")]
+        public async Task<ActionResult<CopyAttachmentsResponseDto>> CopyTemplateAttachments(Guid templateId, [FromBody] CopyAttachmentsInput input)
+        {
+            if (input.EmailLogId == Guid.Empty)
+                return BadRequest("EmailLogId is required");
+
+            // Get all attachments for the template
+            var templateAttachments = await _emailLogAttachmentRepository.GetByTemplateIdAsync(templateId);
+
+            if (templateAttachments.Count == 0)
+            {
+                return Ok(new CopyAttachmentsResponseDto { AttachmentCount = 0 });
+            }
+
+            // Copy attachments to the email log
+            int copiedCount = 0;
+            foreach (var templateAttachment in templateAttachments)
+            {
+                var newAttachment = new EmailLogAttachment
+                {
+                    EmailLogId = input.EmailLogId,
+                    TemplateId = null,
+                    OriginTemplateId = templateId,
+                    S3ObjectKey = templateAttachment.S3ObjectKey,
+                    FileName = templateAttachment.FileName,
+                    DisplayName = templateAttachment.DisplayName,
+                    ContentType = templateAttachment.ContentType,
+                    FileSize = templateAttachment.FileSize,
+                    Time = DateTime.UtcNow,
+                    UserId = _currentUser.Id ?? Guid.Empty,
+                    TenantId = _currentUser.TenantId ?? Guid.Empty
+                };
+
+                await _emailLogAttachmentRepository.InsertAsync(newAttachment);
+                copiedCount++;
+            }
+
+            return Ok(new CopyAttachmentsResponseDto { AttachmentCount = copiedCount });
+        }
+
+        [HttpDelete("email-log/{emailLogId}/origin-attachments")]
+        public async Task<ActionResult<CopyAttachmentsResponseDto>> DeleteOriginAttachments(Guid emailLogId)
+        {
+            var attachments = await _emailLogAttachmentRepository.GetOriginAttachmentsByEmailLogIdAsync(emailLogId);
+            foreach (var attachment in attachments)
+            {
+                await _emailLogAttachmentRepository.DeleteAsync(attachment.Id);
+            }
+            return Ok(new CopyAttachmentsResponseDto { AttachmentCount = attachments.Count });
         }
 
         [HttpGet("statuses")]
@@ -181,6 +329,26 @@ namespace Unity.GrantManager.Web.Controllers
             return NoContent();
         }
 
+        [HttpGet("can-delete-template/{templateId:guid}")]
+        public async Task<ActionResult<object>> CanDeleteTemplate(Guid templateId)
+        {
+            var result = await _automatedNotificationAppService.GetListAsync(
+                new Notifications.GetNotificationsInput { MaxResultCount = 1000 });
+
+            var inUse = result.Items.Any(n => n.EmailTemplateId == templateId);
+
+            if (inUse)
+            {
+                return Ok(new
+                {
+                    canDelete = false,
+                    errorMessage = "This template cannot be deleted because it is assigned to one or more Scheduled Notifications. Please remove the template from all Scheduled Notifications before deleting."
+                });
+            }
+
+            return Ok(new { canDelete = true, errorMessage = (string?)null });
+        }
+
         [HttpPut("{formId}/{id:guid}")]
         public async Task<ActionResult<ScheduledNotificationDto>> UpdateForForm(string formId, Guid id, [FromBody] CreateScheduledNotificationInput input)
         {
@@ -239,6 +407,9 @@ namespace Unity.GrantManager.Web.Controllers
         public string Name { get; init; } = string.Empty;
         public string Subject { get; init; } = string.Empty;
         public string Body { get; init; } = string.Empty;
+        public string SendFrom { get; init; } = string.Empty;
+        public string? RecipientCategory { get; init; }
+        public string? RecipientIdentifier { get; init; }
     }
 
     public record ScheduledNotificationDto
@@ -271,5 +442,20 @@ namespace Unity.GrantManager.Web.Controllers
     {
         public string Id { get; init; } = string.Empty;
         public string DisplayName { get; init; } = string.Empty;
+    }
+
+    public record CopyAttachmentsInput
+    {
+        public Guid EmailLogId { get; init; }
+    }
+
+    public record CopyAttachmentsResponseDto
+    {
+        public int AttachmentCount { get; init; }
+    }
+
+    public record ResolvedRecipientsDto
+    {
+        public string EmailTo { get; init; } = string.Empty;
     }
 }

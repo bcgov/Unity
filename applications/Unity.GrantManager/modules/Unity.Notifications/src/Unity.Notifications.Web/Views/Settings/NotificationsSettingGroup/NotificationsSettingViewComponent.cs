@@ -43,6 +43,9 @@ public class NotificationsSettingViewComponent(ISettingProvider settingProvider)
             context
                 .Files
                 .AddIfNotContains("/Views/Settings/NotificationsSettingGroup/InternalEmailGroups.js");
+            context
+                .Files
+                .AddIfNotContains("/libs/select2/dist/js/select2.full.min.js");
         }
     }
 
@@ -52,6 +55,10 @@ public class NotificationsSettingViewComponent(ISettingProvider settingProvider)
         {
            context.Files
                 .AddIfNotContains("/Views/Settings/NotificationsSettingGroup/Default.css");
+            context.Files
+                .AddIfNotContains("/libs/select2/dist/css/select2.min.css");
+            context.Files
+                .AddIfNotContains("/libs/select2-bootstrap-5-theme/dist/select2-bootstrap-5-theme.min.css");
         }
     }
 }

@@ -29,6 +29,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicationBreadcrumbWi
                 ApplicantId = applicationApplicant.ApplicantId,
                 ApplicantName = applicationApplicant.ApplicantName ?? string.Empty,
                 ApplicationStatus = applicationApplicant.ApplicationStatus,
+                ExternalStatusVisibility = applicationApplicant.ExternalStatusVisibility,
                 ReferenceNo = applicationApplicant.ApplicationReferenceNo,
 
                 ApplicationFormId = formDetails.ApplicationFormId,

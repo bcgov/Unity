@@ -13,12 +13,13 @@ using Unity.AI.Settings;
 using Unity.GrantManager.Attachments;
 using Unity.GrantManager.GrantApplications;
 using Volo.Abp.MultiTenancy;
+using Volo.Abp;
+using Volo.Abp.Features;
 
 namespace Unity.AI.Generation;
 
 [Route("api/app/ai/generation")]
 public class AIGenerationAppService(
-    IAttachmentSummaryService attachmentSummaryService,
     IApplicationAIGenerationQueue aiGenerationQueue,
     AIFeatureGuard featureGuard,
     ICurrentTenant currentTenant)
@@ -37,12 +38,15 @@ public class AIGenerationAppService(
             return [];
         }
 
-        var summaries = await attachmentSummaryService.GenerateForApplicationAsync(
+        await aiGenerationQueue.QueueAttachmentSummaryAsync(
             input.ApplicationId,
+            currentTenant.Id,
             input.PromptVersion,
             input.AttachmentIds);
 
-        return summaries.Select(_ => new AttachmentSummaryResultDto { Completed = true }).ToList();
+        return input.AttachmentIds
+            .Select(_ => new AttachmentSummaryResultDto { Completed = false })
+            .ToList();
     }
 
     [Authorize(AIPermissions.Analysis.GenerateApplicationAnalysis)]
@@ -67,20 +71,5 @@ public class AIGenerationAppService(
 
         await aiGenerationQueue.QueueApplicationScoringAsync(applicationId, currentTenant.Id, promptVersion);
         return new ApplicationScoringResultDto { Completed = false };
-    }
-
-    [Authorize(AIPermissions.Analysis.ViewAttachmentSummary)]
-    [Authorize(AIPermissions.Analysis.ViewApplicationAnalysis)]
-    [Authorize(AIPermissions.Analysis.ViewScoringResult)]
-    [HttpPost("all")]
-    public virtual async Task<ApplicationContentResultDto> GenerateContentAsync(Guid applicationId, string? promptVersion = null)
-    {
-        await featureGuard.EnsureEnabledAsync(AIFeatures.AttachmentSummaries, AILocalizationKeys.GenerateAllDisabled);
-        await featureGuard.EnsureEnabledAsync(AIFeatures.ApplicationAnalysis, AILocalizationKeys.GenerateAllDisabled);
-        await featureGuard.EnsureEnabledAsync(AIFeatures.Scoring, AILocalizationKeys.GenerateAllDisabled);
-
-        await aiGenerationQueue.QueueAllAIStagesAsync(applicationId, currentTenant.Id, promptVersion);
-
-        return new ApplicationContentResultDto { Completed = true };
     }
 }

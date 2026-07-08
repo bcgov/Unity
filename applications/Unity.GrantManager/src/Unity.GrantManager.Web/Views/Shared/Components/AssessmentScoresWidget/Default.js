@@ -688,7 +688,9 @@ function queueApplicationScoring(triggerButton = null) {
         originalHtml: existingHtml,
         getStatus: () => unity.grantManager.grantApplications.grantApplication
             .getAIGenerationStatus(applicationId, 'application-scoring'),
-        onComplete: () => PubSub.publish('refresh_assessment_scores', null),
+        onComplete: () => {
+            PubSub.publish('refresh_assessment_scores', null);
+        },
         onFailed: (request) => abp.message.error(request?.failureReason || 'AI scoring failed.')
     });
 

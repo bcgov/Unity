@@ -1290,6 +1290,9 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<string>("ElectoralDistrict")
                         .HasColumnType("text");
 
+                    b.Property<bool>("ExternalStatusVisibility")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("ExtraProperties")
                         .IsRequired()
                         .HasColumnType("text")
@@ -2462,6 +2465,9 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<DateTime?>("ReportDate")
                         .HasColumnType("timestamp without time zone");
 
+                    b.Property<bool?>("SignedOff")
+                        .HasColumnType("boolean");
+
                     b.Property<Guid?>("TenantId")
                         .HasColumnType("uuid")
                         .HasColumnName("TenantId");
@@ -3454,6 +3460,9 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
 
                     b.Property<Guid>("EmailLogId")
                         .HasColumnType("uuid");
+
+                    b.Property<Guid?>("TemplateId")
+                        .HasColumnType("uuid");                        
 
                     b.Property<string>("ExtraProperties")
                         .IsRequired()

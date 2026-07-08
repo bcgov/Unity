@@ -131,7 +131,7 @@ public class OpenAIResponseParser : ITransientDependency
                 : string.Empty;
             var confidence = property.Value.TryGetProperty("confidence", out var confidenceProp) &&
                              confidenceProp.ValueKind == JsonValueKind.Number &&
-                             confidenceProp.TryGetInt32(out var parsedConfidence)
+                             confidenceProp.TryGetDecimal(out var parsedConfidence)
                 ? NormalizeConfidence(parsedConfidence)
                 : 0;
 
@@ -242,10 +242,11 @@ public class OpenAIResponseParser : ITransientDependency
         return true;
     }
 
-    private static int NormalizeConfidence(int confidence)
+    private static int NormalizeConfidence(decimal confidence)
     {
-        var clamped = Math.Clamp(confidence, 0, 100);
-        var rounded = (int)Math.Round(clamped / 5.0, MidpointRounding.AwayFromZero) * 5;
+        var clamped = Math.Clamp(confidence, 0m, 1m);
+        var percentage = clamped * 100m;
+        var rounded = (int)Math.Round(percentage / 10m, MidpointRounding.AwayFromZero) * 10;
         return Math.Clamp(rounded, 0, 100);
     }
 }

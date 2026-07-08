@@ -260,7 +260,7 @@ $(function () {
 
     function getApproxNumberOfEmployeesColumn(columnIndex) {
         return {
-            title: 'Organization Size (Approximate Number of Employees)',
+            title: 'Approx. Number of Employees',
             data: 'approxNumberOfEmployees',
             name: 'approxNumberOfEmployees',
             className: 'data-table-header',
