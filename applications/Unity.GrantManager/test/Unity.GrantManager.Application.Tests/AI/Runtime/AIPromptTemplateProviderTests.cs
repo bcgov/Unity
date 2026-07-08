@@ -25,7 +25,7 @@ public class AIPromptTemplateProviderTests
             "SYSTEM",
             "USER")
         {
-            MetadataJson = "{\"RULES\":\"- rule\"}",
+            MetadataJson = "{\"operationName\":\"ApplicationAnalysis\",\"promptVersion\":\"v1\",\"inputContractName\":\"ApplicationAnalysisOperationInputDto\",\"outputContractName\":\"ApplicationAnalysisResponse\"}",
             IsActive = true
         };
 
@@ -36,7 +36,12 @@ public class AIPromptTemplateProviderTests
         snapshot.PromptVersion.ShouldBe("v1");
         snapshot.SystemPrompt.ShouldBe("SYSTEM");
         snapshot.UserPrompt.ShouldBe("USER");
-        snapshot.MetadataJson.ShouldBe("{\"RULES\":\"- rule\"}");
+        snapshot.MetadataJson.ShouldContain("ApplicationAnalysis");
+        snapshot.Manifest.ShouldNotBeNull();
+        snapshot.Manifest!.OperationName.ShouldBe("ApplicationAnalysis");
+        snapshot.Manifest.PromptVersion.ShouldBe("v1");
+        snapshot.Manifest.InputContractName.ShouldBe("ApplicationAnalysisOperationInputDto");
+        snapshot.Manifest.OutputContractName.ShouldBe("ApplicationAnalysisResponse");
     }
 
     [Fact]

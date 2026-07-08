@@ -67,6 +67,11 @@ public class AttachmentSummaryService(
         }
 
         var mode = executionModeResolver.ResolveMode(AIExecutionModeResolver.AttachmentSummaryOperation);
+        if (mode == AIExecutionMode.Batch)
+        {
+            return await GenerateBatchAsync(ids, promptVersion, cancellationToken);
+        }
+
         if (mode != AIExecutionMode.Sequential)
         {
             logger.LogWarning(
@@ -80,6 +85,86 @@ public class AttachmentSummaryService(
             mode,
             id => GenerateOrFallbackAsync(id, promptVersion, cancellationToken),
             batch => GenerateSequentiallyAsync(batch, promptVersion, cancellationToken));
+    }
+
+    private async Task<List<string>> GenerateBatchAsync(
+        IReadOnlyCollection<Guid> attachmentIds,
+        string? promptVersion,
+        CancellationToken cancellationToken)
+    {
+        var attachments = new List<(Guid Id, AttachmentSummarySource Source, string ContentType, string ExtractedText)>(attachmentIds.Count);
+        var failures = new Dictionary<Guid, string>();
+
+        foreach (var attachmentId in attachmentIds)
+        {
+            try
+            {
+                var attachment = await LoadAttachmentAsync(attachmentId);
+                var fileName = string.IsNullOrWhiteSpace(attachment.FileName) ? "unknown" : attachment.FileName;
+                await using var attachmentStream = await OpenAttachmentStreamAsync(attachment, fileName, cancellationToken);
+                var extractedText = await textExtractionService.ExtractTextAsync(fileName, attachmentStream.Content, attachmentStream.ContentType, cancellationToken);
+                if (ShouldStopOnEmptyExtraction(fileName, extractedText))
+                {
+                    LogEmptyExtraction(attachmentId, fileName, attachmentStream);
+                    failures[attachmentId] = TextExtractionFailedSummary;
+                    continue;
+                }
+
+                attachments.Add((attachmentId, attachment, attachmentStream.ContentType, extractedText));
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Error preparing AI summary batch item {AttachmentId}", attachmentId);
+                failures[attachmentId] = SummaryGenerationFailedMessage;
+            }
+        }
+
+        if (attachments.Count == 0)
+        {
+            return attachmentIds.Select(id => failures.TryGetValue(id, out var failure) ? failure : SummaryGenerationFailedMessage).ToList();
+        }
+
+        var batchRequest = new AttachmentSummaryBatchRequest
+        {
+            PromptVersion = promptVersion,
+            Attachments = attachments.Select(item => new AttachmentSummaryBatchItemRequest
+            {
+                AttachmentId = item.Id.ToString(),
+                FileName = string.IsNullOrWhiteSpace(item.Source.FileName) ? "unknown" : item.Source.FileName!,
+                ContentType = item.ContentType,
+                ExtractedText = item.ExtractedText
+            }).ToList()
+        };
+
+        var batchResponse = await aiService.GenerateAttachmentSummaryBatchAsync(batchRequest, cancellationToken);
+        var responseMap = batchResponse.Attachments
+            .Where(item => !string.IsNullOrWhiteSpace(item.AttachmentId))
+            .ToDictionary(item => item.AttachmentId, item => item.Summary, StringComparer.OrdinalIgnoreCase);
+
+        var results = new List<string>(attachmentIds.Count);
+        foreach (var attachmentId in attachmentIds)
+        {
+            if (failures.TryGetValue(attachmentId, out var failure))
+            {
+                results.Add(failure);
+                continue;
+            }
+
+            if (responseMap.TryGetValue(attachmentId.ToString(), out var summary))
+            {
+                await SaveSummaryAsync(attachmentId, summary);
+                results.Add(summary);
+                continue;
+            }
+
+            results.Add(SummaryGenerationFailedMessage);
+        }
+
+        return results;
     }
 
     private async Task<List<string>> GenerateSequentiallyAsync(

@@ -197,6 +197,63 @@ namespace Unity.AI.Runtime
             }
         }
 
+        public async Task<AttachmentSummaryBatchResponse> GenerateAttachmentSummaryBatchAsync(AttachmentSummaryBatchRequest request, CancellationToken cancellationToken = default)
+        {
+            ArgumentNullException.ThrowIfNull(request);
+            try
+            {
+                var settings = await _openAIConfigurationResolver.ResolveOperationSettingsAsync(AttachmentSummaryPromptType, cancellationToken);
+                var promptTemplate = await _promptTemplateProvider.GetRequiredPromptAsync(
+                    AttachmentSummaryPromptType,
+                    request.PromptVersion ?? settings.PromptVersion,
+                    cancellationToken);
+                var promptVersion = promptTemplate.PromptVersion;
+
+                var attachmentsPayload = request.Attachments.Select(attachment => new
+                {
+                    attachmentId = attachment.AttachmentId,
+                    name = string.IsNullOrWhiteSpace(attachment.FileName) ? "attachment" : attachment.FileName.Trim(),
+                    contentType = attachment.ContentType ?? "application/octet-stream",
+                    text = string.IsNullOrWhiteSpace(attachment.ExtractedText) ? null : attachment.ExtractedText
+                });
+
+                var attachments = JsonSerializer.Serialize(attachmentsPayload, AIJsonDefaults.Indented);
+                var contentToAnalyze = AIPromptTemplateRenderer.BuildAttachmentSummaryBatchUserPrompt(
+                    promptTemplate.UserPrompt,
+                    attachments,
+                    promptTemplate.MetadataJson);
+
+                await _promptFileLogger.LogPromptInputAsync(AttachmentSummaryPromptType, promptVersion, promptTemplate.SystemPrompt, contentToAnalyze, cancellationToken);
+                var result = await GenerateWithRetryAsync(
+                    () => _openAITransportService.GenerateSummaryAsync(
+                        contentToAnalyze,
+                        promptTemplate.SystemPrompt,
+                        settings,
+                        settings.CompletionTokens,
+                        cancellationToken: cancellationToken),
+                    AIProviderPayloadValidator.ValidateAttachmentSummaryBatchJson,
+                    "attachment summary batch",
+                    cancellationToken);
+                await _promptFileLogger.LogPromptOutputAsync(AttachmentSummaryPromptType, promptVersion, result.CaptureOutput, cancellationToken);
+
+                if (result.Outcome != AIOperationOutcome.Success)
+                {
+                    return new AttachmentSummaryBatchResponse();
+                }
+
+                return OpenAIResponseParser.ParseAttachmentSummaryBatchResponse(result.Content);
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Attachment summary batch generation failed.");
+                return new AttachmentSummaryBatchResponse();
+            }
+        }
+
         public async Task<ApplicationScoringResponse> GenerateApplicationScoringAsync(ApplicationScoringRequest request, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(request);

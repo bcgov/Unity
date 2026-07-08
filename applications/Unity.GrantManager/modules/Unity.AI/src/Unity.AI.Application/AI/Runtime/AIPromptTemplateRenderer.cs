@@ -39,6 +39,20 @@ public static class AIPromptTemplateRenderer
             });
     }
 
+    public static string BuildAttachmentSummaryBatchUserPrompt(
+        string userPromptTemplate,
+        string attachments,
+        string? metadataJson = null)
+    {
+        return RenderPromptTemplate(
+            userPromptTemplate,
+            metadataJson,
+            new Dictionary<string, string>
+            {
+                ["ATTACHMENTS"] = attachments
+            });
+    }
+
     public static string BuildApplicationScoringUserPrompt(
         string userPromptTemplate,
         string data,
