@@ -23,6 +23,7 @@ public interface IGrantApplicationAppService
     Task<Guid?> GetAccountCodingIdFromFormIdAsync(Guid formId);
     Task<string> DismissAIAnalysisItemAsync(Guid applicationId, string itemId);
     Task<string> RestoreAIAnalysisItemAsync(Guid applicationId, string itemId);
+    Task<AIGenerationStatusDto> GetAIGenerationStatusAsync(Guid applicationId, string operationType);
     Task<PagedResultDto<GrantApplicationDto>> GetListAsync(GrantApplicationListInputDto input);
     Task<bool> IsApplicantRedStopAsync(Guid applicationId);
     string? GetWorkflowDiagram(bool isDirectApproval);
