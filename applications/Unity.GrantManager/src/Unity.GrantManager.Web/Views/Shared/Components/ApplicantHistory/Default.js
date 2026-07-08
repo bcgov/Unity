@@ -187,6 +187,7 @@ $(function () {
                 }
             },
             { title: 'Outstanding', data: 'outstanding', name: 'outstanding', className: 'data-table-header', width: '100px', render: (d) => d === true ? 'Yes' : 'No' },
+            { title: 'Signed-Off', data: 'signedOff', name: 'signedOff', className: 'data-table-header', width: '100px', render: (d) => d === true ? 'Yes' : 'No' },
             { title: 'Incomplete Report', data: 'incompleteReport', name: 'incompleteReport', className: 'data-table-header', width: '130px', render: (d) => d === true ? 'Yes' : 'No' },
             {
                 title: 'Note', data: 'note', name: 'note', className: 'data-table-header', width: '200px',
@@ -326,7 +327,7 @@ $(function () {
 
     const reportsHistoryTable = initializeDataTable({
         dt: $('#ReportsHistoryTable'),
-        defaultVisibleColumns: ['fiscalYear', 'reportDate', 'outstanding', 'incompleteReport', 'note', 'actions'],
+        defaultVisibleColumns: ['fiscalYear', 'reportDate', 'outstanding', 'signedOff', 'incompleteReport', 'note', 'actions'],
         listColumns: getReportsHistoryColumns(),
         dataEndpoint: () => unity.grantManager.applicantProfile.applicantHistory.getReportsHistoryList(getApplicantId()),
         data: () => ({}),
