@@ -962,21 +962,6 @@
         }
     }
 
-    async function handleTemplateSelectChange($select) {
-        const selectedTemplateId = $select.val();
-        if (!selectedTemplateId) return;
-
-        $select.val('');
-
-        const template = await fetchTemplateById(selectedTemplateId);
-        if (!template) {
-            abp.notify.error('Template not found.');
-            return;
-        }
-
-        await applyTemplateToEmail(template);
-    }
-
     async function fetchTemplateById(templateId) {
         let templates = cachedTemplates;
         if (!templates) {
@@ -993,15 +978,6 @@
             }
         }
         return templates.find(t => t.id === templateId || t.Id === templateId);
-    }
-
-    async function handleTemplateSelectOpen($select) {
-        try {
-            await ensureTemplatesSelectOptionsLoaded($select);
-        } catch (err) {
-            console.error('Failed to load templates:', err);
-            abp.notify.error('Failed to load templates.');
-        }
     }
 
     function updateSelectedTemplateLabel(templateName, templateId) {
@@ -1407,24 +1383,8 @@
 
                     // Templates button - add to TinyMCE menu bar at bottom
                     if (!$menubar.find('.templates-button-container').length) {
-                        // Create select element for templates
-                        const $templatesSelect = $('<select>')
-                            .addClass('templates-select templates-button-container')
-                            .attr('title', 'Select a template to apply');
-
-                        // Keep "Templates" as the control label, but not as a selectable option.
-                        $('<option>')
-                            .val('')
-                            .text('Templates')
-                            .prop('selected', true)
-                            .prop('disabled', true)
-                            .prop('hidden', true)
-                            .appendTo($templatesSelect);
-
-                        $templatesSelect
-                            .on('change', handleTemplateSelectChange)
-                            .on('click', handleTemplateSelectOpen);
-
+                        const $templatesSelect = createTemplateSelect(templateName, isViewingDraft);
+                        bindTemplateSelectEvents($templatesSelect, isViewingDraft);
                         $menubar.append($templatesSelect);
                     }
                 }, 0);  // setTimeout for rendering after editor init
@@ -2067,23 +2027,36 @@
     }
 
     function bindTemplateSelectEvents($select, isDraft) {
-        $select.on('change', function () {
-            handleTemplateSelectChangeWithDraftCheck($(this), isDraft);
+        $select.on('change', async function () {
+            if (!isDraft) return;
+            const $this = $(this);
+            const selectedTemplateId = $this.val();
+            if (!selectedTemplateId) return;
+            
+            $this.val('');
+            
+            const template = await fetchTemplateById(selectedTemplateId);
+            if (!template) {
+                abp.notify.error('Template not found.');
+                return;
+            }
+            
+            await applyTemplateToEmail(template);
         });
 
-        $select.on('click', function (e) {
-            handleTemplateSelectOpenWithDraftCheck($(this), isDraft);
+        $select.on('click', async function (e) {
+            if (!isDraft || $(this).prop('disabled')) {
+                e.preventDefault();
+                return;
+            }
+            
+            try {
+                await ensureTemplatesSelectOptionsLoaded($(this));
+            } catch (err) {
+                console.error('Failed to load templates:', err);
+                abp.notify.error('Failed to load templates.');
+            }
         });
-    }
-
-    function handleTemplateSelectChangeWithDraftCheck($select, isDraft) {
-        if (!isDraft) return;
-        handleTemplateSelectChange($select);
-    }
-
-    function handleTemplateSelectOpenWithDraftCheck($select, isDraft) {
-        if (!isDraft || $select.prop('disabled')) return;
-        handleTemplateSelectOpen($select);
     }
 
     PubSub.subscribe('email_selected', (msg, data) => {
