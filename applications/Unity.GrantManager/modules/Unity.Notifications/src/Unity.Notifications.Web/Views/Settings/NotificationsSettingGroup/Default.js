@@ -126,7 +126,14 @@ $(function () {
     }
 
     function setSelectedTemplateRecipients(values) {
-        let valueArr = Array.isArray(values) ? values : (values ? [values] : []);
+        let valueArr;
+        if (Array.isArray(values)) {
+            valueArr = values;
+        } else if (values) {
+            valueArr = [values];
+        } else {
+            valueArr = [];
+        }
         $('#templateRecipientSelect').val(valueArr).trigger('change');
     }
 
@@ -438,6 +445,36 @@ $(function () {
             });
     }
 
+    function handleDeleteCanCheckSuccess(response, templateId) {
+        if (response.canDelete) {
+            proceedWithDelete(templateId, function () {
+                PubSub.publish('reload_templates_table_with_close');
+            });
+        } else {
+            abp.notify.error(response.errorMessage || 'This template cannot be deleted because it is currently in use.');
+        }
+    }
+
+    function handleDeleteCanCheckError(templateId) {
+        // If check fails, proceed with deletion
+        proceedWithDelete(templateId, function () {
+            PubSub.publish('reload_templates_table_with_close');
+        });
+    }
+
+    function checkCanDeleteTemplate(templateId) {
+        $.ajax({
+            url: `/api/form-notifications/can-delete-template/${templateId}`,
+            type: 'GET',
+            success: function (response) {
+                handleDeleteCanCheckSuccess(response, templateId);
+            },
+            error: function () {
+                handleDeleteCanCheckError(templateId);
+            }
+        });
+    }
+
     UiElements.deleteButton.on('click', function () {
         let templateId = $('#templateId').val();
         abp.message.confirm(
@@ -445,25 +482,7 @@ $(function () {
             'Delete Template',
             function (confirmed) {
                 if (confirmed) {
-                    $.ajax({
-                        url: `/api/form-notifications/can-delete-template/${templateId}`,
-                        type: 'GET',
-                        success: function (response) {
-                            if (response.canDelete) {
-                                proceedWithDelete(templateId, function () {
-                                    PubSub.publish('reload_templates_table_with_close');
-                                });
-                            } else {
-                                abp.notify.error(response.errorMessage || 'This template cannot be deleted because it is currently in use.');
-                            }
-                        },
-                        error: function () {
-                            // If check fails, proceed with deletion
-                            proceedWithDelete(templateId, function () {
-                                PubSub.publish('reload_templates_table_with_close');
-                            });
-                        }
-                    });
+                    checkCanDeleteTemplate(templateId);
                 }
             }
         );
@@ -553,6 +572,33 @@ $(function () {
             fixedHeaders: true
         });
 
+        // ── Helper: Select and initialize template by ID ──
+        function selectTemplateById(templateId) {
+            const rows = templatesDataTable.rows().data();
+            for (let i = 0; i < rows.length; i++) {
+                if (rows[i].id === templateId) {
+                    const $row = $(templatesDataTable.row(i).node());
+                    const rowData = templatesDataTable.row(i).data();
+                    if (rowData) {
+                        initializeTemplateVariables();
+                        initializeEditor(rowData, dropdownItems);
+                        populateFields(rowData);
+                        
+                        // Highlight selected row
+                        $('#TemplatesTable tbody tr').removeClass('template-selected');
+                        $row.addClass('template-selected');
+                        openRightPanel();
+                        
+                        // Publish event for pub/sub listeners
+                        PubSub.publish('template_selected_from_email_editor', {
+                            templateId: templateId
+                        });
+                    }
+                    break;
+                }
+            }
+        }
+
         // ── Auto-select template from localStorage if navigating from email editor ──
         let hasCheckedAutoSelect = false;
         $('#TemplatesTable').on('draw.dt', function () {
@@ -573,31 +619,7 @@ $(function () {
             
             // Wait for tab transition to complete, then find and select the template
             setTimeout(() => {
-                const rows = templatesDataTable.rows().data();
-                for (let i = 0; i < rows.length; i++) {
-                    if (rows[i].id === templateToSelectId) {
-                        const $row = $(templatesDataTable.row(i).node());
-                        
-                        // Trigger the same selection logic
-                        const rowData = templatesDataTable.row(i).data();
-                        if (rowData) {
-                            initializeTemplateVariables();
-                            initializeEditor(rowData, dropdownItems);
-                            populateFields(rowData);
-                            
-                            // Highlight selected row
-                            $('#TemplatesTable tbody tr').removeClass('template-selected');
-                            $row.addClass('template-selected');
-                            openRightPanel();
-                            
-                            // Publish event for pub/sub listeners
-                            PubSub.publish('template_selected_from_email_editor', {
-                                templateId: templateToSelectId
-                            });
-                        }
-                        break;
-                    }
-                }
+                selectTemplateById(templateToSelectId);
             }, 150);
         });
 
@@ -623,7 +645,6 @@ $(function () {
         // ── Edit button click ──────────────────────────────────────────────────
         $('#TemplatesTable').on('click', '.template-edit-btn', function (e) {
             e.stopPropagation();
-            const templateId = $(this).data('id');
             const rowData = templatesDataTable.row($(this).closest('tr')).data();
             
             if (!rowData) return;
@@ -1081,8 +1102,13 @@ function deleteEmailAttachment(attachmentId) {
     );
 }
 
-function isValidEmail(email) {
-    // Basic email validation regex
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
+/**
+  * Validates email format
+  * @param {string} email - Email address to validate
+  * @returns {boolean} True if valid email format
+  */
+function validateEmail(email) {
+    // Optimized regex to prevent ReDoS: use atomic-like patterns with specific character classes
+    const emailRegex = /^[a-zA-Z0-9._%-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    return emailRegex.exec(String(email).toLowerCase()) !== null;
 }

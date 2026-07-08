@@ -1113,6 +1113,78 @@
         }
     }
 
+    async function processTemplateBody(body) {
+        if (body && applicationDetails && mappingConfig) {
+            try {
+                const templateData = extractTemplateData(applicationDetails, mappingConfig);
+                const template = Handlebars.compile(body);
+                const processedBody = template(templateData);
+                console.log('Template variables replaced, rendered body length:', processedBody?.length);
+                return processedBody;
+            } catch (e) {
+                console.warn('Failed to process template variables:', e);
+            }
+        } else {
+            console.log('Handlebars processing skipped - applicationDetails or mappingConfig not available');
+        }
+        return body;
+    }
+
+    async function confirmTemplateReplacement() {
+        if (!newDraftId) {
+            return true;
+        }
+
+        let confirmMessage = 'Any changes to the email will be reverted to the template defaults.';
+        if (activeTemplateAttachmentCount > 0) {
+            confirmMessage += `\n\nThe ${activeTemplateAttachmentCount} attachment${activeTemplateAttachmentCount === 1 ? '' : 's'} copied from the previous template will also be removed.`;
+        }
+
+        const confirm = await Swal.fire({
+            title: 'Apply Template?',
+            text: confirmMessage,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Apply Template',
+            cancelButtonText: 'Cancel'
+        });
+
+        if (!confirm.isConfirmed) {
+            return false;
+        }
+
+        if (activeTemplateAttachmentCount > 0) {
+            await deleteOriginAttachments(newDraftId);
+            activeTemplateAttachmentCount = 0;
+            if (emailAttachmentsTable) {
+                emailAttachmentsTable.ajax.reload();
+            }
+        }
+
+        return true;
+    }
+
+    async function applyTemplateParamsToEmail(subject, body, sendFrom, templateName, selectedTemplateId, templateRecipients) {
+        const draftId = await handleNewEmail(true, subject, body, sendFrom, templateName, selectedTemplateId);
+        activeTemplateId = selectedTemplateId;
+        activeTemplateAttachmentCount = 0;
+        updateSelectedTemplateLabel(templateName, selectedTemplateId);
+
+        if (templateRecipients) {
+            UIElements.inputEmailTo.val(templateRecipients).trigger('change');
+            UIElements.inputOriginalEmailTo.val(templateRecipients);
+        }
+
+        const attachmentCount = await copyTemplateAttachments(selectedTemplateId, draftId);
+        activeTemplateAttachmentCount = attachmentCount;
+
+        if (emailAttachmentsTable) {
+            emailAttachmentsTable.ajax.reload();
+        }
+
+        return attachmentCount;
+    }
+
     async function handleTemplateSelection() {
         const selectedTemplateId = UIElements.templateSelectionDropdown.val();
 
@@ -1123,7 +1195,6 @@
         closeTemplateSelectionModal();
 
         try {
-            // Load all templates and find the selected one
             const response = await $.ajax({
                 url: `/api/form-notifications/templates`,
                 type: 'GET'
@@ -1132,16 +1203,7 @@
             console.log('API Response:', response);
             console.log('Selected Template ID:', selectedTemplateId);
 
-            // Try to find template with either camelCase or PascalCase property names
-            let selectedTemplate = response.find(t => t.id === selectedTemplateId);
-            let useUpperCase = false;
-
-            if (!selectedTemplate) {
-                console.warn('Template not found with camelCase, checking with PascalCase...');
-                console.log('Available template IDs:', response.map(t => t.id || t.Id));
-                selectedTemplate = response.find(t => t.Id === selectedTemplateId);
-                useUpperCase = true;
-            }
+            const { selectedTemplate, useUpperCase } = findTemplateById(response, selectedTemplateId);
 
             if (!selectedTemplate) {
                 abp.notify.error('Selected template not found.');
@@ -1150,80 +1212,23 @@
 
             console.log('Selected template:', selectedTemplate);
 
-            // Get property values with fallback for case differences
-            const subject = useUpperCase ? selectedTemplate.Subject : selectedTemplate.subject;
-            let body = useUpperCase ? (selectedTemplate.Body || selectedTemplate.BodyHTML) : (selectedTemplate.body || selectedTemplate.bodyHTML);
-            const sendFrom = useUpperCase ? selectedTemplate.SendFrom : selectedTemplate.sendFrom;
+            const { subject, body: initialBody, sendFrom, name: templateName } = extractTemplateValues(selectedTemplate, useUpperCase);
+            console.log('Template values - Subject:', subject, 'Body length:', initialBody?.length, 'SendFrom:', sendFrom);
 
-            console.log('Template values - Subject:', subject, 'Body length:', body?.length, 'SendFrom:', sendFrom);
-
-            // Process template variables using Handlebars if applicationDetails is available
-            if (body && applicationDetails && mappingConfig) {
-                try {
-                    const templateData = extractTemplateData(applicationDetails, mappingConfig);
-                    const template = Handlebars.compile(body);
-                    body = template(templateData);
-                    console.log('Template variables replaced, rendered body length:', body?.length);
-                } catch (e) {
-                    console.warn('Failed to process template variables:', e);
-                    // Continue with unprocessed body if Handlebars fails
-                }
-            } else {
-                console.log('Handlebars processing skipped - applicationDetails or mappingConfig not available');
-            }
-
-            const templateName = useUpperCase ? selectedTemplate.Name : selectedTemplate.name;
+            const body = await processTemplateBody(initialBody);
             const templateRecipients = await resolveTemplateRecipientEmailsFromApi(selectedTemplate, selectedTemplateId);
 
-            // If an email draft is already open, show confirmation before re-applying a template
-            if (newDraftId) {
-                let confirmMessage = 'Any changes to the email will be reverted to the template defaults.';
-                if (activeTemplateAttachmentCount > 0) {
-                    confirmMessage += `\n\nThe ${activeTemplateAttachmentCount} attachment${activeTemplateAttachmentCount === 1 ? '' : 's'} copied from the previous template will also be removed.`;
-                }
-                const confirm = await Swal.fire({
-                    title: 'Apply Template?',
-                    text: confirmMessage,
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonText: 'Apply Template',
-                    cancelButtonText: 'Cancel'
-                });
-                if (!confirm.isConfirmed) {
-                    return;
-                }
-                // Remove previous template attachments if any
-                if (activeTemplateAttachmentCount > 0) {
-                    await deleteOriginAttachments(newDraftId);
-                    activeTemplateAttachmentCount = 0;
-                    if (emailAttachmentsTable) {
-                        emailAttachmentsTable.ajax.reload();
-                    }
-                }
+            const shouldContinue = await confirmTemplateReplacement();
+            if (!shouldContinue) {
+                return;
             }
 
-            // Initialize email with template data
-            const draftId = await handleNewEmail(true, subject, body, sendFrom, templateName, selectedTemplateId);
-            activeTemplateId = selectedTemplateId;
-            activeTemplateAttachmentCount = 0;
-            updateSelectedTemplateLabel(templateName, selectedTemplateId);
-            if (templateRecipients) {
-                UIElements.inputEmailTo.val(templateRecipients).trigger('change');
-                UIElements.inputOriginalEmailTo.val(templateRecipients);
-            }
-
-            // Copy template attachments to the email log
-            const attachmentCount = await copyTemplateAttachments(selectedTemplateId, draftId);
-            activeTemplateAttachmentCount = attachmentCount;
-
-            if (emailAttachmentsTable) {
-                emailAttachmentsTable.ajax.reload();
-            }
+            const attachmentCount = await applyTemplateParamsToEmail(subject, body, sendFrom, templateName, selectedTemplateId, templateRecipients);
 
             await Swal.fire({
                 title: 'Template Applied',
                 text: attachmentCount > 0
-                    ? `${attachmentCount} attachment${attachmentCount === 1 ? '' : 's'} from the template ${attachmentCount === 1 ? 'has' : 'have'} been copied to this email.`
+                    ? buildSuccessMessage(attachmentCount)
                     : 'Template applied successfully. No attachments were copied.',
                 icon: 'success',
                 confirmButtonText: 'OK'
@@ -1294,9 +1299,7 @@
             return;
         }
 
-        tinymce.get("EmailBody")?.remove();
-
-        console.log('Initializing TinyMCE with template body:', templateBody?.substring(0, 50) + '...');
+        tinymce.get("EmailBody")?.remove();   
 
         // Show modal FIRST so element is in DOM
         UIElements.inputEmailSubject.val(templateSubject);
@@ -1330,16 +1333,12 @@
                 editorInstance = editor;
             },
             init_instance_callback: function (editor) {
-                console.log('TinyMCE init_instance_callback - editor ready, setting content');
-                console.log('Template body:', templateBody);
                 try {
                     if (templateBody) {
                         const sanitizedTemplateBody = sanitizeTinyMceHtml(templateBody);
                         editor.setContent(sanitizedTemplateBody, { format: 'html' });
-                        console.log('Content set successfully. Editor content now:', editor.getContent().substring(0, 50));
                         UIElements.inputEmailBody.val(sanitizedTemplateBody);
                     } else {
-                        console.warn('Template body is empty');
                         editor.setContent('');
                     }
                 } catch (e) {
@@ -1932,92 +1931,82 @@
         return templateData;
     }
 
+    function buildConfirmationMessage() {
+        let message = 'Selecting a template will revert any changes made to this email.';
+        if (activeTemplateAttachmentCount > 0) {
+            const count = activeTemplateAttachmentCount;
+            const plural = count === 1 ? '' : 's';
+            message += `\n\nThe ${count} attachment${plural} from the previous template will be removed and replaced with any new template attachments.`;
+        }
+        return message;
+    }
+
+    async function showTemplateConfirmation() {
+        const result = await Swal.fire({
+            title: 'Apply Template?',
+            text: buildConfirmationMessage(),
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Apply Template',
+            cancelButtonText: 'Cancel'
+        });
+        return result.isConfirmed;
+    }
+
+    async function clearPreviousAttachments(currentEmailId) {
+        if (currentEmailId) {
+            await deleteOriginAttachments(currentEmailId);
+            activeTemplateAttachmentCount = 0;
+            if (emailAttachmentsTable) {
+                emailAttachmentsTable.ajax.reload();
+            }
+        }
+    }
+
+    async function populateEmailFields(fields, body, templateRecipients) {
+        UIElements.inputEmailSubject.val(fields.subject);
+        if (body) {
+            editorInstance.setContent(body);
+        }
+        UIElements.inputEmailBody.val(body || '');
+        UIElements.inputEmailFrom.val(fields.sendFrom || defaultValues.emailFrom);
+        if (templateRecipients) {
+            UIElements.inputEmailTo.val(templateRecipients).trigger('change');
+        }
+    }
+
     // Helper function to apply a template to the current email
     async function applyTemplateToEmail(template) {
         try {
-            // Get the current email ID from the form field
             const currentEmailId = UIElements.inputEmailId.val();
 
-            // Show confirmation dialog
-            let confirmMessage = 'Selecting a template will revert any changes made to this email.';
-            if (activeTemplateAttachmentCount > 0) {
-                confirmMessage += `\n\nThe ${activeTemplateAttachmentCount} attachment${activeTemplateAttachmentCount === 1 ? '' : 's'} from the previous template will be removed and replaced with any new template attachments.`;
-            }
-
-            const result = await Swal.fire({
-                title: 'Apply Template?',
-                text: confirmMessage,
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonText: 'Apply Template',
-                cancelButtonText: 'Cancel'
-            });
-
-            if (!result.isConfirmed) {
+            if (!await showTemplateConfirmation()) {
                 return;
             }
 
-            // Always clear existing template-origin attachments before applying a new template.
-            // This prevents accumulation when tracking state gets out of sync.
-            if (currentEmailId) {
-                await deleteOriginAttachments(currentEmailId);
-                activeTemplateAttachmentCount = 0;
-                if (emailAttachmentsTable) {
-                    emailAttachmentsTable.ajax.reload();
-                }
-            }
+            await clearPreviousAttachments(currentEmailId);
 
-            // Apply the template
-            const subject = template.subject || template.Subject || '';
-            let body = template.body || template.bodyHTML || template.Body || template.BodyHTML || '';
-            const sendFrom = template.sendFrom || template.SendFrom || '';
+            const fields = extractTemplateFields(template);
+            let body = fields.body;
+            body = await processTemplateBody(body);
 
-            // Process template variables using Handlebars if available
-            if (body && applicationDetails && mappingConfig) {
-                try {
-                    const templateData = extractTemplateData(applicationDetails, mappingConfig);
-                    const handlebarsTemplate = Handlebars.compile(body);
-                    body = handlebarsTemplate(templateData);
-                } catch (e) {
-                    console.warn('Failed to process template variables:', e);
-                }
-            }
+            const templateRecipients = await resolveTemplateRecipientEmailsFromApi(template, fields.id);
+            await populateEmailFields(fields, body, templateRecipients);
 
-            // Apply template to current email being edited
-            UIElements.inputEmailSubject.val(subject);
-            if (body) {
-                editorInstance.setContent(body);
-            }
-            UIElements.inputEmailBody.val(body || '');
-            UIElements.inputEmailFrom.val(sendFrom || defaultValues.emailFrom);
-            const templateRecipients = await resolveTemplateRecipientEmailsFromApi(template, template.id || template.Id);
-            if (templateRecipients) {
-                UIElements.inputEmailTo.val(templateRecipients).trigger('change');
-            }
-            activeTemplateId = template.id || template.Id;
+            activeTemplateId = fields.id;
             activeTemplateAttachmentCount = 0;
-
-            updateSelectedTemplateLabel(template.name || template.Name || 'Unnamed Template', template.id || template.Id);
-
-            // Programmatic field updates do not fire input events; re-evaluate dirty state.
+            updateSelectedTemplateLabel(fields.name, fields.id);
             handleDraftChange();
 
-            // Copy template attachments to the email log
-            const attachmentCount = await copyTemplateAttachments(template.id || template.Id, currentEmailId);
+            const attachmentCount = await copyTemplateAttachments(fields.id, currentEmailId);
             activeTemplateAttachmentCount = attachmentCount;
 
             if (emailAttachmentsTable) {
                 emailAttachmentsTable.ajax.reload();
             }
 
-            await Swal.fire({
-                title: 'Template Applied',
-                text: attachmentCount > 0
-                    ? `${attachmentCount} attachment${attachmentCount === 1 ? '' : 's'} from the template ${attachmentCount === 1 ? 'has' : 'have'} been copied to this email.`
-                    : 'Template applied successfully. No attachments were copied.',
-                icon: 'success',
-                confirmButtonText: 'OK'
-            });
+            const message = buildSuccessMessage(attachmentCount);
+            await showSuccessNotification(message);
         } catch (e) {
             console.error('Failed to apply template:', e);
             abp.notify.error('Failed to apply template. Please try again.');
@@ -2842,5 +2831,54 @@ function createCurrencyFormatter() {
         currency: 'CAD',
         minimumFractionDigits: 2,
         maximumFractionDigits: 2,
+    });
+}
+
+function extractTemplateFields(template) {
+    return {
+        subject: template.subject || template.Subject || '',
+        body: template.body || template.bodyHTML || template.Body || template.BodyHTML || '',
+        sendFrom: template.sendFrom || template.SendFrom || '',
+        id: template.id || template.Id,
+        name: template.name || template.Name || 'Unnamed Template'
+    };
+}
+
+function findTemplateById(templates, templateId) {
+    let selectedTemplate = templates.find(t => t.id === templateId);
+    let useUpperCase = false;
+
+    if (!selectedTemplate) {
+        console.warn('Template not found with camelCase, checking with PascalCase...');
+        console.log('Available template IDs:', templates.map(t => t.id || t.Id));
+        selectedTemplate = templates.find(t => t.Id === templateId);
+        useUpperCase = true;
+    }
+
+    return { selectedTemplate, useUpperCase };
+}
+
+function extractTemplateValues(template, useUpperCase) {
+    const subject = useUpperCase ? template.Subject : template.subject;
+    const body = useUpperCase ? (template.Body || template.BodyHTML) : (template.body || template.bodyHTML);
+    const sendFrom = useUpperCase ? template.SendFrom : template.sendFrom;
+    const name = useUpperCase ? template.Name : template.name;
+    return { subject, body, sendFrom, name };
+}
+
+function buildSuccessMessage(attachmentCount) {
+    const plural = attachmentCount === 1 ? '' : 's';
+    const verbForm = attachmentCount === 1 ? 'has' : 'have';
+    return attachmentCount > 0
+        ? `${attachmentCount} attachment${plural} from the template ${verbForm} been copied to this email.`
+        : 'Template applied successfully. No attachments were copied.';
+}
+
+async function showSuccessNotification(message) {
+    await Swal.fire({
+        title: 'Template Applied',
+        text: message,
+        icon: 'success',
+        confirmButtonText: 'OK'
     });
 }

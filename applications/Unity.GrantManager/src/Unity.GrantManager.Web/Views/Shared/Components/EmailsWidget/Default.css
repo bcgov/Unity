@@ -1038,7 +1038,7 @@ input#EmailFrom.input-validation-error {
     z-index: 10 !important;
 }
 
-.tox *:not(svg):not(rect)& {
+.tox *:not(svg):not(rect) {
     background-color: initial;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
     font-size: 14px !important;
