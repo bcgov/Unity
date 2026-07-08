@@ -64,6 +64,12 @@ namespace Unity.GrantManager.Web.Identity.LoginHandlers
                     foreach (var role in userRoles)
                     {
                         var dbRole = await IdentityRoleManager.GetByIdAsync(role.Id);
+                        // Two distinct claim types are intentional here - see the NOTE in
+                        // GrantManagerWebModule.ConfigureAuthentication. UnityClaimsTypes.Role
+                        // ("client_roles") drives ASP.NET Core's RoleClaimType/IsInRole and also
+                        // carries Keycloak-only roles (ITAdministrator/ITOperations). AbpClaimTypes.Role
+                        // drives ABP's RolePermissionValueProvider and is safe for ABP's dynamic claims
+                        // refresh to recompute from the DB, since it only ever holds real DB roles.
                         principal.AddClaim(UnityClaimsTypes.Role, dbRole.Name);
                         principal.AddClaim(AbpClaimTypes.Role, dbRole.Name);
                     }

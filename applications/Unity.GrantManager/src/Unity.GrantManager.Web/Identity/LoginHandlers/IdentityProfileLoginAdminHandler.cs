@@ -2,14 +2,12 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Security.Claims;
 using System.Threading.Tasks;
 using Unity.GrantManager.Identity;
 using Unity.Modules.Shared.Permissions;
 using Volo.Abp;
 using Volo.Abp.Data;
 using Volo.Abp.Identity;
-using Volo.Abp.Security.Claims;
 
 namespace Unity.GrantManager.Web.Identity.LoginHandlers
 {
@@ -31,7 +29,10 @@ namespace Unity.GrantManager.Web.Identity.LoginHandlers
             }
 
             AssignDefaultClaims(validatedTokenContext.Principal!, userTenantAccount.DisplayName ?? string.Empty, userTenantAccount.Id);
-            (validatedTokenContext.Principal!.Identity as ClaimsIdentity)?.AddClaim(new Claim(AbpClaimTypes.Role, IdentityConsts.ITAdminRoleName));
+            // No explicit role claim stamped here - ITAdministrator/ITOperations role recognition
+            // relies entirely on the client_roles claim Keycloak already sends natively (the routing
+            // check at the top of IdentityProfileLoginHandler.HandleAsync depends on that being true
+            // before this handler even runs).
             return userTenantAccount;
         }
 

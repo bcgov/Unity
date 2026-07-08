@@ -75,19 +75,15 @@ namespace Unity.GrantManager.Web.Identity
             var userClaims = _principalAccessor.Principal?.Claims;
             if (userClaims != null && userClaims.Any())
             {
-                // First try the IDIR-specific GUID claim
-                var idirGuid = userClaims.FirstOrDefault(s => s.Type == UnityClaimsTypes.IDirUserGuid);
-                if (idirGuid != null && Guid.TryParse(idirGuid.Value, out var guid))
-                {
-                    return guid;
-                }
-
-                // Fallback to UserId claim (strip @azureidir suffix if present)
+                // UnityClaimsTypes.IDirUserGuid ("idir_user_guid") is Keycloak's IDIR-specific
+                // identifier, used only to derive the OIDC subject for account matching on login
+                // (see UserImportAppService) - it is NOT the database user id and must not be used
+                // here, even though it happens to also be GUID-formatted.
                 var userId = userClaims.FirstOrDefault(s => s.Type == AbpClaimTypes.UserId);
                 if (userId != null)
                 {
                     var value = userId.Value.Split('@')[0]; // Remove @azureidir suffix
-                    if (Guid.TryParse(value, out guid))
+                    if (Guid.TryParse(value, out var guid))
                     {
                         return guid;
                     }

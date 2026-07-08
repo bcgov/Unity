@@ -62,6 +62,7 @@ using Volo.Abp.Localization;
 using Volo.Abp.Modularity;
 using Volo.Abp.OpenIddict.Tokens;
 using Volo.Abp.SecurityLog;
+using Volo.Abp.Security.Claims;
 using Volo.Abp.SettingManagement.Web;
 using Volo.Abp.SettingManagement.Web.Pages.SettingManagement;
 using Volo.Abp.Swashbuckle;
@@ -277,10 +278,24 @@ public class GrantManagerWebModule : AbpModule
     private static void ConfigurePolicies(ServiceConfigurationContext context)
     {
         PolicyRegistrant.Register(context);
+        PermissionOrPolicyRegistrant.Register(context);
     }
 
     private static void ConfigureAuthentication(ServiceConfigurationContext context, IConfiguration configuration)
     {
+        context.Services.Configure<AbpClaimsPrincipalFactoryOptions>(options =>
+        {
+            options.IsDynamicClaimsEnabled = true; //set it "true" to enable "Dynamic Claims" or "false" to disable it.
+        });
+
+        // NOTE: AbpClaimTypes.Role must stay a DISTINCT claim type from UnityClaimsTypes.Role
+        // ("client_roles"). ABP's dynamic claims refresh (AbpDynamicClaimsPrincipalContributorBase)
+        // recomputes AbpClaimTypes.Role claims purely from the user's real DB IdentityUserRole
+        // assignments and REPLACES (RemoveAll + re-add) whatever was there. Keycloak-only roles
+        // (ITAdministrator/ITOperations) are never DB roles, so if the two claim types were unified,
+        // every dynamic-claims refresh would wipe them out. Unifying them was tried as a cookie-size
+        // optimization (one claim per role instead of two) but reverted for this reason.
+
         context.Services.AddAuthentication(options =>
         {
             options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
@@ -589,7 +604,7 @@ public class GrantManagerWebModule : AbpModule
         app.UseStaticFiles();
         app.UseMiddleware<TimezoneMiddleware>();
         app.UseRouting();
-        app.UseAuthentication();
+        app.UseAuthentication();        
 
         if (MultiTenancyConsts.IsEnabled)
         {
@@ -597,6 +612,7 @@ public class GrantManagerWebModule : AbpModule
         }
 
         app.UseUnitOfWork();
+        app.UseDynamicClaims();
         app.UseAuthorization();
         if (IsProfilingAllowed(env, configuration))
         {

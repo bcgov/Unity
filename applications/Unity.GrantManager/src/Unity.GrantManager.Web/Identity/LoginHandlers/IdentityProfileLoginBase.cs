@@ -1,5 +1,6 @@
 ﻿using System.Security.Claims;
 using System;
+using System.Security.Principal;
 using Unity.GrantManager.Identity;
 using OpenIddict.Abstractions;
 using System.IdentityModel.Tokens.Jwt;
@@ -27,9 +28,15 @@ namespace Unity.GrantManager.Web.Identity.LoginHandlers
 
         protected static void AssignDefaultClaims(ClaimsPrincipal claimsPrinicipal, string displayName, Guid userId)
         {
+            // AbpClaimTypes.UserId is the same claim type URI as ClaimTypes.NameIdentifier, which the
+            // OIDC/JWT handler already populates from the token's "sub" claim before this runs. Without
+            // clearing it first, the principal ends up with two UserId claims (Keycloak's sub, then ours),
+            // and CurrentUser.FindUserId()'s FirstOrDefault picks the wrong (sub) one.
+            var identity = claimsPrinicipal.Identity as ClaimsIdentity;
+            identity?.RemoveAll(AbpClaimTypes.UserId);
+
             claimsPrinicipal.AddClaim("DisplayName", displayName);
             claimsPrinicipal.AddClaim(AbpClaimTypes.UserId, userId.ToString());
-            claimsPrinicipal.AddClaim("UserId", userId.ToString()); // Legacy claim for backward compatibility
             claimsPrinicipal.AddClaim("Badge", Utils.CreateUserBadge(displayName));
         }
 

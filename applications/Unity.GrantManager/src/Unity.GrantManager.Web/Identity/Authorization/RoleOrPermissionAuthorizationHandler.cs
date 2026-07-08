@@ -1,3 +1,4 @@
+using System.Linq;
 using Microsoft.AspNetCore.Authorization;
 using System.Threading.Tasks;
 using Volo.Abp.Authorization.Permissions;
@@ -7,12 +8,12 @@ namespace Unity.GrantManager.Web.Identity.Authorization;
 
 public class RoleOrPermissionRequirement : IAuthorizationRequirement
 {
-    public string RoleName { get; }
+    public string[] RoleNames { get; }
     public string PermissionName { get; }
 
-    public RoleOrPermissionRequirement(string roleName, string permissionName)
+    public RoleOrPermissionRequirement(string[] roleNames, string permissionName)
     {
-        RoleName = roleName;
+        RoleNames = roleNames;
         PermissionName = permissionName;
     }
 }
@@ -30,7 +31,7 @@ public class RoleOrPermissionAuthorizationHandler : AuthorizationHandler<RoleOrP
         AuthorizationHandlerContext context,
         RoleOrPermissionRequirement requirement)
     {
-        if (context.User.IsInRole(requirement.RoleName))
+        if (requirement.RoleNames.Any(context.User.IsInRole))
         {
             context.Succeed(requirement);
             return;

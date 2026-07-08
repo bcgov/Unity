@@ -4,6 +4,7 @@ using OpenIddict.Abstractions;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
+using System.Security.Principal;
 using System.Threading.Tasks;
 using Unity.GrantManager.Identity;
 using Unity.GrantManager.Web.Identity.LoginHandlers;
@@ -44,6 +45,7 @@ namespace Unity.GrantManager.Web.Identity
                 }
 
                 AddTenantClaims(validatedTokenContext.Principal!, userTenantAccounts);
+                RemoveRawJwtMetadataClaims(validatedTokenContext.Principal!);
 
                 // Create security log
                 await securityLogManager.SaveAsync(securityLog =>
@@ -63,6 +65,23 @@ namespace Unity.GrantManager.Web.Identity
             if (userTenantAccounts.Count > 1)
             {
                 claimsPrincipal.AddClaim(UnityClaimsTypes.HasMultipleTenants, "true");
+            }
+        }
+
+        // Raw OIDC/JWT protocol claims that ASP.NET Core attaches to the principal when it parses
+        // the ID token, unrelated to app-level identity/authorization and unused anywhere in this
+        // codebase (verified via repo-wide search) - stripped before sign-in to shrink the auth cookie.
+        private static readonly string[] RawJwtMetadataClaimTypes =
+        [
+            "jti", "sid", "session_state", "at_hash", "iss", "aud", "azp", "exp", "iat", "typ"
+        ];
+
+        private static void RemoveRawJwtMetadataClaims(ClaimsPrincipal claimsPrincipal)
+        {
+            var identity = claimsPrincipal.Identity as ClaimsIdentity;
+            foreach (var claimType in RawJwtMetadataClaimTypes)
+            {
+                identity?.RemoveAll(claimType);
             }
         }
     }

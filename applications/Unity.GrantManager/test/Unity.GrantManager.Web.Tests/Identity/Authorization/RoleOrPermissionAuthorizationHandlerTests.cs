@@ -48,7 +48,7 @@ public class RoleOrPermissionAuthorizationHandlerTests
     {
         // Arrange
         var user = CreateUserWithRole("ITAdministrator");
-        var requirement = new RoleOrPermissionRequirement("ITAdministrator", "Unity.ITAdmin");
+        var requirement = new RoleOrPermissionRequirement(["ITAdministrator"], "Unity.ITAdmin");
         var context = CreateContext(user, requirement);
 
         // Act
@@ -65,7 +65,7 @@ public class RoleOrPermissionAuthorizationHandlerTests
     {
         // Arrange
         var user = CreateUserWithoutRole();
-        var requirement = new RoleOrPermissionRequirement("ITAdministrator", "Unity.ITAdmin");
+        var requirement = new RoleOrPermissionRequirement(["ITAdministrator"], "Unity.ITAdmin");
 
         _permissionChecker.IsGrantedAsync(user, "Unity.ITAdmin")
             .Returns(true);
@@ -84,7 +84,7 @@ public class RoleOrPermissionAuthorizationHandlerTests
     {
         // Arrange
         var user = CreateUserWithoutRole();
-        var requirement = new RoleOrPermissionRequirement("ITAdministrator", "Unity.ITAdmin");
+        var requirement = new RoleOrPermissionRequirement(["ITAdministrator"], "Unity.ITAdmin");
 
         _permissionChecker.IsGrantedAsync(user, "Unity.ITAdmin")
             .Returns(false);
@@ -103,7 +103,7 @@ public class RoleOrPermissionAuthorizationHandlerTests
     {
         // Arrange
         var user = CreateUserWithRole("ITOperations");
-        var requirement = new RoleOrPermissionRequirement("ITOperations", "Unity.ITOperations");
+        var requirement = new RoleOrPermissionRequirement(["ITOperations"], "Unity.ITOperations");
         var context = CreateContext(user, requirement);
 
         // Act
@@ -120,7 +120,7 @@ public class RoleOrPermissionAuthorizationHandlerTests
     {
         // Arrange
         var user = CreateUserWithRole("SomeOtherRole");
-        var requirement = new RoleOrPermissionRequirement("ITAdministrator", "Unity.ITAdmin");
+        var requirement = new RoleOrPermissionRequirement(["ITAdministrator"], "Unity.ITAdmin");
 
         _permissionChecker.IsGrantedAsync(user, "Unity.ITAdmin")
             .Returns(false);
@@ -136,10 +136,27 @@ public class RoleOrPermissionAuthorizationHandlerTests
     }
 
     [Fact]
-    public void Requirement_ShouldStoreRoleAndPermission()
+    public void Requirement_ShouldStoreRolesAndPermission()
     {
-        var requirement = new RoleOrPermissionRequirement("MyRole", "MyPermission");
-        requirement.RoleName.ShouldBe("MyRole");
+        var requirement = new RoleOrPermissionRequirement(["MyRole"], "MyPermission");
+        requirement.RoleNames.ShouldBe(["MyRole"]);
         requirement.PermissionName.ShouldBe("MyPermission");
+    }
+
+    [Fact]
+    public async Task HandleAsync_ShouldSucceed_WhenUserHasAnyOfMultipleRoles()
+    {
+        // Arrange
+        var user = CreateUserWithRole("ITAdministrator");
+        var requirement = new RoleOrPermissionRequirement(["ITOperations", "ITAdministrator"], "Unity.ITOperations");
+        var context = CreateContext(user, requirement);
+
+        // Act
+        await _handler.HandleAsync(context);
+
+        // Assert
+        context.HasSucceeded.ShouldBeTrue();
+        await _permissionChecker.DidNotReceive().IsGrantedAsync(
+            Arg.Any<ClaimsPrincipal>(), Arg.Any<string>());
     }
 }
