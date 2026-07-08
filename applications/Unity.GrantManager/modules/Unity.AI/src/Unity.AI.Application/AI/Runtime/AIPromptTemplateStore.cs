@@ -24,7 +24,8 @@ public class AIPromptTemplateStore(
         using (multiTenantDataFilter.Disable())
         {
             var prompt = await promptRepository.FindAsync(p =>
-                p.TenantId == null && p.Name == promptType && p.VersionNumber == versionNumber);
+                p.TenantId == null && p.Name == promptType && p.VersionNumber == versionNumber,
+                cancellationToken: cancellationToken);
             if (prompt == null || !prompt.IsActive)
             {
                 throw new InvalidOperationException(

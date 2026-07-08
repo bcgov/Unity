@@ -7,11 +7,9 @@ namespace Unity.AI.Runtime;
 public class AIPromptTemplateProvider(
     IAIPromptTemplateStore promptTemplateStore) : IAIPromptTemplateProvider, ITransientDependency
 {
-    public async Task<AIPromptTemplateSnapshot> GetRequiredPromptAsync(
+    public Task<AIPromptTemplateSnapshot> GetRequiredPromptAsync(
         string promptType,
         string promptVersion,
         CancellationToken cancellationToken = default)
-    {
-        return await promptTemplateStore.GetRequiredPromptAsync(promptType, promptVersion, cancellationToken);
-    }
+        => promptTemplateStore.GetRequiredPromptAsync(promptType, promptVersion, cancellationToken);
 }
