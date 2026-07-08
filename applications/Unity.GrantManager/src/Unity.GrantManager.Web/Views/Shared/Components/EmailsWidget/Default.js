@@ -81,6 +81,7 @@
     let originalTemplateState = { name: '', id: '' }; // Baseline template for discard restore
     let activeTemplateAttachmentCount = 0; // Track how many attachments were copied from the active template
     let isApplicationEmailContext = true; // Flag to track if we're in application email or template preview context
+    let cachedTemplates = null; // Cache templates globally
     let scheduleState = {
         currentMonth: new Date().getMonth(),
         currentYear: new Date().getFullYear(),
@@ -224,6 +225,7 @@
         defaultValues.emailCC = UIElements.inputOriginalEmailCC.val() || '';
         defaultValues.emailBCC = UIElements.inputOriginalEmailBCC.val() || '';
         if (globalThis.toastr) { toastr.options.positionClass = 'toast-top-center'; }
+        preloadTemplates(); // Pre-fetch templates on page load
         initTemplateDetails();
         $('#templateTextContainer').hide();
         $('#scheduled-delay-section').hide();
@@ -941,13 +943,64 @@
             return;
         }
 
-        const templates = await $.ajax({
-            url: `/api/form-notifications/templates`,
-            type: 'GET'
-        });
+        let templates = cachedTemplates;
+        if (!templates) {
+            try {
+                templates = await $.ajax({
+                    url: `/api/form-notifications/templates`,
+                    type: 'GET'
+                });
+                cachedTemplates = templates;
+            } catch (e) {
+                console.error('Failed to fetch templates:', e);
+                return;
+            }
+        }
 
         if (templates?.length > 0) {
             populateTemplatesSelectOptions($select, templates);
+        }
+    }
+
+    async function handleTemplateSelectChange($select) {
+        const selectedTemplateId = $select.val();
+        if (!selectedTemplateId) return;
+
+        $select.val('');
+
+        const template = await fetchTemplateById(selectedTemplateId);
+        if (!template) {
+            abp.notify.error('Template not found.');
+            return;
+        }
+
+        await applyTemplateToEmail(template);
+    }
+
+    async function fetchTemplateById(templateId) {
+        let templates = cachedTemplates;
+        if (!templates) {
+            try {
+                templates = await $.ajax({
+                    url: `/api/form-notifications/templates`,
+                    type: 'GET'
+                });
+                cachedTemplates = templates;
+            } catch (e) {
+                console.error('Failed to fetch templates:', e);
+                abp.notify.error('Failed to apply template.');
+                return null;
+            }
+        }
+        return templates.find(t => t.id === templateId || t.Id === templateId);
+    }
+
+    async function handleTemplateSelectOpen($select) {
+        try {
+            await ensureTemplatesSelectOptionsLoaded($select);
+        } catch (err) {
+            console.error('Failed to load templates:', err);
+            abp.notify.error('Failed to load templates.');
         }
     }
 
@@ -1368,46 +1421,9 @@
                             .prop('hidden', true)
                             .appendTo($templatesSelect);
 
-
-                        // Load templates and populate select
-                        $templatesSelect.on('change', async function () {
-                            const selectedTemplateId = $(this).val();
-
-                            if (!selectedTemplateId) {
-                                return;
-                            }
-
-                            // Reset select to default
-                            $(this).val('');
-
-                            try {
-                                const response = await $.ajax({
-                                    url: `/api/form-notifications/templates`,
-                                    type: 'GET'
-                                });
-
-                                const template = response.find(t => t.id === selectedTemplateId || t.Id === selectedTemplateId);
-
-                                if (template) {
-                                    await applyTemplateToEmail(template);
-                                } else {
-                                    abp.notify.error('Template not found.');
-                                }
-                            } catch (e) {
-                                console.error('Failed to apply template:', e);
-                                abp.notify.error('Failed to apply template.');
-                            }
-                        });
-
-                        // Load templates lazily when opened.
-                        $templatesSelect.on('click', async function (e) {
-                            try {
-                                await ensureTemplatesSelectOptionsLoaded($(this));
-                            } catch (err) {
-                                console.error('Failed to load templates:', err);
-                                abp.notify.error('Failed to load templates.');
-                            }
-                        });
+                        $templatesSelect
+                            .on('change', handleTemplateSelectChange)
+                            .on('click', handleTemplateSelectOpen);
 
                         $menubar.append($templatesSelect);
                     }
@@ -2015,6 +2031,61 @@
 
     let isViewingDraft = false; // Track if we're viewing a draft email
 
+    async function preloadTemplates() {
+        if (cachedTemplates) return;
+        try {
+            cachedTemplates = await $.ajax({
+                url: `/api/form-notifications/templates`,
+                type: 'GET'
+            });
+        } catch (e) {
+            console.warn('Failed to preload templates:', e);
+            cachedTemplates = [];
+        }
+    }
+
+    function createTemplateSelect(selectedRecordTemplateName, isDraft) {
+        const $templatesSelect = $('<select>')
+            .addClass('templates-select templates-button-container')
+            .attr('title', 'Select a template to apply');
+
+        $templatesSelect.prop('disabled', !isDraft);
+
+        $('<option>')
+            .val('')
+            .text(selectedRecordTemplateName || 'Templates')
+            .prop('selected', true)
+            .prop('disabled', true)
+            .prop('hidden', !selectedRecordTemplateName)
+            .appendTo($templatesSelect);
+
+        if (cachedTemplates?.length > 0) {
+            populateTemplatesSelectOptions($templatesSelect, cachedTemplates);
+        }
+
+        return $templatesSelect;
+    }
+
+    function bindTemplateSelectEvents($select, isDraft) {
+        $select.on('change', function () {
+            handleTemplateSelectChangeWithDraftCheck($(this), isDraft);
+        });
+
+        $select.on('click', function (e) {
+            handleTemplateSelectOpenWithDraftCheck($(this), isDraft);
+        });
+    }
+
+    function handleTemplateSelectChangeWithDraftCheck($select, isDraft) {
+        if (!isDraft) return;
+        handleTemplateSelectChange($select);
+    }
+
+    function handleTemplateSelectOpenWithDraftCheck($select, isDraft) {
+        if (!isDraft || $select.prop('disabled')) return;
+        handleTemplateSelectOpen($select);
+    }
+
     PubSub.subscribe('email_selected', (msg, data) => {
         console.log("EMAIL SELECTED EVENT FIRED", data);
 
@@ -2088,78 +2159,14 @@
                 // Create template label and buttons in label container
                 setTimeout(() => {
                     const $menubar = $(editor.getContainer()).find('.tox-menubar');
+                    if (!$menubar.length) return;
 
                     updateSelectedTemplateLabel(selectedRecordTemplateName, activeTemplateId || '');
 
                     // Templates select - add to TinyMCE menu bar at bottom
                     if (!$menubar.find('.templates-button-container').length) {
-                        // Create select element for templates
-                        const $templatesSelect = $('<select>')
-                            .addClass('templates-select templates-button-container')
-                            .attr('title', 'Select a template to apply');
-
-                        // Disable template selection for non-draft emails.
-                        $templatesSelect.prop('disabled', !isDraft);
-
-                        // Keep "Templates" as the control label, but not as a selectable option.
-                        $('<option>')
-                            .val('')
-                            .text(selectedRecordTemplateName || 'Templates')
-                            .prop('selected', true)
-                            .prop('disabled', true)
-                            .prop('hidden', !selectedRecordTemplateName)
-                            .appendTo($templatesSelect);
-
-                        // Load templates and populate select
-                        $templatesSelect.on('change', async function () {
-                            if (!isDraft) {
-                                return;
-                            }
-
-                            const selectedTemplateId = $(this).val();
-
-                            if (!selectedTemplateId) {
-                                return;
-                            }
-
-                            // Reset select to default
-                            $(this).val('');
-
-                            try {
-                                const response = await $.ajax({
-                                    url: `/api/form-notifications/templates`,
-                                    type: 'GET'
-                                });
-
-                                const template = response.find(t => t.id === selectedTemplateId || t.Id === selectedTemplateId);
-
-                                if (template) {
-                                    // Route all template changes through one apply flow so confirmation UX is consistent.
-                                    await applyTemplateToEmail(template);
-                                } else {
-                                    abp.notify.error('Template not found.');
-                                }
-                            } catch (e) {
-                                console.error('Failed to apply template:', e);
-                                abp.notify.error('Failed to apply template.');
-                            }
-                        });
-
-                        // Load templates on first click
-                        $templatesSelect.on('click', async function (e) {
-                            if (!isDraft || $(this).prop('disabled')) {
-                                e.preventDefault();
-                                return;
-                            }
-
-                            try {
-                                await ensureTemplatesSelectOptionsLoaded($(this));
-                            } catch (err) {
-                                console.error('Failed to load templates:', err);
-                                abp.notify.error('Failed to load templates.');
-                            }
-                        });
-
+                        const $templatesSelect = createTemplateSelect(selectedRecordTemplateName, isDraft);
+                        bindTemplateSelectEvents($templatesSelect, isDraft);
                         $menubar.append($templatesSelect);
                     }
 

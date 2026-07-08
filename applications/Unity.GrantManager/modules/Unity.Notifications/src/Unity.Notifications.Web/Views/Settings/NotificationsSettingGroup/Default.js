@@ -475,8 +475,7 @@ $(function () {
         });
     }
 
-    UiElements.deleteButton.on('click', function () {
-        let templateId = $('#templateId').val();
+    function initiateTemplateDelete(templateId) {
         abp.message.confirm(
             'Are you sure you want to delete this template?',
             'Delete Template',
@@ -486,7 +485,11 @@ $(function () {
                 }
             }
         );
+    }
 
+    UiElements.deleteButton.on('click', function () {
+        const templateId = $('#templateId').val();
+        initiateTemplateDelete(templateId);
     });
 
     function initializeTemplateDataTables() {                
@@ -663,34 +666,7 @@ $(function () {
         $('#TemplatesTable').on('click', '.template-delete-btn', function (e) {
             e.stopPropagation();
             const templateId = $(this).data('id');
-            
-            abp.message.confirm(
-                'Are you sure you want to delete this template?',
-                'Delete Template',
-                function (confirmed) {
-                    if (confirmed) {
-                        $.ajax({
-                            url: `/api/form-notifications/can-delete-template/${templateId}`,
-                            type: 'GET',
-                            success: function (response) {
-                                if (response.canDelete) {
-                                    proceedWithDelete(templateId, function () {
-                                        PubSub.publish('reload_templates_table_with_close');
-                                    });
-                                } else {
-                                    abp.notify.error(response.errorMessage || 'This template cannot be deleted because it is currently in use.');
-                                }
-                            },
-                            error: function () {
-                                // If check fails, proceed with deletion
-                                proceedWithDelete(templateId, function () {
-                                    PubSub.publish('reload_templates_table_with_close');
-                                });
-                            }
-                        });
-                    }
-                }
-            );
+            initiateTemplateDelete(templateId);
         });
 
         // Removed nested functions - now defined at global scope above
