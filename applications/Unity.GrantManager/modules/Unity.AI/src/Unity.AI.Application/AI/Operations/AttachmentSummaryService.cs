@@ -141,9 +141,14 @@ public class AttachmentSummaryService(
         };
 
         var batchResponse = await aiService.GenerateAttachmentSummaryBatchAsync(batchRequest, cancellationToken);
-        var responseMap = batchResponse.Attachments
-            .Where(item => !string.IsNullOrWhiteSpace(item.AttachmentId))
-            .ToDictionary(item => item.AttachmentId, item => item.Summary, StringComparer.OrdinalIgnoreCase);
+        var responseMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var item in batchResponse.Attachments)
+        {
+            if (!string.IsNullOrWhiteSpace(item.AttachmentId))
+            {
+                responseMap[item.AttachmentId] = item.Summary;
+            }
+        }
 
         var results = new List<string>(attachmentIds.Count);
         foreach (var attachmentId in attachmentIds)

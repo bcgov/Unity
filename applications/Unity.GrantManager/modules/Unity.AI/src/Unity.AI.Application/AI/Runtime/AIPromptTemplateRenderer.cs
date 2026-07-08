@@ -35,7 +35,8 @@ public static class AIPromptTemplateRenderer
             metadataJson,
             new Dictionary<string, string>
             {
-                ["ATTACHMENT"] = attachment
+                ["ATTACHMENT"] = attachment,
+                ["ATTACHMENTS"] = attachment
             });
     }
 

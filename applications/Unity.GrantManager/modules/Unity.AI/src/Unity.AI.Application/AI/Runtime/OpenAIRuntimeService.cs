@@ -205,6 +205,11 @@ namespace Unity.AI.Runtime
             ArgumentNullException.ThrowIfNull(request);
             try
             {
+                if (request.Attachments is null || request.Attachments.Count == 0)
+                {
+                    return new AttachmentSummaryBatchResponse();
+                }
+
                 var settings = await _openAIConfigurationResolver.ResolveOperationSettingsAsync(AttachmentSummaryPromptType, cancellationToken);
                 var promptTemplate = await _promptTemplateProvider.GetRequiredPromptAsync(
                     AttachmentSummaryPromptType,

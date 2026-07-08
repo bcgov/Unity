@@ -28,6 +28,9 @@ public static class AIExecutionStrategy
 
         switch (mode)
         {
+            case AIExecutionMode.Single:
+                return await batchOperation(items);
+
             case AIExecutionMode.Parallel:
                 return [.. await Task.WhenAll(items.Select(operation))];
 
