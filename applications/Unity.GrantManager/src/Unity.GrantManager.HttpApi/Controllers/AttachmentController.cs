@@ -1,23 +1,23 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Unity.GrantManager.Attachments;
 using Unity.GrantManager.Intakes;
+using Unity.GrantManager.Models;
 using Unity.Notifications.Emails;
 using Volo.Abp.AspNetCore.Mvc;
 using Volo.Abp.MultiTenancy;
 using Volo.Abp.Validation;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
-using Unity.GrantManager.Models;
-using System.Threading;
 
 namespace Unity.GrantManager.Controllers
 {
@@ -57,7 +57,7 @@ namespace Unity.GrantManager.Controllers
         private readonly ICurrentTenant _currentTenant;
         private readonly ILibreOfficeConversionService _libreOfficeConversionService;
         private readonly IAttachmentPreviewAppService _attachmentPreviewAppService;
-        private ILogger logger => LazyServiceProvider.LazyGetService<ILogger>(provider => LoggerFactory?.CreateLogger(GetType().FullName!) ?? NullLogger.Instance);
+        private ILogger Logger => LazyServiceProvider.LazyGetService<ILogger>(provider => LoggerFactory?.CreateLogger(GetType().FullName!) ?? NullLogger.Instance);
         private const string badRequestFileMsg = "File name must be provided.";
         private const string NotFoundFileMsg = "File not found.";
         private const string errorFileMsg = "An error occurred while downloading the file.";
@@ -127,7 +127,7 @@ namespace Unity.GrantManager.Controllers
             catch (Exception ex)
             {
                 string ExceptionMessage = ex.Message;
-                logger.LogError(ex, "AttachmentController->DownloadApplicantAttachment: {ExceptionMessage}", ExceptionMessage);
+                Logger.LogError(ex, "AttachmentController->DownloadApplicantAttachment: {ExceptionMessage}", ExceptionMessage);
                 return StatusCode(500, errorFileMsg);
             }
         }
@@ -174,7 +174,7 @@ namespace Unity.GrantManager.Controllers
             catch (Exception ex)
             {
                 string ExceptionMessage = ex.Message;
-                logger.LogError(ex, "AttachmentController->DownloadApplicationAttachment: {ExceptionMessage}", ExceptionMessage);
+                Logger.LogError(ex, "AttachmentController->DownloadApplicationAttachment: {ExceptionMessage}", ExceptionMessage);
                 return StatusCode(500, errorFileMsg);
             }
         }
@@ -221,7 +221,7 @@ namespace Unity.GrantManager.Controllers
             catch (Exception ex)
             {
                 string ExceptionMessage = ex.Message;
-                logger.LogError(ex, "AttachmentController->DownloadAssessmentAttachment: {ExceptionMessage}", ExceptionMessage);
+                Logger.LogError(ex, "AttachmentController->DownloadAssessmentAttachment: {ExceptionMessage}", ExceptionMessage);
                 return StatusCode(500, errorFileMsg);
             }
         }
@@ -253,7 +253,7 @@ namespace Unity.GrantManager.Controllers
             catch (Exception ex)
             {
                 string ExceptionMessage = ex.Message;
-                logger.LogError(ex, "AttachmentController->DownloadChefsAttachment: {ExceptionMessage}", ExceptionMessage);
+                Logger.LogError(ex, "AttachmentController->DownloadChefsAttachment: {ExceptionMessage}", ExceptionMessage);
                 var errorCode = ex.Data.Contains(ErrorCodeKey) ? Convert.ToInt32(ex.Data[ErrorCodeKey]) : 500;
                 return StatusCode(errorCode, ExceptionMessage);
             }
@@ -297,7 +297,7 @@ namespace Unity.GrantManager.Controllers
                 catch (Exception ex)
                 {
                     string ExceptionMessage = ex.Message;
-                    logger.LogError(ex, "AttachmentController->DownloadAllChefsAttachment: {ExceptionMessage}", ExceptionMessage);
+                    Logger.LogError(ex, "AttachmentController->DownloadAllChefsAttachment: {ExceptionMessage}", ExceptionMessage);
                     if (ExceptionMessage.Contains(chefsApiAccessError))
                     {                        
                         return StatusCode(403, chefsApiAccessError);
@@ -325,7 +325,7 @@ namespace Unity.GrantManager.Controllers
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "AttachmentController->PreviewApplicationAttachment: {Message}", ex.Message);
+                Logger.LogError(ex, "AttachmentController->PreviewApplicationAttachment: {Message}", ex.Message);
                 return StatusCode(500, errorFileMsg);
             }
         }
@@ -346,7 +346,7 @@ namespace Unity.GrantManager.Controllers
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "AttachmentController->PreviewAssessmentAttachment: {Message}", ex.Message);
+                Logger.LogError(ex, "AttachmentController->PreviewAssessmentAttachment: {Message}", ex.Message);
                 return StatusCode(500, errorFileMsg);
             }
         }
@@ -366,7 +366,7 @@ namespace Unity.GrantManager.Controllers
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "AttachmentController->PreviewApplicantAttachment: {Message}", ex.Message);
+                Logger.LogError(ex, "AttachmentController->PreviewApplicantAttachment: {Message}", ex.Message);
                 return StatusCode(500, errorFileMsg);
             }
         }
@@ -387,7 +387,7 @@ namespace Unity.GrantManager.Controllers
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "AttachmentController->PreviewChefsAttachment: {Message}", ex.Message);
+                Logger.LogError(ex, "AttachmentController->PreviewChefsAttachment: {Message}", ex.Message);
                 var errorCode = ex.Data.Contains(ErrorCodeKey) ? Convert.ToInt32(ex.Data[ErrorCodeKey]) : 500;
                 return StatusCode(errorCode, errorFileMsg);
             }
@@ -447,9 +447,20 @@ namespace Unity.GrantManager.Controllers
             return await UploadFiles(files);
         }
 
+        [HttpPost("template/{templateId}/upload")]
+        public async Task<IActionResult> UploadTemplateAttachments(Guid templateId, IList<IFormFile> files)
+        {
+            return await UploadEmailAttachments(null, templateId, files);
+        }
+
         [HttpPost("email/{emailLogId}/upload")]
         public async Task<IActionResult> UploadEmailAttachments(Guid emailLogId, IList<IFormFile> files)
         {
+            return await UploadEmailAttachments(emailLogId, null, files);
+        }
+
+        public async Task<IActionResult> UploadEmailAttachments(Guid? emailLogId, Guid? templateId, IList<IFormFile> files)
+        { 
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
@@ -481,9 +492,9 @@ namespace Unity.GrantManager.Controllers
 
             var totalMaxFileSizeConfig = _configuration["S3:EmailAttachmentsTotalMaxFileSize"] ?? "25";
             if (double.TryParse(totalMaxFileSizeConfig, out double totalMaxSizeMB))
-            {
+            {                
                 long existingTotalBytes = await _emailLogAttachmentUploadService
-                    .GetTotalFileSizeByEmailLogIdAsync(emailLogId);
+                    .GetTotalFileSizeByEmailLogIdAsync(emailLogId, templateId);
                 long newFilesBytes = files.Sum(f => f.Length);
                 double combinedMB = (existingTotalBytes + newFilesBytes) * 0.000001;
 
@@ -504,6 +515,7 @@ namespace Unity.GrantManager.Controllers
                     await file.CopyToAsync(ms);
                     var dto = await _emailLogAttachmentUploadService.UploadAsync(
                         emailLogId,
+                        templateId,
                         _currentTenant.Id,
                         file.FileName,
                         ms.ToArray(),
@@ -512,7 +524,7 @@ namespace Unity.GrantManager.Controllers
                 }
                 catch (Exception ex)
                 {
-                    logger.LogError(ex, "AttachmentController->UploadEmailAttachments: Failed to upload {FileName}", file.FileName);
+                    Logger.LogError(ex, "AttachmentController->UploadEmailAttachments: Failed to upload {FileName}", file.FileName);
                     return StatusCode(500, $"Failed to upload {file.FileName}: {ex.Message}");
                 }
             }
@@ -527,7 +539,7 @@ namespace Unity.GrantManager.Controllers
             {
                 throw new AbpValidationException(message: "ERROR: Invalid File Type.", validationErrors: InvalidFileTypes);
             }
-            List<string> ErrorList = new();
+            List<string> ErrorList = [];
             foreach (IFormFile source in files)
             {
                 try
@@ -558,7 +570,7 @@ namespace Unity.GrantManager.Controllers
 
         private List<ValidationResult> GetInvalidFileTypes(IList<IFormFile> files)
         {
-            List<ValidationResult> ErrorList = new();
+            List<ValidationResult> ErrorList = [];
             var InvalidFileTypes = _configuration["S3:DisallowedFileTypes"] ?? "";
             var DisallowedFileTypes = JsonConvert.DeserializeObject<string[]>(InvalidFileTypes);
             if (DisallowedFileTypes == null)

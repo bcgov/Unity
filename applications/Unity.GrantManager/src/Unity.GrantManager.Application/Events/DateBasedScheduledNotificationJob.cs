@@ -229,7 +229,7 @@ namespace Unity.GrantManager.Events
 
                 // OPTIMIZATION: Batch load all needed templates upfront instead of querying per notification (N+1 problem)
                 var uniqueTemplateIds = notifications.Select(n => n.EmailTemplateId).Distinct().ToHashSet();
-                var templatesDict = (await _templateService.GetTemplatesByTenent())
+                var templatesDict = (await _templateService.GetTemplatesByTenant())
                     .Where(t => uniqueTemplateIds.Contains(t.Id))
                     .ToDictionary(t => t.Id);
 

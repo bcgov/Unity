@@ -8,7 +8,11 @@ namespace Unity.Notifications.Emails;
 public class EmailLogAttachment : AuditedAggregateRoot<Guid>, IMultiTenant
 {
     // Foreign key to EmailLog
-    public Guid EmailLogId { get; set; }
+    public Guid? EmailLogId { get; set; }
+    public Guid? TemplateId { get; set; }
+    
+    // Original template ID when copying from template
+    public Guid? OriginTemplateId { get; set; }
 
     // S3 storage properties
     public string S3ObjectKey { get; set; } = string.Empty;

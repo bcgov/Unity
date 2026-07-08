@@ -1,0 +1,16 @@
+# Local secrets must never end up in a Docker build context / image,
+# even for a locally-run `docker build` outside of CI (which never has
+# these files in the first place, since they are gitignored).
+**/appsettings.secrets.json
+**/appsettings.Development.json
+**/.env
+**/.env.*
+**/*.env
+
+# Build artifacts and local tooling state - not needed in the build
+# context and only bloat it / risk copying stale output.
+**/bin/
+**/obj/
+**/node_modules/
+.git/
+.vs/
