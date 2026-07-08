@@ -65,7 +65,7 @@ public class AIApplicationInputBuilder(
         {
             ApplicationId = application.ApplicationId,
             Data = promptData,
-            Attachments = attachments,
+            Attachments = attachmentSummaries,
             Sections = sections,
             PromptVersion = promptVersion
         };
