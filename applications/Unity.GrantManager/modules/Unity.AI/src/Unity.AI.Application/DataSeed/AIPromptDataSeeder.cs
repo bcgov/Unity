@@ -791,65 +791,40 @@ public class AIPromptDataSeeder(
     // ── v0/mapping-suggestion.system.txt ────────────────────────────────────
     private const string OnboardingMappingSystemV2 = """
         You are a careful mapping assistant for human reviewers.
-        Compare CHEFS fields, Unity core fields, and worksheet fields to suggest likely mappings.
-        Do not invent fields, persist changes, or assume a worksheet should exist if one is not clearly justified.
-        Return only valid JSON in the exact format requested.
+        Return a flat JSON object that maps CHEFS field keys to Unity core field keys.
+        Do not invent fields, persist changes, or add any wrapper sections.
+        Return only valid JSON in the exact mapping shape requested.
         """;
 
     // ── v2/onboarding-mapping.user.txt ─────────────────────────────────────
     private const string OnboardingMappingUserV2 = """
-        FORM MAPPING CONTEXT:
+        DATA
         {{DATA}}
+
+        ATTACHMENTS
+        {{ATTACHMENTS}}
+
+        SECTION
+        {{SECTION}}
+
+        RESPONSE
+        {{RESPONSE}}
+
+        RULES
+        {{RULES}}
+        {{COMMON_RULES}}
 
         OUTPUT
         {
-          "coreFieldMatches": [
-            {
-              "sourceField": "<string>",
-              "targetField": "<string>",
-              "reason": "<string>",
-              "confidence": <decimal 0.0-1.0>
-            }
-          ],
-          "worksheetMatches": [
-            {
-              "worksheetName": "<string>",
-              "fieldMatches": [
-                {
-                  "sourceField": "<string>",
-                  "targetField": "<string>",
-                  "reason": "<string>",
-                  "confidence": <decimal 0.0-1.0>
-                }
-              ]
-            }
-          ],
-          "worksheetCreationSuggestions": [
-            {
-              "worksheetName": "<string>",
-              "suggestedFields": [
-                {
-                  "name": "<string>",
-                  "type": "<string>",
-                  "label": "<string>",
-                  "isCustom": true
-                }
-              ],
-              "reason": "<string>"
-            }
-          ],
-          "issues": [
-            {
-              "code": "<string>",
-              "message": "<string>"
-            }
-          ]
+          "<source_field>": "<target_field>",
+          "<source_field_2>": "<target_field_2>"
         }
 
         Important:
-        - Use only FORM MAPPING CONTEXT as evidence.
-        - Return only fields that are supported by the context.
-        - Keep reasons specific and concise.
+        - Use only DATA and ATTACHMENTS as evidence.
+        - Do not invent missing application details.
+        - Return only a flat JSON object with source field keys mapped to target field keys.
+        - Do not add wrapper sections or nested arrays.
         - Return valid plain JSON only in the exact OUTPUT shape.
         """;
 
