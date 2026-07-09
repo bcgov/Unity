@@ -471,7 +471,10 @@ function generateAiButtonAction(e, dt, button, config) {
         globalThis.AIGenerationButtonState?.setGenerating($button);
     }
 
-    unity.grantManager.grantApplications.grantApplication.queueApplicationScoring(pageApplicationId)
+    abp.ajax({
+        url: `/api/app/ai/generation/application-scoring?applicationId=${encodeURIComponent(pageApplicationId)}`,
+        type: 'POST'
+    })
         .done(function (generationStatus) {
             const request = generationStatus?.generationRequest;
             const status = globalThis.AIGenerationButtonState?.resolveStatus(request?.status) ?? '';
@@ -517,8 +520,10 @@ function resumeActiveReviewListAiButton(reviewListTable) {
     }
 
     const $button = $(button.node());
-    unity.grantManager.grantApplications.grantApplication
-        .getAIGenerationStatus(pageApplicationId, 'application-scoring')
+    abp.ajax({
+        url: `/api/app/ai/generation/status?applicationId=${encodeURIComponent(pageApplicationId)}&operationType=application-scoring`,
+        type: 'GET'
+    })
         .done(function(generationStatus) {
             const request = generationStatus?.generationRequest;
             if (request?.isActive !== true) {
@@ -534,8 +539,10 @@ function pollReviewListAiButton($button) {
     globalThis.AIGenerationButtonState.monitor({
         $button,
         originalHtml: generateAiButtonText(null, null, null),
-        getStatus: () => unity.grantManager.grantApplications.grantApplication
-            .getAIGenerationStatus(pageApplicationId, 'application-scoring'),
+        getStatus: () => abp.ajax({
+            url: `/api/app/ai/generation/status?applicationId=${encodeURIComponent(pageApplicationId)}&operationType=application-scoring`,
+            type: 'GET'
+        }),
         onComplete: refreshReviewListAfterAiScoring,
         onFailed: (request) => abp.message.error(request?.failureReason || 'AI scoring failed.')
     });

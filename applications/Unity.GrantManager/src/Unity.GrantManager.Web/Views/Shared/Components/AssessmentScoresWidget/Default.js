@@ -686,16 +686,20 @@ function queueApplicationScoring(triggerButton = null) {
     const monitorScoring = () => globalThis.AIGenerationButtonState.monitor({
         $button,
         originalHtml: existingHtml,
-        getStatus: () => unity.grantManager.grantApplications.grantApplication
-            .getAIGenerationStatus(applicationId, 'application-scoring'),
+        getStatus: () => abp.ajax({
+            url: `/api/app/ai/generation/status?applicationId=${encodeURIComponent(applicationId)}&operationType=application-scoring`,
+            type: 'GET'
+        }),
         onComplete: () => {
             PubSub.publish('refresh_assessment_scores', null);
         },
         onFailed: (request) => abp.message.error(request?.failureReason || 'AI scoring failed.')
     });
 
-    unity.grantManager.grantApplications.grantApplication
-        .queueApplicationScoring(applicationId)
+    abp.ajax({
+        url: `/api/app/ai/generation/application-scoring?applicationId=${encodeURIComponent(applicationId)}`,
+        type: 'POST'
+    })
         .done(function (generationStatus) {
             const request = generationStatus?.generationRequest;
             const status = globalThis.AIGenerationButtonState?.resolveStatus(request?.status) ?? '';

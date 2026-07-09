@@ -6,25 +6,19 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using Unity.AI.Models;
 using Unity.AI.Prompts;
-using Unity.Flex.Domain.Scoresheets;
-using Unity.GrantManager.Applications;
 using Volo.Abp;
 using Volo.Abp.DependencyInjection;
 
 namespace Unity.AI.Operations;
 
 public class AIApplicationInputBuilder(
-    IApplicationFormRepository applicationFormRepository,
-    IApplicationFormSubmissionRepository applicationFormSubmissionRepository,
-    IApplicationFormVersionRepository applicationFormVersionRepository,
-    IApplicationChefsFileAttachmentRepository applicationChefsFileAttachmentRepository,
-    IScoresheetRepository scoresheetRepository,
+    IAIApplicationInputDataProvider dataProvider,
     ILogger<AIApplicationInputBuilder> logger) : IAIApplicationInputBuilder, ITransientDependency
 {
     public async Task<ApplicationAnalysisOperationInputDto> BuildApplicationAnalysisInputAsync(AIApplicationPromptDataDto application, string? promptVersion)
     {
-        var formSubmission = await applicationFormSubmissionRepository.GetByApplicationAsync(application.ApplicationId);
-        var attachments = await applicationChefsFileAttachmentRepository.GetListAsync(a => a.ApplicationId == application.ApplicationId);
+        var formSubmission = await dataProvider.GetApplicationSubmissionAsync(application.ApplicationId);
+        var attachments = await dataProvider.GetAttachmentSummariesAsync(application.ApplicationId);
         var formSchema = await GetFormSchemaAsync(formSubmission?.ApplicationFormVersionId);
 
         return new ApplicationAnalysisOperationInputDto
@@ -32,29 +26,29 @@ public class AIApplicationInputBuilder(
             ApplicationId = application.ApplicationId,
             Schema = JsonSerializer.SerializeToElement(PromptDataPayloadBuilder.BuildFormFieldConfiguration(formSchema, logger)),
             Data = PromptDataPayloadBuilder.BuildPromptDataPayload(application, formSubmission?.Submission, formSchema, logger),
-            Attachments = PromptDataPayloadBuilder.BuildAttachmentSummaries(attachments),
+            Attachments = attachments,
             PromptVersion = promptVersion
         };
     }
 
     public async Task<ApplicationScoringOperationInputDto> BuildApplicationScoringInputAsync(AIApplicationPromptDataDto application, string? promptVersion)
     {
-        var applicationForm = await applicationFormRepository.GetAsync(application.ApplicationFormId);
-        if (applicationForm.ScoresheetId == null)
+        var applicationForm = await dataProvider.GetApplicationFormAsync(application.ApplicationFormId);
+        if (applicationForm?.ScoresheetId == null)
         {
             throw new UserFriendlyException("Scoring requires a configured scoresheet.");
         }
 
-        var scoresheet = await scoresheetRepository.GetWithChildrenAsync(applicationForm.ScoresheetId.Value);
+        var scoresheet = await dataProvider.GetScoresheetAsync(applicationForm.ScoresheetId.Value);
         if (scoresheet == null || !scoresheet.Sections.Any() || !scoresheet.Sections.SelectMany(s => s.Fields).Any())
         {
             throw new UserFriendlyException("Scoring requires a scoresheet with fields.");
         }
 
-        var attachments = await applicationChefsFileAttachmentRepository.GetListAsync(a => a.ApplicationId == application.ApplicationId);
-        var attachmentSummaries = PromptDataPayloadBuilder.BuildAttachmentSummaries(attachments);
+        var attachments = await dataProvider.GetAttachmentSummariesAsync(application.ApplicationId);
+        var attachmentSummaries = attachments;
 
-        var formSubmission = await applicationFormSubmissionRepository.GetByApplicationAsync(application.ApplicationId);
+        var formSubmission = await dataProvider.GetApplicationSubmissionAsync(application.ApplicationId);
         var formSchema = await GetFormSchemaAsync(formSubmission?.ApplicationFormVersionId);
         var promptData = PromptDataPayloadBuilder.BuildPromptDataPayload(application, formSubmission?.Submission, formSchema, logger);
 
@@ -86,7 +80,7 @@ public class AIApplicationInputBuilder(
 
         try
         {
-            var formVersion = await applicationFormVersionRepository.GetAsync(formVersionId.Value);
+            var formVersion = await dataProvider.GetApplicationFormVersionAsync(formVersionId);
             return string.IsNullOrWhiteSpace(formVersion?.FormSchema) ? null : formVersion.FormSchema;
         }
         catch (Exception ex)
@@ -96,7 +90,7 @@ public class AIApplicationInputBuilder(
         }
     }
 
-    private static List<object> BuildSectionQuestionsData(ScoresheetSection section)
+    private static List<object> BuildSectionQuestionsData(ScoresheetSectionSnapshot section)
     {
         var sectionQuestionsData = new List<object>();
         foreach (var field in section.Fields.OrderBy(f => f.Order))
@@ -117,9 +111,9 @@ public class AIApplicationInputBuilder(
         return sectionQuestionsData;
     }
 
-    private static object[]? ExtractSelectListOptions(Question field)
+    private static object[]? ExtractSelectListOptions(ScoresheetFieldSnapshot field)
     {
-        if (field.Type != Unity.Flex.Scoresheets.Enums.QuestionType.SelectList || string.IsNullOrEmpty(field.Definition))
+        if (field.Type != Unity.Flex.Scoresheets.Enums.QuestionType.SelectList.ToString() || string.IsNullOrEmpty(field.Definition))
         {
             return null;
         }
