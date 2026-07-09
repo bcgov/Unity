@@ -488,7 +488,7 @@ globalThis.queueApplicationAnalysis = function(triggerButton = null) {
     })
         .done(function(generationStatus) {
             const request = generationStatus?.generationRequest;
-            const status = globalThis.AIGenerationButtonState?.resolveStatus(request?.status) ?? '';
+            const status = String(request?.status ?? '').trim();
 
             if (status === 'Completed') {
                 globalThis.AIGenerationButtonState?.restoreForCooldownCheck($button, existingHtml);

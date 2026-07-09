@@ -28,6 +28,7 @@
     "AI:ApplicationAnalysisRequiresSubmission": "AI application analysis requires application submission data.",
     "AI:ScoringRequiresScoresheet": "AI scoring requires a configured scoresheet.",
     "AI:ScoringRequiresScoresheetFields": "AI scoring requires a scoresheet with scoring fields.",
+    "AI:AttachmentNotFound": "Attachment not found.",
     "AI:SelectAttachmentForSummaries": "Select at least one attachment to generate summaries.",
 
     "AIPrompts": "AI Prompts",

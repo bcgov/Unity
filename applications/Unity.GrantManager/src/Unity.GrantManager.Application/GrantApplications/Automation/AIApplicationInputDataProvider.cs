@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 using Unity.AI.Models;
 using Unity.AI.Operations;
 using Unity.GrantManager.Applications;
@@ -11,15 +12,22 @@ using Volo.Abp.DependencyInjection;
 namespace Unity.GrantManager.GrantApplications.Automation;
 
 public class AIApplicationInputDataProvider(
+    IApplicationRepository applicationRepository,
     IApplicationFormRepository applicationFormRepository,
     IApplicationFormSubmissionRepository applicationFormSubmissionRepository,
     IApplicationFormVersionRepository applicationFormVersionRepository,
     IApplicationChefsFileAttachmentRepository applicationChefsFileAttachmentRepository,
     IScoresheetRepository scoresheetRepository) : IAIApplicationInputDataProvider, ITransientDependency
 {
-    public async Task<ApplicationFormSnapshot?> GetApplicationFormAsync(Guid applicationFormId)
+    public async Task<ApplicationFormSnapshot?> GetApplicationFormAsync(Guid applicationId)
     {
-        var form = await applicationFormRepository.FindAsync(applicationFormId);
+        var application = await applicationRepository.FindAsync(applicationId);
+        if (application == null)
+        {
+            return null;
+        }
+
+        var form = await applicationFormRepository.FindAsync(application.ApplicationFormId);
         return form == null ? null : new ApplicationFormSnapshot { ScoresheetId = form.ScoresheetId };
     }
 
@@ -46,16 +54,13 @@ public class AIApplicationInputDataProvider(
         return version == null ? null : new ApplicationFormVersionSnapshot { FormSchema = version.FormSchema };
     }
 
-    public async Task<List<AIAttachmentItem>> GetAttachmentSummariesAsync(Guid applicationId)
+    public async Task<List<AttachmentSummarySnapshot>> GetAttachmentSummariesAsync(Guid applicationId)
     {
         var attachments = await applicationChefsFileAttachmentRepository.GetListAsync(a => a.ApplicationId == applicationId);
         return attachments
-            .Where(attachment => !string.IsNullOrWhiteSpace(attachment.AISummary))
-            .Select(attachment => new AIAttachmentItem
-            {
-                Name = attachment.FileName ?? string.Empty,
-                Summary = attachment.AISummary ?? string.Empty
-            })
+            .Select(a => new AttachmentSummarySnapshot(
+                string.IsNullOrWhiteSpace(a.FileName) ? "attachment" : a.FileName.Trim(),
+                string.IsNullOrWhiteSpace(a.AISummary) ? null : a.AISummary.Trim()))
             .ToList();
     }
 
@@ -88,5 +93,17 @@ public class AIApplicationInputDataProvider(
                 })
                 .ToList()
         };
+    }
+
+    public async Task<bool> HasAttachmentsAsync(Guid applicationId)
+    {
+        var queryable = await applicationChefsFileAttachmentRepository.GetQueryableAsync();
+        return await queryable.AnyAsync(a => a.ApplicationId == applicationId);
+    }
+
+    public async Task<bool> HasSubmissionAsync(Guid applicationId)
+    {
+        var submission = await applicationFormSubmissionRepository.GetByApplicationAsync(applicationId);
+        return submission != null && !string.IsNullOrWhiteSpace(submission.Submission);
     }
 }

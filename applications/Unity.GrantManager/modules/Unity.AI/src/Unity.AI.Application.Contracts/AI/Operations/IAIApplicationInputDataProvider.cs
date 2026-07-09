@@ -7,15 +7,19 @@ namespace Unity.AI.Operations;
 
 public interface IAIApplicationInputDataProvider
 {
-    Task<ApplicationFormSnapshot?> GetApplicationFormAsync(Guid applicationFormId);
+    Task<ApplicationFormSnapshot?> GetApplicationFormAsync(Guid applicationId);
 
     Task<ApplicationSubmissionSnapshot?> GetApplicationSubmissionAsync(Guid applicationId);
 
     Task<ApplicationFormVersionSnapshot?> GetApplicationFormVersionAsync(Guid? formVersionId);
 
-    Task<List<AIAttachmentItem>> GetAttachmentSummariesAsync(Guid applicationId);
+    Task<List<AttachmentSummarySnapshot>> GetAttachmentSummariesAsync(Guid applicationId);
 
     Task<ScoresheetSnapshot?> GetScoresheetAsync(Guid scoresheetId);
+
+    Task<bool> HasAttachmentsAsync(Guid applicationId);
+
+    Task<bool> HasSubmissionAsync(Guid applicationId);
 }
 
 public sealed class ApplicationFormSnapshot
@@ -34,6 +38,10 @@ public sealed class ApplicationFormVersionSnapshot
 {
     public string? FormSchema { get; set; }
 }
+
+public sealed record AttachmentSummarySnapshot(
+    string? FileName,
+    string? Summary);
 
 public sealed class ScoresheetSnapshot
 {
