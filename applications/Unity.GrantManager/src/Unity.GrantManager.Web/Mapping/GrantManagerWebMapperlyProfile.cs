@@ -1,5 +1,5 @@
-using System;
 using Riok.Mapperly.Abstractions;
+using System;
 using Unity.GrantManager.ApplicantProfile;
 using Unity.GrantManager.ApplicantProfile.ProfileData;
 using Unity.GrantManager.ApplicationForms;
@@ -13,7 +13,7 @@ using Unity.GrantManager.Web.Components.ApplicationUiSettingGroup;
 using Unity.GrantManager.Web.Pages.ApplicantContact;
 using Unity.GrantManager.Web.Pages.ApplicationContact;
 using Unity.GrantManager.Web.Pages.ApplicationForms.ViewModels;
-using Unity.GrantManager.Web.Pages.BulkActions.PublishApplications;
+using Unity.GrantManager.Web.Pages.BulkActions;
 using Unity.GrantManager.Web.Pages.Sites.ViewModels;
 using Unity.GrantManager.Web.Views.Shared.Components.ApplicantInfo;
 using Unity.GrantManager.Web.Views.Shared.Components.SummaryWidget;
