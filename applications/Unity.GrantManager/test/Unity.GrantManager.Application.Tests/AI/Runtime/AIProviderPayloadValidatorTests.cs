@@ -174,4 +174,36 @@ public class AIProviderPayloadValidatorTests
         reason.ShouldNotBeNull();
         reason.ShouldContain("empty");
     }
+
+    [Fact]
+    public void ValidateAttachmentSummaryBatchJson_Should_Return_Success_For_Valid_Items()
+    {
+        var result = AIProviderPayloadValidator.ValidateAttachmentSummaryBatchJson(
+            """
+            {
+              "attachments": [
+                {
+                  "attachmentId": "a1",
+                  "summary": "One"
+                },
+                {
+                  "attachmentId": "a2",
+                  "summary": "Two"
+                }
+              ]
+            }
+            """);
+
+        result.IsValid.ShouldBeTrue();
+    }
+
+    [Fact]
+    public void ValidateAttachmentSummaryBatchJson_Should_Return_InvalidOutput_When_Attachments_Are_Missing()
+    {
+        var result = AIProviderPayloadValidator.ValidateAttachmentSummaryBatchJson("{}");
+
+        result.IsValid.ShouldBeFalse();
+        result.FailureCategory.ShouldBe(AIFailureCategory.InvalidOutput);
+        result.Reason.ShouldContain("attachments");
+    }
 }

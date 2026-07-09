@@ -143,6 +143,86 @@ public class AttachmentSummaryServiceTests
     }
 
     [Fact]
+    public async Task GenerateAndSaveAsync_Should_Use_Batch_Mode_When_Configured()
+    {
+        var firstAttachmentId = Guid.NewGuid();
+        var secondAttachmentId = Guid.NewGuid();
+        var submissionId = Guid.NewGuid();
+        var fileId1 = Guid.NewGuid();
+        var fileId2 = Guid.NewGuid();
+        var stream1 = new MemoryStream([1, 2, 3]);
+        var stream2 = new MemoryStream([4, 5, 6]);
+
+        var firstAttachment = new ApplicationChefsFileAttachment
+        {
+            ApplicationId = Guid.NewGuid(),
+            FileName = "first.txt",
+            ChefsSubmissionId = submissionId.ToString(),
+            ChefsFileId = fileId1.ToString()
+        };
+
+        var secondAttachment = new ApplicationChefsFileAttachment
+        {
+            ApplicationId = firstAttachment.ApplicationId,
+            FileName = "second.txt",
+            ChefsSubmissionId = submissionId.ToString(),
+            ChefsFileId = fileId2.ToString()
+        };
+
+        var attachmentRepository = Substitute.For<IApplicationChefsFileAttachmentRepository>();
+        attachmentRepository.GetAsync(firstAttachmentId).Returns(firstAttachment);
+        attachmentRepository.GetAsync(secondAttachmentId).Returns(secondAttachment);
+
+        var streamProvider = Substitute.For<IChefsFileAttachmentStreamProvider>();
+        streamProvider.OpenAsync(submissionId, fileId1, "first.txt")
+            .Returns(new ChefsFileAttachmentStream(stream1, "text/plain"));
+        streamProvider.OpenAsync(submissionId, fileId2, "second.txt")
+            .Returns(new ChefsFileAttachmentStream(stream2, "text/plain"));
+
+        var textExtractionService = Substitute.For<ITextExtractionService>();
+        textExtractionService.ExtractTextAsync("first.txt", stream1, "text/plain", Arg.Any<CancellationToken>())
+            .Returns("first extracted");
+        textExtractionService.ExtractTextAsync("second.txt", stream2, "text/plain", Arg.Any<CancellationToken>())
+            .Returns("second extracted");
+
+        var aiService = Substitute.For<IAIService>();
+        aiService.GenerateAttachmentSummaryBatchAsync(Arg.Any<AttachmentSummaryBatchRequest>())
+            .Returns(new AttachmentSummaryBatchResponse
+            {
+                Attachments =
+                {
+                    new AttachmentSummaryBatchItemResponse { AttachmentId = firstAttachmentId.ToString(), Summary = "first summary" },
+                    new AttachmentSummaryBatchItemResponse { AttachmentId = secondAttachmentId.ToString(), Summary = "second summary" }
+                }
+            });
+
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                [$"Azure:Operations:{AIExecutionModeResolver.AttachmentSummaryOperation}:ExecutionMode"] = "Batch"
+            })
+            .Build();
+
+        var service = new AttachmentSummaryService(
+            attachmentRepository,
+            streamProvider,
+            textExtractionService,
+            aiService,
+            Substitute.For<IAIGenerationPrerequisiteValidator>(),
+            new AIExecutionModeResolver(configuration),
+            CreateUnitOfWorkManager(),
+            NullLogger<AttachmentSummaryService>.Instance,
+            Substitute.For<IStringLocalizer<AIResource>>());
+
+        var summaries = await service.GenerateAndSaveAsync([firstAttachmentId, secondAttachmentId], "v1");
+
+        summaries.ShouldBe(["first summary", "second summary"]);
+        await aiService.Received(1).GenerateAttachmentSummaryBatchAsync(Arg.Any<AttachmentSummaryBatchRequest>());
+        await attachmentRepository.Received(1).UpdateAsync(firstAttachment);
+        await attachmentRepository.Received(1).UpdateAsync(secondAttachment);
+    }
+
+    [Fact]
     public async Task GenerateAndSaveAsync_Should_Pass_Extracted_Docx_Text_To_AI()
     {
         var attachmentId = Guid.NewGuid();
