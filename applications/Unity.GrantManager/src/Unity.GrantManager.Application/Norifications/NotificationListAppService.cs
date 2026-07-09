@@ -50,6 +50,12 @@ public class NotificationListAppService(
 
         query = query.OrderBy(sorting);
 
+        // The list runs client-side (serverSideEnabled is off in Index.js): return every row in the
+        // date window and let DataTables page, search and sort in the browser. TotalCount is the full
+        // match count, not a page. This mirrors the Applications list, whose repository likewise does
+        // not apply skip/take in client-side mode (GetApplicationListRecordsAsync) and sets
+        // totalCount = items.Count to avoid a redundant count query. The 6-month default bounds the
+        // payload; full server-side paging is a future option if volume ever requires it.
         var logs = await AsyncExecuter.ToListAsync(query);
         var totalCount = logs.Count;
 
