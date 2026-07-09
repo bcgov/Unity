@@ -227,18 +227,10 @@ $(function () {
     }
 
     function pollAttachmentSummaryGeneration(applicationId, $button, originalHtml) {
-        if (!globalThis.AIGenerationButtonState?.monitor) {
-            console.error('AIGenerationButtonState is not available; cannot poll attachment summary generation.');
-            abp.message.error('AI attachment summary polling is unavailable. Please refresh and try again.');
-            globalThis.AIGenerationButtonState?.restore($button);
-            $button.html(originalHtml ?? $button.html()).prop('disabled', false);
-            return;
-        }
-
         globalThis.AIGenerationButtonState.monitor({
             $button,
             originalHtml: originalHtml ?? $button.html(),
-            getStatus: () => globalThis.AIGenerationApi.getStatus(applicationId, 'attachment-summary'),
+            getStatus: () => unity.ai.generation.aIGeneration.getStatus(applicationId, 'attachment-summary'),
             onComplete: refreshAttachmentSummaryResults,
             onFailed: (request) => {
                 abp.message.error(request?.failureReason || 'AI attachment summary generation failed.');

@@ -14,10 +14,9 @@
     }
 
     function applyRateLimitState(generationStatus, options = {}) {
-        const request = generationStatus?.generationRequest;
         global.applyAIRateLimitState?.(
             {
-                isGenerating: generationStatus?.isGenerating === true || request?.isActive === true,
+                isGenerating: generationStatus?.isGenerating === true,
                 retryAfterSeconds: Number(generationStatus?.retryAfterSeconds) || 0
             },
             { pollWhenGenerating: options.pollWhenGenerating === true }
@@ -76,7 +75,6 @@
                             options.onFailed?.(request);
                             return;
                         }
-
                         if (!request) {
                             stop();
                             restoreButton(options.$button, options.originalHtml);
@@ -85,7 +83,7 @@
                             return;
                         }
 
-                        if (request.isActive === false || status === 'Completed') {
+                        if (generationStatus?.isGenerating !== true) {
                             stop();
                             restoreButtonForCooldownCheck(options.$button, options.originalHtml);
                             applyRateLimitState(generationStatus, { pollWhenGenerating: true });

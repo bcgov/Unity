@@ -704,7 +704,6 @@ function queueApplicationScoring(triggerButton = null) {
                 PubSub.publish('refresh_assessment_scores', null);
                 return;
             }
-
             monitorScoring();
         })
         .fail(function () {

@@ -482,15 +482,13 @@ function generateAiButtonAction(e, dt, button, config) {
                 refreshReviewListAfterAiScoring();
                 return;
             }
-
             pollReviewListAiButton($button);
         })
         .fail(function () {
             abp.message.error('Failed to queue AI scoring. Please try again.');
             restoreReviewListAiButton($button);
             globalThis.syncAIRateLimitButtons?.();
-        })
-        ;
+        });
 }
 
 function restoreReviewListAiButton($button) {
@@ -517,16 +515,15 @@ function resumeActiveReviewListAiButton(reviewListTable) {
     }
 
     const $button = $(button.node());
-    unity.ai.generation.aIGeneration.getStatus(pageApplicationId, 'application-scoring')
-        .done(function(generationStatus) {
-            const request = generationStatus?.generationRequest;
-            if (request?.isActive !== true) {
-                return;
-            }
+    unity.ai.generation.aIGeneration.getStatus(pageApplicationId, 'application-scoring').done(function(generationStatus) {
+        const request = generationStatus?.generationRequest;
+        if (request?.isActive !== true) {
+            return;
+        }
 
-            globalThis.AIGenerationButtonState?.setGenerating($button);
-            pollReviewListAiButton($button);
-        });
+        globalThis.AIGenerationButtonState?.setGenerating($button);
+        pollReviewListAiButton($button);
+    });
 }
 
 function pollReviewListAiButton($button) {

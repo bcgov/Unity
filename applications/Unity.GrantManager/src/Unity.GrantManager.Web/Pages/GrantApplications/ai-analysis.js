@@ -568,16 +568,15 @@ $(function() {
             return;
         }
 
-        unity.ai.generation.aIGeneration.getStatus(applicationId, 'application-analysis')
-            .done(function(generationStatus) {
-                const request = generationStatus?.generationRequest;
-                if (request?.isActive !== true) {
-                    return;
-                }
+        unity.ai.generation.aIGeneration.getStatus(applicationId, 'application-analysis').done(function(generationStatus) {
+            const request = generationStatus?.generationRequest;
+            if (request?.isActive !== true) {
+                return;
+            }
 
-                const existingHtml = $regenerateButton.html();
-                globalThis.AIGenerationButtonState?.setGenerating($regenerateButton);
-                monitorAIAnalysisGeneration(applicationId, $regenerateButton, existingHtml);
-            });
+            const existingHtml = $regenerateButton.html();
+            globalThis.AIGenerationButtonState?.setGenerating($regenerateButton);
+            monitorAIAnalysisGeneration(applicationId, $regenerateButton, existingHtml);
+        });
     }
 });
