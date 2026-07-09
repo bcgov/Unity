@@ -107,11 +107,14 @@
                                 icon="fl fl-edit" class="btn unt-btn-primary btn-primary" data-toggle="modal"
                                 style="pointer-events: all;" abp-tooltip="Edit the Mapping JSON Manually"
                                 button-type="Primary" />
-                    <abp-button id="btn-suggest" text="Generate Mapping" icon-type="Other"
-                                icon="fa-solid fa-wand-magic-sparkles" class="btn unt-btn-outline-primary btn-outline-primary"
-                                style="pointer-events: all;"
-                                abp-tooltip="Generate an AI mapping suggestion for the current form version"
-                                button-type="Primary" />
+                    <button type="button" id="btn-suggest" class="btn unt-btn-outline-primary btn-outline-primary"
+                            style="pointer-events: all;"
+                            title="Generate an AI mapping suggestion for the current form version">
+                        <span class="ai-button-content">
+                            <i class="unt-icon-sm fa-solid fa-wand-magic-sparkles"></i>
+                            <span>Generate Mapping</span>
+                        </span>
+                    </button>
                     <abp-button id="btn-reset" text="Reset Mapping" icon-type="Other" icon="fl fl-undo"
                                 class="btn unt-btn-outline-primary btn-outline-primary"
                                 abp-tooltip="This button resets the mapping to the last saved state" />
@@ -344,15 +347,12 @@
     </div>
 
     <abp-modal centered="true" scrollable="true" size="Large" id="editMappingModal">
-        <abp-modal-header title="Edit Mapping JSON"></abp-modal-header>
+            <abp-modal-header title="Edit Mapping JSON"></abp-modal-header>
         <abp-modal-body>
             <textarea id="jsonText" rows="15"
                 cols="80">@Model?.ApplicationFormVersionDto?.SubmissionHeaderMapping</textarea>
         </abp-modal-body>
         <abp-modal-footer>
-            <abp-button id="btn-apply-suggestion" text="Apply Suggestion" icon-type="Other"
-                class="btn unt-btn-outline-primary btn-outline-primary" abp-tooltip="Apply the AI suggestion into the editor"
-                button-type="Secondary" />
             <abp-button id="btn-save-mapping" text="Save Mapping JSON" icon-type="Other"
                 class="btn unt-btn-primary btn-primary" abp-tooltip="Save the Mapping JSON" button-type="Primary" />
             <abp-button id="btn-cancel-mapping" text="Cancel" icon-type="Other" class="btn unt-btn-link btn-link"

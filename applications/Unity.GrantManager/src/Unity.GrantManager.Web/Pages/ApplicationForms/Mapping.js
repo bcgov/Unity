@@ -61,7 +61,6 @@
         btnSync: $('#btn-sync'),
         btnReset: $('#btn-reset'),
         btnClose: $('.btn-close'),
-        btnApplySuggestion: $('#btn-apply-suggestion'),
         btnSaveMapping: $('#btn-save-mapping'),
         btnCancel: $('#btn-cancel-mapping'),
         inputSearchBar: $('#search-bar'),
@@ -97,7 +96,6 @@
         UIElements.btnBack.on('click', handleBack);
         UIElements.btnSave.on('click', handleSave);
         UIElements.btnSaveMapping.on('click', handleSaveEditMapping);
-        UIElements.btnApplySuggestion.on('click', handleApplySuggestion);
         UIElements.btnSync.on('click', handleSync);
         UIElements.btnEdit.on('click', handleEdit);
         UIElements.btnSuggest.on('click', handleSuggest);
@@ -162,7 +160,7 @@
             return;
         }
 
-        UIElements.btnSuggest.prop('disabled', true);
+        setSuggestButtonState(true);
         $.ajax({
             url: `/api/app/application-form-version/${formVersion}/suggest-mapping`,
             type: 'POST',
@@ -171,23 +169,17 @@
                 UIElements.editMappingModal.addClass('display-modal');
             },
             error: function () {
-                abp.notify.error('', 'Failed to generate mapping suggestion.');
+                abp.notify.error('', 'Failed to load mapping suggestion.');
             },
             complete: function () {
-                UIElements.btnSuggest.prop('disabled', false);
+                setSuggestButtonState(false);
             }
         });
     }
 
-    function handleApplySuggestion() {
-        try {
-            const suggestion = JSON.parse($('#jsonText').val() || '{}');
-            const mappingJson = buildMappingFromSuggestion(suggestion);
-            $('#jsonText').val(prettyJson(JSON.stringify(mappingJson)));
-            abp.notify.success('', 'Suggestion applied to the editor.');
-        } catch (err) {
-            abp.notify.error('', 'The suggestion JSON could not be applied: ' + err);
-        }
+    function setSuggestButtonState(isGenerating) {
+        UIElements.btnSuggest.prop('disabled', isGenerating);
+        UIElements.btnSuggest.find('span').last().text(isGenerating ? 'Generating...' : 'Generate Mapping');
     }
 
     function handleSaveEditMapping() {
@@ -216,23 +208,6 @@
                 'The JSON is not valid:' + err
             );
         }
-    }
-
-    function buildMappingFromSuggestion(suggestion) {
-        const mapping = {};
-        const addMatch = (match) => {
-            if (!match || !match.sourceField || !match.targetField) {
-                return;
-            }
-            mapping[match.sourceField] = match.targetField;
-        };
-
-        (suggestion.coreFieldMatches || []).forEach(addMatch);
-        (suggestion.worksheetMatches || []).forEach(worksheet => {
-            (worksheet.fieldMatches || []).forEach(addMatch);
-        });
-
-        return mapping;
     }
 
     function handleCancelMapping() {
