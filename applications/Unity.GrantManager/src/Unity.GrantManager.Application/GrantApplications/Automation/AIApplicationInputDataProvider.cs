@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 using Unity.AI.Models;
 using Unity.AI.Operations;
 using Unity.GrantManager.Applications;
@@ -53,7 +54,6 @@ public class AIApplicationInputDataProvider(
             .Select(a => new AttachmentSummarySnapshot(
                 string.IsNullOrWhiteSpace(a.FileName) ? "attachment" : a.FileName.Trim(),
                 string.IsNullOrWhiteSpace(a.AISummary) ? null : a.AISummary.Trim()))
-            .Where(a => !string.IsNullOrWhiteSpace(a.Summary))
             .ToList();
     }
 
@@ -90,8 +90,8 @@ public class AIApplicationInputDataProvider(
 
     public async Task<bool> HasAttachmentsAsync(Guid applicationId)
     {
-        var attachments = await applicationChefsFileAttachmentRepository.GetListAsync(a => a.ApplicationId == applicationId);
-        return attachments.Count > 0;
+        var queryable = await applicationChefsFileAttachmentRepository.GetQueryableAsync();
+        return await queryable.AnyAsync(a => a.ApplicationId == applicationId);
     }
 
     public async Task<bool> HasSubmissionAsync(Guid applicationId)
