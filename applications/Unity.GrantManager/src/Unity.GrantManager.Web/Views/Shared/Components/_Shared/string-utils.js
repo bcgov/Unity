@@ -79,5 +79,5 @@ function escapeHtmlAttribute(value) {
  * @returns {boolean} True if valid GUID format
  */
 function validateGuid(textString) {
-    return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-5][0-9a-f]{3}-[089ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(textString);
+    return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-5][0-9a-f]{3}-[089ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(textString ?? '').trim());
 }

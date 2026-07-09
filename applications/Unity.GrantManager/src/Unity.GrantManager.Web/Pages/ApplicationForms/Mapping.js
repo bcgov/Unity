@@ -156,7 +156,7 @@
     }
 
     function handleSuggest() {
-        const formVersion = document.getElementById('formVersionId').value;
+        const formVersion = String(document.getElementById('formVersionId')?.value ?? '').trim();
         if (!validateGuid(formVersion)) {
             abp.notify.error('', 'The Form Version ID is not in a GUID format');
             return;
