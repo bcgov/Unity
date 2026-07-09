@@ -12,9 +12,3 @@ public interface IAttachmentSummaryPersistence
 
     Task<List<Guid>> LoadApplicationAttachmentIdsAsync(Guid applicationId);
 }
-
-public sealed record AttachmentSummarySource(
-    Guid Id,
-    string? FileName,
-    string? ChefsSubmissionId,
-    string? ChefsFileId);

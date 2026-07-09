@@ -12,15 +12,22 @@ using Volo.Abp.DependencyInjection;
 namespace Unity.GrantManager.GrantApplications.Automation;
 
 public class AIApplicationInputDataProvider(
+    IApplicationRepository applicationRepository,
     IApplicationFormRepository applicationFormRepository,
     IApplicationFormSubmissionRepository applicationFormSubmissionRepository,
     IApplicationFormVersionRepository applicationFormVersionRepository,
     IApplicationChefsFileAttachmentRepository applicationChefsFileAttachmentRepository,
     IScoresheetRepository scoresheetRepository) : IAIApplicationInputDataProvider, ITransientDependency
 {
-    public async Task<ApplicationFormSnapshot?> GetApplicationFormAsync(Guid applicationFormId)
+    public async Task<ApplicationFormSnapshot?> GetApplicationFormAsync(Guid applicationId)
     {
-        var form = await applicationFormRepository.FindAsync(applicationFormId);
+        var application = await applicationRepository.FindAsync(applicationId);
+        if (application == null)
+        {
+            return null;
+        }
+
+        var form = await applicationFormRepository.FindAsync(application.ApplicationFormId);
         return form == null ? null : new ApplicationFormSnapshot { ScoresheetId = form.ScoresheetId };
     }
 
