@@ -211,19 +211,6 @@ $(function () {
                 contentType: 'application/json',
                 type: 'POST',
                 success: function (generationStatus) {
-                    const request = generationStatus?.generationRequest;
-                    const status = globalThis.AIGenerationButtonState?.resolveStatus(request?.status) ?? '';
-
-                    if (status === 'Completed') {
-                        globalThis.AIGenerationButtonState?.restoreForCooldownCheck(
-                            $activeButton,
-                            existingHTML
-                        );
-                        globalThis.AIGenerationButtonState?.applyStatusState(generationStatus);
-                        refreshAttachmentSummaryResults();
-                        return;
-                    }
-
                     globalThis.AIGenerationButtonState?.setGenerating($activeButton);
                     pollAttachmentSummaryGeneration(applicationId, $activeButton, existingHTML);
                 },
@@ -251,8 +238,10 @@ $(function () {
         globalThis.AIGenerationButtonState.monitor({
             $button,
             originalHtml: originalHtml ?? $button.html(),
-            getStatus: () => unity.grantManager.grantApplications.grantApplication
-                .getAIGenerationStatus(applicationId, 'attachment-summary'),
+            getStatus: () => abp.ajax({
+                url: `/api/app/ai/generation/status?applicationId=${encodeURIComponent(applicationId)}&operationType=attachment-summary`,
+                type: 'GET'
+            }),
             onComplete: refreshAttachmentSummaryResults,
             onFailed: (request) => {
                 abp.message.error(request?.failureReason || 'AI attachment summary generation failed.');

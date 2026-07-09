@@ -6,7 +6,6 @@ using System.Linq;
 using System.Text.Json;
 using Unity.AI.Operations;
 using Unity.AI.Models;
-using Unity.GrantManager.Applications;
 
 namespace Unity.AI.Prompts
 {
@@ -76,17 +75,14 @@ namespace Unity.AI.Prompts
         }
 
         public static List<AIAttachmentItem> BuildAttachmentSummaries(
-            IEnumerable<ApplicationChefsFileAttachment> attachments,
-            bool excludeWhitespaceOnlySummaries = true)
+            IEnumerable<AttachmentSummarySnapshot> attachments)
         {
             return attachments
-                .Where(a => excludeWhitespaceOnlySummaries
-                    ? !string.IsNullOrWhiteSpace(a.AISummary)
-                    : !string.IsNullOrEmpty(a.AISummary))
+                .Where(a => !string.IsNullOrWhiteSpace(a.Summary))
                 .Select(a => new AIAttachmentItem
                 {
                     Name = string.IsNullOrWhiteSpace(a.FileName) ? "attachment" : a.FileName.Trim(),
-                    Summary = a.AISummary!.Trim()
+                    Summary = a.Summary!.Trim()
                 })
                 .ToList();
         }

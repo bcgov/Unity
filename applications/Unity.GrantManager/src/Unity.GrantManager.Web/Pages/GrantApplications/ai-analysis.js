@@ -482,11 +482,13 @@ globalThis.queueApplicationAnalysis = function(triggerButton = null) {
 
     globalThis.AIGenerationButtonState?.setGenerating($button);
 
-    unity.grantManager.grantApplications.grantApplication
-        .queueApplicationAnalysis(applicationId)
+    abp.ajax({
+        url: `/api/app/ai/generation/application-analysis?applicationId=${encodeURIComponent(applicationId)}`,
+        type: 'POST'
+    })
         .done(function(generationStatus) {
             const request = generationStatus?.generationRequest;
-            const status = globalThis.AIGenerationButtonState?.resolveStatus(request?.status) ?? '';
+            const status = String(request?.status ?? '').trim();
 
             if (status === 'Completed') {
                 globalThis.AIGenerationButtonState?.restoreForCooldownCheck($button, existingHtml);
@@ -512,8 +514,10 @@ function monitorAIAnalysisGeneration(applicationId, $button, existingHtml) {
     aiAnalysisMonitor = globalThis.AIGenerationButtonState.monitor({
         $button,
         originalHtml: existingHtml,
-        getStatus: () => unity.grantManager.grantApplications.grantApplication
-            .getAIGenerationStatus(applicationId, 'application-analysis'),
+        getStatus: () => abp.ajax({
+            url: `/api/app/ai/generation/status?applicationId=${encodeURIComponent(applicationId)}&operationType=application-analysis`,
+            type: 'GET'
+        }),
         onComplete: loadAIAnalysis,
         onFailed: (request) => {
             loadAIAnalysis();
@@ -570,8 +574,10 @@ $(function() {
             return;
         }
 
-        unity.grantManager.grantApplications.grantApplication
-            .getAIGenerationStatus(applicationId, 'application-analysis')
+        abp.ajax({
+            url: `/api/app/ai/generation/status?applicationId=${encodeURIComponent(applicationId)}&operationType=application-analysis`,
+            type: 'GET'
+        })
             .done(function(generationStatus) {
                 const request = generationStatus?.generationRequest;
                 if (request?.isActive !== true) {

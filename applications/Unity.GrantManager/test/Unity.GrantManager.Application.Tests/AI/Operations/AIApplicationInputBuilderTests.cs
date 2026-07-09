@@ -3,11 +3,10 @@ using NSubstitute;
 using Shouldly;
 using System;
 using System.Collections.Generic;
-using System.Linq.Expressions;
 using System.Text.Json;
 using System.Threading.Tasks;
+using Unity.AI.Models;
 using Unity.AI.Operations;
-using Unity.Flex.Domain.Scoresheets;
 using Unity.Flex.Scoresheets.Enums;
 using Unity.GrantManager.Applications;
 using Xunit;
@@ -17,20 +16,14 @@ namespace Unity.GrantManager.AI.Operations;
 public class AIApplicationInputBuilderTests
 {
     [Fact]
-    public async Task BuildApplicationAnalysisInputAsync_Uses_Shared_Prompt_Mapping_And_Excludes_Whitespace_Summaries()
+    public async Task BuildApplicationAnalysisInputAsync_Uses_Shared_Prompt_Mapping_And_Attachments()
     {
         var applicationId = Guid.NewGuid();
         var formVersionId = Guid.NewGuid();
-        var builder = CreateBuilder(
-            out _,
-            out var applicationFormSubmissionRepository,
-            out var applicationFormVersionRepository,
-            out var applicationChefsFileAttachmentRepository,
-            out _);
+        var builder = CreateBuilder(out var dataProvider);
 
-        var submission = new ApplicationFormSubmission
+        dataProvider.GetApplicationSubmissionAsync(applicationId).Returns(new ApplicationSubmissionSnapshot
         {
-            ApplicationId = applicationId,
             ApplicationFormVersionId = formVersionId,
             Submission = JsonSerializer.Serialize(new
             {
@@ -40,9 +33,8 @@ public class AIApplicationInputBuilderTests
                     ignored_field = "drop me"
                 }
             })
-        };
-        applicationFormSubmissionRepository.GetByApplicationAsync(applicationId).Returns(submission);
-        applicationFormVersionRepository.GetAsync(formVersionId).Returns(new ApplicationFormVersion
+        });
+        dataProvider.GetApplicationFormVersionAsync(formVersionId).Returns(new ApplicationFormVersionSnapshot
         {
             FormSchema = JsonSerializer.Serialize(new
             {
@@ -59,22 +51,10 @@ public class AIApplicationInputBuilderTests
                 }
             })
         });
-        applicationChefsFileAttachmentRepository.GetListAsync(Arg.Any<Expression<Func<ApplicationChefsFileAttachment, bool>>>())
-            .Returns(
-                [
-                    new ApplicationChefsFileAttachment
-                    {
-                        ApplicationId = applicationId,
-                        FileName = "summary.pdf",
-                        AISummary = "Summary text"
-                    },
-                    new ApplicationChefsFileAttachment
-                    {
-                        ApplicationId = applicationId,
-                        FileName = "ignored.pdf",
-                        AISummary = "   "
-                    }
-                ]);
+        dataProvider.GetAttachmentSummariesAsync(applicationId).Returns(Task.FromResult(new List<AttachmentSummarySnapshot>
+        {
+            new("summary.pdf", "Summary text")
+        }));
 
         var input = await builder.BuildApplicationAnalysisInputAsync(CreatePromptData(applicationId), "v1");
 
@@ -89,35 +69,23 @@ public class AIApplicationInputBuilderTests
     }
 
     [Fact]
-    public async Task BuildApplicationScoringInputAsync_Uses_Shared_Attachment_Filtering_And_Builds_Section_Schema()
+    public async Task BuildApplicationScoringInputAsync_Uses_Shared_Input_Data_And_Builds_Section_Schema()
     {
         var applicationId = Guid.NewGuid();
         var formVersionId = Guid.NewGuid();
         var scoresheetId = Guid.NewGuid();
-        var builder = CreateBuilder(
-            out var applicationFormRepository,
-            out var applicationFormSubmissionRepository,
-            out var applicationFormVersionRepository,
-            out var applicationChefsFileAttachmentRepository,
-            out var scoresheetRepository);
+        var builder = CreateBuilder(out var dataProvider);
 
-        applicationFormRepository.GetAsync(Arg.Any<Guid>()).Returns(new ApplicationForm
+        dataProvider.GetApplicationFormAsync(applicationId).Returns(new ApplicationFormSnapshot
         {
             ScoresheetId = scoresheetId
         });
-        applicationFormSubmissionRepository.GetByApplicationAsync(applicationId).Returns(new ApplicationFormSubmission
+        dataProvider.GetApplicationSubmissionAsync(applicationId).Returns(new ApplicationSubmissionSnapshot
         {
-            ApplicationId = applicationId,
             ApplicationFormVersionId = formVersionId,
-            Submission = JsonSerializer.Serialize(new
-            {
-                data = new
-                {
-                    project_name = "Submitted project"
-                }
-            })
+            Submission = JsonSerializer.Serialize(new { data = new { project_name = "Submitted project" } })
         });
-        applicationFormVersionRepository.GetAsync(formVersionId).Returns(new ApplicationFormVersion
+        dataProvider.GetApplicationFormVersionAsync(formVersionId).Returns(new ApplicationFormVersionSnapshot
         {
             FormSchema = JsonSerializer.Serialize(new
             {
@@ -134,28 +102,33 @@ public class AIApplicationInputBuilderTests
                 }
             })
         });
-        applicationChefsFileAttachmentRepository.GetListAsync(Arg.Any<Expression<Func<ApplicationChefsFileAttachment, bool>>>())
-            .Returns(
-                [
-                    new ApplicationChefsFileAttachment
-                    {
-                        ApplicationId = applicationId,
-                        FileName = "summary.pdf",
-                        AISummary = "Summary text"
-                    },
-                    new ApplicationChefsFileAttachment
-                    {
-                        ApplicationId = applicationId,
-                        FileName = "ignored.pdf",
-                        AISummary = "   "
-                    }
-                ]);
-
-        var scoresheet = new Scoresheet(Guid.NewGuid(), "Scoresheet", "Scoresheet");
-        var section = new ScoresheetSection(Guid.NewGuid(), "Section A", 1);
-        section.Fields.Add(new Question(Guid.NewGuid(), "q1", "Question 1", QuestionType.Text, 1, "Description", null));
-        scoresheet.Sections.Add(section);
-        scoresheetRepository.GetWithChildrenAsync(scoresheetId).Returns(scoresheet);
+        dataProvider.GetAttachmentSummariesAsync(applicationId).Returns(Task.FromResult(new List<AttachmentSummarySnapshot>
+        {
+            new("summary.pdf", "Summary text")
+        }));
+        dataProvider.GetScoresheetAsync(scoresheetId).Returns(new ScoresheetSnapshot
+        {
+            Sections =
+            [
+                new ScoresheetSectionSnapshot
+                {
+                    Name = "Section A",
+                    Order = 1,
+                    Fields =
+                    [
+                        new ScoresheetFieldSnapshot
+                        {
+                            Id = Guid.NewGuid(),
+                            Label = "Question 1",
+                            Description = "Description",
+                            Type = QuestionType.Text.ToString(),
+                            Order = 1,
+                            Definition = null
+                        }
+                    ]
+                }
+            ]
+        });
 
         var input = await builder.BuildApplicationScoringInputAsync(CreatePromptData(applicationId), "v2");
 
@@ -170,34 +143,21 @@ public class AIApplicationInputBuilderTests
         input.Data.GetProperty("project_name").GetString().ShouldBe("Submitted project");
     }
 
-    private static AIApplicationInputBuilder CreateBuilder(
-        out IApplicationFormRepository applicationFormRepository,
-        out IApplicationFormSubmissionRepository applicationFormSubmissionRepository,
-        out IApplicationFormVersionRepository applicationFormVersionRepository,
-        out IApplicationChefsFileAttachmentRepository applicationChefsFileAttachmentRepository,
-        out IScoresheetRepository scoresheetRepository)
+    private static AIApplicationInputBuilder CreateBuilder(out IAIApplicationInputDataProvider applicationInputDataProvider)
     {
-        applicationFormRepository = Substitute.For<IApplicationFormRepository>();
-        applicationFormSubmissionRepository = Substitute.For<IApplicationFormSubmissionRepository>();
-        applicationFormVersionRepository = Substitute.For<IApplicationFormVersionRepository>();
-        applicationChefsFileAttachmentRepository = Substitute.For<IApplicationChefsFileAttachmentRepository>();
-        scoresheetRepository = Substitute.For<IScoresheetRepository>();
+        applicationInputDataProvider = Substitute.For<IAIApplicationInputDataProvider>();
 
         return new AIApplicationInputBuilder(
-            applicationFormRepository,
-            applicationFormSubmissionRepository,
-            applicationFormVersionRepository,
-            applicationChefsFileAttachmentRepository,
-            scoresheetRepository,
+            applicationInputDataProvider,
             NullLogger<AIApplicationInputBuilder>.Instance);
     }
 
-    private static AIApplicationPromptDataDto CreatePromptData(Guid applicationId)
+    private static AIApplicationPromptDataDto CreatePromptData(Guid applicationId, Guid? applicationFormId = null)
     {
         return new AIApplicationPromptDataDto
         {
             ApplicationId = applicationId,
-            ApplicationFormId = Guid.NewGuid(),
+            ApplicationFormId = applicationFormId ?? Guid.NewGuid(),
             ProjectName = "Project Alpha",
             ReferenceNo = "REF-001",
             RequestedAmount = 15000m,

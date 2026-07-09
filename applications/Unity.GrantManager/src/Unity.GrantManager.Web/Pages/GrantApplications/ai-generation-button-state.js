@@ -25,20 +25,6 @@
     }
 
     global.AIGenerationButtonState = {
-        resolveStatus(status) {
-            switch (Number(status)) {
-                case 0:
-                    return 'Queued';
-                case 1:
-                    return 'Running';
-                case 2:
-                    return 'Completed';
-                case 3:
-                    return 'Failed';
-                default:
-                    return '';
-            }
-        },
         setGenerating($button) {
             global.setAIGenerationButtonsGenerating?.({ poll: false });
         },
@@ -81,7 +67,7 @@
                     .done((generationStatus) => {
                         failures = 0;
                         const request = generationStatus?.generationRequest;
-                        const status = this.resolveStatus(request?.status);
+                        const status = String(request?.status ?? '').trim();
 
                         if (status === 'Failed') {
                             stop();
