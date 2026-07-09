@@ -1,0 +1,30 @@
+name: Cypress E2E — UAT
+
+# Runs against the UAT environment after a successful main deployment,
+# or manually via workflow_dispatch.
+#
+# Unity has no separate UAT build workflow — UAT deploys off the main build,
+# so this triggers off the same workflow_run as prod's build pipeline.
+# There's also no "uat" GitHub Environment today, so oc-login reuses the
+# "main" Environment's OpenShift credentials (same cluster-wide access).
+#
+# Runs Cypress inside OpenShift (d18498-tools) — see cypress-e2e-runner.yml.
+
+on:
+  workflow_run:
+    workflows: ["Main - Build & Push docker images"]
+    types: [completed]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  cypress:
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
+    uses: ./.github/workflows/cypress-e2e-runner.yml
+    with:
+      env_name: uat
+      cypress_config_key: CYPRESS_CONFIG_UAT
+      gh_environment: main
+    secrets: inherit
