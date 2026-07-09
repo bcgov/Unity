@@ -86,8 +86,10 @@ public class ApplicationStatusAppService : ApplicationService, IApplicationStatu
         tenant.SetProperty("Branch", NormalizeProgramDetail(input.Branch));
         tenant.SetProperty("Description", NormalizeProgramDetail(input.Description));
 
-        await _tenantRepository.UpdateAsync(tenant);
-    }
+        using (CurrentTenant.Change(null))
+        {
+            await _tenantRepository.UpdateAsync(tenant);
+        }
 
     protected virtual async Task<Tenant> GetCurrentTenantForProgramDetailsAsync()
     {

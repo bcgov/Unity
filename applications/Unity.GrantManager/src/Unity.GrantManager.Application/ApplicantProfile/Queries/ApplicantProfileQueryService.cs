@@ -100,9 +100,8 @@ namespace Unity.GrantManager.ApplicantProfile
             using (currentTenant.Change(null))
             {
                 var tenantIds = mappings.Select(m => m.TenantId).ToHashSet();
-                var allTenants = await tenantRepository.GetListAsync();
-                var tenants = allTenants.Where(t => tenantIds.Contains(t.Id)).ToList();
-
+                var queryable = await tenantRepository.GetQueryableAsync();
+                var tenants = await queryable.Where(t => tenantIds.Contains(t.Id)).ToListAsync();
                 // Create a map of tenant ID to DisplayName (with fallback to Name)
                 var tenantDisplayNames = tenants.ToDictionary(
                     t => t.Id,
