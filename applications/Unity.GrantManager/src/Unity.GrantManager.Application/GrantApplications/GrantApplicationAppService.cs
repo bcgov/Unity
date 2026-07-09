@@ -1373,7 +1373,8 @@ public class GrantApplicationAppService(
         {
             GenerationRequest = request,
             IsGenerating = state.IsGenerating,
-            RetryAfterSeconds = state.RetryAfterSeconds
+            RetryAfterSeconds = state.RetryAfterSeconds,
+            FailureReason = request?.FailureReason
         };
     }
 

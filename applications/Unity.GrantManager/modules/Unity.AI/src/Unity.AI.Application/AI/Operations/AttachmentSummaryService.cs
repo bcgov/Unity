@@ -171,16 +171,6 @@ public class AttachmentSummaryService(
         return results;
     }
 
-    private async Task<AttachmentSummarySource> LoadAttachmentAsync(Guid attachmentId)
-    {
-        return await attachmentSummaryPersistence.LoadAsync(attachmentId);
-    }
-
-    private async Task SaveSummaryAsync(Guid attachmentId, string summary)
-    {
-        await attachmentSummaryPersistence.SaveSummaryAsync(attachmentId, summary);
-    }
-
     private async Task<List<string>> GenerateSequentiallyAsync(
         IReadOnlyCollection<Guid> attachmentIds,
         string? promptVersion,
