@@ -239,9 +239,9 @@ public class AttachmentSummaryServiceTests
             .Returns(new ChefsFileAttachmentStream(stream2, "text/plain"));
 
         var textExtractionService = Substitute.For<ITextExtractionService>();
-        textExtractionService.ExtractTextAsync("first.txt", stream1, "text/plain")
+        textExtractionService.ExtractTextAsync("first.txt", stream1, "text/plain", Arg.Any<CancellationToken>())
             .Returns("first extracted");
-        textExtractionService.ExtractTextAsync("second.txt", stream2, "text/plain")
+        textExtractionService.ExtractTextAsync("second.txt", stream2, "text/plain", Arg.Any<CancellationToken>())
             .Returns("second extracted");
 
         var aiService = Substitute.For<IAIService>();

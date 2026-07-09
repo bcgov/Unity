@@ -28,22 +28,21 @@ public static class AIExecutionStrategy
 
         switch (mode)
         {
-            case AIExecutionMode.Single:
-                return await batchOperation(items);
-
-            case AIExecutionMode.Parallel:
-                return [.. await Task.WhenAll(items.Select(operation))];
-
-            case AIExecutionMode.Batch:
-                return await batchOperation(items);
-
-            default:
+            case AIExecutionMode.Sequential:
                 var sequential = new List<TResult>(items.Count);
                 foreach (var item in items)
                 {
                     sequential.Add(await operation(item));
                 }
                 return sequential;
+
+            case AIExecutionMode.Batch:
+                return await batchOperation(items);
+
+            case AIExecutionMode.Parallel:
+                return [.. await Task.WhenAll(items.Select(operation))];
         }
+
+        throw new ArgumentOutOfRangeException(nameof(mode), mode, "Unsupported AI execution mode.");
     }
 }

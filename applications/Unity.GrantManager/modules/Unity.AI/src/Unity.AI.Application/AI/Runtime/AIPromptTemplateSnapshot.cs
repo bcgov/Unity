@@ -10,15 +10,15 @@ public sealed record AIPromptTemplateSnapshot(
     string UserPrompt,
     string? MetadataJson)
 {
-    public UnityPromptAssetManifest? Manifest => ParseManifest(MetadataJson);
+    public UnityPromptAssetManifest? Manifest { get; } = ParseManifest(MetadataJson);
 
     private static UnityPromptAssetManifest? ParseManifest(string? metadataJson)
-    {
-        if (string.IsNullOrWhiteSpace(metadataJson))
-        {
-            return null;
-        }
+        => string.IsNullOrWhiteSpace(metadataJson)
+            ? null
+            : TryDeserialize(metadataJson);
 
+    private static UnityPromptAssetManifest? TryDeserialize(string metadataJson)
+    {
         try
         {
             return JsonSerializer.Deserialize<UnityPromptAssetManifest>(metadataJson);

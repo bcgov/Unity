@@ -25,7 +25,7 @@ public class AIOperationDataSeeder(
 
     private static readonly BuiltInOperationDefinition[] BuiltInOperations =
     [
-        new(AIPromptTypes.ApplicationAnalysis, AIPromptTypes.ApplicationAnalysis, 1, 4000, AIExecutionMode.Single),
+        new(AIPromptTypes.ApplicationAnalysis, AIPromptTypes.ApplicationAnalysis, 1, 4000),
         new(AIPromptTypes.AttachmentSummary, AIPromptTypes.AttachmentSummary, 1, 2000),
         new(AIPromptTypes.ApplicationScoring, AIPromptTypes.ApplicationScoring, 1, 8000)
     ];
