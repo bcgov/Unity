@@ -77,6 +77,7 @@
                             stop();
                             restoreButton(options.$button, options.originalHtml);
                             applyRateLimitState(generationStatus, { pollWhenGenerating: true });
+                            options.onPollFailed?.(new Error(generationStatus?.failureReason || 'AI generation failed.'));
                             options.onFailed?.(request);
                             return;
                         }

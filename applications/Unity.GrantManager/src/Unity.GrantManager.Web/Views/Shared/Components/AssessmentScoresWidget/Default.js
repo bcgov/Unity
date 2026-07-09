@@ -744,4 +744,21 @@ $(function () {
     $(document).on('click', '[id^="scoresheet-section-discard-"]', function () {
         discardChangesScoresSection($(this).data('form-id'), $(this).data('section-id'));
     });
+
+    $(document).on('click', '#btn-expand-all', function () {
+        expandAllAccordions('assessment-scoresheet');
+    });
+    $(document).on('click', '#btn-collapse-all', function () {
+        collapseAllAccordions('assessment-scoresheet');
+    });
+    $(document).on('click', '#saveAssessmentScoresBtn', function () {
+        saveAssessmentScores();
+    });
+
+    $(document).on('click', '[id^="scoresheet-section-save-"]', function () {
+        saveScoresSection($(this).data('form-id'), $(this).data('section-id'));
+    });
+    $(document).on('click', '[id^="scoresheet-section-discard-"]', function () {
+        discardChangesScoresSection($(this).data('form-id'), $(this).data('section-id'));
+    });
 });
