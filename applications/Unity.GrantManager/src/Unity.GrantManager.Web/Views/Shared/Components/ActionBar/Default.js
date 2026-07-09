@@ -292,19 +292,9 @@ $(function () {
             });
     });
 
-    publishApplicationsModal.onResult(function (_, response) {                
-        let transformedFailures = response.responseText.failures.map(failure => {
-            return {
-                Key: failure.key,
-                Value: failure.value
-            };
-        });
-        let summaryJson = JSON.stringify(
-        {
-            Successes: response.responseText.successes,
-            Failures: transformedFailures
-        });
-        publishApplicationsModal.open({ summaryJson: summaryJson });
+    publishApplicationsModal.onResult(function (_, response) {
+        // This is here for future validation or additional processing if needed
+        publishApplicationsModal.close();
         PubSub.publish("refresh_application_list");
     });
     //#endregion Batch Publish
