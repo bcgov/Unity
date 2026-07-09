@@ -8,6 +8,7 @@ using Unity.AI.Operations;
 using Unity.GrantManager.Applications;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Uow;
+using Volo.Abp;
 
 namespace Unity.GrantManager.GrantApplications.Automation;
 
