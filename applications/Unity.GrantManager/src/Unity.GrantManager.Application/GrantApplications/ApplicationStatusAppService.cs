@@ -90,6 +90,7 @@ public class ApplicationStatusAppService : ApplicationService, IApplicationStatu
         {
             await _tenantRepository.UpdateAsync(tenant);
         }
+    }
 
     protected virtual async Task<Tenant> GetCurrentTenantForProgramDetailsAsync()
     {

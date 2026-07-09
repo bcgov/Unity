@@ -23,7 +23,7 @@ namespace Unity.GrantManager.ApplicantProfile
     public class ApplicantProfileQueryService(
             ICurrentTenant currentTenant,
             IRepository<ApplicantTenantMap, Guid> applicantTenantMapRepository,
-            ITenantRepository tenantRepository,
+            IRepository<Tenant, Guid> tenantRepository,
             IEnumerable<IApplicantProfileDataProvider> dataProviders,
             ISettingProvider settingProvider,
             ILogger<ApplicantProfileQueryService> logger)

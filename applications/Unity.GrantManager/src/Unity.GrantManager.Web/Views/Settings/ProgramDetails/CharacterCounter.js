@@ -5,9 +5,9 @@
 
             $container.find('[data-char-count]').each(function () {
                 const $input = $(this);
-                const maxLength = parseInt($input.attr('data-char-count'), 10);
+                const maxLength = Number.parseInt($input.attr('data-char-count'), 10);
 
-                if (isNaN(maxLength)) {
+                if (Number.isNaN(maxLength)) {
                     return;
                 }
 
