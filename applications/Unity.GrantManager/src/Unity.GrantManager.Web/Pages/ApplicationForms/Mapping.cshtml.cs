@@ -51,6 +51,9 @@ namespace Unity.GrantManager.Web.Pages.ApplicationForms
         public string? IntakeProperties { get; set; }
 
         [BindProperty]
+        public string? MappingSuggestionJson { get; set; }
+
+        [BindProperty]
         public bool FlexEnabled { get; set; }
 
         public bool ShowAITab { get; set; }

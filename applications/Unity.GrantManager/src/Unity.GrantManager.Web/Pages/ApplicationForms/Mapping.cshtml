@@ -107,6 +107,11 @@
                                 icon="fl fl-edit" class="btn unt-btn-primary btn-primary" data-toggle="modal"
                                 style="pointer-events: all;" abp-tooltip="Edit the Mapping JSON Manually"
                                 button-type="Primary" />
+                    <abp-button id="btn-suggest" text="Suggest Mapping" icon-type="Other"
+                                icon="fl fl-sparkles" class="btn unt-btn-outline-primary btn-outline-primary"
+                                style="pointer-events: all;"
+                                abp-tooltip="Generate an AI suggestion for the current mapping JSON"
+                                button-type="Primary" />
                     <abp-button id="btn-reset" text="Reset Mapping" icon-type="Other" icon="fl fl-undo"
                                 class="btn unt-btn-outline-primary btn-outline-primary"
                                 abp-tooltip="This button resets the mapping to the last saved state" />
@@ -345,6 +350,9 @@
                 cols="80">@Model?.ApplicationFormVersionDto?.SubmissionHeaderMapping</textarea>
         </abp-modal-body>
         <abp-modal-footer>
+            <abp-button id="btn-apply-suggestion" text="Apply Suggestion" icon-type="Other"
+                class="btn unt-btn-outline-primary btn-outline-primary" abp-tooltip="Apply the AI suggestion into the editor"
+                button-type="Secondary" />
             <abp-button id="btn-save-mapping" text="Save Mapping JSON" icon-type="Other"
                 class="btn unt-btn-primary btn-primary" abp-tooltip="Save the Mapping JSON" button-type="Primary" />
             <abp-button id="btn-cancel-mapping" text="Cancel" icon-type="Other" class="btn unt-btn-link btn-link"

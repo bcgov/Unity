@@ -57,9 +57,11 @@
         btnBack: $('#btn-back'),
         btnSave: $('#btn-save'),
         btnEdit: $('#btn-edit'),
+        btnSuggest: $('#btn-suggest'),
         btnSync: $('#btn-sync'),
         btnReset: $('#btn-reset'),
         btnClose: $('.btn-close'),
+        btnApplySuggestion: $('#btn-apply-suggestion'),
         btnSaveMapping: $('#btn-save-mapping'),
         btnCancel: $('#btn-cancel-mapping'),
         inputSearchBar: $('#search-bar'),
@@ -95,8 +97,10 @@
         UIElements.btnBack.on('click', handleBack);
         UIElements.btnSave.on('click', handleSave);
         UIElements.btnSaveMapping.on('click', handleSaveEditMapping);
+        UIElements.btnApplySuggestion.on('click', handleApplySuggestion);
         UIElements.btnSync.on('click', handleSync);
         UIElements.btnEdit.on('click', handleEdit);
+        UIElements.btnSuggest.on('click', handleSuggest);
         UIElements.btnReset.on('click', handleReset);
         UIElements.btnCancel.on('click', handleCancelMapping);
         UIElements.btnClose.on('click', handleCancelMapping);
@@ -151,6 +155,41 @@
         UIElements.editMappingModal.addClass('display-modal');
     }
 
+    function handleSuggest() {
+        const formVersion = document.getElementById('formVersionId').value;
+        if (!validateGuid(formVersion)) {
+            abp.notify.error('', 'The Form Version ID is not in a GUID format');
+            return;
+        }
+
+        UIElements.btnSuggest.prop('disabled', true);
+        $.ajax({
+            url: `/api/app/application-form-version/${formVersion}/suggest-mapping`,
+            type: 'POST',
+            success: function (data) {
+                $('#jsonText').val(prettyJson(JSON.stringify(data)));
+                UIElements.editMappingModal.addClass('display-modal');
+            },
+            error: function () {
+                abp.notify.error('', 'Failed to generate mapping suggestion.');
+            },
+            complete: function () {
+                UIElements.btnSuggest.prop('disabled', false);
+            }
+        });
+    }
+
+    function handleApplySuggestion() {
+        try {
+            const suggestion = JSON.parse($('#jsonText').val() || '{}');
+            const mappingJson = buildMappingFromSuggestion(suggestion);
+            $('#jsonText').val(prettyJson(JSON.stringify(mappingJson)));
+            abp.notify.success('', 'Suggestion applied to the editor.');
+        } catch (err) {
+            abp.notify.error('', 'The suggestion JSON could not be applied: ' + err);
+        }
+    }
+
     function handleSaveEditMapping() {
         try {
             let jsonText = $('#jsonText').val();
@@ -177,6 +216,23 @@
                 'The JSON is not valid:' + err
             );
         }
+    }
+
+    function buildMappingFromSuggestion(suggestion) {
+        const mapping = {};
+        const addMatch = (match) => {
+            if (!match || !match.sourceField || !match.targetField) {
+                return;
+            }
+            mapping[match.sourceField] = match.targetField;
+        };
+
+        (suggestion.coreFieldMatches || []).forEach(addMatch);
+        (suggestion.worksheetMatches || []).forEach(worksheet => {
+            (worksheet.fieldMatches || []).forEach(addMatch);
+        });
+
+        return mapping;
     }
 
     function handleCancelMapping() {
