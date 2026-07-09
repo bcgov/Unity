@@ -230,7 +230,10 @@ $(function () {
         globalThis.AIGenerationButtonState.monitor({
             $button,
             originalHtml: originalHtml ?? $button.html(),
-            getStatus: () => unity.ai.generation.aIGeneration.getStatus(applicationId, 'attachment-summary'),
+            getStatus: () => abp.ajax({
+                url: `/api/app/ai/generation/status?applicationId=${encodeURIComponent(applicationId)}&operationType=attachment-summary`,
+                type: 'GET'
+            }),
             onComplete: refreshAttachmentSummaryResults,
             onPollFailed: (error) => {
                 console.warn('Failed to poll AI attachment summary status.', error);
