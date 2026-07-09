@@ -8,11 +8,13 @@ using Unity.Flex;
 using Unity.Flex.Worksheets;
 using Unity.Flex.Worksheets.Definitions;
 using Unity.GrantManager.ApplicationForms.Mapping;
+using Unity.GrantManager.Applications;
 using Unity.GrantManager.Intakes;
 using Unity.GrantManager.Intakes.Mapping;
 using Unity.Modules.Shared.Correlation;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Features;
+using Volo.Abp.Domain.Repositories;
 
 namespace Unity.GrantManager.ApplicationForms.Mapping;
 
@@ -22,13 +24,13 @@ public interface IApplicationFormVersionMappingReadService
 }
 
 public class ApplicationFormVersionMappingReadService(
-    IApplicationFormVersionAppService applicationFormVersionAppService,
+    IRepository<ApplicationFormVersion, Guid> applicationFormVersionRepository,
     IWorksheetAppService worksheetAppService,
     IFeatureChecker featureChecker) : IApplicationFormVersionMappingReadService, ITransientDependency
 {
     public async Task<ApplicationFormMappingReadModelDto> GetAsync(Guid formVersionId)
     {
-        var formVersion = await applicationFormVersionAppService.GetAsync(formVersionId);
+        var formVersion = await applicationFormVersionRepository.GetAsync(formVersionId);
 
         var model = new ApplicationFormMappingReadModelDto
         {
