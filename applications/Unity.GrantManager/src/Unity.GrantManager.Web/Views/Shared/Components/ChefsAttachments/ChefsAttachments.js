@@ -232,8 +232,9 @@ $(function () {
             originalHtml: originalHtml ?? $button.html(),
             getStatus: () => unity.ai.generation.aIGeneration.getStatus(applicationId, 'attachment-summary'),
             onComplete: refreshAttachmentSummaryResults,
-            onFailed: (request) => {
-                abp.message.error(request?.failureReason || 'AI attachment summary generation failed.');
+            onPollFailed: (error) => {
+                console.warn('Failed to poll AI attachment summary status.', error);
+                abp.message.error(error?.message || 'AI attachment summary generation failed.');
             }
         });
     }

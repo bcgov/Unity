@@ -23,6 +23,11 @@
         );
     }
 
+    function isFailedRequest(generationStatus) {
+        const request = generationStatus?.generationRequest;
+        return request?.status === 'Failed';
+    }
+
     global.AIGenerationButtonState = {
         setGenerating($button) {
             global.setAIGenerationButtonsGenerating?.({ poll: false });
@@ -80,6 +85,14 @@
                             restoreButton(options.$button, options.originalHtml);
                             global.refreshAIRateLimitState?.();
                             options.onMissing?.();
+                            return;
+                        }
+
+                        if (isFailedRequest(generationStatus)) {
+                            stop();
+                            restoreButton(options.$button, options.originalHtml);
+                            applyRateLimitState(generationStatus, { pollWhenGenerating: true });
+                            options.onPollFailed?.(new Error(generationStatus?.failureReason || 'AI generation failed.'));
                             return;
                         }
 

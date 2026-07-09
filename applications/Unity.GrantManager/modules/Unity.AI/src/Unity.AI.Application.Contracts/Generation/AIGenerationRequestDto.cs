@@ -9,4 +9,6 @@ public class AIGenerationRequestDto
     public Guid OperationId { get; set; }
 
     public string OperationType { get; set; } = string.Empty;
+
+    public string Status { get; set; } = string.Empty;
 }

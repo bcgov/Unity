@@ -532,7 +532,10 @@ function pollReviewListAiButton($button) {
         originalHtml: generateAiButtonText(null, null, null),
         getStatus: () => unity.ai.generation.aIGeneration.getStatus(pageApplicationId, 'application-scoring'),
         onComplete: refreshReviewListAfterAiScoring,
-        onFailed: (request) => abp.message.error(request?.failureReason || 'AI scoring failed.')
+        onPollFailed: (error) => {
+            console.warn('Failed to poll AI scoring status.', error);
+            abp.message.error(error?.message || 'AI scoring failed.');
+        }
     });
 }
 

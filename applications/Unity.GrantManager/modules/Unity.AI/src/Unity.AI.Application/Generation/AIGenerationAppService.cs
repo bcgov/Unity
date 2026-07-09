@@ -105,6 +105,7 @@ public class AIGenerationAppService(
                     FailureReason = request.FailureReason,
                     IsActive = request.IsActive
                 },
+            FailureReason = request?.FailureReason,
             IsGenerating = state.IsGenerating,
             RetryAfterSeconds = state.RetryAfterSeconds
         };
