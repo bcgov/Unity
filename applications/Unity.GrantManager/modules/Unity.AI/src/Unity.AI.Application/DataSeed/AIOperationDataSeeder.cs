@@ -27,7 +27,8 @@ public class AIOperationDataSeeder(
     [
         new(AIPromptTypes.ApplicationAnalysis, AIPromptTypes.ApplicationAnalysis, 1, 4000),
         new(AIPromptTypes.AttachmentSummary, AIPromptTypes.AttachmentSummary, 1, 2000),
-        new(AIPromptTypes.ApplicationScoring, AIPromptTypes.ApplicationScoring, 1, 8000)
+        new(AIPromptTypes.ApplicationScoring, AIPromptTypes.ApplicationScoring, 1, 8000),
+        new(AIPromptTypes.OnboardingMapping, AIPromptTypes.OnboardingMapping, 2, 2000)
     ];
 
     public async Task SeedAsync(DataSeedContext context)

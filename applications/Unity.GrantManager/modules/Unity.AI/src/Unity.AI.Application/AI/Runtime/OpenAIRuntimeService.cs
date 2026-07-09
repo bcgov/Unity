@@ -25,6 +25,7 @@ namespace Unity.AI.Runtime
         private const string ApplicationAnalysisPromptType = AIPromptTypes.ApplicationAnalysis;
         private const string AttachmentSummaryPromptType = AIPromptTypes.AttachmentSummary;
         private const string ApplicationScoringPromptType = AIPromptTypes.ApplicationScoring;
+        private const string MappingSuggestionPromptType = AIPromptTypes.OnboardingMapping;
         private const int MaxAiAttempts = 3;
 
         public OpenAIRuntimeService(
@@ -330,6 +331,55 @@ namespace Unity.AI.Runtime
             {
                 _logger.LogError(ex, "Application scoring generation failed for section {SectionName}.", request.SectionName);
                 return new ApplicationScoringResponse();
+            }
+        }
+
+        public async Task<MappingSuggestionResponse> GenerateMappingSuggestionAsync(MappingSuggestionRequest request, CancellationToken cancellationToken = default)
+        {
+            ArgumentNullException.ThrowIfNull(request);
+            try
+            {
+                var settings = await _openAIConfigurationResolver.ResolveOperationSettingsAsync(MappingSuggestionPromptType, cancellationToken);
+                var promptTemplate = await _promptTemplateProvider.GetRequiredPromptAsync(
+                    MappingSuggestionPromptType,
+                    request.PromptVersion ?? settings.PromptVersion,
+                    cancellationToken);
+                var promptVersion = promptTemplate.PromptVersion;
+                var dataJson = request.Data.GetRawText();
+                var systemPrompt = promptTemplate.SystemPrompt;
+                var content = AIPromptTemplateRenderer.BuildMappingSuggestionUserPrompt(
+                    promptTemplate.UserPrompt,
+                    dataJson,
+                    promptTemplate.MetadataJson);
+
+                await _promptFileLogger.LogPromptInputAsync(MappingSuggestionPromptType, promptVersion, systemPrompt, content, cancellationToken);
+                var result = await GenerateWithRetryAsync(
+                    () => _openAITransportService.GenerateSummaryAsync(
+                        content,
+                        systemPrompt,
+                        settings,
+                        settings.CompletionTokens,
+                        cancellationToken: cancellationToken),
+                    AIProviderPayloadValidator.ValidateMappingSuggestionJson,
+                    "mapping suggestion",
+                    cancellationToken);
+                await _promptFileLogger.LogPromptOutputAsync(MappingSuggestionPromptType, promptVersion, result.CaptureOutput, cancellationToken);
+
+                if (result.Outcome != AIOperationOutcome.Success)
+                {
+                    return new MappingSuggestionResponse();
+                }
+
+                return OpenAIResponseParser.ParseMappingSuggestionResponse(result.Content);
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Mapping suggestion generation failed.");
+                return new MappingSuggestionResponse();
             }
         }
 

@@ -28,6 +28,7 @@ public class AIPromptDataSeeder(
             await SeedAnalysisPromptAsync();
             await SeedAttachmentPromptAsync();
             await SeedScoresheetPromptAsync();
+            await SeedOnboardingMappingPromptAsync();
         }
     }
 
@@ -108,6 +109,13 @@ public class AIPromptDataSeeder(
                 output: ScoresheetOutputV2,
                 rules: ScoresheetRulesV2,
                 commonRules: CommonRules));
+    }
+
+    // ─── MAPPING SUGGESTION ─────────────────────────────────────────────────
+
+    private async Task SeedOnboardingMappingPromptAsync()
+    {
+        await EnsurePromptAsync(AIPromptTypes.OnboardingMapping, 2, OnboardingMappingSystemV2, OnboardingMappingUserV2, OnboardingMappingMetadataV2);
     }
 
     // ─── HELPERS ──────────────────────────────────────────────────────────────
@@ -778,6 +786,77 @@ public class AIPromptDataSeeder(
         - Each answer object must include: "answer", "rationale", and "confidence".
         - Never omit "answer", "rationale", or "confidence" for any question type.
         - The "answer" value type must match question type: Number => numeric; YesNo/SelectList/Text/TextArea => string.
+        """;
+
+    // ── v0/mapping-suggestion.system.txt ────────────────────────────────────
+    private const string OnboardingMappingSystemV2 = """
+        You are a careful mapping assistant for human reviewers.
+        Compare CHEFS fields, Unity core fields, and worksheet fields to suggest likely mappings.
+        Do not invent fields, persist changes, or assume a worksheet should exist if one is not clearly justified.
+        Return only valid JSON in the exact format requested.
+        """;
+
+    // ── v2/onboarding-mapping.user.txt ─────────────────────────────────────
+    private const string OnboardingMappingUserV2 = """
+        FORM MAPPING CONTEXT:
+        {{DATA}}
+
+        OUTPUT
+        {
+          "coreFieldMatches": [
+            {
+              "sourceField": "<string>",
+              "targetField": "<string>",
+              "reason": "<string>",
+              "confidence": <decimal 0.0-1.0>
+            }
+          ],
+          "worksheetMatches": [
+            {
+              "worksheetName": "<string>",
+              "fieldMatches": [
+                {
+                  "sourceField": "<string>",
+                  "targetField": "<string>",
+                  "reason": "<string>",
+                  "confidence": <decimal 0.0-1.0>
+                }
+              ]
+            }
+          ],
+          "worksheetCreationSuggestions": [
+            {
+              "worksheetName": "<string>",
+              "suggestedFields": [
+                {
+                  "name": "<string>",
+                  "type": "<string>",
+                  "label": "<string>",
+                  "isCustom": true
+                }
+              ],
+              "reason": "<string>"
+            }
+          ],
+          "issues": [
+            {
+              "code": "<string>",
+              "message": "<string>"
+            }
+          ]
+        }
+
+        Important:
+        - Use only FORM MAPPING CONTEXT as evidence.
+        - Return only fields that are supported by the context.
+        - Keep reasons specific and concise.
+        - Return valid plain JSON only in the exact OUTPUT shape.
+        """;
+
+    private const string OnboardingMappingMetadataV2 = """
+        {
+          "DATA": "Serialized JSON payload containing CHEFS fields, Unity core fields, and worksheet-derived custom fields."
+        }
         """;
 
     // ── v1/common.rules.txt ──────────────────────────────────────────────────

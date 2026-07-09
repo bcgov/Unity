@@ -8,6 +8,7 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using Unity.Flex.Worksheets;
 using Unity.GrantManager.ApplicationForms;
+using Unity.GrantManager.ApplicationForms.Mapping;
 using Unity.GrantManager.Forms;
 using Unity.GrantManager.Intakes;
 using Volo.Abp.AspNetCore.Mvc.UI.RazorPages;
@@ -23,7 +24,7 @@ namespace Unity.GrantManager.Web.Pages.ApplicationForms
     [Authorize]
     public class MappingModel(IApplicationFormAppService applicationFormAppService,
                         IApplicationFormVersionAppService applicationFormVersionAppService,
-                        IWorksheetAppService worksheetAppService,
+                        IApplicationFormVersionMappingReadService mappingReadService,
                         IFeatureChecker featureChecker,
                         ISettingProvider settingProvider) : AbpPageModel
     {
@@ -102,77 +103,25 @@ namespace Unity.GrantManager.Web.Pages.ApplicationForms
         
         private async Task<List<MapField>> GenerateMappingFieldsAsync()
         {
-            IntakeMapping intakeMapping = new();
-            List<MapField> properties = [];
-
-            foreach (var property in intakeMapping.GetType().GetProperties())
-            {
-                var browsable = property.GetCustomAttributes(typeof(BrowsableAttribute), true).Cast<BrowsableAttribute>().SingleOrDefault();
-                var displayName = property.GetCustomAttributes(typeof(DisplayNameAttribute), true).Cast<DisplayNameAttribute>().SingleOrDefault();
-                var fieldType = property.GetCustomAttributes(typeof(MapFieldTypeAttribute), true).Cast<MapFieldTypeAttribute>().SingleOrDefault();
-
-                if (browsable != null && browsable.IsDefaultAttribute())
+            var readModel = await mappingReadService.GetAsync(ApplicationFormVersionDto?.Id ?? Guid.Empty);
+            var properties = readModel.ChefsFields
+                .Select(field => new MapField
                 {
-                    properties.Add(new MapField()
-                    {
-                        Name = property.Name,
-                        Type = fieldType?.Type ?? "String",
-                        IsCustom = false,
-                        Label = displayName?.DisplayName ?? property.Name
-                    });
-                }
-            }
-
-            if (await featureChecker.IsEnabledAsync("Unity.Flex"))
-            {
-                // Get the available field from the worksheets for the current Form
-                var formVersion = await applicationFormVersionAppService.GetByChefsFormVersionId(ChefsFormVersionGuid);
-                var worksheets = await worksheetAppService.GetListByCorrelationAsync(formVersion?.Id ?? Guid.Empty, CorrelationConsts.FormVersion);
-
-                foreach (var worksheet in worksheets)
+                    Name = field.Name,
+                    Type = field.Type,
+                    IsCustom = field.IsCustom,
+                    Label = field.Label
+                })
+                .Concat(readModel.Worksheets.SelectMany(worksheet => worksheet.Fields).Select(field => new MapField
                 {
-                    // Get worksheet name
-                    var fields = worksheet
-                        .Sections
-                            .SelectMany(f => f.Fields)
-                        .ToList();
-
-                    properties.AddRange(from CustomFieldDto? field in fields
-                                        where field.IsMappable()
-                                        select new MapField()
-                                        {
-                                            Name = $"{field.Name}.{field.Type}",
-                                            Type = ConvertCustomType(field.Type),
-                                            IsCustom = true,
-                                            Label = $"{field.Label} ({worksheet.Name})"
-                                        });
-                }
-            }
+                    Name = field.Name,
+                    Type = field.Type,
+                    IsCustom = field.IsCustom,
+                    Label = field.Label
+                }))
+                .ToList();
 
             return [.. properties.OrderBy(s => s.Label)];
-        }
-
-        private static string ConvertCustomType(CustomFieldType type)
-        {
-            return type switch
-            {
-                CustomFieldType.Text => "String",
-                CustomFieldType.Date => "Date",
-                CustomFieldType.Email => "Email",
-                CustomFieldType.Phone => "Phone",
-                CustomFieldType.DateTime => "Date",
-                CustomFieldType.YesNo => "YesNo",
-                CustomFieldType.Currency => "Currency",
-                CustomFieldType.Numeric => "Number",
-                CustomFieldType.Radio => "Radio",
-                CustomFieldType.Checkbox => "Checkbox",
-                CustomFieldType.CheckboxGroup => "CheckboxGroup",
-                CustomFieldType.SelectList => "SelectList",
-                CustomFieldType.BCAddress => "BCAddress",
-                CustomFieldType.TextArea => "TextArea",
-                CustomFieldType.DataGrid => "DataGrid",
-                _ => "",
-            };
         }
 
         public class MapField

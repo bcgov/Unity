@@ -3,12 +3,17 @@ using Newtonsoft.Json.Linq;
 using System;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Text.Json;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
+using Unity.AI;
+using Unity.AI.Requests;
+using Unity.AI.Responses;
 using Unity.GrantManager.Forms;
 using Unity.GrantManager.Intakes;
 using Unity.GrantManager.Integrations.Chefs;
+using Unity.GrantManager.ApplicationForms.Mapping;
 using Unity.GrantManager.Reporting.FieldGenerators;
 using Unity.Modules.Shared.Features;
 using Volo.Abp.Application.Dtos;
@@ -29,7 +34,9 @@ namespace Unity.GrantManager.ApplicationForms
         IApplicationFormVersionRepository formVersionRepository,
         IApplicationFormSubmissionRepository formSubmissionRepository,
         IReportingFieldsGeneratorService reportingFieldsGeneratorService,
-        IFeatureChecker featureChecker) :
+        IFeatureChecker featureChecker,
+        IApplicationFormVersionMappingReadService mappingReadService,
+        IAIService aiService) :
         CrudAppService<
             ApplicationFormVersion,
             ApplicationFormVersionDto,
@@ -38,6 +45,9 @@ namespace Unity.GrantManager.ApplicationForms
             CreateUpdateApplicationFormVersionDto>(repository),
         IApplicationFormVersionAppService
     {
+        private readonly IApplicationFormVersionMappingReadService _mappingReadService = mappingReadService;
+        private readonly IAIService _aiService = aiService;
+
         public override async Task<ApplicationFormVersionDto> CreateAsync(CreateUpdateApplicationFormVersionDto input) =>
             await base.CreateAsync(input);
 
@@ -309,6 +319,55 @@ namespace Unity.GrantManager.ApplicationForms
             var pattern = $"(,\\s*\\\"{formName}.*\\\")|(\\\"{formName}.*\\\",)";
             applicationFormVersion.SubmissionHeaderMapping = Regex.Replace(applicationFormVersion.SubmissionHeaderMapping, pattern, "", RegexOptions.None, TimeSpan.FromSeconds(30));
             await formVersionRepository.UpdateAsync(applicationFormVersion);
+        }
+
+        public virtual async Task<ApplicationFormMappingSuggestionDto> SuggestMappingAsync(Guid id)
+        {
+            var readModel = await _mappingReadService.GetAsync(id);
+            var response = await _aiService.GenerateMappingSuggestionAsync(new MappingSuggestionRequest
+            {
+                Data = JsonSerializer.SerializeToElement(readModel)
+            });
+
+            return new ApplicationFormMappingSuggestionDto
+            {
+                ApplicationFormVersionId = id,
+                CoreFieldMatches = response.CoreFieldMatches.Select(item => new MappingSuggestionDto
+                {
+                    SourceField = item.SourceField,
+                    TargetField = item.TargetField,
+                    Reason = item.Reason,
+                    Confidence = item.Confidence
+                }).ToList(),
+                WorksheetMatches = response.WorksheetMatches.Select(item => new WorksheetMappingSuggestionDto
+                {
+                    WorksheetName = item.WorksheetName,
+                    FieldMatches = item.FieldMatches.Select(match => new MappingSuggestionDto
+                    {
+                        SourceField = match.SourceField,
+                        TargetField = match.TargetField,
+                        Reason = match.Reason,
+                        Confidence = match.Confidence
+                    }).ToList()
+                }).ToList(),
+                WorksheetCreationSuggestions = response.WorksheetCreationSuggestions.Select(item => new WorksheetCreationSuggestionDto
+                {
+                    WorksheetName = item.WorksheetName,
+                    SuggestedFields = item.SuggestedFields.Select(field => new MappingFieldDto
+                    {
+                        Name = field.Name,
+                        Type = field.Type,
+                        Label = field.Label,
+                        IsCustom = field.IsCustom
+                    }).ToList(),
+                    Reason = item.Reason
+                }).ToList(),
+                Issues = response.Issues.Select(item => new MappingIssueDto
+                {
+                    Code = item.Code,
+                    Message = item.Message
+                }).ToList()
+            };
         }
 
         private async Task<int> GetVersion(Guid formVersionId)

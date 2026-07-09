@@ -1,0 +1,53 @@
+FORM MAPPING CONTEXT:
+{{DATA}}
+
+OUTPUT
+{
+  "coreFieldMatches": [
+    {
+      "sourceField": "<string>",
+      "targetField": "<string>",
+      "reason": "<string>",
+      "confidence": <decimal 0.0-1.0>
+    }
+  ],
+  "worksheetMatches": [
+    {
+      "worksheetName": "<string>",
+      "fieldMatches": [
+        {
+          "sourceField": "<string>",
+          "targetField": "<string>",
+          "reason": "<string>",
+          "confidence": <decimal 0.0-1.0>
+        }
+      ]
+    }
+  ],
+  "worksheetCreationSuggestions": [
+    {
+      "worksheetName": "<string>",
+      "suggestedFields": [
+        {
+          "name": "<string>",
+          "type": "<string>",
+          "label": "<string>",
+          "isCustom": true
+        }
+      ],
+      "reason": "<string>"
+    }
+  ],
+  "issues": [
+    {
+      "code": "<string>",
+      "message": "<string>"
+    }
+  ]
+}
+
+Important:
+- Use only FORM MAPPING CONTEXT as evidence.
+- Return only fields that are supported by the context.
+- Keep reasons specific and concise.
+- Return valid plain JSON only in the exact OUTPUT shape.

@@ -145,6 +145,16 @@ namespace Unity.AI.Runtime
             return AIResponseValidationResult.Success();
         }
 
+        public static AIResponseValidationResult ValidateMappingSuggestionJson(string response)
+        {
+            if (!TryParseRootObject(response, out _))
+            {
+                return AIResponseValidationResult.Invalid("Mapping suggestion response was not valid JSON.");
+            }
+
+            return AIResponseValidationResult.Success();
+        }
+
         private static HashSet<string> ExtractQuestionIds(string sectionJson)
         {
             var ids = new HashSet<string>(StringComparer.OrdinalIgnoreCase);

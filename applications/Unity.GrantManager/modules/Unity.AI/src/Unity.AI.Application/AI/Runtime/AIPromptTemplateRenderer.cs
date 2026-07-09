@@ -74,6 +74,20 @@ public static class AIPromptTemplateRenderer
             });
     }
 
+    public static string BuildMappingSuggestionUserPrompt(
+        string userPromptTemplate,
+        string data,
+        string? metadataJson = null)
+    {
+        return RenderPromptTemplate(
+            userPromptTemplate,
+            metadataJson,
+            new Dictionary<string, string>
+            {
+                ["DATA"] = data
+            });
+    }
+
     private static string RenderPromptTemplate(
         string template,
         string? metadataJson,
