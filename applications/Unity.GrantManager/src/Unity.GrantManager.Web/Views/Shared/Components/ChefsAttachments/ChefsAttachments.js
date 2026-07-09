@@ -211,9 +211,6 @@ $(function () {
                 contentType: 'application/json',
                 type: 'POST',
                 success: function (generationStatus) {
-                    if (generationStatus?.generationRequest?.isActive !== true) {
-                        return;
-                    }
                     globalThis.AIGenerationButtonState?.setGenerating($activeButton);
                     pollAttachmentSummaryGeneration(applicationId, $activeButton, existingHTML);
                 },
