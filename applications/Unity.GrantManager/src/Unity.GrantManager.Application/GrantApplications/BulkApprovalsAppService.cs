@@ -252,8 +252,9 @@ namespace Unity.GrantManager.GrantApplications
         /// Get applications for bulk publish with internal and external status information
         /// </summary>
         /// <param name="applicationGuids"></param>
+        /// <param name="excludePublished"></param>
         /// <returns></returns>
-        public async Task<List<BulkPublishDto>> GetApplicationsForBulkPublish(Guid[] applicationGuids)
+        public async Task<List<BulkPublishDto>> GetApplicationsForBulkPublish(Guid[] applicationGuids, bool excludePublished = true)
         {
             var applicationsQuery = await applicationRepository.GetQueryableAsync();
             var statusesQuery = await applicationStatusRepository.GetQueryableAsync();
@@ -263,7 +264,7 @@ namespace Unity.GrantManager.GrantApplications
                     from application in applicationsQuery
                     join form in formsQuery on application.ApplicationFormId equals form.Id
                     join status in statusesQuery on application.ApplicationStatusId equals status.Id
-                    where applicationGuids.Contains(application.Id)
+                    where applicationGuids.Contains(application.Id) && (!excludePublished || !application.ExternalStatusVisibility)
                     select new BulkPublishDto
                     {
                         ApplicationId = application.Id,
