@@ -3,12 +3,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Unity.AI.Models;
-using Unity.AI.Prompts;
+using Unity.AI.Operations;
 using Unity.GrantManager.Applications;
 using Unity.Flex.Domain.Scoresheets;
 using Volo.Abp.DependencyInjection;
 
-namespace Unity.AI.Operations;
+namespace Unity.GrantManager.GrantApplications.Automation;
 
 public class AIApplicationInputDataProvider(
     IApplicationFormRepository applicationFormRepository,
@@ -49,7 +49,14 @@ public class AIApplicationInputDataProvider(
     public async Task<List<AIAttachmentItem>> GetAttachmentSummariesAsync(Guid applicationId)
     {
         var attachments = await applicationChefsFileAttachmentRepository.GetListAsync(a => a.ApplicationId == applicationId);
-        return global::Unity.AI.Prompts.PromptDataPayloadBuilder.BuildAttachmentSummaries(attachments);
+        return attachments
+            .Where(attachment => !string.IsNullOrWhiteSpace(attachment.AISummary))
+            .Select(attachment => new AIAttachmentItem
+            {
+                Name = attachment.FileName ?? string.Empty,
+                Summary = attachment.AISummary ?? string.Empty
+            })
+            .ToList();
     }
 
     public async Task<ScoresheetSnapshot?> GetScoresheetAsync(Guid scoresheetId)

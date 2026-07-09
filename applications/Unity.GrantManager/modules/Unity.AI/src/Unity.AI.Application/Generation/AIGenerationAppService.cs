@@ -80,6 +80,7 @@ public class AIGenerationAppService(
         return new ApplicationScoringResultDto { Completed = false };
     }
 
+    [Authorize]
     [HttpGet("status")]
     public virtual async Task<AIGenerationStatusDto> GetStatusAsync(Guid applicationId, string operationType)
     {

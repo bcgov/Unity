@@ -15,6 +15,7 @@ using Unity.GrantManager.GrantApplications.Automation.BackgroundJobs;
 using Volo.Abp.EventBus.Local;
 using Volo.Abp.Features;
 using Volo.Abp;
+using Volo.Abp.DependencyInjection;
 using Volo.Abp.MultiTenancy;
 using Xunit;
 using Xunit.Abstractions;
@@ -40,6 +41,7 @@ public class AIGenerationAppServiceTests(ITestOutputHelper outputHelper) : Grant
             Substitute.For<IAIRateLimiter>(),
             featureGuard,
             Substitute.For<Volo.Abp.MultiTenancy.ICurrentTenant>());
+        service.LazyServiceProvider = GetRequiredService<IAbpLazyServiceProvider>();
 
         var result = await service.GenerateAttachmentSummariesAsync(new GenerateAttachmentSummariesInputDto
         {
@@ -90,6 +92,7 @@ public class AIGenerationAppServiceTests(ITestOutputHelper outputHelper) : Grant
             rateLimiter,
             CreateFeatureGuard(),
             currentTenant);
+        service.LazyServiceProvider = GetRequiredService<IAbpLazyServiceProvider>();
 
         var result = await service.GetStatusAsync(applicationId, operationType);
 
@@ -115,6 +118,7 @@ public class AIGenerationAppServiceTests(ITestOutputHelper outputHelper) : Grant
             Substitute.For<IAIRateLimiter>(),
             CreateFeatureGuard(),
             Substitute.For<ICurrentTenant>());
+        service.LazyServiceProvider = GetRequiredService<IAbpLazyServiceProvider>();
 
         var exception = await Should.ThrowAsync<UserFriendlyException>(
             () => service.GetStatusAsync(Guid.NewGuid(), "unsupported-operation"));
@@ -130,5 +134,6 @@ public class AIGenerationAppServiceTests(ITestOutputHelper outputHelper) : Grant
         var localizer = Substitute.For<IStringLocalizer<AIResource>>();
         return new AIFeatureGuard(featureChecker, localizer);
     }
+
 }
 
