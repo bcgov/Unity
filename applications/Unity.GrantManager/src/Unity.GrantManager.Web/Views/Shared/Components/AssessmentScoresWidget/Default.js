@@ -690,10 +690,7 @@ function queueApplicationScoring(triggerButton = null) {
         onComplete: () => {
             PubSub.publish('refresh_assessment_scores', null);
         },
-        onPollFailed: (error) => {
-            console.warn('Failed to poll AI scoring status.', error);
-            abp.message.error(error?.message || 'AI scoring failed.');
-        }
+        onFailed: (request) => abp.message.error(request?.failureReason || 'AI scoring failed.')
     });
 
     unity.ai.generation.aIGeneration.generateApplicationScoring(applicationId)

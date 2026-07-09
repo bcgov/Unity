@@ -513,6 +513,10 @@ function monitorAIAnalysisGeneration(applicationId, $button, existingHtml) {
         originalHtml: existingHtml,
         getStatus: () => unity.ai.generation.aIGeneration.getStatus(applicationId, 'application-analysis'),
         onComplete: loadAIAnalysis,
+        onFailed: (request) => {
+            loadAIAnalysis();
+            abp.message.error(request?.failureReason || 'AI analysis failed.');
+        },
         onPollFailed: (error) => {
             console.warn('Failed to poll AI analysis status.', error);
             abp.message.error('Unable to load AI analysis status. Please try again.');

@@ -96,7 +96,7 @@
                             return;
                         }
 
-                        if (generationStatus?.isGenerating !== true) {
+                        if (request.isActive !== true) {
                             stop();
                             restoreButtonForCooldownCheck(options.$button, options.originalHtml);
                             applyRateLimitState(generationStatus, { pollWhenGenerating: true });
