@@ -471,7 +471,7 @@ function generateAiButtonAction(e, dt, button, config) {
         globalThis.AIGenerationButtonState?.setGenerating($button);
     }
 
-    unity.ai.generation.aIGeneration.generateApplicationScoring(pageApplicationId)
+    globalThis.AIGenerationApi.queueApplicationScoring(pageApplicationId)
         .done(function (generationStatus) {
             const request = generationStatus?.generationRequest;
             const status = String(request?.status ?? '').trim();
@@ -515,9 +515,8 @@ function resumeActiveReviewListAiButton(reviewListTable) {
     }
 
     const $button = $(button.node());
-    unity.ai.generation.aIGeneration.getStatus(pageApplicationId, 'application-scoring').done(function(generationStatus) {
-        const request = generationStatus?.generationRequest;
-        if (request?.isActive !== true) {
+    globalThis.AIGenerationApi.getStatus(pageApplicationId, 'application-scoring').done(function(generationStatus) {
+        if (generationStatus?.generationRequest?.isActive !== true) {
             return;
         }
 
@@ -530,7 +529,7 @@ function pollReviewListAiButton($button) {
     globalThis.AIGenerationButtonState.monitor({
         $button,
         originalHtml: generateAiButtonText(null, null, null),
-        getStatus: () => unity.ai.generation.aIGeneration.getStatus(pageApplicationId, 'application-scoring'),
+        getStatus: () => globalThis.AIGenerationApi.getStatus(pageApplicationId, 'application-scoring'),
         onComplete: refreshReviewListAfterAiScoring,
         onFailed: (request) => abp.message.error(request?.failureReason || 'AI scoring failed.')
     });

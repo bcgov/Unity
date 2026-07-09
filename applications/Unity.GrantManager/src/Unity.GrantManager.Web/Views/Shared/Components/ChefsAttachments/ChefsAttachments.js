@@ -202,27 +202,22 @@ $(function () {
                 )
                 .prop('disabled', true);
 
-            $.ajax({
-                url: '/api/app/ai/generation/attachment-summary',
-                data: JSON.stringify({
-                    applicationId: applicationId,
-                    attachmentIds: summaryAttachmentIds,
-                }),
-                contentType: 'application/json',
-                type: 'POST',
-                success: function (generationStatus) {
+            globalThis.AIGenerationApi.queueAttachmentSummary({
+                applicationId: applicationId,
+                attachmentIds: summaryAttachmentIds,
+            })
+                .done(function (generationStatus) {
                     globalThis.AIGenerationButtonState?.setGenerating($activeButton);
                     pollAttachmentSummaryGeneration(applicationId, $activeButton, existingHTML);
-                },
-                error: function (error) {
+                })
+                .fail(function (error) {
                     console.error('Error generating AI summaries:', error);
                     abp.message.error('An error occurred while generating AI summaries. Please try again.');
                     globalThis.AIGenerationButtonState?.restore($activeButton);
                     globalThis.refreshAIRateLimitState?.();
                     $activeButton.html(existingHTML).prop('disabled', false);
                     setGenerateSummariesEnabled();
-                },
-            });
+                });
         });
     }
 
@@ -230,10 +225,7 @@ $(function () {
         globalThis.AIGenerationButtonState.monitor({
             $button,
             originalHtml: originalHtml ?? $button.html(),
-            getStatus: () => abp.ajax({
-                url: `/api/app/ai/generation/status?applicationId=${encodeURIComponent(applicationId)}&operationType=attachment-summary`,
-                type: 'GET'
-            }),
+            getStatus: () => globalThis.AIGenerationApi.getStatus(applicationId, 'attachment-summary'),
             onComplete: refreshAttachmentSummaryResults,
             onPollFailed: (error) => {
                 console.warn('Failed to poll AI attachment summary status.', error);

@@ -482,7 +482,7 @@ globalThis.queueApplicationAnalysis = function(triggerButton = null) {
 
     globalThis.AIGenerationButtonState?.setGenerating($button);
 
-    unity.ai.generation.aIGeneration.generateApplicationAnalysis(applicationId)
+    globalThis.AIGenerationApi.queueApplicationAnalysis(applicationId)
         .done(function(generationStatus) {
             const request = generationStatus?.generationRequest;
             const status = String(request?.status ?? '').trim();
@@ -511,7 +511,7 @@ function monitorAIAnalysisGeneration(applicationId, $button, existingHtml) {
     aiAnalysisMonitor = globalThis.AIGenerationButtonState.monitor({
         $button,
         originalHtml: existingHtml,
-        getStatus: () => unity.ai.generation.aIGeneration.getStatus(applicationId, 'application-analysis'),
+        getStatus: () => globalThis.AIGenerationApi.getStatus(applicationId, 'application-analysis'),
         onComplete: loadAIAnalysis,
         onFailed: (request) => {
             loadAIAnalysis();
@@ -568,9 +568,8 @@ $(function() {
             return;
         }
 
-        unity.ai.generation.aIGeneration.getStatus(applicationId, 'application-analysis').done(function(generationStatus) {
-            const request = generationStatus?.generationRequest;
-            if (request?.isActive !== true) {
+        globalThis.AIGenerationApi.getStatus(applicationId, 'application-analysis').done(function(generationStatus) {
+            if (generationStatus?.generationRequest?.isActive !== true) {
                 return;
             }
             const existingHtml = $regenerateButton.html();
