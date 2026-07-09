@@ -53,8 +53,6 @@ internal static class PolicyRegistrant
             policy => policy.RequireClaim(PermissionConstant, GrantManagerPermissions.Intakes.Default));
         authorizationBuilder.AddPolicy(GrantManagerPermissions.ApplicationForms.Default,
             policy => policy.RequireClaim(PermissionConstant, GrantManagerPermissions.ApplicationForms.Default));
-        authorizationBuilder.AddPolicy(GrantManagerPermissions.ApplicantPortal.EditProgramDetails,
-            policy => policy.RequireClaim(PermissionConstant, GrantManagerPermissions.ApplicantPortal.EditProgramDetails));
 
         // Grant Application Policies
         authorizationBuilder.AddPolicy(GrantApplicationPermissions.Applications.Default,

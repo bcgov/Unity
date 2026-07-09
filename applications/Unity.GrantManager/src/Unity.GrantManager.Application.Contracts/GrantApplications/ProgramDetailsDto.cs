@@ -3,7 +3,7 @@ using System;
 namespace Unity.GrantManager.GrantApplications;
 
 [Serializable]
-public class ApplicantPortalProgramDetailsDto
+public class ProgramDetailsDto
 {
     public string DisplayName { get; set; } = string.Empty;
 

@@ -33,14 +33,6 @@
     padding: 1rem;
 }
 
-.portal-settings-config-panel {
-    display: none;
-}
-
-.portal-settings-config-panel.active {
-    display: block;
-}
-
 .portal-settings-actions {
     background: #fff;
 }
@@ -69,31 +61,4 @@
     padding: 0.75rem 1rem;
     display: flex;
     margin-top: 1px;
-}
-
-.char-counter-wrapper {
-    position: relative;
-    display: block;
-}
-
-.char-counter {
-    position: absolute;
-    top: 0;
-    right: 8px;
-    font-size: 0.65rem;
-    font-style: italic;
-    color: #6c757d;
-    white-space: nowrap;
-    padding: 4px 0;
-    pointer-events: none;
-}
-
-.char-counter-warning {
-    color: #ffc107;
-    font-weight: 500;
-}
-
-.char-counter-critical {
-    color: #dc3545;
-    font-weight: 500;
 }

@@ -87,6 +87,7 @@ namespace Unity.GrantManager.Permissions.GrantApplications
             settingManagement.AddPermission(UnitySettingManagementPermissions.UserInterface, L("Permission:UnitySettingManagementPermissions.UserInterface"));
             settingManagement.AddPermission(UnitySettingManagementPermissions.BackgroundJobSettings, L("Permission:UnitySettingManagementPermissions.BackgroundJobs"));
             settingManagement.AddPermission(UnitySettingManagementPermissions.ConfigurePayments, L("Permission:UnitySettingManagementPermissions.ConfigurePayments"));
+            settingManagement.AddPermission(UnitySettingManagementPermissions.EditProgramDetails, L("Permission:UnitySettingManagementPermissions.EditProgramDetails"));
 
             var emailingPermission = context.GetPermissionOrNull(SettingManagementPermissions.Emailing);
             if (emailingPermission != null)

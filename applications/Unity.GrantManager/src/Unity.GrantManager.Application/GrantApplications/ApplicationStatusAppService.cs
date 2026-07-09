@@ -44,12 +44,12 @@ public class ApplicationStatusAppService : ApplicationService, IApplicationStatu
         return ObjectMapper.Map<List<ApplicationStatus>, List<ApplicantPortalStatusDto>>(statuses.OrderBy(s => s.StatusCode).ToList());
     }
 
-    [Authorize(GrantManagerPermissions.ApplicantPortal.EditProgramDetails)]
-    public virtual async Task<ApplicantPortalProgramDetailsDto> GetApplicantPortalProgramDetailsAsync()
+    [Authorize(UnitySettingManagementPermissions.EditProgramDetails)]
+    public virtual async Task<ProgramDetailsDto> GetProgramDetailsAsync()
     {
         var tenant = await GetCurrentTenantForProgramDetailsAsync();
 
-        return new ApplicantPortalProgramDetailsDto
+        return new ProgramDetailsDto
         {
             DisplayName = GetExtraPropertyValue(tenant, "DisplayName"),
             Division = GetExtraPropertyValue(tenant, "Division"),
@@ -76,8 +76,8 @@ public class ApplicationStatusAppService : ApplicationService, IApplicationStatu
         }
     }
 
-    [Authorize(GrantManagerPermissions.ApplicantPortal.EditProgramDetails)]
-    public virtual async Task UpdateApplicantPortalProgramDetailsAsync(UpdateApplicantPortalProgramDetailsDto input)
+    [Authorize(UnitySettingManagementPermissions.EditProgramDetails)]
+    public virtual async Task UpdateProgramDetailsAsync(UpdateProgramDetailsDto input)
     {
         var tenant = await GetCurrentTenantForProgramDetailsAsync();
 

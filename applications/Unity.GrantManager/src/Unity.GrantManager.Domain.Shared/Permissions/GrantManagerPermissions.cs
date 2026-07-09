@@ -24,12 +24,6 @@ public static class GrantManagerPermissions
         public const string Default = GroupName + ".ApplicationForms";
     }
 
-    public static class ApplicantPortal
-    {
-        public const string Default = GroupName + ".ApplicantPortal";
-        public const string EditProgramDetails = Default + ".EditProgramDetails";
-    }
-    
     public static class Endpoints
     {
         public const string Default = GroupName + ".Endpoints";
