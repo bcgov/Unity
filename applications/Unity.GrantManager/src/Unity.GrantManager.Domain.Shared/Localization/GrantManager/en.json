@@ -67,6 +67,7 @@
     "Assignee": "Assignee",
     "Probability": "Probability",
     "GrantApplicationStatus": "Status",
+    "ExternalStatusVisibility": "Status Visibility",
     "ProposalDate": "Proposal Date",
     "SubmissionDate": "Submission Date",
     "GrantApplications": "Grant Applications",
