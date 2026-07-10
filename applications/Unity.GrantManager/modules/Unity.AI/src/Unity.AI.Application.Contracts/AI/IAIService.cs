@@ -14,5 +14,8 @@ namespace Unity.AI
         Task<ApplicationAnalysisResponse> GenerateApplicationAnalysisAsync(ApplicationAnalysisRequest request, CancellationToken cancellationToken = default);
         Task<ApplicationScoringResponse> GenerateApplicationScoringAsync(ApplicationScoringRequest request, CancellationToken cancellationToken = default);
         Task<MappingSuggestionResponse> GenerateMappingSuggestionAsync(MappingSuggestionRequest request, CancellationToken cancellationToken = default);
+        Task<MappingSuggestionResponse> GenerateFormMappingAsync(MappingSuggestionRequest request, CancellationToken cancellationToken = default);
+        Task<string> GenerateFormWorksheetAsync(MappingSuggestionRequest request, CancellationToken cancellationToken = default);
+        Task<string> GenerateFormScoresheetAsync(MappingSuggestionRequest request, CancellationToken cancellationToken = default);
     }
 }

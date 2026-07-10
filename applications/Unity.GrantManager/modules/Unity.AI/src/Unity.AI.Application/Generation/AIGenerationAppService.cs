@@ -31,6 +31,9 @@ public class AIGenerationAppService(
     private const string ApplicationAnalysisOperationType = "application-analysis";
     private const string AttachmentSummaryOperationType = "attachment-summary";
     private const string ApplicationScoringOperationType = "application-scoring";
+    private const string FormMappingOperationType = "form-mapping";
+    private const string FormWorksheetOperationType = "form-worksheet";
+    private const string FormScoresheetOperationType = "form-scoresheet";
 
     [Authorize(AIPermissions.Analysis.GenerateAttachmentSummaries)]
     [HttpPost("attachment-summary")]
@@ -80,6 +83,42 @@ public class AIGenerationAppService(
         return new ApplicationScoringResultDto { Completed = false };
     }
 
+    [Authorize(AIPermissions.Analysis.GenerateFormMapping)]
+    [HttpPost("form-mapping")]
+    public virtual async Task<FormMappingResultDto> GenerateFormMappingAsync(Guid applicationId, Guid applicationFormVersionId, string? promptVersion = null)
+    {
+        await featureGuard.EnsureEnabledAsync(
+            AIFeatures.FormMapping,
+            AILocalizationKeys.FormMappingDisabled);
+
+        await aiGenerationQueue.QueueFormMappingAsync(applicationId, currentTenant.Id, applicationFormVersionId, promptVersion);
+        return new FormMappingResultDto { Completed = false };
+    }
+
+    [Authorize(AIPermissions.Analysis.GenerateFormWorksheet)]
+    [HttpPost("form-worksheet")]
+    public virtual async Task<FormWorksheetResultDto> GenerateFormWorksheetAsync(Guid applicationId, Guid applicationFormVersionId, string? promptVersion = null)
+    {
+        await featureGuard.EnsureEnabledAsync(
+            AIFeatures.FormWorksheet,
+            AILocalizationKeys.FormWorksheetDisabled);
+
+        await aiGenerationQueue.QueueFormWorksheetAsync(applicationId, currentTenant.Id, applicationFormVersionId, promptVersion);
+        return new FormWorksheetResultDto { Completed = false };
+    }
+
+    [Authorize(AIPermissions.Analysis.GenerateFormScoresheet)]
+    [HttpPost("form-scoresheet")]
+    public virtual async Task<FormScoresheetResultDto> GenerateFormScoresheetAsync(Guid applicationId, Guid applicationFormVersionId, string? promptVersion = null)
+    {
+        await featureGuard.EnsureEnabledAsync(
+            AIFeatures.FormScoresheet,
+            AILocalizationKeys.FormScoresheetDisabled);
+
+        await aiGenerationQueue.QueueFormScoresheetAsync(applicationId, currentTenant.Id, applicationFormVersionId, promptVersion);
+        return new FormScoresheetResultDto { Completed = false };
+    }
+
     [Authorize]
     [HttpGet("status")]
     public virtual async Task<AIGenerationStatusDto> GetStatusAsync(Guid applicationId, string operationType)
@@ -105,7 +144,6 @@ public class AIGenerationAppService(
                     FailureReason = request.FailureReason,
                     IsActive = request.IsActive
                 },
-            FailureReason = request?.FailureReason,
             IsGenerating = state.IsGenerating,
             RetryAfterSeconds = state.RetryAfterSeconds
         };
@@ -118,17 +156,11 @@ public class AIGenerationAppService(
             ApplicationAnalysisOperationType => AIPermissions.Analysis.ViewApplicationAnalysis,
             AttachmentSummaryOperationType => AIPermissions.Analysis.ViewAttachmentSummary,
             ApplicationScoringOperationType => AIPermissions.Analysis.ViewScoringResult,
-            AIGenerationRequestKeyHelper.PipelineOperationType => null,
+            FormMappingOperationType => AIPermissions.Analysis.ViewFormMapping,
+            FormWorksheetOperationType => AIPermissions.Analysis.ViewFormWorksheet,
+            FormScoresheetOperationType => AIPermissions.Analysis.ViewFormScoresheet,
             _ => throw new UserFriendlyException($"Unsupported AI generation operation type: {operationType}")
         };
-
-        if (permission is null)
-        {
-            await CheckPolicyAsync(AIPermissions.Analysis.ViewApplicationAnalysis);
-            await CheckPolicyAsync(AIPermissions.Analysis.ViewAttachmentSummary);
-            await CheckPolicyAsync(AIPermissions.Analysis.ViewScoringResult);
-            return;
-        }
 
         await CheckPolicyAsync(permission);
     }

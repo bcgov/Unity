@@ -55,6 +55,36 @@ public class AIPermissionDefinitionProvider : PermissionDefinitionProvider
             L("Permission:AI.GenerateScoring"))
             .RequireFeatures("Unity.AI.Scoring");
 
+        var viewFormMapping = aiPermissionsGroup.AddPermission(
+            AIPermissions.Analysis.ViewFormMapping,
+            L("Permission:AI.ViewFormMapping"))
+            .RequireFeatures("Unity.AI.FormMapping");
+
+        viewFormMapping.AddChild(
+            AIPermissions.Analysis.GenerateFormMapping,
+            L("Permission:AI.GenerateFormMapping"))
+            .RequireFeatures("Unity.AI.FormMapping");
+
+        var viewFormWorksheet = aiPermissionsGroup.AddPermission(
+            AIPermissions.Analysis.ViewFormWorksheet,
+            L("Permission:AI.ViewFormWorksheet"))
+            .RequireFeatures("Unity.AI.FormWorksheet");
+
+        viewFormWorksheet.AddChild(
+            AIPermissions.Analysis.GenerateFormWorksheet,
+            L("Permission:AI.GenerateFormWorksheet"))
+            .RequireFeatures("Unity.AI.FormWorksheet");
+
+        var viewFormScoresheet = aiPermissionsGroup.AddPermission(
+            AIPermissions.Analysis.ViewFormScoresheet,
+            L("Permission:AI.ViewFormScoresheet"))
+            .RequireFeatures("Unity.AI.FormScoresheet");
+
+        viewFormScoresheet.AddChild(
+            AIPermissions.Analysis.GenerateFormScoresheet,
+            L("Permission:AI.GenerateFormScoresheet"))
+            .RequireFeatures("Unity.AI.FormScoresheet");
+
         var settingManagement = context.GetGroup(SettingManagementPermissions.GroupName);
         var configureAI = settingManagement.AddPermission(
             AIPermissions.Configuration.ConfigureAI,
@@ -62,7 +92,10 @@ public class AIPermissionDefinitionProvider : PermissionDefinitionProvider
         configureAI.StateCheckers.Add(new AnyFeaturePermissionStateProvider(
             "Unity.AI.Scoring",
             "Unity.AI.AttachmentSummaries",
-            "Unity.AI.ApplicationAnalysis"));
+            "Unity.AI.ApplicationAnalysis",
+            "Unity.AI.FormMapping",
+            "Unity.AI.FormWorksheet",
+            "Unity.AI.FormScoresheet"));
     }
 
     private static LocalizableString L(string name)

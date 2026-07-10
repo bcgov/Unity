@@ -321,13 +321,17 @@ namespace Unity.GrantManager.ApplicationForms
             await formVersionRepository.UpdateAsync(applicationFormVersion);
         }
 
-        public virtual async Task<ApplicationFormMappingSuggestionDto> SuggestMappingAsync(Guid id)
+        public virtual async Task<ApplicationFormMappingSuggestionDto> GenerateMappingAsync(Guid id)
         {
             var readModel = await _mappingReadService.GetAsync(id);
-            var response = await _aiService.GenerateMappingSuggestionAsync(new MappingSuggestionRequest
+            var response = await _aiService.GenerateFormMappingAsync(new MappingSuggestionRequest
             {
                 Data = JsonSerializer.SerializeToElement(readModel)
             });
+            var submissionHeaderMapping = BuildSubmissionHeaderMapping(response);
+            var applicationFormVersion = await repository.GetAsync(id);
+            applicationFormVersion.SubmissionHeaderMapping = JsonSerializer.Serialize(submissionHeaderMapping);
+            await repository.UpdateAsync(applicationFormVersion, true);
 
             return new ApplicationFormMappingSuggestionDto
             {
@@ -368,6 +372,36 @@ namespace Unity.GrantManager.ApplicationForms
                     Message = item.Message
                 }).ToList()
             };
+        }
+
+        private static Dictionary<string, string> BuildSubmissionHeaderMapping(Unity.AI.Responses.MappingSuggestionResponse response)
+        {
+            var mapping = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var match in response.CoreFieldMatches)
+            {
+                AddMapping(mapping, match.SourceField, match.TargetField);
+            }
+
+            foreach (var worksheetMatch in response.WorksheetMatches)
+            {
+                foreach (var match in worksheetMatch.FieldMatches)
+                {
+                    AddMapping(mapping, match.SourceField, match.TargetField);
+                }
+            }
+
+            return mapping;
+        }
+
+        private static void AddMapping(Dictionary<string, string> mapping, string? sourceField, string? targetField)
+        {
+            if (string.IsNullOrWhiteSpace(sourceField) || string.IsNullOrWhiteSpace(targetField))
+            {
+                return;
+            }
+
+            mapping[sourceField] = targetField;
         }
 
         private async Task<int> GetVersion(Guid formVersionId)

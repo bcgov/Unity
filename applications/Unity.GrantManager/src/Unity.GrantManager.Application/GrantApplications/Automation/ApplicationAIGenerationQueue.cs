@@ -96,6 +96,69 @@ public class ApplicationAIGenerationQueue(
             });
     }
 
+    public async Task QueueFormMappingAsync(Guid applicationId, Guid? tenantId, Guid applicationFormVersionId, string? promptVersion = null)
+    {
+        await EnsureRequestAndEnqueueAsync(
+            tenantId,
+            AIGenerationRequestKeyHelper.FormMappingOperationType,
+            applicationId,
+            () => aiGenerationPrerequisiteValidator.EnsureFormMappingAvailableAsync(applicationFormVersionId),
+            () =>
+            {
+                return backgroundJobManager.EnqueueAsync(new GenerateFormMappingBackgroundJobArgs
+                {
+                    ApplicationId = applicationId,
+                    ApplicationFormVersionId = applicationFormVersionId,
+                    PromptVersion = promptVersion,
+                    RequestedByUserId = currentUser.Id,
+                    TenantId = tenantId
+                });
+            });
+    }
+
+    public async Task QueueFormWorksheetAsync(Guid applicationId, Guid? tenantId, Guid applicationFormVersionId, string? promptVersion = null)
+    {
+        await EnsureRequestAndEnqueueAsync(
+            tenantId,
+            AIGenerationRequestKeyHelper.FormWorksheetOperationType,
+            applicationId,
+            () => aiGenerationPrerequisiteValidator.EnsureFormWorksheetAvailableAsync(applicationFormVersionId),
+            () =>
+            {
+                return backgroundJobManager.EnqueueAsync(new GenerateFormWorksheetBackgroundJobArgs
+                {
+                    ApplicationId = applicationId,
+                    ApplicationFormVersionId = applicationFormVersionId,
+                    PromptVersion = promptVersion,
+                    RequestedByUserId = currentUser.Id,
+                    TenantId = tenantId
+                });
+            });
+    }
+
+    public async Task QueueFormScoresheetAsync(Guid applicationId, Guid? tenantId, Guid applicationFormVersionId, string? promptVersion = null)
+    {
+        await EnsureRequestAndEnqueueAsync(
+            tenantId,
+            AIGenerationRequestKeyHelper.FormScoresheetOperationType,
+            applicationId,
+            () => aiGenerationPrerequisiteValidator.EnsureFormScoresheetAvailableAsync(applicationFormVersionId),
+            () =>
+            {
+                var requestedByUserId = currentUser.Id
+                    ?? throw new UserFriendlyException("A logged-in user is required to generate a form scoresheet.");
+
+                return backgroundJobManager.EnqueueAsync(new GenerateFormScoresheetBackgroundJobArgs
+                {
+                    ApplicationId = applicationId,
+                    ApplicationFormVersionId = applicationFormVersionId,
+                    PromptVersion = promptVersion,
+                    RequestedByUserId = requestedByUserId,
+                    TenantId = tenantId
+                });
+            });
+    }
+
     public async Task QueueAllAIStagesAsync(Guid applicationId, Guid? tenantId, string? promptVersion = null)
     {
         var hasEnabledStage = false;

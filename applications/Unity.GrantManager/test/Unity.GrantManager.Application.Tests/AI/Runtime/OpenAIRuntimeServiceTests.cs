@@ -52,4 +52,5 @@ public class OpenAIRuntimeServiceTests
             configuration,
             multiTenantDataFilter);
     }
+
 }

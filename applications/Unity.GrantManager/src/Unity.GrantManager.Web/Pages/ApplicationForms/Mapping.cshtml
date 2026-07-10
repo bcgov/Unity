@@ -5,6 +5,7 @@
 @using Unity.GrantManager.Web.Pages.ApplicationForms;
 @using Unity.GrantManager.Permissions;
 @using Unity.Notifications.Permissions;
+@using Unity.AI.Permissions;
 
 @using Volo.Abp.Authorization.Permissions;
 @using Unity.GrantManager.Web.Views.Shared.Components.Notifications;
@@ -25,6 +26,8 @@
 {
     <abp-script src="/Views/Shared/Components/_Shared/string-utils.js" />
     <abp-script src="/Pages/ApplicationForms/mapping-utils.js" />
+    <abp-script src="/Pages/GrantApplications/ai-generation-button-state.js" />
+    <abp-script src="/Pages/GrantApplications/ai-rate-limit.js" />
     <abp-script src="/Pages/ApplicationForms/Mapping.js" />
     <abp-script src="/Pages/SettingManagement/zone-management.js" />
 }
@@ -107,14 +110,17 @@
                                 icon="fl fl-edit" class="btn unt-btn-primary btn-primary" data-toggle="modal"
                                 style="pointer-events: all;" abp-tooltip="Edit the Mapping JSON Manually"
                                 button-type="Primary" />
-                    <button type="button" id="btn-suggest" class="btn unt-btn-outline-primary btn-outline-primary"
-                            style="pointer-events: all;"
-                            title="Generate an AI mapping suggestion for the current form version">
-                        <span class="ai-button-content">
-                            <i class="unt-icon-sm fa-solid fa-wand-magic-sparkles"></i>
-                            <span>Generate Mapping</span>
-                        </span>
-                    </button>
+                    @if (await PermissionChecker.IsGrantedAsync(AIPermissions.Analysis.GenerateFormMapping))
+                    {
+                        <button type="button" id="btn-generate" class="btn ai-generate-btn unt-btn-outline-primary btn-outline-primary"
+                                style="pointer-events: all;"
+                                title="Generate the mapping for the current form version">
+                            <span class="ai-button-content">
+                                <i class="unt-icon-sm fa-solid fa-wand-magic-sparkles"></i>
+                                <span>Generate Mapping</span>
+                            </span>
+                        </button>
+                    }
                     <abp-button id="btn-reset" text="Reset Mapping" icon-type="Other" icon="fl fl-undo"
                                 class="btn unt-btn-outline-primary btn-outline-primary"
                                 abp-tooltip="This button resets the mapping to the last saved state" />

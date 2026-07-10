@@ -25,7 +25,9 @@ namespace Unity.AI.Runtime
         private const string ApplicationAnalysisPromptType = AIPromptTypes.ApplicationAnalysis;
         private const string AttachmentSummaryPromptType = AIPromptTypes.AttachmentSummary;
         private const string ApplicationScoringPromptType = AIPromptTypes.ApplicationScoring;
-        private const string MappingSuggestionPromptType = AIPromptTypes.OnboardingMapping;
+        private const string MappingSuggestionPromptType = AIPromptTypes.FormMapping;
+        private const string FormWorksheetPromptType = AIPromptTypes.FormWorksheet;
+        private const string FormScoresheetPromptType = AIPromptTypes.FormScoresheet;
         private const int MaxAiAttempts = 3;
 
         public OpenAIRuntimeService(
@@ -335,13 +337,16 @@ namespace Unity.AI.Runtime
         }
 
         public async Task<MappingSuggestionResponse> GenerateMappingSuggestionAsync(MappingSuggestionRequest request, CancellationToken cancellationToken = default)
+            => await GenerateMappingSuggestionAsync(request, MappingSuggestionPromptType, cancellationToken);
+
+        public async Task<string> GenerateFormWorksheetAsync(MappingSuggestionRequest request, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(request);
             try
             {
-                var settings = await _openAIConfigurationResolver.ResolveOperationSettingsAsync(MappingSuggestionPromptType, cancellationToken);
+                var settings = await _openAIConfigurationResolver.ResolveOperationSettingsAsync(FormWorksheetPromptType, cancellationToken);
                 var promptTemplate = await _promptTemplateProvider.GetRequiredPromptAsync(
-                    MappingSuggestionPromptType,
+                    FormWorksheetPromptType,
                     request.PromptVersion ?? settings.PromptVersion,
                     cancellationToken);
                 var promptVersion = promptTemplate.PromptVersion;
@@ -352,7 +357,95 @@ namespace Unity.AI.Runtime
                     dataJson,
                     promptTemplate.MetadataJson);
 
-                await _promptFileLogger.LogPromptInputAsync(MappingSuggestionPromptType, promptVersion, systemPrompt, content, cancellationToken);
+                await _promptFileLogger.LogPromptInputAsync(FormWorksheetPromptType, promptVersion, systemPrompt, content, cancellationToken);
+                var result = await GenerateWithRetryAsync(
+                    () => _openAITransportService.GenerateSummaryAsync(
+                        content,
+                        systemPrompt,
+                        settings,
+                        settings.CompletionTokens,
+                        cancellationToken: cancellationToken),
+                    AIProviderPayloadValidator.ValidateMappingSuggestionJson,
+                    "form worksheet",
+                    cancellationToken);
+                await _promptFileLogger.LogPromptOutputAsync(FormWorksheetPromptType, promptVersion, result.CaptureOutput, cancellationToken);
+
+                return result.Outcome == AIOperationOutcome.Success ? result.Content : "{}";
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Form worksheet generation failed.");
+                return "{}";
+            }
+        }
+
+        public async Task<string> GenerateFormScoresheetAsync(MappingSuggestionRequest request, CancellationToken cancellationToken = default)
+        {
+            ArgumentNullException.ThrowIfNull(request);
+            try
+            {
+                var settings = await _openAIConfigurationResolver.ResolveOperationSettingsAsync(FormScoresheetPromptType, cancellationToken);
+                var promptTemplate = await _promptTemplateProvider.GetRequiredPromptAsync(
+                    FormScoresheetPromptType,
+                    request.PromptVersion ?? settings.PromptVersion,
+                    cancellationToken);
+                var promptVersion = promptTemplate.PromptVersion;
+                var dataJson = request.Data.GetRawText();
+                var systemPrompt = promptTemplate.SystemPrompt;
+                var content = AIPromptTemplateRenderer.BuildMappingSuggestionUserPrompt(
+                    promptTemplate.UserPrompt,
+                    dataJson,
+                    promptTemplate.MetadataJson);
+
+                await _promptFileLogger.LogPromptInputAsync(FormScoresheetPromptType, promptVersion, systemPrompt, content, cancellationToken);
+                var result = await GenerateWithRetryAsync(
+                    () => _openAITransportService.GenerateSummaryAsync(
+                        content,
+                        systemPrompt,
+                        settings,
+                        settings.CompletionTokens,
+                        cancellationToken: cancellationToken),
+                    AIProviderPayloadValidator.ValidateMappingSuggestionJson,
+                    "form scoresheet",
+                    cancellationToken);
+                await _promptFileLogger.LogPromptOutputAsync(FormScoresheetPromptType, promptVersion, result.CaptureOutput, cancellationToken);
+
+                return result.Outcome == AIOperationOutcome.Success ? result.Content : "{}";
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Form scoresheet generation failed.");
+                return "{}";
+            }
+        }
+
+        private async Task<MappingSuggestionResponse> GenerateMappingSuggestionAsync(MappingSuggestionRequest request, string promptType, CancellationToken cancellationToken = default)
+        {
+            ArgumentNullException.ThrowIfNull(request);
+            try
+            {
+                var settings = await _openAIConfigurationResolver.ResolveOperationSettingsAsync(promptType, cancellationToken);
+                var promptTemplate = await _promptTemplateProvider.GetRequiredPromptAsync(
+                    promptType,
+                    request.PromptVersion ?? settings.PromptVersion,
+                    cancellationToken);
+                var promptVersion = promptTemplate.PromptVersion;
+                var dataJson = request.Data.GetRawText();
+                var systemPrompt = promptTemplate.SystemPrompt;
+                var content = AIPromptTemplateRenderer.BuildMappingSuggestionUserPrompt(
+                    promptTemplate.UserPrompt,
+                    dataJson,
+                    promptTemplate.MetadataJson);
+
+                await _promptFileLogger.LogPromptInputAsync(promptType, promptVersion, systemPrompt, content, cancellationToken);
                 var result = await GenerateWithRetryAsync(
                     () => _openAITransportService.GenerateSummaryAsync(
                         content,
@@ -363,7 +456,7 @@ namespace Unity.AI.Runtime
                     AIProviderPayloadValidator.ValidateMappingSuggestionJson,
                     "mapping suggestion",
                     cancellationToken);
-                await _promptFileLogger.LogPromptOutputAsync(MappingSuggestionPromptType, promptVersion, result.CaptureOutput, cancellationToken);
+                await _promptFileLogger.LogPromptOutputAsync(promptType, promptVersion, result.CaptureOutput, cancellationToken);
 
                 if (result.Outcome != AIOperationOutcome.Success)
                 {
@@ -382,6 +475,9 @@ namespace Unity.AI.Runtime
                 return new MappingSuggestionResponse();
             }
         }
+
+        public Task<MappingSuggestionResponse> GenerateFormMappingAsync(MappingSuggestionRequest request, CancellationToken cancellationToken = default) =>
+            GenerateMappingSuggestionAsync(request, MappingSuggestionPromptType, cancellationToken);
 
         private async Task<AIOperationResult> GenerateWithRetryAsync(
             Func<Task<AIOperationResult>> operation,

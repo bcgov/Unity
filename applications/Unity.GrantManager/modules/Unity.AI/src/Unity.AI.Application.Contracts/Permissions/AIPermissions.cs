@@ -17,10 +17,16 @@ public static class AIPermissions
         public const string ViewApplicationAnalysis = GroupName + ".ViewApplicationAnalysis";
         public const string ViewAttachmentSummary   = GroupName + ".ViewAttachmentSummary";
         public const string ViewScoringResult       = GroupName + ".ViewScoringResult";
+        public const string ViewFormMapping         = GroupName + ".ViewFormMapping";
+        public const string ViewFormWorksheet       = GroupName + ".ViewFormWorksheet";
+        public const string ViewFormScoresheet      = GroupName + ".ViewFormScoresheet";
 
         public const string GenerateApplicationAnalysis = GroupName + ".GenerateApplicationAnalysis";
         public const string GenerateAttachmentSummaries = GroupName + ".GenerateAttachmentSummaries";
         public const string GenerateScoring             = GroupName + ".GenerateScoring";
+        public const string GenerateFormMapping         = GroupName + ".GenerateFormMapping";
+        public const string GenerateFormWorksheet       = GroupName + ".GenerateFormWorksheet";
+        public const string GenerateFormScoresheet      = GroupName + ".GenerateFormScoresheet";
     }
 
     public static class Configuration

@@ -28,7 +28,9 @@ public class AIPromptDataSeeder(
             await SeedAnalysisPromptAsync();
             await SeedAttachmentPromptAsync();
             await SeedScoresheetPromptAsync();
-            await SeedOnboardingMappingPromptAsync();
+            await SeedFormMappingPromptAsync();
+            await SeedFormWorksheetPromptAsync();
+            await SeedFormScoresheetPromptAsync();
         }
     }
 
@@ -113,9 +115,19 @@ public class AIPromptDataSeeder(
 
     // ─── MAPPING SUGGESTION ─────────────────────────────────────────────────
 
-    private async Task SeedOnboardingMappingPromptAsync()
+    private async Task SeedFormMappingPromptAsync()
     {
-        await EnsurePromptAsync(AIPromptTypes.OnboardingMapping, 2, OnboardingMappingSystemV2, OnboardingMappingUserV2, OnboardingMappingMetadataV2);
+        await EnsurePromptAsync(AIPromptTypes.FormMapping, 2, FormMappingSystemV2, FormMappingUserV2, FormMappingMetadataV2);
+    }
+
+    private async Task SeedFormWorksheetPromptAsync()
+    {
+        await EnsurePromptAsync(AIPromptTypes.FormWorksheet, 2, FormWorksheetSystemV2, FormWorksheetUserV2, FormWorksheetMetadataV2);
+    }
+
+    private async Task SeedFormScoresheetPromptAsync()
+    {
+        await EnsurePromptAsync(AIPromptTypes.FormScoresheet, 2, FormScoresheetSystemV2, FormScoresheetUserV2, FormScoresheetMetadataV2);
     }
 
     // ─── HELPERS ──────────────────────────────────────────────────────────────
@@ -789,48 +801,184 @@ public class AIPromptDataSeeder(
         """;
 
     // ── v0/mapping-suggestion.system.txt ────────────────────────────────────
-    private const string OnboardingMappingSystemV2 = """
+    private const string FormMappingSystemV2 = """
         You are a careful mapping assistant for human reviewers.
-        Return a flat JSON object that maps CHEFS field keys to Unity core field keys.
-        Do not invent fields, persist changes, or add any wrapper sections.
+        Return structured JSON for recommended CHEFS-to-Unity field mapping.
+        Do not invent fields, persist changes, or add wrapper sections.
         Return only valid JSON in the exact mapping shape requested.
         """;
 
     // ── v2/onboarding-mapping.user.txt ─────────────────────────────────────
-    private const string OnboardingMappingUserV2 = """
-        DATA
+    private const string FormMappingUserV2 = """
+        FORM MAPPING CONTEXT:
         {{DATA}}
-
-        ATTACHMENTS
-        {{ATTACHMENTS}}
-
-        SECTION
-        {{SECTION}}
-
-        RESPONSE
-        {{RESPONSE}}
-
-        RULES
-        {{RULES}}
-        {{COMMON_RULES}}
 
         OUTPUT
         {
-          "<source_field>": "<target_field>",
-          "<source_field_2>": "<target_field_2>"
+          "coreFieldMatches": [
+            {
+              "sourceField": "<string>",
+              "targetField": "<string>",
+              "reason": "<string>",
+              "confidence": <decimal 0.0-1.0>
+            }
+          ],
+          "worksheetMatches": [
+            {
+              "worksheetName": "<string>",
+              "fieldMatches": [
+                {
+                  "sourceField": "<string>",
+                  "targetField": "<string>",
+                  "reason": "<string>",
+                  "confidence": <decimal 0.0-1.0>
+                }
+              ]
+            }
+          ],
+          "worksheetCreationSuggestions": [
+            {
+              "worksheetName": "<string>",
+              "suggestedFields": [
+                {
+                  "name": "<string>",
+                  "type": "<string>",
+                  "label": "<string>",
+                  "isCustom": true
+                }
+              ],
+              "reason": "<string>"
+            }
+          ],
+          "issues": [
+            {
+              "code": "<string>",
+              "message": "<string>"
+            }
+          ]
         }
 
         Important:
-        - Use only DATA and ATTACHMENTS as evidence.
-        - Do not invent missing application details.
-        - Return only a flat JSON object with source field keys mapped to target field keys.
-        - Do not add wrapper sections or nested arrays.
+        - Use only FORM MAPPING CONTEXT as evidence.
+        - Prefer existing Unity core intake fields when they already fit the source field.
+        - Only suggest worksheet fields or worksheet creation when the form genuinely needs them.
+        - Return only fields that are supported by the context.
+        - Keep reasons specific and concise.
         - Return valid plain JSON only in the exact OUTPUT shape.
         """;
 
-    private const string OnboardingMappingMetadataV2 = """
+    private const string FormMappingMetadataV2 = """
         {
           "DATA": "Serialized JSON payload containing CHEFS fields, Unity core fields, and worksheet-derived custom fields."
+        }
+        """;
+
+    // ── v2/form-worksheet.system.txt ───────────────────────────────────────
+    private const string FormWorksheetSystemV2 = """
+        You are a worksheet definition generator for Unity Grant Manager.
+        Generate a recommended worksheet definition JSON that can be used to create a Flex worksheet.
+        Return only valid JSON.
+        """;
+
+    // ── v2/form-worksheet.user.txt ──────────────────────────────────────────
+    private const string FormWorksheetUserV2 = """
+        WORKSHEET CONTEXT:
+        {{DATA}}
+
+        OUTPUT
+        {
+          "Name": "<string>",
+          "Title": "<string>",
+          "Version": <number>,
+          "Published": true,
+          "Sections": [
+            {
+              "Name": "<string>",
+              "Order": 1,
+              "Fields": [
+                {
+                  "Name": "<string>",
+                  "Key": "<string>",
+                  "Label": "<string>",
+                  "Type": <number>,
+                  "Definition": "<string>"
+                }
+              ]
+            }
+          ],
+          "ReportColumns": "<string>",
+          "ReportKeys": "<string>",
+          "ReportViewName": "<string>"
+        }
+
+        Important:
+        - Use only WORKSHEET CONTEXT as evidence.
+        - Prefer existing Unity core fields when they already cover the need.
+        - Only create additional worksheet fields when they are genuinely needed for this form.
+        - Use the numeric CustomFieldType values from Unity Flex.
+        - Return only fields supported by the context.
+        - Return valid plain JSON only in the exact OUTPUT shape.
+        """;
+
+    private const string FormWorksheetMetadataV2 = """
+        {
+          "DATA": "Serialized JSON payload containing the form name, form version, existing worksheet links, and worksheet field context."
+        }
+        """;
+
+    // ── v2/form-scoresheet.system.txt ───────────────────────────────────────
+    private const string FormScoresheetSystemV2 = """
+        You are a scoresheet definition generator for Unity Grant Manager.
+        Generate a recommended scoresheet definition JSON that can be imported into Flex.
+        Return only valid JSON.
+        """;
+
+    // ── v2/form-scoresheet.user.txt ──────────────────────────────────────────
+    private const string FormScoresheetUserV2 = """
+        SCORESHEET CONTEXT:
+        {{DATA}}
+
+        OUTPUT
+        {
+          "Title": "<string>",
+          "Name": "<string>",
+          "Version": <number>,
+          "Order": 0,
+          "Published": false,
+          "ReportColumns": "<string>",
+          "ReportKeys": "<string>",
+          "ReportViewName": "<string>",
+          "Sections": [
+            {
+              "Name": "<string>",
+              "Order": 0,
+              "Fields": [
+                {
+                  "Name": "<string>",
+                  "Label": "<string>",
+                  "Description": "<string|null>",
+                  "Order": 0,
+                  "Type": <number>,
+                  "Enabled": true,
+                  "Definition": "<string>"
+                }
+              ]
+            }
+          ]
+        }
+
+        Important:
+        - Use only SCORESHEET CONTEXT as evidence.
+        - Generate the rubric that assessors use to score submitted applications.
+        - Keep the structure focused on reviewer criteria, comments, and scoring sections.
+        - Use the numeric QuestionType values from Unity Flex.
+        - Return only fields supported by the context.
+        - Return valid plain JSON only in the exact OUTPUT shape.
+        """;
+
+    private const string FormScoresheetMetadataV2 = """
+        {
+          "DATA": "Serialized JSON payload containing the form name, form version, scoresheet identifier, and existing scoresheet context."
         }
         """;
 

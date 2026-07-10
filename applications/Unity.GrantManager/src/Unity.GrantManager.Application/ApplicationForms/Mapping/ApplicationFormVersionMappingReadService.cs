@@ -7,6 +7,7 @@ using Newtonsoft.Json.Linq;
 using Unity.Flex;
 using Unity.Flex.Worksheets;
 using Unity.Flex.Worksheets.Definitions;
+using Unity.Flex.Domain.Worksheets;
 using Unity.GrantManager.ApplicationForms.Mapping;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Intakes;
@@ -25,7 +26,7 @@ public interface IApplicationFormVersionMappingReadService
 
 public class ApplicationFormVersionMappingReadService(
     IRepository<ApplicationFormVersion, Guid> applicationFormVersionRepository,
-    IWorksheetAppService worksheetAppService,
+    IWorksheetListRepository worksheetListRepository,
     IFeatureChecker featureChecker) : IApplicationFormVersionMappingReadService, ITransientDependency
 {
     public async Task<ApplicationFormMappingReadModelDto> GetAsync(Guid formVersionId)
@@ -44,8 +45,8 @@ public class ApplicationFormVersionMappingReadService(
 
         if (await featureChecker.IsEnabledAsync("Unity.Flex"))
         {
-            var worksheets = await worksheetAppService.GetListByCorrelationAsync(formVersionId, CorrelationConsts.FormVersion);
-            model.Worksheets = worksheets.Select(MapWorksheet).ToList();
+            var worksheets = await worksheetListRepository.GetListByCorrelationAsync(formVersionId, CorrelationConsts.FormVersion, includeDetails: true);
+            model.Worksheets = worksheets.Select((Worksheet worksheet) => MapWorksheet(worksheet)).ToList();
         }
 
         return model;
@@ -99,7 +100,7 @@ public class ApplicationFormVersionMappingReadService(
             .ToList();
     }
 
-    private static WorksheetMappingFieldsDto MapWorksheet(WorksheetDto worksheet)
+    private static WorksheetMappingFieldsDto MapWorksheet(Worksheet worksheet)
     {
         return new WorksheetMappingFieldsDto
         {
@@ -107,7 +108,7 @@ public class ApplicationFormVersionMappingReadService(
             WorksheetName = worksheet.Name,
             Fields = worksheet.Sections
                 .SelectMany(section => section.Fields)
-                .Where(IsMappable)
+                .Where(field => IsMappable(field))
                 .Select(field => new MappingFieldDto
                 {
                     Name = $"{field.Name}.{field.Type}",
@@ -120,28 +121,28 @@ public class ApplicationFormVersionMappingReadService(
         };
     }
 
-    private static bool IsMappable(CustomFieldDto? fieldDto)
+    private static bool IsMappable(CustomField? field)
     {
-        if (fieldDto == null)
+        if (field == null)
         {
             return false;
         }
 
-        return fieldDto.Type switch
+        return field.Type switch
         {
-            CustomFieldType.DataGrid => IsDataGridMappable(fieldDto),
+            CustomFieldType.DataGrid => IsDataGridMappable(field),
             _ => true
         };
     }
 
-    private static bool IsDataGridMappable(CustomFieldDto fieldDto)
+    private static bool IsDataGridMappable(CustomField field)
     {
-        if (fieldDto.Definition == null)
+        if (string.IsNullOrWhiteSpace(field.Definition))
         {
             return true;
         }
 
-        var definition = (DataGridDefinition?)fieldDto.Definition.ConvertDefinition(CustomFieldType.DataGrid);
+        var definition = (DataGridDefinition?)field.Definition.ConvertDefinition(CustomFieldType.DataGrid);
         return definition?.Dynamic ?? true;
     }
 

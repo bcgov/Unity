@@ -51,7 +51,7 @@ public class OpenAITransportService(
 
             var completion = result.Value;
             var rawResponse = result.GetRawResponse();
-            var responseContent = rawResponse.Content.ToString();
+            var responseContent = rawResponse?.Content?.ToString() ?? string.Empty;
             var modelOutput = ExtractModelOutput(completion, responseContent);
             var providerResponse = BuildProviderResponseFromMetadata(
                 modelOutput ?? string.Empty,

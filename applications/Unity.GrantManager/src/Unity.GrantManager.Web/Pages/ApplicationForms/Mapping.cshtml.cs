@@ -106,7 +106,12 @@ namespace Unity.GrantManager.Web.Pages.ApplicationForms
         
         private async Task<List<MapField>> GenerateMappingFieldsAsync()
         {
-            var readModel = await mappingReadService.GetAsync(ApplicationFormVersionDto?.Id ?? Guid.Empty);
+            if (ApplicationFormVersionDto?.Id is not Guid formVersionId || formVersionId == Guid.Empty)
+            {
+                return [];
+            }
+
+            var readModel = await mappingReadService.GetAsync(formVersionId);
             var properties = readModel.ChefsFields
                 .Select(field => new MapField
                 {

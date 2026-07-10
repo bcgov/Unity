@@ -23,6 +23,6 @@ namespace Unity.GrantManager.ApplicationForms
         Task<ApplicationFormVersionDto?> GetByChefsFormVersionId(Guid chefsFormVersionId);
         Task<int> GetFormVersionByApplicationIdAsync(Guid applicationId);
         Task DeleteWorkSheetMappingByFormName(string formName, Guid formVersionId);
-        Task<ApplicationFormMappingSuggestionDto> SuggestMappingAsync(Guid id);
+        Task<ApplicationFormMappingSuggestionDto> GenerateMappingAsync(Guid id);
     }
 }

@@ -1,4 +1,6 @@
-﻿@using Unity.GrantManager.Web.Views.Shared.Components.CustomFields @* Suppress:S1128 *@
+@using Unity.GrantManager.Web.Views.Shared.Components.CustomFields @* Suppress:S1128 *@
+@using Unity.AI.Permissions
+@inject Volo.Abp.Authorization.Permissions.IPermissionChecker PermissionChecker
 @model CustomFieldsViewModel
 
 @{
@@ -20,6 +22,28 @@
                     abp-tooltip="Save the worksheet associations for mapping to the available Unity worksheet fields"
                     button-type="Primary"
                     form="worksheet-config-form" />
+        @if (await PermissionChecker.IsGrantedAsync(AIPermissions.Analysis.GenerateFormScoresheet))
+        {
+            <button type="button" id="btn-generate-scoresheet" class="btn ai-generate-btn unt-btn-outline-primary btn-outline-primary"
+                    style="pointer-events: all;"
+                    title="Generate a scoresheet for the current form version">
+                <span class="ai-button-content">
+                    <i class="unt-icon-sm fa-solid fa-wand-magic-sparkles"></i>
+                    <span>Generate Scoresheet</span>
+                </span>
+            </button>
+        }
+        @if (await PermissionChecker.IsGrantedAsync(AIPermissions.Analysis.GenerateFormWorksheet))
+        {
+            <button type="button" id="btn-generate-worksheet" class="btn ai-generate-btn unt-btn-outline-primary btn-outline-primary"
+                    style="pointer-events: all;"
+                    title="Generate a worksheet for the current form version">
+                <span class="ai-button-content">
+                    <i class="unt-icon-sm fa-solid fa-wand-magic-sparkles"></i>
+                    <span>Generate Worksheet</span>
+                </span>
+            </button>
+        }
         <abp-button id="btn-back-worksheet-config"
                     text="Back"
                     class="btn unt-btn-outline-primary btn-outline-primary"
