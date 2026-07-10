@@ -98,7 +98,7 @@ public class AttachmentSummaryServiceTests
     [Fact]
     public async Task GenerateAndSaveAsync_Should_Reject_Empty_Attachment_List()
     {
-        var persistence = Substitute.For<IAttachmentSummaryPersistence>();
+        var persistence = Substitute.For<IAttachmentSummaryDataProvider>();
         var service = CreateService(
             persistence,
             Substitute.For<IChefsFileAttachmentStreamProvider>(),
@@ -107,7 +107,7 @@ public class AttachmentSummaryServiceTests
 
         await Should.ThrowAsync<UserFriendlyException>(() => service.GenerateAndSaveAsync([], "v1"));
 
-        await persistence.DidNotReceive().LoadApplicationAttachmentIdsAsync(Arg.Any<Guid>());
+        await persistence.DidNotReceive().GetApplicationAttachmentIdsAsync(Arg.Any<Guid>());
     }
 
     [Fact]
@@ -171,18 +171,18 @@ public class AttachmentSummaryServiceTests
             ChefsFileId = fileId2.ToString()
         };
 
-        var persistence = Substitute.For<IAttachmentSummaryPersistence>();
-        persistence.LoadAsync(firstAttachmentId).Returns(new AttachmentSummarySource(
+        var persistence = Substitute.For<IAttachmentSummaryDataProvider>();
+        persistence.GetAttachmentAsync(firstAttachmentId).Returns(new AttachmentSummarySource(
             firstAttachmentId,
             firstAttachment.FileName,
             firstAttachment.ChefsSubmissionId,
             firstAttachment.ChefsFileId));
-        persistence.LoadAsync(secondAttachmentId).Returns(new AttachmentSummarySource(
+        persistence.GetAttachmentAsync(secondAttachmentId).Returns(new AttachmentSummarySource(
             secondAttachmentId,
             secondAttachment.FileName,
             secondAttachment.ChefsSubmissionId,
             secondAttachment.ChefsFileId));
-        persistence.LoadApplicationAttachmentIdsAsync(applicationId).Returns([firstAttachmentId, secondAttachmentId]);
+        persistence.GetApplicationAttachmentIdsAsync(applicationId).Returns([firstAttachmentId, secondAttachmentId]);
 
         var streamProvider = Substitute.For<IChefsFileAttachmentStreamProvider>();
         streamProvider.OpenAsync(submissionId, fileId1, "first.txt")
@@ -229,8 +229,8 @@ public class AttachmentSummaryServiceTests
 
         summaries.ShouldBe(["first summary", "second summary"]);
         await aiService.Received(1).GenerateAttachmentSummaryBatchAsync(Arg.Any<AttachmentSummaryBatchRequest>());
-        await persistence.Received(1).SaveSummaryAsync(firstAttachmentId, "first summary");
-        await persistence.Received(1).SaveSummaryAsync(secondAttachmentId, "second summary");
+        await persistence.Received(1).UpdateAttachmentSummaryAsync(firstAttachmentId, "first summary");
+        await persistence.Received(1).UpdateAttachmentSummaryAsync(secondAttachmentId, "second summary");
     }
 
     [Fact]
@@ -336,7 +336,7 @@ public class AttachmentSummaryServiceTests
     }
 
     private static AttachmentSummaryService CreateService(
-        IAttachmentSummaryPersistence persistence,
+        IAttachmentSummaryDataProvider persistence,
         IChefsFileAttachmentStreamProvider streamProvider,
         ITextExtractionService textExtractionService,
         IAIService aiService)
@@ -353,21 +353,21 @@ public class AttachmentSummaryServiceTests
             Substitute.For<IStringLocalizer<AIResource>>());
     }
 
-    private static IAttachmentSummaryPersistence CreatePersistence(
+    private static IAttachmentSummaryDataProvider CreatePersistence(
         Guid attachmentId,
         string fileName,
         Guid submissionId,
         Guid fileId,
         Action<string>? savedSummary = null)
     {
-        var persistence = Substitute.For<IAttachmentSummaryPersistence>();
-        persistence.LoadAsync(attachmentId).Returns(new AttachmentSummarySource(
+        var persistence = Substitute.For<IAttachmentSummaryDataProvider>();
+        persistence.GetAttachmentAsync(attachmentId).Returns(new AttachmentSummarySource(
             attachmentId,
             fileName,
             submissionId.ToString(),
             fileId.ToString()));
-        persistence.LoadApplicationAttachmentIdsAsync(Arg.Any<Guid>()).Returns(new List<Guid>());
-        persistence.SaveSummaryAsync(attachmentId, Arg.Any<string>()).Returns(callInfo =>
+        persistence.GetApplicationAttachmentIdsAsync(Arg.Any<Guid>()).Returns(new List<Guid>());
+        persistence.UpdateAttachmentSummaryAsync(attachmentId, Arg.Any<string>()).Returns(callInfo =>
         {
             savedSummary?.Invoke(callInfo.ArgAt<string>(1));
             return Task.CompletedTask;

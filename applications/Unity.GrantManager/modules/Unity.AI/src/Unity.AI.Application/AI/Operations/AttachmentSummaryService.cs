@@ -288,17 +288,6 @@ public class AttachmentSummaryService(
         }
     }
 
-    private async Task<AttachmentSummarySource> LoadAttachmentAsync(Guid attachmentId)
-    {
-        var attachment = await attachmentSummaryPersistence.LoadAsync(attachmentId);
-        return attachment;
-    }
-
-    private async Task SaveSummaryAsync(Guid attachmentId, string summary)
-    {
-        await attachmentSummaryPersistence.SaveSummaryAsync(attachmentId, summary);
-    }
-
     private static bool ShouldStopOnEmptyExtraction(string fileName, string extractedText)
     {
         return string.IsNullOrWhiteSpace(extractedText) && IsSupportedOfficeOrPdf(fileName);
