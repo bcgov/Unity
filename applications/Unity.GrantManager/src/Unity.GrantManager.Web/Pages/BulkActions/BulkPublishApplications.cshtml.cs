@@ -16,7 +16,7 @@ namespace Unity.GrantManager.Web.Pages.BulkActions;
 [Authorize(UnitySelector.Application.Status.BulkPublish)]
 public class BulkPublishApplicationsModel(
     ApplicationIdsCacheService cacheService,
-    IBulkApprovalsAppService bulkApprovalsAppService) : AbpPageModel
+    IApplicationBulkActionsAppService bulkActionsAppService) : AbpPageModel
 {
     [BindProperty]
     public List<BulkPublishApplicationViewModel>? BulkApplications { get; set; }
@@ -81,7 +81,7 @@ public class BulkPublishApplicationsModel(
             }
 
             // Fetch application details for the selected IDs
-            var bulkApplications = await bulkApprovalsAppService.GetApplicationsForBulkPublish(applicationGuids);
+            var bulkApplications = await bulkActionsAppService.GetApplicationsForBulkPublish(applicationGuids);
 
             BulkApplications = ObjectMapper.Map<List<BulkPublishDto>, List<BulkPublishApplicationViewModel>>(bulkApplications);
             ApplicationsCount = BulkApplications.Count;
@@ -107,7 +107,7 @@ public class BulkPublishApplicationsModel(
             }
 
             var applicationsToPublish = BulkApplications.Select(y => y.ApplicationId).ToArray();
-            await bulkApprovalsAppService.BulkPublishApplications(applicationsToPublish);
+            await bulkActionsAppService.BulkPublishApplications(applicationsToPublish);
 
             return new OkResult();
         }

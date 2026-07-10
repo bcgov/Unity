@@ -8,7 +8,5 @@ namespace Unity.GrantManager.GrantApplications
     {
         Task<BulkApprovalResultDto> BulkApproveApplications(List<BulkApprovalDto> batchApplicationsToApprove);
         Task<List<BulkApprovalDto>> GetApplicationsForBulkApproval(Guid[] applicationGuids);
-        Task<List<BulkPublishDto>> GetApplicationsForBulkPublish(Guid[] applicationGuids, bool excludePublished = true);
-        Task BulkPublishApplications(Guid[] applicationGuids);
     }
 }
