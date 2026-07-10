@@ -1,0 +1,15 @@
+using System;
+
+namespace Unity.GrantManager.SettingManagement;
+
+[Serializable]
+public class ProgramDetailsDto
+{
+    public string DisplayName { get; set; } = string.Empty;
+
+    public string Division { get; set; } = string.Empty;
+
+    public string Branch { get; set; } = string.Empty;
+
+    public string Description { get; set; } = string.Empty;
+}

@@ -269,4 +269,3 @@ internal static class PolicyRegistrant
             policy => policy.RequireClaim(PermissionConstant, ReportingPermissions.Configuration.Delete));        
     }
 }
-

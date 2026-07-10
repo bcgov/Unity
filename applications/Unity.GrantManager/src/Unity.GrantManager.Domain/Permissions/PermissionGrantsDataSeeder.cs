@@ -132,6 +132,8 @@ namespace Unity.GrantManager.Permissions
                     IdentitySeedPermissions.Roles.ManagePermissions,
                     GrantManagerPermissions.Intakes.Default,
                     GrantManagerPermissions.ApplicationForms.Default,
+                    UnitySettingManagementPermissions.UserInterface,
+                    UnitySettingManagementPermissions.EditProgramDetails,
 
                     .. SettingManagement_Tags_CommonPermissions,
                     .. ReviewAndAssessment_CommonPermissions,
@@ -236,6 +238,7 @@ namespace Unity.GrantManager.Permissions
                 [
                     GrantManagerPermissions.Default,
                     UnitySettingManagementPermissions.UserInterface,
+                    UnitySettingManagementPermissions.EditProgramDetails,
                     GrantManagerPermissions.Organizations.Default,
                     GrantManagerPermissions.Organizations.ManageProfiles,
                     GrantManagerPermissions.Intakes.Default,
@@ -345,4 +348,3 @@ namespace Unity.GrantManager.Permissions
         }
     }
 }
-

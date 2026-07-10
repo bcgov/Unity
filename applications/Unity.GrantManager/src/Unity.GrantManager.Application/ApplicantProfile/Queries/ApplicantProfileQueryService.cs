@@ -10,6 +10,7 @@ using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.MultiTenancy;
 using Volo.Abp.Settings;
+using Volo.Abp.TenantManagement;
 
 namespace Unity.GrantManager.ApplicantProfile
 {
@@ -22,6 +23,7 @@ namespace Unity.GrantManager.ApplicantProfile
     public class ApplicantProfileQueryService(
             ICurrentTenant currentTenant,
             IRepository<ApplicantTenantMap, Guid> applicantTenantMapRepository,
+            IRepository<Tenant, Guid> tenantRepository,
             IEnumerable<IApplicantProfileDataProvider> dataProviders,
             ISettingProvider settingProvider,
             ILogger<ApplicantProfileQueryService> logger)
@@ -63,7 +65,7 @@ namespace Unity.GrantManager.ApplicantProfile
         /// </summary>
         /// <remarks>The method extracts the username portion from the subject identifier in the request
         /// to match tenant mappings. This operation is asynchronous and queries the host database for relevant tenant
-        /// associations.</remarks>
+        /// associations. Tenant display names are batch-loaded for efficiency, falling back to the tenant name if not set.</remarks>
         /// <param name="request">An object containing applicant profile information, including the subject identifier used to locate tenant
         /// mappings.</param>
         /// <returns>A list of <see cref="ApplicantTenantDto"/> objects representing the tenants linked to the applicant. The
@@ -75,7 +77,7 @@ namespace Unity.GrantManager.ApplicantProfile
             if (subUsername is null) return [];
             List<ApplicantTenantDto> mappings = [];
 
-            // Query the ApplicantTenantMaps table in the host database
+            // Query 1: Get all tenant mappings for the applicant
             using (currentTenant.Change(null))
             {
                 var queryable = await applicantTenantMapRepository.GetQueryableAsync();
@@ -87,6 +89,33 @@ namespace Unity.GrantManager.ApplicantProfile
                         TenantName = m.TenantName
                     })
                     .ToListAsync();
+            }
+
+            if (mappings.Count == 0)
+            {
+                return mappings;
+            }
+
+            // Query 2: Batch-load all tenants by their IDs to get display names
+            using (currentTenant.Change(null))
+            {
+                var tenantIds = mappings.Select(m => m.TenantId).ToHashSet();
+                var queryable = await tenantRepository.GetQueryableAsync();
+                var tenants = await queryable.Where(t => tenantIds.Contains(t.Id)).ToListAsync();
+                // Create a map of tenant ID to DisplayName (with fallback to Name)
+                var tenantDisplayNames = tenants.ToDictionary(
+                    t => t.Id,
+                    t => GetTenantDisplayName(t)
+                );
+
+                // Populate DisplayName for each mapping
+                foreach (var mapping in mappings)
+                {
+                    if (tenantDisplayNames.TryGetValue(mapping.TenantId, out var displayName))
+                    {
+                        mapping.DisplayName = displayName;
+                    }
+                }
             }
 
             // Apply tenant specific metadata
@@ -107,8 +136,24 @@ namespace Unity.GrantManager.ApplicantProfile
             using (currentTenant.Change(tenantMap.TenantId))
             {
                 var defaultEmailAddress = await settingProvider.GetOrNullAsync(NotificationsSettings.Mailing.DefaultFromAddress);
-                tenantMap.Metadata[ApplicantTenantMetadataKeys.DefaultFromAddress] = defaultEmailAddress ?? "NoReply@gov.bc.ca";
+                tenantMap.DefaultFromAddress = defaultEmailAddress ?? "NoReply@gov.bc.ca";
             }
+        }
+
+        /// <summary>
+        /// Extracts the DisplayName from the tenant's extra properties, falling back to the tenant's Name.
+        /// </summary>
+        private static string GetTenantDisplayName(Volo.Abp.TenantManagement.Tenant tenant)
+        {
+            if (tenant.ExtraProperties.TryGetValue("DisplayName", out var displayNameObj))
+            {
+                var displayName = displayNameObj?.ToString()?.Trim();
+                if (!string.IsNullOrEmpty(displayName))
+                {
+                    return displayName;
+                }
+            }
+            return tenant.Name;
         }
     }
 }
