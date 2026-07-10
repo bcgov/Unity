@@ -290,7 +290,9 @@ $(function () {
                         ? l('DetailsActionBar:UnpublishButton')
                         : l('DetailsActionBar:PublishButton'));
 
-                    abp.notify.success(l('DetailsActionBar:PublishStatusUpdated'));
+                    abp.notify.success(nextPublishedState 
+                        ? l('DetailsActionBar:PublishStatusUpdatedToast')
+                        : l('DetailsActionBar:UnpublishStatusUpdatedToast'));
                     PubSub.publish('application_status_changed', nextPublishedState ? 'Publish' : 'Unpublish');
                     PubSub.publish('refresh_detail_panel_summary');
                 })
