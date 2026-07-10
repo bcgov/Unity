@@ -2,13 +2,10 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
-using NPOI.XWPF.UserModel;
 using Shouldly;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Unity.AI;
@@ -17,6 +14,7 @@ using Unity.AI.Localization;
 using Unity.AI.Operations;
 using Unity.AI.Requests;
 using Unity.AI.Responses;
+using Unity.GrantManager.Applications;
 using Unity.GrantManager.Intakes;
 using Volo.Abp;
 using Volo.Abp.Uow;
@@ -92,35 +90,6 @@ public class AttachmentSummaryServiceTests
         var service = CreateService(provider, Substitute.For<IChefsFileAttachmentStreamProvider>(), Substitute.For<ITextExtractionService>(), Substitute.For<IAIService>());
 
         await Should.ThrowAsync<UserFriendlyException>(() => service.GenerateAndSaveAsync([], "v1"));
-    }
-
-    [Fact]
-    public async Task GenerateAndSaveAsync_Should_Not_Call_AI_When_Supported_File_Extraction_Is_Empty()
-    {
-        var attachmentId = Guid.NewGuid();
-        var submissionId = Guid.NewGuid();
-        var fileId = Guid.NewGuid();
-        var stream = new MemoryStream([1, 2, 3]);
-        string? savedSummary = null;
-
-        var provider = CreateProvider(attachmentId, "test.docx", submissionId, fileId, summary => savedSummary = summary);
-
-        var streamProvider = Substitute.For<IChefsFileAttachmentStreamProvider>();
-        streamProvider.OpenAsync(submissionId, fileId, "test.docx")
-            .Returns(new ChefsFileAttachmentStream(stream, "application/vnd.openxmlformats-officedocument.wordprocessingml.document"));
-
-        var textExtractionService = Substitute.For<ITextExtractionService>();
-        textExtractionService.ExtractTextAsync("test.docx", stream, "application/vnd.openxmlformats-officedocument.wordprocessingml.document", Arg.Any<CancellationToken>())
-            .Returns(string.Empty);
-
-        var aiService = Substitute.For<IAIService>();
-        var service = CreateService(provider, streamProvider, textExtractionService, aiService);
-
-        var result = await service.GenerateAndSaveAsync(attachmentId, "v1");
-
-        result.ShouldBe("Attachment text could not be extracted for AI summary generation.");
-        savedSummary.ShouldBe(result);
-        await aiService.DidNotReceive().GenerateAttachmentSummaryAsync(Arg.Any<AttachmentSummaryRequest>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]

@@ -58,7 +58,6 @@ public class GrantApplicationAppService(
     IApplicantAddressRepository applicantAddressRepository,
     IApplicantSupplierAppService applicantSupplierService,
     IPaymentRequestAppService paymentRequestService,
-    IApplicationAIGenerationQueue aiGenerationQueue,
     IAIGenerationStatusAppService aiGenerationStatusAppService,
     IAIRateLimiter aiRateLimiter,
     IFeatureChecker featureChecker)
@@ -1361,6 +1360,22 @@ public class GrantApplicationAppService(
     public async Task<string> RestoreAIAnalysisItemAsync(Guid applicationId, string itemId)
     {
         return await UpdateAIAnalysisItemDismissedStateAsync(applicationId, itemId, isDismissed: false);
+    }
+
+    public async Task<AIGenerationStatusDto> GetAIGenerationStatusAsync(Guid applicationId, string operationType)
+    {
+        await EnsureAIGenerationStatusAccessAsync(operationType);
+
+        var request = await aiGenerationStatusAppService.GetLatestAsync(applicationId, operationType, CurrentTenant.Id);
+        var state = await aiRateLimiter.GetStateAsync();
+
+        return new AIGenerationStatusDto
+        {
+            GenerationRequest = request,
+            IsGenerating = state.IsGenerating,
+            RetryAfterSeconds = state.RetryAfterSeconds,
+            FailureReason = request?.FailureReason
+        };
     }
 
     private async Task<string> UpdateAIAnalysisItemDismissedStateAsync(Guid applicationId, string itemId, bool isDismissed)
