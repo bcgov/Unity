@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Events;
 using Unity.GrantManager.Permissions;
+using Unity.Modules.Shared;
 using Volo.Abp.EventBus.Local;
 using Volo.Abp.Uow;
 
@@ -254,6 +255,7 @@ namespace Unity.GrantManager.GrantApplications
         /// <param name="applicationGuids"></param>
         /// <param name="excludePublished"></param>
         /// <returns></returns>
+        [Authorize(UnitySelector.Application.Status.BulkPublish)]
         public async Task<List<BulkPublishDto>> GetApplicationsForBulkPublish(Guid[] applicationGuids, bool excludePublished = true)
         {
             var applicationsQuery = await applicationRepository.GetQueryableAsync();
@@ -288,6 +290,7 @@ namespace Unity.GrantManager.GrantApplications
         /// </summary>
         /// <param name="applicationGuids">The GUIDs of the applications to be bulk published.</param>
         /// <returns>A task representing the asynchronous operation.</returns>
+        [Authorize(UnitySelector.Application.Status.BulkPublish)]
         public async Task BulkPublishApplications(Guid[] applicationGuids)
         {
             var applications = await applicationRepository
