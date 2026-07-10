@@ -247,9 +247,9 @@
     "Unity.GrantManager.ApplicationManagement.Payment.PaymentList": "Payment List",
 
     "Unity.GrantManager.ApplicationManagement.Application.Status": "External Status Visibility",
-    "Unity.GrantManager.ApplicationManagement.Application.Status.Publish": "Publish",
-    "Unity.GrantManager.ApplicationManagement.Application.Status.Unpublish": "Unpublish",
-    "Unity.GrantManager.ApplicationManagement.Application.Status.BulkPublish": "Bulk Publish",
+    "Unity.GrantManager.ApplicationManagement.Application.Status.Publish": "Publish Status",
+    "Unity.GrantManager.ApplicationManagement.Application.Status.Unpublish": "Unpublish Status",
+    "Unity.GrantManager.ApplicationManagement.Application.Status.BulkPublish": "Bulk Publish Status",
 
     "Permission:GrantApplicationManagement.ProjectInfo": "Project Info",
     "Permission:GrantApplicationManagement.ProjectInfo.Update": "Project Info Update",
