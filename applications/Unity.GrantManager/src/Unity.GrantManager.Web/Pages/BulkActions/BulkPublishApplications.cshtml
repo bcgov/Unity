@@ -87,17 +87,17 @@
             <abp-row id="batch-action-summary" class="m-0 batch-action-summary d-none">
                 <abp-column size="_12" class="px-3">
                     <p id="maxCountWarning" class="alert alert-light border-0 border-4 border-start rounded-0 text-body d-none">
-                        <span class="action-note-prefix action-note-error">Error</span> You have exceeded the maximum number of items for bulk status publishing. Please reduce the number to 50 or fewer
+                        <span class="action-note-prefix action-note-error">Error</span> @Model.MaxBatchCountExceededError
                     </p>
                     <p id="minCountWarning" class="alert alert-light border-0 border-4 border-start rounded-0 text-body d-none">
-                            <span class="action-note-prefix action-note-error">Error</span> You have no items selected for bulk status publishing. Please close this prompt to continue.
+                            <span class="action-note-prefix action-note-error">Error</span> @L["ApplicationBatchPublishRequest:MinCountExceeded"]
                     </p>
                 </abp-column>
             </abp-row>
             <abp-row class="m-0">
                 <abp-column size="_12" class="px-3">
                     <p class="alert alert-light border-0 border-4 border-start rounded-0 text-body">
-                        <strong>Note:</strong> By confirming, the selected application statuses will be published and made visible to applicants in the portal.
+                        <strong>Note:</strong> @L["ApplicationBatchPublishRequest:ConfirmationNote"]
                     </p>
                 </abp-column>
             </abp-row>

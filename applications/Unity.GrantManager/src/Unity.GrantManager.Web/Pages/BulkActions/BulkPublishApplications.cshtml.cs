@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using System;
@@ -6,10 +7,13 @@ using System.Linq;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.GrantApplications;
+using Unity.Modules.Shared;
+using Unity.Modules.Shared.Utils;
 using Volo.Abp.AspNetCore.Mvc.UI.RazorPages;
 
 namespace Unity.GrantManager.Web.Pages.BulkActions;
 
+[Authorize(UnitySelector.Application.Status.BulkPublish)]
 public class BulkPublishApplicationsModel(
     ApplicationIdsCacheService cacheService,
     IBulkApprovalsAppService bulkApprovalsAppService) : AbpPageModel
@@ -37,9 +41,14 @@ public class BulkPublishApplicationsModel(
 
     public async Task OnGetAsync(string cacheKey)
     {
+        if (!await AuthorizationService.IsGrantedAsync(UnitySelector.Application.Status.BulkPublish))
+        {
+            return;
+        }
+
         MaxBatchCount = BatchApprovalConsts.MaxBatchCount;
         BulkApplications = [];
-        MaxBatchCountExceededError = L["ApplicationBatchApprovalRequest:MaxCountExceeded", BatchApprovalConsts.MaxBatchCount.ToString()].Value;
+        MaxBatchCountExceededError = L["ApplicationBatchPublishRequest:MaxCountExceeded", BatchApprovalConsts.MaxBatchCount.ToString()].Value;
 
         try
         {
@@ -48,7 +57,7 @@ public class BulkPublishApplicationsModel(
 
             if (selectedApplicationIds == null || selectedApplicationIds.Count == 0)
             {
-                Logger.LogWarning("Cache key expired or invalid: {CacheKey}", cacheKey);
+                Logger.LogWarning("Cache key expired or invalid: {CacheKey}", cacheKey.SanitizeField());
                 ViewData["Error"] = "The session has expired. Please try selecting applications again.";
                 Invalid = true;
                 return;
@@ -60,13 +69,14 @@ public class BulkPublishApplicationsModel(
             // Clean up cache after retrieval (one-time use)
             await cacheService.RemoveAsync(cacheKey);
 
-            if (MaxBatchCount <= applicationGuids.Length)
+            if (applicationGuids.Length > MaxBatchCount)
             {
                 MaxBatchCountExceeded = true;
             }
 
             if (applicationGuids.Length == 0)
             {
+                Invalid = true;
                 return;
             }
 
@@ -75,6 +85,7 @@ public class BulkPublishApplicationsModel(
 
             BulkApplications = ObjectMapper.Map<List<BulkPublishDto>, List<BulkPublishApplicationViewModel>>(bulkApplications);
             ApplicationsCount = BulkApplications.Count;
+            Invalid = MaxBatchCountExceeded || ApplicationsCount == 0;
         }
         catch (Exception ex)
         {
@@ -90,6 +101,11 @@ public class BulkPublishApplicationsModel(
         try
         {
             if (BulkApplications == null) return NoContent();
+            if (BulkApplications.Count == 0 || BulkApplications.Count > BatchApprovalConsts.MaxBatchCount)
+            {
+                return BadRequest();
+            }
+
             var applicationsToPublish = BulkApplications.Select(y => y.ApplicationId).ToArray();
             await bulkApprovalsAppService.BulkPublishApplications(applicationsToPublish);
 

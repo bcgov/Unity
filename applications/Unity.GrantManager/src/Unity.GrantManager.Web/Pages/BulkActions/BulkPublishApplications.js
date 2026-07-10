@@ -57,9 +57,9 @@ function validBatchCount() {
             return false;
         }
 
-        if (maxBatchCount <= applicationsCount) {
+        if (applicationsCount > maxBatchCount) {
             validationMaxValid = false;
-        } else if (applicationsCount == 0) {
+        } else if (applicationsCount === 0) {
             validationMinValid = false;
         }
 

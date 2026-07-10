@@ -272,7 +272,7 @@ namespace Unity.GrantManager.GrantApplications
                         ApplicationId = application.Id,
                         ReferenceNo = application.ReferenceNo,
                         ApplicantName = application.Applicant.ApplicantName ?? string.Empty,
-                        ApplicationStatus = application.ApplicationStatus.InternalStatus,
+                        ApplicationStatus = status.InternalStatus,
                         FormName = form.ApplicationFormName ?? string.Empty,
                         FinalDecisionDate = application.FinalDecisionDate,
                         ExternalStatusVisibility = application.ExternalStatusVisibility,

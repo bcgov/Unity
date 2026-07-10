@@ -160,7 +160,7 @@
     "Permission:GrantApplicationManagement.Approvals.DeferAfterApproval": "Defer After Approval",
     "Permission:GrantApplicationManagement.Comments.Default": "Comments",
     "Permission:GrantApplicationManagement.Comments.Add": "Add Application Comment",
-     "Permission:GrantApplicationManagement.Organizations.Default": "Organizations",
+    "Permission:GrantApplicationManagement.Organizations.Default": "Organizations",
     "Permission:GrantApplicationManagement.Organizations.ManageProfiles": "Manage Organization Profiles",
     "Permission:GrantManagerManagement.Intakes.Default": "Manage Intakes",
     "Permission:GrantManagerManagement.ApplicationForms.Default": "Manage Forms",
@@ -532,6 +532,10 @@
     "ApplicationBatchApprovalRequest:InvalidPermissions": "Invalid permissions",
     "ApplicationBatchApprovalRequest:InvalidApprovedAmount": "Invalid Approved Amount, it must be greater than 0.00",
     "ApplicationBatchApprovalRequest:InvalidRecommendedAmount": "Invalid Recommended Amount, it must be greater than 0.00",
+
+    "ApplicationBatchPublishRequest:MaxCountExceeded": "You have exceeded the maximum number of items for bulk approval. Please reduce the number to {0} or fewer",
+    "ApplicationBatchPublishRequest:MinCountExceeded": "You have no items selected for bulk status publishing. Please close this prompt to continue",
+    "ApplicationBatchPublishRequest:ConfirmationNote": "By confirming, the selected application statuses will be published and made visible to applicants in the portal.",
 
     "ApplicationLinks:Category": "Category",
     "ApplicationLinks:ID": "ID",
