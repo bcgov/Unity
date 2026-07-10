@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace Unity.GrantManager.GrantApplications;
+namespace Unity.GrantManager.SettingManagement;
 
 public class UpdateProgramDetailsDto
 {

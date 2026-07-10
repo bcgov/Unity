@@ -89,7 +89,7 @@
         const currentValues = getProgramDetailsValues();
 
         abp.ui.setBusy($programDetailsForm);
-        unity.grantManager.grantApplications.applicationStatus
+        unity.grantManager.settingManagement.programDetails
             .updateProgramDetails({
                 displayName: currentValues.displayName,
                 division: currentValues.division,

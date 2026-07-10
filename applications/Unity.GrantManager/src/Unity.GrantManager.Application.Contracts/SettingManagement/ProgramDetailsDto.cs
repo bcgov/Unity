@@ -1,6 +1,6 @@
 using System;
 
-namespace Unity.GrantManager.GrantApplications;
+namespace Unity.GrantManager.SettingManagement;
 
 [Serializable]
 public class ProgramDetailsDto

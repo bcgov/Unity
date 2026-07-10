@@ -1,4 +1,4 @@
-namespace Unity.GrantManager.GrantApplications;
+namespace Unity.GrantManager.SettingManagement;
 
 public static class ProgramDetailsConsts
 {
