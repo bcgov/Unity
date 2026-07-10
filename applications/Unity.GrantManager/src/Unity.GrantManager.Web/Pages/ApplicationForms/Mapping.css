@@ -6,6 +6,10 @@
     background-color: white;
 }
 
+.unt-tab-content .form-select {
+    width: auto;
+}
+
 .configuration-action-bar {
     align-items: center;
     border-bottom: 1px solid #dee2e6;
