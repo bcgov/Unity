@@ -246,6 +246,11 @@
     "Unity.GrantManager.ApplicationManagement.Payment.Supplier.Update": "Edit Supplier Info",
     "Unity.GrantManager.ApplicationManagement.Payment.PaymentList": "Payment List",
 
+    "Unity.GrantManager.ApplicationManagement.Application.Status": "External Status Visibility",
+    "Unity.GrantManager.ApplicationManagement.Application.Status.Publish": "Publish",
+    "Unity.GrantManager.ApplicationManagement.Application.Status.Unpublish": "Unpublish",
+    "Unity.GrantManager.ApplicationManagement.Application.Status.BulkPublish": "Bulk Publish",
+
     "Permission:GrantApplicationManagement.ProjectInfo": "Project Info",
     "Permission:GrantApplicationManagement.ProjectInfo.Update": "Project Info Update",
     "Permission:GrantApplicationManagement.ProjectInfo.Update.UpdateFinalStateFields": "Edit Project Info Fields After Approval",

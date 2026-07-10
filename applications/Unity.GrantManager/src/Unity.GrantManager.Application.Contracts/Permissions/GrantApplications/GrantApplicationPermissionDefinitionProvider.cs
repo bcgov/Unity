@@ -70,6 +70,12 @@ namespace Unity.GrantManager.Permissions.GrantApplications
             approvalPermissions.AddChild(GrantApplicationPermissions.Approvals.DeferAfterApproval, L("Permission:GrantApplicationManagement.Approvals.DeferAfterApproval"));
             approvalPermissions.AddChild(GrantApplicationPermissions.Approvals.BulkApplicationApproval, L("Permission:GrantApplicationManagement.Approvals.BulkApplicationApproval"));
 
+            // External Status Visibility
+            var statusVisibilityPermissions = grantApplicationPermissionsGroup.AddPermission(UnitySelector.Application.Status.Default, L(UnitySelector.Application.Status.Default));
+            statusVisibilityPermissions.AddUnityChild(UnitySelector.Application.Status.Publish);
+            statusVisibilityPermissions.AddUnityChild(UnitySelector.Application.Status.Unpublish);
+            statusVisibilityPermissions.AddUnityChild(UnitySelector.Application.Status.BulkPublish);
+
             // Comments
             var appCommentPermissions = grantApplicationPermissionsGroup.AddPermission(GrantApplicationPermissions.Comments.Default, L("Permission:GrantApplicationManagement.Comments.Default"));
             appCommentPermissions.AddChild(GrantApplicationPermissions.Comments.Add, L("Permission:GrantApplicationManagement.Comments.Add"));
