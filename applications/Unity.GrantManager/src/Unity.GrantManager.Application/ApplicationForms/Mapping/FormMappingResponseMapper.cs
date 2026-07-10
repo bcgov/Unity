@@ -4,9 +4,9 @@ using Unity.AI.Responses;
 
 namespace Unity.GrantManager.ApplicationForms.Mapping;
 
-internal static class MappingSuggestionResponseMapper
+internal static class FormMappingResponseMapper
 {
-    internal static Dictionary<string, string> BuildSubmissionHeaderMapping(MappingSuggestionResponse response)
+    internal static Dictionary<string, string> BuildSubmissionHeaderMapping(FormMappingResponse response)
     {
         var mapping = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 

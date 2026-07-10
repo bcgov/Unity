@@ -104,12 +104,13 @@ public class GenerateFormScoresheetJob(
                         }
                 };
 
-                var scoresheetJson = await aiService.GenerateFormScoresheetAsync(new MappingSuggestionRequest
+                var scoresheetResponse = await aiService.GenerateFormScoresheetAsync(new FormScoresheetRequest
                 {
                     Data = JsonSerializer.SerializeToElement(promptData),
                     PromptVersion = args.PromptVersion
                 });
 
+                var scoresheetJson = JsonSerializer.Serialize(scoresheetResponse);
                 var importDto = ParseScoresheetDefinition(scoresheetJson);
                 var scoresheet = existingScoresheet == null
                     ? BuildScoresheet(importDto, scoresheetJson, scoresheetName)

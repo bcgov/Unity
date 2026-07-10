@@ -105,12 +105,13 @@ public class GenerateFormWorksheetJob(
                     })
                 };
 
-                var worksheetJson = await aiService.GenerateFormWorksheetAsync(new MappingSuggestionRequest
+                var worksheetResponse = await aiService.GenerateFormWorksheetAsync(new FormWorksheetRequest
                 {
                     Data = JsonSerializer.SerializeToElement(promptData),
                     PromptVersion = args.PromptVersion
                 });
 
+                var worksheetJson = JsonSerializer.Serialize(worksheetResponse);
                 var createDto = ParseWorksheetDefinition(worksheetJson);
                 var worksheet = existingWorksheet == null
                     ? BuildWorksheet(createDto, worksheetName)

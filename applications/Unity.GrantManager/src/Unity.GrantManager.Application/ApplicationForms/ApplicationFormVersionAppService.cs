@@ -321,32 +321,32 @@ namespace Unity.GrantManager.ApplicationForms
             await formVersionRepository.UpdateAsync(applicationFormVersion);
         }
 
-        public virtual async Task<ApplicationFormMappingSuggestionDto> GenerateMappingAsync(Guid id)
+        public virtual async Task<ApplicationFormMappingDto> GenerateMappingAsync(Guid id)
         {
             var readModel = await _mappingReadService.GetAsync(id);
-            var response = await _aiService.GenerateFormMappingAsync(new MappingSuggestionRequest
+            var response = await _aiService.GenerateFormMappingAsync(new FormMappingRequest
             {
                 Data = JsonSerializer.SerializeToElement(readModel)
             });
-            var submissionHeaderMapping = MappingSuggestionResponseMapper.BuildSubmissionHeaderMapping(response);
+            var submissionHeaderMapping = FormMappingResponseMapper.BuildSubmissionHeaderMapping(response);
             var applicationFormVersion = await repository.GetAsync(id);
             applicationFormVersion.SubmissionHeaderMapping = JsonSerializer.Serialize(submissionHeaderMapping);
             await repository.UpdateAsync(applicationFormVersion, true);
 
-            return new ApplicationFormMappingSuggestionDto
+            return new ApplicationFormMappingDto
             {
                 ApplicationFormVersionId = id,
-                CoreFieldMatches = response.CoreFieldMatches.Select(item => new MappingSuggestionDto
+                CoreFieldMatches = response.CoreFieldMatches.Select(item => new FormMappingDto
                 {
                     SourceField = item.SourceField,
                     TargetField = item.TargetField,
                     Reason = item.Reason,
                     Confidence = item.Confidence
                 }).ToList(),
-                WorksheetMatches = response.WorksheetMatches.Select(item => new WorksheetMappingSuggestionDto
+                WorksheetMatches = response.WorksheetMatches.Select(item => new FormWorksheetDto
                 {
                     WorksheetName = item.WorksheetName,
-                    FieldMatches = item.FieldMatches.Select(match => new MappingSuggestionDto
+                    FieldMatches = item.FieldMatches.Select(match => new FormMappingDto
                     {
                         SourceField = match.SourceField,
                         TargetField = match.TargetField,

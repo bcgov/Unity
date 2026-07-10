@@ -10,12 +10,10 @@ namespace Unity.AI
         Task<bool> IsAvailableAsync();
 
         Task<AttachmentSummaryResponse> GenerateAttachmentSummaryAsync(AttachmentSummaryRequest request, CancellationToken cancellationToken = default);
-        Task<AttachmentSummaryBatchResponse> GenerateAttachmentSummaryBatchAsync(AttachmentSummaryBatchRequest request, CancellationToken cancellationToken = default);
         Task<ApplicationAnalysisResponse> GenerateApplicationAnalysisAsync(ApplicationAnalysisRequest request, CancellationToken cancellationToken = default);
         Task<ApplicationScoringResponse> GenerateApplicationScoringAsync(ApplicationScoringRequest request, CancellationToken cancellationToken = default);
-        Task<MappingSuggestionResponse> GenerateMappingSuggestionAsync(MappingSuggestionRequest request, CancellationToken cancellationToken = default);
-        Task<MappingSuggestionResponse> GenerateFormMappingAsync(MappingSuggestionRequest request, CancellationToken cancellationToken = default);
-        Task<string> GenerateFormWorksheetAsync(MappingSuggestionRequest request, CancellationToken cancellationToken = default);
-        Task<string> GenerateFormScoresheetAsync(MappingSuggestionRequest request, CancellationToken cancellationToken = default);
+        Task<FormMappingResponse> GenerateFormMappingAsync(FormMappingRequest request, CancellationToken cancellationToken = default);
+        Task<FormWorksheetResponse> GenerateFormWorksheetAsync(FormWorksheetRequest request, CancellationToken cancellationToken = default);
+        Task<FormScoresheetResponse> GenerateFormScoresheetAsync(FormScoresheetRequest request, CancellationToken cancellationToken = default);
     }
 }

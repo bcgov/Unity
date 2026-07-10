@@ -2,8 +2,8 @@ using System.Collections.Generic;
 
 namespace Unity.GrantManager.ApplicationForms.Mapping;
 
-public class WorksheetMappingSuggestionDto
+public class FormWorksheetDto
 {
     public string WorksheetName { get; set; } = string.Empty;
-    public List<MappingSuggestionDto> FieldMatches { get; set; } = [];
+    public List<FormMappingDto> FieldMatches { get; set; } = [];
 }

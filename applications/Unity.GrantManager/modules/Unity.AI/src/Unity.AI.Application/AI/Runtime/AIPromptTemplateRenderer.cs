@@ -40,20 +40,6 @@ public static class AIPromptTemplateRenderer
             });
     }
 
-    public static string BuildAttachmentSummaryBatchUserPrompt(
-        string userPromptTemplate,
-        string attachments,
-        string? metadataJson = null)
-    {
-        return RenderPromptTemplate(
-            userPromptTemplate,
-            metadataJson,
-            new Dictionary<string, string>
-            {
-                ["ATTACHMENTS"] = attachments
-            });
-    }
-
     public static string BuildApplicationScoringUserPrompt(
         string userPromptTemplate,
         string data,
@@ -74,7 +60,7 @@ public static class AIPromptTemplateRenderer
             });
     }
 
-    public static string BuildMappingSuggestionUserPrompt(
+    public static string BuildFormMappingUserPrompt(
         string userPromptTemplate,
         string data,
         string? metadataJson = null)

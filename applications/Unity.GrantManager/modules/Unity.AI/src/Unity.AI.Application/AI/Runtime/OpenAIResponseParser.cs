@@ -47,49 +47,6 @@ public class OpenAIResponseParser : ITransientDependency
         return response;
     }
 
-    public static AttachmentSummaryBatchResponse ParseAttachmentSummaryBatchResponse(string raw)
-    {
-        var response = new AttachmentSummaryBatchResponse();
-        if (!TryParseJsonObjectFromResponse(raw, out var root))
-        {
-            return response;
-        }
-
-        if (!root.TryGetProperty("attachments", out var attachments) || attachments.ValueKind != JsonValueKind.Array)
-        {
-            return response;
-        }
-
-        foreach (var attachment in attachments.EnumerateArray())
-        {
-            if (attachment.ValueKind != JsonValueKind.Object)
-            {
-                continue;
-            }
-
-            var attachmentId = attachment.TryGetProperty("attachmentId", out var idProp) && idProp.ValueKind == JsonValueKind.String
-                ? idProp.GetString() ?? string.Empty
-                : string.Empty;
-
-            if (string.IsNullOrWhiteSpace(attachmentId))
-            {
-                continue;
-            }
-
-            var summary = attachment.TryGetProperty(AIJsonKeys.Summary, out var summaryProp) && summaryProp.ValueKind == JsonValueKind.String
-                ? summaryProp.GetString() ?? string.Empty
-                : string.Empty;
-
-            response.Attachments.Add(new AttachmentSummaryBatchItemResponse
-            {
-                AttachmentId = attachmentId,
-                Summary = summary
-            });
-        }
-
-        return response;
-    }
-
     public static ApplicationScoringResponse ParseApplicationScoringResponse(string raw, IReadOnlyDictionary<string, string>? questionIdAliasMap = null)
     {
         var response = new ApplicationScoringResponse();
@@ -134,9 +91,9 @@ public class OpenAIResponseParser : ITransientDependency
         return response;
     }
 
-    public static MappingSuggestionResponse ParseMappingSuggestionResponse(string raw)
+    public static FormMappingResponse ParseFormMappingResponse(string raw)
     {
-        var response = new MappingSuggestionResponse();
+        var response = new FormMappingResponse();
         if (!TryParseJsonObjectFromResponse(raw, out var root))
         {
             return response;
@@ -144,18 +101,18 @@ public class OpenAIResponseParser : ITransientDependency
 
         if (root.TryGetProperty("coreFieldMatches", out var coreFieldMatches) && coreFieldMatches.ValueKind == JsonValueKind.Array)
         {
-            response.CoreFieldMatches = ParseMappingSuggestionItems(coreFieldMatches).ToList();
+            response.CoreFieldMatches = ParseFormMappingMatches(coreFieldMatches).ToList();
         }
 
         if (root.TryGetProperty("worksheetMatches", out var worksheetMatches) && worksheetMatches.ValueKind == JsonValueKind.Array)
         {
             response.WorksheetMatches = worksheetMatches.EnumerateArray()
                 .Where(item => item.ValueKind == JsonValueKind.Object)
-                .Select(item => new WorksheetMappingSuggestionResponse
-                {
-                    WorksheetName = item.TryGetProperty("worksheetName", out var name) && name.ValueKind == JsonValueKind.String ? name.GetString() ?? string.Empty : string.Empty,
-                    FieldMatches = item.TryGetProperty("fieldMatches", out var matches) && matches.ValueKind == JsonValueKind.Array
-                        ? ParseMappingSuggestionItems(matches).ToList()
+                    .Select(item => new FormMappingWorksheetResponse
+                    {
+                        WorksheetName = item.TryGetProperty("worksheetName", out var name) && name.ValueKind == JsonValueKind.String ? name.GetString() ?? string.Empty : string.Empty,
+                        FieldMatches = item.TryGetProperty("fieldMatches", out var matches) && matches.ValueKind == JsonValueKind.Array
+                            ? ParseFormMappingMatches(matches).ToList()
                         : []
                 })
                 .ToList();
@@ -165,10 +122,10 @@ public class OpenAIResponseParser : ITransientDependency
         {
             response.WorksheetCreationSuggestions = worksheetCreationSuggestions.EnumerateArray()
                 .Where(item => item.ValueKind == JsonValueKind.Object)
-                .Select(item => new WorksheetCreationSuggestionResponse
-                {
-                    WorksheetName = item.TryGetProperty("worksheetName", out var name) && name.ValueKind == JsonValueKind.String ? name.GetString() ?? string.Empty : string.Empty,
-                    Reason = item.TryGetProperty("reason", out var reason) && reason.ValueKind == JsonValueKind.String ? reason.GetString() ?? string.Empty : string.Empty,
+                    .Select(item => new FormWorksheetCreationResponse
+                    {
+                        WorksheetName = item.TryGetProperty("worksheetName", out var name) && name.ValueKind == JsonValueKind.String ? name.GetString() ?? string.Empty : string.Empty,
+                        Reason = item.TryGetProperty("reason", out var reason) && reason.ValueKind == JsonValueKind.String ? reason.GetString() ?? string.Empty : string.Empty,
                     SuggestedFields = item.TryGetProperty("suggestedFields", out var fields) && fields.ValueKind == JsonValueKind.Array
                         ? ParseMappingFields(fields).ToList()
                         : []
@@ -180,10 +137,10 @@ public class OpenAIResponseParser : ITransientDependency
         {
             response.Issues = issues.EnumerateArray()
                 .Where(item => item.ValueKind == JsonValueKind.Object)
-                .Select(item => new MappingIssueResponse
-                {
-                    Code = item.TryGetProperty("code", out var code) && code.ValueKind == JsonValueKind.String ? code.GetString() ?? string.Empty : string.Empty,
-                    Message = item.TryGetProperty("message", out var message) && message.ValueKind == JsonValueKind.String ? message.GetString() ?? string.Empty : string.Empty
+                    .Select(item => new FormMappingIssueResponse
+                    {
+                        Code = item.TryGetProperty("code", out var code) && code.ValueKind == JsonValueKind.String ? code.GetString() ?? string.Empty : string.Empty,
+                        Message = item.TryGetProperty("message", out var message) && message.ValueKind == JsonValueKind.String ? message.GetString() ?? string.Empty : string.Empty
                 })
                 .ToList();
         }
@@ -292,7 +249,7 @@ public class OpenAIResponseParser : ITransientDependency
         }
     }
 
-    private static IEnumerable<MappingSuggestionItemResponse> ParseMappingSuggestionItems(JsonElement itemsArray)
+    private static IEnumerable<FormMappingMatchResponse> ParseFormMappingMatches(JsonElement itemsArray)
     {
         foreach (var item in itemsArray.EnumerateArray())
         {
@@ -301,7 +258,7 @@ public class OpenAIResponseParser : ITransientDependency
                 continue;
             }
 
-            yield return new MappingSuggestionItemResponse
+            yield return new FormMappingMatchResponse
             {
                 SourceField = item.TryGetProperty("sourceField", out var sourceField) && sourceField.ValueKind == JsonValueKind.String ? sourceField.GetString() ?? string.Empty : string.Empty,
                 TargetField = item.TryGetProperty("targetField", out var targetField) && targetField.ValueKind == JsonValueKind.String ? targetField.GetString() ?? string.Empty : string.Empty,
@@ -311,7 +268,7 @@ public class OpenAIResponseParser : ITransientDependency
         }
     }
 
-    private static IEnumerable<MappingFieldResponse> ParseMappingFields(JsonElement itemsArray)
+    private static IEnumerable<FormMappingFieldResponse> ParseMappingFields(JsonElement itemsArray)
     {
         foreach (var item in itemsArray.EnumerateArray())
         {
@@ -320,7 +277,7 @@ public class OpenAIResponseParser : ITransientDependency
                 continue;
             }
 
-            yield return new MappingFieldResponse
+            yield return new FormMappingFieldResponse
             {
                 Name = item.TryGetProperty("name", out var name) && name.ValueKind == JsonValueKind.String ? name.GetString() ?? string.Empty : string.Empty,
                 Type = item.TryGetProperty("type", out var type) && type.ValueKind == JsonValueKind.String ? type.GetString() ?? string.Empty : string.Empty,

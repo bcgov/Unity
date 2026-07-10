@@ -30,7 +30,7 @@ public class ApplicationFormVersionAppServiceTests(ITestOutputHelper outputHelpe
     public async Task GenerateMappingAsync_Should_Save_SubmissionHeaderMapping_From_Ai_Response()
     {
         var formVersionId = Guid.NewGuid();
-        MappingSuggestionRequest? capturedRequest = null;
+        FormMappingRequest? capturedRequest = null;
         var repository = Substitute.For<IRepository<ApplicationFormVersion, Guid>>();
         var formVersion = new ApplicationFormVersion
         {
@@ -58,12 +58,12 @@ public class ApplicationFormVersionAppServiceTests(ITestOutputHelper outputHelpe
         });
 
         var aiService = Substitute.For<IAIService>();
-        aiService.GenerateFormMappingAsync(Arg.Do<MappingSuggestionRequest>(request => capturedRequest = request), Arg.Any<System.Threading.CancellationToken>())
-            .Returns(new MappingSuggestionResponse
+        aiService.GenerateFormMappingAsync(Arg.Do<FormMappingRequest>(request => capturedRequest = request), Arg.Any<System.Threading.CancellationToken>())
+            .Returns(new FormMappingResponse
             {
                 CoreFieldMatches =
                 [
-                    new MappingSuggestionItemResponse
+                    new FormMappingMatchResponse
                     {
                         SourceField = "ProjectName",
                         TargetField = "ProjectName",

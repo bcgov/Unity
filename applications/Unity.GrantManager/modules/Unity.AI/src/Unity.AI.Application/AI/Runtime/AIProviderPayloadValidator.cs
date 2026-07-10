@@ -14,39 +14,6 @@ namespace Unity.AI.Runtime
                 : AIResponseValidationResult.Invalid("Attachment summary response was empty.");
         }
 
-        public static AIResponseValidationResult ValidateAttachmentSummaryBatchJson(string response)
-        {
-            if (!TryParseRootObject(response, out var root))
-            {
-                return AIResponseValidationResult.Invalid("Attachment summary batch response was not valid JSON.");
-            }
-
-            if (!root.TryGetProperty("attachments", out var attachments) || attachments.ValueKind != JsonValueKind.Array)
-            {
-                return AIResponseValidationResult.Invalid("Attachment summary batch response is missing required field 'attachments' (expected array).");
-            }
-
-            foreach (var attachment in attachments.EnumerateArray())
-            {
-                if (attachment.ValueKind != JsonValueKind.Object)
-                {
-                    return AIResponseValidationResult.Invalid("Attachment summary batch response includes an invalid attachment item.");
-                }
-
-                if (!attachment.TryGetProperty("attachmentId", out var attachmentId) || attachmentId.ValueKind != JsonValueKind.String || string.IsNullOrWhiteSpace(attachmentId.GetString()))
-                {
-                    return AIResponseValidationResult.Invalid("Attachment summary batch response is missing a valid attachmentId.");
-                }
-
-                if (!attachment.TryGetProperty(AIJsonKeys.Summary, out var summary) || summary.ValueKind != JsonValueKind.String)
-                {
-                    return AIResponseValidationResult.Invalid("Attachment summary batch response is missing a valid summary.");
-                }
-            }
-
-            return AIResponseValidationResult.Success();
-        }
-
         public static AIResponseValidationResult ValidateApplicationAnalysisJson(string response)
         {
             if (!TryParseRootObject(response, out var root))
@@ -145,7 +112,7 @@ namespace Unity.AI.Runtime
             return AIResponseValidationResult.Success();
         }
 
-        public static AIResponseValidationResult ValidateMappingSuggestionJson(string response)
+        public static AIResponseValidationResult ValidateFormMappingJson(string response)
         {
             if (!TryParseRootObject(response, out _))
             {

@@ -52,13 +52,13 @@ public class GenerateFormMappingJob(
             try
             {
                 var readModel = await mappingReadService.GetAsync(args.ApplicationFormVersionId);
-                var response = await aiService.GenerateFormMappingAsync(new MappingSuggestionRequest
+                var response = await aiService.GenerateFormMappingAsync(new FormMappingRequest
                 {
                     Data = JsonSerializer.SerializeToElement(readModel),
                     PromptVersion = args.PromptVersion
                 });
 
-                var submissionHeaderMapping = MappingSuggestionResponseMapper.BuildSubmissionHeaderMapping(response);
+                var submissionHeaderMapping = FormMappingResponseMapper.BuildSubmissionHeaderMapping(response);
                 var applicationFormVersion = await applicationFormVersionRepository.GetAsync(args.ApplicationFormVersionId);
                 applicationFormVersion.SubmissionHeaderMapping = JsonSerializer.Serialize(submissionHeaderMapping);
                 await applicationFormVersionRepository.UpdateAsync(applicationFormVersion, true);

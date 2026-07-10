@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 
 namespace Unity.AI.Requests;
 
-public class MappingSuggestionRequest
+public class FormWorksheetRequest
 {
     [JsonPropertyName("data")]
     public JsonElement Data { get; set; }
