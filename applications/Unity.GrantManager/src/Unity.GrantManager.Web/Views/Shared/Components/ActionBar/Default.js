@@ -27,6 +27,7 @@ $(function () {
     });
     let publishApplicationsModal = new abp.ModalManager({
         viewUrl: 'BulkActions/BulkPublishApplications',
+        modalClass: 'BulkPublishModal'
     });
     //#endregion Modal Managers
 
@@ -271,12 +272,13 @@ $(function () {
             'The application(s) have been successfully published',
             'Publish Application'
         );
+        publishApplicationsModal.close();
         PubSub.publish("refresh_application_list");
     });
     //#endregion Generic Modal Result Events
 
     //#region Batch Publish
-    $('#bulkPublish').on("click", function () {
+    $('#openBulkPublishModal').on("click", function () {
         // Store application IDs in distributed cache to avoid URL length limits
         unity.grantManager.applications.applicationBulkActions
             .storeApplicationIds({ applicationIds: selectedApplicationIds })
@@ -290,12 +292,6 @@ $(function () {
                 abp.notify.error('Failed to prepare bulk publish. Please try again.');
                 console.error('Error storing application IDs:', error);
             });
-    });
-
-    publishApplicationsModal.onResult(function (_, response) {
-        // This is here for future validation or additional processing if needed
-        publishApplicationsModal.close();
-        PubSub.publish("refresh_application_list");
     });
     //#endregion Batch Publish
 

@@ -31,7 +31,7 @@
                                 <abp-column size="_9" class="px-1 flex-grow-1">
                                     <div class="action-details-header">
                                         <div class="header-data reference-no">@Model.BulkApplications[i].ReferenceNo</div>
-                                        <div class="header-data applicant-name">
+                                        <div class="header-data applicant-name nowrap">
                                                 @(string.IsNullOrWhiteSpace(Model.BulkApplications[i].ApplicantName) ? "Applicant Name" : @Model.BulkApplications[i].ApplicantName)
                                         </div>
                                         <div class="header-data form-name pr-1">
@@ -46,7 +46,7 @@
                                                 size="Small"
                                                 icon-type="Other"
                                                 icon="fa fa-times"
-                                                class="m-0 p-0"
+                                                class="removeRow m-0 p-0"
                                                 data-parameter="@Model.BulkApplications[i].ApplicationId" />
                                 </abp-column>
                             </abp-row>
@@ -87,10 +87,10 @@
             <abp-row id="batch-action-summary" class="m-0 batch-action-summary d-none">
                 <abp-column size="_12" class="px-3">
                     <p id="maxCountWarning" class="alert alert-light border-0 border-4 border-start rounded-0 text-body d-none">
-                        <span class="action-note-prefix action-note-error">Error</span> You have exceeded the maximum number of items for bulk publishing. Please reduce the number to 50 or fewer
+                        <span class="action-note-prefix action-note-error">Error</span> You have exceeded the maximum number of items for bulk status publishing. Please reduce the number to 50 or fewer
                     </p>
                     <p id="minCountWarning" class="alert alert-light border-0 border-4 border-start rounded-0 text-body d-none">
-                        <span class="action-note-prefix action-note-error">Error</span> @Model.MaxBatchCountExceededError
+                            <span class="action-note-prefix action-note-error">Error</span> You have no items selected for bulk status publishing. Please close this prompt to continue.
                     </p>
                 </abp-column>
             </abp-row>
@@ -104,20 +104,19 @@
         }
     </abp-modal-body>
     <abp-modal-footer>
-        <abp-button id="btnSubmitBatchApproval"
+        <abp-button id="btnSubmitBatchPublish"
                     data-busy-text="Saving..."
                     class="btn btn-primary"
                     disabled="@Model.Invalid"
                     text="Confirm"
                     type="submit">
         </abp-button>
-        <abp-button id="btnCancelBatchApproval"
+        <abp-button id="btnCancelBatchPublish"
                     class="btn btn-secondary"
+                    aria-label="Cancel"
                     data-bs-dismiss="modal"
-                    text="@L["ApplicationBatchApprovalRequest:CancelButtonText"].Value"
-                    data-dismiss="modal"
-                    onclick="closeApprovals()"
-                    onkeydown="if(event.key === 'Enter' || event.key === ' ') { closeApprovals(); event.preventDefault(); }"> 
+                    data-dismiss="modal" 
+                    text="@L["ApplicationBatchApprovalRequest:CancelButtonText"].Value">
         </abp-button>
     </abp-modal-footer>
 </abp-modal>

@@ -17,12 +17,12 @@ function setMaxCountError(visible) {
 function enableBulkPublishSubmit() {
     $("#bulkPublishApplicationsModal")
         .find('#btnSubmitBatchPublish').prop("disabled", false);
-}
+    }
 
 function disableBulkPublishSubmit() {
     $("#bulkPublishApplicationsModal")
         .find('#btnSubmitBatchPublish').prop("disabled", true);
-}
+    }
 
 function closePublish() {
     $('#bulkPublishApplicationsModal').modal('hide');
@@ -37,33 +37,45 @@ function runValidations() {
     });
 
     isValid = validBatchCount();
-    $('#batch-action-summary').toggleClass('d-none', isValid);
+        $('#batch-action-summary').toggleClass('d-none', isValid);
 
-    if (isValid) {
+        if (isValid) {
         enableBulkPublishSubmit();
-    } else {
+        } else {
         disableBulkPublishSubmit();
+        }
     }
-}
 
 function validBatchCount() {
-    let applicationsCount = $('#ApplicationsCount').val();
-    let maxBatchCount = $('#MaxBatchCount').val();
-    let validationMaxValid = true;
-    let validationMinValid = true;
+        let applicationsCount = Number.parseInt(String($('#ApplicationsCount').val() ?? ''), 10);
+        let maxBatchCount = Number.parseInt(String($('#MaxBatchCount').val() ?? ''), 10);
+        let validationMaxValid = true;
+        let validationMinValid = true;
 
-    if (maxBatchCount <= applicationsCount) {
-        validationMaxValid = false;
-    } else if (applicationsCount === 0) {
-        validationMinValid = false;
-    }
+        const hasInvalidNumber = Number.isNaN(applicationsCount) || Number.isNaN(maxBatchCount);
+        if (hasInvalidNumber) {
+            return false;
+        }
 
-    $('#maxCountWarning').toggleClass('d-none', validationMaxValid);
-    $('#minCountWarning').toggleClass('d-none', validationMinValid);
+        if (maxBatchCount <= applicationsCount) {
+            validationMaxValid = false;
+        } else if (applicationsCount == 0) {
+            validationMinValid = false;
+        }
 
-    return validationMaxValid && validationMinValid;
+        $('#maxCountWarning').toggleClass('d-none', validationMaxValid);
+        $('#minCountWarning').toggleClass('d-none', validationMinValid);
+        $('.batch-action-card').toggleClass('d-none', !validationMinValid);
+
+        return validationMaxValid && validationMinValid;
 }
 
 $(function () {
-    runValidations();
+    class BulkPublishModal {
+        initModal(publicApi, args) {
+            runValidations();
+        }
+    }
+
+    abp.modals.BulkPublishModal = BulkPublishModal;
 });
