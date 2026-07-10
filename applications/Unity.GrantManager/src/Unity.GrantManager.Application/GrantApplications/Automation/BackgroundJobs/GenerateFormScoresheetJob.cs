@@ -31,6 +31,11 @@ public class GenerateFormScoresheetJob(
     IAIRateLimiter aiRateLimiter,
     ILogger<GenerateFormScoresheetJob> logger) : AsyncBackgroundJob<GenerateFormScoresheetBackgroundJobArgs>, ITransientDependency
 {
+    private static readonly JsonSerializerOptions CaseInsensitiveJsonOptions = new()
+    {
+        PropertyNameCaseInsensitive = true
+    };
+
     public override async Task ExecuteAsync(GenerateFormScoresheetBackgroundJobArgs args)
     {
         using var logScope = AIGenerationLogScope.Begin(
@@ -106,10 +111,18 @@ public class GenerateFormScoresheetJob(
                 });
 
                 var importDto = ParseScoresheetDefinition(scoresheetJson);
-                var scoresheet = existingScoresheet ?? await scoresheetRepository.InsertAsync(BuildScoresheet(importDto, scoresheetJson, scoresheetName));
-                RebuildScoresheet(scoresheet, importDto, scoresheetJson, scoresheetName);
+                var scoresheet = existingScoresheet == null
+                    ? BuildScoresheet(importDto, scoresheetJson, scoresheetName)
+                    : RebuildScoresheet(existingScoresheet, importDto, scoresheetJson, scoresheetName);
                 scoresheet.Published = true;
-                await scoresheetRepository.UpdateAsync(scoresheet);
+                if (existingScoresheet == null)
+                {
+                    await scoresheetRepository.InsertAsync(scoresheet);
+                }
+                else
+                {
+                    await scoresheetRepository.UpdateAsync(scoresheet);
+                }
 
                 applicationForm.ScoresheetId = scoresheet.Id;
                 await applicationFormRepository.UpdateAsync(applicationForm);
@@ -145,10 +158,7 @@ public class GenerateFormScoresheetJob(
             throw new InvalidOperationException("Scoresheet generation returned empty content.");
         }
 
-        var dto = JsonSerializer.Deserialize<CreateScoresheetDto>(json, new JsonSerializerOptions
-        {
-            PropertyNameCaseInsensitive = true
-        });
+        var dto = JsonSerializer.Deserialize<CreateScoresheetDto>(json, CaseInsensitiveJsonOptions);
 
         return dto ?? throw new InvalidOperationException("Scoresheet generation returned an unusable scoresheet definition.");
     }
@@ -161,89 +171,149 @@ public class GenerateFormScoresheetJob(
     private static Scoresheet BuildScoresheet(CreateScoresheetDto dto, string json, string scoresheetName)
     {
         var scoresheet = new Scoresheet(Guid.NewGuid(), dto.Title, scoresheetName);
-        var parsed = JsonSerializer.Deserialize<JsonElement>(json, new JsonSerializerOptions
-        {
-            PropertyNameCaseInsensitive = true
-        });
-
-        if (!parsed.TryGetProperty("Version", out var versionElement) || versionElement.ValueKind != JsonValueKind.Number)
+        var parsed = ParseScoresheetElement(json);
+        if (!TryGetNumberProperty(parsed, "Version", out var version))
         {
             throw new InvalidOperationException("Scoresheet generation returned a definition without a valid Version.");
         }
 
-        scoresheet.Version = versionElement.GetUInt32();
+        scoresheet.Version = version;
 
-        foreach (var section in parsed.GetProperty("Sections").EnumerateArray())
+        if (!parsed.TryGetProperty("Sections", out var sectionsElement) || sectionsElement.ValueKind != JsonValueKind.Array)
         {
-            var sectionName = section.GetProperty("Name").GetString() ?? string.Empty;
-            var sectionOrder = section.GetProperty("Order").GetUInt32();
+            throw new InvalidOperationException("Scoresheet generation returned a definition without Sections.");
+        }
+
+        foreach (var section in sectionsElement.EnumerateArray())
+        {
+            var sectionName = GetRequiredStringProperty(section, "Name", "section");
+            var sectionOrder = GetRequiredNumberProperty(section, "Order", "section");
             var scoresheetSection = new ScoresheetSection(Guid.NewGuid(), sectionName, sectionOrder);
             scoresheet.AddSection(scoresheetSection);
 
-            foreach (var field in section.GetProperty("Fields").EnumerateArray())
+            if (!section.TryGetProperty("Fields", out var fieldsElement) || fieldsElement.ValueKind != JsonValueKind.Array)
+            {
+                throw new InvalidOperationException($"Scoresheet generation returned section '{sectionName}' without Fields.");
+            }
+
+            foreach (var field in fieldsElement.EnumerateArray())
             {
                 var question = new Question(
                     Guid.NewGuid(),
-                    field.GetProperty("Name").GetString() ?? string.Empty,
-                    field.GetProperty("Label").GetString() ?? string.Empty,
-                    (Unity.Flex.Scoresheets.Enums.QuestionType)field.GetProperty("Type").GetInt32(),
-                    field.GetProperty("Order").GetUInt32(),
+                    GetRequiredStringProperty(field, "Name", "field"),
+                    GetRequiredStringProperty(field, "Label", "field"),
+                    (Unity.Flex.Scoresheets.Enums.QuestionType)GetRequiredNumberProperty(field, "Type", "field"),
+                    GetRequiredNumberProperty(field, "Order", "field"),
                     field.TryGetProperty("Description", out var description) && description.ValueKind != JsonValueKind.Null
                         ? description.GetString()
                         : null,
-                    field.TryGetProperty("Definition", out var definition) ? definition.GetString() : null);
+                    field.TryGetProperty("Definition", out var definition) && definition.ValueKind != JsonValueKind.Null
+                        ? definition.GetString()
+                        : null);
                 question.SectionId = scoresheetSection.Id;
                 scoresheetSection.Fields.Add(question);
             }
         }
 
         scoresheet.SetReportingFields(
-            parsed.GetProperty("ReportKeys").GetString() ?? string.Empty,
-            parsed.GetProperty("ReportColumns").GetString() ?? string.Empty,
-            parsed.GetProperty("ReportViewName").GetString() ?? string.Empty);
+            GetRequiredStringProperty(parsed, "ReportKeys", "scoresheet"),
+            GetRequiredStringProperty(parsed, "ReportColumns", "scoresheet"),
+            GetRequiredStringProperty(parsed, "ReportViewName", "scoresheet"));
 
         return scoresheet;
     }
 
-    private static void RebuildScoresheet(Scoresheet scoresheet, CreateScoresheetDto dto, string json, string scoresheetName)
+    private static Scoresheet RebuildScoresheet(Scoresheet scoresheet, CreateScoresheetDto dto, string json, string scoresheetName)
     {
-        var parsed = JsonSerializer.Deserialize<JsonElement>(json, new JsonSerializerOptions
+        var parsed = ParseScoresheetElement(json);
+        if (!TryGetNumberProperty(parsed, "Version", out var version))
         {
-            PropertyNameCaseInsensitive = true
-        });
+            throw new InvalidOperationException("Scoresheet generation returned a definition without a valid Version.");
+        }
 
         scoresheet.SetName(scoresheetName);
         scoresheet.Title = dto.Title;
-        scoresheet.Version = parsed.GetProperty("Version").GetUInt32();
+        scoresheet.Version = version;
         scoresheet.SetReportingFields(
-            parsed.GetProperty("ReportKeys").GetString() ?? string.Empty,
-            parsed.GetProperty("ReportColumns").GetString() ?? string.Empty,
-            parsed.GetProperty("ReportViewName").GetString() ?? string.Empty);
+            GetRequiredStringProperty(parsed, "ReportKeys", "scoresheet"),
+            GetRequiredStringProperty(parsed, "ReportColumns", "scoresheet"),
+            GetRequiredStringProperty(parsed, "ReportViewName", "scoresheet"));
 
         scoresheet.Sections.Clear();
 
-        foreach (var section in parsed.GetProperty("Sections").EnumerateArray())
+        if (!parsed.TryGetProperty("Sections", out var sectionsElement) || sectionsElement.ValueKind != JsonValueKind.Array)
         {
-            var sectionName = section.GetProperty("Name").GetString() ?? string.Empty;
-            var sectionOrder = section.GetProperty("Order").GetUInt32();
+            throw new InvalidOperationException("Scoresheet generation returned a definition without Sections.");
+        }
+
+        foreach (var section in sectionsElement.EnumerateArray())
+        {
+            var sectionName = GetRequiredStringProperty(section, "Name", "section");
+            var sectionOrder = GetRequiredNumberProperty(section, "Order", "section");
             var scoresheetSection = new ScoresheetSection(Guid.NewGuid(), sectionName, sectionOrder);
             scoresheet.AddSection(scoresheetSection);
 
-            foreach (var field in section.GetProperty("Fields").EnumerateArray())
+            if (!section.TryGetProperty("Fields", out var fieldsElement) || fieldsElement.ValueKind != JsonValueKind.Array)
+            {
+                throw new InvalidOperationException($"Scoresheet generation returned section '{sectionName}' without Fields.");
+            }
+
+            foreach (var field in fieldsElement.EnumerateArray())
             {
                 var question = new Question(
                     Guid.NewGuid(),
-                    field.GetProperty("Name").GetString() ?? string.Empty,
-                    field.GetProperty("Label").GetString() ?? string.Empty,
-                    (Unity.Flex.Scoresheets.Enums.QuestionType)field.GetProperty("Type").GetInt32(),
-                    field.GetProperty("Order").GetUInt32(),
+                    GetRequiredStringProperty(field, "Name", "field"),
+                    GetRequiredStringProperty(field, "Label", "field"),
+                    (Unity.Flex.Scoresheets.Enums.QuestionType)GetRequiredNumberProperty(field, "Type", "field"),
+                    GetRequiredNumberProperty(field, "Order", "field"),
                     field.TryGetProperty("Description", out var description) && description.ValueKind != JsonValueKind.Null
                         ? description.GetString()
                         : null,
-                    field.TryGetProperty("Definition", out var definition) ? definition.GetString() : null);
+                    field.TryGetProperty("Definition", out var definition) && definition.ValueKind != JsonValueKind.Null
+                        ? definition.GetString()
+                        : null);
                 question.SectionId = scoresheetSection.Id;
                 scoresheetSection.Fields.Add(question);
             }
         }
+
+        return scoresheet;
+    }
+
+    private static JsonElement ParseScoresheetElement(string json)
+    {
+        return JsonSerializer.Deserialize<JsonElement>(json, CaseInsensitiveJsonOptions);
+    }
+
+    private static bool TryGetNumberProperty(JsonElement element, string propertyName, out uint value)
+    {
+        if (element.TryGetProperty(propertyName, out var property) && property.ValueKind == JsonValueKind.Number)
+        {
+            value = property.GetUInt32();
+            return true;
+        }
+
+        value = default;
+        return false;
+    }
+
+    private static string GetRequiredStringProperty(JsonElement element, string propertyName, string sourceName)
+    {
+        if (element.TryGetProperty(propertyName, out var property) && property.ValueKind != JsonValueKind.Null)
+        {
+            return property.GetString() ?? string.Empty;
+        }
+
+        throw new InvalidOperationException($"Scoresheet generation returned a {sourceName} without {propertyName}.");
+    }
+
+    private static uint GetRequiredNumberProperty(JsonElement element, string propertyName, string sourceName)
+    {
+        if (TryGetNumberProperty(element, propertyName, out var value))
+        {
+            return value;
+        }
+
+        throw new InvalidOperationException($"Scoresheet generation returned a {sourceName} without a valid {propertyName}.");
     }
 }

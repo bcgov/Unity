@@ -36,6 +36,11 @@ public class GenerateFormWorksheetJob(
     IAIRateLimiter aiRateLimiter,
     ILogger<GenerateFormWorksheetJob> logger) : AsyncBackgroundJob<GenerateFormWorksheetBackgroundJobArgs>, ITransientDependency
 {
+    private static readonly JsonSerializerOptions CaseInsensitiveJsonOptions = new()
+    {
+        PropertyNameCaseInsensitive = true
+    };
+
     public override async Task ExecuteAsync(GenerateFormWorksheetBackgroundJobArgs args)
     {
         using var logScope = AIGenerationLogScope.Begin(
@@ -60,8 +65,7 @@ public class GenerateFormWorksheetJob(
                 var formVersion = await applicationFormVersionRepository.GetAsync(args.ApplicationFormVersionId);
                 var applicationForm = await applicationFormRepository.GetAsync(formVersion.ApplicationFormId);
                 var worksheetName = BuildWorksheetName(formVersion.Id, applicationForm.Id);
-                var existingWorksheet = await worksheetRepository.GetByNameAsync(worksheetName, true)
-                    ?? (await worksheetRepository.GetListOrderedAsync(formVersion.Id, CorrelationConsts.FormVersion, includeDetails: true)).FirstOrDefault();
+                var existingWorksheet = await worksheetRepository.GetByNameAsync(worksheetName, true);
 
                 List<Worksheet> worksheetSnapshots = [];
                 if (existingWorksheet != null)
@@ -108,10 +112,18 @@ public class GenerateFormWorksheetJob(
                 });
 
                 var createDto = ParseWorksheetDefinition(worksheetJson);
-                var worksheet = existingWorksheet ?? await worksheetRepository.InsertAsync(BuildWorksheet(createDto, worksheetName));
-                RebuildWorksheet(worksheet, createDto);
+                var worksheet = existingWorksheet == null
+                    ? BuildWorksheet(createDto, worksheetName)
+                    : RebuildWorksheet(existingWorksheet, createDto);
                 worksheet.SetPublished(true);
-                await worksheetRepository.UpdateAsync(worksheet);
+                if (existingWorksheet == null)
+                {
+                    await worksheetRepository.InsertAsync(worksheet);
+                }
+                else
+                {
+                    await worksheetRepository.UpdateAsync(worksheet);
+                }
 
                 await UpsertWorksheetLinkAsync(worksheet.Id, formVersion.Id);
 
@@ -146,10 +158,7 @@ public class GenerateFormWorksheetJob(
             throw new InvalidOperationException("Worksheet generation returned empty content.");
         }
 
-        var dto = JsonSerializer.Deserialize<CreateWorksheetDto>(json, new JsonSerializerOptions
-        {
-            PropertyNameCaseInsensitive = true
-        });
+        var dto = JsonSerializer.Deserialize<CreateWorksheetDto>(json, CaseInsensitiveJsonOptions);
 
         return dto ?? throw new InvalidOperationException("Worksheet generation returned an unusable worksheet definition.");
     }
@@ -194,7 +203,7 @@ public class GenerateFormWorksheetJob(
         return worksheet;
     }
 
-    private static void RebuildWorksheet(Worksheet worksheet, CreateWorksheetDto dto)
+    private static Worksheet RebuildWorksheet(Worksheet worksheet, CreateWorksheetDto dto)
     {
         worksheet.SetName(worksheet.Name);
         worksheet.SetTitle(dto.Title);
@@ -223,6 +232,8 @@ public class GenerateFormWorksheetJob(
                 worksheetSection.Fields.Add(customField);
             }
         }
+
+        return worksheet;
     }
 
     private async Task UpsertWorksheetLinkAsync(Guid worksheetId, Guid correlationId)

@@ -3,7 +3,6 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Unity.Flex.Domain.Scoresheets;
-using Unity.Flex.Domain.Worksheets;
 using Unity.AI.Localization;
 using Unity.GrantManager.Applications;
 using Unity.Modules.Shared.Correlation;
@@ -20,7 +19,6 @@ public class AIGenerationPrerequisiteValidator(
     IApplicationFormSubmissionRepository applicationFormSubmissionRepository,
     IApplicationChefsFileAttachmentRepository applicationChefsFileAttachmentRepository,
     IScoresheetRepository scoresheetRepository,
-    IWorksheetListRepository worksheetListRepository,
     IAsyncQueryableExecuter asyncExecuter,
     IStringLocalizer<AIResource> localizer) : IAIGenerationPrerequisiteValidator, ITransientDependency
 {
@@ -72,16 +70,6 @@ public class AIGenerationPrerequisiteValidator(
     {
         var formVersion = await applicationFormVersionRepository.FindAsync(applicationFormVersionId);
         if (formVersion == null)
-        {
-            throw new UserFriendlyException(localizer[AILocalizationKeys.FormWorksheetRequiresFormVersion]);
-        }
-
-        var worksheetLinks = await worksheetListRepository.GetListByCorrelationAsync(
-            formVersion.Id,
-            CorrelationConsts.FormVersion,
-            true);
-
-        if (worksheetLinks == null)
         {
             throw new UserFriendlyException(localizer[AILocalizationKeys.FormWorksheetRequiresFormVersion]);
         }

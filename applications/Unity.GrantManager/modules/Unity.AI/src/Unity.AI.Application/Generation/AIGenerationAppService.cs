@@ -28,13 +28,6 @@ public class AIGenerationAppService(
     ICurrentTenant currentTenant)
     : AIAppService, IAIGenerationAppService
 {
-    private const string ApplicationAnalysisOperationType = "application-analysis";
-    private const string AttachmentSummaryOperationType = "attachment-summary";
-    private const string ApplicationScoringOperationType = "application-scoring";
-    private const string FormMappingOperationType = "form-mapping";
-    private const string FormWorksheetOperationType = "form-worksheet";
-    private const string FormScoresheetOperationType = "form-scoresheet";
-
     [Authorize(AIPermissions.Analysis.GenerateAttachmentSummaries)]
     [HttpPost("attachment-summary")]
     public virtual async Task<List<AttachmentSummaryResultDto>> GenerateAttachmentSummariesAsync(GenerateAttachmentSummariesInputDto input)
@@ -153,12 +146,12 @@ public class AIGenerationAppService(
     {
         var permission = operationType switch
         {
-            ApplicationAnalysisOperationType => AIPermissions.Analysis.ViewApplicationAnalysis,
-            AttachmentSummaryOperationType => AIPermissions.Analysis.ViewAttachmentSummary,
-            ApplicationScoringOperationType => AIPermissions.Analysis.ViewScoringResult,
-            FormMappingOperationType => AIPermissions.Analysis.ViewFormMapping,
-            FormWorksheetOperationType => AIPermissions.Analysis.ViewFormWorksheet,
-            FormScoresheetOperationType => AIPermissions.Analysis.ViewFormScoresheet,
+            AIGenerationRequestKeyHelper.ApplicationAnalysisOperationType => AIPermissions.Analysis.ViewApplicationAnalysis,
+            AIGenerationRequestKeyHelper.AttachmentSummaryOperationType => AIPermissions.Analysis.ViewAttachmentSummary,
+            AIGenerationRequestKeyHelper.ApplicationScoringOperationType => AIPermissions.Analysis.ViewScoringResult,
+            AIGenerationRequestKeyHelper.FormMappingOperationType => AIPermissions.Analysis.ViewFormMapping,
+            AIGenerationRequestKeyHelper.FormWorksheetOperationType => AIPermissions.Analysis.ViewFormWorksheet,
+            AIGenerationRequestKeyHelper.FormScoresheetOperationType => AIPermissions.Analysis.ViewFormScoresheet,
             _ => throw new UserFriendlyException($"Unsupported AI generation operation type: {operationType}")
         };
 
