@@ -471,10 +471,7 @@ function generateAiButtonAction(e, dt, button, config) {
         globalThis.AIGenerationButtonState?.setGenerating($button);
     }
 
-    abp.ajax({
-        url: `/api/app/ai/generation/application-scoring?applicationId=${encodeURIComponent(pageApplicationId)}`,
-        type: 'POST'
-    })
+    globalThis.AIGenerationApi.queueApplicationScoring(pageApplicationId)
         .done(function (generationStatus) {
             const request = generationStatus?.generationRequest;
             const status = String(request?.status ?? '').trim();
@@ -485,15 +482,13 @@ function generateAiButtonAction(e, dt, button, config) {
                 refreshReviewListAfterAiScoring();
                 return;
             }
-
             pollReviewListAiButton($button);
         })
         .fail(function () {
             abp.message.error('Failed to queue AI scoring. Please try again.');
             restoreReviewListAiButton($button);
             globalThis.syncAIRateLimitButtons?.();
-        })
-        ;
+        });
 }
 
 function restoreReviewListAiButton($button) {
@@ -520,29 +515,21 @@ function resumeActiveReviewListAiButton(reviewListTable) {
     }
 
     const $button = $(button.node());
-    abp.ajax({
-        url: `/api/app/ai/generation/status?applicationId=${encodeURIComponent(pageApplicationId)}&operationType=application-scoring`,
-        type: 'GET'
-    })
-        .done(function(generationStatus) {
-            const request = generationStatus?.generationRequest;
-            if (request?.isActive !== true) {
-                return;
-            }
+    globalThis.AIGenerationApi.getStatus(pageApplicationId, 'application-scoring').done(function(generationStatus) {
+        if (generationStatus?.generationRequest?.isActive !== true) {
+            return;
+        }
 
-            globalThis.AIGenerationButtonState?.setGenerating($button);
-            pollReviewListAiButton($button);
-        });
+        globalThis.AIGenerationButtonState?.setGenerating($button);
+        pollReviewListAiButton($button);
+    });
 }
 
 function pollReviewListAiButton($button) {
     globalThis.AIGenerationButtonState.monitor({
         $button,
         originalHtml: generateAiButtonText(null, null, null),
-        getStatus: () => abp.ajax({
-            url: `/api/app/ai/generation/status?applicationId=${encodeURIComponent(pageApplicationId)}&operationType=application-scoring`,
-            type: 'GET'
-        }),
+        getStatus: () => globalThis.AIGenerationApi.getStatus(pageApplicationId, 'application-scoring'),
         onComplete: refreshReviewListAfterAiScoring,
         onFailed: (request) => abp.message.error(request?.failureReason || 'AI scoring failed.')
     });

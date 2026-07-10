@@ -305,7 +305,7 @@ $(function () {
         if (!sendFrom?.trim()) {
             validationErrors.push('Send From is required.');
             markFieldError('sendFrom', 'Send From is required.');
-        } else if (!isValidEmail(sendFrom.trim())) {
+        } else if (!validateEmail(sendFrom.trim())) {
             validationErrors.push('Send From must be a valid email address.');
             markFieldError('sendFrom', 'Send From must be a valid email address.');
         }

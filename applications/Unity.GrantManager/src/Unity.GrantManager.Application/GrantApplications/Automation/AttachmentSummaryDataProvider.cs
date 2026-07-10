@@ -1,14 +1,14 @@
-using System;
 using Microsoft.Extensions.Localization;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Unity.AI.Operations;
 using Unity.AI.Localization;
+using Unity.AI.Operations;
 using Unity.GrantManager.Applications;
-using Volo.Abp;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Uow;
+using Volo.Abp;
 
 namespace Unity.GrantManager.GrantApplications.Automation;
 
@@ -23,16 +23,13 @@ public class AttachmentSummaryDataProvider(
         var attachment = await applicationChefsFileAttachmentRepository.FindAsync(attachmentId);
         await uow.CompleteAsync();
 
-        if (attachment == null)
-        {
-            return null;
-        }
-
-        return new AttachmentSummarySource(
-            attachment.Id,
-            attachment.FileName,
-            attachment.ChefsSubmissionId,
-            attachment.ChefsFileId);
+        return attachment == null
+            ? null
+            : new AttachmentSummarySource(
+                attachment.Id,
+                attachment.FileName,
+                attachment.ChefsSubmissionId,
+                attachment.ChefsFileId);
     }
 
     public async Task UpdateAttachmentSummaryAsync(Guid attachmentId, string summary)
