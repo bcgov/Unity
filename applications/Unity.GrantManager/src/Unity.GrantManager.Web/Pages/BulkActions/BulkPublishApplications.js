@@ -14,60 +14,38 @@ function setMaxCountError(visible) {
     }
 }
 
-function enableBulkPublishSubmit() {
-    $("#bulkPublishApplicationsModal")
-        .find('#btnSubmitBatchPublish').prop("disabled", false);
-    }
-
-function disableBulkPublishSubmit() {
-    $("#bulkPublishApplicationsModal")
-        .find('#btnSubmitBatchPublish').prop("disabled", true);
-    }
-
 function closePublish() {
     $('#bulkPublishApplicationsModal').modal('hide');
 }
 
 function runValidations() {
-    let isValid = true;
-    let itemCount = 0;
-
-    $('#bulkPublishForm input[name="BulkApplications.Index"]').each(function () {
-        itemCount++;
-    });
-
-    isValid = validBatchCount();
-        $('#batch-action-summary').toggleClass('d-none', isValid);
-
-        if (isValid) {
-        enableBulkPublishSubmit();
-        } else {
-        disableBulkPublishSubmit();
-        }
-    }
+    const isValid = validBatchCount();
+    $('#batch-action-summary').toggleClass('d-none', isValid);
+    $("#bulkPublishApplicationsModal").find('#btnSubmitBatchPublish').prop("disabled", !isValid);
+}
 
 function validBatchCount() {
-        let applicationsCount = Number.parseInt(String($('#ApplicationsCount').val() ?? ''), 10);
-        let maxBatchCount = Number.parseInt(String($('#MaxBatchCount').val() ?? ''), 10);
-        let validationMaxValid = true;
-        let validationMinValid = true;
+    const applicationsCount = Number.parseInt(String($('#ApplicationsCount').val() ?? ''), 10);
+    const maxBatchCount = Number.parseInt(String($('#MaxBatchCount').val() ?? ''), 10);
+    let validationMaxValid = true;
+    let validationMinValid = true;
 
-        const hasInvalidNumber = Number.isNaN(applicationsCount) || Number.isNaN(maxBatchCount);
-        if (hasInvalidNumber) {
-            return false;
-        }
+    const hasInvalidNumber = Number.isNaN(applicationsCount) || Number.isNaN(maxBatchCount);
+    if (hasInvalidNumber) {
+        return false;
+    }
 
-        if (applicationsCount > maxBatchCount) {
-            validationMaxValid = false;
-        } else if (applicationsCount === 0) {
-            validationMinValid = false;
-        }
+    if (applicationsCount > maxBatchCount) {
+        validationMaxValid = false;
+    } else if (applicationsCount === 0) {
+        validationMinValid = false;
+    }
 
-        $('#maxCountWarning').toggleClass('d-none', validationMaxValid);
-        $('#minCountWarning').toggleClass('d-none', validationMinValid);
-        $('.batch-action-card').toggleClass('d-none', !validationMinValid);
+    $('#maxCountWarning').toggleClass('d-none', validationMaxValid);
+    $('#minCountWarning').toggleClass('d-none', validationMinValid);
+    $('.batch-action-card').toggleClass('d-none', !validationMinValid);
 
-        return validationMaxValid && validationMinValid;
+    return validationMaxValid && validationMinValid;
 }
 
 $(function () {

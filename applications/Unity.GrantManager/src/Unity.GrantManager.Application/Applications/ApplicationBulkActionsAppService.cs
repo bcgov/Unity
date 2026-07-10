@@ -21,6 +21,7 @@ public class ApplicationBulkActionsAppService(
     IApplicationStatusRepository applicationStatusRepository,
     IApplicationFormRepository applicationFormRepository) : GrantManagerAppService, IApplicationBulkActionsAppService
 {
+    private readonly ApplicationIdsCacheService _cacheService = cacheService;
 
     /// <summary>
     /// Stores application IDs in distributed cache for bulk operations
@@ -36,7 +37,7 @@ public class ApplicationBulkActionsAppService(
 
         try
         {
-            var cacheKey = await cacheService.StoreApplicationIdsAsync(input.ApplicationIds);
+            var cacheKey = await _cacheService.StoreApplicationIdsAsync(input.ApplicationIds);
 
             Logger.LogInformation(
                 "User {UserId} stored {Count} application IDs for bulk operation with cache key: {CacheKey}",

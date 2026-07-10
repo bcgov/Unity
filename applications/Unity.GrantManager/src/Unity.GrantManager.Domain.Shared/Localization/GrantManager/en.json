@@ -533,7 +533,7 @@
     "ApplicationBatchApprovalRequest:InvalidApprovedAmount": "Invalid Approved Amount, it must be greater than 0.00",
     "ApplicationBatchApprovalRequest:InvalidRecommendedAmount": "Invalid Recommended Amount, it must be greater than 0.00",
 
-    "ApplicationBatchPublishRequest:MaxCountExceeded": "You have exceeded the maximum number of items for bulk approval. Please reduce the number to {0} or fewer",
+    "ApplicationBatchPublishRequest:MaxCountExceeded": "You have exceeded the maximum number of items for bulk status publishing. Please reduce the number to {0} or fewer",
     "ApplicationBatchPublishRequest:MinCountExceeded": "You have no items selected for bulk status publishing. Please close this prompt to continue",
     "ApplicationBatchPublishRequest:ConfirmationNote": "By confirming, the selected application statuses will be published and made visible to applicants in the portal.",
 
