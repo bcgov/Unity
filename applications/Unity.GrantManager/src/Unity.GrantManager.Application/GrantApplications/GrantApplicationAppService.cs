@@ -161,6 +161,7 @@ public class GrantApplicationAppService(
                 ContractExecutionDate = rec.ContractExecutionDate,
                 RiskRanking = rec.RiskRanking,
                 UnityApplicationId = rec.UnityApplicationId,
+                ExternalStatusVisibility = rec.ExternalStatusVisibility,
 
                 // From ApplicationStatus
                 Status = rec.Status,

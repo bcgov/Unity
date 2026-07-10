@@ -569,6 +569,7 @@ $(function () {
             getTotalProjectBudgetColumn(columnIndex++),
             getAssigneesColumn(columnIndex++),
             getStatusColumn(columnIndex++),
+            getExternalStatusVisibilityColumn(columnIndex++),
             getRequestedAmountColumn(columnIndex++),
             getApprovedAmountColumn(columnIndex++),
             getEconomicRegionColumn(columnIndex++),
@@ -785,6 +786,19 @@ $(function () {
             data: 'status',
             name: 'status',
             className: 'data-table-header',
+            index: columnIndex
+        }
+    }
+
+    function getExternalStatusVisibilityColumn(columnIndex) {
+        return {
+            title: l('ExternalStatusVisibility'),
+            data: 'externalStatusVisibility',
+            name: 'externalStatusVisibility',
+            className: 'data-table-header',
+            render: function (data) {
+                return data ? 'Published' : 'Unpublished';
+            },
             index: columnIndex
         }
     }

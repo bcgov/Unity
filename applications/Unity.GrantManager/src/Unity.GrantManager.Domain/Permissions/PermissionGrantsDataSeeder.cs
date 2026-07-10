@@ -105,6 +105,13 @@ namespace Unity.GrantManager.Permissions
             UnitySelector.Payment.Tags.Delete,
         ];
 
+        public readonly List<string> ExternalStatusVisibility_CommonPermissions = [
+            UnitySelector.Application.Status.Default,
+            UnitySelector.Application.Status.Publish,
+            UnitySelector.Application.Status.Unpublish,
+            UnitySelector.Application.Status.BulkPublish
+        ];
+
         public async Task SeedAsync(DataSeedContext context)
         {
             // Default permission grants based on role
@@ -145,6 +152,7 @@ namespace Unity.GrantManager.Permissions
                     .. NotificationsScheduling_CommonPermissions,
                     .. Dashboard_CommonPermissions,
                     .. Tags_CommonPermissions,
+                    .. ExternalStatusVisibility_CommonPermissions,
                     AIPermissions.Configuration.ConfigureAI,
                     FlexPermissions.Worksheets.Default,
                     FlexPermissions.Worksheets.Delete
@@ -210,6 +218,7 @@ namespace Unity.GrantManager.Permissions
                     .. NotificationsScheduling_CommonPermissions,
                     .. Dashboard_CommonPermissions,
                     .. Tags_CommonPermissions,
+                    .. ExternalStatusVisibility_CommonPermissions,
 
                     // Role Specific Permissions
                     UnitySelector.Project.Summary.Update.UpdateFinalStateFields,
