@@ -170,6 +170,9 @@ $(function () {
         if (templatesDataTable) {
             templatesDataTable.columns.adjust();
         }
+        if (emailAttachmentsTable) {
+            emailAttachmentsTable.columns.adjust();
+        }
     }
 
     function closeRightPanel() {
@@ -222,6 +225,13 @@ $(function () {
         UiElements.deleteButton.show();
         $('#email-attachments-section').show();
         initEmailAttachmentsTable(data.id);
+        
+        // Recalculate table columns after initialization
+        if (emailAttachmentsTable) {
+            setTimeout(() => {
+                emailAttachmentsTable.columns.adjust().draw();
+            }, 100);
+        }
     }
 
     function populateFieldsForNewTemplate() {
@@ -703,6 +713,9 @@ $(function () {
             return;
         }
 
+        // Ensure table has 100% width
+        $('#EmailAttachmentsTable').css('width', '100%');
+
         emailAttachmentsTable = $('#EmailAttachmentsTable').DataTable(
             abp.libs.datatables.normalizeConfiguration({
                 serverSide: false,
@@ -721,24 +734,17 @@ $(function () {
                 ),
                 columnDefs: [
                     {
-                        title: '<i class="fl fl-paperclip"></i>',
-                        width: '40px',
-                        className: 'text-center',
-                        orderable: false,
-                        render: function () {
-                            return '<i class="fl fl-paperclip"></i>';
-                        }
-                    },
-                    {
+                        targets: 0,
                         title: 'Document Name',
                         data: 'fileName',
-                        className: 'data-table-header text-break',
+                        className: 'data-table-header text-break text-start',
                         width: '40%'
                     },
                     {
+                        targets: 1,
                         title: 'Date',
                         data: 'time',
-                        className: 'data-table-header',
+                        className: 'data-table-header text-start',
                         width: '130px',
                         render: function (data, type) {
                             if (type === 'display' || type === 'filter') {
@@ -748,15 +754,17 @@ $(function () {
                         }
                     },
                     {
+                        targets: 2,
                         title: 'Attached by',
                         data: 'attachedBy',
-                        className: 'data-table-header',
+                        className: 'data-table-header text-start',
                         width: '25%'
                     },
                     {
+                        targets: 3,
                         title: 'File Size',
                         data: 'fileSize',
-                        className: 'data-table-header',
+                        className: 'data-table-header text-start',
                         width: '90px',
                         render: function (data) {
                             if (!data) return '—';
@@ -765,10 +773,11 @@ $(function () {
                         }
                     },
                     {
-                        title: '',
+                        targets: 4,
+                        title: 'Actions',
                         data: 'id',
                         width: '80px',
-                        className: 'text-center',
+                        className: 'text-start',
                         orderable: false,
                         render: function (data) {
                             return generateEmailAttachmentButtonContent(data);
@@ -776,6 +785,9 @@ $(function () {
                     }
                 ],
                 drawCallback: function () {
+                    if (emailAttachmentsTable) {
+                        emailAttachmentsTable.columns.adjust();
+                    }
                 }
             })
         );
@@ -928,6 +940,11 @@ $(function () {
 
             $leftPane.css('flex', `0 0 ${leftPct}%`);
             $rightPane.css({ 'flex': 'none', 'width': rightPct + '%' });
+            
+            // Recalculate table columns while dragging
+            if (emailAttachmentsTable) {
+                emailAttachmentsTable.columns.adjust();
+            }
         });
 
         $(document).on('mouseup.splitDrag', function () {
@@ -935,6 +952,11 @@ $(function () {
                 isDragging = false;
                 $divider.removeClass('dragging');
                 $('body').removeClass('split-dragging');
+                
+                // Final recalculation after dragging completes
+                if (emailAttachmentsTable) {
+                    emailAttachmentsTable.columns.adjust().draw();
+                }
             }
         });
     }
@@ -1047,7 +1069,7 @@ function createMenuItems(dropdownItems, editor) {
  * @returns {string} HTML for attachment button
  */
 function generateEmailAttachmentButtonContent(attachmentId) {
-    return `<button class="btn fullWidth" style="margin:10px" type="button" onclick="deleteEmailAttachment('${attachmentId}')">
+    return `<button class="btn fullWidth btn  btn-action-gray" style="margin:10px" type="button" onclick="deleteEmailAttachment('${attachmentId}')">
                 <i class="fl fl-cancel"></i>
             </button>`;
 }

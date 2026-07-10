@@ -266,7 +266,16 @@ internal static class PolicyRegistrant
         authorizationBuilder.AddPolicy(ReportingPermissions.Configuration.Update,
             policy => policy.RequireClaim(PermissionConstant, ReportingPermissions.Configuration.Update));
         authorizationBuilder.AddPolicy(ReportingPermissions.Configuration.Delete,
-            policy => policy.RequireClaim(PermissionConstant, ReportingPermissions.Configuration.Delete));        
+            policy => policy.RequireClaim(PermissionConstant, ReportingPermissions.Configuration.Delete));
+
+        // Application - External Status Visibility
+        authorizationBuilder.AddPolicy(UnitySelector.Application.Status.Default,
+            policy => policy.RequireClaim(PermissionConstant, UnitySelector.Application.Status.Default));
+        authorizationBuilder.AddPolicy(UnitySelector.Application.Status.Publish,
+            policy => policy.RequireClaim(PermissionConstant, UnitySelector.Application.Status.Publish));
+        authorizationBuilder.AddPolicy(UnitySelector.Application.Status.Unpublish,
+            policy => policy.RequireClaim(PermissionConstant, UnitySelector.Application.Status.Unpublish));
+        authorizationBuilder.AddPolicy(UnitySelector.Application.Status.BulkPublish,
+            policy => policy.RequireClaim(PermissionConstant, UnitySelector.Application.Status.BulkPublish));
     }
 }
-

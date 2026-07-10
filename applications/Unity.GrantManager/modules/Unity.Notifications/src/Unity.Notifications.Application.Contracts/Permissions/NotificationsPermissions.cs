@@ -16,7 +16,6 @@ public static class NotificationsPermissions
         public const string Schedule = "Notifications.Email.Schedule";
         public const string NotificationsTab = "Notifications.Form.Tab";
         public const string ScheduleCreate = "Notifications.Form.Email.Schedule.Create";
-        public const string ScheduleDelete = "Notifications.Form.Email.Schedule.Delete";
         public const string ScheduleCancel = "Notifications.Form.Email.Schedule.Cancel";
     }
 

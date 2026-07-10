@@ -26,6 +26,8 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ActionBar
               .AddIfNotContains("/Views/Shared/Components/ActionBar/Default.css");
             context.Files
               .AddIfNotContains("/Pages/BulkApprovals/ApproveApplicationsModal.css");
+            context.Files
+              .AddIfNotContains("/Pages/BulkActions/BulkPublishApplications.css");
         }
     }
 
@@ -48,6 +50,8 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ActionBar
               .AddIfNotContains("/libs/jquery-maskmoney/dist/jquery.maskMoney.min.js");
             context.Files
               .AddIfNotContains("/Pages/BulkApprovals/ApproveApplicationsModal.js");
+            context.Files
+              .AddIfNotContains("/Pages/BulkActions/BulkPublishApplications.js");
         }
     }
 }

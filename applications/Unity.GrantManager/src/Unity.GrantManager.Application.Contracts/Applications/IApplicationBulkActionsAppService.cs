@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Unity.GrantManager.GrantApplications;
 using Volo.Abp.Application.Services;
 
 namespace Unity.GrantManager.Applications
@@ -13,6 +14,8 @@ namespace Unity.GrantManager.Applications
         /// <param name="input">Request containing list of application IDs</param>
         /// <returns>Cache key to retrieve the stored IDs</returns>
         Task<StoreApplicationIdsResultDto> StoreApplicationIdsAsync(StoreApplicationIdsRequestDto input);
+        Task<List<BulkPublishDto>> GetApplicationsForBulkPublish(Guid[] applicationGuids, bool excludePublished = true);
+        Task BulkPublishApplications(Guid[] applicationGuids);
     }
 
     public class StoreApplicationIdsRequestDto

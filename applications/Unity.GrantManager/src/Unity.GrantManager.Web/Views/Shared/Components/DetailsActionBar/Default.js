@@ -290,7 +290,15 @@ $(function () {
                         ? l('DetailsActionBar:UnpublishButton')
                         : l('DetailsActionBar:PublishButton'));
 
-                    abp.notify.success(l('DetailsActionBar:PublishStatusUpdated'));
+                    abp.notify.success(nextPublishedState 
+                        ? l('DetailsActionBar:PublishStatusUpdatedToast')
+                        : l('DetailsActionBar:UnpublishStatusUpdatedToast'));
+
+                    let canPublishStatus = abp.auth.isGranted("Unity.GrantManager.ApplicationManagement.Application.Status.Publish");
+                    let canUnpublishStatus = abp.auth.isGranted("Unity.GrantManager.ApplicationManagement.Application.Status.Unpublish");
+                    let canUpdateExternalStatusVisibility = (!nextPublishedState && canPublishStatus) || (nextPublishedState && canUnpublishStatus);
+                    $('#togglePublishStatusBtn').prop('disabled', !canUpdateExternalStatusVisibility);
+
                     PubSub.publish('application_status_changed', nextPublishedState ? 'Publish' : 'Unpublish');
                     PubSub.publish('refresh_detail_panel_summary');
                 })

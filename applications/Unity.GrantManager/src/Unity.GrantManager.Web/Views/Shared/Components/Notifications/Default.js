@@ -224,9 +224,6 @@
         $('#notifications-list').on('click', '.js-cancel-notification', function () {
             onCancelNotification($(this).data('id'));
         });
-        $('#notifications-list').on('click', '.js-delete-notification', function () {
-            onDeleteNotification($(this).data('id'));
-        });
     }
 
     function reloadTable() {
@@ -265,34 +262,6 @@
         });
     }
 
-    function onDeleteNotification(id) {
-        if (!id) return;
-        Swal.fire({
-            title: 'Delete Notification?',
-            text: 'Are you sure you want to delete this scheduled notification?',
-            showCancelButton: true,
-            confirmButtonText: 'Confirm',
-            customClass: {
-                confirmButton: 'btn btn-primary',
-                cancelButton: 'btn btn-secondary'
-            }
-        }).then((result) => {
-            if (!result.isConfirmed) return;
-            fetch('/api/form-notifications/' + encodeURIComponent(formId) + '/' + encodeURIComponent(id), {
-                    method: 'DELETE',
-                    headers: { 'RequestVerificationToken': abp.security.antiForgery.getToken() }
-                })
-                .then(r => {
-                    if (!r.ok) throw new Error('Failed to delete');
-                    abp.notify.success('Notification deleted');
-                    reloadTable();
-                })
-                .catch(err => {
-                    console.error(err);
-                    abp.notify.error('Failed to delete notification');
-                });
-        });
-    }
 
     function onEditNotification(id) {
         if (!id) return;
@@ -593,12 +562,6 @@
                 cancelBtn.remove();
             }            
         }
-
-        const deleteBtn = container.querySelector('.js-delete-notification');
-        if (deleteBtn) {
-            deleteBtn.dataset.id = row.id;
-        }
-
         return container.innerHTML;
     }
 

@@ -14,6 +14,7 @@ namespace Unity.GrantManager.GrantApplications;
 public class ApplicationStatusAppService : ApplicationService, IApplicationStatusService
 {
     private readonly IApplicationStatusRepository _applicationStatusRepository;
+
     public ApplicationStatusAppService(IApplicationStatusRepository repository)
     {
         _applicationStatusRepository = repository;

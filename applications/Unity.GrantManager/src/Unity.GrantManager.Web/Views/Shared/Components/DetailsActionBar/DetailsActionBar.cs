@@ -23,13 +23,14 @@ public class DetailsActionBar(
         SelectedApplicationId = applicationId;
 
         var application = await grantApplicationAppService.GetBasicAsync(SelectedApplicationId);
-        var canUpdateExternalStatusVisibility = await authorizationService.IsGrantedAsync(UnitySelector.Review.AssessmentResults.Update.Default);
+        var canPublishStatus = await authorizationService.IsGrantedAnyAsync(UnitySelector.Application.Status.Publish);
+        var canUnpublishStatus = await authorizationService.IsGrantedAnyAsync(UnitySelector.Application.Status.Unpublish);
 
         return View(new DetailsActionBarViewModel
         {
             ApplicationId = SelectedApplicationId,
             ExternalStatusVisibility = application.ExternalStatusVisibility,
-            CanUpdateExternalStatusVisibility = canUpdateExternalStatusVisibility
+            CanUpdateExternalStatusVisibility = (!application.ExternalStatusVisibility && canPublishStatus) || (application.ExternalStatusVisibility && canUnpublishStatus),
         });
     }
 }

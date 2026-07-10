@@ -23,7 +23,7 @@ public static class GrantManagerPermissions
     {
         public const string Default = GroupName + ".ApplicationForms";
     }
-    
+
     public static class Endpoints
     {
         public const string Default = GroupName + ".Endpoints";

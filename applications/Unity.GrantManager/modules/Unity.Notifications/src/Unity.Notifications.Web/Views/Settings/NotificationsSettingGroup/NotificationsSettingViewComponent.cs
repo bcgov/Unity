@@ -5,7 +5,7 @@ using Volo.Abp.AspNetCore.Mvc;
 using Volo.Abp.AspNetCore.Mvc.UI.Bundling;
 using Volo.Abp.AspNetCore.Mvc.UI.Widgets;
 using Volo.Abp.Settings;
-
+using Microsoft.Extensions.Configuration;
 namespace Unity.Notifications.Web.Views.Settings.NotificationsSettingGroup;
 
 [Widget(
@@ -13,7 +13,8 @@ namespace Unity.Notifications.Web.Views.Settings.NotificationsSettingGroup;
     StyleTypes = [typeof(NotificationsSettingStyleBundleContributor)],
     AutoInitialize = true
 )]
-public class NotificationsSettingViewComponent(ISettingProvider settingProvider) : AbpViewComponent
+public class NotificationsSettingViewComponent(ISettingProvider settingProvider,  
+                                               IConfiguration configuration) : AbpViewComponent
 {
     public virtual async Task<IViewComponentResult> InvokeAsync()
     {
@@ -21,14 +22,21 @@ public class NotificationsSettingViewComponent(ISettingProvider settingProvider)
         var success = int.TryParse(retryMaxSetting, out int maximumRetryAttempts);
         if (!success) { maximumRetryAttempts = 3; }
 
+
+
         var model = new NotificationsSettingViewModel
         {
             DefaultFromAddress = await settingProvider.GetOrNullAsync(Notifications.Settings.NotificationsSettings.Mailing.DefaultFromAddress) ?? "",
             MaximumRetryAttempts = maximumRetryAttempts,
             EnableEmailDelay = string.Equals(
                 await settingProvider.GetOrNullAsync(Notifications.Settings.NotificationsSettings.Mailing.EnableEmailDelay),
-                "true", System.StringComparison.OrdinalIgnoreCase)
+                "true", System.StringComparison.OrdinalIgnoreCase),
+                Extensions = configuration["S3:DisallowedFileTypes"] ?? "",
+                MaxFileSize = configuration["S3:MaxFileSize"] ?? "",
+                EmailAttachmentMaxFileSize = configuration["S3:EmailAttachmentMaxFileSize"] ?? "",
+                TotalEmailAttachmentMaxFileSize = configuration["S3:EmailAttachmentsTotalMaxFileSize"] ?? "25"
         };
+
 
         return View("~/Views/Settings/NotificationsSettingGroup/Default.cshtml", model);
     }

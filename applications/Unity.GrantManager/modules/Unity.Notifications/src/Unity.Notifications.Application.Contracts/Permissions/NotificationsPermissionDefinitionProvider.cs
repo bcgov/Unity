@@ -42,10 +42,6 @@ public class NotificationsPermissionDefinitionProvider : PermissionDefinitionPro
             L($"Permission:{NotificationsPermissions.Email.ScheduleCreate}"));
 
         scheduleNotificationsPermissions.AddChild(
-            NotificationsPermissions.Email.ScheduleDelete,
-            L($"Permission:{NotificationsPermissions.Email.ScheduleDelete}"));
-
-        scheduleNotificationsPermissions.AddChild(
             NotificationsPermissions.Email.ScheduleCancel,
             L($"Permission:{NotificationsPermissions.Email.ScheduleCancel}"));
 
