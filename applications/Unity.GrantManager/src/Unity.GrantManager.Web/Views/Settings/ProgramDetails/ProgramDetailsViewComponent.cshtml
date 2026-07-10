@@ -1,0 +1,65 @@
+@using Microsoft.Extensions.Localization
+@using Unity.GrantManager.SettingManagement
+@using Unity.GrantManager.Localization
+@model Unity.GrantManager.SettingManagement.ProgramDetailsDto
+
+@inject IStringLocalizer<GrantManagerResource> L
+
+<div class="container-fluid px-0">
+    <div class="unity-page-titlebar">
+        <h4 class="m-0">@L["ProgramDetails:Heading"]</h4>
+    </div>
+    <form id="ProgramDetailsForm">
+        <div class="p-3">
+            <div class="mb-3">
+                <label class="form-label" for="ProgramDetailsDisplayName">@L["ProgramDetails:DisplayName"]</label>
+                <input type="text"
+                       class="form-control"
+                       id="ProgramDetailsDisplayName"
+                       name="displayName"
+                       value="@Model.DisplayName"
+                       maxlength="@ProgramDetailsConsts.MaxDisplayNameLength"
+                       data-char-count="@ProgramDetailsConsts.MaxDisplayNameLength" />
+            </div>
+            <div class="mb-3">
+                <label class="form-label" for="ProgramDetailsDivision">@L["ProgramDetails:Division"]</label>
+                <input type="text"
+                       class="form-control"
+                       id="ProgramDetailsDivision"
+                       name="division"
+                       value="@Model.Division"
+                       maxlength="@ProgramDetailsConsts.MaxDivisionLength"
+                       data-char-count="@ProgramDetailsConsts.MaxDivisionLength" />
+            </div>
+            <div class="mb-3">
+                <label class="form-label" for="ProgramDetailsBranch">@L["ProgramDetails:Branch"]</label>
+                <input type="text"
+                       class="form-control"
+                       id="ProgramDetailsBranch"
+                       name="branch"
+                       value="@Model.Branch"
+                       maxlength="@ProgramDetailsConsts.MaxBranchLength"
+                       data-char-count="@ProgramDetailsConsts.MaxBranchLength" />
+            </div>
+            <div class="mb-3">
+                <label class="form-label" for="ProgramDetailsDescription">@L["ProgramDetails:Description"]</label>
+                <textarea class="form-control"
+                          id="ProgramDetailsDescription"
+                          name="description"
+                          rows="4"
+                          maxlength="@ProgramDetailsConsts.MaxDescriptionLength"
+                          data-char-count="@ProgramDetailsConsts.MaxDescriptionLength">@Model.Description</textarea>
+            </div>
+        </div>
+        <div class="d-flex gap-2 p-2">
+            <abp-button id="ProgramDetailsSaveButton"
+                        button-type="Primary" class="me-2"
+                        type="submit"
+                        text="@L["ProgramDetails:SaveChanges"].Value" />
+            <abp-button id="ProgramDetailsResetButton"
+                        button-type="Secondary" class="me-2"
+                        type="button"
+                        text="@L["ProgramDetails:ResetChanges"].Value" />
+        </div>
+    </form>
+</div>

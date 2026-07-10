@@ -31,6 +31,7 @@ public class EditReportsHistoryModal : AbpPageModel
             FiscalYear = record.FiscalYear,
             ReportDate = record.ReportDate,
             Outstanding = record.Outstanding,
+            SignedOff = record.SignedOff,
             IncompleteReport = record.IncompleteReport,
             Note = record.Note
         };
@@ -44,6 +45,7 @@ public class EditReportsHistoryModal : AbpPageModel
             FiscalYear = ReportsHistoryForm.FiscalYear,
             ReportDate = ReportsHistoryForm.ReportDate,
             Outstanding = ReportsHistoryForm.Outstanding,
+            SignedOff = ReportsHistoryForm.SignedOff,
             IncompleteReport = ReportsHistoryForm.IncompleteReport,
             Note = ReportsHistoryForm.Note
         };

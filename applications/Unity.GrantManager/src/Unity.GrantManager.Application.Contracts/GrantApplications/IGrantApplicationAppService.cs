@@ -20,15 +20,10 @@ public interface IGrantApplicationAppService
     Task<GrantApplicationDto> GetAsync(Guid id);
     Task<GrantApplicationLiteDto> GetBasicAsync(Guid id);
     Task<GrantApplicationDto> TriggerAction(Guid applicationId, GrantApplicationAction triggerAction);
-    Task<AIGenerationStatusDto> QueueAIGenerationAsync(Guid applicationId, string? promptVersion = null);
-    Task<AIGenerationStatusDto> QueueApplicationAnalysisAsync(Guid applicationId, string? promptVersion = null);
-    Task<AIGenerationStatusDto> QueueAttachmentSummaryAsync(QueueAttachmentSummaryRequestDto input, string? promptVersion = null);
-    Task<AIGenerationStatusDto> QueueApplicationScoringAsync(Guid applicationId, string? promptVersion = null);
-    Task<AIGenerationStatusDto> GetAIGenerationStatusAsync(Guid applicationId, string operationType, string? promptVersion = null);
-    Task QueueAllAIStagesAsync(Guid applicationId, string? promptVersion = null);
     Task<Guid?> GetAccountCodingIdFromFormIdAsync(Guid formId);
     Task<string> DismissAIAnalysisItemAsync(Guid applicationId, string itemId);
     Task<string> RestoreAIAnalysisItemAsync(Guid applicationId, string itemId);
+    Task<AIGenerationStatusDto> GetAIGenerationStatusAsync(Guid applicationId, string operationType);
     Task<PagedResultDto<GrantApplicationDto>> GetListAsync(GrantApplicationListInputDto input);
     Task<bool> IsApplicantRedStopAsync(Guid applicationId);
     string? GetWorkflowDiagram(bool isDirectApproval);

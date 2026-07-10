@@ -279,4 +279,3 @@ internal static class PolicyRegistrant
             policy => policy.RequireClaim(PermissionConstant, UnitySelector.Application.Status.BulkPublish));
     }
 }
-

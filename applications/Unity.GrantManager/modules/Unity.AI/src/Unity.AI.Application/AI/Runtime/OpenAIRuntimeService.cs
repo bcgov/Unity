@@ -145,16 +145,19 @@ namespace Unity.AI.Runtime
                 var prompt = promptTemplate.SystemPrompt;
 
                 var attachmentText = string.IsNullOrWhiteSpace(extractedText) ? null : extractedText;
-                var attachmentPayload = new
+                var attachmentPayload = new[]
                 {
-                    name = fileName,
-                    contentType,
-                    text = attachmentText
+                    new
+                    {
+                        name = fileName,
+                        contentType,
+                        text = attachmentText
+                    }
                 };
-                var attachment = JsonSerializer.Serialize(attachmentPayload, AIJsonDefaults.Indented);
-                var contentToAnalyze = AIPromptTemplateRenderer.BuildAttachmentSummaryUserPrompt(
+                var attachments = JsonSerializer.Serialize(attachmentPayload, AIJsonDefaults.Indented);
+                var contentToAnalyze = AIPromptTemplateRenderer.BuildAttachmentSummaryBatchUserPrompt(
                     promptTemplate.UserPrompt,
-                    attachment,
+                    attachments,
                     promptTemplate.MetadataJson);
 
                 await _promptFileLogger.LogPromptInputAsync(AttachmentSummaryPromptType, promptVersion, prompt, contentToAnalyze, cancellationToken);
@@ -194,6 +197,68 @@ namespace Unity.AI.Runtime
                 {
                     Summary = $"AI analysis not available for this attachment ({fileName})."
                 };
+            }
+        }
+
+        public async Task<AttachmentSummaryBatchResponse> GenerateAttachmentSummaryBatchAsync(AttachmentSummaryBatchRequest request, CancellationToken cancellationToken = default)
+        {
+            ArgumentNullException.ThrowIfNull(request);
+            try
+            {
+                if (request.Attachments is null || request.Attachments.Count == 0)
+                {
+                    return new AttachmentSummaryBatchResponse();
+                }
+
+                var settings = await _openAIConfigurationResolver.ResolveOperationSettingsAsync(AttachmentSummaryPromptType, cancellationToken);
+                var promptTemplate = await _promptTemplateProvider.GetRequiredPromptAsync(
+                    AttachmentSummaryPromptType,
+                    request.PromptVersion ?? settings.PromptVersion,
+                    cancellationToken);
+                var promptVersion = promptTemplate.PromptVersion;
+
+                var attachmentsPayload = request.Attachments.Select(attachment => new
+                {
+                    attachmentId = attachment.AttachmentId,
+                    name = string.IsNullOrWhiteSpace(attachment.FileName) ? "attachment" : attachment.FileName.Trim(),
+                    contentType = attachment.ContentType ?? "application/octet-stream",
+                    text = string.IsNullOrWhiteSpace(attachment.ExtractedText) ? null : attachment.ExtractedText
+                });
+
+                var attachments = JsonSerializer.Serialize(attachmentsPayload, AIJsonDefaults.Indented);
+                var contentToAnalyze = AIPromptTemplateRenderer.BuildAttachmentSummaryBatchUserPrompt(
+                    promptTemplate.UserPrompt,
+                    attachments,
+                    promptTemplate.MetadataJson);
+
+                await _promptFileLogger.LogPromptInputAsync(AttachmentSummaryPromptType, promptVersion, promptTemplate.SystemPrompt, contentToAnalyze, cancellationToken);
+                var result = await GenerateWithRetryAsync(
+                    () => _openAITransportService.GenerateSummaryAsync(
+                        contentToAnalyze,
+                        promptTemplate.SystemPrompt,
+                        settings,
+                        settings.CompletionTokens,
+                        cancellationToken: cancellationToken),
+                    AIProviderPayloadValidator.ValidateAttachmentSummaryBatchJson,
+                    "attachment summary batch",
+                    cancellationToken);
+                await _promptFileLogger.LogPromptOutputAsync(AttachmentSummaryPromptType, promptVersion, result.CaptureOutput, cancellationToken);
+
+                if (result.Outcome != AIOperationOutcome.Success)
+                {
+                    return new AttachmentSummaryBatchResponse();
+                }
+
+                return OpenAIResponseParser.ParseAttachmentSummaryBatchResponse(result.Content);
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Attachment summary batch generation failed.");
+                return new AttachmentSummaryBatchResponse();
             }
         }
 

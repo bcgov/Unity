@@ -7,14 +7,19 @@
     }
 
     let responseCallback = function (result) {
+        const normalizedResult = (result || []).map(item => ({
+            ...item,
+            templateName: resolveTemplateName(item)
+        }));
+
         if (result) {
             setTimeout(function () {
-                PubSub.publish('update_application_emails_count', { itemCount: result.length });
+                PubSub.publish('update_application_emails_count', { itemCount: normalizedResult.length });
             }, 10);
         }
 
         return {
-            data: result
+            data: normalizedResult
         };
     };
 
@@ -68,8 +73,7 @@
                             year: "numeric",
                             month: "numeric",
                             hour: "numeric",
-                            minute: "numeric",
-                            second: "numeric"
+                            minute: "numeric"
                         }) : '—';
                     }
                 },
@@ -86,8 +90,7 @@
                             year: "numeric",
                             month: "numeric",
                             hour: "numeric",
-                            minute: "numeric",
-                            second: "numeric"
+                            minute: "numeric"
                         }) : '—';
                     }
                 },
@@ -111,7 +114,7 @@
                     visible: enableEmailDelay,
                     render: function (data, type) {
                         if (!data) return '—';
-                        return DateUtils.formatUtcToBcPacificDateTime(data, type) || '—';
+                        return formatScheduledSendDateTimeUtcToPacific(data, type) || '—';
                     }
                 },
                 {
@@ -156,9 +159,9 @@
                         }
                         // Show cancel button for scheduled sends that haven't passed yet
                         else if (full.sendOnDateTime && abp.auth.isGranted('Notifications.Email.CancelScheduled')) {
-                            const sendOnDateTime = new Date(full.sendOnDateTime);
-                            const now = new Date();
-                            if (sendOnDateTime > now) {
+                            const sendOnDateTime = parseUtcDateTime(full.sendOnDateTime);
+                            const now = luxon.DateTime.utc();
+                            if (sendOnDateTime && sendOnDateTime > now) {
                                 return generateCancelScheduledButtonContent(full, meta.row);
                             }
                         }
@@ -203,8 +206,13 @@
         let column = emailHistoryDataTable.column(this);
 
         if (column.index() > 0 && column.index() < 4) {
-            let data = row.data();
-            PubSub.publish('email_selected', data);
+            const data = row.data();
+            const normalizedSelectedRow = {
+                ...data,
+                templateName: resolveTemplateName(data)
+            };
+
+            PubSub.publish('email_selected', normalizedSelectedRow);
         }
     });
 
@@ -216,6 +224,54 @@
         emailHistoryDataTable.columns.adjust().draw();
     });
 });
+
+function resolveTemplateName(emailRow) {
+    const value = [
+        emailRow?.templateName,
+        emailRow?.emailTemplateName,
+        emailRow?.template,
+        emailRow?.TemplateName,
+        emailRow?.EmailTemplateName,
+        emailRow?.Template
+    ].find(v => typeof v === 'string' && v.trim().length > 0);
+
+    return (value || '').trim();
+}
+
+function parseUtcDateTime(value) {
+    if (!value) {
+        return null;
+    }
+
+    const normalized = String(value).trim().replace(' ', 'T');
+    const withUtcSuffix = /([zZ]|[+-]\d{2}:?\d{2})$/.test(normalized)
+        ? normalized
+        : `${normalized}Z`;
+
+    const dateTime = luxon.DateTime.fromISO(withUtcSuffix, { zone: 'utc' });
+    return dateTime.isValid ? dateTime : null;
+}
+
+function formatScheduledSendDateTimeUtcToPacific(value, type) {
+    if (type !== 'display' && type !== 'filter') {
+        return value;
+    }
+
+    const utcDateTime = parseUtcDateTime(value);
+    if (!utcDateTime) {
+        return '—';
+    }
+
+    return utcDateTime
+        .setZone('UTC-7')
+        .toLocaleString({
+            day: 'numeric',
+            year: 'numeric',
+            month: 'numeric',
+            hour: 'numeric',
+            minute: 'numeric'
+        });
+}
 
 function generateCancelScheduledButtonContent(full, row) {
     return `<button class="btn btn-delete-delayed" type="button" onclick="cancelScheduledEmail('${full.id}', '${row}')"><i class="fl fl-cancel"></i></button>`;

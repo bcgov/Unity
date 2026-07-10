@@ -1,0 +1,11 @@
+{
+    "webapp.url": "https://dev-unity.apps.silver.devops.gov.bc.ca/",
+    "environment": "DEV",
+    "test1username": "",
+    "test1password": "",
+    "test2username": "",
+    "test2password": "",
+    "TEST_EMAIL_TO": "",
+    "TEST_EMAIL_CC": "",
+    "TEST_EMAIL_BCC": ""
+}

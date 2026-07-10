@@ -338,6 +338,7 @@
     "Permission:UnitySettingManagementPermissions.BackgroundJobs": "Background Jobs",
     "Permission:UnitySettingManagementPermissions.UserInterface": "Application Tabs",
     "Permission:UnitySettingManagementPermissions.ConfigurePayments": "Configure Payments",
+    "Permission:UnitySettingManagementPermissions.EditProgramDetails": "Edit Program Details",
 
     "Setting:GrantManager.UI.PageTitle": "Application Tabs Configuration",
     "Setting:GrantManager.UI.Tabs.Applicant.Description": "Toggle visibility of the Applicant Info tab for the tenant",
@@ -539,6 +540,7 @@
 
     "ApplicantPortalSettings:Title": "Applicant Portal Configuration",
     "ApplicantPortalSettings:ManageStatuses": "Manage Statuses",
+    "ApplicantPortalSettings:ProgramDetails": "Program Details",
     "ApplicantPortalSettings:PortalStatusHeading": "Applicant Portal Status",
     "ApplicantPortalSettings:InternalStatus": "Internal Status",
     "ApplicantPortalSettings:PortalStatusLabel": "External Status",
@@ -550,6 +552,18 @@
     "ApplicantPortalSettings:SaveSuccess": "Portal status labels updated successfully.",
     "ApplicantPortalSettings:SaveError": "An error occurred while saving portal status labels.",
     "ApplicantPortalSettings:ValidationRequired": "Portal status label cannot be empty.",
+
+    "ProgramDetails:Heading": "Program Details",
+    "ProgramDetails:DisplayName": "Display Name",
+    "ProgramDetails:Division": "Division",
+    "ProgramDetails:Branch": "Branch",
+    "ProgramDetails:Description": "Description",
+    "ProgramDetails:SaveChanges": "Save Changes",
+    "ProgramDetails:ResetChanges": "Reset",
+    "ProgramDetails:NoChanges": "No changes to save.",
+    "ProgramDetails:ChangesReset": "Changes have been reset to original values.",
+    "ProgramDetails:SaveSuccess": "Program details updated successfully.",
+    "ProgramDetails:SaveError": "An error occurred while saving program details.",
 
     "Common:Command:Cancel": "Cancel",
     "Common:Command:Save": "Save",

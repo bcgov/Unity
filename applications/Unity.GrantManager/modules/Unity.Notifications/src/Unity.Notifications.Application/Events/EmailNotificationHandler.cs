@@ -116,6 +116,7 @@ namespace Unity.GrantManager.Events
                     {
                         await emailAttachmentService.UploadAttachmentAsync(
                             emailLog.Id,
+                            null, // No templateId for user-uploaded attachments
                             emailLog.TenantId,
                             attachmentData.FileName,
                             attachmentData.Content,

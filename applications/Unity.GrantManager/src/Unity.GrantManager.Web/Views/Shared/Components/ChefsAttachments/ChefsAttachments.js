@@ -202,60 +202,34 @@ $(function () {
                 )
                 .prop('disabled', true);
 
-            $.ajax({
-                url: '/api/app/ai/generation/attachment-summary',
-                data: JSON.stringify({
-                    applicationId: applicationId,
-                    attachmentIds: summaryAttachmentIds,
-                }),
-                contentType: 'application/json',
-                type: 'POST',
-                success: function (generationStatus) {
-                    const request = generationStatus?.generationRequest;
-                    const status = globalThis.AIGenerationButtonState?.resolveStatus(request?.status) ?? '';
-
-                    if (status === 'Completed') {
-                        globalThis.AIGenerationButtonState?.restoreForCooldownCheck(
-                            $activeButton,
-                            existingHTML
-                        );
-                        globalThis.AIGenerationButtonState?.applyStatusState(generationStatus);
-                        refreshAttachmentSummaryResults();
-                        return;
-                    }
-
+            globalThis.AIGenerationApi.queueAttachmentSummary({
+                applicationId: applicationId,
+                attachmentIds: summaryAttachmentIds,
+            })
+                .done(function (generationStatus) {
                     globalThis.AIGenerationButtonState?.setGenerating($activeButton);
                     pollAttachmentSummaryGeneration(applicationId, $activeButton, existingHTML);
-                },
-                error: function (error) {
+                })
+                .fail(function (error) {
                     console.error('Error generating AI summaries:', error);
                     abp.message.error('An error occurred while generating AI summaries. Please try again.');
                     globalThis.AIGenerationButtonState?.restore($activeButton);
                     globalThis.refreshAIRateLimitState?.();
                     $activeButton.html(existingHTML).prop('disabled', false);
                     setGenerateSummariesEnabled();
-                },
-            });
+                });
         });
     }
 
     function pollAttachmentSummaryGeneration(applicationId, $button, originalHtml) {
-        if (!globalThis.AIGenerationButtonState?.monitor) {
-            console.error('AIGenerationButtonState is not available; cannot poll attachment summary generation.');
-            abp.message.error('AI attachment summary polling is unavailable. Please refresh and try again.');
-            globalThis.AIGenerationButtonState?.restore($button);
-            $button.html(originalHtml ?? $button.html()).prop('disabled', false);
-            return;
-        }
-
         globalThis.AIGenerationButtonState.monitor({
             $button,
             originalHtml: originalHtml ?? $button.html(),
-            getStatus: () => unity.grantManager.grantApplications.grantApplication
-                .getAIGenerationStatus(applicationId, 'attachment-summary'),
+            getStatus: () => globalThis.AIGenerationApi.getStatus(applicationId, 'attachment-summary'),
             onComplete: refreshAttachmentSummaryResults,
-            onFailed: (request) => {
-                abp.message.error(request?.failureReason || 'AI attachment summary generation failed.');
+            onPollFailed: (error) => {
+                console.warn('Failed to poll AI attachment summary status.', error);
+                abp.message.error(error?.message || 'AI attachment summary generation failed.');
             }
         });
     }

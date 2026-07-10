@@ -20,6 +20,9 @@ public class ReportsHistoryModalViewModel
     [DisplayName("Outstanding")]
     public bool? Outstanding { get; set; }
 
+    [DisplayName("Signed-Off")]
+    public bool? SignedOff { get; set; }
+
     [DisplayName("Incomplete Report")]
     public bool? IncompleteReport { get; set; }
 

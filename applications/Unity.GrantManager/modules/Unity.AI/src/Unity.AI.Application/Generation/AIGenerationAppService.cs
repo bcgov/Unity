@@ -9,6 +9,7 @@ using Unity.AI.Features;
 using Unity.AI.Localization;
 using Unity.AI.Operations;
 using Unity.AI.Permissions;
+using Unity.AI.RateLimit;
 using Unity.AI.Settings;
 using Unity.GrantManager.Attachments;
 using Unity.GrantManager.GrantApplications;
@@ -21,10 +22,16 @@ namespace Unity.AI.Generation;
 [Route("api/app/ai/generation")]
 public class AIGenerationAppService(
     IApplicationAIGenerationQueue aiGenerationQueue,
+    IAIGenerationStatusAppService aiGenerationStatusAppService,
+    IAIRateLimiter aiRateLimiter,
     AIFeatureGuard featureGuard,
     ICurrentTenant currentTenant)
     : AIAppService, IAIGenerationAppService
 {
+    private const string ApplicationAnalysisOperationType = "application-analysis";
+    private const string AttachmentSummaryOperationType = "attachment-summary";
+    private const string ApplicationScoringOperationType = "application-scoring";
+
     [Authorize(AIPermissions.Analysis.GenerateAttachmentSummaries)]
     [HttpPost("attachment-summary")]
     public virtual async Task<List<AttachmentSummaryResultDto>> GenerateAttachmentSummariesAsync(GenerateAttachmentSummariesInputDto input)
@@ -71,5 +78,58 @@ public class AIGenerationAppService(
 
         await aiGenerationQueue.QueueApplicationScoringAsync(applicationId, currentTenant.Id, promptVersion);
         return new ApplicationScoringResultDto { Completed = false };
+    }
+
+    [Authorize]
+    [HttpGet("status")]
+    public virtual async Task<AIGenerationStatusDto> GetStatusAsync(Guid applicationId, string operationType)
+    {
+        await EnsureStatusAccessAsync(operationType);
+
+        var request = await aiGenerationStatusAppService.GetLatestAsync(applicationId, operationType, currentTenant.Id);
+        var state = await aiRateLimiter.GetStateAsync();
+
+        return new AIGenerationStatusDto
+        {
+            GenerationRequest = request == null
+                ? null
+                : new AIGenerationStatusRequestDto
+                {
+                    Id = request.Id,
+                    ApplicationId = request.ApplicationId,
+                    OperationId = request.OperationId,
+                    OperationType = operationType,
+                    Status = request.Status.ToString(),
+                    StartedAt = request.StartedAt,
+                    CompletedAt = request.CompletedAt,
+                    FailureReason = request.FailureReason,
+                    IsActive = request.IsActive
+                },
+            FailureReason = request?.FailureReason,
+            IsGenerating = state.IsGenerating,
+            RetryAfterSeconds = state.RetryAfterSeconds
+        };
+    }
+
+    private async Task EnsureStatusAccessAsync(string operationType)
+    {
+        var permission = operationType switch
+        {
+            ApplicationAnalysisOperationType => AIPermissions.Analysis.ViewApplicationAnalysis,
+            AttachmentSummaryOperationType => AIPermissions.Analysis.ViewAttachmentSummary,
+            ApplicationScoringOperationType => AIPermissions.Analysis.ViewScoringResult,
+            AIGenerationRequestKeyHelper.PipelineOperationType => null,
+            _ => throw new UserFriendlyException($"Unsupported AI generation operation type: {operationType}")
+        };
+
+        if (permission is null)
+        {
+            await CheckPolicyAsync(AIPermissions.Analysis.ViewApplicationAnalysis);
+            await CheckPolicyAsync(AIPermissions.Analysis.ViewAttachmentSummary);
+            await CheckPolicyAsync(AIPermissions.Analysis.ViewScoringResult);
+            return;
+        }
+
+        await CheckPolicyAsync(permission);
     }
 }

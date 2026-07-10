@@ -151,6 +151,49 @@ public class OpenAIResponseParser : ITransientDependency
         return response;
     }
 
+    public static AttachmentSummaryBatchResponse ParseAttachmentSummaryBatchResponse(string raw)
+    {
+        var response = new AttachmentSummaryBatchResponse();
+        if (!TryParseJsonObjectFromResponse(raw, out var root))
+        {
+            return response;
+        }
+
+        if (!root.TryGetProperty("attachments", out var attachments) || attachments.ValueKind != JsonValueKind.Array)
+        {
+            return response;
+        }
+
+        foreach (var attachment in attachments.EnumerateArray())
+        {
+            if (attachment.ValueKind != JsonValueKind.Object)
+            {
+                continue;
+            }
+
+            var attachmentId = attachment.TryGetProperty("attachmentId", out var idProp) && idProp.ValueKind == JsonValueKind.String
+                ? idProp.GetString() ?? string.Empty
+                : string.Empty;
+
+            if (string.IsNullOrWhiteSpace(attachmentId))
+            {
+                continue;
+            }
+
+            var summary = attachment.TryGetProperty(AIJsonKeys.Summary, out var summaryProp) && summaryProp.ValueKind == JsonValueKind.String
+                ? summaryProp.GetString() ?? string.Empty
+                : string.Empty;
+
+            response.Attachments.Add(new AttachmentSummaryBatchItemResponse
+            {
+                AttachmentId = attachmentId,
+                Summary = summary
+            });
+        }
+
+        return response;
+    }
+
     private static IEnumerable<ApplicationAnalysisFinding> ParseFindings(JsonElement findingsArray)
     {
         foreach (var item in findingsArray.EnumerateArray())
