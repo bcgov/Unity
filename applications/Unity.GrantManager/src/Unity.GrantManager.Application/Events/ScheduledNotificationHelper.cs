@@ -68,7 +68,7 @@ namespace Unity.GrantManager.Events
                 ["contact_full_name"]           = applicantAgent?.Name ?? string.Empty,
                 ["contact_title"]               = applicantAgent?.Title ?? string.Empty,
                 ["category"]                    = applicationForm?.Category ?? string.Empty,
-                ["today_date"]                  = $"Today, {DateTime.Today.ToString("MMMM d, yyyy")}",
+                ["today_date"]                  = $"{DateTime.Today.ToString("MMMM d, yyyy")}",
                 ["unity_application_id"]        = application.UnityApplicationId ?? string.Empty
             };
         }

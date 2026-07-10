@@ -39,12 +39,6 @@
                 <span>Cancel</span>
             </button>
             }
-            @if (await PermissionChecker.IsGrantedAsync(NotificationsPermissions.Email.ScheduleDelete)) 
-            {                         
-            <button class="btn unt-btn-outline-primary btn-sm abp-action-button js-delete-notification notification-action-btn" type="button">
-                <i class="fl fl-cancel"></i>
-            </button>
-            }
         </div>
     </template>
 
