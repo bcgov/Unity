@@ -26,7 +26,7 @@ public class GenerateFormMappingJob(
     IRepository<AIGenerationRequest, Guid> generationRequestRepository,
     ICurrentTenant currentTenant,
     IUnitOfWorkManager unitOfWorkManager,
-    ICooldownService aiCooldownService,
+    IAICooldownService aiCooldownService,
     ILogger<GenerateFormMappingJob> logger) : AsyncBackgroundJob<GenerateFormMappingBackgroundJobArgs>, ITransientDependency
 {
     public override async Task ExecuteAsync(GenerateFormMappingBackgroundJobArgs args)

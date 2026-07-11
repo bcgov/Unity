@@ -15,7 +15,6 @@ using System.Threading.Tasks;
 using Unity.AI.Automation;
 using Unity.AI.Models;
 using Unity.AI.Permissions;
-using Unity.AI.Cooldown;
 using Unity.AI.Responses;
 using Unity.Flex.WorksheetInstances;
 using Unity.Flex.Worksheets;
@@ -59,7 +58,6 @@ public class GrantApplicationAppService(
     IApplicantSupplierAppService applicantSupplierService,
     IPaymentRequestAppService paymentRequestService,
     IAIGenerationStatusAppService aiGenerationStatusAppService,
-    IAICooldownAppService aiCooldownService,
     IFeatureChecker featureChecker)
     : GrantManagerAppService, IGrantApplicationAppService
 #pragma warning restore S107 // Methods should not have too many parameters

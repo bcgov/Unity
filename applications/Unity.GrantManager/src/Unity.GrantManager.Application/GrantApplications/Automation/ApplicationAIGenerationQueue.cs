@@ -32,11 +32,10 @@ public class ApplicationGenerationQueue(
     IDistributedLockProvider distributedLockProvider,
     IGenerationPrerequisiteValidator aiGenerationPrerequisiteValidator,
     IFeatureChecker featureChecker,
-    ICooldownService aiCooldownService,
+    IAICooldownService aiCooldownService,
     IAsyncQueryableExecuter asyncQueryableExecuter,
     ICurrentUser currentUser,
-    ILogger<ApplicationGenerationQueue> logger,
-    IStringLocalizer<AIResource> localizer)
+    ILogger<ApplicationGenerationQueue> logger)
     : IApplicationGenerationQueue, ITransientDependency
 {
     private readonly IAsyncQueryableExecuter _asyncQueryableExecuter = asyncQueryableExecuter;
@@ -259,7 +258,7 @@ public class ApplicationGenerationQueue(
 
             // Single chokepoint for all AI generate flows (manual + auto).
             // The limiter is a no-op for system/background callers without an authenticated user.
-            await aiCooldownService.EnsureAsync();
+            await aiCooldownService.EnsureAsync(currentUser.Id);
 
             var request = new AIGenerationRequest(
                 Guid.NewGuid(),

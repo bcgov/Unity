@@ -20,7 +20,7 @@ public class GenerateApplicationAnalysisJob(
     IRepository<AIGenerationRequest, Guid> generationRequestRepository,
     ICurrentTenant currentTenant,
     IUnitOfWorkManager unitOfWorkManager,
-    ICooldownService aiCooldownService,
+    IAICooldownService aiCooldownService,
     ILogger<GenerateApplicationAnalysisJob> logger) : AsyncBackgroundJob<GenerateApplicationAnalysisBackgroundJobArgs>, ITransientDependency
 {
     public override async Task ExecuteAsync(GenerateApplicationAnalysisBackgroundJobArgs args)

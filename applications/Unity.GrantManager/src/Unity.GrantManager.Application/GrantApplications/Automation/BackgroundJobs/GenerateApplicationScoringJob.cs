@@ -23,7 +23,7 @@ public class GenerateApplicationScoringJob(
     ICurrentTenant currentTenant,
     IUnitOfWorkManager unitOfWorkManager,
     ILocalEventBus localEventBus,
-    ICooldownService aiCooldownService,
+    IAICooldownService aiCooldownService,
     ILogger<GenerateApplicationScoringJob> logger) : AsyncBackgroundJob<GenerateApplicationScoringBackgroundJobArgs>, ITransientDependency
 {
     public override async Task ExecuteAsync(GenerateApplicationScoringBackgroundJobArgs args)
@@ -47,10 +47,9 @@ public class GenerateApplicationScoringJob(
             try
             {
                 var application = await applicationRepository.GetAsync(args.ApplicationId);
-                var operation = await operationRepository.FirstOrDefaultAsync(item => item.Name == AIGenerationRequestKeyHelper.ResolveOperationName(AIGenerationRequestKeyHelper.ApplicationScoringOperationType));
                 var scoresheetAnswers = await applicationScoringService.GenerateApplicationScoringAsync(
                     application.Id,
-                    ExecutionMode.Sequential,
+                    AIExecutionMode.Sequential,
                     args.PromptVersion);
                 application.AIScoresheetAnswers = scoresheetAnswers;
                 await applicationRepository.UpdateAsync(application);

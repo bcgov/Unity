@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 using Unity.AI.Automation;
 using Unity.AI.Features;
@@ -27,22 +26,22 @@ public class AIGenerationAppService(
 {
     [Authorize(AIPermissions.Analysis.GenerateAttachmentSummaries)]
     [HttpPost("attachment-summary")]
-    public virtual async Task GenerateApplicationAttachmentSummariesAsync(Guid applicationId, List<Guid> attachmentIds, string? promptVersion = null)
+    public virtual async Task GenerateApplicationAttachmentSummariesAsync(AttachmentSummaryGenerationRequestDto request)
     {
         await featureGuard.EnsureEnabledAsync(
             AIFeatures.AttachmentSummaries,
             AILocalizationKeys.AttachmentSummariesDisabled);
 
-        if (attachmentIds.Count == 0)
+        if (request.AttachmentIds.Count == 0)
         {
             return;
         }
 
         await aiGenerationQueue.QueueApplicationAttachmentSummaryAsync(
-            applicationId,
+            request.ApplicationId,
             currentTenant.Id,
-            attachmentIds,
-            promptVersion);
+            request.AttachmentIds,
+            request.PromptVersion);
     }
 
     [Authorize(AIPermissions.Analysis.GenerateApplicationAnalysis)]

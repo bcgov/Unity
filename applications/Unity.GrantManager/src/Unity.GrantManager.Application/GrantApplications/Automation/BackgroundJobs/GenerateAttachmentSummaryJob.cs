@@ -19,7 +19,7 @@ public class GenerateAttachmentSummaryJob(
     IRepository<AIGenerationRequest, Guid> generationRequestRepository,
     ICurrentTenant currentTenant,
     IUnitOfWorkManager unitOfWorkManager,
-    ICooldownService aiCooldownService,
+    IAICooldownService aiCooldownService,
     ILogger<GenerateApplicationAttachmentSummaryJob> logger) : AsyncBackgroundJob<GenerateApplicationAttachmentSummaryBackgroundJobArgs>, ITransientDependency
 {
     public override async Task ExecuteAsync(GenerateAttachmentSummaryBackgroundJobArgs args)
@@ -42,7 +42,11 @@ public class GenerateAttachmentSummaryJob(
                 args.OperationId);
             try
             {
-                await attachmentSummaryService.GenerateForApplicationAsync(args.ApplicationId, args.PromptVersion, args.AttachmentIds);
+                await attachmentSummaryService.GenerateForApplicationAsync(
+                    args.ApplicationId,
+                    args.PromptVersion,
+                    args.AttachmentIds,
+                    default);
 
                 await AIGenerationRequestJobHelper.StampRateLimitBestEffortAsync(aiRateLimiter, logger, args.RequestedByUserId, args.ApplicationId, AIGenerationRequestKeyHelper.AttachmentSummaryOperationType);
                 await AIGenerationRequestJobHelper.MarkCompletedInNewUowAsync(

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Unity.AI.Operations;
 using Unity.GrantManager.Applications;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Uow;
@@ -10,7 +11,7 @@ namespace Unity.AI.Operations;
 
 public class AttachmentSummaryPersistence(
     IApplicationChefsFileAttachmentRepository applicationChefsFileAttachmentRepository,
-    IUnitOfWorkManager unitOfWorkManager) : IAttachmentSummaryPersistence, ITransientDependency
+    IUnitOfWorkManager unitOfWorkManager) : IApplicationAttachmentSummaryPersistence, ITransientDependency
 {
     public async Task<AttachmentSummarySource> LoadAsync(Guid attachmentId)
     {
