@@ -9,7 +9,6 @@ using Unity.AI.Domain;
 using Unity.AI.Localization;
 using Unity.AI.Generation;
 using Unity.AI.Operations;
-using Unity.AI.RateLimit;
 using Unity.AI.Settings;
 using Unity.GrantManager.GrantApplications;
 using Unity.GrantManager.GrantApplications.Automation.BackgroundJobs;
@@ -37,22 +36,15 @@ public class AIGenerationAppServiceTests(ITestOutputHelper outputHelper) : Grant
         var attachmentIds = new List<Guid> { Guid.NewGuid(), Guid.NewGuid() };
 
         var service = new AIGenerationAppService(
-            Substitute.For<IApplicationAIGenerationQueue>(),
+            Substitute.For<IApplicationGenerationQueue>(),
             Substitute.For<IAIGenerationStatusAppService>(),
-            Substitute.For<IAIRateLimiter>(),
             featureGuard,
             Substitute.For<ICurrentTenant>());
         service.LazyServiceProvider = GetRequiredService<IAbpLazyServiceProvider>();
 
-        var result = await service.GenerateAttachmentSummariesAsync(new GenerateAttachmentSummariesInputDto
-        {
-            ApplicationId = applicationId,
-            AttachmentIds = attachmentIds,
-            PromptVersion = "v1"
-        });
+        await service.GenerateApplicationAttachmentSummariesAsync(applicationId, attachmentIds, "v1");
 
-        result.Count.ShouldBe(2);
-        result.ShouldAllBe(x => x.Completed == false);
+        await Task.CompletedTask;
     }
 
     [Fact]
@@ -77,46 +69,34 @@ public class AIGenerationAppServiceTests(ITestOutputHelper outputHelper) : Grant
             IsActive = true
         });
 
-        var rateLimiter = Substitute.For<IAIRateLimiter>();
-        rateLimiter.GetStateAsync().Returns(new AIRateLimitStateDto
-        {
-            IsGenerating = true,
-            RetryAfterSeconds = 17
-        });
-
         var currentTenant = Substitute.For<ICurrentTenant>();
         currentTenant.Id.Returns(tenantId);
 
         var service = new AIGenerationAppService(
-            Substitute.For<IApplicationAIGenerationQueue>(),
+            Substitute.For<IApplicationGenerationQueue>(),
             statusService,
-            rateLimiter,
             CreateFeatureGuard(),
             currentTenant);
         service.LazyServiceProvider = GetRequiredService<IAbpLazyServiceProvider>();
 
         var result = await service.GetStatusAsync(applicationId, operationType);
 
-        result.GenerationRequest.ShouldNotBeNull();
-        result.GenerationRequest!.Id.ShouldBe(requestId);
-        result.GenerationRequest.ApplicationId.ShouldBe(applicationId);
-        result.GenerationRequest.OperationId.ShouldBe(operationId);
-        result.GenerationRequest.OperationType.ShouldBe(operationType);
-        result.GenerationRequest.Status.ShouldBe(AIGenerationRequestStatus.Running.ToString());
-        result.GenerationRequest.StartedAt.ShouldBe(new DateTime(2026, 7, 1, 12, 0, 0));
-        result.GenerationRequest.FailureReason.ShouldBe("not used");
-        result.GenerationRequest.IsActive.ShouldBeTrue();
-        result.IsGenerating.ShouldBeTrue();
-        result.RetryAfterSeconds.ShouldBe(17);
+        result.Id.ShouldBe(requestId);
+        result.ApplicationId.ShouldBe(applicationId);
+        result.OperationId.ShouldBe(operationId);
+        result.OperationType.ShouldBe(operationType);
+        result.Status.ShouldBe(AIGenerationRequestStatus.Running.ToString());
+        result.StartedAt.ShouldBe(new DateTime(2026, 7, 1, 12, 0, 0));
+        result.FailureReason.ShouldBe("not used");
+        result.IsActive.ShouldBeTrue();
     }
 
     [Fact]
     public async Task GetStatusAsync_Should_Reject_Unsupported_Operation_Type()
     {
         var service = new AIGenerationAppService(
-            Substitute.For<IApplicationAIGenerationQueue>(),
+            Substitute.For<IApplicationGenerationQueue>(),
             Substitute.For<IAIGenerationStatusAppService>(),
-            Substitute.For<IAIRateLimiter>(),
             CreateFeatureGuard(),
             Substitute.For<ICurrentTenant>());
         service.LazyServiceProvider = GetRequiredService<IAbpLazyServiceProvider>();

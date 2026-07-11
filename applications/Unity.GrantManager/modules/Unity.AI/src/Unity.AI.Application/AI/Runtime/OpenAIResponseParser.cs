@@ -19,27 +19,27 @@ public class OpenAIResponseParser : ITransientDependency
             return response;
         }
 
-        if (TryGetStringProperty(root, AIJsonKeys.Decision, out var decision))
+        if (TryGetStringProperty(root, "decision", out var decision))
         {
             response.Decision = decision.Trim().ToUpperInvariant();
         }
 
-        if (TryGetArrayProperty(root, AIJsonKeys.Errors, out var errorsArray))
+        if (TryGetArrayProperty(root, "errors", out var errorsArray))
         {
             response.Errors = ParseFindings(errorsArray).ToList();
         }
 
-        if (TryGetArrayProperty(root, AIJsonKeys.Warnings, out var warningsArray))
+        if (TryGetArrayProperty(root, "warnings", out var warningsArray))
         {
             response.Warnings = ParseFindings(warningsArray).ToList();
         }
 
-        if (TryGetArrayProperty(root, AIJsonKeys.Summaries, out var summariesArray))
+        if (TryGetArrayProperty(root, "summaries", out var summariesArray))
         {
             response.Summaries = ParseFindings(summariesArray).ToList();
         }
 
-        if (TryGetArrayProperty(root, AIJsonKeys.Recommendations, out var recommendationsArray))
+        if (TryGetArrayProperty(root, "recommendations", out var recommendationsArray))
         {
             response.Recommendations = ParseFindings(recommendationsArray).ToList();
         }
@@ -93,59 +93,15 @@ public class OpenAIResponseParser : ITransientDependency
 
     public static FormMappingResponse ParseFormMappingResponse(string raw)
     {
-        var response = new FormMappingResponse();
         if (!TryParseJsonObjectFromResponse(raw, out var root))
         {
-            return response;
+            return new FormMappingResponse();
         }
 
-        if (root.TryGetProperty("coreFieldMatches", out var coreFieldMatches) && coreFieldMatches.ValueKind == JsonValueKind.Array)
+        return new FormMappingResponse
         {
-            response.CoreFieldMatches = ParseFormMappingMatches(coreFieldMatches).ToList();
-        }
-
-        if (root.TryGetProperty("worksheetMatches", out var worksheetMatches) && worksheetMatches.ValueKind == JsonValueKind.Array)
-        {
-            response.WorksheetMatches = worksheetMatches.EnumerateArray()
-                .Where(item => item.ValueKind == JsonValueKind.Object)
-                    .Select(item => new FormMappingWorksheetResponse
-                    {
-                        WorksheetName = item.TryGetProperty("worksheetName", out var name) && name.ValueKind == JsonValueKind.String ? name.GetString() ?? string.Empty : string.Empty,
-                        FieldMatches = item.TryGetProperty("fieldMatches", out var matches) && matches.ValueKind == JsonValueKind.Array
-                            ? ParseFormMappingMatches(matches).ToList()
-                        : []
-                })
-                .ToList();
-        }
-
-        if (root.TryGetProperty("worksheetCreationSuggestions", out var worksheetCreationSuggestions) && worksheetCreationSuggestions.ValueKind == JsonValueKind.Array)
-        {
-            response.WorksheetCreationSuggestions = worksheetCreationSuggestions.EnumerateArray()
-                .Where(item => item.ValueKind == JsonValueKind.Object)
-                    .Select(item => new FormWorksheetCreationResponse
-                    {
-                        WorksheetName = item.TryGetProperty("worksheetName", out var name) && name.ValueKind == JsonValueKind.String ? name.GetString() ?? string.Empty : string.Empty,
-                        Reason = item.TryGetProperty("reason", out var reason) && reason.ValueKind == JsonValueKind.String ? reason.GetString() ?? string.Empty : string.Empty,
-                    SuggestedFields = item.TryGetProperty("suggestedFields", out var fields) && fields.ValueKind == JsonValueKind.Array
-                        ? ParseMappingFields(fields).ToList()
-                        : []
-                })
-                .ToList();
-        }
-
-        if (root.TryGetProperty("issues", out var issues) && issues.ValueKind == JsonValueKind.Array)
-        {
-            response.Issues = issues.EnumerateArray()
-                .Where(item => item.ValueKind == JsonValueKind.Object)
-                    .Select(item => new FormMappingIssueResponse
-                    {
-                        Code = item.TryGetProperty("code", out var code) && code.ValueKind == JsonValueKind.String ? code.GetString() ?? string.Empty : string.Empty,
-                        Message = item.TryGetProperty("message", out var message) && message.ValueKind == JsonValueKind.String ? message.GetString() ?? string.Empty : string.Empty
-                })
-                .ToList();
-        }
-
-        return response;
+            Mapping = root.GetRawText()
+        };
     }
 
     private static string AddIdsToAnalysisItems(string analysisJson)
@@ -162,10 +118,10 @@ public class OpenAIResponseParser : ITransientDependency
                 {
                     var outputPropertyName = property.Name;
 
-                    if (outputPropertyName == AIJsonKeys.Errors ||
-                        outputPropertyName == AIJsonKeys.Warnings ||
-                        outputPropertyName == AIJsonKeys.Summaries ||
-                        outputPropertyName == AIJsonKeys.Recommendations)
+                    if (outputPropertyName == "errors" ||
+                        outputPropertyName == "warnings" ||
+                        outputPropertyName == "summaries" ||
+                        outputPropertyName == "recommendations")
                     {
                         writer.WritePropertyName(outputPropertyName);
                         writer.WriteStartArray();
@@ -179,11 +135,11 @@ public class OpenAIResponseParser : ITransientDependency
                                 itemProperty.WriteTo(writer);
                             }
 
-                            if (!item.TryGetProperty(AIJsonKeys.Id, out var idProp) ||
+                            if (!item.TryGetProperty("id", out var idProp) ||
                                 idProp.ValueKind != JsonValueKind.String ||
                                 string.IsNullOrWhiteSpace(idProp.GetString()))
                             {
-                                writer.WriteString(AIJsonKeys.Id, Guid.NewGuid().ToString());
+                                writer.WriteString("id", Guid.NewGuid().ToString());
                             }
 
                             writer.WriteEndObject();
@@ -218,23 +174,23 @@ public class OpenAIResponseParser : ITransientDependency
             }
 
             var id = Guid.NewGuid().ToString();
-            if (item.TryGetProperty(AIJsonKeys.Id, out var idProp) && idProp.ValueKind == JsonValueKind.String)
+            if (item.TryGetProperty("id", out var idProp) && idProp.ValueKind == JsonValueKind.String)
             {
                 id = idProp.GetString() ?? id;
             }
 
-            var dismissed = item.TryGetProperty(AIJsonKeys.Dismissed, out var dismissedProp) &&
+            var dismissed = item.TryGetProperty("dismissed", out var dismissedProp) &&
                 (dismissedProp.ValueKind == JsonValueKind.True || dismissedProp.ValueKind == JsonValueKind.False) &&
                 dismissedProp.GetBoolean();
 
             string? title = null;
-            if (item.TryGetProperty(AIJsonKeys.Title, out var titleProp) && titleProp.ValueKind == JsonValueKind.String)
+            if (item.TryGetProperty("title", out var titleProp) && titleProp.ValueKind == JsonValueKind.String)
             {
                 title = titleProp.GetString();
             }
 
             string? detail = null;
-            if (item.TryGetProperty(AIJsonKeys.Detail, out var detailProp) && detailProp.ValueKind == JsonValueKind.String)
+            if (item.TryGetProperty("detail", out var detailProp) && detailProp.ValueKind == JsonValueKind.String)
             {
                 detail = detailProp.GetString();
             }
@@ -245,44 +201,6 @@ public class OpenAIResponseParser : ITransientDependency
                 Dismissed = dismissed,
                 Title = title,
                 Detail = detail
-            };
-        }
-    }
-
-    private static IEnumerable<FormMappingMatchResponse> ParseFormMappingMatches(JsonElement itemsArray)
-    {
-        foreach (var item in itemsArray.EnumerateArray())
-        {
-            if (item.ValueKind != JsonValueKind.Object)
-            {
-                continue;
-            }
-
-            yield return new FormMappingMatchResponse
-            {
-                SourceField = item.TryGetProperty("sourceField", out var sourceField) && sourceField.ValueKind == JsonValueKind.String ? sourceField.GetString() ?? string.Empty : string.Empty,
-                TargetField = item.TryGetProperty("targetField", out var targetField) && targetField.ValueKind == JsonValueKind.String ? targetField.GetString() ?? string.Empty : string.Empty,
-                Reason = item.TryGetProperty("reason", out var reason) && reason.ValueKind == JsonValueKind.String ? reason.GetString() ?? string.Empty : string.Empty,
-                Confidence = item.TryGetProperty("confidence", out var confidence) && confidence.ValueKind == JsonValueKind.Number && confidence.TryGetDecimal(out var parsedConfidence) ? parsedConfidence : 0m
-            };
-        }
-    }
-
-    private static IEnumerable<FormMappingFieldResponse> ParseMappingFields(JsonElement itemsArray)
-    {
-        foreach (var item in itemsArray.EnumerateArray())
-        {
-            if (item.ValueKind != JsonValueKind.Object)
-            {
-                continue;
-            }
-
-            yield return new FormMappingFieldResponse
-            {
-                Name = item.TryGetProperty("name", out var name) && name.ValueKind == JsonValueKind.String ? name.GetString() ?? string.Empty : string.Empty,
-                Type = item.TryGetProperty("type", out var type) && type.ValueKind == JsonValueKind.String ? type.GetString() ?? string.Empty : string.Empty,
-                Label = item.TryGetProperty("label", out var label) && label.ValueKind == JsonValueKind.String ? label.GetString() ?? string.Empty : string.Empty,
-                IsCustom = item.TryGetProperty("isCustom", out var isCustom) && (isCustom.ValueKind == JsonValueKind.True || isCustom.ValueKind == JsonValueKind.False) && isCustom.GetBoolean()
             };
         }
     }

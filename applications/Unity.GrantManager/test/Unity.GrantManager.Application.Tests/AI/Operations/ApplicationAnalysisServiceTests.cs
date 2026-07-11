@@ -1,12 +1,16 @@
+using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
 using Shouldly;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
+using Unity.AI.Automation;
 using Unity.AI;
-using Unity.AI.Models;
 using Unity.AI.Operations;
+using Unity.AI.Models;
+using Unity.AI.Validation;
 using Unity.AI.Requests;
 using Unity.AI.Responses;
 using Xunit;
@@ -29,36 +33,52 @@ public class ApplicationAnalysisServiceTests : GrantManagerApplicationTestBase
         var aiService = Substitute.For<IAIService>();
         aiService.GenerateApplicationAnalysisAsync(Arg.Do<ApplicationAnalysisRequest>(request => capturedRequest = request))
             .Returns(new ApplicationAnalysisResponse { Decision = "ok" });
-        var prerequisiteValidator = Substitute.For<IAIGenerationPrerequisiteValidator>();
+        var prerequisiteValidator = Substitute.For<IGenerationPrerequisiteValidator>();
+        var dataProvider = Substitute.For<IApplicationGenerationDataProvider>();
+        dataProvider.GetApplicationSubmissionAsync(applicationId).Returns(new ApplicationSubmissionSnapshot
+        {
+            ApplicationFormVersionId = Guid.NewGuid(),
+            Submission = JsonSerializer.Serialize(new
+            {
+                data = new
+                {
+                    projectName = "Submitted project"
+                }
+            })
+        });
+        dataProvider.GetAttachmentSummariesAsync(applicationId).Returns([]);
+        dataProvider.GetApplicationFormVersionAsync(Arg.Any<Guid?>()).Returns(new ApplicationFormVersionSnapshot
+        {
+            FormSchema = JsonSerializer.Serialize(new
+            {
+                components = new[]
+                {
+                    new
+                    {
+                        key = "projectName",
+                        label = "Project Name",
+                        type = "textfield",
+                        input = true,
+                        validate = new { required = true }
+                    }
+                }
+            })
+        });
 
         var service = new ApplicationAnalysisService(
             aiService,
-            prerequisiteValidator);
+            prerequisiteValidator,
+            dataProvider,
+            NullLogger<ApplicationAnalysisService>.Instance);
 
-        var result = await service.RegenerateAsync(new ApplicationAnalysisOperationInputDto
-        {
-            ApplicationId = applicationId,
-            Schema = JsonSerializer.SerializeToElement(new { projectName = "Project Name" }),
-            Data = JsonSerializer.SerializeToElement(new { projectName = "Submitted project" }),
-            Attachments = new List<AIAttachmentItem>
-            {
-                new()
-                {
-                    Name = "summary.pdf",
-                    Summary = "Summary text"
-                }
-            },
-            PromptVersion = "v1"
-        });
+        var result = await service.GenerateApplicationAnalysisAsync(applicationId, "v1");
 
         result.ShouldContain("\"Decision\": \"ok\"");
         capturedRequest.ShouldNotBeNull();
         capturedRequest.PromptVersion.ShouldBe("v1");
-        capturedRequest.Attachments.Count.ShouldBe(1);
-        capturedRequest.Attachments[0].Name.ShouldBe("summary.pdf");
-        capturedRequest.Attachments[0].Summary.ShouldBe("Summary text");
+        capturedRequest.Attachments.ShouldBeEmpty();
         capturedRequest.Data.GetProperty("projectName").GetString().ShouldBe("Submitted project");
-        capturedRequest.Schema.GetProperty("projectName").GetString().ShouldBe("Project Name");
+        capturedRequest.Schema.GetProperty("required_fields").EnumerateArray().First().GetString().ShouldBe("Project Name (projectName)");
 
         await prerequisiteValidator.Received(1).EnsureApplicationAnalysisAvailableAsync(applicationId);
         await aiService.Received(1).GenerateApplicationAnalysisAsync(Arg.Any<ApplicationAnalysisRequest>(), Arg.Any<System.Threading.CancellationToken>());
@@ -73,23 +93,21 @@ public class ApplicationAnalysisServiceTests : GrantManagerApplicationTestBase
         var aiService = Substitute.For<IAIService>();
         aiService.GenerateApplicationAnalysisAsync(Arg.Do<ApplicationAnalysisRequest>(request => capturedRequest = request))
             .Returns(new ApplicationAnalysisResponse());
-        var prerequisiteValidator = Substitute.For<IAIGenerationPrerequisiteValidator>();
+        var prerequisiteValidator = Substitute.For<IGenerationPrerequisiteValidator>();
+        var dataProvider = Substitute.For<IApplicationGenerationDataProvider>();
+        dataProvider.GetApplicationSubmissionAsync(applicationId).Returns((ApplicationSubmissionSnapshot?)null);
+        dataProvider.GetAttachmentSummariesAsync(applicationId).Returns([]);
 
         var service = new ApplicationAnalysisService(
             aiService,
-            prerequisiteValidator);
+            prerequisiteValidator,
+            dataProvider,
+            NullLogger<ApplicationAnalysisService>.Instance);
 
-        await service.RegenerateAsync(new ApplicationAnalysisOperationInputDto
-        {
-            ApplicationId = applicationId,
-            Schema = JsonSerializer.SerializeToElement(new { }),
-            Data = JsonSerializer.SerializeToElement(new { project_name = "Fallback project" }),
-            Attachments = [],
-            PromptVersion = null
-        });
+        await service.GenerateApplicationAnalysisAsync(applicationId);
 
         capturedRequest.ShouldNotBeNull();
-        capturedRequest.Data.GetProperty("project_name").GetString().ShouldBe("Fallback project");
+        capturedRequest.Data.GetRawText().ShouldBe("{}");
         capturedRequest.Attachments.ShouldBeEmpty();
         capturedRequest.PromptVersion.ShouldBeNull();
     }

@@ -1,7 +1,7 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
-using Unity.AI.RateLimit;
+using Unity.AI.Cooldown;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Linq;
@@ -14,7 +14,7 @@ public class AIGenerationActivityProvider(
     IRepository<AIGenerationRequest, Guid> generationRequestRepository,
     ICurrentUser currentUser,
     ICurrentTenant currentTenant,
-    IAsyncQueryableExecuter asyncExecuter) : IAIGenerationActivityProvider, ITransientDependency
+    IAsyncQueryableExecuter asyncExecuter) : ITransientDependency
 {
     public async Task<bool> HasActiveGenerationAsync()
     {

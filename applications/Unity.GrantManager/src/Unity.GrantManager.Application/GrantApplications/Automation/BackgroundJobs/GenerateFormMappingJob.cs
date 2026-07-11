@@ -4,11 +4,11 @@ using System.Collections.Generic;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Unity.AI.Domain;
-using Unity.AI;
+using Unity.AI.Operations;
 using Unity.AI.Requests;
 using Unity.AI.Responses;
 using Unity.GrantManager.ApplicationForms;
-using Unity.AI.RateLimit;
+using Unity.AI.Cooldown;
 using Unity.GrantManager.ApplicationForms.Mapping;
 using Unity.GrantManager.Applications;
 using Volo.Abp.Domain.Repositories;
@@ -21,13 +21,13 @@ namespace Unity.GrantManager.GrantApplications.Automation.BackgroundJobs;
 
 public class GenerateFormMappingJob(
     IApplicationFormVersionMappingReadService mappingReadService,
-    IAIService aiService,
+    IFormMappingService aiService,
     IRepository<ApplicationFormVersion, Guid> applicationFormVersionRepository,
     IRepository<AIGenerationRequest, Guid> generationRequestRepository,
     IRepository<AIOperation, Guid> operationRepository,
     ICurrentTenant currentTenant,
     IUnitOfWorkManager unitOfWorkManager,
-    IAIRateLimiter aiRateLimiter,
+    IAICooldownAppService aiCooldownService,
     ILogger<GenerateFormMappingJob> logger) : AsyncBackgroundJob<GenerateFormMappingBackgroundJobArgs>, ITransientDependency
 {
     public override async Task ExecuteAsync(GenerateFormMappingBackgroundJobArgs args)
@@ -60,10 +60,10 @@ public class GenerateFormMappingJob(
 
                 var submissionHeaderMapping = FormMappingResponseMapper.BuildSubmissionHeaderMapping(response);
                 var applicationFormVersion = await applicationFormVersionRepository.GetAsync(args.ApplicationFormVersionId);
-                applicationFormVersion.SubmissionHeaderMapping = JsonSerializer.Serialize(submissionHeaderMapping);
+                applicationFormVersion.SubmissionHeaderMapping = submissionHeaderMapping;
                 await applicationFormVersionRepository.UpdateAsync(applicationFormVersion, true);
 
-                await AIGenerationRequestJobHelper.StampRateLimitBestEffortAsync(aiRateLimiter, logger, args.RequestedByUserId, args.ApplicationId, AIGenerationRequestKeyHelper.FormMappingOperationType);
+                await AIGenerationRequestJobHelper.StampCooldownBestEffortAsync(aiCooldownService, logger, args.RequestedByUserId, args.ApplicationId, AIGenerationRequestKeyHelper.FormMappingOperationType);
                 await AIGenerationRequestJobHelper.MarkCompletedInNewUowAsync(
                     unitOfWorkManager,
                     generationRequestRepository,

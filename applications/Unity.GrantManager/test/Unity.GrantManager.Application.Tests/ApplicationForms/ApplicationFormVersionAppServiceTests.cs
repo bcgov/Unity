@@ -61,16 +61,7 @@ public class ApplicationFormVersionAppServiceTests(ITestOutputHelper outputHelpe
         aiService.GenerateFormMappingAsync(Arg.Do<FormMappingRequest>(request => capturedRequest = request), Arg.Any<System.Threading.CancellationToken>())
             .Returns(new FormMappingResponse
             {
-                CoreFieldMatches =
-                [
-                    new FormMappingMatchResponse
-                    {
-                        SourceField = "ProjectName",
-                        TargetField = "ProjectName",
-                        Reason = "same meaning",
-                        Confidence = 0.99M
-                    }
-                ]
+                Mapping = """{"ProjectName":"ProjectName"}"""
             });
 
         var service = CreateService(repository, readService, aiService);
@@ -78,7 +69,6 @@ public class ApplicationFormVersionAppServiceTests(ITestOutputHelper outputHelpe
         var result = await service.GenerateMappingAsync(formVersionId);
 
         result.ApplicationFormVersionId.ShouldBe(formVersionId);
-        result.CoreFieldMatches.Count.ShouldBe(1);
         capturedRequest.ShouldNotBeNull();
         capturedRequest!.Data.GetProperty("ChefsFields").ValueKind.ShouldBe(System.Text.Json.JsonValueKind.Array);
         capturedRequest.Data.GetProperty("UnityCoreFields").ValueKind.ShouldBe(System.Text.Json.JsonValueKind.Array);

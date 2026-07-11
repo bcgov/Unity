@@ -13,7 +13,7 @@ using Volo.Abp.Settings;
 namespace Unity.GrantManager.GrantApplications.Automation.Handlers;
 
 public class QueueApplicationAIPipelineOnProcessHandler(
-    IApplicationAIGenerationQueue aiGenerationQueue,
+    IApplicationGenerationQueue aiGenerationQueue,
     ISettingProvider settingProvider,
     IApplicationFormRepository applicationFormRepository,
     IFeatureChecker featureChecker,
@@ -53,7 +53,7 @@ public class QueueApplicationAIPipelineOnProcessHandler(
 
         try
         {
-            await aiGenerationQueue.QueueAllAIStagesAsync(eventData.Application.Id, eventData.Application.TenantId);
+            await aiGenerationQueue.QueueApplicationIntakeAsync(eventData.Application.Id, eventData.Application.TenantId);
 
             logger.LogInformation("Queued AI pipeline for application {ApplicationId}.", eventData.Application.Id);
         }

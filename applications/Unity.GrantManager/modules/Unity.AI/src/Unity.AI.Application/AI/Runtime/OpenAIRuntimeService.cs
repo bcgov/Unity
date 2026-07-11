@@ -6,6 +6,7 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Unity.AI.Models;
+using Unity.AI.Operations;
 using Unity.AI.Prompts;
 using Unity.AI.Requests;
 using Unity.AI.Responses;
@@ -14,7 +15,14 @@ using Volo.Abp.DependencyInjection;
 
 namespace Unity.AI.Runtime
 {
-    [ExposeServices(typeof(IAIService))]
+    [ExposeServices(
+        typeof(IAIService),
+        typeof(IApplicationAnalysisService),
+        typeof(IApplicationScoringService),
+        typeof(IApplicationAttachmentSummaryService),
+        typeof(IFormMappingService),
+        typeof(IFormWorksheetService),
+        typeof(IFormScoresheetService))]
     public class OpenAIRuntimeService : IAIService, ITransientDependency
     {
         private readonly ILogger<OpenAIRuntimeService> _logger;
@@ -23,7 +31,7 @@ namespace Unity.AI.Runtime
         private readonly IAIPromptTemplateProvider _promptTemplateProvider;
         private readonly OpenAIPromptFileLogger _promptFileLogger;
         private const string ApplicationAnalysisPromptType = AIPromptTypes.ApplicationAnalysis;
-        private const string AttachmentSummaryPromptType = AIPromptTypes.AttachmentSummary;
+        private const string AttachmentSummaryPromptType = AIPromptTypes.ApplicationAttachmentSummary;
         private const string ApplicationScoringPromptType = AIPromptTypes.ApplicationScoring;
         private const string FormMappingPromptType = AIPromptTypes.FormMapping;
         private const string FormWorksheetPromptType = AIPromptTypes.FormWorksheet;
@@ -130,7 +138,7 @@ namespace Unity.AI.Runtime
             }
         }
 
-        public async Task<AttachmentSummaryResponse> GenerateAttachmentSummaryAsync(AttachmentSummaryRequest request, CancellationToken cancellationToken = default)
+        public async Task<ApplicationAttachmentSummaryResponse> GenerateAttachmentSummaryAsync(ApplicationAttachmentSummaryRequest request, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(request);
             var fileName = request.FileName ?? string.Empty;
@@ -178,13 +186,13 @@ namespace Unity.AI.Runtime
 
                 if (result.Outcome != AIOperationOutcome.Success)
                 {
-                    return new AttachmentSummaryResponse
+                    return new ApplicationAttachmentSummaryResponse
                     {
                         Summary = $"AI analysis not available for this attachment ({fileName})."
                     };
                 }
 
-                return new AttachmentSummaryResponse
+                return new ApplicationAttachmentSummaryResponse
                 {
                     Summary = ExtractSummaryFromJson(result.Content)
                 };
@@ -196,7 +204,7 @@ namespace Unity.AI.Runtime
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Attachment summary generation failed for {FileName}.", fileName);
-                return new AttachmentSummaryResponse
+                return new ApplicationAttachmentSummaryResponse
                 {
                     Summary = $"AI analysis not available for this attachment ({fileName})."
                 };
@@ -305,9 +313,12 @@ namespace Unity.AI.Runtime
                     cancellationToken);
                 await _promptFileLogger.LogPromptOutputAsync(FormWorksheetPromptType, promptVersion, result.CaptureOutput, cancellationToken);
 
-                return JsonSerializer.Deserialize<FormWorksheetResponse>(
-                    result.Outcome == AIOperationOutcome.Success ? result.Content : "{}",
-                    AIJsonDefaults.IndentedCamelCase) ?? new FormWorksheetResponse();
+                return new FormWorksheetResponse
+                {
+                    Worksheet = result.Outcome == AIOperationOutcome.Success
+                        ? AIResponseJson.CleanJsonResponse(result.Content)
+                        : "{}"
+                };
             }
             catch (OperationCanceledException)
             {
@@ -351,9 +362,12 @@ namespace Unity.AI.Runtime
                     cancellationToken);
                 await _promptFileLogger.LogPromptOutputAsync(FormScoresheetPromptType, promptVersion, result.CaptureOutput, cancellationToken);
 
-                return JsonSerializer.Deserialize<FormScoresheetResponse>(
-                    result.Outcome == AIOperationOutcome.Success ? result.Content : "{}",
-                    AIJsonDefaults.IndentedCamelCase) ?? new FormScoresheetResponse();
+                return new FormScoresheetResponse
+                {
+                    Scoresheet = result.Outcome == AIOperationOutcome.Success
+                        ? AIResponseJson.CleanJsonResponse(result.Content)
+                        : "{}"
+                };
             }
             catch (OperationCanceledException)
             {
@@ -402,7 +416,10 @@ namespace Unity.AI.Runtime
                     return new FormMappingResponse();
                 }
 
-                return OpenAIResponseParser.ParseFormMappingResponse(result.Content);
+                return new FormMappingResponse
+                {
+                    Mapping = AIResponseJson.CleanJsonResponse(result.Content)
+                };
             }
             catch (OperationCanceledException)
             {
@@ -546,7 +563,7 @@ namespace Unity.AI.Runtime
                 return output?.Trim() ?? string.Empty;
             }
 
-            if (jsonObject.TryGetProperty(AIJsonKeys.Summary, out var summaryProp) &&
+            if (jsonObject.TryGetProperty("summary", out var summaryProp) &&
                 summaryProp.ValueKind == JsonValueKind.String)
             {
                 return summaryProp.GetString() ?? string.Empty;

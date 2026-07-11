@@ -4,8 +4,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
-using Unity.AI;
 using Unity.AI.Domain;
+using Unity.AI.Operations;
 using Unity.AI.Requests;
 using Unity.GrantManager.ApplicationForms;
 using Unity.GrantManager.Applications;
@@ -14,7 +14,7 @@ using Unity.Flex.Domain.WorksheetLinks;
 using Unity.Flex.Domain.Worksheets;
 using Unity.Flex.Worksheets;
 using Unity.Modules.Shared.Correlation;
-using Unity.AI.RateLimit;
+using Unity.AI.Cooldown;
 using Volo.Abp.BackgroundJobs;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Repositories;
@@ -28,12 +28,12 @@ public class GenerateFormWorksheetJob(
     IApplicationFormRepository applicationFormRepository,
     IWorksheetRepository worksheetRepository,
     IWorksheetLinkRepository worksheetLinkRepository,
-    IAIService aiService,
+    IFormWorksheetService aiService,
     IRepository<AIGenerationRequest, Guid> generationRequestRepository,
     IRepository<AIOperation, Guid> operationRepository,
     ICurrentTenant currentTenant,
     IUnitOfWorkManager unitOfWorkManager,
-    IAIRateLimiter aiRateLimiter,
+    IAICooldownAppService aiCooldownService,
     ILogger<GenerateFormWorksheetJob> logger) : AsyncBackgroundJob<GenerateFormWorksheetBackgroundJobArgs>, ITransientDependency
 {
     private static readonly JsonSerializerOptions CaseInsensitiveJsonOptions = new()
@@ -111,7 +111,7 @@ public class GenerateFormWorksheetJob(
                     PromptVersion = args.PromptVersion
                 });
 
-                var worksheetJson = JsonSerializer.Serialize(worksheetResponse);
+                var worksheetJson = worksheetResponse.Worksheet;
                 var createDto = ParseWorksheetDefinition(worksheetJson);
                 var worksheet = existingWorksheet == null
                     ? BuildWorksheet(createDto, worksheetName)
@@ -128,7 +128,7 @@ public class GenerateFormWorksheetJob(
 
                 await UpsertWorksheetLinkAsync(worksheet.Id, formVersion.Id);
 
-                await AIGenerationRequestJobHelper.StampRateLimitBestEffortAsync(aiRateLimiter, logger, args.RequestedByUserId, args.ApplicationId, AIGenerationRequestKeyHelper.FormWorksheetOperationType);
+                await AIGenerationRequestJobHelper.StampCooldownBestEffortAsync(aiCooldownService, logger, args.RequestedByUserId, args.ApplicationId, AIGenerationRequestKeyHelper.FormWorksheetOperationType);
                 await AIGenerationRequestJobHelper.MarkCompletedInNewUowAsync(
                     unitOfWorkManager,
                     generationRequestRepository,

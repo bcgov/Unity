@@ -7,7 +7,7 @@ using System.Text.Json;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
-using Unity.AI;
+using Unity.AI.Operations;
 using Unity.AI.Requests;
 using Unity.AI.Responses;
 using Unity.GrantManager.Forms;
@@ -36,7 +36,7 @@ namespace Unity.GrantManager.ApplicationForms
         IReportingFieldsGeneratorService reportingFieldsGeneratorService,
         IFeatureChecker featureChecker,
         IApplicationFormVersionMappingReadService mappingReadService,
-        IAIService aiService) :
+        IFormMappingService aiService) :
         CrudAppService<
             ApplicationFormVersion,
             ApplicationFormVersionDto,
@@ -46,7 +46,7 @@ namespace Unity.GrantManager.ApplicationForms
         IApplicationFormVersionAppService
     {
         private readonly IApplicationFormVersionMappingReadService _mappingReadService = mappingReadService;
-        private readonly IAIService _aiService = aiService;
+        private readonly IFormMappingService _aiService = aiService;
 
         public override async Task<ApplicationFormVersionDto> CreateAsync(CreateUpdateApplicationFormVersionDto input) =>
             await base.CreateAsync(input);
@@ -330,47 +330,12 @@ namespace Unity.GrantManager.ApplicationForms
             });
             var submissionHeaderMapping = FormMappingResponseMapper.BuildSubmissionHeaderMapping(response);
             var applicationFormVersion = await repository.GetAsync(id);
-            applicationFormVersion.SubmissionHeaderMapping = JsonSerializer.Serialize(submissionHeaderMapping);
+            applicationFormVersion.SubmissionHeaderMapping = submissionHeaderMapping;
             await repository.UpdateAsync(applicationFormVersion, true);
 
             return new ApplicationFormMappingDto
             {
-                ApplicationFormVersionId = id,
-                CoreFieldMatches = response.CoreFieldMatches.Select(item => new FormMappingDto
-                {
-                    SourceField = item.SourceField,
-                    TargetField = item.TargetField,
-                    Reason = item.Reason,
-                    Confidence = item.Confidence
-                }).ToList(),
-                WorksheetMatches = response.WorksheetMatches.Select(item => new FormWorksheetDto
-                {
-                    WorksheetName = item.WorksheetName,
-                    FieldMatches = item.FieldMatches.Select(match => new FormMappingDto
-                    {
-                        SourceField = match.SourceField,
-                        TargetField = match.TargetField,
-                        Reason = match.Reason,
-                        Confidence = match.Confidence
-                    }).ToList()
-                }).ToList(),
-                WorksheetCreationSuggestions = response.WorksheetCreationSuggestions.Select(item => new WorksheetCreationSuggestionDto
-                {
-                    WorksheetName = item.WorksheetName,
-                    SuggestedFields = item.SuggestedFields.Select(field => new MappingFieldDto
-                    {
-                        Name = field.Name,
-                        Type = field.Type,
-                        Label = field.Label,
-                        IsCustom = field.IsCustom
-                    }).ToList(),
-                    Reason = item.Reason
-                }).ToList(),
-                Issues = response.Issues.Select(item => new MappingIssueDto
-                {
-                    Code = item.Code,
-                    Message = item.Message
-                }).ToList()
+                ApplicationFormVersionId = id
             };
         }
 

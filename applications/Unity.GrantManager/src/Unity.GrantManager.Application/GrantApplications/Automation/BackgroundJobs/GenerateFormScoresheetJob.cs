@@ -3,12 +3,12 @@ using System;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
-using Unity.AI;
 using Unity.AI.Domain;
+using Unity.AI.Operations;
 using Unity.AI.Requests;
 using Unity.GrantManager.ApplicationForms;
 using Unity.GrantManager.Applications;
-using Unity.AI.RateLimit;
+using Unity.AI.Cooldown;
 using Unity.Flex.Domain.Scoresheets;
 using Unity.Flex.Scoresheets;
 using Volo.Abp.BackgroundJobs;
@@ -23,12 +23,12 @@ public class GenerateFormScoresheetJob(
     IApplicationFormVersionRepository applicationFormVersionRepository,
     IApplicationFormRepository applicationFormRepository,
     IScoresheetRepository scoresheetRepository,
-    IAIService aiService,
+    IFormScoresheetService aiService,
     IRepository<AIGenerationRequest, Guid> generationRequestRepository,
     IRepository<AIOperation, Guid> operationRepository,
     ICurrentTenant currentTenant,
     IUnitOfWorkManager unitOfWorkManager,
-    IAIRateLimiter aiRateLimiter,
+    IAICooldownAppService aiCooldownService,
     ILogger<GenerateFormScoresheetJob> logger) : AsyncBackgroundJob<GenerateFormScoresheetBackgroundJobArgs>, ITransientDependency
 {
     private static readonly JsonSerializerOptions CaseInsensitiveJsonOptions = new()
@@ -110,7 +110,7 @@ public class GenerateFormScoresheetJob(
                     PromptVersion = args.PromptVersion
                 });
 
-                var scoresheetJson = JsonSerializer.Serialize(scoresheetResponse);
+                var scoresheetJson = scoresheetResponse.Scoresheet;
                 var importDto = ParseScoresheetDefinition(scoresheetJson);
                 var scoresheet = existingScoresheet == null
                     ? BuildScoresheet(importDto, scoresheetJson, scoresheetName)
@@ -128,7 +128,7 @@ public class GenerateFormScoresheetJob(
                 applicationForm.ScoresheetId = scoresheet.Id;
                 await applicationFormRepository.UpdateAsync(applicationForm);
 
-                await AIGenerationRequestJobHelper.StampRateLimitBestEffortAsync(aiRateLimiter, logger, args.RequestedByUserId, args.ApplicationId, AIGenerationRequestKeyHelper.FormScoresheetOperationType);
+                await AIGenerationRequestJobHelper.StampCooldownBestEffortAsync(aiCooldownService, logger, args.RequestedByUserId, args.ApplicationId, AIGenerationRequestKeyHelper.FormScoresheetOperationType);
                 await AIGenerationRequestJobHelper.MarkCompletedInNewUowAsync(
                     unitOfWorkManager,
                     generationRequestRepository,

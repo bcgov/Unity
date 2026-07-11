@@ -7,7 +7,8 @@ using Unity.AI.Automation;
 using Unity.AI.Features;
 using Unity.AI.Localization;
 using Unity.AI.Operations;
-using Unity.AI.RateLimit;
+using Unity.AI.Cooldown;
+using Unity.AI.Validation;
 using Unity.GrantManager.GrantApplications;
 using Unity.GrantManager.GrantApplications.Automation.BackgroundJobs;
 using Medallion.Threading;
@@ -20,25 +21,26 @@ using Volo.Abp.DependencyInjection;
 using Volo.Abp.Features;
 using Volo.Abp.Linq;
 using Volo.Abp.Users;
+using Unity.GrantManager.Applications;
 
 namespace Unity.GrantManager.GrantApplications.Automation;
 
-public class ApplicationAIGenerationQueue(
+public class ApplicationGenerationQueue(
     IBackgroundJobManager backgroundJobManager,
     IRepository<AIGenerationRequest, Guid> generationRequestRepository,
     IRepository<AIOperation, Guid> operationRepository,
     IDistributedLockProvider distributedLockProvider,
-    IAIGenerationPrerequisiteValidator aiGenerationPrerequisiteValidator,
+    IGenerationPrerequisiteValidator aiGenerationPrerequisiteValidator,
     IFeatureChecker featureChecker,
-    IAIRateLimiter aiRateLimiter,
+    IAICooldownAppService aiCooldownService,
     IAsyncQueryableExecuter asyncQueryableExecuter,
     ICurrentUser currentUser,
-    ILogger<ApplicationAIGenerationQueue> logger,
+    ILogger<ApplicationGenerationQueue> logger,
     IStringLocalizer<AIResource> localizer)
-    : IApplicationAIGenerationQueue, ITransientDependency
+    : IApplicationGenerationQueue, ITransientDependency
 {
     private readonly IAsyncQueryableExecuter _asyncQueryableExecuter = asyncQueryableExecuter;
-    public async Task QueueAttachmentSummaryAsync(Guid applicationId, Guid? tenantId, string? promptVersion = null, List<Guid>? attachmentIds = null)
+    public async Task QueueApplicationAttachmentSummaryAsync(Guid applicationId, Guid? tenantId, List<Guid> attachmentIds, string? promptVersion = null)
     {
         await EnsureRequestAndEnqueueAsync(
             tenantId,
@@ -47,7 +49,7 @@ public class ApplicationAIGenerationQueue(
             () => aiGenerationPrerequisiteValidator.EnsureAttachmentSummaryAvailableAsync(applicationId),
             () =>
             {
-                return backgroundJobManager.EnqueueAsync(new GenerateAttachmentSummaryBackgroundJobArgs
+                return backgroundJobManager.EnqueueAsync(new GenerateApplicationAttachmentSummaryBackgroundJobArgs
                 {
                     ApplicationId = applicationId,
                     AttachmentIds = attachmentIds,
@@ -159,7 +161,7 @@ public class ApplicationAIGenerationQueue(
             });
     }
 
-    public async Task QueueAllAIStagesAsync(Guid applicationId, Guid? tenantId, string? promptVersion = null)
+    public async Task QueueApplicationIntakeAsync(Guid applicationId, Guid? tenantId, string? promptVersion = null)
     {
         var hasEnabledStage = false;
         var enqueuedStage = false;
@@ -170,7 +172,7 @@ public class ApplicationAIGenerationQueue(
             hasEnabledStage = true;
             try
             {
-                await QueueAttachmentSummaryAsync(applicationId, tenantId, promptVersion);
+                await QueueApplicationAttachmentSummaryAsync(applicationId, tenantId, new List<Guid>(), promptVersion: promptVersion);
                 enqueuedStage = true;
             }
             catch (UserFriendlyException ex)
@@ -193,7 +195,7 @@ public class ApplicationAIGenerationQueue(
             }
         }
 
-        if (await featureChecker.IsEnabledAsync(AIFeatures.Scoring))
+        if (await featureChecker.IsEnabledAsync(AIFeatures.ApplicationScoring))
         {
             hasEnabledStage = true;
             try
@@ -209,7 +211,7 @@ public class ApplicationAIGenerationQueue(
 
         if (!hasEnabledStage)
         {
-            throw new UserFriendlyException(localizer[AILocalizationKeys.GenerateAllDisabled]);
+            throw new UserFriendlyException("No AI generation features are enabled.");
         }
 
         if (!enqueuedStage && lastStageException != null)
@@ -251,7 +253,7 @@ public class ApplicationAIGenerationQueue(
 
             // Single chokepoint for all AI generate flows (manual + auto).
             // The limiter is a no-op for system/background callers without an authenticated user.
-            await aiRateLimiter.EnsureAsync();
+            await aiCooldownService.EnsureAsync();
 
             var request = new AIGenerationRequest(
                 Guid.NewGuid(),

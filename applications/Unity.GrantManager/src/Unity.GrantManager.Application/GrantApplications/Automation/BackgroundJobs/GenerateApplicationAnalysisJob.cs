@@ -3,7 +3,7 @@ using System;
 using System.Threading.Tasks;
 using Unity.AI.Domain;
 using Unity.AI.Operations;
-using Unity.AI.RateLimit;
+using Unity.AI.Cooldown;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.GrantApplications;
 using Volo.Abp.BackgroundJobs;
@@ -11,20 +11,17 @@ using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.MultiTenancy;
 using Volo.Abp.Uow;
-using Volo.Abp.ObjectMapping;
 
 namespace Unity.GrantManager.GrantApplications.Automation.BackgroundJobs;
 
 public class GenerateApplicationAnalysisJob(
-    IAIApplicationInputBuilder inputBuilder,
-    IApplicationAnalysisService applicationAnalysisService,
+    ApplicationAnalysisService applicationAnalysisService,
     IApplicationRepository applicationRepository,
-    IObjectMapper objectMapper,
     IRepository<AIGenerationRequest, Guid> generationRequestRepository,
     IRepository<AIOperation, Guid> operationRepository,
     ICurrentTenant currentTenant,
     IUnitOfWorkManager unitOfWorkManager,
-    IAIRateLimiter aiRateLimiter,
+    IAICooldownAppService aiCooldownService,
     ILogger<GenerateApplicationAnalysisJob> logger) : AsyncBackgroundJob<GenerateApplicationAnalysisBackgroundJobArgs>, ITransientDependency
 {
     public override async Task ExecuteAsync(GenerateApplicationAnalysisBackgroundJobArgs args)
@@ -49,12 +46,10 @@ public class GenerateApplicationAnalysisJob(
             try
             {
                 var application = await applicationRepository.GetAsync(args.ApplicationId);
-                var applicationInput = objectMapper.Map<Application, AIApplicationPromptDataDto>(application);
-                var input = await inputBuilder.BuildApplicationAnalysisInputAsync(applicationInput, args.PromptVersion);
-                var analysisJson = await applicationAnalysisService.RegenerateAsync(input);
+                var analysisJson = await applicationAnalysisService.GenerateApplicationAnalysisAsync(application.Id, args.PromptVersion);
                 application.AIAnalysis = analysisJson;
                 await applicationRepository.UpdateAsync(application);
-                await AIGenerationRequestJobHelper.StampRateLimitBestEffortAsync(aiRateLimiter, logger, args.RequestedByUserId, args.ApplicationId, AIGenerationRequestKeyHelper.ApplicationAnalysisOperationType);
+                await AIGenerationRequestJobHelper.StampCooldownBestEffortAsync(aiCooldownService, logger, args.RequestedByUserId, args.ApplicationId, AIGenerationRequestKeyHelper.ApplicationAnalysisOperationType);
                 await AIGenerationRequestJobHelper.MarkCompletedInNewUowAsync(
                     unitOfWorkManager,
                     generationRequestRepository,

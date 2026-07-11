@@ -15,7 +15,7 @@ using System.Threading.Tasks;
 using Unity.AI.Automation;
 using Unity.AI.Models;
 using Unity.AI.Permissions;
-using Unity.AI.RateLimit;
+using Unity.AI.Cooldown;
 using Unity.AI.Responses;
 using Unity.Flex.WorksheetInstances;
 using Unity.Flex.Worksheets;
@@ -59,7 +59,7 @@ public class GrantApplicationAppService(
     IApplicantSupplierAppService applicantSupplierService,
     IPaymentRequestAppService paymentRequestService,
     IAIGenerationStatusAppService aiGenerationStatusAppService,
-    IAIRateLimiter aiRateLimiter,
+    IAICooldownAppService aiCooldownService,
     IFeatureChecker featureChecker)
     : GrantManagerAppService, IGrantApplicationAppService
 #pragma warning restore S107 // Methods should not have too many parameters
@@ -1207,18 +1207,18 @@ public class GrantApplicationAppService(
         switch (operationType)
         {
             case AIGenerationRequestKeyHelper.ApplicationAnalysisOperationType:
-                await AuthorizationService.CheckAsync(AIPermissions.Analysis.ViewApplicationAnalysis);
+                await AuthorizationService.CheckAsync(AIPermissions.ApplicationAnalysis.View);
                 return;
             case AIGenerationRequestKeyHelper.AttachmentSummaryOperationType:
-                await AuthorizationService.CheckAsync(AIPermissions.Analysis.ViewAttachmentSummary);
+                await AuthorizationService.CheckAsync(AIPermissions.AttachmentSummaries.View);
                 return;
             case AIGenerationRequestKeyHelper.ApplicationScoringOperationType:
-                await AuthorizationService.CheckAsync(AIPermissions.Analysis.ViewScoringResult);
+                await AuthorizationService.CheckAsync(AIPermissions.ApplicationScoring.View);
                 return;
             case AIGenerationRequestKeyHelper.PipelineOperationType:
-                await AuthorizationService.CheckAsync(AIPermissions.Analysis.ViewApplicationAnalysis);
-                await AuthorizationService.CheckAsync(AIPermissions.Analysis.ViewAttachmentSummary);
-                await AuthorizationService.CheckAsync(AIPermissions.Analysis.ViewScoringResult);
+                await AuthorizationService.CheckAsync(AIPermissions.ApplicationAnalysis.View);
+                await AuthorizationService.CheckAsync(AIPermissions.AttachmentSummaries.View);
+                await AuthorizationService.CheckAsync(AIPermissions.ApplicationScoring.View);
                 return;
             default:
                 throw new UserFriendlyException("Unknown AI generation operation type.");
@@ -1233,7 +1233,7 @@ public class GrantApplicationAppService(
         }
     }
 
-    private async Task<List<Guid>> ResolveAttachmentSummaryIdsAsync(QueueAttachmentSummaryRequestDto input)
+    private async Task<List<Guid>> ResolveAttachmentSummaryIdsAsync(QueueApplicationAttachmentSummaryRequestDto input)
     {
         if (input == null)
         {
@@ -1367,13 +1367,10 @@ public class GrantApplicationAppService(
         await EnsureAIGenerationStatusAccessAsync(operationType);
 
         var request = await aiGenerationStatusAppService.GetLatestAsync(applicationId, operationType, CurrentTenant.Id);
-        var state = await aiRateLimiter.GetStateAsync();
 
         return new AIGenerationStatusDto
         {
             GenerationRequest = request,
-            IsGenerating = state.IsGenerating,
-            RetryAfterSeconds = state.RetryAfterSeconds,
             FailureReason = request?.FailureReason
         };
     }

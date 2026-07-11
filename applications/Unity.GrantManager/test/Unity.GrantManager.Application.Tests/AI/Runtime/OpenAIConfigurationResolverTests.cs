@@ -9,6 +9,7 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Unity.AI.Domain;
+using Unity.AI.Execution;
 using Unity.AI.Operations;
 using Unity.AI.Prompts;
 using Unity.AI.Runtime;
