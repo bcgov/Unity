@@ -18,14 +18,12 @@
                     icon-type="Other"
                     icon="fl fl-save"
                     class="btn unt-btn-primary btn-primary"
-                    style="pointer-events: all;"
                     abp-tooltip="Save the worksheet associations for mapping to the available Unity worksheet fields"
                     button-type="Primary"
                     form="worksheet-config-form" />
-        @if (await PermissionChecker.IsGrantedAsync(AIPermissions.Analysis.GenerateFormScoresheet))
+        @if (await PermissionChecker.IsGrantedAsync(AIPermissions.FormScoresheet.Generate))
         {
             <button type="button" id="btn-generate-scoresheet" class="btn ai-generate-btn unt-btn-outline-primary btn-outline-primary"
-                    style="pointer-events: all;"
                     title="Generate a scoresheet for the current form version">
                 <span class="ai-button-content">
                     <i class="unt-icon-sm fa-solid fa-wand-magic-sparkles"></i>
@@ -33,10 +31,9 @@
                 </span>
             </button>
         }
-        @if (await PermissionChecker.IsGrantedAsync(AIPermissions.Analysis.GenerateFormWorksheet))
+        @if (await PermissionChecker.IsGrantedAsync(AIPermissions.FormWorksheet.Generate))
         {
             <button type="button" id="btn-generate-worksheet" class="btn ai-generate-btn unt-btn-outline-primary btn-outline-primary"
-                    style="pointer-events: all;"
                     title="Generate a worksheet for the current form version">
                 <span class="ai-button-content">
                     <i class="unt-icon-sm fa-solid fa-wand-magic-sparkles"></i>

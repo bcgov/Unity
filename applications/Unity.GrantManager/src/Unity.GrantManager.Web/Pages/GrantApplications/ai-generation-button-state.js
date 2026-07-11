@@ -87,12 +87,12 @@
                         if (request.isActive !== true) {
                             stop();
                             restoreButtonForCooldownCheck(options.$button, options.originalHtml);
-                            applyRateLimitState(generationStatus, { pollWhenGenerating: true });
+                            global.refreshAICooldownState?.();
                             options.onComplete?.(request);
                             return;
                         }
 
-                        applyRateLimitState(generationStatus);
+                        global.setAIGenerationButtonsGenerating?.({ poll: false });
                         scheduleNextPoll();
                     })
                     .fail((error) => {

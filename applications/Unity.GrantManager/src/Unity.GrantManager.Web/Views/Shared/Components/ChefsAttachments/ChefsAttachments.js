@@ -193,29 +193,20 @@ $(function () {
                 return;
             }
 
-            const existingHTML = $activeButton.html();
-
             globalThis.AIGenerationButtonState?.setGenerating($activeButton);
-            $activeButton
-                .html(
-                    '<span class="ai-button-content"><span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span><span>Generating...</span></span>'
-                )
-                .prop('disabled', true);
 
             globalThis.AIGenerationApi.queueAttachmentSummary({
                 applicationId: applicationId,
                 attachmentIds: summaryAttachmentIds,
             })
                 .done(function (generationStatus) {
-                    globalThis.AIGenerationButtonState?.setGenerating($activeButton);
-                    pollAttachmentSummaryGeneration(applicationId, $activeButton, existingHTML);
+                    pollAttachmentSummaryGeneration(applicationId, $activeButton, $activeButton.html());
                 })
                 .fail(function (error) {
                     console.error('Error generating AI summaries:', error);
                     abp.message.error('An error occurred while generating AI summaries. Please try again.');
                     globalThis.AIGenerationButtonState?.restore($activeButton);
-                    globalThis.refreshAIRateLimitState?.();
-                    $activeButton.html(existingHTML).prop('disabled', false);
+                    globalThis.refreshAICooldownState?.();
                     setGenerateSummariesEnabled();
                 });
         });

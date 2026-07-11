@@ -110,7 +110,7 @@
                                 icon="fl fl-edit" class="btn unt-btn-primary btn-primary" data-toggle="modal"
                                 style="pointer-events: all;" abp-tooltip="Edit the Mapping JSON Manually"
                                 button-type="Primary" />
-                    @if (await PermissionChecker.IsGrantedAsync(AIPermissions.Analysis.GenerateFormMapping))
+                    @if (await PermissionChecker.IsGrantedAsync(AIPermissions.FormMapping.Generate))
                     {
                         <button type="button" id="btn-generate" class="btn ai-generate-btn unt-btn-outline-primary btn-outline-primary"
                                 style="pointer-events: all;"

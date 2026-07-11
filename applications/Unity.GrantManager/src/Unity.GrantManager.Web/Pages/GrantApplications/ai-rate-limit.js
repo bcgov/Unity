@@ -46,7 +46,7 @@
         btn.setAttribute(ATTR_COOLDOWN, '1');
         btn.setAttribute('disabled', 'disabled');
         btn.classList.add('disabled');
-        setLabel(btn, `Wait ${seconds}s`);
+        setLabel(btn, `Waiting... ${seconds}s`);
     }
 
     function restore(btn) {
@@ -246,8 +246,8 @@
         applyCooldown(Number(data?.retryAfterSeconds) || 0);
     }
 
-    globalThis.syncAIRateLimitButtons = () => {
-        renderState();
+    globalThis.syncAICooldownButtons = () => {
+        disableUntilChecked();
         fetchState(true);
     };
     globalThis.setAIGenerationButtonsGenerating = applyGenerating;
