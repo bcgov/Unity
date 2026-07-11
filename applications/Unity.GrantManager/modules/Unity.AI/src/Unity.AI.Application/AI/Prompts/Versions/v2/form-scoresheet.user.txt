@@ -1,0 +1,39 @@
+SCORESHEET CONTEXT:
+{{DATA}}
+
+OUTPUT
+{
+  "Title": "<string>",
+  "Name": "<string>",
+  "Version": <number>,
+  "Order": 0,
+  "Published": false,
+  "ReportColumns": "<string>",
+  "ReportKeys": "<string>",
+  "ReportViewName": "<string>",
+  "Sections": [
+    {
+      "Name": "<string>",
+      "Order": 0,
+      "Fields": [
+        {
+          "Name": "<string>",
+          "Label": "<string>",
+          "Description": "<string|null>",
+          "Order": 0,
+          "Type": <number>,
+          "Enabled": true,
+          "Definition": "<string>"
+        }
+      ]
+    }
+  ]
+}
+
+Rules:
+- Return one scoresheet definition JSON object only.
+- The context is the CHEFS form data for the application.
+- Generate the rubric that assessors use to score submitted applications.
+- Keep the structure focused on reviewer criteria, comments, and scoring sections.
+- Use the numeric QuestionType values from Unity Flex.
+- Return valid plain JSON only.

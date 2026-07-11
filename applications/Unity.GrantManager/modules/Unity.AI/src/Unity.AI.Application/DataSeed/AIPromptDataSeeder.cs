@@ -815,18 +815,18 @@ public class AIPromptDataSeeder(
 
         OUTPUT
         {
-          "<unity field name>": "<chefs source field name>",
-          "<unity field name>": "<chefs source field name>"
+          "<chefs field name>": "<unity target field name>",
+          "<chefs field name>": "<unity target field name>"
         }
 
         Important:
         - Use only FORM MAPPING CONTEXT as evidence.
         - The context is grouped as chefsData and unityData.
-        - chefsData.fields contains the CHEFS source fields.
-        - unityData.coreFields contains Unity target fields.
-        - unityData.customFields contains worksheet-derived Unity target fields.
+        - chefsData.fields contains the CHEFS form fields.
+        - unityData.coreFields contains Unity core intake fields.
+        - unityData.customFields contains worksheet-derived custom fields.
         - The mapping is dynamic; do not hardcode or assume a fixed list of fields.
-        - Prefer existing Unity core intake fields when they already fit the CHEFS source field.
+        - Prefer existing Unity core intake fields when they already fit the source field.
         - Only use worksheet custom field targets when the form genuinely needs them.
         - Return valid plain JSON only in the exact OUTPUT shape.
         """;
@@ -875,13 +875,14 @@ public class AIPromptDataSeeder(
           "ReportViewName": "<string>"
         }
 
-        Important:
-        - Use only WORKSHEET CONTEXT as evidence.
-        - Prefer existing Unity core fields when they already cover the need.
-        - Only create additional worksheet fields when they are genuinely needed for this form.
-        - Use the numeric CustomFieldType values from Unity Flex.
-        - Return only fields supported by the context.
-        - Return valid plain JSON only in the exact OUTPUT shape.
+        Rules:
+        - Return one worksheet definition JSON object only.
+        - The context includes CHEFS fields, Unity core fields, and existing worksheet-derived custom fields.
+        - Use the provided form context to decide which custom fields are genuinely needed.
+        - Prefer existing Unity core fields when they already satisfy the need.
+        - Only create additional worksheet custom fields when the form genuinely needs them.
+        - Keep the worksheet structure valid for Flex.
+        - Return valid plain JSON only.
         """;
 
     private const string FormWorksheetMetadataV2 = """
@@ -931,13 +932,13 @@ public class AIPromptDataSeeder(
           ]
         }
 
-        Important:
-        - Use only SCORESHEET CONTEXT as evidence.
+        Rules:
+        - Return one scoresheet definition JSON object only.
+        - The context is the CHEFS form data for the application.
         - Generate the rubric that assessors use to score submitted applications.
         - Keep the structure focused on reviewer criteria, comments, and scoring sections.
         - Use the numeric QuestionType values from Unity Flex.
-        - Return only fields supported by the context.
-        - Return valid plain JSON only in the exact OUTPUT shape.
+        - Return valid plain JSON only.
         """;
 
     private const string FormScoresheetMetadataV2 = """

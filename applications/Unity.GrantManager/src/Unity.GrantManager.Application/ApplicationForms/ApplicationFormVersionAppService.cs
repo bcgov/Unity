@@ -341,13 +341,9 @@ namespace Unity.GrantManager.ApplicationForms
                     customFields = readModel.Worksheets
                 }
             };
-            var promptDataJsonOptions = new JsonSerializerOptions
-            {
-                WriteIndented = true
-            };
             var response = await _aiService.GenerateFormMappingAsync(new FormMappingRequest
             {
-                Data = JsonSerializer.SerializeToElement(promptData, promptDataJsonOptions)
+                Data = JsonSerializer.SerializeToElement(promptData, AIJsonDefaults.Indented)
             });
             var submissionHeaderMapping = FormMappingResponseMapper.BuildSubmissionHeaderMapping(response);
             var applicationFormVersion = await repository.GetAsync(id);

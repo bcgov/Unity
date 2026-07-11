@@ -3,51 +3,19 @@ FORM MAPPING CONTEXT:
 
 OUTPUT
 {
-  "coreFieldMatches": [
-    {
-      "sourceField": "<string>",
-      "targetField": "<string>",
-      "reason": "<string>",
-      "confidence": <decimal 0.0-1.0>
-    }
-  ],
-  "worksheetMatches": [
-    {
-      "worksheetName": "<string>",
-      "fieldMatches": [
-        {
-          "sourceField": "<string>",
-          "targetField": "<string>",
-          "reason": "<string>",
-          "confidence": <decimal 0.0-1.0>
-        }
-      ]
-    }
-  ],
-  "worksheetCreationSuggestions": [
-    {
-      "worksheetName": "<string>",
-      "suggestedFields": [
-        {
-          "name": "<string>",
-          "type": "<string>",
-          "label": "<string>",
-          "isCustom": true
-        }
-      ],
-      "reason": "<string>"
-    }
-  ],
-  "issues": [
-    {
-      "code": "<string>",
-      "message": "<string>"
-    }
-  ]
+  "<chefs field name>": "<unity target field name>",
+  "<chefs field name>": "<unity target field name>"
 }
 
-Important:
-- Use only FORM MAPPING CONTEXT as evidence.
-- Return only fields that are supported by the context.
-- Keep reasons specific and concise.
-- Return valid plain JSON only in the exact OUTPUT shape.
+Rules:
+- Return one flat JSON object only.
+- The context is grouped as `chefsData` and `unityData`.
+- `chefsData.fields` contains the CHEFS form fields.
+- `unityData.coreFields` contains Unity core intake fields.
+- `unityData.customFields` contains worksheet-derived custom fields.
+- Each property name must be a CHEFS field or worksheet field name from the provided context.
+- Each property value must be the Unity target field name that best matches that source field.
+- The mapping is dynamic; do not hardcode or assume a fixed list of fields.
+- Prefer existing Unity core intake fields when they already fit the source field.
+- Only use worksheet custom field targets when the form genuinely needs them.
+- Return valid plain JSON only.
