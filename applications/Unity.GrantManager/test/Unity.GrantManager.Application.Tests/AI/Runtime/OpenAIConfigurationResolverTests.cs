@@ -62,7 +62,7 @@ public class OpenAIConfigurationResolverTests
                 {
                     new(Guid.NewGuid(), AIPromptTypes.ApplicationAnalysis, modelId, promptId)
                     {
-                        ExecutionMode = AIExecutionMode.Sequential,
+                        ExecutionMode = ExecutionMode.Sequential,
                         CompletionTokens = 2222,
                         IsActive = true
                     }
@@ -128,7 +128,7 @@ public class OpenAIConfigurationResolverTests
                 {
                     new(Guid.NewGuid(), "Default", modelId, promptId)
                     {
-                        ExecutionMode = AIExecutionMode.Sequential,
+                        ExecutionMode = ExecutionMode.Sequential,
                         CompletionTokens = 2000,
                         IsActive = true
                     }
@@ -320,6 +320,7 @@ public class OpenAIConfigurationResolverTests
             modelRepository ?? CreateEmptyModelRepository(),
             operationRepository ?? CreateEmptyOperationRepository(),
             promptRepository ?? CreateEmptyPromptRepository(),
+            Substitute.For<Microsoft.Extensions.Caching.Memory.IMemoryCache>(),
             configuration,
             filter);
     }

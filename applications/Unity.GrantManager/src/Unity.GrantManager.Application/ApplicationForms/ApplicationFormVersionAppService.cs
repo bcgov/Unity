@@ -10,6 +10,7 @@ using Unity.GrantManager.Applications;
 using Unity.AI.Operations;
 using Unity.AI.Requests;
 using Unity.AI.Responses;
+using Unity.AI.Runtime;
 using Unity.GrantManager.Forms;
 using Unity.GrantManager.Intakes;
 using Unity.GrantManager.Integrations.Chefs;
@@ -324,9 +325,29 @@ namespace Unity.GrantManager.ApplicationForms
         public virtual async Task<ApplicationFormMappingDto> GenerateMappingAsync(Guid id)
         {
             var readModel = await _mappingReadService.GetAsync(id);
+            var promptData = new
+            {
+                chefsData = new
+                {
+                    applicationFormId = readModel.ApplicationFormId,
+                    applicationFormVersionId = readModel.ApplicationFormVersionId,
+                    chefsApplicationFormGuid = readModel.ChefsApplicationFormGuid,
+                    chefsFormVersionGuid = readModel.ChefsFormVersionGuid,
+                    fields = readModel.ChefsFields
+                },
+                unityData = new
+                {
+                    coreFields = readModel.UnityCoreFields,
+                    customFields = readModel.Worksheets
+                }
+            };
+            var promptDataJsonOptions = new JsonSerializerOptions
+            {
+                WriteIndented = true
+            };
             var response = await _aiService.GenerateFormMappingAsync(new FormMappingRequest
             {
-                Data = JsonSerializer.SerializeToElement(readModel)
+                Data = JsonSerializer.SerializeToElement(promptData, promptDataJsonOptions)
             });
             var submissionHeaderMapping = FormMappingResponseMapper.BuildSubmissionHeaderMapping(response);
             var applicationFormVersion = await repository.GetAsync(id);

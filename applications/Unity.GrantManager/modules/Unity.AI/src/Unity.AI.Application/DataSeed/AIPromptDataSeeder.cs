@@ -803,7 +803,7 @@ public class AIPromptDataSeeder(
     // ── v0/mapping-suggestion.system.txt ────────────────────────────────────
     private const string FormMappingSystemV2 = """
         You are a careful mapping assistant for human reviewers.
-        Return structured JSON for recommended CHEFS-to-Unity field mapping.
+        Return structured JSON for recommended Unity-to-CHEFS field mapping.
         Do not invent fields, persist changes, or add wrapper sections.
         Return only valid JSON in the exact mapping shape requested.
         """;
@@ -815,55 +815,19 @@ public class AIPromptDataSeeder(
 
         OUTPUT
         {
-          "coreFieldMatches": [
-            {
-              "sourceField": "<string>",
-              "targetField": "<string>",
-              "reason": "<string>",
-              "confidence": <decimal 0.0-1.0>
-            }
-          ],
-          "worksheetMatches": [
-            {
-              "worksheetName": "<string>",
-              "fieldMatches": [
-                {
-                  "sourceField": "<string>",
-                  "targetField": "<string>",
-                  "reason": "<string>",
-                  "confidence": <decimal 0.0-1.0>
-                }
-              ]
-            }
-          ],
-          "worksheetCreationSuggestions": [
-            {
-              "worksheetName": "<string>",
-              "suggestedFields": [
-                {
-                  "name": "<string>",
-                  "type": "<string>",
-                  "label": "<string>",
-                  "isCustom": true
-                }
-              ],
-              "reason": "<string>"
-            }
-          ],
-          "issues": [
-            {
-              "code": "<string>",
-              "message": "<string>"
-            }
-          ]
+          "<unity field name>": "<chefs source field name>",
+          "<unity field name>": "<chefs source field name>"
         }
 
         Important:
         - Use only FORM MAPPING CONTEXT as evidence.
-        - Prefer existing Unity core intake fields when they already fit the source field.
-        - Only suggest worksheet fields or worksheet creation when the form genuinely needs them.
-        - Return only fields that are supported by the context.
-        - Keep reasons specific and concise.
+        - The context is grouped as chefsData and unityData.
+        - chefsData.fields contains the CHEFS source fields.
+        - unityData.coreFields contains Unity target fields.
+        - unityData.customFields contains worksheet-derived Unity target fields.
+        - The mapping is dynamic; do not hardcode or assume a fixed list of fields.
+        - Prefer existing Unity core intake fields when they already fit the CHEFS source field.
+        - Only use worksheet custom field targets when the form genuinely needs them.
         - Return valid plain JSON only in the exact OUTPUT shape.
         """;
 

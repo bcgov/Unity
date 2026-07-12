@@ -4,11 +4,11 @@ using System.Collections.Generic;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Unity.AI.Domain;
+using Unity.AI.Cooldown;
 using Unity.AI.Operations;
 using Unity.AI.Requests;
 using Unity.AI.Responses;
 using Unity.GrantManager.ApplicationForms;
-using Unity.AI.Cooldown;
 using Unity.GrantManager.ApplicationForms.Mapping;
 using Unity.GrantManager.Applications;
 using Volo.Abp.Domain.Repositories;
@@ -24,10 +24,9 @@ public class GenerateFormMappingJob(
     IFormMappingService aiService,
     IRepository<ApplicationFormVersion, Guid> applicationFormVersionRepository,
     IRepository<AIGenerationRequest, Guid> generationRequestRepository,
-    IRepository<AIOperation, Guid> operationRepository,
     ICurrentTenant currentTenant,
     IUnitOfWorkManager unitOfWorkManager,
-    IAICooldownAppService aiCooldownService,
+    ICooldownService aiCooldownService,
     ILogger<GenerateFormMappingJob> logger) : AsyncBackgroundJob<GenerateFormMappingBackgroundJobArgs>, ITransientDependency
 {
     public override async Task ExecuteAsync(GenerateFormMappingBackgroundJobArgs args)
@@ -45,10 +44,9 @@ public class GenerateFormMappingJob(
             await AIGenerationRequestJobHelper.MarkRunningInNewUowAsync(
                 unitOfWorkManager,
                 generationRequestRepository,
-                operationRepository,
                 args.TenantId,
                 args.ApplicationId,
-                AIGenerationRequestKeyHelper.FormMappingOperationType);
+                args.OperationId);
             try
             {
                 var readModel = await mappingReadService.GetAsync(args.ApplicationFormVersionId);
@@ -67,20 +65,18 @@ public class GenerateFormMappingJob(
                 await AIGenerationRequestJobHelper.MarkCompletedInNewUowAsync(
                     unitOfWorkManager,
                     generationRequestRepository,
-                    operationRepository,
                     args.TenantId,
                     args.ApplicationId,
-                    AIGenerationRequestKeyHelper.FormMappingOperationType);
+                    args.OperationId);
             }
             catch (System.Exception ex)
             {
                 await AIGenerationRequestJobHelper.MarkFailedInNewUowAsync(
                     unitOfWorkManager,
                     generationRequestRepository,
-                    operationRepository,
                     args.TenantId,
                     args.ApplicationId,
-                    AIGenerationRequestKeyHelper.FormMappingOperationType,
+                    args.OperationId,
                     ex.Message);
                 throw;
             }

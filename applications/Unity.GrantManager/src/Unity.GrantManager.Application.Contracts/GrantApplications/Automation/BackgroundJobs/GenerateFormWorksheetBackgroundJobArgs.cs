@@ -5,6 +5,7 @@ namespace Unity.GrantManager.GrantApplications.Automation.BackgroundJobs;
 public class GenerateFormWorksheetBackgroundJobArgs
 {
     public Guid ApplicationId { get; set; }
+    public Guid OperationId { get; set; }
 
     public Guid? TenantId { get; set; }
 

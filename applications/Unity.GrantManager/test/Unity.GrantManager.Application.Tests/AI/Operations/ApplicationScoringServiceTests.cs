@@ -97,7 +97,7 @@ public class ApplicationScoringServiceTests
             })
         });
 
-        var operationRepository = CreateOperationRepository(AIExecutionMode.Sequential);
+        var operationRepository = CreateOperationRepository(ExecutionMode.Sequential);
         var service = CreateService(aiService, operationRepository, dataProvider);
 
         var applicationId = Guid.NewGuid();
@@ -184,7 +184,7 @@ public class ApplicationScoringServiceTests
             FormSchema = JsonSerializer.Serialize(new { components = Array.Empty<object>() })
         });
 
-        var operationRepository = CreateOperationRepository(AIExecutionMode.Batch);
+        var operationRepository = CreateOperationRepository(ExecutionMode.Batch);
         var service = CreateService(aiService, operationRepository, dataProvider);
 
         var result = await service.GenerateApplicationScoringAsync(Guid.NewGuid());
@@ -205,7 +205,7 @@ public class ApplicationScoringServiceTests
         {
             ScoresheetId = null
         });
-        var operationRepository = CreateOperationRepository(AIExecutionMode.Batch);
+        var operationRepository = CreateOperationRepository(ExecutionMode.Batch);
         var service = CreateService(aiService, operationRepository, dataProvider);
 
         await Should.ThrowAsync<UserFriendlyException>(() => service.GenerateApplicationScoringAsync(Guid.NewGuid()));
@@ -223,7 +223,7 @@ public class ApplicationScoringServiceTests
             NullLogger<ApplicationScoringService>.Instance);
     }
 
-    private static IRepository<AIOperation, Guid> CreateOperationRepository(AIExecutionMode executionMode)
+    private static IRepository<AIOperation, Guid> CreateOperationRepository(ExecutionMode executionMode)
     {
         var operationRepository = Substitute.For<IRepository<AIOperation, Guid>>();
         operationRepository.GetListAsync(Arg.Any<System.Linq.Expressions.Expression<Func<AIOperation, bool>>>(), Arg.Any<bool>(), Arg.Any<CancellationToken>())

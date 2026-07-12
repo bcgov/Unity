@@ -4,11 +4,11 @@ using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Unity.AI.Domain;
+using Unity.AI.Cooldown;
 using Unity.AI.Operations;
 using Unity.AI.Requests;
 using Unity.GrantManager.ApplicationForms;
 using Unity.GrantManager.Applications;
-using Unity.AI.Cooldown;
 using Unity.Flex.Domain.Scoresheets;
 using Unity.Flex.Scoresheets;
 using Volo.Abp.BackgroundJobs;
@@ -25,10 +25,9 @@ public class GenerateFormScoresheetJob(
     IScoresheetRepository scoresheetRepository,
     IFormScoresheetService aiService,
     IRepository<AIGenerationRequest, Guid> generationRequestRepository,
-    IRepository<AIOperation, Guid> operationRepository,
     ICurrentTenant currentTenant,
     IUnitOfWorkManager unitOfWorkManager,
-    IAICooldownAppService aiCooldownService,
+    ICooldownService aiCooldownService,
     ILogger<GenerateFormScoresheetJob> logger) : AsyncBackgroundJob<GenerateFormScoresheetBackgroundJobArgs>, ITransientDependency
 {
     private static readonly JsonSerializerOptions CaseInsensitiveJsonOptions = new()
@@ -51,10 +50,9 @@ public class GenerateFormScoresheetJob(
             await AIGenerationRequestJobHelper.MarkRunningInNewUowAsync(
                 unitOfWorkManager,
                 generationRequestRepository,
-                operationRepository,
                 args.TenantId,
                 args.ApplicationId,
-                AIGenerationRequestKeyHelper.FormScoresheetOperationType);
+                args.OperationId);
 
             try
             {
@@ -132,20 +130,18 @@ public class GenerateFormScoresheetJob(
                 await AIGenerationRequestJobHelper.MarkCompletedInNewUowAsync(
                     unitOfWorkManager,
                     generationRequestRepository,
-                    operationRepository,
                     args.TenantId,
                     args.ApplicationId,
-                    AIGenerationRequestKeyHelper.FormScoresheetOperationType);
+                    args.OperationId);
             }
             catch (Exception ex)
             {
                 await AIGenerationRequestJobHelper.MarkFailedInNewUowAsync(
                     unitOfWorkManager,
                     generationRequestRepository,
-                    operationRepository,
                     args.TenantId,
                     args.ApplicationId,
-                    AIGenerationRequestKeyHelper.FormScoresheetOperationType,
+                    args.OperationId,
                     ex.Message);
                 throw;
             }

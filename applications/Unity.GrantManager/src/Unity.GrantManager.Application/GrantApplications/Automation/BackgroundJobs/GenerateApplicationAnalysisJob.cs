@@ -2,8 +2,8 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Threading.Tasks;
 using Unity.AI.Domain;
-using Unity.AI.Operations;
 using Unity.AI.Cooldown;
+using Unity.AI.Operations;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.GrantApplications;
 using Volo.Abp.BackgroundJobs;
@@ -18,10 +18,9 @@ public class GenerateApplicationAnalysisJob(
     ApplicationAnalysisService applicationAnalysisService,
     IApplicationRepository applicationRepository,
     IRepository<AIGenerationRequest, Guid> generationRequestRepository,
-    IRepository<AIOperation, Guid> operationRepository,
     ICurrentTenant currentTenant,
     IUnitOfWorkManager unitOfWorkManager,
-    IAICooldownAppService aiCooldownService,
+    ICooldownService aiCooldownService,
     ILogger<GenerateApplicationAnalysisJob> logger) : AsyncBackgroundJob<GenerateApplicationAnalysisBackgroundJobArgs>, ITransientDependency
 {
     public override async Task ExecuteAsync(GenerateApplicationAnalysisBackgroundJobArgs args)
@@ -39,10 +38,9 @@ public class GenerateApplicationAnalysisJob(
             await AIGenerationRequestJobHelper.MarkRunningInNewUowAsync(
                 unitOfWorkManager,
                 generationRequestRepository,
-                operationRepository,
                 args.TenantId,
                 args.ApplicationId,
-                AIGenerationRequestKeyHelper.ApplicationAnalysisOperationType);
+                args.OperationId);
             try
             {
                 var application = await applicationRepository.GetAsync(args.ApplicationId);
@@ -53,20 +51,18 @@ public class GenerateApplicationAnalysisJob(
                 await AIGenerationRequestJobHelper.MarkCompletedInNewUowAsync(
                     unitOfWorkManager,
                     generationRequestRepository,
-                    operationRepository,
                     args.TenantId,
                     args.ApplicationId,
-                    AIGenerationRequestKeyHelper.ApplicationAnalysisOperationType);
+                    args.OperationId);
             }
             catch (Exception ex)
             {
                 await AIGenerationRequestJobHelper.MarkFailedInNewUowAsync(
                     unitOfWorkManager,
                     generationRequestRepository,
-                    operationRepository,
                     args.TenantId,
                     args.ApplicationId,
-                    AIGenerationRequestKeyHelper.ApplicationAnalysisOperationType,
+                    args.OperationId,
                     ex.Message);
                 throw;
             }

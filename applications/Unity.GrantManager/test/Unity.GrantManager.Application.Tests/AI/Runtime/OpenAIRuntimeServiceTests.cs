@@ -49,6 +49,7 @@ public class OpenAIRuntimeServiceTests
             modelRepository,
             operationRepository,
             promptRepository,
+            Substitute.For<Microsoft.Extensions.Caching.Memory.IMemoryCache>(),
             configuration,
             multiTenantDataFilter);
     }

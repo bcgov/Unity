@@ -262,7 +262,26 @@ public class AttachmentSummaryServiceTests
             Substitute.For<IStringLocalizer<AIResource>>());
     }
 
-    private static IAttachmentSummaryDataProvider CreatePersistence(
+    private static IRepository<AIOperation, Guid> CreateOperationRepository()
+    {
+        var operationRepository = Substitute.For<IRepository<AIOperation, Guid>>();
+        operationRepository.GetListAsync(Arg.Any<System.Linq.Expressions.Expression<Func<AIOperation, bool>>>(), Arg.Any<bool>(), Arg.Any<CancellationToken>())
+            .Returns(callInfo =>
+            {
+                var filter = callInfo.ArgAt<System.Linq.Expressions.Expression<Func<AIOperation, bool>>>(0).Compile();
+                var operation = new AIOperation(Guid.NewGuid(), AIPromptTypes.ApplicationAttachmentSummary, Guid.NewGuid(), Guid.NewGuid())
+                {
+                    ExecutionMode = ExecutionMode.Sequential,
+                    IsActive = true
+                };
+
+                return Task.FromResult(filter(operation) ? new List<AIOperation> { operation } : new List<AIOperation>());
+            });
+
+        return operationRepository;
+    }
+
+    private static IApplicationAttachmentSummaryPersistence CreatePersistence(
         Guid attachmentId,
         string fileName,
         Guid submissionId,

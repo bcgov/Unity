@@ -32,7 +32,7 @@ public class ApplicationGenerationQueue(
     IDistributedLockProvider distributedLockProvider,
     IGenerationPrerequisiteValidator aiGenerationPrerequisiteValidator,
     IFeatureChecker featureChecker,
-    IAICooldownAppService aiCooldownService,
+    ICooldownService aiCooldownService,
     IAsyncQueryableExecuter asyncQueryableExecuter,
     ICurrentUser currentUser,
     ILogger<ApplicationGenerationQueue> logger,
@@ -47,11 +47,12 @@ public class ApplicationGenerationQueue(
             AIGenerationRequestKeyHelper.AttachmentSummaryOperationType,
             applicationId,
             () => aiGenerationPrerequisiteValidator.EnsureAttachmentSummaryAvailableAsync(applicationId),
-            () =>
+            operationId =>
             {
                 return backgroundJobManager.EnqueueAsync(new GenerateApplicationAttachmentSummaryBackgroundJobArgs
                 {
                     ApplicationId = applicationId,
+                    OperationId = operationId,
                     AttachmentIds = attachmentIds,
                     PromptVersion = promptVersion,
                     RequestedByUserId = currentUser.Id,
@@ -67,11 +68,12 @@ public class ApplicationGenerationQueue(
             AIGenerationRequestKeyHelper.ApplicationAnalysisOperationType,
             applicationId,
             () => aiGenerationPrerequisiteValidator.EnsureApplicationAnalysisAvailableAsync(applicationId),
-            () =>
+            operationId =>
             {
                 return backgroundJobManager.EnqueueAsync(new GenerateApplicationAnalysisBackgroundJobArgs
                 {
                     ApplicationId = applicationId,
+                    OperationId = operationId,
                     PromptVersion = promptVersion,
                     RequestedByUserId = currentUser.Id,
                     TenantId = tenantId
@@ -86,11 +88,12 @@ public class ApplicationGenerationQueue(
             AIGenerationRequestKeyHelper.ApplicationScoringOperationType,
             applicationId,
             () => aiGenerationPrerequisiteValidator.EnsureApplicationScoringAvailableAsync(applicationId),
-            () =>
+            operationId =>
             {
                 return backgroundJobManager.EnqueueAsync(new GenerateApplicationScoringBackgroundJobArgs
                 {
                     ApplicationId = applicationId,
+                    OperationId = operationId,
                     PromptVersion = promptVersion,
                     RequestedByUserId = currentUser.Id,
                     TenantId = tenantId
@@ -105,11 +108,12 @@ public class ApplicationGenerationQueue(
             AIGenerationRequestKeyHelper.FormMappingOperationType,
             applicationId,
             () => aiGenerationPrerequisiteValidator.EnsureFormMappingAvailableAsync(applicationFormVersionId),
-            () =>
+            operationId =>
             {
                 return backgroundJobManager.EnqueueAsync(new GenerateFormMappingBackgroundJobArgs
                 {
                     ApplicationId = applicationId,
+                    OperationId = operationId,
                     ApplicationFormVersionId = applicationFormVersionId,
                     PromptVersion = promptVersion,
                     RequestedByUserId = currentUser.Id,
@@ -125,11 +129,12 @@ public class ApplicationGenerationQueue(
             AIGenerationRequestKeyHelper.FormWorksheetOperationType,
             applicationId,
             () => aiGenerationPrerequisiteValidator.EnsureFormWorksheetAvailableAsync(applicationFormVersionId),
-            () =>
+            operationId =>
             {
                 return backgroundJobManager.EnqueueAsync(new GenerateFormWorksheetBackgroundJobArgs
                 {
                     ApplicationId = applicationId,
+                    OperationId = operationId,
                     ApplicationFormVersionId = applicationFormVersionId,
                     PromptVersion = promptVersion,
                     RequestedByUserId = currentUser.Id,
@@ -145,7 +150,7 @@ public class ApplicationGenerationQueue(
             AIGenerationRequestKeyHelper.FormScoresheetOperationType,
             applicationId,
             () => aiGenerationPrerequisiteValidator.EnsureFormScoresheetAvailableAsync(applicationFormVersionId),
-            () =>
+            operationId =>
             {
                 var requestedByUserId = currentUser.Id
                     ?? throw new UserFriendlyException("A logged-in user is required to generate a form scoresheet.");
@@ -153,6 +158,7 @@ public class ApplicationGenerationQueue(
                 return backgroundJobManager.EnqueueAsync(new GenerateFormScoresheetBackgroundJobArgs
                 {
                     ApplicationId = applicationId,
+                    OperationId = operationId,
                     ApplicationFormVersionId = applicationFormVersionId,
                     PromptVersion = promptVersion,
                     RequestedByUserId = requestedByUserId,
@@ -225,7 +231,7 @@ public class ApplicationGenerationQueue(
         string operationType,
         Guid applicationId,
         Func<Task> validateInput,
-        Func<Task> enqueue)
+        Func<Guid, Task> enqueue)
     {
         var operation = await ResolveOperationAsync(operationType);
         var requestLock = distributedLockProvider.CreateLock($"ai-generation:{tenantId}:{applicationId}:{operation.Id}");
@@ -265,7 +271,7 @@ public class ApplicationGenerationQueue(
 
             try
             {
-                await enqueue();
+                await enqueue(operation.Id);
             }
             catch (Exception ex)
             {

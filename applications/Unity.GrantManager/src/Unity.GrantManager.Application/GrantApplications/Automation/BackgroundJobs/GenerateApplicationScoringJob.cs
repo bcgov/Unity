@@ -3,8 +3,8 @@ using System;
 using System.Threading.Tasks;
 using Unity.AI.Domain;
 using Unity.AI.Execution;
-using Unity.AI.Operations;
 using Unity.AI.Cooldown;
+using Unity.AI.Operations;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.GrantApplications.Automation.Events;
 using Volo.Abp.BackgroundJobs;
@@ -20,11 +20,10 @@ public class GenerateApplicationScoringJob(
     ApplicationScoringService applicationScoringService,
     IApplicationRepository applicationRepository,
     IRepository<AIGenerationRequest, Guid> generationRequestRepository,
-    IRepository<AIOperation, Guid> operationRepository,
     ICurrentTenant currentTenant,
     IUnitOfWorkManager unitOfWorkManager,
     ILocalEventBus localEventBus,
-    IAICooldownAppService aiCooldownService,
+    ICooldownService aiCooldownService,
     ILogger<GenerateApplicationScoringJob> logger) : AsyncBackgroundJob<GenerateApplicationScoringBackgroundJobArgs>, ITransientDependency
 {
     public override async Task ExecuteAsync(GenerateApplicationScoringBackgroundJobArgs args)
@@ -42,17 +41,16 @@ public class GenerateApplicationScoringJob(
             await AIGenerationRequestJobHelper.MarkRunningInNewUowAsync(
                 unitOfWorkManager,
                 generationRequestRepository,
-                operationRepository,
                 args.TenantId,
                 args.ApplicationId,
-                AIGenerationRequestKeyHelper.ApplicationScoringOperationType);
+                args.OperationId);
             try
             {
                 var application = await applicationRepository.GetAsync(args.ApplicationId);
                 var operation = await operationRepository.FirstOrDefaultAsync(item => item.Name == AIGenerationRequestKeyHelper.ResolveOperationName(AIGenerationRequestKeyHelper.ApplicationScoringOperationType));
                 var scoresheetAnswers = await applicationScoringService.GenerateApplicationScoringAsync(
                     application.Id,
-                    operation?.ExecutionMode ?? AIExecutionMode.Sequential,
+                    ExecutionMode.Sequential,
                     args.PromptVersion);
                 application.AIScoresheetAnswers = scoresheetAnswers;
                 await applicationRepository.UpdateAsync(application);
@@ -64,20 +62,18 @@ public class GenerateApplicationScoringJob(
                 await AIGenerationRequestJobHelper.MarkCompletedInNewUowAsync(
                     unitOfWorkManager,
                     generationRequestRepository,
-                    operationRepository,
                     args.TenantId,
                     args.ApplicationId,
-                    AIGenerationRequestKeyHelper.ApplicationScoringOperationType);
+                    args.OperationId);
             }
             catch (Exception ex)
             {
                 await AIGenerationRequestJobHelper.MarkFailedInNewUowAsync(
                     unitOfWorkManager,
                     generationRequestRepository,
-                    operationRepository,
                     args.TenantId,
                     args.ApplicationId,
-                    AIGenerationRequestKeyHelper.ApplicationScoringOperationType,
+                    args.OperationId,
                     ex.Message);
                 throw;
             }

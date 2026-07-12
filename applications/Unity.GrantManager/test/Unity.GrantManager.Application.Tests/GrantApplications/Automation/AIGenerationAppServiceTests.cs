@@ -35,14 +35,19 @@ public class AIGenerationAppServiceTests(ITestOutputHelper outputHelper) : Grant
         var applicationId = Guid.NewGuid();
         var attachmentIds = new List<Guid> { Guid.NewGuid(), Guid.NewGuid() };
 
-        var service = new AIGenerationAppService(
+        var service = new GenerationAppService(
             Substitute.For<IApplicationGenerationQueue>(),
             Substitute.For<IAIGenerationStatusAppService>(),
             featureGuard,
             Substitute.For<ICurrentTenant>());
         service.LazyServiceProvider = GetRequiredService<IAbpLazyServiceProvider>();
 
-        await service.GenerateApplicationAttachmentSummariesAsync(applicationId, attachmentIds, "v1");
+        await service.GenerateApplicationAttachmentSummariesAsync(new ApplicationAttachmentSummaryRequestDto
+        {
+            ApplicationId = applicationId,
+            AttachmentIds = attachmentIds,
+            PromptVersion = "v1"
+        });
 
         await Task.CompletedTask;
     }
@@ -72,7 +77,7 @@ public class AIGenerationAppServiceTests(ITestOutputHelper outputHelper) : Grant
         var currentTenant = Substitute.For<ICurrentTenant>();
         currentTenant.Id.Returns(tenantId);
 
-        var service = new AIGenerationAppService(
+        var service = new GenerationAppService(
             Substitute.For<IApplicationGenerationQueue>(),
             statusService,
             CreateFeatureGuard(),
@@ -94,7 +99,7 @@ public class AIGenerationAppServiceTests(ITestOutputHelper outputHelper) : Grant
     [Fact]
     public async Task GetStatusAsync_Should_Reject_Unsupported_Operation_Type()
     {
-        var service = new AIGenerationAppService(
+        var service = new GenerationAppService(
             Substitute.For<IApplicationGenerationQueue>(),
             Substitute.For<IAIGenerationStatusAppService>(),
             CreateFeatureGuard(),
