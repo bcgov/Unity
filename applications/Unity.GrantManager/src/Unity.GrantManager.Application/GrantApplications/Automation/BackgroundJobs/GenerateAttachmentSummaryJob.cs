@@ -19,7 +19,7 @@ public class GenerateAttachmentSummaryJob(
     IRepository<AIGenerationRequest, Guid> generationRequestRepository,
     ICurrentTenant currentTenant,
     IUnitOfWorkManager unitOfWorkManager,
-    IAICooldownService aiCooldownService,
+    ICooldownService aiCooldownService,
     ILogger<GenerateApplicationAttachmentSummaryJob> logger) : AsyncBackgroundJob<GenerateApplicationAttachmentSummaryBackgroundJobArgs>, ITransientDependency
 {
     public override async Task ExecuteAsync(GenerateAttachmentSummaryBackgroundJobArgs args)

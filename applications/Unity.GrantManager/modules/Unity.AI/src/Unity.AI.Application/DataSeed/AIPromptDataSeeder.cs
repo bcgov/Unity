@@ -815,18 +815,18 @@ public class AIPromptDataSeeder(
 
         OUTPUT
         {
-          "<chefs field name>": "<unity target field name>",
-          "<chefs field name>": "<unity target field name>"
+          "<unity field name>": "<chefs source field name>",
+          "<unity field name>": "<chefs source field name>"
         }
 
         Important:
         - Use only FORM MAPPING CONTEXT as evidence.
         - The context is grouped as chefsData and unityData.
-        - chefsData.fields contains the CHEFS form fields.
-        - unityData.coreFields contains Unity core intake fields.
-        - unityData.customFields contains worksheet-derived custom fields.
+        - chefsData.fields contains the CHEFS source fields.
+        - unityData.coreFields contains Unity target fields.
+        - unityData.customFields contains worksheet-derived Unity target fields.
         - The mapping is dynamic; do not hardcode or assume a fixed list of fields.
-        - Prefer existing Unity core intake fields when they already fit the source field.
+        - Prefer existing Unity core intake fields when they already fit the CHEFS source field.
         - Only use worksheet custom field targets when the form genuinely needs them.
         - Return valid plain JSON only in the exact OUTPUT shape.
         """;

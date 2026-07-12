@@ -32,7 +32,7 @@ public class GenerateFormWorksheetJob(
     IRepository<AIGenerationRequest, Guid> generationRequestRepository,
     ICurrentTenant currentTenant,
     IUnitOfWorkManager unitOfWorkManager,
-    IAICooldownService aiCooldownService,
+    ICooldownService aiCooldownService,
     ILogger<GenerateFormWorksheetJob> logger) : AsyncBackgroundJob<GenerateFormWorksheetBackgroundJobArgs>, ITransientDependency
 {
     private static readonly JsonSerializerOptions CaseInsensitiveJsonOptions = new()

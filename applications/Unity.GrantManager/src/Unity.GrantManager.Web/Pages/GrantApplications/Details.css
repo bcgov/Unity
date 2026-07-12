@@ -84,6 +84,14 @@
     pointer-events: none;
 }
 
+.ai-generate-btn:disabled:hover,
+.ai-generate-btn.disabled:hover,
+.ai-generate-btn[data-ai-shared-generating='1'],
+.ai-generate-btn[data-ai-cooldown-active='1'],
+.ai-generate-btn[data-ai-cooldown-checking='1'] {
+    pointer-events: none;
+}
+
 .ai-generate-btn.btn-sm {
     height: 2rem;
 }

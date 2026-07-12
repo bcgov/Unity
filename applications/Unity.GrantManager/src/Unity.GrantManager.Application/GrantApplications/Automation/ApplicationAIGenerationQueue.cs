@@ -32,7 +32,7 @@ public class ApplicationGenerationQueue(
     IDistributedLockProvider distributedLockProvider,
     IGenerationPrerequisiteValidator aiGenerationPrerequisiteValidator,
     IFeatureChecker featureChecker,
-    IAICooldownService aiCooldownService,
+    ICooldownService aiCooldownService,
     IAsyncQueryableExecuter asyncQueryableExecuter,
     ICurrentUser currentUser,
     ILogger<ApplicationGenerationQueue> logger)

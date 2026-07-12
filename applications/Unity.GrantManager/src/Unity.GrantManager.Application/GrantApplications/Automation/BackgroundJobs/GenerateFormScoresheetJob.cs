@@ -27,7 +27,7 @@ public class GenerateFormScoresheetJob(
     IRepository<AIGenerationRequest, Guid> generationRequestRepository,
     ICurrentTenant currentTenant,
     IUnitOfWorkManager unitOfWorkManager,
-    IAICooldownService aiCooldownService,
+    ICooldownService aiCooldownService,
     ILogger<GenerateFormScoresheetJob> logger) : AsyncBackgroundJob<GenerateFormScoresheetBackgroundJobArgs>, ITransientDependency
 {
     private static readonly JsonSerializerOptions CaseInsensitiveJsonOptions = new()
