@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Unity.AI;
+using Unity.AI.Operations;
 using Unity.AI.Requests;
 using Unity.AI.Responses;
 using Unity.GrantManager.ApplicationForms;
@@ -57,7 +58,7 @@ public class ApplicationFormVersionAppServiceTests(ITestOutputHelper outputHelpe
             }
         });
 
-        var aiService = Substitute.For<IAIService>();
+        var aiService = Substitute.For<IFormMappingService>();
         aiService.GenerateFormMappingAsync(Arg.Do<FormMappingRequest>(request => capturedRequest = request), Arg.Any<System.Threading.CancellationToken>())
             .Returns(new FormMappingResponse
             {
@@ -70,9 +71,9 @@ public class ApplicationFormVersionAppServiceTests(ITestOutputHelper outputHelpe
 
         result.ApplicationFormVersionId.ShouldBe(formVersionId);
         capturedRequest.ShouldNotBeNull();
-        capturedRequest!.Data.GetProperty("ChefsFields").ValueKind.ShouldBe(System.Text.Json.JsonValueKind.Array);
-        capturedRequest.Data.GetProperty("UnityCoreFields").ValueKind.ShouldBe(System.Text.Json.JsonValueKind.Array);
-        capturedRequest.Data.GetProperty("Worksheets").ValueKind.ShouldBe(System.Text.Json.JsonValueKind.Array);
+        capturedRequest!.Data.GetProperty("chefsData").GetProperty("fields").ValueKind.ShouldBe(System.Text.Json.JsonValueKind.Array);
+        capturedRequest.Data.GetProperty("unityData").GetProperty("coreFields").ValueKind.ShouldBe(System.Text.Json.JsonValueKind.Array);
+        capturedRequest.Data.GetProperty("unityData").GetProperty("customFields").ValueKind.ShouldBe(System.Text.Json.JsonValueKind.Array);
         formVersion.SubmissionHeaderMapping.ShouldBe("""{"ProjectName":"ProjectName"}""");
         await repository.Received(1).UpdateAsync(formVersion, true);
     }
@@ -80,7 +81,7 @@ public class ApplicationFormVersionAppServiceTests(ITestOutputHelper outputHelpe
     private static ApplicationFormVersionAppService CreateService(
         IRepository<ApplicationFormVersion, Guid> repository,
         IApplicationFormVersionMappingReadService mappingReadService,
-        IAIService aiService)
+        IFormMappingService aiService)
     {
         var service = new ApplicationFormVersionAppService(
             repository,

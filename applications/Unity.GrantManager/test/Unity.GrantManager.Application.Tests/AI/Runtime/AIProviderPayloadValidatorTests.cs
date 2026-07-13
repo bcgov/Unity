@@ -10,7 +10,7 @@ public class PromptResponseValidatorTests
     [Fact]
     public void ValidateApplicationAnalysisJson_Should_Return_InvalidOutput_For_InvalidJson()
     {
-        var result = PromptResponseValidator.ValidateApplicationAnalysisJson("not-json");
+        var result = AIProviderPayloadValidator.ValidateApplicationAnalysisJson("not-json");
 
         result.IsValid.ShouldBeFalse();
         result.FailureCategory.ShouldBe(AIFailureCategory.InvalidOutput);
@@ -22,7 +22,7 @@ public class PromptResponseValidatorTests
     [Fact]
     public void ValidateApplicationAnalysisJson_Should_Return_InvalidOutput_When_Decision_Is_Missing()
     {
-        var result = PromptResponseValidator.ValidateApplicationAnalysisJson(
+        var result = AIProviderPayloadValidator.ValidateApplicationAnalysisJson(
             """
             {
               "errors": [],
@@ -47,7 +47,7 @@ public class PromptResponseValidatorTests
             new { id = "q1" }
         });
 
-        var result = PromptResponseValidator.ValidateApplicationScoringJson("{}", sectionJson);
+        var result = AIProviderPayloadValidator.ValidateApplicationScoringJson("{}", sectionJson);
 
         result.IsValid.ShouldBeFalse();
         result.FailureCategory.ShouldBe(AIFailureCategory.InvalidOutput);
@@ -62,7 +62,7 @@ public class PromptResponseValidatorTests
             new { id = "q1" }
         });
 
-        var result = PromptResponseValidator.ValidateApplicationScoringJson(
+        var result = AIProviderPayloadValidator.ValidateApplicationScoringJson(
             """
             {
               "q1": {
@@ -80,7 +80,7 @@ public class PromptResponseValidatorTests
     [Fact]
     public void ValidateApplicationAnalysisJson_Should_Return_InvalidOutput_When_Decision_Is_Not_Proceed_Or_Hold()
     {
-        var result = PromptResponseValidator.ValidateApplicationAnalysisJson(
+        var result = AIProviderPayloadValidator.ValidateApplicationAnalysisJson(
             """
             {
               "decision": "unknown",
@@ -101,7 +101,7 @@ public class PromptResponseValidatorTests
     [Fact]
     public void ValidateApplicationAnalysisJson_Should_Return_InvalidOutput_When_All_Findings_Are_Empty()
     {
-        var result = PromptResponseValidator.ValidateApplicationAnalysisJson(
+        var result = AIProviderPayloadValidator.ValidateApplicationAnalysisJson(
             """
             {
               "decision": "PROCEED",
@@ -122,7 +122,7 @@ public class PromptResponseValidatorTests
     [Fact]
     public void ValidateApplicationAnalysisJson_Should_Return_InvalidOutput_When_Recommendations_Are_Empty()
     {
-        var result = PromptResponseValidator.ValidateApplicationAnalysisJson(
+        var result = AIProviderPayloadValidator.ValidateApplicationAnalysisJson(
             """
             {
               "decision": "PROCEED",
@@ -145,7 +145,7 @@ public class PromptResponseValidatorTests
     [Fact]
     public void ValidateApplicationAnalysisJson_Should_Return_Success_For_Proceed_With_Findings()
     {
-        var result = PromptResponseValidator.ValidateApplicationAnalysisJson(
+        var result = AIProviderPayloadValidator.ValidateApplicationAnalysisJson(
             """
             {
               "decision": "PROCEED",
@@ -166,7 +166,7 @@ public class PromptResponseValidatorTests
     [Fact]
     public void ValidateAttachmentSummaryText_Should_Return_InvalidOutput_For_Empty_Text()
     {
-        var result = PromptResponseValidator.ValidateAttachmentSummaryText(string.Empty);
+        var result = AIProviderPayloadValidator.ValidateAttachmentSummaryText(string.Empty);
 
         result.IsValid.ShouldBeFalse();
         result.FailureCategory.ShouldBe(AIFailureCategory.InvalidOutput);

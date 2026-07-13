@@ -12,13 +12,16 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Unity.AI;
+using Unity.AI.Domain;
 using Unity.AI.Extraction;
 using Unity.AI.Localization;
+using Unity.AI.Prompts;
 using Unity.AI.Operations;
 using Unity.AI.Requests;
 using Unity.AI.Responses;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Intakes;
+using Volo.Abp.Domain.Repositories;
 using Volo.Abp;
 using Volo.Abp.Uow;
 using Xunit;
@@ -269,9 +272,9 @@ public class AttachmentSummaryServiceTests
             .Returns(callInfo =>
             {
                 var filter = callInfo.ArgAt<System.Linq.Expressions.Expression<Func<AIOperation, bool>>>(0).Compile();
-                var operation = new AIOperation(Guid.NewGuid(), AIPromptTypes.ApplicationAttachmentSummary, Guid.NewGuid(), Guid.NewGuid())
+                var operation = new AIOperation(Guid.NewGuid(), AIPromptTypes.AttachmentSummary, Guid.NewGuid(), Guid.NewGuid())
                 {
-                    ExecutionMode = ExecutionMode.Sequential,
+                    ExecutionMode = AIExecutionMode.Sequential,
                     IsActive = true
                 };
 
@@ -281,7 +284,7 @@ public class AttachmentSummaryServiceTests
         return operationRepository;
     }
 
-    private static IApplicationAttachmentSummaryPersistence CreatePersistence(
+    private static IAttachmentSummaryDataProvider CreatePersistence(
         Guid attachmentId,
         string fileName,
         Guid submissionId,

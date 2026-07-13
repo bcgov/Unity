@@ -9,7 +9,6 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Unity.AI.Domain;
-using Unity.AI.Execution;
 using Unity.AI.Operations;
 using Unity.AI.Prompts;
 using Unity.AI.Runtime;
@@ -62,7 +61,7 @@ public class OpenAIConfigurationResolverTests
                 {
                     new(Guid.NewGuid(), AIPromptTypes.ApplicationAnalysis, modelId, promptId)
                     {
-                        ExecutionMode = ExecutionMode.Sequential,
+                        ExecutionMode = AIExecutionMode.Sequential,
                         CompletionTokens = 2222,
                         IsActive = true
                     }
@@ -128,7 +127,7 @@ public class OpenAIConfigurationResolverTests
                 {
                     new(Guid.NewGuid(), "Default", modelId, promptId)
                     {
-                        ExecutionMode = ExecutionMode.Sequential,
+                        ExecutionMode = AIExecutionMode.Sequential,
                         CompletionTokens = 2000,
                         IsActive = true
                     }

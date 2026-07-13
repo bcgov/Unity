@@ -4,7 +4,6 @@ using Shouldly;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Unity.AI.Automation;
 using Unity.AI.Domain;
 using Unity.AI.Localization;
 using Unity.AI.Generation;
@@ -35,14 +34,14 @@ public class AIGenerationAppServiceTests(ITestOutputHelper outputHelper) : Grant
         var applicationId = Guid.NewGuid();
         var attachmentIds = new List<Guid> { Guid.NewGuid(), Guid.NewGuid() };
 
-        var service = new GenerationAppService(
+        var service = new AIGenerationAppService(
             Substitute.For<IApplicationGenerationQueue>(),
             Substitute.For<IAIGenerationStatusAppService>(),
             featureGuard,
             Substitute.For<ICurrentTenant>());
         service.LazyServiceProvider = GetRequiredService<IAbpLazyServiceProvider>();
 
-        await service.GenerateApplicationAttachmentSummariesAsync(new ApplicationAttachmentSummaryRequestDto
+        await service.GenerateApplicationAttachmentSummariesAsync(new AttachmentSummaryGenerationRequestDto
         {
             ApplicationId = applicationId,
             AttachmentIds = attachmentIds,
@@ -77,7 +76,7 @@ public class AIGenerationAppServiceTests(ITestOutputHelper outputHelper) : Grant
         var currentTenant = Substitute.For<ICurrentTenant>();
         currentTenant.Id.Returns(tenantId);
 
-        var service = new GenerationAppService(
+        var service = new AIGenerationAppService(
             Substitute.For<IApplicationGenerationQueue>(),
             statusService,
             CreateFeatureGuard(),
@@ -99,7 +98,7 @@ public class AIGenerationAppServiceTests(ITestOutputHelper outputHelper) : Grant
     [Fact]
     public async Task GetStatusAsync_Should_Reject_Unsupported_Operation_Type()
     {
-        var service = new GenerationAppService(
+        var service = new AIGenerationAppService(
             Substitute.For<IApplicationGenerationQueue>(),
             Substitute.For<IAIGenerationStatusAppService>(),
             CreateFeatureGuard(),
