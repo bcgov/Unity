@@ -1,8 +1,9 @@
-@using Unity.GrantManager.History
-@using Unity.GrantManager.Web.Views.Shared.Components.HistoryWidget
+@using Microsoft.AspNetCore.Html
 @using Microsoft.AspNetCore.Mvc.Localization
-@using Unity.GrantManager.Localization
 @using Microsoft.Extensions.Localization
+@using Unity.GrantManager.History
+@using Unity.GrantManager.Localization
+@using Unity.GrantManager.Web.Views.Shared.Components.HistoryWidget
 @using Unity.Modules.Shared.Utils
 
 @model HistoryWidgetViewModel
@@ -12,8 +13,7 @@
 @{
     Layout = null;
 }
-<br/>
-<div id="application-history-div" class="mb-2 card border"> 
+<div id="application-history-div" class="mb-2 mt-4 card border">
     <div id="card-header-div" class="card-header bg-default"> 
         <h4 class="mb-0 card-title">Application Status History</h4> 
     </div> 
@@ -31,12 +31,6 @@
 
             @foreach (HistoryDto historyDto in Model.ApplicationStatusHistoryList ?? Enumerable.Empty<HistoryDto>())
             {
-                string fromString = string.Empty;
-                if (!string.IsNullOrEmpty(historyDto?.OriginalValue)) 
-                {
-                    fromString = "from";
-                }
-
                 <div class="mb-2 history-read-mode">
                     <div class="unity-history-block read-mode">
                         <div class="d-flex justify-content-between">
@@ -44,13 +38,23 @@
                                 @historyDto?.UserName
                             </div>
                         </div>
+                        @if (historyDto?.PropertyName == HistoryWidgetViewComponent.Property_ApplicationStatusId)
+                        {
                         <div class="history-lbl">
-                            <div>
-                                Status changed @fromString <span class="status-change">@historyDto?.OriginalValue</span> 
-                                to
-                                <span class="status-change">@historyDto?.NewValue</span>
-                            </div>
+                            Status changed 
+                            @if (!string.IsNullOrEmpty(historyDto?.OriginalValue))
+                            {
+                                <text>from <span class="status-change">@historyDto?.OriginalValue</span></text>
+                            }
+                            to <span class="status-change">@historyDto?.NewValue</span>
                         </div>
+                        }
+                        @if (historyDto?.PropertyName == HistoryWidgetViewComponent.Property_ExternalStatusVisibility)
+                        {
+                        <div class="history-lbl">
+                            External Status Visibility changed to <span class="status-change">@(bool.TryParse(historyDto?.NewValue, out bool newValue) && newValue ? "Published" : "Unpublished")</span>
+                        </div>
+                        }
                         <time datetime="@DateTimeExtensions.FormatTimestamp(historyDto?.ChangeTime)" class="history-time mt-3 fw-bold">
                             @DateTimeExtensions.FormatPacificTime(historyDto?.ChangeTime)
                         </time>
