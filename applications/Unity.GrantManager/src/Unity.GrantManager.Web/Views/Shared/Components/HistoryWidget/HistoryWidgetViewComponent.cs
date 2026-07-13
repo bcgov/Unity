@@ -32,14 +32,14 @@ public class HistoryWidgetViewComponent(
             new GetEntityPropertyChangesInput
             {
                 EntityId = entityId,
-                PropertyNames = ["ApplicationStatusId", "ExternalStatusVisibility"],
+                PropertyNames = [Property_ApplicationStatusId, Property_ExternalStatusVisibility],
             }, applicationStatusDict),
         };
 
         return View(model);
     }
 
-    public async Task<Dictionary<string, string>> GetApplicationStatusDict() {
+    private async Task<Dictionary<string, string>> GetApplicationStatusDict() {
         List<ApplicationStatus> applicationStatusList = await applicationStatusRepository.GetListAsync();
         Dictionary<string, string> applicationStatusDict = new Dictionary<string, string>();
         foreach (var applicationStatus in applicationStatusList)

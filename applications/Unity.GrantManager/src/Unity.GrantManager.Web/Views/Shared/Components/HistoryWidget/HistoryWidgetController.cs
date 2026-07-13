@@ -14,7 +14,7 @@ public class HistoryWidgetController : AbpController
     {
         if (!ModelState.IsValid)
         {
-            return ViewComponent("HistoryWidget");
+            return BadRequest(ModelState);
         }
 
         return ViewComponent("HistoryWidget", new { applicationId });

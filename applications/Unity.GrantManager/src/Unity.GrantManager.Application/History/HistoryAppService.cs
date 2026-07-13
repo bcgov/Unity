@@ -61,7 +61,7 @@ public class HistoryAppService(
             includeDetails: true,
             cancellationToken: default);
 
-        var propertyNames = input.PropertyNames.ToHashSet(StringComparer.Ordinal);
+        var propertyNames = (input.PropertyNames ?? []).ToHashSet(StringComparer.Ordinal);
         var historyList = new List<HistoryDto>();
         var userNameCache = new Dictionary<Guid, string>();
 

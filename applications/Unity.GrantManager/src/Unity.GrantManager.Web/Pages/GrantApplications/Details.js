@@ -1092,7 +1092,7 @@ function updateLinksCounters() {
                 $('#' + tag).text(count);
             })
             .get();
-    }, 100);                  
+    }, 100);
 }
 
 function initEmailsWidget() {
@@ -1186,18 +1186,18 @@ function initCommentsWidget() {
 }
 
 function initHistoryWidget() {
-    debugger;
     let applicationHistoryWidgetManager = new abp.WidgetManager({
         wrapper: '#applicationHistoryWidget',
         filterCallback: function () {
             return {
-                applicationId: $('#DetailsViewApplicationId').val(),
+                applicationId:
+                    $('#DetailsViewApplicationId').val() ??
+                    '00000000-0000-0000-0000-000000000000',
             };
         },
     })
 
     PubSub.subscribe('ApplicationHistory_refresh', () => {
-        debugger;
         applicationHistoryWidgetManager.refresh();
     });
 }
