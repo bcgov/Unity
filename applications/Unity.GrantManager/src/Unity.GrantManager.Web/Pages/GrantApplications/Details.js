@@ -25,6 +25,7 @@ $(function () {
         setStoredDividerWidth();
         initCommentsWidget();
         initEmailsWidget();
+        initHistoryWidget();
         updateLinksCounters();
         renderSubmission();
         loadAIAnalysis();
@@ -1091,7 +1092,7 @@ function updateLinksCounters() {
                 $('#' + tag).text(count);
             })
             .get();
-    }, 100);
+    }, 100);                  
 }
 
 function initEmailsWidget() {
@@ -1181,6 +1182,23 @@ function initCommentsWidget() {
 
     PubSub.subscribe('ApplicationTags_refresh', () => {
         tagsWidgetManager.refresh();
+    });
+}
+
+function initHistoryWidget() {
+    debugger;
+    let applicationHistoryWidgetManager = new abp.WidgetManager({
+        wrapper: '#applicationHistoryWidget',
+        filterCallback: function () {
+            return {
+                applicationId: $('#DetailsViewApplicationId').val(),
+            };
+        },
+    })
+
+    PubSub.subscribe('ApplicationHistory_refresh', () => {
+        debugger;
+        applicationHistoryWidgetManager.refresh();
     });
 }
 
