@@ -27,21 +27,16 @@ public class HistoryWidgetViewComponent(
         Dictionary<string, string> applicationStatusDict = await GetApplicationStatusDict();
 
         HistoryWidgetViewModel model = new()
-        {       
-            ApplicationStatusHistoryList = await historyAppService.GetHistoryList(entityId, "ApplicationStatusId", applicationStatusDict),
-        };
-
-        HistoryWidgetViewModel model2 = new()
         {
             ApplicationStatusHistoryList = await historyAppService.GetEntityPropertyChangesAsync(
             new GetEntityPropertyChangesInput
             {
-                EntityId = applicationId.ToString(),
+                EntityId = entityId,
                 PropertyNames = ["ApplicationStatusId", "ExternalStatusVisibility"],
             }, applicationStatusDict),
         };
 
-        return View(model2);
+        return View(model);
     }
 
     public async Task<Dictionary<string, string>> GetApplicationStatusDict() {
