@@ -29,7 +29,8 @@ public class AIOperationDataSeeder(
         new(AIPromptTypes.AttachmentSummary, AIPromptTypes.AttachmentSummary, 1, 2000),
         new(AIPromptTypes.ApplicationScoring, AIPromptTypes.ApplicationScoring, 1, 8000),
         new(AIPromptTypes.FormMapping, AIPromptTypes.FormMapping, 2, 2000),
-        new(AIPromptTypes.FormWorksheet, AIPromptTypes.FormWorksheet, 2, 4000)
+        new(AIPromptTypes.FormWorksheet, AIPromptTypes.FormWorksheet, 2, 4000),
+        new(AIPromptTypes.FormScoresheet, AIPromptTypes.FormScoresheet, 2, 4000)
     ];
 
     public async Task SeedAsync(DataSeedContext context)
