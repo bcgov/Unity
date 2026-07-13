@@ -2,11 +2,240 @@ $(function () {
     const l = abp.localization.getResource('Payments');
     const nullPlaceholder = '—';
     const requestedFieldsStorageKey = 'PaymentRequests_RequestedFields';
+    const defaultQuickDateRange = 'last6months';
     const formatter = createNumberFormatter();
     const guidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     let dt = $('#PaymentRequestListTable');
     let dataTable;
     let isApprove = false;
+
+    let paymentTableFilters = {
+        requestedFromDate: null,
+        requestedToDate: null
+    };
+
+    const UIElements = {
+        quickDateRange: $('#quickDateRange'),
+        inputFilter: $('.date-input-filter'),
+        requestedToInput: $('#requestedToDate'),
+        requestedFromInput: $('#requestedFromDate'),
+    };
+
+    function formatDate(date) {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
+
+    // Returns a formatted { fromDate, toDate } for the filter fields.
+    // Null if 'custom' or no input provided (assumes custom is default break)
+    function getDateRange(rangeType) {
+        let today = new Date();
+        const toDate = formatDate(new Date());
+        let fromDate;
+
+        switch (rangeType) {
+            case 'today':
+                fromDate = toDate;
+                break;
+            case 'last7days':
+                fromDate = formatDate(new Date(today.setDate(today.getDate() - 7)));
+                break;
+            case 'last30days':
+                fromDate = formatDate(new Date(today.setDate(today.getDate() - 30)));
+                break;
+            case 'last3months':
+                fromDate = formatDate(new Date(today.setMonth(today.getMonth() - 3)));
+                break;
+            case 'last6months':
+                fromDate = formatDate(new Date(today.setMonth(today.getMonth() - 6)));
+                break;
+            case 'alltime':
+                return { fromDate: null, toDate: null };
+            case 'custom':
+            default:
+                return null; // Don't modify dates for custom
+        }
+
+        return { fromDate, toDate };
+    }
+
+    function toggleCustomDateInputs(show) {
+        if (show) {
+            $('#customDateInputs').show();
+        } else {
+            $('#customDateInputs').hide();
+        }
+    }
+
+    function validateDate(dateValue, element) {
+        if (dateValue) {
+            const selectedDate = new Date(dateValue);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            const minDate = element.attr('min') ? new Date(element.attr('min')) : null;
+            const maxDate = element.attr('max') ? new Date(element.attr('max')) : null;
+
+            if (selectedDate > today) {
+                element.addClass('input-validation-error');
+                abp.notify.error('The date cannot be in the future', 'Invalid Date');
+                return false;
+            }
+
+            if (minDate && selectedDate < minDate) {
+                element.addClass('input-validation-error');
+                abp.notify.error('The date cannot be before the minimum allowed date', 'Invalid Date');
+                return false;
+            }
+
+            if (maxDate && selectedDate > maxDate) {
+                element.addClass('input-validation-error');
+                abp.notify.error('The date cannot be after the maximum allowed date', 'Invalid Date');
+                return false;
+            }
+
+            element.removeClass('input-validation-error');
+            return true;
+        }
+        return true;
+    }
+
+    function setDateRangeFilters(quickDateRange, range) {
+        UIElements.quickDateRange.val(quickDateRange);
+
+        if (range) {
+            const fromDate = range.fromDate ?? '';
+            const toDate = range.toDate ?? '';
+            UIElements.requestedFromInput.val(fromDate);
+            UIElements.requestedToInput.val(toDate);
+            paymentTableFilters.requestedFromDate = fromDate;
+            paymentTableFilters.requestedToDate = toDate;
+        }
+    }
+
+    function setDateRangeLocalStorage(quickDateRange, fromToRange) {
+        localStorage.setItem('PaymentRequests_QuickRange', quickDateRange || defaultQuickDateRange);
+        if (fromToRange) {
+            const fromDate = fromToRange.fromDate;
+            const toDate = fromToRange.toDate;
+            if (fromDate) {
+                localStorage.setItem('PaymentRequests_FromDate', fromDate);
+            }
+            else {
+                localStorage.removeItem('PaymentRequests_FromDate');
+            }
+            if (toDate) {
+                localStorage.setItem('PaymentRequests_ToDate', toDate);
+            }
+            else {
+                localStorage.removeItem('PaymentRequests_ToDate');
+            }
+        }
+    }
+
+    function initializeRequestedFilterDates() {
+        let savedQuickRange = localStorage.getItem('PaymentRequests_QuickRange') || defaultQuickDateRange;
+        let savedFromDate = localStorage.getItem('PaymentRequests_FromDate');
+        let savedToDate = localStorage.getItem('PaymentRequests_ToDate');
+
+        let isCustomRange = savedQuickRange === 'custom';
+        toggleCustomDateInputs(isCustomRange);
+
+        let range = isCustomRange
+            ? {
+                fromDate: savedFromDate || '',
+                toDate: savedToDate || ''
+            }
+            : getDateRange(savedQuickRange);
+
+        if (!isCustomRange && !range) {
+            savedQuickRange = defaultQuickDateRange;
+            range = getDateRange(savedQuickRange);
+        }
+
+        setDateRangeFilters(savedQuickRange, range);
+        setDateRangeLocalStorage(savedQuickRange, range);
+
+        // Set max date to today for both inputs
+        const today = formatDate(new Date());
+        UIElements.requestedToInput.attr({ 'max': today });
+        UIElements.requestedFromInput.attr({ 'max': today });
+    }
+
+    function handleInputFilterChange() {
+        const $input = $(this);
+        const dateValue = $input.val();
+
+        if (!validateDate(dateValue, $input)) return;
+
+        paymentTableFilters.requestedFromDate = UIElements.requestedFromInput.val();
+        paymentTableFilters.requestedToDate = UIElements.requestedToInput.val();
+
+        // If the values for FromDate and ToDate are being set outside of the
+        // quick drop down handler, custom SHOULD be shown, but set just in case
+        UIElements.quickDateRange.val('custom');
+        localStorage.setItem('PaymentRequests_QuickRange', 'custom');
+
+        localStorage.setItem('PaymentRequests_FromDate', paymentTableFilters.requestedFromDate);
+        localStorage.setItem('PaymentRequests_ToDate', paymentTableFilters.requestedToDate);
+
+        dataTable.ajax.reload(null, true);
+    }
+
+    function handleQuickDateRangeChange() {
+        const selectedRange = $(this).val();
+
+        if (selectedRange === 'custom') {
+            // Show the custom date inputs and don't modify their values
+            toggleCustomDateInputs(true);
+            return;
+        }
+
+        // Hide custom date inputs for preset ranges
+        toggleCustomDateInputs(false);
+
+        // Get the date range for the selected option
+        const range = getDateRange(selectedRange);
+        setDateRangeFilters(selectedRange, range);
+        setDateRangeLocalStorage(selectedRange, range);
+
+        // Reload the table with new filters
+        dataTable.ajax.reload(null, true);
+    }
+
+    function bindUIEvents() {
+        UIElements.inputFilter.on('change', handleInputFilterChange);
+        UIElements.quickDateRange.on('change', handleQuickDateRangeChange);
+    }
+
+    // Restores search value and date range filters when a saved view is loaded.
+    function restoreCustomFilters(filters) {
+        $('#search').val(filters.externalSearchValue || '');
+
+        let quickRange = filters.quickDateRange || defaultQuickDateRange;
+        let isCustomRange = filters.quickDateRange === 'custom';
+        toggleCustomDateInputs(isCustomRange);
+
+        let range = isCustomRange
+            ? {
+                fromDate: filters.requestedFromDate || '',
+                toDate: filters.requestedToDate || ''
+            }
+            : getDateRange(quickRange);
+
+        if (!isCustomRange && !range) {
+            quickRange = defaultQuickDateRange;
+            range = getDateRange(quickRange);
+        }
+
+        setDateRangeFilters(quickRange, range);
+        setDateRangeLocalStorage(quickRange, range);
+    }
+
+    bindUIEvents();
+    initializeRequestedFilterDates();
 
     const listColumns = getColumns();
     const defaultVisibleColumns = [
@@ -247,7 +476,16 @@ $(function () {
 
                         $('.dt-search input').val('');
                         $('#search').val('');
-                        dt.search('').order(initialSortOrder).draw();
+                        dt.search('').order(initialSortOrder);
+
+                        // Reset date range filters
+                        const range = getDateRange(defaultQuickDateRange);
+                        setDateRangeFilters(defaultQuickDateRange, range);
+                        setDateRangeLocalStorage(defaultQuickDateRange, range);
+                        toggleCustomDateInputs(false);
+
+                        // Reload table data with updated filters
+                        dt.ajax.reload(null, false);
                     }
                 },
                 { extend: 'removeAllStates', text: 'Delete All Views' },
@@ -332,7 +570,9 @@ $(function () {
             }
 
             return {
-                requestedFields: requestedFields
+                requestedFields: requestedFields,
+                requestedFromDate: paymentTableFilters.requestedFromDate,
+                requestedToDate: paymentTableFilters.requestedToDate
             };
         },
         responseCallback,
@@ -347,14 +587,17 @@ $(function () {
         fixedHeaders: true,
         onStateSaveParams: function (settings, data) {
             data.customFilters = {
-                externalSearchValue: $('#search').val() || ''
+                externalSearchValue: $('#search').val() || '',
+                quickDateRange: UIElements.quickDateRange.val(),
+                requestedFromDate: UIElements.requestedFromInput.val(),
+                requestedToDate: UIElements.requestedToInput.val()
             };
         },
         onStateLoadParams: function (settings, data) {
             if (!initialLoad) {
                 isRestoringState = true;
                 if (data?.customFilters) {
-                    $('#search').val(data.customFilters.externalSearchValue || '');
+                    restoreCustomFilters(data.customFilters);
                 }
             }
         },
