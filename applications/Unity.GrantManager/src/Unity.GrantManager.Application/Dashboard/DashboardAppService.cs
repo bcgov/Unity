@@ -205,16 +205,21 @@ public class DashboardAppService : ApplicationService, IDashboardAppService
             var applicationTags = await GetFilteredApplicationTags(applicationQuery, parameters);
             var filteredApplications = applicationQuery.Where(app => applicationTags.Contains(app.Id));
 
-            var requestedAmount = await filteredApplications.SumAsync(app => app.RequestedAmount);
-            var approvedAmount = await filteredApplications.SumAsync(app => app.ApprovedAmount);
+            // Single query for both aggregates instead of two separate round-trips
+            var amounts = await filteredApplications
+                .GroupBy(_ => true)
+                .Select(g => new
+                {
+                    RequestedAmount = g.Sum(a => a.RequestedAmount),
+                    ApprovedAmount = g.Sum(a => a.ApprovedAmount)
+                })
+                .FirstOrDefaultAsync();
 
-            var queryResult = new List<GetRequestedApprovedAmtDto>
+            return new List<GetRequestedApprovedAmtDto>
             {
-                new GetRequestedApprovedAmtDto { Description = "Requested Amount", Amount = requestedAmount },
-                new GetRequestedApprovedAmtDto { Description = "Approved Amount", Amount = approvedAmount }
+                new GetRequestedApprovedAmtDto { Description = "Requested Amount", Amount = amounts?.RequestedAmount ?? 0 },
+                new GetRequestedApprovedAmtDto { Description = "Approved Amount", Amount = amounts?.ApprovedAmount ?? 0 }
             };
-
-            return queryResult;
         });
 
         return requestApprovedAmtDto;
@@ -222,17 +227,23 @@ public class DashboardAppService : ApplicationService, IDashboardAppService
 
     private async Task<List<Guid>> GetFilteredApplicationTags(IQueryable<Application> applications, DashboardParameters parameters)
     {
-        var tags = await _applicationTagsRepository.WithDetailsAsync();
-        var tagsResult = tags.Join(applications, tag => tag.ApplicationId, app => app.Id, (tag, app) => tag);
+        var tagQueryable = (await _applicationTagsRepository.GetQueryableAsync()).Include(t => t.Tag);
+        var tagsResult = tagQueryable.Join(applications, tag => tag.ApplicationId, app => app.Id, (tag, app) => tag);
 
-        var applicationIdsWithTags = tagsResult.AsEnumerable()
-            .SelectMany(tag => tag.Tag.Name.Split(','), (tagResult, tag) => new { tagResult.ApplicationId, Tag = tag })
+        // Use async materialization and project to minimal fields to reduce memory pressure
+        var materializedTags = await tagsResult
+            .Select(tag => new { tag.ApplicationId, TagName = tag.Tag.Name })
+            .ToListAsync();
+
+        var applicationIdsWithTags = materializedTags
+            .SelectMany(tag => tag.TagName.Split(','), (tagResult, tagName) => new { tagResult.ApplicationId, Tag = tagName })
             .Where(tag => parameters.Tags.Contains(tag.Tag))
             .Select(tag => tag.ApplicationId)
             .ToHashSet();
 
         if (parameters.Tags.Contains(string.Empty))
         {
+            // Keep tagsResult as IQueryable so EF generates a SQL NOT EXISTS subquery
             var applicationsWithoutTags = applications.Where(app => !tagsResult.Any(res => res.ApplicationId == app.Id));
             applications = applications.Where(app => applicationIdsWithTags.Contains(app.Id)).Union(applicationsWithoutTags);
         }
