@@ -93,6 +93,15 @@ public class AIGenerationAppServiceTests(ITestOutputHelper outputHelper) : Grant
         result.StartedAt.ShouldBe(new DateTime(2026, 7, 1, 12, 0, 0));
         result.FailureReason.ShouldBe("not used");
         result.IsActive.ShouldBeTrue();
+        result.GenerationRequest.ShouldNotBeNull();
+        result.GenerationRequest!.Id.ShouldBe(requestId);
+        result.GenerationRequest.ApplicationId.ShouldBe(applicationId);
+        result.GenerationRequest.OperationId.ShouldBe(operationId);
+        result.GenerationRequest.OperationType.ShouldBe(operationType);
+        result.GenerationRequest.Status.ShouldBe(AIGenerationRequestStatus.Running.ToString());
+        result.GenerationRequest.StartedAt.ShouldBe(new DateTime(2026, 7, 1, 12, 0, 0));
+        result.GenerationRequest.FailureReason.ShouldBe("not used");
+        result.GenerationRequest.IsActive.ShouldBeTrue();
     }
 
     [Fact]

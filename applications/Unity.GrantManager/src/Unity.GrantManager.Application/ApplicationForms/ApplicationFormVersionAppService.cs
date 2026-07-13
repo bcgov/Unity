@@ -7,6 +7,9 @@ using System.Text.Json;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
+using Unity.AI.Cooldown;
+using Unity.AI.Features;
+using Unity.AI.Permissions;
 using Unity.AI.Operations;
 using Unity.AI.Requests;
 using Unity.AI.Responses;
@@ -22,6 +25,7 @@ using Volo.Abp.Application.Services;
 using Volo.Abp.Domain.Entities;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Features;
+using Volo.Abp;
 using Volo.Abp.Uow;
 using Unity.GrantManager.Intakes.Mapping;
 
@@ -37,6 +41,7 @@ namespace Unity.GrantManager.ApplicationForms
         IReportingFieldsGeneratorService reportingFieldsGeneratorService,
         IFeatureChecker featureChecker,
         IApplicationFormVersionMappingReadService mappingReadService,
+        IAICooldownService aiCooldownService,
         IFormMappingService aiService) :
         CrudAppService<
             ApplicationFormVersion,
@@ -47,6 +52,7 @@ namespace Unity.GrantManager.ApplicationForms
         IApplicationFormVersionAppService
     {
         private readonly IApplicationFormVersionMappingReadService _mappingReadService = mappingReadService;
+        private readonly IAICooldownService _aiCooldownService = aiCooldownService;
         private readonly IFormMappingService _aiService = aiService;
 
         public override async Task<ApplicationFormVersionDto> CreateAsync(CreateUpdateApplicationFormVersionDto input) =>
@@ -324,6 +330,14 @@ namespace Unity.GrantManager.ApplicationForms
 
         public virtual async Task<ApplicationFormMappingDto> GenerateMappingAsync(Guid id)
         {
+            if (!await featureChecker.IsEnabledAsync(AIFeatures.FormMapping))
+            {
+                throw new UserFriendlyException("AI form mapping is disabled.");
+            }
+
+            await CheckPolicyAsync(AIPermissions.Analysis.GenerateFormMapping);
+            await _aiCooldownService.EnsureAsync(CurrentUser.Id);
+
             var readModel = await _mappingReadService.GetAsync(id);
             var promptData = new
             {

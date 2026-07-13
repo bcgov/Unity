@@ -113,6 +113,18 @@ public class AIGenerationAppService(
 
         return new AIGenerationStatusDto
         {
+            GenerationRequest = new AIGenerationRequestDto
+            {
+                Id = request.Id,
+                ApplicationId = request.ApplicationId,
+                OperationId = request.OperationId,
+                OperationType = operationType,
+                Status = request.Status.ToString(),
+                StartedAt = request.StartedAt,
+                CompletedAt = request.CompletedAt,
+                FailureReason = request.FailureReason,
+                IsActive = request.IsActive
+            },
             Id = request.Id,
             ApplicationId = request.ApplicationId,
             OperationId = request.OperationId,

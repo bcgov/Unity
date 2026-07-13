@@ -4,6 +4,8 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Unity.AI;
+using Unity.AI.Cooldown;
+using Unity.AI.Features;
 using Unity.AI.Operations;
 using Unity.AI.Requests;
 using Unity.AI.Responses;
@@ -18,6 +20,7 @@ using Unity.GrantManager.Integrations.Chefs;
 using Unity.Modules.Shared.Features;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Domain.Repositories;
+using Volo.Abp.DependencyInjection;
 using Volo.Abp.Features;
 using Volo.Abp.Uow;
 using Xunit;
@@ -62,10 +65,11 @@ public class ApplicationFormVersionAppServiceTests(ITestOutputHelper outputHelpe
         aiService.GenerateFormMappingAsync(Arg.Do<FormMappingRequest>(request => capturedRequest = request), Arg.Any<System.Threading.CancellationToken>())
             .Returns(new FormMappingResponse
             {
-                Mapping = """{"ProjectName":"ProjectName"}"""
-            });
+                Mapping = """{"ProjectName":"Project Name"}"""
+        });
 
         var service = CreateService(repository, readService, aiService);
+        service.LazyServiceProvider = GetRequiredService<IAbpLazyServiceProvider>();
 
         var result = await service.GenerateMappingAsync(formVersionId);
 
@@ -74,7 +78,7 @@ public class ApplicationFormVersionAppServiceTests(ITestOutputHelper outputHelpe
         capturedRequest!.Data.GetProperty("chefsData").GetProperty("fields").ValueKind.ShouldBe(System.Text.Json.JsonValueKind.Array);
         capturedRequest.Data.GetProperty("unityData").GetProperty("coreFields").ValueKind.ShouldBe(System.Text.Json.JsonValueKind.Array);
         capturedRequest.Data.GetProperty("unityData").GetProperty("customFields").ValueKind.ShouldBe(System.Text.Json.JsonValueKind.Array);
-        formVersion.SubmissionHeaderMapping.ShouldBe("""{"ProjectName":"ProjectName"}""");
+        formVersion.SubmissionHeaderMapping.ShouldBe("""{"Project Name":"ProjectName"}""");
         await repository.Received(1).UpdateAsync(formVersion, true);
     }
 
@@ -83,6 +87,13 @@ public class ApplicationFormVersionAppServiceTests(ITestOutputHelper outputHelpe
         IApplicationFormVersionMappingReadService mappingReadService,
         IFormMappingService aiService)
     {
+        var featureChecker = Substitute.For<IFeatureChecker>();
+        featureChecker.IsEnabledAsync(AIFeatures.FormMapping).Returns(true);
+
+        var cooldownService = Substitute.For<IAICooldownService>();
+        cooldownService.EnsureAsync(Arg.Any<Guid?>())
+            .Returns(Task.CompletedTask);
+
         var service = new ApplicationFormVersionAppService(
             repository,
             Substitute.For<IIntakeFormSubmissionMapper>(),
@@ -91,8 +102,9 @@ public class ApplicationFormVersionAppServiceTests(ITestOutputHelper outputHelpe
             Substitute.For<IApplicationFormVersionRepository>(),
             Substitute.For<IApplicationFormSubmissionRepository>(),
             Substitute.For<IReportingFieldsGeneratorService>(),
-            Substitute.For<IFeatureChecker>(),
+            featureChecker,
             mappingReadService,
+            cooldownService,
             aiService);
         return service;
     }
