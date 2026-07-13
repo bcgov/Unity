@@ -15,15 +15,8 @@ using Volo.Abp.DependencyInjection;
 
 namespace Unity.AI.Runtime
 {
-    [ExposeServices(
-        typeof(IAIService),
-        typeof(IApplicationAnalysisService),
-        typeof(IApplicationScoringService),
-        typeof(IApplicationAttachmentSummaryService),
-        typeof(IFormMappingService),
-        typeof(IFormWorksheetService),
-        typeof(IFormScoresheetService))]
-    public class OpenAIRuntimeService : IAIService, ITransientDependency
+    [ExposeServices(typeof(IAIService), typeof(IFormMappingService), typeof(IFormWorksheetService), typeof(IFormScoresheetService))]
+    public class OpenAIRuntimeService : IAIService, IFormMappingService, IFormWorksheetService, IFormScoresheetService, ITransientDependency
     {
         private readonly ILogger<OpenAIRuntimeService> _logger;
         private readonly OpenAITransportService _openAITransportService;
@@ -31,7 +24,7 @@ namespace Unity.AI.Runtime
         private readonly IAIPromptTemplateProvider _promptTemplateProvider;
         private readonly OpenAIPromptFileLogger _promptFileLogger;
         private const string ApplicationAnalysisPromptType = AIPromptTypes.ApplicationAnalysis;
-        private const string AttachmentSummaryPromptType = AIPromptTypes.ApplicationAttachmentSummary;
+        private const string AttachmentSummaryPromptType = AIPromptTypes.AttachmentSummary;
         private const string ApplicationScoringPromptType = AIPromptTypes.ApplicationScoring;
         private const string FormMappingPromptType = AIPromptTypes.FormMapping;
         private const string FormWorksheetPromptType = AIPromptTypes.FormWorksheet;
@@ -138,7 +131,7 @@ namespace Unity.AI.Runtime
             }
         }
 
-        public async Task<ApplicationAttachmentSummaryResponse> GenerateAttachmentSummaryAsync(ApplicationAttachmentSummaryRequest request, CancellationToken cancellationToken = default)
+        public async Task<AttachmentSummaryResponse> GenerateAttachmentSummaryAsync(AttachmentSummaryRequest request, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(request);
             var fileName = request.FileName ?? string.Empty;
@@ -186,13 +179,13 @@ namespace Unity.AI.Runtime
 
                 if (result.Outcome != AIOperationOutcome.Success)
                 {
-                    return new ApplicationAttachmentSummaryResponse
+                    return new AttachmentSummaryResponse
                     {
                         Summary = $"AI analysis not available for this attachment ({fileName})."
                     };
                 }
 
-                return new ApplicationAttachmentSummaryResponse
+                return new AttachmentSummaryResponse
                 {
                     Summary = ExtractSummaryFromJson(result.Content)
                 };
@@ -204,7 +197,7 @@ namespace Unity.AI.Runtime
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Attachment summary generation failed for {FileName}.", fileName);
-                return new ApplicationAttachmentSummaryResponse
+                return new AttachmentSummaryResponse
                 {
                     Summary = $"AI analysis not available for this attachment ({fileName})."
                 };

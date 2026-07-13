@@ -5,6 +5,8 @@ namespace Unity.AI.Responses;
 
 public class FormWorksheetResponse
 {
+    public string Worksheet { get; set; } = string.Empty;
+
     [JsonPropertyName("name")]
     public string Name { get; set; } = string.Empty;
 

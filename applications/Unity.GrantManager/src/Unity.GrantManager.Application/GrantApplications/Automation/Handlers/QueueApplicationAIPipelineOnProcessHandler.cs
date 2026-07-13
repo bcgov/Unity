@@ -1,7 +1,7 @@
 using Microsoft.Extensions.Logging;
 using System;
 using System.Threading.Tasks;
-using Unity.AI.Automation;
+using Unity.AI.Generation;
 using Unity.AI.Settings;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Intakes.Events;

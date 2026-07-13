@@ -2,11 +2,11 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Threading.Tasks;
 using Unity.AI.Domain;
-using Unity.AI.Execution;
 using Unity.AI.Cooldown;
 using Unity.AI.Operations;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.GrantApplications.Automation.Events;
+using Volo.Abp.ObjectMapping;
 using Volo.Abp.BackgroundJobs;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Repositories;
@@ -18,12 +18,14 @@ namespace Unity.GrantManager.GrantApplications.Automation.BackgroundJobs;
 
 public class GenerateApplicationScoringJob(
     ApplicationScoringService applicationScoringService,
+    IAIApplicationInputBuilder aiApplicationInputBuilder,
     IApplicationRepository applicationRepository,
     IRepository<AIGenerationRequest, Guid> generationRequestRepository,
     ICurrentTenant currentTenant,
     IUnitOfWorkManager unitOfWorkManager,
     ILocalEventBus localEventBus,
-    ICooldownService aiCooldownService,
+    IAICooldownService aiCooldownService,
+    IObjectMapper objectMapper,
     ILogger<GenerateApplicationScoringJob> logger) : AsyncBackgroundJob<GenerateApplicationScoringBackgroundJobArgs>, ITransientDependency
 {
     public override async Task ExecuteAsync(GenerateApplicationScoringBackgroundJobArgs args)
@@ -47,10 +49,9 @@ public class GenerateApplicationScoringJob(
             try
             {
                 var application = await applicationRepository.GetAsync(args.ApplicationId);
-                var scoresheetAnswers = await applicationScoringService.GenerateApplicationScoringAsync(
-                    application.Id,
-                    ExecutionMode.Sequential,
-                    args.PromptVersion);
+                var promptData = objectMapper.Map<Application, AIApplicationPromptDataDto>(application);
+                var scoringInput = await aiApplicationInputBuilder.BuildApplicationScoringInputAsync(promptData, args.PromptVersion);
+                var scoresheetAnswers = await applicationScoringService.RegenerateAsync(scoringInput);
                 application.AIScoresheetAnswers = scoresheetAnswers;
                 await applicationRepository.UpdateAsync(application);
                 await localEventBus.PublishAsync(new ApplicationAIScoringGeneratedEvent

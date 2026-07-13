@@ -106,7 +106,7 @@ public static class AIGenerationRequestJobHelper
     }
 
     public static async Task StampCooldownBestEffortAsync(
-        ICooldownService aiCooldownService,
+        IAICooldownService aiCooldownService,
         ILogger logger,
         Guid? requestedByUserId,
         Guid applicationId,

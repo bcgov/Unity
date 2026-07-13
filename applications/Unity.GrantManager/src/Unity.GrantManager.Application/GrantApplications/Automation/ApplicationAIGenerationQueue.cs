@@ -3,14 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Unity.AI.Domain;
-using Unity.AI.Automation;
+using Unity.AI.Generation;
 using Unity.AI.Features;
 using Unity.AI.Localization;
 using Unity.AI.Operations;
 using Unity.AI.Cooldown;
-using Unity.AI.Validation;
-using Unity.GrantManager.GrantApplications;
 using Unity.GrantManager.GrantApplications.Automation.BackgroundJobs;
+using Unity.GrantManager.GrantApplications;
 using Medallion.Threading;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Localization;
@@ -30,9 +29,9 @@ public class ApplicationGenerationQueue(
     IRepository<AIGenerationRequest, Guid> generationRequestRepository,
     IRepository<AIOperation, Guid> operationRepository,
     IDistributedLockProvider distributedLockProvider,
-    IGenerationPrerequisiteValidator aiGenerationPrerequisiteValidator,
+    IAIGenerationPrerequisiteValidator aiGenerationPrerequisiteValidator,
     IFeatureChecker featureChecker,
-    ICooldownService aiCooldownService,
+    IAICooldownService aiCooldownService,
     IAsyncQueryableExecuter asyncQueryableExecuter,
     ICurrentUser currentUser,
     ILogger<ApplicationGenerationQueue> logger)
@@ -48,7 +47,7 @@ public class ApplicationGenerationQueue(
             () => aiGenerationPrerequisiteValidator.EnsureAttachmentSummaryAvailableAsync(applicationId),
             operationId =>
             {
-                return backgroundJobManager.EnqueueAsync(new GenerateApplicationAttachmentSummaryBackgroundJobArgs
+                return backgroundJobManager.EnqueueAsync(new GenerateAttachmentSummaryBackgroundJobArgs
                 {
                     ApplicationId = applicationId,
                     OperationId = operationId,
@@ -200,7 +199,7 @@ public class ApplicationGenerationQueue(
             }
         }
 
-        if (await featureChecker.IsEnabledAsync(AIFeatures.ApplicationScoring))
+        if (await featureChecker.IsEnabledAsync(AIFeatures.Scoring))
         {
             hasEnabledStage = true;
             try

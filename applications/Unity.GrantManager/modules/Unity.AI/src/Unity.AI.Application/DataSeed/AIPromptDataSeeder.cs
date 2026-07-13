@@ -67,9 +67,9 @@ public class AIPromptDataSeeder(
 
     private async Task SeedAttachmentPromptAsync()
     {
-        await EnsurePromptAsync(AIPromptTypes.ApplicationAttachmentSummary, 0, AttachmentSystemV0, AttachmentUserV0);
+        await EnsurePromptAsync(AIPromptTypes.AttachmentSummary, 0, AttachmentSystemV0, AttachmentUserV0);
         await EnsurePromptAsync(
-            AIPromptTypes.ApplicationAttachmentSummary,
+            AIPromptTypes.AttachmentSummary,
             1,
             AttachmentSystemV1,
             AttachmentUserV1,
@@ -78,7 +78,7 @@ public class AIPromptDataSeeder(
                 rules: AttachmentRules,
                 commonRules: CommonRules));
         await EnsurePromptAsync(
-            AIPromptTypes.ApplicationAttachmentSummary,
+            AIPromptTypes.AttachmentSummary,
             2,
             AttachmentSystemV2,
             AttachmentUserV2,

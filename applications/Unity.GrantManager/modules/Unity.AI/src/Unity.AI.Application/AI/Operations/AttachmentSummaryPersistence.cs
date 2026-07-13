@@ -11,7 +11,7 @@ namespace Unity.AI.Operations;
 
 public class AttachmentSummaryPersistence(
     IApplicationChefsFileAttachmentRepository applicationChefsFileAttachmentRepository,
-    IUnitOfWorkManager unitOfWorkManager) : IApplicationAttachmentSummaryPersistence, ITransientDependency
+    IUnitOfWorkManager unitOfWorkManager) : IAttachmentSummaryPersistence, ITransientDependency
 {
     public async Task<AttachmentSummarySource> LoadAsync(Guid attachmentId)
     {

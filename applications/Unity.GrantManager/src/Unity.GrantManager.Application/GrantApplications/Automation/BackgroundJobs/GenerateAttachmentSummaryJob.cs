@@ -2,7 +2,6 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Threading.Tasks;
 using Unity.AI.Domain;
-using Unity.AI.Execution;
 using Unity.AI.Cooldown;
 using Unity.AI.Operations;
 using Unity.GrantManager.GrantApplications;
@@ -19,8 +18,8 @@ public class GenerateAttachmentSummaryJob(
     IRepository<AIGenerationRequest, Guid> generationRequestRepository,
     ICurrentTenant currentTenant,
     IUnitOfWorkManager unitOfWorkManager,
-    ICooldownService aiCooldownService,
-    ILogger<GenerateApplicationAttachmentSummaryJob> logger) : AsyncBackgroundJob<GenerateApplicationAttachmentSummaryBackgroundJobArgs>, ITransientDependency
+    IAICooldownService aiCooldownService,
+    ILogger<GenerateAttachmentSummaryJob> logger) : AsyncBackgroundJob<GenerateAttachmentSummaryBackgroundJobArgs>, ITransientDependency
 {
     public override async Task ExecuteAsync(GenerateAttachmentSummaryBackgroundJobArgs args)
     {
@@ -48,7 +47,7 @@ public class GenerateAttachmentSummaryJob(
                     args.AttachmentIds,
                     default);
 
-                await AIGenerationRequestJobHelper.StampRateLimitBestEffortAsync(aiRateLimiter, logger, args.RequestedByUserId, args.ApplicationId, AIGenerationRequestKeyHelper.AttachmentSummaryOperationType);
+                await AIGenerationRequestJobHelper.StampCooldownBestEffortAsync(aiCooldownService, logger, args.RequestedByUserId, args.ApplicationId, AIGenerationRequestKeyHelper.AttachmentSummaryOperationType);
                 await AIGenerationRequestJobHelper.MarkCompletedInNewUowAsync(
                     unitOfWorkManager,
                     generationRequestRepository,

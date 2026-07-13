@@ -12,7 +12,6 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
-using Unity.AI.Automation;
 using Unity.AI.Models;
 using Unity.AI.Permissions;
 using Unity.AI.Responses;
@@ -26,6 +25,7 @@ using Unity.GrantManager.Flex;
 using Unity.GrantManager.GlobalTag;
 using Unity.GrantManager.Identity;
 using Unity.GrantManager.Payments;
+using Unity.GrantManager.GrantApplications.Automation;
 using Unity.Modules.Shared;
 using Unity.Modules.Shared.Correlation;
 using Unity.Modules.Shared.Specializations;
@@ -1205,18 +1205,18 @@ public class GrantApplicationAppService(
         switch (operationType)
         {
             case AIGenerationRequestKeyHelper.ApplicationAnalysisOperationType:
-                await AuthorizationService.CheckAsync(AIPermissions.ApplicationAnalysis.View);
+                await AuthorizationService.CheckAsync(AIPermissions.Analysis.ViewApplicationAnalysis);
                 return;
             case AIGenerationRequestKeyHelper.AttachmentSummaryOperationType:
-                await AuthorizationService.CheckAsync(AIPermissions.AttachmentSummaries.View);
+                await AuthorizationService.CheckAsync(AIPermissions.Analysis.ViewAttachmentSummary);
                 return;
             case AIGenerationRequestKeyHelper.ApplicationScoringOperationType:
-                await AuthorizationService.CheckAsync(AIPermissions.ApplicationScoring.View);
+                await AuthorizationService.CheckAsync(AIPermissions.Analysis.ViewScoringResult);
                 return;
             case AIGenerationRequestKeyHelper.PipelineOperationType:
-                await AuthorizationService.CheckAsync(AIPermissions.ApplicationAnalysis.View);
-                await AuthorizationService.CheckAsync(AIPermissions.AttachmentSummaries.View);
-                await AuthorizationService.CheckAsync(AIPermissions.ApplicationScoring.View);
+                await AuthorizationService.CheckAsync(AIPermissions.Analysis.ViewApplicationAnalysis);
+                await AuthorizationService.CheckAsync(AIPermissions.Analysis.ViewAttachmentSummary);
+                await AuthorizationService.CheckAsync(AIPermissions.Analysis.ViewScoringResult);
                 return;
             default:
                 throw new UserFriendlyException("Unknown AI generation operation type.");
@@ -1231,7 +1231,7 @@ public class GrantApplicationAppService(
         }
     }
 
-    private async Task<List<Guid>> ResolveAttachmentSummaryIdsAsync(QueueApplicationAttachmentSummaryRequestDto input)
+    private async Task<List<Guid>> ResolveAttachmentSummaryIdsAsync(QueueAttachmentSummaryRequestDto input)
     {
         if (input == null)
         {

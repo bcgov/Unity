@@ -29,6 +29,42 @@ public static class AIPermissions
         public const string GenerateFormScoresheet      = GroupName + ".GenerateFormScoresheet";
     }
 
+    public static class ApplicationAnalysis
+    {
+        public const string View = Analysis.ViewApplicationAnalysis;
+        public const string Generate = Analysis.GenerateApplicationAnalysis;
+    }
+
+    public static class AttachmentSummaries
+    {
+        public const string View = Analysis.ViewAttachmentSummary;
+        public const string Generate = Analysis.GenerateAttachmentSummaries;
+    }
+
+    public static class ApplicationScoring
+    {
+        public const string View = Analysis.ViewScoringResult;
+        public const string Generate = Analysis.GenerateScoring;
+    }
+
+    public static class FormMapping
+    {
+        public const string View = Analysis.ViewFormMapping;
+        public const string Generate = Analysis.GenerateFormMapping;
+    }
+
+    public static class FormWorksheet
+    {
+        public const string View = Analysis.ViewFormWorksheet;
+        public const string Generate = Analysis.GenerateFormWorksheet;
+    }
+
+    public static class FormScoresheet
+    {
+        public const string View = Analysis.ViewFormScoresheet;
+        public const string Generate = Analysis.GenerateFormScoresheet;
+    }
+
     public static class Configuration
     {
         public const string ConfigureAI = "SettingManagement.ConfigureAI";

@@ -6,6 +6,7 @@ using Unity.AI.Cooldown;
 using Unity.AI.Operations;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.GrantApplications;
+using Volo.Abp.ObjectMapping;
 using Volo.Abp.BackgroundJobs;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Repositories;
@@ -16,11 +17,13 @@ namespace Unity.GrantManager.GrantApplications.Automation.BackgroundJobs;
 
 public class GenerateApplicationAnalysisJob(
     ApplicationAnalysisService applicationAnalysisService,
+    IAIApplicationInputBuilder aiApplicationInputBuilder,
     IApplicationRepository applicationRepository,
     IRepository<AIGenerationRequest, Guid> generationRequestRepository,
     ICurrentTenant currentTenant,
     IUnitOfWorkManager unitOfWorkManager,
-    ICooldownService aiCooldownService,
+    IAICooldownService aiCooldownService,
+    IObjectMapper objectMapper,
     ILogger<GenerateApplicationAnalysisJob> logger) : AsyncBackgroundJob<GenerateApplicationAnalysisBackgroundJobArgs>, ITransientDependency
 {
     public override async Task ExecuteAsync(GenerateApplicationAnalysisBackgroundJobArgs args)
@@ -44,7 +47,9 @@ public class GenerateApplicationAnalysisJob(
             try
             {
                 var application = await applicationRepository.GetAsync(args.ApplicationId);
-                var analysisJson = await applicationAnalysisService.GenerateApplicationAnalysisAsync(application.Id, args.PromptVersion);
+                var promptData = objectMapper.Map<Application, AIApplicationPromptDataDto>(application);
+                var analysisInput = await aiApplicationInputBuilder.BuildApplicationAnalysisInputAsync(promptData, args.PromptVersion);
+                var analysisJson = await applicationAnalysisService.RegenerateAsync(analysisInput);
                 application.AIAnalysis = analysisJson;
                 await applicationRepository.UpdateAsync(application);
                 await AIGenerationRequestJobHelper.StampCooldownBestEffortAsync(aiCooldownService, logger, args.RequestedByUserId, args.ApplicationId, AIGenerationRequestKeyHelper.ApplicationAnalysisOperationType);
