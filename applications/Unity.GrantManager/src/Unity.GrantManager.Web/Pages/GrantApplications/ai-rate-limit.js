@@ -75,6 +75,7 @@
             return;
         }
 
+        rememberLabel(btn);
         btn.setAttribute(ATTR_CHECKING, '1');
         if (!btn.disabled || btn.getAttribute(ATTR_OWNED_DISABLED) === '1') {
             btn.setAttribute(ATTR_OWNED_DISABLED, '1');
@@ -250,9 +251,12 @@
         disableUntilChecked();
         fetchState(true);
     };
+    globalThis.syncAIRateLimitButtons = globalThis.syncAICooldownButtons;
     globalThis.setAIGenerationButtonsGenerating = applyGenerating;
+    globalThis.setAIGenerationButtonsCooldown = applyCooldown;
     globalThis.applyAIRateLimitState = applyRateLimitState;
-    globalThis.refreshAIRateLimitState = globalThis.syncAIRateLimitButtons;
+    globalThis.refreshAICooldownState = globalThis.syncAICooldownButtons;
+    globalThis.refreshAIRateLimitState = globalThis.syncAICooldownButtons;
 
     document.addEventListener('click', (e) => {
         const btn = e.target.closest(BUTTON_SELECTOR);

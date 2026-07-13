@@ -196,7 +196,11 @@
 
                 monitorFormMappingGeneration(applicationId, $button, existingHtml);
             })
-            .fail(function () {
+            .fail(function (error) {
+                if (globalThis.AIGenerationButtonState?.handleQueueFailure(error)) {
+                    return;
+                }
+
                 abp.message.error('Failed to queue AI mapping generation. Please try again.');
                 restoreGenerateMappingButton($button, existingHtml);
                 globalThis.syncAIRateLimitButtons?.();
@@ -237,7 +241,11 @@
 
                 monitorFormWorksheetGeneration(applicationId, $button, existingHtml);
             })
-            .fail(function () {
+            .fail(function (error) {
+                if (globalThis.AIGenerationButtonState?.handleQueueFailure(error)) {
+                    return;
+                }
+
                 abp.message.error('Failed to queue AI worksheet generation. Please try again.');
                 restoreGenerateWorksheetButton($button, existingHtml);
                 globalThis.syncAIRateLimitButtons?.();
@@ -278,7 +286,11 @@
 
                 monitorFormScoresheetGeneration(applicationId, $button, existingHtml);
             })
-            .fail(function () {
+            .fail(function (error) {
+                if (globalThis.AIGenerationButtonState?.handleQueueFailure(error)) {
+                    return;
+                }
+
                 abp.message.error('Failed to queue AI scoresheet generation. Please try again.');
                 restoreGenerateScoresheetButton($button, existingHtml);
                 globalThis.syncAIRateLimitButtons?.();
