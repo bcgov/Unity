@@ -227,16 +227,18 @@ public class DashboardAppService : ApplicationService, IDashboardAppService
 
     private async Task<List<Guid>> GetFilteredApplicationTags(IQueryable<Application> applications, DashboardParameters parameters)
     {
-        var tagQueryable = (await _applicationTagsRepository.GetQueryableAsync()).Include(t => t.Tag);
-        var tagsResult = tagQueryable.Join(applications, tag => tag.ApplicationId, app => app.Id, (tag, app) => tag);
+        var tagQueryable = (await _applicationTagsRepository.GetQueryableAsync()).Include(tag => tag.Tag);
+        var applicationIds = applications.Select(a => a.Id).Distinct();
+        var tagsResult = tagQueryable.Where(tag => applicationIds.Contains(tag.ApplicationId));
 
         // Use async materialization and project to minimal fields to reduce memory pressure
         var materializedTags = await tagsResult
             .Select(tag => new { tag.ApplicationId, TagName = tag.Tag.Name })
+            .Distinct()
             .ToListAsync();
 
         var applicationIdsWithTags = materializedTags
-            .SelectMany(tag => tag.TagName.Split(','), (tagResult, tagName) => new { tagResult.ApplicationId, Tag = tagName })
+            .SelectMany(tag => tag.TagName.Split(',', StringSplitOptions.TrimEntries), (tagResult, tagName) => new { tagResult.ApplicationId, Tag = tagName })
             .Where(tag => parameters.Tags.Contains(tag.Tag))
             .Select(tag => tag.ApplicationId)
             .ToHashSet();
