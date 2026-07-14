@@ -1,10 +1,4 @@
 $(function () {
-    if (globalThis.initializeCustomFieldsConfiguration) {
-        globalThis.initializeCustomFieldsConfiguration();
-        return;
-    }
-
-    globalThis.initializeCustomFieldsConfiguration = function () {
     let customTabIds = [];
     let assessmentInfoIds = [];
     let projectInfoIds = [];
@@ -26,9 +20,9 @@ $(function () {
     }
 
     function bindUIEvents() {
-        UIElements.scoreSheet.off('change.customFields').on('change.customFields', saveScoresheet);
-        UIElements.backButton.off('click.customFields').on('click.customFields', handleBack);
-        UIElements.worksheetForm.off('submit.customFields').on('submit.customFields', handleSave);
+        UIElements.scoreSheet.on('change', saveScoresheet);
+        UIElements.backButton.on('click', handleBack);
+        UIElements.worksheetForm.on('submit', handleSave);
     }
 
     init();
@@ -265,9 +259,6 @@ $(function () {
         updateDraggedClasses(beingDragged, addClass, removeClass);
         dragOver.appendChild(beingDragged);
     }
-    };
-
-    globalThis.initializeCustomFieldsConfiguration();
 });
 
 function updateDraggedClasses(beingDragged, addClass, removeClass) {
@@ -299,3 +290,5 @@ function beingDragged(ev) {
 function handleBack() {
     location.href = '/ApplicationForms';
 }
+
+

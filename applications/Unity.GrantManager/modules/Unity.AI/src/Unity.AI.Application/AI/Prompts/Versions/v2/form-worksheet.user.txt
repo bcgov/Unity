@@ -13,6 +13,7 @@ OUTPUT
       "Order": 1,
       "Fields": [
         {
+          "Name": "<string>",
           "Key": "<string>",
           "Label": "<string>",
           "Type": <number>,
@@ -28,13 +29,9 @@ OUTPUT
 
 Rules:
 - Return one worksheet definition JSON object only.
-- The context contains CHEFS source fields, Unity core target fields, and a worksheet template.
-- Compare CHEFS fields to Unity core fields first.
-- Fill out the worksheet template with only additional custom fields for CHEFS fields that are meaningful and not already covered by a Unity core field.
-- Do not create worksheet fields for CHEFS fields that clearly fit an existing Unity core field.
-- Do not create one worksheet field per CHEFS field; omit weak, duplicate, technical, or low-value fields.
-- If there are no meaningful custom fields to add, return the template worksheet with an empty Fields array and empty ReportColumns/ReportKeys.
-- Use the template's Name, Version, Published, and ReportViewName values.
-- Generate stable field Keys such as CustomField1, CustomField2, and matching ReportColumns/ReportKeys.
+- The context includes CHEFS fields, Unity core fields, and existing worksheet-derived custom fields.
+- Use the provided form context to decide which custom fields are genuinely needed.
+- Prefer existing Unity core fields when they already satisfy the need.
+- Only create additional worksheet custom fields when the form genuinely needs them.
 - Keep the worksheet structure valid for Flex.
 - Return valid plain JSON only.
