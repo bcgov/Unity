@@ -3,7 +3,6 @@ using Newtonsoft.Json.Linq;
 using System;
 using System.Linq;
 using System.Text.RegularExpressions;
-using System.Text.Json;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
@@ -339,29 +338,9 @@ namespace Unity.GrantManager.ApplicationForms
             await _aiCooldownService.EnsureAsync(CurrentUser.Id);
 
             var readModel = await _mappingReadService.GetAsync(id);
-            var promptData = new
-            {
-                chefsData = new
-                {
-                    applicationFormId = readModel.ApplicationFormId,
-                    applicationFormVersionId = readModel.ApplicationFormVersionId,
-                    chefsApplicationFormGuid = readModel.ChefsApplicationFormGuid,
-                    chefsFormVersionGuid = readModel.ChefsFormVersionGuid,
-                    fields = readModel.ChefsFields
-                },
-                unityData = new
-                {
-                    coreFields = readModel.UnityCoreFields,
-                    customFields = readModel.Worksheets
-                }
-            };
-            var promptDataJsonOptions = new JsonSerializerOptions
-            {
-                WriteIndented = true
-            };
             var response = await _aiService.GenerateFormMappingAsync(new FormMappingRequest
             {
-                Data = JsonSerializer.SerializeToElement(promptData, promptDataJsonOptions)
+                Data = FormMappingPromptDataBuilder.Build(readModel)
             });
             var submissionHeaderMapping = FormMappingResponseMapper.BuildSubmissionHeaderMapping(response);
             var applicationFormVersion = await repository.GetAsync(id);

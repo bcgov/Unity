@@ -29,6 +29,13 @@ public class ApplicationFormVersionMappingReadService(
     IWorksheetListRepository worksheetListRepository,
     IFeatureChecker featureChecker) : IApplicationFormVersionMappingReadService, ITransientDependency
 {
+    private static readonly HashSet<string> ExcludedMappingFieldNames = new(StringComparer.OrdinalIgnoreCase)
+    {
+        nameof(IntakeMapping.ConfirmationId),
+        nameof(IntakeMapping.SubmissionDate),
+        nameof(IntakeMapping.SubmissionId)
+    };
+
     public async Task<ApplicationFormMappingReadModelDto> GetAsync(Guid formVersionId)
     {
         var formVersion = await applicationFormVersionRepository.GetAsync(formVersionId);
@@ -61,6 +68,7 @@ public class ApplicationFormVersionMappingReadService(
 
         var jObject = JObject.Parse(availableChefsFields);
         return jObject.Properties()
+            .Where(property => !ExcludedMappingFieldNames.Contains(property.Name))
             .Select(property =>
             {
                 var fieldConfig = JObject.Parse(property.Value.ToString());
@@ -89,6 +97,7 @@ public class ApplicationFormVersionMappingReadService(
                 FieldType = property.GetCustomAttributes(typeof(MapFieldTypeAttribute), true).Cast<MapFieldTypeAttribute>().SingleOrDefault()
             })
             .Where(item => item.Browsable?.IsDefaultAttribute() == true)
+            .Where(item => !ExcludedMappingFieldNames.Contains(item.Property.Name))
             .Select(item => new MappingFieldDto
             {
                 Name = item.Property.Name,
@@ -111,7 +120,7 @@ public class ApplicationFormVersionMappingReadService(
                 .Where(field => IsMappable(field))
                 .Select(field => new MappingFieldDto
                 {
-                    Name = $"{field.Name}.{field.Type}",
+                    Name = string.IsNullOrWhiteSpace(field.Key) ? field.Name : field.Key,
                     Type = ConvertCustomType(field.Type),
                     IsCustom = true,
                     Label = $"{field.Label} ({worksheet.Name})"

@@ -1,5 +1,3 @@
-using System;
-using System.Collections.Generic;
 using System.Text.Json;
 using Unity.AI.Responses;
 
@@ -22,24 +20,21 @@ internal static class FormMappingResponseMapper
                 return "{}";
             }
 
-            var reversed = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
             foreach (var property in document.RootElement.EnumerateObject())
             {
                 if (property.Value.ValueKind != JsonValueKind.String)
                 {
-                    continue;
+                    return "{}";
                 }
 
-                var unityField = property.Value.GetString();
-                if (string.IsNullOrWhiteSpace(unityField))
+                var chefsField = property.Value.GetString();
+                if (string.IsNullOrWhiteSpace(chefsField) || string.IsNullOrWhiteSpace(property.Name))
                 {
-                    continue;
+                    return "{}";
                 }
-
-                reversed[unityField] = property.Name;
             }
 
-            return JsonSerializer.Serialize(reversed);
+            return document.RootElement.GetRawText();
         }
         catch (JsonException)
         {

@@ -55,6 +55,16 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.CustomFields
             return new OkObjectResult(new { chefsFormVersionId });
         }
 
+        [HttpGet("refresh")]
+        public IActionResult Refresh(Guid formVersionId, string formName)
+        {
+            return ViewComponent("CustomFields", new
+            {
+                formVersionId = formVersionId.ToString(),
+                formName
+            });
+        }
+
         private static void ProcessSlotIds(string? slotIds, string uiAnchor, List<(Guid worksheetId, string anchor, uint order)> tabLinks)
         {
             if (!string.IsNullOrWhiteSpace(slotIds) && slotIds != Guid.Empty.ToString())

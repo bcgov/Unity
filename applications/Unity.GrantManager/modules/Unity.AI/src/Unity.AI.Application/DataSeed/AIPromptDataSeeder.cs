@@ -825,6 +825,11 @@ public class AIPromptDataSeeder(
         - chefsData.fields contains the CHEFS source fields.
         - unityData.coreFields contains Unity target fields.
         - unityData.customFields contains worksheet-derived Unity target fields.
+        - Only include mappings that are clearly semantically equivalent or strongly related by label, name, type, and purpose.
+        - Do not force one-to-one coverage. Omit Unity fields when no CHEFS field is a sensible match.
+        - Omit CHEFS fields that do not clearly map to a Unity target field.
+        - Do not map platform/system identifiers such as SubmissionId, SubmissionDate, or ConfirmationId; they are managed by Unity and should be omitted if present.
+        - If no fields clearly match, return `{}`.
         - The mapping is dynamic; do not hardcode or assume a fixed list of fields.
         - Prefer existing Unity core intake fields when they already fit the CHEFS source field.
         - Only use worksheet custom field targets when the form genuinely needs them.
@@ -861,7 +866,6 @@ public class AIPromptDataSeeder(
               "Order": 1,
               "Fields": [
                 {
-                  "Name": "<string>",
                   "Key": "<string>",
                   "Label": "<string>",
                   "Type": <number>,
@@ -877,17 +881,21 @@ public class AIPromptDataSeeder(
 
         Rules:
         - Return one worksheet definition JSON object only.
-        - The context includes CHEFS fields, Unity core fields, and existing worksheet-derived custom fields.
-        - Use the provided form context to decide which custom fields are genuinely needed.
-        - Prefer existing Unity core fields when they already satisfy the need.
-        - Only create additional worksheet custom fields when the form genuinely needs them.
+        - The context contains CHEFS source fields, Unity core target fields, and a worksheet template.
+        - Compare CHEFS fields to Unity core fields first.
+        - Fill out the worksheet template with only additional custom fields for CHEFS fields that are meaningful and not already covered by a Unity core field.
+        - Do not create worksheet fields for CHEFS fields that clearly fit an existing Unity core field.
+        - Do not create one worksheet field per CHEFS field; omit weak, duplicate, technical, or low-value fields.
+        - If there are no meaningful custom fields to add, return the template worksheet with an empty Fields array and empty ReportColumns/ReportKeys.
+        - Use the template's Name, Version, Published, and ReportViewName values.
+        - Generate stable field Keys such as CustomField1, CustomField2, and matching ReportColumns/ReportKeys.
         - Keep the worksheet structure valid for Flex.
         - Return valid plain JSON only.
         """;
 
     private const string FormWorksheetMetadataV2 = """
         {
-          "DATA": "Serialized JSON payload containing the form name, form version, existing worksheet links, and worksheet field context."
+          "DATA": "Serialized JSON payload containing form metadata, CHEFS fields, Unity core fields, and the worksheet template to fill out."
         }
         """;
 
@@ -934,16 +942,20 @@ public class AIPromptDataSeeder(
 
         Rules:
         - Return one scoresheet definition JSON object only.
-        - The context is the CHEFS form data for the application.
-        - Generate the rubric that assessors use to score submitted applications.
-        - Keep the structure focused on reviewer criteria, comments, and scoring sections.
+        - The context contains CHEFS form fields, allowed Unity Flex question types, and a scoresheet template.
+        - Fill out the scoresheet template to generate the rubric assessors use to score submitted applications.
+        - Use CHEFS form fields as evidence for assessment criteria, but do not create one question per form field.
+        - Keep the generated scoresheet focused on reviewer criteria, scoring choices, and comments.
+        - Do not invent assessor workflow, compliance, declaration, approval, status, conflict-of-interest, or submission identifier questions unless the CHEFS fields explicitly contain content that should be scored for that topic.
+        - Use the template's Name, Version, Order, Published, ReportColumns, ReportKeys, and ReportViewName values.
         - Use the numeric QuestionType values from Unity Flex.
+        - Do not copy or infer an existing scoresheet unless it is explicitly provided as part of the template.
         - Return valid plain JSON only.
         """;
 
     private const string FormScoresheetMetadataV2 = """
         {
-          "DATA": "Serialized JSON payload containing the form name, form version, scoresheet identifier, and existing scoresheet context."
+          "DATA": "Serialized JSON payload containing the form name, form version, CHEFS fields, allowed question types, and the scoresheet template to fill out."
         }
         """;
 

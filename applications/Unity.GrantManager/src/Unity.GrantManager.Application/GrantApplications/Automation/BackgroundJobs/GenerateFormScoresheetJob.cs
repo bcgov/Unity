@@ -23,6 +23,8 @@ public class GenerateFormScoresheetJob(
     IApplicationFormVersionRepository applicationFormVersionRepository,
     IApplicationFormRepository applicationFormRepository,
     IScoresheetRepository scoresheetRepository,
+    IScoresheetSectionRepository scoresheetSectionRepository,
+    IQuestionRepository questionRepository,
     IFormScoresheetService aiService,
     IRepository<AIGenerationRequest, Guid> generationRequestRepository,
     ICurrentTenant currentTenant,
@@ -59,10 +61,7 @@ public class GenerateFormScoresheetJob(
                 var formVersion = await applicationFormVersionRepository.GetAsync(args.ApplicationFormVersionId);
                 var applicationForm = await applicationFormRepository.GetAsync(formVersion.ApplicationFormId);
                 var scoresheetName = BuildScoresheetName(formVersion.Id, applicationForm.Id);
-                var existingScoresheet = await scoresheetRepository.GetByNameAsync(scoresheetName, true)
-                    ?? (applicationForm.ScoresheetId.HasValue
-                        ? await scoresheetRepository.GetWithChildrenAsync(applicationForm.ScoresheetId.Value)
-                        : null);
+                var existingScoresheet = await scoresheetRepository.GetByNameAsync(scoresheetName, true);
 
                 var promptData = new
                 {
@@ -70,36 +69,47 @@ public class GenerateFormScoresheetJob(
                     chefsFormVersionGuid = formVersion.ChefsFormVersionGuid,
                     applicationFormId = applicationForm.Id,
                     formName = applicationForm.ApplicationFormName,
-                    scoresheetId = applicationForm.ScoresheetId,
-                    existingScoresheet = existingScoresheet == null
-                        ? null
-                        : new
+                    chefsFields = ParseOptionalJsonElement(formVersion.AvailableChefsFields),
+                    allowedQuestionTypes = new[]
+                    {
+                        new { Name = "Number", Value = 1, DefinitionTemplate = "{\"min\":0,\"max\":10,\"required\":true}" },
+                        new { Name = "Text", Value = 2, DefinitionTemplate = "{\"required\":true,\"maxLength\":4294967295,\"minLength\":0}" },
+                        new { Name = "YesNo", Value = 6, DefinitionTemplate = "{\"yes_value\":0,\"no_value\":0,\"required\":true}" },
+                        new { Name = "SelectList", Value = 12, DefinitionTemplate = "{\"options\":[{\"key\":\"key1\",\"value\":\"<option label>\",\"numeric_value\":0}],\"required\":true}" },
+                        new { Name = "TextArea", Value = 14, DefinitionTemplate = "{\"rows\":5,\"required\":true,\"maxLength\":4294967295,\"minLength\":0}" }
+                    },
+                    scoresheetTemplate = new
+                    {
+                        Title = $"{applicationForm.ApplicationFormName} Scoresheet",
+                        Name = scoresheetName,
+                        Version = existingScoresheet == null ? 1u : existingScoresheet.Version + 1u,
+                        Order = 0,
+                        Published = false,
+                        ReportColumns = string.Empty,
+                        ReportKeys = string.Empty,
+                        ReportViewName = string.Empty,
+                        Sections = new[]
                         {
-                            existingScoresheet.Id,
-                            existingScoresheet.Title,
-                            existingScoresheet.Name,
-                            existingScoresheet.Version,
-                            existingScoresheet.Order,
-                            existingScoresheet.Published,
-                            existingScoresheet.ReportColumns,
-                            existingScoresheet.ReportKeys,
-                            existingScoresheet.ReportViewName,
-                            sections = existingScoresheet.Sections.Select(section => new
+                            new
                             {
-                                section.Name,
-                                section.Order,
-                                fields = section.Fields.Select(field => new
+                                Name = "<review criteria section>",
+                                Order = 0,
+                                Fields = new[]
                                 {
-                                    field.Name,
-                                    field.Label,
-                                    field.Description,
-                                    field.Order,
-                                    field.Type,
-                                    field.Enabled,
-                                    field.Definition
-                                })
-                            })
+                                    new
+                                    {
+                                        Name = "<stable question name>",
+                                        Label = "<review question shown to assessors>",
+                                        Description = "<scoring guidance or null>",
+                                        Order = 0,
+                                        Type = 12,
+                                        Enabled = true,
+                                        Definition = "{\"options\":[{\"key\":\"key1\",\"value\":\"<option label>\",\"numeric_value\":0}],\"required\":true}"
+                                    }
+                                }
+                            }
                         }
+                    }
                 };
 
                 var scoresheetResponse = await aiService.GenerateFormScoresheetAsync(new FormScoresheetRequest
@@ -110,17 +120,19 @@ public class GenerateFormScoresheetJob(
 
                 var scoresheetJson = scoresheetResponse.Scoresheet;
                 var importDto = ParseScoresheetDefinition(scoresheetJson);
-                var scoresheet = existingScoresheet == null
-                    ? BuildScoresheet(importDto, scoresheetJson, scoresheetName)
-                    : RebuildScoresheet(existingScoresheet, importDto, scoresheetJson, scoresheetName);
-                scoresheet.Published = true;
+                Scoresheet scoresheet;
                 if (existingScoresheet == null)
                 {
+                    scoresheet = BuildScoresheet(importDto, scoresheetJson, scoresheetName);
+                    scoresheet.Published = true;
                     await scoresheetRepository.InsertAsync(scoresheet);
                 }
                 else
                 {
+                    scoresheet = await RebuildScoresheetAsync(existingScoresheet, importDto, scoresheetJson, scoresheetName);
+                    scoresheet.Published = true;
                     await scoresheetRepository.UpdateAsync(scoresheet);
+                    await InsertScoresheetChildrenAsync(scoresheet.Id, scoresheetJson);
                 }
 
                 applicationForm.ScoresheetId = scoresheet.Id;
@@ -146,6 +158,16 @@ public class GenerateFormScoresheetJob(
                 throw;
             }
         }
+    }
+
+    private static JsonElement? ParseOptionalJsonElement(string? json)
+    {
+        if (string.IsNullOrWhiteSpace(json))
+        {
+            return null;
+        }
+
+        return JsonSerializer.Deserialize<JsonElement>(json, CaseInsensitiveJsonOptions);
     }
 
     private static CreateScoresheetDto ParseScoresheetDefinition(string json)
@@ -220,7 +242,7 @@ public class GenerateFormScoresheetJob(
         return scoresheet;
     }
 
-    private static Scoresheet RebuildScoresheet(Scoresheet scoresheet, CreateScoresheetDto dto, string json, string scoresheetName)
+    private async Task<Scoresheet> RebuildScoresheetAsync(Scoresheet scoresheet, CreateScoresheetDto dto, string json, string scoresheetName)
     {
         var parsed = ParseScoresheetElement(json);
         if (!TryGetNumberProperty(parsed, "Version", out var version))
@@ -236,8 +258,16 @@ public class GenerateFormScoresheetJob(
             GetRequiredStringProperty(parsed, "ReportColumns", "scoresheet"),
             GetRequiredStringProperty(parsed, "ReportViewName", "scoresheet"));
 
+        await DeleteExistingScoresheetChildrenAsync(scoresheet);
         scoresheet.Sections.Clear();
 
+        ValidateScoresheetSections(parsed);
+
+        return scoresheet;
+    }
+
+    private static void ValidateScoresheetSections(JsonElement parsed)
+    {
         if (!parsed.TryGetProperty("Sections", out var sectionsElement) || sectionsElement.ValueKind != JsonValueKind.Array)
         {
             throw new InvalidOperationException("Scoresheet generation returned a definition without Sections.");
@@ -246,9 +276,7 @@ public class GenerateFormScoresheetJob(
         foreach (var section in sectionsElement.EnumerateArray())
         {
             var sectionName = GetRequiredStringProperty(section, "Name", "section");
-            var sectionOrder = GetRequiredNumberProperty(section, "Order", "section");
-            var scoresheetSection = new ScoresheetSection(Guid.NewGuid(), sectionName, sectionOrder);
-            scoresheet.AddSection(scoresheetSection);
+            GetRequiredNumberProperty(section, "Order", "section");
 
             if (!section.TryGetProperty("Fields", out var fieldsElement) || fieldsElement.ValueKind != JsonValueKind.Array)
             {
@@ -257,24 +285,55 @@ public class GenerateFormScoresheetJob(
 
             foreach (var field in fieldsElement.EnumerateArray())
             {
+                GetRequiredStringProperty(field, "Name", "field");
+                GetRequiredStringProperty(field, "Label", "field");
+                GetRequiredNumberProperty(field, "Type", "field");
+                GetRequiredNumberProperty(field, "Order", "field");
+                GetOptionalStringProperty(field, "Description");
+                GetRequiredStringProperty(field, "Definition", "field");
+            }
+        }
+    }
+
+    private async Task InsertScoresheetChildrenAsync(Guid scoresheetId, string json)
+    {
+        var parsed = ParseScoresheetElement(json);
+        ValidateScoresheetSections(parsed);
+        var sectionsElement = parsed.GetProperty("Sections");
+
+        foreach (var section in sectionsElement.EnumerateArray())
+        {
+            var scoresheetSection = await scoresheetSectionRepository.InsertAsync(new ScoresheetSection(
+                Guid.NewGuid(),
+                GetRequiredStringProperty(section, "Name", "section"),
+                GetRequiredNumberProperty(section, "Order", "section"),
+                scoresheetId));
+
+            var fieldsElement = section.GetProperty("Fields");
+            foreach (var field in fieldsElement.EnumerateArray())
+            {
                 var question = new Question(
                     Guid.NewGuid(),
                     GetRequiredStringProperty(field, "Name", "field"),
                     GetRequiredStringProperty(field, "Label", "field"),
                     (Unity.Flex.Scoresheets.Enums.QuestionType)GetRequiredNumberProperty(field, "Type", "field"),
                     GetRequiredNumberProperty(field, "Order", "field"),
-                    field.TryGetProperty("Description", out var description) && description.ValueKind != JsonValueKind.Null
-                        ? description.GetString()
-                        : null,
-                    field.TryGetProperty("Definition", out var definition) && definition.ValueKind != JsonValueKind.Null
-                        ? definition.GetString()
-                        : null);
+                    GetOptionalStringProperty(field, "Description"),
+                    GetRequiredStringProperty(field, "Definition", "field"));
                 question.SectionId = scoresheetSection.Id;
-                scoresheetSection.Fields.Add(question);
+                await questionRepository.InsertAsync(question);
             }
         }
+    }
 
-        return scoresheet;
+    private async Task DeleteExistingScoresheetChildrenAsync(Scoresheet scoresheet)
+    {
+        foreach (var section in scoresheet.Sections)
+        {
+            await questionRepository.DeleteManyAsync(section.Fields.Select(question => question.Id));
+        }
+
+        await scoresheetSectionRepository.DeleteManyAsync(scoresheet.Sections.Select(section => section.Id));
     }
 
     private static JsonElement ParseScoresheetElement(string json)
@@ -302,6 +361,13 @@ public class GenerateFormScoresheetJob(
         }
 
         throw new InvalidOperationException($"Scoresheet generation returned a {sourceName} without {propertyName}.");
+    }
+
+    private static string? GetOptionalStringProperty(JsonElement element, string propertyName)
+    {
+        return element.TryGetProperty(propertyName, out var property) && property.ValueKind != JsonValueKind.Null
+            ? property.GetString()
+            : null;
     }
 
     private static uint GetRequiredNumberProperty(JsonElement element, string propertyName, string sourceName)

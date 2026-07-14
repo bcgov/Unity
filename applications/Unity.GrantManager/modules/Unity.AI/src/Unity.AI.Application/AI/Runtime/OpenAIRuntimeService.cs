@@ -301,7 +301,7 @@ namespace Unity.AI.Runtime
                         settings,
                         settings.CompletionTokens,
                         cancellationToken: cancellationToken),
-                    AIProviderPayloadValidator.ValidateFormMappingJson,
+                    AIProviderPayloadValidator.ValidateFormWorksheetJson,
                     "form worksheet",
                     cancellationToken);
                 await _promptFileLogger.LogPromptOutputAsync(FormWorksheetPromptType, promptVersion, result.CaptureOutput, cancellationToken);
@@ -350,7 +350,7 @@ namespace Unity.AI.Runtime
                         settings,
                         settings.CompletionTokens,
                         cancellationToken: cancellationToken),
-                    AIProviderPayloadValidator.ValidateFormMappingJson,
+                    AIProviderPayloadValidator.ValidateFormScoresheetJson,
                     "form scoresheet",
                     cancellationToken);
                 await _promptFileLogger.LogPromptOutputAsync(FormScoresheetPromptType, promptVersion, result.CaptureOutput, cancellationToken);

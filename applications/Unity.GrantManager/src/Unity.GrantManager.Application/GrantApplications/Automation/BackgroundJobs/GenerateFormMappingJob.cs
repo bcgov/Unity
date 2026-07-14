@@ -1,7 +1,5 @@
 using Microsoft.Extensions.Logging;
 using System;
-using System.Collections.Generic;
-using System.Text.Json;
 using System.Threading.Tasks;
 using Unity.AI.Domain;
 using Unity.AI.Cooldown;
@@ -52,7 +50,7 @@ public class GenerateFormMappingJob(
                 var readModel = await mappingReadService.GetAsync(args.ApplicationFormVersionId);
                 var response = await aiService.GenerateFormMappingAsync(new FormMappingRequest
                 {
-                    Data = JsonSerializer.SerializeToElement(readModel),
+                    Data = FormMappingPromptDataBuilder.Build(readModel),
                     PromptVersion = args.PromptVersion
                 });
 

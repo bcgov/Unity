@@ -49,28 +49,5 @@ public class AIMenuContributor : IMenuContributor
             ));
         }
 
-        if (await featureChecker.IsEnabledAsync("Unity.AI.FormMapping"))
-        {
-            context.Menu.AddItem(new ApplicationMenuItem(
-                name: AIMenus.FormMapping,
-                displayName: l["Permission:AI.ViewFormMapping"],
-                url: "~/ApplicationForms",
-                icon: "fl fl-map",
-                order: 10,
-                requiredPermissionName: AIPermissions.Analysis.GenerateFormMapping
-            ));
-        }
-
-        if (await featureChecker.IsEnabledAsync("Unity.AI.FormWorksheet"))
-        {
-            context.Menu.AddItem(new ApplicationMenuItem(
-                name: AIMenus.FormMapping + ".Worksheet",
-                displayName: l["Permission:AI.ViewFormWorksheet"],
-                url: "~/ApplicationForms",
-                icon: "fl fl-ai-prompts",
-                order: 11,
-                requiredPermissionName: AIPermissions.Analysis.GenerateFormWorksheet
-            ));
-        }
     }
 }

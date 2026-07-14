@@ -338,17 +338,33 @@
     }
 
     function refreshWorksheetAfterGeneration() {
-        abp.notify.success('', 'Worksheet generated and assigned successfully. Reloading page.');
-        setTimeout(function () {
-            globalThis.location.reload();
-        }, 500);
+        abp.notify.success('', 'Worksheet generated and assigned successfully.');
+        refreshCustomFieldsWidget();
     }
 
     function refreshScoresheetAfterGeneration() {
-        abp.notify.success('', 'Scoresheet generated and assigned successfully. Reloading page.');
-        setTimeout(function () {
+        abp.notify.success('', 'Scoresheet generated and assigned successfully.');
+        refreshCustomFieldsWidget();
+    }
+
+    function refreshCustomFieldsWidget() {
+        const formVersionId = String(document.getElementById('ChefsFormVersionId')?.value ?? '').trim();
+        const formName = String(document.getElementById('formName')?.value ?? '').trim();
+        const $widget = $('#customFieldsWidget');
+
+        if (!validateGuid(formVersionId) || !$widget.length) {
             globalThis.location.reload();
-        }, 500);
+            return;
+        }
+
+        abp.ui.setBusy($widget);
+        $widget.load(
+            `/GrantApplications/CustomFields/refresh?formVersionId=${encodeURIComponent(formVersionId)}&formName=${encodeURIComponent(formName)}`,
+            function () {
+                globalThis.initializeCustomFieldsConfiguration?.();
+                abp.ui.clearBusy($widget);
+            }
+        );
     }
 
     function monitorFormMappingGeneration(applicationId, $button, existingHtml) {

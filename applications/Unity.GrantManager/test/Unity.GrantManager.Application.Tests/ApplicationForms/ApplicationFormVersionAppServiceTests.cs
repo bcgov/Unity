@@ -2,6 +2,8 @@ using NSubstitute;
 using Shouldly;
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 using Unity.AI;
 using Unity.AI.Cooldown;
@@ -9,6 +11,8 @@ using Unity.AI.Features;
 using Unity.AI.Operations;
 using Unity.AI.Requests;
 using Unity.AI.Responses;
+using Unity.Flex.Domain.Worksheets;
+using Unity.Flex.Worksheets;
 using Unity.GrantManager.ApplicationForms;
 using Unity.GrantManager.ApplicationForms.Mapping;
 using Unity.GrantManager.Applications;
@@ -65,7 +69,7 @@ public class ApplicationFormVersionAppServiceTests(ITestOutputHelper outputHelpe
         aiService.GenerateFormMappingAsync(Arg.Do<FormMappingRequest>(request => capturedRequest = request), Arg.Any<System.Threading.CancellationToken>())
             .Returns(new FormMappingResponse
             {
-                Mapping = """{"ProjectName":"Project Name"}"""
+                Mapping = """{"ProjectName":"projectName"}"""
         });
 
         var service = CreateService(repository, readService, aiService);
@@ -78,8 +82,68 @@ public class ApplicationFormVersionAppServiceTests(ITestOutputHelper outputHelpe
         capturedRequest!.Data.GetProperty("chefsData").GetProperty("fields").ValueKind.ShouldBe(System.Text.Json.JsonValueKind.Array);
         capturedRequest.Data.GetProperty("unityData").GetProperty("coreFields").ValueKind.ShouldBe(System.Text.Json.JsonValueKind.Array);
         capturedRequest.Data.GetProperty("unityData").GetProperty("customFields").ValueKind.ShouldBe(System.Text.Json.JsonValueKind.Array);
-        formVersion.SubmissionHeaderMapping.ShouldBe("""{"Project Name":"ProjectName"}""");
+        formVersion.SubmissionHeaderMapping.ShouldBe("""{"ProjectName":"projectName"}""");
         await repository.Received(1).UpdateAsync(formVersion, true);
+    }
+
+    [Fact]
+    public void MappingReadService_Should_Use_CustomField_Key_For_Worksheet_Field_Name()
+    {
+        var worksheet = new Worksheet(Guid.NewGuid(), "customfields-v1", "Custom Fields");
+        var section = new WorksheetSection(Guid.NewGuid(), "section");
+        section.Worksheet = worksheet;
+        section.Fields.Add(new CustomField(
+            Guid.NewGuid(),
+            "CustomField2",
+            worksheet.Name,
+            "Custom Field 2",
+            CustomFieldType.Text,
+            "{\"required\": false, \"maxLength\": 4294967295, \"minLength\": 0}"));
+        worksheet.AddSection(section);
+
+        var method = typeof(ApplicationFormVersionMappingReadService)
+            .GetMethod("MapWorksheet", BindingFlags.NonPublic | BindingFlags.Static);
+
+        var result = (WorksheetMappingFieldsDto)method!.Invoke(null, [worksheet])!;
+
+        var field = result.Fields.Single();
+        field.Name.ShouldBe("CustomField2");
+        field.Name.ShouldNotContain("custom_customfields-v1");
+        field.Name.ShouldNotContain(".Text");
+    }
+
+    [Fact]
+    public void MappingReadService_Should_Exclude_System_Fields_From_Chefs_Fields()
+    {
+        const string availableChefsFields = """
+        {
+          "ProjectName": { "type": "textfield", "label": "Project Name" },
+          "SubmissionId": { "type": "textfield", "label": "Submission ID" },
+          "SubmissionDate": { "type": "datetime", "label": "Submission Date" },
+          "ConfirmationId": { "type": "textfield", "label": "Confirmation ID" }
+        }
+        """;
+
+        var method = typeof(ApplicationFormVersionMappingReadService)
+            .GetMethod("BuildChefsFields", BindingFlags.NonPublic | BindingFlags.Static);
+
+        var result = (List<MappingFieldDto>)method!.Invoke(null, [availableChefsFields])!;
+
+        result.Select(field => field.Name).ShouldBe(["ProjectName"]);
+    }
+
+    [Fact]
+    public void MappingReadService_Should_Exclude_System_Fields_From_Unity_Core_Fields()
+    {
+        var method = typeof(ApplicationFormVersionMappingReadService)
+            .GetMethod("BuildUnityCoreFields", BindingFlags.NonPublic | BindingFlags.Static);
+
+        var result = (List<MappingFieldDto>)method!.Invoke(null, [])!;
+
+        result.Select(field => field.Name).ShouldNotContain("ConfirmationId");
+        result.Select(field => field.Name).ShouldNotContain("SubmissionDate");
+        result.Select(field => field.Name).ShouldNotContain("SubmissionId");
+        result.Select(field => field.Name).ShouldContain("ProjectName");
     }
 
     private static ApplicationFormVersionAppService CreateService(

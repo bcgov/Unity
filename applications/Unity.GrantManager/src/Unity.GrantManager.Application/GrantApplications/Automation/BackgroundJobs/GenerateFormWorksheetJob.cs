@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -14,6 +15,8 @@ using Unity.GrantManager.Flex;
 using Unity.Flex.Domain.WorksheetLinks;
 using Unity.Flex.Domain.Worksheets;
 using Unity.Flex.Worksheets;
+using Unity.GrantManager.Intakes;
+using Unity.GrantManager.Intakes.Mapping;
 using Unity.Modules.Shared.Correlation;
 using Volo.Abp.BackgroundJobs;
 using Volo.Abp.DependencyInjection;
@@ -27,6 +30,8 @@ public class GenerateFormWorksheetJob(
     IApplicationFormVersionRepository applicationFormVersionRepository,
     IApplicationFormRepository applicationFormRepository,
     IWorksheetRepository worksheetRepository,
+    IRepository<WorksheetSection, Guid> worksheetSectionRepository,
+    IRepository<CustomField, Guid> customFieldRepository,
     IWorksheetLinkRepository worksheetLinkRepository,
     IFormWorksheetService aiService,
     IRepository<AIGenerationRequest, Guid> generationRequestRepository,
@@ -35,6 +40,13 @@ public class GenerateFormWorksheetJob(
     IAICooldownService aiCooldownService,
     ILogger<GenerateFormWorksheetJob> logger) : AsyncBackgroundJob<GenerateFormWorksheetBackgroundJobArgs>, ITransientDependency
 {
+    private static readonly string[] ExcludedCoreFieldNames =
+    [
+        nameof(IntakeMapping.ConfirmationId),
+        nameof(IntakeMapping.SubmissionDate),
+        nameof(IntakeMapping.SubmissionId)
+    ];
+
     private static readonly JsonSerializerOptions CaseInsensitiveJsonOptions = new()
     {
         PropertyNameCaseInsensitive = true
@@ -65,42 +77,45 @@ public class GenerateFormWorksheetJob(
                 var worksheetName = BuildWorksheetName(formVersion.Id, applicationForm.Id);
                 var existingWorksheet = await worksheetRepository.GetByNameAsync(worksheetName, true);
 
-                List<Worksheet> worksheetSnapshots = [];
-                if (existingWorksheet != null)
-                {
-                    worksheetSnapshots.Add(existingWorksheet);
-                }
                 var promptData = new
                 {
                     applicationFormVersionId = formVersion.Id,
                     chefsFormVersionGuid = formVersion.ChefsFormVersionGuid,
                     applicationFormId = applicationForm.Id,
                     formName = applicationForm.ApplicationFormName,
-                    scoresheetId = applicationForm.ScoresheetId,
-                    existingWorksheets = worksheetSnapshots.Select(worksheet => new
+                    chefsFields = ParseOptionalJsonElement(formVersion.AvailableChefsFields),
+                    unityCoreFields = BuildUnityCoreFields(),
+                    worksheetTemplate = new
                     {
-                        worksheet.Id,
-                        worksheet.Name,
-                        worksheet.Title,
-                        worksheet.Version,
-                        worksheet.Published,
-                        worksheet.ReportViewName,
-                        sections = worksheet.Sections.Select(section => new
+                        Name = worksheetName,
+                        Title = $"{applicationForm.ApplicationFormName} Custom Fields",
+                        Version = existingWorksheet == null ? 1u : existingWorksheet.Version + 1u,
+                        Published = true,
+                        Sections = new[]
                         {
-                            section.Name,
-                            section.Order,
-                            fields = section.Fields.Select(field => new
+                            new
                             {
-                                field.Name,
-                                field.Key,
-                                field.Label,
-                                field.Type,
-                                field.Order,
-                                field.Enabled,
-                                field.Definition
-                            })
-                        })
-                    })
+                                Name = "Custom Fields",
+                                Order = 1,
+                                Fields = new[]
+                                {
+                                    new
+                                    {
+                                        Name = $"custom_{worksheetName}_CustomField1",
+                                        Key = "CustomField1",
+                                        Label = "Custom Field 1",
+                                        Type = 2,
+                                        Order = 1,
+                                        Enabled = true,
+                                        Definition = "{\"required\": false, \"maxLength\": 4294967295, \"minLength\": 0}"
+                                    }
+                                }
+                            }
+                        },
+                        ReportColumns = "CustomField1",
+                        ReportKeys = "CustomField1",
+                        ReportViewName = $"Worksheet-{worksheetName}"
+                    }
                 };
 
                 var worksheetResponse = await aiService.GenerateFormWorksheetAsync(new FormWorksheetRequest
@@ -111,17 +126,19 @@ public class GenerateFormWorksheetJob(
 
                 var worksheetJson = worksheetResponse.Worksheet;
                 var createDto = ParseWorksheetDefinition(worksheetJson);
-                var worksheet = existingWorksheet == null
-                    ? BuildWorksheet(createDto, worksheetName)
-                    : RebuildWorksheet(existingWorksheet, createDto);
-                worksheet.SetPublished(true);
+                Worksheet worksheet;
                 if (existingWorksheet == null)
                 {
+                    worksheet = BuildWorksheet(createDto, worksheetName);
+                    worksheet.SetPublished(true);
                     await worksheetRepository.InsertAsync(worksheet);
                 }
                 else
                 {
+                    worksheet = await RebuildWorksheetAsync(existingWorksheet, createDto);
+                    worksheet.SetPublished(true);
                     await worksheetRepository.UpdateAsync(worksheet);
+                    await InsertWorksheetChildrenAsync(worksheet, createDto);
                 }
 
                 await UpsertWorksheetLinkAsync(worksheet.Id, formVersion.Id);
@@ -146,6 +163,40 @@ public class GenerateFormWorksheetJob(
                 throw;
             }
         }
+    }
+
+    private static JsonElement? ParseOptionalJsonElement(string? json)
+    {
+        if (string.IsNullOrWhiteSpace(json))
+        {
+            return null;
+        }
+
+        return JsonSerializer.Deserialize<JsonElement>(json, CaseInsensitiveJsonOptions);
+    }
+
+    private static object[] BuildUnityCoreFields()
+    {
+        return typeof(IntakeMapping)
+            .GetProperties()
+            .Select(property => new
+            {
+                Property = property,
+                Browsable = property.GetCustomAttributes(typeof(BrowsableAttribute), true).Cast<BrowsableAttribute>().SingleOrDefault(),
+                DisplayName = property.GetCustomAttributes(typeof(DisplayNameAttribute), true).Cast<DisplayNameAttribute>().SingleOrDefault(),
+                FieldType = property.GetCustomAttributes(typeof(MapFieldTypeAttribute), true).Cast<MapFieldTypeAttribute>().SingleOrDefault()
+            })
+            .Where(item => item.Browsable?.IsDefaultAttribute() == true)
+            .Where(item => !ExcludedCoreFieldNames.Contains(item.Property.Name, StringComparer.OrdinalIgnoreCase))
+            .Select(item => new
+            {
+                Name = item.Property.Name,
+                Type = item.FieldType?.Type ?? "String",
+                Label = item.DisplayName?.DisplayName ?? item.Property.Name
+            })
+            .OrderBy(field => field.Label)
+            .Cast<object>()
+            .ToArray();
     }
 
     private static CreateWorksheetDto ParseWorksheetDefinition(string json)
@@ -191,7 +242,7 @@ public class GenerateFormWorksheetJob(
                     worksheet.Name,
                     field.Label,
                     field.Type,
-                    field.Definition);
+                    GetDefinitionText(field.Definition));
                 customField.Section = worksheetSection;
                 worksheetSection.Fields.Add(customField);
             }
@@ -200,7 +251,7 @@ public class GenerateFormWorksheetJob(
         return worksheet;
     }
 
-    private static Worksheet RebuildWorksheet(Worksheet worksheet, CreateWorksheetDto dto)
+    private async Task<Worksheet> RebuildWorksheetAsync(Worksheet worksheet, CreateWorksheetDto dto)
     {
         worksheet.SetName(worksheet.Name);
         worksheet.SetTitle(dto.Title);
@@ -208,13 +259,20 @@ public class GenerateFormWorksheetJob(
         worksheet.SetPublished(dto.Published);
         worksheet.SetReportingFields(dto.ReportKeys, dto.ReportColumns, dto.ReportViewName);
 
+        await DeleteExistingWorksheetChildrenAsync(worksheet);
         worksheet.Sections.Clear();
 
+        return worksheet;
+    }
+
+    private async Task InsertWorksheetChildrenAsync(Worksheet worksheet, CreateWorksheetDto dto)
+    {
         foreach (var section in dto.Sections.OrderBy(s => s.Order))
         {
             var worksheetSection = new WorksheetSection(Guid.NewGuid(), section.Name).SetOrder(section.Order);
+            worksheetSection.WorksheetId = worksheet.Id;
             worksheetSection.Worksheet = worksheet;
-            worksheet.AddSection(worksheetSection);
+            await worksheetSectionRepository.InsertAsync(worksheetSection);
 
             foreach (var field in section.Fields)
             {
@@ -224,13 +282,33 @@ public class GenerateFormWorksheetJob(
                     worksheet.Name,
                     field.Label,
                     field.Type,
-                    field.Definition);
+                    GetDefinitionText(field.Definition));
                 customField.Section = worksheetSection;
-                worksheetSection.Fields.Add(customField);
+                await customFieldRepository.InsertAsync(customField);
             }
         }
+    }
 
-        return worksheet;
+    private static string GetDefinitionText(object? definition)
+    {
+        return definition switch
+        {
+            null => "{}",
+            JsonElement { ValueKind: JsonValueKind.String } element => element.GetString() ?? "{}",
+            JsonElement element => element.GetRawText(),
+            string text => text,
+            _ => JsonSerializer.Serialize(definition)
+        };
+    }
+
+    private async Task DeleteExistingWorksheetChildrenAsync(Worksheet worksheet)
+    {
+        foreach (var section in worksheet.Sections)
+        {
+            await customFieldRepository.DeleteManyAsync(section.Fields.Select(field => field.Id));
+        }
+
+        await worksheetSectionRepository.DeleteManyAsync(worksheet.Sections.Select(section => section.Id));
     }
 
     private async Task UpsertWorksheetLinkAsync(Guid worksheetId, Guid correlationId)
