@@ -35,7 +35,6 @@ public class AIGenerationQueueTests(ITestOutputHelper outputHelper) : GrantManag
     private static readonly Guid ApplicationAnalysisOperationId = Guid.Parse("22222222-2222-2222-2222-222222222222");
     private static readonly Guid ApplicationScoringOperationId = Guid.Parse("33333333-3333-3333-3333-333333333333");
     private static readonly Guid FormMappingOperationId = Guid.Parse("44444444-4444-4444-4444-444444444444");
-    private static readonly Guid FormWorksheetOperationId = Guid.Parse("55555555-5555-5555-5555-555555555555");
     [Fact]
     public async Task QueueApplicationIntakeAsync_Should_Enqueue_Pipeline_Job_When_None_Exists()
     {
@@ -310,51 +309,6 @@ public class AIGenerationQueueTests(ITestOutputHelper outputHelper) : GrantManag
             r.Status == AIGenerationRequestStatus.Queued), Arg.Any<bool>(), Arg.Any<CancellationToken>());
     }
 
-    [Fact]
-    public async Task QueueFormWorksheetAsync_Should_Enqueue_New_Request_When_None_Exists()
-    {
-        var applicationId = Guid.NewGuid();
-        var applicationFormVersionId = Guid.NewGuid();
-        var tenantId = Guid.NewGuid();
-        var promptVersion = "v2";
-        var repository = Substitute.For<IRepository<AIGenerationRequest, Guid>>();
-        repository.GetQueryableAsync().Returns(Task.FromResult<IQueryable<AIGenerationRequest>>(Array.Empty<AIGenerationRequest>().AsQueryable()));
-        repository.InsertAsync(Arg.Any<AIGenerationRequest>(), Arg.Any<bool>(), Arg.Any<CancellationToken>())
-            .Returns(callInfo => Task.FromResult(callInfo.Arg<AIGenerationRequest>()));
-
-        GenerateFormWorksheetBackgroundJobArgs? capturedArgs = null;
-        var backgroundJobManager = Substitute.For<IBackgroundJobManager>();
-        backgroundJobManager.EnqueueAsync<GenerateFormWorksheetBackgroundJobArgs>(Arg.Any<GenerateFormWorksheetBackgroundJobArgs>(), Arg.Any<BackgroundJobPriority>(), Arg.Any<TimeSpan?>())
-            .Returns(callInfo =>
-            {
-                capturedArgs = callInfo.Arg<GenerateFormWorksheetBackgroundJobArgs>();
-                return Task.FromResult(string.Empty);
-            });
-
-        var prerequisiteValidator = Substitute.For<IAIGenerationPrerequisiteValidator>();
-        prerequisiteValidator.EnsureFormWorksheetAvailableAsync(applicationFormVersionId).Returns(Task.CompletedTask);
-
-        var queue = CreateQueue(
-            backgroundJobManager,
-            repository,
-            prerequisiteValidator: prerequisiteValidator,
-            operationRepository: CreateOperationRepository(),
-            asyncQueryableExecuter: Substitute.For<IAsyncQueryableExecuter>());
-
-        await queue.QueueFormWorksheetAsync(applicationId, tenantId, applicationFormVersionId, promptVersion);
-
-        capturedArgs.ShouldNotBeNull();
-        capturedArgs!.ApplicationId.ShouldBe(applicationId);
-        capturedArgs.ApplicationFormVersionId.ShouldBe(applicationFormVersionId);
-        capturedArgs.TenantId.ShouldBe(tenantId);
-        capturedArgs.PromptVersion.ShouldBe(promptVersion);
-        capturedArgs.RequestedByUserId.ShouldBe(CreateQueueCurrentUserId);
-        await repository.Received(1).InsertAsync(Arg.Is<AIGenerationRequest>(r =>
-            r.ApplicationId == applicationId &&
-            r.TenantId == tenantId &&
-            r.Status == AIGenerationRequestStatus.Queued), Arg.Any<bool>(), Arg.Any<CancellationToken>());
-    }
-
     private sealed class TestDistributedLockProvider : IDistributedLockProvider
     {
         public IDistributedLock CreateLock(string name) => new TestDistributedLock(name);
@@ -456,8 +410,7 @@ public class AIGenerationQueueTests(ITestOutputHelper outputHelper) : GrantManag
             new(ApplicationAttachmentSummaryOperationId, "AttachmentSummary", Guid.NewGuid(), Guid.NewGuid()) { IsActive = true },
             new(ApplicationAnalysisOperationId, "ApplicationAnalysis", Guid.NewGuid(), Guid.NewGuid()) { IsActive = true },
             new(ApplicationScoringOperationId, "ApplicationScoring", Guid.NewGuid(), Guid.NewGuid()) { IsActive = true },
-            new(FormMappingOperationId, "FormMapping", Guid.NewGuid(), Guid.NewGuid()) { IsActive = true },
-            new(FormWorksheetOperationId, "FormWorksheet", Guid.NewGuid(), Guid.NewGuid()) { IsActive = true }
+            new(FormMappingOperationId, "FormMapping", Guid.NewGuid(), Guid.NewGuid()) { IsActive = true }
         };
 
         var repository = Substitute.For<IRepository<AIOperation, Guid>>();

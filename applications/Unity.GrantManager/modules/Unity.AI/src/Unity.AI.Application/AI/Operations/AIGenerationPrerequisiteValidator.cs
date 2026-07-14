@@ -66,33 +66,4 @@ public class AIGenerationPrerequisiteValidator(
         }
     }
 
-    public async Task EnsureFormWorksheetAvailableAsync(Guid applicationFormVersionId)
-    {
-        var formVersion = await applicationFormVersionRepository.FindAsync(applicationFormVersionId);
-        if (formVersion == null)
-        {
-            throw new UserFriendlyException(localizer[AILocalizationKeys.FormWorksheetRequiresFormVersion]);
-        }
-    }
-
-    public async Task EnsureFormScoresheetAvailableAsync(Guid applicationFormVersionId)
-    {
-        var formVersion = await applicationFormVersionRepository.FindAsync(applicationFormVersionId);
-        if (formVersion == null)
-        {
-            throw new UserFriendlyException(localizer[AILocalizationKeys.FormScoresheetRequiresFormVersion]);
-        }
-
-        var applicationForm = await applicationFormRepository.GetAsync(formVersion.ApplicationFormId);
-        if (applicationForm.ScoresheetId == null)
-        {
-            throw new UserFriendlyException(localizer[AILocalizationKeys.FormScoresheetRequiresFormVersion]);
-        }
-
-        var scoresheet = await scoresheetRepository.GetWithChildrenAsync(applicationForm.ScoresheetId.Value);
-        if (scoresheet == null || !scoresheet.Sections.Any() || !scoresheet.Sections.SelectMany(s => s.Fields).Any())
-        {
-            throw new UserFriendlyException(localizer[AILocalizationKeys.FormScoresheetRequiresFormVersion]);
-        }
-    }
 }

@@ -120,51 +120,6 @@ public class ApplicationGenerationQueue(
             });
     }
 
-    public async Task QueueFormWorksheetAsync(Guid applicationId, Guid? tenantId, Guid applicationFormVersionId, string? promptVersion = null)
-    {
-        await EnsureRequestAndEnqueueAsync(
-            tenantId,
-            AIGenerationRequestKeyHelper.FormWorksheetOperationType,
-            applicationId,
-            () => aiGenerationPrerequisiteValidator.EnsureFormWorksheetAvailableAsync(applicationFormVersionId),
-            operationId =>
-            {
-                return backgroundJobManager.EnqueueAsync(new GenerateFormWorksheetBackgroundJobArgs
-                {
-                    ApplicationId = applicationId,
-                    OperationId = operationId,
-                    ApplicationFormVersionId = applicationFormVersionId,
-                    PromptVersion = promptVersion,
-                    RequestedByUserId = currentUser.Id,
-                    TenantId = tenantId
-                });
-            });
-    }
-
-    public async Task QueueFormScoresheetAsync(Guid applicationId, Guid? tenantId, Guid applicationFormVersionId, string? promptVersion = null)
-    {
-        await EnsureRequestAndEnqueueAsync(
-            tenantId,
-            AIGenerationRequestKeyHelper.FormScoresheetOperationType,
-            applicationId,
-            () => aiGenerationPrerequisiteValidator.EnsureFormScoresheetAvailableAsync(applicationFormVersionId),
-            operationId =>
-            {
-                var requestedByUserId = currentUser.Id
-                    ?? throw new UserFriendlyException("A logged-in user is required to generate a form scoresheet.");
-
-                return backgroundJobManager.EnqueueAsync(new GenerateFormScoresheetBackgroundJobArgs
-                {
-                    ApplicationId = applicationId,
-                    OperationId = operationId,
-                    ApplicationFormVersionId = applicationFormVersionId,
-                    PromptVersion = promptVersion,
-                    RequestedByUserId = requestedByUserId,
-                    TenantId = tenantId
-                });
-            });
-    }
-
     public async Task QueueApplicationIntakeAsync(Guid applicationId, Guid? tenantId, string? promptVersion = null)
     {
         var hasEnabledStage = false;

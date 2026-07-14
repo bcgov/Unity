@@ -65,26 +65,6 @@ public class AIPermissionDefinitionProvider : PermissionDefinitionProvider
             L("Permission:AI.GenerateFormMapping"))
             .RequireFeatures("Unity.AI.FormMapping");
 
-        var viewFormWorksheet = aiPermissionsGroup.AddPermission(
-            AIPermissions.Analysis.ViewFormWorksheet,
-            L("Permission:AI.ViewFormWorksheet"))
-            .RequireFeatures("Unity.AI.FormWorksheet");
-
-        viewFormWorksheet.AddChild(
-            AIPermissions.Analysis.GenerateFormWorksheet,
-            L("Permission:AI.GenerateFormWorksheet"))
-            .RequireFeatures("Unity.AI.FormWorksheet");
-
-        var viewFormScoresheet = aiPermissionsGroup.AddPermission(
-            AIPermissions.Analysis.ViewFormScoresheet,
-            L("Permission:AI.ViewFormScoresheet"))
-            .RequireFeatures("Unity.AI.FormScoresheet");
-
-        viewFormScoresheet.AddChild(
-            AIPermissions.Analysis.GenerateFormScoresheet,
-            L("Permission:AI.GenerateFormScoresheet"))
-            .RequireFeatures("Unity.AI.FormScoresheet");
-
         var settingManagement = context.GetGroup(SettingManagementPermissions.GroupName);
         var configureAI = settingManagement.AddPermission(
             AIPermissions.Configuration.ConfigureAI,
@@ -93,9 +73,7 @@ public class AIPermissionDefinitionProvider : PermissionDefinitionProvider
             "Unity.AI.Scoring",
             "Unity.AI.AttachmentSummaries",
             "Unity.AI.ApplicationAnalysis",
-            "Unity.AI.FormMapping",
-            "Unity.AI.FormWorksheet",
-            "Unity.AI.FormScoresheet"));
+            "Unity.AI.FormMapping"));
     }
 
     private static LocalizableString L(string name)

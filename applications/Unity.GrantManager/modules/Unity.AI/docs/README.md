@@ -11,5 +11,3 @@
 - [`operations/attachment-summary.md`](./operations/attachment-summary.md)
 - [`operations/application-scoring.md`](./operations/application-scoring.md)
 - [`operations/form-mapping.md`](./operations/form-mapping.md)
-- [`operations/form-worksheet.md`](./operations/form-worksheet.md)
-- [`operations/form-scoresheet.md`](./operations/form-scoresheet.md)
