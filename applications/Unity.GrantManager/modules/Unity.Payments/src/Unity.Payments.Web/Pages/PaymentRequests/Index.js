@@ -51,6 +51,15 @@ $(function () {
             case 'last6months':
                 fromDate = formatDate(new Date(today.setMonth(today.getMonth() - 6)));
                 break;
+            case 'currentfiscalyear': {
+                const currentMonth = today.getMonth();
+                const currentYear = today.getFullYear();
+                const fiscalStartYear = currentMonth >= 3 ? currentYear : currentYear - 1;
+                return {
+                    fromDate: formatDate(new Date(fiscalStartYear, 3, 1)),
+                    toDate: formatDate(new Date(fiscalStartYear + 1, 2, 31))
+                };
+            }
             case 'alltime':
                 return { fromDate: null, toDate: null };
             case 'custom':
