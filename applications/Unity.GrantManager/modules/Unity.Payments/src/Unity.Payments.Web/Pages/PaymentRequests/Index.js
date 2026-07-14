@@ -21,13 +21,6 @@ $(function () {
         requestedFromInput: $('#requestedFromDate'),
     };
 
-    function formatDate(date) {
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
-        return `${year}-${month}-${day}`;
-    }
-
     // Returns a formatted { fromDate, toDate } for the filter fields.
     // Null if 'custom' or no input provided (assumes custom is default break)
     function getDateRange(rangeType) {
@@ -76,39 +69,6 @@ $(function () {
         } else {
             $('#customDateInputs').hide();
         }
-    }
-
-    function validateDate(dateValue, element) {
-        if (dateValue) {
-            const selectedDate = new Date(dateValue);
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-
-            const minDate = element.attr('min') ? new Date(element.attr('min')) : null;
-            const maxDate = element.attr('max') ? new Date(element.attr('max')) : null;
-
-            if (selectedDate > today) {
-                element.addClass('input-validation-error');
-                abp.notify.error('The date cannot be in the future', 'Invalid Date');
-                return false;
-            }
-
-            if (minDate && selectedDate < minDate) {
-                element.addClass('input-validation-error');
-                abp.notify.error('The date cannot be before the minimum allowed date', 'Invalid Date');
-                return false;
-            }
-
-            if (maxDate && selectedDate > maxDate) {
-                element.addClass('input-validation-error');
-                abp.notify.error('The date cannot be after the maximum allowed date', 'Invalid Date');
-                return false;
-            }
-
-            element.removeClass('input-validation-error');
-            return true;
-        }
-        return true;
     }
 
     function setDateRangeFilters(quickDateRange, range) {
@@ -664,16 +624,6 @@ $(function () {
     let cancel_button = abp.auth.isGranted('PaymentsPermissions.Payments.CancelPayment')
         ? dataTable.buttons(['.payment-cancel'])
         : null;
-
-    function setActionButtonState(buttonApi, enabled) {
-        if (!buttonApi) return;
-        if (enabled) {
-            buttonApi.enable();
-        } else {
-            buttonApi.disable();
-        }
-        buttonApi.nodes().toggleClass('action-bar-btn-unavailable', !enabled);
-    }
 
     checkActionButtons();
     dataTable.on('search.dt', () => handleSearch());
@@ -1367,6 +1317,56 @@ $(function () {
     );
 
 });
+
+function formatDate(date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
+
+function validateDate(dateValue, element) {
+    if (dateValue) {
+        const selectedDate = new Date(dateValue);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        const minDate = element.attr('min') ? new Date(element.attr('min')) : null;
+        const maxDate = element.attr('max') ? new Date(element.attr('max')) : null;
+
+        if (selectedDate > today) {
+            element.addClass('input-validation-error');
+            abp.notify.error('The date cannot be in the future', 'Invalid Date');
+            return false;
+        }
+
+        if (minDate && selectedDate < minDate) {
+            element.addClass('input-validation-error');
+            abp.notify.error('The date cannot be before the minimum allowed date', 'Invalid Date');
+            return false;
+        }
+
+        if (maxDate && selectedDate > maxDate) {
+            element.addClass('input-validation-error');
+            abp.notify.error('The date cannot be after the maximum allowed date', 'Invalid Date');
+            return false;
+        }
+
+        element.removeClass('input-validation-error');
+        return true;
+    }
+    return true;
+}
+
+function setActionButtonState(buttonApi, enabled) {
+    if (!buttonApi) return;
+    if (enabled) {
+        buttonApi.enable();
+    } else {
+        buttonApi.disable();
+    }
+    buttonApi.nodes().toggleClass('action-bar-btn-unavailable', !enabled);
+}
 
 function getCancelledColumn(columnIndex) {
     return {
