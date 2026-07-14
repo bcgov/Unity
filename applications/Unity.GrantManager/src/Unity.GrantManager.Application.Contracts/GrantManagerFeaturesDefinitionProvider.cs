@@ -70,6 +70,12 @@ namespace Unity.GrantManager
                                     .Create<GrantManagerResource>("AI Form Mapping"),
                 valueType: new ToggleStringValueType());
 
+            myGroup.AddFeature("Unity.AI.FormWorksheet",
+                defaultValue: defaultValue,
+                    displayName: LocalizableString
+                                    .Create<GrantManagerResource>("AI Form Worksheet"),
+                valueType: new ToggleStringValueType());
+
             myGroup.AddFeature("Unity.Analytics",
                 defaultValue: defaultValue,
                     displayName: LocalizableString

@@ -9,6 +9,7 @@ Use these existing operations as the canonical references:
 2. `ApplicationScoring`
 3. `AttachmentSummary`
 4. `FormMapping`
+5. `FormWorksheet`
 
 ## Base Pattern
 1. Define the prompt type.

@@ -120,6 +120,27 @@ public class ApplicationGenerationQueue(
             });
     }
 
+    public async Task QueueFormWorksheetAsync(Guid applicationId, Guid? tenantId, Guid applicationFormVersionId, string? promptVersion = null)
+    {
+        await EnsureRequestAndEnqueueAsync(
+            tenantId,
+            AIGenerationRequestKeyHelper.FormWorksheetOperationType,
+            applicationId,
+            () => aiGenerationPrerequisiteValidator.EnsureFormWorksheetAvailableAsync(applicationFormVersionId),
+            operationId =>
+            {
+                return backgroundJobManager.EnqueueAsync(new GenerateFormWorksheetBackgroundJobArgs
+                {
+                    ApplicationId = applicationId,
+                    OperationId = operationId,
+                    ApplicationFormVersionId = applicationFormVersionId,
+                    PromptVersion = promptVersion,
+                    RequestedByUserId = currentUser.Id,
+                    TenantId = tenantId
+                });
+            });
+    }
+
     public async Task QueueApplicationIntakeAsync(Guid applicationId, Guid? tenantId, string? promptVersion = null)
     {
         var hasEnabledStage = false;
