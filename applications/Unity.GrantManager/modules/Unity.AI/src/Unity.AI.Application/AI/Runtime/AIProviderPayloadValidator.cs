@@ -141,25 +141,6 @@ namespace Unity.AI.Runtime
             return ValidateSections(root, "worksheet", requiresFieldKey: true, allowEmptyFields: true);
         }
 
-        public static AIResponseValidationResult ValidateFormScoresheetJson(string response)
-        {
-            if (!TryParseRootObject(response, out var root))
-            {
-                return AIResponseValidationResult.Invalid("Scoresheet response was not valid JSON.");
-            }
-
-            foreach (var propertyName in new[] { "Title", "Name", "Version", "Order", "Published", "ReportColumns", "ReportKeys", "ReportViewName" })
-            {
-                var result = ValidateRequiredProperty(root, propertyName, "scoresheet");
-                if (!result.IsValid)
-                {
-                    return result;
-                }
-            }
-
-            return ValidateSections(root, "scoresheet", requiresFieldKey: false, allowEmptyFields: false);
-        }
-
         private static AIResponseValidationResult ValidateSections(JsonElement root, string responseName, bool requiresFieldKey, bool allowEmptyFields)
         {
             if (!TryGetProperty(root, "Sections", out var sections) || sections.ValueKind != JsonValueKind.Array)

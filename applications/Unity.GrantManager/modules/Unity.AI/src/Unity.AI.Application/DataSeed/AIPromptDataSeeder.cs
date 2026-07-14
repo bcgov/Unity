@@ -942,20 +942,16 @@ public class AIPromptDataSeeder(
 
         Rules:
         - Return one scoresheet definition JSON object only.
-        - The context contains CHEFS form fields, allowed Unity Flex question types, and a scoresheet template.
-        - Fill out the scoresheet template to generate the rubric assessors use to score submitted applications.
-        - Use CHEFS form fields as evidence for assessment criteria, but do not create one question per form field.
-        - Keep the generated scoresheet focused on reviewer criteria, scoring choices, and comments.
-        - Do not invent assessor workflow, compliance, declaration, approval, status, conflict-of-interest, or submission identifier questions unless the CHEFS fields explicitly contain content that should be scored for that topic.
-        - Use the template's Name, Version, Order, Published, ReportColumns, ReportKeys, and ReportViewName values.
+        - The context is the CHEFS form data for the application.
+        - Generate the rubric that assessors use to score submitted applications.
+        - Keep the structure focused on reviewer criteria, comments, and scoring sections.
         - Use the numeric QuestionType values from Unity Flex.
-        - Do not copy or infer an existing scoresheet unless it is explicitly provided as part of the template.
         - Return valid plain JSON only.
         """;
 
     private const string FormScoresheetMetadataV2 = """
         {
-          "DATA": "Serialized JSON payload containing the form name, form version, CHEFS fields, allowed question types, and the scoresheet template to fill out."
+          "DATA": "Serialized JSON payload containing the form name, form version, scoresheet identifier, and existing scoresheet context."
         }
         """;
 

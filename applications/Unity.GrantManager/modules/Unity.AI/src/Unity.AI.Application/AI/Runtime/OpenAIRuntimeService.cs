@@ -350,7 +350,7 @@ namespace Unity.AI.Runtime
                         settings,
                         settings.CompletionTokens,
                         cancellationToken: cancellationToken),
-                    AIProviderPayloadValidator.ValidateFormScoresheetJson,
+                    AIProviderPayloadValidator.ValidateFormMappingJson,
                     "form scoresheet",
                     cancellationToken);
                 await _promptFileLogger.LogPromptOutputAsync(FormScoresheetPromptType, promptVersion, result.CaptureOutput, cancellationToken);

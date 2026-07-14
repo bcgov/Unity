@@ -343,8 +343,10 @@
     }
 
     function refreshScoresheetAfterGeneration() {
-        abp.notify.success('', 'Scoresheet generated and assigned successfully.');
-        refreshCustomFieldsWidget();
+        abp.notify.success('', 'Scoresheet generated and assigned successfully. Reloading page.');
+        setTimeout(function () {
+            globalThis.location.reload();
+        }, 500);
     }
 
     function refreshCustomFieldsWidget() {
