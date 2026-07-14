@@ -30,28 +30,28 @@
         description: $descriptionInput.val().trim()
     };
 
-    function getProgramDetailsValues() {
+    const getProgramDetailsValues = () => {
         return {
             displayName: $displayNameInput.val().trim(),
             division: $divisionInput.val().trim(),
             branch: $branchInput.val().trim(),
             description: $descriptionInput.val().trim()
         };
-    }
+    };
 
-    function hasProgramDetailsChanges() {
+    const hasProgramDetailsChanges = () => {
         const currentValues = getProgramDetailsValues();
         return currentValues.displayName !== originalProgramDetailsValues.displayName
             || currentValues.division !== originalProgramDetailsValues.division
             || currentValues.branch !== originalProgramDetailsValues.branch
             || currentValues.description !== originalProgramDetailsValues.description;
-    }
+    };
 
-    function updateProgramDetailsButtonStates() {
+    const updateProgramDetailsButtonStates = () => {
         const changed = hasProgramDetailsChanges();
         $programDetailsSaveButton.prop('disabled', !changed);
         $programDetailsResetButton.prop('disabled', !changed);
-    }
+    };
 
     const debouncedProgramDetailsButtonUpdate = debounce(updateProgramDetailsButtonStates, 150);
 

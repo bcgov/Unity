@@ -25,14 +25,14 @@
                 if (!$counter.length) {
                     $counter = $('<div class="char-counter"></div>').insertAfter($input);
                 }
-                function updateCounter() {
+                const updateCounter = () => {
                     const currentLength = $input.val().length;
                     $counter.text(currentLength + '/' + maxLength);
 
                     const percentageUsed = (currentLength / maxLength) * 100;
                     $counter.toggleClass('char-counter-critical', percentageUsed >= 95);
                     $counter.toggleClass('char-counter-warning', percentageUsed >= 80 && percentageUsed < 95);
-                }
+                };
 
                 $input.on('input', updateCounter);
                 updateCounter();
