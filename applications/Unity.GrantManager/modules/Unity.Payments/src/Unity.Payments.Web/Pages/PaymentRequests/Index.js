@@ -21,48 +21,6 @@ $(function () {
         requestedFromInput: $('#requestedFromDate'),
     };
 
-    // Returns a formatted { fromDate, toDate } for the filter fields.
-    // Null if 'custom' or no input provided (assumes custom is default break)
-    function getDateRange(rangeType) {
-        let today = new Date();
-        const toDate = formatDate(new Date());
-        let fromDate;
-
-        switch (rangeType) {
-            case 'today':
-                fromDate = toDate;
-                break;
-            case 'last7days':
-                fromDate = formatDate(new Date(today.setDate(today.getDate() - 7)));
-                break;
-            case 'last30days':
-                fromDate = formatDate(new Date(today.setDate(today.getDate() - 30)));
-                break;
-            case 'last3months':
-                fromDate = formatDate(new Date(today.setMonth(today.getMonth() - 3)));
-                break;
-            case 'last6months':
-                fromDate = formatDate(new Date(today.setMonth(today.getMonth() - 6)));
-                break;
-            case 'currentfiscalyear': {
-                const currentMonth = today.getMonth();
-                const currentYear = today.getFullYear();
-                const fiscalStartYear = currentMonth >= 3 ? currentYear : currentYear - 1;
-                return {
-                    fromDate: formatDate(new Date(fiscalStartYear, 3, 1)),
-                    toDate: formatDate(new Date(fiscalStartYear + 1, 2, 31))
-                };
-            }
-            case 'alltime':
-                return { fromDate: null, toDate: null };
-            case 'custom':
-            default:
-                return null; // Don't modify dates for custom
-        }
-
-        return { fromDate, toDate };
-    }
-
     function toggleCustomDateInputs(show) {
         if (show) {
             $('#customDateInputs').show();
@@ -1323,6 +1281,48 @@ function formatDate(date) {
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const day = String(date.getDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
+}
+
+// Returns a formatted { fromDate, toDate } for the filter fields.
+// Null if 'custom' or no input provided (assumes custom is default break)
+function getDateRange(rangeType) {
+    let today = new Date();
+    const toDate = formatDate(new Date());
+    let fromDate;
+
+    switch (rangeType) {
+        case 'today':
+            fromDate = toDate;
+            break;
+        case 'last7days':
+            fromDate = formatDate(new Date(today.setDate(today.getDate() - 7)));
+            break;
+        case 'last30days':
+            fromDate = formatDate(new Date(today.setDate(today.getDate() - 30)));
+            break;
+        case 'last3months':
+            fromDate = formatDate(new Date(today.setMonth(today.getMonth() - 3)));
+            break;
+        case 'last6months':
+            fromDate = formatDate(new Date(today.setMonth(today.getMonth() - 6)));
+            break;
+        case 'currentfiscalyear': {
+            const currentMonth = today.getMonth();
+            const currentYear = today.getFullYear();
+            const fiscalStartYear = currentMonth >= 3 ? currentYear : currentYear - 1;
+            return {
+                fromDate: formatDate(new Date(fiscalStartYear, 3, 1)),
+                toDate: formatDate(new Date(fiscalStartYear + 1, 2, 31))
+            };
+        }
+        case 'alltime':
+            return { fromDate: null, toDate: null };
+        case 'custom':
+        default:
+            return null; // Don't modify dates for custom
+    }
+
+    return { fromDate, toDate };
 }
 
 function validateDate(dateValue, element) {
