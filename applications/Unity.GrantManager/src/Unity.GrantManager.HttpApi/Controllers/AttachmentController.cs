@@ -459,6 +459,7 @@ namespace Unity.GrantManager.Controllers
             return await UploadEmailAttachments(emailLogId, null, files);
         }
 
+        [NonAction]
         public async Task<IActionResult> UploadEmailAttachments(Guid? emailLogId, Guid? templateId, IList<IFormFile> files)
         { 
             if (!ModelState.IsValid)
