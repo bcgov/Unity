@@ -563,7 +563,7 @@
     "ProgramDetails:Branch": "Branch",
     "ProgramDetails:Description": "Description",
     "ProgramDetails:SaveChanges": "Save Changes",
-    "ProgramDetails:ResetChanges": "Reset",
+    "ProgramDetails:ResetChanges": "Discard Changes",
     "ProgramDetails:NoChanges": "No changes to save.",
     "ProgramDetails:ChangesReset": "Changes have been reset to original values.",
     "ProgramDetails:SaveSuccess": "Program details updated successfully.",
