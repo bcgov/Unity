@@ -325,10 +325,10 @@ $(function () {
                 .done(() => {
                     abp.notify.success('The Status Check has been sent for verification to CFS. Please refresh this page to check for Status updates.');
                     $(".select-all-payments").prop("checked", false);
-                    payment_approve_buttons.disable();
-                    payment_check_status_buttons.disable();
-                    history_button.disable();
-                    if (cancel_button) cancel_button.disable();
+                    setActionButtonState(payment_approve_buttons, false);
+                    setActionButtonState(payment_check_status_buttons, false);
+                    setActionButtonState(history_button, false);
+                    setActionButtonState(cancel_button, false);
                     selectedPaymentIds = [];
                     PubSub.publish("deselect_batchpayment_application", "reset_data");
                 })
@@ -397,10 +397,10 @@ $(function () {
                             .then(function () {
                                 abp.notify.success('Payment has been cancelled successfully.');
                                 $(".select-all-payments").prop("checked", false);
-                                payment_approve_buttons.disable();
-                                payment_check_status_buttons.disable();
-                                history_button.disable();
-                                if (cancel_button) cancel_button.disable();
+                                setActionButtonState(payment_approve_buttons, false);
+                                setActionButtonState(payment_check_status_buttons, false);
+                                setActionButtonState(history_button, false);
+                                setActionButtonState(cancel_button, false);
                                 selectedPaymentIds = [];
                                 PubSub.publish("deselect_batchpayment_application", "reset_data");
                                 dataTable.ajax.reload(null, false);
@@ -665,10 +665,17 @@ $(function () {
         ? dataTable.buttons(['.payment-cancel'])
         : null;
 
-    payment_approve_buttons.disable();
-    payment_check_status_buttons.disable();
-    history_button.disable();
-    if (cancel_button) cancel_button.disable();
+    function setActionButtonState(buttonApi, enabled) {
+        if (!buttonApi) return;
+        if (enabled) {
+            buttonApi.enable();
+        } else {
+            buttonApi.disable();
+        }
+        buttonApi.nodes().toggleClass('action-bar-btn-unavailable', !enabled);
+    }
+
+    checkActionButtons();
     dataTable.on('search.dt', () => handleSearch());
 
     function checkAllRowsHaveState(states) {
@@ -744,51 +751,36 @@ $(function () {
     }
 
     function checkActionButtons() {
-        let isInSentState = checkAllRowsHaveState(['Submitted', 'FSB']);
-        if (isInSentState) {
-            payment_check_status_buttons.enable();
-        } else {
-            payment_check_status_buttons.disable();
-        }
+        const hasSelection = dataTable.rows({ selected: true }).indexes().length > 0;
+        let isInSentState = hasSelection && checkAllRowsHaveState(['Submitted', 'FSB']);
+        setActionButtonState(payment_check_status_buttons, isInSentState);
+
         let hasHistoricalPayment = dataTable.rows('.selected').data().toArray().some(row => row.status === 'HistoricalPayment');
         let hasCancelledPayment = dataTable.rows('.selected').data().toArray().some(row => row.status === 'Cancelled');
-        const hasSelection = dataTable.rows({ selected: true }).indexes().length > 0;
         const canApprove = hasSelection && !isInSentState && !hasHistoricalPayment && !hasCancelledPayment
             && (abp.auth.isGranted('PaymentsPermissions.Payments.L1ApproveOrDecline')
                 || abp.auth.isGranted('PaymentsPermissions.Payments.L2ApproveOrDecline')
                 || abp.auth.isGranted('PaymentsPermissions.Payments.L3ApproveOrDecline'));
-        if (canApprove) {
-            payment_approve_buttons.enable();
-        } else {
-            payment_approve_buttons.disable();
-        }
+        setActionButtonState(payment_approve_buttons, canApprove);
+
         checkEnableHistoryButton(dataTable, history_button);
 
         if (cancel_button) {
             const eligibleCancelStatuses = ['HistoricalPayment', 'L1Pending', 'L2Pending', 'L3Pending'];
             const selectedCount = dataTable.rows({ selected: true }).indexes().length;
+            let canCancel = false;
             if (selectedCount === 1) {
                 const rowData = dataTable.rows({ selected: true }).data().toArray()[0];
-                if (eligibleCancelStatuses.includes(rowData.status)) {
-                    cancel_button.enable();
-                } else {
-                    cancel_button.disable();
-                }
-            } else {
-                cancel_button.disable();
+                canCancel = eligibleCancelStatuses.includes(rowData.status);
             }
+            setActionButtonState(cancel_button, canCancel);
         }
     }
 
     function handleSearch() {
-        let filterValue = $('.dt-search input').val();
-        if (filterValue !== undefined && filterValue.length > 0) {
-            Array.from(document.getElementsByClassName('selected')).forEach(
-                function (element, index, array) {
-                    element.classList.toggle('selected');
-                }
-            );
-            PubSub.publish("deselect_batchpayment_application", "reset_data");
+        const filterValue = dataTable.search();
+        if (filterValue?.length > 0) {
+            dataTable.rows({ selected: true }).deselect();
         }
     }
 
@@ -1304,10 +1296,10 @@ $(function () {
         );
         dataTable.ajax.reload(null, false);
         $(".select-all-payments").prop("checked", false);
-        payment_approve_buttons.disable();
-        payment_check_status_buttons.disable();
-        history_button.disable();
-        if (cancel_button) cancel_button.disable();
+        setActionButtonState(payment_approve_buttons, false);
+        setActionButtonState(payment_check_status_buttons, false);
+        setActionButtonState(history_button, false);
+        setActionButtonState(cancel_button, false);
         selectedPaymentIds = [];
         PubSub.publish("deselect_batchpayment_application", "reset_data");
     });
@@ -1364,10 +1356,10 @@ $(function () {
         (msg, data) => {
             dataTable.ajax.reload(null, false);
             $(".select-all-payments").prop("checked", false);
-            payment_approve_buttons.disable();
-            payment_check_status_buttons.disable();
-            history_button.disable();
-            if (cancel_button) cancel_button.disable();
+            setActionButtonState(payment_approve_buttons, false);
+            setActionButtonState(payment_check_status_buttons, false);
+            setActionButtonState(history_button, false);
+            setActionButtonState(cancel_button, false);
             selectedPaymentIds = [];
             PubSub.publish("deselect_batchpayment_application", "reset_data");
             PubSub.publish('clear_selected_payment');
@@ -1420,11 +1412,13 @@ let casPaymentResponseModal = new abp.ModalManager({
 });
 
 function checkEnableHistoryButton(dataTable, history_button) {
-    if (dataTable.rows({ selected: true }).indexes().length == 1) {
+    const enabled = dataTable.rows({ selected: true }).indexes().length == 1;
+    if (enabled) {
         history_button.enable();
     } else {
         history_button.disable();
     }
+    history_button.nodes().toggleClass('action-bar-btn-unavailable', !enabled);
 }
 
 function openCasResponseModal(casResponse) {
