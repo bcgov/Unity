@@ -230,10 +230,14 @@ namespace Unity.Notifications.EmailNotifications
 
         public async Task<dynamic> BuildEmailObjectWithAttachmentsAsync(EmailLog emailLog)
         {
+            var persistedUtcSendOn = emailLog.SendOnDateTime.HasValue
+                ? DateTime.SpecifyKind(emailLog.SendOnDateTime.Value, DateTimeKind.Utc)
+                : (DateTime?)null;
+
             // Get base email object (without attachments)
             var emailObject = await GetEmailObjectAsync(
                 new EmailMessageParams(emailLog.ToAddress, emailLog.Body, emailLog.Subject,
-                    emailLog.FromAddress, emailLog.TemplateName, emailLog.CC, emailLog.BCC, emailLog.SendOnDateTime),
+                    emailLog.FromAddress, emailLog.TemplateName, emailLog.CC, emailLog.BCC, persistedUtcSendOn),
                 emailLog.BodyType,
                 excludeTemplate: true);
 
