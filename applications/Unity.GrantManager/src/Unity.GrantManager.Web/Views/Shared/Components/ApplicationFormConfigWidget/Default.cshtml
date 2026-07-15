@@ -8,8 +8,33 @@
 @inject IStringLocalizer<GrantManagerResource> L
 @inject IAuthorizationService AuthorizationService
 
-<div class="other-config-scrollable-content">
+<div class="other-config-scrollable-content container-fluid">
 <form id="otherConfigForm" autocomplete="off">
+    <div class="configuration-action-bar row">
+        <div class="col-12 col-md-8">
+            <h5>Other Configuration</h5>
+        </div>
+        <div class="col-12 col-md-4 d-flex align-items-center justify-content-end gap-2">
+            <abp-button id="btn-save-other-config"
+                        text="Save"
+                        icon-type="Other" icon="fl fl-save"
+                        class="btn unt-btn-primary btn-primary"
+                        abp-tooltip="Save Other Configuration"
+                        button-type="Primary" />
+            <button type="button"
+                    id="btn-cancel-other-config"
+                    class="btn unt-btn-outline-primary btn-outline-primary"
+                    abp-tooltip="Cancel changes">
+                <i class="fl fl-undo"></i> Cancel
+            </button>
+            <button type="reset"
+                    id="btn-back-other-config"
+                    class="btn unt-btn-outline-primary btn-outline-primary"
+                    abp-tooltip="Navigate back to the Forms">
+                Back
+            </button>
+        </div>
+    </div>
     <div class="row">
         <div class="col-12 p-3">
             <h6 class="mb-3"><b>Workflow Settings</b></h6>
@@ -99,33 +124,6 @@
                 If multiple forms are assigned the same prefix, they will share a single, continuous sequence of numbers.
                 @* @L["ApplicationForms.Configuration.Notes:SelectedApplicantElectoralAddress"].Value *@
             </label>
-        </div>
-    </div>
-
-
-    <div class="row">
-        <div class="col-12">
-            <div class="d-flex justify-content-start">
-                <abp-button id="btn-save-other-config"
-                            text="Save"
-                            icon-type="Other"
-                            icon="fl fl-save"
-                            class="btn unt-btn-primary btn-primary mx-1"
-                            abp-tooltip="Save Other Configuration"
-                            button-type="Primary" />
-                <button type="reset"
-                        id="btn-cancel-other-config"
-                        class="btn unt-btn-outline-primary btn-outline-primary mx-1"
-                        abp-tooltip="Cancel changes">
-                    <i class="fl fl-undo"></i> Cancel
-                </button>
-                <button type="reset"
-                        id="btn-back-other-config"
-                        class="btn unt-btn-outline-primary btn-outline-primary mx-1"
-                        abp-tooltip="Navigate back to the Forms">
-                    Back
-                </button>
-            </div>
         </div>
     </div>
 </form>

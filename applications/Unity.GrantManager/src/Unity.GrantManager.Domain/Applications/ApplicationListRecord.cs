@@ -57,6 +57,7 @@ public class ApplicationListRecord
     public DateTime? ContractExecutionDate { get; init; }
     public string? RiskRanking { get; init; }
     public string? UnityApplicationId { get; init; }
+    public bool ExternalStatusVisibility { get; init; }
 
     // ApplicationStatus (always joined)
     public string Status { get; init; } = string.Empty;
@@ -76,7 +77,7 @@ public class ApplicationListRecord
     public string? ApplicantOrgNumber { get; init; }
     public string? ApplicantOrgStatus { get; init; }
     public string? ApplicantBusinessNumber { get; init; }
-    public string? ApplicantOrganizationSize { get; init; }
+    public string? ApplicantApproxNumberOfEmployees { get; init; }
     public string? ApplicantSectorSubSectorIndustryDesc { get; init; }
     public bool? ApplicantRedStop { get; init; }
     public string? ApplicantIndigenousOrgInd { get; init; }

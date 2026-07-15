@@ -12,6 +12,9 @@
     Layout = null;
     var sendEmailGranted    = await PermissionChecker.IsGrantedAsync("Notifications.Email.Send");
     var emailFieldsetState  = sendEmailGranted ? string.Empty : "disabled";
+    var enableEmailDelay = Model.EnableEmailDelay;
+    var scheduleEmailGranted = await PermissionChecker.IsGrantedAsync("Notifications.Email.Schedule");
+    var enableScheduleSend = enableEmailDelay && scheduleEmailGranted;
 }
 
 <div id=" emails-div@(Model.ApplicationId)" class="mt-2  emails-container" data-count="0" data-counttag="application_emails_count">
@@ -67,6 +70,7 @@
 
     <form id="EmailForm" class="email-form" autocomplete="off">
         <abp-input type="hidden" id="ApplicationId" asp-for="@Model.ApplicationId" />
+        <input type="hidden" id="EmailTemplateName" name="EmailTemplateName" value="" />
         <fieldset @emailFieldsetState>
             <legend class="d-none">Email Form</legend>
             <input type="hidden" id="EmailId" name="EmailId" />
@@ -77,115 +81,181 @@
             <input type="hidden" id="OriginalDraftEmailSubject" />
             <input type="hidden" id="OriginalDraftEmailBody" />
 
-            <abp-row class="m-0 p-0">
-                <abp-column id="templateListContainer" size="_10" class="px-2">
-                    <abp-select asp-for="@Model.EmailTemplate" asp-items="@Model.TemplatesList" id="template">
-                        <option value="">Please select</option>
-                    </abp-select>
-                </abp-column>
-                <abp-column id="templateTextContainer" size="_10" class="px-1">
-                    <abp-input id="templateText" asp-for="@Model.EmailTemplateName"></abp-input>
+            <!-- Top Buttons -->
+            <abp-row class="m-0 p-0" abp-if="@sendEmailGranted">
+                <abp-column size="_10" class="email-buttons-container">
+                    <!-- From Field -->
+                    <div class="from-field-container">
+                        <label for="EmailFrom" class="from-label">From:</label>
+                        <abp-input asp-for="@Model.EmailFrom" class="email-input from-input" suppress-label="true" />
+                    </div>
+                    <div class="email-buttons-group">
+                        <div class="btn-group">
+                            <button id="btn-send-top" type="submit" class="btn btn-primary btn-send" data-applicationId="@Model.ApplicationId">
+                                Send
+                            </button>
+                        
+                            <button id="btn-send-dropdown" type="button" class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" abp-if="@enableScheduleSend">
+                                <i class="fa fa-chevron-down"></i>
+                            </button>
+                            <ul class="dropdown-menu" aria-labelledby="btn-send-dropdown">
+                                <li><a class="dropdown-item btn-send-menu" href="#">Send</a></li>
+                                <li><a class="dropdown-item btn-schedule-send-menu" href="#">Schedule Send</a></li>
+                            </ul>
+                        </div>                    
+
+                        <!-- Other Buttons (Right) -->
+                        <div class="ms-auto d-flex gap-2">
+                            <abp-button id="btn-save-top"
+                                        icon-type="Other"
+                                        icon="fl fl-save"
+                                        class="btn-save"
+                                        text="Save"
+                                        type="button"
+                                        button-type="Primary" data-applicationId="@Model.ApplicationId"></abp-button>
+
+                            <abp-button id="btn-send-discard-top"
+                                        class="close btn-send-discard"
+                                        data-dismiss="modal"
+                                        aria-label="Discard"
+                                        text="Discard"
+                                        button-type="Secondary" data-applicationId="@Model.ApplicationId"></abp-button>
+
+                            <abp-button id="btn-send-close-top"
+                                        class="close btn-send-close"
+                                        data-dismiss="modal"
+                                        aria-label="Close"
+                                        text="Close"
+                                        button-type="Secondary" data-applicationId="@Model.ApplicationId"></abp-button>
+                        </div>
+                    </div>
                 </abp-column>
             </abp-row>
-            <abp-row class="m-0 p-0">
-                <abp-column size="_10" class="px-1">
-                    <abp-input asp-for="@Model.EmailTo" class="email-input" />
+
+             <abp-row id="scheduled-delay-section"class="m-0 p-0 align-items-center" abp-if="@enableScheduleSend">
+                <abp-row class="m-0 p-0 align-items-center">
+                    <abp-column size="_12" class="px-1">
+                        <div id="scheduled-display-container" class="d-flex align-items-center gap-2 flex-wrap">
+                            <span id="scheduled-label-container">
+                                <label for="scheduleSend" class="form-label mb-0">
+                                    Scheduled Date/Time:
+                                </label>
+                            </span>                            
+                            <span id="send-on-display" class="text-muted"></span>
+                            <button type="button" id="btn-clear-schedule" class="btn btn-light" style="display: none;">
+                                Clear
+                            </button>
+                        </div>
+                        <div id="delay-datetime-validation" class="text-danger mt-1"></div>
+                        <!-- Hidden field carries the UTC ISO value submitted to the API -->
+                        <input id="SendOnDateTime" name="SendOnDateTime" type="hidden" />
+                    </abp-column>
+                </abp-row>
+            </abp-row>        
+
+            <abp-row class="m-0 p-0 align-items-start">
+                <abp-column class="col-auto px-1 label-column-aligned mt-14">
+                    <label for="EmailTo" class="form-label mb-0">To:</label>
+                </abp-column>
+                <abp-column class="col px-1 email-to-container">
+                    <abp-input asp-for="@Model.EmailTo" class="email-input" suppress-label="true" />
+                    <button type="button" id="btn-show-bcc" class="btn btn-outline-secondary btn-sm email-bcc-button">
+                        BCC
+                    </button>
                 </abp-column>
             </abp-row>
-            <abp-row class="m-0 p-0">
-                <abp-column size="_10" class="px-1">
-                    <abp-input asp-for="@Model.EmailCC" class="email-input" />
+            <abp-row class="m-0 p-0 align-items-start row">
+                <abp-column class="col-auto px-1 mt-14">
+                    <label for="EmailCC" class="form-label mb-0">Cc:</label>
+                </abp-column>
+                <abp-column class="col px-1">
+                    <abp-input asp-for="@Model.EmailCC" class="email-input" suppress-label="true" />
                 </abp-column>
             </abp-row>
-            <abp-row class="m-0 p-0">
-                <abp-column size="_10" class="px-1">
-                    <abp-input asp-for="@Model.EmailBCC" class="email-input" />
+            <abp-row class="m-0 p-0 align-items-start row" id="bcc-input-row">
+                <abp-column class="col-auto px-1 mt-14">
+                    <label for="EmailBCC" class="form-label mb-0">Bcc:</label>
+                </abp-column>
+                <abp-column class="col px-1">
+                    <abp-input asp-for="@Model.EmailBCC" class="email-input" suppress-label="true" />
                 </abp-column>
             </abp-row>
-            <abp-row class="m-0 p-0">
-                <abp-column size="_10" class="px-1">
-                    <abp-input asp-for="@Model.EmailFrom" class="email-input" />
+            <abp-row class="m-0 p-0 align-items-start row">
+                <abp-column size="_12" class="px-1">
+                    <abp-input asp-for="@Model.EmailSubject" class="email-input" suppress-label="true" />
                 </abp-column>
             </abp-row>
-            <abp-row class="m-0 p-0">
-                <abp-column size="_10" class="px-1">
-                    <abp-input asp-for="@Model.EmailSubject" class="email-input" />
-                </abp-column>
-            </abp-row>
-            <abp-row class="m-0 p-0">
-                <abp-column size="_10" class="px-1">
-                    <abp-input asp-for="@Model.EmailBody" class="email-input" />
+            <abp-row class="m-0 p-0 px-1">
+                <abp-column size="_12" class="px-2 pe-1">
+                    <abp-input asp-for="@Model.EmailBody" class="email-input" suppress-label="true" />
                 </abp-column>
             </abp-row>
         </fieldset>
-        <div id="email-attachments-section" style="display:none">
-            <abp-row class="m-0 p-0">
-                <abp-column size="_12" class="px-0">
-                    <h6 class="fw-bold pt-3 pb-1 m-0">Attachments</h6>
-                    <abp-table id="EmailAttachmentsTable"
-                               hoverable-rows="true"
-                               class="attachments-table nowrap"></abp-table>
-                    <div id="attachment-upload-progress" style="display:none" class="mt-2 mb-1">
-                        <div class="progress">
-                            <div id="attachment-upload-progress-bar"
-                                 class="progress-bar progress-bar-striped progress-bar-animated"
-                                 role="progressbar"
-                                 style="width:0%"
-                                 aria-valuenow="0"
-                                 aria-valuemin="0"
-                                 aria-valuemax="100">0%</div>
-                        </div>
-                    </div>
-                    <div id="email-attachment-size-error" class="alert alert-danger mt-2" style="display:none">
-                        <i class="fa fa-exclamation-triangle me-1"></i>
-                        <span id="email-attachment-size-error-message"></span>
-                    </div>
-                    <div class="d-flex justify-content-end mt-2 mb-1">
-                        <form id="email-attachment-form" enctype="multipart/form-data">
-                            <input id="email_attachment_upload" type="file" multiple
-                                   style="display:none" />
-                            <abp-button text="Add Attachments"
-                                        id="email_attachment_upload_btn"
-                                        icon-type="Other"
-                                        icon="fl fl-plus"
-                                        button-type="Light" />
-                        </form>
-                    </div>
-                </abp-column>
-            </abp-row>
+
+        @await Html.PartialAsync("/Views/Shared/Components/EmailsWidget/_EmailAttachments.cshtml")
+
+    </form>
+
+<!-- Schedule Send Modal -->
+<div id="schedule-modal-backdrop"></div>
+<div id="schedule-send-modal">
+    <!-- Header -->
+    <div class="schedule-modal-header">
+        <h5 class="schedule-modal-title">Set a scheduled date and time</h5>
+    </div>
+
+    <!-- Main Content: Two Column Layout -->
+    <div class="schedule-modal-body d-flex gap-4">
+        <!-- Left Column: Calendar -->
+        <div class="schedule-calendar-section">
+            <div class="calendar-nav d-flex justify-content-between align-items-center mb-3">
+                <button type="button" id="btn-calendar-prev" class="btn btn-sm btn-light">←</button>
+                <span id="calendar-month-year" class="calendar-month-year">June 2026</span>
+                <button type="button" id="btn-calendar-next" class="btn btn-sm btn-light">→</button>
+            </div>
+            <div id="schedule-calendar-grid" class="calendar-grid">
+                <!-- Day grid will be generated by JavaScript -->
+            </div>
         </div>
-        <abp-row class="m-0 p-0" abp-if="@sendEmailGranted">
-            <abp-column size="_10" class="px-1">
-            <abp-modal-footer>
-                <abp-button id="btn-save"
-                            icon-type="Other"
-                            icon="fl fl-save"
-                            class="btn-save"
-                            text="Save"
-                            type="button"
-                            button-type="Primary" data-applicationId="@Model.ApplicationId"></abp-button>
 
-                <abp-button id="btn-send"
-                            class="btn-send"
-                            text="Send"
-                            type="submit"
-                            button-type="Primary" data-applicationId="@Model.ApplicationId"></abp-button>
+        <!-- Right Column: Date & Time Inputs -->
+        <div class="schedule-inputs-section">
+            <!-- Date Input -->
+            <div class="schedule-input-group mb-3">
+                <label for="schedule-date-input" class="form-label">Select a date</label>
+                <div class="input-group">
+                    <input id="schedule-date-input" type="text" class="form-control" placeholder="MM/DD/YYYY" />
+                    <button type="button" class="input-group-text" disabled>
+                        <i class="fa fa-calendar"></i>
+                    </button>
+                </div>
+                <small id="schedule-date-validation" class="d-block mt-1" style="display: none;"></small>
+            </div>
 
-                <abp-button id="btn-send-discard"
-                            class="close btn-send-discard"
-                            data-dismiss="modal"
-                            aria-label="Discard"
-                            text="Discard"
-                            button-type="Secondary" data-applicationId="@Model.ApplicationId"></abp-button>
+            <!-- Time Dropdown -->
+            <div class="schedule-input-group">
+                <label for="schedule-time-select" class="form-label">Time</label>
+                <div class="input-group">
+                    <select id="schedule-time-select" class="form-select">
+                        <option value="">Select a time</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
 
-                <abp-button id="btn-send-close"
-                            class="close btn-send-close"
-                            data-dismiss="modal"
-                            aria-label="Close"
-                            text="Close"
-                            button-type="Secondary" data-applicationId="@Model.ApplicationId"></abp-button>
-            </abp-modal-footer>
-        </abp-column>
-    </abp-row>
-</form>
+    <!-- Validation Message -->
+    <div id="schedule-modal-validation" class="text-danger mt-3" style="display: none;"></div>
+
+    <!-- Footer -->
+    <div class="schedule-modal-footer d-flex justify-content-end gap-2 mt-4">
+        <button type="button" id="btn-schedule-confirm" class="btn btn-primary btn-sm">Schedule</button>
+        <button type="button" id="btn-schedule-cancel" class="btn btn-secondary btn-sm">Cancel</button>        
+    </div>
 </div>
+
+</div>
+
+@section Scripts {
+    <script src="~/views/shared/components/emailswidget/Default.js"></script>
+}

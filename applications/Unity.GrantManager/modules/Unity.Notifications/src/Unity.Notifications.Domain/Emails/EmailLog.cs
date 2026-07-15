@@ -14,6 +14,7 @@ public class EmailLog : AuditedAggregateRoot<Guid>, IMultiTenant
     public Guid AssessmentId { get; set; }
     public Guid ApplicationId { get; set; }
     public Guid ApplicantId { get; set; }
+    public Guid? ScheduledNotificationId { get; set; }
     public string FromAddress { get; set; } = string.Empty;
     public string ToAddress { get; set; } = string.Empty;
     public string CC { get; set; } = string.Empty;
@@ -29,6 +30,8 @@ public class EmailLog : AuditedAggregateRoot<Guid>, IMultiTenant
     public string ChesStatus { get; set; } = string.Empty;
     public string? ChesHttpStatusCode { get; set; }    
     public string Status { get; set; } = string.Empty;
+    public RecipientType? Recipient { get; set; }
+    public EmailType? EmailType { get; set; }
     public DateTime? SendOnDateTime { get; set; }
     public DateTime? SentDateTime { get; set; }
     public string TemplateName { get; set; } = string.Empty;

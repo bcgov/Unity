@@ -1,0 +1,186 @@
+/* Notifications widget styles */
+.notifications-widget {
+    padding: 1rem;
+    background: #f8f9fb;
+    font-family: var(--bs-body-font-family, 'BCSans', sans-serif);
+    font-size: var(--bc-font-size, 1rem);
+}
+.notifications-widget .card { border: 0; }
+.notifications-widget .card .card-body { background: #fff; }
+
+/* Select2 Bootstrap 5 Theme - Use default styling */
+/* Let Select2's Bootstrap 5 theme handle the layout naturally */
+.select2-container--bootstrap-5 .select2-selection--multiple {
+    min-height: 38px;
+    height: auto;
+    max-height: 150px;
+    overflow-y: auto;
+}
+
+/* Ensure the Select2 box matches standard input borders and radius */
+.select2-container--bootstrap-5 .select2-selection {
+    border: 2px solid #2e5dd7 !important;
+    border-radius: 8px !important;
+    height: auto !important;
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out !important;
+}
+
+/* Match the focus state (glow) of other inputs */
+.select2-container--bootstrap-5.select2-container--focus .select2-selection {
+    border-color: #2e5dd7 !important;
+    box-shadow: 0 0 0 0.25rem rgba(46, 93, 215, 0.25) !important;
+    outline: 0 !important;
+}
+
+.select2-container--bootstrap-5.select2-container--disabled .select2-selection--multiple {
+    background-color: #e9ecef;
+    border-color: #dee2e6;
+    cursor: not-allowed;
+}
+
+/* Suppress Bootstrap's invalid !-circle icon on selects; keep red border only */
+#notificationForm .form-select.is-invalid,
+#notificationForm .form-select.is-invalid:focus {
+    background-image: var(--bs-form-select-bg-img);
+    background-size: 16px 12px;
+    background-position: right 0.75rem center;
+    padding-right: 2.25rem;
+}
+
+/* Modal column layout */
+#modalColumns { 
+    align-items: stretch; 
+    gap: 60px;
+    display: flex;
+    flex: 1 1 auto;
+    min-height: 0;
+}
+
+.left-col { 
+    flex: 0 0 33%; 
+    min-width: 320px;
+    overflow-y: auto;
+}
+
+.right-col { 
+    flex: 1 1 0;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+#notificationForm { 
+    display: flex; 
+    flex-direction: column; 
+    flex: 1 1 auto; 
+    min-height: 0; 
+}
+
+/* Modal styling */
+.notification-modal-content {
+    display: flex;
+    flex-direction: column;
+    min-width: 900px;
+    min-height: 480px;
+    max-height: 85vh;
+}
+
+.notification-modal-body {
+    overflow: hidden;
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+}
+
+.notification-modal-footer {
+    flex-shrink: 0;
+}
+
+/* Notification info note styling */
+.notification-info-note {
+    background-color: #d1ecf1;
+    border: 1px solid #bee5eb;
+    color: #0c5460;
+    padding: 12px 16px;
+    margin: 16px;
+    border-radius: 4px;
+    font-size: 0.95rem;
+    line-height: 1.5;
+}
+
+/* Template preview styling */
+.template-preview-container {
+    padding: 12px;
+    background: #fff;
+    flex: 1;
+    overflow: auto;
+    box-sizing: border-box;
+    border: 1px solid #dee2e6;
+}
+
+.template-preview-text {
+    min-height: 120px;
+    white-space: pre-wrap;
+    width: 100%;
+    height: 100%;
+    box-sizing: border-box;
+}
+
+/* Hidden sections (display:none handled by JavaScript) */
+.hidden-section {
+    display: none;
+}
+
+/* Notifications table styling */
+.notification-table {
+    width: 100%;
+}
+
+/* Notification table action buttons */
+.notification-action-btn {
+    margin-left: 10px;
+    margin-right: 10px;
+}
+
+.button-group {
+    display: flex;
+    justify-content: center;
+}
+
+.dt-column-title, table.dataTable thead th {
+    color: #fff;
+    font-weight: 500;
+    font-size: 18px;
+}
+
+table.dataTable td {
+    word-wrap: break-word;
+    max-width: 250px;
+    font-size: 15px;
+}
+
+.unt-btn-outline-primary {
+    background-color: white;
+}
+
+.js-delete-notification {
+    padding: 10px 5px;
+}
+
+.badge {
+    min-height: 24px;
+    /* Layout & Alignment */
+    display: inline-block;
+    vertical-align: middle;
+    
+    /* Text Spacing */
+    line-height: 1;
+    
+    /* Visually centered padding (compensates for font metrics) */
+    padding-top: 8px;
+    padding-bottom: 8px;
+    
+    /* Horizontal padding (inherited from Bootstrap default) */
+    padding-left: 0.65em;
+    padding-right: 0.65em;
+}

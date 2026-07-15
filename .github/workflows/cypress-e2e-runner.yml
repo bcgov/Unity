@@ -1,0 +1,130 @@
+name: Cypress E2E (runner)
+
+# Shared job called by cypress-dev/test/uat/prod.yml.
+#
+# Unlike Grants, this doesn't run Cypress on the GitHub-hosted runner directly —
+# the Unity Grant Manager Route is IP-allowlisted to the BC Gov network, which
+# GitHub-hosted runners can't reach. Instead this job launches an OpenShift Job
+# (from the unity-cypress-job Template in d18498-tools) that runs the existing
+# Unity.AutoUI Cypress suite from inside the cluster, waits for it to finish,
+# and pulls the logs/screenshots back into this Actions run.
+#
+# Test credentials are NOT GitHub secrets — the Job pulls them from the
+# unity-cypress-config Secret in d18498-tools, synced from Vault
+# (GH_UGM_CYPRESS_CONFIG) via External Secrets.
+#
+# OpenShift auth reuses the same oc-login pattern already used by
+# docker-build-dev.yml/docker-build-test.yml/docker-build-main.yml.
+
+on:
+  workflow_call:
+    inputs:
+      env_name:
+        description: "Cypress environment name: dev | test | uat | prod"
+        required: true
+        type: string
+      cypress_config_key:
+        description: "Key in the unity-cypress-config Secret for this env (e.g. CYPRESS_CONFIG_DEV)"
+        required: true
+        type: string
+      base_url:
+        description: "Optional baseUrl override — use to target a feature branch deployment instead of the default env URL"
+        required: false
+        type: string
+        default: ""
+      gh_environment:
+        description: "GitHub Environment to source OpenShift credentials from (defaults to env_name — dev/test have their own; uat/prod reuse 'main')"
+        required: false
+        type: string
+        default: ""
+
+permissions:
+  contents: read
+
+env:
+  TOOLS_NAMESPACE: d18498-tools
+  JOB_TIMEOUT: 20m
+
+jobs:
+  cypress:
+    name: Cypress E2E — ${{ inputs.env_name }}
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.gh_environment || inputs.env_name }}
+    env:
+      OC_CLUSTER: ${{ vars.OPENSHIFT_CLUSTER }}
+      OC_AUTH_TOKEN: ${{ secrets.OPENSHIFT_TOKEN }}
+      GH_TOKEN: ${{ secrets.GH_API_TOKEN }}
+
+    steps:
+      - name: Install OpenShift CLI
+        run: |
+          curl -LO https://mirror.openshift.com/pub/openshift-v4/clients/oc/latest/linux/oc.tar.gz
+          tar -xvf oc.tar.gz
+          sudo mv oc /usr/local/bin
+
+      - name: Connect to OpenShift API
+        run: oc login --token=$OC_AUTH_TOKEN --server=$OC_CLUSTER
+
+      - name: Launch Cypress Job
+        id: launch
+        run: |
+          # The unity-cypress-job Template lives in the tenant-gitops-d18498 repo
+          # and is synced into the cluster by ArgoCD — process it by name directly
+          # from d18498-tools rather than checking out that repo here.
+          JOB_REF=$(oc process unity-cypress-job \
+            -p ENV=${{ inputs.env_name }} \
+            -p CYPRESS_CONFIG_KEY=${{ inputs.cypress_config_key }} \
+            -p GIT_REF=$GITHUB_SHA \
+            -p GIT_TOKEN=$GH_TOKEN \
+            -p BASE_URL="${{ inputs.base_url }}" \
+            -n $TOOLS_NAMESPACE \
+            | oc create -f - -o name -n $TOOLS_NAMESPACE)
+          echo "Created $JOB_REF"
+          echo "job_ref=$JOB_REF" >> "$GITHUB_OUTPUT"
+
+      - name: Wait for Cypress Job to finish
+        id: wait
+        run: |
+          JOB_REF="${{ steps.launch.outputs.job_ref }}"
+          oc wait --for=condition=complete --timeout=$JOB_TIMEOUT "$JOB_REF" -n $TOOLS_NAMESPACE &
+          COMPLETE_PID=$!
+          oc wait --for=condition=failed --timeout=$JOB_TIMEOUT "$JOB_REF" -n $TOOLS_NAMESPACE &
+          FAILED_PID=$!
+          wait -n $COMPLETE_PID $FAILED_PID || true
+          kill $COMPLETE_PID $FAILED_PID 2>/dev/null || true
+
+          SUCCEEDED=$(oc get "$JOB_REF" -n $TOOLS_NAMESPACE -o jsonpath='{.status.succeeded}')
+          echo "succeeded=${SUCCEEDED:-0}" >> "$GITHUB_OUTPUT"
+
+      - name: Show Cypress logs
+        if: always()
+        run: |
+          JOB_REF="${{ steps.launch.outputs.job_ref }}"
+          oc logs "$JOB_REF" -n $TOOLS_NAMESPACE -c cypress --tail=-1 || true
+
+      - name: Collect screenshots on failure
+        if: steps.wait.outputs.succeeded != '1'
+        run: |
+          JOB_NAME="${{ steps.launch.outputs.job_ref }}"
+          JOB_NAME="${JOB_NAME#job.batch/}"
+          POD=$(oc get pods -n $TOOLS_NAMESPACE -l job-name="$JOB_NAME" -o jsonpath='{.items[0].metadata.name}')
+          mkdir -p cypress-screenshots
+          oc cp "$TOOLS_NAMESPACE/$POD:/workspace/applications/Unity.AutoUI/cypress/screenshots" ./cypress-screenshots -c cypress || true
+
+      - name: Upload screenshots on failure
+        if: steps.wait.outputs.succeeded != '1'
+        uses: actions/upload-artifact@v5
+        with:
+          name: cypress-screenshots-${{ inputs.env_name }}-${{ github.run_number }}
+          path: cypress-screenshots
+          if-no-files-found: ignore
+
+      - name: Clean up Cypress Job
+        if: always()
+        run: |
+          JOB_REF="${{ steps.launch.outputs.job_ref }}"
+          oc delete "$JOB_REF" -n $TOOLS_NAMESPACE --ignore-not-found
+
+      - name: Fail workflow if Cypress did not succeed
+        if: steps.wait.outputs.succeeded != '1'
+        run: exit 1

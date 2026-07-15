@@ -7,6 +7,7 @@ namespace Unity.GrantManager.Applicants
     {
         public Guid TenantId { get; set; }
         public string TenantName { get; set; } = string.Empty;
-        public Dictionary<string, string> Metadata { get; set; } = [];
+        public string? DisplayName { get; set; }
+        public string? DefaultFromAddress { get; set; }
     }
 }

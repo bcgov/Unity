@@ -1,15 +1,23 @@
 ﻿@using Unity.GrantManager.Localization;
 @using Microsoft.Extensions.Localization;
 @using Unity.GrantManager.Web.Views.Shared.Components.ApplicationActionWidget;
+@using Unity.GrantManager.Web.Views.Shared.Components.DetailsActionBar;
 
 @inject IStringLocalizer<GrantManagerResource> L
+@model DetailsActionBarViewModel
 
 <div class="action-bar p-2 fade-in-load" id="detailsActionBar">
     <div id="DetailsActionBarStart" class="d-flex align-items-stretch justify-content-start gap-2">
         <div class="order-first">
             @await Component.InvokeAsync(typeof(ApplicationActionWidget), new { applicationId = @Model.ApplicationId })
         </div>
-        @* Items are included here through the Review List JS*@   
+        <abp-button id="togglePublishStatusBtn"
+                    data-selector="applications-table-actions"
+                    data-is-published="@Model.ExternalStatusVisibility.ToString().ToLowerInvariant()"
+                    text='@(Model.ExternalStatusVisibility ? L["DetailsActionBar:UnpublishButton"].Value : L["DetailsActionBar:PublishButton"].Value)'
+                    icon-type="Other"
+                    button-type="Light"
+                    disabled="@(!Model.CanUpdateExternalStatusVisibility)" />
     </div>
     <div id="DetailsActionBarEnd" class="d-flex align-items-stretch justify-content-end gap-2 margin-left-auto">
         <abp-button id="tagApplication"

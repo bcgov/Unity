@@ -47,6 +47,7 @@ namespace Unity.GrantManager.Permissions.GrantApplications
             applicatPermissions.AddChild(GrantApplicationPermissions.Applicants.ViewList, L("Permission:GrantApplicationManagement.Applicants.ViewList"));
             applicatPermissions.AddChild(GrantApplicationPermissions.Applicants.Edit, L("Permission:GrantApplicationManagement.Applicants.Edit"));
             applicatPermissions.AddChild(GrantApplicationPermissions.Applicants.AssignApplicant, L("Permission:GrantApplicationManagement.Applicants.AssignApplicant"));
+            applicatPermissions.AddChild(GrantApplicationPermissions.Applicants.Delete, L("Permission:GrantApplicationManagement.Applicants.Delete"));
             var applicantInfoPermissions = applicatPermissions.AddChild(
                 GrantApplicationPermissions.Applicants.ApplicantInfoDefault,
                 L("Permission:GrantApplicationManagement.Applicants.ApplicantInfo"));
@@ -69,6 +70,12 @@ namespace Unity.GrantManager.Permissions.GrantApplications
             approvalPermissions.AddChild(GrantApplicationPermissions.Approvals.DeferAfterApproval, L("Permission:GrantApplicationManagement.Approvals.DeferAfterApproval"));
             approvalPermissions.AddChild(GrantApplicationPermissions.Approvals.BulkApplicationApproval, L("Permission:GrantApplicationManagement.Approvals.BulkApplicationApproval"));
 
+            // External Status Visibility
+            var statusVisibilityPermissions = grantApplicationPermissionsGroup.AddPermission(UnitySelector.Application.Status.Default, L(UnitySelector.Application.Status.Default));
+            statusVisibilityPermissions.AddUnityChild(UnitySelector.Application.Status.Publish);
+            statusVisibilityPermissions.AddUnityChild(UnitySelector.Application.Status.Unpublish);
+            statusVisibilityPermissions.AddUnityChild(UnitySelector.Application.Status.BulkPublish);
+
             // Comments
             var appCommentPermissions = grantApplicationPermissionsGroup.AddPermission(GrantApplicationPermissions.Comments.Default, L("Permission:GrantApplicationManagement.Comments.Default"));
             appCommentPermissions.AddChild(GrantApplicationPermissions.Comments.Add, L("Permission:GrantApplicationManagement.Comments.Add"));
@@ -86,6 +93,7 @@ namespace Unity.GrantManager.Permissions.GrantApplications
             settingManagement.AddPermission(UnitySettingManagementPermissions.UserInterface, L("Permission:UnitySettingManagementPermissions.UserInterface"));
             settingManagement.AddPermission(UnitySettingManagementPermissions.BackgroundJobSettings, L("Permission:UnitySettingManagementPermissions.BackgroundJobs"));
             settingManagement.AddPermission(UnitySettingManagementPermissions.ConfigurePayments, L("Permission:UnitySettingManagementPermissions.ConfigurePayments"));
+            settingManagement.AddPermission(UnitySettingManagementPermissions.EditProgramDetails, L("Permission:UnitySettingManagementPermissions.EditProgramDetails"));
 
             var emailingPermission = context.GetPermissionOrNull(SettingManagementPermissions.Emailing);
             if (emailingPermission != null)

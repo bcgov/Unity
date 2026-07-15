@@ -53,6 +53,18 @@ $(function () {
             { title: 'Reconsideration Amount', data: 'reconsiderationAmount', name: 'reconsiderationAmount', className: 'data-table-header currency-display', render: (d) => formatCurrency(d) },            
             { title: 'Total Grant Amount', data: 'totalGrantAmount', name: 'totalGrantAmount', className: 'data-table-header currency-display', render: (d) => formatCurrency(d) },
             {
+                title: 'Paid Date', data: 'paidDate', name: 'paidDate', className: 'data-table-header', width: '90px',
+                createdCell: function (td) { $(td).css('min-width', '90px'); },
+                render: function (d) {
+                    if (!d) return nullPlaceholder;
+                    try {
+                        return luxon.DateTime.fromISO(d, {
+                            locale: abp.localization.currentCulture.name,
+                        }).toUTC().toLocaleString();
+                    } catch (e) { console.warn('Paid date parse error:', e); return d; }
+                }
+            },
+            {
                 title: 'Notes', data: 'fundingNotes', name: 'fundingNotes', className: 'data-table-header', width: '200px',
                 createdCell: function (td) { $(td).css('min-width', '200px'); },
                 render: (d) => d ?? nullPlaceholder
@@ -64,12 +76,12 @@ $(function () {
 
                     let $editBtn = $('<button>')
                         .addClass('btn btn-sm edit-button px-0 funding-edit-btn')
-                        .attr({ 'aria-label': 'Edit', 'title': 'Edit' })
+                        .attr({ 'type': 'button', 'aria-label': 'Edit', 'title': 'Edit' })
                         .append($('<i>').addClass('fl fl-edit'));
 
                     let $deleteBtn = $('<button>')
                         .addClass('btn btn-link p-0 funding-delete-btn')
-                        .attr({ 'title': 'Delete Funding History', 'data-id': row.id })
+                        .attr({ 'type': 'button', 'title': 'Delete Funding History', 'data-id': row.id })
                         .css({ 'color': '#0066cc', 'text-decoration': 'none' })
                         .append($('<i>').addClass('fa fa-times'));
 
@@ -98,12 +110,12 @@ $(function () {
 
                     let $editBtn = $('<button>')
                         .addClass('btn btn-sm edit-button px-0 issue-edit-btn')
-                        .attr({ 'aria-label': 'Edit', 'title': 'Edit' })
+                        .attr({ 'type': 'button', 'aria-label': 'Edit', 'title': 'Edit' })
                         .append($('<i>').addClass('fl fl-edit'));
 
                     let $deleteBtn = $('<button>')
                         .addClass('btn btn-link p-0 issue-delete-btn')
-                        .attr({ 'title': 'Delete Issue Tracking', 'data-id': row.id })
+                        .attr({ 'type': 'button', 'title': 'Delete Issue Tracking', 'data-id': row.id })
                         .css({ 'color': '#0066cc', 'text-decoration': 'none' })
                         .append($('<i>').addClass('fa fa-times'));
 
@@ -144,12 +156,12 @@ $(function () {
 
                     let $editBtn = $('<button>')
                         .addClass('btn btn-sm edit-button px-0 audit-edit-btn')
-                        .attr({ 'aria-label': 'Edit', 'title': 'Edit' })
+                        .attr({ 'type': 'button', 'aria-label': 'Edit', 'title': 'Edit' })
                         .append($('<i>').addClass('fl fl-edit'));
 
                     let $deleteBtn = $('<button>')
                         .addClass('btn btn-link p-0 audit-delete-btn')
-                        .attr({ 'title': 'Delete Audit History', 'data-id': row.id })
+                        .attr({ 'type': 'button', 'title': 'Delete Audit History', 'data-id': row.id })
                         .css({ 'color': '#0066cc', 'text-decoration': 'none' })
                         .append($('<i>').addClass('fa fa-times'));
 
@@ -175,6 +187,7 @@ $(function () {
                 }
             },
             { title: 'Outstanding', data: 'outstanding', name: 'outstanding', className: 'data-table-header', width: '100px', render: (d) => d === true ? 'Yes' : 'No' },
+            { title: 'Signed-Off', data: 'signedOff', name: 'signedOff', className: 'data-table-header', width: '100px', render: (d) => d === true ? 'Yes' : 'No' },
             { title: 'Incomplete Report', data: 'incompleteReport', name: 'incompleteReport', className: 'data-table-header', width: '130px', render: (d) => d === true ? 'Yes' : 'No' },
             {
                 title: 'Note', data: 'note', name: 'note', className: 'data-table-header', width: '200px',
@@ -188,12 +201,12 @@ $(function () {
 
                     let $editBtn = $('<button>')
                         .addClass('btn btn-sm edit-button px-0 reports-edit-btn')
-                        .attr({ 'aria-label': 'Edit', 'title': 'Edit' })
+                        .attr({ 'type': 'button', 'aria-label': 'Edit', 'title': 'Edit' })
                         .append($('<i>').addClass('fl fl-edit'));
 
                     let $deleteBtn = $('<button>')
                         .addClass('btn btn-link p-0 reports-delete-btn')
-                        .attr({ 'title': 'Delete Reports History', 'data-id': row.id })
+                        .attr({ 'type': 'button', 'title': 'Delete Reports History', 'data-id': row.id })
                         .css({ 'color': '#0066cc', 'text-decoration': 'none' })
                         .append($('<i>').addClass('fa fa-times'));
 
@@ -224,7 +237,7 @@ $(function () {
 
     const fundingHistoryTable = initializeDataTable({
         dt: $('#FundingHistoryTable'),
-        defaultVisibleColumns: ['grantCategory', 'fundingYear', 'renewedFunding', 'approvedAmount', 'reconsiderationAmount', 'oneTimeConsideration', 'totalGrantAmount', 'fundingNotes', 'actions'],
+        defaultVisibleColumns: ['grantCategory', 'fundingYear', 'renewedFunding', 'approvedAmount', 'reconsiderationAmount', 'oneTimeConsideration', 'totalGrantAmount', 'paidDate', 'fundingNotes', 'actions'],
         listColumns: getFundingHistoryColumns(),
         dataEndpoint: () => unity.grantManager.applicantProfile.applicantHistory.getFundingHistoryList(getApplicantId()),
         data: () => ({}),
@@ -314,7 +327,7 @@ $(function () {
 
     const reportsHistoryTable = initializeDataTable({
         dt: $('#ReportsHistoryTable'),
-        defaultVisibleColumns: ['fiscalYear', 'reportDate', 'outstanding', 'incompleteReport', 'note', 'actions'],
+        defaultVisibleColumns: ['fiscalYear', 'reportDate', 'outstanding', 'signedOff', 'incompleteReport', 'note', 'actions'],
         listColumns: getReportsHistoryColumns(),
         dataEndpoint: () => unity.grantManager.applicantProfile.applicantHistory.getReportsHistoryList(getApplicantId()),
         data: () => ({}),

@@ -1,8 +1,20 @@
 using Microsoft.Extensions.Configuration;
+using NSubstitute;
 using Shouldly;
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Linq.Expressions;
+using System.Text.Json;
+using System.Threading;
+using System.Threading.Tasks;
+using Unity.AI.Domain;
+using Unity.AI.Operations;
+using Unity.AI.Prompts;
 using Unity.AI.Runtime;
+using Volo.Abp.Data;
+using Volo.Abp.Domain.Repositories;
+using Volo.Abp.MultiTenancy;
 using Xunit;
 
 namespace Unity.GrantManager.AI.Runtime;
@@ -10,219 +22,334 @@ namespace Unity.GrantManager.AI.Runtime;
 public class OpenAIConfigurationResolverTests
 {
     [Fact]
-    public void ResolveApiUrl_Should_CombineEndpointWithLeadingSlashProfilePath()
+    public async Task Should_Throw_When_No_Operations_Are_Configured()
     {
-        var configuration = new ConfigurationBuilder()
-            .AddInMemoryCollection(new Dictionary<string, string?>
+        var resolver = CreateResolver();
+
+        var ex = await Should.ThrowAsync<InvalidOperationException>(() => resolver.ResolveOperationSettingsAsync(AIPromptTypes.ApplicationAnalysis));
+        ex.Message.ShouldContain("AI operation");
+    }
+
+    [Fact]
+    public async Task Should_Resolve_Operation_Strictly_From_Database()
+    {
+        var modelRepository = Substitute.For<IRepository<AIModel, Guid>>();
+        var operationRepository = Substitute.For<IRepository<AIOperation, Guid>>();
+        var promptRepository = Substitute.For<IRepository<AIPrompt, Guid>>();
+
+        var modelId = Guid.NewGuid();
+        var promptId = Guid.NewGuid();
+
+        modelRepository
+            .GetAsync(modelId, cancellationToken: Arg.Any<CancellationToken>())
+            .Returns(new AIModel(modelId, "Gpt5Mini")
             {
-                ["Azure:Operations:Defaults:Provider"] = "OpenAI",
-                ["Azure:Operations:Defaults:Profile"] = "Gpt4oMini",
-                ["Azure:OpenAI:Endpoint"] = "https://d837ad-test-recap-webapp.azurewebsites.net",
-                ["Azure:OpenAI:Profiles:Gpt4oMini:ApiUrl"] = "/openai/deployments/gpt-4o-mini/chat/completions?api-version=2024-02-01"
-            })
-            .Build();
+                IsActive = true,
+                SettingsJson = JsonSerializer.Serialize(new AIModelSettings
+                {
+                    MaxOutputTokenCountSupported = true,
+                    Temperature = 0.25
+                })
+            });
 
-        var resolver = new OpenAIConfigurationResolver(configuration);
-
-        resolver.ResolveApiUrl().ShouldBe(
-            "https://d837ad-test-recap-webapp.azurewebsites.net/openai/deployments/gpt-4o-mini/chat/completions?api-version=2024-02-01");
-    }
-
-    [Fact]
-    public void ResolveProviderName_Should_Throw_When_DefaultProvider_Is_Missing()
-    {
-        var configuration = new ConfigurationBuilder()
-            .AddInMemoryCollection(new Dictionary<string, string?>())
-            .Build();
-
-        var resolver = new OpenAIConfigurationResolver(configuration);
-
-        var ex = Should.Throw<InvalidOperationException>(() => resolver.ResolveProviderName());
-        ex.Message.ShouldContain("Azure:Operations:Defaults:Provider");
-    }
-
-    [Fact]
-    public void ResolveApiUrl_Should_Throw_When_Endpoint_Is_Missing()
-    {
-        var configuration = new ConfigurationBuilder()
-            .AddInMemoryCollection(new Dictionary<string, string?>
+        operationRepository
+            .GetListAsync(Arg.Any<Expression<Func<AIOperation, bool>>>())
+            .Returns(callInfo =>
             {
-                ["Azure:Operations:Defaults:Provider"] = "OpenAI",
-                ["Azure:Operations:Defaults:Profile"] = "Gpt4oMini",
-                ["Azure:OpenAI:Profiles:Gpt4oMini:ApiUrl"] = "/openai/deployments/gpt-4o-mini/chat/completions?api-version=2024-02-01"
-            })
-            .Build();
+                var predicate = callInfo.Arg<Expression<Func<AIOperation, bool>>>();
+                return Task.FromResult(new List<AIOperation>
+                {
+                    new(Guid.NewGuid(), AIPromptTypes.ApplicationAnalysis, modelId, promptId)
+                    {
+                        ExecutionMode = AIExecutionMode.Sequential,
+                        CompletionTokens = 2222,
+                        IsActive = true
+                    }
+                }.Where(predicate.Compile()).ToList());
+            });
 
-        var resolver = new OpenAIConfigurationResolver(configuration);
-
-        var ex = Should.Throw<InvalidOperationException>(() => resolver.ResolveApiUrl());
-        ex.Message.ShouldContain("Azure:OpenAI:Endpoint");
-    }
-
-    [Fact]
-    public void ResolveMaxTokensParameterNameForOperation_Should_Return_Configured_Profile_Parameter()
-    {
-        var configuration = new ConfigurationBuilder()
-            .AddInMemoryCollection(new Dictionary<string, string?>
+        promptRepository
+            .GetAsync(promptId, cancellationToken: Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(new AIPrompt(promptId, AIPromptTypes.ApplicationAnalysis, 1, "system", "user")
             {
-                ["Azure:Operations:Defaults:Provider"] = "OpenAI",
-                ["Azure:Operations:Defaults:Profile"] = "Gpt4oMini",
-                ["Azure:OpenAI:Profiles:Gpt4oMini:MaxTokensParameter"] = "max_tokens"
-            })
-            .Build();
+                MetadataJson = "{}",
+                IsActive = true
+            }));
 
-        var resolver = new OpenAIConfigurationResolver(configuration);
-
-        resolver.ResolveMaxTokensParameterNameForOperation().ShouldBe("max_tokens");
-    }
-
-    [Fact]
-    public void ResolveCompletionTokens_Should_Throw_When_Operation_And_Default_Are_Missing()
-    {
-        var configuration = new ConfigurationBuilder()
-            .AddInMemoryCollection(new Dictionary<string, string?>())
-            .Build();
-
-        var resolver = new OpenAIConfigurationResolver(configuration);
-
-        var ex = Should.Throw<InvalidOperationException>(() => resolver.ResolveCompletionTokens("ApplicationAnalysis"));
-        ex.Message.ShouldContain("ApplicationAnalysis");
-    }
-
-    [Fact]
-    public void ResolvePromptVersion_Should_Use_Operation_Override_Before_Default()
-    {
-        var configuration = new ConfigurationBuilder()
-            .AddInMemoryCollection(new Dictionary<string, string?>
+        var resolver = CreateResolver(
+            new Dictionary<string, string?>
             {
-                ["Azure:Operations:Defaults:PromptVersion"] = "v0",
-                ["Azure:Operations:ApplicationAnalysis:PromptVersion"] = "v1"
-            })
-            .Build();
+                ["Azure:OpenAI:ApiKey"] = "secret",
+                ["Azure:OpenAI:Profiles:Gpt5Mini:DeploymentName"] = "gpt-5-mini"
+            },
+            modelRepository,
+            operationRepository,
+            promptRepository);
 
-        var resolver = new OpenAIConfigurationResolver(configuration);
+        var settings = await resolver.ResolveOperationSettingsAsync(AIPromptTypes.ApplicationAnalysis);
 
-        resolver.ResolvePromptVersion("ApplicationAnalysis").ShouldBe("v1");
+        settings.ProviderName.ShouldBe("OpenAI");
+        settings.ProfileName.ShouldBe("Gpt5Mini");
+        settings.Endpoint.ShouldBe(new Uri("https://example.test"));
+        settings.DeploymentName.ShouldBe("gpt-5-mini");
+        settings.Temperature.ShouldBe(0.25);
+        settings.CompletionTokens.ShouldBe(2222);
+        settings.PromptVersion.ShouldBe("v1");
     }
 
     [Fact]
-    public void ResolvePromptVersion_Should_Throw_When_Default_Is_Missing()
+    public async Task Should_Throw_When_Operation_Is_Missing()
     {
-        var configuration = new ConfigurationBuilder()
-            .AddInMemoryCollection(new Dictionary<string, string?>())
-            .Build();
+        var modelRepository = Substitute.For<IRepository<AIModel, Guid>>();
+        var operationRepository = Substitute.For<IRepository<AIOperation, Guid>>();
+        var promptRepository = Substitute.For<IRepository<AIPrompt, Guid>>();
 
-        var resolver = new OpenAIConfigurationResolver(configuration);
+        var modelId = Guid.NewGuid();
+        var promptId = Guid.NewGuid();
 
-        var ex = Should.Throw<InvalidOperationException>(() => resolver.ResolvePromptVersion("ApplicationAnalysis"));
-        ex.Message.ShouldContain("Azure:Operations:Defaults:PromptVersion");
-    }
-
-    [Fact]
-    public void ResolveApiKey_Should_Throw_When_Configured_Key_Is_Missing()
-    {
-        var configuration = new ConfigurationBuilder()
-            .AddInMemoryCollection(new Dictionary<string, string?>
+        modelRepository
+            .GetAsync(modelId, cancellationToken: Arg.Any<CancellationToken>())
+            .Returns(new AIModel(modelId, "Gpt5Mini")
             {
-                ["Azure:Operations:Defaults:Provider"] = "OpenAI"
-            })
-            .Build();
+                IsActive = true,
+                SettingsJson = JsonSerializer.Serialize(new AIModelSettings
+                {
+                    Temperature = 0.2
+                })
+            });
 
-        var resolver = new OpenAIConfigurationResolver(configuration);
+        operationRepository
+            .GetListAsync(Arg.Any<Expression<Func<AIOperation, bool>>>())
+            .Returns(callInfo =>
+            {
+                var predicate = callInfo.Arg<Expression<Func<AIOperation, bool>>>();
+                return Task.FromResult(new List<AIOperation>
+                {
+                    new(Guid.NewGuid(), "Default", modelId, promptId)
+                    {
+                        ExecutionMode = AIExecutionMode.Sequential,
+                        CompletionTokens = 2000,
+                        IsActive = true
+                    }
+                }.Where(predicate.Compile()).ToList());
+            });
 
-        var ex = Should.Throw<InvalidOperationException>(() => resolver.ResolveApiKey());
-        ex.Message.ShouldContain("Azure:OpenAI:ApiKey");
+        promptRepository
+            .GetAsync(promptId, cancellationToken: Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(new AIPrompt(promptId, AIPromptTypes.ApplicationAnalysis, 1, "system", "user")
+            {
+                MetadataJson = "{}",
+                IsActive = true
+            }));
+
+        var resolver = CreateResolver(
+            new Dictionary<string, string?>
+            {
+                ["Azure:OpenAI:ApiKey"] = "secret",
+                ["Azure:OpenAI:Profiles:Gpt5Mini:DeploymentName"] = "gpt-5-mini"
+            },
+            modelRepository,
+            operationRepository,
+            promptRepository);
+
+        var exception = await Should.ThrowAsync<InvalidOperationException>(
+            () => resolver.ResolveOperationSettingsAsync(AIPromptTypes.ApplicationAnalysis));
+
+        exception.Message.ShouldContain("AI operation 'ApplicationAnalysis' is not configured.");
     }
 
     [Fact]
-    public void ResolveConfiguredTemperature_Should_Return_Profile_Temperature()
+    public async Task Should_Resolve_Model_Values_Strictly_From_Database()
     {
-        var configuration = new ConfigurationBuilder()
-            .AddInMemoryCollection(new Dictionary<string, string?>
+        var modelRepository = Substitute.For<IRepository<AIModel, Guid>>();
+        modelRepository
+            .GetListAsync(Arg.Any<Expression<Func<AIModel, bool>>>())
+            .Returns(callInfo =>
             {
-                ["Azure:Operations:Defaults:Provider"] = "OpenAI",
-                ["Azure:Operations:Defaults:Profile"] = "Gpt4oMini",
-                ["Azure:OpenAI:Profiles:Gpt4oMini:Temperature"] = "0.3"
-            })
-            .Build();
+                var predicate = callInfo.Arg<Expression<Func<AIModel, bool>>>();
+                return Task.FromResult(new List<AIModel>
+                {
+                    new(Guid.NewGuid(), "Gpt5Mini")
+                    {
+                        IsActive = true,
+                        SettingsJson = JsonSerializer.Serialize(new AIModelSettings
+                        {
+                            MaxOutputTokenCountSupported = true,
+                            Temperature = 0.35
+                        })
+                    }
+                }.Where(predicate.Compile()).ToList());
+            });
 
-        var resolver = new OpenAIConfigurationResolver(configuration);
+        var resolver = CreateResolver(modelRepository: modelRepository);
 
-        resolver.ResolveConfiguredTemperature().ShouldBe(0.3);
+        resolver.ResolveProviderName().ShouldBe("OpenAI");
+        (await resolver.ResolveDeploymentNameAsync()).ShouldBe("gpt-5-mini");
+        (await resolver.ResolveEndpointAsync()).ShouldBe(new Uri("https://example.test"));
+        (await resolver.ResolveConfiguredTemperatureAsync()).ShouldBe(0.35);
+        (await resolver.ResolveMaxOutputTokenCountSupportedAsync()).ShouldBeTrue();
     }
 
-    [Theory]
-    [InlineData(null)]
-    [InlineData("not-a-number")]
-    public void ResolveConfiguredTemperature_Should_Return_Null_When_Profile_Temperature_Is_Missing_Or_Invalid(string? temperature)
+    [Fact]
+    public async Task Should_Resolve_ApiKey_From_Provider_Secret()
     {
-        var values = new Dictionary<string, string?>
+        var modelRepository = Substitute.For<IRepository<AIModel, Guid>>();
+        modelRepository
+            .GetListAsync(Arg.Any<Expression<Func<AIModel, bool>>>())
+            .Returns(callInfo =>
+            {
+                var predicate = callInfo.Arg<Expression<Func<AIModel, bool>>>();
+                return Task.FromResult(new List<AIModel>
+                {
+                    new(Guid.NewGuid(), "Default")
+                    {
+                        IsActive = true,
+                        SettingsJson = JsonSerializer.Serialize(new AIModelSettings
+                        {
+                            MaxOutputTokenCountSupported = true
+                        })
+                    }
+                }.Where(predicate.Compile()).ToList());
+            });
+
+        var resolver = CreateResolver(
+            new Dictionary<string, string?>
+            {
+                ["Azure:OpenAI:ApiKey"] = "secret"
+            },
+            modelRepository);
+
+        (await resolver.ResolveApiKeyAsync()).ShouldBe("secret");
+    }
+
+    [Fact]
+    public async Task Should_Resolve_Operation_Settings_From_Host_Context()
+    {
+        var modelRepository = Substitute.For<IRepository<AIModel, Guid>>();
+        var operationRepository = Substitute.For<IRepository<AIOperation, Guid>>();
+        var promptRepository = Substitute.For<IRepository<AIPrompt, Guid>>();
+        var multiTenantDataFilter = Substitute.For<IDataFilter<IMultiTenant>>();
+        multiTenantDataFilter.Disable().Returns(Substitute.For<IDisposable>());
+
+        var modelId = Guid.NewGuid();
+        var promptId = Guid.NewGuid();
+
+        modelRepository
+            .GetAsync(modelId, cancellationToken: Arg.Any<CancellationToken>())
+            .Returns(new AIModel(modelId, "Gpt5Mini")
+            {
+                IsActive = true,
+                SettingsJson = JsonSerializer.Serialize(new AIModelSettings
+                {
+                    Temperature = 0.1
+                })
+            });
+
+        operationRepository
+            .GetListAsync(Arg.Any<Expression<Func<AIOperation, bool>>>())
+            .Returns(callInfo =>
+            {
+                var predicate = callInfo.Arg<Expression<Func<AIOperation, bool>>>();
+                return Task.FromResult(new List<AIOperation>
+                {
+                    new(Guid.NewGuid(), AIPromptTypes.ApplicationAnalysis, modelId, promptId)
+                    {
+                        IsActive = true,
+                        CompletionTokens = 2000
+                    }
+                }.Where(predicate.Compile()).ToList());
+            });
+
+        promptRepository
+            .GetAsync(promptId, cancellationToken: Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(new AIPrompt(promptId, AIPromptTypes.ApplicationAnalysis, 1, "system", "user")
+            {
+                MetadataJson = "{}",
+                IsActive = true
+            }));
+
+        var resolver = CreateResolver(
+            new Dictionary<string, string?>
+            {
+                ["Azure:OpenAI:ApiKey"] = "secret"
+            },
+            modelRepository,
+            operationRepository,
+            promptRepository,
+            multiTenantDataFilter);
+
+        var settings = await resolver.ResolveOperationSettingsAsync(AIPromptTypes.ApplicationAnalysis);
+
+        settings.PromptVersion.ShouldBe("v1");
+        multiTenantDataFilter.Received().Disable();
+    }
+
+    private static OpenAIConfigurationResolver CreateResolver(
+        IReadOnlyDictionary<string, string?>? values = null,
+        IRepository<AIModel, Guid>? modelRepository = null,
+        IRepository<AIOperation, Guid>? operationRepository = null,
+        IRepository<AIPrompt, Guid>? promptRepository = null,
+        IDataFilter<IMultiTenant>? multiTenantDataFilter = null)
+    {
+        var configurationValues = new Dictionary<string, string?>
         {
             ["Azure:Operations:Defaults:Provider"] = "OpenAI",
-            ["Azure:Operations:Defaults:Profile"] = "Gpt4oMini"
+            ["Azure:Operations:Defaults:Profile"] = "Gpt5Mini",
+            ["Azure:OpenAI:Endpoint"] = "https://example.test",
+            ["Azure:OpenAI:ApiKey"] = "secret",
+            ["Azure:OpenAI:Profiles:Gpt5Mini:DeploymentName"] = "gpt-5-mini",
+            ["Azure:OpenAI:Profiles:Gpt5Mini:MaxOutputTokenCountSupported"] = "true"
         };
 
-        if (temperature != null)
+        if (values != null)
         {
-            values["Azure:OpenAI:Profiles:Gpt4oMini:Temperature"] = temperature;
+            foreach (var pair in values)
+            {
+                configurationValues[pair.Key] = pair.Value;
+            }
         }
 
         var configuration = new ConfigurationBuilder()
-            .AddInMemoryCollection(values)
+            .AddInMemoryCollection(configurationValues)
             .Build();
 
-        var resolver = new OpenAIConfigurationResolver(configuration);
-
-        resolver.ResolveConfiguredTemperature().ShouldBeNull();
+        var filter = multiTenantDataFilter ?? Substitute.For<IDataFilter<IMultiTenant>>();
+        filter.Disable().Returns(Substitute.For<IDisposable>());
+        return new OpenAIConfigurationResolver(
+            modelRepository ?? CreateEmptyModelRepository(),
+            operationRepository ?? CreateEmptyOperationRepository(),
+            promptRepository ?? CreateEmptyPromptRepository(),
+            configuration,
+            filter);
     }
 
-    [Fact]
-    public void ResolveConfiguredReasoningEffort_Should_Return_ProfileValue()
+    private static IRepository<AIModel, Guid> CreateEmptyModelRepository()
     {
-        var configuration = BuildProfileConfiguration("ReasoningEffort", "minimal");
-        var resolver = new OpenAIConfigurationResolver(configuration);
-
-        resolver.ResolveConfiguredReasoningEffort().ShouldBe("minimal");
+        var modelRepository = Substitute.For<IRepository<AIModel, Guid>>();
+        modelRepository
+            .GetListAsync(Arg.Any<Expression<Func<AIModel, bool>>>())
+            .Returns(Task.FromResult(new List<AIModel>()));
+        return modelRepository;
     }
 
-    [Fact]
-    public void ResolveConfiguredVerbosity_Should_Return_ProfileValue()
+    private static IRepository<AIOperation, Guid> CreateEmptyOperationRepository()
     {
-        var configuration = BuildProfileConfiguration("Verbosity", "low");
-        var resolver = new OpenAIConfigurationResolver(configuration);
-
-        resolver.ResolveConfiguredVerbosity().ShouldBe("low");
+        var operationRepository = Substitute.For<IRepository<AIOperation, Guid>>();
+        operationRepository
+            .GetListAsync(Arg.Any<Expression<Func<AIOperation, bool>>>())
+            .Returns(Task.FromResult(new List<AIOperation>()));
+        return operationRepository;
     }
 
-    [Fact]
-    public void ResolveConfiguredReasoningEffort_Should_ReturnNull_WhenProfileSettingMissing()
+    private static IRepository<AIPrompt, Guid> CreateEmptyPromptRepository()
     {
-        var configuration = BuildProfileConfiguration("Temperature", "0.3");
-        var resolver = new OpenAIConfigurationResolver(configuration);
-
-        resolver.ResolveConfiguredReasoningEffort().ShouldBeNull();
-    }
-
-    [Fact]
-    public void ResolveConfiguredVerbosity_Should_RejectUnsupportedValue()
-    {
-        var configuration = BuildProfileConfiguration("Verbosity", "verbose");
-        var resolver = new OpenAIConfigurationResolver(configuration);
-
-        var exception = Should.Throw<System.InvalidOperationException>(() => resolver.ResolveConfiguredVerbosity());
-        exception.Message.ShouldContain("Verbosity");
-        exception.Message.ShouldContain("low, medium, high");
-    }
-
-    private static IConfiguration BuildProfileConfiguration(string settingName, string settingValue)
-    {
-        return new ConfigurationBuilder()
-            .AddInMemoryCollection(new Dictionary<string, string?>
+        var promptRepository = Substitute.For<IRepository<AIPrompt, Guid>>();
+        promptRepository
+            .GetAsync(Arg.Any<Guid>(), cancellationToken: Arg.Any<CancellationToken>())
+            .Returns(callInfo => Task.FromResult(new AIPrompt(callInfo.Arg<Guid>(), "Default", 1, "system", "user")
             {
-                ["Azure:Operations:Defaults:Provider"] = "OpenAI",
-                ["Azure:Operations:Defaults:Profile"] = "Gpt5Mini",
-                [$"Azure:OpenAI:Profiles:Gpt5Mini:{settingName}"] = settingValue
-            })
-            .Build();
+                MetadataJson = "{}"
+            }));
+        return promptRepository;
     }
 }

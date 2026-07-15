@@ -131,7 +131,7 @@ public class OpenAIResponseParser : ITransientDependency
                 : string.Empty;
             var confidence = property.Value.TryGetProperty("confidence", out var confidenceProp) &&
                              confidenceProp.ValueKind == JsonValueKind.Number &&
-                             confidenceProp.TryGetInt32(out var parsedConfidence)
+                             confidenceProp.TryGetDecimal(out var parsedConfidence)
                 ? NormalizeConfidence(parsedConfidence)
                 : 0;
 
@@ -146,6 +146,49 @@ public class OpenAIResponseParser : ITransientDependency
                 Rationale = rationale,
                 Confidence = confidence
             };
+        }
+
+        return response;
+    }
+
+    public static AttachmentSummaryBatchResponse ParseAttachmentSummaryBatchResponse(string raw)
+    {
+        var response = new AttachmentSummaryBatchResponse();
+        if (!TryParseJsonObjectFromResponse(raw, out var root))
+        {
+            return response;
+        }
+
+        if (!root.TryGetProperty("attachments", out var attachments) || attachments.ValueKind != JsonValueKind.Array)
+        {
+            return response;
+        }
+
+        foreach (var attachment in attachments.EnumerateArray())
+        {
+            if (attachment.ValueKind != JsonValueKind.Object)
+            {
+                continue;
+            }
+
+            var attachmentId = attachment.TryGetProperty("attachmentId", out var idProp) && idProp.ValueKind == JsonValueKind.String
+                ? idProp.GetString() ?? string.Empty
+                : string.Empty;
+
+            if (string.IsNullOrWhiteSpace(attachmentId))
+            {
+                continue;
+            }
+
+            var summary = attachment.TryGetProperty(AIJsonKeys.Summary, out var summaryProp) && summaryProp.ValueKind == JsonValueKind.String
+                ? summaryProp.GetString() ?? string.Empty
+                : string.Empty;
+
+            response.Attachments.Add(new AttachmentSummaryBatchItemResponse
+            {
+                AttachmentId = attachmentId,
+                Summary = summary
+            });
         }
 
         return response;
@@ -242,10 +285,11 @@ public class OpenAIResponseParser : ITransientDependency
         return true;
     }
 
-    private static int NormalizeConfidence(int confidence)
+    private static int NormalizeConfidence(decimal confidence)
     {
-        var clamped = Math.Clamp(confidence, 0, 100);
-        var rounded = (int)Math.Round(clamped / 5.0, MidpointRounding.AwayFromZero) * 5;
+        var clamped = Math.Clamp(confidence, 0m, 1m);
+        var percentage = clamped * 100m;
+        var rounded = (int)Math.Round(percentage / 10m, MidpointRounding.AwayFromZero) * 10;
         return Math.Clamp(rounded, 0, 100);
     }
 }

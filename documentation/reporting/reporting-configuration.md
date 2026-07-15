@@ -162,6 +162,7 @@ The **Path** column shows the data-centric navigation path used by the PostgreSQ
 | Internal `path` (not displayed) | Internal `typePath` | Displayed "Path" (DataPath) | Why |
 | -------------------------------- | ------------------- | --------------------------- | --- |
 | `panel1->firstName` | `panel->textfield` | `firstName` | `panel` is a container — stripped |
+| `tab1->firstName` | `tab->textfield` | `firstName` | `tab` is a container — stripped |
 | `datagrid1->itemName` | `datagrid->textfield` | `datagrid1->itemName` | `datagrid` is kept — it IS in the JSON |
 | `checkboxField->optionA` | `simplecheckboxes->option` | `checkboxField->optionA` | Both segments present in data |
 

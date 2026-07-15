@@ -25,6 +25,7 @@
     <!-- Explicit reference to fix vulnerable transitive dependency -->
     <PackageReference Include="AWSSDK.Core" Version="4.0.5" />
     <ProjectReference Include="..\..\..\..\src\Unity.GrantManager.Application.Contracts\Unity.GrantManager.Application.Contracts.csproj" />
+    <ProjectReference Include="..\..\..\..\src\Unity.GrantManager.Domain\Unity.GrantManager.Domain.csproj" />
     <ProjectReference Include="..\Unity.Notifications.Application.Contracts\Unity.Notifications.Application.Contracts.csproj" />
     <ProjectReference Include="..\Unity.Notifications.Domain\Unity.Notifications.Domain.csproj" />
   </ItemGroup>

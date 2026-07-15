@@ -14,7 +14,8 @@ using Volo.Abp.Uow;
 namespace Unity.GrantManager.GrantApplications
 {
     [Authorize]
-    public class BulkApprovalsAppService(IApplicationRepository applicationRepository,
+    public class BulkApprovalsAppService(
+        IApplicationRepository applicationRepository,
         IApplicationManager applicationManager,
         ILocalEventBus localEventBus,
         IUnitOfWorkManager unitofWorkManager) : GrantManagerAppService, IBulkApprovalsAppService

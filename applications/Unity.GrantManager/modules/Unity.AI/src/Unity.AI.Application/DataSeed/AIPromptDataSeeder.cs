@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Unity.AI.Domain;
+using Unity.AI.Prompts;
 using Volo.Abp.Data;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Repositories;
@@ -11,21 +12,13 @@ using Volo.Abp.MultiTenancy;
 namespace Unity.AI.DataSeed;
 
 /// <summary>
-/// Seeds the built-in AI prompts (analysis, attachment, scoresheet) into the host database.
-/// Each prompt is seeded with two versions — v0 (original single-file prompts) and v1 (modular
-/// prompts with separate rubric, score, output, and rules sections stored in MetadataJson).
-/// The seeder is idempotent: it checks by fixed GUID before inserting.
+/// Seeds the built-in AI prompts (application analysis, attachment summary, application scoring) into the host database.
+/// Each prompt family is represented as versioned rows in AIPrompts.
 /// </summary>
 public class AIPromptDataSeeder(
     IRepository<AIPrompt, Guid> promptRepository,
-    IRepository<AIPromptVersion, Guid> versionRepository,
-    ICurrentTenant currentTenant) : IDataSeedContributor, ITransientDependency
+    ICurrentTenant currentTenant) : ITransientDependency
 {
-    // Fixed deterministic GUIDs — never change these; they ensure idempotent re-seeding
-    private static readonly Guid AnalysisPromptId   = new("4a100001-1000-4000-a000-000000000001");
-    private static readonly Guid AttachmentPromptId = new("4a100001-1000-4000-a000-000000000002");
-    private static readonly Guid ScoresheetPromptId = new("4a100001-1000-4000-a000-000000000003");
-
     public async Task SeedAsync(DataSeedContext context)
     {
         if (context.TenantId != null) return; // host database only
@@ -42,101 +35,79 @@ public class AIPromptDataSeeder(
 
     private async Task SeedAnalysisPromptAsync()
     {
-        if (await promptRepository.AnyAsync(p => p.Id == AnalysisPromptId)) return;
-
-        await promptRepository.InsertAsync(new AIPrompt(AnalysisPromptId, "analysis", PromptType.Skill)
-        {
-            Description = "Grant application analysis and review",
-            IsActive = true
-        });
-
-        await versionRepository.InsertAsync(new AIPromptVersion(
-            Guid.CreateVersion7(), AnalysisPromptId, 0,
-            AnalysisSystemV0, AnalysisUserV0)
-        {
-            DeveloperNotes = "v0 — initial single-file analysis prompt",
-            IsPublished = true
-        });
-
-        await versionRepository.InsertAsync(new AIPromptVersion(
-            Guid.CreateVersion7(), AnalysisPromptId, 1,
-            AnalysisSystemV1, AnalysisUserV1)
-        {
-            DeveloperNotes = "v1 — modular prompt with separate rubric, score, output, and rules sections",
-            IsPublished = true,
-            MetadataJson = BuildSections(
+        await EnsurePromptAsync(AIPromptTypes.ApplicationAnalysis, 0, AnalysisSystemV0, AnalysisUserV0);
+        await EnsurePromptAsync(
+            AIPromptTypes.ApplicationAnalysis,
+            1,
+            AnalysisSystemV1,
+            AnalysisUserV1,
+            BuildSections(
                 rubric: AnalysisRubric,
                 score: AnalysisScore,
                 output: AnalysisOutput,
                 rules: AnalysisRules,
-                commonRules: CommonRules)
-        });
+                commonRules: CommonRules));
+        await EnsurePromptAsync(
+            AIPromptTypes.ApplicationAnalysis,
+            2,
+            AnalysisSystemV2,
+            AnalysisUserV2,
+            BuildSections(
+                rubric: AnalysisRubricV2,
+                score: AnalysisScoreV2,
+                output: AnalysisOutputV2,
+                rules: AnalysisRulesV2,
+                commonRules: CommonRules));
     }
 
     // ─── ATTACHMENT ───────────────────────────────────────────────────────────
 
     private async Task SeedAttachmentPromptAsync()
     {
-        if (await promptRepository.AnyAsync(p => p.Id == AttachmentPromptId)) return;
-
-        await promptRepository.InsertAsync(new AIPrompt(AttachmentPromptId, "attachment", PromptType.Skill)
-        {
-            Description = "Attachment summarization for grant review",
-            IsActive = true
-        });
-
-        await versionRepository.InsertAsync(new AIPromptVersion(
-            Guid.CreateVersion7(), AttachmentPromptId, 0,
-            AttachmentSystemV0, AttachmentUserV0)
-        {
-            DeveloperNotes = "v0 — initial single-file attachment prompt",
-            IsPublished = true
-        });
-
-        await versionRepository.InsertAsync(new AIPromptVersion(
-            Guid.CreateVersion7(), AttachmentPromptId, 1,
-            AttachmentSystemV1, AttachmentUserV1)
-        {
-            DeveloperNotes = "v1 — modular prompt with separate output and rules sections",
-            IsPublished = true,
-            MetadataJson = BuildSections(
+        await EnsurePromptAsync(AIPromptTypes.AttachmentSummary, 0, AttachmentSystemV0, AttachmentUserV0);
+        await EnsurePromptAsync(
+            AIPromptTypes.AttachmentSummary,
+            1,
+            AttachmentSystemV1,
+            AttachmentUserV1,
+            BuildSections(
                 output: AttachmentOutput,
                 rules: AttachmentRules,
-                commonRules: CommonRules)
-        });
+                commonRules: CommonRules));
+        await EnsurePromptAsync(
+            AIPromptTypes.AttachmentSummary,
+            2,
+            AttachmentSystemV2,
+            AttachmentUserV2,
+            BuildSections(
+                output: AttachmentOutputV2,
+                rules: AttachmentRulesV2,
+                commonRules: CommonRules));
     }
 
     // ─── SCORESHEET ───────────────────────────────────────────────────────────
 
     private async Task SeedScoresheetPromptAsync()
     {
-        if (await promptRepository.AnyAsync(p => p.Id == ScoresheetPromptId)) return;
-
-        await promptRepository.InsertAsync(new AIPrompt(ScoresheetPromptId, "scoresheet", PromptType.Skill)
-        {
-            Description = "Scoresheet section answering assistant",
-            IsActive = true
-        });
-
-        await versionRepository.InsertAsync(new AIPromptVersion(
-            Guid.CreateVersion7(), ScoresheetPromptId, 0,
-            ScoresheetSystemV0, ScoresheetUserV0)
-        {
-            DeveloperNotes = "v0 — initial single-file scoresheet prompt",
-            IsPublished = true
-        });
-
-        await versionRepository.InsertAsync(new AIPromptVersion(
-            Guid.CreateVersion7(), ScoresheetPromptId, 1,
-            ScoresheetSystemV1, ScoresheetUserV1)
-        {
-            DeveloperNotes = "v1 — modular prompt with separate output and rules sections",
-            IsPublished = true,
-            MetadataJson = BuildSections(
+        await EnsurePromptAsync(AIPromptTypes.ApplicationScoring, 0, ScoresheetSystemV0, ScoresheetUserV0);
+        await EnsurePromptAsync(
+            AIPromptTypes.ApplicationScoring,
+            1,
+            ScoresheetSystemV1,
+            ScoresheetUserV1,
+            BuildSections(
                 output: ScoresheetOutput,
                 rules: ScoresheetRules,
-                commonRules: CommonRules)
-        });
+                commonRules: CommonRules));
+        await EnsurePromptAsync(
+            AIPromptTypes.ApplicationScoring,
+            2,
+            ScoresheetSystemV2,
+            ScoresheetUserV2,
+            BuildSections(
+                output: ScoresheetOutputV2,
+                rules: ScoresheetRulesV2,
+                commonRules: CommonRules));
     }
 
     // ─── HELPERS ──────────────────────────────────────────────────────────────
@@ -151,7 +122,38 @@ public class AIPromptDataSeeder(
         if (output != null)      dict["OUTPUT"]       = output;
         if (rules != null)       dict["RULES"]        = rules;
         if (commonRules != null) dict["COMMON_RULES"] = commonRules;
-        return JsonSerializer.Serialize(new { sections = dict });
+        return JsonSerializer.Serialize(dict);
+    }
+
+    private async Task EnsurePromptAsync(
+        string promptName,
+        int versionNumber,
+        string systemPrompt,
+        string userPrompt,
+        string? metadataJson = null)
+    {
+        var prompt = await promptRepository.FirstOrDefaultAsync(
+            p => p.Name == promptName && p.VersionNumber == versionNumber);
+        if (prompt != null)
+        {
+            prompt.SystemPrompt = systemPrompt;
+            prompt.UserPrompt = userPrompt;
+            prompt.MetadataJson = metadataJson ?? "{}";
+            prompt.IsActive = true;
+            await promptRepository.UpdateAsync(prompt, autoSave: true);
+            return;
+        }
+
+        await promptRepository.InsertAsync(new AIPrompt(
+            Guid.CreateVersion7(),
+            promptName,
+            versionNumber,
+            systemPrompt,
+            userPrompt)
+        {
+            MetadataJson = metadataJson ?? "{}",
+            IsActive = true
+        });
     }
 
     // ═════════════════════════════════════════════════════════════════════════
@@ -278,7 +280,7 @@ public class AIPromptDataSeeder(
 
         TASK
         Using SCHEMA, DATA, ATTACHMENTS, RUBRIC, SCORE, OUTPUT, and RULES:
-        1. Review the application and attachments for the strongest reviewer-relevant evidence.
+        1. Review the application and any provided attachments for the strongest reviewer-relevant evidence.
         2. Determine which conclusions are directly supported by that evidence.
         3. Exclude weak, repetitive, or loosely supported conclusions.
         4. Return only the strongest evidence-backed reviewer conclusions.
@@ -363,26 +365,128 @@ public class AIPromptDataSeeder(
         - Prefer, in order: direct evidence from DATA, specific supporting evidence from ATTACHMENTS, then broader context only when necessary.
         - Treat missing or empty values as findings only when they weaken rubric evidence.
         - Prefer material findings; avoid nitpicking.
-        - Do not restate basic application facts as findings unless they support a specific reviewer conclusion about readiness, feasibility, budget credibility, eligibility, or confidence in proceeding.
         - Prefer direct evidence from DATA over derivative statements in ATTACHMENTS when both address the same point.
         - If ATTACHMENTS evidence is used, cite the attachment by name in detail.
         - Each detail must cite concrete evidence from DATA or ATTACHMENTS.
         - Write reviewer-facing natural language. Do not refer to prompt section names, internal field keys, or schema labels such as DATA, ATTACHMENTS, ProjectSummary, CustomField1, or OrganizationType.
         - Refer to evidence by its plain-language meaning, quoted text, or attachment name rather than internal key names.
         - Only include warnings when the evidence shows a specific, concrete risk, inconsistency, or meaningful uncertainty; a stated risk label alone is not enough.
-        - Do not state that one amount exceeds, matches, or conflicts with another unless the comparison is directly supported by the provided values.
-        - Do not treat ordinary lack of detailed supporting explanation as a material gap unless the provided evidence creates real uncertainty about feasibility, eligibility, or budget credibility.
-        - Prefer neutral evidence descriptions over evaluative adjectives unless the evidence directly supports a strong conclusion.
-        - Do not describe capacity, feasibility, or justification as strong, detailed, or well-supported unless the evidence shows more than the existence of basic organizational, budget, or timeline information.
-        - Do not infer community support, established partnerships, or delivery capacity from a single partner reference, staff count, or basic organizational status alone.
-        - Do not describe a timeline as realistic or feasible based only on start and end dates unless additional evidence supports deliverability.
         - Use 3-6 words for title.
         - Summary titles should name the specific substantive reviewer conclusion, strength, or risk, not a generic evaluation label or abstract category.
         - Each detail must be 1-2 complete sentences.
         - Summaries and recommendations must be concrete, distinct, reviewer-relevant, and specific to this application's evidence.
         - Avoid generic praise, checklist language, and repeated conclusions across lists.
         - Do not use a summary merely to say that supporting documents were provided; summarize the specific substantive evidence they add, or omit the finding.
-        - If no findings exist, return empty arrays.
+        - Errors and warnings may be empty.
+        - Summaries and recommendations must each include at least one item.
+        - Decision must be PROCEED or HOLD.
+        - Use summaries for overall application quality/readiness synthesis.
+        - Use recommendations for concrete reviewer-facing next actions based on the provided evidence.
+        - Recommendations may include proceeding with the normal review process when the application appears ready for that step.
+        - When evidence shows a meaningful gap, inconsistency, or uncertainty, use recommendations for specific follow-up or verification actions.
+        - Return an empty array only when no concrete next action would help the reviewer.
+        """;
+
+    // ── v2/analysis.system.txt ───────────────────────────────────────────────
+    private const string AnalysisSystemV2 = """
+        You are a careful grant review assistant for human reviewers.
+        Review the application and attachments for the strongest evidence-backed reviewer conclusions.
+        Do not fill gaps, assume compliance, or treat relevance as proof.
+        """;
+
+    // ── v2/analysis.user.txt ─────────────────────────────────────────────────
+    private const string AnalysisUserV2 = """
+        SCHEMA
+        {{SCHEMA}}
+
+        DATA
+        {{DATA}}
+
+        ATTACHMENTS
+        {{ATTACHMENTS}}
+
+        RUBRIC
+        {{RUBRIC}}
+
+        SCORE
+        {{SCORE}}
+
+        RESPONSE
+        {{RESPONSE}}
+
+        RULES
+        {{RULES}}
+        {{COMMON_RULES}}
+        """;
+
+    // ── v2/analysis.rubric.txt ───────────────────────────────────────────────
+    private const string AnalysisRubricV2 = """
+        ELIGIBILITY REQUIREMENTS: Project aligns with program objectives; Applicant is an eligible entity; Budget is reasonable and justified; Timeline is realistic.
+        COMPLETENESS CHECKS: Required information is present; Supporting materials are provided where applicable; Description is clear.
+        FINANCIAL REVIEW: Requested amount is within limits; Budget matches scope; Matching funds or contributions are identified.
+        RISK ASSESSMENT: Applicant capacity; Feasibility; Compliance considerations; Delivery risks.
+        QUALITY INDICATORS: Clear objectives; Defined beneficiaries; Appropriate approach; Long-term sustainability.
+        """;
+
+    // ── v2/analysis.score.txt ────────────────────────────────────────────────
+    private const string AnalysisScoreV2 = """
+        HIGH: Application demonstrates strong evidence across most rubric areas with few or no issues.
+        MEDIUM: Application has some gaps or weaknesses that require reviewer attention.
+        LOW: Application has significant gaps or risks across key rubric areas.
+        """;
+
+    // ── v2/analysis.output.txt ───────────────────────────────────────────────
+    private const string AnalysisOutputV2 = """
+        {
+          "decision": "<PROCEED|HOLD>",
+          "errors": [
+            {
+              "title": "<string>",
+              "detail": "<string>"
+            }
+          ],
+          "warnings": [
+            {
+              "title": "<string>",
+              "detail": "<string>"
+            }
+          ],
+          "summaries": [
+            {
+              "title": "<string>",
+              "detail": "<string>"
+            }
+          ],
+          "recommendations": [
+            {
+              "title": "<string>",
+              "detail": "<string>"
+            }
+          ]
+        }
+        """;
+
+    // ── v2/analysis.rules.txt ────────────────────────────────────────────────
+    private const string AnalysisRulesV2 = """
+        - Use only provided input sections as evidence.
+        - Do not invent fields, documents, requirements, or facts.
+        - Prefer, in order: direct evidence from DATA, specific supporting evidence from ATTACHMENTS, then broader context only when necessary.
+        - Treat missing or empty values as findings only when they weaken rubric evidence.
+        - Prefer material findings; avoid nitpicking.
+        - Prefer direct evidence from DATA over derivative statements in ATTACHMENTS when both address the same point.
+        - If ATTACHMENTS evidence is used, cite the attachment by name in detail.
+        - Each detail must cite concrete evidence from DATA or ATTACHMENTS.
+        - Write reviewer-facing natural language. Do not refer to prompt section names, internal field keys, or schema labels such as DATA, ATTACHMENTS, ProjectSummary, CustomField1, or OrganizationType.
+        - Refer to evidence by its plain-language meaning, quoted text, or attachment name rather than internal key names.
+        - Only include warnings when the evidence shows a specific, concrete risk, inconsistency, or meaningful uncertainty; a stated risk label alone is not enough.
+        - Use 3-6 words for title.
+        - Summary titles should name the specific substantive reviewer conclusion, strength, or risk, not a generic evaluation label or abstract category.
+        - Each detail must be 1-2 complete sentences.
+        - Summaries and recommendations must be concrete, distinct, reviewer-relevant, and specific to this application's evidence.
+        - Avoid generic praise, checklist language, and repeated conclusions across lists.
+        - Do not use a summary merely to say that supporting documents were provided; summarize the specific substantive evidence they add, or omit the finding.
+        - Errors and warnings may be empty.
+        - Summaries and recommendations must each include at least one item.
         - Decision must be PROCEED or HOLD.
         - Use summaries for overall application quality/readiness synthesis.
         - Use recommendations for concrete reviewer-facing next actions based on the provided evidence.
@@ -460,6 +564,48 @@ public class AIPromptDataSeeder(
         - Return exactly one object with only the key: summary.
         """;
 
+    // ── v2/attachment.system.txt ─────────────────────────────────────────────
+    private const string AttachmentSystemV2 = """
+        You are a careful grant review assistant for human reviewers.
+        Summarize the attachment itself, not the overall project.
+        Return a concise reviewer-facing summary.
+        """;
+
+    // ── v2/attachment.user.txt ───────────────────────────────────────────────
+    private const string AttachmentUserV2 = """
+        ATTACHMENT
+        {{ATTACHMENT}}
+
+        RESPONSE
+        {{RESPONSE}}
+
+        RULES
+        {{RULES}}
+        {{COMMON_RULES}}
+        """;
+
+    // ── v2/attachment.output.txt ─────────────────────────────────────────────
+    private const string AttachmentOutputV2 = """
+        {
+          "summary": "<string>"
+        }
+        """;
+
+    // ── v2/attachment.rules.txt ──────────────────────────────────────────────
+    private const string AttachmentRulesV2 = """
+        - Use only ATTACHMENT as evidence.
+        - Summarize actual content when ATTACHMENT.text is present; otherwise provide a conservative file-level summary.
+        - Describe the attachment itself rather than summarizing the overall project.
+        - Begin with what the attachment contains or provides, not the file name or file type, unless that metadata is necessary to describe the evidence.
+        - Do not invent missing details.
+        - Do not calculate or restate totals, sums, or aggregates unless they are explicitly present in ATTACHMENT.text.
+        - Write reviewer-facing natural language. Do not refer to prompt section names, internal field keys, or schema labels such as ATTACHMENT or ATTACHMENT.text.
+        - Refer to evidence by its plain-language meaning, quoted text, or file name rather than internal key names.
+        - Write 1-2 complete sentences.
+        - Summary must be grounded in concrete ATTACHMENT evidence.
+        - Return exactly one object with only the key: summary.
+        """;
+
     // ── v0/scoresheet.system.txt ─────────────────────────────────────────────
     private const string ScoresheetSystemV0 = """
         You are an expert grant application reviewer for the BC Government.
@@ -488,14 +634,14 @@ public class AIPromptDataSeeder(
         For each question, provide:
         1. The answer based on the application evidence
         2. A brief rationale (1-2 complete sentences) citing concrete supporting evidence
-        3. A confidence score from 0-100 (integer) indicating certainty in the selected answer
+        3. A confidence score as a decimal fraction from 0.0 to 1.0.
 
         OUTPUT
         {
-          "<question_id>": {
+            "<question_id>": {
             "answer": "<string | number>",
             "rationale": "<evidence-based rationale>",
-            "confidence": <integer 0-100 step 5>
+            "confidence": <decimal 0.0-1.0>
           }
         }
 
@@ -507,8 +653,62 @@ public class AIPromptDataSeeder(
         - answer type must match the question type.
         - For select list questions, return only the option number as a string, never label text.
         - rationale must be 1-2 complete sentences grounded in evidence.
-        - confidence must be an integer from 0 to 100 in increments of 5.
+        - confidence must be a decimal fraction from 0.0 to 1.0.
         - Return valid plain JSON only in the exact OUTPUT shape.
+        """;
+
+    // ── v2/scoresheet.system.txt ─────────────────────────────────────────────
+    private const string ScoresheetSystemV2 = """
+        You are a careful grant review assistant for human reviewers.
+        Answer each question in SECTION using only the provided DATA and ATTACHMENTS.
+        Choose the most conservative valid answer supported by the evidence.
+        If evidence is incomplete or indirect, explain the uncertainty in the rationale.
+        """;
+
+    // ── v2/scoresheet.user.txt ───────────────────────────────────────────────
+    private const string ScoresheetUserV2 = """
+        DATA
+        {{DATA}}
+
+        ATTACHMENTS
+        {{ATTACHMENTS}}
+
+        SECTION
+        {{SECTION}}
+
+        RESPONSE
+        {{RESPONSE}}
+
+        RULES
+        {{RULES}}
+        {{COMMON_RULES}}
+        """;
+
+    // ── v2/scoresheet.output.txt ─────────────────────────────────────────────
+    private const string ScoresheetOutputV2 = """
+        {
+          "<question_id>": {
+            "answer": "<string | number>",
+            "rationale": "<evidence-based rationale>",
+            "confidence": <decimal 0.0-1.0>
+          }
+        }
+        """;
+
+    // ── v2/scoresheet.rules.txt ──────────────────────────────────────────────
+    private const string ScoresheetRulesV2 = """
+        - Use only DATA and ATTACHMENTS as evidence.
+        - Do not invent missing application details.
+        - Prefer direct evidence of the exact condition asked.
+        - If evidence is insufficient, partial, indirect, missing, or non-specific, choose the most conservative valid answer and explain the uncertainty.
+        - Return exactly one answer object per question ID in SECTION.questions.
+        - Do not omit any question IDs from SECTION.questions.
+        - Do not add keys that are not question IDs from SECTION.questions.
+        - Use the exact question IDs from RESPONSE and SECTION.questions without alteration.
+        - Use RESPONSE as the output contract and fill every placeholder value.
+        - Each answer object must include: "answer", "rationale", and "confidence".
+        - Confidence is mandatory for every question and must always be a numeric decimal between 0.0 and 1.0.
+        - The "answer" value type must match question type: Number => numeric; YesNo/SelectList/Text/TextArea => string.
         """;
 
     // ── v1/scoresheet.system.txt ─────────────────────────────────────────────
@@ -520,7 +720,7 @@ public class AIPromptDataSeeder(
         Using DATA, ATTACHMENTS, SECTION, RESPONSE, OUTPUT, and RULES:
         1. Review each question in SECTION one at a time.
         2. Identify the exact condition the question asks about.
-        3. Consider only the most relevant evidence in DATA and ATTACHMENTS for that condition.
+        3. Consider only the most relevant evidence in DATA and any provided ATTACHMENTS for that condition.
         4. Choose the most conservative valid answer supported by that evidence.
         5. If evidence is incomplete or indirect, explain the uncertainty in the rationale.
         6. Repeat for every question in SECTION.
@@ -551,7 +751,7 @@ public class AIPromptDataSeeder(
           "<question_id>": {
             "answer": "<string | number>",
             "rationale": "<evidence-based rationale>",
-            "confidence": <integer 0-100 step 5>
+            "confidence": <decimal 0.0-1.0>
           }
         }
         """;
@@ -583,6 +783,7 @@ public class AIPromptDataSeeder(
     // ── v1/common.rules.txt ──────────────────────────────────────────────────
     private const string CommonRules = """
         - Any narrative text response must be at least 12 words.
+        - If ATTACHMENTS is empty, use DATA only and do not mention missing attachments unless their absence is material to the specific conclusion or question.
         - Return values exactly as specified in OUTPUT.
         - Do not return keys outside OUTPUT.
         - Return valid JSON only.

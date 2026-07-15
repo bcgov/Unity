@@ -14,7 +14,11 @@ namespace Unity.GrantManager.ApplicantProfile.ProfileData
         public string? NonRegOrgName { get; set; }
         public string? FiscalMonth { get; set; }
         public int? FiscalDay { get; set; }
+        // Kept for Grants Portal backward compatibility — the portal reads this JSON key.
+        // Value is sourced from Applicant.ApproxNumberOfEmployees, not Applicant.OrganizationSize.
+        // Portal developer can migrate to ApproxNumberOfEmployees once this field is confirmed stable.
         public string? OrganizationSize { get; set; }
+        public string? ApproxNumberOfEmployees { get; set; }
         public string? Sector { get; set; }
         public string? SubSector { get; set; }
     }

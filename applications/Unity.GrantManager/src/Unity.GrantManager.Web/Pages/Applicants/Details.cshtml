@@ -31,7 +31,7 @@
     @await Component.InvokeAsync("ApplicantBreadcrumbWidget", new { applicantId = @Model.ApplicantId })
 </div>
 
-@if (await PermissionChecker.IsGrantedAsync(GrantApplicationPermissions.Applicants.Edit))
+@if (!Model.ApplicantIsDeleted && await PermissionChecker.IsGrantedAsync(GrantApplicationPermissions.Applicants.Edit))
 {
     <div class="action-bar p-2 fade-in-load" id="applicantActionBar">
         <div id="ApplicantActionBarStart" class="d-flex align-items-stretch justify-content-start gap-2">
@@ -67,6 +67,19 @@
 <input type="hidden" id="CurrentUserName" value="@Model.CurrentUserName" />
 <input type="hidden" id="Extensions" value="@Model.Extensions" />
 <input type="hidden" id="MaxFileSize" value="@Model.MaxFileSize" />
+
+@if (Model.ApplicantIsDeleted)
+{
+    <div class="container mt-4">
+        <div class="alert alert-warning" role="alert">
+            <h5 class="alert-heading">Applicant No Longer Available</h5>
+            <p>This applicant has been deleted and is no longer available.</p>
+            <a href="/GrantApplicants" class="btn btn-secondary btn-sm">Return to Applicant List</a>
+        </div>
+    </div>
+}
+else
+{
 
 <div id="main-loading">
     <div class="d-flex justify-content-center">
@@ -234,3 +247,5 @@
         </abp-card>
     </div>
 </div>
+
+} @* end else (applicant not deleted) *@

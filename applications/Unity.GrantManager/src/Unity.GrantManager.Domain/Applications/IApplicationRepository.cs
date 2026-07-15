@@ -43,5 +43,8 @@ namespace Unity.GrantManager.Applications
 
         // Get applications whose DefaultSiteId matches the given site id
         Task<List<Application>> GetApplicationsBySiteIdAsync(Guid siteId);
+
+        // Check whether any applications exist for the given applicant
+        Task<bool> HasApplicationsByApplicantIdAsync(Guid applicantId);
     }
 }

@@ -14,6 +14,7 @@ using Volo.Abp.TenantManagement.Localization;
 using Volo.Abp.UI.Navigation;
 using Volo.Abp.VirtualFileSystem;
 using Volo.Abp.Threading;
+using Unity.Modules.Shared.Permissions;
 using Unity.TenantManagement.Web.Navigation;
 
 namespace Unity.TenantManagement.Web;
@@ -55,10 +56,12 @@ public class UnityTenantManagementWebModule : AbpModule
 
         Configure<RazorPagesOptions>(options =>
         {
-            options.Conventions.AuthorizePage("/TenantManagement/Tenants/Index", TenantManagementPermissions.Tenants.Default);
+            options.Conventions.AuthorizePage("/TenantManagement/Tenants/Index", TenantManagementPermissions.Policies.TenantsOrITOps);
             options.Conventions.AuthorizePage("/TenantManagement/Tenants/CreateModal", TenantManagementPermissions.Tenants.Create);
             options.Conventions.AuthorizePage("/TenantManagement/Tenants/EditModal", TenantManagementPermissions.Tenants.Update);
             options.Conventions.AuthorizePage("/TenantManagement/Tenants/AssignManagerModal", TenantManagementPermissions.Tenants.Create);
+            options.Conventions.AuthorizePage("/TenantManagement/Tenants/ConfigurationModal", TenantManagementPermissions.Policies.TenantsOrITOps);
+            options.Conventions.AuthorizePage("/TenantManagement/Onboarding/Index", IdentityConsts.ITOperationsPermissionName);
         });
 
         Configure<AbpPageToolbarOptions>(options =>
@@ -95,7 +98,8 @@ public class UnityTenantManagementWebModule : AbpModule
                     editFormTypes: new[]
                     {
                         typeof(Pages.TenantManagement.Tenants.EditModalModel.TenantInfoModel),
-                        typeof(Pages.TenantManagement.Tenants.AssignManagerModalModel.AssignManagerInfoModel)
+                        typeof(Pages.TenantManagement.Tenants.AssignManagerModalModel.AssignManagerInfoModel),
+                        typeof(Pages.TenantManagement.Tenants.ConfigurationModalModel.TenantInfoModel)
                     }
                 );
         });

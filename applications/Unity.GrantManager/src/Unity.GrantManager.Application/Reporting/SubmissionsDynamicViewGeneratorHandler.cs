@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Notifications;
-using Unity.Notifications.TeamsNotifications;
+using Unity.GrantManager.Notifications.Teams;
 using Volo.Abp.BackgroundJobs;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Repositories;
@@ -73,7 +73,15 @@ namespace Unity.GrantManager.Reporting
                 var activityTitle = "Reporting view generation failed";
                 var activitySubtitle = $"Form version {viewGenerationEvent.ApplicationFormVersionId}";
 
-                await notificationsAppService.PostToTeamsAsync(activityTitle, activitySubtitle, facts);
+                // Ensure a fresh UnitOfWork and tenant context are created when calling
+                // into services that use repositories/DbContext. The original UoW
+                // may have been disposed when this method is invoked from a catch.
+                using (currentTenant.Change(viewGenerationEvent.TenantId))
+                {
+                    using var notifyUow = unitOfWorkManager.Begin(requiresNew: true, isTransactional: false);
+                    await notificationsAppService.PostToTeamsAsync(activityTitle, activitySubtitle, facts);
+                    await notifyUow.CompleteAsync();
+                }
             }
             catch (Exception notifyEx)
             {

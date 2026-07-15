@@ -230,7 +230,10 @@ function initializeDataTable(options) {
         onStateLoaded,
         fixedHeaders = false,
         lengthMenu = [25, 50, 75, 100, -1],
-        deferRender = false
+        deferRender = false,
+        enableContextMenu = false,
+        contextMenuActionsSelector = '[data-selector$="-table-actions"]',
+        contextMenuLabels = {}
     } = options;
 
     // Process columns and visibility
@@ -350,6 +353,11 @@ function initializeDataTable(options) {
             }
         },
         stateLoadParams: function (settings, data) {
+            // Discard stale state when column count has changed so defaultVisibleColumns applies cleanly
+            if (data?.columns && data.columns.length !== settings.aoColumns.length) {
+                return false;
+            }
+
             if (data?.externalSearch) {
                 let externalSearch = $(settings.oInit.externalSearchInputId);
                 if (externalSearch.length) externalSearch.val(data.externalSearch);
@@ -446,6 +454,16 @@ function initializeDataTable(options) {
     // Initialize ScrollResize plugin for dynamic scroll body sizing
     if (fixedHeaders && DataTable.ScrollResize) {
         iDt.settings()[0]._scrollResize = new DataTable.ScrollResize(iDt);
+    }
+
+    // Initialize Context Menu plugin if enabled
+    if (enableContextMenu && typeof globalThis.initializeTableContextMenu === 'function') {
+        initializeTableContextMenu(iDt, {
+            enabled: true,
+            actionsSelector: contextMenuActionsSelector,
+            copyEnabled: true,
+            labels: contextMenuLabels
+        });
     }
 
     return iDt;

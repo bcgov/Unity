@@ -1,4 +1,5 @@
 $(function () {
+    //#region Modal Managers
     let selectedApplicationIds = [];
     let assignApplicationModal = new abp.ModalManager({
         viewUrl: 'AssigneeSelection/AssigneeSelectionModal'
@@ -24,7 +25,13 @@ $(function () {
     let applicationHistoricalPaymentRequestModal = new abp.ModalManager({
         viewUrl: 'PaymentRequests/CreateHistoricalPayments',
     });
+    let publishApplicationsModal = new abp.ModalManager({
+        viewUrl: 'BulkActions/BulkPublishApplications',
+        modalClass: 'BulkPublishModal'
+    });
+    //#endregion Modal Managers
 
+    //#region Tag Helpers
     // Helper functions to reduce nesting depth
     function groupTagsByApplication(tags, applicationIds) {
         let groupedTags = {};
@@ -132,7 +139,9 @@ $(function () {
 
         tagInput.addData(tagInputArray);
     }
+    //#endregion Tag Helpers
 
+    //#region Tag Modal Events
     tagApplicationModal.onOpen(async function () {
         let tagInput = new TagsInput({
             selector: 'SelectedTags',
@@ -172,7 +181,9 @@ $(function () {
             console.error("Error loading tag select list", error);
         }
     });
+    //#endregion Tag Modal Events
 
+    //#region Assignee Helpers
     // Helper functions for assignee modal
     function parseAssigneeData(uncommonTags, commonTags, allTags) {
         let suggestionsArray = [];
@@ -202,7 +213,9 @@ $(function () {
 
         return { suggestionsArray, tagInputArray };
     }
+    //#endregion Assignee Helpers
 
+    //#region Assignee Modal Events
     assignApplicationModal.onOpen(function () {
         let userTagsInput = new UserTagsInput({
             selector: 'SelectedAssignees',
@@ -220,6 +233,9 @@ $(function () {
         userTagsInput.addData(tagInputArray);
         document.getElementById("user-tags-input").dataset.touched = "false";
     });
+    //#endregion Assignee Modal Events
+
+    //#region Generic Modal Result Events
     tagApplicationModal.onResult(function () {
         abp.notify.success(
             'The application tags have been successfully updated.',
@@ -251,7 +267,35 @@ $(function () {
         PubSub.publish("refresh_application_list");
     });
 
-    // Batch Approval Start
+    publishApplicationsModal.onResult(function () {
+        abp.notify.success(
+            'The application(s) have been successfully published',
+            'Publish Application'
+        );
+        publishApplicationsModal.close();
+        PubSub.publish("refresh_application_list");
+    });
+    //#endregion Generic Modal Result Events
+
+    //#region Batch Publish
+    $('#openBulkPublishModal').on("click", function () {
+        // Store application IDs in distributed cache to avoid URL length limits
+        unity.grantManager.applications.applicationBulkActions
+            .storeApplicationIds({ applicationIds: selectedApplicationIds })
+            .then(function(response) {
+                // Open modal with cache key instead of application IDs array
+                publishApplicationsModal.open({
+                    cacheKey: response.cacheKey
+                });
+            })
+            .catch(function(error) {
+                abp.notify.error('Failed to prepare bulk publish. Please try again.');
+                console.error('Error storing application IDs:', error);
+            });
+    });
+    //#endregion Batch Publish
+
+    //#region Batch Approval
     $('#approveApplications').on("click", function () {
         // Store application IDs in distributed cache to avoid URL length limits
         unity.grantManager.applications.applicationBulkActions
@@ -282,8 +326,9 @@ $(function () {
         approveApplicationsSummaryModal.open({ summaryJson: summaryJson });
         PubSub.publish("refresh_application_list");
     });
-    // Batch Approval End
+    //#endregion Batch Approval
 
+    //#region Selection Events
     PubSub.subscribe("select_application", (msg, data) => {
         selectedApplicationIds.push(data.id);
         manageActionButtons();
@@ -302,7 +347,9 @@ $(function () {
         selectedApplicationIds = [];
         manageActionButtons();
     });
+    //#endregion Selection Events
 
+    //#region Action Button Click Events
     $('#assignApplication').on('click', function () {
         // Store application IDs in distributed cache to avoid URL length limits
         unity.grantManager.applications.applicationBulkActions
@@ -344,7 +391,9 @@ $(function () {
             '/GrantApplications/Details?ApplicationId=' +
             selectedApplicationIds[0];
     });
+    //#endregion Action Button Click Events
 
+    //#region Action Bar State
     let summaryWidgetManager = new abp.WidgetManager({
         wrapper: '#summaryWidgetArea',
         filterCallback: function () {
@@ -379,7 +428,9 @@ $(function () {
             }
         }
     }
+    //#endregion Action Bar State
 
+    //#region Tags and Payments
 
     $('#tagApplication').on('click', function () {
         // Store application IDs in distributed cache to avoid URL length limits
@@ -442,5 +493,6 @@ $(function () {
         abp.notify.success('The historical payment has been successfully recorded.', 'Historical Payment');
         PubSub.publish("refresh_application_list");
     });
+    //#endregion Tags and Payments
 });
 
