@@ -8,10 +8,17 @@ by difficulty x schema_type / by tag):
 - execution validity (generated SQL runs without error)
 - execution accuracy: row-content match (row order + column order/aliases
   ignored) as the primary rule, strict content-hash match as a stricter
-  secondary number
+  secondary number, and a looser canonical secondary (row_match OR
+  match-after-value-canonicalization: '42' == '42.0', midnight timestamp ==
+  date) that isolates pure formatting misses
+- table selection: tables referenced by generated vs gold SQL (parsed on the
+  fly with sqlglot when installed — see eval/requirements.txt; scoring is
+  skipped gracefully otherwise)
 - self-correction iterations (first-attempt success rate, distribution)
 - latency (wall-clock per generate_sql call; mean/p50/p95)
 - token usage
+- with --runs N (N>1): cross-attempt consistency (flake rate, distinct
+  generated SQL per question)
 
 Requires live Metabase, Azure OpenAI, AND Postgres/pgvector (importing
 sql_generator connects to pgvector at import time — one more prerequisite than
@@ -43,6 +50,7 @@ Usage:
     python eval/run_eval.py --limit 5
     python eval/run_eval.py --tenant "Default Grants Program"
     python eval/run_eval.py --output path.json
+    python eval/run_eval.py --ids PUB-EASY-001 --runs 3   # consistency mode
 """
 import argparse
 import asyncio
@@ -55,6 +63,7 @@ import sys
 import time
 from collections import Counter
 from datetime import datetime, timezone
+from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Dict, List, Optional, Tuple
@@ -64,7 +73,11 @@ RESULTS_DIR = Path(__file__).parent / "results"
 
 # Version of THIS artifact format — bump when the JSON schema below changes,
 # so tooling comparing runs across time can detect incompatible artifacts.
-EVAL_SCHEMA_VERSION = "1"
+# v2 = additive over v1: per-question row_match_canonical /
+# canonical_match_reason / table_scoring / attempt; aggregate
+# canonical_row_match_rate / table_selection_rate / table_parse_failures;
+# top-level runs / consistency / sqlglot_version.
+EVAL_SCHEMA_VERSION = "2"
 
 PERMUTATION_CAP = 5000
 
@@ -120,11 +133,46 @@ def check_select_only(sql: str) -> Optional[str]:
     return None
 
 
-def stringify_rows(rows: List[list]) -> List[Tuple[str, ...]]:
+def stringify_rows(rows: List[list], value_fn=None) -> List[Tuple[str, ...]]:
     """str() every value — same convention as capture_dataset.compute_content_hash,
     so NULL->'None', Decimal/datetime formatting etc. are symmetric on both sides.
-    Deliberately strict: '1' != '1.0' and '2026-07-08' != '2026-07-08T00:00:00'."""
-    return [tuple(str(v) for v in row) for row in rows]
+    Deliberately strict: '1' != '1.0' and '2026-07-08' != '2026-07-08T00:00:00'.
+    value_fn, if given, post-processes each stringified cell (see
+    canonicalize_value) — applied to gold and generated alike."""
+    if value_fn is None:
+        return [tuple(str(v) for v in row) for row in rows]
+    return [tuple(value_fn(str(v)) for v in row) for row in rows]
+
+
+# Date part of a timestamp whose time is exactly midnight (optionally with a
+# fractional .000...) — the only datetime shape canonicalize_value collapses.
+_MIDNIGHT_RE = re.compile(r"^(\d{4}-\d{2}-\d{2})[T ]00:00:00(?:\.0+)?$")
+
+
+def canonicalize_value(s: str) -> str:
+    """Normalize the known cosmetic formatting differences between equal
+    values: '42' == '42.0' == '4.2E+1', and '2026-07-08T00:00:00' ==
+    '2026-07-08'. Everything else (case, whitespace, 'None', 'NaN') is left
+    untouched. Timezone suffixes are deliberately not handled: both sides of
+    every comparison come through the same Metabase-JSON -> str() path, so tz
+    representation is already symmetric."""
+    if s != s.strip():
+        # Decimal() tolerates surrounding whitespace; keep it significant.
+        return s
+    m = _MIDNIGHT_RE.match(s)
+    if m:
+        return m.group(1)
+    try:
+        d = Decimal(s)
+    except InvalidOperation:
+        return s
+    if not d.is_finite():
+        return s  # 'NaN'/'Infinity' parse but must not compare equal
+    if d == 0:
+        return "0"  # collapses '0', '0.0', '-0', '0E-2'
+    # format(..., 'f') is load-bearing: Decimal('420').normalize() is 4.2E+2,
+    # so plain str() would turn '420' into '4.2E+2'.
+    return format(d.normalize(), "f")
 
 
 class _PermutationCapExceeded(Exception):
@@ -133,7 +181,8 @@ class _PermutationCapExceeded(Exception):
 
 def rows_match(gold_rows: List[list], gen_rows: List[list],
                gold_ncols: int, gen_ncols: int,
-               permutation_cap: int = PERMUTATION_CAP) -> Tuple[bool, str]:
+               permutation_cap: int = PERMUTATION_CAP,
+               value_fn=None) -> Tuple[bool, str]:
     """Primary accuracy rule: permutation row-multiset match.
 
     Match = same column count AND some column permutation of the generated
@@ -142,14 +191,18 @@ def rows_match(gold_rows: List[list], gen_rows: List[list],
     preserved exactly (unlike sorting values within each row, which would
     false-positive on cross-column transpositions).
 
+    value_fn (e.g. canonicalize_value) post-processes every stringified cell
+    on BOTH sides before any comparison — including the per-column multisets
+    that prune the permutation search.
+
     Returns (matched, reason) — reason is "exact" / "column_permutation" on
     match, or "column_count_mismatch" / "row_count_mismatch" /
     "row_content_mismatch" / "permutation_search_exhausted" on miss.
     """
     if gold_ncols != gen_ncols:
         return False, "column_count_mismatch"
-    gold_s = stringify_rows(gold_rows)
-    gen_s = stringify_rows(gen_rows)
+    gold_s = stringify_rows(gold_rows, value_fn)
+    gen_s = stringify_rows(gen_rows, value_fn)
     if len(gold_s) != len(gen_s):
         return False, "row_count_mismatch"
     if not gold_s:
@@ -202,6 +255,52 @@ def rows_match(gold_rows: List[list], gen_rows: List[list],
     return False, "row_content_mismatch"
 
 
+def extract_tables(sql: str) -> Tuple[Optional[List[str]], Optional[str]]:
+    """Parse SQL and return (sorted normalized 'schema.table' names, error_note).
+
+    Normalization: names lowercased (quoted-vs-unquoted case matters for
+    execution, not for judging table selection; collision risk in this schema
+    is nil), unqualified names default to 'public' (Postgres search_path).
+    Unqualified references shadowed by a CTE alias are excluded;
+    schema-qualified ones survive. sqlglot is imported lazily so run_eval
+    stays import-light and works (with table scoring disabled) when the
+    optional eval dependency isn't installed:
+    (None, 'sqlglot_not_installed') on ImportError,
+    (None, 'parse_error: ...') when parsing fails."""
+    try:
+        import sqlglot
+        from sqlglot import exp
+    except ImportError:
+        return None, "sqlglot_not_installed"
+    try:
+        parsed = sqlglot.parse_one(sql, read="postgres")
+    except Exception as e:
+        return None, f"parse_error: {e!r}"[:300]
+    cte_names = {c.alias_or_name.lower() for c in parsed.find_all(exp.CTE)}
+    tables = set()
+    for t in parsed.find_all(exp.Table):
+        name = t.name.lower()
+        if not t.db and name in cte_names:
+            continue  # reference to a CTE, not a real table
+        tables.add(f"{(t.db or 'public').lower()}.{name}")
+    return sorted(tables), None
+
+
+def classify_table_overlap(gold: set, gen: set) -> str:
+    """How the generated SQL's table set relates to gold's:
+    'exact' / 'superset' (gen ⊃ gold) / 'subset' (gen ⊂ gold) /
+    'overlap' (partial intersection) / 'disjoint'."""
+    if gen == gold:
+        return "exact"
+    if gen > gold:
+        return "superset"
+    if gen < gold:
+        return "subset"
+    if gen & gold:
+        return "overlap"
+    return "disjoint"
+
+
 def percentile(values: List[float], p: float) -> Optional[float]:
     """Nearest-rank percentile; None on empty input."""
     if not values:
@@ -234,13 +333,24 @@ def _aggregate(records: List[dict]) -> dict:
     token_totals = [r["tokens"]["total_tokens"] for r in records
                     if r.get("tokens") and "total_tokens" in r["tokens"]]
 
+    # Table-selection is only scorable where both gold and generated SQL parsed.
+    table_scored = [r for r in measured
+                    if (r.get("table_scoring") or {}).get("match") is not None]
+
     return {
         "n": n,
         "unmeasured": n - m,
         "safety_violations": sum(1 for r in records if r.get("guard_violation")),
         "validity_rate": _rate(sum(1 for r in measured if r.get("valid_execution")), m),
         "row_match_rate": _rate(len(successes), m),
+        "canonical_row_match_rate": _rate(
+            sum(1 for r in measured if r.get("row_match_canonical")), m),
         "hash_match_rate": _rate(sum(1 for r in measured if r.get("content_hash_match")), m),
+        "table_selection_rate": _rate(
+            sum(1 for r in table_scored if r["table_scoring"]["match"] == "exact"),
+            len(table_scored)),
+        "table_parse_failures": sum(
+            1 for r in measured if (r.get("table_scoring") or {}).get("note")),
         "first_attempt_success_rate": _rate(
             sum(1 for r in successes if r.get("self_correction_iterations") == 1),
             len(successes),
@@ -278,6 +388,59 @@ def build_aggregates(records: List[dict]) -> dict:
     }
 
 
+def build_consistency(records: List[dict], runs: int) -> Optional[dict]:
+    """Cross-attempt consistency report for --runs N (None when runs == 1).
+
+    Consistency is judged on the primary row_match only, over measured
+    attempts. distinct_generated_sql collapses whitespace before comparing —
+    a cheap nondeterminism signal, not semantic SQL equivalence."""
+    if runs == 1:
+        return None
+
+    by_id: Dict[str, List[dict]] = {}
+    for r in records:
+        by_id.setdefault(r["id"], []).append(r)
+
+    per_question = {}
+    eligible = 0
+    flaky = []
+    distinct_counts = []
+    for qid, attempts in sorted(by_id.items()):
+        attempts = sorted(attempts, key=lambda r: r.get("attempt", 1))
+        measured = [r for r in attempts if r.get("measured")]
+        outcomes = [bool(r.get("row_match")) for r in measured]
+        sqls = {" ".join(r["generated_sql"].split())
+                for r in attempts if r.get("generated_sql")}
+        consistent = len(set(outcomes)) <= 1 if len(outcomes) >= 2 else None
+        if consistent is not None:
+            eligible += 1
+            if not consistent:
+                flaky.append(qid)
+        distinct_counts.append(len(sqls))
+        per_question[qid] = {
+            "attempts": len(attempts),
+            "measured_attempts": len(measured),
+            "row_match_outcomes": outcomes,
+            "consistent": consistent,
+            "distinct_generated_sql": len(sqls),
+            "generation_failures": sum(
+                1 for r in attempts if r.get("generated_sql") is None),
+            "row_match_rate": _rate(sum(outcomes), len(outcomes)),
+        }
+
+    return {
+        "runs": runs,
+        "eligible_questions": eligible,
+        "flaky_questions": flaky,
+        "flake_rate": _rate(len(flaky), eligible),
+        "consistent_rate": _rate(eligible - len(flaky), eligible),
+        "distinct_sql_mean": (
+            round(sum(distinct_counts) / len(distinct_counts), 2)
+            if distinct_counts else None),
+        "per_question": per_question,
+    }
+
+
 # ---------------------------------------------------------------------------
 # Runtime — everything below needs the live stack.
 # ---------------------------------------------------------------------------
@@ -305,6 +468,15 @@ def _load_deps() -> SimpleNamespace:
         compute_content_hash=compute_content_hash,
         load_entries=load_entries,
     )
+
+
+def _sqlglot_version() -> Optional[str]:
+    """Provenance for table-selection scoring; None when not installed."""
+    try:
+        import sqlglot
+        return sqlglot.__version__
+    except Exception:
+        return None
 
 
 def _git_commit() -> Optional[str]:
@@ -342,7 +514,10 @@ def run_one(entry: dict, deps: SimpleNamespace) -> dict:
         "execution_error": None,
         "row_match": False,
         "row_match_reason": None,
+        "row_match_canonical": False,
+        "canonical_match_reason": None,
         "content_hash_match": False,
+        "table_scoring": None,
         "gold_live": None,
         "generated_shape": None,
         "self_correction_iterations": None,
@@ -381,6 +556,29 @@ def run_one(entry: dict, deps: SimpleNamespace) -> dict:
 
         # 2. SELECT-only guard — on violation, never execute the SQL.
         record["guard_violation"] = check_select_only(sql)
+
+    # 2.5. Table-selection scoring — parsing is read-only, so this runs even
+    # for guard-violating or non-executing SQL (that's the diagnostic point:
+    # "right tables, wrong SQL" vs "wrong tables").
+    gold_tables, gold_note = extract_tables(entry["gold_sql"])
+    gen_tables = gen_note = None
+    if sql is not None:
+        gen_tables, gen_note = extract_tables(sql)
+    tbl_match = tbl_missing = tbl_extra = None
+    if gold_tables is not None and gen_tables is not None:
+        tbl_match = classify_table_overlap(set(gold_tables), set(gen_tables))
+        tbl_missing = sorted(set(gold_tables) - set(gen_tables))
+        tbl_extra = sorted(set(gen_tables) - set(gold_tables))
+    record["table_scoring"] = {
+        "gold_tables": gold_tables,
+        "generated_tables": gen_tables,
+        "match": tbl_match,
+        "missing": tbl_missing,
+        "extra": tbl_extra,
+        "note": "; ".join(p for p in (
+            f"gold: {gold_note}" if gold_note else None,
+            f"generated: {gen_note}" if gen_note else None) if p) or None,
+    }
 
     # 3. Execute generated SQL (skipped on generation failure / guard violation).
     gen_cols = gen_rows = None
@@ -434,6 +632,19 @@ def run_one(entry: dict, deps: SimpleNamespace) -> dict:
         matched, reason = rows_match(gold_rows, gen_rows, len(gold_cols), len(gen_cols))
         record["row_match"] = matched
         record["row_match_reason"] = reason
+        # Secondary, looser rule: retry with value canonicalization when the
+        # only difference can be value formatting ('42' vs '42.0'). OR
+        # semantics: row_match_canonical is True for every primary pass too —
+        # a canonical-ONLY pass is (row_match_canonical and not row_match).
+        # permutation_search_exhausted is not retried: canonicalization merges
+        # values, which only widens the permutation search.
+        canonical = matched
+        if not matched and reason == "row_content_mismatch":
+            canonical, canon_reason = rows_match(
+                gold_rows, gen_rows, len(gold_cols), len(gen_cols),
+                value_fn=canonicalize_value)
+            record["canonical_match_reason"] = canon_reason
+        record["row_match_canonical"] = canonical
         record["content_hash_match"] = (
             deps.compute_content_hash(gen_cols, gen_rows) == gold_live_hash
         )
@@ -452,19 +663,44 @@ def _print_summary(aggregates: dict):
     rows += [(k, v) for k, v in aggregates["by_schema_type"].items()]
 
     print("\n=== Eval summary ===")
-    header = (f"{'stratum':<22}{'n':>4}{'valid':>7}{'row_match':>11}"
-              f"{'hash_match':>12}{'iters':>7}{'p50ms':>9}{'p95ms':>9}{'tok/q':>8}")
+    header = (f"{'stratum':<22}{'n':>4}{'valid':>7}{'row_match':>11}{'canon':>7}"
+              f"{'hash_match':>12}{'tables':>8}{'iters':>7}{'p50ms':>9}{'p95ms':>9}{'tok/q':>8}")
     print(header)
     print("-" * len(header))
     for name, a in rows:
         print(f"{name:<22}{a['n']:>4}{fmt_rate(a['validity_rate']):>7}"
-              f"{fmt_rate(a['row_match_rate']):>11}{fmt_rate(a['hash_match_rate']):>12}"
+              f"{fmt_rate(a['row_match_rate']):>11}{fmt_rate(a['canonical_row_match_rate']):>7}"
+              f"{fmt_rate(a['hash_match_rate']):>12}{fmt_rate(a['table_selection_rate']):>8}"
               f"{fmt(a['iterations']['mean']):>7}{fmt(a['latency_ms']['p50']):>9}"
               f"{fmt(a['latency_ms']['p95']):>9}{fmt(a['tokens']['mean_per_question']):>8}")
     overall = aggregates["overall"]
     print(f"\nunmeasured={overall['unmeasured']} safety_violations={overall['safety_violations']} "
           f"first_attempt_success_rate={fmt_rate(overall['first_attempt_success_rate'])} "
+          f"table_parse_failures={overall['table_parse_failures']} "
           f"total_tokens={overall['tokens']['total']}")
+
+
+def _print_consistency(consistency: dict):
+    def fmt_rate(v):
+        return f"{v:.2f}" if v is not None else "-"
+
+    print(f"\n=== Consistency ({consistency['runs']} runs/question) ===")
+    print(f"eligible_questions={consistency['eligible_questions']} "
+          f"flake_rate={fmt_rate(consistency['flake_rate'])} "
+          f"consistent_rate={fmt_rate(consistency['consistent_rate'])} "
+          f"distinct_sql_mean={consistency['distinct_sql_mean']}")
+    for qid in consistency["flaky_questions"]:
+        q = consistency["per_question"][qid]
+        vector = ",".join("T" if o else "F" for o in q["row_match_outcomes"])
+        print(f"  [FLAKY] {qid} row_match=[{vector}] "
+              f"distinct_sql={q['distinct_generated_sql']}")
+    nondeterministic = [
+        (qid, q) for qid, q in consistency["per_question"].items()
+        if q["distinct_generated_sql"] > 1 and qid not in consistency["flaky_questions"]
+    ]
+    for qid, q in nondeterministic:
+        print(f"  [SQL-VARIES] {qid} distinct_sql={q['distinct_generated_sql']} "
+              f"(row_match outcome consistent)")
 
 
 def main():
@@ -475,7 +711,13 @@ def main():
     parser.add_argument("--limit", type=int, help="Run only the first N entries after filtering")
     parser.add_argument("--tenant", help="Run only entries for this tenant_id")
     parser.add_argument("--output", help="Artifact path (default: eval/results/eval_<timestamp>.json)")
+    parser.add_argument("--runs", type=int, default=1,
+                        help="Attempts per question, run consecutively; N>1 measures "
+                             "run-to-run consistency. Multiplies Azure token cost and "
+                             "wall time by N.")
     args = parser.parse_args()
+    if args.runs < 1:
+        parser.error("--runs must be >= 1")
 
     if not DATASET_PATH.exists():
         print(f"ERROR: dataset not found at {DATASET_PATH}", file=sys.stderr)
@@ -511,48 +753,63 @@ def main():
         print("No entries selected.", file=sys.stderr)
         sys.exit(1)
 
+    if extract_tables("SELECT 1")[1] == "sqlglot_not_installed":
+        print("WARNING: sqlglot not installed — table-selection scoring disabled "
+              "(pip install -r eval/requirements.txt)")
+
     started_at = datetime.now(timezone.utc)
     run_id = started_at.strftime("%Y%m%dT%H%M%SZ")
-    print(f"Running eval on {len(selected)} entr{'y' if len(selected) == 1 else 'ies'} (run_id={run_id})...\n")
+    print(f"Running eval on {len(selected)} entr{'y' if len(selected) == 1 else 'ies'}"
+          + (f" x {args.runs} attempts" if args.runs > 1 else "")
+          + f" (run_id={run_id})...\n")
 
     records = []
     for i, entry in enumerate(selected, 1):
-        print(f"[Eval] start {i}/{len(selected)} id={entry['id']} "
-              f"difficulty={entry['difficulty']} schema_type={entry['schema_type']}")
-        try:
-            record = run_one(entry, deps)
-        except Exception as e:
-            # One bad question never aborts the run.
-            record = {
-                "id": entry["id"], "question": entry["question"],
-                "tenant_id": entry["tenant_id"], "schema_type": entry["schema_type"],
-                "difficulty": entry["difficulty"], "tags": entry.get("tags", []),
-                "frozen": entry.get("frozen", False),
-                "runner_error": repr(e), "measured": False,
-            }
-        records.append(record)
-        print(f"[Eval] done id={record['id']} measured={record.get('measured')} "
-              f"valid={record.get('valid_execution')} row_match={record.get('row_match')} "
-              f"hash_match={record.get('content_hash_match')} "
-              f"iters={record.get('self_correction_iterations')} "
-              f"latency_ms={record.get('latency_ms')} "
-              f"tokens={(record.get('tokens') or {}).get('total_tokens')}"
-              + (f" guard_violation={record['guard_violation']!r}" if record.get("guard_violation") else "")
-              + (f" error={record.get('generation_error') or record.get('execution_error') or record.get('runner_error')!r}"
-                 if not record.get("row_match") else ""))
+        for attempt in range(1, args.runs + 1):
+            print(f"[Eval] start {i}/{len(selected)}"
+                  + (f" attempt {attempt}/{args.runs}" if args.runs > 1 else "")
+                  + f" id={entry['id']} "
+                  f"difficulty={entry['difficulty']} schema_type={entry['schema_type']}")
+            try:
+                record = run_one(entry, deps)
+            except Exception as e:
+                # One bad question never aborts the run.
+                record = {
+                    "id": entry["id"], "question": entry["question"],
+                    "tenant_id": entry["tenant_id"], "schema_type": entry["schema_type"],
+                    "difficulty": entry["difficulty"], "tags": entry.get("tags", []),
+                    "frozen": entry.get("frozen", False),
+                    "runner_error": repr(e), "measured": False,
+                }
+            record["attempt"] = attempt
+            records.append(record)
+            print(f"[Eval] done id={record['id']} measured={record.get('measured')} "
+                  f"valid={record.get('valid_execution')} row_match={record.get('row_match')} "
+                  f"canonical={record.get('row_match_canonical')} "
+                  f"hash_match={record.get('content_hash_match')} "
+                  f"tables={(record.get('table_scoring') or {}).get('match')} "
+                  f"iters={record.get('self_correction_iterations')} "
+                  f"latency_ms={record.get('latency_ms')} "
+                  f"tokens={(record.get('tokens') or {}).get('total_tokens')}"
+                  + (f" guard_violation={record['guard_violation']!r}" if record.get("guard_violation") else "")
+                  + (f" error={record.get('generation_error') or record.get('execution_error') or record.get('runner_error')!r}"
+                     if not record.get("row_match") else ""))
 
     finished_at = datetime.now(timezone.utc)
     aggregates = build_aggregates(records)
+    consistency = build_consistency(records, args.runs)
     artifact = {
         "eval_schema_version": EVAL_SCHEMA_VERSION,
         "run_id": run_id,
         "started_at": started_at.isoformat(timespec="seconds"),
         "finished_at": finished_at.isoformat(timespec="seconds"),
         "git_commit": _git_commit(),
+        "sqlglot_version": _sqlglot_version(),
         "dataset_path": str(DATASET_PATH),
         "dataset_fingerprint": _dataset_fingerprint(entries),
         "tenants": sorted({e["tenant_id"] for e in selected}),
         "entries_selected": len(selected),
+        "runs": args.runs,
         "filters": {"ids": args.ids, "limit": args.limit, "tenant": args.tenant},
         "config_snapshot": {
             "deployment": deps.config.ai.azure_deployment,
@@ -562,6 +819,8 @@ def main():
         },
         "questions": records,
         "aggregates": aggregates,
+        # Always present; null for --runs 1 so the artifact shape is stable.
+        "consistency": consistency,
     }
 
     output_path = output_override if output_override else RESULTS_DIR / f"eval_{run_id}.json"
@@ -571,6 +830,8 @@ def main():
         f.write("\n")
 
     _print_summary(aggregates)
+    if consistency is not None:
+        _print_consistency(consistency)
     print(f"\nWrote {output_path}")
 
     unmeasured = aggregates["overall"]["unmeasured"]

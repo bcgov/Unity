@@ -1,0 +1,8 @@
+# Optional extras for eval-only tooling. NOT part of the production image:
+# applications/Dockerfile installs only requirements.txt and never copies eval/.
+# Install alongside the app deps:
+#   pip install -r requirements.txt -r eval/requirements.txt
+#
+# Without sqlglot, run_eval.py still works — table-selection scoring is
+# disabled (null fields, a startup warning, and '-' in the summary column).
+sqlglot==30.12.0  # pure-Python SQL parser, no binary deps

@@ -42,6 +42,8 @@ Access at http://localhost
 1. Install dependencies:
 ```bash
 pip install -r requirements.txt
+# optional, for the eval tooling's table-selection scoring (see eval/README.md):
+pip install -r eval/requirements.txt
 ```
 
 2. Set environment variables (see `applications/.env.example`)
