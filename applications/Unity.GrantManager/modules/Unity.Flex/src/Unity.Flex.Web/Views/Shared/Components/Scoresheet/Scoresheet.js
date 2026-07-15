@@ -490,7 +490,7 @@ function savePreviewChanges(questionId, inputFieldPrefix, saveButtonPrefix, disc
     const saveButton = document.getElementById(saveButtonPrefix + questionId);
     const discardButton = document.getElementById(discardButtonPrefix + questionId);
 
-    inputField.setAttribute('data-original-value', inputField.value);
+    inputField.dataset.originalValue = inputField.value;
     saveButton.disabled = true;
     discardButton.disabled = true;
 

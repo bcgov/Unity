@@ -355,48 +355,54 @@
     }
 
 
+    function createIntakeFieldCard(intakeField) {
+        let intakeFieldJson = intakeField;
+        let dragableDiv = document.createElement('div');
+        dragableDiv.id = 'unity_' + intakeFieldJson.Name;
+        dragableDiv.className = 'card mapping-field';
+        dragableDiv.setAttribute("draggable", "true");
+
+        // Set icon HTML (internal code, safe)
+        dragableDiv.innerHTML = `${setTypeIndicator(intakeField)}`;
+
+        // Append label as text node to prevent HTML injection
+        dragableDiv.appendChild(document.createTextNode(intakeFieldJson.Label));
+
+        // Append asterisk and route to the appropriate column based on custom status
+        if (intakeFieldJson.IsCustom) {
+            dragableDiv.appendChild(document.createTextNode(" *"));
+            dragableDiv.className += ' custom-field';
+            worksheetMapColumn.appendChild(dragableDiv);
+        } else {
+            intakeMapColumn.appendChild(dragableDiv);
+        }
+    }
+
+    function buildAvailableChefsFieldsRows(availableChefsFields) {
+        let rowsToAdd = [];
+        for (let key of Object.keys(availableChefsFields)) {
+            let jsonObj = JSON.parse(availableChefsFields[key]);
+            if (allowableTypes.has(jsonObj.type.trim())) {
+                rowsToAdd.push([stripHtml(jsonObj.label), key, jsonObj.type, key]);
+            }
+        }
+        return rowsToAdd;
+    }
+
     function initializeIntakeMap(availableChefsFields) {
         try {
 
             let intakeFields = JSON.parse(intakeFieldsString);
 
             for (let intakeField of intakeFields) {
-                let intakeFieldJson = intakeField;
-                if (!excludedIntakeMappings.has(intakeFieldJson.Name)) {
-                    let dragableDiv = document.createElement('div');
-                    dragableDiv.id = 'unity_' + intakeFieldJson.Name;
-                    dragableDiv.className = 'card mapping-field';
-                    dragableDiv.setAttribute("draggable", "true");
-
-                    // Set icon HTML (internal code, safe)
-                    dragableDiv.innerHTML = `${setTypeIndicator(intakeField)}`;
-
-                    // Append label as text node to prevent HTML injection
-                    dragableDiv.appendChild(document.createTextNode(intakeFieldJson.Label));
-
-                    // Append asterisk if custom
-                    if (intakeFieldJson.IsCustom) {
-                        dragableDiv.appendChild(document.createTextNode(" *"));
-                    }
-                    if (intakeFieldJson.IsCustom) {
-                        worksheetMapColumn.appendChild(dragableDiv);
-                        dragableDiv.className += ' custom-field';
-                    } else {
-                        intakeMapColumn.appendChild(dragableDiv);
-                    }
+                if (!excludedIntakeMappings.has(intakeField.Name)) {
+                    createIntakeFieldCard(intakeField);
                 }
             }
 
-            let keys = Object.keys(availableChefsFields);
             dataTable.clear();
 
-            let rowsToAdd = [];
-            for (let key of keys) {
-                let jsonObj = JSON.parse(availableChefsFields[key]);
-                if (allowableTypes.has(jsonObj.type.trim())) {
-                    rowsToAdd.push([stripHtml(jsonObj.label), key, jsonObj.type, key]);
-                }
-            }
+            let rowsToAdd = buildAvailableChefsFieldsRows(availableChefsFields);
 
             if (rowsToAdd.length > 0) {
                 dataTable.rows.add(rowsToAdd);

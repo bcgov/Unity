@@ -108,7 +108,7 @@ $(function () {
         let groupedValues = Object.values(groupedTags);
         if (groupedValues.length === 0) return [];
         
-        return groupedValues.reduce(filterCommonTags);
+        return groupedValues.reduce((prev, next) => filterCommonTags(prev, next), groupedValues[0]);
     }
 
     // Helper function to check if tag is common
