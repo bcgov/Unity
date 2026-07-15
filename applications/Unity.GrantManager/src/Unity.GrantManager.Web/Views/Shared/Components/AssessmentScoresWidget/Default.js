@@ -686,19 +686,17 @@ function queueApplicationScoring(triggerButton = null) {
     const monitorScoring = () => globalThis.AIGenerationButtonState.monitor({
         $button,
         originalHtml: existingHtml,
-        getStatus: () => unity.grantManager.grantApplications.grantApplication
-            .getAIGenerationStatus(applicationId, 'application-scoring'),
+        getStatus: () => globalThis.AIGenerationApi.getStatus(applicationId, 'application-scoring'),
         onComplete: () => {
             PubSub.publish('refresh_assessment_scores', null);
         },
         onFailed: (request) => abp.message.error(request?.failureReason || 'AI scoring failed.')
     });
 
-    unity.grantManager.grantApplications.grantApplication
-        .queueApplicationScoring(applicationId)
+    globalThis.AIGenerationApi.queueApplicationScoring(applicationId)
         .done(function (generationStatus) {
             const request = generationStatus?.generationRequest;
-            const status = globalThis.AIGenerationButtonState?.resolveStatus(request?.status) ?? '';
+            const status = String(request?.status ?? '').trim();
 
             if (status === 'Completed') {
                 globalThis.AIGenerationButtonState?.restoreForCooldownCheck($button, existingHtml);
@@ -706,7 +704,6 @@ function queueApplicationScoring(triggerButton = null) {
                 PubSub.publish('refresh_assessment_scores', null);
                 return;
             }
-
             monitorScoring();
         })
         .fail(function () {
@@ -741,4 +738,5 @@ $(function () {
     $(document).on('click', '[id^="scoresheet-section-discard-"]', function () {
         discardChangesScoresSection($(this).data('form-id'), $(this).data('section-id'));
     });
+
 });

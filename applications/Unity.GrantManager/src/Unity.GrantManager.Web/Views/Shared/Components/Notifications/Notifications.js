@@ -47,7 +47,7 @@
         if (!sel || !preview) return;
         fetch('/api/form-notifications/templates').then(r => r.json()).then(list => {
             const t = list.find(x => String(x.id) === sel.value);
-            preview.innerText = t ? `Subject: ${t.subject}\n\n${t.body}` : '';
+            globalThis.renderNotificationTemplatePreview(preview, t);
         });
     }
 

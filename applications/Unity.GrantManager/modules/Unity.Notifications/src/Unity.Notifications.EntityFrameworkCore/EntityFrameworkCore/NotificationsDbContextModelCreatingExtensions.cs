@@ -35,10 +35,18 @@ public static class NotificationsDbContextModelCreatingExtensions
             // Foreign key to EmailLog with CASCADE delete
             b.HasOne<EmailLog>()
                 .WithMany()
+                .IsRequired(false)
                 .HasForeignKey(x => x.EmailLogId)
                 .OnDelete(DeleteBehavior.Cascade);
 
+            b.HasOne<EmailTemplate>()
+                .WithMany()
+                .IsRequired(false)
+                .HasForeignKey(x => x.TemplateId)
+                .OnDelete(DeleteBehavior.Cascade);                
+
             // Indexes for performance
+            b.HasIndex(x => x.TemplateId);
             b.HasIndex(x => x.EmailLogId);
             b.HasIndex(x => x.S3ObjectKey);
         });

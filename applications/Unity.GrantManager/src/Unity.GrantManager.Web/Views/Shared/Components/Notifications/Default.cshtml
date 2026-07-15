@@ -7,7 +7,7 @@
 <link rel="stylesheet" href="/libs/select2-bootstrap-5-theme/dist/select2-bootstrap-5-theme.min.css" />
 <link rel="stylesheet" href="/Views/Shared/Components/Notifications/Default.css" />
 
-<!-- Select2 and component scripts loaded in Default.js after jQuery is available -->
+<script src="/js/formConfiguration/NotificationsPreview.js"></script>
 <script src="/Views/Shared/Components/Notifications/Default.js"></script>
 
 <div class="notifications-widget p-3">
@@ -37,12 +37,6 @@
             {            
             <button class="btn unt-btn-outline-primary btn-sm abp-action-button js-cancel-notification notification-action-btn" type="button">
                 <span>Cancel</span>
-            </button>
-            }
-            @if (await PermissionChecker.IsGrantedAsync(NotificationsPermissions.Email.ScheduleDelete)) 
-            {                         
-            <button class="btn unt-btn-outline-primary btn-sm abp-action-button js-delete-notification notification-action-btn" type="button">
-                <i class="fl fl-cancel"></i>
             </button>
             }
         </div>

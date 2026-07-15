@@ -36,6 +36,17 @@
     "NotificationList:EmailType:Manual": "Manual",
     "NotificationList:EmailType:Scheduled": "Scheduled",
     "NotificationList:EmailType:EventBased": "Event Based",
-    "NotificationList:EmailType:Delayed": "Delayed"
+    "NotificationList:EmailType:Delayed": "Delayed",
+    "NotificationList:QuickDateRange": "Quick Date Range",
+    "NotificationList:DateRange:Today": "Today",
+    "NotificationList:DateRange:Last7Days": "Last 7 days",
+    "NotificationList:DateRange:Last30Days": "Last 30 days",
+    "NotificationList:DateRange:Last3Months": "Last 3 months",
+    "NotificationList:DateRange:Last6Months": "Last 6 months",
+    "NotificationList:DateRange:AllTime": "All time",
+    "NotificationList:DateRange:Custom": "Custom Ranges",
+    "NotificationList:DateFrom": "Date From",
+    "NotificationList:DateTo": "Date To",
+    "NotificationList:DateCannotBeFuture": "The date cannot be in the future"
   }
 }

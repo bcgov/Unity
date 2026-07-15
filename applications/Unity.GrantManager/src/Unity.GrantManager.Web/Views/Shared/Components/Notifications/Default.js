@@ -15,10 +15,6 @@
 
         const script = document.createElement('script');
         script.src = '/libs/select2/dist/js/select2.min.js';
-        script.onload = function() {
-            console.debug('Select2 library loaded successfully');
-            // Initialization will happen in waitForSelect2()
-        };
         script.onerror = function() {
             console.error('Failed to load Select2 library');
             select2Loading = false;
@@ -51,7 +47,6 @@
                         closeOnSelect: true,
                         allowClear: false
                     });
-                    console.log('Select2 initialized successfully');
                 } catch (e) {
                     console.error('Failed to initialize Select2:', e);
                     select2Ready = false;
@@ -148,17 +143,19 @@
     }
 
     function renderTriggerDetail(data, type, row) {
+        let detail = '';
         if (row.triggerType === 'Date') {
-            let detail = row.dateType ? row.dateType : '';
-            if (row.recipientCategory) {
-                detail += (detail ? ' → ' : '') + 'Category: ' + row.recipientCategory;
-            }
-            if (row.recipientIdentifier) {
-                detail += (detail ? ', ' : '') + 'Recipients: ' + row.recipientIdentifier;
-            }
-            return detail;
+            detail = row.dateType ? row.dateType : '';
+        } else {
+            detail = row.eventStatus ? row.eventStatus : '';
         }
-        return row.eventStatus ? row.eventStatus : '';
+        if (row.recipientCategory) {
+            detail += (detail ? ' → ' : '') + 'Category: ' + row.recipientCategory;
+        }
+        if (row.recipientIdentifier) {
+            detail += (detail ? ', ' : '') + 'Recipients: ' + row.recipientIdentifier;
+        }
+        return detail;
     }
 
     function getNotificationColumns() {
@@ -227,9 +224,6 @@
         $('#notifications-list').on('click', '.js-cancel-notification', function () {
             onCancelNotification($(this).data('id'));
         });
-        $('#notifications-list').on('click', '.js-delete-notification', function () {
-            onDeleteNotification($(this).data('id'));
-        });
     }
 
     function reloadTable() {
@@ -268,34 +262,6 @@
         });
     }
 
-    function onDeleteNotification(id) {
-        if (!id) return;
-        Swal.fire({
-            title: 'Delete Notification?',
-            text: 'Are you sure you want to delete this scheduled notification?',
-            showCancelButton: true,
-            confirmButtonText: 'Confirm',
-            customClass: {
-                confirmButton: 'btn btn-primary',
-                cancelButton: 'btn btn-secondary'
-            }
-        }).then((result) => {
-            if (!result.isConfirmed) return;
-            fetch('/api/form-notifications/' + encodeURIComponent(formId) + '/' + encodeURIComponent(id), {
-                    method: 'DELETE',
-                    headers: { 'RequestVerificationToken': abp.security.antiForgery.getToken() }
-                })
-                .then(r => {
-                    if (!r.ok) throw new Error('Failed to delete');
-                    abp.notify.success('Notification deleted');
-                    reloadTable();
-                })
-                .catch(err => {
-                    console.error(err);
-                    abp.notify.error('Failed to delete notification');
-                });
-        });
-    }
 
     function onEditNotification(id) {
         if (!id) return;
@@ -424,6 +390,82 @@
         refreshSelect2();
     }
 
+    function decodeHtmlEntities(value) {
+        if (!value || typeof value !== 'string') {
+            return '';
+        }
+
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(value, 'text/html');
+        return doc.documentElement.textContent || '';
+    }
+
+    function decodeHtmlEntitiesRecursively(value, maxPasses = 12) {
+        let current = value || '';
+        for (let i = 0; i < maxPasses; i++) {
+            const decoded = decodeHtmlEntities(current);
+            if (!decoded || decoded === current) {
+                break;
+            }
+            current = decoded;
+
+            if (/<[a-z][\s\S]*>/i.test(current)) {
+                break;
+            }
+        }
+        return current;
+    }
+
+    function resolveTemplatePreviewBody(template) {
+        const rawBody =
+            template?.body ||
+            template?.bodyHtml ||
+            template?.bodyHTML ||
+            template?.Body ||
+            template?.BodyHtml ||
+            template?.BodyHTML ||
+            '';
+
+        const decodedBody = decodeHtmlEntitiesRecursively(rawBody);
+
+        // Prefer decoded content when it results in actual HTML tags.
+        if (/<[a-z][\s\S]*>/i.test(decodedBody)) {
+            return decodedBody;
+        }
+
+        // Fall back to raw body when it already contains HTML tags.
+        if (/<[a-z][\s\S]*>/i.test(rawBody)) {
+            return rawBody;
+        }
+
+        // Plain text body (no tags) still displays correctly.
+        return decodedBody || rawBody;
+    }
+
+    function renderTemplatePreview(previewElement, template) {
+        if (!previewElement) {
+            return;
+        }
+
+        previewElement.replaceChildren();
+
+        if (!template) {
+            return;
+        }
+
+        const subjectRow = document.createElement('div');
+        const subjectLabel = document.createElement('strong');
+        subjectLabel.textContent = 'Subject: ';
+        const subjectValue = document.createElement('span');
+        subjectValue.textContent = template.subject || template.Subject || '';
+        subjectRow.append(subjectLabel, subjectValue);
+
+        const bodyRow = document.createElement('div');
+        bodyRow.innerHTML = resolveTemplatePreviewBody(template);
+
+        previewElement.append(subjectRow, document.createElement('br'), bodyRow);
+    }
+
     function updatePreview() {
         const sel = document.getElementById('templateSelect');
         const preview = document.getElementById('templatePreview');
@@ -431,7 +473,7 @@
         const val = sel.value;
         fetch('/api/form-notifications/templates').then(r => r.json()).then(list => {
             const t = list.find(x => String(x.id) === String(val));
-            preview.innerText = t ? `${t.subject}\n\n${t.body}` : '';
+            renderTemplatePreview(preview, t);
         });
     }
 
@@ -449,7 +491,7 @@
         document.getElementById('dateOptions')?.classList.add('hidden-section');
         document.getElementById('eventOptions')?.classList.add('hidden-section');
         document.getElementById('recipientOptions')?.classList.add('hidden-section');
-        document.getElementById('templatePreview').innerText = '';
+        renderTemplatePreview(document.getElementById('templatePreview'), null);
 
         const modalEl = document.getElementById('notificationModal');
         if (modalEl === null) return;
@@ -520,12 +562,6 @@
                 cancelBtn.remove();
             }            
         }
-
-        const deleteBtn = container.querySelector('.js-delete-notification');
-        if (deleteBtn) {
-            deleteBtn.dataset.id = row.id;
-        }
-
         return container.innerHTML;
     }
 

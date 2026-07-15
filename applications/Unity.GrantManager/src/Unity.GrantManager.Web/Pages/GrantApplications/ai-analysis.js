@@ -482,11 +482,10 @@ globalThis.queueApplicationAnalysis = function(triggerButton = null) {
 
     globalThis.AIGenerationButtonState?.setGenerating($button);
 
-    unity.grantManager.grantApplications.grantApplication
-        .queueApplicationAnalysis(applicationId)
+    globalThis.AIGenerationApi.queueApplicationAnalysis(applicationId)
         .done(function(generationStatus) {
             const request = generationStatus?.generationRequest;
-            const status = globalThis.AIGenerationButtonState?.resolveStatus(request?.status) ?? '';
+            const status = String(request?.status ?? '').trim();
 
             if (status === 'Completed') {
                 globalThis.AIGenerationButtonState?.restoreForCooldownCheck($button, existingHtml);
@@ -512,8 +511,7 @@ function monitorAIAnalysisGeneration(applicationId, $button, existingHtml) {
     aiAnalysisMonitor = globalThis.AIGenerationButtonState.monitor({
         $button,
         originalHtml: existingHtml,
-        getStatus: () => unity.grantManager.grantApplications.grantApplication
-            .getAIGenerationStatus(applicationId, 'application-analysis'),
+        getStatus: () => globalThis.AIGenerationApi.getStatus(applicationId, 'application-analysis'),
         onComplete: loadAIAnalysis,
         onFailed: (request) => {
             loadAIAnalysis();
@@ -570,17 +568,13 @@ $(function() {
             return;
         }
 
-        unity.grantManager.grantApplications.grantApplication
-            .getAIGenerationStatus(applicationId, 'application-analysis')
-            .done(function(generationStatus) {
-                const request = generationStatus?.generationRequest;
-                if (request?.isActive !== true) {
-                    return;
-                }
-
-                const existingHtml = $regenerateButton.html();
-                globalThis.AIGenerationButtonState?.setGenerating($regenerateButton);
-                monitorAIAnalysisGeneration(applicationId, $regenerateButton, existingHtml);
-            });
+        globalThis.AIGenerationApi.getStatus(applicationId, 'application-analysis').done(function(generationStatus) {
+            if (generationStatus?.generationRequest?.isActive !== true) {
+                return;
+            }
+            const existingHtml = $regenerateButton.html();
+            globalThis.AIGenerationButtonState?.setGenerating($regenerateButton);
+            monitorAIAnalysisGeneration(applicationId, $regenerateButton, existingHtml);
+        });
     }
 });

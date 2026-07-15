@@ -14,6 +14,7 @@ using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Domain.Services;
 using Volo.Abp.EventBus.Local;
 using Volo.Abp.Uow;
+using Unity.GrantManager.Events;
 
 namespace Unity.GrantManager.Intakes
 {
@@ -93,9 +94,9 @@ namespace Unity.GrantManager.Intakes
                 ApplicationFormSubmission = newSubmission,
                 RawSubmission = formSubmission
             });
-
+            
+            await localEventBus.PublishAsync(new ApplicationChangedEvent { Action = GrantApplicationAction.Submit, ApplicationId = application.Id });
             await uow.SaveChangesAsync();
-
             return application.Id;
         }
 

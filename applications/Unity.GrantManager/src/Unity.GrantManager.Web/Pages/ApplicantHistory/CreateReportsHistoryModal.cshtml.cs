@@ -34,6 +34,7 @@ public class CreateReportsHistoryModal : AbpPageModel
             FiscalYear = ReportsHistoryForm.FiscalYear,
             ReportDate = ReportsHistoryForm.ReportDate,
             Outstanding = ReportsHistoryForm.Outstanding,
+            SignedOff = ReportsHistoryForm.SignedOff,
             IncompleteReport = ReportsHistoryForm.IncompleteReport,
             Note = ReportsHistoryForm.Note
         };

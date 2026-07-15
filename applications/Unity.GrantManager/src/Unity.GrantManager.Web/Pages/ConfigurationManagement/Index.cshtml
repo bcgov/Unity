@@ -25,6 +25,10 @@
     {
         <abp-style src="/Views/Settings/NotificationsSettingGroup/Default.css" />
     }
+    @if (Model.ShowProgramDetails)
+    {
+        <abp-style src="/Views/Settings/ProgramDetails/ProgramDetails.css" />
+    }
 }
 
 @section scripts {
@@ -45,6 +49,11 @@
     @if (Model.ShowAI)
     {
         <abp-script src="/Views/Settings/AISettingGroup/Default.js" />
+    }
+    @if (Model.ShowProgramDetails)
+    {
+        <abp-script src="/Views/Settings/ProgramDetails/CharacterCounter.js" />
+        <abp-script src="/Views/Settings/ProgramDetails/ProgramDetails.js" />
     }
 }
 
@@ -88,6 +97,12 @@
                     AI
                 </li>
             }
+            @if (Model.ShowProgramDetails)
+            {
+                <li id="program-details-menu-item" class="nav-item btn btn-nav" data-target="program-details-div">
+                    Program Details
+                </li>
+            }
         </ul>
     </div>
     <!-- Main Content -->
@@ -107,10 +122,6 @@
                 <input type="hidden" id="AccountCodingId" value="@Model.AccountCodingId" />
 
                 <div class="container-fluid px-0">
-                    <div class="unity-page-titlebar">
-                        <h4 class="m-0">Payments</h4>
-                    </div>
-
                     <nav aria-label="Payment Tabs">
                         <div class="nav nav-tabs" id="payments-nav-tab" role="tablist">
                             @if (Model.ShowPaymentAccountCoding)
@@ -228,6 +239,14 @@
         {
             <div id="ai-div" class="config-section input-area card mb-3 config-management hide">
                 @await Component.InvokeAsync(typeof(Unity.AI.Web.Views.Settings.AISettingGroup.AISettingViewComponent))
+            </div>
+        }
+
+        <!-- Program Details -->
+        @if (Model.ShowProgramDetails)
+        {
+            <div id="program-details-div" class="config-section input-area card mb-3 config-management hide">
+                @await Component.InvokeAsync(typeof(Unity.GrantManager.Web.Views.Settings.ProgramDetails.ProgramDetailsViewComponent))
             </div>
         }
     </div>

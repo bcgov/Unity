@@ -70,6 +70,7 @@
 
     <form id="EmailForm" class="email-form" autocomplete="off">
         <abp-input type="hidden" id="ApplicationId" asp-for="@Model.ApplicationId" />
+        <input type="hidden" id="EmailTemplateName" name="EmailTemplateName" value="" />
         <fieldset @emailFieldsetState>
             <legend class="d-none">Email Form</legend>
             <input type="hidden" id="EmailId" name="EmailId" />
@@ -131,7 +132,7 @@
                 </abp-column>
             </abp-row>
 
-             <abp-row id="scheduled-delay-section"class="m-0 p-0 align-items-center" abp-if="enableScheduleSend">
+             <abp-row id="scheduled-delay-section"class="m-0 p-0 align-items-center" abp-if="@enableScheduleSend">
                 <abp-row class="m-0 p-0 align-items-center">
                     <abp-column size="_12" class="px-1">
                         <div id="scheduled-display-container" class="d-flex align-items-center gap-2 flex-wrap">
@@ -163,75 +164,36 @@
                     </button>
                 </abp-column>
             </abp-row>
-            <abp-row class="m-0 p-0 align-items-center">
-                <abp-column class="col-auto px-1">
+            <abp-row class="m-0 p-0 align-items-start row">
+                <abp-column class="col-auto px-1 mt-14">
                     <label for="EmailCC" class="form-label mb-0">Cc:</label>
                 </abp-column>
                 <abp-column class="col px-1">
                     <abp-input asp-for="@Model.EmailCC" class="email-input" suppress-label="true" />
                 </abp-column>
             </abp-row>
-            <abp-row class="m-0 p-0 align-items-center" id="bcc-input-row">
-                <abp-column class="col-auto px-1">
+            <abp-row class="m-0 p-0 align-items-start row" id="bcc-input-row">
+                <abp-column class="col-auto px-1 mt-14">
                     <label for="EmailBCC" class="form-label mb-0">Bcc:</label>
                 </abp-column>
                 <abp-column class="col px-1">
                     <abp-input asp-for="@Model.EmailBCC" class="email-input" suppress-label="true" />
                 </abp-column>
             </abp-row>
-            <abp-row class="m-0 p-0 align-items-center" id="templateListContainer">
-                <abp-column size="_12" class="px-1">
-                    <abp-select asp-for="@Model.EmailTemplate" asp-items="@Model.TemplatesList" id="EmailTemplate" suppress-label="true">
-                        <option value="">Select a template</option>
-                    </abp-select>
-                </abp-column>
-            </abp-row>
-            <abp-row class="m-0 p-0 align-items-center">
+            <abp-row class="m-0 p-0 align-items-start row">
                 <abp-column size="_12" class="px-1">
                     <abp-input asp-for="@Model.EmailSubject" class="email-input" suppress-label="true" />
                 </abp-column>
             </abp-row>
             <abp-row class="m-0 p-0 px-1">
-                <abp-column size="_12" class="px-1">
+                <abp-column size="_12" class="px-2 pe-1">
                     <abp-input asp-for="@Model.EmailBody" class="email-input" suppress-label="true" />
                 </abp-column>
             </abp-row>
         </fieldset>
 
-        <div id="email-attachments-section" class="px-3" style="display:none">
-            <abp-row class="m-0 p-0">
-                <abp-column size="_12" class="px-0">
-                    <h6 class="fw-bold pt-3 pb-1 m-0">Attachments</h6>
-                    <abp-table id="EmailAttachmentsTable"
-                               hoverable-rows="true"
-                               class="attachments-table nowrap"></abp-table>
-                    <div id="attachment-upload-progress" style="display:none" class="mt-2 mb-1">
-                        <div class="progress">
-                            <progress id="attachment-upload-progress-bar"
-                                 class="progress-bar progress-bar-striped progress-bar-animated"
-                                 style="width:0%"
-                                 value="0"
-                                 max="100">0%</progress>
-                        </div>
-                    </div>
-                    <div id="email-attachment-size-error" class="alert alert-danger mt-2" style="display:none">
-                        <i class="fa fa-exclamation-triangle me-1"></i>
-                        <span id="email-attachment-size-error-message"></span>
-                    </div>
-                    <div class="d-flex justify-content-end mt-2 mb-1">
-                        <form id="email-attachment-form" enctype="multipart/form-data">
-                            <input id="email_attachment_upload" type="file" multiple
-                                   style="display:none" />
-                            <abp-button text="Add Attachments"
-                                        id="email_attachment_upload_btn"
-                                        icon-type="Other"
-                                        icon="fl fl-plus"
-                                        button-type="Light" />
-                        </form>
-                    </div>
-                </abp-column>
-            </abp-row>
-        </div>
+        @await Html.PartialAsync("/Views/Shared/Components/EmailsWidget/_EmailAttachments.cshtml")
+
     </form>
 
 <!-- Schedule Send Modal -->

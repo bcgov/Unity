@@ -38,13 +38,15 @@ public class EmailAttachmentService : ITransientDependency
     }
 
     public async Task<EmailLogAttachment> UploadAttachmentAsync(
-        Guid emailLogId,
+        Guid? emailLogId,
+        Guid? templateId,
         Guid? tenantId,
         string fileName,
         byte[] fileContent,
         string contentType)
     {
-        var s3Key = BuildS3Key(tenantId, emailLogId, fileName);
+        var guid = emailLogId ?? templateId ?? throw new ArgumentException("Either emailLogId or templateId must be provided.");
+        var s3Key = BuildS3Key(tenantId, guid, fileName);
         var bucket = _configuration[S3BucketConfigKey];
 
         // Upload to S3
@@ -68,6 +70,7 @@ public class EmailAttachmentService : ITransientDependency
         var attachment = new EmailLogAttachment
         {
             EmailLogId = emailLogId,
+            TemplateId = templateId,
             S3ObjectKey = s3Key,
             FileName = fileName,
             DisplayName = fileName,
@@ -102,14 +105,16 @@ public class EmailAttachmentService : ITransientDependency
     }
 
     public async Task<EmailLogAttachment> UploadUserAttachmentAsync(
-        Guid emailLogId,
+        Guid? emailLogId,
+        Guid? templateId,
         Guid? tenantId,
         string fileName,
         byte[] fileContent,
         string contentType)
     {
         var uniqueKey = Guid.NewGuid();
-        var s3Key = BuildUserAttachmentS3Key(tenantId, emailLogId, uniqueKey, fileName);
+        Guid generateGuid = emailLogId ?? templateId ?? throw new ArgumentException("Either emailLogId or templateId must be provided.");
+        var s3Key = BuildUserAttachmentS3Key(tenantId, generateGuid, uniqueKey, fileName);
         var bucket = _configuration[S3BucketConfigKey];
 
         using var uploadStream = new MemoryStream(fileContent);
@@ -131,6 +136,7 @@ public class EmailAttachmentService : ITransientDependency
         var attachment = new EmailLogAttachment
         {
             EmailLogId = emailLogId,
+            TemplateId = templateId,
             S3ObjectKey = s3Key,
             FileName = fileName,
             DisplayName = fileName,
@@ -162,10 +168,22 @@ public class EmailAttachmentService : ITransientDependency
         return await _emailLogAttachmentRepository.GetByEmailLogIdAsync(emailLogId);
     }
 
-    public async Task<long> GetTotalFileSizeAsync(Guid emailLogId)
+    public async Task<long> GetTotalFileSizeAsync(Guid? emailLogId, Guid? templateId)
     {
-        var attachments = await _emailLogAttachmentRepository.GetByEmailLogIdAsync(emailLogId);
-        return attachments.Sum(a => a.FileSize);
+        if(emailLogId != null)
+        {
+            var attachments = await _emailLogAttachmentRepository.GetByEmailLogIdAsync(emailLogId.Value);
+            return attachments.Sum(a => a.FileSize);
+        }
+        else if(templateId != null)
+        {
+            var attachments = await _emailLogAttachmentRepository.GetByTemplateIdAsync(templateId.Value);
+            return attachments.Sum(a => a.FileSize);
+        }
+        else
+        {
+            throw new ArgumentException("Either emailLogId or templateId must be provided.");
+        }
     }
 
     private static string BuildUserAttachmentS3Key(Guid? tenantId, Guid emailLogId, Guid attachmentId, string fileName)

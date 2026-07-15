@@ -10,5 +10,6 @@ public static class AILocalizationKeys
     public const string ApplicationAnalysisRequiresSubmission = "AI:ApplicationAnalysisRequiresSubmission";
     public const string ScoringRequiresScoresheet = "AI:ScoringRequiresScoresheet";
     public const string ScoringRequiresScoresheetFields = "AI:ScoringRequiresScoresheetFields";
+    public const string AttachmentNotFound = "AI:AttachmentNotFound";
     public const string SelectAttachmentForSummaries = "AI:SelectAttachmentForSummaries";
 }

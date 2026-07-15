@@ -1,0 +1,34 @@
+name: Cypress E2E — Dev
+
+# Auto-triggers after a successful dev deployment.
+# Can also be run manually — supply base_url to target a feature branch deployment
+# instead of the default dev environment URL.
+#
+# Runs Cypress inside OpenShift (d18498-tools) rather than on the GitHub-hosted
+# runner, since the app's Route is IP-allowlisted to the BC Gov network.
+# Test credentials come from Vault (GH_UGM_CYPRESS_CONFIG) via External Secrets,
+# not GitHub Actions secrets — see cypress-e2e-runner.yml.
+
+on:
+  workflow_run:
+    workflows: ["Dev - Build & Push docker images"]
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: "Override baseUrl (e.g. https://feature-branch.apps.silver.devops.gov.bc.ca/)"
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  cypress:
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
+    uses: ./.github/workflows/cypress-e2e-runner.yml
+    with:
+      env_name: dev
+      cypress_config_key: CYPRESS_CONFIG_DEV
+      base_url: ${{ inputs.base_url || '' }}
+    secrets: inherit
