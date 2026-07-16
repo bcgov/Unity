@@ -33,27 +33,32 @@ const RIGHT_TABS = [
     loginIfNeeded();
   });
 
-  it("validates status actions, left tabs, and right pane tabs", () => {
-    // Start each run from a clean page-factory cache.
+  const openApplicantDetails = () => {
     PageFactory.clearCache();
-
-    const applicantsViewPage = PageFactory.getApplicantsViewPage();
-
-    applicantsViewPage
+    return PageFactory.getApplicantsViewPage()
       .visitApplicantsList()
-      .searchAndOpenApplicant(APPLICANT_NAME)
+      .searchAndOpenApplicant(APPLICANT_NAME);
+  };
+
+  it("validates status actions and core UI styling", () => {
+    openApplicantDetails()
       .openStatusActions()
+      .verifyCoreUiStyling()
       .verifyStatusActionOptions(["Active", "Inactive"])
       .closeOpenMenus();
+  });
 
-    // Validate each main details tab renders expected content.
-    LEFT_TABS.forEach((tabName) => {
-      applicantsViewPage.openLeftTab(tabName).verifyLeftTabContent(tabName);
+  LEFT_TABS.forEach((tabName) => {
+    it(`validates left tab: ${tabName}`, () => {
+      openApplicantDetails().openLeftTab(tabName).verifyLeftTabContent(tabName);
     });
+  });
 
-    // Validate each right pane tab and its core content.
-    RIGHT_TABS.forEach((tabName) => {
-      applicantsViewPage.openRightTab(tabName).verifyRightTabContent(tabName);
+  RIGHT_TABS.forEach((tabName) => {
+    it(`validates right tab: ${tabName}`, () => {
+      openApplicantDetails()
+        .openRightTab(tabName)
+        .verifyRightTabContent(tabName);
     });
   });
 });

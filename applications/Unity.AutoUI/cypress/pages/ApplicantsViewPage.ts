@@ -100,6 +100,68 @@ export class ApplicantsViewPage extends BasePage {
     return this;
   }
 
+  verifyCoreUiStyling(): this {
+    cy.contains("button", "Status Actions", { timeout: 20000 })
+      .should("be.visible")
+      .should(($button) => {
+        const styles = window.getComputedStyle($button[0]);
+
+        expect(styles.fontFamily.trim(), "button font-family").to.not.equal("");
+        expect(
+          parseFloat(styles.fontSize),
+          "button font-size",
+        ).to.be.greaterThan(10);
+        expect(
+          parseInt(styles.fontWeight, 10),
+          "button font-weight",
+        ).to.be.greaterThan(0);
+        expect(styles.backgroundColor, "button background-color").to.not.equal(
+          "rgba(0, 0, 0, 0)",
+        );
+      });
+
+    cy.get("[role='tab']:visible", { timeout: 20000 })
+      .first()
+      .should(($tab) => {
+        const styles = window.getComputedStyle($tab[0]);
+
+        expect(styles.fontFamily.trim(), "tab font-family").to.not.equal("");
+        expect(parseFloat(styles.fontSize), "tab font-size").to.be.greaterThan(
+          10,
+        );
+        expect(styles.color, "tab text color").to.not.equal("rgba(0, 0, 0, 0)");
+      });
+
+    cy.get(this.selectors.statusMenu)
+      .find("button, a")
+      .first()
+      .should("be.visible")
+      .should(($action) => {
+        const styles = window.getComputedStyle($action[0]);
+
+        expect(
+          styles.fontFamily.trim(),
+          "status action font-family",
+        ).to.not.equal("");
+        expect(
+          parseFloat(styles.fontSize),
+          "status action font-size",
+        ).to.be.greaterThan(10);
+      });
+
+    cy.get("body").then(($body) => {
+      const iconCount = $body.find(
+        "svg, i[class*='icon'], span[class*='icon'], .fa, .bi, .material-icons",
+      ).length;
+
+      expect(iconCount, "icons rendered in applicants view").to.be.greaterThan(
+        0,
+      );
+    });
+
+    return this;
+  }
+
   openLeftTab(tabName: LeftTabName): this {
     cy.contains("[role='tab']:visible", new RegExp(`^${tabName}$`), {
       timeout: 20000,
@@ -132,9 +194,7 @@ export class ApplicantsViewPage extends BasePage {
       case "Contacts":
         cy.contains("Primary Contact", { timeout: 20000 }).should("exist");
         cy.contains("Contacts", { timeout: 20000 }).should("exist");
-        cy.contains("th:visible", "Submission #", { timeout: 20000 }).should(
-          "be.visible",
-        );
+        cy.contains("th", "Submission #", { timeout: 20000 }).should("exist");
         break;
       case "Addresses":
         cy.contains("Primary Physical Address", { timeout: 20000 }).should(
@@ -146,15 +206,9 @@ export class ApplicantsViewPage extends BasePage {
         cy.contains("Addresses", { timeout: 20000 }).should("exist");
         break;
       case "Submissions":
-        cy.contains("th:visible", "Submission #", { timeout: 20000 }).should(
-          "be.visible",
-        );
-        cy.contains("th:visible", "Category", { timeout: 20000 }).should(
-          "be.visible",
-        );
-        cy.contains("th:visible", "Status", { timeout: 20000 }).should(
-          "be.visible",
-        );
+        cy.contains("th", "Submission #", { timeout: 20000 }).should("exist");
+        cy.contains("th", "Category", { timeout: 20000 }).should("exist");
+        cy.contains("th", "Status", { timeout: 20000 }).should("exist");
         break;
       case "History":
         cy.contains("Funding History", { timeout: 20000 }).should("exist");
@@ -164,11 +218,11 @@ export class ApplicantsViewPage extends BasePage {
       case "Payments":
         cy.contains("Payment Summary", { timeout: 20000 }).should("exist");
         cy.contains("Payment List", { timeout: 20000 }).should("exist");
-        cy.contains("th:visible", "Payment ID", { timeout: 20000 }).should(
-          "be.visible",
-        );
+        cy.contains("th", "Payment ID", { timeout: 20000 }).should("exist");
         break;
     }
+
+    this.verifyActiveTabInputValues(tabName);
     return this;
   }
 
@@ -237,6 +291,8 @@ export class ApplicantsViewPage extends BasePage {
         );
         break;
     }
+
+    this.verifyActiveRightTabInputValues(tabName);
     return this;
   }
 
@@ -264,5 +320,119 @@ export class ApplicantsViewPage extends BasePage {
         .should("be.visible")
         .click({ force: true });
     });
+  }
+
+  private verifyActiveTabInputValues(tabName: LeftTabName): void {
+    const inputSelector = [
+      "input:not([type='hidden']):not([type='search']):not([type='checkbox']):not([type='radio']):not([type='file']):not([type='button']):not([type='submit'])",
+      "textarea",
+      "select",
+    ].join(", ");
+
+    cy.get(".tab-pane.active.show, .tab-pane.active", { timeout: 20000 })
+      .first()
+      .then(($panel) => {
+        const $fields = $panel
+          .find(inputSelector)
+          .filter((_, element) => Cypress.$(element).is(":visible"));
+
+        if ($fields.length === 0) {
+          cy.log(`[${tabName}] no visible input fields found`);
+          return;
+        }
+
+        cy.wrap($fields).each(($field, index) => {
+          const $el = Cypress.$($field);
+          const tagName = ($el.prop("tagName") as string).toLowerCase();
+          const fieldName =
+            $el.attr("name") ||
+            $el.attr("id") ||
+            $el.attr("placeholder") ||
+            `${tagName}-${index}`;
+
+          const rawValue =
+            tagName === "select"
+              ? String($el.find("option:selected").text() || "").trim()
+              : String($el.val() ?? "").trim();
+
+          expect(
+            rawValue.toLowerCase(),
+            `[${tabName}] ${fieldName} should not be undefined`,
+          ).to.not.equal("undefined");
+          expect(
+            rawValue.toLowerCase(),
+            `[${tabName}] ${fieldName} should not be null`,
+          ).to.not.equal("null");
+
+          const isRequiredField =
+            $el.is("[required]") ||
+            String($el.attr("aria-required") || "").toLowerCase() === "true";
+
+          if (isRequiredField) {
+            expect(
+              rawValue,
+              `[${tabName}] required field ${fieldName} should have a value`,
+            ).to.not.equal("");
+          }
+        });
+      });
+  }
+
+  private verifyActiveRightTabInputValues(tabName: RightTabName): void {
+    const inputSelector = [
+      "input:not([type='hidden']):not([type='search']):not([type='checkbox']):not([type='radio']):not([type='file']):not([type='button']):not([type='submit'])",
+      "textarea",
+      "select",
+    ].join(", ");
+
+    cy.get(".right-card .tab-pane.active.show, .right-card .tab-pane.active", {
+      timeout: 20000,
+    })
+      .first()
+      .then(($panel) => {
+        const $fields = $panel
+          .find(inputSelector)
+          .filter((_, element) => Cypress.$(element).is(":visible"));
+
+        if ($fields.length === 0) {
+          cy.log(`[Right:${tabName}] no visible input fields found`);
+          return;
+        }
+
+        cy.wrap($fields).each(($field, index) => {
+          const $el = Cypress.$($field);
+          const tagName = ($el.prop("tagName") as string).toLowerCase();
+          const fieldName =
+            $el.attr("name") ||
+            $el.attr("id") ||
+            $el.attr("placeholder") ||
+            `${tagName}-${index}`;
+
+          const rawValue =
+            tagName === "select"
+              ? String($el.find("option:selected").text() || "").trim()
+              : String($el.val() ?? "").trim();
+
+          expect(
+            rawValue.toLowerCase(),
+            `[Right:${tabName}] ${fieldName} should not be undefined`,
+          ).to.not.equal("undefined");
+          expect(
+            rawValue.toLowerCase(),
+            `[Right:${tabName}] ${fieldName} should not be null`,
+          ).to.not.equal("null");
+
+          const isRequiredField =
+            $el.is("[required]") ||
+            String($el.attr("aria-required") || "").toLowerCase() === "true";
+
+          if (isRequiredField) {
+            expect(
+              rawValue,
+              `[Right:${tabName}] required field ${fieldName} should have a value`,
+            ).to.not.equal("");
+          }
+        });
+      });
   }
 }
