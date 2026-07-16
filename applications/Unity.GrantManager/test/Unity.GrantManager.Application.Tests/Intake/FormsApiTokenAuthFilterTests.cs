@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Hosting;
 using Newtonsoft.Json;
 using System.Collections.Generic;
 using System.IO;
@@ -30,7 +31,7 @@ namespace Unity.GrantManager.Intake
     {
         private readonly FormsApiTokenAuthFilter _formsApiTokenAuthFilter;
 
-        private readonly ITenantRepository _tenantRepository;        
+        private readonly ITenantRepository _tenantRepository;
         private readonly ICurrentTenant _currentTenant;
         private readonly IApplicationFormTokenAppService _formTokenAppService;
         private readonly IEnumerable<IFormIdResolver> _formIdResolvers;
@@ -46,13 +47,22 @@ namespace Unity.GrantManager.Intake
             _tenantTokenRepository = GetRequiredService<ITenantTokenRepository>();
             _stringEncryptionService = GetRequiredService<StringEncryptionService>();
 
-            _formsApiTokenAuthFilter = new FormsApiTokenAuthFilter(_tenantRepository, _currentTenant, _formTokenAppService, _formIdResolvers);
+            _formsApiTokenAuthFilter = new FormsApiTokenAuthFilter(_tenantRepository, _currentTenant, _formTokenAppService,
+                _formIdResolvers, new TestHostEnvironment { EnvironmentName = Environments.Production });
+        }
+
+        private sealed class TestHostEnvironment : IHostEnvironment
+        {
+            public string EnvironmentName { get; set; } = Environments.Production;
+            public string ApplicationName { get; set; } = "Tests";
+            public string ContentRootPath { get; set; } = ".";
+            public Microsoft.Extensions.FileProviders.IFileProvider ContentRootFileProvider { get; set; } = null!;
         }
 
         [Fact]
         [Trait("Category", "Integration")]
-        public async Task OnAuthorizationAsync_AllowLoginWithNoTokenSet()
-        {                     
+        public async Task OnAuthorizationAsync_401_NoTokenSetForTenant_NonDevelopment()
+        {
             // Arrange
             var context = BuildContext(new EventSubscriptionDto()
             {
@@ -69,7 +79,38 @@ namespace Unity.GrantManager.Intake
                 await _formsApiTokenAuthFilter.OnAuthorizationAsync(context);
             }
 
-            // Assert            
+            // Assert — non-Development environments must fail closed when no token is configured.
+            context.Result.ShouldBeOfType<UnauthorizedObjectResult>();
+            var result = context.Result as UnauthorizedObjectResult;
+            result!.Value.ShouldBeOfType<ProblemDetails>();
+            var problemDetails = result.Value as ProblemDetails;
+            problemDetails!.Status.ShouldBe(StatusCodes.Status401Unauthorized);
+            problemDetails.Detail.ShouldBe("API authentication not configured for this tenant");
+        }
+
+        [Fact]
+        [Trait("Category", "Integration")]
+        public async Task OnAuthorizationAsync_AllowsNoTokenSet_InDevelopmentOnly()
+        {
+            // Arrange
+            var devFilter = new FormsApiTokenAuthFilter(_tenantRepository, _currentTenant, _formTokenAppService,
+                _formIdResolvers, new TestHostEnvironment { EnvironmentName = Environments.Development });
+
+            var context = BuildContext(new EventSubscriptionDto()
+            {
+                FormId = Guid.NewGuid(),
+                FormVersion = Guid.NewGuid(),
+                SubmissionId = Guid.NewGuid(),
+                SubscriptionEvent = "string"
+            });
+
+            // Act
+            using (_currentTenant.Change(Guid.NewGuid(), "Test"))
+            {
+                await devFilter.OnAuthorizationAsync(context);
+            }
+
+            // Assert — Development is the one intentional exception: unconfigured tenants still pass through.
             context.Result.ShouldBe(null);
         }
 
