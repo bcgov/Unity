@@ -26,7 +26,16 @@
         {
             <abp-button id="mergeApplicants"
                         text="Merge"
+                        data-selector="applicants-table-actions"
                         class="custom-table-btn flex-none btn btn-secondary d-none"
+                        button-type="Secondary" />
+        }
+        @if (await PermissionChecker.IsGrantedAsync(GrantApplicationPermissions.Applicants.Delete))
+        {
+            <abp-button id="deleteApplicant"
+                        text="Delete"
+                        data-selector="applicants-table-actions"
+                        class="custom-table-btn flex-none btn btn-secondary action-bar-btn-unavailable"
                         button-type="Secondary" />
         }
     </div>

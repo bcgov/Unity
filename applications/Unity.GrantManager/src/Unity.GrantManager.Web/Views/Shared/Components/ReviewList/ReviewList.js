@@ -471,25 +471,24 @@ function generateAiButtonAction(e, dt, button, config) {
         globalThis.AIGenerationButtonState?.setGenerating($button);
     }
 
-    unity.grantManager.grantApplications.grantApplication.queueApplicationScoring(pageApplicationId)
-        .done(function (request) {
-            const status = globalThis.AIGenerationButtonState?.resolveStatus(request?.status) ?? '';
+    globalThis.AIGenerationApi.queueApplicationScoring(pageApplicationId)
+        .done(function (generationStatus) {
+            const request = generationStatus?.generationRequest;
+            const status = String(request?.status ?? '').trim();
 
             if (status === 'Completed') {
                 restoreReviewListAiButtonForCooldownCheck($button);
+                globalThis.AIGenerationButtonState?.applyStatusState(generationStatus);
                 refreshReviewListAfterAiScoring();
-                globalThis.syncAIRateLimitButtons?.();
                 return;
             }
-
             pollReviewListAiButton($button);
         })
         .fail(function () {
             abp.message.error('Failed to queue AI scoring. Please try again.');
             restoreReviewListAiButton($button);
             globalThis.syncAIRateLimitButtons?.();
-        })
-        ;
+        });
 }
 
 function restoreReviewListAiButton($button) {
@@ -516,24 +515,21 @@ function resumeActiveReviewListAiButton(reviewListTable) {
     }
 
     const $button = $(button.node());
-    unity.grantManager.grantApplications.grantApplication
-        .getAIGenerationStatus(pageApplicationId, 'application-scoring')
-        .done(function(request) {
-            if (request?.isActive !== true) {
-                return;
-            }
+    globalThis.AIGenerationApi.getStatus(pageApplicationId, 'application-scoring').done(function(generationStatus) {
+        if (generationStatus?.generationRequest?.isActive !== true) {
+            return;
+        }
 
-            globalThis.AIGenerationButtonState?.setGenerating($button);
-            pollReviewListAiButton($button);
-        });
+        globalThis.AIGenerationButtonState?.setGenerating($button);
+        pollReviewListAiButton($button);
+    });
 }
 
 function pollReviewListAiButton($button) {
     globalThis.AIGenerationButtonState.monitor({
         $button,
         originalHtml: generateAiButtonText(null, null, null),
-        getStatus: () => unity.grantManager.grantApplications.grantApplication
-            .getAIGenerationStatus(pageApplicationId, 'application-scoring'),
+        getStatus: () => globalThis.AIGenerationApi.getStatus(pageApplicationId, 'application-scoring'),
         onComplete: refreshReviewListAfterAiScoring,
         onFailed: (request) => abp.message.error(request?.failureReason || 'AI scoring failed.')
     });

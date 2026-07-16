@@ -1,0 +1,123 @@
+﻿@page
+@model Unity.GrantManager.Web.Pages.BulkActions.BulkPublishApplicationsModel
+@using Microsoft.Extensions.Localization
+@using Unity.GrantManager.Localization
+
+@inject IStringLocalizer<GrantManagerResource> L
+@{
+    Layout = null;
+}
+
+<form method="post" asp-page-handler="OnPostAsync" id="bulkPublishForm">
+<abp-modal id="bulkPublishApplicationsModal" size="ExtraLarge">
+    <abp-modal-header title="Publish Status"></abp-modal-header>
+    <abp-modal-body>
+        @if (ViewData["Error"] != null)
+        {
+            <div class="alert alert-warning" role="alert">
+                <i class="fa fa-exclamation-triangle"></i> @ViewData["Error"]
+            </div>
+        }
+        else
+        {
+            <abp-card class="batch-action-card">
+                <abp-card-body>
+                    <abp-input id="ApplicationsCount" type="hidden" asp-for="@Model.ApplicationsCount" />
+                    <abp-input id="MaxBatchCount" type="hidden" asp-for="@Model.MaxBatchCount" />
+                    @for (var i = 0; i < Model.BulkApplications?.Count; i++)
+                    {
+                        <div id="@($"{Model.BulkApplications[i].ApplicationId}_container")" class="batch-action-container">
+                            <abp-row class="m-0 p-2 bulk-action-row-header d-flex flex-nowrap">
+                                <abp-column size="_9" class="px-1 flex-grow-1">
+                                    <div class="action-details-header">
+                                        <div class="header-data reference-no">@Model.BulkApplications[i].ReferenceNo</div>
+                                        <div class="header-data applicant-name nowrap">
+                                                @(string.IsNullOrWhiteSpace(Model.BulkApplications[i].ApplicantName) ? "Applicant Name" : @Model.BulkApplications[i].ApplicantName)
+                                        </div>
+                                        <div class="header-data form-name pr-1">
+                                                @(string.IsNullOrWhiteSpace(Model.BulkApplications[i].FormName) ? "(Form Name)" : string.Format("({0})", @Model.BulkApplications[i].FormName))
+                                        </div>
+                                        <div class="application-status">@Model.BulkApplications[i].ApplicationStatus</div>
+                                    </div>
+                                </abp-column>
+                                <abp-column size="_3" class="bulk-action-remove-row d-flex justify-content-end col-3 gap-1 align-items-center">
+                                    <abp-button onclick='removeApplicationRow("@Model.BulkApplications[i].ApplicationId" + "_container")'
+                                                onkeydown='if(event.key === "Enter" || event.key === " ") { removeApplicationRow("@Model.BulkApplications[i].ApplicationId" + "_container"); event.preventDefault(); }'
+                                                size="Small"
+                                                icon-type="Other"
+                                                icon="fa fa-times"
+                                                class="removeRow m-0 p-0"
+                                                data-parameter="@Model.BulkApplications[i].ApplicationId" />
+                                </abp-column>
+                            </abp-row>
+
+                            <input name="BulkApplications.Index" type="hidden" value="@i" />
+                            <abp-input type="hidden" asp-for="@Model.BulkApplications[i].IsValid" />
+                            <abp-input type="hidden" asp-for="@Model.BulkApplications[i].ApplicationId" />
+                            <abp-input type="hidden" asp-for="@Model.BulkApplications[i].ApplicantName" />
+                            <abp-input type="hidden" asp-for="@Model.BulkApplications[i].ReferenceNo" />
+
+                            <abp-row class="m-0 p-3">
+                                <abp-column size="_4" class="px-3">
+                                    <abp-input asp-for="@Model.BulkApplications[i].ExternalStatus" disabled=true />
+                                    <input type="hidden" asp-for="@Model.BulkApplications[i].ExternalStatus" />
+                                </abp-column>
+                                <abp-column size="_4" class="px-3">
+                                    <abp-input asp-for="@Model.BulkApplications[i].PublishedStatus" disabled=true />
+                                    <input type="hidden" asp-for="@Model.BulkApplications[i].PublishedStatus" />
+                                </abp-column>
+                                <abp-column size="_4">
+                                    @if (Model.BulkApplications[i].FinalDecisionDate.HasValue)
+                                    {
+                                        <abp-input asp-for="@Model.BulkApplications[i].FinalDecisionDate" disabled="true" type="date" />
+                                    }
+                                    else
+                                    {
+                                        <div class="mb-3">
+                                            <label class="form-label" for="BulkApplications_@(i)__FinalDecisionDate">Decision Date</label>
+                                            <input asp-for="@Model.BulkApplications[i].FinalDecisionDate" type="date" class="form-control" disabled readonly />
+                                        </div>
+                                    }
+                                </abp-column>
+                            </abp-row>
+                        </div>
+                    }
+                    </abp-card-body>
+            </abp-card>
+            <abp-row id="batch-action-summary" class="m-0 batch-action-summary d-none">
+                <abp-column size="_12" class="px-3">
+                    <p id="maxCountWarning" class="alert alert-light border-0 border-4 border-start rounded-0 text-body d-none">
+                        <span class="action-note-prefix action-note-error">Error</span> @Model.MaxBatchCountExceededError
+                    </p>
+                    <p id="minCountWarning" class="alert alert-light border-0 border-4 border-start rounded-0 text-body d-none">
+                            <span class="action-note-prefix action-note-error">Error</span> @L["ApplicationBatchPublishRequest:MinCountExceeded"]
+                    </p>
+                </abp-column>
+            </abp-row>
+            <abp-row class="m-0">
+                <abp-column size="_12" class="px-3">
+                    <p class="alert alert-light border-0 border-4 border-start rounded-0 text-body">
+                        <strong>Note:</strong> @L["ApplicationBatchPublishRequest:ConfirmationNote"]
+                    </p>
+                </abp-column>
+            </abp-row>
+        }
+    </abp-modal-body>
+    <abp-modal-footer>
+        <abp-button id="btnSubmitBatchPublish"
+                    data-busy-text="Saving..."
+                    class="btn btn-primary"
+                    disabled="@Model.Invalid"
+                    text="Confirm"
+                    type="submit">
+        </abp-button>
+        <abp-button id="btnCancelBatchPublish"
+                    class="btn btn-secondary"
+                    aria-label="Cancel"
+                    data-bs-dismiss="modal"
+                    data-dismiss="modal" 
+                    text="@L["ApplicationBatchApprovalRequest:CancelButtonText"].Value">
+        </abp-button>
+    </abp-modal-footer>
+</abp-modal>
+</form>

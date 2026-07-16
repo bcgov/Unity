@@ -223,6 +223,12 @@ public class ApplicationRepository
             .ToListAsync();
     }
 
+    public async Task<bool> HasApplicationsByApplicantIdAsync(Guid applicantId)
+    {
+        var query = await GetQueryableAsync();
+        return await query.AnyAsync(a => a.ApplicantId == applicantId);
+    }
+
     public async Task<List<ApplicationListRecord>> GetApplicationListRecordsAsync(
         int skipCount,
         int maxResultCount,
@@ -316,6 +322,7 @@ public class ApplicationRepository
                 a.RiskRanking,
                 a.UnityApplicationId,
                 Status = a.ApplicationStatus.InternalStatus, // ApplicationStatus (always joined)
+                a.ExternalStatusVisibility,
                 Category = a.ApplicationForm.Category ?? string.Empty, // ApplicationForm (always joined)          
                 a.ApplicantId,
                 ApplicantName = a.Applicant.ApplicantName, // Applicant (always joined)
@@ -328,7 +335,7 @@ public class ApplicationRepository
                 ApplicantOrgNumber = a.Applicant.OrgNumber,
                 ApplicantOrgStatus = a.Applicant.OrgStatus,
                 ApplicantBusinessNumber = a.Applicant.BusinessNumber,
-                ApplicantOrganizationSize = a.Applicant.OrganizationSize,
+                ApplicantApproxNumberOfEmployees = a.Applicant.ApproxNumberOfEmployees,
                 ApplicantSectorSubSectorIndustryDesc = a.Applicant.SectorSubSectorIndustryDesc,
                 ApplicantRedStop = a.Applicant.RedStop,
                 ApplicantIndigenousOrgInd = a.Applicant.IndigenousOrgInd,
@@ -500,6 +507,7 @@ public class ApplicationRepository
                     RiskRanking = a.RiskRanking,
                     UnityApplicationId = a.UnityApplicationId,
                     Status = a.Status,
+                    ExternalStatusVisibility = a.ExternalStatusVisibility,
                     Category = a.Category,
                     ApplicantId = a.ApplicantId,
                     ApplicantName = a.ApplicantName,
@@ -512,7 +520,7 @@ public class ApplicationRepository
                     ApplicantOrgNumber = a.ApplicantOrgNumber,
                     ApplicantOrgStatus = a.ApplicantOrgStatus,
                     ApplicantBusinessNumber = a.ApplicantBusinessNumber,
-                    ApplicantOrganizationSize = a.ApplicantOrganizationSize,
+                    ApplicantApproxNumberOfEmployees = a.ApplicantApproxNumberOfEmployees,
                     ApplicantSectorSubSectorIndustryDesc = a.ApplicantSectorSubSectorIndustryDesc,
                     ApplicantRedStop = a.ApplicantRedStop,
                     ApplicantIndigenousOrgInd = a.ApplicantIndigenousOrgInd,

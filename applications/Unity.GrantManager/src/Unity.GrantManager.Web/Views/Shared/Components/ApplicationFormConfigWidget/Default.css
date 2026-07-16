@@ -1,4 +1,8 @@
-﻿.configuration-warning {
+﻿#otherConfigForm .form-select {
+    width: 400px !important;
+}
+
+.configuration-warning {
     color: var(--lpx-danger);
     border-color: var(--lpx-danger);
 }

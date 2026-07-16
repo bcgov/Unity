@@ -1,4 +1,5 @@
 using Shouldly;
+using System.Text.Json;
 using Unity.AI.Runtime;
 using Xunit;
 
@@ -6,118 +7,203 @@ namespace Unity.GrantManager.AI.Runtime;
 
 public class AIProviderPayloadValidatorTests
 {
-    [Theory]
-    [InlineData(null, false)]
-    [InlineData("", false)]
-    [InlineData("   ", false)]
-    [InlineData("Some summary text", true)]
-    public void IsValidAttachmentSummaryText_Should_RejectBlankAndAcceptContent(string? input, bool expected)
+    [Fact]
+    public void ValidateApplicationAnalysisJson_Should_Return_InvalidOutput_For_InvalidJson()
     {
-        AIProviderPayloadValidator.IsValidAttachmentSummaryText(input!).ShouldBe(expected);
+        var result = AIProviderPayloadValidator.ValidateApplicationAnalysisJson("not-json");
+
+        result.IsValid.ShouldBeFalse();
+        result.FailureCategory.ShouldBe(AIFailureCategory.InvalidOutput);
+        var reason = result.Reason;
+        reason.ShouldNotBeNull();
+        reason.ShouldContain("not valid JSON");
     }
 
     [Fact]
-    public void IsValidApplicationAnalysisJson_Should_ReturnTrue_ForWellFormedPayload()
+    public void ValidateApplicationAnalysisJson_Should_Return_InvalidOutput_When_Decision_Is_Missing()
     {
-        var json = """
+        var result = AIProviderPayloadValidator.ValidateApplicationAnalysisJson(
+            """
             {
-              "decision": "Approved",
               "errors": [],
               "warnings": [],
               "summaries": [],
               "recommendations": []
             }
-            """;
-        AIProviderPayloadValidator.IsValidApplicationAnalysisJson(json).ShouldBeTrue();
-    }
+            """);
 
-    [Theory]
-    [InlineData(null)]
-    [InlineData("")]
-    [InlineData("not json")]
-    [InlineData("[]")]
-    public void IsValidApplicationAnalysisJson_Should_ReturnFalse_ForInvalidInput(string? input)
-    {
-        AIProviderPayloadValidator.IsValidApplicationAnalysisJson(input!).ShouldBeFalse();
+        result.IsValid.ShouldBeFalse();
+        result.FailureCategory.ShouldBe(AIFailureCategory.InvalidOutput);
+        var reason = result.Reason;
+        reason.ShouldNotBeNull();
+        reason.ShouldContain("decision");
     }
 
     [Fact]
-    public void IsValidApplicationAnalysisJson_Should_ReturnFalse_WhenDecisionMissing()
+    public void ValidateApplicationScoringJson_Should_Return_InvalidOutput_When_Answer_Is_Missing()
     {
-        var json = """{"errors":[],"warnings":[],"summaries":[],"recommendations":[]}""";
-        AIProviderPayloadValidator.IsValidApplicationAnalysisJson(json).ShouldBeFalse();
+        var sectionJson = JsonSerializer.Serialize(new[]
+        {
+            new { id = "q1" }
+        });
+
+        var result = AIProviderPayloadValidator.ValidateApplicationScoringJson("{}", sectionJson);
+
+        result.IsValid.ShouldBeFalse();
+        result.FailureCategory.ShouldBe(AIFailureCategory.InvalidOutput);
+        result.Reason.ShouldContain("q1");
     }
 
     [Fact]
-    public void IsValidApplicationAnalysisJson_Should_ReturnFalse_WhenErrorsIsNotArray()
+    public void ValidateApplicationScoringJson_Should_Return_Success_For_Decimal_Confidence()
     {
-        var json = """{"decision":"ok","errors":"bad","warnings":[],"summaries":[],"recommendations":[]}""";
-        AIProviderPayloadValidator.IsValidApplicationAnalysisJson(json).ShouldBeFalse();
-    }
+        var sectionJson = JsonSerializer.Serialize(new[]
+        {
+            new { id = "q1" }
+        });
 
-    [Fact]
-    public void IsValidApplicationAnalysisJson_Should_AcceptMarkdownWrappedJson()
-    {
-        var json = "```json\n{\"decision\":\"ok\",\"errors\":[],\"warnings\":[],\"summaries\":[],\"recommendations\":[]}\n```";
-        AIProviderPayloadValidator.IsValidApplicationAnalysisJson(json).ShouldBeTrue();
-    }
-
-    [Fact]
-    public void IsValidApplicationScoringJson_Should_ReturnTrue_ForWellFormedPayload()
-    {
-        var sectionJson = """[{"id":"q1"},{"id":"q2"}]""";
-        var response = """
+        var result = AIProviderPayloadValidator.ValidateApplicationScoringJson(
+            """
             {
-              "q1": {"answer": "Yes", "confidence": 85},
-              "q2": {"answer": "No",  "confidence": 42}
+              "q1": {
+                "answer": "No",
+                "rationale": "The record does not directly confirm the condition.",
+                "confidence": 0.30
+              }
             }
-            """;
-        AIProviderPayloadValidator.IsValidApplicationScoringJson(response, sectionJson).ShouldBeTrue();
+            """,
+            sectionJson);
+
+        result.IsValid.ShouldBeTrue();
     }
 
     [Fact]
-    public void IsValidApplicationScoringJson_Should_ReturnFalse_WhenSectionJsonIsEmpty()
+    public void ValidateApplicationAnalysisJson_Should_Return_InvalidOutput_When_Decision_Is_Not_Proceed_Or_Hold()
     {
-        AIProviderPayloadValidator.IsValidApplicationScoringJson("{}", "[]").ShouldBeFalse();
+        var result = AIProviderPayloadValidator.ValidateApplicationAnalysisJson(
+            """
+            {
+              "decision": "unknown",
+              "errors": [],
+              "warnings": [],
+              "summaries": [
+                { "title": "Summary", "detail": "Content" }
+              ],
+              "recommendations": []
+            }
+            """);
+
+        result.IsValid.ShouldBeFalse();
+        result.FailureCategory.ShouldBe(AIFailureCategory.InvalidOutput);
+        result.Reason.ShouldContain("Expected 'PROCEED' or 'HOLD'");
     }
 
     [Fact]
-    public void IsValidApplicationScoringJson_Should_ReturnFalse_WhenAnswerMissing()
+    public void ValidateApplicationAnalysisJson_Should_Return_InvalidOutput_When_All_Findings_Are_Empty()
     {
-        var sectionJson = """[{"id":"q1"}]""";
-        var response = """{"q1": {"confidence": 50}}""";
-        AIProviderPayloadValidator.IsValidApplicationScoringJson(response, sectionJson).ShouldBeFalse();
+        var result = AIProviderPayloadValidator.ValidateApplicationAnalysisJson(
+            """
+            {
+              "decision": "PROCEED",
+              "errors": [],
+              "warnings": [],
+              "summaries": [],
+              "recommendations": []
+            }
+            """);
+
+        result.IsValid.ShouldBeFalse();
+        result.FailureCategory.ShouldBe(AIFailureCategory.InvalidOutput);
+        var reason = result.Reason;
+        reason.ShouldNotBeNull();
+        reason.ShouldContain("summaries");
     }
 
     [Fact]
-    public void IsValidApplicationScoringJson_Should_ReturnFalse_WhenConfidenceOutOfRange()
+    public void ValidateApplicationAnalysisJson_Should_Return_InvalidOutput_When_Recommendations_Are_Empty()
     {
-        var sectionJson = """[{"id":"q1"}]""";
-        var response = """{"q1": {"answer": "Yes", "confidence": 150}}""";
-        AIProviderPayloadValidator.IsValidApplicationScoringJson(response, sectionJson).ShouldBeFalse();
+        var result = AIProviderPayloadValidator.ValidateApplicationAnalysisJson(
+            """
+            {
+              "decision": "PROCEED",
+              "errors": [],
+              "warnings": [],
+              "summaries": [
+                { "title": "Summary", "detail": "Looks complete." }
+              ],
+              "recommendations": []
+            }
+            """);
+
+        result.IsValid.ShouldBeFalse();
+        result.FailureCategory.ShouldBe(AIFailureCategory.InvalidOutput);
+        var reason = result.Reason;
+        reason.ShouldNotBeNull();
+        reason.ShouldContain("recommendations");
     }
 
     [Fact]
-    public void IsValidApplicationScoringJson_Should_ReturnFalse_WhenQuestionMissingFromResponse()
+    public void ValidateApplicationAnalysisJson_Should_Return_Success_For_Proceed_With_Findings()
     {
-        var sectionJson = """[{"id":"q1"},{"id":"q2"}]""";
-        var response = """{"q1": {"answer": "Yes", "confidence": 80}}""";
-        AIProviderPayloadValidator.IsValidApplicationScoringJson(response, sectionJson).ShouldBeFalse();
+        var result = AIProviderPayloadValidator.ValidateApplicationAnalysisJson(
+            """
+            {
+              "decision": "PROCEED",
+              "errors": [],
+              "warnings": [],
+              "summaries": [
+                { "title": "Summary", "detail": "Looks complete." }
+              ],
+              "recommendations": [
+                { "title": "Proceed", "detail": "No blocking issues remain." }
+              ]
+            }
+            """);
+
+        result.IsValid.ShouldBeTrue();
     }
 
     [Fact]
-    public void IsValidApplicationScoringJson_Should_AcceptQuestionsWrappedInObject()
+    public void ValidateAttachmentSummaryText_Should_Return_InvalidOutput_For_Empty_Text()
     {
-        var sectionJson = """{"questions":[{"id":"q1"}]}""";
-        var response = """{"q1": {"answer": "Yes", "confidence": 75}}""";
-        AIProviderPayloadValidator.IsValidApplicationScoringJson(response, sectionJson).ShouldBeTrue();
+        var result = AIProviderPayloadValidator.ValidateAttachmentSummaryText(string.Empty);
+
+        result.IsValid.ShouldBeFalse();
+        result.FailureCategory.ShouldBe(AIFailureCategory.InvalidOutput);
+        var reason = result.Reason;
+        reason.ShouldNotBeNull();
+        reason.ShouldContain("empty");
     }
 
     [Fact]
-    public void IsValidApplicationScoringJson_Should_ReturnFalse_WhenConfidenceIsNegative()
+    public void ValidateAttachmentSummaryBatchJson_Should_Return_Success_For_Valid_Items()
     {
-        var sectionJson = """[{"id":"q1"}]""";
-        var response = """{"q1": {"answer": "Yes", "confidence": -1}}""";
-        AIProviderPayloadValidator.IsValidApplicationScoringJson(response, sectionJson).ShouldBeFalse();
+        var result = AIProviderPayloadValidator.ValidateAttachmentSummaryBatchJson(
+            """
+            {
+              "attachments": [
+                {
+                  "attachmentId": "a1",
+                  "summary": "One"
+                },
+                {
+                  "attachmentId": "a2",
+                  "summary": "Two"
+                }
+              ]
+            }
+            """);
+
+        result.IsValid.ShouldBeTrue();
+    }
+
+    [Fact]
+    public void ValidateAttachmentSummaryBatchJson_Should_Return_InvalidOutput_When_Attachments_Are_Missing()
+    {
+        var result = AIProviderPayloadValidator.ValidateAttachmentSummaryBatchJson("{}");
+
+        result.IsValid.ShouldBeFalse();
+        result.FailureCategory.ShouldBe(AIFailureCategory.InvalidOutput);
+        result.Reason.ShouldContain("attachments");
     }
 }

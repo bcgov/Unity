@@ -76,6 +76,7 @@
 
 #main-divider {
     width: 10px;
+    min-width: 10px;
     flex: 0 0 10px;
     background-color: #ccc;
     cursor: col-resize;

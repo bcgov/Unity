@@ -21,8 +21,8 @@ function generateAttachmentButtonContent(data, type, full, meta, attachmentType)
                 <i class="fl fl-attachment-more"></i>
             </button>
             <div class="dropdown-content">
-                <button class="btn fullWidth js-preview-attachment" style="margin:10px" type="button" data-attachment-type="${escapedAttachmentType}" data-owner-id="${escapedOwnerId}" data-file-name="${escapedFileName}" data-display-name="${escapedDisplayName}">
-                    <i class="fa fa-eye"></i><span>Preview Attachment</span>
+                <button class="btn fullWidth js-preview-attachment" style="margin:10px;margin-left:8px;" type="button" data-attachment-type="${escapedAttachmentType}" data-owner-id="${escapedOwnerId}" data-file-name="${escapedFileName}" data-display-name="${escapedDisplayName}">
+                    <i class="fa fa-eye p-0"></i><span>Preview Attachment</span>
                 </button>
                 <a href="${downloadUrl}" target="_blank" download="${data}" class="fullwidth">
                     <button class="btn fullWidth" style="margin:10px" type="button">

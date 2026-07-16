@@ -61,7 +61,9 @@
         dataTableName: 'UserGrantProgramsTable',
         dynamicButtonContainerId: 'dynamicButtonContainerId',
         externalSearchId: 'search-grant-programs',
-        disableColumnSelect: true
+        disableColumnSelect: true,
+        enableContextMenu: true,
+        contextMenuActionsSelector: '[data-selector="programs-table-actions"]'
     });
 });
 

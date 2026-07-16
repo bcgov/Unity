@@ -11,5 +11,6 @@ public class TenantDto : ExtensibleEntityDto<Guid>, IHasConcurrencyStamp
     public string Branch { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
     public string CasClientCode { get; set; } = string.Empty;
+    public string LicencePlate { get; set; } = string.Empty;
     public string ConcurrencyStamp { get; set; }
 }

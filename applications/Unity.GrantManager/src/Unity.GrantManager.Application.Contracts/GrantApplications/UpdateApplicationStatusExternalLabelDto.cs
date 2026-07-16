@@ -11,4 +11,7 @@ public class UpdateApplicationStatusExternalLabelDto
     [Required]
     [StringLength(ApplicationStatusConsts.MaxNameLength, MinimumLength = 1)]
     public string ExternalStatus { get; set; } = string.Empty;
+
+    [StringLength(ApplicationStatusConsts.MaxNameLength)]
+    public string? NotifiedStatus { get; set; }
 }

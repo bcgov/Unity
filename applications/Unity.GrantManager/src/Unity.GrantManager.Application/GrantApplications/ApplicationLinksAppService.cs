@@ -15,10 +15,10 @@ namespace Unity.GrantManager.GrantApplications;
 
 [Authorize]
 [ExposeServices(typeof(ApplicationLinksAppService), typeof(IApplicationLinksService))]
-public class ApplicationLinksAppService : CrudAppService<
+public class ApplicationLinksAppService(IRepository<ApplicationLink, Guid> repository) : CrudAppService<
         ApplicationLink,
         ApplicationLinksDto,
-        Guid>, IApplicationLinksService
+        Guid>(repository), IApplicationLinksService
 {
     // Validation Error Messages
     private const string ERROR_MULTIPLE_PARENTS = "Error: A submission can not have two parents. Please revise the link type.";
@@ -32,29 +32,31 @@ public class ApplicationLinksAppService : CrudAppService<
     public IApplicationRepository ApplicationRepository { get; set; } = null!;
     public IApplicantRepository ApplicantRepository { get; set; } = null!;
     public IApplicationFormAppService ApplicationFormAppService { get; set; } = null!;
-
-    public ApplicationLinksAppService(IRepository<ApplicationLink, Guid> repository) : base(repository) { }
+    public IRepository<ApplicationStatus, Guid> ApplicationStatusRepository { get; set; } = null!;
 
     public async Task<List<ApplicationLinksInfoDto>> GetListByApplicationAsync(Guid applicationId)
     {
         var applicationLinksQuery = await ApplicationLinksRepository.GetQueryableAsync();
         var applicationsQuery = await ApplicationRepository.GetQueryableAsync();
         var applicantsQuery = await ApplicantRepository.GetQueryableAsync();
+        var statusQuery = await ApplicationStatusRepository.GetQueryableAsync();
 
         // Get basic application and applicant data without form details
         var basicQuery = from applicationLinks in applicationLinksQuery
                         join application in applicationsQuery on applicationLinks.LinkedApplicationId equals application.Id into appLinks
                         from application in appLinks.DefaultIfEmpty() // Left join for safety
+                        join status in statusQuery on application.ApplicationStatusId equals status.Id into appStatuses
+                        from status in appStatuses.DefaultIfEmpty() // Left join to avoid split query navigation issue
                         join applicant in applicantsQuery on application.ApplicantId equals applicant.Id into applicants
                         from applicant in applicants.DefaultIfEmpty() // Left join for safety
                         where applicationLinks.ApplicationId == applicationId || applicationLinks.LinkedApplicationId == applicationId
                         select new
                         {
                             Id = applicationLinks.Id,
-                            ApplicationId = application.Id,
-                            ApplicationStatus = application.ApplicationStatus.InternalStatus,
-                            ReferenceNumber = application.ReferenceNo,
-                            ProjectName = application.ProjectName,
+                            ApplicationId = application != null ? application.Id : Guid.Empty,
+                            ApplicationStatus = status != null ? status.InternalStatus : GrantManagerConsts.UnknownValue,
+                            ReferenceNumber = application != null ? application.ReferenceNo : GrantManagerConsts.UnknownValue,
+                            ProjectName = application != null ? application.ProjectName : GrantManagerConsts.UnknownValue,
                             ApplicantName = applicant.ApplicantName ?? GrantManagerConsts.UnknownValue,
                             LinkType = applicationLinks.LinkType
                         };

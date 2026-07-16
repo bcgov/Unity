@@ -178,7 +178,11 @@ internal static class PolicyRegistrant
         authorizationBuilder.AddPolicy(TenantManagementPermissions.Tenants.Delete,
             policy => policy.RequireClaim(PermissionConstant, TenantManagementPermissions.Tenants.Delete));
         authorizationBuilder.AddPolicy(TenantManagementPermissions.Tenants.ManageFeatures,
-            policy => policy.RequireClaim(PermissionConstant, TenantManagementPermissions.Tenants.ManageFeatures));
+            policy => policy.RequireAssertion(context =>
+                context.User.HasClaim(PermissionConstant, TenantManagementPermissions.Tenants.ManageFeatures) ||
+                context.User.IsInRole(IdentityConsts.ITOperationsRoleName) ||
+                context.User.HasClaim(c => c.Type == PermissionConstant && c.Value == IdentityConsts.ITOperationsPermissionName)
+            ));
         authorizationBuilder.AddPolicy(TenantManagementPermissions.Tenants.ManageConnectionStrings,
             policy => policy.RequireClaim(PermissionConstant, TenantManagementPermissions.Tenants.ManageConnectionStrings));
 
@@ -202,6 +206,30 @@ internal static class PolicyRegistrant
         // IT Operations Policies
         authorizationBuilder.AddPolicy(IdentityConsts.ITOperationsPolicyName,
         policy => policy.RequireAssertion(context =>
+            context.User.IsInRole(IdentityConsts.ITOperationsRoleName) ||
+            context.User.HasClaim(c => c.Type == PermissionConstant && c.Value == IdentityConsts.ITOperationsPermissionName)
+        ));
+
+        // Tenant management combined: Tenants.Default OR ITOperations
+        authorizationBuilder.AddPolicy(TenantManagementPermissions.Policies.TenantsOrITOps,
+        policy => policy.RequireAssertion(context =>
+            context.User.HasClaim(PermissionConstant, TenantManagementPermissions.Tenants.Default) ||
+            context.User.IsInRole(IdentityConsts.ITOperationsRoleName) ||
+            context.User.HasClaim(c => c.Type == PermissionConstant && c.Value == IdentityConsts.ITOperationsPermissionName)
+        ));
+
+        // Tenant management combined: Tenants.Update OR ITOperations
+        authorizationBuilder.AddPolicy(TenantManagementPermissions.Policies.TenantsUpdateOrITOps,
+        policy => policy.RequireAssertion(context =>
+            context.User.HasClaim(PermissionConstant, TenantManagementPermissions.Tenants.Update) ||
+            context.User.IsInRole(IdentityConsts.ITOperationsRoleName) ||
+            context.User.HasClaim(c => c.Type == PermissionConstant && c.Value == IdentityConsts.ITOperationsPermissionName)
+        ));
+
+        // Tenant management combined: Tenants.Create OR ITOperations
+        authorizationBuilder.AddPolicy(TenantManagementPermissions.Policies.TenantsCreateOrITOps,
+        policy => policy.RequireAssertion(context =>
+            context.User.HasClaim(PermissionConstant, TenantManagementPermissions.Tenants.Create) ||
             context.User.IsInRole(IdentityConsts.ITOperationsRoleName) ||
             context.User.HasClaim(c => c.Type == PermissionConstant && c.Value == IdentityConsts.ITOperationsPermissionName)
         ));
@@ -243,7 +271,16 @@ internal static class PolicyRegistrant
         authorizationBuilder.AddPolicy(ReportingPermissions.Configuration.Update,
             policy => policy.RequireClaim(PermissionConstant, ReportingPermissions.Configuration.Update));
         authorizationBuilder.AddPolicy(ReportingPermissions.Configuration.Delete,
-            policy => policy.RequireClaim(PermissionConstant, ReportingPermissions.Configuration.Delete));        
+            policy => policy.RequireClaim(PermissionConstant, ReportingPermissions.Configuration.Delete));
+
+        // Application - External Status Visibility
+        authorizationBuilder.AddPolicy(UnitySelector.Application.Status.Default,
+            policy => policy.RequireClaim(PermissionConstant, UnitySelector.Application.Status.Default));
+        authorizationBuilder.AddPolicy(UnitySelector.Application.Status.Publish,
+            policy => policy.RequireClaim(PermissionConstant, UnitySelector.Application.Status.Publish));
+        authorizationBuilder.AddPolicy(UnitySelector.Application.Status.Unpublish,
+            policy => policy.RequireClaim(PermissionConstant, UnitySelector.Application.Status.Unpublish));
+        authorizationBuilder.AddPolicy(UnitySelector.Application.Status.BulkPublish,
+            policy => policy.RequireClaim(PermissionConstant, UnitySelector.Application.Status.BulkPublish));
     }
 }
-

@@ -686,24 +686,24 @@ function queueApplicationScoring(triggerButton = null) {
     const monitorScoring = () => globalThis.AIGenerationButtonState.monitor({
         $button,
         originalHtml: existingHtml,
-        getStatus: () => unity.grantManager.grantApplications.grantApplication
-            .getAIGenerationStatus(applicationId, 'application-scoring'),
-        onComplete: () => PubSub.publish('refresh_assessment_scores', null),
+        getStatus: () => globalThis.AIGenerationApi.getStatus(applicationId, 'application-scoring'),
+        onComplete: () => {
+            PubSub.publish('refresh_assessment_scores', null);
+        },
         onFailed: (request) => abp.message.error(request?.failureReason || 'AI scoring failed.')
     });
 
-    unity.grantManager.grantApplications.grantApplication
-        .queueApplicationScoring(applicationId)
-        .done(function (request) {
-            const status = globalThis.AIGenerationButtonState?.resolveStatus(request?.status) ?? '';
+    globalThis.AIGenerationApi.queueApplicationScoring(applicationId)
+        .done(function (generationStatus) {
+            const request = generationStatus?.generationRequest;
+            const status = String(request?.status ?? '').trim();
 
             if (status === 'Completed') {
                 globalThis.AIGenerationButtonState?.restoreForCooldownCheck($button, existingHtml);
+                globalThis.AIGenerationButtonState?.applyStatusState(generationStatus);
                 PubSub.publish('refresh_assessment_scores', null);
-                globalThis.syncAIRateLimitButtons?.();
                 return;
             }
-
             monitorScoring();
         })
         .fail(function () {
@@ -715,3 +715,28 @@ function queueApplicationScoring(triggerButton = null) {
             globalThis.syncAIRateLimitButtons?.();
         });
 }
+
+$(function () {
+    // Static buttons
+    $(document).on('click', '#regenerateAiScoresheetBtn', function () {
+        queueApplicationScoring();
+    });
+    $(document).on('click', '#btn-expand-all', function () {
+        expandAllAccordions('assessment-scoresheet');
+    });
+    $(document).on('click', '#btn-collapse-all', function () {
+        collapseAllAccordions('assessment-scoresheet');
+    });
+    $(document).on('click', '#saveAssessmentScoresBtn', function () {
+        saveAssessmentScores();
+    });
+
+    // Dynamically-generated section buttons (event delegation)
+    $(document).on('click', '[id^="scoresheet-section-save-"]', function () {
+        saveScoresSection($(this).data('form-id'), $(this).data('section-id'));
+    });
+    $(document).on('click', '[id^="scoresheet-section-discard-"]', function () {
+        discardChangesScoresSection($(this).data('form-id'), $(this).data('section-id'));
+    });
+
+});

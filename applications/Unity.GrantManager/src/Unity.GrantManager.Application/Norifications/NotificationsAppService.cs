@@ -4,7 +4,8 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Integrations;
-using Unity.Notifications.TeamsNotifications;
+using Unity.GrantManager.Notifications.Teams;
+using Unity.Notifications.Teams;
 using Volo.Abp;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Repositories;
@@ -82,8 +83,7 @@ namespace Unity.GrantManager.Notifications
                 logger.LogWarning("PostToTeamsAsync (no-facts): no Teams channel configured, skipping notification");
                 return;
             }
-
-            List<Fact> facts = new() { };
+            List<Fact> facts = [];
             string messageCard = TeamsNotificationService.InitializeMessageCard(activityTitle, activitySubtitle, facts);
             try
             {

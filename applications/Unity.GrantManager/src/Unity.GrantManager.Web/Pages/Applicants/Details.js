@@ -27,7 +27,8 @@ $(document).ready(function () {
     // Handle tab switching animations
     $('button[data-bs-toggle="tab"]').on('shown.bs.tab', function (e) {
         let targetTab = $(e.target).attr('data-bs-target');
-        $(targetTab).addClass('fade-in-load visible');
+        const targetEl = targetTab ? document.querySelector(targetTab) : null;
+        if (targetEl) $(targetEl).addClass('fade-in-load visible');
         if ($(e.target).closest('#detailsTab').length) {
             syncLeftTabScrollPosition(targetTab);
             scheduleLeftTabScrollReset(targetTab);
@@ -371,7 +372,7 @@ function updateCommentsCounters() {
     setTimeout(() => {
         $('.comments-container')
             .map(function () {
-                $('#' + $(this).data('counttag')).html($(this).data('count'));
+                $('#' + $(this).data('counttag')).text($(this).data('count'));
             })
             .get();
     }, 500);

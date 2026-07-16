@@ -37,7 +37,6 @@ namespace Unity.AI.Extraction
         {
             if (fileContent == null)
             {
-                _logger.LogDebug("File content stream is null for {FileName}", fileName);
                 return Task.FromResult(string.Empty);
             }
 
@@ -49,7 +48,6 @@ namespace Unity.AI.Extraction
 
                 if (extension == ".doc")
                 {
-                    _logger.LogDebug("Legacy .doc extraction is not supported for {FileName}", fileName);
                     return Task.FromResult(string.Empty);
                 }
 
@@ -63,13 +61,7 @@ namespace Unity.AI.Extraction
                     _ => ExtractByContentType(fileName, fileContent, normalizedContentType, cancellationToken)
                 };
 
-                if (string.IsNullOrEmpty(rawText))
-                {
-                    _logger.LogDebug("No text extraction available for content type {ContentType} with extension {Extension}",
-                        contentType, extension);
-                }
-
-                return Task.FromResult(NormalizeAndLimitText(rawText, fileName));
+                return Task.FromResult(NormalizeAndLimitText(rawText));
             }
             catch (OperationCanceledException)
             {
@@ -138,12 +130,9 @@ namespace Unity.AI.Extraction
                     builder.Append(buffer, 0, Math.Min(read, remaining));
                     if (builder.Length >= MaxExtractedTextLength)
                     {
-                        _logger.LogDebug("Truncated text content to {MaxLength} characters", MaxExtractedTextLength);
                         break;
                     }
                 }
-
-                _logger.LogDebug("Extracted {CharacterCount} characters from text-based content.", builder.Length);
                 return builder.ToString();
             }
             catch (Exception ex)
@@ -180,7 +169,6 @@ namespace Unity.AI.Extraction
                     }
                 }
 
-                _logger.LogDebug("Extracted PDF text from {ProcessedPageCount} pages for {FileName}", processedPageCount, fileName);
                 return builder.ToString();
             }
             catch (Exception ex)
@@ -200,11 +188,6 @@ namespace Unity.AI.Extraction
                 var processedParagraphCount = AppendDocxParagraphText(document, builder, cancellationToken);
                 var processedTableRowCount = AppendDocxTableText(document, builder, cancellationToken);
 
-                _logger.LogDebug(
-                    "Extracted Word text from {ProcessedParagraphCount} paragraphs and {ProcessedTableRowCount} table rows for {FileName}",
-                    processedParagraphCount,
-                    processedTableRowCount,
-                    fileName);
                 return builder.ToString();
             }
             catch (Exception ex)
@@ -324,11 +307,6 @@ namespace Unity.AI.Extraction
                     }
                 }
 
-                _logger.LogDebug(
-                    "Extracted Excel text from {ProcessedSheetCount} sheets and {ProcessedRowCount} rows for {FileName}",
-                    processedSheetCount,
-                    processedRowCount,
-                    fileName);
                 return builder.ToString();
             }
             catch (Exception ex)
@@ -371,7 +349,6 @@ namespace Unity.AI.Extraction
                     }
                 }
 
-                _logger.LogDebug("Extracted PowerPoint text from {ProcessedSlideCount} slides for {FileName}", processedSlideCount, fileName);
                 return builder.ToString();
             }
             catch (Exception ex)
@@ -390,14 +367,12 @@ namespace Unity.AI.Extraction
 
             if (slideEntriesByName.Count == 0)
             {
-                _logger.LogDebug("No slide entries found in PowerPoint archive.");
                 return Enumerable.Empty<ZipArchiveEntry>();
             }
 
             var orderedSlideNames = TryGetPowerPointSlideOrder(archive);
             if (orderedSlideNames.Count == 0)
             {
-                _logger.LogDebug("Using PowerPoint part-name order fallback for {SlideCount} slides.", slideEntriesByName.Count);
                 return slideEntriesByName.Values
                     .OrderBy(entry => GetPowerPointSlideNumber(entry.FullName))
                     .ToList();
@@ -417,8 +392,6 @@ namespace Unity.AI.Extraction
             {
                 orderedEntries.AddRange(slideEntriesByName.Values.OrderBy(entry => GetPowerPointSlideNumber(entry.FullName)));
             }
-
-            _logger.LogDebug("Resolved PowerPoint presentation order for {SlideCount} slides.", orderedEntries.Count);
             return orderedEntries;
         }
 
@@ -583,7 +556,7 @@ namespace Unity.AI.Extraction
             }
             catch (Exception ex)
             {
-                _logger.LogDebug(ex, "Falling back to part-name slide order for PowerPoint extraction.");
+                _logger.LogDebug(ex, "Could not determine PowerPoint slide order from relationships; falling back to part-name order.");
                 return new List<string>();
             }
         }
@@ -683,15 +656,13 @@ namespace Unity.AI.Extraction
             }) ?? string.Empty;
         }
 
-        private string NormalizeAndLimitText(string text, string fileName)
+        private string NormalizeAndLimitText(string text)
         {
             var normalized = NormalizeExtractedText(text);
-            normalized = RemoveLeadingFileNameArtifact(normalized, fileName);
 
             if (normalized.Length > MaxExtractedTextLength)
             {
                 normalized = normalized.Substring(0, MaxExtractedTextLength);
-                _logger.LogDebug("Truncated extracted content to {MaxLength} characters", MaxExtractedTextLength);
             }
 
             return normalized;
@@ -709,66 +680,12 @@ namespace Unity.AI.Extraction
                 .Replace("\r\n", "\n")
                 .Replace('\r', '\n');
 
-            normalized = LowerToUpperWordBoundaryRegex().Replace(normalized, " ");
-            normalized = PunctuationToWordBoundaryRegex().Replace(normalized, " ");
-            normalized = ColonDashSpacingRegex().Replace(normalized, ": - ");
-            normalized = HyphenSpacingRegex().Replace(normalized, " - ");
-            normalized = KeywordBoundaryRegex().Replace(normalized, " ");
             normalized = MultipleSpacesRegex().Replace(normalized, " ");
             normalized = NewlineWhitespaceRegex().Replace(normalized, "\n");
             normalized = MultipleNewlinesRegex().Replace(normalized, "\n");
 
             return normalized.Trim();
         }
-
-        private static string RemoveLeadingFileNameArtifact(string text, string fileName)
-        {
-            if (string.IsNullOrWhiteSpace(text) || string.IsNullOrWhiteSpace(fileName))
-            {
-                return text;
-            }
-
-            var rawStem = Path.GetFileNameWithoutExtension(fileName)?.Trim();
-            if (string.IsNullOrWhiteSpace(rawStem))
-            {
-                return text;
-            }
-
-            var decodedStem = Uri.UnescapeDataString(rawStem);
-            foreach (var candidate in new[] { rawStem, decodedStem })
-            {
-                if (string.IsNullOrWhiteSpace(candidate))
-                {
-                    continue;
-                }
-
-                if (text.StartsWith(candidate, StringComparison.OrdinalIgnoreCase))
-                {
-                    var stripped = text.Substring(candidate.Length).TrimStart(' ', '-', ':', '.', '\t');
-                    if (!string.IsNullOrWhiteSpace(stripped))
-                    {
-                        return stripped;
-                    }
-                }
-            }
-
-            return text;
-        }
-
-        [GeneratedRegex(@"(?<=[a-z])(?=[A-Z])")]
-        private static partial Regex LowerToUpperWordBoundaryRegex();
-
-        [GeneratedRegex(@"(?<=[\.\,\:\;\)])(?=[A-Za-z0-9])")]
-        private static partial Regex PunctuationToWordBoundaryRegex();
-
-        [GeneratedRegex(@":-")]
-        private static partial Regex ColonDashSpacingRegex();
-
-        [GeneratedRegex(@"(?<=\S)- (?=[A-Za-z])")]
-        private static partial Regex HyphenSpacingRegex();
-
-        [GeneratedRegex(@"(?<=[a-z])(?=(project|funding|budget|community|summary|notes|details|planning|outcomes|background|services)\b)", RegexOptions.IgnoreCase)]
-        private static partial Regex KeywordBoundaryRegex();
 
         [GeneratedRegex(@"[ \t]+")]
         private static partial Regex MultipleSpacesRegex();

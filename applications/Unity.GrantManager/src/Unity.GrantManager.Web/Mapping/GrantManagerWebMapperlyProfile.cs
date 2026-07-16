@@ -1,5 +1,5 @@
-using System;
 using Riok.Mapperly.Abstractions;
+using System;
 using Unity.GrantManager.ApplicantProfile;
 using Unity.GrantManager.ApplicantProfile.ProfileData;
 using Unity.GrantManager.ApplicationForms;
@@ -13,6 +13,7 @@ using Unity.GrantManager.Web.Components.ApplicationUiSettingGroup;
 using Unity.GrantManager.Web.Pages.ApplicantContact;
 using Unity.GrantManager.Web.Pages.ApplicationContact;
 using Unity.GrantManager.Web.Pages.ApplicationForms.ViewModels;
+using Unity.GrantManager.Web.Pages.BulkActions;
 using Unity.GrantManager.Web.Pages.Sites.ViewModels;
 using Unity.GrantManager.Web.Views.Shared.Components.ApplicantInfo;
 using Unity.GrantManager.Web.Views.Shared.Components.SummaryWidget;
@@ -76,7 +77,7 @@ public partial class ApplicationToGrantApplicationDtoWebMapper : MapperBase<Appl
     [MapperIgnoreTarget(nameof(GrantApplicationDto.OrganizationType))]
     [MapperIgnoreTarget(nameof(GrantApplicationDto.OrgStatus))]
     [MapperIgnoreTarget(nameof(GrantApplicationDto.BusinessNumber))]
-    [MapperIgnoreTarget(nameof(GrantApplicationDto.OrganizationSize))]
+    [MapperIgnoreTarget(nameof(GrantApplicationDto.ApproxNumberOfEmployees))]
     [MapperIgnoreTarget(nameof(GrantApplicationDto.OrgNumber))]
     [MapperIgnoreTarget(nameof(GrantApplicationDto.SectorSubSectorIndustryDesc))]
     [MapperIgnoreTarget(nameof(GrantApplicationDto.PaymentInfo))]
@@ -105,7 +106,7 @@ public partial class ApplicationToGrantApplicationDtoWebMapper : MapperBase<Appl
     [MapperIgnoreTarget(nameof(GrantApplicationDto.OrganizationType))]
     [MapperIgnoreTarget(nameof(GrantApplicationDto.OrgStatus))]
     [MapperIgnoreTarget(nameof(GrantApplicationDto.BusinessNumber))]
-    [MapperIgnoreTarget(nameof(GrantApplicationDto.OrganizationSize))]
+    [MapperIgnoreTarget(nameof(GrantApplicationDto.ApproxNumberOfEmployees))]
     [MapperIgnoreTarget(nameof(GrantApplicationDto.OrgNumber))]
     [MapperIgnoreTarget(nameof(GrantApplicationDto.SectorSubSectorIndustryDesc))]
     [MapperIgnoreTarget(nameof(GrantApplicationDto.PaymentInfo))]
@@ -319,4 +320,14 @@ public partial class ApplicantContactModalViewModelToUpdateApplicantContactDtoMa
     [MapperIgnoreSource(nameof(ApplicantContactModalViewModel.RoleOptions))]
     [MapperIgnoreTarget(nameof(UpdateApplicantContactDto.WorkPhoneExtension))]
     public override partial void Map(ApplicantContactModalViewModel source, UpdateApplicantContactDto destination);
+}
+
+[Mapper]
+public partial class BulkPublishDtoToViewModelMapper : MapperBase<BulkPublishDto, BulkPublishApplicationViewModel>
+{
+    [MapperIgnoreTarget(nameof(BulkPublishApplicationViewModel.IsValid))]
+    public override partial BulkPublishApplicationViewModel Map(BulkPublishDto source);
+
+    [MapperIgnoreTarget(nameof(BulkPublishApplicationViewModel.IsValid))]
+    public override partial void Map(BulkPublishDto source, BulkPublishApplicationViewModel destination);
 }

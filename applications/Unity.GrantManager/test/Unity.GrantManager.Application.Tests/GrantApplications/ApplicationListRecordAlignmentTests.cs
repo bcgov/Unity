@@ -142,8 +142,8 @@ public class ApplicationListRecordAlignmentTests : GrantManagerApplicationTestBa
                 $"ApplicantSubSector mismatch for Id={app.Id}");
             rec.ApplicantOrganizationType.ShouldBe(applicant.OrganizationType,
                 $"ApplicantOrganizationType mismatch for Id={app.Id}");
-            rec.ApplicantOrganizationSize.ShouldBe(applicant.OrganizationSize,
-                $"ApplicantOrganizationSize mismatch for Id={app.Id}");
+            rec.ApplicantApproxNumberOfEmployees.ShouldBe(applicant.ApproxNumberOfEmployees,
+                $"ApplicantApproxNumberOfEmployees mismatch for Id={app.Id}");
             rec.ApplicantIndigenousOrgInd.ShouldBe(applicant.IndigenousOrgInd,
                 $"ApplicantIndigenousOrgInd mismatch for Id={app.Id}");
             rec.ApplicantRedStop.ShouldBe(applicant.RedStop,
