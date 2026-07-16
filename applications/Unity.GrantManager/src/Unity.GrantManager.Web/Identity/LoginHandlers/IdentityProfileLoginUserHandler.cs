@@ -9,7 +9,6 @@ using System.Security.Claims;
 using System.Threading.Tasks;
 using Unity.GrantManager.Identity;
 using Unity.GrantManager.Web.Exceptions;
-using Volo.Abp.Identity;
 using Volo.Abp.Security.Claims;
 
 namespace Unity.GrantManager.Web.Identity.LoginHandlers
@@ -53,29 +52,12 @@ namespace Unity.GrantManager.Web.Identity.LoginHandlers
             }
 
             userTenantAccount ??= userTenantAccounts[0];
-            var principal = validatedTokenContext.Principal!;
 
-            using (CurrentTenant.Change(userTenantAccount.TenantId))
-            {
-                var userRoles = await IdentityUserRepository.GetRolesAsync(userTenantAccount.Id);
-
-                if (userRoles != null)
-                {
-                    foreach (var role in userRoles)
-                    {
-                        var dbRole = await IdentityRoleManager.GetByIdAsync(role.Id);
-                        // Two distinct claim types are intentional here - see the NOTE in
-                        // GrantManagerWebModule.ConfigureAuthentication. UnityClaimsTypes.Role
-                        // ("client_roles") drives ASP.NET Core's RoleClaimType/IsInRole and also
-                        // carries Keycloak-only roles (ITAdministrator/ITOperations). AbpClaimTypes.Role
-                        // drives ABP's RolePermissionValueProvider and is safe for ABP's dynamic claims
-                        // refresh to recompute from the DB, since it only ever holds real DB roles.
-                        principal.AddClaim(UnityClaimsTypes.Role, dbRole.Name);
-                        principal.AddClaim(AbpClaimTypes.Role, dbRole.Name);
-                    }
-                }
-            }
-
+            // DB-managed roles (approver, assessor, program_manager, etc.) are no longer stamped
+            // onto the principal here - ABP's dynamic claims refresh recomputes AbpClaimTypes.Role
+            // from the DB on every request, so the cookie doesn't need to carry them. The
+            // UnityClaimsTypes.Role ("client_roles") claim now only ever holds what Keycloak sends
+            // natively (ITAdministrator/ITOperations), which ABP can't recompute.
             AssignDefaultClaims(validatedTokenContext.Principal!, userTenantAccount.DisplayName ?? string.Empty, userTenantAccount.Id);
 
             validatedTokenContext.Principal!.AddClaim(AbpClaimTypes.TenantId, userTenantAccount.TenantId?.ToString() ?? Guid.Empty.ToString());

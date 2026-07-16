@@ -2,6 +2,7 @@ using System;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Unity.Modules.Shared.Specializations;
+using Volo.Abp.Authorization.Permissions;
 using Volo.Abp.Features;
 using Volo.Abp.UI.Navigation;
 using Volo.Abp.Users;
@@ -15,6 +16,8 @@ public static class MenuItemExtensions
     private const string ExcludeWhenSpecializationsKey = "_ExcludeWhenSpecializations";
     private const string OnlyWhenSpecializationsKey = "_OnlyWhenSpecializations";
     private const string OnlyWhenInRoleKey = "_OnlyWhenInRole";
+    private const string RequiredPermissionOrRolePermissionKey = "_RequiredPermissionOrRolePermission";
+    private const string RequiredPermissionOrRoleRolesKey = "_RequiredPermissionOrRoleRoles";
 
     /// <summary>
     /// Hides this menu item when any of the given features are enabled.
@@ -69,6 +72,37 @@ public static class MenuItemExtensions
         params string[] roleNames)
     {
         item.CustomData[OnlyWhenInRoleKey] = roleNames;
+        return item;
+    }
+
+    /// <summary>
+    /// Shows this menu item when the current user either has the given permission granted
+    /// (checked via IPermissionChecker, e.g. permissions granted through the DB/UI) or is in
+    /// any of the given roles (checked via ICurrentUser.IsInRole, e.g. Keycloak-issued client
+    /// roles).
+    /// </summary>
+    /// <remarks>
+    /// Use this instead of the <c>ApplicationMenuItem(..., requiredPermissionName: ...)</c>
+    /// constructor argument when a role (typically ITAdministrator/ITOperations) should also be
+    /// able to see the item even without the permission explicitly granted. The constructor arg
+    /// is checked entirely inside ABP's own menu-rendering pipeline via IPermissionChecker and
+    /// has no awareness of roles or of authorization policies - it will NOT be satisfied by a
+    /// role-based RoleOrPermissionRequirement authorization policy registered for the same
+    /// permission name, even if that policy protects the page itself.
+    /// (This is exactly what caused the TestingPermissions menu item to stay hidden for
+    /// ITOperations/ITAdministrator users despite the page being reachable via a
+    /// RoleOrPermissionRequirement policy of the same name - the menu check and the page's
+    /// [Authorize] check are two unrelated code paths.)
+    /// Use <see cref="OnlyWhenInRole"/> instead when the item should be role-gated ONLY, with no
+    /// permission fallback.
+    /// </remarks>
+    public static ApplicationMenuItem RequirePermissionOrRole(
+        this ApplicationMenuItem item,
+        string permissionName,
+        params string[] roleNames)
+    {
+        item.CustomData[RequiredPermissionOrRolePermissionKey] = permissionName;
+        item.CustomData[RequiredPermissionOrRoleRolesKey] = roleNames;
         return item;
     }
 
@@ -143,6 +177,23 @@ public static class MenuItemExtensions
             var currentUser = serviceProvider.GetRequiredService<ICurrentUser>();
             if (!Array.Exists(onlyRoles, currentUser.IsInRole))
                 return false;
+        }
+
+        if (item.CustomData.TryGetValue(RequiredPermissionOrRolePermissionKey, out var permObj)
+            && permObj is string permissionName)
+        {
+            var roles = item.CustomData.TryGetValue(RequiredPermissionOrRoleRolesKey, out var rolesObj)
+                && rolesObj is string[] requiredRoles
+                    ? requiredRoles
+                    : [];
+
+            var currentUser = serviceProvider.GetRequiredService<ICurrentUser>();
+            if (!Array.Exists(roles, currentUser.IsInRole))
+            {
+                var permissionChecker = serviceProvider.GetRequiredService<IPermissionChecker>();
+                if (!await permissionChecker.IsGrantedAsync(permissionName))
+                    return false;
+            }
         }
 
         return true;

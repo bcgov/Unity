@@ -30,6 +30,8 @@ internal static class PolicyRegistrant
             policy => policy.RequireRole(IdentityConsts.ITAdminRoleName));
         authorizationBuilder.AddPolicy(IdentityConsts.ITOperationsPolicyName,
             policy => policy.RequireRole(IdentityConsts.ITOperationsRoleName));
+        authorizationBuilder.AddPolicy(IdentityConsts.ITAdminOrITOperationsPolicyName,
+            policy => policy.RequireRole(ITAdminOrITOperationsRoles));
 
         // Tenant management combined: Tenants.<X> OR ITAdmin/ITOperations
         // NOTE: TenantManagementPermissions.Tenants.Default/Create/Update/Delete/ManageConnectionStrings
