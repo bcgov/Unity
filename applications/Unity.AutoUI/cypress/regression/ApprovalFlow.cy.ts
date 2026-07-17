@@ -170,13 +170,23 @@ const APPLICATIONS_PATH = "GrantApplications";
   function openStatusActionsMenu(): void {
     waitForBlockingUiToClear();
     detailsPage.dismissErrorModalIfPresent();
+
+    // On DEV the button can re-render (e.g. "Processing..." -> its real label)
+    // between assertions, detaching the subject held by a single chained
+    // .should().and(). Re-querying fresh for each assertion (per Cypress's
+    // own guidance for this error) picks up the current DOM node instead.
     cy.get(STATUS_ACTIONS.menuButton, { timeout: 20000 })
       .filter(":visible")
       .first()
-      .scrollIntoView()
+      .scrollIntoView();
+
+    cy.get(STATUS_ACTIONS.menuButton, { timeout: 20000 })
+      .filter(":visible")
+      .first()
       .should("be.visible")
       .and("not.contain.text", "Processing...")
       .click({ force: true });
+
     cy.get(STATUS_ACTIONS.menu, { timeout: 20000 }).should("be.visible");
   }
 
