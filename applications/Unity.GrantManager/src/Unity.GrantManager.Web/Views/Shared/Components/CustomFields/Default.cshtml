@@ -32,6 +32,17 @@
                 </span>
             </button>
         }
+        @if (await PermissionChecker.IsGrantedAsync(AIPermissions.FormScoresheet.Generate))
+        {
+            <button type="button" id="btn-generate-scoresheet" class="btn ai-generate-btn unt-btn-outline-primary btn-outline-primary"
+                    data-ai-cooldown-checking="1" data-ai-rate-limit-disabled="1" disabled
+                    title="Generate a scoresheet for the current form version">
+                <span class="ai-button-content">
+                    <i class="unt-icon-sm fa-solid fa-wand-magic-sparkles"></i>
+                    <span>Generate Scoresheet</span>
+                </span>
+            </button>
+        }
         <abp-button id="btn-back-worksheet-config"
                     text="Back"
                     class="btn unt-btn-outline-primary btn-outline-primary"
