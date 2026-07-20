@@ -1,0 +1,72 @@
+// Most visual styling comes from the MVC theme's own stylesheets (linked at
+// runtime via core/theme-assets.ts: fonts.css, unity-styles.css, layout.css,
+// fluenticons.min.css), reused as-is rather than reimplemented here.
+
+// .abp-application-layout is a <div> here (Angular can't emit <body>), and a plain
+// block div sizes to its own content by default - it doesn't inherit its parent's
+// height just because app-shell (styles.scss) has min-height: 100vh. In the real
+// app this class is directly on <body>, which gets height: 100% from
+// `html, body { height: 100%; }` with no such gap.
+//
+// A single min-height fix here isn't enough either: giving the outermost div a
+// height doesn't make its CHILDREN stretch to fill it - `.unity-app-container`
+// (below the fixed-height navbar) still only takes its own content height, leaving
+// the "extra" space as an unstyled gap rather than being handed to the content
+// area. Each block-level hop needs the height passed down explicitly via flex;
+// the real app never had this problem because none of these elements were ever
+// separate un-sized boxes - they were always fragments of one flowing body.
+.abp-application-layout {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+// .abp-application-layout is now a flex column (needed for the height fix above).
+// Any direct child inheriting `margin: auto` from the theme's own CSS - written
+// assuming normal block flow, where auto margins on an auto-width block do nothing
+// - behaves very differently as a flex item: auto margins override the default
+// `align-items: stretch` cross-axis behavior, shrinking the item to its content
+// width and centering it instead of letting it fill the row. #main-navbar
+// (`.unity-navbar` has `margin: auto` in unity-styles.css) is the concrete case
+// that surfaced this, but it's the same failure mode as .unity-app-main-container's
+// margin below - reset generically for every direct child instead of patching
+// each one as it's separately reported.
+.abp-application-layout > * {
+  margin-left: 0;
+  margin-right: 0;
+}
+
+.unity-app-container {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+
+  > .d-flex {
+    flex: 1;
+    min-width: 0;
+  }
+}
+
+// Pages/ConfigurationManagement/Index.css sets `.unity-app-main-container { margin:
+// auto; ... }`, harmless in the real app where this element was only ever as tall
+// as its own content. Now that .unity-app-container/.d-flex above genuinely fill
+// the remaining viewport height (needed for the full-height fix), that `margin:
+// auto` vertically centers .unity-app-main-container within all that extra space
+// as a flex item of .d-flex - pushing content down from the header instead of
+// sitting right below it, which is the big gap being reported. Neutralize only the
+// vertical half of that margin; leave horizontal centering intact.
+.unity-app-main-container {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+.btn-dropdown {
+  height: 2rem;
+  padding-top: 3px;
+}
+
+.dropdown-title {
+  font-size: 18px;
+  padding-left: 8px;
+  font-weight: 800;
+}

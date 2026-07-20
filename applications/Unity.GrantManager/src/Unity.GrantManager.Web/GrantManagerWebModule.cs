@@ -371,6 +371,11 @@ public class GrantManagerWebModule : AbpModule
                 // Rewrite OIDC redirect URI on OpenShift (Staging, Production) environments or if requested
                 options.Events.OnRedirectToIdentityProvider = context =>
                 {
+                    if (TryHandleAngularApiChallenge(context))
+                    {
+                        return Task.CompletedTask;
+                    }
+
                     var host = context.Request.Host;
                     var explicitIn = configuration["AuthServer:OidcSignin"] ?? $"https://{host}/signin-oidc";
                     context.ProtocolMessage.SetParameter("redirect_uri", explicitIn);
@@ -399,8 +404,32 @@ public class GrantManagerWebModule : AbpModule
                 options.ProtocolValidator.RequireNonce = false;
                 options.CorrelationCookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
                 options.CorrelationCookie.SameSite = SameSiteMode.Unspecified;
+
+                options.Events.OnRedirectToIdentityProvider = context =>
+                {
+                    TryHandleAngularApiChallenge(context);
+                    return Task.CompletedTask;
+                };
             }
         });
+    }
+
+    // The OIDC challenge scheme has no concept of returning 401 instead of redirecting -
+    // it's a redirect-based protocol, and this app's cookie scheme is never itself the
+    // challenge scheme (DefaultChallengeScheme is OpenIdConnect), so Cookie's own
+    // OnRedirectToLogin never fires for [Authorize] failures. The Angular SPA's API calls
+    // (/api/angular-app/*) need a plain 401 instead of a redirect chain ending in an HTML
+    // login page, so short-circuit here before the OIDC redirect is written.
+    private static bool TryHandleAngularApiChallenge(Microsoft.AspNetCore.Authentication.OpenIdConnect.RedirectContext context)
+    {
+        if (!context.Request.Path.StartsWithSegments("/api/angular-app"))
+        {
+            return false;
+        }
+
+        context.HandleResponse();
+        context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+        return true;
     }
 
     private void ConfigureUrls(IConfiguration configuration)

@@ -51,6 +51,10 @@
                on every request), never in client_roles/CurrentUser.IsInRole. *@
             @if (CurrentUser.FindClaims(AbpClaimTypes.Role).Any(c => c.Value == "system_admin") && await FeatureChecker.IsEnabledAsync("SettingManagement.Enable"))
             {
+                @* Strangler-fig POC: navigates into ConfigurationManagement as normal - the
+                   Program Details side-menu item within that page is what now routes into
+                   the Angular app (see Pages/ConfigurationManagement/Index.cshtml), rather
+                   than this top-level link having its own separate Angular-hosted duplicate. *@
                 <abp-dropdown-item href="/ConfigurationManagement">Configuration Management</abp-dropdown-item>
             }
             @if (CurrentUser.IsInRole("ITOperations"))

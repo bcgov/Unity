@@ -23,10 +23,14 @@
             }
         });
 
-        // Restore the last active menu item from localStorage, fallback to first
+        // Restore the last active menu item from localStorage, fallback to first.
+        // Navigate-away items (e.g. Program Details, now hosted in the Angular app)
+        // have no content div to restore - they're a navigation target, not a
+        // togglable section, so they're excluded from consideration here.
+        const toggleableMenuItems = menuItems.filter(function () { return !$(this).data('navigate-url'); });
         const savedMenuId = localStorage.getItem(ACTIVE_MENU_KEY);
-        const savedMenuItem = savedMenuId ? menuItems.filter('#' + savedMenuId) : $();
-        const activeMenuItem = (savedMenuItem.length ? savedMenuItem : menuItems.first());
+        const savedMenuItem = savedMenuId ? toggleableMenuItems.filter('#' + savedMenuId) : $();
+        const activeMenuItem = (savedMenuItem.length ? savedMenuItem : toggleableMenuItems.first());
         if (activeMenuItem.length) {
             activeMenuItem.addClass('active');
             const targetId = activeMenuItem.data('target');
@@ -68,6 +72,15 @@
 
     function menuItemClick(e) {
         const clickedItem = $(e.currentTarget);
+
+        // Navigate-away items (Program Details) leave this page entirely rather
+        // than toggling a section within it.
+        const navigateUrl = clickedItem.data('navigate-url');
+        if (navigateUrl) {
+            window.location.href = navigateUrl;
+            return;
+        }
+
         const targetId = clickedItem.data('target');
 
         // Persist selection

@@ -1,0 +1,24 @@
+@if (isLeaf) {
+  @if (item.url) {
+    <a class="dropdown-item" [href]="item.url">
+      @if (showIcon) {
+        <i [class]="item.icon"></i>
+      }
+      {{ item.displayName }}
+    </a>
+  }
+} @else {
+  <div class="dropdown-submenu">
+    <a role="button" class="btn dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+      @if (item.icon) {
+        <span class="lp-icon"><i [class]="item.icon"></i></span>
+      }
+      <span class="lp-text">{{ item.displayName }}</span>
+    </a>
+    <div class="dropdown-menu border-0 shadow-sm">
+      @for (child of item.items; track child.name) {
+        <app-menu-item [item]="child" />
+      }
+    </div>
+  </div>
+}

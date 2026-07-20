@@ -1,0 +1,24 @@
+<div class="config-page-layout">
+  <div id="ConfigurationManagementSideMenu" class="side-menu">
+    <ul>
+      @for (item of mvcSideMenuItems; track item.elementId) {
+        @if (isVisible(item)) {
+          <li [id]="item.elementId" class="nav-item btn btn-nav" (click)="navigateToMvcSection(item.elementId)">
+            {{ item.label }}
+          </li>
+        }
+      }
+      @if (bootstrap()?.showProgramDetails) {
+        <li id="program-details-menu-item" class="nav-item btn btn-nav active">
+          Program Details
+        </li>
+      }
+    </ul>
+  </div>
+
+  <div class="config-content">
+    <div class="config-section input-area card mb-3 config-management">
+      <router-outlet />
+    </div>
+  </div>
+</div>
