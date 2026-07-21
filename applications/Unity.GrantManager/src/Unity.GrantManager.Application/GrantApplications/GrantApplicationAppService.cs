@@ -12,10 +12,8 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
-using Unity.AI.Automation;
 using Unity.AI.Models;
 using Unity.AI.Permissions;
-using Unity.AI.RateLimit;
 using Unity.AI.Responses;
 using Unity.Flex.WorksheetInstances;
 using Unity.Flex.Worksheets;
@@ -27,6 +25,7 @@ using Unity.GrantManager.Flex;
 using Unity.GrantManager.GlobalTag;
 using Unity.GrantManager.Identity;
 using Unity.GrantManager.Payments;
+using Unity.GrantManager.GrantApplications.Automation;
 using Unity.Modules.Shared;
 using Unity.Modules.Shared.Correlation;
 using Unity.Modules.Shared.Specializations;
@@ -59,7 +58,6 @@ public class GrantApplicationAppService(
     IApplicantSupplierAppService applicantSupplierService,
     IPaymentRequestAppService paymentRequestService,
     IAIGenerationStatusAppService aiGenerationStatusAppService,
-    IAIRateLimiter aiRateLimiter,
     IFeatureChecker featureChecker)
     : GrantManagerAppService, IGrantApplicationAppService
 #pragma warning restore S107 // Methods should not have too many parameters
@@ -1368,13 +1366,10 @@ public class GrantApplicationAppService(
         await EnsureAIGenerationStatusAccessAsync(operationType);
 
         var request = await aiGenerationStatusAppService.GetLatestAsync(applicationId, operationType, CurrentTenant.Id);
-        var state = await aiRateLimiter.GetStateAsync();
 
         return new AIGenerationStatusDto
         {
             GenerationRequest = request,
-            IsGenerating = state.IsGenerating,
-            RetryAfterSeconds = state.RetryAfterSeconds,
             FailureReason = request?.FailureReason
         };
     }

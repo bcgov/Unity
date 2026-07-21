@@ -28,6 +28,7 @@ public class AIPromptDataSeeder(
             await SeedAnalysisPromptAsync();
             await SeedAttachmentPromptAsync();
             await SeedScoresheetPromptAsync();
+            await SeedFormMappingPromptAsync();
         }
     }
 
@@ -108,6 +109,13 @@ public class AIPromptDataSeeder(
                 output: ScoresheetOutputV2,
                 rules: ScoresheetRulesV2,
                 commonRules: CommonRules));
+    }
+
+    // ─── MAPPING SUGGESTION ─────────────────────────────────────────────────
+
+    private async Task SeedFormMappingPromptAsync()
+    {
+        await EnsurePromptAsync(AIPromptTypes.FormMapping, 2, FormMappingSystemV2, FormMappingUserV2, FormMappingMetadataV2);
     }
 
     // ─── HELPERS ──────────────────────────────────────────────────────────────
@@ -778,6 +786,48 @@ public class AIPromptDataSeeder(
         - Each answer object must include: "answer", "rationale", and "confidence".
         - Never omit "answer", "rationale", or "confidence" for any question type.
         - The "answer" value type must match question type: Number => numeric; YesNo/SelectList/Text/TextArea => string.
+        """;
+
+    // ── v0/mapping-suggestion.system.txt ────────────────────────────────────
+    private const string FormMappingSystemV2 = """
+        You are a careful mapping assistant for human reviewers.
+        Return structured JSON for recommended Unity-to-CHEFS field mapping.
+        Do not invent fields, persist changes, or add wrapper sections.
+        Return only valid JSON in the exact mapping shape requested.
+        """;
+
+    // ── v2/onboarding-mapping.user.txt ─────────────────────────────────────
+    private const string FormMappingUserV2 = """
+        FORM MAPPING CONTEXT:
+        {{DATA}}
+
+        OUTPUT
+        {
+          "<unity field name>": "<chefs source field name>",
+          "<unity field name>": "<chefs source field name>"
+        }
+
+        Important:
+        - Use only FORM MAPPING CONTEXT as evidence.
+        - The context is grouped as chefsData and unityData.
+        - chefsData.fields contains the CHEFS source fields.
+        - unityData.coreFields contains Unity target fields.
+        - unityData.customFields contains worksheet-derived Unity target fields.
+        - Only include mappings that are clearly semantically equivalent or strongly related by label, name, type, and purpose.
+        - Do not force one-to-one coverage. Omit Unity fields when no CHEFS field is a sensible match.
+        - Omit CHEFS fields that do not clearly map to a Unity target field.
+        - Do not map platform/system identifiers such as SubmissionId, SubmissionDate, or ConfirmationId; they are managed by Unity and should be omitted if present.
+        - If no fields clearly match, return `{}`.
+        - The mapping is dynamic; do not hardcode or assume a fixed list of fields.
+        - Prefer existing Unity core intake fields when they already fit the CHEFS source field.
+        - Only use worksheet custom field targets when the form genuinely needs them.
+        - Return valid plain JSON only in the exact OUTPUT shape.
+        """;
+
+    private const string FormMappingMetadataV2 = """
+        {
+          "DATA": "Serialized JSON payload containing CHEFS fields, Unity core fields, and worksheet-derived custom fields."
+        }
         """;
 
     // ── v1/common.rules.txt ──────────────────────────────────────────────────

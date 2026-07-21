@@ -4,7 +4,7 @@ using System.Linq.Expressions;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Unity.AI.Domain;
-using Unity.AI.RateLimit;
+using Unity.AI.Cooldown;
 using Unity.GrantManager.GrantApplications;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Uow;
@@ -56,18 +56,16 @@ public static class AIGenerationRequestJobHelper
     public static async Task MarkRunningInNewUowAsync(
         IUnitOfWorkManager unitOfWorkManager,
         IRepository<AIGenerationRequest, Guid> generationRequestRepository,
-        IRepository<AIOperation, Guid> operationRepository,
         Guid? tenantId,
         Guid applicationId,
-        string operationType)
+        Guid operationId)
     {
         using var uow = unitOfWorkManager.Begin(requiresNew: true, isTransactional: false);
-        var operation = await ResolveOperationAsync(operationRepository, operationType);
         var request = await GetLatestRequestAsync(
             generationRequestRepository,
             x => x.TenantId == tenantId
                  && x.ApplicationId == applicationId
-                 && x.OperationId == operation.Id);
+                 && x.OperationId == operationId);
         await MarkRunningAsync(generationRequestRepository, request);
         await uow.CompleteAsync();
     }
@@ -75,18 +73,16 @@ public static class AIGenerationRequestJobHelper
     public static async Task MarkCompletedInNewUowAsync(
         IUnitOfWorkManager unitOfWorkManager,
         IRepository<AIGenerationRequest, Guid> generationRequestRepository,
-        IRepository<AIOperation, Guid> operationRepository,
         Guid? tenantId,
         Guid applicationId,
-        string operationType)
+        Guid operationId)
     {
         using var uow = unitOfWorkManager.Begin(requiresNew: true, isTransactional: false);
-        var operation = await ResolveOperationAsync(operationRepository, operationType);
         var request = await GetLatestRequestAsync(
             generationRequestRepository,
             x => x.TenantId == tenantId
                  && x.ApplicationId == applicationId
-                 && x.OperationId == operation.Id);
+                 && x.OperationId == operationId);
         await MarkCompletedAsync(generationRequestRepository, request);
         await uow.CompleteAsync();
     }
@@ -94,25 +90,23 @@ public static class AIGenerationRequestJobHelper
     public static async Task MarkFailedInNewUowAsync(
         IUnitOfWorkManager unitOfWorkManager,
         IRepository<AIGenerationRequest, Guid> generationRequestRepository,
-        IRepository<AIOperation, Guid> operationRepository,
         Guid? tenantId,
         Guid applicationId,
-        string operationType,
+        Guid operationId,
         string? failureReason)
     {
         using var uow = unitOfWorkManager.Begin(requiresNew: true, isTransactional: false);
-        var operation = await ResolveOperationAsync(operationRepository, operationType);
         var request = await GetLatestRequestAsync(
             generationRequestRepository,
             x => x.TenantId == tenantId
                  && x.ApplicationId == applicationId
-                 && x.OperationId == operation.Id);
+                 && x.OperationId == operationId);
         await MarkFailedAsync(generationRequestRepository, request, failureReason);
         await uow.CompleteAsync();
     }
 
-    public static async Task StampRateLimitBestEffortAsync(
-        IAIRateLimiter aiRateLimiter,
+    public static async Task StampCooldownBestEffortAsync(
+        IAICooldownService aiCooldownService,
         ILogger logger,
         Guid? requestedByUserId,
         Guid applicationId,
@@ -120,31 +114,16 @@ public static class AIGenerationRequestJobHelper
     {
         try
         {
-            await aiRateLimiter.StampAsync(requestedByUserId);
+            await aiCooldownService.StampAsync(requestedByUserId);
         }
         catch (Exception ex)
         {
             logger.LogWarning(
                 ex,
-                "AI rate-limit cooldown stamp failed after completed AI generation request for application {ApplicationId} and operation {OperationType}.",
+                "AI cooldown stamp failed after completed AI generation request for application {ApplicationId} and operation {OperationType}.",
                 applicationId,
                 operationType);
         }
-    }
-
-    private static async Task<AIOperation> ResolveOperationAsync(
-        IRepository<AIOperation, Guid> operationRepository,
-        string operationType)
-    {
-        var operationName = AIGenerationRequestKeyHelper.ResolveOperationName(operationType);
-        if (operationName == null)
-        {
-            throw new ArgumentException($"Unknown AI operation type '{operationType}'.", nameof(operationType));
-        }
-
-        var operation = await operationRepository.FirstOrDefaultAsync(item => item.Name == operationName);
-
-        return operation ?? throw new InvalidOperationException($"AI operation '{operationType}' is not configured.");
     }
 
     public static async Task<AIGenerationRequest?> GetLatestRequestAsync(

@@ -55,6 +55,16 @@ public class AIPermissionDefinitionProvider : PermissionDefinitionProvider
             L("Permission:AI.GenerateScoring"))
             .RequireFeatures("Unity.AI.Scoring");
 
+        var viewFormMapping = aiPermissionsGroup.AddPermission(
+            AIPermissions.Analysis.ViewFormMapping,
+            L("Permission:AI.ViewFormMapping"))
+            .RequireFeatures("Unity.AI.FormMapping");
+
+        viewFormMapping.AddChild(
+            AIPermissions.Analysis.GenerateFormMapping,
+            L("Permission:AI.GenerateFormMapping"))
+            .RequireFeatures("Unity.AI.FormMapping");
+
         var settingManagement = context.GetGroup(SettingManagementPermissions.GroupName);
         var configureAI = settingManagement.AddPermission(
             AIPermissions.Configuration.ConfigureAI,
@@ -62,7 +72,8 @@ public class AIPermissionDefinitionProvider : PermissionDefinitionProvider
         configureAI.StateCheckers.Add(new AnyFeaturePermissionStateProvider(
             "Unity.AI.Scoring",
             "Unity.AI.AttachmentSummaries",
-            "Unity.AI.ApplicationAnalysis"));
+            "Unity.AI.ApplicationAnalysis",
+            "Unity.AI.FormMapping"));
     }
 
     private static LocalizableString L(string name)

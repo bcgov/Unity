@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Caching.Memory;
 using System;
 using System.Linq;
 using System.Text.Json;
@@ -17,9 +18,11 @@ public class OpenAIConfigurationResolver(
     IRepository<AIModel, Guid> modelRepository,
     IRepository<AIOperation, Guid> operationRepository,
     IRepository<AIPrompt, Guid> promptRepository,
+    IMemoryCache memoryCache,
     IConfiguration configuration,
     IDataFilter<IMultiTenant> multiTenantDataFilter) : ITransientDependency
 {
+    private static readonly TimeSpan SettingsCacheDuration = TimeSpan.FromMinutes(5);
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         PropertyNameCaseInsensitive = true
@@ -28,6 +31,7 @@ public class OpenAIConfigurationResolver(
     private readonly IRepository<AIModel, Guid> _modelRepository = modelRepository;
     private readonly IRepository<AIOperation, Guid> _operationRepository = operationRepository;
     private readonly IRepository<AIPrompt, Guid> _promptRepository = promptRepository;
+    private readonly IMemoryCache _memoryCache = memoryCache;
     private readonly IConfiguration _configuration = configuration;
     private readonly IDataFilter<IMultiTenant> _multiTenantDataFilter = multiTenantDataFilter;
 
@@ -43,6 +47,12 @@ public class OpenAIConfigurationResolver(
         string operationName,
         CancellationToken cancellationToken = default)
     {
+        var cacheKey = BuildOperationSettingsCacheKey(operationName);
+        if (_memoryCache.TryGetValue(cacheKey, out OpenAIOperationSettings cachedSettings))
+        {
+            return cachedSettings;
+        }
+
         var operation = await ResolveOperationAsync(operationName, cancellationToken);
         if (operation == null)
         {
@@ -74,7 +84,7 @@ public class OpenAIConfigurationResolver(
         }
 
         var apiKey = Required($"Azure:{providerName}:ApiKey");
-        return new OpenAIOperationSettings(
+        var settings = new OpenAIOperationSettings(
             providerName,
             model.Name,
             apiKey,
@@ -84,6 +94,9 @@ public class OpenAIConfigurationResolver(
             modelSettings.Temperature,
             operation.CompletionTokens,
             $"v{prompt.VersionNumber}");
+
+        _memoryCache.Set(cacheKey, settings, SettingsCacheDuration);
+        return settings;
     }
 
     public async Task<double?> ResolveConfiguredTemperatureAsync(string? modelName = null, CancellationToken cancellationToken = default)
@@ -202,16 +215,6 @@ public class OpenAIConfigurationResolver(
         return (model, settings);
     }
 
-    private async Task<AIOperation?> ResolveOperationAsync(string operationName, CancellationToken cancellationToken)
-    {
-        var operations = await _operationRepository.GetListAsync(
-            operation => operation.IsActive,
-            cancellationToken: cancellationToken);
-
-        return operations.FirstOrDefault(operation =>
-            string.Equals(operation.Name, operationName, StringComparison.OrdinalIgnoreCase));
-    }
-
     private static AIModelSettings ResolveModelSettings(AIModel model)
     {
         var settings = JsonSerializer.Deserialize<AIModelSettings>(model.SettingsJson, JsonOptions);
@@ -279,6 +282,11 @@ public class OpenAIConfigurationResolver(
         return $"v{prompt.VersionNumber}";
     }
 
+    private static string BuildOperationSettingsCacheKey(string operationName)
+    {
+        return $"ai:operation-settings:{operationName.Trim().ToLowerInvariant()}";
+    }
+
     private async Task<AIPrompt> LoadPromptAsync(Guid promptId, CancellationToken cancellationToken)
     {
         using (_multiTenantDataFilter.Disable())
@@ -286,4 +294,49 @@ public class OpenAIConfigurationResolver(
             return await _promptRepository.GetAsync(promptId, cancellationToken: cancellationToken);
         }
     }
+
+    private async Task<ResolvedOperationSnapshot?> ResolveOperationAsync(string operationName, CancellationToken cancellationToken)
+    {
+        var cacheKey = BuildOperationSnapshotCacheKey(operationName);
+        if (_memoryCache.TryGetValue(cacheKey, out ResolvedOperationSnapshot cachedOperation))
+        {
+            return cachedOperation;
+        }
+
+        var operations = await _operationRepository.GetListAsync(
+            operation => operation.IsActive,
+            cancellationToken: cancellationToken);
+
+        var operation = operations.FirstOrDefault(operation =>
+            string.Equals(operation.Name, operationName, StringComparison.OrdinalIgnoreCase));
+
+        if (operation == null)
+        {
+            return null;
+        }
+
+        var snapshot = new ResolvedOperationSnapshot(
+            operation.Id,
+            operation.Name,
+            operation.AIModelId,
+            operation.AIPromptId,
+            operation.CompletionTokens,
+            operation.IsActive);
+
+        _memoryCache.Set(cacheKey, snapshot, SettingsCacheDuration);
+        return snapshot;
+    }
+
+    private static string BuildOperationSnapshotCacheKey(string operationName)
+    {
+        return $"ai:operation-snapshot:{operationName.Trim().ToLowerInvariant()}";
+    }
+
+    private sealed record ResolvedOperationSnapshot(
+        Guid Id,
+        string Name,
+        Guid AIModelId,
+        Guid AIPromptId,
+        int CompletionTokens,
+        bool IsActive);
 }

@@ -15,6 +15,7 @@ public class AIExecutionModeResolver(IConfiguration configuration) : ITransientD
 {
     public const string AttachmentSummaryOperation = AIPromptTypes.AttachmentSummary;
     public const string ApplicationScoringOperation = AIPromptTypes.ApplicationScoring;
+    public const string FormMappingOperation = AIPromptTypes.FormMapping;
 
     public AIExecutionMode ResolveMode(string operationName)
     {

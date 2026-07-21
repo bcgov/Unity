@@ -48,5 +48,6 @@ public class AIMenuContributor : IMenuContributor
                 requiredPermissionName: AIPermissions.Reporting.ReportingDefault
             ));
         }
+
     }
 }

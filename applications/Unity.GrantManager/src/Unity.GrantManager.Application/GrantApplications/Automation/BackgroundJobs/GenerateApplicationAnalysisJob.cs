@@ -2,29 +2,28 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Threading.Tasks;
 using Unity.AI.Domain;
+using Unity.AI.Cooldown;
 using Unity.AI.Operations;
-using Unity.AI.RateLimit;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.GrantApplications;
+using Volo.Abp.ObjectMapping;
 using Volo.Abp.BackgroundJobs;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.MultiTenancy;
 using Volo.Abp.Uow;
-using Volo.Abp.ObjectMapping;
 
 namespace Unity.GrantManager.GrantApplications.Automation.BackgroundJobs;
 
 public class GenerateApplicationAnalysisJob(
-    IAIApplicationInputBuilder inputBuilder,
-    IApplicationAnalysisService applicationAnalysisService,
+    ApplicationAnalysisService applicationAnalysisService,
+    IAIApplicationInputBuilder aiApplicationInputBuilder,
     IApplicationRepository applicationRepository,
-    IObjectMapper objectMapper,
     IRepository<AIGenerationRequest, Guid> generationRequestRepository,
-    IRepository<AIOperation, Guid> operationRepository,
     ICurrentTenant currentTenant,
     IUnitOfWorkManager unitOfWorkManager,
-    IAIRateLimiter aiRateLimiter,
+    IAICooldownService aiCooldownService,
+    IObjectMapper objectMapper,
     ILogger<GenerateApplicationAnalysisJob> logger) : AsyncBackgroundJob<GenerateApplicationAnalysisBackgroundJobArgs>, ITransientDependency
 {
     public override async Task ExecuteAsync(GenerateApplicationAnalysisBackgroundJobArgs args)
@@ -42,36 +41,33 @@ public class GenerateApplicationAnalysisJob(
             await AIGenerationRequestJobHelper.MarkRunningInNewUowAsync(
                 unitOfWorkManager,
                 generationRequestRepository,
-                operationRepository,
                 args.TenantId,
                 args.ApplicationId,
-                AIGenerationRequestKeyHelper.ApplicationAnalysisOperationType);
+                args.OperationId);
             try
             {
                 var application = await applicationRepository.GetAsync(args.ApplicationId);
-                var applicationInput = objectMapper.Map<Application, AIApplicationPromptDataDto>(application);
-                var input = await inputBuilder.BuildApplicationAnalysisInputAsync(applicationInput, args.PromptVersion);
-                var analysisJson = await applicationAnalysisService.RegenerateAsync(input);
+                var promptData = objectMapper.Map<Application, AIApplicationPromptDataDto>(application);
+                var analysisInput = await aiApplicationInputBuilder.BuildApplicationAnalysisInputAsync(promptData, args.PromptVersion);
+                var analysisJson = await applicationAnalysisService.RegenerateAsync(analysisInput);
                 application.AIAnalysis = analysisJson;
                 await applicationRepository.UpdateAsync(application);
-                await AIGenerationRequestJobHelper.StampRateLimitBestEffortAsync(aiRateLimiter, logger, args.RequestedByUserId, args.ApplicationId, AIGenerationRequestKeyHelper.ApplicationAnalysisOperationType);
+                await AIGenerationRequestJobHelper.StampCooldownBestEffortAsync(aiCooldownService, logger, args.RequestedByUserId, args.ApplicationId, AIGenerationRequestKeyHelper.ApplicationAnalysisOperationType);
                 await AIGenerationRequestJobHelper.MarkCompletedInNewUowAsync(
                     unitOfWorkManager,
                     generationRequestRepository,
-                    operationRepository,
                     args.TenantId,
                     args.ApplicationId,
-                    AIGenerationRequestKeyHelper.ApplicationAnalysisOperationType);
+                    args.OperationId);
             }
             catch (Exception ex)
             {
                 await AIGenerationRequestJobHelper.MarkFailedInNewUowAsync(
                     unitOfWorkManager,
                     generationRequestRepository,
-                    operationRepository,
                     args.TenantId,
                     args.ApplicationId,
-                    AIGenerationRequestKeyHelper.ApplicationAnalysisOperationType,
+                    args.OperationId,
                     ex.Message);
                 throw;
             }

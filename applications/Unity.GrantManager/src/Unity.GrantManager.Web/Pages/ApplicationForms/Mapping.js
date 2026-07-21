@@ -57,6 +57,7 @@
         btnBack: $('#btn-back'),
         btnSave: $('#btn-save'),
         btnEdit: $('#btn-edit'),
+        btnGenerate: $('#btn-generate'),
         btnSync: $('#btn-sync'),
         btnReset: $('#btn-reset'),
         btnClose: $('.btn-close'),
@@ -97,6 +98,7 @@
         UIElements.btnSaveMapping.on('click', handleSaveEditMapping);
         UIElements.btnSync.on('click', handleSync);
         UIElements.btnEdit.on('click', handleEdit);
+        UIElements.btnGenerate.on('click', queueFormMapping);
         UIElements.btnReset.on('click', handleReset);
         UIElements.btnCancel.on('click', handleCancelMapping);
         UIElements.btnClose.on('click', handleCancelMapping);
@@ -149,6 +151,122 @@
     function handleEdit() {
         $('#jsonText').val(prettyJson(existingMappingString));
         UIElements.editMappingModal.addClass('display-modal');
+    }
+
+    function queueFormMapping(triggerButton = null) {
+        const formVersion = String(document.getElementById('formVersionId')?.value ?? '').trim();
+        const applicationId = String(document.getElementById('applicationFormId')?.value ?? '').trim();
+        if (!validateGuid(formVersion)) {
+            abp.notify.error('', 'The Form Version ID is not in a GUID format');
+            return;
+        }
+        if (!validateGuid(applicationId)) {
+            abp.notify.error('', 'The Application ID is not in a GUID format');
+            return;
+        }
+
+        const buttonElement = triggerButton?.currentTarget || triggerButton?.target || triggerButton || UIElements.btnGenerate?.get?.(0);
+        const $button = $(buttonElement);
+        const existingHtml = $button.html();
+
+        if ($button.prop('disabled')) {
+            return;
+        }
+
+        globalThis.AIGenerationButtonState?.setGenerating($button);
+
+        abp.ajax({
+            url: `/api/app/ai/generation/form-mapping?applicationId=${encodeURIComponent(applicationId)}&applicationFormVersionId=${encodeURIComponent(formVersion)}`,
+            type: 'POST',
+        })
+            .done(function (generationStatus) {
+                const request = generationStatus?.generationRequest;
+                const status = globalThis.AIGenerationButtonState?.resolveStatus(request?.status) ?? '';
+
+                if (status === 'Completed') {
+                    globalThis.AIGenerationButtonState?.restoreForCooldownCheck($button, existingHtml);
+                    globalThis.AIGenerationButtonState?.applyStatusState(generationStatus);
+                    refreshMappingAfterGeneration(applicationId, formVersion);
+                    return;
+                }
+
+                monitorFormMappingGeneration(applicationId, $button, existingHtml);
+            })
+            .fail(function (error) {
+                if (globalThis.AIGenerationButtonState?.handleQueueFailure(error)) {
+                    return;
+                }
+
+                abp.message.error('Failed to queue AI mapping generation. Please try again.');
+                restoreGenerateMappingButton($button, existingHtml);
+                globalThis.syncAIRateLimitButtons?.();
+            });
+    }
+
+    function monitorFormMappingGeneration(applicationId, $button, existingHtml) {
+        globalThis.AIGenerationButtonState?.monitor({
+            $button,
+            originalHtml: existingHtml,
+            getStatus: () => abp.ajax({
+                url: `/api/app/ai/generation/status?applicationId=${encodeURIComponent(applicationId)}&operationType=form-mapping`,
+                type: 'GET'
+            }),
+            onComplete: function () {
+                refreshMappingAfterGeneration(applicationId);
+            },
+            onFailed: function (request) {
+                abp.message.error(request?.failureReason || 'AI mapping generation failed.');
+            },
+            onPollFailed: function () {
+                abp.message.error('Unable to load AI mapping generation status. Please try again.');
+            }
+        });
+    }
+
+    function refreshMappingAfterGeneration(applicationId, formVersion = null) {
+        const resolvedFormVersion = String(formVersion ?? document.getElementById('formVersionId')?.value ?? '').trim();
+        if (!validateGuid(resolvedFormVersion)) {
+            abp.notify.error('', 'Unable to refresh the generated mapping because the Form Version ID is invalid.');
+            return;
+        }
+
+        abp.ajax({
+            url: `/api/app/application-form-version/${encodeURIComponent(resolvedFormVersion)}`,
+            type: 'GET'
+        })
+            .done(function (applicationFormVersionDto) {
+                const availableChefsFields = applicationFormVersionDto?.availableChefsFields
+                    ? JSON.parse(applicationFormVersionDto.availableChefsFields)
+                    : [];
+
+                $('#applicationFormVersionDtoString').val(JSON.stringify(applicationFormVersionDto ?? {}));
+                $('#availableChefsFields').val(applicationFormVersionDto?.availableChefsFields ?? '');
+                $('#existingMapping').val(applicationFormVersionDto?.submissionHeaderMapping ?? '');
+
+                existingMappingString = applicationFormVersionDto?.submissionHeaderMapping ?? '';
+                availableChefFieldsString = applicationFormVersionDto?.availableChefsFields ?? '';
+
+                $(intakeMapColumn).empty();
+                $(worksheetMapColumn).empty();
+                dataTable.clear().draw();
+                initializeIntakeMap(availableChefsFields);
+                bindExistingMaps();
+
+                abp.notify.success('', 'Form mapping generated and saved successfully.');
+            })
+            .fail(function () {
+                abp.notify.error('', 'Form mapping generated, but the page could not refresh the saved mapping.');
+            });
+    }
+
+    function restoreGenerateMappingButton($button, existingHtml) {
+        if (!$button?.length) {
+            return;
+        }
+
+        globalThis.AIGenerationButtonState?.restore($button);
+        $button.html(existingHtml).prop('disabled', false);
+        $button.find('span').last().text('Generate Mapping');
     }
 
     function handleSaveEditMapping() {
