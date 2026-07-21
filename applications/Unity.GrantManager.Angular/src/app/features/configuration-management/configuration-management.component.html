@@ -1,17 +1,25 @@
 <div class="config-page-layout">
   <div id="ConfigurationManagementSideMenu" class="side-menu">
     <ul>
-      @for (item of mvcSideMenuItems; track item.elementId) {
-        @if (isVisible(item)) {
-          <li [id]="item.elementId" class="nav-item btn btn-nav" (click)="navigateToMvcSection(item.elementId)">
-            {{ item.label }}
+      @if (bootstrap() === null) {
+        @for (row of skeletonRows; track $index) {
+          <li class="nav-item skeleton-menu-item placeholder-glow" aria-hidden="true">
+            <span class="placeholder"></span>
           </li>
         }
-      }
-      @if (bootstrap()?.showProgramDetails) {
-        <li id="program-details-menu-item" class="nav-item btn btn-nav active">
-          Program Details
-        </li>
+      } @else {
+        @for (item of mvcSideMenuItems; track item.elementId) {
+          @if (isVisible(item)) {
+            <li [id]="item.elementId" class="nav-item btn btn-nav" (click)="navigateToMvcSection(item.elementId)">
+              {{ item.label }}
+            </li>
+          }
+        }
+        @if (bootstrap()?.showProgramDetails) {
+          <li id="program-details-menu-item" class="nav-item btn btn-nav active">
+            Program Details
+          </li>
+        }
       }
     </ul>
   </div>

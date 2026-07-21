@@ -1,3 +1,21 @@
-// Intentionally empty - .config-page-layout/.side-menu/.config-content/.config-section
-// are all defined in the MVC app's own Pages/ConfigurationManagement/Index.css,
-// loaded globally (see core/theme-assets.ts) rather than reimplemented here.
+// .config-page-layout/.side-menu/.config-content/.config-section are all defined in
+// the MVC app's own Pages/ConfigurationManagement/Index.css, loaded globally (see
+// core/theme-assets.ts) rather than reimplemented here. The skeleton-loading state
+// below has no MVC equivalent (the Razor page renders its side menu server-side,
+// so it never had a loading state to style) - it's the one addition that belongs here.
+.skeleton-menu-item {
+  display: flex;
+  align-items: center;
+
+  // Fills the li's content box (40px row height minus its 10px top/bottom padding)
+  // and reuses the real nav-item pill's own radius (flat left, rounded right) so the
+  // placeholder reads as the same shape, just lighter than Bootstrap's default
+  // currentColor-based gray, which came out too dark against this sidebar's text color.
+  .placeholder {
+    width: 100%;
+    height: 20px;
+    border-radius: 0 100em 100em 0;
+    background-color: #dee2e6;
+    opacity: 0.7;
+  }
+}

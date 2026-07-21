@@ -27,6 +27,11 @@ export class ConfigurationManagementComponent implements OnInit {
   readonly bootstrap = signal<ConfigurationManagementBootstrap | null>(null);
   readonly mvcSideMenuItems: MvcSideMenuItem[] = MVC_SIDE_MENU_ITEMS;
 
+  // Placeholder rows shown in the side menu while bootstrap() is still null - count
+  // matches MVC_SIDE_MENU_ITEMS plus the Program Details item, i.e. the max number
+  // of real rows that could appear once the bootstrap flags come back.
+  readonly skeletonRows = Array.from({ length: MVC_SIDE_MENU_ITEMS.length + 1 });
+
   constructor() {
     // Feature-specific, not shell-global (core/theme-assets.ts) - matches how the
     // Razor page itself only pulls this in via its own @section styles block.

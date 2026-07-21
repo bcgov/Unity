@@ -268,8 +268,18 @@ the same host:port the browser is actually using.
 **Full instructions, troubleshooting, and the one-time cert setup:**
 [`applications/Unity.GrantManager.Angular/local-dev-gateway/README.md`](../../applications/Unity.GrantManager.Angular/local-dev-gateway/README.md)
 
-Quick reference — three things running, in order, all over HTTPS with the same
-trusted ASP.NET Core dev cert:
+Quick reference — three things running, all over HTTPS with the same trusted
+ASP.NET Core dev cert: the backend on 44343, Angular on 4300 (serve-path
+`/app/`), and the gateway on 44342. A single script starts all three in their
+own windows, killing anything already bound to those ports first:
+
+```powershell
+applications\Unity.GrantManager.Angular\scripts\start-local-dev.ps1
+```
+
+Then browse to **`https://localhost:44342`**.
+
+**Running the pieces manually**, if you need to (e.g. to restart just one):
 
 ```powershell
 # 1. Backend, on 44343 (not its usual 44342 - the gateway takes that port)
@@ -288,7 +298,7 @@ $env:LOCAL_GATEWAY_KEY = "$env:USERPROFILE\.dev-certs\localhost-key.pem"
 npm start
 ```
 
-Then browse to **`https://localhost:44342`**.
+</details>
 
 ---
 
