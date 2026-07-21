@@ -155,6 +155,7 @@
                     PubSub.publish("application_status_changed", triggerActionEnum);
                     PubSub.publish("refresh_detail_panel_summary");
                     PubSub.publish("init_date_pickers");
+                    PubSub.publish('ApplicationHistory_refresh');
                 })
                 .catch(function () { widgetManager.refresh(); });
         }

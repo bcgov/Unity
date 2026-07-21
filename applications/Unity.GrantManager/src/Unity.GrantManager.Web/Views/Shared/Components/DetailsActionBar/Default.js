@@ -301,6 +301,7 @@ $(function () {
 
                     PubSub.publish('application_status_changed', nextPublishedState ? 'Publish' : 'Unpublish');
                     PubSub.publish('refresh_detail_panel_summary');
+                    PubSub.publish('ApplicationHistory_refresh');
                 })
                 .catch(function (error) {
                     abp.notify.error(l('DetailsActionBar:PublishStatusUpdateFailed'));
