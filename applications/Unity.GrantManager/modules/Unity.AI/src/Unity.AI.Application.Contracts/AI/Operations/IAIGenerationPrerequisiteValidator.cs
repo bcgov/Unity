@@ -10,4 +10,6 @@ public interface IAIGenerationPrerequisiteValidator
     Task EnsureApplicationAnalysisAvailableAsync(Guid applicationId);
 
     Task EnsureApplicationScoringAvailableAsync(Guid applicationId);
+
+    Task EnsureFormMappingAvailableAsync(Guid applicationFormVersionId);
 }

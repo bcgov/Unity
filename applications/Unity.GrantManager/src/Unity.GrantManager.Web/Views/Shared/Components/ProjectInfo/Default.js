@@ -22,18 +22,16 @@ abp.widgets.ProjectInfo = function ($wrapper) {
             this.setupEventHandlers();
         },
         setupEventHandlers: function() {
-            const self = this;
-
             // Save button handler
-            self.zoneForm.saveButton.on('click', function () {
+            this.zoneForm.saveButton.on('click', () => {
                 let applicationId = document.getElementById('ProjectInfo_ApplicationId').value; 
-                let formData = self.zoneForm.serializeZoneArray();
+                let formData = this.zoneForm.serializeZoneArray();
                 
                 let projectInfoObj = {};
                 
                 // Process all form fields
-                $.each(formData, function (_, input) {
-                    self.processFormField(projectInfoObj, input);
+                $.each(formData, (_, input) => {
+                    this.processFormField(projectInfoObj, input);
                 });
 
                 const customIncludes = new Set();
@@ -78,35 +76,35 @@ abp.widgets.ProjectInfo = function ($wrapper) {
                         if (customIncludes.has(key)) return true;
                         
                         // Check if it's a modified widget field
-                        return self.zoneForm.modifiedFields.has(`ProjectInfo.${key}`);
+                        return this.zoneForm.modifiedFields.has(`ProjectInfo.${key}`);
                     })
                 );
 
                 let projectInfoSubmission = {
-                    modifiedFields: Array.from(self.zoneForm.modifiedFields).map(field => {
+                    modifiedFields: Array.from(this.zoneForm.modifiedFields).map(field => {
                         const parts = field.split('.');
                         return parts.length > 1 ? parts.slice(1).join('.') : field;
                     }),
                     data: modifiedFieldData
                 };
                 
-                self.zoneForm.setSaving(true);
+                this.zoneForm.setSaving(true);
                 try {
                     unity.grantManager.grantApplications.grantApplication
                         .updatePartialProjectInfo(applicationId, projectInfoSubmission)
-                        .done(function () {
+                        .done(() => {
                             abp.notify.success('The project info has been updated.');
-                            self.zoneForm.resetTracking();
+                            this.zoneForm.resetTracking();
                             PubSub.publish('project_info_saved', projectInfoObj);
                             PubSub.publish('refresh_detail_panel_summary');
                         })
-                        .fail(function () {
-                            self.zoneForm.setSaving(false);
+                        .fail(() => {
+                            this.zoneForm.setSaving(false);
                         });
                 }
                 catch (error) {
                     console.log(error);
-                    self.zoneForm.setSaving(false);
+                    this.zoneForm.setSaving(false);
                 }
             });
 
@@ -121,7 +119,7 @@ abp.widgets.ProjectInfo = function ($wrapper) {
                 let allEconomicRegions = JSON.parse($('#allEconomicRegionList').text());
                 let allRegionalDistricts = JSON.parse($('#allRegionalDistrictList').text());
                 let selectedEconomicRegion = allEconomicRegions.find(d => d.economicRegionName == selectedValue);
-                let childDropdown = self.initializeDroplist('#regionalDistricts');
+                let childDropdown = widgetApi.initializeDroplist('#regionalDistricts');
                 
                 if (selectedValue) {
                     let regionalDistricts = allRegionalDistricts.filter(d => 
@@ -138,7 +136,7 @@ abp.widgets.ProjectInfo = function ($wrapper) {
             
             $('#regionalDistricts').change(function () {
                 const selectedValue = $(this).val();
-                let childDropdown = self.initializeDroplist('#communities');
+                let childDropdown = widgetApi.initializeDroplist('#communities');
                 if (selectedValue) {
                     let allSubdistricts = JSON.parse($('#allRegionalDistrictList').text());
                     let allCommunities = JSON.parse($('#allCommunitiesList').text());
@@ -171,7 +169,7 @@ abp.widgets.ProjectInfo = function ($wrapper) {
             );
             
             PubSub.subscribe('fields_projectinfo', () => {
-                self.enableProjectInfoSaveBtn();
+                this.enableProjectInfoSaveBtn();
             });
 
             // PubSub Event Handling should be implemented here

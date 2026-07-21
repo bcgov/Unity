@@ -302,6 +302,43 @@
         }
     }
 
+    function navigateCalendarMonth(direction) {
+        scheduleState.currentMonth += direction;
+        if (scheduleState.currentMonth < 0) {
+            scheduleState.currentMonth = 11;
+            scheduleState.currentYear--;
+        } else if (scheduleState.currentMonth > 11) {
+            scheduleState.currentMonth = 0;
+            scheduleState.currentYear++;
+        }
+        renderCalendarGrid(scheduleState);
+    }
+
+    function formatScheduleDateInput(rawValue) {
+        let val = rawValue.replaceAll(/\D/, '');
+        if (val.length > 8) val = val.substring(0, 8);
+        if (val.length >= 2) {
+            val = val.substring(0, 2) + '/' + val.substring(2);
+        }
+        if (val.length >= 5) {
+            val = val.substring(0, 5) + '/' + val.substring(5);
+        }
+        return val;
+    }
+
+    function handleScheduleDateInputChange() {
+        const val = formatScheduleDateInput(UIElements.scheduleDateInput.val());
+        UIElements.scheduleDateInput.val(val);
+
+        // Validate immediately when a complete date is entered (MM/DD/YYYY = 10 chars)
+        if (val.length === 10) {
+            validateScheduleDate();
+        } else if (val.length < 10 && val.length > 0) {
+            // Clear validation messages while user is still typing an incomplete date
+            UIElements.scheduleDateValidation.hide();
+        }
+    }
+
     function bindDelayModeEvents() {
         // Use global scheduleState
         scheduleState.currentMonth = new Date().getMonth();
@@ -330,42 +367,16 @@
 
         // Calendar navigation
         UIElements.btnCalendarPrev.on('click', function () {
-            scheduleState.currentMonth--;
-            if (scheduleState.currentMonth < 0) {
-                scheduleState.currentMonth = 11;
-                scheduleState.currentYear--;
-            }
-            renderCalendarGrid(scheduleState);
+            navigateCalendarMonth(-1);
         });
 
         UIElements.btnCalendarNext.on('click', function () {
-            scheduleState.currentMonth++;
-            if (scheduleState.currentMonth > 11) {
-                scheduleState.currentMonth = 0;
-                scheduleState.currentYear++;
-            }
-            renderCalendarGrid(scheduleState);
+            navigateCalendarMonth(1);
         });
 
         // Date input two-way binding with input masking for MM/DD/YYYY
         UIElements.scheduleDateInput.on('input', function () {
-            let val = UIElements.scheduleDateInput.val().replaceAll(/\D/, '');
-            if (val.length > 8) val = val.substring(0, 8);
-            if (val.length >= 2) {
-                val = val.substring(0, 2) + '/' + val.substring(2);
-            }
-            if (val.length >= 5) {
-                val = val.substring(0, 5) + '/' + val.substring(5);
-            }
-            UIElements.scheduleDateInput.val(val);
-
-            // Validate immediately when a complete date is entered (MM/DD/YYYY = 10 chars)
-            if (val.length === 10) {
-                validateScheduleDate();
-            } else if (val.length < 10 && val.length > 0) {
-                // Clear validation messages while user is still typing an incomplete date
-                UIElements.scheduleDateValidation.hide();
-            }
+            handleScheduleDateInputChange();
         });
 
         UIElements.scheduleDateInput.on('blur', function () {

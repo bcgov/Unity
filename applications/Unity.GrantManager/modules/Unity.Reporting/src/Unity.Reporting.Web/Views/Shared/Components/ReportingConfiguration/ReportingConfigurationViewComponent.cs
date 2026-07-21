@@ -114,8 +114,10 @@ namespace Unity.Reporting.Web.Views.Shared.Components.ReportingConfiguration
                 FormVersions = [.. formVersions
                     .Select(v => new SelectListItem
                     {
-                        Value = v.Id.ToString(),
-                        Text = $"{v.Version} - {v.ChefsFormVersionGuid!.ToString()}"
+                        Value = v.Id.ToString(),                        
+                        Text = string.IsNullOrEmpty(v.ChefsFormVersionGuid)
+                            ? $"{v.Version}"
+                            : $"{v.Version} - {v.ChefsFormVersionGuid}"
                     })],
                 SelectedVersionId = selectedVersionId,
                 ViewName = viewName,

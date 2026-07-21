@@ -2,7 +2,9 @@
     function request(url, type, data = null, contentType = null) {
         const options = { url, type };
         if (data !== null) {
-            options.data = data;
+            options.data = contentType === 'application/json' && typeof data !== 'string'
+                ? JSON.stringify(data)
+                : data;
         }
         if (contentType) {
             options.contentType = contentType;
@@ -28,7 +30,11 @@
             return request(
                 '/api/app/ai/generation/attachment-summary',
                 'POST',
-                JSON.stringify(input),
+                {
+                    applicationId: input.applicationId,
+                    attachmentIds: input.attachmentIds || [],
+                    promptVersion: input.promptVersion || null,
+                },
                 'application/json'
             );
         },

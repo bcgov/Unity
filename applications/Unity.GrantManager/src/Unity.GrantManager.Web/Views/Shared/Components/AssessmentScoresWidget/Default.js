@@ -139,10 +139,7 @@ function saveScoresSection(formId, sectionId) {
             if (inputFieldArr.length > 0) {
                 for (let item of inputFieldArr) {
                     const inputField = document.getElementById(item);
-                    inputField.setAttribute(
-                        'data-original-value',
-                        inputField.value
-                    );
+                    inputField.dataset.originalValue = inputField.value;
                 }
             }
 
@@ -162,11 +159,11 @@ function markAsHumanConfirmed(inputElement) {
     console.log('markAsHumanConfirmed inputElement', inputElement);
     // Check if this was an AI-generated answer
     const isHumanConfirmed =
-        inputElement.getAttribute('data-is-human-confirmed') === 'true';
+        inputElement.dataset.isHumanConfirmed === 'true';
 
     if (!isHumanConfirmed) {
         // Mark as human confirmed
-        inputElement.setAttribute('data-is-human-confirmed', 'true');
+        inputElement.dataset.isHumanConfirmed = 'true';
 
         // Update styling from AI-generated to human-confirmed
         inputElement.classList.remove('ai-generated-answer');
@@ -296,9 +293,7 @@ function discardChangesScoresSection(formId, sectionId) {
         for (let item of inputFieldArr) {
             let questionId = item.split('-').slice(2).join('-');
             const inputField = document.getElementById(item);
-            const originalValue = inputField.getAttribute(
-                'data-original-value'
-            );
+            const originalValue = inputField.dataset.originalValue;
             inputField.value = originalValue;
 
             if (
@@ -589,11 +584,11 @@ function updateSubtotal() {
             let value = 0;
             if (input.value === 'Yes') {
                 value =
-                    parseFloat(input.getAttribute('data-yes-numeric-value')) ||
+                    parseFloat(input.dataset.yesNumericValue) ||
                     0;
             } else if (input.value === 'No') {
                 value =
-                    parseFloat(input.getAttribute('data-no-numeric-value')) ||
+                    parseFloat(input.dataset.noNumericValue) ||
                     0;
             }
             subtotal += value;
@@ -606,7 +601,7 @@ function updateSubtotal() {
         selectListInputs.forEach((select) => {
             const selectedOption = select.options[select.selectedIndex];
             const numericValue =
-                parseFloat(selectedOption.getAttribute('data-numeric-value')) ||
+                parseFloat(selectedOption.dataset.numericValue) ||
                 0;
             subtotal += numericValue;
         });
@@ -631,7 +626,7 @@ function discardChanges(
         discardButtonPrefix + questionId
     );
 
-    const originalValue = inputField.getAttribute('data-original-value');
+    const originalValue = inputField.dataset.originalValue;
     inputField.value = originalValue;
 
     saveButton.disabled = true;

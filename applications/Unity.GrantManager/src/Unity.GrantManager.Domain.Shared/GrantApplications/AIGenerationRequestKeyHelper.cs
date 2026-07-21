@@ -8,6 +8,7 @@ public static class AIGenerationRequestKeyHelper
     public const string ApplicationAnalysisOperationType = "application-analysis";
     public const string ApplicationScoringOperationType = "application-scoring";
     public const string PipelineOperationType = "pipeline";
+    public const string FormMappingOperationType = "form-mapping";
 
     public static string BuildRequestKey(Guid? tenantId, Guid applicationId, string operationType)
     {
@@ -31,6 +32,7 @@ public static class AIGenerationRequestKeyHelper
             ApplicationAnalysisOperationType => "ApplicationAnalysis",
             AttachmentSummaryOperationType => "AttachmentSummary",
             ApplicationScoringOperationType => "ApplicationScoring",
+            FormMappingOperationType => "FormMapping",
             PipelineOperationType => "Default",
             _ => null
         };
