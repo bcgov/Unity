@@ -60,6 +60,7 @@
         btnGenerate: $('#btn-generate'),
         btnGenerateWorksheet: $('#btn-generate-worksheet'),
         btnGenerateScoresheet: $('#btn-generate-scoresheet'),
+        btnReviewWorksheet: $('#btn-review-worksheet'),
         worksheetReviewModal: $('#aiWorksheetReviewModal'),
         worksheetReviewFields: $('#aiWorksheetReviewFields'),
         worksheetReviewEmpty: $('#aiWorksheetReviewEmpty'),
@@ -108,6 +109,7 @@
         UIElements.btnGenerate.on('click', queueFormMapping);
         UIElements.btnGenerateWorksheet.on('click', queueFormWorksheet);
         UIElements.btnGenerateScoresheet.on('click', queueFormScoresheet);
+        UIElements.btnReviewWorksheet.on('click', loadAiWorksheetReview);
         UIElements.btnConfirmWorksheet.on('click', confirmAiWorksheet);
         UIElements.btnCancelWorksheet.on('click', cancelAiWorksheet);
         UIElements.worksheetReviewModal.on('hidden.bs.modal', cancelAiWorksheetIfNeeded);
@@ -363,8 +365,14 @@
     }
 
     function setAiWorksheetPending(isPending) {
-        UIElements.btnGenerateWorksheet.attr('data-ai-pending', isPending ? 'true' : 'false');
-        UIElements.btnGenerateWorksheet.find('span').last().text(isPending ? 'Review Worksheet' : 'Generate Worksheet');
+        UIElements.btnGenerateWorksheet
+            .attr('data-ai-pending', isPending ? 'true' : 'false')
+            .toggleClass('d-none', isPending);
+        UIElements.btnReviewWorksheet.toggleClass('d-none', !isPending);
+
+        if (!isPending) {
+            globalThis.syncAIRateLimitButtons?.();
+        }
     }
 
     function loadAiWorksheetReview() {

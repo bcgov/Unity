@@ -23,12 +23,19 @@
                     form="worksheet-config-form" />
         @if (await PermissionChecker.IsGrantedAsync(AIPermissions.FormWorksheet.Generate))
         {
-            <button type="button" id="btn-generate-worksheet" class="btn ai-generate-btn unt-btn-outline-primary btn-outline-primary"
+            <button type="button" id="btn-generate-worksheet" class="btn ai-generate-btn unt-btn-outline-primary btn-outline-primary @(Model.HasPendingAiWorksheet ? "d-none" : string.Empty)"
                     data-ai-cooldown-checking="1" data-ai-rate-limit-disabled="1" data-ai-pending="@(Model.HasPendingAiWorksheet.ToString().ToLowerInvariant())" disabled
                     title="Generate a worksheet for the current form version">
                 <span class="ai-button-content">
                     <i class="unt-icon-sm fa-solid fa-wand-magic-sparkles"></i>
-                    <span>@(Model.HasPendingAiWorksheet ? "Review Worksheet" : "Generate Worksheet")</span>
+                    <span>Generate Worksheet</span>
+                </span>
+            </button>
+            <button type="button" id="btn-review-worksheet" class="btn unt-btn-outline-primary btn-outline-primary @(Model.HasPendingAiWorksheet ? string.Empty : "d-none")"
+                    title="Review the pending AI worksheet">
+                <span class="ai-button-content">
+                    <i class="unt-icon-sm fa-solid fa-wand-magic-sparkles"></i>
+                    <span>Review Worksheet</span>
                 </span>
             </button>
         }
