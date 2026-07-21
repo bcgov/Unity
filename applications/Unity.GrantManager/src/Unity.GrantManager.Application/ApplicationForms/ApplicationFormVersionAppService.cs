@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
+using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Linq;
@@ -27,6 +28,10 @@ using Volo.Abp.Features;
 using Volo.Abp;
 using Volo.Abp.Uow;
 using Unity.GrantManager.Intakes.Mapping;
+using Unity.Flex.Domain.WorksheetLinks;
+using Unity.Flex.Domain.Worksheets;
+using Unity.GrantManager.Flex;
+using Unity.Modules.Shared.Correlation;
 
 namespace Unity.GrantManager.ApplicationForms
 {
@@ -41,7 +46,10 @@ namespace Unity.GrantManager.ApplicationForms
         IFeatureChecker featureChecker,
         IApplicationFormVersionMappingReadService mappingReadService,
         IAICooldownService aiCooldownService,
-        IFormMappingService aiService) :
+        IFormMappingService aiService,
+        IWorksheetRepository worksheetRepository,
+        IRepository<CustomField, Guid> customFieldRepository,
+        IWorksheetLinkRepository worksheetLinkRepository) :
         CrudAppService<
             ApplicationFormVersion,
             ApplicationFormVersionDto,
@@ -352,6 +360,126 @@ namespace Unity.GrantManager.ApplicationForms
                 ApplicationFormVersionId = id
             };
         }
+
+        [HttpGet("api/app/application-form-version/pending-ai-worksheet")]
+        public virtual async Task<AiWorksheetReviewDto?> GetPendingAiWorksheetAsync(Guid formVersionId)
+        {
+            await CheckPolicyAsync(AIPermissions.Analysis.ViewFormWorksheet);
+
+            var worksheet = await GetPendingAiWorksheetEntityAsync(formVersionId);
+            return worksheet == null ? null : MapAiWorksheetReview(worksheet);
+        }
+
+        [HttpPost("api/app/application-form-version/confirm-ai-worksheet")]
+        public virtual async Task ConfirmAiWorksheetAsync(Guid formVersionId, ConfirmAiWorksheetDto input)
+        {
+            await CheckPolicyAsync(AIPermissions.Analysis.GenerateFormWorksheet);
+
+            var worksheet = await GetPendingAiWorksheetEntityAsync(formVersionId);
+            if (worksheet == null || worksheet.Id != input.WorksheetId)
+            {
+                throw new UserFriendlyException("The AI worksheet is no longer available for review.");
+            }
+
+            var selectedFieldIds = input.SelectedFieldIds.ToHashSet();
+            var fields = worksheet.Sections.SelectMany(section => section.Fields).ToList();
+            var unknownFieldIds = selectedFieldIds.Except(fields.Select(field => field.Id)).ToList();
+            if (unknownFieldIds.Count > 0)
+            {
+                throw new UserFriendlyException("The AI worksheet selection is invalid.");
+            }
+
+            foreach (var field in fields.Where(field => !selectedFieldIds.Contains(field.Id)))
+            {
+                field.Section.RemoveField(field);
+                await customFieldRepository.DeleteAsync(field.Id);
+            }
+
+            worksheet.SetPublished(true);
+            await worksheetRepository.UpdateAsync(worksheet, true);
+            await UpsertAiWorksheetLinkAsync(worksheet.Id, formVersionId);
+        }
+
+        [HttpPost("api/app/application-form-version/cancel-ai-worksheet")]
+        public virtual async Task CancelAiWorksheetAsync(Guid formVersionId)
+        {
+            await CheckPolicyAsync(AIPermissions.Analysis.GenerateFormWorksheet);
+
+            var worksheet = await GetPendingAiWorksheetEntityAsync(formVersionId);
+            if (worksheet != null)
+            {
+                await worksheetRepository.DeleteAsync(worksheet, true);
+            }
+        }
+
+        private async Task<Worksheet?> GetPendingAiWorksheetEntityAsync(Guid formVersionId)
+        {
+            var formVersion = await formVersionRepository.GetAsync(formVersionId);
+            var worksheetName = BuildAiWorksheetName(formVersion.ApplicationFormId, formVersion.Id);
+            var worksheet = await worksheetRepository.GetByNameAsync(worksheetName, true);
+
+            if (worksheet == null)
+            {
+                return null;
+            }
+
+            if (worksheet.Published)
+            {
+                return null;
+            }
+
+            return worksheet;
+        }
+
+        private static AiWorksheetReviewDto MapAiWorksheetReview(Worksheet worksheet) => new()
+        {
+            WorksheetId = worksheet.Id,
+            WorksheetName = worksheet.Name,
+            WorksheetTitle = worksheet.Title,
+            Sections = worksheet.Sections
+                .OrderBy(section => section.Order)
+                .Select(section => new AiWorksheetReviewSectionDto
+                {
+                    Name = section.Name,
+                    Fields = section.Fields
+                        .OrderBy(field => field.Order)
+                        .Select(field => new AiWorksheetReviewFieldDto
+                        {
+                            Id = field.Id,
+                            Key = field.Key,
+                            Label = field.Label,
+                            Type = field.Type.ToString()
+                        })
+                        .ToList()
+                })
+                .ToList()
+        };
+
+        private async Task UpsertAiWorksheetLinkAsync(Guid worksheetId, Guid formVersionId)
+        {
+            var existingLink = await worksheetLinkRepository.GetExistingLinkAsync(
+                worksheetId,
+                formVersionId,
+                CorrelationConsts.FormVersion);
+
+            if (existingLink != null)
+            {
+                existingLink.SetAnchor(FlexConsts.CustomTab).SetOrder(1);
+                await worksheetLinkRepository.UpdateAsync(existingLink, true);
+                return;
+            }
+
+            await worksheetLinkRepository.InsertAsync(new WorksheetLink(
+                Guid.NewGuid(),
+                worksheetId,
+                formVersionId,
+                CorrelationConsts.FormVersion,
+                FlexConsts.CustomTab,
+                1), true);
+        }
+
+        private static string BuildAiWorksheetName(Guid formId, Guid formVersionId) =>
+            $"ai-form-{formId}-version-{formVersionId}-worksheet";
 
         private async Task<int> GetVersion(Guid formVersionId)
         {

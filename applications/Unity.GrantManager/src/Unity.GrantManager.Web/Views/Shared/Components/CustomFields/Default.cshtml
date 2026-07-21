@@ -24,11 +24,11 @@
         @if (await PermissionChecker.IsGrantedAsync(AIPermissions.FormWorksheet.Generate))
         {
             <button type="button" id="btn-generate-worksheet" class="btn ai-generate-btn unt-btn-outline-primary btn-outline-primary"
-                    data-ai-cooldown-checking="1" data-ai-rate-limit-disabled="1" disabled
+                    data-ai-cooldown-checking="1" data-ai-rate-limit-disabled="1" data-ai-pending="@(Model.HasPendingAiWorksheet.ToString().ToLowerInvariant())" disabled
                     title="Generate a worksheet for the current form version">
                 <span class="ai-button-content">
                     <i class="unt-icon-sm fa-solid fa-wand-magic-sparkles"></i>
-                    <span>Generate Worksheet</span>
+                    <span>@(Model.HasPendingAiWorksheet ? "Review Worksheet" : "Generate Worksheet")</span>
                 </span>
             </button>
         }
@@ -181,4 +181,35 @@
             </div>
         </div>
     </form>
+</div>
+
+<div class="modal fade" id="aiWorksheetReviewModal" tabindex="-1" aria-labelledby="aiWorksheetReviewModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content ai-worksheet-review">
+            <div class="modal-header ai-worksheet-review__header">
+                <div>
+                    <div class="ai-worksheet-review__eyebrow">AI worksheet draft</div>
+                    <h5 class="modal-title" id="aiWorksheetReviewModalLabel">Choose fields for your worksheet</h5>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="ai-worksheet-review__intro">
+                    <span>Keep the suggestions you want to include. You can update the field details later.</span>
+                </div>
+                <div class="ai-worksheet-review__table-header">
+                    <span>CHEFS field</span>
+                    <span aria-hidden="true"></span>
+                    <span>Unity field</span>
+                    <span class="text-center">Include</span>
+                </div>
+                <div id="aiWorksheetReviewFields"></div>
+                <div id="aiWorksheetReviewEmpty" class="ai-worksheet-review__empty d-none">No custom fields were suggested.</div>
+            </div>
+            <div class="modal-footer ai-worksheet-review__footer">
+                <button type="button" id="btn-cancel-ai-worksheet" class="btn btn-outline-secondary" data-bs-dismiss="modal">Discard draft</button>
+                <button type="button" id="btn-confirm-ai-worksheet" class="btn btn-primary">Publish selected fields</button>
+            </div>
+        </div>
+    </div>
 </div>

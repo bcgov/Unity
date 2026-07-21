@@ -43,7 +43,12 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.CustomFields
             model.ChefsFormPublished = formVersion?.Published;
             model.WorksheetLinks = await worksheetLinkAppService.GetListByCorrelationAsync(formVersion?.Id ?? Guid.Empty, CorrelationConsts.FormVersion);
 
-            model.PublishedWorksheets = [.. (await worksheetListAppService.GetListAsync())
+            var aiWorksheetName = $"ai-form-{formVersion?.ApplicationFormId}-version-{formVersion?.Id}-worksheet";
+            var worksheets = await worksheetListAppService.GetListAsync();
+            model.HasPendingAiWorksheet = worksheets
+                .Any(worksheet => !worksheet.Published && worksheet.Name == aiWorksheetName);
+
+            model.PublishedWorksheets = [.. worksheets
                 .Where(s => s.Published && !model.WorksheetLinks.Select(s => s.WorksheetId).Contains(s.Id))
                 .OrderBy(s => s.Title)];
 
