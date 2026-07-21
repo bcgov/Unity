@@ -23,6 +23,9 @@ namespace Unity.Payments.Domain.Services
         IObjectMapper objectMapper,
         IApplicationRepository applicationRepository) : DomainService, IPaymentRequestQueryManager
     {
+        private static readonly TimeZoneInfo VancouverTimeZone =
+            TimeZoneInfo.FindSystemTimeZoneById("Pacific Standard Time");
+
         private static readonly HashSet<string> SiteFields = new(StringComparer.OrdinalIgnoreCase)
         {
             "siteNumber",
@@ -60,6 +63,42 @@ namespace Unity.Payments.Domain.Services
             "category"
         };
 
+        /// <summary>
+        /// Converts Vancouver local date range to UTC range (inclusive)
+        /// </summary>
+        private static (DateTime? FromUtc, DateTime? ToUtc) ConvertToUtcRange(
+            DateTime? fromLocal,
+            DateTime? toLocal)
+        {
+            DateTime? fromUtc = null;
+            DateTime? toUtc = null;
+
+            if (fromLocal.HasValue)
+            {
+                var localFrom = DateTime.SpecifyKind(
+                    fromLocal.Value,
+                    DateTimeKind.Unspecified);
+
+                fromUtc = TimeZoneInfo.ConvertTimeToUtc(
+                    localFrom,
+                    VancouverTimeZone);
+            }
+
+            if (toLocal.HasValue)
+            {
+                // End of local day (23:59:59.9999999)
+                var localToEndOfDay = DateTime.SpecifyKind(
+                    toLocal.Value.Date.AddDays(1).AddTicks(-1),
+                    DateTimeKind.Unspecified);
+
+                toUtc = TimeZoneInfo.ConvertTimeToUtc(
+                    localToEndOfDay,
+                    VancouverTimeZone);
+            }
+
+            return (fromUtc, toUtc);
+        }
+
         public Task<int> GetPaymentRequestCountBySiteIdAsync(Guid siteId)
         {
             return paymentRequestRepository.GetPaymentRequestCountBySiteId(siteId);
@@ -80,7 +119,7 @@ namespace Unity.Payments.Domain.Services
             return await paymentRequestRepository.GetListAsync(x => paymentRequestIds.Contains(x.Id), includeDetails: includeDetails);
         }
 
-        public async Task<List<PaymentRequest>> GetPagedPaymentRequestsWithIncludesAsync(int skipCount, int maxResultCount, string sorting, IReadOnlyList<string>? requestedFields = null)
+        public async Task<List<PaymentRequest>> GetPagedPaymentRequestsWithIncludesAsync(int skipCount, int maxResultCount, string sorting, IReadOnlyList<string>? requestedFields = null, DateTime? requestedFromDate = null, DateTime? requestedToDate = null)
         {
             var paymentsQueryable = await paymentRequestRepository.GetQueryableAsync();
             var includeSite = IncludesAny(requestedFields, SiteFields);
@@ -89,6 +128,16 @@ namespace Unity.Payments.Domain.Services
             var includeExpenseApprovals = IncludesAny(requestedFields, ExpenseApprovalFields);
 
             paymentsQueryable = paymentsQueryable.AsNoTracking();
+
+            var (fromUtc, toUtc) = ConvertToUtcRange(requestedFromDate, requestedToDate);
+            if (fromUtc.HasValue)
+            {
+                paymentsQueryable = paymentsQueryable.Where(pr => pr.CreationTime >= fromUtc.Value);
+            }
+            if (toUtc.HasValue)
+            {
+                paymentsQueryable = paymentsQueryable.Where(pr => pr.CreationTime <= toUtc.Value);
+            }
 
             if (includeSite)
             {

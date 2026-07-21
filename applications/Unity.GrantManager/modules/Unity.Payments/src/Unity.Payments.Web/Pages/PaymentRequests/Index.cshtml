@@ -17,8 +17,8 @@
     <abp-style src="/Pages/PaymentRequests/Index.css" />
 }
 
-<div class="container-fluid px-2">
-    @await Component.InvokeAsync("PaymentActionBar")
+<div class="container-fluid px-2 action-bar-date-controls">
+    @await Component.InvokeAsync("PaymentActionBar", new { showDateRangeFilter = true })
     <div class="d-flex my-1 p-2">
         <abp-column size="_6">
             <abp-card-title></abp-card-title>

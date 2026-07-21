@@ -150,20 +150,23 @@ $(function () {
         manageActionButtons();
     });
 
+    // Owns only the standalone TAGS button. The DataTables-driven buttons
+    // (Check Status, Approve, Decline, Cancel, History) are exclusively
+    // owned by checkActionButtons() in PaymentRequests/Index.js — touching
+    // them here would race with that logic, since PubSub.publish() defers
+    // delivery to a later tick and could re-enable/unhide a button that
+    // Index.js just disabled for a selected row.
     function manageActionButtons() {
-        if (selectedPaymentIds.length == 0) {
-            $('*[data-selector="batch-payment-table-actions"]').prop('disabled', true);
-            $('*[data-selector="batch-payment-table-actions"]').addClass('action-bar-btn-unavailable');
-            $('.action-bar').addClass('disabled');
-            $('#tagPayment').prop('disabled', true);
-        }
-        else {
-            $('*[data-selector="batch-payment-table-actions"]').prop('disabled', false);
-            $('*[data-selector="batch-payment-table-actions"]').removeClass('action-bar-btn-unavailable');
-            $('.action-bar').addClass('active');
-            $('#tagPayment').removeClass('disabled');
-            $('#tagPayment').prop('disabled', false);
-        }
+        const hasSelection = selectedPaymentIds.length > 0;
+
+        $('#tagPayment')
+            .prop('disabled', !hasSelection)
+            .toggleClass('action-bar-btn-unavailable', !hasSelection)
+            .toggleClass('disabled', !hasSelection);
+
+        $('.action-bar')
+            .toggleClass('active', hasSelection)
+            .toggleClass('disabled', !hasSelection);
     }
 
     $('#tagPayment').on('click', function () {
@@ -192,5 +195,8 @@ $(function () {
         manageActionButtons();
         PubSub.publish("refresh_payment_list");
     });
+
+    // Initialize button states
+    manageActionButtons();
 });
 
