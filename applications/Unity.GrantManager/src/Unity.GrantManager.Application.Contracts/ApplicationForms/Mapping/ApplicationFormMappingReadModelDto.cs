@@ -9,6 +9,7 @@ public class ApplicationFormMappingReadModelDto
     public Guid ApplicationFormId { get; set; }
     public string? ChefsApplicationFormGuid { get; set; }
     public string? ChefsFormVersionGuid { get; set; }
+    public string? ExistingMapping { get; set; }
     public List<MappingFieldDto> ChefsFields { get; set; } = [];
     public List<MappingFieldDto> UnityCoreFields { get; set; } = [];
     public List<WorksheetMappingFieldsDto> Worksheets { get; set; } = [];

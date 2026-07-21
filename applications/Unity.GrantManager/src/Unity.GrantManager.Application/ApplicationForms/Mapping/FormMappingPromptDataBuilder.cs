@@ -6,6 +6,7 @@ internal static class FormMappingPromptDataBuilder
 {
     internal static JsonElement Build(ApplicationFormMappingReadModelDto readModel)
     {
+        var existingMapping = ParseExistingMapping(readModel.ExistingMapping);
         var promptData = new
         {
             chefsData = new
@@ -20,12 +21,31 @@ internal static class FormMappingPromptDataBuilder
             {
                 coreFields = readModel.UnityCoreFields,
                 customFields = readModel.Worksheets
-            }
+            },
+            existingMapping
         };
 
         return JsonSerializer.SerializeToElement(promptData, new JsonSerializerOptions
         {
             WriteIndented = true
         });
+    }
+
+    private static JsonElement ParseExistingMapping(string? existingMapping)
+    {
+        if (string.IsNullOrWhiteSpace(existingMapping))
+        {
+            return JsonSerializer.SerializeToElement(new { });
+        }
+
+        try
+        {
+            using var document = JsonDocument.Parse(existingMapping);
+            return document.RootElement.Clone();
+        }
+        catch (JsonException)
+        {
+            return JsonSerializer.SerializeToElement(existingMapping);
+        }
     }
 }
