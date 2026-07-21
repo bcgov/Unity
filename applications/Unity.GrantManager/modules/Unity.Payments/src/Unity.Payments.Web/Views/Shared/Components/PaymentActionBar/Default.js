@@ -76,7 +76,7 @@ $(function () {
 
             let groupedValues = Object.values(groupedTags);
             if (groupedValues.length > 0) {
-                commonTags = groupedValues.reduce(filterCommonTags);
+                commonTags = groupedValues.reduce((prev, next) => filterCommonTags(prev, next), groupedValues[0]);
             }
             
             let allTagEntries = Object.entries(groupedTags).map(([paymentId, tagList]) => {

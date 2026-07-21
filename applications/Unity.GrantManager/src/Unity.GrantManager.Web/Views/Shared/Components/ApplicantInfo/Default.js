@@ -53,8 +53,6 @@ abp.widgets.ApplicantInfo = function ($wrapper) {
             widgetManager.refresh($wrapper, currentFilters);
         },
         setupEventHandlers: function () {
-            const self = this;
-
             // Unsubscribe from previous subscription if it exists
             // This prevents duplicate event handlers after widget refresh
             if (applicantInfoMergedSubscriptionToken) {
@@ -66,13 +64,13 @@ abp.widgets.ApplicantInfo = function ($wrapper) {
             applicantInfoMergedSubscriptionToken = PubSub.subscribe(
                 'applicant_info_merged',
                 () => {
-                    self.refresh();
+                    this.refresh();
                 }
             );
 
             // Save button handler
-            self.zoneForm.saveButton.on('click', async function () {
-                if (self.zoneForm.modifiedFields.has('ApplicantSummary.UnityApplicantId')) {
+            this.zoneForm.saveButton.on('click', async () => {
+                if (this.zoneForm.modifiedFields.has('ApplicantSummary.UnityApplicantId')) {
                     const newId = $('#ApplicantSummary_UnityApplicantId').val()?.trim();
                     const currentApplicantId = $('#ApplicantInfoViewApplicantId').val();
                     if (newId && currentApplicantId) {
@@ -89,26 +87,26 @@ abp.widgets.ApplicantInfo = function ($wrapper) {
                 }
 
                 let applicationId = document.getElementById('ApplicantInfo_ApplicationId').value;
-                let applicantInfoSubmission = self.getPartialUpdate();
-                self.zoneForm.setSaving(true);
+                let applicantInfoSubmission = this.getPartialUpdate();
+                this.zoneForm.setSaving(true);
                 try {
                     unity.grantManager.grantApplications.applicationApplicant
                         .updatePartialApplicantInfo(applicationId, applicantInfoSubmission)
-                        .done(function () {
+                        .done(() => {
                             abp.notify.success('The Applicant Info has been updated.');
-                            self.zoneForm.resetTracking();
+                            this.zoneForm.resetTracking();
                             PubSub.publish("refresh_detail_panel_summary");
                             PubSub.publish('applicant_info_updated', applicantInfoSubmission);
                         })
-                        .fail(function (error) {
+                        .fail((error) => {
                             abp.notify.error('Failed to update Applicant Info.');
                             console.log(error);
-                            self.zoneForm.setSaving(false);
+                            this.zoneForm.setSaving(false);
                         });
                 } catch (error) {
                     abp.notify.error('An unexpected error occurred.');
                     console.log(error);
-                    self.zoneForm.setSaving(false);
+                    this.zoneForm.setSaving(false);
                 }
             });
         },
