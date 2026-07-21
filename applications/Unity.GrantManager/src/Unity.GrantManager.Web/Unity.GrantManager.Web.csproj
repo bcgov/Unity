@@ -76,6 +76,12 @@
     <PackageReference Include="Volo.Abp.Mapperly" Version="10.3.0" />
     <PackageReference Include="Volo.Abp.SettingManagement.Web" Version="10.3.0" />
     <PackageReference Include="Volo.Abp.Swashbuckle" Version="10.3.0" />
+
+    <!-- Override transitive Swashbuckle.AspNetCore (pulled at 10.0.1 by Volo.Abp.Swashbuckle 10.3.0),
+         which resolves a vulnerable Microsoft.OpenApi 2.3.0 (GHSA-v5pm-xwqc-g5wc). 10.2.3 depends on
+         Microsoft.OpenApi 2.7.5+, which fixes it. Remove this once Volo.Abp.Swashbuckle depends on
+         Swashbuckle.AspNetCore >= 10.2.3 natively. -->
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="10.2.3" />
   </ItemGroup>
 
   <!-- Static Assets Copy -->
