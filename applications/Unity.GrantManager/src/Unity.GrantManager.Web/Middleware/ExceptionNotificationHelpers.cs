@@ -1,12 +1,29 @@
 using System;
 using System.Diagnostics;
 using System.Collections.Generic;
-using Unity.Notifications.TeamsNotifications;
+using System.Text.RegularExpressions;
+using Unity.GrantManager.Notifications.Logs;
 
 namespace Unity.GrantManager.Web.Middleware
 {
-    internal static class ExceptionNotificationHelpers
+    internal static partial class ExceptionNotificationHelpers
     {
+        // Matches Azure Boards work item references used in this repo's branch/PR naming, e.g. "AB#33086".
+        [GeneratedRegex(@"AB#\d+", RegexOptions.IgnoreCase)]
+        private static partial Regex TicketReferencePattern();
+
+        // Pulls the ticket reference (e.g. "AB#33086") out of a PR title so an exception log row
+        // can be traced back to the work item that introduced the failing line, not just the author.
+        public static string? ExtractTicketReference(string? pullRequestTitle)
+        {
+            if (string.IsNullOrWhiteSpace(pullRequestTitle))
+            {
+                return null;
+            }
+
+            var match = TicketReferencePattern().Match(pullRequestTitle);
+            return match.Success ? match.Value.ToUpperInvariant() : null;
+        }
         public static string NormalizeRepoPath(string fullPath)
         {
             if (string.IsNullOrWhiteSpace(fullPath)) return fullPath;

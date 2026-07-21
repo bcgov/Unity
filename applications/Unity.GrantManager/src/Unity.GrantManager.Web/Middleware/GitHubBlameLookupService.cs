@@ -71,14 +71,6 @@ public class GitHubBlameLookupService : IBlameLookupService
             _branch = "dev2";
         }
 
-        string pat = Environment.GetEnvironmentVariable("UNITY_GITHUB_PAT") ?? "";
-
-        if (!string.IsNullOrWhiteSpace(pat))
-        {
-            _httpClient.DefaultRequestHeaders.Authorization =
-                new AuthenticationHeaderValue("Bearer", pat);
-        }
-
         _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("Unity-GrantManager");
     }
 

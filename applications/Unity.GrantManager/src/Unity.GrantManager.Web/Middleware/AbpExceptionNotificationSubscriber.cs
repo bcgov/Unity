@@ -5,7 +5,8 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Unity.GrantManager.Notifications;
-using Unity.Notifications.TeamsNotifications;
+using Unity.GrantManager.Notifications.Logs;
+using Unity.GrantManager.Logs;
 using Volo.Abp.ExceptionHandling;
 using Volo.Abp.Uow;
 
@@ -45,12 +46,19 @@ public class AbpExceptionNotificationSubscriber(
             .WithLabels("error", ex.GetType().Name)
             .Inc();
 
-        TryQueueTeamsNotification(ex);
+        // The OpenShift "UnityHighExceptionRate" alert queries application_exceptions_total by
+        // its "type" label. ExceptionCounterMiddleware only sees exceptions that escape the whole
+        // pipeline unhandled, so ABP-handled exceptions (the common case) must be counted here too.
+        ExceptionCounterMiddleware.ExceptionCounter
+            .WithLabels(ex.GetType().Name)
+            .Inc();
+
+        TryQueueLogNotification(ex);
 
         return Task.CompletedTask;
     }
 
-    private void TryQueueTeamsNotification(Exception ex)
+    private void TryQueueLogNotification(Exception ex)
     {
         string? env =
             Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
@@ -89,6 +97,8 @@ public class AbpExceptionNotificationSubscriber(
             var uowManager = services.GetRequiredService<IUnitOfWorkManager>();
             var notifications =
                 services.GetRequiredService<INotificationsAppService>();
+            var exceptionLogs =
+                services.GetService<IExceptionLogAppService>();
 
             string endpoint = GetEndpoint();
 
@@ -101,6 +111,7 @@ public class AbpExceptionNotificationSubscriber(
 
             int? sourceLine = frame?.Line;
 
+            Guid? userId = AbpUserTenantAccessor.GetCurrentUserId(services);
             string userName = AbpUserTenantAccessor.GetCurrentUserName(services) ?? "unknown";
             string tenantName = await AbpUserTenantAccessor.GetCurrentTenantNameAsync(services) ?? "unknown";
 
@@ -117,7 +128,7 @@ public class AbpExceptionNotificationSubscriber(
                 tenantName,
                 sourceFile,
                 sourceLine);
-            await EnrichWithBlameInfoAsync(
+            GitHubBlameInfo? blame = await EnrichWithBlameInfoAsync(
                 services,
                 facts,
                 sourceFile,
@@ -125,10 +136,61 @@ public class AbpExceptionNotificationSubscriber(
 
             using var uow = uowManager.Begin(requiresNew: true, isTransactional: false);
 
-            await notifications.PostToTeamsAsync(
-                activityTitle,
-                activitySubtitle,
-                facts);
+            // Try to post notification, but don't let failures prevent exception logging
+            try
+            {
+                await notifications.PostToNotificationsAsync(
+                    activityTitle,
+                    activitySubtitle,
+                    facts);
+            }
+            catch (Exception notificationEx)
+            {
+                logger.LogWarning(notificationEx, "Failed to post notification to Teams");
+            }
+
+            // Always attempt to log the exception, even if notification failed
+            if (exceptionLogs != null)
+            {
+                try
+                {
+                    await exceptionLogs.CreateAsync(new CreateExceptionLogDto
+                    {
+                        UserId = userId,
+                        UserName = userName,
+                        TenantName = tenantName,
+                        NotificationType = ExceptionLogType.AbpHandledException,
+                        Channel = ExceptionLogChannel.ExceptionPipeline,
+                        Severity = ExceptionLogSeverity.Error,
+                        Title = activityTitle,
+                        Message = ex.Message,
+                        Source = nameof(AbpExceptionNotificationSubscriber),
+                        SourceReference = endpoint,
+                        CorrelationId = httpContextAccessor.HttpContext?.TraceIdentifier,
+                        IsDeliveredRealtime = false,
+                        ExceptionType = ex.GetType().FullName ?? ex.GetType().Name,
+                        ExceptionMessage = ex.Message,
+                        StackExcerpt = ExceptionNotificationHelpers.BuildApplicationStackExcerpt(ex),
+                        SourceFile = sourceFile,
+                        SourceLine = sourceLine,
+                        CommitSha = ExceptionCounterMiddleware.CommitSha,
+                        Environment = environment,
+                        PayloadJson = null,
+                        BlameAuthor = blame?.Author,
+                        BlameEmail = blame?.Email,
+                        BlameCommitSha = blame?.CommitSha,
+                        BlameCommitMessage = blame?.Message,
+                        PullRequestUrl = blame?.PullRequestUrl,
+                        PullRequestNumber = blame?.PullRequestNumber,
+                        PullRequestTitle = blame?.PullRequestTitle,
+                        TicketReference = ExceptionNotificationHelpers.ExtractTicketReference(blame?.PullRequestTitle)
+                    });
+                }
+                catch (Exception logEx)
+                {
+                    logger.LogWarning(logEx, "Failed to create exception log in ABP exception subscriber");
+                }
+            }
 
             await uow.CompleteAsync();
         }
@@ -182,7 +244,7 @@ public class AbpExceptionNotificationSubscriber(
             innerMessage);
     }
 
-    private async Task EnrichWithBlameInfoAsync(
+    private async Task<GitHubBlameInfo?> EnrichWithBlameInfoAsync(
         IServiceProvider services,
         List<Fact> facts,
         string sourceFile,
@@ -190,7 +252,7 @@ public class AbpExceptionNotificationSubscriber(
     {
         if (!sourceLine.HasValue)
         {
-            return;
+            return null;
         }
 
         try
@@ -200,7 +262,7 @@ public class AbpExceptionNotificationSubscriber(
             if (blameService == null)
             {
                 logger.LogDebug("Blame lookup service not available; skipping blame enrichment for {File}:{Line}", sourceFile, sourceLine);
-                return;
+                return null;
             }
 
             GitHubBlameInfo? blame = null;
@@ -215,7 +277,7 @@ public class AbpExceptionNotificationSubscriber(
 
             if (blame == null)
             {
-                return;
+                return null;
             }
 
             logger.LogInformation(
@@ -226,12 +288,16 @@ public class AbpExceptionNotificationSubscriber(
             AddAuthorFact(facts, blame);
             AddCommitFact(facts, blame);
             AddPullRequestFacts(facts, blame);
+
+            return blame;
         }
         catch (Exception blameException)
         {
             logger.LogWarning(
                 blameException,
                 "Failed to enrich exception with GitHub blame information");
+
+            return null;
         }
     }
 

@@ -21,7 +21,7 @@ using Volo.Abp.MultiTenancy;
 using Volo.Abp.Security.Encryption;
 using Volo.Abp.TenantManagement;
 using Unity.GrantManager.Notifications;
-using Unity.GrantManager.Notifications.Teams;
+using Unity.GrantManager.Notifications.Logs;
 
 namespace Unity.GrantManager.ApplicationForms
 {
@@ -245,7 +245,7 @@ namespace Unity.GrantManager.ApplicationForms
                 string activityTitle = "Review Missed Chefs Submissions " + tenantName;
                 string activitySubtitle = "Environment: " + envInfo;
                 
-                await _notificationsAppService.PostToTeamsAsync(activityTitle, activitySubtitle, _facts);
+                await _notificationsAppService.PostToNotificationsAsync(activityTitle, activitySubtitle, _facts);
             }
             return (missingSubmissions ?? [], missingSubmissionsReportBuilder.ToString());
         }

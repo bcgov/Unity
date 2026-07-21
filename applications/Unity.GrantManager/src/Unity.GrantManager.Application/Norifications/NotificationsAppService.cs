@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Integrations;
-using Unity.GrantManager.Notifications.Teams;
+using Unity.GrantManager.Notifications.Logs;
 using Unity.Notifications.Teams;
 using Volo.Abp;
 using Volo.Abp.DependencyInjection;
@@ -40,34 +40,28 @@ namespace Unity.GrantManager.Notifications
         [RemoteService(false)]
         public async Task NotifyChefsEventToTeamsAsync(string factName, string factValue, bool alert = false)
         {
-            string teamsChannel = await InitializeTeamsChannelAsync(alert ? TeamsNotificationService.TEAMS_ALERT : TeamsNotificationService.TEAMS_NOTIFICATION);
-            if (teamsChannel.IsNullOrEmpty())
-            {
-                return;
-            }
-
             string? envInfo = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
             string activityTitle = "Chefs Submission Event Validation Error";
             string activitySubtitle = "Environment: " + envInfo;
-            TeamsNotificationService teamsNotificationService = new();
-            teamsNotificationService.AddFact(factName, factValue);
-            await teamsNotificationService.PostFactsToTeamsAsync(teamsChannel, activityTitle, activitySubtitle);
+            LogNotificationService LogNotificationService = new();
+            LogNotificationService.AddFact(factName, factValue);
+            await LogNotificationService.LogFactsToNotificationsAsync(NotificationType.UnityAlert, activityTitle, activitySubtitle);
         }
 
         [UnitOfWork]
-        public async Task PostToTeamsAsync(string activityTitle, string activitySubtitle, List<Fact> facts)
+        public async Task PostToNotificationsAsync(string activityTitle, string activitySubtitle, List<Fact> facts)
         {
-            string teamsChannel = await InitializeTeamsChannelAsync(TeamsNotificationService.TEAMS_NOTIFICATION);
+            string teamsChannel = await InitializeTeamsChannelAsync(LogNotificationService.TEAMS_NOTIFICATION);
             if (teamsChannel.IsNullOrEmpty())
             {
-                logger.LogWarning("PostToTeamsAsync: no Teams channel configured, skipping notification TeamsNotificationService.TEAMS_NOTIFICATION");
+                logger.LogWarning("PostToNotificationsAsync: no Teams channel configured, skipping notification LogNotificationService.TEAMS_NOTIFICATION");
                 return;
             }
 
-            string messageCard = TeamsNotificationService.InitializeMessageCard(activityTitle, activitySubtitle, facts);
+            string messageCard = LogNotificationService.InitializeMessageCard(activityTitle, activitySubtitle, facts);
             try
             {
-                await TeamsNotificationService.PostToTeamsChannelAsync(teamsChannel, messageCard);
+                await LogNotificationService.PostToNotificationsChannelAsync(NotificationType.UnityAlert, messageCard);
             }
             catch (Exception ex)
             {
@@ -75,19 +69,19 @@ namespace Unity.GrantManager.Notifications
             }
         }
 
-        public async Task PostToTeamsAsync(string activityTitle, string activitySubtitle)
+        public async Task PostToNotificationsAsync(string activityTitle, string activitySubtitle)
         {
-            string teamsChannel = await InitializeTeamsChannelAsync(TeamsNotificationService.TEAMS_NOTIFICATION);
+            string teamsChannel = await InitializeTeamsChannelAsync(LogNotificationService.TEAMS_NOTIFICATION);
             if (teamsChannel.IsNullOrEmpty())
             {
-                logger.LogWarning("PostToTeamsAsync (no-facts): no Teams channel configured, skipping notification");
+                logger.LogWarning("PostToNotificationsAsync (no-facts): no Teams channel configured, skipping notification");
                 return;
             }
             List<Fact> facts = [];
-            string messageCard = TeamsNotificationService.InitializeMessageCard(activityTitle, activitySubtitle, facts);
+            string messageCard = LogNotificationService.InitializeMessageCard(activityTitle, activitySubtitle, facts);
             try
             {
-                await TeamsNotificationService.PostToTeamsChannelAsync(teamsChannel, messageCard);
+                await LogNotificationService.PostToNotificationsChannelAsync(NotificationType.UnityAlert, messageCard);
             }
             catch (Exception ex)
             {
@@ -97,12 +91,7 @@ namespace Unity.GrantManager.Notifications
 
         public async Task PostChefsEventToTeamsAsync(string subscriptionEvent, dynamic form, dynamic chefsFormVersion)
         {
-            string teamsChannel = await InitializeTeamsChannelAsync(TeamsNotificationService.TEAMS_NOTIFICATION);
-            if (teamsChannel.IsNullOrEmpty())
-            {
-                return;
-            }
-            await TeamsNotificationService.PostChefsEventToTeamsAsync(teamsChannel, subscriptionEvent, form, chefsFormVersion);
+            await LogNotificationService.PostChefsEventToNotificationsAsync(NotificationType.ChefsEvent, subscriptionEvent, form, chefsFormVersion);
         }
     }
 }

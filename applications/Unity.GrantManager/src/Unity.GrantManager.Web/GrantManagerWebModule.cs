@@ -144,7 +144,7 @@ public class GrantManagerWebModule : AbpModule
 
         ConfgureFormsApiAuhentication(context);
         ConfigureAuthentication(context, configuration);
-        ConfigurePolicies(context);
+        ConfigurePolicies(context, configuration);
         ConfigureUrls(configuration);
         ConfigureBundles();
         ConfigureAutoMapper();
@@ -321,12 +321,27 @@ public class GrantManagerWebModule : AbpModule
         context.Services.AddScoped<IFormIdResolver, FormIdRouteResolver>();
     }
 
-    private static void ConfigurePolicies(ServiceConfigurationContext context)
+    private static void ConfigurePolicies(ServiceConfigurationContext context, IConfiguration configuration)
     {
         context.Services.AddScoped<Microsoft.AspNetCore.Authorization.IAuthorizationHandler, InternalNetworkHandler>();
-        context.Services.AddSingleton<Middleware.ExceptionNotificationThrottle>();
+        context.Services.AddSingleton<ExceptionNotificationThrottle>();
         context.Services.AddTransient<Volo.Abp.ExceptionHandling.IExceptionSubscriber, Middleware.AbpExceptionNotificationSubscriber>();
-        context.Services.AddHttpClient<Middleware.IBlameLookupService, Middleware.GitHubBlameLookupService>();
+        
+        context.Services.AddHttpClient<IBlameLookupService, GitHubBlameLookupService>()
+            .ConfigureHttpClient(client =>
+            {
+                string pat =
+                    Environment.GetEnvironmentVariable("UNITY_GITHUB_PAT")
+                    ?? configuration["UNITY_GITHUB_PAT"]
+                    ?? "";
+
+                if (!string.IsNullOrWhiteSpace(pat))
+                {
+                    client.DefaultRequestHeaders.Authorization =
+                        new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", pat);
+                }
+            });
+        
         PolicyRegistrant.Register(context);
     }
 
@@ -457,7 +472,6 @@ public class GrantManagerWebModule : AbpModule
                 {
                     bundle.AddFiles("/global-styles.css");
                 });
-
 
             options.StyleBundles.Configure(
                 NotificationsBundles.Styles.Notifications,
@@ -600,6 +614,9 @@ public class GrantManagerWebModule : AbpModule
         var app = context.GetApplicationBuilder();
         var env = context.GetEnvironment();
         var configuration = context.GetConfiguration();
+
+        ErrorCountingLoggerSink.SetScopeFactory(
+            app.ApplicationServices.GetRequiredService<IServiceScopeFactory>());
 
         if (!env.IsProduction())
         {

@@ -84,5 +84,11 @@ namespace Unity.SharedKernel.Utilities
 
             return null;
         }
+
+        public static Guid? GetCurrentUserId(IServiceProvider serviceProvider)
+        {
+            var currentUser = serviceProvider.GetService<ICurrentUser>();
+            return currentUser?.Id;
+        }
     }
 }

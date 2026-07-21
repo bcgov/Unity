@@ -8,8 +8,9 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Prometheus;
 using Unity.GrantManager.Notifications;
-using Unity.Notifications.TeamsNotifications;
 using Volo.Abp.Uow;
+using Unity.GrantManager.Notifications.Logs;
+using Unity.GrantManager.Logs;
 
 namespace Unity.GrantManager.Web.Middleware;
 
@@ -27,7 +28,10 @@ public class ExceptionCounterMiddleware(
             "Development"
         };
 
-    private static readonly Counter ExceptionCounter =
+    // Internal so AbpExceptionNotificationSubscriber can also increment it for ABP-handled
+    // exceptions — the OpenShift "UnityHighExceptionRate" alert keys off this metric's "type"
+    // label, so both handled and unhandled exceptions need to feed it.
+    internal static readonly Counter ExceptionCounter =
         Metrics.CreateCounter(
             "application_exceptions_total",
             "Total number of application exceptions",
@@ -74,7 +78,7 @@ public class ExceptionCounterMiddleware(
                 .WithLabels("fatal", ex.GetType().Name)
                 .Inc();
 
-            QueueTeamsNotification(context, ex);
+            QueueLogNotification(context, ex);
 
             throw;
         }
@@ -82,9 +86,10 @@ public class ExceptionCounterMiddleware(
 
     // Repo path and frame helpers are provided by ExceptionNotificationHelpers to avoid duplication
 
-    private void QueueTeamsNotification(HttpContext context, Exception ex)
+    private void QueueLogNotification(HttpContext context, Exception ex)
     {
         string? env = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
+        string correlationId = context.TraceIdentifier;
 
         if (!NotifyEnvironments.Contains(env ?? string.Empty))
         {
@@ -120,8 +125,10 @@ public class ExceptionCounterMiddleware(
 
                 var uowManager = scope.ServiceProvider.GetRequiredService<IUnitOfWorkManager>();
                 var notifications = scope.ServiceProvider.GetRequiredService<INotificationsAppService>();
+                var exceptionLogs = scope.ServiceProvider.GetService<IExceptionLogAppService>();
 
                 // Get current user and tenant name
+                var userId = AbpUserTenantAccessor.GetCurrentUserId(scope.ServiceProvider);
                 var userName = AbpUserTenantAccessor.GetCurrentUserName(scope.ServiceProvider) ?? "unknown";
                 var tenantName = await AbpUserTenantAccessor.GetCurrentTenantNameAsync(scope.ServiceProvider) ?? "unknown";
 
@@ -143,6 +150,7 @@ public class ExceptionCounterMiddleware(
                     innerMessage);
 
                 // Try to enrich with blame info similar to AbpExceptionNotificationSubscriber
+                GitHubBlameInfo? blame = null;
                 try
                 {
                     if (sourceLine.HasValue)
@@ -154,7 +162,7 @@ public class ExceptionCounterMiddleware(
                         {
                             try
                             {
-                                var blame = await blameService.GetBlameAsync(blamePath, sourceLine.Value);
+                                blame = await blameService.GetBlameAsync(blamePath, sourceLine.Value);
                                 if (blame != null)
                                 {
                                     facts.Add(new Fact { Name = "Author", Value = $"{blame.Author} <{blame.Email}>" });
@@ -197,16 +205,67 @@ public class ExceptionCounterMiddleware(
                 {
                     using var uow = uowManager.Begin(requiresNew: true, isTransactional: false);
 
-                    await notifications.PostToTeamsAsync(
-                        activityTitle,
-                        activitySubtitle,
-                        facts);
+                    // Try to post notification, but don't let failures prevent exception logging
+                    try
+                    {
+                        await notifications.PostToNotificationsAsync(
+                            activityTitle,
+                            activitySubtitle,
+                            facts);
+                    }
+                    catch (Exception notificationEx)
+                    {
+                        logger.LogWarning(notificationEx, "Failed to post Teams notification");
+                    }
+
+                    // Always attempt to log the exception, even if notification failed
+                    if (exceptionLogs != null)
+                    {
+                        try
+                        {
+                            await exceptionLogs.CreateAsync(new CreateExceptionLogDto
+                            {
+                                UserId = userId,
+                                UserName = userName,
+                                TenantName = tenantName,
+                                NotificationType = ExceptionLogType.MiddlewareUnhandledException,
+                                Channel = ExceptionLogChannel.ExceptionPipeline,
+                                Severity = ExceptionLogSeverity.Error,
+                                Title = activityTitle,
+                                Message = exMessage,
+                                Source = nameof(ExceptionCounterMiddleware),
+                                SourceReference = endpoint,
+                                CorrelationId = correlationId,
+                                IsDeliveredRealtime = false,
+                                ExceptionType = exTypeName,
+                                ExceptionMessage = exMessage,
+                                StackExcerpt = stackTrace,
+                                SourceFile = sourceFile,
+                                SourceLine = sourceLine,
+                                CommitSha = CommitSha,
+                                Environment = env,
+                                PayloadJson = null,
+                                BlameAuthor = blame?.Author,
+                                BlameEmail = blame?.Email,
+                                BlameCommitSha = blame?.CommitSha,
+                                BlameCommitMessage = blame?.Message,
+                                PullRequestUrl = blame?.PullRequestUrl,
+                                PullRequestNumber = blame?.PullRequestNumber,
+                                PullRequestTitle = blame?.PullRequestTitle,
+                                TicketReference = ExceptionNotificationHelpers.ExtractTicketReference(blame?.PullRequestTitle)
+                            });
+                        }
+                        catch (Exception logEx)
+                        {
+                            logger.LogWarning(logEx, "Failed to create exception log within UnitOfWork");
+                        }
+                    }
 
                     await uow.CompleteAsync();
                 }
                 catch (Exception uowEx)
                 {
-                    logger.LogWarning(uowEx, "Failed to send Teams exception notification within UnitOfWork");
+                    logger.LogWarning(uowEx, "Failed to complete UnitOfWork for exception handling");
                 }
             }
             catch (Exception notifyEx)

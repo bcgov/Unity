@@ -6,8 +6,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Unity.GrantManager.Notifications;
-using Unity.Notifications.TeamsNotifications;
 using Volo.Abp.AspNetCore.Mvc;
+using Unity.GrantManager.Notifications.Logs;
 
 namespace Unity.GrantManager.Web.Controllers.Monitoring;
 
@@ -82,7 +82,7 @@ public class AlertWebhookController(
                 facts.Add(new Fact { Name = "Source", Value = lead.GeneratorURL });
             }
 
-            await notificationsAppService.PostToTeamsAsync(activityTitle, activitySubtitle, facts);
+            await notificationsAppService.PostToNotificationsAsync(activityTitle, activitySubtitle, facts);
 
             return Ok();
         }
