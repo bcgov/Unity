@@ -143,6 +143,15 @@ public class EntityFrameworkCoreGrantManagerDbSchemaMigrator
                 .GetRequiredService<GrantManagerDbContext>()
                 .Database;
 
+            // The database itself may not exist yet on a brand new Postgres instance.
+            // MigrateAsync() would normally create it as its first step, but
+            // ReconcileMigrationHistoryAsync needs to connect before that, so ensure
+            // it exists here first (mirrors the tenant path further up).
+            if (!await hostDb.CanConnectAsync())
+            {
+                await hostDb.GetService<IRelationalDatabaseCreator>().CreateAsync();
+            }
+
             await ReconcileMigrationHistoryAsync(hostDb, HostInitialMigrationId);
 
             await hostDb.MigrateAsync();
