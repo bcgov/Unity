@@ -21,7 +21,12 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="HtmlSanitizer" Version="9.0.892" />
+    <!-- Pinned to a HtmlSanitizer prerelease because AngleSharp.Css has no stable 1.0 release compatible
+         with AngleSharp 1.x (see github.com/mganss/HtmlSanitizer#491). The stable 9.0.x line hard-pins
+         AngleSharp 0.17.1, which has a known moderate vulnerability (GHSA-pgww-w46g-26qg). The maintainer
+         has pointed users to the prerelease line for this exact issue for 2+ years; move to the first
+         stable HtmlSanitizer release that depends on AngleSharp >= 1.5 once one ships. -->
+    <PackageReference Include="HtmlSanitizer" Version="9.1.968-beta" />
     <PackageReference Include="Markdig.Signed" Version="0.44.0" />
     <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="10.0.3" />
     <PackageReference Include="Microsoft.Extensions.Options" Version="10.0.3" />
