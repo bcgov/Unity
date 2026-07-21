@@ -15,7 +15,7 @@ public class NotificationsSettingViewModel
     [MaxLength(2)]
     public int MaximumRetryAttempts { get; set; } = 3;
 
-    [Display(Name = "Enable Email Delay")]
+    [Display(Name = "Enable Schedule Email for Individual Application")]
     public bool EnableEmailDelay { get; set; }
 
     public string Extensions { get; set; } = string.Empty;
