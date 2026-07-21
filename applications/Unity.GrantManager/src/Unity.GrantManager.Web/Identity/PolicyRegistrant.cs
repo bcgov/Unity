@@ -16,6 +16,7 @@ internal static class PolicyRegistrant
     // when cookie-stamped permission claims were dropped in favour of IPermissionChecker).
     private static readonly string[] ITAdminOrITOperationsRoles =
         [IdentityConsts.ITAdminRoleName, IdentityConsts.ITOperationsRoleName];
+    internal const string MetricsAccessPolicy = "MetricsAccess";
 
     internal static void Register(ServiceConfigurationContext context)
     {
@@ -24,6 +25,10 @@ internal static class PolicyRegistrant
         // (Redis-cached). Only policies that need to check a Keycloak-issued role claim
         // (IsInRole) need explicit registration here.
         var authorizationBuilder = context.Services.AddAuthorizationBuilder();
+
+        // Metrics endpoint — allow only loopback / RFC-1918 (cluster-internal) callers
+        authorizationBuilder.AddPolicy(MetricsAccessPolicy,
+            policy => policy.AddRequirements(new InternalNetworkRequirement()));
 
         // IT Administrator / IT Operations role policies
         authorizationBuilder.AddPolicy(IdentityConsts.ITAdminPolicyName,
