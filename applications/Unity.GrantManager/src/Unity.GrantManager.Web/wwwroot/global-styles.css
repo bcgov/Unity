@@ -92,7 +92,7 @@ inner-menu-item .lpx-menu-item-link:hover {
     border-color: var(--lpx-danger);
 }
 
-/* Constraint pre elements to prevent page horizontal scrolling */
+/* Constrain pre elements to prevent page horizontal scrolling */
 pre {
     max-width: 100%;
     overflow-x: auto;

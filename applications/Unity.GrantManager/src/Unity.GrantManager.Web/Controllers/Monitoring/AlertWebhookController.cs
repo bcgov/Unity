@@ -8,12 +8,13 @@ using Microsoft.Extensions.Logging;
 using Unity.GrantManager.Notifications;
 using Volo.Abp.AspNetCore.Mvc;
 using Unity.GrantManager.Notifications.Logs;
+using Unity.GrantManager.Web.Identity.Policy;
 
 namespace Unity.GrantManager.Web.Controllers.Monitoring;
 
 [ApiController]
 [Route("api/monitoring")]
-[AllowAnonymous]
+[Authorize(Policy = PolicyRegistrant.MetricsAccessPolicy)]
 [IgnoreAntiforgeryToken]
 public class AlertWebhookController(
     INotificationsAppService notificationsAppService,

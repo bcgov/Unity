@@ -177,17 +177,17 @@ public class GrantManagerWebModule : AbpModule
 
             foreach (var proxy in knownForwardedHeaderProxies)
             {
-                if (!string.IsNullOrWhiteSpace(proxy))
+                if (!string.IsNullOrWhiteSpace(proxy) && System.Net.IPAddress.TryParse(proxy, out var proxyAddress))
                 {
-                    options.KnownProxies.Add(System.Net.IPAddress.Parse(proxy));
+                    options.KnownProxies.Add(proxyAddress);
                 }
             }
 
             foreach (var network in knownForwardedHeaderNetworks)
             {
-                if (!string.IsNullOrWhiteSpace(network))
+                if (!string.IsNullOrWhiteSpace(network) && System.Net.IPNetwork.TryParse(network, out var ipNetwork))
                 {
-                    options.KnownIPNetworks.Add(System.Net.IPNetwork.Parse(network));
+                    options.KnownIPNetworks.Add(ipNetwork);
                 }
             }
 
