@@ -838,12 +838,12 @@ $(function () {
             render: function (data) {
                 if (data + "" !== "undefined" && data?.length > 0) {
                     const escaped = data
-                        .replace(/\\/g, '\\\\')
-                        .replace(/'/g, "\\'")
-                        .replace(/&/g, '&amp;')
-                        .replace(/"/g, '&quot;')
-                        .replace(/</g, '&lt;')
-                        .replace(/>/g, '&gt;');
+                        .replaceAll(/\\/g, String.raw`\\`)
+                        .replaceAll(/'/g, "\\'")
+                        .replaceAll(/&/g, '&amp;')
+                        .replaceAll(/"/g, '&quot;')
+                        .replaceAll(/</g, '&lt;')
+                        .replaceAll(/>/g, '&gt;');
                     return '<button class="btn btn-light info-btn" type="button" onclick="openCasResponseModal(\'' + escaped + '\');">View Response<i class="fl fl-mapinfo"></i></button>';
                 }
                 return null;
