@@ -112,7 +112,12 @@ namespace Unity.GrantManager.Web.Pages.ApplicationForms
             }
 
             var readModel = await mappingReadService.GetAsync(formVersionId);
-            var properties = readModel.ChefsFields
+            return BuildMappingFields(readModel);
+        }
+
+        internal static List<MapField> BuildMappingFields(ApplicationFormMappingReadModelDto readModel)
+        {
+            var properties = readModel.UnityCoreFields
                 .Select(field => new MapField
                 {
                     Name = field.Name,
