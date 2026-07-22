@@ -33,7 +33,7 @@
 
   <!-- Package References -->
   <ItemGroup>
-    <PackageReference Include="DistributedLock.Redis" Version="1.0.3" />
+    <PackageReference Include="DistributedLock.Redis" Version="1.1.1" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.10" />
     <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="10.0.10" />
     <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks.Abstractions" Version="10.0.10" />
@@ -41,7 +41,7 @@
     <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
     <PackageReference Include="NPOI" Version="2.8.0" />
     <PackageReference Include="PdfPig" Version="0.1.15" />
-    <PackageReference Include="Quartz.Serialization.Json" Version="3.14.0" />
+    <PackageReference Include="Quartz.Serialization.Json" Version="3.18.2" />
     <PackageReference Include="RestSharp" Version="112.1.0" />
     <PackageReference Include="Riok.Mapperly" Version="4.3.1" />
 

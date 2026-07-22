@@ -15,12 +15,12 @@
     <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="10.0.10" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.0" />
     <!-- Explicit reference to fix vulnerable transitive dependency -->
-    <PackageReference Include="AWSSDK.Core" Version="4.0.5" />
+    <PackageReference Include="AWSSDK.Core" Version="4.0.100.7" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Update="ConfigureAwait.Fody" Version="3.3.2" />
-    <PackageReference Update="Fody" Version="6.9.2">
+    <PackageReference Update="ConfigureAwait.Fody" Version="3.4.1" />
+    <PackageReference Update="Fody" Version="6.9.3">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
     </PackageReference>

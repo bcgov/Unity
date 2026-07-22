@@ -14,7 +14,7 @@
     <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="10.0.10" />
     <PackageReference Include="Microsoft.Extensions.Http.Resilience" Version="10.8.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
-    <PackageReference Include="Stateless" Version="5.17.0" />
+    <PackageReference Include="Stateless" Version="5.20.1" />
     <PackageReference Include="Volo.Abp.AspNetCore.Mvc" Version="10.5.0" />    
     <PackageReference Include="Volo.Abp.Mapperly" Version="10.5.0" />
     <PackageReference Include="Riok.Mapperly" Version="4.3.1" />
@@ -30,7 +30,7 @@
     
     <PackageReference Include="Volo.Abp.TenantManagement.Application" Version="10.5.0" />
     <!-- Explicit references to fix vulnerable transitive dependencies -->
-    <PackageReference Include="AWSSDK.Core" Version="4.0.5" />
+    <PackageReference Include="AWSSDK.Core" Version="4.0.100.7" />
     <PackageReference Include="System.IO.Packaging" Version="10.0.10" />
     
     <ProjectReference Include="..\..\..\..\src\Unity.GrantManager.Domain\Unity.GrantManager.Domain.csproj" />
@@ -40,8 +40,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Update="ConfigureAwait.Fody" Version="3.3.2" />
-    <PackageReference Update="Fody" Version="6.9.2">
+    <PackageReference Update="ConfigureAwait.Fody" Version="3.4.1" />
+    <PackageReference Update="Fody" Version="6.9.3">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
     </PackageReference>
