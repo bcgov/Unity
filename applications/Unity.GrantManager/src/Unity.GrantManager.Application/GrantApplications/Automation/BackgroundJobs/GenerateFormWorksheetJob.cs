@@ -9,6 +9,7 @@ using Unity.AI.Cooldown;
 using Unity.AI.Operations;
 using Unity.AI.Requests;
 using Unity.GrantManager.ApplicationForms;
+using Unity.GrantManager.ApplicationForms.Mapping;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Flex;
 using Unity.Flex.Domain.WorksheetLinks;
@@ -28,6 +29,7 @@ public class GenerateFormWorksheetJob(
     IApplicationFormRepository applicationFormRepository,
     IWorksheetRepository worksheetRepository,
     IWorksheetLinkRepository worksheetLinkRepository,
+    IApplicationFormVersionMappingReadService mappingReadService,
     IFormWorksheetService aiService,
     IRepository<AIGenerationRequest, Guid> generationRequestRepository,
     ICurrentTenant currentTenant,
@@ -64,6 +66,7 @@ public class GenerateFormWorksheetJob(
                 var applicationForm = await applicationFormRepository.GetAsync(formVersion.ApplicationFormId);
                 var worksheetName = BuildWorksheetName(formVersion.Id, applicationForm.Id);
                 var existingWorksheet = await worksheetRepository.GetByNameAsync(worksheetName, true);
+                var mappingReadModel = await mappingReadService.GetAsync(formVersion.Id);
 
                 List<Worksheet> worksheetSnapshots = [];
                 if (existingWorksheet != null)
@@ -77,6 +80,10 @@ public class GenerateFormWorksheetJob(
                     applicationFormId = applicationForm.Id,
                     formName = applicationForm.ApplicationFormName,
                     scoresheetId = applicationForm.ScoresheetId,
+                    chefsFields = mappingReadModel.ChefsFields,
+                    unityCoreFields = mappingReadModel.UnityCoreFields,
+                    existingMapping = formVersion.SubmissionHeaderMapping,
+                    formSchema = formVersion.FormSchema,
                     existingWorksheets = worksheetSnapshots.Select(worksheet => new
                     {
                         worksheet.Id,
@@ -148,7 +155,7 @@ public class GenerateFormWorksheetJob(
         }
     }
 
-    private static CreateWorksheetDto ParseWorksheetDefinition(string json)
+    internal static CreateWorksheetDto ParseWorksheetDefinition(string json)
     {
         if (string.IsNullOrWhiteSpace(json))
         {
@@ -157,7 +164,12 @@ public class GenerateFormWorksheetJob(
 
         var dto = JsonSerializer.Deserialize<CreateWorksheetDto>(json, CaseInsensitiveJsonOptions);
 
-        return dto ?? throw new InvalidOperationException("Worksheet generation returned an unusable worksheet definition.");
+        if (dto == null || string.IsNullOrWhiteSpace(dto.Title) || dto.Sections is not { Count: > 0 })
+        {
+            throw new InvalidOperationException("Worksheet generation returned an unusable worksheet definition.");
+        }
+
+        return dto;
     }
 
     private static string BuildWorksheetName(Guid formVersionId, Guid formId)

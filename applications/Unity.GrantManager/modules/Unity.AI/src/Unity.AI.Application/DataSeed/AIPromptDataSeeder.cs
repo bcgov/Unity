@@ -876,7 +876,11 @@ public class AIPromptDataSeeder(
 
         Rules:
         - Return one worksheet definition JSON object only.
-        - The context includes CHEFS fields, Unity core fields, and existing worksheet-derived custom fields.
+        - chefsFields contains the available CHEFS source fields.
+        - unityCoreFields contains existing Unity core fields. Do not create a custom field when one of these already fits.
+        - existingMapping contains any current confirmed Unity-to-CHEFS mappings. Do not duplicate those mappings with a custom field.
+        - existingWorksheets contains the previous AI worksheet definition, if one exists. Refine it rather than duplicating its custom fields.
+        - formSchema contains detailed CHEFS control configuration when labels and types need more context.
         - Use the provided form context to decide which custom fields are genuinely needed.
         - Prefer existing Unity core fields when they already satisfy the need.
         - Only create additional worksheet custom fields when the form genuinely needs them.
@@ -886,7 +890,7 @@ public class AIPromptDataSeeder(
 
     private const string FormWorksheetMetadataV2 = """
         {
-          "DATA": "Serialized JSON payload containing the form name, form version, existing worksheet links, and worksheet field context."
+          "DATA": "Serialized JSON payload containing form metadata, CHEFS fields, Unity core fields, the current mapping, form schema, and the existing AI worksheet."
         }
         """;
 
