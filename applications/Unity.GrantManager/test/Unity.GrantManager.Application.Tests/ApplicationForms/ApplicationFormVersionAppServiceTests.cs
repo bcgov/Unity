@@ -117,7 +117,7 @@ public class ApplicationFormVersionAppServiceTests(ITestOutputHelper outputHelpe
         var result = (WorksheetMappingFieldsDto)method!.Invoke(null, [worksheet])!;
 
         var field = result.Fields.Single();
-        field.Name.ShouldBe("CustomField2.Text");
+        field.Name.ShouldBe("custom_customfields-v1_customfield2.Text");
     }
 
     [Fact]
