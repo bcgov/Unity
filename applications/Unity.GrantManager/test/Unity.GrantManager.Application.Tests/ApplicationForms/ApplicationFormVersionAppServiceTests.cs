@@ -97,7 +97,7 @@ public class ApplicationFormVersionAppServiceTests(ITestOutputHelper outputHelpe
     }
 
     [Fact]
-    public void MappingReadService_Should_Use_CustomField_Key_For_Worksheet_Field_Name()
+    public void MappingReadService_Should_Use_Canonical_CustomField_Name_For_Worksheet_Field_Name()
     {
         var worksheet = new Worksheet(Guid.NewGuid(), "customfields-v1", "Custom Fields");
         var section = new WorksheetSection(Guid.NewGuid(), "section");
@@ -117,9 +117,7 @@ public class ApplicationFormVersionAppServiceTests(ITestOutputHelper outputHelpe
         var result = (WorksheetMappingFieldsDto)method!.Invoke(null, [worksheet])!;
 
         var field = result.Fields.Single();
-        field.Name.ShouldBe("CustomField2");
-        field.Name.ShouldNotContain("custom_customfields-v1");
-        field.Name.ShouldNotContain(".Text");
+        field.Name.ShouldBe("CustomField2.Text");
     }
 
     [Fact]
