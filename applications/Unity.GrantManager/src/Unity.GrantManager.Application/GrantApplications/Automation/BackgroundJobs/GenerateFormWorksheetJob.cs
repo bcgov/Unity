@@ -205,7 +205,7 @@ public class GenerateFormWorksheetJob(
                     field.Type,
                     field.Definition);
                 customField.Section = worksheetSection;
-                worksheetSection.Fields.Add(customField);
+                worksheetSection.AddField(customField);
             }
         }
 
@@ -238,7 +238,7 @@ public class GenerateFormWorksheetJob(
                     field.Type,
                     field.Definition);
                 customField.Section = worksheetSection;
-                worksheetSection.Fields.Add(customField);
+                worksheetSection.AddField(customField);
             }
         }
 
