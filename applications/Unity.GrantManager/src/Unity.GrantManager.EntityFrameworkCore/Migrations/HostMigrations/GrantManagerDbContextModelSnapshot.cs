@@ -624,7 +624,10 @@ namespace Unity.GrantManager.Migrations.HostMigrations
                         .HasColumnName("LastModifierId");
 
                     b.Property<string>("MetadataJson")
-                        .HasColumnType("jsonb");
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("jsonb")
+                        .HasDefaultValue("{}");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -3363,7 +3366,7 @@ namespace Unity.GrantManager.Migrations.HostMigrations
 
                             b1.HasKey("IdentityUserPasskeyCredentialId");
 
-                            b1.ToTable("UserPasskeys");
+                            b1.ToTable("UserPasskeys", (string)null);
 
                             b1
                                 .ToJson("Data")
