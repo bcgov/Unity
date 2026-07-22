@@ -18,6 +18,13 @@ public static class TenantManagementPermissions
         public const string ManageEndpoints = AbpGroupName + ".Tenants" + ".ManageEndpoints";
     }
 
+    public static class Policies
+    {
+        public const string TenantsOrITOps = "TenantManagement.TenantsOrITOps";
+        public const string TenantsUpdateOrITOps = "TenantManagement.TenantsUpdateOrITOps";
+        public const string TenantsCreateOrITOps = "TenantManagement.TenantsCreateOrITOps";
+    }
+
     public static string[] GetAll()
     {
         return ReflectionHelper.GetPublicConstantsRecursively(typeof(TenantManagementPermissions));

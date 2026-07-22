@@ -4,8 +4,10 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using NSubstitute;
 using Shouldly;
+using Unity.TenantManagement.Application;
 using Unity.TenantManagement.Application.Contracts;
 using Volo.Abp;
+using Volo.Abp.TenantManagement;
 using Xunit;
 
 namespace Unity.TenantManagement;
@@ -19,7 +21,12 @@ public class TenantAppService_Tests : AbpTenantManagementApplicationTestBase
         // Create a Substitute and replace original one in Service Collection
         var tenantConnectionStringBuilder = Substitute.For<ITenantConnectionStringBuilder>();
 
-        tenantConnectionStringBuilder.Build(Arg.Any<string>()).Returns("acme test connection");
+        tenantConnectionStringBuilder.GenerateCredentialsAsync()
+            .Returns(Task.FromResult(new TenantDbCredentials("T_ABC123", "T_ABC123", "XYZ789")));
+        tenantConnectionStringBuilder.GenerateReadOnlyCredentials(Arg.Any<TenantDbCredentials>())
+            .Returns(new TenantDbCredentials("T_ABC123", "T_ABC123_readonly", "RO12345"));
+        tenantConnectionStringBuilder.Build(Arg.Any<string>(), Arg.Any<TenantDbCredentials>())
+            .Returns("acme test connection");
 
         services.AddSingleton(tenantConnectionStringBuilder);
     }
@@ -75,6 +82,11 @@ public class TenantAppService_Tests : AbpTenantManagementApplicationTestBase
         var tenant = await _tenantAppService.CreateAsync(new TenantCreateDto { Name = tenancyName });
         tenant.Name.ShouldBe(tenancyName);
         tenant.Id.ShouldNotBe(Guid.Empty);
+
+        var tenantRepository = GetRequiredService<ITenantRepository>();
+        var tenantInDb = await tenantRepository.GetAsync(tenant.Id, includeDetails: true);
+        tenantInDb.ConnectionStrings.ShouldContain(cs => cs.Name == UnityTenantManagementConsts.TenantConnectionStringName);
+        tenantInDb.ConnectionStrings.ShouldContain(cs => cs.Name == UnityTenantManagementConsts.TenantReadOnlyConnectionStringName);
     }
 
     [Fact]

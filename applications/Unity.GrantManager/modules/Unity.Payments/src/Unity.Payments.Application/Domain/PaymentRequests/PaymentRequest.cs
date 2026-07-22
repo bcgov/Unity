@@ -64,6 +64,11 @@ namespace Unity.Payments.Domain.PaymentRequests
         public virtual DateTime? FsbNotificationSentDate { get; private set; }
         public virtual string? FsbApNotified { get; private set; }
 
+        // Cancellation tracking
+        public virtual DateTime? CancelledOn { get; private set; }
+        public virtual Guid? CancelledById { get; private set; }
+        public virtual string? CancelledBy { get; private set; }
+
         protected PaymentRequest()
         {
             ExpenseApprovals = [];
@@ -219,6 +224,14 @@ namespace Unity.Payments.Domain.PaymentRequests
             FsbNotificationEmailLogId = null;
             FsbNotificationSentDate = null;
             FsbApNotified = null;
+            return this;
+        }
+
+        public PaymentRequest SetCancellation(DateTime cancelledOn, Guid cancelledById, string cancelledBy)
+        {
+            CancelledOn = cancelledOn;
+            CancelledById = cancelledById;
+            CancelledBy = cancelledBy;
             return this;
         }
 

@@ -1,10 +1,13 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Dynamic.Core;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.Extensions.Localization;
 using Unity.GrantManager.Applications;
 using Unity.Notifications.Emails;
+using Unity.Notifications.Localization;
 using Unity.Notifications.Permissions;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
@@ -18,15 +21,43 @@ namespace Unity.GrantManager.Notifications;
 public class NotificationListAppService(
     IEmailLogsRepository emailLogsRepository,
     IRepository<Application, Guid> applicationRepository,
-    IRepository<Applicant, Guid> applicantRepository)
+    IRepository<Applicant, Guid> applicantRepository,
+    IStringLocalizer<NotificationsResource> notificationsLocalizer)
     : ApplicationService, INotificationListAppService
 {
-    public virtual async Task<PagedResultDto<NotificationSummaryDto>> GetListAsync(PagedAndSortedResultRequestDto input)
+    private static readonly TimeZoneInfo VancouverTimeZone =
+        TimeZoneInfo.FindSystemTimeZoneById("Pacific Standard Time");
+
+    public virtual async Task<PagedResultDto<NotificationSummaryDto>> GetListAsync(NotificationListInputDto input)
     {
         var sorting = ResolveSorting(input.Sorting);
+        var (fromUtc, toUtc) = ConvertToUtcRange(input.DateFrom, input.DateTo);
 
-        var totalCount = await emailLogsRepository.GetCountAsync();
-        var logs = await emailLogsRepository.GetPagedListAsync(input.SkipCount, input.MaxResultCount, sorting);
+        var query = await emailLogsRepository.GetQueryableAsync();
+
+        // Filter on the sent date, falling back to the creation date for rows that were never
+        // sent (drafts, failures, scheduled emails). Otherwise their null SentDateTime would
+        // drop them from every window except "All time".
+        if (fromUtc.HasValue)
+        {
+            query = query.Where(e => (e.SentDateTime ?? e.CreationTime) >= fromUtc.Value);
+        }
+
+        if (toUtc.HasValue)
+        {
+            query = query.Where(e => (e.SentDateTime ?? e.CreationTime) <= toUtc.Value);
+        }
+
+        query = query.OrderBy(sorting);
+
+        // The list runs client-side (serverSideEnabled is off in Index.js): return every row in the
+        // date window and let DataTables page, search and sort in the browser. TotalCount is the full
+        // match count, not a page. This mirrors the Applications list, whose repository likewise does
+        // not apply skip/take in client-side mode (GetApplicationListRecordsAsync) and sets
+        // totalCount = items.Count to avoid a redundant count query. The 6-month default bounds the
+        // payload; full server-side paging is a future option if volume ever requires it.
+        var logs = await AsyncExecuter.ToListAsync(query);
+        var totalCount = logs.Count;
 
         var applicationIds = logs.Select(l => l.ApplicationId).Distinct().ToArray();
         var applications = await applicationRepository.GetListAsync(a => applicationIds.Contains(a.Id));
@@ -62,11 +93,48 @@ public class NotificationListAppService(
                 ToAddress = log.ToAddress,
                 Subject = log.Subject,
                 Recipient = log.Recipient,
-                EmailType = log.EmailType
+                EmailType = log.EmailType,
+                EmailTypeText = GetEmailTypeText(log.EmailType)
             };
         }).ToList();
 
         return new PagedResultDto<NotificationSummaryDto>(totalCount, items);
+    }
+
+    // Converts a Vancouver-local date range (date-only) to an inclusive UTC range:
+    // From -> start of local day, To -> end of local day (23:59:59.9999999). Mirrors ApplicationRepository.
+    private static (DateTime? FromUtc, DateTime? ToUtc) ConvertToUtcRange(DateTime? fromLocal, DateTime? toLocal)
+    {
+        DateTime? fromUtc = null;
+        DateTime? toUtc = null;
+
+        if (fromLocal.HasValue)
+        {
+            var localFrom = DateTime.SpecifyKind(fromLocal.Value.Date, DateTimeKind.Unspecified);
+            fromUtc = TimeZoneInfo.ConvertTimeToUtc(localFrom, VancouverTimeZone);
+        }
+
+        if (toLocal.HasValue)
+        {
+            var localToEndOfDay = DateTime.SpecifyKind(toLocal.Value.Date.AddDays(1).AddTicks(-1), DateTimeKind.Unspecified);
+            toUtc = TimeZoneInfo.ConvertTimeToUtc(localToEndOfDay, VancouverTimeZone);
+        }
+
+        return (fromUtc, toUtc);
+    }
+
+    // Maps the EmailType enum to the user-facing label shown on the Notification List
+    private string GetEmailTypeText(EmailType? emailType)
+    {
+        return emailType switch
+        {
+            EmailType.Manual => notificationsLocalizer["NotificationList:EmailType:Manual"].Value,
+            EmailType.DateBased => notificationsLocalizer["NotificationList:EmailType:Scheduled"].Value,
+            EmailType.EventBased => notificationsLocalizer["NotificationList:EmailType:EventBased"].Value,
+            EmailType.Delayed => notificationsLocalizer["NotificationList:EmailType:Delayed"].Value,
+            // Fallback for any future unmapped value: show the raw enum name rather than a blank cell.
+            _ => emailType?.ToString() ?? string.Empty
+        };
     }
 
     private const string DefaultSorting = "SentDateTime DESC";

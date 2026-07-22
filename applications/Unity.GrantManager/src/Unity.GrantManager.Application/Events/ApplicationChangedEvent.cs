@@ -10,5 +10,7 @@ namespace Unity.GrantManager.Events
 
         [JsonConverter(typeof(JsonStringEnumConverter))]
         public GrantApplicationAction Action { get; set; }
+
+        public Guid? TenantId { get; set; }
     }
 }

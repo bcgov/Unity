@@ -18,6 +18,7 @@ using Unity.GrantManager.Flex;
 using Unity.GrantManager.GrantApplications;
 using Unity.GrantManager.Zones;
 using Unity.Modules.Shared.Correlation;
+using Unity.Modules.Shared.Specializations;
 using Volo.Abp.AspNetCore.Mvc.UI.RazorPages;
 using Volo.Abp.Features;
 using Volo.Abp.Users;
@@ -114,6 +115,11 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
 
         public async Task OnGetAsync()
         {
+            if (await _featureChecker.IsEnabledAsync(SpecializationConsts.Onboarding))
+            {
+                ViewData["ActiveNavHref"] = "/TenantManagement/Onboarding";
+            }
+
             ApplicationFormSubmission applicationFormSubmission = await _grantApplicationAppService.GetFormSubmissionByApplicationId(ApplicationId);
             ZoneStateSet = await _zoneManagementAppService.GetZoneStateSetAsync(applicationFormSubmission.ApplicationFormId);
             

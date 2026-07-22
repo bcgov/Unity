@@ -322,6 +322,7 @@ public class ApplicationRepository
                 a.RiskRanking,
                 a.UnityApplicationId,
                 Status = a.ApplicationStatus.InternalStatus, // ApplicationStatus (always joined)
+                a.ExternalStatusVisibility,
                 Category = a.ApplicationForm.Category ?? string.Empty, // ApplicationForm (always joined)          
                 a.ApplicantId,
                 ApplicantName = a.Applicant.ApplicantName, // Applicant (always joined)
@@ -506,6 +507,7 @@ public class ApplicationRepository
                     RiskRanking = a.RiskRanking,
                     UnityApplicationId = a.UnityApplicationId,
                     Status = a.Status,
+                    ExternalStatusVisibility = a.ExternalStatusVisibility,
                     Category = a.Category,
                     ApplicantId = a.ApplicantId,
                     ApplicantName = a.ApplicantName,

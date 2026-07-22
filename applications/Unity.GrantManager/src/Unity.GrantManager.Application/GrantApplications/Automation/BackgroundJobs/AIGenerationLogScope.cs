@@ -11,7 +11,6 @@ internal static class AIGenerationLogScope
         string operationType,
         Guid applicationId,
         Guid? tenantId,
-        string requestKey,
         string? promptVersion,
         Guid? requestedByUserId)
     {
@@ -20,7 +19,6 @@ internal static class AIGenerationLogScope
             ["AIOperationType"] = operationType,
             ["AIApplicationId"] = applicationId,
             ["AITenantId"] = tenantId,
-            ["AIGenerationRequestKey"] = requestKey,
             ["AIPromptVersion"] = promptVersion,
             ["AIRequestedByUserId"] = requestedByUserId
         });

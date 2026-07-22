@@ -37,23 +37,16 @@ public class OpenAITransportService(
                 ? "You are a professional grant analyst for the BC Government."
                 : systemPrompt;
 
-            var options = new ChatCompletionOptions();
-            if (settings.MaxOutputTokenCountSupported)
+            var messages = new List<ChatMessage>
             {
-                options.MaxOutputTokenCount = maxTokens;
-            }
+                new SystemChatMessage(resolvedSystemPrompt),
+                new UserChatMessage(content ?? string.Empty)
+            };
 
-            if (settings.Temperature.HasValue)
-            {
-                options.Temperature = (float)settings.Temperature.Value;
-            }
-
-            var result = await _chatClientFactory.Create(settings).CompleteChatAsync(
-                [
-                    new SystemChatMessage(resolvedSystemPrompt),
-                    new UserChatMessage(content ?? string.Empty)
-                ],
-                options,
+            var result = await CompleteChatWithTemperatureFallbackAsync(
+                settings,
+                messages,
+                maxTokens,
                 cancellationToken);
 
             var completion = result.Value;
@@ -108,6 +101,70 @@ public class OpenAITransportService(
             _logger.LogError(ex, "Error generating AI summary");
             return AIOperationResult.TransientFailure(new AIProviderResult(ex.Message));
         }
+    }
+
+    private async Task<ClientResult<ChatCompletion>> CompleteChatWithTemperatureFallbackAsync(
+        OpenAIOperationSettings settings,
+        IReadOnlyList<ChatMessage> messages,
+        int maxTokens,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            return await _chatClientFactory.Create(settings).CompleteChatAsync(
+                messages,
+                BuildOptions(settings, maxTokens, includeTemperature: true),
+                cancellationToken);
+        }
+        catch (ClientResultException ex)
+        {
+            var responseContent = ex.GetRawResponse()?.Content?.ToString() ?? ex.Message;
+            if (!ShouldRetryWithoutTemperature(settings, ex.Status, responseContent))
+            {
+                throw;
+            }
+
+            _logger.LogWarning(
+                ex,
+                "Retrying OpenAI request without temperature after provider rejected the temperature parameter for profile {ProfileName}.",
+                settings.ProfileName);
+
+            return await _chatClientFactory.Create(settings).CompleteChatAsync(
+                messages,
+                BuildOptions(settings, maxTokens, includeTemperature: false),
+                cancellationToken);
+        }
+    }
+
+    private static ChatCompletionOptions BuildOptions(OpenAIOperationSettings settings, int maxTokens, bool includeTemperature)
+    {
+        var options = new ChatCompletionOptions();
+        if (settings.MaxOutputTokenCountSupported)
+        {
+            options.MaxOutputTokenCount = maxTokens;
+        }
+
+        if (includeTemperature && settings.Temperature.HasValue)
+        {
+            options.Temperature = (float)settings.Temperature.Value;
+        }
+
+        return options;
+    }
+
+    private static bool ShouldRetryWithoutTemperature(OpenAIOperationSettings settings, int statusCode, string responseContent)
+    {
+        if (!settings.Temperature.HasValue || statusCode != 400 || string.IsNullOrWhiteSpace(responseContent))
+        {
+            return false;
+        }
+
+        var lowered = responseContent.ToLowerInvariant();
+        return lowered.Contains("temperature")
+            && (lowered.Contains("unsupported")
+                || lowered.Contains("not supported")
+                || lowered.Contains("not allowed")
+                || lowered.Contains("invalid"));
     }
 
     private static AIOperationResult MapFailureOutcome(HttpStatusCode statusCode, AIProviderResult response)

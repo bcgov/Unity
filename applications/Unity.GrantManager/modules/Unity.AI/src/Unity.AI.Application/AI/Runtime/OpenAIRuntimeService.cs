@@ -9,6 +9,7 @@ using Unity.AI.Models;
 using Unity.AI.Prompts;
 using Unity.AI.Requests;
 using Unity.AI.Responses;
+using Volo.Abp;
 using Volo.Abp.DependencyInjection;
 
 namespace Unity.AI.Runtime
@@ -42,16 +43,7 @@ namespace Unity.AI.Runtime
 
         public Task<bool> IsAvailableAsync()
         {
-            try
-            {
-                _openAIConfigurationResolver.ResolveApiKey();
-                return Task.FromResult(true);
-            }
-            catch (InvalidOperationException ex)
-            {
-                _logger.LogWarning(ex, "AI is unavailable because the OpenAI configuration could not be resolved.");
-                return Task.FromResult(false);
-            }
+            return IsAvailableCoreAsync();
         }
 
         public async Task<ApplicationAnalysisResponse> GenerateApplicationAnalysisAsync(ApplicationAnalysisRequest request, CancellationToken cancellationToken = default)
@@ -59,7 +51,7 @@ namespace Unity.AI.Runtime
             try
             {
                 ArgumentNullException.ThrowIfNull(request);
-                var settings = _openAIConfigurationResolver.ResolveOperationSettings(ApplicationAnalysisPromptType);
+                var settings = await _openAIConfigurationResolver.ResolveOperationSettingsAsync(ApplicationAnalysisPromptType, cancellationToken);
                 var promptTemplate = await _promptTemplateProvider.GetRequiredPromptAsync(
                     ApplicationAnalysisPromptType,
                     request.PromptVersion ?? settings.PromptVersion,
@@ -79,7 +71,7 @@ namespace Unity.AI.Runtime
                 var attachments = JsonSerializer.Serialize(attachmentsPayload, AIJsonDefaults.Indented);
                 var systemPrompt = promptTemplate.SystemPrompt;
                 var applicationAnalysisContent = AIPromptTemplateRenderer.BuildApplicationAnalysisUserPrompt(
-                    promptTemplate.UserPromptTemplate,
+                    promptTemplate.UserPrompt,
                     schema,
                     data,
                     attachments,
@@ -101,7 +93,25 @@ namespace Unity.AI.Runtime
 
                 if (result.Outcome != AIOperationOutcome.Success)
                 {
-                    return new ApplicationAnalysisResponse();
+                    var providerDetails = result.Response?.RawResponse;
+                    if (string.IsNullOrWhiteSpace(providerDetails))
+                    {
+                        providerDetails = result.Response?.Content;
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(providerDetails) && providerDetails.Length > 400)
+                    {
+                        providerDetails = providerDetails[..400];
+                    }
+
+                    _logger.LogError(
+                        "Application analysis generation failed with outcome {Outcome} and failure category {FailureCategory}. HTTP status {HttpStatusCode}. Provider details: {ProviderDetails}",
+                        result.Outcome,
+                        result.FailureCategory,
+                        result.Response?.HttpStatusCode?.ToString() ?? "n/a",
+                        providerDetails ?? "n/a");
+
+                    throw new UserFriendlyException("Application analysis generation failed.");
                 }
 
                 return OpenAIResponseParser.ParseApplicationAnalysisResponse(result.Content);
@@ -112,8 +122,8 @@ namespace Unity.AI.Runtime
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error generating application analysis.");
-                return new ApplicationAnalysisResponse();
+                _logger.LogError(ex, "Application analysis generation failed.");
+                throw;
             }
         }
 
@@ -125,7 +135,7 @@ namespace Unity.AI.Runtime
 
             try
             {
-                var settings = _openAIConfigurationResolver.ResolveOperationSettings(AttachmentSummaryPromptType);
+                var settings = await _openAIConfigurationResolver.ResolveOperationSettingsAsync(AttachmentSummaryPromptType, cancellationToken);
                 var promptTemplate = await _promptTemplateProvider.GetRequiredPromptAsync(
                     AttachmentSummaryPromptType,
                     request.PromptVersion ?? settings.PromptVersion,
@@ -135,25 +145,19 @@ namespace Unity.AI.Runtime
                 var prompt = promptTemplate.SystemPrompt;
 
                 var attachmentText = string.IsNullOrWhiteSpace(extractedText) ? null : extractedText;
-                if (attachmentText != null)
+                var attachmentPayload = new[]
                 {
-                    _logger.LogDebug("Received {TextLength} extracted characters for {FileName}", attachmentText.Length, fileName);
-                }
-                else
-                {
-                    _logger.LogDebug("No text extracted from {FileName}, analyzing metadata only", fileName);
-                }
-
-                var attachmentPayload = new
-                {
-                    name = fileName,
-                    contentType,
-                    text = attachmentText
+                    new
+                    {
+                        name = fileName,
+                        contentType,
+                        text = attachmentText
+                    }
                 };
-                var attachment = JsonSerializer.Serialize(attachmentPayload, AIJsonDefaults.Indented);
-                var contentToAnalyze = AIPromptTemplateRenderer.BuildAttachmentSummaryUserPrompt(
-                    promptTemplate.UserPromptTemplate,
-                    attachment,
+                var attachments = JsonSerializer.Serialize(attachmentPayload, AIJsonDefaults.Indented);
+                var contentToAnalyze = AIPromptTemplateRenderer.BuildAttachmentSummaryBatchUserPrompt(
+                    promptTemplate.UserPrompt,
+                    attachments,
                     promptTemplate.MetadataJson);
 
                 await _promptFileLogger.LogPromptInputAsync(AttachmentSummaryPromptType, promptVersion, prompt, contentToAnalyze, cancellationToken);
@@ -188,11 +192,73 @@ namespace Unity.AI.Runtime
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error generating attachment summary for {FileName}", fileName);
+                _logger.LogError(ex, "Attachment summary generation failed for {FileName}.", fileName);
                 return new AttachmentSummaryResponse
                 {
                     Summary = $"AI analysis not available for this attachment ({fileName})."
                 };
+            }
+        }
+
+        public async Task<AttachmentSummaryBatchResponse> GenerateAttachmentSummaryBatchAsync(AttachmentSummaryBatchRequest request, CancellationToken cancellationToken = default)
+        {
+            ArgumentNullException.ThrowIfNull(request);
+            try
+            {
+                if (request.Attachments is null || request.Attachments.Count == 0)
+                {
+                    return new AttachmentSummaryBatchResponse();
+                }
+
+                var settings = await _openAIConfigurationResolver.ResolveOperationSettingsAsync(AttachmentSummaryPromptType, cancellationToken);
+                var promptTemplate = await _promptTemplateProvider.GetRequiredPromptAsync(
+                    AttachmentSummaryPromptType,
+                    request.PromptVersion ?? settings.PromptVersion,
+                    cancellationToken);
+                var promptVersion = promptTemplate.PromptVersion;
+
+                var attachmentsPayload = request.Attachments.Select(attachment => new
+                {
+                    attachmentId = attachment.AttachmentId,
+                    name = string.IsNullOrWhiteSpace(attachment.FileName) ? "attachment" : attachment.FileName.Trim(),
+                    contentType = attachment.ContentType ?? "application/octet-stream",
+                    text = string.IsNullOrWhiteSpace(attachment.ExtractedText) ? null : attachment.ExtractedText
+                });
+
+                var attachments = JsonSerializer.Serialize(attachmentsPayload, AIJsonDefaults.Indented);
+                var contentToAnalyze = AIPromptTemplateRenderer.BuildAttachmentSummaryBatchUserPrompt(
+                    promptTemplate.UserPrompt,
+                    attachments,
+                    promptTemplate.MetadataJson);
+
+                await _promptFileLogger.LogPromptInputAsync(AttachmentSummaryPromptType, promptVersion, promptTemplate.SystemPrompt, contentToAnalyze, cancellationToken);
+                var result = await GenerateWithRetryAsync(
+                    () => _openAITransportService.GenerateSummaryAsync(
+                        contentToAnalyze,
+                        promptTemplate.SystemPrompt,
+                        settings,
+                        settings.CompletionTokens,
+                        cancellationToken: cancellationToken),
+                    AIProviderPayloadValidator.ValidateAttachmentSummaryBatchJson,
+                    "attachment summary batch",
+                    cancellationToken);
+                await _promptFileLogger.LogPromptOutputAsync(AttachmentSummaryPromptType, promptVersion, result.CaptureOutput, cancellationToken);
+
+                if (result.Outcome != AIOperationOutcome.Success)
+                {
+                    return new AttachmentSummaryBatchResponse();
+                }
+
+                return OpenAIResponseParser.ParseAttachmentSummaryBatchResponse(result.Content);
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Attachment summary batch generation failed.");
+                return new AttachmentSummaryBatchResponse();
             }
         }
 
@@ -201,7 +267,7 @@ namespace Unity.AI.Runtime
             ArgumentNullException.ThrowIfNull(request);
             try
             {
-                var settings = _openAIConfigurationResolver.ResolveOperationSettings(ApplicationScoringPromptType);
+                var settings = await _openAIConfigurationResolver.ResolveOperationSettingsAsync(ApplicationScoringPromptType, cancellationToken);
                 var promptTemplate = await _promptTemplateProvider.GetRequiredPromptAsync(
                     ApplicationScoringPromptType,
                     request.PromptVersion ?? settings.PromptVersion,
@@ -228,7 +294,7 @@ namespace Unity.AI.Runtime
                 }
 
                 var applicationScoringContent = AIPromptTemplateRenderer.BuildApplicationScoringUserPrompt(
-                    promptTemplate.UserPromptTemplate,
+                    promptTemplate.UserPrompt,
                     dataJson,
                     attachments,
                     section,
@@ -262,7 +328,7 @@ namespace Unity.AI.Runtime
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error generating application scoring answers for section {SectionName}", request.SectionName);
+                _logger.LogError(ex, "Application scoring generation failed for section {SectionName}.", request.SectionName);
                 return new ApplicationScoringResponse();
             }
         }
@@ -335,6 +401,20 @@ namespace Unity.AI.Runtime
                 lastResult.Response.HttpStatusCode,
                 lastResult.Response.Model);
             return lastResult;
+        }
+
+        private async Task<bool> IsAvailableCoreAsync()
+        {
+            try
+            {
+                await _openAIConfigurationResolver.ResolveApiKeyAsync();
+                return true;
+            }
+            catch (InvalidOperationException ex)
+            {
+                _logger.LogWarning(ex, "AI is unavailable because the OpenAI configuration could not be resolved.");
+                return false;
+            }
         }
 
         private static string ResolveNarrativeContent(AIOperationResult result)

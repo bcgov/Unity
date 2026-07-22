@@ -61,7 +61,7 @@ $(function () {
                             _identityRoleAppService
                                 .delete(data.record.id)
                                 .then(function () {
-                                    _dataTable.ajax.reloadEx();
+                                    _dataTable.ajax.reload();
                                     abp.notify.success(l('SuccessfullyDeleted'));
                                 });
                         },
@@ -123,8 +123,9 @@ $(function () {
         {
             text: '<i class="fl fl-multi-select align-middle"></i><span>View Role Matrix</span>',
             className: 'btn-light rounded-1',
+            available: () => abp.auth.isGranted('AbpIdentity.Roles'),
             action: function (e, dt, button, config) {
-                window.location = '/Identity/Roles/PermissionRoleMatrix'
+                globalThis.location = '/Identity/Roles/PermissionRoleMatrix'
             }
         },
         {
@@ -173,10 +174,10 @@ $(function () {
     });
 
     _createModal.onResult(function () {
-        _dataTable.ajax.reloadEx();
+        _dataTable.ajax.reload();
     });
 
     _editModal.onResult(function () {
-        _dataTable.ajax.reloadEx();
+        _dataTable.ajax.reload();
     });
 });

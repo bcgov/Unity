@@ -11,33 +11,33 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.EmailsWidget
     {
         [Required]
         [Placeholder("To")]
-        [DisplayName("Email To")]
+        [DisplayName("To")]
         public string EmailTo { get; set; } = string.Empty;
 
         [Required]
         [Placeholder("From")]
         [DataType(DataType.EmailAddress)]
-        [DisplayName("Email From")]
+        [DisplayName("From")]
         public string EmailFrom { get; set; } = string.Empty;
 
         [Placeholder("CC")]
-        [DisplayName("Email CC")]
+        [DisplayName("CC")]
         public string? EmailCC { get; set; }
 
         [Placeholder("BCC")]
-        [DisplayName("Email BCC")]
+        [DisplayName("BCC")]
         public string? EmailBCC { get; set; }
         
         [Required]
-        [Placeholder("Subject")]
-        [DisplayName("Email Subject")]
+        [Placeholder("Add a subject")]
+        [DisplayName("Subject")]
         [MaxLength(1023)]
         public string EmailSubject { get; set; } = string.Empty;
 
 
         [TextArea(Rows = 4)]
         [Placeholder("Body of email")]
-        [DisplayName("Email Body")]
+        [DisplayName("Body")]
         [Required]
         public string EmailBody { get; set; } = string.Empty;
         public Guid OwnerId { get; set; }
@@ -45,12 +45,11 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.EmailsWidget
         public Guid EmailId { get; set; } = Guid.Empty;
         public Guid CurrentUserId { get; set; }
 
-        [DisplayName("Email Template")]
+        [DisplayName("Template")]
         public Guid? EmailTemplate { get; set; }
-
-        [DisplayName("Email Template")]
-        public string? EmailTemplateName { get; set; }
-
         public List<SelectListItem> TemplatesList { get; set; } = new();
+
+        /// <summary>Whether the email delay feature is enabled for this tenant.</summary>
+        public bool EnableEmailDelay { get; set; }
     }
 }

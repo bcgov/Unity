@@ -28,25 +28,20 @@
     "AI:ApplicationAnalysisRequiresSubmission": "AI application analysis requires application submission data.",
     "AI:ScoringRequiresScoresheet": "AI scoring requires a configured scoresheet.",
     "AI:ScoringRequiresScoresheetFields": "AI scoring requires a scoresheet with scoring fields.",
+    "AI:AttachmentNotFound": "Attachment not found.",
     "AI:SelectAttachmentForSummaries": "Select at least one attachment to generate summaries.",
 
     "AIPrompts": "AI Prompts",
     "AIPrompt": "AI Prompt",
     "AIPromptVersion": "Prompt Version",
     "AIPromptVersions": "Prompt Versions",
-    "PromptType": "Type",
     "PromptName": "Name",
-    "PromptDescription": "Description",
     "PromptIsActive": "Active",
     "VersionNumber": "Version Number",
     "SystemPrompt": "System Prompt",
-    "UserPromptTemplate": "User Prompt Template",
-    "DeveloperNotes": "Developer Notes",
-    "TargetModel": "Target Model",
-    "TargetProvider": "Target Provider",
+    "UserPrompt": "User Prompt",
+    "MetadataJson": "Metadata JSON",
     "Temperature": "Temperature",
-    "MaxTokens": "Max Tokens",
-    "IsPublished": "Published",
-    "IsDeprecated": "Deprecated"
+    "MaxTokens": "Max Tokens"
   }
 }

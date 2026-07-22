@@ -8,6 +8,7 @@ using Unity.Notifications.Permissions;
 using Volo.Abp;
 using Volo.Abp.Application.Services;
 using Volo.Abp.DependencyInjection;
+using Volo.Abp.Domain.Entities;
 using Volo.Abp.Users;
 
 namespace Unity.Notifications.Emails;
@@ -20,9 +21,29 @@ public class EmailLogAttachmentAppService(
     EmailAttachmentService emailAttachmentService,
     IExternalUserLookupServiceProvider externalUserLookupServiceProvider) : ApplicationService, IEmailLogAttachmentAppService, IEmailLogAttachmentUploadService
 {
+
     public async Task<List<EmailLogAttachmentDto>> GetListByEmailLogIdAsync(Guid emailLogId)
     {
-        var attachments = await emailLogAttachmentRepository.GetByEmailLogIdAsync(emailLogId);
+        return await GetListBydAsync(emailLogId, null);
+    }
+
+    public async Task<List<EmailLogAttachmentDto>> GetListByTemplateIdAsync(Guid templateId)
+    {
+        return await GetListBydAsync(null, templateId);
+    }
+        
+    public async Task<List<EmailLogAttachmentDto>> GetListBydAsync(Guid? emailLogId, Guid? templateId)
+    {
+        var attachments = new List<EmailLogAttachment>();
+        if (emailLogId.HasValue)
+        {
+            attachments = await emailLogAttachmentRepository.GetByEmailLogIdAsync(emailLogId.Value);
+        }
+        else if (templateId.HasValue)
+        {
+            attachments = await emailLogAttachmentRepository.GetByTemplateIdAsync(templateId.Value);
+        }
+
         var dtos = new List<EmailLogAttachmentDto>();
 
         foreach (var attachment in attachments)
@@ -45,9 +66,33 @@ public class EmailLogAttachmentAppService(
 
     public async Task DeleteAsync(Guid id)
     {
-        var attachment = await emailLogAttachmentRepository.GetAsync(id);
+        // Idempotent delete: if already removed by another request, treat as success.
+        var attachment = await emailLogAttachmentRepository.FindAsync(id);
+        if (attachment == null)
+        {
+            return;
+        }
 
-        var emailLog = await emailLogsRepository.GetAsync(attachment.EmailLogId);
+        if (attachment.TemplateId.HasValue)
+        {
+            await emailAttachmentService.DeleteFromS3Async(attachment.S3ObjectKey);
+            try
+            {
+                await emailLogAttachmentRepository.DeleteAsync(attachment, autoSave: true);
+            }
+            catch (EntityNotFoundException)
+            {
+                // Already deleted by another request.
+            }
+            return;
+        }
+
+        if(attachment.EmailLogId == null)
+        {
+            throw new UserFriendlyException("Invalid email log ID.");
+        }
+
+        var emailLog = await emailLogsRepository.GetAsync(attachment.EmailLogId.Value);
         if (emailLog.Status != EmailStatus.Draft)
         {
             throw new UserFriendlyException("Attachments can only be deleted from draft emails.");
@@ -61,17 +106,25 @@ public class EmailLogAttachmentAppService(
         {
             Logger.LogError(ex, "Failed to delete S3 object {S3ObjectKey} for attachment {AttachmentId}", attachment.S3ObjectKey, id);
         }
-        await emailLogAttachmentRepository.DeleteAsync(id);
+
+        try
+        {
+            await emailLogAttachmentRepository.DeleteAsync(attachment, autoSave: true);
+        }
+        catch (EntityNotFoundException)
+        {
+            // Already deleted by another request.
+        }
     }
 
-    public async Task<long> GetTotalFileSizeByEmailLogIdAsync(Guid emailLogId)
+    public async Task<long> GetTotalFileSizeByEmailLogIdAsync(Guid? emailLogId, Guid? templateId)
     {
-        return await emailAttachmentService.GetTotalFileSizeAsync(emailLogId);
+        return await emailAttachmentService.GetTotalFileSizeAsync(emailLogId, templateId);
     }
 
-    public async Task<EmailLogAttachmentDto> UploadAsync(Guid emailLogId, Guid? tenantId, string fileName, byte[] content, string contentType)
+    public async Task<EmailLogAttachmentDto> UploadAsync(Guid? emailLogId, Guid? templateId, Guid? tenantId, string fileName, byte[] content, string contentType)
     {
-        var attachment = await emailAttachmentService.UploadUserAttachmentAsync(emailLogId, tenantId, fileName, content, contentType);
+        var attachment = await emailAttachmentService.UploadUserAttachmentAsync(emailLogId, templateId, tenantId, fileName, content, contentType);
 
         return new EmailLogAttachmentDto
         {

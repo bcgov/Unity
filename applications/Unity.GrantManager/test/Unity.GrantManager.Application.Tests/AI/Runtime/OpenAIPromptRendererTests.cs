@@ -10,6 +10,7 @@ public class OpenAIPromptRendererTests
     [Theory]
     [InlineData("v0")]
     [InlineData("v1")]
+    [InlineData("v2")]
     [InlineData(" v1 ")]
     public void ResolvePromptVersion_Should_Return_Supported_Version(string version)
     {
@@ -22,6 +23,7 @@ public class OpenAIPromptRendererTests
     [InlineData("")]
     [InlineData("V1")]
     [InlineData("vNext")]
+    [InlineData("version2")]
     public void ResolvePromptVersion_Should_Throw_When_Version_Is_Missing_Or_Unsupported(string? version)
     {
         Should.Throw<InvalidOperationException>(() => OpenAIPromptRenderer.ResolvePromptVersion(version));

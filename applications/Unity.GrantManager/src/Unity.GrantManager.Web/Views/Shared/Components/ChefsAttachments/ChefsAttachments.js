@@ -202,32 +202,43 @@ $(function () {
                 )
                 .prop('disabled', true);
 
-            $.ajax({
-                url: '/api/app/ai/generation/attachment-summary',
-                data: JSON.stringify({
-                    applicationId: applicationId,
-                    attachmentIds: summaryAttachmentIds,
-                }),
-                contentType: 'application/json',
-                type: 'POST',
-                success: function () {
-                    resetAttachmentSelection();
-                    chefsDataTable.ajax.reload();
-                    abp.notify.success('AI summaries generated successfully.');
-                    globalThis.AIGenerationButtonState?.restore($activeButton);
-                    globalThis.refreshAIRateLimitState?.();
-                    $activeButton.html(existingHTML).prop('disabled', false);
-                },
-                error: function (error) {
+            globalThis.AIGenerationApi.queueAttachmentSummary({
+                applicationId: applicationId,
+                attachmentIds: summaryAttachmentIds,
+            })
+                .done(function (generationStatus) {
+                    globalThis.AIGenerationButtonState?.setGenerating($activeButton);
+                    pollAttachmentSummaryGeneration(applicationId, $activeButton, existingHTML);
+                })
+                .fail(function (error) {
                     console.error('Error generating AI summaries:', error);
                     abp.message.error('An error occurred while generating AI summaries. Please try again.');
                     globalThis.AIGenerationButtonState?.restore($activeButton);
                     globalThis.refreshAIRateLimitState?.();
                     $activeButton.html(existingHTML).prop('disabled', false);
                     setGenerateSummariesEnabled();
-                },
-            });
+                });
         });
+    }
+
+    function pollAttachmentSummaryGeneration(applicationId, $button, originalHtml) {
+        globalThis.AIGenerationButtonState.monitor({
+            $button,
+            originalHtml: originalHtml ?? $button.html(),
+            getStatus: () => globalThis.AIGenerationApi.getStatus(applicationId, 'attachment-summary'),
+            onComplete: refreshAttachmentSummaryResults,
+            onPollFailed: (error) => {
+                console.warn('Failed to poll AI attachment summary status.', error);
+                abp.message.error(error?.message || 'AI attachment summary generation failed.');
+            }
+        });
+    }
+
+    function refreshAttachmentSummaryResults() {
+        resetAttachmentSelection();
+        chefsDataTable.ajax.reload();
+        abp.notify.success('AI summaries generated successfully.');
+        globalThis.refreshAIRateLimitState?.();
     }
 
     // Toggle all AI summaries (only if feature is enabled)

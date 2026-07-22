@@ -35,7 +35,22 @@ public static class AIPromptTemplateRenderer
             metadataJson,
             new Dictionary<string, string>
             {
-                ["ATTACHMENT"] = attachment
+                ["ATTACHMENT"] = attachment,
+                ["ATTACHMENTS"] = attachment
+            });
+    }
+
+    public static string BuildAttachmentSummaryBatchUserPrompt(
+        string userPromptTemplate,
+        string attachments,
+        string? metadataJson = null)
+    {
+        return RenderPromptTemplate(
+            userPromptTemplate,
+            metadataJson,
+            new Dictionary<string, string>
+            {
+                ["ATTACHMENTS"] = attachments
             });
     }
 
@@ -114,11 +129,6 @@ public static class AIPromptTemplateRenderer
             if (root.ValueKind != JsonValueKind.Object)
             {
                 return new Dictionary<string, string>(StringComparer.Ordinal);
-            }
-
-            if (root.TryGetProperty("sections", out var sections) && sections.ValueKind == JsonValueKind.Object)
-            {
-                return ExtractStringProperties(sections);
             }
 
             return ExtractStringProperties(root);

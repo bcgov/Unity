@@ -11,6 +11,12 @@ public static class NotificationsPermissions
     {
         public const string Default = "Notifications.Email";
         public const string Send = "Notifications.Email.Send";
+        public const string DeleteDraft = "Notifications.Email.DeleteDraft";
+        public const string CancelScheduled = "Notifications.Email.CancelScheduled";
+        public const string Schedule = "Notifications.Email.Schedule";
+        public const string NotificationsTab = "Notifications.Form.Tab";
+        public const string ScheduleCreate = "Notifications.Form.Email.Schedule.Create";
+        public const string ScheduleCancel = "Notifications.Form.Email.Schedule.Cancel";
     }
 
     public static class NotificationList

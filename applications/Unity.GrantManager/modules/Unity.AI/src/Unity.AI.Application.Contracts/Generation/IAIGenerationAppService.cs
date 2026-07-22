@@ -15,5 +15,5 @@ public interface IAIGenerationAppService : IApplicationService
 
     Task<ApplicationScoringResultDto> GenerateApplicationScoringAsync(Guid applicationId, string? promptVersion = null);
 
-    Task<ApplicationContentResultDto> GenerateContentAsync(Guid applicationId, string? promptVersion = null);
+    Task<AIGenerationStatusDto> GetStatusAsync(Guid applicationId, string operationType);
 }

@@ -260,7 +260,7 @@ $(function () {
 
     function getApproxNumberOfEmployeesColumn(columnIndex) {
         return {
-            title: 'Organization Size (Approximate Number of Employees)',
+            title: 'Approx. Number of Employees',
             data: 'approxNumberOfEmployees',
             name: 'approxNumberOfEmployees',
             className: 'data-table-header',
@@ -607,9 +607,10 @@ $(function () {
                 }
             }
             return null;
-        }
+        },
+        enableContextMenu: true,
+        contextMenuActionsSelector: '[data-selector="applicants-table-actions"]'
     });
-
 
     // Handle row selection and publish events for ActionBar
     dataTable.on('select', function (e, dt, type, indexes) {

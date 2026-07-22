@@ -12,6 +12,7 @@ using Unity.AI.Models;
 using Unity.AI.Operations;
 using Unity.AI.Requests;
 using Unity.AI.Responses;
+using Unity.AI.Runtime;
 using Xunit;
 
 namespace Unity.GrantManager.AI.Operations;

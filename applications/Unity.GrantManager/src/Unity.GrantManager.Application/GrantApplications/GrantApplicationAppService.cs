@@ -29,6 +29,7 @@ using Unity.GrantManager.Identity;
 using Unity.GrantManager.Payments;
 using Unity.Modules.Shared;
 using Unity.Modules.Shared.Correlation;
+using Unity.Modules.Shared.Specializations;
 using Unity.Payments.PaymentRequests;
 using Volo.Abp;
 using Volo.Abp.Application.Dtos;
@@ -57,7 +58,6 @@ public class GrantApplicationAppService(
     IApplicantAddressRepository applicantAddressRepository,
     IApplicantSupplierAppService applicantSupplierService,
     IPaymentRequestAppService paymentRequestService,
-    IApplicationAIGenerationQueue aiGenerationQueue,
     IAIGenerationStatusAppService aiGenerationStatusAppService,
     IAIRateLimiter aiRateLimiter,
     IFeatureChecker featureChecker)
@@ -161,6 +161,7 @@ public class GrantApplicationAppService(
                 ContractExecutionDate = rec.ContractExecutionDate,
                 RiskRanking = rec.RiskRanking,
                 UnityApplicationId = rec.UnityApplicationId,
+                ExternalStatusVisibility = rec.ExternalStatusVisibility,
 
                 // From ApplicationStatus
                 Status = rec.Status,
@@ -417,6 +418,15 @@ public class GrantApplicationAppService(
             await PublishCustomFieldsAsync(application.Id, input);
         }
 
+        await applicationRepository.UpdateAsync(application);
+        return ObjectMapper.Map<Application, GrantApplicationDto>(application);
+    }
+
+    [Authorize(UnitySelector.Review.AssessmentResults.Update.Default)]
+    public async Task<GrantApplicationDto> UpdateExternalStatusVisibilityAsync(Guid id, bool externalStatusVisibility)
+    {
+        var application = await applicationRepository.GetAsync(id);
+        application.ExternalStatusVisibility = externalStatusVisibility;
         await applicationRepository.UpdateAsync(application);
         return ObjectMapper.Map<Application, GrantApplicationDto>(application);
     }
@@ -1106,6 +1116,16 @@ public class GrantApplicationAppService(
     /// <returns>A list of application actions with their state machine permitted and authorization status.</returns>
     public async Task<ListResultDto<ApplicationActionDto>> GetActions(Guid applicationId, bool includeInternal = false)
     {
+        if (await featureChecker.IsEnabledAsync(SpecializationConsts.Onboarding))
+        {
+            var onboardingManager = LazyServiceProvider.LazyGetRequiredService<OnboardingApplicationManager>();
+            var onboardingActionList = await onboardingManager.GetActions(applicationId);
+            var onboardingDtos = ObjectMapper.Map<List<ApplicationActionResultItem>, List<ApplicationActionDto>>(onboardingActionList);
+            foreach (var item in onboardingDtos)
+                item.IsAuthorized = true;
+            return new ListResultDto<ApplicationActionDto>(onboardingDtos);
+        }
+
         var actionList = await applicationManager.GetActions(applicationId);
         var application = await applicationRepository.GetAsync(applicationId, true);
 
@@ -1139,6 +1159,14 @@ public class GrantApplicationAppService(
     /// <param name="triggerAction">The action to be invoked on an Application</param>
     public async Task<GrantApplicationDto> TriggerAction(Guid applicationId, GrantApplicationAction triggerAction)
     {
+        if (await featureChecker.IsEnabledAsync(SpecializationConsts.Onboarding))
+        {
+            var onboardingManager = LazyServiceProvider.LazyGetRequiredService<OnboardingApplicationManager>();
+            var onboardingApplication = await onboardingManager.TriggerAction(applicationId, triggerAction);
+            await LocalEventBus.PublishAsync(new ApplicationChangedEvent { Action = triggerAction, ApplicationId = applicationId });
+            return ObjectMapper.Map<Application, GrantApplicationDto>(onboardingApplication);
+        }
+
         // AUTHORIZATION HANDLING
         var application = await applicationRepository.GetAsync(applicationId, true);
         if (!await AuthorizationService.IsGrantedAsync(application, GetActionAuthorizationRequirement(triggerAction)))
@@ -1154,11 +1182,13 @@ public class GrantApplicationAppService(
 
         application = await applicationManager.TriggerAction(applicationId, triggerAction);
 
+        // After the workflow state change, publish to the local event bus
         await LocalEventBus.PublishAsync(
             new ApplicationChangedEvent
             {
-                Action = triggerAction,
-                ApplicationId = applicationId
+                ApplicationId = applicationId,
+                Action = triggerAction,  // e.g. GrantApplicationAction.Approve / Deny
+                TenantId = CurrentTenant.Id
             }
         );
 
@@ -1171,95 +1201,6 @@ public class GrantApplicationAppService(
     public string? GetWorkflowDiagram(bool isDirectApproval)
     {
         return applicationManager.GetWorkflowDiagram(isDirectApproval);
-    }
-
-    public async Task<AIGenerationStatusDto> QueueAIGenerationAsync(Guid applicationId, string? promptVersion = null)
-    {
-        await EnsureAIAnalysisEnabledAsync();
-        return await QueueApplicationAnalysisAsync(applicationId, promptVersion);
-    }
-
-    [Authorize(AIPermissions.Analysis.GenerateApplicationAnalysis)]
-    public async Task<AIGenerationStatusDto> QueueApplicationAnalysisAsync(Guid applicationId, string? promptVersion = null)
-    {
-        await EnsureAIAnalysisEnabledAsync();
-        await aiGenerationQueue.QueueApplicationAnalysisAsync(applicationId, CurrentTenant.Id, promptVersion);
-
-        var request = await aiGenerationStatusAppService.GetLatestAsync(
-            applicationId,
-            AIGenerationRequestKeyHelper.ApplicationAnalysisOperationType,
-            CurrentTenant.Id);
-
-        return await CreateGenerationStatusAsync(
-            request ?? throw new UserFriendlyException("Unable to queue AI analysis request."));
-    }
-
-    [Authorize(AIPermissions.Analysis.GenerateAttachmentSummaries)]
-    public async Task<AIGenerationStatusDto> QueueAttachmentSummaryAsync(QueueAttachmentSummaryRequestDto input, string? promptVersion = null)
-    {
-        await EnsureAttachmentSummariesEnabledAsync();
-        var attachmentIds = await ResolveAttachmentSummaryIdsAsync(input);
-        await aiGenerationQueue.QueueAttachmentSummaryAsync(input.ApplicationId, CurrentTenant.Id, promptVersion, attachmentIds);
-
-        var request = await aiGenerationStatusAppService.GetLatestAsync(
-            input.ApplicationId,
-            AIGenerationRequestKeyHelper.AttachmentSummaryOperationType,
-            CurrentTenant.Id);
-
-        return await CreateGenerationStatusAsync(
-            request ?? throw new UserFriendlyException("Unable to queue AI attachment summary request."));
-    }
-
-    [Authorize(AIPermissions.Analysis.GenerateScoring)]
-    public async Task<AIGenerationStatusDto> QueueApplicationScoringAsync(Guid applicationId, string? promptVersion = null)
-    {
-        await EnsureScoringEnabledAsync();
-        await aiGenerationQueue.QueueApplicationScoringAsync(applicationId, CurrentTenant.Id, promptVersion);
-
-        var request = await aiGenerationStatusAppService.GetLatestAsync(
-            applicationId,
-            AIGenerationRequestKeyHelper.ApplicationScoringOperationType,
-            CurrentTenant.Id);
-
-        return await CreateGenerationStatusAsync(
-            request ?? throw new UserFriendlyException("Unable to queue AI scoring request."));
-    }
-
-    public async Task<AIGenerationStatusDto> GetAIGenerationStatusAsync(Guid applicationId, string operationType, string? promptVersion = null)
-    {
-        await EnsureAIGenerationStatusAccessAsync(operationType);
-        return await CreateGenerationStatusAsync(
-            await aiGenerationStatusAppService.GetLatestAsync(applicationId, operationType, CurrentTenant.Id));
-    }
-
-    [Authorize(AIPermissions.Analysis.GenerateApplicationAnalysis)]
-    [Authorize(AIPermissions.Analysis.GenerateAttachmentSummaries)]
-    [Authorize(AIPermissions.Analysis.GenerateScoring)]
-    public async Task<AIGenerationStatusDto> QueueAllAIStagesAsync(Guid applicationId, string? promptVersion = null)
-    {
-        await EnsureAttachmentSummariesEnabledAsync();
-        await EnsureAIAnalysisEnabledAsync();
-        await EnsureScoringEnabledAsync();
-        await aiGenerationQueue.QueueAllAIStagesAsync(applicationId, CurrentTenant.Id, promptVersion);
-
-        var request = await aiGenerationStatusAppService.GetLatestAsync(
-            applicationId,
-            AIGenerationRequestKeyHelper.PipelineOperationType,
-            CurrentTenant.Id);
-
-        return await CreateGenerationStatusAsync(
-            request ?? throw new UserFriendlyException("Unable to queue AI generation request."));
-    }
-
-    private async Task<AIGenerationStatusDto> CreateGenerationStatusAsync(AIGenerationRequestDto? request)
-    {
-        var state = await aiRateLimiter.GetStateAsync();
-        return new AIGenerationStatusDto
-        {
-            GenerationRequest = request,
-            IsGenerating = state.IsGenerating,
-            RetryAfterSeconds = state.RetryAfterSeconds
-        };
     }
 
     private async Task EnsureAIGenerationStatusAccessAsync(string operationType)
@@ -1363,10 +1304,35 @@ public class GrantApplicationAppService(
                         UnityApplicationId = applications.UnityApplicationId ?? string.Empty,
                         ApplicantName = applicant != null ? (applicant.ApplicantName ?? GrantManagerConsts.UnknownValue) : GrantManagerConsts.UnknownValue,
                         OrganizationName = applicant != null ? (applicant.OrgName ?? string.Empty) : string.Empty,
-                        UnityApplicantId = applicant != null ? (applicant.UnityApplicantId ?? string.Empty) : string.Empty
+                        UnityApplicantId = applicant != null ? (applicant.UnityApplicantId ?? string.Empty) : string.Empty,
+                        ExternalStatusVisibility = applications.ExternalStatusVisibility
                     };
 
         return await query.ToListAsync();
+    }
+
+    public async Task<GrantApplicationLiteDto> GetBasicAsync(Guid id)
+    {
+        var applicationsQuery = await applicationRepository.GetQueryableAsync();
+        var applicantsQuery = await applicantRepository.GetQueryableAsync();
+
+        var query = from applications in applicationsQuery
+                    join applicant in applicantsQuery on applications.ApplicantId equals applicant.Id into applicantGroup
+                    from applicant in applicantGroup.DefaultIfEmpty()
+                    where applications.Id == id
+                    select new GrantApplicationLiteDto
+                    {
+                        Id = applications.Id,
+                        ProjectName = applications.ProjectName,
+                        ReferenceNo = applications.ReferenceNo,
+                        UnityApplicationId = applications.UnityApplicationId ?? string.Empty,
+                        ApplicantName = applicant != null ? (applicant.ApplicantName ?? GrantManagerConsts.UnknownValue) : GrantManagerConsts.UnknownValue,
+                        OrganizationName = applicant != null ? (applicant.OrgName ?? string.Empty) : string.Empty,
+                        UnityApplicantId = applicant != null ? (applicant.UnityApplicantId ?? string.Empty) : string.Empty,
+                        ExternalStatusVisibility = applications.ExternalStatusVisibility
+                    };
+
+        return await query.FirstOrDefaultAsync() ?? throw new EntityNotFoundException();
     }
 
     private static Dictionary<string, object> ExtractCustomFieldsForWorksheet(dynamic customFields, Guid worksheetId)
@@ -1395,6 +1361,22 @@ public class GrantApplicationAppService(
     public async Task<string> RestoreAIAnalysisItemAsync(Guid applicationId, string itemId)
     {
         return await UpdateAIAnalysisItemDismissedStateAsync(applicationId, itemId, isDismissed: false);
+    }
+
+    public async Task<AIGenerationStatusDto> GetAIGenerationStatusAsync(Guid applicationId, string operationType)
+    {
+        await EnsureAIGenerationStatusAccessAsync(operationType);
+
+        var request = await aiGenerationStatusAppService.GetLatestAsync(applicationId, operationType, CurrentTenant.Id);
+        var state = await aiRateLimiter.GetStateAsync();
+
+        return new AIGenerationStatusDto
+        {
+            GenerationRequest = request,
+            IsGenerating = state.IsGenerating,
+            RetryAfterSeconds = state.RetryAfterSeconds,
+            FailureReason = request?.FailureReason
+        };
     }
 
     private async Task<string> UpdateAIAnalysisItemDismissedStateAsync(Guid applicationId, string itemId, bool isDismissed)
