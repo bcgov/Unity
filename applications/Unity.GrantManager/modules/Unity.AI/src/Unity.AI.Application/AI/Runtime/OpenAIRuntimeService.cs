@@ -6,6 +6,7 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Unity.AI.Models;
+using Unity.AI.Operations;
 using Unity.AI.Prompts;
 using Unity.AI.Requests;
 using Unity.AI.Responses;
@@ -14,8 +15,8 @@ using Volo.Abp.DependencyInjection;
 
 namespace Unity.AI.Runtime
 {
-    [ExposeServices(typeof(IAIService))]
-    public class OpenAIRuntimeService : IAIService, ITransientDependency
+    [ExposeServices(typeof(IAIService), typeof(IFormMappingService), typeof(IFormWorksheetService))]
+    public class OpenAIRuntimeService : IAIService, IFormMappingService, IFormWorksheetService, ITransientDependency
     {
         private readonly ILogger<OpenAIRuntimeService> _logger;
         private readonly OpenAITransportService _openAITransportService;
@@ -25,6 +26,8 @@ namespace Unity.AI.Runtime
         private const string ApplicationAnalysisPromptType = AIPromptTypes.ApplicationAnalysis;
         private const string AttachmentSummaryPromptType = AIPromptTypes.AttachmentSummary;
         private const string ApplicationScoringPromptType = AIPromptTypes.ApplicationScoring;
+        private const string FormMappingPromptType = AIPromptTypes.FormMapping;
+        private const string FormWorksheetPromptType = AIPromptTypes.FormWorksheet;
         private const int MaxAiAttempts = 3;
 
         public OpenAIRuntimeService(
@@ -155,7 +158,7 @@ namespace Unity.AI.Runtime
                     }
                 };
                 var attachments = JsonSerializer.Serialize(attachmentPayload, AIJsonDefaults.Indented);
-                var contentToAnalyze = AIPromptTemplateRenderer.BuildAttachmentSummaryBatchUserPrompt(
+                var contentToAnalyze = AIPromptTemplateRenderer.BuildAttachmentSummaryUserPrompt(
                     promptTemplate.UserPrompt,
                     attachments,
                     promptTemplate.MetadataJson);
@@ -197,68 +200,6 @@ namespace Unity.AI.Runtime
                 {
                     Summary = $"AI analysis not available for this attachment ({fileName})."
                 };
-            }
-        }
-
-        public async Task<AttachmentSummaryBatchResponse> GenerateAttachmentSummaryBatchAsync(AttachmentSummaryBatchRequest request, CancellationToken cancellationToken = default)
-        {
-            ArgumentNullException.ThrowIfNull(request);
-            try
-            {
-                if (request.Attachments is null || request.Attachments.Count == 0)
-                {
-                    return new AttachmentSummaryBatchResponse();
-                }
-
-                var settings = await _openAIConfigurationResolver.ResolveOperationSettingsAsync(AttachmentSummaryPromptType, cancellationToken);
-                var promptTemplate = await _promptTemplateProvider.GetRequiredPromptAsync(
-                    AttachmentSummaryPromptType,
-                    request.PromptVersion ?? settings.PromptVersion,
-                    cancellationToken);
-                var promptVersion = promptTemplate.PromptVersion;
-
-                var attachmentsPayload = request.Attachments.Select(attachment => new
-                {
-                    attachmentId = attachment.AttachmentId,
-                    name = string.IsNullOrWhiteSpace(attachment.FileName) ? "attachment" : attachment.FileName.Trim(),
-                    contentType = attachment.ContentType ?? "application/octet-stream",
-                    text = string.IsNullOrWhiteSpace(attachment.ExtractedText) ? null : attachment.ExtractedText
-                });
-
-                var attachments = JsonSerializer.Serialize(attachmentsPayload, AIJsonDefaults.Indented);
-                var contentToAnalyze = AIPromptTemplateRenderer.BuildAttachmentSummaryBatchUserPrompt(
-                    promptTemplate.UserPrompt,
-                    attachments,
-                    promptTemplate.MetadataJson);
-
-                await _promptFileLogger.LogPromptInputAsync(AttachmentSummaryPromptType, promptVersion, promptTemplate.SystemPrompt, contentToAnalyze, cancellationToken);
-                var result = await GenerateWithRetryAsync(
-                    () => _openAITransportService.GenerateSummaryAsync(
-                        contentToAnalyze,
-                        promptTemplate.SystemPrompt,
-                        settings,
-                        settings.CompletionTokens,
-                        cancellationToken: cancellationToken),
-                    AIProviderPayloadValidator.ValidateAttachmentSummaryBatchJson,
-                    "attachment summary batch",
-                    cancellationToken);
-                await _promptFileLogger.LogPromptOutputAsync(AttachmentSummaryPromptType, promptVersion, result.CaptureOutput, cancellationToken);
-
-                if (result.Outcome != AIOperationOutcome.Success)
-                {
-                    return new AttachmentSummaryBatchResponse();
-                }
-
-                return OpenAIResponseParser.ParseAttachmentSummaryBatchResponse(result.Content);
-            }
-            catch (OperationCanceledException)
-            {
-                throw;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Attachment summary batch generation failed.");
-                return new AttachmentSummaryBatchResponse();
             }
         }
 
@@ -332,6 +273,110 @@ namespace Unity.AI.Runtime
                 return new ApplicationScoringResponse();
             }
         }
+
+        public async Task<FormWorksheetResponse> GenerateFormWorksheetAsync(FormWorksheetRequest request, CancellationToken cancellationToken = default)
+        {
+            ArgumentNullException.ThrowIfNull(request);
+            try
+            {
+                var settings = await _openAIConfigurationResolver.ResolveOperationSettingsAsync(FormWorksheetPromptType, cancellationToken);
+                var promptTemplate = await _promptTemplateProvider.GetRequiredPromptAsync(
+                    FormWorksheetPromptType,
+                    request.PromptVersion ?? settings.PromptVersion,
+                    cancellationToken);
+                var promptVersion = promptTemplate.PromptVersion;
+                var dataJson = request.Data.GetRawText();
+                var systemPrompt = promptTemplate.SystemPrompt;
+                var content = AIPromptTemplateRenderer.BuildFormMappingUserPrompt(
+                    promptTemplate.UserPrompt,
+                    dataJson,
+                    promptTemplate.MetadataJson);
+
+                await _promptFileLogger.LogPromptInputAsync(FormWorksheetPromptType, promptVersion, systemPrompt, content, cancellationToken);
+                var result = await GenerateWithRetryAsync(
+                    () => _openAITransportService.GenerateSummaryAsync(
+                        content,
+                        systemPrompt,
+                        settings,
+                        settings.CompletionTokens,
+                        cancellationToken: cancellationToken),
+                    AIProviderPayloadValidator.ValidateFormWorksheetJson,
+                    "form worksheet",
+                    cancellationToken);
+                await _promptFileLogger.LogPromptOutputAsync(FormWorksheetPromptType, promptVersion, result.CaptureOutput, cancellationToken);
+
+                return new FormWorksheetResponse
+                {
+                    Worksheet = result.Outcome == AIOperationOutcome.Success
+                        ? AIResponseJson.CleanJsonResponse(result.Content)
+                        : "{}"
+                };
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Form worksheet generation failed.");
+                return new FormWorksheetResponse();
+            }
+        }
+
+        private async Task<FormMappingResponse> GenerateFormMappingCoreAsync(FormMappingRequest request, string promptType, CancellationToken cancellationToken = default)
+        {
+            ArgumentNullException.ThrowIfNull(request);
+            try
+            {
+                var settings = await _openAIConfigurationResolver.ResolveOperationSettingsAsync(promptType, cancellationToken);
+                var promptTemplate = await _promptTemplateProvider.GetRequiredPromptAsync(
+                    promptType,
+                    request.PromptVersion ?? settings.PromptVersion,
+                    cancellationToken);
+                var promptVersion = promptTemplate.PromptVersion;
+                var dataJson = request.Data.GetRawText();
+                var systemPrompt = promptTemplate.SystemPrompt;
+                var content = AIPromptTemplateRenderer.BuildFormMappingUserPrompt(
+                    promptTemplate.UserPrompt,
+                    dataJson,
+                    promptTemplate.MetadataJson);
+
+                await _promptFileLogger.LogPromptInputAsync(promptType, promptVersion, systemPrompt, content, cancellationToken);
+                var result = await GenerateWithRetryAsync(
+                    () => _openAITransportService.GenerateSummaryAsync(
+                        content,
+                        systemPrompt,
+                        settings,
+                        settings.CompletionTokens,
+                        cancellationToken: cancellationToken),
+                    AIProviderPayloadValidator.ValidateFormMappingJson,
+                    "mapping suggestion",
+                    cancellationToken);
+                await _promptFileLogger.LogPromptOutputAsync(promptType, promptVersion, result.CaptureOutput, cancellationToken);
+
+                if (result.Outcome != AIOperationOutcome.Success)
+                {
+                    return new FormMappingResponse();
+                }
+
+                return new FormMappingResponse
+                {
+                    Mapping = AIResponseJson.CleanJsonResponse(result.Content)
+                };
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Mapping suggestion generation failed.");
+                return new FormMappingResponse();
+            }
+        }
+
+        public Task<FormMappingResponse> GenerateFormMappingAsync(FormMappingRequest request, CancellationToken cancellationToken = default) =>
+            GenerateFormMappingCoreAsync(request, FormMappingPromptType, cancellationToken);
 
         private async Task<AIOperationResult> GenerateWithRetryAsync(
             Func<Task<AIOperationResult>> operation,
@@ -461,7 +506,7 @@ namespace Unity.AI.Runtime
                 return output?.Trim() ?? string.Empty;
             }
 
-            if (jsonObject.TryGetProperty(AIJsonKeys.Summary, out var summaryProp) &&
+            if (jsonObject.TryGetProperty("summary", out var summaryProp) &&
                 summaryProp.ValueKind == JsonValueKind.String)
             {
                 return summaryProp.GetString() ?? string.Empty;

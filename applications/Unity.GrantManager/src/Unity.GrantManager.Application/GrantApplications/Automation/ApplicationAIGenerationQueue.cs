@@ -3,13 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Unity.AI.Domain;
-using Unity.AI.Automation;
+using Unity.AI.Generation;
 using Unity.AI.Features;
 using Unity.AI.Localization;
 using Unity.AI.Operations;
-using Unity.AI.RateLimit;
-using Unity.GrantManager.GrantApplications;
+using Unity.AI.Cooldown;
 using Unity.GrantManager.GrantApplications.Automation.BackgroundJobs;
+using Unity.GrantManager.GrantApplications;
 using Medallion.Threading;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Localization;
@@ -20,36 +20,37 @@ using Volo.Abp.DependencyInjection;
 using Volo.Abp.Features;
 using Volo.Abp.Linq;
 using Volo.Abp.Users;
+using Unity.GrantManager.Applications;
 
 namespace Unity.GrantManager.GrantApplications.Automation;
 
-public class ApplicationAIGenerationQueue(
+public class ApplicationGenerationQueue(
     IBackgroundJobManager backgroundJobManager,
     IRepository<AIGenerationRequest, Guid> generationRequestRepository,
     IRepository<AIOperation, Guid> operationRepository,
     IDistributedLockProvider distributedLockProvider,
     IAIGenerationPrerequisiteValidator aiGenerationPrerequisiteValidator,
     IFeatureChecker featureChecker,
-    IAIRateLimiter aiRateLimiter,
+    IAICooldownService aiCooldownService,
     IAsyncQueryableExecuter asyncQueryableExecuter,
     ICurrentUser currentUser,
-    ILogger<ApplicationAIGenerationQueue> logger,
-    IStringLocalizer<AIResource> localizer)
-    : IApplicationAIGenerationQueue, ITransientDependency
+    ILogger<ApplicationGenerationQueue> logger)
+    : IApplicationGenerationQueue, ITransientDependency
 {
     private readonly IAsyncQueryableExecuter _asyncQueryableExecuter = asyncQueryableExecuter;
-    public async Task QueueAttachmentSummaryAsync(Guid applicationId, Guid? tenantId, string? promptVersion = null, List<Guid>? attachmentIds = null)
+    public async Task QueueApplicationAttachmentSummaryAsync(Guid applicationId, Guid? tenantId, List<Guid> attachmentIds, string? promptVersion = null)
     {
         await EnsureRequestAndEnqueueAsync(
             tenantId,
             AIGenerationRequestKeyHelper.AttachmentSummaryOperationType,
             applicationId,
             () => aiGenerationPrerequisiteValidator.EnsureAttachmentSummaryAvailableAsync(applicationId),
-            () =>
+            operationId =>
             {
                 return backgroundJobManager.EnqueueAsync(new GenerateAttachmentSummaryBackgroundJobArgs
                 {
                     ApplicationId = applicationId,
+                    OperationId = operationId,
                     AttachmentIds = attachmentIds,
                     PromptVersion = promptVersion,
                     RequestedByUserId = currentUser.Id,
@@ -65,11 +66,12 @@ public class ApplicationAIGenerationQueue(
             AIGenerationRequestKeyHelper.ApplicationAnalysisOperationType,
             applicationId,
             () => aiGenerationPrerequisiteValidator.EnsureApplicationAnalysisAvailableAsync(applicationId),
-            () =>
+            operationId =>
             {
                 return backgroundJobManager.EnqueueAsync(new GenerateApplicationAnalysisBackgroundJobArgs
                 {
                     ApplicationId = applicationId,
+                    OperationId = operationId,
                     PromptVersion = promptVersion,
                     RequestedByUserId = currentUser.Id,
                     TenantId = tenantId
@@ -84,11 +86,12 @@ public class ApplicationAIGenerationQueue(
             AIGenerationRequestKeyHelper.ApplicationScoringOperationType,
             applicationId,
             () => aiGenerationPrerequisiteValidator.EnsureApplicationScoringAvailableAsync(applicationId),
-            () =>
+            operationId =>
             {
                 return backgroundJobManager.EnqueueAsync(new GenerateApplicationScoringBackgroundJobArgs
                 {
                     ApplicationId = applicationId,
+                    OperationId = operationId,
                     PromptVersion = promptVersion,
                     RequestedByUserId = currentUser.Id,
                     TenantId = tenantId
@@ -96,7 +99,49 @@ public class ApplicationAIGenerationQueue(
             });
     }
 
-    public async Task QueueAllAIStagesAsync(Guid applicationId, Guid? tenantId, string? promptVersion = null)
+    public async Task QueueFormMappingAsync(Guid applicationId, Guid? tenantId, Guid applicationFormVersionId, string? promptVersion = null)
+    {
+        await EnsureRequestAndEnqueueAsync(
+            tenantId,
+            AIGenerationRequestKeyHelper.FormMappingOperationType,
+            applicationId,
+            () => aiGenerationPrerequisiteValidator.EnsureFormMappingAvailableAsync(applicationFormVersionId),
+            operationId =>
+            {
+                return backgroundJobManager.EnqueueAsync(new GenerateFormMappingBackgroundJobArgs
+                {
+                    ApplicationId = applicationId,
+                    OperationId = operationId,
+                    ApplicationFormVersionId = applicationFormVersionId,
+                    PromptVersion = promptVersion,
+                    RequestedByUserId = currentUser.Id,
+                    TenantId = tenantId
+                });
+            });
+    }
+
+    public async Task QueueFormWorksheetAsync(Guid applicationId, Guid? tenantId, Guid applicationFormVersionId, string? promptVersion = null)
+    {
+        await EnsureRequestAndEnqueueAsync(
+            tenantId,
+            AIGenerationRequestKeyHelper.FormWorksheetOperationType,
+            applicationId,
+            () => aiGenerationPrerequisiteValidator.EnsureFormWorksheetAvailableAsync(applicationFormVersionId),
+            operationId =>
+            {
+                return backgroundJobManager.EnqueueAsync(new GenerateFormWorksheetBackgroundJobArgs
+                {
+                    ApplicationId = applicationId,
+                    OperationId = operationId,
+                    ApplicationFormVersionId = applicationFormVersionId,
+                    PromptVersion = promptVersion,
+                    RequestedByUserId = currentUser.Id,
+                    TenantId = tenantId
+                });
+            });
+    }
+
+    public async Task QueueApplicationIntakeAsync(Guid applicationId, Guid? tenantId, string? promptVersion = null)
     {
         var hasEnabledStage = false;
         var enqueuedStage = false;
@@ -107,7 +152,7 @@ public class ApplicationAIGenerationQueue(
             hasEnabledStage = true;
             try
             {
-                await QueueAttachmentSummaryAsync(applicationId, tenantId, promptVersion);
+                await QueueApplicationAttachmentSummaryAsync(applicationId, tenantId, new List<Guid>(), promptVersion: promptVersion);
                 enqueuedStage = true;
             }
             catch (UserFriendlyException ex)
@@ -146,7 +191,7 @@ public class ApplicationAIGenerationQueue(
 
         if (!hasEnabledStage)
         {
-            throw new UserFriendlyException(localizer[AILocalizationKeys.GenerateAllDisabled]);
+            throw new UserFriendlyException("No AI generation features are enabled.");
         }
 
         if (!enqueuedStage && lastStageException != null)
@@ -160,7 +205,7 @@ public class ApplicationAIGenerationQueue(
         string operationType,
         Guid applicationId,
         Func<Task> validateInput,
-        Func<Task> enqueue)
+        Func<Guid, Task> enqueue)
     {
         var operation = await ResolveOperationAsync(operationType);
         var requestLock = distributedLockProvider.CreateLock($"ai-generation:{tenantId}:{applicationId}:{operation.Id}");
@@ -188,7 +233,7 @@ public class ApplicationAIGenerationQueue(
 
             // Single chokepoint for all AI generate flows (manual + auto).
             // The limiter is a no-op for system/background callers without an authenticated user.
-            await aiRateLimiter.EnsureAsync();
+            await aiCooldownService.EnsureAsync(currentUser.Id);
 
             var request = new AIGenerationRequest(
                 Guid.NewGuid(),
@@ -200,7 +245,7 @@ public class ApplicationAIGenerationQueue(
 
             try
             {
-                await enqueue();
+                await enqueue(operation.Id);
             }
             catch (Exception ex)
             {

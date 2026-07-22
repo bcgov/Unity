@@ -36,7 +36,7 @@
     </PackageReference>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="AI\Prompts\Versions\**\*.txt">
+    <Content Include="Prompts\Versions\**\*.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
     </Content>

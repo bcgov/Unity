@@ -28,6 +28,8 @@ public class AIPromptDataSeeder(
             await SeedAnalysisPromptAsync();
             await SeedAttachmentPromptAsync();
             await SeedScoresheetPromptAsync();
+            await SeedFormMappingPromptAsync();
+            await SeedFormWorksheetPromptAsync();
         }
     }
 
@@ -108,6 +110,18 @@ public class AIPromptDataSeeder(
                 output: ScoresheetOutputV2,
                 rules: ScoresheetRulesV2,
                 commonRules: CommonRules));
+    }
+
+    // ─── MAPPING SUGGESTION ─────────────────────────────────────────────────
+
+    private async Task SeedFormMappingPromptAsync()
+    {
+        await EnsurePromptAsync(AIPromptTypes.FormMapping, 2, FormMappingSystemV2, FormMappingUserV2, FormMappingMetadataV2);
+    }
+
+    private async Task SeedFormWorksheetPromptAsync()
+    {
+        await EnsurePromptAsync(AIPromptTypes.FormWorksheet, 2, FormWorksheetSystemV2, FormWorksheetUserV2, FormWorksheetMetadataV2);
     }
 
     // ─── HELPERS ──────────────────────────────────────────────────────────────
@@ -778,6 +792,110 @@ public class AIPromptDataSeeder(
         - Each answer object must include: "answer", "rationale", and "confidence".
         - Never omit "answer", "rationale", or "confidence" for any question type.
         - The "answer" value type must match question type: Number => numeric; YesNo/SelectList/Text/TextArea => string.
+        """;
+
+    // ── v0/mapping-suggestion.system.txt ────────────────────────────────────
+    private const string FormMappingSystemV2 = """
+        You are a careful mapping assistant for human reviewers.
+        Return structured JSON for recommended Unity-to-CHEFS field mapping.
+        Do not invent fields, persist changes, or add wrapper sections.
+        Return only valid JSON in the exact mapping shape requested.
+        """;
+
+    // ── v2/onboarding-mapping.user.txt ─────────────────────────────────────
+    private const string FormMappingUserV2 = """
+        FORM MAPPING CONTEXT:
+        {{DATA}}
+
+        OUTPUT
+        {
+          "<unity field name>": "<chefs source field name>",
+          "<unity field name>": "<chefs source field name>"
+        }
+
+        Important:
+        - Use only FORM MAPPING CONTEXT as evidence.
+        - The context is grouped as chefsData and unityData.
+        - chefsData.fields contains the CHEFS source fields.
+        - unityData.coreFields contains Unity target fields.
+        - unityData.customFields contains worksheet-derived Unity target fields.
+        - existingMapping contains the current Unity-to-CHEFS assignments, when any exist.
+        - Return a complete mapping, including existing mappings and any new suggestions.
+        - Preserve every existing non-empty mapping exactly as provided; do not replace or remove it.
+        - Only fill blank existing mappings or add new mappings when supported by the available fields.
+        - Only include mappings that are clearly semantically equivalent or strongly related by label, name, type, and purpose.
+        - Do not force one-to-one coverage. Omit Unity fields when no CHEFS field is a sensible match.
+        - Omit CHEFS fields that do not clearly map to a Unity target field.
+        - Do not map platform/system identifiers such as SubmissionId, SubmissionDate, or ConfirmationId; they are managed by Unity and should be omitted if present.
+        - If no fields clearly match, return `{}`.
+        - The mapping is dynamic; do not hardcode or assume a fixed list of fields.
+        - Prefer existing Unity core intake fields when they already fit the CHEFS source field.
+        - Only use worksheet custom field targets when the form genuinely needs them.
+        - Return valid plain JSON only in the exact OUTPUT shape.
+        """;
+
+    private const string FormMappingMetadataV2 = """
+        {
+          "DATA": "Serialized JSON payload containing CHEFS fields, Unity core fields, worksheet-derived custom fields, and the existing mapping."
+        }
+        """;
+
+    // ── v2/form-worksheet.system.txt ───────────────────────────────────────
+    private const string FormWorksheetSystemV2 = """
+        You are a worksheet definition generator for Unity Grant Manager.
+        Generate a recommended worksheet definition JSON that can be used to create a Flex worksheet.
+        Return only valid JSON.
+        """;
+
+    // ── v2/form-worksheet.user.txt ──────────────────────────────────────────
+    private const string FormWorksheetUserV2 = """
+        WORKSHEET CONTEXT:
+        {{DATA}}
+
+        OUTPUT
+        {
+          "Name": "<string>",
+          "Title": "<string>",
+          "Version": <number>,
+          "Published": true,
+          "Sections": [
+            {
+              "Name": "<string>",
+              "Order": 1,
+              "Fields": [
+                {
+                  "Name": "<string>",
+                  "Key": "<string>",
+                  "Label": "<string>",
+                  "Type": <number>,
+                  "Definition": "<string>"
+                }
+              ]
+            }
+          ],
+          "ReportColumns": "<string>",
+          "ReportKeys": "<string>",
+          "ReportViewName": "<string>"
+        }
+
+        Rules:
+        - Return one worksheet definition JSON object only.
+        - chefsFields contains the available CHEFS source fields.
+        - unityCoreFields contains existing Unity core fields. Do not create a custom field when one of these already fits.
+        - existingMapping contains any current confirmed Unity-to-CHEFS mappings. Do not duplicate those mappings with a custom field.
+        - existingWorksheets contains the previous AI worksheet definition, if one exists. Refine it rather than duplicating its custom fields.
+        - formSchema contains detailed CHEFS control configuration when labels and types need more context.
+        - Use the provided form context to decide which custom fields are genuinely needed.
+        - Prefer existing Unity core fields when they already satisfy the need.
+        - Only create additional worksheet custom fields when the form genuinely needs them.
+        - Keep the worksheet structure valid for Flex.
+        - Return valid plain JSON only.
+        """;
+
+    private const string FormWorksheetMetadataV2 = """
+        {
+          "DATA": "Serialized JSON payload containing form metadata, CHEFS fields, Unity core fields, the current mapping, form schema, and the existing AI worksheet."
+        }
         """;
 
     // ── v1/common.rules.txt ──────────────────────────────────────────────────

@@ -14,39 +14,6 @@ namespace Unity.AI.Runtime
                 : AIResponseValidationResult.Invalid("Attachment summary response was empty.");
         }
 
-        public static AIResponseValidationResult ValidateAttachmentSummaryBatchJson(string response)
-        {
-            if (!TryParseRootObject(response, out var root))
-            {
-                return AIResponseValidationResult.Invalid("Attachment summary batch response was not valid JSON.");
-            }
-
-            if (!root.TryGetProperty("attachments", out var attachments) || attachments.ValueKind != JsonValueKind.Array)
-            {
-                return AIResponseValidationResult.Invalid("Attachment summary batch response is missing required field 'attachments' (expected array).");
-            }
-
-            foreach (var attachment in attachments.EnumerateArray())
-            {
-                if (attachment.ValueKind != JsonValueKind.Object)
-                {
-                    return AIResponseValidationResult.Invalid("Attachment summary batch response includes an invalid attachment item.");
-                }
-
-                if (!attachment.TryGetProperty("attachmentId", out var attachmentId) || attachmentId.ValueKind != JsonValueKind.String || string.IsNullOrWhiteSpace(attachmentId.GetString()))
-                {
-                    return AIResponseValidationResult.Invalid("Attachment summary batch response is missing a valid attachmentId.");
-                }
-
-                if (!attachment.TryGetProperty(AIJsonKeys.Summary, out var summary) || summary.ValueKind != JsonValueKind.String)
-                {
-                    return AIResponseValidationResult.Invalid("Attachment summary batch response is missing a valid summary.");
-                }
-            }
-
-            return AIResponseValidationResult.Success();
-        }
-
         public static AIResponseValidationResult ValidateApplicationAnalysisJson(string response)
         {
             if (!TryParseRootObject(response, out var root))
@@ -54,48 +21,48 @@ namespace Unity.AI.Runtime
                 return AIResponseValidationResult.Invalid("Application analysis response was not valid JSON.");
             }
 
-            if (!root.TryGetProperty(AIJsonKeys.Decision, out var decision) || decision.ValueKind != JsonValueKind.String)
+            if (!root.TryGetProperty("decision", out var decision) || decision.ValueKind != JsonValueKind.String)
             {
-                return AIResponseValidationResult.Invalid($"Application analysis response is missing or invalid required field '{AIJsonKeys.Decision}' (expected string).");
+                return AIResponseValidationResult.Invalid("Application analysis response is missing or invalid required field 'decision' (expected string).");
             }
 
             var normalizedDecision = (decision.GetString() ?? string.Empty).Trim().ToUpperInvariant();
             if (normalizedDecision != "PROCEED" && normalizedDecision != "HOLD")
             {
                 return AIResponseValidationResult.Invalid(
-                    $"Application analysis response has invalid '{AIJsonKeys.Decision}' value. Expected 'PROCEED' or 'HOLD'.");
+                    "Application analysis response has invalid 'decision' value. Expected 'PROCEED' or 'HOLD'.");
             }
 
-            if (!root.TryGetProperty(AIJsonKeys.Errors, out var errors) || errors.ValueKind != JsonValueKind.Array)
+            if (!root.TryGetProperty("errors", out var errors) || errors.ValueKind != JsonValueKind.Array)
             {
-                return AIResponseValidationResult.Invalid($"Application analysis response is missing or invalid required field '{AIJsonKeys.Errors}' (expected array).");
+                return AIResponseValidationResult.Invalid("Application analysis response is missing or invalid required field 'errors' (expected array).");
             }
 
-            if (!root.TryGetProperty(AIJsonKeys.Warnings, out var warnings) || warnings.ValueKind != JsonValueKind.Array)
+            if (!root.TryGetProperty("warnings", out var warnings) || warnings.ValueKind != JsonValueKind.Array)
             {
-                return AIResponseValidationResult.Invalid($"Application analysis response is missing or invalid required field '{AIJsonKeys.Warnings}' (expected array).");
+                return AIResponseValidationResult.Invalid("Application analysis response is missing or invalid required field 'warnings' (expected array).");
             }
 
-            if (!root.TryGetProperty(AIJsonKeys.Summaries, out var summaries) || summaries.ValueKind != JsonValueKind.Array)
+            if (!root.TryGetProperty("summaries", out var summaries) || summaries.ValueKind != JsonValueKind.Array)
             {
-                return AIResponseValidationResult.Invalid($"Application analysis response is missing or invalid required field '{AIJsonKeys.Summaries}' (expected array).");
+                return AIResponseValidationResult.Invalid("Application analysis response is missing or invalid required field 'summaries' (expected array).");
             }
 
-            if (!root.TryGetProperty(AIJsonKeys.Recommendations, out var recommendations) || recommendations.ValueKind != JsonValueKind.Array)
+            if (!root.TryGetProperty("recommendations", out var recommendations) || recommendations.ValueKind != JsonValueKind.Array)
             {
-                return AIResponseValidationResult.Invalid($"Application analysis response is missing or invalid required field '{AIJsonKeys.Recommendations}' (expected array).");
+                return AIResponseValidationResult.Invalid("Application analysis response is missing or invalid required field 'recommendations' (expected array).");
             }
 
             if (summaries.GetArrayLength() == 0)
             {
                 return AIResponseValidationResult.Invalid(
-                    $"Application analysis response must include at least one item in '{AIJsonKeys.Summaries}'.");
+                    "Application analysis response must include at least one item in 'summaries'.");
             }
 
             if (recommendations.GetArrayLength() == 0)
             {
                 return AIResponseValidationResult.Invalid(
-                    $"Application analysis response must include at least one item in '{AIJsonKeys.Recommendations}'.");
+                    "Application analysis response must include at least one item in 'recommendations'.");
             }
 
             return AIResponseValidationResult.Success();
@@ -122,7 +89,7 @@ namespace Unity.AI.Runtime
                         $"Application scoring response is missing required answer object for question id '{questionId}'.");
                 }
 
-                if (!answerObject.TryGetProperty(AIJsonKeys.Answer, out var answerValue)
+                if (!answerObject.TryGetProperty("answer", out var answerValue)
                     || answerValue.ValueKind == JsonValueKind.Null
                     || answerValue.ValueKind == JsonValueKind.Object
                     || answerValue.ValueKind == JsonValueKind.Array)
@@ -131,7 +98,7 @@ namespace Unity.AI.Runtime
                         $"Application scoring response is missing a valid answer for question id '{questionId}'.");
                 }
 
-                if (!answerObject.TryGetProperty(AIJsonKeys.Confidence, out var confidenceValue)
+                if (!answerObject.TryGetProperty("confidence", out var confidenceValue)
                     || confidenceValue.ValueKind != JsonValueKind.Number
                     || !confidenceValue.TryGetDecimal(out var confidence)
                     || confidence < 0m
@@ -140,6 +107,40 @@ namespace Unity.AI.Runtime
                     return AIResponseValidationResult.Invalid(
                         $"Application scoring response is missing a valid confidence score for question id '{questionId}'.");
                 }
+            }
+
+            return AIResponseValidationResult.Success();
+        }
+
+        public static AIResponseValidationResult ValidateFormMappingJson(string response)
+        {
+            if (!TryParseRootObject(response, out _))
+            {
+                return AIResponseValidationResult.Invalid("Mapping suggestion response was not valid JSON.");
+            }
+
+            return AIResponseValidationResult.Success();
+        }
+
+        public static AIResponseValidationResult ValidateFormWorksheetJson(string response)
+        {
+            if (!TryParseRootObject(response, out var root))
+            {
+                return AIResponseValidationResult.Invalid("Form worksheet response was not valid JSON.");
+            }
+
+            if (!root.TryGetProperty("title", out var title)
+                || title.ValueKind != JsonValueKind.String
+                || string.IsNullOrWhiteSpace(title.GetString()))
+            {
+                return AIResponseValidationResult.Invalid("Form worksheet response is missing a non-empty 'title'.");
+            }
+
+            if (!root.TryGetProperty("sections", out var sections)
+                || sections.ValueKind != JsonValueKind.Array
+                || sections.GetArrayLength() == 0)
+            {
+                return AIResponseValidationResult.Invalid("Form worksheet response must include at least one section.");
             }
 
             return AIResponseValidationResult.Success();

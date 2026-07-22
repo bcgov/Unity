@@ -1,11 +1,55 @@
 ﻿@using Unity.Modules.Shared
 @using Volo.Abp.Authorization.Permissions
+@model bool
 
 @inject IPermissionChecker PermissionChecker
 
 <div class="action-bar p-2 search-action-bar">
     <div class="search-action-bar_search-wrapper">
         <input type="search" id="search" placeholder="Search" class="tbl-search">
+
+        @if (Model)
+        {
+        <div class="mb-3 date-input-filter-div">
+            <label class="form-label" for="quickDateRange">Quick Date Range</label>
+            <select id="quickDateRange" class="form-control quick-date-input">
+                <option value="today">Today</option>
+                <option value="last7days">Last 7 days</option>
+                <option value="last30days">Last 30 days</option>
+                <option value="last3months">Last 3 months</option>
+                <option value="last6months" selected>Last 6 months</option>
+                <option value="currentfiscalyear">Current Fiscal Year</option>
+                <option value="alltime">All time</option>
+                <option value="custom">Custom Ranges</option>
+            </select>
+        </div>
+        <div class="mb-3 custom-date-range-container-div" id="customDateInputs" style="display: none;">
+            <div class="mb-3 date-input-filter-div">
+                <label class="form-label" for="requestedFromDate">Requested Date From</label>
+                <input
+                    abp-data-datepicker="false"
+                    type="date"
+                    id="requestedFromDate"
+                    name="RequestedFromDate"
+                    value=""
+                    class="form-control date-input-filter"
+                    min="1900-01-01"
+                    max="2100-01-01">
+            </div>
+            <div class="mb-3 date-input-filter-div">
+                <label class="form-label" for="requestedToDate">Requested Date To</label>
+                <input
+                    abp-data-datepicker="false"
+                    type="date"
+                    id="requestedToDate"
+                    name="RequestedToDate"
+                    value=""
+                    class="form-control date-input-filter"
+                    min="1900-01-01"
+                    max="2100-01-01">
+            </div>
+        </div>
+        }
     </div>
 
     <div class="btn-group" id="app_custom_buttons">
@@ -14,7 +58,7 @@
         <abp-button id="tagPayment"
                     data-selector="batch-payment-table-actions"
                     text="Tags"
-                    class="custom-table-btn flex-none btn btn-secondary disabled"
+                    class="custom-table-btn flex-none btn btn-secondary action-bar-btn-unavailable"
                     button-type="Secondary" />
         }
     </div>

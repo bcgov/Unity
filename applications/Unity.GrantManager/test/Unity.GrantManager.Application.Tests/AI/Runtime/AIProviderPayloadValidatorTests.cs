@@ -5,7 +5,7 @@ using Xunit;
 
 namespace Unity.GrantManager.AI.Runtime;
 
-public class AIProviderPayloadValidatorTests
+public class PromptResponseValidatorTests
 {
     [Fact]
     public void ValidateApplicationAnalysisJson_Should_Return_InvalidOutput_For_InvalidJson()
@@ -175,21 +175,26 @@ public class AIProviderPayloadValidatorTests
         reason.ShouldContain("empty");
     }
 
-    [Fact]
-    public void ValidateAttachmentSummaryBatchJson_Should_Return_Success_For_Valid_Items()
+    [Theory]
+    [InlineData("{}")]
+    [InlineData("""{"title":"Draft","sections":[]}""")]
+    public void ValidateFormWorksheetJson_Should_Return_InvalidOutput_For_Incomplete_Worksheet(string response)
     {
-        var result = AIProviderPayloadValidator.ValidateAttachmentSummaryBatchJson(
+        var result = AIProviderPayloadValidator.ValidateFormWorksheetJson(response);
+
+        result.IsValid.ShouldBeFalse();
+        result.FailureCategory.ShouldBe(AIFailureCategory.InvalidOutput);
+    }
+
+    [Fact]
+    public void ValidateFormWorksheetJson_Should_Return_Success_For_Complete_Worksheet()
+    {
+        var result = AIProviderPayloadValidator.ValidateFormWorksheetJson(
             """
             {
-              "attachments": [
-                {
-                  "attachmentId": "a1",
-                  "summary": "One"
-                },
-                {
-                  "attachmentId": "a2",
-                  "summary": "Two"
-                }
+              "title": "Draft",
+              "sections": [
+                { "name": "Application details", "fields": [] }
               ]
             }
             """);
@@ -197,13 +202,4 @@ public class AIProviderPayloadValidatorTests
         result.IsValid.ShouldBeTrue();
     }
 
-    [Fact]
-    public void ValidateAttachmentSummaryBatchJson_Should_Return_InvalidOutput_When_Attachments_Are_Missing()
-    {
-        var result = AIProviderPayloadValidator.ValidateAttachmentSummaryBatchJson("{}");
-
-        result.IsValid.ShouldBeFalse();
-        result.FailureCategory.ShouldBe(AIFailureCategory.InvalidOutput);
-        result.Reason.ShouldContain("attachments");
-    }
 }
