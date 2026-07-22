@@ -18,7 +18,7 @@
     <ProjectReference Include="..\Unity.Notifications.TestBase\Unity.Notifications.TestBase.csproj" />
     <PackageReference Include="Volo.Abp.EntityFrameworkCore.Sqlite" Version="10.5.0" />
     <!-- Explicit reference to fix vulnerable transitive dependency -->
-    <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="3.0.3" />
+    <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="3.0.4" />
   </ItemGroup>
 
   <ItemGroup>

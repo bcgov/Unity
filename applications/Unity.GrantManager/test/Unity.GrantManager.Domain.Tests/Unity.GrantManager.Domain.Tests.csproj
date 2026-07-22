@@ -17,7 +17,7 @@
     <PackageReference Include="Npgsql" Version="10.0.3" />
     <!-- Explicit reference to fix vulnerable transitive dependency -->
     <PackageReference Include="System.IO.Packaging" Version="10.0.10" />
-    <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="3.0.3" />
+    <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="3.0.4" />
   </ItemGroup>
 
   <ItemGroup>
