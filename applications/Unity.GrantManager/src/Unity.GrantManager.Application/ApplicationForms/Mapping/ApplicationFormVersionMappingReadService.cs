@@ -46,6 +46,7 @@ public class ApplicationFormVersionMappingReadService(
             ApplicationFormId = formVersion.ApplicationFormId,
             ChefsApplicationFormGuid = formVersion.ChefsApplicationFormGuid,
             ChefsFormVersionGuid = formVersion.ChefsFormVersionGuid,
+            ExistingMapping = formVersion.SubmissionHeaderMapping,
             ChefsFields = BuildChefsFields(formVersion.AvailableChefsFields),
             UnityCoreFields = BuildUnityCoreFields()
         };

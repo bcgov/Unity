@@ -813,6 +813,10 @@ public class AIPromptDataSeeder(
         - chefsData.fields contains the CHEFS source fields.
         - unityData.coreFields contains Unity target fields.
         - unityData.customFields contains worksheet-derived Unity target fields.
+        - existingMapping contains the current Unity-to-CHEFS assignments, when any exist.
+        - Return a complete mapping, including existing mappings and any new suggestions.
+        - Preserve every existing non-empty mapping exactly as provided; do not replace or remove it.
+        - Only fill blank existing mappings or add new mappings when supported by the available fields.
         - Only include mappings that are clearly semantically equivalent or strongly related by label, name, type, and purpose.
         - Do not force one-to-one coverage. Omit Unity fields when no CHEFS field is a sensible match.
         - Omit CHEFS fields that do not clearly map to a Unity target field.
@@ -826,7 +830,7 @@ public class AIPromptDataSeeder(
 
     private const string FormMappingMetadataV2 = """
         {
-          "DATA": "Serialized JSON payload containing CHEFS fields, Unity core fields, and worksheet-derived custom fields."
+          "DATA": "Serialized JSON payload containing CHEFS fields, Unity core fields, worksheet-derived custom fields, and the existing mapping."
         }
         """;
 

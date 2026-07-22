@@ -55,6 +55,7 @@ public class ApplicationFormVersionAppServiceTests(ITestOutputHelper outputHelpe
             ApplicationFormId = formVersion.ApplicationFormId,
             ChefsApplicationFormGuid = "chefs-form",
             ChefsFormVersionGuid = "chefs-version",
+            ExistingMapping = "{\"ProjectName\":\"projectName\"}",
             ChefsFields = new List<MappingFieldDto>
             {
                 new() { Name = "ProjectName", Label = "Project Name", Type = "Text", IsCustom = false }
@@ -82,8 +83,17 @@ public class ApplicationFormVersionAppServiceTests(ITestOutputHelper outputHelpe
         capturedRequest!.Data.GetProperty("chefsData").GetProperty("fields").ValueKind.ShouldBe(System.Text.Json.JsonValueKind.Array);
         capturedRequest.Data.GetProperty("unityData").GetProperty("coreFields").ValueKind.ShouldBe(System.Text.Json.JsonValueKind.Array);
         capturedRequest.Data.GetProperty("unityData").GetProperty("customFields").ValueKind.ShouldBe(System.Text.Json.JsonValueKind.Array);
+        capturedRequest.Data.GetProperty("existingMapping").GetProperty("ProjectName").GetString().ShouldBe("projectName");
         formVersion.SubmissionHeaderMapping.ShouldBe("""{"ProjectName":"projectName"}""");
         await repository.Received(1).UpdateAsync(formVersion, true);
+    }
+
+    [Fact]
+    public void FormMappingPromptData_Should_UseEmptyObject_When_NoExistingMappingIsAvailable()
+    {
+        var promptData = FormMappingPromptDataBuilder.Build(new ApplicationFormMappingReadModelDto());
+
+        promptData.GetProperty("existingMapping").GetRawText().ShouldBe("{}");
     }
 
     [Fact]
