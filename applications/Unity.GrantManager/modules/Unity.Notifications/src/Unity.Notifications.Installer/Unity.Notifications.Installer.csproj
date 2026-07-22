@@ -10,8 +10,8 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Microsoft.Extensions.Options" Version="10.0.3" />
-        <PackageReference Include="Volo.Abp.VirtualFileSystem" Version="10.3.0" />
+        <PackageReference Include="Microsoft.Extensions.Options" Version="10.0.10" />
+        <PackageReference Include="Volo.Abp.VirtualFileSystem" Version="10.5.0" />
     </ItemGroup>
 
     <ItemGroup>

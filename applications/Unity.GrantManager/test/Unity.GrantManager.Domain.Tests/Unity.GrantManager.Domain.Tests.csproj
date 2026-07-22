@@ -16,7 +16,7 @@
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.0" />
     <PackageReference Include="Npgsql" Version="10.0.2" />
     <!-- Explicit reference to fix vulnerable transitive dependency -->
-    <PackageReference Include="System.IO.Packaging" Version="10.0.7" />
+    <PackageReference Include="System.IO.Packaging" Version="10.0.10" />
     <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="3.0.3" />
   </ItemGroup>
 

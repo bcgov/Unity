@@ -47,8 +47,8 @@
 
   <!-- Package References -->
   <ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore.DataProtection.StackExchangeRedis" Version="10.0.3" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.3">
+    <PackageReference Include="Microsoft.AspNetCore.DataProtection.StackExchangeRedis" Version="10.0.10" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.10">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>
         runtime;
@@ -68,14 +68,14 @@
     <PackageReference Include="Serilog.Settings.Configuration" Version="9.0.0" />
     <PackageReference Include="Serilog.Sinks.Async" Version="2.1.0" />
 
-    <PackageReference Include="Volo.Abp.AspNetCore.Authentication.OpenIdConnect" Version="10.3.0" />
-    <PackageReference Include="Volo.Abp.AspNetCore.Serilog" Version="10.3.0" />
-    <PackageReference Include="Volo.Abp.Autofac" Version="10.3.0" />
-    <PackageReference Include="Volo.Abp.BlobStoring" Version="10.3.0" />
-    <PackageReference Include="Volo.Abp.Http.Client.IdentityModel.Web" Version="10.3.0" />
-    <PackageReference Include="Volo.Abp.Mapperly" Version="10.3.0" />
-    <PackageReference Include="Volo.Abp.SettingManagement.Web" Version="10.3.0" />
-    <PackageReference Include="Volo.Abp.Swashbuckle" Version="10.3.0" />
+    <PackageReference Include="Volo.Abp.AspNetCore.Authentication.OpenIdConnect" Version="10.5.0" />
+    <PackageReference Include="Volo.Abp.AspNetCore.Serilog" Version="10.5.0" />
+    <PackageReference Include="Volo.Abp.Autofac" Version="10.5.0" />
+    <PackageReference Include="Volo.Abp.BlobStoring" Version="10.5.0" />
+    <PackageReference Include="Volo.Abp.Http.Client.IdentityModel.Web" Version="10.5.0" />
+    <PackageReference Include="Volo.Abp.Mapperly" Version="10.5.0" />
+    <PackageReference Include="Volo.Abp.SettingManagement.Web" Version="10.5.0" />
+    <PackageReference Include="Volo.Abp.Swashbuckle" Version="10.5.0" />
 
     <!-- Override transitive Swashbuckle.AspNetCore (pulled at 10.0.1 by Volo.Abp.Swashbuckle 10.3.0),
          which resolves a vulnerable Microsoft.OpenApi 2.3.0 (GHSA-v5pm-xwqc-g5wc). 10.2.3 depends on

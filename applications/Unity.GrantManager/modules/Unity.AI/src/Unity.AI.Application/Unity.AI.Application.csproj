@@ -6,19 +6,19 @@
     <RootNamespace>Unity.AI</RootNamespace>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.3" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.10" />
     <PackageReference Include="Azure.AI.OpenAI" Version="2.1.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="NPOI" Version="2.7.5" />
     <PackageReference Include="PdfPig" Version="0.1.13" />
-    <PackageReference Include="Volo.Abp.AspNetCore.Mvc" Version="10.3.0" />
-    <PackageReference Include="Volo.Abp.Mapperly" Version="10.3.0" />
+    <PackageReference Include="Volo.Abp.AspNetCore.Mvc" Version="10.5.0" />
+    <PackageReference Include="Volo.Abp.Mapperly" Version="10.5.0" />
     <PackageReference Include="Riok.Mapperly" Version="4.3.1" />
-    <PackageReference Include="Volo.Abp.Ddd.Application" Version="10.3.0" />
-    <PackageReference Include="Volo.Abp.DistributedLocking" Version="10.3.0" />
-    <PackageReference Include="Volo.Abp.EntityFrameworkCore" Version="10.3.0" />
-    <PackageReference Include="Volo.Abp.Features" Version="10.3.0" />
-    <PackageReference Include="Volo.Abp.TenantManagement.Domain" Version="10.3.0" />
+    <PackageReference Include="Volo.Abp.Ddd.Application" Version="10.5.0" />
+    <PackageReference Include="Volo.Abp.DistributedLocking" Version="10.5.0" />
+    <PackageReference Include="Volo.Abp.EntityFrameworkCore" Version="10.5.0" />
+    <PackageReference Include="Volo.Abp.Features" Version="10.5.0" />
+    <PackageReference Include="Volo.Abp.TenantManagement.Domain" Version="10.5.0" />
     <!-- Explicit references to fix vulnerable transitive dependencies -->
     <PackageReference Include="AWSSDK.Core" Version="4.0.5" />
     <PackageReference Include="System.Security.Cryptography.Xml" Version="10.0.10" />
