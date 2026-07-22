@@ -134,12 +134,14 @@
     PubSub.subscribe('project_info_saved',
         (msg, data) => {
             if (data.RequestedAmount) {
-                $('#RequestedAmountInputAR')?.prop("value", data?.RequestedAmount);
-                $('#RequestedAmountInputAR').maskMoney('mask');
+                const anRequested = AutoNumeric.getAutoNumericElement('#RequestedAmountInputAR');
+                if (anRequested) { anRequested.set(data.RequestedAmount); }
+                else { $('#RequestedAmountInputAR').val(data.RequestedAmount); }
             }
             if (data.TotalProjectBudget) {
-                $('#TotalBudgetInputAR')?.prop("value", data?.TotalProjectBudget);
-                $('#TotalBudgetInputAR').maskMoney('mask');
+                const anBudget = AutoNumeric.getAutoNumericElement('#TotalBudgetInputAR');
+                if (anBudget) { anBudget.set(data.TotalProjectBudget); }
+                else { $('#TotalBudgetInputAR').val(data.TotalProjectBudget); }
             }
         }
     );
@@ -156,7 +158,7 @@
             return value.replaceAll(',', '');
         }
     });
-    $('.unity-currency-input').maskMoney({ allowZero: true });
+    initCurrencyInputs(document, { minimumValue: '0' });
 });
 
 let dueDateHasChanged = false;

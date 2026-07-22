@@ -157,12 +157,14 @@ abp.widgets.ProjectInfo = function ($wrapper) {
             PubSub.subscribe('application_assessment_results_saved',
                 (msg, data) => {
                     if (data.RequestedAmount) {
-                        $('#RequestedAmountInputPI').prop("value", data.RequestedAmount);
-                        $('#RequestedAmountInputPI').maskMoney('mask');
+                        const anRequested = AutoNumeric.getAutoNumericElement('#RequestedAmountInputPI');
+                        if (anRequested) { anRequested.set(data.RequestedAmount); }
+                        else { $('#RequestedAmountInputPI').val(data.RequestedAmount); }
                     }
                     if (data.TotalProjectBudget) {
-                        $('#TotalBudgetInputPI').prop("value", data.TotalProjectBudget);
-                        $('#TotalBudgetInputPI').maskMoney('mask');
+                        const anBudget = AutoNumeric.getAutoNumericElement('#TotalBudgetInputPI');
+                        if (anBudget) { anBudget.set(data.TotalProjectBudget); }
+                        else { $('#TotalBudgetInputPI').val(data.TotalProjectBudget); }
                     }
                     calculatePercentage();
                 }
@@ -305,5 +307,7 @@ function calculatePercentage() {
         return;
     }
     const percentage = ((requestedAmount / totalProjectBudget) * 100.00).toFixed(2);
-    $("#ProjectInfo_PercentageTotalProjectBudget").maskMoney('mask', parseFloat(percentage));
+    const anPercentage = AutoNumeric.getAutoNumericElement('#ProjectInfo_PercentageTotalProjectBudget');
+    if (anPercentage) { anPercentage.set(percentage); }
+    else { $("#ProjectInfo_PercentageTotalProjectBudget").val(percentage); }
 }

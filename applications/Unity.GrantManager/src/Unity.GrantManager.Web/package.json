@@ -5,6 +5,7 @@
   "dependencies": {
     "@abp/aspnetcore.mvc.ui.theme.basic": "~9.1.3",
     "@abp/font-awesome": "~9.1.3",
+    "autonumeric": "~4.10.10",
     "bootstrap-4": "npm:bootstrap@~4.6.2",
     "bootstrap-select": "~1.13.18",
     "datatables.net-bs5": "~2.3.8",
@@ -20,7 +21,6 @@
     "echarts": "~6.1.0",
     "formiojs": "4.21.7",
     "handlebars": "~4.7.9",
-    "jquery-maskmoney": "~3.0.2",
     "jszip": "~3.10.1",
     "popper.js": "~1.16.1",
     "pubsub-js": "~1.9.5",

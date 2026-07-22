@@ -153,7 +153,6 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantOrganizationIn
     {
         public override void ConfigureBundle(BundleConfigurationContext context)
         {
-            context.Files.AddIfNotContains("/libs/jquery-maskmoney/dist/jquery.maskMoney.min.js");
             context.Files.AddIfNotContains("/Views/Shared/Components/ApplicantOrganizationInfo/Default.js");
         }
     }

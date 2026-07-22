@@ -561,12 +561,7 @@ $(function () {
     });
 
     function initCustomFieldCurrencies() {
-        $('.custom-currency-input')
-            .maskMoney({
-                thousands: ',',
-                decimal: '.',
-            })
-            .maskMoney('mask');
+        initCurrencyInputs(document);
     }
 
     PubSub.subscribe('application_assessment_results_saved', (msg, data) => {
