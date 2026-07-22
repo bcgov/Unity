@@ -66,4 +66,12 @@ public class AIGenerationPrerequisiteValidator(
         }
     }
 
+    public async Task EnsureFormWorksheetAvailableAsync(Guid applicationFormVersionId)
+    {
+        var formVersion = await applicationFormVersionRepository.FindAsync(applicationFormVersionId);
+        if (formVersion == null)
+        {
+            throw new UserFriendlyException(localizer[AILocalizationKeys.FormWorksheetRequiresFormVersion]);
+        }
+    }
 }

@@ -122,6 +122,30 @@ namespace Unity.AI.Runtime
             return AIResponseValidationResult.Success();
         }
 
+        public static AIResponseValidationResult ValidateFormWorksheetJson(string response)
+        {
+            if (!TryParseRootObject(response, out var root))
+            {
+                return AIResponseValidationResult.Invalid("Form worksheet response was not valid JSON.");
+            }
+
+            if (!root.TryGetProperty("title", out var title)
+                || title.ValueKind != JsonValueKind.String
+                || string.IsNullOrWhiteSpace(title.GetString()))
+            {
+                return AIResponseValidationResult.Invalid("Form worksheet response is missing a non-empty 'title'.");
+            }
+
+            if (!root.TryGetProperty("sections", out var sections)
+                || sections.ValueKind != JsonValueKind.Array
+                || sections.GetArrayLength() == 0)
+            {
+                return AIResponseValidationResult.Invalid("Form worksheet response must include at least one section.");
+            }
+
+            return AIResponseValidationResult.Success();
+        }
+
         private static HashSet<string> ExtractQuestionIds(string sectionJson)
         {
             var ids = new HashSet<string>(StringComparer.OrdinalIgnoreCase);

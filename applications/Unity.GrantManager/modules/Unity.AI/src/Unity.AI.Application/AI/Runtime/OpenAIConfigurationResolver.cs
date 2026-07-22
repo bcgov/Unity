@@ -48,7 +48,7 @@ public class OpenAIConfigurationResolver(
         CancellationToken cancellationToken = default)
     {
         var cacheKey = BuildOperationSettingsCacheKey(operationName);
-        if (_memoryCache.TryGetValue(cacheKey, out OpenAIOperationSettings cachedSettings))
+        if (_memoryCache.TryGetValue(cacheKey, out OpenAIOperationSettings? cachedSettings) && cachedSettings is not null)
         {
             return cachedSettings;
         }
@@ -298,7 +298,7 @@ public class OpenAIConfigurationResolver(
     private async Task<ResolvedOperationSnapshot?> ResolveOperationAsync(string operationName, CancellationToken cancellationToken)
     {
         var cacheKey = BuildOperationSnapshotCacheKey(operationName);
-        if (_memoryCache.TryGetValue(cacheKey, out ResolvedOperationSnapshot cachedOperation))
+        if (_memoryCache.TryGetValue(cacheKey, out ResolvedOperationSnapshot? cachedOperation) && cachedOperation is not null)
         {
             return cachedOperation;
         }

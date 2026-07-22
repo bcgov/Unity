@@ -9,7 +9,6 @@ UI -> API app service -> queue -> background job -> AI runtime -> persisted resu
 - Application Scoring: application + scoresheet -> scoring
 - Form Mapping: form version -> mapping
 - Form Worksheet: form version -> worksheet
-- Form Scoresheet: form version -> scoresheet
 
 ## Build Rule
 See [`implementation-playbook.md`](./implementation-playbook.md) for the canonical add-a-new-operation sequence.

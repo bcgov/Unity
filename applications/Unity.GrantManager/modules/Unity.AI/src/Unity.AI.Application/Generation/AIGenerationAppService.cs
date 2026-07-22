@@ -77,6 +77,17 @@ public class AIGenerationAppService(
         await aiGenerationQueue.QueueFormMappingAsync(applicationId, currentTenant.Id, applicationFormVersionId, promptVersion);
     }
 
+    [Authorize(AIPermissions.Analysis.GenerateFormWorksheet)]
+    [HttpPost("form-worksheet")]
+    public virtual async Task GenerateFormWorksheetAsync(Guid applicationId, Guid applicationFormVersionId, string? promptVersion = null)
+    {
+        await featureGuard.EnsureEnabledAsync(
+            AIFeatures.FormWorksheet,
+            AILocalizationKeys.FormWorksheetDisabled);
+
+        await aiGenerationQueue.QueueFormWorksheetAsync(applicationId, currentTenant.Id, applicationFormVersionId, promptVersion);
+    }
+
     [Authorize]
     [HttpGet("status")]
     public virtual async Task<AIGenerationStatusDto> GetStatusAsync(Guid applicationId, string operationType)
@@ -123,6 +134,7 @@ public class AIGenerationAppService(
             AIGenerationRequestKeyHelper.AttachmentSummaryOperationType => AIPermissions.Analysis.ViewAttachmentSummary,
             AIGenerationRequestKeyHelper.ApplicationScoringOperationType => AIPermissions.Analysis.ViewScoringResult,
             AIGenerationRequestKeyHelper.FormMappingOperationType => AIPermissions.Analysis.ViewFormMapping,
+            AIGenerationRequestKeyHelper.FormWorksheetOperationType => AIPermissions.Analysis.ViewFormWorksheet,
             _ => throw new UserFriendlyException($"Unsupported AI generation operation type: {operationType}")
         };
 

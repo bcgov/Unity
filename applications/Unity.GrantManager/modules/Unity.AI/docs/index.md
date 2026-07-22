@@ -60,12 +60,14 @@ UI-facing AI bits:
 | Attachment Summary | `ViewAttachmentSummary` | `GenerateAttachmentSummaries` |
 | Application Scoring | `ViewScoringResult` | `GenerateScoring` |
 | Form Mapping | `ViewFormMapping` | `GenerateFormMapping` |
+| Form Worksheet | `ViewFormWorksheet` | `GenerateFormWorksheet` |
 
 - Features:
   - `Unity.AI.ApplicationAnalysis`
   - `Unity.AI.AttachmentSummaries`
   - `Unity.AI.Scoring`
   - `Unity.AI.FormMapping`
+  - `Unity.AI.FormWorksheet`
 
 - Rule:
   - Both permission and feature gate must allow generation.
