@@ -86,6 +86,52 @@ Then `pg_dump --schema-only` both resulting databases and diff them — they
 should be structurally identical. This also catches model/snapshot drift
 before it reaches a shared environment (see below).
 
+## `dotnet ef migrations add` cannot see database functions/procedures/extensions
+
+This is the single biggest gap the 2026-07 squash hit, and it's easy to miss:
+`dotnet ef migrations add` only diffs the C#-declared entity model (tables,
+columns, indexes, keys). It has **no visibility into anything created via
+`migrationBuilder.Sql(...)`** — `CREATE FUNCTION`, `CREATE PROCEDURE`,
+`CREATE EXTENSION`, standalone views, etc. all vanish silently when migrations
+are squashed, because the regenerated `Initial` migration is just a fresh
+diff of the model, not a replay of history.
+
+The tenant DB alone had 18 functions/procedures in the `Reporting` and
+`public` schemas (the entire dynamic view-generation engine described in
+`documentation/reporting/` — see `GenerateViewBackgroundJob`) plus the
+`fuzzystrmatch` and `pg_stat_statements` extensions, none of which existed on
+a freshly-squashed database until this was caught by manually diffing a real
+database against a fresh one. The host DB was missing `pg_stat_statements`
+for the same reason.
+
+**Fix applied:** the source SQL for each was already kept as embedded
+`.sql` resources under `Scripts/` (the same files the original migrations
+read via `Assembly.GetManifestResourceStream` — see `AddFormVersionViewGen.cs`
+in the pre-squash history for the pattern). A handful of functions
+(`generate_scoresheets_view`, `generate_submissions_view`,
+`generate_worksheets_view`, `get_next_sequence_number`) didn't have a
+corresponding `Scripts/*.sql` file, so those were reconstructed via
+`pg_dump --schema-only` against a real, fully-migrated database (the live
+database is the ground truth for the *final* state of a function that was
+redefined across several migrations — safer than hand-merging incremental
+`CREATE OR REPLACE` edits from migration history). All of it is now
+(re-)created at the end of `Initial.Up()` via `RunEmbeddedScript(...)` calls
+and two `CREATE EXTENSION IF NOT EXISTS` statements, so a brand-new database
+gets full parity.
+
+Not restored: `public.populate_application_addresses()` — a one-time data-fix
+helper function created by `AB29492_ApplicantAddress_Datafix`. It exists in
+old databases only as a leftover from a completed one-time backfill; nothing
+in the running application calls it, so it wasn't carried forward. Revisit
+this call if that assumption turns out to be wrong.
+
+**When redoing this squash**: after regenerating `Initial` via
+`dotnet ef migrations add`, always diff `pg_proc`/`pg_extension` between a
+real database and a fresh one that only ran the new `Initial` — a plain
+schema-only `pg_dump` diff can miss this because functions/extensions aren't
+part of the EF model either way; you have to check the actual database
+objects, not just re-run the migration tool.
+
 ## Before doing this again: rebase first
 
 Migrations keep landing on `dev` after a squash branch is cut. Regenerating

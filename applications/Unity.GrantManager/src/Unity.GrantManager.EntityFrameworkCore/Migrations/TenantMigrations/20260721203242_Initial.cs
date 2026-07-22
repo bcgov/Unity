@@ -2575,11 +2575,72 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                 schema: "Flex",
                 table: "WorksheetSections",
                 column: "WorksheetId");
+
+            /* The functions/procedures/extensions below were originally created via raw
+             * migrationBuilder.Sql(...) calls in the pre-squash migration history. That
+             * history is EF-model-invisible - `dotnet ef migrations add` only diffs the
+             * C#-declared entity model, so squashing to a single Initial migration silently
+             * dropped every one of these. They're restored here from the embedded Scripts/
+             * resources (the same source files the original migrations read from) so a
+             * fresh database gets the reporting view-generation infrastructure the
+             * application actually depends on at runtime (see GenerateViewBackgroundJob).
+             */
+            migrationBuilder.Sql("CREATE EXTENSION IF NOT EXISTS fuzzystrmatch WITH SCHEMA public;");
+            migrationBuilder.Sql("CREATE EXTENSION IF NOT EXISTS pg_stat_statements WITH SCHEMA public;");
+
+            RunEmbeddedScript(migrationBuilder, "safe_to_date.sql");
+            RunEmbeddedScript(migrationBuilder, "safe_to_jsonb.sql");
+            RunEmbeddedScript(migrationBuilder, "safe_to_timestamp.sql");
+            RunEmbeddedScript(migrationBuilder, "calculate_scoresheet_total_score.sql");
+            RunEmbeddedScript(migrationBuilder, "get_next_sequence_number.sql");
+            RunEmbeddedScript(migrationBuilder, "get_formversion_data.sql");
+            RunEmbeddedScript(migrationBuilder, "get_worksheet_data.sql");
+            RunEmbeddedScript(migrationBuilder, "get_scoresheet_data.sql");
+            RunEmbeddedScript(migrationBuilder, "get_consolidated_formversion_data.sql");
+            RunEmbeddedScript(migrationBuilder, "get_consolidated_worksheet_data.sql");
+            RunEmbeddedScript(migrationBuilder, "generate_formversion_view.sql");
+            RunEmbeddedScript(migrationBuilder, "generate_worksheet_view.sql");
+            RunEmbeddedScript(migrationBuilder, "generate_scoresheet_view.sql");
+            RunEmbeddedScript(migrationBuilder, "generate_worksheets_view.sql");
+            RunEmbeddedScript(migrationBuilder, "generate_scoresheets_view.sql");
+            RunEmbeddedScript(migrationBuilder, "generate_submissions_view.sql");
+            RunEmbeddedScript(migrationBuilder, "generate_consolidated_formversion_view.sql");
+            RunEmbeddedScript(migrationBuilder, "generate_consolidated_worksheet_view.sql");
+        }
+
+        private static void RunEmbeddedScript(MigrationBuilder migrationBuilder, string scriptFileName)
+        {
+            var assembly = System.Reflection.Assembly.GetExecutingAssembly();
+            var resourceName = $"Unity.GrantManager.Scripts.{scriptFileName}";
+
+            using var stream = assembly.GetManifestResourceStream(resourceName)
+                ?? throw new InvalidOperationException($"Could not find embedded resource: {resourceName}");
+            using var reader = new System.IO.StreamReader(stream);
+            migrationBuilder.Sql(reader.ReadToEnd());
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.Sql(@"DROP PROCEDURE IF EXISTS ""Reporting"".generate_consolidated_worksheet_view(UUID);");
+            migrationBuilder.Sql(@"DROP PROCEDURE IF EXISTS ""Reporting"".generate_consolidated_formversion_view(UUID);");
+            migrationBuilder.Sql(@"DROP PROCEDURE IF EXISTS ""Reporting"".generate_submissions_view(UUID);");
+            migrationBuilder.Sql(@"DROP PROCEDURE IF EXISTS ""Reporting"".generate_scoresheets_view(UUID);");
+            migrationBuilder.Sql(@"DROP PROCEDURE IF EXISTS ""Reporting"".generate_worksheets_view(UUID);");
+            migrationBuilder.Sql(@"DROP PROCEDURE IF EXISTS ""Reporting"".generate_scoresheet_view(UUID);");
+            migrationBuilder.Sql(@"DROP PROCEDURE IF EXISTS ""Reporting"".generate_worksheet_view(UUID);");
+            migrationBuilder.Sql(@"DROP PROCEDURE IF EXISTS ""Reporting"".generate_formversion_view(UUID);");
+            migrationBuilder.Sql(@"DROP FUNCTION IF EXISTS ""Reporting"".get_consolidated_worksheet_data(UUID, UUID);");
+            migrationBuilder.Sql(@"DROP FUNCTION IF EXISTS ""Reporting"".get_consolidated_formversion_data(UUID, UUID);");
+            migrationBuilder.Sql(@"DROP FUNCTION IF EXISTS ""Reporting"".get_scoresheet_data(UUID, UUID);");
+            migrationBuilder.Sql(@"DROP FUNCTION IF EXISTS ""Reporting"".get_worksheet_data(UUID, UUID);");
+            migrationBuilder.Sql(@"DROP FUNCTION IF EXISTS ""Reporting"".get_formversion_data(UUID, UUID);");
+            migrationBuilder.Sql(@"DROP FUNCTION IF EXISTS public.get_next_sequence_number(UUID, TEXT);");
+            migrationBuilder.Sql(@"DROP FUNCTION IF EXISTS ""Reporting"".calculate_scoresheet_total_score(UUID);");
+            migrationBuilder.Sql(@"DROP FUNCTION IF EXISTS ""Reporting"".safe_to_timestamp(TEXT);");
+            migrationBuilder.Sql(@"DROP FUNCTION IF EXISTS ""Reporting"".safe_to_jsonb(TEXT);");
+            migrationBuilder.Sql(@"DROP FUNCTION IF EXISTS ""Reporting"".safe_to_date(TEXT);");
+
             migrationBuilder.DropTable(
                 name: "Answers",
                 schema: "Flex");

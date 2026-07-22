@@ -1715,6 +1715,13 @@ namespace Unity.GrantManager.Migrations.HostMigrations
                 name: "IX_Users_UserName",
                 table: "Users",
                 column: "UserName");
+
+            /* Originally installed via a raw migrationBuilder.Sql(...) call in the
+             * pre-squash migration history, which `dotnet ef migrations add` can't see
+             * (it only diffs the C#-declared entity model). Restored here so the
+             * extension is present on a fresh database too.
+             */
+            migrationBuilder.Sql("CREATE EXTENSION IF NOT EXISTS pg_stat_statements WITH SCHEMA public;");
         }
 
         /// <inheritdoc />
