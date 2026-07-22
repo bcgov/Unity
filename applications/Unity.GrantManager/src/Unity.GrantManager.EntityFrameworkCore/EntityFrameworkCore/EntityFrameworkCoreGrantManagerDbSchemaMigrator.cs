@@ -33,7 +33,7 @@ public class EntityFrameworkCoreGrantManagerDbSchemaMigrator
      * migrator invocation, forever - after the first run per database, history only
      * ever contains the Initial row so the guard clause never fires again.
      */
-    private const string HostInitialMigrationId = "20260721203219_Initial";
+    private const string HostInitialMigrationId = "20260722193713_Initial";
     private const string TenantInitialMigrationId = "20260721203242_Initial";
     private const string EfCoreProductVersion = "10.0.3";
 
