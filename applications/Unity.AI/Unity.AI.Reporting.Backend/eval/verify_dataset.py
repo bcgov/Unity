@@ -24,7 +24,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 from config import config  # noqa: E402
 from metabase import metabase_client  # noqa: E402
-from capture_dataset import compute_content_hash, load_entries  # noqa: E402
+from capture_dataset import DATASET_PATH, compute_content_hash, load_entries  # noqa: E402
 
 
 def verify_one(entry: dict) -> list:
@@ -67,8 +67,11 @@ def verify_one(entry: dict) -> list:
 
 
 def main():
-    argparse.ArgumentParser(description=__doc__).parse_args()
-    entries = load_entries()
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--dataset", help=f"Dataset JSONL path (default: {DATASET_PATH})")
+    args = parser.parse_args()
+    dataset_path = Path(args.dataset).resolve() if args.dataset else DATASET_PATH
+    entries = load_entries(dataset_path)
     print(f"Verifying {len(entries)} entries against live Metabase...\n")
 
     hard_failures = 0

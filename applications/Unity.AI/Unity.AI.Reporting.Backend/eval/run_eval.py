@@ -491,9 +491,9 @@ def _git_commit() -> Optional[str]:
         return None
 
 
-def _dataset_fingerprint(entries: List[dict]) -> dict:
+def _dataset_fingerprint(dataset_path: Path, entries: List[dict]) -> dict:
     return {
-        "sha256": "sha256:" + hashlib.sha256(DATASET_PATH.read_bytes()).hexdigest(),
+        "sha256": "sha256:" + hashlib.sha256(dataset_path.read_bytes()).hexdigest(),
         "schema_versions": sorted({e.get("schema_version", "") for e in entries}),
     }
 
@@ -715,21 +715,24 @@ def main():
                         help="Attempts per question, run consecutively; N>1 measures "
                              "run-to-run consistency. Multiplies Azure token cost and "
                              "wall time by N.")
+    parser.add_argument("--dataset", help=f"Dataset JSONL path (default: {DATASET_PATH})")
     args = parser.parse_args()
     if args.runs < 1:
         parser.error("--runs must be >= 1")
 
-    if not DATASET_PATH.exists():
-        print(f"ERROR: dataset not found at {DATASET_PATH}", file=sys.stderr)
+    # Resolve before _load_deps() chdirs into src/ — relative --output and
+    # --dataset should be relative to where the user launched the script.
+    dataset_path = Path(args.dataset).resolve() if args.dataset else DATASET_PATH
+
+    if not dataset_path.exists():
+        print(f"ERROR: dataset not found at {dataset_path}", file=sys.stderr)
         sys.exit(1)
 
-    # Resolve before _load_deps() chdirs into src/ — a relative --output
-    # should be relative to where the user launched the script.
     output_override = Path(args.output).resolve() if args.output else None
 
     print("Loading live stack (Azure OpenAI + Metabase + Postgres/pgvector)...")
     deps = _load_deps()
-    entries = deps.load_entries()
+    entries = deps.load_entries(dataset_path)
 
     selected = []
     wanted_ids = {i.strip() for i in args.ids.split(",")} if args.ids else None
@@ -805,8 +808,8 @@ def main():
         "finished_at": finished_at.isoformat(timespec="seconds"),
         "git_commit": _git_commit(),
         "sqlglot_version": _sqlglot_version(),
-        "dataset_path": str(DATASET_PATH),
-        "dataset_fingerprint": _dataset_fingerprint(entries),
+        "dataset_path": str(dataset_path),
+        "dataset_fingerprint": _dataset_fingerprint(dataset_path, entries),
         "tenants": sorted({e["tenant_id"] for e in selected}),
         "entries_selected": len(selected),
         "runs": args.runs,

@@ -41,13 +41,13 @@ def compute_content_hash(cols: list, rows: list) -> str:
     return "sha256:" + hashlib.sha256(canonical.encode("utf-8")).hexdigest()
 
 
-def load_entries() -> list:
-    with open(DATASET_PATH, "r", encoding="utf-8") as f:
+def load_entries(dataset_path: Path = DATASET_PATH) -> list:
+    with open(dataset_path, "r", encoding="utf-8") as f:
         return json.load(f)
 
 
-def write_entries(entries: list):
-    with open(DATASET_PATH, "w", encoding="utf-8") as f:
+def write_entries(entries: list, dataset_path: Path = DATASET_PATH):
+    with open(dataset_path, "w", encoding="utf-8") as f:
         json.dump(entries, f, indent=2, ensure_ascii=False)
         f.write("\n")
 
@@ -75,13 +75,15 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--refresh", help="Re-capture a single entry by id, even if already captured")
     parser.add_argument("--refresh-all", action="store_true", help="Re-capture every entry, even if already captured")
+    parser.add_argument("--dataset", help=f"Dataset JSONL path (default: {DATASET_PATH})")
     args = parser.parse_args()
+    dataset_path = Path(args.dataset).resolve() if args.dataset else DATASET_PATH
 
-    if not DATASET_PATH.exists():
-        print(f"ERROR: dataset not found at {DATASET_PATH}", file=sys.stderr)
+    if not dataset_path.exists():
+        print(f"ERROR: dataset not found at {dataset_path}", file=sys.stderr)
         sys.exit(1)
 
-    entries = load_entries()
+    entries = load_entries(dataset_path)
     to_process = []
     for entry in entries:
         already_captured = bool(entry.get("content_hash"))
@@ -105,8 +107,8 @@ def main():
         if not ok:
             failures.append((entry["id"], message))
 
-    write_entries(entries)
-    print(f"Wrote {DATASET_PATH}")
+    write_entries(entries, dataset_path)
+    print(f"Wrote {dataset_path}")
 
     if failures:
         print(f"\n{len(failures)} entr{'y' if len(failures) == 1 else 'ies'} failed to capture:", file=sys.stderr)
