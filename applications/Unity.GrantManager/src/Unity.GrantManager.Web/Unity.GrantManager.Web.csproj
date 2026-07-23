@@ -78,10 +78,8 @@
     <PackageReference Include="Volo.Abp.Swashbuckle" Version="10.5.0" />
     <PackageReference Include="prometheus-net.AspNetCore" Version="8.2.1" />
 
-    <!-- Override transitive Swashbuckle.AspNetCore (pulled at 10.0.1 by Volo.Abp.Swashbuckle 10.3.0),
-         which resolves a vulnerable Microsoft.OpenApi 2.3.0 (GHSA-v5pm-xwqc-g5wc). 10.2.3 depends on
-         Microsoft.OpenApi 2.7.5+, which fixes it. Remove this once Volo.Abp.Swashbuckle depends on
-         Swashbuckle.AspNetCore >= 10.2.3 natively. -->
+    <!-- Override transitive Swashbuckle.AspNetCore to ensure Microsoft.OpenApi >= 2.7.5 (fixes GHSA-v5pm-xwqc-g5wc).
+         Remove this once Volo.Abp.Swashbuckle depends on Swashbuckle.AspNetCore >= 10.2.3 transitively. -->
     <PackageReference Include="Swashbuckle.AspNetCore" Version="10.2.3" />
   </ItemGroup>
 
