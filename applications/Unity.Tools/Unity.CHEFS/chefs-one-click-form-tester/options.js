@@ -21,8 +21,9 @@ const DEFAULT_SETTINGS = {
 let rules = [];
 
 function newRuleId() {
-  if (crypto && typeof crypto.randomUUID === 'function') {
-    return crypto.randomUUID();
+  const cryptoApi = globalThis.crypto;
+  if (cryptoApi && typeof cryptoApi.randomUUID === 'function') {
+    return cryptoApi.randomUUID();
   }
   return `rule-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
