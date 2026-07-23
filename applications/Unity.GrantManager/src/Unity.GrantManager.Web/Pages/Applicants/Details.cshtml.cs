@@ -28,7 +28,7 @@ namespace Unity.GrantManager.Web.Pages.Applicants
         public string Status { get; set; } = string.Empty;
         public Guid? CurrentUserId { get; set; }
         public string CurrentUserName { get; set; }
-        public string Extensions { get; set; } = string.Empty;
+        public string AllowedFileTypes { get; set; } = string.Empty;
         public string MaxFileSize { get; set; } = string.Empty;
 
         public DetailsModel(
@@ -41,7 +41,7 @@ namespace Unity.GrantManager.Web.Pages.Applicants
             _applicationRepository = applicationRepository;
             CurrentUserId = currentUser.Id;
             CurrentUserName = currentUser.SurName + ", " + currentUser.Name;
-            Extensions = configuration["S3:DisallowedFileTypes"] ?? "";
+            AllowedFileTypes = configuration["S3:AllowedFileTypes"] ?? "";
             MaxFileSize = configuration["S3:MaxFileSize"] ?? "";
         }
 

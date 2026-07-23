@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -472,54 +473,67 @@ namespace Unity.GrantManager.Controllers
                 return BadRequest(fileProvidedError);
             }
 
-            List<ValidationResult> invalidFileTypes = GetInvalidFileTypes(files);
-            if (invalidFileTypes.Count > 0)
+            List<ValidationResult> invalidMetadata = GetInvalidFileMetadata(files);
+            if (invalidMetadata.Count > 0)
             {
-                throw new AbpValidationException(message: "ERROR: Invalid File Type.", validationErrors: invalidFileTypes);
+                throw new AbpValidationException(message: "ERROR: Invalid File Type.", validationErrors: invalidMetadata);
             }
 
+            // Email-specific size checks are metadata-only (file.Length / a total-size lookup),
+            // so they run before any file is buffered into memory, same as GetInvalidFileMetadata.
+            // A missing OR malformed config value both fall back to the default and the check
+            // still runs - a parse failure must not silently disable enforcement.
             var emailAttachmentMaxFileSizeConfig = _configuration["S3:EmailAttachmentMaxFileSize"] ?? "20";
-            if (double.TryParse(emailAttachmentMaxFileSizeConfig, out double maxFileSizeMB))
+            if (!double.TryParse(emailAttachmentMaxFileSizeConfig, out double maxFileSizeMB) || maxFileSizeMB <= 0)
             {
-                var oversizedFiles = files.Where(f => f.Length * 0.000001 > maxFileSizeMB).ToList();
-                if (oversizedFiles.Count > 0)
-                {
-                    var sizeErrors = oversizedFiles.Select(f =>
-                        new ValidationResult($"File '{f.FileName}' exceeds the maximum allowed size of {maxFileSizeMB} MB for email attachments.", [f.FileName])
-                    ).ToList();
-                    throw new AbpValidationException("One or more files exceed the maximum allowed size for email attachments.", sizeErrors);
-                }
+                maxFileSizeMB = 20;
+            }
+
+            var oversizedFiles = files.Where(f => f.Length * 0.000001 > maxFileSizeMB).ToList();
+            if (oversizedFiles.Count > 0)
+            {
+                var sizeErrors = oversizedFiles.Select(f =>
+                    new ValidationResult($"File '{f.FileName}' exceeds the maximum allowed size of {maxFileSizeMB} MB for email attachments.", [f.FileName])
+                ).ToList();
+                throw new AbpValidationException("One or more files exceed the maximum allowed size for email attachments.", sizeErrors);
             }
 
             var totalMaxFileSizeConfig = _configuration["S3:EmailAttachmentsTotalMaxFileSize"] ?? "25";
-            if (double.TryParse(totalMaxFileSizeConfig, out double totalMaxSizeMB))
-            {                
-                long existingTotalBytes = await _emailLogAttachmentUploadService
-                    .GetTotalFileSizeByEmailLogIdAsync(emailLogId, templateId);
-                long newFilesBytes = files.Sum(f => f.Length);
-                double combinedMB = (existingTotalBytes + newFilesBytes) * 0.000001;
+            if (!double.TryParse(totalMaxFileSizeConfig, out double totalMaxSizeMB) || totalMaxSizeMB <= 0)
+            {
+                totalMaxSizeMB = 25;
+            }
 
-                if (combinedMB > totalMaxSizeMB)
-                {
-                    throw new AbpValidationException(
-                        $"The total size of all attachments ({combinedMB:F1} MB) would exceed the maximum allowed {totalMaxSizeMB} MB for email attachments. Please remove existing attachments or select a smaller file.",
-                        [new ValidationResult("Total attachment size exceeds the allowed limit.")]);
-                }
+            long existingTotalBytes = await _emailLogAttachmentUploadService
+                .GetTotalFileSizeByEmailLogIdAsync(emailLogId, templateId);
+            long newFilesBytes = files.Sum(f => f.Length);
+            double combinedMB = (existingTotalBytes + newFilesBytes) * 0.000001;
+
+            if (combinedMB > totalMaxSizeMB)
+            {
+                throw new AbpValidationException(
+                    $"The total size of all attachments ({combinedMB:F1} MB) would exceed the maximum allowed {totalMaxSizeMB} MB for email attachments. Please remove existing attachments or select a smaller file.",
+                    [new ValidationResult("Total attachment size exceeds the allowed limit.")]);
+            }
+
+            List<(IFormFile File, byte[] Content)> fileEntries = await ReadFilesAsync(files);
+            List<ValidationResult> invalidContent = GetInvalidFileContent(fileEntries);
+            if (invalidContent.Count > 0)
+            {
+                throw new AbpValidationException(message: "ERROR: Invalid File Type.", validationErrors: invalidContent);
             }
 
             var results = new List<object>();
-            foreach (var file in files)
+            foreach (var (file, content) in fileEntries)
             {
                 try
                 {
-                    using var ms = new MemoryStream();
-                    await file.CopyToAsync(ms);
                     var dto = await _emailLogAttachmentUploadService.UploadAsync(
                         emailLogId,
                         templateId,
                         _currentTenant.Id,
                         file.FileName,
-                        ms.ToArray(),
+                        content,
                         file.ContentType ?? "application/octet-stream");
                     results.Add(dto);
                 }
@@ -535,23 +549,28 @@ namespace Unity.GrantManager.Controllers
 
         private async Task<IActionResult> UploadFiles(IList<IFormFile> files)
         {
-            List<ValidationResult> InvalidFileTypes = GetInvalidFileTypes(files);
-            if (InvalidFileTypes.Count > 0)
+            List<ValidationResult> invalidMetadata = GetInvalidFileMetadata(files);
+            if (invalidMetadata.Count > 0)
             {
-                throw new AbpValidationException(message: "ERROR: Invalid File Type.", validationErrors: InvalidFileTypes);
+                throw new AbpValidationException(message: "ERROR: Invalid File Type.", validationErrors: invalidMetadata);
+            }
+
+            List<(IFormFile File, byte[] Content)> fileEntries = await ReadFilesAsync(files);
+            List<ValidationResult> invalidContent = GetInvalidFileContent(fileEntries);
+            if (invalidContent.Count > 0)
+            {
+                throw new AbpValidationException(message: "ERROR: Invalid File Type.", validationErrors: invalidContent);
             }
             List<string> ErrorList = [];
-            foreach (IFormFile source in files)
+            foreach (var (source, content) in fileEntries)
             {
                 try
                 {
-                    using var memoryStream = new MemoryStream();
-                    await source.CopyToAsync(memoryStream);
                     await _fileAppService.SaveBlobAsync(
                         new SaveBlobInputDto
                         {
                             Name = source.FileName,
-                            Content = memoryStream.ToArray()
+                            Content = content
                         });
                 }
                 catch (Exception ex)
@@ -569,26 +588,165 @@ namespace Unity.GrantManager.Controllers
             return Ok("All Files Are Successfully Uploaded!");
         }
 
-        private List<ValidationResult> GetInvalidFileTypes(IList<IFormFile> files)
+        private static async Task<List<(IFormFile File, byte[] Content)>> ReadFilesAsync(IList<IFormFile> files)
+        {
+            var fileEntries = new List<(IFormFile File, byte[] Content)>();
+            foreach (var file in files)
+            {
+                using var memoryStream = new MemoryStream();
+                await file.CopyToAsync(memoryStream);
+                fileEntries.Add((file, memoryStream.ToArray()));
+            }
+            return fileEntries;
+        }
+
+        // Extensions for which the browser-supplied ContentType and file signature (magic bytes)
+        // are reliable enough to validate; plain text formats (txt/csv) have no consistent signature
+        // or ContentType across browsers/OSes, so only the allowlist and size checks apply to them.
+        private static readonly HashSet<string> StrictlyValidatedExtensions = new(StringComparer.OrdinalIgnoreCase)
+        {
+            "pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "jpg", "jpeg", "png", "gif", "zip"
+        };
+
+        private static string GetExtension(string fileName)
+        {
+            var extension = Path.GetExtension(fileName);
+            if (extension.StartsWith('.'))
+            {
+                extension = extension[1..];
+            }
+            return extension.ToLowerInvariant();
+        }
+
+        // Used when S3:AllowedFileTypes is missing or fails to parse, so a config gap degrades
+        // to this known-safe, already-reviewed set rather than silently rejecting every upload
+        // (fail-closed-to-nothing) or silently allowing anything (fail-open).
+        private static readonly string[] DefaultAllowedFileTypes =
+        [
+            "pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "jpg", "jpeg", "png", "gif", "txt", "csv", "zip"
+        ];
+
+        private string[]? GetConfiguredFileTypesOrNull()
+        {
+            var allowedFileTypesConfig = _configuration["S3:AllowedFileTypes"];
+            if (string.IsNullOrWhiteSpace(allowedFileTypesConfig))
+            {
+                return null;
+            }
+
+            try
+            {
+                var allowedFileTypes = JsonConvert.DeserializeObject<string[]>(allowedFileTypesConfig);
+                if (allowedFileTypes == null || allowedFileTypes.Length == 0)
+                {
+                    Logger.LogWarning("AttachmentController: S3:AllowedFileTypes was empty; falling back to the default allowlist.");
+                    return null;
+                }
+                return allowedFileTypes;
+            }
+            catch (JsonException ex)
+            {
+                Logger.LogWarning(ex, "AttachmentController: S3:AllowedFileTypes could not be parsed as a JSON string array; falling back to the default allowlist.");
+                return null;
+            }
+        }
+
+        // S3:AllowedFileTypes can only ever narrow this controller's effective allowlist, never
+        // broaden it. DefaultAllowedFileTypes is exactly the set of extensions this controller
+        // knows how to validate at the content level (StrictlyValidatedExtensions' signature and
+        // content-type checks, plus txt/csv which are deliberately exempt since they're inert
+        // text with no reliable signature). Without this ceiling, an operator accidentally (or
+        // maliciously) adding e.g. "exe" to config would let it pass the extension check while
+        // still being skipped by the content-level checks - reintroducing CWE-434 via config
+        // alone, with no code change required.
+        private string[] GetAllowedFileTypes()
+        {
+            var configuredFileTypes = GetConfiguredFileTypesOrNull();
+            if (configuredFileTypes == null)
+            {
+                return DefaultAllowedFileTypes;
+            }
+
+            var normalizedConfiguredTypes = configuredFileTypes.Select(t => t.ToLowerInvariant()).ToArray();
+            var effectiveFileTypes = normalizedConfiguredTypes
+                .Where(t => DefaultAllowedFileTypes.Contains(t))
+                .Distinct()
+                .ToArray();
+
+            var rejectedFileTypes = normalizedConfiguredTypes.Except(effectiveFileTypes).ToList();
+            if (rejectedFileTypes.Count > 0)
+            {
+                Logger.LogWarning(
+                    "AttachmentController: S3:AllowedFileTypes configured extension(s) [{RejectedFileTypes}] are outside the validated safe set and were ignored.",
+                    string.Join(", ", rejectedFileTypes));
+            }
+
+            return effectiveFileTypes.Length > 0 ? effectiveFileTypes : DefaultAllowedFileTypes;
+        }
+
+        // Cheap, metadata-only checks (extension + declared size) that require no stream I/O.
+        // Run these before ever reading a file's bytes, so an oversized or disallowed file is
+        // rejected without being buffered into memory or scanned for a signature match.
+        private List<ValidationResult> GetInvalidFileMetadata(IList<IFormFile> files)
         {
             List<ValidationResult> ErrorList = [];
-            var InvalidFileTypes = _configuration["S3:DisallowedFileTypes"] ?? "";
-            var DisallowedFileTypes = JsonConvert.DeserializeObject<string[]>(InvalidFileTypes);
-            if (DisallowedFileTypes == null)
+            var AllowedFileTypes = GetAllowedFileTypes();
+
+            var maxFileSizeConfig = _configuration["S3:MaxFileSize"] ?? "25";
+            if (!double.TryParse(maxFileSizeConfig, out double maxFileSizeMB) || maxFileSizeMB <= 0)
             {
-                return ErrorList;
+                maxFileSizeMB = 25;
             }
-            foreach (var fileName in files.Where(file =>
+
+            foreach (var file in files)
             {
-                string FileType = Path.GetExtension(file.FileName);
-                if (FileType.StartsWith('.'))
+                var fileName = file.FileName;
+                var extension = GetExtension(fileName);
+
+                if (!AllowedFileTypes.Contains(extension))
                 {
-                    FileType = FileType[1..];
+                    ErrorList.Add(new ValidationResult("Invalid file type for " + fileName, [nameof(fileName)]));
+                    continue;
                 }
-                return DisallowedFileTypes.Contains(FileType.ToLower());
-            }).Select(source => source.FileName))
+
+                if (file.Length * 0.000001 > maxFileSizeMB)
+                {
+                    ErrorList.Add(new ValidationResult($"File '{fileName}' exceeds the maximum allowed size of {maxFileSizeMB} MB.", [nameof(fileName)]));
+                }
+            }
+            return ErrorList;
+        }
+
+        // Content-level checks (content-type consistency + magic-byte signature) that require
+        // the file's bytes. Only called for files that already passed GetInvalidFileMetadata.
+        private static List<ValidationResult> GetInvalidFileContent(List<(IFormFile File, byte[] Content)> fileEntries)
+        {
+            List<ValidationResult> ErrorList = [];
+            var contentTypeProvider = new FileExtensionContentTypeProvider();
+
+            foreach (var (file, content) in fileEntries)
             {
-                ErrorList.Add(new ValidationResult("Invalid file type for " + fileName, [nameof(fileName)]));
+                var fileName = file.FileName;
+                var extension = GetExtension(fileName);
+
+                if (!StrictlyValidatedExtensions.Contains(extension))
+                {
+                    continue;
+                }
+
+                if (contentTypeProvider.TryGetContentType(fileName, out var expectedContentType) &&
+                    !string.IsNullOrWhiteSpace(file.ContentType) &&
+                    !string.Equals(file.ContentType, "application/octet-stream", StringComparison.OrdinalIgnoreCase) &&
+                    !string.Equals(expectedContentType.Split('/')[0], file.ContentType.Split('/')[0], StringComparison.OrdinalIgnoreCase))
+                {
+                    ErrorList.Add(new ValidationResult("File content type does not match its extension for " + fileName, [nameof(fileName)]));
+                    continue;
+                }
+
+                if (!FileSignatureValidator.HasValidSignature(extension, content))
+                {
+                    ErrorList.Add(new ValidationResult("File content does not match its expected format for " + fileName, [nameof(fileName)]));
+                }
             }
             return ErrorList;
         }
