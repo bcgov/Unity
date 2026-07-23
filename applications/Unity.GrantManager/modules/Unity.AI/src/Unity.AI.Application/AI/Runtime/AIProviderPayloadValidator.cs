@@ -141,6 +141,9 @@ namespace Unity.AI.Runtime
                 || sections.GetArrayLength() == 0)
             {
                 return AIResponseValidationResult.Invalid("Form worksheet response must include at least one section.");
+            }
+
+            return AIResponseValidationResult.Success();
         }
 
         public static AIResponseValidationResult ValidateFormScoresheetJson(string response)
