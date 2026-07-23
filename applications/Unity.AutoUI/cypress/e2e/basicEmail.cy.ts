@@ -318,10 +318,9 @@ describe("Send an email", () => {
       .should("be.visible")
       .click({ force: true });
 
-    // The composer stays open after saving (it doesn't hand control back to
-    // #btn-new-email — that stays hidden while a composer is active), so
-    // check for the history list refreshing instead.
-    cy.contains("Email History", { timeout: STANDARD_TIMEOUT }).should("exist");
+    cy.contains("#EmailHistoryTable td", TEST_EMAIL_SUBJECT, {
+      timeout: STANDARD_TIMEOUT,
+    }).should("exist");
   });
 
   it("Select saved email from Email History", () => {

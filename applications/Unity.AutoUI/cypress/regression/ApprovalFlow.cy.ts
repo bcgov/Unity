@@ -225,27 +225,13 @@ const APPLICATIONS_PATH = "GrantApplications";
   }
 
   function confirmStatusActionIfNeeded(): void {
-    // The confirmation modal (SweetAlert2 or Bootstrap "Confirm Action") renders after
-    // client-side validation that runs post-click — there's no network call to key a
-    // wait off of, and it can take longer than a single fixed delay to appear. Some
-    // actions (Start Review, Complete Review, Start Assessment) never show a modal at
-    // all, so we can't just wait for one to exist either. Poll for either outcome.
-    const pollDeadline = Date.now() + 4000;
-    cy.get("body", { timeout: 4000 }).should(($body) => {
-      const modalPresent =
-        $body.find(".swal2-popup .swal2-confirm").length > 0 ||
-        $body.find(".modal.show .modal-content:contains('Confirm Action')")
-          .length > 0;
-      expect(modalPresent || Date.now() > pollDeadline).to.be.true;
-    });
-
-    cy.get("body").then(($body) => {
+    const confirmIfPresent = ($body: JQuery<HTMLElement>): boolean => {
       if ($body.find(".swal2-popup .swal2-confirm").length > 0) {
         cy.get(".swal2-popup .swal2-confirm", { timeout: 20000 })
           .should("be.visible")
           .click({ force: true });
         cy.get(".swal2-container", { timeout: 20000 }).should("not.exist");
-        return;
+        return true;
       }
 
       if (
@@ -263,7 +249,21 @@ const APPLICATIONS_PATH = "GrantApplications";
           timeout: 20000,
         }).should("not.exist");
         cy.get(".modal-backdrop", { timeout: 20000 }).should("not.exist");
+        return true;
       }
+
+      return false;
+    };
+
+    cy.get("body").then(($body) => {
+      if (confirmIfPresent($body)) {
+        return;
+      }
+
+      cy.wait(750);
+      cy.get("body").then(($bodyAfterGracePeriod) => {
+        confirmIfPresent($bodyAfterGracePeriod);
+      });
     });
   }
 
