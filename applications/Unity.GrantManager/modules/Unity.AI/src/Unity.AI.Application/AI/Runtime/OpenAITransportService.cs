@@ -51,17 +51,18 @@ public class OpenAITransportService(
 
             var completion = result.Value;
             var rawResponse = result.GetRawResponse();
+            var statusCode = rawResponse?.Status;
             var responseContent = rawResponse?.Content?.ToString() ?? string.Empty;
             var modelOutput = ExtractModelOutput(completion, responseContent);
             var providerResponse = BuildProviderResponseFromMetadata(
                 modelOutput ?? string.Empty,
                 responseContent,
                 TryExtractProviderMetadata(responseContent),
-                rawResponse.Status);
+                statusCode);
 
             if (string.IsNullOrWhiteSpace(modelOutput))
             {
-                LogEmptyModelOutput(completion, providerResponse, rawResponse.Status);
+                LogEmptyModelOutput(completion, providerResponse, statusCode ?? 0);
             }
 
             return string.IsNullOrWhiteSpace(modelOutput)

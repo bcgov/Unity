@@ -55,6 +55,7 @@ public class ApplicationFormVersionAppServiceTests(ITestOutputHelper outputHelpe
             ApplicationFormId = formVersion.ApplicationFormId,
             ChefsApplicationFormGuid = "chefs-form",
             ChefsFormVersionGuid = "chefs-version",
+            ExistingMapping = "{\"ProjectName\":\"projectName\"}",
             ChefsFields = new List<MappingFieldDto>
             {
                 new() { Name = "ProjectName", Label = "Project Name", Type = "Text", IsCustom = false }
@@ -82,12 +83,21 @@ public class ApplicationFormVersionAppServiceTests(ITestOutputHelper outputHelpe
         capturedRequest!.Data.GetProperty("chefsData").GetProperty("fields").ValueKind.ShouldBe(System.Text.Json.JsonValueKind.Array);
         capturedRequest.Data.GetProperty("unityData").GetProperty("coreFields").ValueKind.ShouldBe(System.Text.Json.JsonValueKind.Array);
         capturedRequest.Data.GetProperty("unityData").GetProperty("customFields").ValueKind.ShouldBe(System.Text.Json.JsonValueKind.Array);
+        capturedRequest.Data.GetProperty("existingMapping").GetProperty("ProjectName").GetString().ShouldBe("projectName");
         formVersion.SubmissionHeaderMapping.ShouldBe("""{"ProjectName":"projectName"}""");
         await repository.Received(1).UpdateAsync(formVersion, true);
     }
 
     [Fact]
-    public void MappingReadService_Should_Use_CustomField_Key_For_Worksheet_Field_Name()
+    public void FormMappingPromptData_Should_UseEmptyObject_When_NoExistingMappingIsAvailable()
+    {
+        var promptData = FormMappingPromptDataBuilder.Build(new ApplicationFormMappingReadModelDto());
+
+        promptData.GetProperty("existingMapping").GetRawText().ShouldBe("{}");
+    }
+
+    [Fact]
+    public void MappingReadService_Should_Use_Canonical_CustomField_Name_For_Worksheet_Field_Name()
     {
         var worksheet = new Worksheet(Guid.NewGuid(), "customfields-v1", "Custom Fields");
         var section = new WorksheetSection(Guid.NewGuid(), "section");
@@ -107,9 +117,7 @@ public class ApplicationFormVersionAppServiceTests(ITestOutputHelper outputHelpe
         var result = (WorksheetMappingFieldsDto)method!.Invoke(null, [worksheet])!;
 
         var field = result.Fields.Single();
-        field.Name.ShouldBe("CustomField2");
-        field.Name.ShouldNotContain("custom_customfields-v1");
-        field.Name.ShouldNotContain(".Text");
+        field.Name.ShouldBe("custom_customfields-v1_customfield2.Text");
     }
 
     [Fact]

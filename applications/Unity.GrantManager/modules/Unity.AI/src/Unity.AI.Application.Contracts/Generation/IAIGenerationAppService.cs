@@ -14,5 +14,7 @@ public interface IAIGenerationAppService : IApplicationService
 
     Task GenerateFormMappingAsync(Guid applicationId, Guid applicationFormVersionId, string? promptVersion = null);
 
+    Task GenerateFormWorksheetAsync(Guid applicationId, Guid applicationFormVersionId, string? promptVersion = null);
+
     Task<AIGenerationStatusDto> GetStatusAsync(Guid applicationId, string operationType);
 }

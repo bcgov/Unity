@@ -6,4 +6,5 @@ public static class AIPromptTypes
     public const string ApplicationAnalysis = "ApplicationAnalysis";
     public const string ApplicationScoring = "ApplicationScoring";
     public const string FormMapping = "FormMapping";
+    public const string FormWorksheet = "FormWorksheet";
 }

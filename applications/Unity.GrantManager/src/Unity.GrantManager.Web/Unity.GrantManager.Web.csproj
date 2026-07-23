@@ -76,6 +76,7 @@
     <PackageReference Include="Volo.Abp.Mapperly" Version="10.5.0" />
     <PackageReference Include="Volo.Abp.SettingManagement.Web" Version="10.5.0" />
     <PackageReference Include="Volo.Abp.Swashbuckle" Version="10.5.0" />
+    <PackageReference Include="prometheus-net.AspNetCore" Version="8.2.1" />
 
     <!-- Override transitive Swashbuckle.AspNetCore (pulled at 10.0.1 by Volo.Abp.Swashbuckle 10.3.0),
          which resolves a vulnerable Microsoft.OpenApi 2.3.0 (GHSA-v5pm-xwqc-g5wc). 10.2.3 depends on

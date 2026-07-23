@@ -46,6 +46,7 @@ public class ApplicationFormVersionMappingReadService(
             ApplicationFormId = formVersion.ApplicationFormId,
             ChefsApplicationFormGuid = formVersion.ChefsApplicationFormGuid,
             ChefsFormVersionGuid = formVersion.ChefsFormVersionGuid,
+            ExistingMapping = formVersion.SubmissionHeaderMapping,
             ChefsFields = BuildChefsFields(formVersion.AvailableChefsFields),
             UnityCoreFields = BuildUnityCoreFields()
         };
@@ -120,7 +121,7 @@ public class ApplicationFormVersionMappingReadService(
                 .Where(field => IsMappable(field))
                 .Select(field => new MappingFieldDto
                 {
-                    Name = string.IsNullOrWhiteSpace(field.Key) ? field.Name : field.Key,
+                    Name = $"{field.Name}.{field.Type}",
                     Type = ConvertCustomType(field.Type),
                     IsCustom = true,
                     Label = $"{field.Label} ({worksheet.Name})"

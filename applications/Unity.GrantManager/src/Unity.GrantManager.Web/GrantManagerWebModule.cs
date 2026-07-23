@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.CookiePolicy;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -79,6 +80,7 @@ using Unity.Notifications.Web.Bundling;
 using Unity.Reporting.Web;
 using Unity.AI.Web;
 using Unity.GrantManager.Web.Views.Settings;
+using Prometheus;
 
 namespace Unity.GrantManager.Web;
 
@@ -143,7 +145,7 @@ public class GrantManagerWebModule : AbpModule
 
         ConfgureFormsApiAuhentication(context);
         ConfigureAuthentication(context, configuration);
-        ConfigurePolicies(context);
+        ConfigurePolicies(context, configuration);
         ConfigureUrls(configuration);
         ConfigureBundles();
         ConfigureAutoMapper();
@@ -154,6 +156,46 @@ public class GrantManagerWebModule : AbpModule
         ConfigureUtils(context);
         ConfigureDataProtection(context, configuration);
         ConfigureMiniProfiler(context, configuration);
+
+        // Trust forwarded client IP headers only from explicitly configured ingress/router addresses.
+        // This ensures RemoteIpAddress reflects the real client IP only when the request came
+        // through a known proxy, so IP-based checks such as the /metrics policy cannot be spoofed
+        // by arbitrary internal callers.
+        var knownForwardedHeaderProxies = configuration
+            .GetSection("ForwardedHeaders:KnownProxies")
+            .Get<string[]>() ?? Array.Empty<string>();
+        var knownForwardedHeaderNetworks = configuration
+            .GetSection("ForwardedHeaders:KnownNetworks")
+            .Get<string[]>() ?? Array.Empty<string>();
+
+        context.Services.Configure<ForwardedHeadersOptions>(options =>
+        {
+            options.ForwardedHeaders = ForwardedHeaders.XForwardedProto;
+            options.ForwardLimit = 1;
+            options.KnownProxies.Clear();
+            options.KnownIPNetworks.Clear();
+
+            foreach (var proxy in knownForwardedHeaderProxies)
+            {
+                if (!string.IsNullOrWhiteSpace(proxy) && System.Net.IPAddress.TryParse(proxy, out var proxyAddress))
+                {
+                    options.KnownProxies.Add(proxyAddress);
+                }
+            }
+
+            foreach (var network in knownForwardedHeaderNetworks)
+            {
+                if (!string.IsNullOrWhiteSpace(network) && System.Net.IPNetwork.TryParse(network, out var ipNetwork))
+                {
+                    options.KnownIPNetworks.Add(ipNetwork);
+                }
+            }
+
+            if (options.KnownProxies.Count > 0 || options.KnownIPNetworks.Count > 0)
+            {
+                options.ForwardedHeaders |= ForwardedHeaders.XForwardedFor;
+            }
+        });
 
         Configure<AbpAntiForgeryOptions>(options =>
         {
@@ -221,8 +263,8 @@ public class GrantManagerWebModule : AbpModule
 
         Configure<SettingManagementPageOptions>(options =>
         {
+            options.Contributors.Add(new BackgroundJobsPageContributor());
             options.Contributors.Add(new TagManagementPageContributor());
-            options.Contributors.Add(new ApplicationUiSettingPageContributor());
         });
 
         context.Services.AddHealthChecks()
@@ -233,6 +275,11 @@ public class GrantManagerWebModule : AbpModule
 
         context.Services.AddHealthChecks()
             .AddCheck<StartupHealthCheck>("startup", tags: _startupHealthCheckTags);
+
+        Configure<SettingManagementPageOptions>(options =>
+        {
+            options.Contributors.Add(new ApplicationUiSettingPageContributor());
+        });
     }
 
     private static void ConfigureDataProtection(ServiceConfigurationContext context, IConfiguration configuration)
@@ -275,8 +322,27 @@ public class GrantManagerWebModule : AbpModule
         context.Services.AddScoped<IFormIdResolver, FormIdRouteResolver>();
     }
 
-    private static void ConfigurePolicies(ServiceConfigurationContext context)
+    private static void ConfigurePolicies(ServiceConfigurationContext context, IConfiguration configuration)
     {
+        context.Services.AddScoped<Microsoft.AspNetCore.Authorization.IAuthorizationHandler, InternalNetworkHandler>();
+        context.Services.AddSingleton<ExceptionNotificationThrottle>();
+        context.Services.AddTransient<Volo.Abp.ExceptionHandling.IExceptionSubscriber, Middleware.AbpExceptionNotificationSubscriber>();
+        
+        context.Services.AddHttpClient<IBlameLookupService, GitHubBlameLookupService>()
+            .ConfigureHttpClient(client =>
+            {
+                string pat =
+                    Environment.GetEnvironmentVariable("UNITY_GITHUB_PAT")
+                    ?? configuration["UNITY_GITHUB_PAT"]
+                    ?? "";
+
+                if (!string.IsNullOrWhiteSpace(pat))
+                {
+                    client.DefaultRequestHeaders.Authorization =
+                        new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", pat);
+                }
+            });
+        
         PolicyRegistrant.Register(context);
         PermissionOrPolicyRegistrant.Register(context);
     }
@@ -422,7 +488,6 @@ public class GrantManagerWebModule : AbpModule
                     bundle.AddFiles("/global-styles.css");
                 });
 
-
             options.StyleBundles.Configure(
                 NotificationsBundles.Styles.Notifications,
                 bundle =>
@@ -565,10 +630,17 @@ public class GrantManagerWebModule : AbpModule
         var env = context.GetEnvironment();
         var configuration = context.GetConfiguration();
 
+        ErrorCountingLoggerSink.SetScopeFactory(
+            app.ApplicationServices.GetRequiredService<IServiceScopeFactory>());
+
         if (!env.IsProduction())
         {
             IdentityModelEventSource.ShowPII = true;
         }
+
+        // Rewrite RemoteIpAddress from X-Forwarded-For before any IP-based checks run.
+        // Trusted networks are configured in ConfigureServices above.
+        app.UseForwardedHeaders();
 
         app.UseAbpRequestLocalization();
 
@@ -602,9 +674,11 @@ public class GrantManagerWebModule : AbpModule
 
         app.UseCorrelationId();
         app.UseStaticFiles();
+        app.UseMiddleware<Unity.GrantManager.Web.Middleware.ExceptionCounterMiddleware>();
         app.UseMiddleware<TimezoneMiddleware>();
         app.UseRouting();
-        app.UseAuthentication();        
+        app.UseHttpMetrics();
+        app.UseAuthentication();
 
         if (MultiTenancyConsts.IsEnabled)
         {
@@ -625,8 +699,10 @@ public class GrantManagerWebModule : AbpModule
         });
         app.UseAuditing();
         app.UseAbpSerilogEnrichers();
-        app.UseMiddleware<OnboardingRedirectMiddleware>();
-        app.UseConfiguredEndpoints();
+        app.UseConfiguredEndpoints(endpoints =>
+        {
+            endpoints.MapMetrics().RequireAuthorization(Unity.GrantManager.Web.Identity.Policy.PolicyRegistrant.MetricsAccessPolicy);
+        });
 
         var supportedCultures = new[]
         {

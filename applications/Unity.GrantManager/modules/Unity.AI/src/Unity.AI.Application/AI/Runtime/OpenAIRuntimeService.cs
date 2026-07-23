@@ -15,8 +15,8 @@ using Volo.Abp.DependencyInjection;
 
 namespace Unity.AI.Runtime
 {
-    [ExposeServices(typeof(IAIService), typeof(IFormMappingService))]
-    public class OpenAIRuntimeService : IAIService, IFormMappingService, ITransientDependency
+    [ExposeServices(typeof(IAIService), typeof(IFormMappingService), typeof(IFormWorksheetService))]
+    public class OpenAIRuntimeService : IAIService, IFormMappingService, IFormWorksheetService, ITransientDependency
     {
         private readonly ILogger<OpenAIRuntimeService> _logger;
         private readonly OpenAITransportService _openAITransportService;
@@ -27,6 +27,7 @@ namespace Unity.AI.Runtime
         private const string AttachmentSummaryPromptType = AIPromptTypes.AttachmentSummary;
         private const string ApplicationScoringPromptType = AIPromptTypes.ApplicationScoring;
         private const string FormMappingPromptType = AIPromptTypes.FormMapping;
+        private const string FormWorksheetPromptType = AIPromptTypes.FormWorksheet;
         private const int MaxAiAttempts = 3;
 
         public OpenAIRuntimeService(
@@ -270,6 +271,55 @@ namespace Unity.AI.Runtime
             {
                 _logger.LogError(ex, "Application scoring generation failed for section {SectionName}.", request.SectionName);
                 return new ApplicationScoringResponse();
+            }
+        }
+
+        public async Task<FormWorksheetResponse> GenerateFormWorksheetAsync(FormWorksheetRequest request, CancellationToken cancellationToken = default)
+        {
+            ArgumentNullException.ThrowIfNull(request);
+            try
+            {
+                var settings = await _openAIConfigurationResolver.ResolveOperationSettingsAsync(FormWorksheetPromptType, cancellationToken);
+                var promptTemplate = await _promptTemplateProvider.GetRequiredPromptAsync(
+                    FormWorksheetPromptType,
+                    request.PromptVersion ?? settings.PromptVersion,
+                    cancellationToken);
+                var promptVersion = promptTemplate.PromptVersion;
+                var dataJson = request.Data.GetRawText();
+                var systemPrompt = promptTemplate.SystemPrompt;
+                var content = AIPromptTemplateRenderer.BuildFormMappingUserPrompt(
+                    promptTemplate.UserPrompt,
+                    dataJson,
+                    promptTemplate.MetadataJson);
+
+                await _promptFileLogger.LogPromptInputAsync(FormWorksheetPromptType, promptVersion, systemPrompt, content, cancellationToken);
+                var result = await GenerateWithRetryAsync(
+                    () => _openAITransportService.GenerateSummaryAsync(
+                        content,
+                        systemPrompt,
+                        settings,
+                        settings.CompletionTokens,
+                        cancellationToken: cancellationToken),
+                    AIProviderPayloadValidator.ValidateFormWorksheetJson,
+                    "form worksheet",
+                    cancellationToken);
+                await _promptFileLogger.LogPromptOutputAsync(FormWorksheetPromptType, promptVersion, result.CaptureOutput, cancellationToken);
+
+                return new FormWorksheetResponse
+                {
+                    Worksheet = result.Outcome == AIOperationOutcome.Success
+                        ? AIResponseJson.CleanJsonResponse(result.Content)
+                        : "{}"
+                };
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Form worksheet generation failed.");
+                return new FormWorksheetResponse();
             }
         }
 

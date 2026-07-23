@@ -175,4 +175,31 @@ public class PromptResponseValidatorTests
         reason.ShouldContain("empty");
     }
 
+    [Theory]
+    [InlineData("{}")]
+    [InlineData("""{"title":"Draft","sections":[]}""")]
+    public void ValidateFormWorksheetJson_Should_Return_InvalidOutput_For_Incomplete_Worksheet(string response)
+    {
+        var result = AIProviderPayloadValidator.ValidateFormWorksheetJson(response);
+
+        result.IsValid.ShouldBeFalse();
+        result.FailureCategory.ShouldBe(AIFailureCategory.InvalidOutput);
+    }
+
+    [Fact]
+    public void ValidateFormWorksheetJson_Should_Return_Success_For_Complete_Worksheet()
+    {
+        var result = AIProviderPayloadValidator.ValidateFormWorksheetJson(
+            """
+            {
+              "title": "Draft",
+              "sections": [
+                { "name": "Application details", "fields": [] }
+              ]
+            }
+            """);
+
+        result.IsValid.ShouldBeTrue();
+    }
+
 }

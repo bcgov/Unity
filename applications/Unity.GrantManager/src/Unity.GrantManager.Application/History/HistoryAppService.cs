@@ -100,7 +100,7 @@ public class HistoryAppService(
         return historyList;
     }
 
-    public virtual async Task<string> LookupUserNameAsync(Guid auditLogId)
+    protected virtual async Task<string> LookupUserNameAsync(Guid auditLogId)
     {
         var auditLog = await auditLogRepository.GetAsync(auditLogId);
         if (auditLog?.UserId == null || auditLog.UserId == Guid.Empty)

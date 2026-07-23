@@ -5,6 +5,7 @@
 - `AttachmentSummary` - attachment summary
 - `ApplicationScoring` - question scoring
 - `FormMapping` - CHEFS to Unity mapping
+- `FormWorksheet` - worksheet generation
 
 ## Versions
 - `v0`, `v1`, `v2` live under `AI/Prompts/Versions`
