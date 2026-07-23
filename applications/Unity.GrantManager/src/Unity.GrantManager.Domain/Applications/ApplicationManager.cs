@@ -135,7 +135,7 @@ public class ApplicationManager : DomainService, IApplicationManager
             .SubstateOf(GrantApplicationState.RESOLVED)
             .Permit(GrantApplicationAction.Withdraw, GrantApplicationState.WITHDRAWN)
             .Permit(GrantApplicationAction.Close, GrantApplicationState.CLOSED)
-            .PermitIf(GrantApplicationAction.Defer, GrantApplicationState.DEFER, () => HasPermission(GrantApplicationPermissions.Approvals.DeferAfterApproval))
+            .PermitIfAsync(GrantApplicationAction.Defer, GrantApplicationState.DEFER, () => HasPermissionAsync(GrantApplicationPermissions.Approvals.DeferAfterApproval))
             .PermitIf(GrantApplicationAction.Deny, GrantApplicationState.GRANT_NOT_APPROVED, () => isDirectApproval, DirectDenialDescription);
 
         stateMachine.Configure(GrantApplicationState.GRANT_NOT_APPROVED)
@@ -160,9 +160,9 @@ public class ApplicationManager : DomainService, IApplicationManager
         return isDirectApproval && stateMachine.State != targetState;
     }
 
-    private bool HasPermission(string permission)
+    private async Task<bool> HasPermissionAsync(string permission)
     {
-        return _permissionChecker.IsGrantedAsync(permission).Result;
+        return await _permissionChecker.IsGrantedAsync(permission);
     }
 
     public async Task<List<ApplicationActionResultItem>> GetActions(Guid applicationId)

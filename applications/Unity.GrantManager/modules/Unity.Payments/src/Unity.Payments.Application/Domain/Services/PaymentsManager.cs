@@ -32,37 +32,37 @@ namespace Unity.Payments.Domain.Services
         private void ConfigureWorkflow(StateMachine<PaymentRequestStatus, PaymentApprovalAction> paymentStateMachine)
         {
             paymentStateMachine.Configure(PaymentRequestStatus.L1Pending)
-                .PermitIf(PaymentApprovalAction.L1Approve, PaymentRequestStatus.L2Pending, () => HasPermissionAsync(PaymentsPermissions.Payments.L1ApproveOrDecline).GetAwaiter().GetResult())
-                .PermitIf(PaymentApprovalAction.L1Decline, PaymentRequestStatus.L1Declined, () => HasPermissionAsync(PaymentsPermissions.Payments.L1ApproveOrDecline).GetAwaiter().GetResult());
+                .PermitIfAsync(PaymentApprovalAction.L1Approve, PaymentRequestStatus.L2Pending, () => HasPermissionAsync(PaymentsPermissions.Payments.L1ApproveOrDecline))
+                .PermitIfAsync(PaymentApprovalAction.L1Decline, PaymentRequestStatus.L1Declined, () => HasPermissionAsync(PaymentsPermissions.Payments.L1ApproveOrDecline));
 
             paymentStateMachine.Configure(PaymentRequestStatus.L1Declined)
-                  .PermitIf(PaymentApprovalAction.L1Approve, PaymentRequestStatus.L2Pending, () => HasPermissionAsync(PaymentsPermissions.Payments.L1ApproveOrDecline).GetAwaiter().GetResult());
+                  .PermitIfAsync(PaymentApprovalAction.L1Approve, PaymentRequestStatus.L2Pending, () => HasPermissionAsync(PaymentsPermissions.Payments.L1ApproveOrDecline));
 
             paymentStateMachine.Configure(PaymentRequestStatus.L2Pending)
-                .PermitIf(PaymentApprovalAction.L2Approve, PaymentRequestStatus.L3Pending, () => HasPermissionAsync(PaymentsPermissions.Payments.L2ApproveOrDecline).GetAwaiter().GetResult())
-                .PermitIf(PaymentApprovalAction.Submit, PaymentRequestStatus.Submitted, () => HasPermissionAsync(PaymentsPermissions.Payments.L2ApproveOrDecline).GetAwaiter().GetResult())
-                .PermitIf(PaymentApprovalAction.L2Decline, PaymentRequestStatus.L2Declined, () => HasPermissionAsync(PaymentsPermissions.Payments.L2ApproveOrDecline).GetAwaiter().GetResult());
+                .PermitIfAsync(PaymentApprovalAction.L2Approve, PaymentRequestStatus.L3Pending, () => HasPermissionAsync(PaymentsPermissions.Payments.L2ApproveOrDecline))
+                .PermitIfAsync(PaymentApprovalAction.Submit, PaymentRequestStatus.Submitted, () => HasPermissionAsync(PaymentsPermissions.Payments.L2ApproveOrDecline))
+                .PermitIfAsync(PaymentApprovalAction.L2Decline, PaymentRequestStatus.L2Declined, () => HasPermissionAsync(PaymentsPermissions.Payments.L2ApproveOrDecline));
 
             paymentStateMachine.Configure(PaymentRequestStatus.L2Declined)
-                .PermitIf(PaymentApprovalAction.L2Approve, PaymentRequestStatus.L3Pending, () => HasPermissionAsync(PaymentsPermissions.Payments.L2ApproveOrDecline).GetAwaiter().GetResult())
-                .PermitIf(PaymentApprovalAction.Submit, PaymentRequestStatus.Submitted, () => HasPermissionAsync(PaymentsPermissions.Payments.L2ApproveOrDecline).GetAwaiter().GetResult());
+                .PermitIfAsync(PaymentApprovalAction.L2Approve, PaymentRequestStatus.L3Pending, () => HasPermissionAsync(PaymentsPermissions.Payments.L2ApproveOrDecline))
+                .PermitIfAsync(PaymentApprovalAction.Submit, PaymentRequestStatus.Submitted, () => HasPermissionAsync(PaymentsPermissions.Payments.L2ApproveOrDecline));
 
             paymentStateMachine.Configure(PaymentRequestStatus.L3Pending)
-                .PermitIf(PaymentApprovalAction.Submit, PaymentRequestStatus.Submitted, () => HasPermissionAsync(PaymentsPermissions.Payments.L3ApproveOrDecline).GetAwaiter().GetResult())
-                .PermitIf(PaymentApprovalAction.L3Decline, PaymentRequestStatus.L3Declined, () => HasPermissionAsync(PaymentsPermissions.Payments.L3ApproveOrDecline).GetAwaiter().GetResult())
-                .PermitIf(PaymentApprovalAction.Cancel, PaymentRequestStatus.Cancelled, () => HasPermissionAsync(PaymentsPermissions.Payments.CancelPayment).GetAwaiter().GetResult());
+                .PermitIfAsync(PaymentApprovalAction.Submit, PaymentRequestStatus.Submitted, () => HasPermissionAsync(PaymentsPermissions.Payments.L3ApproveOrDecline))
+                .PermitIfAsync(PaymentApprovalAction.L3Decline, PaymentRequestStatus.L3Declined, () => HasPermissionAsync(PaymentsPermissions.Payments.L3ApproveOrDecline))
+                .PermitIfAsync(PaymentApprovalAction.Cancel, PaymentRequestStatus.Cancelled, () => HasPermissionAsync(PaymentsPermissions.Payments.CancelPayment));
 
             paymentStateMachine.Configure(PaymentRequestStatus.L2Declined)
-                .PermitIf(PaymentApprovalAction.Submit, PaymentRequestStatus.Submitted, () => HasPermissionAsync(PaymentsPermissions.Payments.L2ApproveOrDecline).GetAwaiter().GetResult());
+                .PermitIfAsync(PaymentApprovalAction.Submit, PaymentRequestStatus.Submitted, () => HasPermissionAsync(PaymentsPermissions.Payments.L2ApproveOrDecline));
 
             paymentStateMachine.Configure(PaymentRequestStatus.L1Pending)
-                .PermitIf(PaymentApprovalAction.Cancel, PaymentRequestStatus.Cancelled, () => HasPermissionAsync(PaymentsPermissions.Payments.CancelPayment).GetAwaiter().GetResult());
+                .PermitIfAsync(PaymentApprovalAction.Cancel, PaymentRequestStatus.Cancelled, () => HasPermissionAsync(PaymentsPermissions.Payments.CancelPayment));
 
             paymentStateMachine.Configure(PaymentRequestStatus.L2Pending)
-                .PermitIf(PaymentApprovalAction.Cancel, PaymentRequestStatus.Cancelled, () => HasPermissionAsync(PaymentsPermissions.Payments.CancelPayment).GetAwaiter().GetResult());
+                .PermitIfAsync(PaymentApprovalAction.Cancel, PaymentRequestStatus.Cancelled, () => HasPermissionAsync(PaymentsPermissions.Payments.CancelPayment));
 
             paymentStateMachine.Configure(PaymentRequestStatus.HistoricalPayment)
-                .PermitIf(PaymentApprovalAction.Cancel, PaymentRequestStatus.Cancelled, () => HasPermissionAsync(PaymentsPermissions.Payments.CancelPayment).GetAwaiter().GetResult());
+                .PermitIfAsync(PaymentApprovalAction.Cancel, PaymentRequestStatus.Cancelled, () => HasPermissionAsync(PaymentsPermissions.Payments.CancelPayment));
         }
 
         private async Task<bool> HasPermissionAsync(string permission)
