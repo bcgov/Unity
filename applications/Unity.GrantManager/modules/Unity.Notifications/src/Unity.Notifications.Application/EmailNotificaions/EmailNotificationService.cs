@@ -75,7 +75,7 @@ public class EmailNotificationService(
         string? envInfo = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
         string activityTitle = "CHES Email error: " + chesEmailError;
         string activitySubtitle = "Environment: " + envInfo;
-        await notificationAppService.PostToTeamsAsync(activityTitle, activitySubtitle);
+        await notificationAppService.PostToNotificationsAsync(activityTitle, activitySubtitle);
     }
 
     public Task<string> GetBaseUrlAsync()

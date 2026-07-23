@@ -213,23 +213,27 @@ body.split-dragging {
 
 /* ── Templates Table Layout Optimization ────────────────────────────────────── */
 
-/* Force the table to respect container bounds */
+/* Force the table to respect container bounds, but never shrink below the point
+   where the Name/Subject/Actions columns become unusable. Below this width the
+   scroll body (overflow-x: auto below) shows a horizontal scrollbar instead of
+   squishing the Actions column and overlapping its buttons. */
 #TemplatesTable {
     table-layout: fixed !important;
     width: 100% !important;
+    min-width: 480px !important; /* Name (~30%) + Subject (auto) + Actions (130px) */
 }
 
 /* Update Column Widths via colgroup/col (essential for DataTables-style tables) */
-#TemplatesTable col:nth-child(1) { 
-    width: 20% !important; /* Name */
+#TemplatesTable col:nth-child(1) {
+    width: 30% !important; /* Name */
 }
 
-#TemplatesTable col:nth-child(2) { 
-    width: 60% !important; /* Subject */
-}
+/* Subject (col:nth-child(2)) intentionally has no explicit width - under
+   table-layout: fixed it automatically fills whatever space remains after the
+   Name and Actions columns are allocated. */
 
-#TemplatesTable col:nth-child(3) { 
-    width: 20% !important; /* Actions */
+#TemplatesTable col:nth-child(3) {
+    width: 130px !important; /* Actions - fixed px so the buttons never get squeezed */
 }
 
 /* Handle text truncation for the content columns */
@@ -244,11 +248,13 @@ body.split-dragging {
 #TemplatesTable .d-inline-flex.gap-2 {
     flex-wrap: nowrap !important;
     width: auto !important;
+    white-space: nowrap !important;
 }
 
-/* Prevent the container from enabling horizontal scroll */
-.dt-scroll-body {
-    overflow-x: hidden !important;
+/* Allow horizontal scrolling once the table hits its minimum width, instead of
+   squishing columns (and overlapping the action buttons) below usable sizes */
+#TemplatesTable_wrapper .dt-scroll-body {
+    overflow-x: auto !important;
     scrollbar-gutter: stable; /* Reserves space for vertical scrollbar to prevent layout shift */
 }
 

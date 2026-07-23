@@ -1,4 +1,6 @@
-﻿@using Unity.GrantManager.Web.Views.Shared.Components.CustomFields @* Suppress:S1128 *@
+@using Unity.GrantManager.Web.Views.Shared.Components.CustomFields @* Suppress:S1128 *@
+@using Unity.AI.Permissions
+@inject Volo.Abp.Authorization.Permissions.IPermissionChecker PermissionChecker
 @model CustomFieldsViewModel
 
 @{
@@ -16,10 +18,31 @@
                     icon-type="Other"
                     icon="fl fl-save"
                     class="btn unt-btn-primary btn-primary"
-                    style="pointer-events: all;"
                     abp-tooltip="Save the worksheet associations for mapping to the available Unity worksheet fields"
                     button-type="Primary"
                     form="worksheet-config-form" />
+        @if (await PermissionChecker.IsGrantedAsync(AIPermissions.FormWorksheet.Generate))
+        {
+            <button type="button" id="btn-generate-worksheet" class="btn ai-generate-btn unt-btn-outline-primary btn-outline-primary"
+                    data-ai-cooldown-checking="1" data-ai-rate-limit-disabled="1" disabled
+                    title="Generate a worksheet for the current form version">
+                <span class="ai-button-content">
+                    <i class="unt-icon-sm fa-solid fa-wand-magic-sparkles"></i>
+                    <span>Generate Worksheet</span>
+                </span>
+            </button>
+        }
+        @if (await PermissionChecker.IsGrantedAsync(AIPermissions.FormScoresheet.Generate))
+        {
+            <button type="button" id="btn-generate-scoresheet" class="btn ai-generate-btn unt-btn-outline-primary btn-outline-primary"
+                    data-ai-cooldown-checking="1" data-ai-rate-limit-disabled="1" disabled
+                    title="Generate a scoresheet for the current form version">
+                <span class="ai-button-content">
+                    <i class="unt-icon-sm fa-solid fa-wand-magic-sparkles"></i>
+                    <span>Generate Scoresheet</span>
+                </span>
+            </button>
+        }
         <abp-button id="btn-back-worksheet-config"
                     text="Back"
                     class="btn unt-btn-outline-primary btn-outline-primary"
@@ -39,7 +62,7 @@
             }
         </div>
     </div>
-    <div class="col-6 pt-3 px-2">
+    <div class="col-6 pt-3 px-2 scoresheet-selector">
         <input type="hidden" id="originalScoresheetId" value="@Model!.ScoresheetId" />
         <abp-select asp-for="@Model.ScoresheetId" asp-items="@Model.ScoresheetOptionsList" id="scoresheet" label="Scoresheets:">
             <option value="">Please choose...</option>

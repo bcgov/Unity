@@ -336,7 +336,9 @@ namespace Unity.Payments.PaymentRequests
                     input.SkipCount,
                     input.MaxResultCount,
                     input.Sorting ?? string.Empty,
-                    input.RequestedFields);
+                    input.RequestedFields,
+                    input.RequestedFromDate,
+                    input.RequestedToDate);
 
                 var mappedPayments = await paymentRequestQueryManager.MapToDtoAndLoadDetailsAsync(
                     paymentWithIncludes,

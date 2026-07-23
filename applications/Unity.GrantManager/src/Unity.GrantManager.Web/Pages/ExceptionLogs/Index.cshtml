@@ -1,0 +1,70 @@
+@page
+@using Unity.GrantManager.Logs
+@model Unity.GrantManager.Web.Pages.ExceptionLogs.IndexModel
+@{
+    ViewBag.PageTitle = "Exception Logs";
+}
+
+@section styles {
+    <abp-style src="/Pages/ExceptionLogs/Index.css" />
+}
+
+@section scripts {
+    <abp-script src="/Pages/ExceptionLogs/Index.js" />
+}
+
+<div class="input-area card mb-3">
+    <div class="container-fluid px-0">
+        <div class="action-bar p-2 filter-search-action-bar exception-logs-action-bar">
+            <div class="unity-page-titlebar">
+                <h4>Exception Logs</h4>
+            </div>
+            <div class="filter-search-action-bar_search-wrapper">
+                <label for="search-exception-logs" class="visually-hidden">Search</label>
+                <input type="search" id="search-exception-logs" placeholder="Title, message, ticket, author..." class="tbl-search" />
+            </div>
+            <div class="exception-logs-filters">
+                <div class="exception-logs-filter-field">
+                    <label class="form-label" for="FromDate">From</label>
+                    <input type="date" id="FromDate" class="form-control" />
+                </div>
+                <div class="exception-logs-filter-field">
+                    <label class="form-label" for="ToDate">To</label>
+                    <input type="date" id="ToDate" class="form-control" />
+                </div>
+                <div class="exception-logs-filter-field">
+                    <label class="form-label" for="Severity">Severity</label>
+                    <select id="Severity" class="form-control">
+                        <option value="">All</option>
+                        @foreach (var severity in Enum.GetValues<ExceptionLogSeverity>())
+                        {
+                            <option value="@severity">@severity</option>
+                        }
+                    </select>
+                </div>
+            </div>
+            <div id="dynamicButtonContainerId" class="dynamic-buttons-div button-gap-1"></div>
+        </div>
+
+        <div class="p-3 pt-0">
+            <abp-table id="ExceptionLogsTable"></abp-table>
+        </div>
+    </div>
+</div>
+
+<template id="exception-log-details-template">
+    <div class="exception-log-details">
+        <div data-row="exceptionType"><strong>Exception:</strong> <span data-field="exceptionType"></span></div>
+        <div data-row="exceptionMessage"><strong>Message:</strong> <span data-field="exceptionMessage"></span></div>
+        <div data-row="location"><strong>Location:</strong> <span data-field="location"></span></div>
+        <div data-row="correlationId"><strong>Correlation Id:</strong> <span data-field="correlationId"></span></div>
+        <div data-row="commit"><strong>Commit:</strong> <span data-field="commit"></span></div>
+        <div data-row="blameCommit"><strong>Blame commit:</strong> <span data-field="blameCommit"></span></div>
+        <div data-row="pullRequestTitle"><strong>PR title:</strong> <span data-field="pullRequestTitle"></span></div>
+        <pre data-field="stackExcerpt"></pre>
+    </div>
+</template>
+
+<template id="exception-log-pr-link-template">
+    <a target="_blank" rel="noopener noreferrer">Pull request</a>
+</template>

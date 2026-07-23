@@ -76,7 +76,8 @@ namespace Unity.GrantManager.Permissions
         public readonly List<string> NotificationsScheduling_CommonPermissions = [
             NotificationsPermissions.Email.CancelScheduled,
             NotificationsPermissions.Email.ScheduleCreate,
-            NotificationsPermissions.Email.ScheduleCancel
+            NotificationsPermissions.Email.ScheduleCancel,
+            NotificationsPermissions.Email.Schedule
         ];        
 
         public readonly List<string> Dashboard_CommonPermissions = [

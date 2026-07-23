@@ -5,6 +5,7 @@
 @using Unity.GrantManager.Web.Pages.ApplicationForms;
 @using Unity.GrantManager.Permissions;
 @using Unity.Notifications.Permissions;
+@using Unity.AI.Permissions;
 
 @using Volo.Abp.Authorization.Permissions;
 @using Unity.GrantManager.Web.Views.Shared.Components.Notifications;
@@ -25,6 +26,8 @@
 {
     <abp-script src="/Views/Shared/Components/_Shared/string-utils.js" />
     <abp-script src="/Pages/ApplicationForms/mapping-utils.js" />
+    <abp-script src="/Pages/GrantApplications/ai-generation-button-state.js" />
+    <abp-script src="/Pages/GrantApplications/ai-rate-limit.js" />
     <abp-script src="/Pages/ApplicationForms/Mapping.js" />
     <abp-script src="/Pages/SettingManagement/zone-management.js" />
 }
@@ -101,12 +104,23 @@
                     <abp-button id="btn-save" text="Save" icon-type="Other" icon="fl fl-save"
                                 class="btn unt-btn-primary btn-primary"
                                 style="pointer-events: all;"
-                                abp-tooltip="Save the Scoresheet and the Mapping of CHEFS fields to Unity Fields"
+                                abp-tooltip="Save the Scoresheet and the Mapping of Unity fields to CHEFS Fields"
                                 button-type="Primary" />
                     <abp-button id="btn-edit" text="Edit Mapping" icon-type="Other" data-target="#editMappingModal"
                                 icon="fl fl-edit" class="btn unt-btn-primary btn-primary" data-toggle="modal"
                                 style="pointer-events: all;" abp-tooltip="Edit the Mapping JSON Manually"
                                 button-type="Primary" />
+                    @if (await PermissionChecker.IsGrantedAsync(AIPermissions.FormMapping.Generate))
+                    {
+                        <button type="button" id="btn-generate" class="btn ai-generate-btn unt-btn-outline-primary btn-outline-primary"
+                                data-ai-cooldown-checking="1" data-ai-rate-limit-disabled="1" disabled
+                                title="Generate the mapping for the current form version">
+                            <span class="ai-button-content">
+                                <i class="unt-icon-sm fa-solid fa-wand-magic-sparkles"></i>
+                                <span>Generate Mapping</span>
+                            </span>
+                        </button>
+                    }
                     <abp-button id="btn-reset" text="Reset Mapping" icon-type="Other" icon="fl fl-undo"
                                 class="btn unt-btn-outline-primary btn-outline-primary"
                                 abp-tooltip="This button resets the mapping to the last saved state" />
@@ -339,7 +353,7 @@
     </div>
 
     <abp-modal centered="true" scrollable="true" size="Large" id="editMappingModal">
-        <abp-modal-header title="Edit Mapping JSON"></abp-modal-header>
+            <abp-modal-header title="Edit Mapping JSON"></abp-modal-header>
         <abp-modal-body>
             <textarea id="jsonText" rows="15"
                 cols="80">@Model?.ApplicationFormVersionDto?.SubmissionHeaderMapping</textarea>

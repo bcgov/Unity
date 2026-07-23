@@ -579,7 +579,7 @@ $(function () {
                 orderable: false,
                 searchable: false,
                 index: 3,
-                width: '20%',
+                width: '130px',
                 render: function (data, type, row) {
                     return `
                         <div class="d-inline-flex gap-2">

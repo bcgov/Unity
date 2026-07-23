@@ -13,6 +13,8 @@ public static class DynamicUrlKeyNames
     public const string DIRECT_MESSAGE_KEY_PREFIX = "DIRECT_MESSAGE_"; // Teams Direct Message URL Weebhook- Dynamically incremented
     public const string WEBHOOK_KEY_PREFIX = "WEBHOOK_"; // General Webhook URL - Dynamically incremented
     public const string GEOCODER_API_BASE = "GEOCODER_API_BASE";
+    public const string GITHUB_REPO = "GITHUB_REPO";
+    public const string GITHUB_GRAPHQL = "GITHUB_GRAPHQL";
     public const string GEOCODER_LOCATION_API_BASE = "GEOCODER_LOCATION_API_BASE";
     public const string ANALYTICS_MATOMO_BASE = "ANALYTICS_MATOMO_BASE";
 }
