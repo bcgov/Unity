@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CHEFS Tester Settings</title>
+  <link rel="stylesheet" href="options.css">
+</head>
+<body>
+  <main>
+    <h1>CHEFS One-Click Form Tester Settings</h1>
+    <p>TEST, UAT, DEV and localhost CHEFS hosts are allowed automatically. Production-like hosts remain blocked unless explicitly enabled here.</p>
+
+    <section>
+      <h2>Run settings</h2>
+      <label for="additionalHosts">Additional allowed hostnames</label>
+      <textarea id="additionalHosts" rows="6" placeholder="one-host.example.gov.bc.ca"></textarea>
+      <p class="hint">Enter one exact hostname per line. Do not include protocol or paths.</p>
+
+      <label class="checkbox-row">
+        <input id="allowProduction" type="checkbox">
+        <span>Allow production-like CHEFS hosts</span>
+      </label>
+
+      <label for="rowsPerGrid">Target rows per data grid</label>
+      <input id="rowsPerGrid" type="number" min="2" max="5" value="2">
+
+      <label class="checkbox-row">
+        <input id="captureScreenshot" type="checkbox" checked>
+        <span>Capture a visible-tab screenshot when a run fails or stalls</span>
+      </label>
+    </section>
+
+    <section aria-labelledby="customFormatsHeading">
+      <h2 id="customFormatsHeading">Custom field formats</h2>
+      <p>Use these rules when a field needs a program-specific identifier format. Rules match normalized visible label text and take precedence over masks detected from the CHEFS component.</p>
+
+      <div class="rule-toolbar">
+        <button id="addRuleButton" type="button">Add Rule</button>
+        <button id="importRulesButton" type="button" class="secondary">Import Rules</button>
+        <button id="exportRulesButton" type="button" class="secondary">Export Rules</button>
+        <label for="importMode" class="inline-label">Import mode</label>
+        <select id="importMode">
+          <option value="merge">Merge</option>
+          <option value="replace">Replace</option>
+        </select>
+        <input id="rulesFileInput" type="file" accept="application/json,.json" hidden>
+      </div>
+
+      <div class="table-wrap">
+        <table id="rulesTable">
+          <thead>
+            <tr>
+              <th scope="col">Enabled</th>
+              <th scope="col">Label keyword or phrase</th>
+              <th scope="col">CHEFS input mask</th>
+              <th scope="col">Remove</th>
+            </tr>
+          </thead>
+          <tbody id="rulesBody"></tbody>
+        </table>
+      </div>
+      <p class="hint">Standard CHEFS mask tokens: <code>9</code> numeric, <code>a</code> alphabetic, <code>*</code> alphanumeric. Literal punctuation and spaces are preserved. Example: <code>aaa-999999</code>.</p>
+      <div id="rulesMessage" class="message" role="status" aria-live="polite"></div>
+    </section>
+
+    <section aria-labelledby="exportSettingsHeading">
+      <h2 id="exportSettingsHeading">Export settings</h2>
+
+      <label for="exportFolder">Export Folder</label>
+      <div class="folder-picker-row">
+        <input id="exportFolder" type="text" placeholder="Optional subfolder inside Downloads" autocomplete="off" spellcheck="false">
+        <button id="selectExportFolderButton" type="button" class="secondary">Select</button>
+      </div>
+      <p class="hint">Leave blank to save exports directly to the browser's Downloads folder. To organize exports, enter an optional Downloads-relative folder such as <code>CHEFS Exports</code>.</p>
+      <p class="hint">Select validates folders directly inside Downloads with a temporary file. The file is removed automatically. Type a path when using a validated nested relative folder.</p>
+      <div id="exportFolderMessage" class="message" role="status" aria-live="polite"></div>
+
+      <label class="checkbox-row">
+        <input id="autoExportAfterRun" type="checkbox">
+        <span>Automatically export after each run</span>
+      </label>
+      <p class="hint">After a run ends in success, failure, a stall, a block, a safety stop or a user stop, download one finalized troubleshooting ZIP without an extension-requested Save As window. Browser or workplace download policies can still require confirmation.</p>
+    </section>
+
+    <section aria-labelledby="batchSettingsHeading">
+      <h2 id="batchSettingsHeading">Batch regression launcher</h2>
+      <p>Enable the project-level batch file to open marked regression tabs and run them sequentially through this extension.</p>
+
+      <label class="checkbox-row">
+        <input id="batchLauncherEnabled" type="checkbox">
+        <span>Enable batch regression launcher</span>
+      </label>
+
+      <label for="batchLauncherToken">Launcher token</label>
+      <div class="folder-picker-row">
+        <input id="batchLauncherToken" type="text" autocomplete="off" spellcheck="false" placeholder="Generate a token, then copy it into the batch file">
+        <button id="generateBatchTokenButton" type="button" class="secondary">Generate Token</button>
+      </div>
+      <p class="hint">The token must match <code>LAUNCHER_TOKEN</code> in the project batch file. It prevents unrelated marked URLs from entering the queue.</p>
+
+      <label for="batchOrigins">Permitted regression origins</label>
+      <textarea id="batchOrigins" rows="5" placeholder="https://chefs-test.example.gov.bc.ca"></textarea>
+      <p class="hint">Enter one exact HTTP or HTTPS origin per line, without a path. Every origin must also pass the existing approved non-production environment checks.</p>
+
+      <div class="actions">
+        <button id="grantBatchPermissionsButton" type="button" class="secondary">Grant Host Access</button>
+      </div>
+      <p class="hint">Chrome requires one-time host access before the extension can start runs in tabs opened by an external batch file.</p>
+      <div id="batchSettingsMessage" class="message" role="status" aria-live="polite"></div>
+    </section>
+
+    <section aria-labelledby="dashboardSettingsHeading">
+      <h2 id="dashboardSettingsHeading">Results dashboard</h2>
+      <p>The dashboard is an internal extension page built only from PID-free aggregate run metrics.</p>
+
+      <label class="checkbox-row">
+        <input id="openDashboardAfterCompletion" type="checkbox">
+        <span>Open results dashboard after completion</span>
+      </label>
+      <p class="hint">A singleton opens the dashboard after finalization. A batch opens it once after the entire queue finishes. An existing dashboard tab is refreshed and reused.</p>
+
+      <label for="dashboardDefaultView">Default dashboard view</label>
+      <select id="dashboardDefaultView">
+        <option value="simple">Simple</option>
+        <option value="analyst">Analyst</option>
+        <option value="statistical">Statistical</option>
+        <option value="experimental">Experimental</option>
+      </select>
+
+      <label class="checkbox-row">
+        <input id="retainDashboardHistory" type="checkbox">
+        <span>Retain PID-free aggregate history for advanced charts</span>
+      </label>
+      <p class="hint">Disabled by default. When enabled, retain at most 200 aggregate records and 90 days. No field values, labels, names, emails, attachments, screenshots, URLs or confirmation IDs are retained.</p>
+
+      <div class="actions">
+        <button id="openDashboardButton" type="button" class="secondary">Open Dashboard</button>
+        <button id="clearDashboardHistoryButton" type="button" class="danger">Clear Dashboard History</button>
+      </div>
+      <div id="dashboardSettingsMessage" class="message" role="status" aria-live="polite"></div>
+    </section>
+
+    <div id="settingsMessage" class="message" role="status" aria-live="polite"></div>
+    <div class="actions">
+      <button id="saveButton" type="button">Save Settings</button>
+      <span id="savedMessage" role="status"></span>
+    </div>
+  </main>
+  <script src="export-path.js"></script>
+  <script src="export-folder-picker.js"></script>
+  <script src="options.js"></script>
+</body>
+</html>
