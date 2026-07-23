@@ -153,19 +153,40 @@ namespace Unity.AI.Runtime
                 return AIResponseValidationResult.Invalid("Scoresheet response was not valid JSON.");
             }
 
-            foreach (var propertyName in new[] { "Title", "Name", "Version", "Order", "Published", "ReportColumns", "ReportKeys", "ReportViewName" })
+            foreach (var propertyName in new[] { "Title", "Name" })
             {
-                var result = ValidateRequiredProperty(root, propertyName, "scoresheet");
+                var result = ValidateRequiredStringProperty(root, propertyName, "scoresheet");
                 if (!result.IsValid)
                 {
                     return result;
                 }
             }
 
-            return ValidateSections(root, "scoresheet", requiresFieldKey: false, allowEmptyFields: false);
+            foreach (var propertyName in new[] { "ReportColumns", "ReportKeys", "ReportViewName" })
+            {
+                var result = ValidateRequiredStringProperty(root, propertyName, "scoresheet", allowEmpty: true);
+                if (!result.IsValid)
+                {
+                    return result;
+                }
+            }
+
+            foreach (var propertyName in new[] { "Version", "Order" })
+            {
+                var result = ValidateRequiredUIntProperty(root, propertyName, "scoresheet");
+                if (!result.IsValid)
+                {
+                    return result;
+                }
+            }
+
+            var publishedResult = ValidateRequiredBooleanProperty(root, "Published", "scoresheet");
+            return !publishedResult.IsValid
+                ? publishedResult
+                : ValidateSections(root, "scoresheet");
         }
 
-        private static AIResponseValidationResult ValidateSections(JsonElement root, string responseName, bool requiresFieldKey, bool allowEmptyFields)
+        private static AIResponseValidationResult ValidateSections(JsonElement root, string responseName)
         {
             if (!TryGetProperty(root, "Sections", out var sections) || sections.ValueKind != JsonValueKind.Array)
             {
@@ -177,6 +198,9 @@ namespace Unity.AI.Runtime
                 return AIResponseValidationResult.Invalid($"{responseName} response must include at least one section.");
             }
 
+            var sectionNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var fieldNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
             foreach (var section in sections.EnumerateArray())
             {
                 if (section.ValueKind != JsonValueKind.Object)
@@ -184,13 +208,21 @@ namespace Unity.AI.Runtime
                     return AIResponseValidationResult.Invalid($"{responseName} response contains an invalid section (expected object).");
                 }
 
-                foreach (var propertyName in new[] { "Name", "Order" })
+                var sectionNameResult = ValidateRequiredStringProperty(section, "Name", $"{responseName} section");
+                if (!sectionNameResult.IsValid)
                 {
-                    var result = ValidateRequiredProperty(section, propertyName, $"{responseName} section");
-                    if (!result.IsValid)
-                    {
-                        return result;
-                    }
+                    return sectionNameResult;
+                }
+
+                if (!sectionNames.Add(section.GetProperty("Name").GetString()!))
+                {
+                    return AIResponseValidationResult.Invalid($"{responseName} response contains duplicate section names.");
+                }
+
+                var sectionOrderResult = ValidateRequiredUIntProperty(section, "Order", $"{responseName} section");
+                if (!sectionOrderResult.IsValid)
+                {
+                    return sectionOrderResult;
                 }
 
                 if (!TryGetProperty(section, "Fields", out var fields) || fields.ValueKind != JsonValueKind.Array)
@@ -198,17 +230,22 @@ namespace Unity.AI.Runtime
                     return AIResponseValidationResult.Invalid($"{responseName} response contains a section without valid 'Fields' (expected array).");
                 }
 
-                if (!allowEmptyFields && fields.GetArrayLength() == 0)
+                if (fields.GetArrayLength() == 0)
                 {
                     return AIResponseValidationResult.Invalid($"{responseName} response contains a section without fields.");
                 }
 
                 foreach (var field in fields.EnumerateArray())
                 {
-                    var result = ValidateField(field, responseName, requiresFieldKey);
+                    var result = ValidateField(field, responseName);
                     if (!result.IsValid)
                     {
                         return result;
+                    }
+
+                    if (!fieldNames.Add(field.GetProperty("Name").GetString()!))
+                    {
+                        return AIResponseValidationResult.Invalid($"{responseName} response contains duplicate field names.");
                     }
                 }
             }
@@ -216,20 +253,25 @@ namespace Unity.AI.Runtime
             return AIResponseValidationResult.Success();
         }
 
-        private static AIResponseValidationResult ValidateField(JsonElement field, string responseName, bool requiresFieldKey)
+        private static AIResponseValidationResult ValidateField(JsonElement field, string responseName)
         {
             if (field.ValueKind != JsonValueKind.Object)
             {
                 return AIResponseValidationResult.Invalid($"{responseName} response contains an invalid field (expected object).");
             }
 
-            var requiredFields = requiresFieldKey
-                ? new[] { "Key", "Label", "Type", "Definition" }
-                : new[] { "Name", "Label", "Order", "Type", "Definition" };
-
-            foreach (var propertyName in requiredFields)
+            foreach (var propertyName in new[] { "Name", "Label" })
             {
-                var result = ValidateRequiredProperty(field, propertyName, $"{responseName} field");
+                var result = ValidateRequiredStringProperty(field, propertyName, $"{responseName} field");
+                if (!result.IsValid)
+                {
+                    return result;
+                }
+            }
+
+            foreach (var propertyName in new[] { "Order", "Type" })
+            {
+                var result = ValidateRequiredUIntProperty(field, propertyName, $"{responseName} field");
                 if (!result.IsValid)
                 {
                     return result;
@@ -279,11 +321,36 @@ namespace Unity.AI.Runtime
             return AIResponseValidationResult.Success();
         }
 
-        private static AIResponseValidationResult ValidateRequiredProperty(JsonElement element, string propertyName, string sourceName)
+        private static AIResponseValidationResult ValidateRequiredStringProperty(JsonElement element, string propertyName, string sourceName, bool allowEmpty = false)
         {
-            if (!TryGetProperty(element, propertyName, out var property) || property.ValueKind == JsonValueKind.Null)
+            if (!TryGetProperty(element, propertyName, out var property)
+                || property.ValueKind != JsonValueKind.String
+                || (!allowEmpty && string.IsNullOrWhiteSpace(property.GetString())))
             {
-                return AIResponseValidationResult.Invalid($"{sourceName} response is missing required field '{propertyName}'.");
+                var expectation = allowEmpty ? "string" : "non-empty string";
+                return AIResponseValidationResult.Invalid($"{sourceName} response is missing or invalid required field '{propertyName}' (expected {expectation}).");
+            }
+
+            return AIResponseValidationResult.Success();
+        }
+
+        private static AIResponseValidationResult ValidateRequiredUIntProperty(JsonElement element, string propertyName, string sourceName)
+        {
+            if (!TryGetProperty(element, propertyName, out var property)
+                || property.ValueKind != JsonValueKind.Number
+                || !property.TryGetUInt32(out _))
+            {
+                return AIResponseValidationResult.Invalid($"{sourceName} response is missing or invalid required field '{propertyName}' (expected non-negative integer).");
+            }
+
+            return AIResponseValidationResult.Success();
+        }
+
+        private static AIResponseValidationResult ValidateRequiredBooleanProperty(JsonElement element, string propertyName, string sourceName)
+        {
+            if (!TryGetProperty(element, propertyName, out var property) || property.ValueKind is not JsonValueKind.True and not JsonValueKind.False)
+            {
+                return AIResponseValidationResult.Invalid($"{sourceName} response is missing or invalid required field '{propertyName}' (expected boolean).");
             }
 
             return AIResponseValidationResult.Success();

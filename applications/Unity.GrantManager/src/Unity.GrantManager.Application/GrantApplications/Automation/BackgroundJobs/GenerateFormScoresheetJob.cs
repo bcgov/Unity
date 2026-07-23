@@ -157,7 +157,12 @@ public class GenerateFormScoresheetJob(
 
         var dto = JsonSerializer.Deserialize<CreateScoresheetDto>(json, CaseInsensitiveJsonOptions);
 
-        return dto ?? throw new InvalidOperationException("Scoresheet generation returned an unusable scoresheet definition.");
+        if (dto == null || string.IsNullOrWhiteSpace(dto.Title) || string.IsNullOrWhiteSpace(dto.Name))
+        {
+            throw new InvalidOperationException("Scoresheet generation returned an unusable scoresheet definition.");
+        }
+
+        return dto;
     }
 
     private static string BuildScoresheetName(Guid formVersionId, Guid formId)
@@ -213,9 +218,9 @@ public class GenerateFormScoresheetJob(
         }
 
         scoresheet.SetReportingFields(
-            GetRequiredStringProperty(parsed, "ReportKeys", "scoresheet"),
-            GetRequiredStringProperty(parsed, "ReportColumns", "scoresheet"),
-            GetRequiredStringProperty(parsed, "ReportViewName", "scoresheet"));
+            GetRequiredStringProperty(parsed, "ReportKeys", "scoresheet", allowEmpty: true),
+            GetRequiredStringProperty(parsed, "ReportColumns", "scoresheet", allowEmpty: true),
+            GetRequiredStringProperty(parsed, "ReportViewName", "scoresheet", allowEmpty: true));
 
         return scoresheet;
     }
@@ -232,9 +237,9 @@ public class GenerateFormScoresheetJob(
         scoresheet.Title = dto.Title;
         scoresheet.Version = version;
         scoresheet.SetReportingFields(
-            GetRequiredStringProperty(parsed, "ReportKeys", "scoresheet"),
-            GetRequiredStringProperty(parsed, "ReportColumns", "scoresheet"),
-            GetRequiredStringProperty(parsed, "ReportViewName", "scoresheet"));
+            GetRequiredStringProperty(parsed, "ReportKeys", "scoresheet", allowEmpty: true),
+            GetRequiredStringProperty(parsed, "ReportColumns", "scoresheet", allowEmpty: true),
+            GetRequiredStringProperty(parsed, "ReportViewName", "scoresheet", allowEmpty: true));
 
         scoresheet.Sections.Clear();
 
@@ -294,14 +299,16 @@ public class GenerateFormScoresheetJob(
         return false;
     }
 
-    private static string GetRequiredStringProperty(JsonElement element, string propertyName, string sourceName)
+    private static string GetRequiredStringProperty(JsonElement element, string propertyName, string sourceName, bool allowEmpty = false)
     {
-        if (element.TryGetProperty(propertyName, out var property) && property.ValueKind != JsonValueKind.Null)
+        if (element.TryGetProperty(propertyName, out var property)
+            && property.ValueKind == JsonValueKind.String
+            && (allowEmpty || !string.IsNullOrWhiteSpace(property.GetString())))
         {
-            return property.GetString() ?? string.Empty;
+            return property.GetString()!;
         }
 
-        throw new InvalidOperationException($"Scoresheet generation returned a {sourceName} without {propertyName}.");
+        throw new InvalidOperationException($"Scoresheet generation returned a {sourceName} without a valid {propertyName}.");
     }
 
     private static uint GetRequiredNumberProperty(JsonElement element, string propertyName, string sourceName)

@@ -202,4 +202,94 @@ public class PromptResponseValidatorTests
         result.IsValid.ShouldBeTrue();
     }
 
+    [Fact]
+    public void ValidateFormScoresheetJson_Should_Return_Success_For_Complete_Scoresheet()
+    {
+        var result = AIProviderPayloadValidator.ValidateFormScoresheetJson(ValidFormScoresheetJson);
+
+        result.IsValid.ShouldBeTrue();
+    }
+
+    [Fact]
+    public void ValidateFormScoresheetJson_Should_Allow_Empty_Optional_Reporting_Fields()
+    {
+        var response = ValidFormScoresheetJson
+            .Replace("\"ReportColumns\": \"score\"", "\"ReportColumns\": \"\"", StringComparison.Ordinal)
+            .Replace("\"ReportKeys\": \"project_score\"", "\"ReportKeys\": \"\"", StringComparison.Ordinal)
+            .Replace("\"ReportViewName\": \"scoresheet_report\"", "\"ReportViewName\": \"\"", StringComparison.Ordinal);
+
+        var result = AIProviderPayloadValidator.ValidateFormScoresheetJson(response);
+
+        result.IsValid.ShouldBeTrue();
+    }
+
+    [Theory]
+    [InlineData("\"Title\": \"Generated scoresheet\"", "\"Title\": \"\"")]
+    [InlineData("\"Version\": 1", "\"Version\": \"1\"")]
+    [InlineData("\"Published\": true", "\"Published\": \"true\"")]
+    [InlineData("\"Definition\": \"{}\"", "\"Definition\": \"not-json\"")]
+    public void ValidateFormScoresheetJson_Should_Return_InvalidOutput_For_Invalid_Required_Value(string validValue, string invalidValue)
+    {
+        var result = AIProviderPayloadValidator.ValidateFormScoresheetJson(ValidFormScoresheetJson.Replace(validValue, invalidValue, StringComparison.Ordinal));
+
+        result.IsValid.ShouldBeFalse();
+        result.FailureCategory.ShouldBe(AIFailureCategory.InvalidOutput);
+    }
+
+    [Fact]
+    public void ValidateFormScoresheetJson_Should_Return_InvalidOutput_For_Duplicate_Question_Names()
+    {
+        var response = ValidFormScoresheetJson.Replace(
+            "\"Fields\": [",
+            "\"Fields\": [{ \"Name\": \"project_score\", \"Label\": \"Duplicate\", \"Order\": 1, \"Type\": 1, \"Definition\": \"{}\" },",
+            StringComparison.Ordinal);
+
+        var result = AIProviderPayloadValidator.ValidateFormScoresheetJson(response);
+
+        result.IsValid.ShouldBeFalse();
+        result.Reason.ShouldContain("duplicate field names");
+    }
+
+    [Fact]
+    public void ValidateFormScoresheetJson_Should_Return_InvalidOutput_For_Duplicate_Section_Names()
+    {
+        var response = ValidFormScoresheetJson.Replace(
+            "\"Sections\": [",
+            "\"Sections\": [{ \"Name\": \"Review\", \"Order\": 1, \"Fields\": [{ \"Name\": \"second_score\", \"Label\": \"Second score\", \"Order\": 0, \"Type\": 1, \"Definition\": \"{}\" }] },",
+            StringComparison.Ordinal);
+
+        var result = AIProviderPayloadValidator.ValidateFormScoresheetJson(response);
+
+        result.IsValid.ShouldBeFalse();
+        result.Reason.ShouldContain("duplicate section names");
+    }
+
+    private const string ValidFormScoresheetJson = """
+        {
+          "Title": "Generated scoresheet",
+          "Name": "generated-scoresheet",
+          "Version": 1,
+          "Order": 0,
+          "Published": true,
+          "ReportColumns": "score",
+          "ReportKeys": "project_score",
+          "ReportViewName": "scoresheet_report",
+          "Sections": [
+            {
+              "Name": "Review",
+              "Order": 0,
+              "Fields": [
+                {
+                  "Name": "project_score",
+                  "Label": "Project score",
+                  "Order": 0,
+                  "Type": 1,
+                  "Definition": "{}"
+                }
+              ]
+            }
+          ]
+        }
+        """;
+
 }
