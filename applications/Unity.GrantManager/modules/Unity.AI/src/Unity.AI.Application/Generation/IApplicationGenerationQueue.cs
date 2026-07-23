@@ -16,5 +16,7 @@ public interface IApplicationGenerationQueue
 
     Task QueueFormWorksheetAsync(Guid applicationId, Guid? tenantId, Guid applicationFormVersionId, string? promptVersion = null);
 
+    Task QueueFormScoresheetAsync(Guid applicationId, Guid? tenantId, Guid applicationFormVersionId, string? promptVersion = null);
+
     Task QueueApplicationIntakeAsync(Guid applicationId, Guid? tenantId, string? promptVersion = null);
 }

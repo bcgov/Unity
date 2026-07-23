@@ -30,6 +30,7 @@ public class AIPromptDataSeeder(
             await SeedScoresheetPromptAsync();
             await SeedFormMappingPromptAsync();
             await SeedFormWorksheetPromptAsync();
+            await SeedFormScoresheetPromptAsync();
         }
     }
 
@@ -122,6 +123,11 @@ public class AIPromptDataSeeder(
     private async Task SeedFormWorksheetPromptAsync()
     {
         await EnsurePromptAsync(AIPromptTypes.FormWorksheet, 2, FormWorksheetSystemV2, FormWorksheetUserV2, FormWorksheetMetadataV2);
+    }
+
+    private async Task SeedFormScoresheetPromptAsync()
+    {
+        await EnsurePromptAsync(AIPromptTypes.FormScoresheet, 2, FormScoresheetSystemV2, FormScoresheetUserV2, FormScoresheetMetadataV2);
     }
 
     // ─── HELPERS ──────────────────────────────────────────────────────────────
@@ -895,6 +901,66 @@ public class AIPromptDataSeeder(
     private const string FormWorksheetMetadataV2 = """
         {
           "DATA": "Serialized JSON payload containing form metadata, CHEFS fields, Unity core fields, the current mapping, form schema, and the existing AI worksheet."
+        }
+        """;
+
+    // ── v2/form-scoresheet.system.txt ───────────────────────────────────────
+    private const string FormScoresheetSystemV2 = """
+        You are a scoresheet definition generator for Unity Grant Manager.
+        Generate a recommended scoresheet definition JSON that can be imported into Flex.
+        Return only valid JSON.
+        """;
+
+    // ── v2/form-scoresheet.user.txt ──────────────────────────────────────────
+    private const string FormScoresheetUserV2 = """
+        SCORESHEET CONTEXT:
+        {{DATA}}
+
+        OUTPUT
+        {
+          "Title": "<string>",
+          "Name": "<string>",
+          "Version": <number>,
+          "Order": 0,
+          "Published": false,
+          "ReportColumns": "<string>",
+          "ReportKeys": "<string>",
+          "ReportViewName": "<string>",
+          "Sections": [
+            {
+              "Name": "<string>",
+              "Order": 0,
+              "Fields": [
+                {
+                  "Name": "<string>",
+                  "Label": "<string>",
+                  "Description": "<string|null>",
+                  "Order": 0,
+                  "Type": <number>,
+                  "Enabled": true,
+                  "Definition": "<string>"
+                }
+              ]
+            }
+          ]
+        }
+
+        Rules:
+        - Return one scoresheet definition JSON object only.
+        - The context contains CHEFS form fields, allowed Unity Flex question types, and a scoresheet template.
+        - Fill out the scoresheet template to generate the rubric assessors use to score submitted applications.
+        - Use CHEFS form fields as evidence for assessment criteria, but do not create one question per form field.
+        - Keep the generated scoresheet focused on reviewer criteria, scoring choices, and comments.
+        - Do not invent assessor workflow, compliance, declaration, approval, status, conflict-of-interest, or submission identifier questions unless the CHEFS fields explicitly contain content that should be scored for that topic.
+        - Use the template's Name, Version, Order, Published, ReportColumns, ReportKeys, and ReportViewName values.
+        - Use the numeric QuestionType values from Unity Flex.
+        - Do not copy or infer an existing scoresheet unless it is explicitly provided as part of the template.
+        - Return valid plain JSON only.
+        """;
+
+    private const string FormScoresheetMetadataV2 = """
+        {
+          "DATA": "Serialized JSON payload containing the form name, form version, CHEFS fields, allowed question types, and the scoresheet template to fill out."
         }
         """;
 
