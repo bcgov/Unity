@@ -2,11 +2,167 @@ $(function () {
     const l = abp.localization.getResource('Payments');
     const nullPlaceholder = '—';
     const requestedFieldsStorageKey = 'PaymentRequests_RequestedFields';
+    const defaultQuickDateRange = 'last6months';
     const formatter = createNumberFormatter();
     const guidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     let dt = $('#PaymentRequestListTable');
     let dataTable;
     let isApprove = false;
+
+    let paymentTableFilters = {
+        requestedFromDate: null,
+        requestedToDate: null
+    };
+
+    const UIElements = {
+        quickDateRange: $('#quickDateRange'),
+        inputFilter: $('.date-input-filter'),
+        requestedToInput: $('#requestedToDate'),
+        requestedFromInput: $('#requestedFromDate'),
+    };
+
+    function toggleCustomDateInputs(show) {
+        if (show) {
+            $('#customDateInputs').show();
+        } else {
+            $('#customDateInputs').hide();
+        }
+    }
+
+    function setDateRangeFilters(quickDateRange, range) {
+        UIElements.quickDateRange.val(quickDateRange);
+
+        if (range) {
+            const fromDate = range.fromDate ?? '';
+            const toDate = range.toDate ?? '';
+            UIElements.requestedFromInput.val(fromDate);
+            UIElements.requestedToInput.val(toDate);
+            paymentTableFilters.requestedFromDate = fromDate;
+            paymentTableFilters.requestedToDate = toDate;
+        }
+    }
+
+    function setDateRangeLocalStorage(quickDateRange, fromToRange) {
+        localStorage.setItem('PaymentRequests_QuickRange', quickDateRange || defaultQuickDateRange);
+        if (fromToRange) {
+            const fromDate = fromToRange.fromDate;
+            const toDate = fromToRange.toDate;
+            if (fromDate) {
+                localStorage.setItem('PaymentRequests_FromDate', fromDate);
+            }
+            else {
+                localStorage.removeItem('PaymentRequests_FromDate');
+            }
+            if (toDate) {
+                localStorage.setItem('PaymentRequests_ToDate', toDate);
+            }
+            else {
+                localStorage.removeItem('PaymentRequests_ToDate');
+            }
+        }
+    }
+
+    function initializeRequestedFilterDates() {
+        let savedQuickRange = localStorage.getItem('PaymentRequests_QuickRange') || defaultQuickDateRange;
+        let savedFromDate = localStorage.getItem('PaymentRequests_FromDate');
+        let savedToDate = localStorage.getItem('PaymentRequests_ToDate');
+
+        let isCustomRange = savedQuickRange === 'custom';
+        toggleCustomDateInputs(isCustomRange);
+
+        let range = isCustomRange
+            ? {
+                fromDate: savedFromDate || '',
+                toDate: savedToDate || ''
+            }
+            : getDateRange(savedQuickRange);
+
+        if (!isCustomRange && !range) {
+            savedQuickRange = defaultQuickDateRange;
+            range = getDateRange(savedQuickRange);
+        }
+
+        setDateRangeFilters(savedQuickRange, range);
+        setDateRangeLocalStorage(savedQuickRange, range);
+
+        // Set max date to today for both inputs
+        const today = formatDate(new Date());
+        UIElements.requestedToInput.attr({ 'max': today });
+        UIElements.requestedFromInput.attr({ 'max': today });
+    }
+
+    function handleInputFilterChange() {
+        const $input = $(this);
+        const dateValue = $input.val();
+
+        if (!validateDate(dateValue, $input)) return;
+
+        paymentTableFilters.requestedFromDate = UIElements.requestedFromInput.val();
+        paymentTableFilters.requestedToDate = UIElements.requestedToInput.val();
+
+        // If the values for FromDate and ToDate are being set outside of the
+        // quick drop down handler, custom SHOULD be shown, but set just in case
+        UIElements.quickDateRange.val('custom');
+        localStorage.setItem('PaymentRequests_QuickRange', 'custom');
+
+        localStorage.setItem('PaymentRequests_FromDate', paymentTableFilters.requestedFromDate);
+        localStorage.setItem('PaymentRequests_ToDate', paymentTableFilters.requestedToDate);
+
+        dataTable.ajax.reload(null, true);
+    }
+
+    function handleQuickDateRangeChange() {
+        const selectedRange = $(this).val();
+
+        if (selectedRange === 'custom') {
+            // Show the custom date inputs and don't modify their values
+            toggleCustomDateInputs(true);
+            return;
+        }
+
+        // Hide custom date inputs for preset ranges
+        toggleCustomDateInputs(false);
+
+        // Get the date range for the selected option
+        const range = getDateRange(selectedRange);
+        setDateRangeFilters(selectedRange, range);
+        setDateRangeLocalStorage(selectedRange, range);
+
+        // Reload the table with new filters
+        dataTable.ajax.reload(null, true);
+    }
+
+    function bindUIEvents() {
+        UIElements.inputFilter.on('change', handleInputFilterChange);
+        UIElements.quickDateRange.on('change', handleQuickDateRangeChange);
+    }
+
+    // Restores search value and date range filters when a saved view is loaded.
+    function restoreCustomFilters(filters) {
+        $('#search').val(filters.externalSearchValue || '');
+
+        let quickRange = filters.quickDateRange || defaultQuickDateRange;
+        let isCustomRange = filters.quickDateRange === 'custom';
+        toggleCustomDateInputs(isCustomRange);
+
+        let range = isCustomRange
+            ? {
+                fromDate: filters.requestedFromDate || '',
+                toDate: filters.requestedToDate || ''
+            }
+            : getDateRange(quickRange);
+
+        if (!isCustomRange && !range) {
+            quickRange = defaultQuickDateRange;
+            range = getDateRange(quickRange);
+        }
+
+        setDateRangeFilters(quickRange, range);
+        setDateRangeLocalStorage(quickRange, range);
+    }
+
+    bindUIEvents();
+    initializeRequestedFilterDates();
 
     const listColumns = getColumns();
     const defaultVisibleColumns = [
@@ -87,10 +243,10 @@ $(function () {
                 .done(() => {
                     abp.notify.success('The Status Check has been sent for verification to CFS. Please refresh this page to check for Status updates.');
                     $(".select-all-payments").prop("checked", false);
-                    payment_approve_buttons.disable();
-                    payment_check_status_buttons.disable();
-                    history_button.disable();
-                    if (cancel_button) cancel_button.disable();
+                    setActionButtonState(payment_approve_buttons, false);
+                    setActionButtonState(payment_check_status_buttons, false);
+                    setActionButtonState(history_button, false);
+                    setActionButtonState(cancel_button, false);
                     selectedPaymentIds = [];
                     PubSub.publish("deselect_batchpayment_application", "reset_data");
                 })
@@ -159,10 +315,10 @@ $(function () {
                             .then(function () {
                                 abp.notify.success('Payment has been cancelled successfully.');
                                 $(".select-all-payments").prop("checked", false);
-                                payment_approve_buttons.disable();
-                                payment_check_status_buttons.disable();
-                                history_button.disable();
-                                if (cancel_button) cancel_button.disable();
+                                setActionButtonState(payment_approve_buttons, false);
+                                setActionButtonState(payment_check_status_buttons, false);
+                                setActionButtonState(history_button, false);
+                                setActionButtonState(cancel_button, false);
                                 selectedPaymentIds = [];
                                 PubSub.publish("deselect_batchpayment_application", "reset_data");
                                 dataTable.ajax.reload(null, false);
@@ -247,7 +403,16 @@ $(function () {
 
                         $('.dt-search input').val('');
                         $('#search').val('');
-                        dt.search('').order(initialSortOrder).draw();
+                        dt.search('').order(initialSortOrder);
+
+                        // Reset date range filters
+                        const range = getDateRange(defaultQuickDateRange);
+                        setDateRangeFilters(defaultQuickDateRange, range);
+                        setDateRangeLocalStorage(defaultQuickDateRange, range);
+                        toggleCustomDateInputs(false);
+
+                        // Reload table data with updated filters
+                        dt.ajax.reload(null, false);
                     }
                 },
                 { extend: 'removeAllStates', text: 'Delete All Views' },
@@ -332,7 +497,9 @@ $(function () {
             }
 
             return {
-                requestedFields: requestedFields
+                requestedFields: requestedFields,
+                requestedFromDate: paymentTableFilters.requestedFromDate,
+                requestedToDate: paymentTableFilters.requestedToDate
             };
         },
         responseCallback,
@@ -347,14 +514,17 @@ $(function () {
         fixedHeaders: true,
         onStateSaveParams: function (settings, data) {
             data.customFilters = {
-                externalSearchValue: $('#search').val() || ''
+                externalSearchValue: $('#search').val() || '',
+                quickDateRange: UIElements.quickDateRange.val(),
+                requestedFromDate: UIElements.requestedFromInput.val(),
+                requestedToDate: UIElements.requestedToInput.val()
             };
         },
         onStateLoadParams: function (settings, data) {
             if (!initialLoad) {
                 isRestoringState = true;
                 if (data?.customFilters) {
-                    $('#search').val(data.customFilters.externalSearchValue || '');
+                    restoreCustomFilters(data.customFilters);
                 }
             }
         },
@@ -413,10 +583,7 @@ $(function () {
         ? dataTable.buttons(['.payment-cancel'])
         : null;
 
-    payment_approve_buttons.disable();
-    payment_check_status_buttons.disable();
-    history_button.disable();
-    if (cancel_button) cancel_button.disable();
+    checkActionButtons();
     dataTable.on('search.dt', () => handleSearch());
 
     function checkAllRowsHaveState(states) {
@@ -492,51 +659,36 @@ $(function () {
     }
 
     function checkActionButtons() {
-        let isInSentState = checkAllRowsHaveState(['Submitted', 'FSB']);
-        if (isInSentState) {
-            payment_check_status_buttons.enable();
-        } else {
-            payment_check_status_buttons.disable();
-        }
+        const hasSelection = dataTable.rows({ selected: true }).indexes().length > 0;
+        let isInSentState = hasSelection && checkAllRowsHaveState(['Submitted', 'FSB']);
+        setActionButtonState(payment_check_status_buttons, isInSentState);
+
         let hasHistoricalPayment = dataTable.rows('.selected').data().toArray().some(row => row.status === 'HistoricalPayment');
         let hasCancelledPayment = dataTable.rows('.selected').data().toArray().some(row => row.status === 'Cancelled');
-        const hasSelection = dataTable.rows({ selected: true }).indexes().length > 0;
         const canApprove = hasSelection && !isInSentState && !hasHistoricalPayment && !hasCancelledPayment
             && (abp.auth.isGranted('PaymentsPermissions.Payments.L1ApproveOrDecline')
                 || abp.auth.isGranted('PaymentsPermissions.Payments.L2ApproveOrDecline')
                 || abp.auth.isGranted('PaymentsPermissions.Payments.L3ApproveOrDecline'));
-        if (canApprove) {
-            payment_approve_buttons.enable();
-        } else {
-            payment_approve_buttons.disable();
-        }
+        setActionButtonState(payment_approve_buttons, canApprove);
+
         checkEnableHistoryButton(dataTable, history_button);
 
         if (cancel_button) {
             const eligibleCancelStatuses = ['HistoricalPayment', 'L1Pending', 'L2Pending', 'L3Pending'];
             const selectedCount = dataTable.rows({ selected: true }).indexes().length;
+            let canCancel = false;
             if (selectedCount === 1) {
                 const rowData = dataTable.rows({ selected: true }).data().toArray()[0];
-                if (eligibleCancelStatuses.includes(rowData.status)) {
-                    cancel_button.enable();
-                } else {
-                    cancel_button.disable();
-                }
-            } else {
-                cancel_button.disable();
+                canCancel = eligibleCancelStatuses.includes(rowData.status);
             }
+            setActionButtonState(cancel_button, canCancel);
         }
     }
 
     function handleSearch() {
-        let filterValue = $('.dt-search input').val();
-        if (filterValue !== undefined && filterValue.length > 0) {
-            Array.from(document.getElementsByClassName('selected')).forEach(
-                function (element, index, array) {
-                    element.classList.toggle('selected');
-                }
-            );
-            PubSub.publish("deselect_batchpayment_application", "reset_data");
+        const filterValue = dataTable.search();
+        if (filterValue?.length > 0) {
+            dataTable.rows({ selected: true }).deselect();
         }
     }
 
@@ -837,7 +989,14 @@ $(function () {
             index: columnIndex,
             render: function (data) {
                 if (data + "" !== "undefined" && data?.length > 0) {
-                    return '<button class="btn btn-light info-btn" type="button" onclick="openCasResponseModal(\'' + data + '\');">View Response<i class="fl fl-mapinfo"></i></button>';
+                    const escaped = data
+                        .replaceAll('\\', String.raw`\\`)
+                        .replaceAll("'", String.raw`\'`)
+                        .replaceAll('&', '&amp;')
+                        .replaceAll('"', '&quot;')
+                        .replaceAll('<', '&lt;')
+                        .replaceAll('>', '&gt;');
+                    return '<button class="btn btn-light info-btn" type="button" onclick="openCasResponseModal(\'' + escaped + '\');">View Response<i class="fl fl-mapinfo"></i></button>';
                 }
                 return null;
             }
@@ -1052,10 +1211,10 @@ $(function () {
         );
         dataTable.ajax.reload(null, false);
         $(".select-all-payments").prop("checked", false);
-        payment_approve_buttons.disable();
-        payment_check_status_buttons.disable();
-        history_button.disable();
-        if (cancel_button) cancel_button.disable();
+        setActionButtonState(payment_approve_buttons, false);
+        setActionButtonState(payment_check_status_buttons, false);
+        setActionButtonState(history_button, false);
+        setActionButtonState(cancel_button, false);
         selectedPaymentIds = [];
         PubSub.publish("deselect_batchpayment_application", "reset_data");
     });
@@ -1112,10 +1271,10 @@ $(function () {
         (msg, data) => {
             dataTable.ajax.reload(null, false);
             $(".select-all-payments").prop("checked", false);
-            payment_approve_buttons.disable();
-            payment_check_status_buttons.disable();
-            history_button.disable();
-            if (cancel_button) cancel_button.disable();
+            setActionButtonState(payment_approve_buttons, false);
+            setActionButtonState(payment_check_status_buttons, false);
+            setActionButtonState(history_button, false);
+            setActionButtonState(cancel_button, false);
             selectedPaymentIds = [];
             PubSub.publish("deselect_batchpayment_application", "reset_data");
             PubSub.publish('clear_selected_payment');
@@ -1123,6 +1282,98 @@ $(function () {
     );
 
 });
+
+function formatDate(date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
+
+// Returns a formatted { fromDate, toDate } for the filter fields.
+// Null if 'custom' or no input provided (assumes custom is default break)
+function getDateRange(rangeType) {
+    let today = new Date();
+    const toDate = formatDate(new Date());
+    let fromDate;
+
+    switch (rangeType) {
+        case 'today':
+            fromDate = toDate;
+            break;
+        case 'last7days':
+            fromDate = formatDate(new Date(today.setDate(today.getDate() - 7)));
+            break;
+        case 'last30days':
+            fromDate = formatDate(new Date(today.setDate(today.getDate() - 30)));
+            break;
+        case 'last3months':
+            fromDate = formatDate(new Date(today.setMonth(today.getMonth() - 3)));
+            break;
+        case 'last6months':
+            fromDate = formatDate(new Date(today.setMonth(today.getMonth() - 6)));
+            break;
+        case 'currentfiscalyear': {
+            const currentMonth = today.getMonth();
+            const currentYear = today.getFullYear();
+            const fiscalStartYear = currentMonth >= 3 ? currentYear : currentYear - 1;
+            return {
+                fromDate: formatDate(new Date(fiscalStartYear, 3, 1)),
+                toDate: formatDate(new Date(fiscalStartYear + 1, 2, 31))
+            };
+        }
+        case 'alltime':
+            return { fromDate: null, toDate: null };
+        case 'custom':
+        default:
+            return null; // Don't modify dates for custom
+    }
+
+    return { fromDate, toDate };
+}
+
+function validateDate(dateValue, element) {
+    if (dateValue) {
+        const selectedDate = new Date(dateValue);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        const minDate = element.attr('min') ? new Date(element.attr('min')) : null;
+        const maxDate = element.attr('max') ? new Date(element.attr('max')) : null;
+
+        if (selectedDate > today) {
+            element.addClass('input-validation-error');
+            abp.notify.error('The date cannot be in the future', 'Invalid Date');
+            return false;
+        }
+
+        if (minDate && selectedDate < minDate) {
+            element.addClass('input-validation-error');
+            abp.notify.error('The date cannot be before the minimum allowed date', 'Invalid Date');
+            return false;
+        }
+
+        if (maxDate && selectedDate > maxDate) {
+            element.addClass('input-validation-error');
+            abp.notify.error('The date cannot be after the maximum allowed date', 'Invalid Date');
+            return false;
+        }
+
+        element.removeClass('input-validation-error');
+        return true;
+    }
+    return true;
+}
+
+function setActionButtonState(buttonApi, enabled) {
+    if (!buttonApi) return;
+    if (enabled) {
+        buttonApi.enable();
+    } else {
+        buttonApi.disable();
+    }
+    buttonApi.nodes().toggleClass('action-bar-btn-unavailable', !enabled);
+}
 
 function getCancelledColumn(columnIndex) {
     return {
@@ -1168,11 +1419,13 @@ let casPaymentResponseModal = new abp.ModalManager({
 });
 
 function checkEnableHistoryButton(dataTable, history_button) {
-    if (dataTable.rows({ selected: true }).indexes().length == 1) {
+    const enabled = dataTable.rows({ selected: true }).indexes().length == 1;
+    if (enabled) {
         history_button.enable();
     } else {
         history_button.disable();
     }
+    history_button.nodes().toggleClass('action-bar-btn-unavailable', !enabled);
 }
 
 function openCasResponseModal(casResponse) {

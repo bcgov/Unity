@@ -18,6 +18,8 @@
     overflow: visible !important;
     width: 100%;
     box-sizing: border-box;
+    overflow-x: auto !important;
+    scrollbar-gutter: stable;
 }
 
 #EmailHistoryTable_wrapper .dt-scroll-head,

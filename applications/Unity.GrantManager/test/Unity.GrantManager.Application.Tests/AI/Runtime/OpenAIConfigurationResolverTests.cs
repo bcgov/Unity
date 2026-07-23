@@ -319,6 +319,7 @@ public class OpenAIConfigurationResolverTests
             modelRepository ?? CreateEmptyModelRepository(),
             operationRepository ?? CreateEmptyOperationRepository(),
             promptRepository ?? CreateEmptyPromptRepository(),
+            Substitute.For<Microsoft.Extensions.Caching.Memory.IMemoryCache>(),
             configuration,
             filter);
     }

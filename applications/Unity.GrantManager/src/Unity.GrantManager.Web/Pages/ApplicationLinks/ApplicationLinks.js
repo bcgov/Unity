@@ -53,8 +53,6 @@ $(function () {
 
         this.arr.push(linkText);
 
-        let linkInput = this;
-
         let link = document.createElement('span');
         link.className = this.options.linkClass + ' ' + linkClass;
         link.innerText = linkText;
@@ -63,13 +61,13 @@ $(function () {
         closeIcon.innerHTML = '&times;';
 
         // delete the link when icon is clicked
-        closeIcon.addEventListener('click', function (e) {
+        closeIcon.addEventListener('click', (e) => {
             e.preventDefault();
-            let link = this.parentNode;
+            let linkNode = closeIcon.parentNode;
 
-            for (let i = 0; i < linkInput.wrapper.childNodes.length; i++) {
-                if (linkInput.wrapper.childNodes[i] == link)
-                    linkInput.deleteLink(link, i);
+            for (let i = 0; i < this.wrapper.childNodes.length; i++) {
+                if (this.wrapper.childNodes[i] == linkNode)
+                    this.deleteLink(linkNode, i);
             }
         })
 
@@ -100,10 +98,8 @@ $(function () {
 
     // Add links programmatically 
     LinksInput.prototype.addData = function (array) {
-        let plugin = this;
-
-        array.forEach(function (string) {
-            plugin.addLink(string);
+        array.forEach((string) => {
+            this.addLink(string);
         })
         return this;
     }
@@ -122,14 +118,13 @@ $(function () {
         this.orignal_input.removeAttribute('hidden');
 
         delete this.orignal_input;
-        let self = this;
 
-        Object.keys(this).forEach(function (key) {
-            if (self[key] instanceof HTMLElement)
-                self[key].remove();
+        Object.keys(this).forEach((key) => {
+            if (this[key] instanceof HTMLElement)
+                this[key].remove();
 
             if (key != 'options')
-                delete self[key];
+                delete this[key];
         });
 
         this.initialized = false;

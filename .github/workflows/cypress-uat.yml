@@ -5,8 +5,6 @@ name: Cypress E2E — UAT
 #
 # Unity has no separate UAT build workflow — UAT deploys off the main build,
 # so this triggers off the same workflow_run as prod's build pipeline.
-# There's also no "uat" GitHub Environment today, so oc-login reuses the
-# "main" Environment's OpenShift credentials (same cluster-wide access).
 #
 # Runs Cypress inside OpenShift (d18498-tools) — see cypress-e2e-runner.yml.
 
@@ -26,5 +24,4 @@ jobs:
     with:
       env_name: uat
       cypress_config_key: CYPRESS_CONFIG_UAT
-      gh_environment: main
     secrets: inherit

@@ -6,4 +6,5 @@ public static class AIMenus
 
     public const string Prompts = Prefix + ".Prompts";
     public const string Reporting = Prefix + ".Reporting";
+    public const string FormMapping = Prefix + ".FormMapping";
 }

@@ -13,9 +13,9 @@ namespace Unity.Payments.Web.Views.Shared.Components.ActionBar
         AutoInitialize = true)]
     public class PaymentActionBar : AbpViewComponent
     {
-        public IViewComponentResult Invoke()
+        public IViewComponentResult Invoke(bool showDateRangeFilter = false)
         {
-            return View();
+            return View(showDateRangeFilter);
         }
     }
 

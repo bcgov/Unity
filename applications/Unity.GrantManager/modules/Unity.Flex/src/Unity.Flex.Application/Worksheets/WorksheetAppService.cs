@@ -58,6 +58,9 @@ namespace Unity.Flex.Worksheets
             }
 
             var newWorksheet = new Worksheet(Guid.NewGuid(), worksheetName, dto.Title);
+            newWorksheet.SetVersion(dto.Version);
+            newWorksheet.SetPublished(dto.Published);
+            newWorksheet.SetReportingFields(dto.ReportKeys, dto.ReportColumns, dto.ReportViewName);
 
             foreach (var section in dto.Sections.OrderBy(s => s.Order))
             {

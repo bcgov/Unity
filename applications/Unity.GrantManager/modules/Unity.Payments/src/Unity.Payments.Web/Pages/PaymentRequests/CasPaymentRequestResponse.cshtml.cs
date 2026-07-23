@@ -18,7 +18,8 @@ namespace Unity.Payments.Web.Pages.Payments
             string pattern = ";";
             string replace = "<br>";
 
-            string formattedResponse = Regex.Replace(casResponse,
+            string encoded = System.Net.WebUtility.HtmlEncode(casResponse);
+            string formattedResponse = Regex.Replace(encoded,
                             pattern,
                             replace,
                             RegexOptions.None,
