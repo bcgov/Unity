@@ -1,6 +1,7 @@
 ﻿using Stateless.Graph;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace Unity.GrantManager.Workflow;
 public static class UnityWorkflowExtensions
@@ -8,9 +9,9 @@ public static class UnityWorkflowExtensions
     /// <summary>
     /// The currently permitted actions allowed by the workflow state machine.
     /// </summary>
-    public static IEnumerable<TTriggers> GetPermittedActions<TStates, TTriggers>(this UnityWorkflow<TStates, TTriggers> workflow)
+    public static async Task<IEnumerable<TTriggers>> GetPermittedActions<TStates, TTriggers>(this UnityWorkflow<TStates, TTriggers> workflow)
     {
-        return workflow._stateMachine.GetPermittedTriggers();
+        return await workflow._stateMachine.GetPermittedTriggersAsync();
     }
 
     /// <summary>

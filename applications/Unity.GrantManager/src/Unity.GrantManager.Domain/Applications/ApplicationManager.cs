@@ -178,7 +178,7 @@ public class ApplicationManager : DomainService, IApplicationManager
             });
 
         var allActions = Workflow.GetAllActions().Distinct().ToList();
-        var permittedActions = Workflow.GetPermittedActions().ToList();
+        var permittedActions = (await Workflow.GetPermittedActions()).ToList();
 
         var actionsList = allActions
             .Select(trigger =>
@@ -194,7 +194,7 @@ public class ApplicationManager : DomainService, IApplicationManager
         return actionsList;
     }
 
-    public bool IsActionAllowed(Application application, GrantApplicationAction triggerAction)
+    public async Task<bool> IsActionAllowed(Application application, GrantApplicationAction triggerAction)
     {
         var Workflow = new UnityWorkflow<GrantApplicationState, GrantApplicationAction>(
             () => application.ApplicationStatus.StatusCode,
@@ -203,7 +203,7 @@ public class ApplicationManager : DomainService, IApplicationManager
                 ConfigureWorkflow(sm, application.ApplicationForm.IsDirectApproval);
             });
 
-        return Workflow.GetPermittedActions().Contains(triggerAction);
+        return (await Workflow.GetPermittedActions()).Contains(triggerAction);
     }
 
     /// <summary>
@@ -326,7 +326,7 @@ public class ApplicationManager : DomainService, IApplicationManager
         using var uow = _unitOfWorkManager.Begin();
         var person = await _personRepository.FindAsync(assigneeId) ?? throw new BusinessException("Tenant User Missing!");
         var application = await _applicationRepository.GetAsync(applicationId, true);
-        IQueryable<ApplicationAssignment> queryableAssignment = _applicationAssignmentRepository.GetQueryableAsync().Result;
+        IQueryable<ApplicationAssignment> queryableAssignment = await _applicationAssignmentRepository.GetQueryableAsync();
         List<ApplicationAssignment> assignments = queryableAssignment
             .Where(a => a.ApplicationId.Equals(applicationId))
             .Where(b => b.AssigneeId.Equals(person.Id)).ToList();
