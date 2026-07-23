@@ -6,7 +6,7 @@ rem 1. Copy the launcher token from the extension Settings page below.
 rem 2. Set CHROME_PROFILE to the profile folder that has the extension loaded.
 rem 3. Add, remove, or reorder the OPEN_FORM lines in the embedded test list.
 
-set "LAUNCHER_TOKEN=a08e7b8bce5a402d9262859aba8998380495eabebe594c33ace293a8f7c697ca"
+set "LAUNCHER_TOKEN=PASTE_TOKEN_FROM_EXTENSION_SETTINGS_HERE"
 set "CHROME_PROFILE=Default"
 set "SUITE_ID=regression-%RANDOM%-%RANDOM%"
 

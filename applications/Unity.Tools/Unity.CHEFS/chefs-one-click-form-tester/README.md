@@ -65,7 +65,7 @@ Batch launching is disabled by default. Open **Settings** and configure **Batch 
 
 The token, exact configured origin, Chrome host permission and existing environment protection must all pass. A production-like host is not made safe merely by adding it to the batch list. Before injecting the tester, the extension removes the launcher marker from browser history and retains only the cleaned form URL in queue records. The extension popup reports active, queued and completed items and provides **Stop Batch**.
 
-The launcher contains no extension ID. If the extension is absent, disabled or not loaded in the chosen Chrome profile, the form tabs simply open. See the project-root `BATCH-REGRESSION.md` for setup, form-list editing and troubleshooting.
+The launcher contains no extension ID. If the extension is absent, disabled or not loaded in the chosen Chrome profile, the form tabs simply open.
 
 ## v0.2.6 Select Export Folder
 
