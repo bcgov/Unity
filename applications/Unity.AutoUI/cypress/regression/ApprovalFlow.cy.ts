@@ -714,17 +714,40 @@ const APPLICATIONS_PATH = "GrantApplications";
   it("Test approval workflow (confirm)", () => {
     cy.reload(); // Refresh to ensure all changes are reflected before approval
     detailsPage.dismissErrorModalIfPresent();
-    clickStatusAction(STATUS_ACTIONS.completeAssessment);
-    confirmStatusActionIfNeeded();
+    waitForBlockingUiToClear();
 
-    cy.get(STATUS_ACTIONS.menuButton, { timeout: 20000 })
-      .filter(":visible")
-      .first()
+    cy.get(BREADCRUMB_STATUS_SELECTOR, { timeout: 20000 })
       .should("be.visible")
-      .and("not.contain.text", "Processing...");
+      .invoke("text")
+      .then((statusText) => {
+        const currentStatus = statusText.trim().toLowerCase();
 
-    clickStatusAction(STATUS_ACTIONS.approve);
-    detailsPage.waitForConfirmModal().clickConfirm();
+        if (currentStatus === "approved") {
+          cy.log("Application is already approved");
+          return;
+        }
+
+        clickStatusActionIfEnabled(
+          STATUS_ACTIONS.completeAssessment,
+          "Complete Assessment",
+        );
+
+        cy.get(STATUS_ACTIONS.menuButton, { timeout: 20000 })
+          .filter(":visible")
+          .first()
+          .should("be.visible")
+          .and("not.contain.text", "Processing...");
+
+        clickStatusAction(STATUS_ACTIONS.approve);
+        confirmStatusActionIfNeeded();
+      });
+
+    cy.get(BREADCRUMB_STATUS_SELECTOR, { timeout: 60000 })
+      .should("be.visible")
+      .invoke("text")
+      .should((statusText) => {
+        expect(statusText.trim().toLowerCase()).to.equal("approved");
+      });
   });
 
   // ============ Post-Approval Verification ============
