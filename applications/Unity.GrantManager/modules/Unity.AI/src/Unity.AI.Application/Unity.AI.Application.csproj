@@ -19,8 +19,7 @@
     <PackageReference Include="Volo.Abp.EntityFrameworkCore" Version="10.5.0" />
     <PackageReference Include="Volo.Abp.Features" Version="10.5.0" />
     <PackageReference Include="Volo.Abp.TenantManagement.Domain" Version="10.5.0" />
-    <!-- Explicit references to fix vulnerable transitive dependencies -->
-    <PackageReference Include="AWSSDK.Core" Version="4.0.100.7" />
+    <!-- Explicit reference to fix vulnerable transitive dependency -->
     <PackageReference Include="System.Security.Cryptography.Xml" Version="10.0.10" />
     <ProjectReference Include="..\..\..\..\modules\Unity.Flex\src\Unity.Flex.Application\Unity.Flex.Application.csproj" />
     <ProjectReference Include="..\..\..\..\src\Unity.GrantManager.Application.Contracts\Unity.GrantManager.Application.Contracts.csproj" />

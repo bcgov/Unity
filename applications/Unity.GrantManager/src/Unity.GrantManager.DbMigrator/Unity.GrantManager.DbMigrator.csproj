@@ -29,8 +29,6 @@
     <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
     <PackageReference Include="Serilog.Sinks.Console" Version="6.1.1" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.10" />
-    <!-- Explicit reference to fix vulnerable transitive dependency -->
-    <PackageReference Include="System.IO.Packaging" Version="10.0.10" />
   </ItemGroup>
 
   <ItemGroup>

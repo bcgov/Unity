@@ -90,8 +90,6 @@
 		<PackageReference Include="Volo.Abp.TenantManagement.EntityFrameworkCore" Version="10.5.0" />
 		<PackageReference Include="Volo.Abp.FeatureManagement.EntityFrameworkCore" Version="10.5.0" />
 		<PackageReference Include="Volo.Abp.OpenIddict.EntityFrameworkCore" Version="10.5.0" />
-		<!-- Explicit reference to fix vulnerable transitive dependency -->
-		<PackageReference Include="System.IO.Packaging" Version="10.0.10" />
 		<ProjectReference Include="..\..\modules\Unity.Notifications\src\Unity.Notifications.EntityFrameworkCore\Unity.Notifications.EntityFrameworkCore.csproj" /></ItemGroup>
 
 
