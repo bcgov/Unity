@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
@@ -28,21 +28,25 @@ namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ
         private string? _consumerTag;
         private readonly string _consumerName = typeof(TMessageConsumer).Name;
 
-        public void RegisterQueueConsumer()
+        public async Task RegisterQueueConsumerAsync()
         {
             _logger.LogInformation("Registering {Consumer} as a consumer for Queue {Queue}", _consumerName, _queueName);
 
             using var scope = _serviceProvider.CreateScope();
             var channelProvider = scope.ServiceProvider.GetRequiredService<IQueueChannelProvider<TQueueMessage>>();
-            var consumerChannel = channelProvider.GetChannel() ?? throw new QueueingException($"Failed to create consumer channel for {_queueName}");
+            var consumerChannel = await channelProvider.GetChannelAsync() ?? throw new QueueingException($"Failed to create consumer channel for {_queueName}");
             var consumer = new AsyncEventingBasicConsumer(consumerChannel);
-            consumer.Received += HandleMessage;
+            consumer.ReceivedAsync += HandleMessageAsync;
 
             try
             {
-                _consumerTag = consumerChannel.BasicConsume(
+                _consumerTag = await consumerChannel.BasicConsumeAsync(
                     queue: _queueName,
                     autoAck: false,
+                    consumerTag: string.Empty,
+                    noLocal: false,
+                    exclusive: false,
+                    arguments: null,
                     consumer: consumer);
 
                 _logger.LogInformation("Successfully registered {Consumer} as consumer for {Queue}", _consumerName, _queueName);
@@ -54,7 +58,7 @@ namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ
             }
         }
 
-        void IQueueConsumerHandler<TMessageConsumer, TQueueMessage>.CancelQueueConsumer()
+        async Task IQueueConsumerHandler<TMessageConsumer, TQueueMessage>.CancelQueueConsumerAsync()
         {
             if (string.IsNullOrEmpty(_consumerTag))
                 return;
@@ -63,11 +67,11 @@ namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ
 
             using var scope = _serviceProvider.CreateScope();
             var channelProvider = scope.ServiceProvider.GetRequiredService<IQueueChannelProvider<TQueueMessage>>();
-            var channel = channelProvider.GetChannel();
+            var channel = await channelProvider.GetChannelAsync();
 
             try
             {
-                channel.BasicCancel(_consumerTag);
+                await channel.BasicCancelAsync(_consumerTag);
             }
             catch (Exception ex)
             {
@@ -76,12 +80,12 @@ namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ
             }
         }
 
-        private async Task HandleMessage(object sender, BasicDeliverEventArgs ea)
+        private async Task HandleMessageAsync(object sender, BasicDeliverEventArgs ea)
         {
             _logger.LogInformation("Received message on {Queue}", _queueName);
 
             using var consumerScope = _serviceProvider.CreateScope();
-            var consumingChannel = ((AsyncEventingBasicConsumer)sender).Model;
+            var consumingChannel = ((AsyncEventingBasicConsumer)sender).Channel;
 
             try
             {
@@ -98,7 +102,7 @@ namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ
                 else if (tenantedMessage.TenantId == Guid.Empty)
                 {
                     _logger.LogError("Message {MessageId} on {Queue} has an empty TenantId and cannot be processed", message.MessageId, _queueName);
-                    consumingChannel.BasicReject(ea.DeliveryTag, requeue: false);
+                    await consumingChannel.BasicRejectAsync(ea.DeliveryTag, requeue: false);
                     return;
                 }
                 else
@@ -106,19 +110,19 @@ namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ
                     await ConsumeWithAuditingAsync(consumerScope, tenantedMessage, message);
                 }
 
-                consumingChannel.BasicAck(ea.DeliveryTag, multiple: false);
+                await consumingChannel.BasicAckAsync(ea.DeliveryTag, multiple: false);
 
                 _logger.LogInformation("Message {MessageId} successfully processed", message.MessageId);
             }
             catch (JsonException jex)
             {
                 _logger.LogError(jex, "Deserialization failed for message on {Queue}", _queueName);
-                consumingChannel.BasicReject(ea.DeliveryTag, requeue: false);
+                await consumingChannel.BasicRejectAsync(ea.DeliveryTag, requeue: false);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error processing message on {Queue}", _queueName);
-                consumingChannel.BasicReject(ea.DeliveryTag, requeue: false);
+                await consumingChannel.BasicRejectAsync(ea.DeliveryTag, requeue: false);
             }
         }
 

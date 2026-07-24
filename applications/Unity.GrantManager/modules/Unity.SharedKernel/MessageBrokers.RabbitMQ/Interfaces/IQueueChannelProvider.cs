@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading.Tasks;
 using RabbitMQ.Client;
 
 #pragma warning disable CA1005 // Avoid excessive parameters on generic types
@@ -13,7 +14,7 @@ namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ.Interfaces
         /// <summary>
         /// Gets a channel for publishing or consuming messages.
         /// </summary>
-        IModel GetChannel();
+        Task<IChannel> GetChannelAsync();
     }
 }
 #pragma warning restore CA1005 // Avoid excessive parameters on generic types

@@ -36,7 +36,7 @@ namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ
 
                     _scope = _serviceProvider.CreateScope();
                     _consumerHandler = _scope.ServiceProvider.GetRequiredService<IQueueConsumerHandler<TMessageConsumer, TQueueMessage>>();
-                    _consumerHandler.RegisterQueueConsumer();
+                    await _consumerHandler.RegisterQueueConsumerAsync();
 
                     _logger.LogInformation("Successfully registered consumer {ConsumerName}", typeof(TMessageConsumer).Name);
                     return;
@@ -63,7 +63,7 @@ namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ
             }
         }
 
-        public Task StopAsync(CancellationToken cancellationToken)
+        public async Task StopAsync(CancellationToken cancellationToken)
         {
             var QueueServiceName = nameof(QueueConsumerRegistratorService<TMessageConsumer, TQueueMessage>);
             var ConsumerName = typeof(TMessageConsumer).Name;
@@ -73,7 +73,10 @@ namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ
 
             try
             {
-                _consumerHandler?.CancelQueueConsumer();
+                if (_consumerHandler != null)
+                {
+                    await _consumerHandler.CancelQueueConsumerAsync();
+                }
                 _scope?.Dispose();
             }
             catch (Exception ex)
@@ -81,8 +84,6 @@ namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ
                 var ExceptionMessage = ex.Message;
                 _logger.LogError(ex, "QueueConsumerRegistratorService StopAsync Exception: {ExceptionMessage}", ExceptionMessage);
             }
-
-            return Task.CompletedTask;
         }
     }
 
