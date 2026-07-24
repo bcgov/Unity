@@ -262,7 +262,7 @@ namespace Unity.GrantManager.Assessments
         public async Task<List<AssessmentAction>> GetPermittedActions(Guid assessmentId)
         {
             var assessment = await _assessmentRepository.GetAsync(assessmentId);
-            var workflowActions = await assessment.Workflow.GetPermittedActions();
+            var workflowActions = await assessment.Workflow.GetPermittedActionsAsync();
 
             List<AssessmentAction> permittedActions = new();
             foreach (var triggerAction in workflowActions)

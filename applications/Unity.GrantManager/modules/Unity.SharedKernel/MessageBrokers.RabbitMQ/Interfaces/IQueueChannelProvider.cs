@@ -15,6 +15,14 @@ namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ.Interfaces
         /// Gets a channel for publishing or consuming messages.
         /// </summary>
         Task<IChannel> GetChannelAsync();
+
+        /// <summary>
+        /// Returns a channel obtained from <see cref="GetChannelAsync"/> so it can be pooled
+        /// or disposed and its throttling permit released. Callers that finish with a channel
+        /// (for example a one-off publish) must return it; long-lived consumer channels are
+        /// kept open and are not returned until the consumer is torn down.
+        /// </summary>
+        void ReturnChannel(IChannel channel);
     }
 }
 #pragma warning restore CA1005 // Avoid excessive parameters on generic types

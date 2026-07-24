@@ -177,7 +177,7 @@ namespace Unity.GrantManager.ApplicationForms
                     try
                     {
                         HashSet<string> newChefsSubmissions = await GetChefsSubmissions(applicationFormDto, numberOfDaysToCheck);
-                        HashSet<string> existingSubmissions = GetSubmissionsByForm(applicationFormDto.Id);
+                        HashSet<string> existingSubmissions = await GetSubmissionsByFormAsync(applicationFormDto.Id);
                         missingSubmissions = [.. newChefsSubmissions.Except(existingSubmissions)];
                         if (missingSubmissions.Count > 0)
                         {
@@ -244,18 +244,18 @@ namespace Unity.GrantManager.ApplicationForms
             return tenantName;
         }
 
-        public HashSet<string> GetSubmissionsByForm(Guid applicationFormId)
+        public async Task<HashSet<string>> GetSubmissionsByFormAsync(Guid applicationFormId)
         {
-            IQueryable<ApplicationFormSubmission> queryableApplicationFormSubmissions = ApplicationFormSubmissionRepository.GetQueryableAsync().Result;
+            IQueryable<ApplicationFormSubmission> queryableApplicationFormSubmissions = await ApplicationFormSubmissionRepository.GetQueryableAsync();
             var formSubmissionGuids = queryableApplicationFormSubmissions.Where(x => x.ApplicationFormId.Equals(applicationFormId)).Select(o => o.ChefsSubmissionGuid).ToHashSet();
             return formSubmissionGuids;
         }
 
         public async Task<IList<ApplicationFormDto>> GetConnectedApplicationFormsAsync()
         {
-            IQueryable<ApplicationForm> queryableApplicationForms = ApplicationFormRepository.GetQueryableAsync().Result;
+            IQueryable<ApplicationForm> queryableApplicationForms = await ApplicationFormRepository.GetQueryableAsync();
             var forms = queryableApplicationForms.Where(x => (x.ApiKey ?? string.Empty) != string.Empty).ToList();
-            return await Task.FromResult<IList<ApplicationFormDto>>(ObjectMapper.Map<List<ApplicationForm>, List<ApplicationFormDto>>([.. forms]));
+            return ObjectMapper.Map<List<ApplicationForm>, List<ApplicationFormDto>>([.. forms]);
         }
 
         public async Task<HashSet<string>> GetChefsSubmissions(ApplicationFormDto applicationFormDto, int numberOfDaysToCheck)

@@ -21,18 +21,24 @@ namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ
 
         public async ValueTask DisposeAsync()
         {
+            if (_connection == null) return;
+
             try
             {
-                if (_connection != null && _connection.IsOpen)
+                if (_connection.IsOpen)
                 {
                     _logger.LogDebug("Closing the connection");
                     await _connection.CloseAsync();
-                    await _connection.DisposeAsync();
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogCritical(ex, "Cannot dispose RabbitMq channel or connection");
+                _logger.LogCritical(ex, "Cannot close RabbitMq connection");
+            }
+            finally
+            {
+                // Always dispose, even if the connection was already closed or faulted.
+                await _connection.DisposeAsync();
             }
         }
 

@@ -78,6 +78,11 @@ namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ
                 _logger.LogError(ex, "Error canceling consumer {Consumer}", _consumerName);
                 throw new QueueingException($"Error canceling consumer {_consumerName}", ex);
             }
+            finally
+            {
+                // Return the short-lived cancel channel so it is disposed and its permit released.
+                channelProvider.ReturnChannel(channel);
+            }
         }
 
         private async Task HandleMessageAsync(object sender, BasicDeliverEventArgs ea)

@@ -70,6 +70,12 @@ namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ
                 _logger.LogError(ex, "PublishMessage Exception: {Message}", ex.Message);
                 throw new QueueingException($"Publish failed: {ex.Message}", ex);
             }
+            finally
+            {
+                // Return the channel so it is pooled (if still open) or disposed, and its
+                // throttling permit is released. Without this the channel and permit leak.
+                _channelProvider.ReturnChannel(channel);
+            }
         }
 
         private static byte[] SerializeMessage(TQueueMessage message)

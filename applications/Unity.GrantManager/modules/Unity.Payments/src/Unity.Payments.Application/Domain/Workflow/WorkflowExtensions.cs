@@ -11,7 +11,7 @@ public static class UnityWorkflowExtensions
     /// <summary>
     /// The currently permitted actions allowed by the workflow state machine.
     /// </summary>
-    public static async Task<IEnumerable<TTriggers>> GetPermittedActions<TStates, TTriggers>(this PaymentsWorkflow<TStates, TTriggers> workflow)
+    public static async Task<IEnumerable<TTriggers>> GetPermittedActionsAsync<TStates, TTriggers>(this PaymentsWorkflow<TStates, TTriggers> workflow)
     {
         return await workflow._stateMachine.GetPermittedTriggersAsync();
     }

@@ -1,4 +1,4 @@
-using Stateless;
+﻿using Stateless;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -40,7 +40,7 @@ public class OnboardingApplicationManager(
             ConfigureWorkflow);
 
         var allActions = workflow.GetAllActions().Distinct().ToList();
-        var permittedActions = (await workflow.GetPermittedActions()).ToList();
+        var permittedActions = (await workflow.GetPermittedActionsAsync()).ToList();
 
         return allActions
             .Select(trigger => new ApplicationActionResultItem
@@ -61,7 +61,7 @@ public class OnboardingApplicationManager(
             s => statusCode = s,
             ConfigureWorkflow);
 
-        return (await workflow.GetPermittedActions()).Contains(triggerAction);
+        return (await workflow.GetPermittedActionsAsync()).Contains(triggerAction);
     }
 
     public async Task<Application> TriggerAction(Guid applicationId, GrantApplicationAction triggerAction)

@@ -79,7 +79,7 @@ namespace Unity.Payments.Domain.Services
                 s => paymentRequest.SetPaymentRequestStatus(s), ConfigureWorkflow);
 
             var allActions = Workflow.GetAllActions().Distinct().ToList();
-            var permittedActions = (await Workflow.GetPermittedActions()).ToList();
+            var permittedActions = (await Workflow.GetPermittedActionsAsync()).ToList();
 
             var actionsList = allActions
                 .Select(trigger =>

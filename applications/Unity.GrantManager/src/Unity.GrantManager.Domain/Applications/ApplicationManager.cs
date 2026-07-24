@@ -178,7 +178,7 @@ public class ApplicationManager : DomainService, IApplicationManager
             });
 
         var allActions = Workflow.GetAllActions().Distinct().ToList();
-        var permittedActions = (await Workflow.GetPermittedActions()).ToList();
+        var permittedActions = (await Workflow.GetPermittedActionsAsync()).ToList();
 
         var actionsList = allActions
             .Select(trigger =>
@@ -203,7 +203,7 @@ public class ApplicationManager : DomainService, IApplicationManager
                 ConfigureWorkflow(sm, application.ApplicationForm.IsDirectApproval);
             });
 
-        return (await Workflow.GetPermittedActions()).Contains(triggerAction);
+        return (await Workflow.GetPermittedActionsAsync()).Contains(triggerAction);
     }
 
     /// <summary>
