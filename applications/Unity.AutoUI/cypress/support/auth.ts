@@ -39,6 +39,48 @@ function isLoginPage($body: JQuery<HTMLElement>): boolean {
   return $body.find('button:contains("LOGIN")').length > 0;
 }
 
+function hasCredentialForm($body: JQuery<HTMLElement>): boolean {
+  return (
+    $body.find("#user, input[name='user'], input[name='username']").length > 0 &&
+    $body.find("#password, input[name='password'], input[type='password']").length > 0
+  );
+}
+
+function hasViewApplicationsButton($body: JQuery<HTMLElement>): boolean {
+  return $body.find('button:contains("VIEW APPLICATIONS")').length > 0;
+}
+
+function waitForCredentialFormOrAuthenticatedPage(timeout: number): void {
+  cy.get("body", { timeout }).should(($body) => {
+    const pathname = $body[0]?.ownerDocument?.location?.pathname ?? "";
+
+    const isReady =
+      pathname.includes("/GrantApplications") ||
+      hasViewApplicationsButton($body) ||
+      hasCredentialForm($body);
+
+    expect(
+      isReady,
+      `expected credential form, VIEW APPLICATIONS button, or /GrantApplications. Current path: ${pathname}`,
+    ).to.equal(true);
+  });
+}
+
+function getExistingSelector(
+  $body: JQuery<HTMLElement>,
+  selectors: string[],
+): string {
+  const selector = selectors.find((candidate) => $body.find(candidate).length > 0);
+
+  if (!selector) {
+    throw new Error(
+      `None of the expected selectors were found: ${selectors.join(", ")}`,
+    );
+  }
+
+  return selector;
+}
+
 /**
  * Handles the Keycloak IDIR selection and login form
  */
@@ -69,36 +111,53 @@ function handleKeycloakLogin(
     }
   });
 
+  waitForCredentialFormOrAuthenticatedPage(timeout);
+
   // Handle username/password form if it appears
   cy.get("body", { timeout }).then(($loginBody) => {
-    if ($loginBody.find("#user").length > 0) {
-      cy.log("Entering IDIR credentials");
-
-      const username = options.username || Cypress.env("test1username");
-      const password = options.password || Cypress.env("test1password");
-
-      cy.get("#user", { timeout })
-        .should("be.visible")
-        .type(username, { log: false });
-
-      cy.get("#password", { timeout })
-        .should("be.visible")
-        .type(password, { log: false });
-
-      // Look for Continue button or submit the form
-      cy.get("body").then(($formBody) => {
-        if ($formBody.find('button:contains("Continue")').length > 0) {
-          cy.contains("button", "Continue", { timeout }).click();
-        } else if ($formBody.find("input[type='submit']").length > 0) {
-          cy.get("input[type='submit']", { timeout }).click();
-        } else {
-          cy.log("⚠️ No submit button found, attempting form submission");
-          cy.get("#user").parents("form").submit();
-        }
-      });
-    } else {
+    if (!hasCredentialForm($loginBody)) {
       cy.log("✓ Already authenticated, skipping credentials");
+      return;
     }
+
+    cy.log("Entering IDIR credentials");
+
+    const username = options.username || Cypress.env("test1username");
+    const password = options.password || Cypress.env("test1password");
+    const usernameSelector = getExistingSelector($loginBody, [
+      "#user",
+      "input[name='user']",
+      "input[name='username']",
+    ]);
+    const passwordSelector = getExistingSelector($loginBody, [
+      "#password",
+      "input[name='password']",
+      "input[type='password']",
+    ]);
+
+    cy.get(usernameSelector, { timeout })
+      .should("be.visible")
+      .clear()
+      .type(username, { log: false });
+
+    cy.get(passwordSelector, { timeout })
+      .should("be.visible")
+      .clear()
+      .type(password, { log: false });
+
+    // Look for Continue button or submit the form
+    cy.get("body").then(($formBody) => {
+      if ($formBody.find('button:contains("Continue")').length > 0) {
+        cy.contains("button", "Continue", { timeout }).click();
+      } else if ($formBody.find("input[type='submit']").length > 0) {
+        cy.get("input[type='submit']", { timeout }).click();
+      } else if ($formBody.find("button[type='submit']").length > 0) {
+        cy.get("button[type='submit']", { timeout }).click();
+      } else {
+        cy.log("⚠️ No submit button found, attempting form submission");
+        cy.get(usernameSelector).parents("form").submit();
+      }
+    });
   });
 }
 
