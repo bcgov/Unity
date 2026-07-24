@@ -1,0 +1,11 @@
+{
+  "documentType": "CHEFS automated attachment",
+  "synthetic": true,
+  "createdFor": "Chrome extension form testing",
+  "records": [
+    {
+      "item": "Program supply",
+      "amount": 1250.0
+    }
+  ]
+}

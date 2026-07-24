@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "exportedAt": "2026-07-22T16:20:00-07:00",
+  "extensionVersion": "0.4.0",
+  "rules": [
+    {
+      "id": "irma-number",
+      "enabled": true,
+      "labelMatch": "IRMA Number",
+      "matchMode": "contains",
+      "caseSensitive": false,
+      "mask": "aaa-999999",
+      "notes": "Example program-area identifier"
+    },
+    {
+      "id": "vehicle-identification-number",
+      "enabled": true,
+      "labelMatch": "Vehicle Identification Number",
+      "matchMode": "contains",
+      "caseSensitive": false,
+      "mask": "*****************",
+      "notes": "Example 17-character alphanumeric identifier"
+    }
+  ]
+}
