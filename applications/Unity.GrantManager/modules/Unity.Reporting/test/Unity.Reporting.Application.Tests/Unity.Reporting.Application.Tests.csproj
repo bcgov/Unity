@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <Import Project="..\..\common.props" />
 
@@ -12,7 +12,7 @@
     <ProjectReference Include="..\..\src\Unity.Reporting.Application\Unity.Reporting.Application.csproj" />
     <ProjectReference Include="..\Unity.Reporting.TestBase\Unity.Reporting.TestBase.csproj" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.10" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.0" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.8.1" />
   </ItemGroup>
 
   <ItemGroup>

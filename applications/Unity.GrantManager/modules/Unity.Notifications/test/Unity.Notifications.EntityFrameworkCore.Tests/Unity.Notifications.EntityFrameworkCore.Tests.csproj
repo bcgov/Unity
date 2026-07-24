@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <Import Project="..\..\common.props" />
 
@@ -12,7 +12,7 @@
     <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.10" />
     <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="10.0.10" />
     <PackageReference Include="Microsoft.Extensions.Options" Version="10.0.10" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.0" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.8.1" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Proxies" Version="10.0.10" />
     <ProjectReference Include="..\..\src\Unity.Notifications.EntityFrameworkCore\Unity.Notifications.EntityFrameworkCore.csproj" />
     <ProjectReference Include="..\Unity.Notifications.TestBase\Unity.Notifications.TestBase.csproj" />
