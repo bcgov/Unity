@@ -15,8 +15,8 @@ using Volo.Abp.DependencyInjection;
 
 namespace Unity.AI.Runtime
 {
-    [ExposeServices(typeof(IAIService), typeof(IFormMappingService), typeof(IFormWorksheetService))]
-    public class OpenAIRuntimeService : IAIService, IFormMappingService, IFormWorksheetService, ITransientDependency
+    [ExposeServices(typeof(IAIService), typeof(IFormMappingService), typeof(IFormWorksheetService), typeof(IFormScoresheetService))]
+    public class OpenAIRuntimeService : IAIService, IFormMappingService, IFormWorksheetService, IFormScoresheetService, ITransientDependency
     {
         private readonly ILogger<OpenAIRuntimeService> _logger;
         private readonly OpenAITransportService _openAITransportService;
@@ -28,6 +28,7 @@ namespace Unity.AI.Runtime
         private const string ApplicationScoringPromptType = AIPromptTypes.ApplicationScoring;
         private const string FormMappingPromptType = AIPromptTypes.FormMapping;
         private const string FormWorksheetPromptType = AIPromptTypes.FormWorksheet;
+        private const string FormScoresheetPromptType = AIPromptTypes.FormScoresheet;
         private const int MaxAiAttempts = 3;
 
         public OpenAIRuntimeService(
@@ -320,6 +321,55 @@ namespace Unity.AI.Runtime
             {
                 _logger.LogError(ex, "Form worksheet generation failed.");
                 return new FormWorksheetResponse();
+            }
+        }
+
+        public async Task<FormScoresheetResponse> GenerateFormScoresheetAsync(FormScoresheetRequest request, CancellationToken cancellationToken = default)
+        {
+            ArgumentNullException.ThrowIfNull(request);
+            try
+            {
+                var settings = await _openAIConfigurationResolver.ResolveOperationSettingsAsync(FormScoresheetPromptType, cancellationToken);
+                var promptTemplate = await _promptTemplateProvider.GetRequiredPromptAsync(
+                    FormScoresheetPromptType,
+                    request.PromptVersion ?? settings.PromptVersion,
+                    cancellationToken);
+                var promptVersion = promptTemplate.PromptVersion;
+                var dataJson = request.Data.GetRawText();
+                var systemPrompt = promptTemplate.SystemPrompt;
+                var content = AIPromptTemplateRenderer.BuildFormMappingUserPrompt(
+                    promptTemplate.UserPrompt,
+                    dataJson,
+                    promptTemplate.MetadataJson);
+
+                await _promptFileLogger.LogPromptInputAsync(FormScoresheetPromptType, promptVersion, systemPrompt, content, cancellationToken);
+                var result = await GenerateWithRetryAsync(
+                    () => _openAITransportService.GenerateSummaryAsync(
+                        content,
+                        systemPrompt,
+                        settings,
+                        settings.CompletionTokens,
+                        cancellationToken: cancellationToken),
+                    AIProviderPayloadValidator.ValidateFormScoresheetJson,
+                    "form scoresheet",
+                    cancellationToken);
+                await _promptFileLogger.LogPromptOutputAsync(FormScoresheetPromptType, promptVersion, result.CaptureOutput, cancellationToken);
+
+                return new FormScoresheetResponse
+                {
+                    Scoresheet = result.Outcome == AIOperationOutcome.Success
+                        ? AIResponseJson.CleanJsonResponse(result.Content)
+                        : "{}"
+                };
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Form scoresheet generation failed.");
+                return new FormScoresheetResponse();
             }
         }
 

@@ -332,8 +332,8 @@ public class GrantManagerWebModule : AbpModule
             .ConfigureHttpClient(client =>
             {
                 string pat =
-                    Environment.GetEnvironmentVariable("UNITY_GITHUB_PAT")
-                    ?? configuration["UNITY_GITHUB_PAT"]
+                    Environment.GetEnvironmentVariable("GH_API_TOKEN")
+                    ?? configuration["GH_API_TOKEN"]
                     ?? "";
 
                 if (!string.IsNullOrWhiteSpace(pat))

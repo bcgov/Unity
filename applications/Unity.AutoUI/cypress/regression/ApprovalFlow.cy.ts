@@ -114,7 +114,7 @@ const APPLICATIONS_PATH = "GrantApplications";
     dismissBlockingModalIfPresent();
 
     listPage
-      .selectQuickDateRange("last7days")
+      .selectQuickDateRange("last30days")
       .waitForTableRefresh()
       .searchForSubmission(submissionId);
 
@@ -155,7 +155,6 @@ const APPLICATIONS_PATH = "GrantApplications";
     cy.get("#nav-payment-info-tab").should("have.class", "active");
     detailsPage.dismissErrorModalIfPresent();
 
-    // Intercept the Refresh Site List API call and wait for it to complete
     cy.intercept("GET", "**/api/app/supplier/sites-by-supplier-number**").as("siteRefresh");
     detailsPage.clickRefreshSiteList();
     cy.wait("@siteRefresh");
@@ -168,15 +167,28 @@ const APPLICATIONS_PATH = "GrantApplications";
   }
 
   function openStatusActionsMenu(): void {
-    waitForBlockingUiToClear();
+    // Dismiss any transient error modal first — waitForBlockingUiToClear() only
+    // waits for blocking UI to go away on its own, it never clicks anything, so
+    // an error modal that requires a click to close would hang it until timeout.
     detailsPage.dismissErrorModalIfPresent();
+    waitForBlockingUiToClear();
+
+    // On DEV the button can re-render (e.g. "Processing..." -> its real label)
+    // between assertions, detaching the subject held by a single chained
+    // .should().and(). Re-querying fresh for each assertion (per Cypress's
+    // own guidance for this error) picks up the current DOM node instead.
     cy.get(STATUS_ACTIONS.menuButton, { timeout: 20000 })
       .filter(":visible")
       .first()
-      .scrollIntoView()
+      .scrollIntoView();
+
+    cy.get(STATUS_ACTIONS.menuButton, { timeout: 20000 })
+      .filter(":visible")
+      .first()
       .should("be.visible")
       .and("not.contain.text", "Processing...")
       .click({ force: true });
+
     cy.get(STATUS_ACTIONS.menu, { timeout: 20000 }).should("be.visible");
   }
 
@@ -213,14 +225,13 @@ const APPLICATIONS_PATH = "GrantApplications";
   }
 
   function confirmStatusActionIfNeeded(): void {
-    cy.wait(500);
-    cy.get("body").then(($body) => {
+    const confirmIfPresent = ($body: JQuery<HTMLElement>): boolean => {
       if ($body.find(".swal2-popup .swal2-confirm").length > 0) {
         cy.get(".swal2-popup .swal2-confirm", { timeout: 20000 })
           .should("be.visible")
           .click({ force: true });
         cy.get(".swal2-container", { timeout: 20000 }).should("not.exist");
-        return;
+        return true;
       }
 
       if (
@@ -238,7 +249,21 @@ const APPLICATIONS_PATH = "GrantApplications";
           timeout: 20000,
         }).should("not.exist");
         cy.get(".modal-backdrop", { timeout: 20000 }).should("not.exist");
+        return true;
       }
+
+      return false;
+    };
+
+    cy.get("body").then(($body) => {
+      if (confirmIfPresent($body)) {
+        return;
+      }
+
+      cy.wait(750);
+      cy.get("body").then(($bodyAfterGracePeriod) => {
+        confirmIfPresent($bodyAfterGracePeriod);
+      });
     });
   }
 
@@ -315,14 +340,9 @@ const APPLICATIONS_PATH = "GrantApplications";
     cy.get("#ApprovalView_ApprovedAmount", { timeout: 30000 })
       .should("be.visible")
       .and("not.be.disabled");
+    reviewPage.enterApprovedAmount(TEST_CONFIG.approvedAmount);
 
     cy.get("body").then(($body) => {
-      if ($body.find("#ApprovalView_ApprovedAmount").length > 0) {
-        reviewPage.enterApprovedAmount(TEST_CONFIG.approvedAmount);
-      } else {
-        cy.log("Approved amount field not present yet; skipping amount entry");
-      }
-
       if ($body.find("#ApprovalView_FinalDecisionDate").length > 0) {
         reviewPage.setDecisionDateToToday();
       } else {
@@ -342,7 +362,7 @@ const APPLICATIONS_PATH = "GrantApplications";
 
     listPage
       .waitForNoBlockingOverlay()
-      .selectQuickDateRange("last7days")
+      .selectQuickDateRange("last30days")
       .waitForTableRefresh()
       .searchForSubmission(submissionId)
       .selectRowByText(submissionId);
@@ -411,6 +431,9 @@ const APPLICATIONS_PATH = "GrantApplications";
 
   /** Select the submissionId row and open the Approve Payments modal. */
   function selectRowAndOpenApproveModal(): void {
+    // Same ordering as openStatusActionsMenu() — dismiss any transient error
+    // modal before the passive wait, since the wait never clicks anything.
+    detailsPage.dismissErrorModalIfPresent();
     waitForBlockingUiToClear();
     cy.contains("tr", submissionId, { timeout: 20000 })
       .scrollIntoView()
@@ -501,7 +524,7 @@ const APPLICATIONS_PATH = "GrantApplications";
   it("Search for submission", () => {
     expect(submissionId, "Submission ID should be set").to.exist;
     listPage
-      .selectQuickDateRange("last7days")
+      .selectQuickDateRange("last30days")
       .waitForTableRefresh()
       .searchForSubmission(submissionId);
   });
@@ -520,7 +543,7 @@ const APPLICATIONS_PATH = "GrantApplications";
         cy.log("Already on details page after assignment");
       } else {
         listPage
-          .selectQuickDateRange("last7days")
+          .selectQuickDateRange("last30days")
           .waitForTableRefresh()
           .searchForSubmission(submissionId)
           .selectRowByText(submissionId)
@@ -572,8 +595,7 @@ const APPLICATIONS_PATH = "GrantApplications";
     cy.get("body").then(($body) => {
       if ($body.find("#CreateButton").length > 0) {
         cy.get("#CreateButton").click({ force: true });
-        // Give the new assessment row time to render before subsequent actions.
-        cy.wait(1000); // Needed because row creation animation can delay DOM readiness.
+        cy.wait(1000); // Row creation animation can delay DOM readiness.
       } else {
         cy.log("Create Assessment button not found - may already be created");
       }
@@ -588,7 +610,9 @@ const APPLICATIONS_PATH = "GrantApplications";
 
   it("Configure payment info", () => {
     cy.reload(); // Reload to get fresh data and avoid concurrency issues
-    // Wait briefly for async payment tab dependencies to stabilize after reload.
+    // Every other cy.reload() in this spec is followed by this — a transient
+    // auth/session error modal can appear post-reload and block the form below.
+    detailsPage.dismissErrorModalIfPresent();
     cy.wait(2000); // Prevents save attempts before payment controls are initialized.
     detailsPage
       .goToPaymentInfoTab()
@@ -690,17 +714,40 @@ const APPLICATIONS_PATH = "GrantApplications";
   it("Test approval workflow (confirm)", () => {
     cy.reload(); // Refresh to ensure all changes are reflected before approval
     detailsPage.dismissErrorModalIfPresent();
-    clickStatusAction(STATUS_ACTIONS.completeAssessment);
-    confirmStatusActionIfNeeded();
+    waitForBlockingUiToClear();
 
-    cy.get(STATUS_ACTIONS.menuButton, { timeout: 20000 })
-      .filter(":visible")
-      .first()
+    cy.get(BREADCRUMB_STATUS_SELECTOR, { timeout: 20000 })
       .should("be.visible")
-      .and("not.contain.text", "Processing...");
+      .invoke("text")
+      .then((statusText) => {
+        const currentStatus = statusText.trim().toLowerCase();
 
-    clickStatusAction(STATUS_ACTIONS.approve);
-    detailsPage.waitForConfirmModal().clickConfirm();
+        if (currentStatus === "approved") {
+          cy.log("Application is already approved");
+          return;
+        }
+
+        clickStatusActionIfEnabled(
+          STATUS_ACTIONS.completeAssessment,
+          "Complete Assessment",
+        );
+
+        cy.get(STATUS_ACTIONS.menuButton, { timeout: 20000 })
+          .filter(":visible")
+          .first()
+          .should("be.visible")
+          .and("not.contain.text", "Processing...");
+
+        clickStatusAction(STATUS_ACTIONS.approve);
+        confirmStatusActionIfNeeded();
+      });
+
+    cy.get(BREADCRUMB_STATUS_SELECTOR, { timeout: 60000 })
+      .should("be.visible")
+      .invoke("text")
+      .should((statusText) => {
+        expect(statusText.trim().toLowerCase()).to.equal("approved");
+      });
   });
 
   // ============ Post-Approval Verification ============
@@ -713,7 +760,7 @@ const APPLICATIONS_PATH = "GrantApplications";
   it("Verify application status is Approved", () => {
     expect(submissionId, "Submission ID should be set").to.exist;
     listPage
-      .selectQuickDateRange("last7days")
+      .selectQuickDateRange("last30days")
       .waitForTableRefresh()
       .searchForSubmission(submissionId);
 

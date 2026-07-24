@@ -74,4 +74,13 @@ public class AIGenerationPrerequisiteValidator(
             throw new UserFriendlyException(localizer[AILocalizationKeys.FormWorksheetRequiresFormVersion]);
         }
     }
+
+    public async Task EnsureFormScoresheetAvailableAsync(Guid applicationFormVersionId)
+    {
+        var formVersion = await applicationFormVersionRepository.FindAsync(applicationFormVersionId);
+        if (formVersion == null)
+        {
+            throw new UserFriendlyException(localizer[AILocalizationKeys.FormScoresheetRequiresFormVersion]);
+        }
+    }
 }

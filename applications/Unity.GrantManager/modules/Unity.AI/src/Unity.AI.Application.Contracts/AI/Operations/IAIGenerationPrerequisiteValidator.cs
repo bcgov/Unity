@@ -14,4 +14,6 @@ public interface IAIGenerationPrerequisiteValidator
     Task EnsureFormMappingAvailableAsync(Guid applicationFormVersionId);
 
     Task EnsureFormWorksheetAvailableAsync(Guid applicationFormVersionId);
+
+    Task EnsureFormScoresheetAvailableAsync(Guid applicationFormVersionId);
 }

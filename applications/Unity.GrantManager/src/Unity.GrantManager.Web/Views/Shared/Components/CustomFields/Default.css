@@ -84,6 +84,16 @@
     display: block;
     margin-top: 12px;
 }
+
+.scoresheet-selector {
+    min-width: 0;
+}
+
+.scoresheet-selector .form-select,
+.scoresheet-selector .form-control {
+    max-width: 100%;
+}
+
 .save-note {
     border: 2px solid;
     border-color: var(--bc-colors-blue-primary);
