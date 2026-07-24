@@ -159,18 +159,13 @@ function completeChefsLogin(environment: ChefsEnvironment, timeout: number): voi
 
   cy.visit(`${environment.baseURL}/app`);
 
-  cy.get("#app > div > main > header > header > div > div.d-print-none", {
-    timeout,
-  })
-    .should("exist")
-    .click();
+  // The header auth button hydrates asynchronously after an auth-state check;
+  // wait for its label rather than just its (empty) wrapper to exist.
+  cy.get("#loginButton", { timeout }).should("be.visible").click();
 
-  cy.get(
-    "#app > div > main > div.v-container.v-locale--is-ltr.text-center.main > div > div:nth-child(2) > div > button",
-    { timeout },
-  )
-    .should("exist")
-    .click();
+  // CHEFS shows an identity-provider picker (IDIR / IDIR MFA / BC Services
+  // Card / BCeID); each button carries a stable data-test attribute.
+  cy.get('[data-test="idir"]', { timeout }).should("be.visible").click();
 
   waitForIdentityRedirectOrAuthenticatedChefsPage(environment.baseURL, timeout);
 
