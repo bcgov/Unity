@@ -188,14 +188,13 @@ public class PromptResponseValidatorTests
     }
 
     [Fact]
-    public void ValidateFormWorksheetJson_Should_Return_Success_For_Complete_Worksheet()
+    public void ValidateFormWorksheetJson_Should_Return_Success_For_Flat_Field_Suggestions()
     {
         var result = AIProviderPayloadValidator.ValidateFormWorksheetJson(
             """
             {
-              "title": "Draft",
-              "sections": [
-                { "name": "Application details", "fields": [] }
+              "fields": [
+                { "key": "projectName", "label": "Project Name", "type": "Text" }
               ]
             }
             """);
