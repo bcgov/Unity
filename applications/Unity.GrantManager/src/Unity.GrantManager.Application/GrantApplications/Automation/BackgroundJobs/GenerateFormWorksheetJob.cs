@@ -1,4 +1,3 @@
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
@@ -37,7 +36,6 @@ public class GenerateFormWorksheetJob(
     ICurrentTenant currentTenant,
     IUnitOfWorkManager unitOfWorkManager,
     IAICooldownService aiCooldownService,
-    IConfiguration configuration,
     ILogger<GenerateFormWorksheetJob> logger) : AsyncBackgroundJob<GenerateFormWorksheetBackgroundJobArgs>, ITransientDependency
 {
     private static readonly JsonSerializerOptions CaseInsensitiveJsonOptions = new()
@@ -94,19 +92,11 @@ public class GenerateFormWorksheetJob(
                             }))
                     };
 
-                    var useMock = configuration.GetValue<bool>("AI:FormWorksheet:UseMock");
-                    var worksheetResponse = useMock
-                        ? CreateMockWorksheetResponse()
-                        : await aiService.GenerateFormWorksheetAsync(new FormWorksheetRequest
-                        {
-                            Data = JsonSerializer.SerializeToElement(promptData),
-                            PromptVersion = args.PromptVersion
-                        });
-
-                    if (useMock)
+                    var worksheetResponse = await aiService.GenerateFormWorksheetAsync(new FormWorksheetRequest
                     {
-                        logger.LogWarning("Using mock AI worksheet data for form version {FormVersionId}.", formVersion.Id);
-                    }
+                        Data = JsonSerializer.SerializeToElement(promptData),
+                        PromptVersion = args.PromptVersion
+                    });
 
                     var suggestions = ParseWorksheetDefinition(worksheetResponse.Worksheet);
                     if (existingWorksheet == null)
@@ -206,19 +196,6 @@ public class GenerateFormWorksheetJob(
     {
         return $"ai-form-{formId}-version-{formVersionId}-worksheet";
     }
-
-    private static FormWorksheetResponse CreateMockWorksheetResponse() => new()
-    {
-        Worksheet = """
-        {
-          "fields": [
-            { "key": "projectName", "label": "Project Name", "type": "Text" },
-            { "key": "projectSummary", "label": "Project Summary", "type": "TextArea" },
-            { "key": "requestedAmount", "label": "Requested Amount", "type": "Currency" }
-          ]
-        }
-        """
-    };
 
     internal static Worksheet BuildWorksheet(List<AiWorksheetFieldSuggestion> suggestions, string worksheetName)
     {
