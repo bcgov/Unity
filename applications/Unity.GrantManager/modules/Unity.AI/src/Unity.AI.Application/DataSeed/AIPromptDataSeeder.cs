@@ -122,7 +122,7 @@ public class AIPromptDataSeeder(
 
     private async Task SeedFormWorksheetPromptAsync()
     {
-        await EnsurePromptAsync(AIPromptTypes.FormWorksheet, 3, FormWorksheetSystemV3, FormWorksheetUserV3, FormWorksheetMetadataV3);
+        await EnsurePromptAsync(AIPromptTypes.FormWorksheet, 2, FormWorksheetSystemV2, FormWorksheetUserV2, FormWorksheetMetadataV2);
     }
 
     private async Task SeedFormScoresheetPromptAsync()
@@ -846,15 +846,15 @@ public class AIPromptDataSeeder(
         }
         """;
 
-    // ── v3/form-worksheet.system.txt ───────────────────────────────────────
-    private const string FormWorksheetSystemV3 = """
+    // ── v2/form-worksheet.system.txt ───────────────────────────────────────
+    private const string FormWorksheetSystemV2 = """
         You are a custom-field suggestion generator for Unity Grant Manager.
         Recommend only the additional fields needed for a Flex worksheet.
         Return only valid JSON.
         """;
 
-    // ── v3/form-worksheet.user.txt ──────────────────────────────────────────
-    private const string FormWorksheetUserV3 = """
+    // ── v2/form-worksheet.user.txt ──────────────────────────────────────────
+    private const string FormWorksheetUserV2 = """
         WORKSHEET CONTEXT:
         {{DATA}}
 
@@ -881,7 +881,7 @@ public class AIPromptDataSeeder(
         - Return valid plain JSON only.
         """;
 
-    private const string FormWorksheetMetadataV3 = """
+    private const string FormWorksheetMetadataV2 = """
         {
           "DATA": "Serialized JSON payload containing form metadata, CHEFS fields, Unity core fields, the current mapping, form schema, and custom fields from worksheets currently linked to the form version."
         }
