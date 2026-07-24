@@ -5,15 +5,7 @@ namespace Unity.GrantManager.ApplicationForms.Mapping;
 
 public class AiWorksheetReviewDto
 {
-    public Guid WorksheetId { get; set; }
-    public string WorksheetName { get; set; } = string.Empty;
-    public string WorksheetTitle { get; set; } = string.Empty;
-    public List<AiWorksheetReviewSectionDto> Sections { get; set; } = [];
-}
-
-public class AiWorksheetReviewSectionDto
-{
-    public string Name { get; set; } = string.Empty;
+    public Guid SessionId { get; set; }
     public List<AiWorksheetReviewFieldDto> Fields { get; set; } = [];
 }
 

@@ -4,6 +4,7 @@ using Newtonsoft.Json.Linq;
 using System;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Text.Json;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
@@ -28,10 +29,7 @@ using Volo.Abp.Features;
 using Volo.Abp;
 using Volo.Abp.Uow;
 using Unity.GrantManager.Intakes.Mapping;
-using Unity.Flex.Domain.WorksheetLinks;
 using Unity.Flex.Domain.Worksheets;
-using Unity.GrantManager.Flex;
-using Unity.Modules.Shared.Correlation;
 
 namespace Unity.GrantManager.ApplicationForms
 {
@@ -48,8 +46,7 @@ namespace Unity.GrantManager.ApplicationForms
         IAICooldownService aiCooldownService,
         IFormMappingService aiService,
         IWorksheetRepository worksheetRepository,
-        IRepository<CustomField, Guid> customFieldRepository,
-        IWorksheetLinkRepository worksheetLinkRepository) :
+        IRepository<CustomField, Guid> customFieldRepository) :
         CrudAppService<
             ApplicationFormVersion,
             ApplicationFormVersionDto,
@@ -370,18 +367,29 @@ namespace Unity.GrantManager.ApplicationForms
             return worksheet == null ? null : MapAiWorksheetReview(worksheet);
         }
 
-        [HttpPost("api/app/application-form-version/confirm-ai-worksheet")]
-        public virtual async Task ConfirmAiWorksheetAsync(Guid formVersionId, ConfirmAiWorksheetDto input)
+        [HttpPost("api/app/application-form-version/create-ai-worksheet-draft")]
+        public virtual async Task CreateAiWorksheetDraftAsync(Guid formVersionId, CreateAiWorksheetDraftDto input)
         {
             await CheckPolicyAsync(AIPermissions.Analysis.GenerateFormWorksheet);
 
             var worksheet = await GetPendingAiWorksheetEntityAsync(formVersionId);
-            if (worksheet == null || worksheet.Id != input.WorksheetId)
+            if (worksheet == null || worksheet.Id != input.SessionId)
             {
                 throw new UserFriendlyException("The AI worksheet is no longer available for review.");
             }
 
-            var selectedFieldIds = input.SelectedFieldIds.ToHashSet();
+            var title = input.Title?.Trim();
+            if (string.IsNullOrWhiteSpace(title))
+            {
+                throw new UserFriendlyException("A worksheet title is required.");
+            }
+
+            var selectedFieldIds = input.SelectedFieldIds?.ToHashSet() ?? [];
+            if (selectedFieldIds.Count == 0)
+            {
+                throw new UserFriendlyException("Select at least one suggested field.");
+            }
+
             var fields = worksheet.Sections.SelectMany(section => section.Fields).ToList();
             var unknownFieldIds = selectedFieldIds.Except(fields.Select(field => field.Id)).ToList();
             if (unknownFieldIds.Count > 0)
@@ -389,19 +397,52 @@ namespace Unity.GrantManager.ApplicationForms
                 throw new UserFriendlyException("The AI worksheet selection is invalid.");
             }
 
-            foreach (var field in fields.Where(field => !selectedFieldIds.Contains(field.Id)))
+            var draftName = await GetNextAiWorksheetDraftNameAsync(title);
+            var draft = new Worksheet(Guid.NewGuid(), draftName, title);
+
+            var draftSection = new WorksheetSection(Guid.NewGuid(), "Suggested Fields")
+            {
+                Worksheet = draft
+            }.SetOrder(1);
+            draft.AddSection(draftSection);
+
+            foreach (var (field, index) in fields
+                .Where(field => selectedFieldIds.Contains(field.Id))
+                .OrderBy(field => field.Section.Order)
+                .ThenBy(field => field.Order)
+                .Select((field, index) => (field, index)))
+            {
+                var draftField = new CustomField(
+                    Guid.NewGuid(),
+                    field.Key,
+                    draft.Name,
+                    field.Label,
+                    field.Type,
+                    NormalizeCustomFieldDefinition(field.Definition));
+                draftField.Section = draftSection;
+                draftSection.AddField(draftField);
+                draftField.SetOrder((uint)(index + 1)).SetEnabled(true);
+            }
+
+            await worksheetRepository.InsertAsync(draft, true);
+
+            foreach (var field in fields.Where(field => selectedFieldIds.Contains(field.Id)))
             {
                 field.Section.RemoveField(field);
                 await customFieldRepository.DeleteAsync(field.Id);
             }
 
-            worksheet.SetPublished(true);
+            if (worksheet.Sections.All(section => section.Fields.Count == 0))
+            {
+                await worksheetRepository.DeleteAsync(worksheet, true);
+                return;
+            }
+
             await worksheetRepository.UpdateAsync(worksheet, true);
-            await UpsertAiWorksheetLinkAsync(worksheet.Id, formVersionId);
         }
 
-        [HttpPost("api/app/application-form-version/cancel-ai-worksheet")]
-        public virtual async Task CancelAiWorksheetAsync(Guid formVersionId)
+        [HttpPost("api/app/application-form-version/discard-ai-worksheet-suggestions")]
+        public virtual async Task DiscardAiWorksheetSuggestionsAsync(Guid formVersionId)
         {
             await CheckPolicyAsync(AIPermissions.Analysis.GenerateFormWorksheet);
 
@@ -433,49 +474,60 @@ namespace Unity.GrantManager.ApplicationForms
 
         private static AiWorksheetReviewDto MapAiWorksheetReview(Worksheet worksheet) => new()
         {
-            WorksheetId = worksheet.Id,
-            WorksheetName = worksheet.Name,
-            WorksheetTitle = worksheet.Title,
-            Sections = worksheet.Sections
+            SessionId = worksheet.Id,
+            Fields = worksheet.Sections
                 .OrderBy(section => section.Order)
-                .Select(section => new AiWorksheetReviewSectionDto
+                .SelectMany(section => section.Fields.OrderBy(field => field.Order))
+                .Select(field => new AiWorksheetReviewFieldDto
                 {
-                    Name = section.Name,
-                    Fields = section.Fields
-                        .OrderBy(field => field.Order)
-                        .Select(field => new AiWorksheetReviewFieldDto
-                        {
-                            Id = field.Id,
-                            Key = field.Key,
-                            Label = field.Label,
-                            Type = field.Type.ToString()
-                        })
-                        .ToList()
+                    Id = field.Id,
+                    Key = field.Key,
+                    Label = field.Label,
+                    Type = field.Type.ToString()
                 })
                 .ToList()
         };
 
-        private async Task UpsertAiWorksheetLinkAsync(Guid worksheetId, Guid formVersionId)
+        private async Task<string> GetNextAiWorksheetDraftNameAsync(string title)
         {
-            var existingLink = await worksheetLinkRepository.GetExistingLinkAsync(
-                worksheetId,
-                formVersionId,
-                CorrelationConsts.FormVersion);
+            var titlePart = Regex.Replace(title.Trim().ToLowerInvariant(), "[^a-z0-9]+", "-").Trim('-');
+            var baseName = $"ai-{(string.IsNullOrEmpty(titlePart) ? "worksheet" : titlePart)}";
+            var candidate = baseName;
+            var suffix = 2;
 
-            if (existingLink != null)
+            while (await worksheetRepository.GetByNameAsync(candidate, false) != null)
             {
-                existingLink.SetAnchor(FlexConsts.CustomTab).SetOrder(1);
-                await worksheetLinkRepository.UpdateAsync(existingLink, true);
-                return;
+                candidate = $"{baseName}-{suffix++}";
             }
 
-            await worksheetLinkRepository.InsertAsync(new WorksheetLink(
-                Guid.NewGuid(),
-                worksheetId,
-                formVersionId,
-                CorrelationConsts.FormVersion,
-                FlexConsts.CustomTab,
-                1), true);
+            return candidate;
+        }
+
+        private static string NormalizeCustomFieldDefinition(string definition)
+        {
+            try
+            {
+                using var document = JsonDocument.Parse(definition);
+                if (document.RootElement.ValueKind != JsonValueKind.String)
+                {
+                    return definition;
+                }
+
+                var unwrappedDefinition = document.RootElement.GetString();
+                if (string.IsNullOrWhiteSpace(unwrappedDefinition))
+                {
+                    return definition;
+                }
+
+                using var unwrappedDocument = JsonDocument.Parse(unwrappedDefinition);
+                return unwrappedDocument.RootElement.ValueKind is JsonValueKind.Object or JsonValueKind.Array
+                    ? unwrappedDefinition
+                    : definition;
+            }
+            catch (JsonException)
+            {
+                return definition;
+            }
         }
 
         private static string BuildAiWorksheetName(Guid formId, Guid formVersionId) =>

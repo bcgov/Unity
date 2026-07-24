@@ -64,8 +64,9 @@
         worksheetReviewModal: $('#aiWorksheetReviewModal'),
         worksheetReviewFields: $('#aiWorksheetReviewFields'),
         worksheetReviewEmpty: $('#aiWorksheetReviewEmpty'),
-        btnConfirmWorksheet: $('#btn-confirm-ai-worksheet'),
-        btnCancelWorksheet: $('#btn-cancel-ai-worksheet'),
+        worksheetTitle: $('#aiWorksheetTitle'),
+        btnCreateWorksheetDraft: $('#btn-create-ai-worksheet-draft'),
+        btnDiscardWorksheet: $('#btn-discard-ai-worksheet'),
         btnSync: $('#btn-sync'),
         btnReset: $('#btn-reset'),
         btnClose: $('.btn-close'),
@@ -110,10 +111,11 @@
         UIElements.btnGenerateWorksheet.on('click', queueFormWorksheet);
         UIElements.btnGenerateScoresheet.on('click', queueFormScoresheet);
         UIElements.btnReviewWorksheet.on('click', loadAiWorksheetReview);
-        UIElements.btnConfirmWorksheet.on('click', confirmAiWorksheet);
-        UIElements.btnCancelWorksheet.on('click', cancelAiWorksheet);
-        UIElements.worksheetReviewModal.on('hidden.bs.modal', cancelAiWorksheetIfNeeded);
-        UIElements.worksheetReviewFields.on('change', 'input[data-field-id]', updateAiWorksheetReviewCount);
+        UIElements.btnCreateWorksheetDraft.on('click', createAiWorksheetDraft);
+        UIElements.btnDiscardWorksheet.on('click', discardAiWorksheetSuggestions);
+        UIElements.worksheetReviewFields.on('change', 'input[data-field-id]', updateAiWorksheetReview);
+        $('#aiWorksheetReviewSelectAll').on('change', toggleAiWorksheetReviewAll);
+        UIElements.worksheetTitle.on('input', updateAiWorksheetDraftButton);
         UIElements.btnReset.on('click', handleReset);
         UIElements.btnCancel.on('click', handleCancelMapping);
         UIElements.btnClose.on('click', handleCancelMapping);
@@ -356,7 +358,7 @@
 
     function refreshWorksheetAfterGeneration() {
         setAiWorksheetPending(true);
-        abp.notify.success('', 'Worksheet generated. Review the suggested fields before confirming.');
+        abp.notify.success('', 'Worksheet generated. Review the suggested fields and create draft worksheets.');
         loadAiWorksheetReview();
     }
 
@@ -404,125 +406,137 @@
     function renderAiWorksheetReview(worksheet) {
         UIElements.worksheetReviewFields.empty();
 
-        let fieldCount = 0;
-        (worksheet.sections || []).forEach(function (section) {
-            const fields = section.fields || [];
-            const $section = $('<section class="ai-worksheet-review__section"></section>');
-            const $sectionHeader = $('<div class="ai-worksheet-review__section-header"></div>');
-            $('<h6 class="ai-worksheet-review__section-title"></h6>').text(section.name).appendTo($sectionHeader);
-            $('<span class="ai-worksheet-review__section-count"></span>')
-                .text(`0 of ${fields.length} selected`)
-                .appendTo($sectionHeader);
-            $sectionHeader.appendTo($section);
-
-            fields.forEach(function (field) {
-                fieldCount++;
-                const fieldId = `ai-worksheet-field-${field.id}`;
-                const $row = $('<div class="ai-worksheet-review__field"></div>');
-                $('<span class="ai-worksheet-review__field-name"></span>')
-                    .attr('data-field-role', 'CHEFS')
-                    .text(field.key || '—')
-                    .appendTo($row);
-                $('<i class="fa-solid fa-arrow-right ai-worksheet-review__arrow" aria-hidden="true"></i>').appendTo($row);
-                $('<span class="ai-worksheet-review__field-name"></span>')
-                    .attr('data-field-role', 'Unity')
-                    .text(field.label || field.key || '—')
-                    .appendTo($row);
-                const $switch = $('<div class="ai-worksheet-review__switch"></div>');
-                const $switchContainer = $('<div class="form-check unt-form-switch form-switch mb-0"></div>');
-                $('<input class="form-check-input" type="checkbox" checked>')
-                    .attr('id', fieldId)
-                    .attr('data-field-id', field.id)
-                    .attr('aria-label', `Include ${field.label || field.key || 'field'}`)
-                    .appendTo($switchContainer);
-                $switchContainer.appendTo($switch);
-                $switch.appendTo($row);
-                $row.appendTo($section);
-            });
-
-            $section.appendTo(UIElements.worksheetReviewFields);
+        const fields = worksheet.fields || [];
+        fields.forEach(function (field) {
+            const fieldId = `ai-worksheet-field-${field.id}`;
+            const $row = $('<div class="ai-worksheet-review__field"></div>');
+            $('<span class="ai-worksheet-review__field-name"></span>')
+                .attr('data-field-role', 'CHEFS')
+                .text(field.key || '—')
+                .appendTo($row);
+            $('<i class="fa-solid fa-arrow-right ai-worksheet-review__arrow" aria-hidden="true"></i>').appendTo($row);
+            $('<span class="ai-worksheet-review__field-name"></span>')
+                .attr('data-field-role', 'Unity')
+                .text(field.label || field.key || '—')
+                .appendTo($row);
+            const $switch = $('<div class="ai-worksheet-review__switch"></div>');
+            const $switchContainer = $('<div class="form-check unt-form-switch form-switch mb-0"></div>');
+            $('<input class="form-check-input" type="checkbox">')
+                .attr('id', fieldId)
+                .attr('data-field-id', field.id)
+                .attr('aria-label', `Include ${field.label || field.key || 'field'}`)
+                .appendTo($switchContainer);
+            $switchContainer.appendTo($switch);
+            $switch.appendTo($row);
+            $row.appendTo(UIElements.worksheetReviewFields);
         });
 
-        UIElements.worksheetReviewFields.attr('data-worksheet-id', worksheet.worksheetId);
-        UIElements.worksheetReviewEmpty.toggleClass('d-none', fieldCount > 0);
-        updateAiWorksheetReviewCount();
+        UIElements.worksheetReviewFields.attr('data-session-id', worksheet.sessionId);
+        UIElements.worksheetReviewEmpty.toggleClass('d-none', fields.length > 0);
+        updateAiWorksheetReview();
     }
 
-    function updateAiWorksheetReviewCount() {
-        UIElements.worksheetReviewFields.find('.ai-worksheet-review__section').each(function () {
-            const $section = $(this);
-            const $sectionFields = $section.find('input[data-field-id]');
-            const sectionSelectedCount = $sectionFields.filter(':checked').length;
-            $section.find('.ai-worksheet-review__section-count')
-                .text(`${sectionSelectedCount} of ${$sectionFields.length} selected`);
-        });
+    function updateAiWorksheetReview() {
+        const $fields = UIElements.worksheetReviewFields.find('input[data-field-id]');
+        const selectedCount = $fields.filter(':checked').length;
+        $('#aiWorksheetReviewSelectionCount').text(`${selectedCount} of ${$fields.length} selected`);
+        $('#aiWorksheetReviewSelectAll')
+            .prop('checked', $fields.length > 0 && selectedCount === $fields.length)
+            .prop('indeterminate', selectedCount > 0 && selectedCount < $fields.length);
+        updateAiWorksheetDraftButton();
     }
 
-    function confirmAiWorksheet() {
+    function toggleAiWorksheetReviewAll() {
+        UIElements.worksheetReviewFields.find('input[data-field-id]').prop('checked', $(this).prop('checked'));
+        updateAiWorksheetReview();
+    }
+
+    function updateAiWorksheetDraftButton() {
+        const hasTitle = String(UIElements.worksheetTitle.val() ?? '').trim().length > 0;
+        const hasSelectedFields = UIElements.worksheetReviewFields.find('input[data-field-id]:checked').length > 0;
+        UIElements.btnCreateWorksheetDraft.prop('disabled', !hasTitle || !hasSelectedFields);
+    }
+
+    function createAiWorksheetDraft() {
         const formVersion = String(document.getElementById('formVersionId')?.value ?? '').trim();
-        const worksheetId = UIElements.worksheetReviewFields.attr('data-worksheet-id');
+        const sessionId = UIElements.worksheetReviewFields.attr('data-session-id');
+        const title = String(UIElements.worksheetTitle.val() ?? '').trim();
         const selectedFieldIds = UIElements.worksheetReviewFields
             .find('input[data-field-id]:checked')
             .map(function () { return $(this).attr('data-field-id'); })
             .get();
 
-        if (!validateGuid(formVersion) || !validateGuid(worksheetId)) {
-            abp.notify.error('', 'Unable to confirm the AI worksheet because its identifiers are invalid.');
+        if (!validateGuid(formVersion) || !validateGuid(sessionId) || !title || selectedFieldIds.length === 0) {
+            abp.notify.error('', 'Enter a worksheet title and select at least one suggested field.');
             return;
         }
 
-        UIElements.btnConfirmWorksheet.prop('disabled', true);
-        UIElements.btnCancelWorksheet.prop('disabled', true);
+        UIElements.btnCreateWorksheetDraft.prop('disabled', true);
+        UIElements.btnDiscardWorksheet.prop('disabled', true);
 
         abp.ajax({
-            url: `/api/app/application-form-version/confirm-ai-worksheet?formVersionId=${encodeURIComponent(formVersion)}`,
+            url: `/api/app/application-form-version/create-ai-worksheet-draft?formVersionId=${encodeURIComponent(formVersion)}`,
             type: 'POST',
             contentType: 'application/json',
-            data: JSON.stringify({ worksheetId, selectedFieldIds })
+            data: JSON.stringify({ sessionId, title, selectedFieldIds })
         })
             .done(function () {
-                UIElements.worksheetReviewModal.data('ai-confirmed', true).modal('hide');
-                setAiWorksheetPending(false);
-                abp.notify.success('', 'Worksheet confirmed and published successfully. Reloading page.');
-                setTimeout(function () { globalThis.location.reload(); }, 500);
+                UIElements.worksheetTitle.val('');
+                abp.notify.success('', 'Draft worksheet created.');
+                refreshAiWorksheetReviewAfterDraftCreation(formVersion);
             })
             .fail(function () {
-                abp.notify.error('', 'Unable to confirm the AI worksheet.');
+                abp.notify.error('', 'Unable to create the draft worksheet.');
             })
             .always(function () {
-                UIElements.btnConfirmWorksheet.prop('disabled', false);
-                UIElements.btnCancelWorksheet.prop('disabled', false);
+                UIElements.btnDiscardWorksheet.prop('disabled', false);
+                updateAiWorksheetDraftButton();
             });
     }
 
-    function cancelAiWorksheet() {
-        if (UIElements.worksheetReviewModal.data('ai-confirmed') === true) {
-            return;
-        }
+    function refreshAiWorksheetReviewAfterDraftCreation(formVersion) {
+        abp.ajax({
+            url: `/api/app/application-form-version/pending-ai-worksheet?formVersionId=${encodeURIComponent(formVersion)}`,
+            type: 'GET'
+        })
+            .done(function (worksheet) {
+                if (!worksheet) {
+                    UIElements.worksheetReviewModal.modal('hide');
+                    setAiWorksheetPending(false);
+                    return;
+                }
 
+                renderAiWorksheetReview(worksheet);
+            })
+            .fail(function () {
+                abp.notify.error('', 'Draft created, but the remaining suggestions could not be loaded.');
+            });
+    }
+
+    function discardAiWorksheetSuggestions() {
         const formVersion = String(document.getElementById('formVersionId')?.value ?? '').trim();
         if (!validateGuid(formVersion) || !isAiWorksheetPending()) {
             return;
         }
 
-        UIElements.worksheetReviewModal.data('ai-confirmed', true);
+        UIElements.btnCreateWorksheetDraft.prop('disabled', true);
+        UIElements.btnDiscardWorksheet.prop('disabled', true);
         abp.ajax({
-            url: `/api/app/application-form-version/cancel-ai-worksheet?formVersionId=${encodeURIComponent(formVersion)}`,
+            url: `/api/app/application-form-version/discard-ai-worksheet-suggestions?formVersionId=${encodeURIComponent(formVersion)}`,
             type: 'POST'
         })
             .done(function () {
                 setAiWorksheetPending(false);
-                abp.notify.success('', 'Pending AI worksheet discarded.');
+                UIElements.worksheetReviewModal.modal('hide');
+                abp.notify.success('', 'Remaining AI worksheet suggestions discarded.');
             })
             .fail(function () {
-                UIElements.worksheetReviewModal.data('ai-confirmed', false);
-                abp.notify.error('', 'Unable to discard the pending AI worksheet.');
+                abp.notify.error('', 'Unable to discard the remaining AI worksheet suggestions.');
+            })
+            .always(function () {
+                UIElements.btnDiscardWorksheet.prop('disabled', false);
+                updateAiWorksheetDraftButton();
             });
-    }
-
-    function cancelAiWorksheetIfNeeded() {
-        cancelAiWorksheet();
-        UIElements.worksheetReviewModal.removeData('ai-confirmed');
     }
 
     function refreshScoresheetAfterGeneration() {

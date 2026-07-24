@@ -118,6 +118,18 @@
     overflow: hidden;
 }
 
+.ai-worksheet-review__body {
+    display: flex;
+    flex-direction: column;
+    max-height: min(65vh, 42rem);
+}
+
+.ai-worksheet-review__list {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+}
+
 .ai-worksheet-review__header {
     align-items: flex-start;
     border-bottom: 1px solid #d8e1eb;
@@ -156,9 +168,17 @@
 .ai-worksheet-review__section-header {
     align-items: center;
     background: #f4f7fa;
-    display: flex;
-    justify-content: space-between;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 2rem minmax(0, 1fr) 4.5rem;
     padding: 0.75rem 1rem;
+}
+
+.ai-worksheet-review__section-title-group {
+    align-items: center;
+    display: flex;
+    gap: 0.75rem;
+    grid-column: 1 / 4;
+    min-width: 0;
 }
 
 .ai-worksheet-review__section-title {
@@ -177,6 +197,12 @@
     white-space: nowrap;
 }
 
+.ai-worksheet-review__section-switch {
+    flex: 0 0 auto;
+    grid-column: 4;
+    justify-self: center;
+}
+
 .ai-worksheet-review__table-header,
 .ai-worksheet-review__field {
     display: grid;
@@ -190,6 +216,10 @@
     font-weight: 700;
     letter-spacing: 0.05em;
     padding: 0.65rem 1rem;
+    position: sticky;
+    top: 0;
+    background: #fff;
+    z-index: 1;
     text-transform: uppercase;
 }
 
@@ -243,6 +273,18 @@
     .ai-worksheet-review__field {
         grid-template-columns: minmax(0, 1fr) 1.5rem auto;
         row-gap: 0.5rem;
+    }
+
+    .ai-worksheet-review__section-header {
+        grid-template-columns: minmax(0, 1fr) 1.5rem auto;
+    }
+
+    .ai-worksheet-review__section-title-group {
+        grid-column: 1 / 3;
+    }
+
+    .ai-worksheet-review__section-switch {
+        grid-column: 3;
     }
 
     .ai-worksheet-review__field-name:first-child {
