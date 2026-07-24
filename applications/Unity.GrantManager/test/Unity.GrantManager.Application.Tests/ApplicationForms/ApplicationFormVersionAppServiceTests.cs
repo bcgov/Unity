@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Unity.AI;
 using Unity.AI.Cooldown;
@@ -97,6 +98,162 @@ public class ApplicationFormVersionAppServiceTests(ITestOutputHelper outputHelpe
     }
 
     [Fact]
+    public async Task GetPendingAiWorksheetAsync_Should_Return_Unpublished_Worksheet_Fields()
+    {
+        var formVersionId = Guid.NewGuid();
+        var formId = Guid.NewGuid();
+        var formVersion = new ApplicationFormVersion
+        {
+            ApplicationFormId = formId
+        };
+        var worksheet = BuildAiWorksheet(formId, formVersionId, published: false);
+        var formVersionRepository = Substitute.For<IApplicationFormVersionRepository>();
+        formVersionRepository.GetAsync(formVersionId).Returns(formVersion);
+        var worksheetRepository = Substitute.For<IWorksheetRepository>();
+        worksheetRepository.GetByNameAsync(Arg.Any<string>(), true).Returns(worksheet);
+
+        var service = CreateService(
+            Substitute.For<IRepository<ApplicationFormVersion, Guid>>(),
+            Substitute.For<IApplicationFormVersionMappingReadService>(),
+            Substitute.For<IFormMappingService>(),
+            formVersionRepository,
+            worksheetRepository);
+        service.LazyServiceProvider = GetRequiredService<IAbpLazyServiceProvider>();
+
+        var result = await service.GetPendingAiWorksheetAsync(formVersionId);
+
+        result.ShouldNotBeNull();
+        result!.SessionId.ShouldBe(worksheet.Id);
+        result.Fields.Single().Label.ShouldBe("Project Name");
+        result.Fields.Single().Selected.ShouldBeTrue();
+    }
+
+    [Fact]
+    public async Task CreateAiWorksheetDraftAsync_Should_Create_Unlinked_Unpublished_Draft_And_Keep_Remaining_Suggestions()
+    {
+        var formVersionId = Guid.NewGuid();
+        var formId = Guid.NewGuid();
+        var formVersion = new ApplicationFormVersion
+        {
+            ApplicationFormId = formId
+        };
+        var worksheet = BuildAiWorksheet(formId, formVersionId, published: false, fieldCount: 2);
+        var formVersionRepository = Substitute.For<IApplicationFormVersionRepository>();
+        formVersionRepository.GetAsync(formVersionId).Returns(formVersion);
+        var worksheetRepository = Substitute.For<IWorksheetRepository>();
+        worksheetRepository.GetByNameAsync(Arg.Any<string>(), true).Returns(worksheet);
+        var customFieldRepository = Substitute.For<IRepository<CustomField, Guid>>();
+        Worksheet? createdDraft = null;
+        worksheetRepository.InsertAsync(Arg.Do<Worksheet>(worksheet => createdDraft = worksheet), true)
+            .Returns(Task.FromResult<Worksheet>(null!));
+
+        var service = CreateService(
+            Substitute.For<IRepository<ApplicationFormVersion, Guid>>(),
+            Substitute.For<IApplicationFormVersionMappingReadService>(),
+            Substitute.For<IFormMappingService>(),
+            formVersionRepository,
+            worksheetRepository,
+            customFieldRepository);
+        service.LazyServiceProvider = GetRequiredService<IAbpLazyServiceProvider>();
+
+        var selectedFieldId = worksheet.Sections.Single().Fields.First().Id;
+        var remainingFieldId = worksheet.Sections.Single().Fields.Last().Id;
+        worksheet.Sections.Single().Fields.First().SetDefinition(JsonSerializer.Serialize("""{"required":true}"""));
+        await service.CreateAiWorksheetDraftAsync(formVersionId, new CreateAiWorksheetDraftDto
+        {
+            SessionId = worksheet.Id,
+            Title = "Risk Review",
+            SelectedFieldIds = [selectedFieldId]
+        });
+
+        createdDraft.ShouldNotBeNull();
+        createdDraft!.Name.ShouldBe("ai-risk-review");
+        createdDraft.Title.ShouldBe("Risk Review");
+        createdDraft.Published.ShouldBeFalse();
+        createdDraft.Links.ShouldBeEmpty();
+        createdDraft.Sections.Single().Fields.Single().Key.ShouldBe("Field0");
+        createdDraft.Sections.Single().Fields.Single().Label.ShouldBe("Project Name");
+        createdDraft.Sections.Single().Fields.Single().Definition.ShouldBe("""{"required":true}""");
+        worksheet.Published.ShouldBeFalse();
+        worksheet.Sections.Single().Fields.Select(field => field.Id).ShouldBe([remainingFieldId]);
+        await customFieldRepository.Received(1).DeleteAsync(selectedFieldId);
+        await worksheetRepository.Received(1).UpdateAsync(worksheet, true);
+    }
+
+    [Fact]
+    public async Task CreateAiWorksheetDraftAsync_Should_Number_Internal_Name_And_Delete_Empty_Suggestions()
+    {
+        var formVersionId = Guid.NewGuid();
+        var formId = Guid.NewGuid();
+        var formVersion = new ApplicationFormVersion
+        {
+            ApplicationFormId = formId
+        };
+        var worksheet = BuildAiWorksheet(formId, formVersionId, published: false, fieldCount: 2);
+        var formVersionRepository = Substitute.For<IApplicationFormVersionRepository>();
+        formVersionRepository.GetAsync(formVersionId).Returns(formVersion);
+        var worksheetRepository = Substitute.For<IWorksheetRepository>();
+        worksheetRepository.GetByNameAsync(Arg.Any<string>(), true).Returns(worksheet);
+        var customFieldRepository = Substitute.For<IRepository<CustomField, Guid>>();
+        Worksheet? createdDraft = null;
+        worksheetRepository.GetByNameAsync("ai-risk-review", false).Returns(new Worksheet(Guid.NewGuid(), "ai-risk-review", "Existing"));
+        worksheetRepository.GetByNameAsync("ai-risk-review-2", false).Returns((Worksheet?)null);
+        worksheetRepository.InsertAsync(Arg.Do<Worksheet>(worksheet => createdDraft = worksheet), true)
+            .Returns(Task.FromResult<Worksheet>(null!));
+
+        var service = CreateService(
+            Substitute.For<IRepository<ApplicationFormVersion, Guid>>(),
+            Substitute.For<IApplicationFormVersionMappingReadService>(),
+            Substitute.For<IFormMappingService>(),
+            formVersionRepository,
+            worksheetRepository,
+            customFieldRepository);
+        service.LazyServiceProvider = GetRequiredService<IAbpLazyServiceProvider>();
+
+        await service.CreateAiWorksheetDraftAsync(formVersionId, new CreateAiWorksheetDraftDto
+        {
+            SessionId = worksheet.Id,
+            Title = "Risk Review",
+            SelectedFieldIds = worksheet.Sections.Single().Fields.Select(field => field.Id).ToList()
+        });
+
+        createdDraft!.Name.ShouldBe("ai-risk-review-2");
+        createdDraft.Published.ShouldBeFalse();
+        await customFieldRepository.Received(2).DeleteAsync(Arg.Any<Guid>());
+        await worksheetRepository.Received(1).DeleteAsync(worksheet, true);
+    }
+
+    private static Worksheet BuildAiWorksheet(Guid formId, Guid formVersionId, bool published, int fieldCount = 1)
+    {
+        var worksheet = new Worksheet(
+            Guid.NewGuid(),
+            $"ai-form-{formId}-version-{formVersionId}-worksheet",
+            "AI Worksheet");
+        worksheet.SetPublished(published);
+
+        var section = new WorksheetSection(Guid.NewGuid(), "Suggested Fields")
+        {
+            Worksheet = worksheet
+        };
+        worksheet.AddSection(section);
+
+        for (var index = 0; index < fieldCount; index++)
+        {
+            var field = new CustomField(
+                Guid.NewGuid(),
+                $"Field{index}",
+                worksheet.Name,
+                index == 0 ? "Project Name" : $"Field {index}",
+                CustomFieldType.Text,
+                "{}");
+            field.Section = section;
+            section.Fields.Add(field);
+        }
+
+        return worksheet;
+    }
+
+    [Fact]
     public void MappingReadService_Should_Use_Canonical_CustomField_Name_For_Worksheet_Field_Name()
     {
         var worksheet = new Worksheet(Guid.NewGuid(), "customfields-v1", "Custom Fields");
@@ -157,7 +314,10 @@ public class ApplicationFormVersionAppServiceTests(ITestOutputHelper outputHelpe
     private static ApplicationFormVersionAppService CreateService(
         IRepository<ApplicationFormVersion, Guid> repository,
         IApplicationFormVersionMappingReadService mappingReadService,
-        IFormMappingService aiService)
+        IFormMappingService aiService,
+        IApplicationFormVersionRepository? formVersionRepository = null,
+        IWorksheetRepository? worksheetRepository = null,
+        IRepository<CustomField, Guid>? customFieldRepository = null)
     {
         var featureChecker = Substitute.For<IFeatureChecker>();
         featureChecker.IsEnabledAsync(AIFeatures.FormMapping).Returns(true);
@@ -171,13 +331,15 @@ public class ApplicationFormVersionAppServiceTests(ITestOutputHelper outputHelpe
             Substitute.For<IIntakeFormSubmissionMapper>(),
             Substitute.For<IUnitOfWorkManager>(),
             Substitute.For<IFormsApiService>(),
-            Substitute.For<IApplicationFormVersionRepository>(),
+            formVersionRepository ?? Substitute.For<IApplicationFormVersionRepository>(),
             Substitute.For<IApplicationFormSubmissionRepository>(),
             Substitute.For<IReportingFieldsGeneratorService>(),
             featureChecker,
             mappingReadService,
             cooldownService,
-            aiService);
+            aiService,
+            worksheetRepository ?? Substitute.For<IWorksheetRepository>(),
+            customFieldRepository ?? Substitute.For<IRepository<CustomField, Guid>>());
         return service;
     }
 }

@@ -8,13 +8,14 @@ using Unity.AI.Domain;
 using Unity.AI.Cooldown;
 using Unity.AI.Operations;
 using Unity.AI.Requests;
+using Unity.AI.Responses;
 using Unity.GrantManager.ApplicationForms;
 using Unity.GrantManager.ApplicationForms.Mapping;
 using Unity.GrantManager.Applications;
-using Unity.GrantManager.Flex;
 using Unity.Flex.Domain.WorksheetLinks;
 using Unity.Flex.Domain.Worksheets;
 using Unity.Flex.Worksheets;
+using Unity.Flex.Worksheets.Definitions;
 using Unity.Modules.Shared.Correlation;
 using Volo.Abp.BackgroundJobs;
 using Volo.Abp.DependencyInjection;
@@ -67,71 +68,65 @@ public class GenerateFormWorksheetJob(
                 var worksheetName = BuildWorksheetName(formVersion.Id, applicationForm.Id);
                 var existingWorksheet = await worksheetRepository.GetByNameAsync(worksheetName, true);
                 var mappingReadModel = await mappingReadService.GetAsync(formVersion.Id);
-
-                List<Worksheet> worksheetSnapshots = [];
-                if (existingWorksheet != null)
+                if (existingWorksheet == null || existingWorksheet.Published)
                 {
-                    worksheetSnapshots.Add(existingWorksheet);
-                }
-                var promptData = new
-                {
-                    applicationFormVersionId = formVersion.Id,
-                    chefsFormVersionGuid = formVersion.ChefsFormVersionGuid,
-                    applicationFormId = applicationForm.Id,
-                    formName = applicationForm.ApplicationFormName,
-                    scoresheetId = applicationForm.ScoresheetId,
-                    chefsFields = mappingReadModel.ChefsFields,
-                    unityCoreFields = mappingReadModel.UnityCoreFields,
-                    existingMapping = formVersion.SubmissionHeaderMapping,
-                    formSchema = formVersion.FormSchema,
-                    existingWorksheets = worksheetSnapshots.Select(worksheet => new
+                    var promptData = new
                     {
-                        worksheet.Id,
-                        worksheet.Name,
-                        worksheet.Title,
-                        worksheet.Version,
-                        worksheet.Published,
-                        worksheet.ReportViewName,
-                        sections = worksheet.Sections.Select(section => new
-                        {
-                            section.Name,
-                            section.Order,
-                            fields = section.Fields.Select(field => new
+                        applicationFormVersionId = formVersion.Id,
+                        chefsFormVersionGuid = formVersion.ChefsFormVersionGuid,
+                        applicationFormId = applicationForm.Id,
+                        formName = applicationForm.ApplicationFormName,
+                        scoresheetId = applicationForm.ScoresheetId,
+                        chefsFields = mappingReadModel.ChefsFields,
+                        unityCoreFields = mappingReadModel.UnityCoreFields,
+                        existingMapping = formVersion.SubmissionHeaderMapping,
+                        formSchema = formVersion.FormSchema,
+                        existingCustomFields = mappingReadModel.Worksheets
+                            .SelectMany(worksheet => worksheet.Fields.Select(field => new
                             {
+                                worksheetId = worksheet.WorksheetId,
+                                worksheetName = worksheet.WorksheetName,
                                 field.Name,
-                                field.Key,
                                 field.Label,
-                                field.Type,
-                                field.Order,
-                                field.Enabled,
-                                field.Definition
-                            })
-                        })
-                    })
-                };
+                                field.Type
+                            }))
+                    };
 
-                var worksheetResponse = await aiService.GenerateFormWorksheetAsync(new FormWorksheetRequest
-                {
-                    Data = JsonSerializer.SerializeToElement(promptData),
-                    PromptVersion = args.PromptVersion
-                });
+                    var worksheetResponse = await aiService.GenerateFormWorksheetAsync(new FormWorksheetRequest
+                    {
+                        Data = JsonSerializer.SerializeToElement(promptData),
+                        PromptVersion = args.PromptVersion
+                    });
 
-                var worksheetJson = worksheetResponse.Worksheet;
-                var createDto = ParseWorksheetDefinition(worksheetJson);
-                var worksheet = existingWorksheet == null
-                    ? BuildWorksheet(createDto, worksheetName)
-                    : RebuildWorksheet(existingWorksheet, createDto);
-                worksheet.SetPublished(true);
-                if (existingWorksheet == null)
-                {
-                    await worksheetRepository.InsertAsync(worksheet);
+                    var suggestions = ParseWorksheetDefinition(worksheetResponse.Worksheet);
+                    if (existingWorksheet == null)
+                    {
+                        var worksheet = BuildWorksheet(suggestions, worksheetName);
+                        worksheet.SetPublished(false);
+                        await worksheetRepository.InsertAsync(worksheet);
+                    }
+                    else
+                    {
+                        var existingLink = await worksheetLinkRepository.GetExistingLinkAsync(
+                            existingWorksheet.Id,
+                            formVersion.Id,
+                            CorrelationConsts.FormVersion);
+                        if (existingLink != null)
+                        {
+                            await worksheetLinkRepository.DeleteAsync(existingLink, true);
+                        }
+
+                        RebuildWorksheet(existingWorksheet, suggestions);
+                        existingWorksheet.SetPublished(false);
+                        await worksheetRepository.UpdateAsync(existingWorksheet);
+                    }
                 }
                 else
                 {
-                    await worksheetRepository.UpdateAsync(worksheet);
+                    logger.LogInformation(
+                        "An unpublished AI worksheet already exists for form version {FormVersionId}; leaving it available for review.",
+                        formVersion.Id);
                 }
-
-                await UpsertWorksheetLinkAsync(worksheet.Id, formVersion.Id);
 
                 await AIGenerationRequestJobHelper.StampCooldownBestEffortAsync(aiCooldownService, logger, args.RequestedByUserId, args.ApplicationId, AIGenerationRequestKeyHelper.FormWorksheetOperationType);
                 await AIGenerationRequestJobHelper.MarkCompletedInNewUowAsync(
@@ -155,21 +150,46 @@ public class GenerateFormWorksheetJob(
         }
     }
 
-    internal static CreateWorksheetDto ParseWorksheetDefinition(string json)
+    internal static List<AiWorksheetFieldSuggestion> ParseWorksheetDefinition(string json)
     {
         if (string.IsNullOrWhiteSpace(json))
         {
             throw new InvalidOperationException("Worksheet generation returned empty content.");
         }
 
-        var dto = JsonSerializer.Deserialize<CreateWorksheetDto>(json, CaseInsensitiveJsonOptions);
-
-        if (dto == null || string.IsNullOrWhiteSpace(dto.Title) || dto.Sections is not { Count: > 0 })
+        AiWorksheetSuggestions? dto;
+        try
+        {
+            dto = JsonSerializer.Deserialize<AiWorksheetSuggestions>(json, CaseInsensitiveJsonOptions);
+        }
+        catch (JsonException)
         {
             throw new InvalidOperationException("Worksheet generation returned an unusable worksheet definition.");
         }
 
-        return dto;
+        if (dto?.Fields == null)
+        {
+            throw new InvalidOperationException("Worksheet generation returned an unusable worksheet definition.");
+        }
+
+        var keys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var field in dto.Fields)
+        {
+            field.Key = field.Key?.Trim() ?? string.Empty;
+            field.Label = field.Label?.Trim() ?? string.Empty;
+            if (string.IsNullOrWhiteSpace(field.Key)
+                || string.IsNullOrWhiteSpace(field.Label)
+                || !keys.Add(field.Key)
+                || !Enum.TryParse<CustomFieldType>(field.Type, false, out var type)
+                || !SupportedSuggestionTypes.Contains(type))
+            {
+                throw new InvalidOperationException("Worksheet generation returned an unusable worksheet definition.");
+            }
+
+            field.ResolvedType = type;
+        }
+
+        return dto.Fields;
     }
 
     private static string BuildWorksheetName(Guid formVersionId, Guid formId)
@@ -177,90 +197,55 @@ public class GenerateFormWorksheetJob(
         return $"ai-form-{formId}-version-{formVersionId}-worksheet";
     }
 
-    private static Worksheet BuildWorksheet(CreateWorksheetDto dto, string worksheetName)
+    internal static Worksheet BuildWorksheet(List<AiWorksheetFieldSuggestion> suggestions, string worksheetName)
     {
-        var worksheet = new Worksheet(Guid.NewGuid(), worksheetName, dto.Title)
-        {
-            ReportColumns = dto.ReportColumns,
-            ReportKeys = dto.ReportKeys,
-            ReportViewName = dto.ReportViewName
-        };
-
-        worksheet.SetVersion(dto.Version);
-        worksheet.SetPublished(dto.Published);
-
-        foreach (var section in dto.Sections.OrderBy(s => s.Order))
-        {
-            var worksheetSection = new WorksheetSection(Guid.NewGuid(), section.Name).SetOrder(section.Order);
-            worksheetSection.Worksheet = worksheet;
-            worksheet.AddSection(worksheetSection);
-
-            foreach (var field in section.Fields)
-            {
-                var customField = new CustomField(
-                    Guid.NewGuid(),
-                    field.Key,
-                    worksheet.Name,
-                    field.Label,
-                    field.Type,
-                    field.Definition);
-                customField.Section = worksheetSection;
-                worksheetSection.AddField(customField);
-            }
-        }
-
+        var worksheet = new Worksheet(Guid.NewGuid(), worksheetName, "AI Suggested Fields");
+        RebuildWorksheet(worksheet, suggestions);
         return worksheet;
     }
 
-    private static Worksheet RebuildWorksheet(Worksheet worksheet, CreateWorksheetDto dto)
+    private static void RebuildWorksheet(Worksheet worksheet, List<AiWorksheetFieldSuggestion> suggestions)
     {
-        worksheet.SetName(worksheet.Name);
-        worksheet.SetTitle(dto.Title);
-        worksheet.SetVersion(dto.Version);
-        worksheet.SetPublished(dto.Published);
-        worksheet.SetReportingFields(dto.ReportKeys, dto.ReportColumns, dto.ReportViewName);
-
         worksheet.Sections.Clear();
 
-        foreach (var section in dto.Sections.OrderBy(s => s.Order))
+        var section = new WorksheetSection(Guid.NewGuid(), "Suggested Fields").SetOrder(1);
+        section.Worksheet = worksheet;
+        worksheet.AddSection(section);
+
+        foreach (var (field, index) in suggestions.Select((field, index) => (field, index)))
         {
-            var worksheetSection = new WorksheetSection(Guid.NewGuid(), section.Name).SetOrder(section.Order);
-            worksheetSection.Worksheet = worksheet;
-            worksheet.AddSection(worksheetSection);
-
-            foreach (var field in section.Fields)
-            {
-                var customField = new CustomField(
-                    Guid.NewGuid(),
-                    field.Key,
-                    worksheet.Name,
-                    field.Label,
-                    field.Type,
-                    field.Definition);
-                customField.Section = worksheetSection;
-                worksheetSection.AddField(customField);
-            }
+            var customField = new CustomField(
+                Guid.NewGuid(),
+                field.Key,
+                worksheet.Name,
+                field.Label,
+                field.ResolvedType,
+                DefinitionResolver.Resolve(field.ResolvedType, null));
+            customField.Section = section;
+            section.AddField(customField);
+            customField.SetOrder((uint)(index + 1));
         }
-
-        return worksheet;
     }
 
-    private async Task UpsertWorksheetLinkAsync(Guid worksheetId, Guid correlationId)
+    private static readonly HashSet<CustomFieldType> SupportedSuggestionTypes =
+    [
+        CustomFieldType.Text, CustomFieldType.TextArea, CustomFieldType.Numeric,
+        CustomFieldType.Currency, CustomFieldType.Date, CustomFieldType.DateTime,
+        CustomFieldType.Email, CustomFieldType.Phone, CustomFieldType.YesNo,
+        CustomFieldType.Checkbox
+    ];
+
+    private sealed class AiWorksheetSuggestions
     {
-        var existingLink = await worksheetLinkRepository.GetExistingLinkAsync(worksheetId, correlationId, CorrelationConsts.FormVersion);
-        if (existingLink != null)
-        {
-            existingLink.SetAnchor(FlexConsts.CustomTab).SetOrder(1);
-            await worksheetLinkRepository.UpdateAsync(existingLink);
-            return;
-        }
-
-        await worksheetLinkRepository.InsertAsync(new WorksheetLink(
-            Guid.NewGuid(),
-            worksheetId,
-            correlationId,
-            CorrelationConsts.FormVersion,
-            FlexConsts.CustomTab,
-            1));
+        public List<AiWorksheetFieldSuggestion>? Fields { get; set; }
     }
+
+    internal sealed class AiWorksheetFieldSuggestion
+    {
+        public string? Key { get; set; }
+        public string? Label { get; set; }
+        public string? Type { get; set; }
+        public CustomFieldType ResolvedType { get; set; }
+    }
+
 }

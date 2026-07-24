@@ -129,18 +129,10 @@ namespace Unity.AI.Runtime
                 return AIResponseValidationResult.Invalid("Form worksheet response was not valid JSON.");
             }
 
-            if (!root.TryGetProperty("title", out var title)
-                || title.ValueKind != JsonValueKind.String
-                || string.IsNullOrWhiteSpace(title.GetString()))
+            if (!root.TryGetProperty("fields", out var fields)
+                || fields.ValueKind != JsonValueKind.Array)
             {
-                return AIResponseValidationResult.Invalid("Form worksheet response is missing a non-empty 'title'.");
-            }
-
-            if (!root.TryGetProperty("sections", out var sections)
-                || sections.ValueKind != JsonValueKind.Array
-                || sections.GetArrayLength() == 0)
-            {
-                return AIResponseValidationResult.Invalid("Form worksheet response must include at least one section.");
+                return AIResponseValidationResult.Invalid("Form worksheet response must include a 'fields' array.");
             }
 
             return AIResponseValidationResult.Success();
