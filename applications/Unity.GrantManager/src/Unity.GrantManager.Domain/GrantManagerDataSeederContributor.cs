@@ -44,8 +44,9 @@ public class GrantManagerDataSeederContributor(
         if (context.TenantId == null) // only seed into a tenant database
         {
            await SeedMainBackgroundJobUserAsync(null);
+           await SeedUnityAlertUserAsync(null);
            return;
-        }   
+        }
 
         await SeedApplicationStatusAsync();
         await SeedAiScoringPersonAsync(context.TenantId);
@@ -129,6 +130,29 @@ public class GrantManagerDataSeederContributor(
                         null)
                     {
                         Name = BackgroundJobConstants.BackgroundJobName
+                    },
+                    autoSave: true);
+            }
+        }
+    }
+
+    private async Task SeedUnityAlertUserAsync(Guid? tenantId)
+    {
+        using (currentTenant.Change(tenantId)) // Null For Main Unity Grant Manager Context
+        {
+            // Check if the IdentityUser already exists
+            var existingUser = await userRepository.FindAsync(UnityAlertConstants.UnityAlertPersonId);
+            if (existingUser == null)
+            {
+                // Create the IdentityUser in the tenant context
+                await userRepository.InsertAsync(
+                    new IdentityUser(
+                        UnityAlertConstants.UnityAlertPersonId,
+                        UnityAlertConstants.UnityAlertUserName,
+                        UnityAlertConstants.UnityAlertEmail,
+                        null)
+                    {
+                        Name = UnityAlertConstants.UnityAlertName
                     },
                     autoSave: true);
             }

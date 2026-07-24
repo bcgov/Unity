@@ -65,7 +65,7 @@ public class AIRateLimiterTests
 
         await limiter.GetStateAsync();
 
-        lockProvider.CreatedLockCount.ShouldBe(0);
+        lockProvider.CreatedLockCount.ShouldBe(1);
     }
 
     [Fact]

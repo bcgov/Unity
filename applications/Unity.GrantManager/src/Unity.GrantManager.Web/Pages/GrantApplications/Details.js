@@ -25,6 +25,7 @@ $(function () {
         setStoredDividerWidth();
         initCommentsWidget();
         initEmailsWidget();
+        initHistoryWidget();
         updateLinksCounters();
         renderSubmission();
         loadAIAnalysis();
@@ -1181,6 +1182,23 @@ function initCommentsWidget() {
 
     PubSub.subscribe('ApplicationTags_refresh', () => {
         tagsWidgetManager.refresh();
+    });
+}
+
+function initHistoryWidget() {
+    let applicationHistoryWidgetManager = new abp.WidgetManager({
+        wrapper: '#applicationHistoryWidget',
+        filterCallback: function () {
+            return {
+                applicationId:
+                    $('#DetailsViewApplicationId').val() ??
+                    '00000000-0000-0000-0000-000000000000',
+            };
+        },
+    })
+
+    PubSub.subscribe('ApplicationHistory_refresh', () => {
+        applicationHistoryWidgetManager.refresh();
     });
 }
 

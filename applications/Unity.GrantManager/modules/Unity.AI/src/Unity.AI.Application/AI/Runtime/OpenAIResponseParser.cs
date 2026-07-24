@@ -19,92 +19,32 @@ public class OpenAIResponseParser : ITransientDependency
             return response;
         }
 
-        if (TryGetStringProperty(root, AIJsonKeys.Decision, out var decision))
+        if (TryGetStringProperty(root, "decision", out var decision))
         {
             response.Decision = decision.Trim().ToUpperInvariant();
         }
 
-        if (TryGetArrayProperty(root, AIJsonKeys.Errors, out var errorsArray))
+        if (TryGetArrayProperty(root, "errors", out var errorsArray))
         {
             response.Errors = ParseFindings(errorsArray).ToList();
         }
 
-        if (TryGetArrayProperty(root, AIJsonKeys.Warnings, out var warningsArray))
+        if (TryGetArrayProperty(root, "warnings", out var warningsArray))
         {
             response.Warnings = ParseFindings(warningsArray).ToList();
         }
 
-        if (TryGetArrayProperty(root, AIJsonKeys.Summaries, out var summariesArray))
+        if (TryGetArrayProperty(root, "summaries", out var summariesArray))
         {
             response.Summaries = ParseFindings(summariesArray).ToList();
         }
 
-        if (TryGetArrayProperty(root, AIJsonKeys.Recommendations, out var recommendationsArray))
+        if (TryGetArrayProperty(root, "recommendations", out var recommendationsArray))
         {
             response.Recommendations = ParseFindings(recommendationsArray).ToList();
         }
 
         return response;
-    }
-
-    private static string AddIdsToAnalysisItems(string analysisJson)
-    {
-        try
-        {
-            using var jsonDoc = JsonDocument.Parse(analysisJson);
-            using var memoryStream = new System.IO.MemoryStream();
-            using (var writer = new Utf8JsonWriter(memoryStream, new JsonWriterOptions { Indented = true }))
-            {
-                writer.WriteStartObject();
-
-                foreach (var property in jsonDoc.RootElement.EnumerateObject())
-                {
-                    var outputPropertyName = property.Name;
-
-                    if (outputPropertyName == AIJsonKeys.Errors ||
-                        outputPropertyName == AIJsonKeys.Warnings ||
-                        outputPropertyName == AIJsonKeys.Summaries ||
-                        outputPropertyName == AIJsonKeys.Recommendations)
-                    {
-                        writer.WritePropertyName(outputPropertyName);
-                        writer.WriteStartArray();
-
-                        foreach (var item in property.Value.EnumerateArray())
-                        {
-                            writer.WriteStartObject();
-
-                            foreach (var itemProperty in item.EnumerateObject())
-                            {
-                                itemProperty.WriteTo(writer);
-                            }
-
-                            if (!item.TryGetProperty(AIJsonKeys.Id, out var idProp) ||
-                                idProp.ValueKind != JsonValueKind.String ||
-                                string.IsNullOrWhiteSpace(idProp.GetString()))
-                            {
-                                writer.WriteString(AIJsonKeys.Id, Guid.NewGuid().ToString());
-                            }
-
-                            writer.WriteEndObject();
-                        }
-
-                        writer.WriteEndArray();
-                        continue;
-                    }
-
-                    property.WriteTo(writer);
-                }
-
-                writer.WriteEndObject();
-                writer.Flush();
-            }
-
-            return Encoding.UTF8.GetString(memoryStream.ToArray());
-        }
-        catch
-        {
-            return analysisJson;
-        }
     }
 
     public static ApplicationScoringResponse ParseApplicationScoringResponse(string raw, IReadOnlyDictionary<string, string>? questionIdAliasMap = null)
@@ -151,47 +91,77 @@ public class OpenAIResponseParser : ITransientDependency
         return response;
     }
 
-    public static AttachmentSummaryBatchResponse ParseAttachmentSummaryBatchResponse(string raw)
+    public static FormMappingResponse ParseFormMappingResponse(string raw)
     {
-        var response = new AttachmentSummaryBatchResponse();
         if (!TryParseJsonObjectFromResponse(raw, out var root))
         {
-            return response;
+            return new FormMappingResponse();
         }
 
-        if (!root.TryGetProperty("attachments", out var attachments) || attachments.ValueKind != JsonValueKind.Array)
+        return new FormMappingResponse
         {
-            return response;
-        }
+            Mapping = root.GetRawText()
+        };
+    }
 
-        foreach (var attachment in attachments.EnumerateArray())
+    private static string AddIdsToAnalysisItems(string analysisJson)
+    {
+        try
         {
-            if (attachment.ValueKind != JsonValueKind.Object)
+            using var jsonDoc = JsonDocument.Parse(analysisJson);
+            using var memoryStream = new System.IO.MemoryStream();
+            using (var writer = new Utf8JsonWriter(memoryStream, new JsonWriterOptions { Indented = true }))
             {
-                continue;
+                writer.WriteStartObject();
+
+                foreach (var property in jsonDoc.RootElement.EnumerateObject())
+                {
+                    var outputPropertyName = property.Name;
+
+                    if (outputPropertyName == "errors" ||
+                        outputPropertyName == "warnings" ||
+                        outputPropertyName == "summaries" ||
+                        outputPropertyName == "recommendations")
+                    {
+                        writer.WritePropertyName(outputPropertyName);
+                        writer.WriteStartArray();
+
+                        foreach (var item in property.Value.EnumerateArray())
+                        {
+                            writer.WriteStartObject();
+
+                            foreach (var itemProperty in item.EnumerateObject())
+                            {
+                                itemProperty.WriteTo(writer);
+                            }
+
+                            if (!item.TryGetProperty("id", out var idProp) ||
+                                idProp.ValueKind != JsonValueKind.String ||
+                                string.IsNullOrWhiteSpace(idProp.GetString()))
+                            {
+                                writer.WriteString("id", Guid.NewGuid().ToString());
+                            }
+
+                            writer.WriteEndObject();
+                        }
+
+                        writer.WriteEndArray();
+                        continue;
+                    }
+
+                    property.WriteTo(writer);
+                }
+
+                writer.WriteEndObject();
+                writer.Flush();
             }
 
-            var attachmentId = attachment.TryGetProperty("attachmentId", out var idProp) && idProp.ValueKind == JsonValueKind.String
-                ? idProp.GetString() ?? string.Empty
-                : string.Empty;
-
-            if (string.IsNullOrWhiteSpace(attachmentId))
-            {
-                continue;
-            }
-
-            var summary = attachment.TryGetProperty(AIJsonKeys.Summary, out var summaryProp) && summaryProp.ValueKind == JsonValueKind.String
-                ? summaryProp.GetString() ?? string.Empty
-                : string.Empty;
-
-            response.Attachments.Add(new AttachmentSummaryBatchItemResponse
-            {
-                AttachmentId = attachmentId,
-                Summary = summary
-            });
+            return Encoding.UTF8.GetString(memoryStream.ToArray());
         }
-
-        return response;
+        catch
+        {
+            return analysisJson;
+        }
     }
 
     private static IEnumerable<ApplicationAnalysisFinding> ParseFindings(JsonElement findingsArray)
@@ -204,23 +174,23 @@ public class OpenAIResponseParser : ITransientDependency
             }
 
             var id = Guid.NewGuid().ToString();
-            if (item.TryGetProperty(AIJsonKeys.Id, out var idProp) && idProp.ValueKind == JsonValueKind.String)
+            if (item.TryGetProperty("id", out var idProp) && idProp.ValueKind == JsonValueKind.String)
             {
                 id = idProp.GetString() ?? id;
             }
 
-            var dismissed = item.TryGetProperty(AIJsonKeys.Dismissed, out var dismissedProp) &&
+            var dismissed = item.TryGetProperty("dismissed", out var dismissedProp) &&
                 (dismissedProp.ValueKind == JsonValueKind.True || dismissedProp.ValueKind == JsonValueKind.False) &&
                 dismissedProp.GetBoolean();
 
             string? title = null;
-            if (item.TryGetProperty(AIJsonKeys.Title, out var titleProp) && titleProp.ValueKind == JsonValueKind.String)
+            if (item.TryGetProperty("title", out var titleProp) && titleProp.ValueKind == JsonValueKind.String)
             {
                 title = titleProp.GetString();
             }
 
             string? detail = null;
-            if (item.TryGetProperty(AIJsonKeys.Detail, out var detailProp) && detailProp.ValueKind == JsonValueKind.String)
+            if (item.TryGetProperty("detail", out var detailProp) && detailProp.ValueKind == JsonValueKind.String)
             {
                 detail = detailProp.GetString();
             }

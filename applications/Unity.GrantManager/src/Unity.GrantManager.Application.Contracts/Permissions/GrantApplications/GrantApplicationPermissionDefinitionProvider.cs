@@ -122,7 +122,7 @@ namespace Unity.GrantManager.Permissions.GrantApplications
             //-- TAG ASSIGNMENT
             var tagsPermissionsGroup = context.AddGroup("Tags", L("Permission:Tags"));
             tagsPermissionsGroup.AddPermission(UnitySelector.Application.Tags.Create, L(UnitySelector.Application.Tags.Create));
-            tagsPermissionsGroup.AddPermission(UnitySelector.Application.Tags.Delete, L(UnitySelector.Application.Tags.Delete));           
+            tagsPermissionsGroup.AddPermission(UnitySelector.Application.Tags.Delete, L(UnitySelector.Application.Tags.Delete));
         }
 
         private static LocalizableString L(string name)

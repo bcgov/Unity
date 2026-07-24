@@ -217,7 +217,9 @@
     });
 
     PubSub.subscribe('refresh_application_emails', () => {
-        emailHistoryDataTable.ajax.reload();
+        emailHistoryDataTable.ajax.reload(() => {
+            emailHistoryDataTable.columns.adjust().draw();
+        }, false);
     });
 
     $('#emails-tab').on('click', function () {

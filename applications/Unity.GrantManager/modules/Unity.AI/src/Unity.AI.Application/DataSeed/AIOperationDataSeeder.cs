@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.Logging;
 using System.Threading.Tasks;
-using Unity.AI.Domain;
 using Unity.AI.Operations;
+using Unity.AI.Domain;
 using Unity.AI.Prompts;
 using Unity.GrantManager.GrantApplications;
 using Volo.Abp.Data;
@@ -27,7 +27,10 @@ public class AIOperationDataSeeder(
     [
         new(AIPromptTypes.ApplicationAnalysis, AIPromptTypes.ApplicationAnalysis, 1, 4000),
         new(AIPromptTypes.AttachmentSummary, AIPromptTypes.AttachmentSummary, 1, 2000),
-        new(AIPromptTypes.ApplicationScoring, AIPromptTypes.ApplicationScoring, 1, 8000)
+        new(AIPromptTypes.ApplicationScoring, AIPromptTypes.ApplicationScoring, 1, 8000),
+        new(AIPromptTypes.FormMapping, AIPromptTypes.FormMapping, 2, 2000),
+        new(AIPromptTypes.FormWorksheet, AIPromptTypes.FormWorksheet, 2, 4000),
+        new(AIPromptTypes.FormScoresheet, AIPromptTypes.FormScoresheet, 2, 4000)
     ];
 
     public async Task SeedAsync(DataSeedContext context)

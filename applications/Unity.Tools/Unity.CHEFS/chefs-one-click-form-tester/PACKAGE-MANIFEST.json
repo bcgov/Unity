@@ -1,0 +1,177 @@
+{
+    "extension":  "CHEFS One-Click Form Tester",
+    "version":  "0.4.0",
+    "build":  "2026.07.23.14",
+    "files":  [
+                  {
+                      "path":  "attachments/chefs-attachment.csv",
+                      "sizeBytes":  101,
+                      "sha256":  "b1371c6eb4498332a725369dcad54a3597b7e1e30e4e039aae5b87b0a7908d03"
+                  },
+                  {
+                      "path":  "attachments/chefs-attachment.docx",
+                      "sizeBytes":  36848,
+                      "sha256":  "24e8557c69ce50601b7abe3d45b50d2b8a513349614f94820249029f0b52064d"
+                  },
+                  {
+                      "path":  "attachments/chefs-attachment.jpg",
+                      "sizeBytes":  12082,
+                      "sha256":  "7662f0224080976c58fe50e0bd921d7a8033b5be16965f2fad66cd9e4a54ed34"
+                  },
+                  {
+                      "path":  "attachments/chefs-attachment.json",
+                      "sizeBytes":  207,
+                      "sha256":  "3671c6bc4eb9ebb45c5c9cb88490680a3973fcb8da27562dd486350ef8dd11a1"
+                  },
+                  {
+                      "path":  "attachments/chefs-attachment.pdf",
+                      "sizeBytes":  1612,
+                      "sha256":  "881b9f20f63f14d69014fd7889466385879dfe50be0bacf22ad9f6b9581e34d5"
+                  },
+                  {
+                      "path":  "attachments/chefs-attachment.png",
+                      "sizeBytes":  2824,
+                      "sha256":  "a4597c544411706b5057179f494d551d02691a17aeb7f173a7161487c456f053"
+                  },
+                  {
+                      "path":  "attachments/chefs-attachment.txt",
+                      "sizeBytes":  61,
+                      "sha256":  "bddbab428397806f7c253225691dfb1cd9a7a789aca15635011a92ed93758b4f"
+                  },
+                  {
+                      "path":  "attachments/chefs-attachment.xlsx",
+                      "sizeBytes":  3617,
+                      "sha256":  "e21f172a5cb4aedbdabd742cbe0c2b2a6913bfc8a01dab5bff575262d24f348b"
+                  },
+                  {
+                      "path":  "BUILD-VALIDATION.txt",
+                      "sizeBytes":  4529,
+                      "sha256":  "5101cfc591a9294451006806d63031c62e6d7096c8708e62ec341d0a9b4672c4"
+                  },
+                  {
+                      "path":  "CHANGELOG.md",
+                      "sizeBytes":  15596,
+                      "sha256":  "c506ffbebc2bb549052873e8562e00552dc305cca8929b8aba0e319551c0e2dd"
+                  },
+                  {
+                      "path":  "content-script.js",
+                      "sizeBytes":  151244,
+                      "sha256":  "767e41f9eaf10ef5b7f9f1d72255680a3294be7280686605bd3a2f9e6ea72289"
+                  },
+                  {
+                      "path":  "dashboard.css",
+                      "sizeBytes":  4987,
+                      "sha256":  "721cfabfa7952fe57f602cb7483fbc481c759750f91b46c58d5046e65f300849"
+                  },
+                  {
+                      "path":  "dashboard.html",
+                      "sizeBytes":  3771,
+                      "sha256":  "72e4ea577a5464148bb190fa5a88b07ea9d9ff8417e44192472e7c6afceb432d"
+                  },
+                  {
+                      "path":  "dashboard.js",
+                      "sizeBytes":  32441,
+                      "sha256":  "1b1fb0d12aa8e1e14c1047d821ef26cf5d9275f0267935717dd37a3671ea6197"
+                  },
+                  {
+                      "path":  "dashboard-model.js",
+                      "sizeBytes":  16848,
+                      "sha256":  "125c4a64554b875574512c4db3eb8dfa9e67e0943077db10377fb14cf46a4c2c"
+                  },
+                  {
+                      "path":  "examples/custom-format-rules.example.json",
+                      "sizeBytes":  646,
+                      "sha256":  "503a1bcc6c2f24abf36e269a0765d9cdf10e28a1a3e8638d92168974d4bc432c"
+                  },
+                  {
+                      "path":  "export-folder-picker.js",
+                      "sizeBytes":  5248,
+                      "sha256":  "d96699e187c42272eb82b258385943c2b9627608cdc212eca0beec6e756a20a1"
+                  },
+                  {
+                      "path":  "export-path.js",
+                      "sizeBytes":  2089,
+                      "sha256":  "9de3d2eee1b0d81a58aca6255704a96741ab08baafdea7feb0506b77798ac957"
+                  },
+                  {
+                      "path":  "icons/icon-128.png",
+                      "sizeBytes":  1054,
+                      "sha256":  "c35c9898870d7317c25344dffbb948f6357e101985cb61da895860c96b4341dc"
+                  },
+                  {
+                      "path":  "icons/icon-16.png",
+                      "sizeBytes":  180,
+                      "sha256":  "ddea246297fdfc1ab06521d910b78355a98433161876322956c18c1fba944878"
+                  },
+                  {
+                      "path":  "icons/icon-32.png",
+                      "sizeBytes":  284,
+                      "sha256":  "8c1df9ee3e6335b1e12f6be494cab8182ac2d64dd19a3dc786a77d47b864edb1"
+                  },
+                  {
+                      "path":  "icons/icon-48.png",
+                      "sizeBytes":  415,
+                      "sha256":  "718bf7f374e341b922d4d803835f13e5fa915f7060885f24e0865e0be45e10a2"
+                  },
+                  {
+                      "path":  "manifest.json",
+                      "sizeBytes":  1198,
+                      "sha256":  "5a7278e01fa94133385bff137612a127a146c7343bb89c769043696b521cc52e"
+                  },
+                  {
+                      "path":  "options.css",
+                      "sizeBytes":  2551,
+                      "sha256":  "ea006a23d844e437b3be3705129aa235642c1ad15212b2253dd8b035686259bd"
+                  },
+                  {
+                      "path":  "options.html",
+                      "sizeBytes":  8061,
+                      "sha256":  "340a583d7284db44d286280065035ace3ac7e000d4026c799176e8009bc7814a"
+                  },
+                  {
+                      "path":  "options.js",
+                      "sizeBytes":  18768,
+                      "sha256":  "80cbbc44a2f18f7eb7473699a5c423a83d1163678d1b260f9b74a57770951a22"
+                  },
+                  {
+                      "path":  "page-bridge.js",
+                      "sizeBytes":  25351,
+                      "sha256":  "be727a65b4ad581b471793d725a5e4d36dc54d3ba1f7772e751d9d9da25f75a1"
+                  },
+                  {
+                      "path":  "popup.css",
+                      "sizeBytes":  1980,
+                      "sha256":  "570440c786c61b68d292f604d931368dc192a0748880aabcfae706d149b67a9a"
+                  },
+                  {
+                      "path":  "popup.html",
+                      "sizeBytes":  1859,
+                      "sha256":  "ca5324faa6955ae4e552cdfd799ab47e7899605c48261079ea90131b06eea90f"
+                  },
+                  {
+                      "path":  "popup.js",
+                      "sizeBytes":  9566,
+                      "sha256":  "cfdfc818e80f68b7f483fe2dc538431901bb7b6dfe78a62e0576f32d4af82b67"
+                  },
+                  {
+                      "path":  "README.md",
+                      "sizeBytes":  12340,
+                      "sha256":  "94c89693cc9505090f3d797dc5fb7b9289f1863659c473bb76b848af101d4e83"
+                  },
+                  {
+                      "path":  "rules/chefs-custom-format-rules-v1-20260722-163940.json",
+                      "sizeBytes":  360,
+                      "sha256":  "f073790149034d49759536107e5b1bbca07a3b5b2045ccc2efaed89a68169c5f"
+                  },
+                  {
+                      "path":  "service-worker.js",
+                      "sizeBytes":  55082,
+                      "sha256":  "2f1b4fac85d97eb14f63f5ae032e650cd09a9639e0dbe298387504d4354b8e5c"
+                  },
+                  {
+                      "path":  "TROUBLESHOOTING.md",
+                      "sizeBytes":  10330,
+                      "sha256":  "ca72956fd6ba6cd597fb202ae453b1f730476b2fffd95b4f1d4d5d4c709c8ba8"
+                  }
+              ]
+}

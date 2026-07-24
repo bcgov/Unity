@@ -150,24 +150,4 @@ public class OpenAIResponseParserTests
         result.Answers["q2"].Confidence.ShouldBe(90);
     }
 
-    [Fact]
-    public void ParseAttachmentSummaryBatchResponse_Should_Map_Attachment_Ids_To_Summaries()
-    {
-        var raw = """
-        {
-          "attachments": [
-            { "attachmentId": "a1", "summary": "One" },
-            { "attachmentId": "a2", "summary": "Two" }
-          ]
-        }
-        """;
-
-        var result = OpenAIResponseParser.ParseAttachmentSummaryBatchResponse(raw);
-
-        result.Attachments.Count.ShouldBe(2);
-        result.Attachments[0].AttachmentId.ShouldBe("a1");
-        result.Attachments[0].Summary.ShouldBe("One");
-        result.Attachments[1].AttachmentId.ShouldBe("a2");
-        result.Attachments[1].Summary.ShouldBe("Two");
-    }
 }
