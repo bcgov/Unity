@@ -27,7 +27,7 @@
          has pointed users to the prerelease line for this exact issue for 2+ years; move to the first
          stable HtmlSanitizer release that depends on AngleSharp >= 1.5 once one ships. -->
     <PackageReference Include="HtmlSanitizer" Version="9.1.968-beta" />
-    <PackageReference Include="Markdig.Signed" Version="0.44.0" />
+    <PackageReference Include="Markdig.Signed" Version="1.3.2" />
     <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="10.0.10" />
     <PackageReference Include="Microsoft.Extensions.Options" Version="10.0.10" />
     <PackageReference Include="Volo.Abp.AspNetCore.Mvc.UI.MultiTenancy" Version="10.5.0" />
