@@ -411,12 +411,12 @@
             const fieldId = `ai-worksheet-field-${field.id}`;
             const $row = $('<div class="ai-worksheet-review__field"></div>');
             $('<span class="ai-worksheet-review__field-name"></span>')
-                .attr('data-field-role', 'CHEFS')
+                .attr('data-field-role', 'Source')
                 .text(field.key || '—')
                 .appendTo($row);
             $('<i class="fa-solid fa-arrow-right ai-worksheet-review__arrow" aria-hidden="true"></i>').appendTo($row);
             $('<span class="ai-worksheet-review__field-name"></span>')
-                .attr('data-field-role', 'Unity')
+                .attr('data-field-role', 'Worksheet')
                 .text(field.label || field.key || '—')
                 .appendTo($row);
             const $switch = $('<div class="ai-worksheet-review__switch"></div>');
@@ -425,6 +425,7 @@
                 .attr('id', fieldId)
                 .attr('data-field-id', field.id)
                 .attr('aria-label', `Include ${field.label || field.key || 'field'}`)
+                .prop('checked', field.selected !== false)
                 .appendTo($switchContainer);
             $switchContainer.appendTo($switch);
             $switch.appendTo($row);
@@ -439,10 +440,9 @@
     function updateAiWorksheetReview() {
         const $fields = UIElements.worksheetReviewFields.find('input[data-field-id]');
         const selectedCount = $fields.filter(':checked').length;
-        $('#aiWorksheetReviewSelectionCount').text(`${selectedCount} of ${$fields.length} selected`);
         $('#aiWorksheetReviewSelectAll')
             .prop('checked', $fields.length > 0 && selectedCount === $fields.length)
-            .prop('indeterminate', selectedCount > 0 && selectedCount < $fields.length);
+            .prop('indeterminate', false);
         updateAiWorksheetDraftButton();
     }
 
@@ -519,23 +519,32 @@
             return;
         }
 
-        UIElements.btnCreateWorksheetDraft.prop('disabled', true);
-        UIElements.btnDiscardWorksheet.prop('disabled', true);
-        abp.ajax({
-            url: `/api/app/application-form-version/discard-ai-worksheet-suggestions?formVersionId=${encodeURIComponent(formVersion)}`,
-            type: 'POST'
-        })
-            .done(function () {
-                setAiWorksheetPending(false);
-                UIElements.worksheetReviewModal.modal('hide');
-                abp.notify.success('', 'Remaining AI worksheet suggestions discarded.');
-            })
-            .fail(function () {
-                abp.notify.error('', 'Unable to discard the remaining AI worksheet suggestions.');
-            })
-            .always(function () {
-                UIElements.btnDiscardWorksheet.prop('disabled', false);
-                updateAiWorksheetDraftButton();
+        abp.message.confirm(
+            'This will permanently remove the remaining AI field suggestions.',
+            'Discard remaining suggestions?')
+            .then(function (confirmed) {
+                if (!confirmed) {
+                    return;
+                }
+
+                UIElements.btnCreateWorksheetDraft.prop('disabled', true);
+                UIElements.btnDiscardWorksheet.prop('disabled', true);
+                abp.ajax({
+                    url: `/api/app/application-form-version/discard-ai-worksheet-suggestions?formVersionId=${encodeURIComponent(formVersion)}`,
+                    type: 'POST'
+                })
+                    .done(function () {
+                        setAiWorksheetPending(false);
+                        UIElements.worksheetReviewModal.modal('hide');
+                        abp.notify.success('', 'Remaining AI worksheet suggestions discarded.');
+                    })
+                    .fail(function () {
+                        abp.notify.error('', 'Unable to discard the remaining AI worksheet suggestions.');
+                    })
+                    .always(function () {
+                        UIElements.btnDiscardWorksheet.prop('disabled', false);
+                        updateAiWorksheetDraftButton();
+                    });
             });
     }
 

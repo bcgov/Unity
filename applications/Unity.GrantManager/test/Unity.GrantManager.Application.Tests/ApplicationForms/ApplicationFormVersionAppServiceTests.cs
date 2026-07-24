@@ -129,6 +129,31 @@ public class ApplicationFormVersionAppServiceTests(ITestOutputHelper outputHelpe
     }
 
     [Fact]
+    public async Task DiscardAiWorksheetSuggestionsAsync_Should_Not_Delete_Published_Containers()
+    {
+        var formVersionId = Guid.NewGuid();
+        var formId = Guid.NewGuid();
+        var formVersion = new ApplicationFormVersion { ApplicationFormId = formId };
+        var publishedSuggestion = BuildAiWorksheet(formId, formVersionId, published: true);
+        var formVersionRepository = Substitute.For<IApplicationFormVersionRepository>();
+        formVersionRepository.GetAsync(formVersionId).Returns(formVersion);
+        var worksheetRepository = Substitute.For<IWorksheetRepository>();
+        worksheetRepository.GetByNameAsync(Arg.Any<string>(), true).Returns(publishedSuggestion);
+
+        var service = CreateService(
+            Substitute.For<IRepository<ApplicationFormVersion, Guid>>(),
+            Substitute.For<IApplicationFormVersionMappingReadService>(),
+            Substitute.For<IFormMappingService>(),
+            formVersionRepository,
+            worksheetRepository);
+        service.LazyServiceProvider = GetRequiredService<IAbpLazyServiceProvider>();
+
+        await service.DiscardAiWorksheetSuggestionsAsync(formVersionId);
+
+        await worksheetRepository.DidNotReceive().DeleteAsync(Arg.Any<Worksheet>(), Arg.Any<bool>());
+    }
+
+    [Fact]
     public async Task CreateAiWorksheetDraftAsync_Should_Create_Unlinked_Unpublished_Draft_And_Keep_Remaining_Suggestions()
     {
         var formVersionId = Guid.NewGuid();
@@ -227,7 +252,7 @@ public class ApplicationFormVersionAppServiceTests(ITestOutputHelper outputHelpe
     {
         var worksheet = new Worksheet(
             Guid.NewGuid(),
-            $"ai-form-{formId}-version-{formVersionId}-worksheet",
+            AiWorksheetSuggestionName.Build(formId, formVersionId),
             "AI Worksheet");
         worksheet.SetPublished(published);
 

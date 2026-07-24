@@ -12,11 +12,9 @@ using Unity.AI.Responses;
 using Unity.GrantManager.ApplicationForms;
 using Unity.GrantManager.ApplicationForms.Mapping;
 using Unity.GrantManager.Applications;
-using Unity.Flex.Domain.WorksheetLinks;
 using Unity.Flex.Domain.Worksheets;
 using Unity.Flex.Worksheets;
 using Unity.Flex.Worksheets.Definitions;
-using Unity.Modules.Shared.Correlation;
 using Volo.Abp.BackgroundJobs;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Repositories;
@@ -29,7 +27,6 @@ public class GenerateFormWorksheetJob(
     IApplicationFormVersionRepository applicationFormVersionRepository,
     IApplicationFormRepository applicationFormRepository,
     IWorksheetRepository worksheetRepository,
-    IWorksheetLinkRepository worksheetLinkRepository,
     IApplicationFormVersionMappingReadService mappingReadService,
     IFormWorksheetService aiService,
     IRepository<AIGenerationRequest, Guid> generationRequestRepository,
@@ -65,11 +62,26 @@ public class GenerateFormWorksheetJob(
             {
                 var formVersion = await applicationFormVersionRepository.GetAsync(args.ApplicationFormVersionId);
                 var applicationForm = await applicationFormRepository.GetAsync(formVersion.ApplicationFormId);
-                var worksheetName = BuildWorksheetName(formVersion.Id, applicationForm.Id);
+                var worksheetName = AiWorksheetSuggestionName.Build(applicationForm.Id, formVersion.Id);
                 var existingWorksheet = await worksheetRepository.GetByNameAsync(worksheetName, true);
-                var mappingReadModel = await mappingReadService.GetAsync(formVersion.Id);
-                if (existingWorksheet == null || existingWorksheet.Published)
+                if (existingWorksheet != null)
                 {
+                    if (existingWorksheet.Published)
+                    {
+                        logger.LogWarning(
+                            "A published worksheet already uses AI suggestion name {WorksheetName}; leaving it unchanged.",
+                            worksheetName);
+                    }
+                    else
+                    {
+                        logger.LogInformation(
+                            "An AI suggestion worksheet is pending review for form version {FormVersionId}; leaving it unchanged.",
+                            formVersion.Id);
+                    }
+                }
+                else
+                {
+                    var mappingReadModel = await mappingReadService.GetAsync(formVersion.Id);
                     var promptData = new
                     {
                         applicationFormVersionId = formVersion.Id,
@@ -99,33 +111,9 @@ public class GenerateFormWorksheetJob(
                     });
 
                     var suggestions = ParseWorksheetDefinition(worksheetResponse.Worksheet);
-                    if (existingWorksheet == null)
-                    {
-                        var worksheet = BuildWorksheet(suggestions, worksheetName);
-                        worksheet.SetPublished(false);
-                        await worksheetRepository.InsertAsync(worksheet);
-                    }
-                    else
-                    {
-                        var existingLink = await worksheetLinkRepository.GetExistingLinkAsync(
-                            existingWorksheet.Id,
-                            formVersion.Id,
-                            CorrelationConsts.FormVersion);
-                        if (existingLink != null)
-                        {
-                            await worksheetLinkRepository.DeleteAsync(existingLink, true);
-                        }
-
-                        RebuildWorksheet(existingWorksheet, suggestions);
-                        existingWorksheet.SetPublished(false);
-                        await worksheetRepository.UpdateAsync(existingWorksheet);
-                    }
-                }
-                else
-                {
-                    logger.LogInformation(
-                        "An unpublished AI worksheet already exists for form version {FormVersionId}; leaving it available for review.",
-                        formVersion.Id);
+                    var worksheet = BuildWorksheet(suggestions, worksheetName);
+                    worksheet.SetPublished(false);
+                    await worksheetRepository.InsertAsync(worksheet);
                 }
 
                 await AIGenerationRequestJobHelper.StampCooldownBestEffortAsync(aiCooldownService, logger, args.RequestedByUserId, args.ApplicationId, AIGenerationRequestKeyHelper.FormWorksheetOperationType);
@@ -177,10 +165,12 @@ public class GenerateFormWorksheetJob(
         {
             field.Key = field.Key?.Trim() ?? string.Empty;
             field.Label = field.Label?.Trim() ?? string.Empty;
+            field.Type = field.Type?.Trim() ?? string.Empty;
             if (string.IsNullOrWhiteSpace(field.Key)
                 || string.IsNullOrWhiteSpace(field.Label)
                 || !keys.Add(field.Key)
-                || !Enum.TryParse<CustomFieldType>(field.Type, false, out var type)
+                || field.Type.Any(char.IsDigit)
+                || !Enum.TryParse<CustomFieldType>(field.Type, true, out var type)
                 || !SupportedSuggestionTypes.Contains(type))
             {
                 throw new InvalidOperationException("Worksheet generation returned an unusable worksheet definition.");
@@ -190,11 +180,6 @@ public class GenerateFormWorksheetJob(
         }
 
         return dto.Fields;
-    }
-
-    private static string BuildWorksheetName(Guid formVersionId, Guid formId)
-    {
-        return $"ai-form-{formId}-version-{formVersionId}-worksheet";
     }
 
     internal static Worksheet BuildWorksheet(List<AiWorksheetFieldSuggestion> suggestions, string worksheetName)

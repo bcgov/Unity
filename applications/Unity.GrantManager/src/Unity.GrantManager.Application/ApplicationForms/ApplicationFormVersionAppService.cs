@@ -456,20 +456,15 @@ namespace Unity.GrantManager.ApplicationForms
         private async Task<Worksheet?> GetPendingAiWorksheetEntityAsync(Guid formVersionId)
         {
             var formVersion = await formVersionRepository.GetAsync(formVersionId);
-            var worksheetName = BuildAiWorksheetName(formVersion.ApplicationFormId, formVersion.Id);
-            var worksheet = await worksheetRepository.GetByNameAsync(worksheetName, true);
+            var worksheet = await worksheetRepository.GetByNameAsync(
+                AiWorksheetSuggestionName.Build(formVersion.ApplicationFormId, formVersion.Id), true);
 
-            if (worksheet == null)
+            if (worksheet?.Published == false)
             {
-                return null;
+                return worksheet;
             }
 
-            if (worksheet.Published)
-            {
-                return null;
-            }
-
-            return worksheet;
+            return null;
         }
 
         private static AiWorksheetReviewDto MapAiWorksheetReview(Worksheet worksheet) => new()
@@ -483,7 +478,8 @@ namespace Unity.GrantManager.ApplicationForms
                     Id = field.Id,
                     Key = field.Key,
                     Label = field.Label,
-                    Type = field.Type.ToString()
+                    Type = field.Type.ToString(),
+                    Selected = true
                 })
                 .ToList()
         };
@@ -529,9 +525,6 @@ namespace Unity.GrantManager.ApplicationForms
                 return definition;
             }
         }
-
-        private static string BuildAiWorksheetName(Guid formId, Guid formVersionId) =>
-            $"ai-form-{formId}-version-{formVersionId}-worksheet";
 
         private async Task<int> GetVersion(Guid formVersionId)
         {

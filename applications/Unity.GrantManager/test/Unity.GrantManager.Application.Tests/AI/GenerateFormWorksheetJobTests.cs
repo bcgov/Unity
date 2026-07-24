@@ -15,6 +15,7 @@ public class GenerateFormWorksheetJobTests
     [InlineData("""{"fields":[{"key":"project","label":"","type":"Text"}]}""")]
     [InlineData("""{"fields":[{"key":"project","label":"Project","type":"Radio"}]}""")]
     [InlineData("""{"fields":[{"key":"project","label":"Project","type":2}]}""")]
+    [InlineData("""{"fields":[{"key":"project","label":"Project","type":" "}]}""")]
     [InlineData("""{"fields":[{"key":"project","label":"Project","type":"Text"},{"key":"PROJECT","label":"Other","type":"Text"}]}""")]
     public void ParseWorksheetDefinition_Should_Reject_Incomplete_Ai_Response(string worksheetJson)
     {
@@ -35,6 +36,16 @@ public class GenerateFormWorksheetJobTests
         fields[0].Key.ShouldBe("projectName");
         fields[0].ResolvedType.ShouldBe(CustomFieldType.Text);
         fields[1].ResolvedType.ShouldBe(CustomFieldType.Currency);
+    }
+
+    [Fact]
+    public void ParseWorksheetDefinition_Should_Trim_And_Ignore_Case_For_Safe_Field_Types()
+    {
+        var fields = GenerateFormWorksheetJob.ParseWorksheetDefinition("""
+            {"fields":[{"key":"projectName","label":"Project Name","type":"  teXT  "}]}
+            """);
+
+        fields.Single().ResolvedType.ShouldBe(CustomFieldType.Text);
     }
 
     [Fact]
