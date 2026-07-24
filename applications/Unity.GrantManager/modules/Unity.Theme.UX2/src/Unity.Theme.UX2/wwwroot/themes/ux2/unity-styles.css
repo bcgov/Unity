@@ -1,5 +1,11 @@
 ﻿/** UNITY based custom styles */
 
+@font-face {
+    font-family: 'Segoe-Fluent-Icons';
+    src: url('fonts/icons/Segoe-MDL2-Assets.ttf') format('truetype');
+    font-weight: 400;
+    font-style: normal;
+}
 
 :root {
     /* bc style colors */
@@ -377,7 +383,6 @@ td.dt-editable {
 
     td.dt-editable:before {
         font-family: 'Segoe-Fluent-Icons', sans-serif;
-        src: url('fonts/icons/Segoe-MDL2-Assets.ttf') format('truetype');
         font-weight: 100;
         font-style: normal;
         font-size: 11px;
@@ -395,7 +400,6 @@ td.dt-editable {
     content: '\E8BB';
     color: var(--bc-colors-white-primary-500, #FFF);
     font-family: 'Segoe-Fluent-Icons', sans-serif;
-    src: url('fonts/icons/Segoe-MDL2-Assets.ttf') format('truetype');
     font-size: 9px;
     padding: 0px;
     padding-bottom: 14px;

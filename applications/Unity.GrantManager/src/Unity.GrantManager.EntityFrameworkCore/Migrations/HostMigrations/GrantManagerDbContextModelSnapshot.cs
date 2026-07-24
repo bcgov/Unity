@@ -467,7 +467,7 @@ namespace Unity.GrantManager.Migrations.HostMigrations
                     b.ToTable("qrtz_triggers", (string)null);
                 });
 
-            modelBuilder.Entity("Unity.AI.Domain.AIPrompt", b =>
+            modelBuilder.Entity("Unity.AI.Domain.AIModel", b =>
                 {
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid");
@@ -486,10 +486,6 @@ namespace Unity.GrantManager.Migrations.HostMigrations
                     b.Property<Guid?>("CreatorId")
                         .HasColumnType("uuid")
                         .HasColumnName("CreatorId");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(2000)
-                        .HasColumnType("character varying(2000)");
 
                     b.Property<string>("ExtraProperties")
                         .IsRequired()
@@ -512,22 +508,86 @@ namespace Unity.GrantManager.Migrations.HostMigrations
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
 
-                    b.Property<Guid?>("TenantId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("TenantId");
-
-                    b.Property<int>("Type")
-                        .HasColumnType("integer");
+                    b.Property<string>("SettingsJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
 
                     b.HasKey("Id");
 
                     b.HasIndex("Name")
                         .IsUnique();
 
-                    b.ToTable("AIPrompts", "AI");
+                    b.ToTable("AIModels", "AI");
                 });
 
-            modelBuilder.Entity("Unity.AI.Domain.AIPromptVersion", b =>
+            modelBuilder.Entity("Unity.AI.Domain.AIOperation", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("AIModelId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("AIPromptId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("CompletionTokens")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("ConcurrencyStamp");
+
+                    b.Property<DateTime>("CreationTime")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("CreationTime");
+
+                    b.Property<Guid?>("CreatorId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("CreatorId");
+
+                    b.Property<string>("ExecutionMode")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("ExtraProperties")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("ExtraProperties");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime?>("LastModificationTime")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("LastModificationTime");
+
+                    b.Property<Guid?>("LastModifierId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("LastModifierId");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AIModelId");
+
+                    b.HasIndex("AIPromptId");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.ToTable("AIOperations", "AI");
+                });
+
+            modelBuilder.Entity("Unity.AI.Domain.AIPrompt", b =>
                 {
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid");
@@ -547,18 +607,12 @@ namespace Unity.GrantManager.Migrations.HostMigrations
                         .HasColumnType("uuid")
                         .HasColumnName("CreatorId");
 
-                    b.Property<string>("DeveloperNotes")
-                        .HasColumnType("text");
-
                     b.Property<string>("ExtraProperties")
                         .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("ExtraProperties");
 
-                    b.Property<bool>("IsDeprecated")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("IsPublished")
+                    b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
 
                     b.Property<DateTime?>("LastModificationTime")
@@ -569,35 +623,26 @@ namespace Unity.GrantManager.Migrations.HostMigrations
                         .HasColumnType("uuid")
                         .HasColumnName("LastModifierId");
 
-                    b.Property<int?>("MaxTokens")
-                        .HasColumnType("integer");
-
                     b.Property<string>("MetadataJson")
-                        .HasColumnType("jsonb");
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("jsonb")
+                        .HasDefaultValue("{}");
 
-                    b.Property<Guid>("PromptId")
-                        .HasColumnType("uuid");
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
 
                     b.Property<string>("SystemPrompt")
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<string>("TargetModel")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<string>("TargetProvider")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<double>("Temperature")
-                        .HasColumnType("double precision");
-
                     b.Property<Guid?>("TenantId")
                         .HasColumnType("uuid")
                         .HasColumnName("TenantId");
 
-                    b.Property<string>("UserPromptTemplate")
+                    b.Property<string>("UserPrompt")
                         .IsRequired()
                         .HasColumnType("text");
 
@@ -606,10 +651,10 @@ namespace Unity.GrantManager.Migrations.HostMigrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("PromptId", "VersionNumber")
+                    b.HasIndex("TenantId", "Name", "VersionNumber")
                         .IsUnique();
 
-                    b.ToTable("AIPromptVersions", "AI");
+                    b.ToTable("AIPrompts", "AI");
                 });
 
             modelBuilder.Entity("Unity.GrantManager.Applicants.ApplicantTenantMap", b =>
@@ -666,7 +711,7 @@ namespace Unity.GrantManager.Migrations.HostMigrations
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid?>("ApplicationId")
+                    b.Property<Guid>("ApplicationId")
                         .HasColumnType("uuid");
 
                     b.Property<DateTime?>("CompletedAt")
@@ -687,14 +732,6 @@ namespace Unity.GrantManager.Migrations.HostMigrations
                         .HasColumnType("uuid")
                         .HasColumnName("CreatorId");
 
-                    b.Property<Guid?>("DeleterId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("DeleterId");
-
-                    b.Property<DateTime?>("DeletionTime")
-                        .HasColumnType("timestamp without time zone")
-                        .HasColumnName("DeletionTime");
-
                     b.Property<string>("ExtraProperties")
                         .IsRequired()
                         .HasColumnType("text")
@@ -704,12 +741,6 @@ namespace Unity.GrantManager.Migrations.HostMigrations
                         .HasMaxLength(2000)
                         .HasColumnType("character varying(2000)");
 
-                    b.Property<bool>("IsDeleted")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(false)
-                        .HasColumnName("IsDeleted");
-
                     b.Property<DateTime?>("LastModificationTime")
                         .HasColumnType("timestamp without time zone")
                         .HasColumnName("LastModificationTime");
@@ -718,15 +749,8 @@ namespace Unity.GrantManager.Migrations.HostMigrations
                         .HasColumnType("uuid")
                         .HasColumnName("LastModifierId");
 
-                    b.Property<string>("OperationType")
-                        .IsRequired()
-                        .HasMaxLength(64)
-                        .HasColumnType("character varying(64)");
-
-                    b.Property<string>("RequestKey")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
+                    b.Property<Guid>("OperationId")
+                        .HasColumnType("uuid");
 
                     b.Property<DateTime?>("StartedAt")
                         .HasColumnType("timestamp without time zone");
@@ -740,9 +764,9 @@ namespace Unity.GrantManager.Migrations.HostMigrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("RequestKey");
+                    b.HasIndex("OperationId");
 
-                    b.HasIndex("TenantId", "ApplicationId", "OperationType", "Status");
+                    b.HasIndex("TenantId", "ApplicationId", "OperationId", "Status");
 
                     b.ToTable("AIRequests", "AI");
                 });
@@ -1177,6 +1201,175 @@ namespace Unity.GrantManager.Migrations.HostMigrations
                     b.HasIndex("SectorId");
 
                     b.ToTable("SubSectors", (string)null);
+                });
+
+            modelBuilder.Entity("Unity.GrantManager.Logs.ExceptionLog", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("BlameAuthor")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<string>("BlameCommitMessage")
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)");
+
+                    b.Property<string>("BlameCommitSha")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("BlameEmail")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<string>("Channel")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<string>("CommitSha")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("ConcurrencyStamp");
+
+                    b.Property<string>("CorrelationId")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<DateTime>("CreationTime")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("CreationTime");
+
+                    b.Property<Guid?>("CreatorId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("CreatorId");
+
+                    b.Property<string>("DeliveryTarget")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<string>("Environment")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("ExceptionMessage")
+                        .HasColumnType("text");
+
+                    b.Property<string>("ExceptionType")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<string>("ExtraProperties")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("ExtraProperties");
+
+                    b.Property<bool>("IsDeliveredRealtime")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime?>("LastModificationTime")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("LastModificationTime");
+
+                    b.Property<Guid?>("LastModifierId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("LastModifierId");
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("NotificationType")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<int>("OccurrenceCount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(1);
+
+                    b.Property<string>("PayloadJson")
+                        .HasColumnType("jsonb");
+
+                    b.Property<int?>("PullRequestNumber")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("PullRequestTitle")
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)");
+
+                    b.Property<string>("PullRequestUrl")
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)");
+
+                    b.Property<string>("Severity")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<string>("Source")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("SourceFile")
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)");
+
+                    b.Property<int?>("SourceLine")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("SourceReference")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<string>("StackExcerpt")
+                        .HasColumnType("text");
+
+                    b.Property<Guid?>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("TenantId");
+
+                    b.Property<string>("TenantName")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<string>("TicketReference")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<Guid?>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("UserName")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CorrelationId");
+
+                    b.HasIndex("TicketReference");
+
+                    b.HasIndex("NotificationType", "CreationTime");
+
+                    b.HasIndex("TenantId", "CreationTime");
+
+                    b.ToTable("ExceptionLogs", (string)null);
                 });
 
             modelBuilder.Entity("Unity.GrantManager.Messaging.InboxMessage", b =>
@@ -3031,15 +3224,32 @@ namespace Unity.GrantManager.Migrations.HostMigrations
                     b.Navigation("JobDetail");
                 });
 
-            modelBuilder.Entity("Unity.AI.Domain.AIPromptVersion", b =>
+            modelBuilder.Entity("Unity.AI.Domain.AIOperation", b =>
                 {
-                    b.HasOne("Unity.AI.Domain.AIPrompt", "Prompt")
-                        .WithMany("Versions")
-                        .HasForeignKey("PromptId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                    b.HasOne("Unity.AI.Domain.AIModel", "AIModel")
+                        .WithMany()
+                        .HasForeignKey("AIModelId")
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.Navigation("Prompt");
+                    b.HasOne("Unity.AI.Domain.AIPrompt", "AIPrompt")
+                        .WithMany()
+                        .HasForeignKey("AIPromptId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("AIModel");
+
+                    b.Navigation("AIPrompt");
+                });
+
+            modelBuilder.Entity("Unity.GrantManager.GrantApplications.AIGenerationRequest", b =>
+                {
+                    b.HasOne("Unity.AI.Domain.AIOperation", null)
+                        .WithMany()
+                        .HasForeignKey("OperationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Unity.GrantManager.Locality.SubSector", b =>
@@ -3156,7 +3366,7 @@ namespace Unity.GrantManager.Migrations.HostMigrations
 
                             b1.HasKey("IdentityUserPasskeyCredentialId");
 
-                            b1.ToTable("UserPasskeys");
+                            b1.ToTable("UserPasskeys", (string)null);
 
                             b1
                                 .ToJson("Data")
@@ -3247,11 +3457,6 @@ namespace Unity.GrantManager.Migrations.HostMigrations
                     b.Navigation("SimplePropertyTriggers");
 
                     b.Navigation("SimpleTriggers");
-                });
-
-            modelBuilder.Entity("Unity.AI.Domain.AIPrompt", b =>
-                {
-                    b.Navigation("Versions");
                 });
 
             modelBuilder.Entity("Unity.GrantManager.Locality.Sector", b =>

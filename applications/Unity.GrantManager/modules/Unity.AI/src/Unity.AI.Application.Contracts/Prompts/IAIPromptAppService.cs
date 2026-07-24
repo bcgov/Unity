@@ -10,4 +10,5 @@ public interface IAIPromptAppService : ICrudAppService<
     PagedAndSortedResultRequestDto,
     CreateUpdateAIPromptDto>
 {
+    System.Threading.Tasks.Task<ListResultDto<AIPromptDto>> GetByPromptAsync(Guid promptId);
 }

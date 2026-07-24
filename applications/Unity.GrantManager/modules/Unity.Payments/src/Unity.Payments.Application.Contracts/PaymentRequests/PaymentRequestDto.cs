@@ -48,7 +48,13 @@ namespace Unity.Payments.PaymentRequests
         public string? FsbApNotified { get; set; }
 
         public Guid? ApplicantId { get; set; }
+        public string? Category { get; set; }
         public Guid? TenantId { get; set; }
+
+        // Cancellation tracking
+        public DateTime? CancelledOn { get; set; }
+        public Guid? CancelledById { get; set; }
+        public string? CancelledBy { get; set; }
 
         public static explicit operator PaymentRequestDto(CreatePaymentRequestDto v)
         {

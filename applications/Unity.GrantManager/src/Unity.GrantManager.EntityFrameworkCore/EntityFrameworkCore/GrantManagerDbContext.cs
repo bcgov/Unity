@@ -5,6 +5,7 @@ using Unity.AI.EntityFrameworkCore;
 using Unity.GrantManager.Applicants;
 using Unity.GrantManager.GrantApplications;
 using Unity.GrantManager.Locality;
+using Unity.GrantManager.Logs;
 using Unity.GrantManager.Tokens;
 using Volo.Abp.AuditLogging.EntityFrameworkCore;
 using Volo.Abp.BackgroundJobs.EntityFrameworkCore;
@@ -50,10 +51,12 @@ public class GrantManagerDbContext :
     public DbSet<InboxMessage> InboxMessages { get; set; }
     public DbSet<OutboxMessage> OutboxMessages { get; set; }
     public DbSet<AIGenerationRequest> AIGenerationRequests { get; set; }
+    public DbSet<ExceptionLog> ExceptionLogs { get; set; }
 
     // Unity.AI entities
     public DbSet<AIPrompt> AIPrompts { get; set; }
-    public DbSet<AIPromptVersion> AIPromptVersions { get; set; }
+    public DbSet<AIModel> AIModels { get; set; }
+    public DbSet<AIOperation> AIOperations { get; set; }
 
     #region Entities from the modules
 
@@ -242,12 +245,53 @@ public class GrantManagerDbContext :
         {
             b.ToTable(GrantManagerConsts.DbTablePrefix + "AIRequests", AIDbProperties.DbSchema);
             b.ConfigureByConvention();
-            b.Property(x => x.OperationType).IsRequired().HasMaxLength(64);
-            b.Property(x => x.RequestKey).IsRequired().HasMaxLength(256);
+            b.Property(x => x.ApplicationId).IsRequired();
+            b.Property(x => x.OperationId).IsRequired();
             b.Property(x => x.FailureReason).HasMaxLength(2000);
             b.Property(x => x.Status).IsRequired();
-            b.HasIndex(x => x.RequestKey);
-            b.HasIndex(x => new { x.TenantId, x.ApplicationId, x.OperationType, x.Status });
+            b.HasOne<AIOperation>()
+                .WithMany()
+                .HasForeignKey(x => x.OperationId)
+                .OnDelete(DeleteBehavior.Restrict);
+            b.HasIndex(x => x.OperationId);
+            b.HasIndex(x => new { x.TenantId, x.ApplicationId, x.OperationId, x.Status });
+        });
+
+        modelBuilder.Entity<ExceptionLog>(b =>
+        {
+            b.ToTable(GrantManagerConsts.DbTablePrefix + "ExceptionLogs", GrantManagerConsts.DbSchema);
+
+            b.ConfigureByConvention();
+
+            b.Property(x => x.NotificationType).HasConversion<string>().HasMaxLength(64);
+            b.Property(x => x.Channel).HasConversion<string>().HasMaxLength(32);
+            b.Property(x => x.Severity).HasConversion<string>().HasMaxLength(32);
+            b.Property(x => x.Title).IsRequired().HasMaxLength(256);
+            b.Property(x => x.Message).IsRequired();
+            b.Property(x => x.Source).IsRequired().HasMaxLength(200);
+            b.Property(x => x.SourceReference).HasMaxLength(256);
+            b.Property(x => x.OccurrenceCount).HasDefaultValue(1);
+            b.Property(x => x.CorrelationId).HasMaxLength(128);
+            b.Property(x => x.DeliveryTarget).HasMaxLength(256);
+            b.Property(x => x.ExceptionType).HasMaxLength(256);
+            b.Property(x => x.Environment).HasMaxLength(64);
+            b.Property(x => x.UserName).HasMaxLength(256);
+            b.Property(x => x.TenantName).HasMaxLength(256);
+            b.Property(x => x.SourceFile).HasMaxLength(512);
+            b.Property(x => x.CommitSha).HasMaxLength(64);
+            b.Property(x => x.PayloadJson).HasColumnType("jsonb");
+            b.Property(x => x.BlameAuthor).HasMaxLength(256);
+            b.Property(x => x.BlameEmail).HasMaxLength(256);
+            b.Property(x => x.BlameCommitSha).HasMaxLength(64);
+            b.Property(x => x.BlameCommitMessage).HasMaxLength(512);
+            b.Property(x => x.PullRequestUrl).HasMaxLength(512);
+            b.Property(x => x.PullRequestTitle).HasMaxLength(512);
+            b.Property(x => x.TicketReference).HasMaxLength(64);
+
+            b.HasIndex(x => new { x.TenantId, x.CreationTime });
+            b.HasIndex(x => new { x.NotificationType, x.CreationTime });
+            b.HasIndex(x => x.CorrelationId);
+            b.HasIndex(x => x.TicketReference);
         });
 
 

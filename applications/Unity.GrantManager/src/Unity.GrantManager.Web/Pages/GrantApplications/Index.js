@@ -462,7 +462,9 @@ $(function () {
                     dtApi.ajax.reload(null, false);
                 }
                 initialLoad = false; // Reset flag after use
-            }
+            },
+            enableContextMenu: true,
+            contextMenuActionsSelector: '[data-selector="applications-table-actions"]'
         });
 
         dataTable.on('select', function (e, dt, type, indexes) {
@@ -567,6 +569,7 @@ $(function () {
             getTotalProjectBudgetColumn(columnIndex++),
             getAssigneesColumn(columnIndex++),
             getStatusColumn(columnIndex++),
+            getExternalStatusVisibilityColumn(columnIndex++),
             getRequestedAmountColumn(columnIndex++),
             getApprovedAmountColumn(columnIndex++),
             getEconomicRegionColumn(columnIndex++),
@@ -599,6 +602,7 @@ $(function () {
             getOrganizationTypeColumn(columnIndex++),
             getOrganizationNameColumn(columnIndex++),
             getBusinessNumberColumn(columnIndex++),
+            getApproxNumberOfEmployeesColumn(columnIndex++),
             getDueDiligenceStatusColumn(columnIndex++),
             getDeclineRationaleColumn(columnIndex++),
             getContactFullNameColumn(columnIndex++),
@@ -782,6 +786,19 @@ $(function () {
             data: 'status',
             name: 'status',
             className: 'data-table-header',
+            index: columnIndex
+        }
+    }
+
+    function getExternalStatusVisibilityColumn(columnIndex) {
+        return {
+            title: l('ExternalStatusVisibility'),
+            data: 'externalStatusVisibility',
+            name: 'externalStatusVisibility',
+            className: 'data-table-header',
+            render: function (data) {
+                return data ? 'Published' : 'Unpublished';
+            },
             index: columnIndex
         }
     }
@@ -1246,6 +1263,19 @@ $(function () {
             title: l('Summary:Application.BusinessNumber'),
             name: 'businessNumber',
             data: 'applicant.businessNumber',
+            className: 'data-table-header',
+            render: function (data) {
+                return data ?? '';
+            },
+            index: columnIndex
+        }
+    }
+
+    function getApproxNumberOfEmployeesColumn(columnIndex) {
+        return {
+            title: l('Summary:Application.ApproxNumberOfEmployees'),
+            name: 'approxNumberOfEmployees',
+            data: 'applicant.approxNumberOfEmployees',
             className: 'data-table-header',
             render: function (data) {
                 return data ?? '';

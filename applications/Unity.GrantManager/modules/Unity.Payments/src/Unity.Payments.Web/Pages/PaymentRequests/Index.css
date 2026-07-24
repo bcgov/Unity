@@ -1,4 +1,45 @@
-﻿#PaymentRequestListTable_filter label {
+﻿.date-input-filter-div {
+    display: inline-block;
+    padding: 10px;
+    padding-top: 0px;
+    margin-top: -10px;
+    margin-bottom: -10px;
+    padding-bottom: 0px !important;
+}
+
+.date-input-filter-div label.form-label {
+    font-size: 13.6px;
+    margin-bottom: 0.3rem;
+}
+
+.custom-date-range-container-div {
+    display: inline-block;
+    padding: 0px;
+    margin: 0px;
+}
+
+.quick-date-input {
+    font-size: var(--bc-font-size);
+    color: var(--bc-colors-grey-text-500);
+    border-radius: var(--bc-layout-margin-small) !important;
+    border: 2px solid var(--bc-colors-blue-primary);
+    text-overflow: ellipsis;
+}
+
+.action-bar-date-controls .search-action-bar {
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+}
+
+.action-bar-date-controls .date-input-filter-div {
+    margin-top: 10px;
+}
+
+.action-bar-date-controls #dynamicButtonContainerId {
+    margin-top: 0;
+}
+
+#PaymentRequestListTable_filter label {
     font-size: var(--bc-font-size-sm);
     color: var(--bc-colors-grey-text-300);
     white-space: nowrap;
@@ -50,4 +91,37 @@
 #PaymentRequestListTable .error-row td {
     background-color: #FEEAEA;
     color: #FF0909 !important;
+}
+
+/* DataTables stateRestore - Save View */
+.container-fluid .dtsr-background {
+    background: rgba(0, 0, 0, 0.5) !important;
+}
+
+.cstm-save-view .dt-button-collection {
+    width: 230px;
+}
+
+.cstm-save-view .dt-button-split a {
+    line-height: 35px;
+}
+
+.container-fluid .dtsr-creation-title,
+.container-fluid .dtsr-confirmation-title {
+    font-weight: 700;
+    font-size: 1.25rem;
+}
+
+.container-fluid .dtsr-creation input,
+.container-fluid .dtsr-rename-modal input {
+    font-size: var(--bc-font-size);
+    color: var(--bc-colors-grey-text-500);
+    border-radius: 4px !important;
+    border: 2px solid var(--bc-colors-blue-primary);
+}
+
+.container-fluid div.dtsr-confirmation button,
+.container-fluid div.dtsr-creation button {
+    color: var(--bc-colors-white-primary-500);
+    background-color: var(--bc-colors-blue-primary);
 }

@@ -70,7 +70,15 @@ namespace Unity.GrantManager.Permissions
         public readonly List<string> Notifications_CommonPermissions = [
             NotificationsPermissions.Email.Default,
             NotificationsPermissions.Email.Send,
+            NotificationsPermissions.Email.DeleteDraft
         ];
+
+        public readonly List<string> NotificationsScheduling_CommonPermissions = [
+            NotificationsPermissions.Email.CancelScheduled,
+            NotificationsPermissions.Email.ScheduleCreate,
+            NotificationsPermissions.Email.ScheduleCancel,
+            NotificationsPermissions.Email.Schedule
+        ];        
 
         public readonly List<string> Dashboard_CommonPermissions = [
             GrantApplicationPermissions.Dashboard.Default,
@@ -95,6 +103,13 @@ namespace Unity.GrantManager.Permissions
             UnitySelector.Application.Tags.Delete,
             UnitySelector.Payment.Tags.Create,
             UnitySelector.Payment.Tags.Delete,
+        ];
+
+        public readonly List<string> ExternalStatusVisibility_CommonPermissions = [
+            UnitySelector.Application.Status.Default,
+            UnitySelector.Application.Status.Publish,
+            UnitySelector.Application.Status.Unpublish,
+            UnitySelector.Application.Status.BulkPublish
         ];
 
         public async Task SeedAsync(DataSeedContext context)
@@ -124,6 +139,8 @@ namespace Unity.GrantManager.Permissions
                     IdentitySeedPermissions.Roles.ManagePermissions,
                     GrantManagerPermissions.Intakes.Default,
                     GrantManagerPermissions.ApplicationForms.Default,
+                    UnitySettingManagementPermissions.UserInterface,
+                    UnitySettingManagementPermissions.EditProgramDetails,
 
                     .. SettingManagement_Tags_CommonPermissions,
                     .. ReviewAndAssessment_CommonPermissions,
@@ -132,8 +149,10 @@ namespace Unity.GrantManager.Permissions
                     .. PaymentInfo_CommonPermissions,
                     UnitySelector.Payment.Supplier.Update,
                     .. Notifications_CommonPermissions,
+                    .. NotificationsScheduling_CommonPermissions,
                     .. Dashboard_CommonPermissions,
                     .. Tags_CommonPermissions,
+                    .. ExternalStatusVisibility_CommonPermissions,
                     AIPermissions.Configuration.ConfigureAI,
                     FlexPermissions.Worksheets.Default,
                     FlexPermissions.Worksheets.Delete
@@ -196,8 +215,10 @@ namespace Unity.GrantManager.Permissions
                     .. PaymentInfo_CommonPermissions,
                     UnitySelector.Payment.Supplier.Update,
                     .. Notifications_CommonPermissions,
+                    .. NotificationsScheduling_CommonPermissions,
                     .. Dashboard_CommonPermissions,
                     .. Tags_CommonPermissions,
+                    .. ExternalStatusVisibility_CommonPermissions,
 
                     // Role Specific Permissions
                     UnitySelector.Project.Summary.Update.UpdateFinalStateFields,
@@ -226,6 +247,7 @@ namespace Unity.GrantManager.Permissions
                 [
                     GrantManagerPermissions.Default,
                     UnitySettingManagementPermissions.UserInterface,
+                    UnitySettingManagementPermissions.EditProgramDetails,
                     GrantManagerPermissions.Organizations.Default,
                     GrantManagerPermissions.Organizations.ManageProfiles,
                     GrantManagerPermissions.Intakes.Default,
@@ -239,6 +261,7 @@ namespace Unity.GrantManager.Permissions
                     .. PaymentInfo_CommonPermissions,
                     UnitySelector.Payment.Supplier.Update,
                     .. Notifications_CommonPermissions,
+                    .. NotificationsScheduling_CommonPermissions,
                     NotificationsPermissions.Settings,
                     .. Dashboard_CommonPermissions,
                     .. Tags_CommonPermissions,
@@ -334,4 +357,3 @@ namespace Unity.GrantManager.Permissions
         }
     }
 }
-

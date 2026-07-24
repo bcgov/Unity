@@ -1,12 +1,56 @@
-﻿@using Unity.GrantManager.Web.Views.Shared.Components.CustomFields @* Suppress:S1128 *@
+@using Unity.GrantManager.Web.Views.Shared.Components.CustomFields @* Suppress:S1128 *@
+@using Unity.AI.Permissions
+@inject Volo.Abp.Authorization.Permissions.IPermissionChecker PermissionChecker
 @model CustomFieldsViewModel
 
 @{
     Layout = null;
 }
 
+<div class="configuration-action-bar row">
+    <div class="col-12 col-md-8">
+        <h5>Scoresheet & Worksheets Configuration</h5>
+    </div>
+    <div class="col-12 col-md-4 btn-wrapper">
+        <abp-button id="btn-save-worksheet-config"
+                    text="Save"
+                    type="submit"
+                    icon-type="Other"
+                    icon="fl fl-save"
+                    class="btn unt-btn-primary btn-primary"
+                    abp-tooltip="Save the worksheet associations for mapping to the available Unity worksheet fields"
+                    button-type="Primary"
+                    form="worksheet-config-form" />
+        @if (await PermissionChecker.IsGrantedAsync(AIPermissions.FormWorksheet.Generate))
+        {
+            <button type="button" id="btn-generate-worksheet" class="btn ai-generate-btn unt-btn-outline-primary btn-outline-primary"
+                    data-ai-cooldown-checking="1" data-ai-rate-limit-disabled="1" disabled
+                    title="Generate a worksheet for the current form version">
+                <span class="ai-button-content">
+                    <i class="unt-icon-sm fa-solid fa-wand-magic-sparkles"></i>
+                    <span>Generate Worksheet</span>
+                </span>
+            </button>
+        }
+        @if (await PermissionChecker.IsGrantedAsync(AIPermissions.FormScoresheet.Generate))
+        {
+            <button type="button" id="btn-generate-scoresheet" class="btn ai-generate-btn unt-btn-outline-primary btn-outline-primary"
+                    data-ai-cooldown-checking="1" data-ai-rate-limit-disabled="1" disabled
+                    title="Generate a scoresheet for the current form version">
+                <span class="ai-button-content">
+                    <i class="unt-icon-sm fa-solid fa-wand-magic-sparkles"></i>
+                    <span>Generate Scoresheet</span>
+                </span>
+            </button>
+        }
+        <abp-button id="btn-back-worksheet-config"
+                    text="Back"
+                    class="btn unt-btn-outline-primary btn-outline-primary"
+                    abp-tooltip="Navigate back to the Forms" />
+    </div>
+</div>
 <div class="row">
-    <div class="col-6 p-3">
+    <div class="col-6 p-3 pb-0">
         <label for="applicationFormVersionRo" class="form-label">Version:</label>
         <div class="select-icon-wrapper">
             <select class="form-select form-control" id="applicationFormVersionRo" name="Version" disabled>
@@ -18,14 +62,14 @@
             }
         </div>
     </div>
-    <div class="col-6 p-3">
+    <div class="col-6 pt-3 px-2 scoresheet-selector">
         <input type="hidden" id="originalScoresheetId" value="@Model!.ScoresheetId" />
         <abp-select asp-for="@Model.ScoresheetId" asp-items="@Model.ScoresheetOptionsList" id="scoresheet" label="Scoresheets:">
             <option value="">Please choose...</option>
         </abp-select>
     </div>
 </div>
-<div id="custom-fields-div" class="custom-fields-container" >
+<div id="custom-fields-div" class="custom-fields-container">
     <form method="post" asp-controller="CustomFields" asp-action="UpdateCustomFields" id="worksheet-config-form">
         <abp-input type="hidden" id="ChefsFormVersionId" asp-for="@Model.ChefsFormVersionId" />
         <abp-input type="hidden" id="AssessmentInfoSlotIds" asp-for="@Model.AssessmentInfoSlotIds" />
@@ -47,27 +91,6 @@
                             </span>
                         </div>
                     }
-                </div>
-                <div class="button-row row">
-                    <div class="col-12">
-                        <div class="buttons">
-                            <div class="buttons-div">
-                                <abp-button id="btn-save-worksheet-config"
-                                            text="Save"
-                                            type="submit"
-                                            icon-type="Other"                                
-                                            class="btn unt-btn-primary btn-primary mx-1"
-                                            style="pointer-events: all;"
-                                            abp-tooltip="Save the Worksheet associations to the Mapping of to the Available Unity Worksheet Fields"
-                                            button-type="Primary" />
-
-                                <abp-button id="btn-back-worksheet-config"
-                                            text="Back"
-                                            class="btn unt-btn-outline-primary btn-outline-primary mx-1"
-                                            abp-tooltip="Navigate back to the Forms" />
-                            </div>
-                        </div>
-                    </div>
                 </div>
             </div>
             <div class="slots-col">

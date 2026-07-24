@@ -70,6 +70,12 @@ namespace Unity.GrantManager.Permissions.GrantApplications
             approvalPermissions.AddChild(GrantApplicationPermissions.Approvals.DeferAfterApproval, L("Permission:GrantApplicationManagement.Approvals.DeferAfterApproval"));
             approvalPermissions.AddChild(GrantApplicationPermissions.Approvals.BulkApplicationApproval, L("Permission:GrantApplicationManagement.Approvals.BulkApplicationApproval"));
 
+            // External Status Visibility
+            var statusVisibilityPermissions = grantApplicationPermissionsGroup.AddPermission(UnitySelector.Application.Status.Default, L(UnitySelector.Application.Status.Default));
+            statusVisibilityPermissions.AddUnityChild(UnitySelector.Application.Status.Publish);
+            statusVisibilityPermissions.AddUnityChild(UnitySelector.Application.Status.Unpublish);
+            statusVisibilityPermissions.AddUnityChild(UnitySelector.Application.Status.BulkPublish);
+
             // Comments
             var appCommentPermissions = grantApplicationPermissionsGroup.AddPermission(GrantApplicationPermissions.Comments.Default, L("Permission:GrantApplicationManagement.Comments.Default"));
             appCommentPermissions.AddChild(GrantApplicationPermissions.Comments.Add, L("Permission:GrantApplicationManagement.Comments.Add"));
@@ -87,6 +93,7 @@ namespace Unity.GrantManager.Permissions.GrantApplications
             settingManagement.AddPermission(UnitySettingManagementPermissions.UserInterface, L("Permission:UnitySettingManagementPermissions.UserInterface"));
             settingManagement.AddPermission(UnitySettingManagementPermissions.BackgroundJobSettings, L("Permission:UnitySettingManagementPermissions.BackgroundJobs"));
             settingManagement.AddPermission(UnitySettingManagementPermissions.ConfigurePayments, L("Permission:UnitySettingManagementPermissions.ConfigurePayments"));
+            settingManagement.AddPermission(UnitySettingManagementPermissions.EditProgramDetails, L("Permission:UnitySettingManagementPermissions.EditProgramDetails"));
 
             var emailingPermission = context.GetPermissionOrNull(SettingManagementPermissions.Emailing);
             if (emailingPermission != null)
@@ -115,7 +122,7 @@ namespace Unity.GrantManager.Permissions.GrantApplications
             //-- TAG ASSIGNMENT
             var tagsPermissionsGroup = context.AddGroup("Tags", L("Permission:Tags"));
             tagsPermissionsGroup.AddPermission(UnitySelector.Application.Tags.Create, L(UnitySelector.Application.Tags.Create));
-            tagsPermissionsGroup.AddPermission(UnitySelector.Application.Tags.Delete, L(UnitySelector.Application.Tags.Delete));           
+            tagsPermissionsGroup.AddPermission(UnitySelector.Application.Tags.Delete, L(UnitySelector.Application.Tags.Delete));
         }
 
         private static LocalizableString L(string name)

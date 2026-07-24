@@ -4,18 +4,59 @@
 @model Unity.Notifications.Web.Pages.Notifications.IndexModel
 @inject IStringLocalizer<NotificationsResource> L
 
+@section styles {
+    <abp-style src="/Pages/Notifications/Index.css" />
+}
+
 @section scripts {
     <abp-script-bundle>
         <abp-script src="/Pages/Notifications/Index.js" />
     </abp-script-bundle>
 }
 
-<div class="container-fluid px-2">
-    <div class="action-bar p-2 search-action-bar d-flex align-items-center gap-2">
-        <abp-card-title class="mb-0">@L["Menu:Notifications"]</abp-card-title>
-        <label for="search" class="visually-hidden">@L["Search"]</label>
-        <input type="search" id="search" class="tbl-search" placeholder="@L["Search"]" aria-label="@L["Search"]" />
-        <span id="dynamicButtonContainerId" class="ms-auto"></span>
+<div class="container-fluid px-2 action-bar-date-controls">
+    <div class="action-bar p-2 search-action-bar">
+        <div class="search-action-bar_search-wrapper">
+            <label for="search" class="visually-hidden">@L["Search"]</label>
+            <input type="search" id="search" class="tbl-search" placeholder="@L["Search"]" aria-label="@L["Search"]" />
+            <div class="mb-3 date-input-filter-div">
+                <label class="form-label" for="quickDateRange">@L["NotificationList:QuickDateRange"]</label>
+                <select id="quickDateRange" class="form-control quick-date-input">
+                    <option value="today">@L["NotificationList:DateRange:Today"]</option>
+                    <option value="last7days">@L["NotificationList:DateRange:Last7Days"]</option>
+                    <option value="last30days">@L["NotificationList:DateRange:Last30Days"]</option>
+                    <option value="last3months">@L["NotificationList:DateRange:Last3Months"]</option>
+                    <option value="last6months" selected>@L["NotificationList:DateRange:Last6Months"]</option>
+                    <option value="alltime">@L["NotificationList:DateRange:AllTime"]</option>
+                    <option value="custom">@L["NotificationList:DateRange:Custom"]</option>
+                </select>
+            </div>
+            <div class="mb-3 custom-date-range-container-div" id="customDateInputs" style="display: none;">
+                <div class="mb-3 date-input-filter-div">
+                    <label class="form-label" for="submittedFromDate">@L["NotificationList:DateFrom"]</label>
+                    <input abp-data-datepicker="false"
+                           type="date"
+                           id="submittedFromDate"
+                           name="SubmittedFromDate"
+                           value=""
+                           class="form-control date-input-filter"
+                           min="1900-01-01"
+                           max="2100-01-01">
+                </div>
+                <div class="mb-3 date-input-filter-div">
+                    <label class="form-label" for="submittedToDate">@L["NotificationList:DateTo"]</label>
+                    <input abp-data-datepicker="false"
+                           type="date"
+                           id="submittedToDate"
+                           name="SubmittedToDate"
+                           value=""
+                           class="form-control date-input-filter"
+                           min="1900-01-01"
+                           max="2100-01-01">
+                </div>
+            </div>
+        </div>
+        <span id="dynamicButtonContainerId"></span>
     </div>
     <abp-table id="NotificationListTable"></abp-table>
 </div>

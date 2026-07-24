@@ -1,19 +1,22 @@
 using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
-using Unity.GrantManager.Attachments;
-using Unity.GrantManager.GrantApplications;
 using Volo.Abp.Application.Services;
 
 namespace Unity.AI.Generation;
 
 public interface IAIGenerationAppService : IApplicationService
 {
-    Task<List<AttachmentSummaryResultDto>> GenerateAttachmentSummariesAsync(GenerateAttachmentSummariesInputDto input);
+    Task GenerateApplicationAttachmentSummariesAsync(AttachmentSummaryGenerationRequestDto request);
 
-    Task<ApplicationAnalysisResultDto> GenerateApplicationAnalysisAsync(Guid applicationId, string? promptVersion = null);
+    Task GenerateApplicationAnalysisAsync(Guid applicationId, string? promptVersion = null);
 
-    Task<ApplicationScoringResultDto> GenerateApplicationScoringAsync(Guid applicationId, string? promptVersion = null);
+    Task GenerateApplicationScoringAsync(Guid applicationId, string? promptVersion = null);
 
-    Task<ApplicationContentResultDto> GenerateContentAsync(Guid applicationId, string? promptVersion = null);
+    Task GenerateFormMappingAsync(Guid applicationId, Guid applicationFormVersionId, string? promptVersion = null);
+
+    Task GenerateFormWorksheetAsync(Guid applicationId, Guid applicationFormVersionId, string? promptVersion = null);
+
+    Task GenerateFormScoresheetAsync(Guid applicationId, Guid applicationFormVersionId, string? promptVersion = null);
+
+    Task<AIGenerationStatusDto> GetStatusAsync(Guid applicationId, string operationType);
 }

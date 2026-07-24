@@ -23,6 +23,10 @@
 	  <None Remove="Scripts\generate_consolidated_worksheet_view.sql" />
 	  <None Remove="Scripts\get_consolidated_formversion_data.sql" />
 	  <None Remove="Scripts\generate_consolidated_formversion_view.sql" />
+	  <None Remove="Scripts\generate_scoresheets_view.sql" />
+	  <None Remove="Scripts\generate_submissions_view.sql" />
+	  <None Remove="Scripts\generate_worksheets_view.sql" />
+	  <None Remove="Scripts\get_next_sequence_number.sql" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -65,6 +69,18 @@
 	  <EmbeddedResource Include="Scripts\generate_consolidated_formversion_view.sql">
 		<CopyToOutputDirectory>Never</CopyToOutputDirectory>
 	  </EmbeddedResource>
+	  <EmbeddedResource Include="Scripts\generate_scoresheets_view.sql">
+		<CopyToOutputDirectory>Never</CopyToOutputDirectory>
+	  </EmbeddedResource>
+	  <EmbeddedResource Include="Scripts\generate_submissions_view.sql">
+		<CopyToOutputDirectory>Never</CopyToOutputDirectory>
+	  </EmbeddedResource>
+	  <EmbeddedResource Include="Scripts\generate_worksheets_view.sql">
+		<CopyToOutputDirectory>Never</CopyToOutputDirectory>
+	  </EmbeddedResource>
+	  <EmbeddedResource Include="Scripts\get_next_sequence_number.sql">
+		<CopyToOutputDirectory>Never</CopyToOutputDirectory>
+	  </EmbeddedResource>
 	</ItemGroup>
 
 	<ItemGroup>
@@ -94,7 +110,5 @@
 		<PackageReference Include="System.IO.Packaging" Version="10.0.7" />
 		<ProjectReference Include="..\..\modules\Unity.Notifications\src\Unity.Notifications.EntityFrameworkCore\Unity.Notifications.EntityFrameworkCore.csproj" /></ItemGroup>
 
-	<ItemGroup>
-		<Folder Include="Migrations\HostMigrations\" />
-	</ItemGroup>
+
 </Project>

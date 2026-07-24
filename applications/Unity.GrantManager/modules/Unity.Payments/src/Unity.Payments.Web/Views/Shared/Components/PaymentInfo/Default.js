@@ -437,7 +437,14 @@
             index: 8,
             render: function (data) {
                 if (data + '' !== 'undefined' && data?.length > 0) {
-                    return '<button class="btn btn-light info-btn" type="button" onclick="openCasResponseModal(\'' + data + '\');">View Response<i class="fl fl-mapinfo"></i></button>';
+                    const escaped = data
+                        .replaceAll('\\', String.raw`\\`)
+                        .replaceAll("'", String.raw`\'`)
+                        .replaceAll('&', '&amp;')
+                        .replaceAll('"', '&quot;')
+                        .replaceAll('<', '&lt;')
+                        .replaceAll('>', '&gt;');
+                    return '<button class="btn btn-light info-btn" type="button" onclick="openCasResponseModal(\'' + escaped + '\');">View Response<i class="fl fl-mapinfo"></i></button>';
                 }
                 return null;
             },

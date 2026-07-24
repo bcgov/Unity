@@ -9,7 +9,6 @@ using System.Net.Http;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
-using Unity.Notifications.TeamsNotifications;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Forms;
 using Unity.GrantManager.Intakes;
@@ -22,6 +21,7 @@ using Volo.Abp.MultiTenancy;
 using Volo.Abp.Security.Encryption;
 using Volo.Abp.TenantManagement;
 using Unity.GrantManager.Notifications;
+using Unity.GrantManager.Notifications.Logs;
 
 namespace Unity.GrantManager.ApplicationForms
 {
@@ -200,7 +200,7 @@ namespace Unity.GrantManager.ApplicationForms
                     {
                         HashSet<string> newChefsSubmissions = await GetChefsSubmissions(applicationFormDto, numberOfDaysToCheck);
                         HashSet<string> existingSubmissions = GetSubmissionsByForm(applicationFormDto.Id);
-                        missingSubmissions = newChefsSubmissions.Except(existingSubmissions).ToHashSet();
+                        missingSubmissions = [.. newChefsSubmissions.Except(existingSubmissions)];
                         if (missingSubmissions.Count > 0)
                         {
                             formsMissingSubmissions++;
@@ -245,9 +245,9 @@ namespace Unity.GrantManager.ApplicationForms
                 string activityTitle = "Review Missed Chefs Submissions " + tenantName;
                 string activitySubtitle = "Environment: " + envInfo;
                 
-                await _notificationsAppService.PostToTeamsAsync(activityTitle, activitySubtitle, _facts);
+                await _notificationsAppService.PostToNotificationsAsync(activityTitle, activitySubtitle, _facts);
             }
-            return (missingSubmissions ?? new HashSet<string>(), missingSubmissionsReportBuilder.ToString());
+            return (missingSubmissions ?? [], missingSubmissionsReportBuilder.ToString());
         }
 
         private async Task<string?> GetTenantNameAsync()
@@ -277,7 +277,7 @@ namespace Unity.GrantManager.ApplicationForms
         {
             IQueryable<ApplicationForm> queryableApplicationForms = _applicationFormRepository.GetQueryableAsync().Result;
             var forms = queryableApplicationForms.Where(x => (x.ApiKey ?? string.Empty) != string.Empty).ToList();
-            return await Task.FromResult<IList<ApplicationFormDto>>(ObjectMapper.Map<List<ApplicationForm>, List<ApplicationFormDto>>(forms.ToList()));
+            return await Task.FromResult<IList<ApplicationFormDto>>(ObjectMapper.Map<List<ApplicationForm>, List<ApplicationFormDto>>([.. forms]));
         }
 
         public async Task<HashSet<string>> GetChefsSubmissions(ApplicationFormDto applicationFormDto, int numberOfDaysToCheck)

@@ -193,41 +193,43 @@ $(function () {
                 return;
             }
 
-            const existingHTML = $activeButton.html();
-
             globalThis.AIGenerationButtonState?.setGenerating($activeButton);
-            $activeButton
-                .html(
-                    '<span class="ai-button-content"><span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span><span>Generating...</span></span>'
-                )
-                .prop('disabled', true);
 
-            $.ajax({
-                url: '/api/app/ai/generation/attachment-summary',
-                data: JSON.stringify({
-                    applicationId: applicationId,
-                    attachmentIds: summaryAttachmentIds,
-                }),
-                contentType: 'application/json',
-                type: 'POST',
-                success: function () {
-                    resetAttachmentSelection();
-                    chefsDataTable.ajax.reload();
-                    abp.notify.success('AI summaries generated successfully.');
-                    globalThis.AIGenerationButtonState?.restore($activeButton);
-                    globalThis.refreshAIRateLimitState?.();
-                    $activeButton.html(existingHTML).prop('disabled', false);
-                },
-                error: function (error) {
+            globalThis.AIGenerationApi.queueAttachmentSummary({
+                applicationId: applicationId,
+                attachmentIds: summaryAttachmentIds,
+            })
+                .done(function (generationStatus) {
+                    pollAttachmentSummaryGeneration(applicationId, $activeButton, $activeButton.html());
+                })
+                .fail(function (error) {
                     console.error('Error generating AI summaries:', error);
                     abp.message.error('An error occurred while generating AI summaries. Please try again.');
                     globalThis.AIGenerationButtonState?.restore($activeButton);
-                    globalThis.refreshAIRateLimitState?.();
-                    $activeButton.html(existingHTML).prop('disabled', false);
+                    globalThis.refreshAICooldownState?.();
                     setGenerateSummariesEnabled();
-                },
-            });
+                });
         });
+    }
+
+    function pollAttachmentSummaryGeneration(applicationId, $button, originalHtml) {
+        globalThis.AIGenerationButtonState.monitor({
+            $button,
+            originalHtml: originalHtml ?? $button.html(),
+            getStatus: () => globalThis.AIGenerationApi.getStatus(applicationId, 'attachment-summary'),
+            onComplete: refreshAttachmentSummaryResults,
+            onPollFailed: (error) => {
+                console.warn('Failed to poll AI attachment summary status.', error);
+                abp.message.error(error?.message || 'AI attachment summary generation failed.');
+            }
+        });
+    }
+
+    function refreshAttachmentSummaryResults() {
+        resetAttachmentSelection();
+        chefsDataTable.ajax.reload();
+        abp.notify.success('AI summaries generated successfully.');
+        globalThis.refreshAIRateLimitState?.();
     }
 
     // Toggle all AI summaries (only if feature is enabled)
@@ -246,16 +248,15 @@ $(function () {
 
             if (allAISummariesExpanded) {
                 chefsDataTable.rows().every(function () {
-                    const row = this;
-                    if (row.child.isShown()) {
-                        const $childRow = $(row.child());
+                    if (this.child.isShown()) {
+                        const $childRow = $(this.child());
                         const $summaryRow = $childRow.find('.ai-summary-row');
 
                         $summaryRow.removeClass('fade-in').addClass('fade-out');
 
-                        setTimeout(function () {
-                            row.child.hide();
-                            $(row.node()).removeClass('shown');
+                        setTimeout(() => {
+                            this.child.hide();
+                            $(this.node()).removeClass('shown');
                             $summaryRow.removeClass('fade-out');
                         }, 500);
                     }
@@ -266,17 +267,16 @@ $(function () {
                 allAISummariesExpanded = false;
             } else {
                 chefsDataTable.rows().every(function () {
-                    const row = this;
-                    const rowData = row.data();
+                    const rowData = this.data();
 
                     if (rowData.aiSummary && rowData.aiSummary.trim() !== '') {
                         const summaryHtml = formatAISummary(rowData);
 
-                        row.child(summaryHtml, 'ai-summary-cell').show();
-                        $(row.node()).addClass('shown');
+                        this.child(summaryHtml, 'ai-summary-cell').show();
+                        $(this.node()).addClass('shown');
 
-                        setTimeout(function () {
-                            const $childRow = $(row.child());
+                        setTimeout(() => {
+                            const $childRow = $(this.child());
                             $childRow.find('.ai-summary-row').addClass('fade-in');
                         }, 10);
                     }

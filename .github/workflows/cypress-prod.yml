@@ -1,0 +1,19 @@
+name: Cypress E2E — Prod
+
+# Manual-only — triggered after UAT sign-off, not automatically after deployment.
+#
+# Runs Cypress inside OpenShift (d18498-tools) — see cypress-e2e-runner.yml.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  cypress:
+    uses: ./.github/workflows/cypress-e2e-runner.yml
+    with:
+      env_name: prod
+      cypress_config_key: CYPRESS_CONFIG_PROD
+    secrets: inherit

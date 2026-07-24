@@ -178,20 +178,63 @@ public class EmailConsumer(
     // -----------------------------
     private async Task UpdateEmailLogStatus(EmailLog log, HttpResponseMessage response)
     {
+        var responseBody = response.Content != null ? await response.Content.ReadAsStringAsync() : null;
+
         log.ChesResponse = JsonConvert.SerializeObject(new
         {
             response.StatusCode,
             Headers = response.Headers?.ToString(),
-            Body = response.Content != null ? await response.Content.ReadAsStringAsync() : null
+            Body = responseBody
         });
 
         log.ChesHttpStatusCode = response.StatusCode.ToString("D");
 
         log.ChesStatus = response.StatusCode.ToString();
 
-        log.Status = response.IsSuccessStatusCode
-            ? EmailStatus.Sent
-            : EmailStatus.Failed;
+        // Update status based on response, but preserve Scheduled status unless send date has passed
+        if (log.Status == EmailStatus.Scheduled)
+        {
+            // If scheduled and send date has passed, update to Sent or Failed based on response
+            if (log.SendOnDateTime.HasValue && log.SendOnDateTime.Value <= DateTime.UtcNow)
+            {
+                log.Status = response.IsSuccessStatusCode
+                    ? EmailStatus.Sent
+                    : EmailStatus.Failed;
+            }
+        }
+        else
+        {
+            // For non-scheduled emails, update status based on response
+            log.Status = response.IsSuccessStatusCode
+                ? EmailStatus.Sent
+                : EmailStatus.Failed;
+        }
+
+        // Extract msgId from CHES response if successful
+        if (response.IsSuccessStatusCode && !string.IsNullOrEmpty(responseBody))
+        {
+            try
+            {
+                var chesResponse = JsonConvert.DeserializeObject<dynamic>(responseBody);
+                if (chesResponse?.messages != null && chesResponse?.messages.Count > 0)
+                {
+                    string? msgId = chesResponse?.messages[0].msgId;
+                    if (msgId != null && Guid.TryParse(msgId, out var msgIdGuid))
+                    {
+                        log.ChesMsgId = msgIdGuid;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(
+                    ex,
+                    "Failed to extract msgId from CHES response for Email {EmailId}. Response: {Response}",
+                    log.Id,
+                    responseBody
+                );
+            }
+        }
 
         // Log SentDateTime on success
         if (response.IsSuccessStatusCode)
@@ -301,5 +344,5 @@ public class EmailConsumer(
     }
 
     private static bool ShouldProcessEmail(EmailLog log)
-        => log != null && log.Status != EmailStatus.Sent;
+        => log != null && log.Status != EmailStatus.Sent && log.Status != EmailStatus.Cancelled;
 }

@@ -4,21 +4,24 @@ using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
 using NPOI.XWPF.UserModel;
 using Shouldly;
-using System.Collections.Generic;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Unity.AI;
+using Unity.AI.Domain;
 using Unity.AI.Extraction;
 using Unity.AI.Localization;
+using Unity.AI.Prompts;
 using Unity.AI.Operations;
 using Unity.AI.Requests;
 using Unity.AI.Responses;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Intakes;
+using Volo.Abp.Domain.Repositories;
 using Volo.Abp;
 using Volo.Abp.Uow;
 using Xunit;
@@ -35,17 +38,9 @@ public class AttachmentSummaryServiceTests
         var fileId = Guid.NewGuid();
         var stream = new MemoryStream([1, 2, 3]);
         AttachmentSummaryRequest? capturedRequest = null;
+        string? savedSummary = null;
 
-        var attachment = new ApplicationChefsFileAttachment
-        {
-            ApplicationId = Guid.NewGuid(),
-            FileName = "test.txt",
-            ChefsSubmissionId = submissionId.ToString(),
-            ChefsFileId = fileId.ToString()
-        };
-
-        var attachmentRepository = Substitute.For<IApplicationChefsFileAttachmentRepository>();
-        attachmentRepository.GetAsync(attachmentId).Returns(attachment);
+        var persistence = CreatePersistence(attachmentId, "test.txt", submissionId, fileId, savedSummary: summary => savedSummary = summary);
 
         var streamProvider = Substitute.For<IChefsFileAttachmentStreamProvider>();
         streamProvider.OpenAsync(submissionId, fileId, "test.txt")
@@ -59,19 +54,11 @@ public class AttachmentSummaryServiceTests
         aiService.GenerateAttachmentSummaryAsync(Arg.Do<AttachmentSummaryRequest>(request => capturedRequest = request))
             .Returns(new AttachmentSummaryResponse { Summary = "summary text" });
 
-        var prerequisiteValidator = Substitute.For<IAIGenerationPrerequisiteValidator>();
-        var unitOfWorkManager = CreateUnitOfWorkManager();
-
-        var service = new AttachmentSummaryService(
-            attachmentRepository,
+        var service = CreateService(
+            persistence,
             streamProvider,
             textExtractionService,
-            aiService,
-            prerequisiteValidator,
-            new AIExecutionModeResolver(new ConfigurationBuilder().Build()),
-            unitOfWorkManager,
-            NullLogger<AttachmentSummaryService>.Instance,
-            Substitute.For<IStringLocalizer<AIResource>>());
+            aiService);
 
         var result = await service.GenerateAndSaveAsync(attachmentId, "v1");
 
@@ -81,9 +68,7 @@ public class AttachmentSummaryServiceTests
         capturedRequest.ContentType.ShouldBe("text/plain");
         capturedRequest.ExtractedText.ShouldBe("extracted text");
         capturedRequest.PromptVersion.ShouldBe("v1");
-        attachment.AISummary.ShouldBe("summary text");
-
-        await attachmentRepository.Received(1).UpdateAsync(attachment);
+        savedSummary.ShouldBe("summary text");
         stream.CanRead.ShouldBeFalse();
     }
 
@@ -97,32 +82,17 @@ public class AttachmentSummaryServiceTests
         using var cancellationTokenSource = new CancellationTokenSource();
         await cancellationTokenSource.CancelAsync();
 
-        var attachment = new ApplicationChefsFileAttachment
-        {
-            ApplicationId = Guid.NewGuid(),
-            FileName = "test.txt",
-            ChefsSubmissionId = submissionId.ToString(),
-            ChefsFileId = fileId.ToString()
-        };
-
-        var attachmentRepository = Substitute.For<IApplicationChefsFileAttachmentRepository>();
-        attachmentRepository.GetAsync(attachmentId).Returns(attachment);
+        var persistence = CreatePersistence(attachmentId, "test.txt", submissionId, fileId);
 
         var streamProvider = Substitute.For<IChefsFileAttachmentStreamProvider>();
         streamProvider.OpenAsync(submissionId, fileId, "test.txt")
             .Returns(new ChefsFileAttachmentStream(stream, "text/plain"));
-        var unitOfWorkManager = CreateUnitOfWorkManager();
 
-        var service = new AttachmentSummaryService(
-            attachmentRepository,
+        var service = CreateService(
+            persistence,
             streamProvider,
             Substitute.For<ITextExtractionService>(),
-            Substitute.For<IAIService>(),
-            Substitute.For<IAIGenerationPrerequisiteValidator>(),
-            new AIExecutionModeResolver(new ConfigurationBuilder().Build()),
-            unitOfWorkManager,
-            NullLogger<AttachmentSummaryService>.Instance,
-            Substitute.For<IStringLocalizer<AIResource>>());
+            Substitute.For<IAIService>());
 
         await Should.ThrowAsync<OperationCanceledException>(() =>
             service.GenerateAndSaveAsync(attachmentId, "v1", cancellationTokenSource.Token));
@@ -131,27 +101,16 @@ public class AttachmentSummaryServiceTests
     [Fact]
     public async Task GenerateAndSaveAsync_Should_Reject_Empty_Attachment_List()
     {
-        var attachmentRepository = Substitute.For<IApplicationChefsFileAttachmentRepository>();
-        var streamProvider = Substitute.For<IChefsFileAttachmentStreamProvider>();
-        var textExtractionService = Substitute.For<ITextExtractionService>();
-        var aiService = Substitute.For<IAIService>();
-        var prerequisiteValidator = Substitute.For<IAIGenerationPrerequisiteValidator>();
-        var unitOfWorkManager = CreateUnitOfWorkManager();
-
-        var service = new AttachmentSummaryService(
-            attachmentRepository,
-            streamProvider,
-            textExtractionService,
-            aiService,
-            prerequisiteValidator,
-            new AIExecutionModeResolver(new ConfigurationBuilder().Build()),
-            unitOfWorkManager,
-            NullLogger<AttachmentSummaryService>.Instance,
-            Substitute.For<IStringLocalizer<AIResource>>());
+        var persistence = Substitute.For<IAttachmentSummaryDataProvider>();
+        var service = CreateService(
+            persistence,
+            Substitute.For<IChefsFileAttachmentStreamProvider>(),
+            Substitute.For<ITextExtractionService>(),
+            Substitute.For<IAIService>());
 
         await Should.ThrowAsync<UserFriendlyException>(() => service.GenerateAndSaveAsync([], "v1"));
 
-        await aiService.DidNotReceive().GenerateAttachmentSummaryAsync(Arg.Any<AttachmentSummaryRequest>());
+        await persistence.DidNotReceive().GetApplicationAttachmentIdsAsync(Arg.Any<Guid>());
     }
 
     [Fact]
@@ -161,17 +120,9 @@ public class AttachmentSummaryServiceTests
         var submissionId = Guid.NewGuid();
         var fileId = Guid.NewGuid();
         var stream = new MemoryStream([1, 2, 3]);
+        string? savedSummary = null;
 
-        var attachment = new ApplicationChefsFileAttachment
-        {
-            ApplicationId = Guid.NewGuid(),
-            FileName = "test.docx",
-            ChefsSubmissionId = submissionId.ToString(),
-            ChefsFileId = fileId.ToString()
-        };
-
-        var attachmentRepository = Substitute.For<IApplicationChefsFileAttachmentRepository>();
-        attachmentRepository.GetAsync(attachmentId).Returns(attachment);
+        var persistence = CreatePersistence(attachmentId, "test.docx", submissionId, fileId, summary => savedSummary = summary);
 
         var streamProvider = Substitute.For<IChefsFileAttachmentStreamProvider>();
         streamProvider.OpenAsync(submissionId, fileId, "test.docx")
@@ -182,23 +133,17 @@ public class AttachmentSummaryServiceTests
             .Returns(string.Empty);
 
         var aiService = Substitute.For<IAIService>();
-        var service = new AttachmentSummaryService(
-            attachmentRepository,
+        var service = CreateService(
+            persistence,
             streamProvider,
             textExtractionService,
-            aiService,
-            Substitute.For<IAIGenerationPrerequisiteValidator>(),
-            new AIExecutionModeResolver(new ConfigurationBuilder().Build()),
-            CreateUnitOfWorkManager(),
-            NullLogger<AttachmentSummaryService>.Instance,
-            Substitute.For<IStringLocalizer<AIResource>>());
+            aiService);
 
         var result = await service.GenerateAndSaveAsync(attachmentId, "v1");
 
         result.ShouldBe("Attachment text could not be extracted for AI summary generation.");
-        attachment.AISummary.ShouldBe(result);
+        savedSummary.ShouldBe(result);
         await aiService.DidNotReceive().GenerateAttachmentSummaryAsync(Arg.Any<AttachmentSummaryRequest>());
-        await attachmentRepository.Received(1).UpdateAsync(attachment);
     }
 
     [Fact]
@@ -210,16 +155,7 @@ public class AttachmentSummaryServiceTests
         var stream = CreateDocxStream("Riverside mock attachment content");
         AttachmentSummaryRequest? capturedRequest = null;
 
-        var attachment = new ApplicationChefsFileAttachment
-        {
-            ApplicationId = Guid.NewGuid(),
-            FileName = "riverside-profile.docx",
-            ChefsSubmissionId = submissionId.ToString(),
-            ChefsFileId = fileId.ToString()
-        };
-
-        var attachmentRepository = Substitute.For<IApplicationChefsFileAttachmentRepository>();
-        attachmentRepository.GetAsync(attachmentId).Returns(attachment);
+        var persistence = CreatePersistence(attachmentId, "riverside-profile.docx", submissionId, fileId);
 
         var streamProvider = Substitute.For<IChefsFileAttachmentStreamProvider>();
         streamProvider.OpenAsync(submissionId, fileId, "riverside-profile.docx")
@@ -229,16 +165,11 @@ public class AttachmentSummaryServiceTests
         aiService.GenerateAttachmentSummaryAsync(Arg.Do<AttachmentSummaryRequest>(request => capturedRequest = request))
             .Returns(new AttachmentSummaryResponse { Summary = "summary text" });
 
-        var service = new AttachmentSummaryService(
-            attachmentRepository,
+        var service = CreateService(
+            persistence,
             streamProvider,
             new TextExtractionService(NullLogger<TextExtractionService>.Instance),
-            aiService,
-            Substitute.For<IAIGenerationPrerequisiteValidator>(),
-            new AIExecutionModeResolver(new ConfigurationBuilder().Build()),
-            CreateUnitOfWorkManager(),
-            NullLogger<AttachmentSummaryService>.Instance,
-            Substitute.For<IStringLocalizer<AIResource>>());
+            aiService);
 
         var result = await service.GenerateAndSaveAsync(attachmentId, "v1");
 
@@ -259,16 +190,7 @@ public class AttachmentSummaryServiceTests
         var stream = new MemoryStream(Encoding.UTF8.GetBytes(attachmentText));
         AttachmentSummaryRequest? capturedRequest = null;
 
-        var attachment = new ApplicationChefsFileAttachment
-        {
-            ApplicationId = Guid.NewGuid(),
-            FileName = "mock-attachment.txt",
-            ChefsSubmissionId = submissionId.ToString(),
-            ChefsFileId = fileId.ToString()
-        };
-
-        var attachmentRepository = Substitute.For<IApplicationChefsFileAttachmentRepository>();
-        attachmentRepository.GetAsync(attachmentId).Returns(attachment);
+        var persistence = CreatePersistence(attachmentId, "mock-attachment.txt", submissionId, fileId);
 
         var streamProvider = Substitute.For<IChefsFileAttachmentStreamProvider>();
         streamProvider.OpenAsync(submissionId, fileId, "mock-attachment.txt")
@@ -278,16 +200,11 @@ public class AttachmentSummaryServiceTests
         aiService.GenerateAttachmentSummaryAsync(Arg.Do<AttachmentSummaryRequest>(request => capturedRequest = request))
             .Returns(new AttachmentSummaryResponse { Summary = "summary text" });
 
-        var service = new AttachmentSummaryService(
-            attachmentRepository,
+        var service = CreateService(
+            persistence,
             streamProvider,
             new TextExtractionService(NullLogger<TextExtractionService>.Instance),
-            aiService,
-            Substitute.For<IAIGenerationPrerequisiteValidator>(),
-            new AIExecutionModeResolver(new ConfigurationBuilder().Build()),
-            CreateUnitOfWorkManager(),
-            NullLogger<AttachmentSummaryService>.Instance,
-            Substitute.For<IStringLocalizer<AIResource>>());
+            aiService);
 
         var result = await service.GenerateAndSaveAsync(attachmentId, "v1");
 
@@ -307,16 +224,7 @@ public class AttachmentSummaryServiceTests
         var stream = CreatePdfStream(attachmentText);
         AttachmentSummaryRequest? capturedRequest = null;
 
-        var attachment = new ApplicationChefsFileAttachment
-        {
-            ApplicationId = Guid.NewGuid(),
-            FileName = "mock-attachment.pdf",
-            ChefsSubmissionId = submissionId.ToString(),
-            ChefsFileId = fileId.ToString()
-        };
-
-        var attachmentRepository = Substitute.For<IApplicationChefsFileAttachmentRepository>();
-        attachmentRepository.GetAsync(attachmentId).Returns(attachment);
+        var persistence = CreatePersistence(attachmentId, "mock-attachment.pdf", submissionId, fileId);
 
         var streamProvider = Substitute.For<IChefsFileAttachmentStreamProvider>();
         streamProvider.OpenAsync(submissionId, fileId, "mock-attachment.pdf")
@@ -326,16 +234,11 @@ public class AttachmentSummaryServiceTests
         aiService.GenerateAttachmentSummaryAsync(Arg.Do<AttachmentSummaryRequest>(request => capturedRequest = request))
             .Returns(new AttachmentSummaryResponse { Summary = "summary text" });
 
-        var service = new AttachmentSummaryService(
-            attachmentRepository,
+        var service = CreateService(
+            persistence,
             streamProvider,
             new TextExtractionService(NullLogger<TextExtractionService>.Instance),
-            aiService,
-            Substitute.For<IAIGenerationPrerequisiteValidator>(),
-            new AIExecutionModeResolver(new ConfigurationBuilder().Build()),
-            CreateUnitOfWorkManager(),
-            NullLogger<AttachmentSummaryService>.Instance,
-            Substitute.For<IStringLocalizer<AIResource>>());
+            aiService);
 
         var result = await service.GenerateAndSaveAsync(attachmentId, "v1");
 
@@ -343,6 +246,64 @@ public class AttachmentSummaryServiceTests
         capturedRequest.ShouldNotBeNull();
         capturedRequest.ExtractedText.ShouldContain(attachmentText);
         await aiService.Received(1).GenerateAttachmentSummaryAsync(Arg.Any<AttachmentSummaryRequest>());
+    }
+
+    private static AttachmentSummaryService CreateService(
+        IAttachmentSummaryDataProvider persistence,
+        IChefsFileAttachmentStreamProvider streamProvider,
+        ITextExtractionService textExtractionService,
+        IAIService aiService)
+    {
+        return new AttachmentSummaryService(
+            persistence,
+            streamProvider,
+            textExtractionService,
+            aiService,
+            Substitute.For<IAIGenerationPrerequisiteValidator>(),
+            CreateUnitOfWorkManager(),
+            NullLogger<AttachmentSummaryService>.Instance,
+            Substitute.For<IStringLocalizer<AIResource>>());
+    }
+
+    private static IRepository<AIOperation, Guid> CreateOperationRepository()
+    {
+        var operationRepository = Substitute.For<IRepository<AIOperation, Guid>>();
+        operationRepository.GetListAsync(Arg.Any<System.Linq.Expressions.Expression<Func<AIOperation, bool>>>(), Arg.Any<bool>(), Arg.Any<CancellationToken>())
+            .Returns(callInfo =>
+            {
+                var filter = callInfo.ArgAt<System.Linq.Expressions.Expression<Func<AIOperation, bool>>>(0).Compile();
+                var operation = new AIOperation(Guid.NewGuid(), AIPromptTypes.AttachmentSummary, Guid.NewGuid(), Guid.NewGuid())
+                {
+                    ExecutionMode = AIExecutionMode.Sequential,
+                    IsActive = true
+                };
+
+                return Task.FromResult(filter(operation) ? new List<AIOperation> { operation } : new List<AIOperation>());
+            });
+
+        return operationRepository;
+    }
+
+    private static IAttachmentSummaryDataProvider CreatePersistence(
+        Guid attachmentId,
+        string fileName,
+        Guid submissionId,
+        Guid fileId,
+        Action<string>? savedSummary = null)
+    {
+        var persistence = Substitute.For<IAttachmentSummaryDataProvider>();
+        persistence.GetAttachmentAsync(attachmentId).Returns(new AttachmentSummarySource(
+            attachmentId,
+            fileName,
+            submissionId.ToString(),
+            fileId.ToString()));
+        persistence.GetApplicationAttachmentIdsAsync(Arg.Any<Guid>()).Returns(new List<Guid>());
+        persistence.UpdateAttachmentSummaryAsync(attachmentId, Arg.Any<string>()).Returns(callInfo =>
+        {
+            savedSummary?.Invoke(callInfo.ArgAt<string>(1));
+            return Task.CompletedTask;
+        });
+        return persistence;
     }
 
     private static MemoryStream CreateDocxStream(string paragraphText)

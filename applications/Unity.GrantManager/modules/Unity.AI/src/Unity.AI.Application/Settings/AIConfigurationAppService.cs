@@ -18,6 +18,7 @@ public class AIConfigurationAppService(
     private readonly ISettingManager _settingManager = settingManager;
     private readonly ICurrentTenant _currentTenant = currentTenant;
 
+    [Authorize(AIPermissions.Configuration.ConfigureAI)]
     [HttpGet("tenant")]
     public virtual async Task<AITenantConfigurationDto> GetTenantConfigurationAsync()
     {

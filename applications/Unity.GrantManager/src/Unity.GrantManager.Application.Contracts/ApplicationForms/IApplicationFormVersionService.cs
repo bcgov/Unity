@@ -1,6 +1,7 @@
-﻿using Newtonsoft.Json.Linq;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Threading.Tasks;
+using Unity.GrantManager.ApplicationForms.Mapping;
 using Unity.GrantManager.Forms;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
@@ -22,5 +23,6 @@ namespace Unity.GrantManager.ApplicationForms
         Task<ApplicationFormVersionDto?> GetByChefsFormVersionId(Guid chefsFormVersionId);
         Task<int> GetFormVersionByApplicationIdAsync(Guid applicationId);
         Task DeleteWorkSheetMappingByFormName(string formName, Guid formVersionId);
+        Task<ApplicationFormMappingDto> GenerateMappingAsync(Guid id);
     }
 }

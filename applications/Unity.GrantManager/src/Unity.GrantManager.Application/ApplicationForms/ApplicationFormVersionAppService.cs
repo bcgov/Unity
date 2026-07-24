@@ -6,9 +6,17 @@ using System.Text.RegularExpressions;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
+using Unity.AI.Cooldown;
+using Unity.AI.Features;
+using Unity.AI.Permissions;
+using Unity.AI.Operations;
+using Unity.AI.Requests;
+using Unity.AI.Responses;
+using Unity.AI.Runtime;
 using Unity.GrantManager.Forms;
 using Unity.GrantManager.Intakes;
 using Unity.GrantManager.Integrations.Chefs;
+using Unity.GrantManager.ApplicationForms.Mapping;
 using Unity.GrantManager.Reporting.FieldGenerators;
 using Unity.Modules.Shared.Features;
 using Volo.Abp.Application.Dtos;
@@ -16,6 +24,7 @@ using Volo.Abp.Application.Services;
 using Volo.Abp.Domain.Entities;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Features;
+using Volo.Abp;
 using Volo.Abp.Uow;
 using Unity.GrantManager.Intakes.Mapping;
 
@@ -29,7 +38,10 @@ namespace Unity.GrantManager.ApplicationForms
         IApplicationFormVersionRepository formVersionRepository,
         IApplicationFormSubmissionRepository formSubmissionRepository,
         IReportingFieldsGeneratorService reportingFieldsGeneratorService,
-        IFeatureChecker featureChecker) :
+        IFeatureChecker featureChecker,
+        IApplicationFormVersionMappingReadService mappingReadService,
+        IAICooldownService aiCooldownService,
+        IFormMappingService aiService) :
         CrudAppService<
             ApplicationFormVersion,
             ApplicationFormVersionDto,
@@ -38,6 +50,10 @@ namespace Unity.GrantManager.ApplicationForms
             CreateUpdateApplicationFormVersionDto>(repository),
         IApplicationFormVersionAppService
     {
+        private readonly IApplicationFormVersionMappingReadService _mappingReadService = mappingReadService;
+        private readonly IAICooldownService _aiCooldownService = aiCooldownService;
+        private readonly IFormMappingService _aiService = aiService;
+
         public override async Task<ApplicationFormVersionDto> CreateAsync(CreateUpdateApplicationFormVersionDto input) =>
             await base.CreateAsync(input);
 
@@ -309,6 +325,32 @@ namespace Unity.GrantManager.ApplicationForms
             var pattern = $"(,\\s*\\\"{formName}.*\\\")|(\\\"{formName}.*\\\",)";
             applicationFormVersion.SubmissionHeaderMapping = Regex.Replace(applicationFormVersion.SubmissionHeaderMapping, pattern, "", RegexOptions.None, TimeSpan.FromSeconds(30));
             await formVersionRepository.UpdateAsync(applicationFormVersion);
+        }
+
+        public virtual async Task<ApplicationFormMappingDto> GenerateMappingAsync(Guid id)
+        {
+            if (!await featureChecker.IsEnabledAsync(AIFeatures.FormMapping))
+            {
+                throw new UserFriendlyException("AI form mapping is disabled.");
+            }
+
+            await CheckPolicyAsync(AIPermissions.Analysis.GenerateFormMapping);
+            await _aiCooldownService.EnsureAsync(CurrentUser.Id);
+
+            var readModel = await _mappingReadService.GetAsync(id);
+            var response = await _aiService.GenerateFormMappingAsync(new FormMappingRequest
+            {
+                Data = FormMappingPromptDataBuilder.Build(readModel)
+            });
+            var submissionHeaderMapping = FormMappingResponseMapper.BuildSubmissionHeaderMapping(response);
+            var applicationFormVersion = await repository.GetAsync(id);
+            applicationFormVersion.SubmissionHeaderMapping = submissionHeaderMapping;
+            await repository.UpdateAsync(applicationFormVersion, true);
+
+            return new ApplicationFormMappingDto
+            {
+                ApplicationFormVersionId = id
+            };
         }
 
         private async Task<int> GetVersion(Guid formVersionId)

@@ -7,15 +7,6 @@ namespace Unity.AI.Runtime;
 
 public class OpenAIPromptRenderer : ITransientDependency
 {
-    private const string PromptVersionV0 = "v0";
-    private const string PromptVersionV1 = "v1";
-    private static readonly Dictionary<string, string> PromptProfiles =
-        new(StringComparer.Ordinal)
-        {
-            [PromptVersionV0] = PromptVersionV0,
-            [PromptVersionV1] = PromptVersionV1
-        };
-
     public static string BuildApplicationScoringResponseTemplate(string sectionPayloadJson)
     {
         try
@@ -131,9 +122,12 @@ public class OpenAIPromptRenderer : ITransientDependency
             throw new InvalidOperationException("AI prompt version is not configured.");
         }
 
-        if (PromptProfiles.TryGetValue(version.Trim(), out var selectedVersion))
+        var normalizedVersion = version.Trim();
+        if (normalizedVersion.Length >= 2 &&
+            normalizedVersion[0] == 'v' &&
+            int.TryParse(normalizedVersion.AsSpan(1), out _))
         {
-            return selectedVersion;
+            return normalizedVersion;
         }
 
         throw new InvalidOperationException($"AI prompt version '{version}' is not supported.");

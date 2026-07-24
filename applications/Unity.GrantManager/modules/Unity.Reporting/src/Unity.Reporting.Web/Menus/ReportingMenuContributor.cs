@@ -1,4 +1,5 @@
 ﻿using System.Threading.Tasks;
+using Unity.Modules.Shared.Navigation;
 using Unity.Modules.Shared.Permissions;
 using Volo.Abp.UI.Navigation;
 
@@ -31,16 +32,15 @@ public class ReportingMenuContributor : IMenuContributor
     /// </summary>
     /// <param name="context">The menu configuration context for adding reporting menu items.</param>
     /// <returns>A completed task representing the synchronous menu item addition operations.</returns>
-    private static Task ConfigureReportingMenuAsync(MenuConfigurationContext context)
+    private static async Task ConfigureReportingMenuAsync(MenuConfigurationContext context)
     {
         // Add Reporting Configuration menu item for IT Admin users
-        context.Menu.AddItem(
+        await context.AddItemAsync(
            new ApplicationMenuItem(
                    ReportingMenus.Prefix,
                    displayName: "Reporting",
-                   "~/ReportingAdmin/Configuration",
-                   requiredPermissionName: IdentityConsts.ITAdminPermissionName
-       ));
-        return Task.CompletedTask;
+                   "~/ReportingAdmin/Configuration")
+               .OnlyWhenInRole(IdentityConsts.ITAdminRoleName)
+       );
     }
 }

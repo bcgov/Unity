@@ -36,6 +36,7 @@ public class IndexModel(
     public bool ShowScoresheets { get; set; }
     public bool ShowTags { get; set; }
     public bool ShowAI { get; set; }
+    public bool ShowProgramDetails { get; set; }
 
     public async Task OnGetAsync()
     {
@@ -61,6 +62,8 @@ public class IndexModel(
 
         ShowAI = await featureChecker.IsEnabledAsync("Unity.AI.Scoring")
             && await permissionChecker.IsGrantedAsync(AIPermissions.Configuration.ConfigureAI);
+
+        ShowProgramDetails = await permissionChecker.IsGrantedAsync(UnitySettingManagementPermissions.EditProgramDetails);
 
         // Load payment data only if visible
         if (ShowPayments)

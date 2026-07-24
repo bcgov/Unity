@@ -6,24 +6,58 @@
     </div>
     <div class="p-3">
         <form id="BackgroundJobsSettingsForm">
+            <!-- Intake Resync Schedule -->
             <abp-row>
                 <abp-column size-md="_12" class="mx-2 fw-bold">
                     <abp-input asp-for="@Model.IntakeResyncExpression" />
                 </abp-column>
             </abp-row>
             <abp-row>
+                <abp-column size-md="_12" class="mx-2 mb-3">
+                    <small class="form-text text-muted">@Model.IntakeResyncExpressionDescription</small>
+                </abp-column>
+            </abp-row>
+
+            <!-- Intake Resync Number of Days -->
+            <abp-row>
                 <abp-column size-md="_12" class="mx-2 fw-bold">
                     <abp-input asp-for="@Model.IntakeNumberOfDays" />
                 </abp-column>
             </abp-row>
+
+            <!-- CAS Payments Reconciliation Schedule -->
             <abp-row>
                 <abp-column size-md="_12" class="mx-2 fw-bold">
                     <abp-input asp-for="@Model.CasPaymentsReconciliationProducerExpression" />
                 </abp-column>
             </abp-row>
             <abp-row>
+                <abp-column size-md="_12" class="mx-2 mb-3">
+                    <small class="form-text text-muted">@Model.CasPaymentsReconciliationProducerExpressionDescription</small>
+                </abp-column>
+            </abp-row>
+
+            <!-- CAS Financial Notification Schedule -->
+            <abp-row>
                 <abp-column size-md="_12" class="mx-2 fw-bold">
                     <abp-input asp-for="@Model.CasFinancialNotificationSummaryProducerExpression" />
+                </abp-column>
+            </abp-row>
+            <abp-row>
+                <abp-column size-md="_12" class="mx-2 mb-3">
+                    <small class="form-text text-muted">@Model.CasFinancialNotificationSummaryProducerExpressionDescription</small>
+                </abp-column>
+            </abp-row>
+
+            <!-- Date-Based Notification Schedule -->
+            <abp-row>
+                <abp-column size-md="_12" class="mx-2 fw-bold">
+                    <abp-input asp-for="@Model.DateBasedNotificationScheduleExpression" />
+                </abp-column>
+            </abp-row>
+            <abp-row>
+                <abp-column size-md="_12" class="mx-2 mb-3">
+                    <small class="form-text text-muted">@Model.DateBasedNotificationScheduleExpressionDescription</small>
                 </abp-column>
             </abp-row>
         </form>

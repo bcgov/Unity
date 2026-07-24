@@ -2,13 +2,14 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Unity.AI.Automation;
+using Unity.AI.Domain;
+using Unity.AI.Generation;
 using Unity.AI.Features;
 using Unity.AI.Localization;
 using Unity.AI.Operations;
-using Unity.AI.RateLimit;
-using Unity.GrantManager.GrantApplications;
+using Unity.AI.Cooldown;
 using Unity.GrantManager.GrantApplications.Automation.BackgroundJobs;
+using Unity.GrantManager.GrantApplications;
 using Medallion.Threading;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Localization;
@@ -17,132 +18,232 @@ using Volo.Abp.Domain.Repositories;
 using Volo.Abp.BackgroundJobs;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Features;
+using Volo.Abp.Linq;
 using Volo.Abp.Users;
+using Unity.GrantManager.Applications;
 
 namespace Unity.GrantManager.GrantApplications.Automation;
 
-public class ApplicationAIGenerationQueue(
+public class ApplicationGenerationQueue(
     IBackgroundJobManager backgroundJobManager,
     IRepository<AIGenerationRequest, Guid> generationRequestRepository,
+    IRepository<AIOperation, Guid> operationRepository,
     IDistributedLockProvider distributedLockProvider,
     IAIGenerationPrerequisiteValidator aiGenerationPrerequisiteValidator,
     IFeatureChecker featureChecker,
-    IAIRateLimiter aiRateLimiter,
+    IAICooldownService aiCooldownService,
+    IAsyncQueryableExecuter asyncQueryableExecuter,
     ICurrentUser currentUser,
-    ILogger<ApplicationAIGenerationQueue> logger,
-    IStringLocalizer<AIResource> localizer)
-    : IApplicationAIGenerationQueue, ITransientDependency
+    ILogger<ApplicationGenerationQueue> logger)
+    : IApplicationGenerationQueue, ITransientDependency
 {
-    public async Task QueueAttachmentSummaryAsync(Guid applicationId, Guid? tenantId, string? promptVersion = null, List<Guid>? attachmentIds = null)
+    private readonly IAsyncQueryableExecuter _asyncQueryableExecuter = asyncQueryableExecuter;
+    public async Task QueueApplicationAttachmentSummaryAsync(Guid applicationId, Guid? tenantId, List<Guid> attachmentIds, string? promptVersion = null)
     {
-        var requestKey = AIGenerationRequestKeyHelper.BuildRequestKey(tenantId, applicationId, AIGenerationRequestKeyHelper.AttachmentSummaryOperationType);
         await EnsureRequestAndEnqueueAsync(
-            requestKey,
             tenantId,
             AIGenerationRequestKeyHelper.AttachmentSummaryOperationType,
             applicationId,
             () => aiGenerationPrerequisiteValidator.EnsureAttachmentSummaryAvailableAsync(applicationId),
-            () =>
+            operationId =>
             {
                 return backgroundJobManager.EnqueueAsync(new GenerateAttachmentSummaryBackgroundJobArgs
                 {
                     ApplicationId = applicationId,
+                    OperationId = operationId,
                     AttachmentIds = attachmentIds,
                     PromptVersion = promptVersion,
                     RequestedByUserId = currentUser.Id,
-                    TenantId = tenantId,
-                    RequestKey = requestKey
+                    TenantId = tenantId
                 });
             });
     }
 
     public async Task QueueApplicationAnalysisAsync(Guid applicationId, Guid? tenantId, string? promptVersion = null)
     {
-        var requestKey = AIGenerationRequestKeyHelper.BuildRequestKey(tenantId, applicationId, AIGenerationRequestKeyHelper.ApplicationAnalysisOperationType);
         await EnsureRequestAndEnqueueAsync(
-            requestKey,
             tenantId,
             AIGenerationRequestKeyHelper.ApplicationAnalysisOperationType,
             applicationId,
             () => aiGenerationPrerequisiteValidator.EnsureApplicationAnalysisAvailableAsync(applicationId),
-            () =>
+            operationId =>
             {
                 return backgroundJobManager.EnqueueAsync(new GenerateApplicationAnalysisBackgroundJobArgs
                 {
                     ApplicationId = applicationId,
+                    OperationId = operationId,
                     PromptVersion = promptVersion,
                     RequestedByUserId = currentUser.Id,
-                    TenantId = tenantId,
-                    RequestKey = requestKey
+                    TenantId = tenantId
                 });
             });
     }
 
     public async Task QueueApplicationScoringAsync(Guid applicationId, Guid? tenantId, string? promptVersion = null)
     {
-        var requestKey = AIGenerationRequestKeyHelper.BuildRequestKey(tenantId, applicationId, AIGenerationRequestKeyHelper.ApplicationScoringOperationType);
         await EnsureRequestAndEnqueueAsync(
-            requestKey,
             tenantId,
             AIGenerationRequestKeyHelper.ApplicationScoringOperationType,
             applicationId,
             () => aiGenerationPrerequisiteValidator.EnsureApplicationScoringAvailableAsync(applicationId),
-            () =>
+            operationId =>
             {
                 return backgroundJobManager.EnqueueAsync(new GenerateApplicationScoringBackgroundJobArgs
                 {
                     ApplicationId = applicationId,
+                    OperationId = operationId,
                     PromptVersion = promptVersion,
                     RequestedByUserId = currentUser.Id,
-                    TenantId = tenantId,
-                    RequestKey = requestKey
+                    TenantId = tenantId
                 });
             });
     }
 
-    public async Task QueueAllAIStagesAsync(Guid applicationId, Guid? tenantId, string? promptVersion = null)
+    public async Task QueueFormMappingAsync(Guid applicationId, Guid? tenantId, Guid applicationFormVersionId, string? promptVersion = null)
     {
-        var requestKey = AIGenerationRequestKeyHelper.BuildRequestKey(tenantId, applicationId, AIGenerationRequestKeyHelper.PipelineOperationType);
         await EnsureRequestAndEnqueueAsync(
-            requestKey,
             tenantId,
-            AIGenerationRequestKeyHelper.PipelineOperationType,
+            AIGenerationRequestKeyHelper.FormMappingOperationType,
             applicationId,
-            () => EnsureAnyPipelineStageAvailableAsync(applicationId),
-            () =>
+            () => aiGenerationPrerequisiteValidator.EnsureFormMappingAvailableAsync(applicationFormVersionId),
+            operationId =>
             {
-                return backgroundJobManager.EnqueueAsync(new RunApplicationAIPipelineJobArgs
+                return backgroundJobManager.EnqueueAsync(new GenerateFormMappingBackgroundJobArgs
                 {
                     ApplicationId = applicationId,
+                    OperationId = operationId,
+                    ApplicationFormVersionId = applicationFormVersionId,
                     PromptVersion = promptVersion,
                     RequestedByUserId = currentUser.Id,
-                    TenantId = tenantId,
-                    RequestKey = requestKey
+                    TenantId = tenantId
                 });
             });
+    }
+
+    public async Task QueueFormWorksheetAsync(Guid applicationId, Guid? tenantId, Guid applicationFormVersionId, string? promptVersion = null)
+    {
+        await EnsureRequestAndEnqueueAsync(
+            tenantId,
+            AIGenerationRequestKeyHelper.FormWorksheetOperationType,
+            applicationId,
+            () => aiGenerationPrerequisiteValidator.EnsureFormWorksheetAvailableAsync(applicationFormVersionId),
+            operationId =>
+            {
+                return backgroundJobManager.EnqueueAsync(new GenerateFormWorksheetBackgroundJobArgs
+                {
+                    ApplicationId = applicationId,
+                    OperationId = operationId,
+                    ApplicationFormVersionId = applicationFormVersionId,
+                    PromptVersion = promptVersion,
+                    RequestedByUserId = currentUser.Id,
+                    TenantId = tenantId
+                });
+            });
+    }
+
+    public async Task QueueFormScoresheetAsync(Guid applicationId, Guid? tenantId, Guid applicationFormVersionId, string? promptVersion = null)
+    {
+        await EnsureRequestAndEnqueueAsync(
+            tenantId,
+            AIGenerationRequestKeyHelper.FormScoresheetOperationType,
+            applicationId,
+            () => aiGenerationPrerequisiteValidator.EnsureFormScoresheetAvailableAsync(applicationFormVersionId),
+            operationId =>
+            {
+                return backgroundJobManager.EnqueueAsync(new GenerateFormScoresheetBackgroundJobArgs
+                {
+                    ApplicationId = applicationId,
+                    OperationId = operationId,
+                    ApplicationFormVersionId = applicationFormVersionId,
+                    PromptVersion = promptVersion,
+                    RequestedByUserId = currentUser.Id,
+                    TenantId = tenantId
+                });
+            });
+    }
+
+    public async Task QueueApplicationIntakeAsync(Guid applicationId, Guid? tenantId, string? promptVersion = null)
+    {
+        var hasEnabledStage = false;
+        var enqueuedStage = false;
+        UserFriendlyException? lastStageException = null;
+
+        if (await featureChecker.IsEnabledAsync(AIFeatures.AttachmentSummaries))
+        {
+            hasEnabledStage = true;
+            try
+            {
+                await QueueApplicationAttachmentSummaryAsync(applicationId, tenantId, new List<Guid>(), promptVersion: promptVersion);
+                enqueuedStage = true;
+            }
+            catch (UserFriendlyException ex)
+            {
+                lastStageException = ex;
+            }
+        }
+
+        if (await featureChecker.IsEnabledAsync(AIFeatures.ApplicationAnalysis))
+        {
+            hasEnabledStage = true;
+            try
+            {
+                await QueueApplicationAnalysisAsync(applicationId, tenantId, promptVersion);
+                enqueuedStage = true;
+            }
+            catch (UserFriendlyException ex)
+            {
+                lastStageException = ex;
+            }
+        }
+
+        if (await featureChecker.IsEnabledAsync(AIFeatures.Scoring))
+        {
+            hasEnabledStage = true;
+            try
+            {
+                await QueueApplicationScoringAsync(applicationId, tenantId, promptVersion);
+                enqueuedStage = true;
+            }
+            catch (UserFriendlyException ex)
+            {
+                lastStageException = ex;
+            }
+        }
+
+        if (!hasEnabledStage)
+        {
+            throw new UserFriendlyException("No AI generation features are enabled.");
+        }
+
+        if (!enqueuedStage && lastStageException != null)
+        {
+            throw lastStageException;
+        }
     }
 
     private async Task EnsureRequestAndEnqueueAsync(
-        string requestKey,
         Guid? tenantId,
         string operationType,
-        Guid? applicationId,
+        Guid applicationId,
         Func<Task> validateInput,
-        Func<Task> enqueue)
+        Func<Guid, Task> enqueue)
     {
-        var requestLock = distributedLockProvider.CreateLock($"ai-generation:{requestKey}");
+        var operation = await ResolveOperationAsync(operationType);
+        var requestLock = distributedLockProvider.CreateLock($"ai-generation:{tenantId}:{applicationId}:{operation.Id}");
 
         using (await requestLock.AcquireAsync())
         {
             var query = await generationRequestRepository.GetQueryableAsync();
             var existingRequests = query.Where(x =>
-                x.RequestKey == requestKey
+                x.TenantId == tenantId
+                && x.ApplicationId == applicationId
+                && x.OperationId == operation.Id
                 && (x.Status == AIGenerationRequestStatus.Queued || x.Status == AIGenerationRequestStatus.Running));
 
-            var existing = existingRequests
-                .OrderByDescending(x => x.CreationTime)
-                .ThenByDescending(x => x.Id)
-                .FirstOrDefault();
+            var existing = await _asyncQueryableExecuter.FirstOrDefaultAsync(
+                existingRequests
+                    .OrderByDescending(x => x.CreationTime)
+                    .ThenByDescending(x => x.Id));
 
             if (existing != null)
             {
@@ -153,20 +254,19 @@ public class ApplicationAIGenerationQueue(
 
             // Single chokepoint for all AI generate flows (manual + auto).
             // The limiter is a no-op for system/background callers without an authenticated user.
-            await aiRateLimiter.EnsureAsync();
+            await aiCooldownService.EnsureAsync(currentUser.Id);
 
             var request = new AIGenerationRequest(
                 Guid.NewGuid(),
                 tenantId,
-                operationType,
-                applicationId,
-                requestKey);
+                operation.Id,
+                applicationId);
 
             await generationRequestRepository.InsertAsync(request, autoSave: true);
 
             try
             {
-                await enqueue();
+                await enqueue(operation.Id);
             }
             catch (Exception ex)
             {
@@ -176,56 +276,30 @@ public class ApplicationAIGenerationQueue(
         }
     }
 
-    private async Task EnsureAnyPipelineStageAvailableAsync(Guid applicationId)
+    private static string ResolveOperationName(string operationType)
+        => AIGenerationRequestKeyHelper.ResolveOperationName(operationType)
+            ?? throw new UserFriendlyException($"AI operation '{operationType}' is not configured.");
+
+    private async Task<AIOperation> ResolveOperationAsync(string operationType)
     {
-        var hasEnabledStage = false;
-        var hasAvailableStage = false;
-        UserFriendlyException? lastPrerequisiteException = null;
+        var operationName = ResolveOperationName(operationType);
+        var operations = await operationRepository.GetQueryableAsync();
+        var operation = await _asyncQueryableExecuter.FirstOrDefaultAsync(
+            operations.Where(operation =>
+                operation.IsActive &&
+                operation.Name == operationName));
 
-        async Task CheckStageAsync(bool isEnabled, Func<Task> ensurePrerequisite)
+        if (operation == null)
         {
-            if (!isEnabled)
-            {
-                return;
-            }
-
-            hasEnabledStage = true;
-
-            try
-            {
-                await ensurePrerequisite();
-                hasAvailableStage = true;
-            }
-            catch (UserFriendlyException ex)
-            {
-                lastPrerequisiteException = ex;
-            }
+            throw new UserFriendlyException($"AI operation '{operationType}' is not configured.");
         }
 
-        await CheckStageAsync(
-            await featureChecker.IsEnabledAsync(AIFeatures.AttachmentSummaries),
-            () => aiGenerationPrerequisiteValidator.EnsureAttachmentSummaryAvailableAsync(applicationId));
-        await CheckStageAsync(
-            await featureChecker.IsEnabledAsync(AIFeatures.ApplicationAnalysis),
-            () => aiGenerationPrerequisiteValidator.EnsureApplicationAnalysisAvailableAsync(applicationId));
-        await CheckStageAsync(
-            await featureChecker.IsEnabledAsync(AIFeatures.Scoring),
-            () => aiGenerationPrerequisiteValidator.EnsureApplicationScoringAvailableAsync(applicationId));
-
-        if (hasAvailableStage)
+        if (!operation.IsActive)
         {
-            return;
+            throw new UserFriendlyException($"AI operation '{operationType}' is not configured.");
         }
 
-        if (lastPrerequisiteException != null)
-        {
-            throw lastPrerequisiteException;
-        }
-
-        if (!hasEnabledStage)
-        {
-            throw new UserFriendlyException(localizer[AILocalizationKeys.GenerateAllDisabled]);
-        }
+        return operation;
     }
 
     private async Task MarkFailedBestEffortAsync(AIGenerationRequest request, Exception exception)

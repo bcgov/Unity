@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "exportedAt": "2026-07-22T16:39:40.749Z",
+  "extensionVersion": "0.2.0",
+  "rules": [
+    {
+      "id": "6bf799a2-3fa9-4434-8865-8e89b1654441",
+      "enabled": true,
+      "labelMatch": "Vehicle Registration Number",
+      "matchMode": "contains",
+      "caseSensitive": false,
+      "mask": "99999999",
+      "notes": ""
+    }
+  ]
+}

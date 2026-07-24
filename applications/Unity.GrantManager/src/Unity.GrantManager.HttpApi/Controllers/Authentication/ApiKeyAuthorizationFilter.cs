@@ -26,7 +26,7 @@ namespace Unity.GrantManager.Controllers.Authentication
 
             var apiKey = configuration["B2BAuth:ApiKey"];
 
-            if (apiKey is null)
+            if (string.IsNullOrWhiteSpace(apiKey))
             {
                 context.Result = new UnauthorizedObjectResult(new ProblemDetails
                 {

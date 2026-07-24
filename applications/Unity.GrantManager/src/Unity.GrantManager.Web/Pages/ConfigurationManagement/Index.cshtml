@@ -16,41 +16,36 @@
 }
 
 @section styles {
-    <abp-style-bundle name="@typeof(IndexModel).FullName">
-        <abp-style src="/Pages/ConfigurationManagement/Index.css" />
-        @if (Model.ShowPayments)
-        {
-            <abp-style src="/Pages/ConfigurationManagement/PaymentConfigurations.css" />
-        }
-        @if (Model.ShowNotifications)
-        {
-            <abp-style src="/Views/Settings/NotificationsSettingGroup/Default.css" />
-        }
-    </abp-style-bundle>
+    <abp-style src="/Pages/ConfigurationManagement/Index.css" />
+    @if (Model.ShowPayments)
+    {
+        <abp-style src="/Pages/ConfigurationManagement/PaymentConfigurations.css" />
+    }
+    @if (Model.ShowNotifications)
+    {
+        <abp-style src="/Views/Settings/NotificationsSettingGroup/Default.css" />
+    }
 }
 
 @section scripts {
-    <abp-script-bundle name="@typeof(IndexModel).FullName">
-        <abp-script src="/Pages/ConfigurationManagement/Index.js" />
-        @if (Model.ShowPayments)
-        {
-            <abp-script src="/Pages/ConfigurationManagement/PaymentConfigurations.js" />
-        }
-        <abp-script src="/libs/sortablejs/Sortable.js" />
-        @if (Model.ShowNotifications)
-        {
-            <abp-script src="/Views/Settings/NotificationsSettingGroup/Default.js" />
-            <abp-script src="/Views/Settings/NotificationsSettingGroup/InternalEmailGroups.js" />
-        }
-        @if (Model.ShowTags)
-        {
-            <abp-script src="/Views/Settings/TagManagement/TagManagement.js" />
-        }
-        @if (Model.ShowAI)
-        {
-            <abp-script src="/Views/Settings/AISettingGroup/Default.js" />
-        }
-    </abp-script-bundle>
+    <abp-script src="/Pages/ConfigurationManagement/Index.js" />
+    @if (Model.ShowPayments)
+    {
+        <abp-script src="/Pages/ConfigurationManagement/PaymentConfigurations.js" />
+    }
+    @if (Model.ShowNotifications)
+    {
+        <abp-script src="/Views/Settings/NotificationsSettingGroup/Default.js" />
+        <abp-script src="/Views/Settings/NotificationsSettingGroup/InternalEmailGroups.js" />
+    }
+    @if (Model.ShowTags)
+    {
+        <abp-script src="/Views/Settings/TagManagement/TagManagement.js" />
+    }
+    @if (Model.ShowAI)
+    {
+        <abp-script src="/Views/Settings/AISettingGroup/Default.js" />
+    }
 }
 
 <div class="config-page-layout">
@@ -215,7 +210,7 @@
         <!-- Scoresheets -->
         @if (Model.ShowScoresheets)
         {
-            <div id="scoresheets-div" class="config-section input-area card mb-3 config-management hide">                
+            <div id="scoresheets-div" class="config-section input-area card mb-3 config-management hide">
                 @await Component.InvokeAsync(typeof(ScoresheetConfigurationViewComponent))
             </div>
         }

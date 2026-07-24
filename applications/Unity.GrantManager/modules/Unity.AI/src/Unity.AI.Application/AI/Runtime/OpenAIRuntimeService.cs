@@ -6,15 +6,17 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Unity.AI.Models;
+using Unity.AI.Operations;
 using Unity.AI.Prompts;
 using Unity.AI.Requests;
 using Unity.AI.Responses;
+using Volo.Abp;
 using Volo.Abp.DependencyInjection;
 
 namespace Unity.AI.Runtime
 {
-    [ExposeServices(typeof(IAIService))]
-    public class OpenAIRuntimeService : IAIService, ITransientDependency
+    [ExposeServices(typeof(IAIService), typeof(IFormMappingService), typeof(IFormWorksheetService), typeof(IFormScoresheetService))]
+    public class OpenAIRuntimeService : IAIService, IFormMappingService, IFormWorksheetService, IFormScoresheetService, ITransientDependency
     {
         private readonly ILogger<OpenAIRuntimeService> _logger;
         private readonly OpenAITransportService _openAITransportService;
@@ -24,6 +26,9 @@ namespace Unity.AI.Runtime
         private const string ApplicationAnalysisPromptType = AIPromptTypes.ApplicationAnalysis;
         private const string AttachmentSummaryPromptType = AIPromptTypes.AttachmentSummary;
         private const string ApplicationScoringPromptType = AIPromptTypes.ApplicationScoring;
+        private const string FormMappingPromptType = AIPromptTypes.FormMapping;
+        private const string FormWorksheetPromptType = AIPromptTypes.FormWorksheet;
+        private const string FormScoresheetPromptType = AIPromptTypes.FormScoresheet;
         private const int MaxAiAttempts = 3;
 
         public OpenAIRuntimeService(
@@ -42,16 +47,7 @@ namespace Unity.AI.Runtime
 
         public Task<bool> IsAvailableAsync()
         {
-            try
-            {
-                _openAIConfigurationResolver.ResolveApiKey();
-                return Task.FromResult(true);
-            }
-            catch (InvalidOperationException ex)
-            {
-                _logger.LogWarning(ex, "AI is unavailable because the OpenAI configuration could not be resolved.");
-                return Task.FromResult(false);
-            }
+            return IsAvailableCoreAsync();
         }
 
         public async Task<ApplicationAnalysisResponse> GenerateApplicationAnalysisAsync(ApplicationAnalysisRequest request, CancellationToken cancellationToken = default)
@@ -59,7 +55,7 @@ namespace Unity.AI.Runtime
             try
             {
                 ArgumentNullException.ThrowIfNull(request);
-                var settings = _openAIConfigurationResolver.ResolveOperationSettings(ApplicationAnalysisPromptType);
+                var settings = await _openAIConfigurationResolver.ResolveOperationSettingsAsync(ApplicationAnalysisPromptType, cancellationToken);
                 var promptTemplate = await _promptTemplateProvider.GetRequiredPromptAsync(
                     ApplicationAnalysisPromptType,
                     request.PromptVersion ?? settings.PromptVersion,
@@ -79,7 +75,7 @@ namespace Unity.AI.Runtime
                 var attachments = JsonSerializer.Serialize(attachmentsPayload, AIJsonDefaults.Indented);
                 var systemPrompt = promptTemplate.SystemPrompt;
                 var applicationAnalysisContent = AIPromptTemplateRenderer.BuildApplicationAnalysisUserPrompt(
-                    promptTemplate.UserPromptTemplate,
+                    promptTemplate.UserPrompt,
                     schema,
                     data,
                     attachments,
@@ -101,7 +97,25 @@ namespace Unity.AI.Runtime
 
                 if (result.Outcome != AIOperationOutcome.Success)
                 {
-                    return new ApplicationAnalysisResponse();
+                    var providerDetails = result.Response?.RawResponse;
+                    if (string.IsNullOrWhiteSpace(providerDetails))
+                    {
+                        providerDetails = result.Response?.Content;
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(providerDetails) && providerDetails.Length > 400)
+                    {
+                        providerDetails = providerDetails[..400];
+                    }
+
+                    _logger.LogError(
+                        "Application analysis generation failed with outcome {Outcome} and failure category {FailureCategory}. HTTP status {HttpStatusCode}. Provider details: {ProviderDetails}",
+                        result.Outcome,
+                        result.FailureCategory,
+                        result.Response?.HttpStatusCode?.ToString() ?? "n/a",
+                        providerDetails ?? "n/a");
+
+                    throw new UserFriendlyException("Application analysis generation failed.");
                 }
 
                 return OpenAIResponseParser.ParseApplicationAnalysisResponse(result.Content);
@@ -112,8 +126,8 @@ namespace Unity.AI.Runtime
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error generating application analysis.");
-                return new ApplicationAnalysisResponse();
+                _logger.LogError(ex, "Application analysis generation failed.");
+                throw;
             }
         }
 
@@ -125,7 +139,7 @@ namespace Unity.AI.Runtime
 
             try
             {
-                var settings = _openAIConfigurationResolver.ResolveOperationSettings(AttachmentSummaryPromptType);
+                var settings = await _openAIConfigurationResolver.ResolveOperationSettingsAsync(AttachmentSummaryPromptType, cancellationToken);
                 var promptTemplate = await _promptTemplateProvider.GetRequiredPromptAsync(
                     AttachmentSummaryPromptType,
                     request.PromptVersion ?? settings.PromptVersion,
@@ -135,25 +149,19 @@ namespace Unity.AI.Runtime
                 var prompt = promptTemplate.SystemPrompt;
 
                 var attachmentText = string.IsNullOrWhiteSpace(extractedText) ? null : extractedText;
-                if (attachmentText != null)
+                var attachmentPayload = new[]
                 {
-                    _logger.LogDebug("Received {TextLength} extracted characters for {FileName}", attachmentText.Length, fileName);
-                }
-                else
-                {
-                    _logger.LogDebug("No text extracted from {FileName}, analyzing metadata only", fileName);
-                }
-
-                var attachmentPayload = new
-                {
-                    name = fileName,
-                    contentType,
-                    text = attachmentText
+                    new
+                    {
+                        name = fileName,
+                        contentType,
+                        text = attachmentText
+                    }
                 };
-                var attachment = JsonSerializer.Serialize(attachmentPayload, AIJsonDefaults.Indented);
+                var attachments = JsonSerializer.Serialize(attachmentPayload, AIJsonDefaults.Indented);
                 var contentToAnalyze = AIPromptTemplateRenderer.BuildAttachmentSummaryUserPrompt(
-                    promptTemplate.UserPromptTemplate,
-                    attachment,
+                    promptTemplate.UserPrompt,
+                    attachments,
                     promptTemplate.MetadataJson);
 
                 await _promptFileLogger.LogPromptInputAsync(AttachmentSummaryPromptType, promptVersion, prompt, contentToAnalyze, cancellationToken);
@@ -188,7 +196,7 @@ namespace Unity.AI.Runtime
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error generating attachment summary for {FileName}", fileName);
+                _logger.LogError(ex, "Attachment summary generation failed for {FileName}.", fileName);
                 return new AttachmentSummaryResponse
                 {
                     Summary = $"AI analysis not available for this attachment ({fileName})."
@@ -201,7 +209,7 @@ namespace Unity.AI.Runtime
             ArgumentNullException.ThrowIfNull(request);
             try
             {
-                var settings = _openAIConfigurationResolver.ResolveOperationSettings(ApplicationScoringPromptType);
+                var settings = await _openAIConfigurationResolver.ResolveOperationSettingsAsync(ApplicationScoringPromptType, cancellationToken);
                 var promptTemplate = await _promptTemplateProvider.GetRequiredPromptAsync(
                     ApplicationScoringPromptType,
                     request.PromptVersion ?? settings.PromptVersion,
@@ -228,7 +236,7 @@ namespace Unity.AI.Runtime
                 }
 
                 var applicationScoringContent = AIPromptTemplateRenderer.BuildApplicationScoringUserPrompt(
-                    promptTemplate.UserPromptTemplate,
+                    promptTemplate.UserPrompt,
                     dataJson,
                     attachments,
                     section,
@@ -262,10 +270,163 @@ namespace Unity.AI.Runtime
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error generating application scoring answers for section {SectionName}", request.SectionName);
+                _logger.LogError(ex, "Application scoring generation failed for section {SectionName}.", request.SectionName);
                 return new ApplicationScoringResponse();
             }
         }
+
+        public async Task<FormWorksheetResponse> GenerateFormWorksheetAsync(FormWorksheetRequest request, CancellationToken cancellationToken = default)
+        {
+            ArgumentNullException.ThrowIfNull(request);
+            try
+            {
+                var settings = await _openAIConfigurationResolver.ResolveOperationSettingsAsync(FormWorksheetPromptType, cancellationToken);
+                var promptTemplate = await _promptTemplateProvider.GetRequiredPromptAsync(
+                    FormWorksheetPromptType,
+                    request.PromptVersion ?? settings.PromptVersion,
+                    cancellationToken);
+                var promptVersion = promptTemplate.PromptVersion;
+                var dataJson = request.Data.GetRawText();
+                var systemPrompt = promptTemplate.SystemPrompt;
+                var content = AIPromptTemplateRenderer.BuildFormMappingUserPrompt(
+                    promptTemplate.UserPrompt,
+                    dataJson,
+                    promptTemplate.MetadataJson);
+
+                await _promptFileLogger.LogPromptInputAsync(FormWorksheetPromptType, promptVersion, systemPrompt, content, cancellationToken);
+                var result = await GenerateWithRetryAsync(
+                    () => _openAITransportService.GenerateSummaryAsync(
+                        content,
+                        systemPrompt,
+                        settings,
+                        settings.CompletionTokens,
+                        cancellationToken: cancellationToken),
+                    AIProviderPayloadValidator.ValidateFormWorksheetJson,
+                    "form worksheet",
+                    cancellationToken);
+                await _promptFileLogger.LogPromptOutputAsync(FormWorksheetPromptType, promptVersion, result.CaptureOutput, cancellationToken);
+
+                return new FormWorksheetResponse
+                {
+                    Worksheet = result.Outcome == AIOperationOutcome.Success
+                        ? AIResponseJson.CleanJsonResponse(result.Content)
+                        : "{}"
+                };
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Form worksheet generation failed.");
+                return new FormWorksheetResponse();
+            }
+        }
+
+        public async Task<FormScoresheetResponse> GenerateFormScoresheetAsync(FormScoresheetRequest request, CancellationToken cancellationToken = default)
+        {
+            ArgumentNullException.ThrowIfNull(request);
+            try
+            {
+                var settings = await _openAIConfigurationResolver.ResolveOperationSettingsAsync(FormScoresheetPromptType, cancellationToken);
+                var promptTemplate = await _promptTemplateProvider.GetRequiredPromptAsync(
+                    FormScoresheetPromptType,
+                    request.PromptVersion ?? settings.PromptVersion,
+                    cancellationToken);
+                var promptVersion = promptTemplate.PromptVersion;
+                var dataJson = request.Data.GetRawText();
+                var systemPrompt = promptTemplate.SystemPrompt;
+                var content = AIPromptTemplateRenderer.BuildFormMappingUserPrompt(
+                    promptTemplate.UserPrompt,
+                    dataJson,
+                    promptTemplate.MetadataJson);
+
+                await _promptFileLogger.LogPromptInputAsync(FormScoresheetPromptType, promptVersion, systemPrompt, content, cancellationToken);
+                var result = await GenerateWithRetryAsync(
+                    () => _openAITransportService.GenerateSummaryAsync(
+                        content,
+                        systemPrompt,
+                        settings,
+                        settings.CompletionTokens,
+                        cancellationToken: cancellationToken),
+                    AIProviderPayloadValidator.ValidateFormScoresheetJson,
+                    "form scoresheet",
+                    cancellationToken);
+                await _promptFileLogger.LogPromptOutputAsync(FormScoresheetPromptType, promptVersion, result.CaptureOutput, cancellationToken);
+
+                return new FormScoresheetResponse
+                {
+                    Scoresheet = result.Outcome == AIOperationOutcome.Success
+                        ? AIResponseJson.CleanJsonResponse(result.Content)
+                        : "{}"
+                };
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Form scoresheet generation failed.");
+                return new FormScoresheetResponse();
+            }
+        }
+
+        private async Task<FormMappingResponse> GenerateFormMappingCoreAsync(FormMappingRequest request, string promptType, CancellationToken cancellationToken = default)
+        {
+            ArgumentNullException.ThrowIfNull(request);
+            try
+            {
+                var settings = await _openAIConfigurationResolver.ResolveOperationSettingsAsync(promptType, cancellationToken);
+                var promptTemplate = await _promptTemplateProvider.GetRequiredPromptAsync(
+                    promptType,
+                    request.PromptVersion ?? settings.PromptVersion,
+                    cancellationToken);
+                var promptVersion = promptTemplate.PromptVersion;
+                var dataJson = request.Data.GetRawText();
+                var systemPrompt = promptTemplate.SystemPrompt;
+                var content = AIPromptTemplateRenderer.BuildFormMappingUserPrompt(
+                    promptTemplate.UserPrompt,
+                    dataJson,
+                    promptTemplate.MetadataJson);
+
+                await _promptFileLogger.LogPromptInputAsync(promptType, promptVersion, systemPrompt, content, cancellationToken);
+                var result = await GenerateWithRetryAsync(
+                    () => _openAITransportService.GenerateSummaryAsync(
+                        content,
+                        systemPrompt,
+                        settings,
+                        settings.CompletionTokens,
+                        cancellationToken: cancellationToken),
+                    AIProviderPayloadValidator.ValidateFormMappingJson,
+                    "mapping suggestion",
+                    cancellationToken);
+                await _promptFileLogger.LogPromptOutputAsync(promptType, promptVersion, result.CaptureOutput, cancellationToken);
+
+                if (result.Outcome != AIOperationOutcome.Success)
+                {
+                    return new FormMappingResponse();
+                }
+
+                return new FormMappingResponse
+                {
+                    Mapping = AIResponseJson.CleanJsonResponse(result.Content)
+                };
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Mapping suggestion generation failed.");
+                return new FormMappingResponse();
+            }
+        }
+
+        public Task<FormMappingResponse> GenerateFormMappingAsync(FormMappingRequest request, CancellationToken cancellationToken = default) =>
+            GenerateFormMappingCoreAsync(request, FormMappingPromptType, cancellationToken);
 
         private async Task<AIOperationResult> GenerateWithRetryAsync(
             Func<Task<AIOperationResult>> operation,
@@ -337,6 +498,20 @@ namespace Unity.AI.Runtime
             return lastResult;
         }
 
+        private async Task<bool> IsAvailableCoreAsync()
+        {
+            try
+            {
+                await _openAIConfigurationResolver.ResolveApiKeyAsync();
+                return true;
+            }
+            catch (InvalidOperationException ex)
+            {
+                _logger.LogWarning(ex, "AI is unavailable because the OpenAI configuration could not be resolved.");
+                return false;
+            }
+        }
+
         private static string ResolveNarrativeContent(AIOperationResult result)
         {
             return result.Outcome switch
@@ -381,7 +556,7 @@ namespace Unity.AI.Runtime
                 return output?.Trim() ?? string.Empty;
             }
 
-            if (jsonObject.TryGetProperty(AIJsonKeys.Summary, out var summaryProp) &&
+            if (jsonObject.TryGetProperty("summary", out var summaryProp) &&
                 summaryProp.ValueKind == JsonValueKind.String)
             {
                 return summaryProp.GetString() ?? string.Empty;

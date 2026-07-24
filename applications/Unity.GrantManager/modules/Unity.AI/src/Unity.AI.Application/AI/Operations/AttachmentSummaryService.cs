@@ -1,5 +1,5 @@
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Localization;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -9,7 +9,6 @@ using System.Threading.Tasks;
 using Unity.AI.Extraction;
 using Unity.AI.Localization;
 using Unity.AI.Requests;
-using Unity.GrantManager.Applications;
 using Unity.GrantManager.Intakes;
 using Volo.Abp;
 using Volo.Abp.DependencyInjection;
@@ -18,12 +17,11 @@ using Volo.Abp.Uow;
 namespace Unity.AI.Operations;
 
 public class AttachmentSummaryService(
-    IApplicationChefsFileAttachmentRepository applicationChefsFileAttachmentRepository,
+    IAttachmentSummaryDataProvider attachmentSummaryDataProvider,
     IChefsFileAttachmentStreamProvider chefsFileAttachmentStreamProvider,
     ITextExtractionService textExtractionService,
     IAIService aiService,
     IAIGenerationPrerequisiteValidator aiGenerationPrerequisiteValidator,
-    AIExecutionModeResolver executionModeResolver,
     IUnitOfWorkManager unitOfWorkManager,
     ILogger<AttachmentSummaryService> logger,
     IStringLocalizer<AIResource> localizer) : IAttachmentSummaryService, ITransientDependency
@@ -66,34 +64,20 @@ public class AttachmentSummaryService(
             throw new UserFriendlyException(localizer[AILocalizationKeys.SelectAttachmentForSummaries]);
         }
 
-        var mode = executionModeResolver.ResolveMode(AIExecutionModeResolver.AttachmentSummaryOperation);
-        if (mode != AIExecutionMode.Sequential)
-        {
-            logger.LogWarning(
-                "AI attachment summary {ExecutionMode} mode is not supported by the current repository-backed execution path. Falling back to sequential execution.",
-                mode);
-            mode = AIExecutionMode.Sequential;
-        }
-
         return await AIExecutionStrategy.RunAsync(
             ids,
-            mode,
+            AIExecutionMode.Sequential,
             id => GenerateOrFallbackAsync(id, promptVersion, cancellationToken),
-            batch => GenerateSequentiallyAsync(batch, promptVersion, cancellationToken));
-    }
+            async batch =>
+            {
+                var summaries = new List<string>(batch.Count);
+                foreach (var attachmentId in batch)
+                {
+                    summaries.Add(await GenerateOrFallbackAsync(attachmentId, promptVersion, cancellationToken));
+                }
 
-    private async Task<List<string>> GenerateSequentiallyAsync(
-        IReadOnlyCollection<Guid> attachmentIds,
-        string? promptVersion,
-        CancellationToken cancellationToken)
-    {
-        var summaries = new List<string>(attachmentIds.Count);
-        foreach (var attachmentId in attachmentIds)
-        {
-            summaries.Add(await GenerateOrFallbackAsync(attachmentId, promptVersion, cancellationToken));
-        }
-
-        return summaries;
+                return summaries;
+            });
     }
 
     private async Task<string> GenerateOrFallbackAsync(
@@ -144,34 +128,18 @@ public class AttachmentSummaryService(
 
     private async Task<AttachmentSummarySource> LoadAttachmentAsync(Guid attachmentId)
     {
-        using var uow = unitOfWorkManager.Begin(requiresNew: true, isTransactional: false);
-        var attachment = await applicationChefsFileAttachmentRepository.GetAsync(attachmentId);
-        var source = new AttachmentSummarySource(
-            attachment.Id,
-            attachment.FileName,
-            attachment.ChefsSubmissionId,
-            attachment.ChefsFileId);
-        await uow.CompleteAsync();
-        return source;
+        var attachment = await attachmentSummaryDataProvider.GetAttachmentAsync(attachmentId);
+        return attachment ?? throw new UserFriendlyException(localizer[AILocalizationKeys.AttachmentNotFound]);
     }
 
     private async Task SaveSummaryAsync(Guid attachmentId, string summary)
     {
-        using var uow = unitOfWorkManager.Begin(requiresNew: true);
-        var attachment = await applicationChefsFileAttachmentRepository.GetAsync(attachmentId);
-        attachment.AISummary = summary;
-        await applicationChefsFileAttachmentRepository.UpdateAsync(attachment);
-        await uow.CompleteAsync();
+        await attachmentSummaryDataProvider.UpdateAttachmentSummaryAsync(attachmentId, summary);
     }
 
     private async Task<List<Guid>> LoadApplicationAttachmentIdsAsync(Guid applicationId)
     {
-        using var uow = unitOfWorkManager.Begin(requiresNew: true, isTransactional: false);
-        var ids = (await applicationChefsFileAttachmentRepository.GetListAsync(a => a.ApplicationId == applicationId))
-            .Select(a => a.Id)
-            .ToList();
-        await uow.CompleteAsync();
-        return ids;
+        return await attachmentSummaryDataProvider.GetApplicationAttachmentIdsAsync(applicationId);
     }
 
     private async Task WithUnitOfWorkAsync(Func<Task> operation)
@@ -256,10 +224,4 @@ public class AttachmentSummaryService(
             return null;
         }
     }
-
-    private sealed record AttachmentSummarySource(
-        Guid Id,
-        string? FileName,
-        string? ChefsSubmissionId,
-        string? ChefsFileId);
 }

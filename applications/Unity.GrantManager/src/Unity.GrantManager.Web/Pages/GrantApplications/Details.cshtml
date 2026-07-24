@@ -37,7 +37,7 @@
 
     // View guards — control tab visibility and loading of existing AI results
     var aiApplicationAnalysisEnabled = await FeatureChecker.IsEnabledAsync("Unity.AI.ApplicationAnalysis")
-        && await PermissionChecker.IsGrantedAsync(AIPermissions.Analysis.ViewApplicationAnalysis);
+        && await PermissionChecker.IsGrantedAsync(AIPermissions.ApplicationAnalysis.View);
 
     // Shared manual-generation guards
     var tenantManualEnabled = await SettingProvider.GetAsync<bool>(AISettings.ManualGenerationEnabled, defaultValue: false);
@@ -48,7 +48,7 @@
     var aiApplicationAnalysisGenerateEnabled = await FeatureChecker.IsEnabledAsync("Unity.AI.ApplicationAnalysis")
         && tenantManualEnabled
         && formManualEnabled
-        && await PermissionChecker.IsGrantedAsync(AIPermissions.Analysis.GenerateApplicationAnalysis);
+        && await PermissionChecker.IsGrantedAsync(AIPermissions.ApplicationAnalysis.Generate);
 }
 @section styles
 {
@@ -57,6 +57,7 @@
 }
 @section scripts
 {
+    <abp-script src="/Pages/GrantApplications/ai-generation-api.js" />
     <abp-script src="/Pages/GrantApplications/ai-generation-button-state.js" />
     <abp-script src="/Pages/GrantApplications/ai-rate-limit.js" />
     <abp-script src="/Pages/GrantApplications/Details.js" />
@@ -366,8 +367,7 @@
                 @if (notificationsFeatureEnabled && readEmailGranted)
                 {
                 <div class="tab-pane" id="emails" role="tabpanel" aria-labelledby="emails-tab">
-                    <h6 class="fw-bold px-3 pt-4 pb-2 m-0">Emails</h6>
-                    <div class="px-3 pb-2" id="applicationEmailsWidget">
+                    <div class="px-2 pb-2" id="applicationEmailsWidget">
                         @await Component.InvokeAsync("EmailsWidget", new { applicationId = Model.ApplicationId, currentUserId = Model.CurrentUserId })
                     </div>
                     <h6 class="fw-bold px-3 pt-4 pb-2 m-0">Email History</h6>

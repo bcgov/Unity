@@ -1,19 +1,176 @@
 $(function () {
     const l = abp.localization.getResource('Payments');
     const nullPlaceholder = '—';
+    const requestedFieldsStorageKey = 'PaymentRequests_RequestedFields';
+    const defaultQuickDateRange = 'last6months';
     const formatter = createNumberFormatter();
     const guidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     let dt = $('#PaymentRequestListTable');
     let dataTable;
     let isApprove = false;
 
+    let paymentTableFilters = {
+        requestedFromDate: null,
+        requestedToDate: null
+    };
+
+    const UIElements = {
+        quickDateRange: $('#quickDateRange'),
+        inputFilter: $('.date-input-filter'),
+        requestedToInput: $('#requestedToDate'),
+        requestedFromInput: $('#requestedFromDate'),
+    };
+
+    function toggleCustomDateInputs(show) {
+        if (show) {
+            $('#customDateInputs').show();
+        } else {
+            $('#customDateInputs').hide();
+        }
+    }
+
+    function setDateRangeFilters(quickDateRange, range) {
+        UIElements.quickDateRange.val(quickDateRange);
+
+        if (range) {
+            const fromDate = range.fromDate ?? '';
+            const toDate = range.toDate ?? '';
+            UIElements.requestedFromInput.val(fromDate);
+            UIElements.requestedToInput.val(toDate);
+            paymentTableFilters.requestedFromDate = fromDate;
+            paymentTableFilters.requestedToDate = toDate;
+        }
+    }
+
+    function setDateRangeLocalStorage(quickDateRange, fromToRange) {
+        localStorage.setItem('PaymentRequests_QuickRange', quickDateRange || defaultQuickDateRange);
+        if (fromToRange) {
+            const fromDate = fromToRange.fromDate;
+            const toDate = fromToRange.toDate;
+            if (fromDate) {
+                localStorage.setItem('PaymentRequests_FromDate', fromDate);
+            }
+            else {
+                localStorage.removeItem('PaymentRequests_FromDate');
+            }
+            if (toDate) {
+                localStorage.setItem('PaymentRequests_ToDate', toDate);
+            }
+            else {
+                localStorage.removeItem('PaymentRequests_ToDate');
+            }
+        }
+    }
+
+    function initializeRequestedFilterDates() {
+        let savedQuickRange = localStorage.getItem('PaymentRequests_QuickRange') || defaultQuickDateRange;
+        let savedFromDate = localStorage.getItem('PaymentRequests_FromDate');
+        let savedToDate = localStorage.getItem('PaymentRequests_ToDate');
+
+        let isCustomRange = savedQuickRange === 'custom';
+        toggleCustomDateInputs(isCustomRange);
+
+        let range = isCustomRange
+            ? {
+                fromDate: savedFromDate || '',
+                toDate: savedToDate || ''
+            }
+            : getDateRange(savedQuickRange);
+
+        if (!isCustomRange && !range) {
+            savedQuickRange = defaultQuickDateRange;
+            range = getDateRange(savedQuickRange);
+        }
+
+        setDateRangeFilters(savedQuickRange, range);
+        setDateRangeLocalStorage(savedQuickRange, range);
+
+        // Set max date to today for both inputs
+        const today = formatDate(new Date());
+        UIElements.requestedToInput.attr({ 'max': today });
+        UIElements.requestedFromInput.attr({ 'max': today });
+    }
+
+    function handleInputFilterChange() {
+        const $input = $(this);
+        const dateValue = $input.val();
+
+        if (!validateDate(dateValue, $input)) return;
+
+        paymentTableFilters.requestedFromDate = UIElements.requestedFromInput.val();
+        paymentTableFilters.requestedToDate = UIElements.requestedToInput.val();
+
+        // If the values for FromDate and ToDate are being set outside of the
+        // quick drop down handler, custom SHOULD be shown, but set just in case
+        UIElements.quickDateRange.val('custom');
+        localStorage.setItem('PaymentRequests_QuickRange', 'custom');
+
+        localStorage.setItem('PaymentRequests_FromDate', paymentTableFilters.requestedFromDate);
+        localStorage.setItem('PaymentRequests_ToDate', paymentTableFilters.requestedToDate);
+
+        dataTable.ajax.reload(null, true);
+    }
+
+    function handleQuickDateRangeChange() {
+        const selectedRange = $(this).val();
+
+        if (selectedRange === 'custom') {
+            // Show the custom date inputs and don't modify their values
+            toggleCustomDateInputs(true);
+            return;
+        }
+
+        // Hide custom date inputs for preset ranges
+        toggleCustomDateInputs(false);
+
+        // Get the date range for the selected option
+        const range = getDateRange(selectedRange);
+        setDateRangeFilters(selectedRange, range);
+        setDateRangeLocalStorage(selectedRange, range);
+
+        // Reload the table with new filters
+        dataTable.ajax.reload(null, true);
+    }
+
+    function bindUIEvents() {
+        UIElements.inputFilter.on('change', handleInputFilterChange);
+        UIElements.quickDateRange.on('change', handleQuickDateRangeChange);
+    }
+
+    // Restores search value and date range filters when a saved view is loaded.
+    function restoreCustomFilters(filters) {
+        $('#search').val(filters.externalSearchValue || '');
+
+        let quickRange = filters.quickDateRange || defaultQuickDateRange;
+        let isCustomRange = filters.quickDateRange === 'custom';
+        toggleCustomDateInputs(isCustomRange);
+
+        let range = isCustomRange
+            ? {
+                fromDate: filters.requestedFromDate || '',
+                toDate: filters.requestedToDate || ''
+            }
+            : getDateRange(quickRange);
+
+        if (!isCustomRange && !range) {
+            quickRange = defaultQuickDateRange;
+            range = getDateRange(quickRange);
+        }
+
+        setDateRangeFilters(quickRange, range);
+        setDateRangeLocalStorage(quickRange, range);
+    }
+
+    bindUIEvents();
+    initializeRequestedFilterDates();
+
     const listColumns = getColumns();
     const defaultVisibleColumns = [
+        'select',
         'referenceNumber',
         'batchName',
         'applicantName',
         'supplierNumber',
-        'creationTime',
         'siteNumber',
         'contactNumber',
         'invoiceNumber',
@@ -29,6 +186,30 @@ $(function () {
         'CASResponse',
         'accountCodingDisplay'
     ];
+    let initialLoad = true;
+    let isRestoringState = false;
+    let refreshDataTimeout = null;
+
+    let languageSetValues = {
+        buttons: {
+            stateRestore: 'View %d'
+        },
+        stateRestore: {
+            creationModal: {
+                title: 'Create View',
+                name: 'Name',
+                button: 'Save',
+            },
+            emptyStates: 'No saved views',
+            renameTitle: 'Rename View',
+            renameLabel: 'New name for "%s"',
+            removeTitle: 'Delete View',
+            removeConfirm: 'Are you sure you want to delete "%s"?',
+            removeSubmit: 'Delete',
+            duplicateError: 'A view with this name already exists.',
+            removeError: 'Failed to remove view.',
+        }
+    };
 
     let paymentRequestStatusModal = new abp.ModalManager({
         viewUrl: 'PaymentApprovals/UpdatePaymentRequestStatus',
@@ -62,9 +243,10 @@ $(function () {
                 .done(() => {
                     abp.notify.success('The Status Check has been sent for verification to CFS. Please refresh this page to check for Status updates.');
                     $(".select-all-payments").prop("checked", false);
-                    payment_approve_buttons.disable();
-                    payment_check_status_buttons.disable();
-                    history_button.disable();
+                    setActionButtonState(payment_approve_buttons, false);
+                    setActionButtonState(payment_check_status_buttons, false);
+                    setActionButtonState(history_button, false);
+                    setActionButtonState(cancel_button, false);
                     selectedPaymentIds = [];
                     PubSub.publish("deselect_batchpayment_application", "reset_data");
                 })
@@ -74,6 +256,9 @@ $(function () {
         {
             text: 'Approve',
             className: 'custom-table-btn flex-none btn btn-secondary payment-status',
+            attr: {
+                'data-selector': 'batch-payment-table-actions'
+            },
             action: function (e, dt, node, config) {
                 // Store payment IDs in distributed cache to avoid URL length limits
                 unity.payments.paymentRequests.paymentBulkActions
@@ -94,6 +279,9 @@ $(function () {
         {
             text: 'Decline',
             className: 'custom-table-btn flex-none btn btn-secondary payment-status',
+            attr: {
+                'data-selector': 'batch-payment-table-actions'
+            },
             action: function (e, dt, node, config) {
                 // Store payment IDs in distributed cache to avoid URL length limits
                 unity.payments.paymentRequests.paymentBulkActions
@@ -111,9 +299,44 @@ $(function () {
                     });
             }
         },
+        ...(abp.auth.isGranted('PaymentsPermissions.Payments.CancelPayment') ? [{
+            text: 'Cancel',
+            className: 'custom-table-btn flex-none btn btn-secondary payment-cancel',
+            action: function (e, dt, node, config) {
+                if (selectedPaymentIds?.length !== 1) return;
+                const rowData = dt.rows({ selected: true }).data().toArray()[0];
+                abp.message.confirm(
+                    `Are you sure you want to cancel the payment: "${rowData.referenceNumber}"?`,
+                    'Cancel Payment',
+                    function (confirmed) {
+                        if (!confirmed) return;
+                        unity.payments.paymentRequests.paymentRequest
+                            .cancel(selectedPaymentIds[0])
+                            .then(function () {
+                                abp.notify.success('Payment has been cancelled successfully.');
+                                $(".select-all-payments").prop("checked", false);
+                                setActionButtonState(payment_approve_buttons, false);
+                                setActionButtonState(payment_check_status_buttons, false);
+                                setActionButtonState(history_button, false);
+                                setActionButtonState(cancel_button, false);
+                                selectedPaymentIds = [];
+                                PubSub.publish("deselect_batchpayment_application", "reset_data");
+                                dataTable.ajax.reload(null, false);
+                            })
+                            .catch(function (err) {
+                                abp.notify.error('Failed to cancel payment. Please try again.');
+                                console.warn('Cancel payment error:', err);
+                            });
+                    }
+                );
+            }
+        }] : []),
         {
             text: 'History',
             className: 'custom-table-btn flex-none btn btn-secondary history',
+            attr: {
+                'data-selector': 'batch-payment-table-actions'
+            },
             action: function (e, dt, node, config) {
                 location.href = '/PaymentHistory/Details?PaymentId=' + selectedPaymentIds[0];
             }
@@ -126,6 +349,75 @@ $(function () {
             attr: {
                 id: 'btn-toggle-filter'
             }
+        },
+        {
+            extend: 'savedStates',
+            className: 'custom-table-btn flex-none btn btn-secondary grp-savedStates',
+            config: {
+                creationModal: true,
+                splitSecondaries: [
+                    { extend: 'updateState', text: '<i class="fa-regular fa-floppy-disk"></i> Update' },
+                    { extend: 'renameState', text: '<i class="fa-regular fa-pen-to-square"></i> Rename' },
+                    { extend: 'removeState', text: '<i class="fa-regular fa-trash-can"></i> Delete' }
+                ]
+            },
+            buttons: [
+                { extend: 'createState', text: 'Save As View' },
+                {
+                    text: 'Reset to Default View',
+                    action: function (e, dt, node, config) {
+                        let dtInit = dt.init();
+                        let initialSortOrder = dtInit?.order ?? [];
+
+                        dt.columns().visible(false);
+
+                        const allColumnNames = dt.settings()[0].aoColumns
+                            .map(col => col.name)
+                            .filter(colName => !defaultVisibleColumns.includes(colName));
+
+                        const orderedIndexes = [];
+                        defaultVisibleColumns.forEach((colName) => {
+                            const colIdx = dt.column(`${colName}:name`).index();
+                            if (colIdx !== undefined && colIdx !== -1) {
+                                dt.column(colIdx).visible(true);
+                                orderedIndexes.push(colIdx);
+                            }
+                        });
+
+                        allColumnNames.forEach((colName) => {
+                            const colIdx = dt.column(`${colName}:name`).index();
+                            if (colIdx !== undefined && colIdx !== -1) {
+                                orderedIndexes.push(colIdx);
+                            }
+                        });
+
+                        dt.colReorder.order(orderedIndexes);
+                        dt.columns.adjust();
+
+                        if (typeof dt.filterRow === 'function') {
+                            const filterRowApi = dt.filterRow();
+                            if (filterRowApi && typeof filterRowApi?.clearFilters === 'function') {
+                                filterRowApi.clearFilters();
+                            }
+                        }
+
+                        $('.dt-search input').val('');
+                        $('#search').val('');
+                        dt.search('').order(initialSortOrder);
+
+                        // Reset date range filters
+                        const range = getDateRange(defaultQuickDateRange);
+                        setDateRangeFilters(defaultQuickDateRange, range);
+                        setDateRangeLocalStorage(defaultQuickDateRange, range);
+                        toggleCustomDateInputs(false);
+
+                        // Reload table data with updated filters
+                        dt.ajax.reload(null, false);
+                    }
+                },
+                { extend: 'removeAllStates', text: 'Delete All Views' },
+                { extend: 'spacer', style: 'bar' }
+            ]
         },
         {
             extend: 'csv',
@@ -172,16 +464,103 @@ $(function () {
             dir: 'desc'
         },
         dataEndpoint: unity.payments.paymentRequests.paymentRequest.getList,
-        data: {},
+        data: function () {
+            let requestedFields;
+            if (dataTable) {
+                try {
+                    const cols = dataTable.settings()[0].aoColumns;
+                    requestedFields = cols
+                        .filter(function (col, idx) { return dataTable.column(idx).visible(); })
+                        .map(function (col) { return col.sName; })
+                        .filter(function (name) { return !!name; });
+                    if (requestedFields.length > 0) {
+                        localStorage.setItem(requestedFieldsStorageKey, JSON.stringify(requestedFields));
+                    }
+                } catch {
+                    // DataTable may still be initializing.
+                }
+            }
+
+            if (!requestedFields || requestedFields.length === 0) {
+                try {
+                    const saved = localStorage.getItem(requestedFieldsStorageKey);
+                    if (saved) {
+                        requestedFields = JSON.parse(saved);
+                    }
+                } catch {
+                    // Ignore local storage parse errors and use defaults.
+                }
+            }
+
+            if (!requestedFields || requestedFields.length === 0) {
+                requestedFields = defaultVisibleColumns;
+            }
+
+            return {
+                requestedFields: requestedFields,
+                requestedFromDate: paymentTableFilters.requestedFromDate,
+                requestedToDate: paymentTableFilters.requestedToDate
+            };
+        },
         responseCallback,
         actionButtons,
+        deferRender: true,
         pagingEnabled: true,
         reorderEnabled: true,
-        languageSetValues: {},
+        languageSetValues,
         dataTableName: 'PaymentRequestListTable',
         dynamicButtonContainerId: 'dynamicButtonContainerId',
         useNullPlaceholder: true,
-        fixedHeaders: true
+        fixedHeaders: true,
+        onStateSaveParams: function (settings, data) {
+            data.customFilters = {
+                externalSearchValue: $('#search').val() || '',
+                quickDateRange: UIElements.quickDateRange.val(),
+                requestedFromDate: UIElements.requestedFromInput.val(),
+                requestedToDate: UIElements.requestedToInput.val()
+            };
+        },
+        onStateLoadParams: function (settings, data) {
+            if (!initialLoad) {
+                isRestoringState = true;
+                if (data?.customFilters) {
+                    restoreCustomFilters(data.customFilters);
+                }
+            }
+        },
+        onStateLoaded: function (dtApi, data) {
+            if (!initialLoad) {
+                isRestoringState = false;
+                dtApi.ajax.reload(null, false);
+            }
+            initialLoad = false;
+        },
+        enableContextMenu: true,
+        contextMenuActionsSelector: '[data-selector="batch-payment-table-actions"]'
+    });
+
+    $('.grp-savedStates').text('Save View');
+    $('.grp-savedStates').closest('.btn-group').addClass('cstm-save-view');
+
+    dataTable.on('column-visibility.dt', function (e, settings, columnIdx) {
+        try {
+            const cols = dataTable.settings()[0].aoColumns;
+            const visibleFields = cols
+                .filter(function (col, idx) { return dataTable.column(idx).visible(); })
+                .map(function (col) { return col.sName; })
+                .filter(function (name) { return !!name; });
+            if (visibleFields.length > 0) {
+                localStorage.setItem(requestedFieldsStorageKey, JSON.stringify(visibleFields));
+            }
+            // During a saved-view restore, isRestoringState is true and onStateLoaded
+            // fires a single authoritative reload after all columns are applied.
+            if (!isRestoringState && cols[columnIdx]?.refreshData) {
+                clearTimeout(refreshDataTimeout);
+                refreshDataTimeout = setTimeout(function () {
+                    dataTable.ajax.reload(null, false);
+                }, 300);
+            }
+        } catch { }
     });
 
     // Attach the draw event to add custom row coloring logic
@@ -200,10 +579,11 @@ $(function () {
     let payment_approve_buttons = dataTable.buttons(['.payment-status']);
     let payment_check_status_buttons = dataTable.buttons(['.payment-check-status']);
     let history_button = dataTable.buttons(['.history']);
+    let cancel_button = abp.auth.isGranted('PaymentsPermissions.Payments.CancelPayment')
+        ? dataTable.buttons(['.payment-cancel'])
+        : null;
 
-    payment_approve_buttons.disable();
-    payment_check_status_buttons.disable();
-    history_button.disable();
+    checkActionButtons();
     dataTable.on('search.dt', () => handleSearch());
 
     function checkAllRowsHaveState(states) {
@@ -279,40 +659,36 @@ $(function () {
     }
 
     function checkActionButtons() {
-        let isInSentState = checkAllRowsHaveState(['Submitted', 'FSB']);
-        if (isInSentState) {
-            payment_check_status_buttons.enable();
-        } else {
-            payment_check_status_buttons.disable();
-        }
+        const hasSelection = dataTable.rows({ selected: true }).indexes().length > 0;
+        let isInSentState = hasSelection && checkAllRowsHaveState(['Submitted', 'FSB']);
+        setActionButtonState(payment_check_status_buttons, isInSentState);
+
         let hasHistoricalPayment = dataTable.rows('.selected').data().toArray().some(row => row.status === 'HistoricalPayment');
-        if (dataTable.rows({ selected: true }).indexes().length > 0 && !isInSentState && !hasHistoricalPayment) {
-            if (abp.auth.isGranted('PaymentsPermissions.Payments.L1ApproveOrDecline')
+        let hasCancelledPayment = dataTable.rows('.selected').data().toArray().some(row => row.status === 'Cancelled');
+        const canApprove = hasSelection && !isInSentState && !hasHistoricalPayment && !hasCancelledPayment
+            && (abp.auth.isGranted('PaymentsPermissions.Payments.L1ApproveOrDecline')
                 || abp.auth.isGranted('PaymentsPermissions.Payments.L2ApproveOrDecline')
-                || abp.auth.isGranted('PaymentsPermissions.Payments.L3ApproveOrDecline')) {
-                payment_approve_buttons.enable();
+                || abp.auth.isGranted('PaymentsPermissions.Payments.L3ApproveOrDecline'));
+        setActionButtonState(payment_approve_buttons, canApprove);
 
-            } else {
-                payment_approve_buttons.disable();
+        checkEnableHistoryButton(dataTable, history_button);
+
+        if (cancel_button) {
+            const eligibleCancelStatuses = ['HistoricalPayment', 'L1Pending', 'L2Pending', 'L3Pending'];
+            const selectedCount = dataTable.rows({ selected: true }).indexes().length;
+            let canCancel = false;
+            if (selectedCount === 1) {
+                const rowData = dataTable.rows({ selected: true }).data().toArray()[0];
+                canCancel = eligibleCancelStatuses.includes(rowData.status);
             }
-
-            checkEnableHistoryButton(dataTable, history_button);
-        }
-        else {
-            payment_approve_buttons.disable();
-            checkEnableHistoryButton(dataTable, history_button);
+            setActionButtonState(cancel_button, canCancel);
         }
     }
 
     function handleSearch() {
-        let filterValue = $('.dt-search input').val();
-        if (filterValue !== undefined && filterValue.length > 0) {
-            Array.from(document.getElementsByClassName('selected')).forEach(
-                function (element, index, array) {
-                    element.classList.toggle('selected');
-                }
-            );
-            PubSub.publish("deselect_batchpayment_application", "reset_data");
+        const filterValue = dataTable.search();
+        if (filterValue?.length > 0) {
+            dataTable.rows({ selected: true }).deselect();
         }
     }
 
@@ -324,6 +700,7 @@ $(function () {
             getBatchNameColumn(columnIndex++),
             getSubmissionConfirmationCodeColumn(columnIndex++),
             getApplicantNameColumn(columnIndex++),
+            getCategoryColumn(columnIndex++),
             getSupplierNumberColumn(columnIndex++),
             getSupplierNameColumn(columnIndex++),
             getSiteNumberColumn(columnIndex++),
@@ -350,6 +727,9 @@ $(function () {
             getNoteColumn(columnIndex++),
             getAccountDistributionColumn(columnIndex++),
             getFsbNotifiedColumn(columnIndex++),
+            getCancelledColumn(columnIndex++),
+            getCancelledByColumn(columnIndex++),
+            getCancelledOnColumn(columnIndex++),
         ]
 
         return columns.map((column) => ({ ...column, targets: [column.index], orderData: [column.index, 0] }));
@@ -378,6 +758,7 @@ $(function () {
             name: 'applicantName',
             data: 'payeeName',
             className: 'data-table-header',
+            refreshData: true,
             index: columnIndex,
             render: function (data, type, row) {
                 let applicantName = (typeof data !== 'string' || data.trim() === '') ? 'Applicant Name' : data;
@@ -420,7 +801,7 @@ $(function () {
 
                 const safeCode = $.fn.dataTable.render.text().display(code);
 
-                if (type === 'display' && abp.auth.isGranted('GrantApplicationManagement.Applicants.ViewList')) {
+                if (type === 'display' && abp.auth.isGranted('GrantApplicationManagement.Applications')) {
                     const applicationId = row?.correlationId;
                     const isGuid = applicationId && guidPattern.test(applicationId);
 
@@ -464,6 +845,7 @@ $(function () {
             name: 'siteNumber',
             data: 'site',
             className: 'data-table-header',
+            refreshData: true,
             index: columnIndex,
             render: function (data) {
                 return data?.number;
@@ -497,6 +879,7 @@ $(function () {
             name: 'payGroup',
             data: 'site',
             className: 'data-table-header',
+            refreshData: true,
             index: columnIndex,
             render: function (data) {
                 if (!data) return '';
@@ -606,7 +989,14 @@ $(function () {
             index: columnIndex,
             render: function (data) {
                 if (data + "" !== "undefined" && data?.length > 0) {
-                    return '<button class="btn btn-light info-btn" type="button" onclick="openCasResponseModal(\'' + data + '\');">View Response<i class="fl fl-mapinfo"></i></button>';
+                    const escaped = data
+                        .replaceAll('\\', String.raw`\\`)
+                        .replaceAll("'", String.raw`\'`)
+                        .replaceAll('&', '&amp;')
+                        .replaceAll('"', '&quot;')
+                        .replaceAll('<', '&lt;')
+                        .replaceAll('>', '&gt;');
+                    return '<button class="btn btn-light info-btn" type="button" onclick="openCasResponseModal(\'' + escaped + '\');">View Response<i class="fl fl-mapinfo"></i></button>';
                 }
                 return null;
             }
@@ -619,6 +1009,7 @@ $(function () {
             name: 'paymentRequesterName',
             data: 'creatorUser',
             className: 'data-table-header',
+            refreshData: true,
             index: columnIndex,
             render: function (data) {
                 return formatName(data);
@@ -632,6 +1023,7 @@ $(function () {
             name: `l${level}ApproverName`,
             data: 'expenseApprovals',
             className: 'data-table-header',
+            refreshData: true,
             index: columnIndex,
             render: function (data) {
                 const approval = getExpenseApprovalsDetails(data, level);
@@ -650,6 +1042,7 @@ $(function () {
             name: `l${level}ApprovalDate`,
             data: 'expenseApprovals',
             className: 'data-table-header text-nowrap',
+            refreshData: true,
             index: columnIndex,
             render: function (data, type) {
                 let approval = getExpenseApprovalsDetails(data, level);
@@ -727,9 +1120,10 @@ $(function () {
             name: 'paymentTags',
             data: 'paymentTags',
             className: '',
+            refreshData: true,
             index: columnIndex,
             render: function (data) {
-                let tagNames = data
+                let tagNames = (data ?? [])
                     .filter(x => x?.tag?.name)
                     .map(x => x.tag.name);
                 return tagNames.join(', ') ?? '';
@@ -754,6 +1148,7 @@ $(function () {
             name: 'accountCodingDisplay',
             data: 'accountCodingDisplay',
             className: 'data-table-header',
+            refreshData: true,
             index: columnIndex,
             render: function (data) {
                 if (data + "" !== "undefined" && data?.length > 0) {
@@ -782,11 +1177,28 @@ $(function () {
         };
     }
 
+    function getCategoryColumn(columnIndex) {
+        return {
+            title: l('ApplicationPaymentListTable:Category'),
+            name: 'category',
+            data: 'category',
+            refreshData: true,
+            className: 'data-table-header',
+            index: columnIndex,
+            render: function (data) {
+                return data ?? nullPlaceholder;
+            }
+        };
+    }
+
     function getExpenseApprovalsDetails(expenseApprovals, type) {
-        return expenseApprovals.find(x => x.type == type);
+        return (expenseApprovals ?? []).find(x => x.type == type);
     }
 
     $('#search').on('input', function () {
+        if (isRestoringState) {
+            return;
+        }
         let table = $('#PaymentRequestListTable').DataTable();
         table.search($(this).val()).draw();
     });
@@ -799,9 +1211,10 @@ $(function () {
         );
         dataTable.ajax.reload(null, false);
         $(".select-all-payments").prop("checked", false);
-        payment_approve_buttons.disable();
-        payment_check_status_buttons.disable();
-        history_button.disable();
+        setActionButtonState(payment_approve_buttons, false);
+        setActionButtonState(payment_check_status_buttons, false);
+        setActionButtonState(history_button, false);
+        setActionButtonState(cancel_button, false);
         selectedPaymentIds = [];
         PubSub.publish("deselect_batchpayment_application", "reset_data");
     });
@@ -836,6 +1249,9 @@ $(function () {
             case "Failed":
                 return "#CE3E39";
 
+            case "Cancelled":
+                return "#6c757d";
+
             default:
                 return "#053662";
         }
@@ -855,9 +1271,10 @@ $(function () {
         (msg, data) => {
             dataTable.ajax.reload(null, false);
             $(".select-all-payments").prop("checked", false);
-            payment_approve_buttons.disable();
-            payment_check_status_buttons.disable();
-            history_button.disable();
+            setActionButtonState(payment_approve_buttons, false);
+            setActionButtonState(payment_check_status_buttons, false);
+            setActionButtonState(history_button, false);
+            setActionButtonState(cancel_button, false);
             selectedPaymentIds = [];
             PubSub.publish("deselect_batchpayment_application", "reset_data");
             PubSub.publish('clear_selected_payment');
@@ -866,16 +1283,149 @@ $(function () {
 
 });
 
+function formatDate(date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
+
+// Returns a formatted { fromDate, toDate } for the filter fields.
+// Null if 'custom' or no input provided (assumes custom is default break)
+function getDateRange(rangeType) {
+    let today = new Date();
+    const toDate = formatDate(new Date());
+    let fromDate;
+
+    switch (rangeType) {
+        case 'today':
+            fromDate = toDate;
+            break;
+        case 'last7days':
+            fromDate = formatDate(new Date(today.setDate(today.getDate() - 7)));
+            break;
+        case 'last30days':
+            fromDate = formatDate(new Date(today.setDate(today.getDate() - 30)));
+            break;
+        case 'last3months':
+            fromDate = formatDate(new Date(today.setMonth(today.getMonth() - 3)));
+            break;
+        case 'last6months':
+            fromDate = formatDate(new Date(today.setMonth(today.getMonth() - 6)));
+            break;
+        case 'currentfiscalyear': {
+            const currentMonth = today.getMonth();
+            const currentYear = today.getFullYear();
+            const fiscalStartYear = currentMonth >= 3 ? currentYear : currentYear - 1;
+            return {
+                fromDate: formatDate(new Date(fiscalStartYear, 3, 1)),
+                toDate: formatDate(new Date(fiscalStartYear + 1, 2, 31))
+            };
+        }
+        case 'alltime':
+            return { fromDate: null, toDate: null };
+        case 'custom':
+        default:
+            return null; // Don't modify dates for custom
+    }
+
+    return { fromDate, toDate };
+}
+
+function validateDate(dateValue, element) {
+    if (dateValue) {
+        const selectedDate = new Date(dateValue);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        const minDate = element.attr('min') ? new Date(element.attr('min')) : null;
+        const maxDate = element.attr('max') ? new Date(element.attr('max')) : null;
+
+        if (selectedDate > today) {
+            element.addClass('input-validation-error');
+            abp.notify.error('The date cannot be in the future', 'Invalid Date');
+            return false;
+        }
+
+        if (minDate && selectedDate < minDate) {
+            element.addClass('input-validation-error');
+            abp.notify.error('The date cannot be before the minimum allowed date', 'Invalid Date');
+            return false;
+        }
+
+        if (maxDate && selectedDate > maxDate) {
+            element.addClass('input-validation-error');
+            abp.notify.error('The date cannot be after the maximum allowed date', 'Invalid Date');
+            return false;
+        }
+
+        element.removeClass('input-validation-error');
+        return true;
+    }
+    return true;
+}
+
+function setActionButtonState(buttonApi, enabled) {
+    if (!buttonApi) return;
+    if (enabled) {
+        buttonApi.enable();
+    } else {
+        buttonApi.disable();
+    }
+    buttonApi.nodes().toggleClass('action-bar-btn-unavailable', !enabled);
+}
+
+function getCancelledColumn(columnIndex) {
+    return {
+        title: 'Cancelled',
+        name: 'cancelled',
+        data: null,
+        className: 'data-table-header',
+        index: columnIndex,
+        render: function (data, type, row) {
+            return row.status === 'Cancelled' ? 'Cancelled' : '';
+        }
+    };
+}
+
+function getCancelledByColumn(columnIndex) {
+    return {
+        title: 'Cancelled By',
+        name: 'cancelledBy',
+        data: 'cancelledBy',
+        className: 'data-table-header',
+        index: columnIndex,
+        render: function (data) {
+            return data ?? '';
+        }
+    };
+}
+
+function getCancelledOnColumn(columnIndex) {
+    return {
+        title: 'Cancelled On',
+        name: 'cancelledOn',
+        data: 'cancelledOn',
+        className: 'data-table-header',
+        index: columnIndex,
+        render: function (data, type) {
+            return DateUtils.formatUtcDateToLocal(data, type);
+        }
+    };
+}
+
 let casPaymentResponseModal = new abp.ModalManager({
     viewUrl: '../PaymentRequests/CasPaymentRequestResponse'
 });
 
 function checkEnableHistoryButton(dataTable, history_button) {
-    if (dataTable.rows({ selected: true }).indexes().length == 1) {
+    const enabled = dataTable.rows({ selected: true }).indexes().length == 1;
+    if (enabled) {
         history_button.enable();
     } else {
         history_button.disable();
     }
+    history_button.nodes().toggleClass('action-bar-btn-unavailable', !enabled);
 }
 
 function openCasResponseModal(casResponse) {

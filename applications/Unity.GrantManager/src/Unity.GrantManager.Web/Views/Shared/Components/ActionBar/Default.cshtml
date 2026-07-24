@@ -79,6 +79,15 @@
             text="@L["ApplicationList:ApproveButton"].Value" />
         }
 
+        @if (await PermissionChecker.IsGrantedAsync(UnitySelector.Application.Status.BulkPublish))
+        {
+        <abp-button id="openBulkPublishModal"
+            text="Publish Status"
+            data-selector="applications-table-actions"
+            class="custom-table-btn flex-none btn btn-secondary action-bar-btn-unavailable"
+            button-type="Secondary" />
+        }
+
         @if(await PermissionChecker.IsGrantedAsync(UnitySelector.Application.Tags.Create) || await PermissionChecker.IsGrantedAsync(UnitySelector.Application.Tags.Delete))
         {
         <abp-button id="tagApplication"

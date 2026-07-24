@@ -8,6 +8,9 @@ public static class AIGenerationRequestKeyHelper
     public const string ApplicationAnalysisOperationType = "application-analysis";
     public const string ApplicationScoringOperationType = "application-scoring";
     public const string PipelineOperationType = "pipeline";
+    public const string FormMappingOperationType = "form-mapping";
+    public const string FormWorksheetOperationType = "form-worksheet";
+    public const string FormScoresheetOperationType = "form-scoresheet";
 
     public static string BuildRequestKey(Guid? tenantId, Guid applicationId, string operationType)
     {
@@ -18,5 +21,24 @@ public static class AIGenerationRequestKeyHelper
             normalizedTenantId,
             applicationId.ToString("D"),
             operationType.Trim().ToLowerInvariant());
+    }
+
+    /// <summary>
+    /// Maps an operation type key (e.g. "application-analysis") to the canonical operation name
+    /// stored in the AIOperations table (e.g. "ApplicationAnalysis").
+    /// </summary>
+    public static string? ResolveOperationName(string operationType)
+    {
+        return operationType switch
+        {
+            ApplicationAnalysisOperationType => "ApplicationAnalysis",
+            AttachmentSummaryOperationType => "AttachmentSummary",
+            ApplicationScoringOperationType => "ApplicationScoring",
+            FormMappingOperationType => "FormMapping",
+            FormWorksheetOperationType => "FormWorksheet",
+            FormScoresheetOperationType => "FormScoresheet",
+            PipelineOperationType => "Default",
+            _ => null
+        };
     }
 }

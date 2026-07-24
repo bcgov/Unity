@@ -1,7 +1,13 @@
 # Cypress TypeScript project gitignore
 
-# Comment cypress.env.json to update build pipeline settings 
+# Comment cypress.env.json to update build pipeline settings
 cypress.env.json
+
+# Local environment config files — create from the .example files in cypress/config/
+cypress/config/dev.json
+cypress/config/test.json
+cypress/config/uat.json
+cypress/config/prod.json
 
 # Dependency directories
 node_modules/

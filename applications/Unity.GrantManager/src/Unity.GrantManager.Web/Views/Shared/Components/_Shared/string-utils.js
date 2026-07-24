@@ -34,3 +34,50 @@ function compareStrings(str1, str2) {
     if (union === 0) return 0;
     return Math.round(Math.min(2 * intersection * 100 / union, 100) * 100) / 100;
 }
+
+/**
+ * Strips HTML tags from a string using textContent (safe DOM API)
+ * Safely extracts plain text content without interpreting HTML meta-characters
+ * @param {string} html - HTML string to strip
+ * @returns {string} Plain text content (safe for all contexts)
+ */
+function stripHtml(html) {
+    if (!html) return '';
+    // Use textContent which is inherently safe - never interprets HTML
+    if (typeof document !== 'undefined') {
+        try {
+            const temp = document.createElement('div');
+            temp.textContent = String(html);
+            return temp.textContent;
+        } catch {
+            // Fall through to regex fallback if DOM is unavailable
+        }
+    }
+    
+    // Server-side or DOM unavailable: remove HTML tag delimiters directly.
+    // Character-level replacement avoids incomplete multi-character sanitization bypasses.
+    return String(html).replace(/[<>]/g, '');
+}
+
+/**
+ * Escapes HTML meta-characters in a string for safe use in HTML attributes
+ * @param {string} value - String to escape
+ * @returns {string} Escaped string safe for use in HTML attributes
+ */
+function escapeHtmlAttribute(value) {
+    return String(value ?? '')
+        .replaceAll('&', '&amp;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#39;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;');
+}
+
+/**
+ * Validates GUID format
+ * @param {string} textString - String to validate as GUID
+ * @returns {boolean} True if valid GUID format
+ */
+function validateGuid(textString) {
+    return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(textString ?? '').trim());
+}

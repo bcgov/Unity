@@ -1,4 +1,30 @@
 (function (global) {
+    function getRequest(generationStatus) {
+        if (generationStatus?.generationRequest) {
+            return generationStatus.generationRequest;
+        }
+
+        if (generationStatus?.status || generationStatus?.isActive === true) {
+            return generationStatus;
+        }
+
+        return null;
+    }
+
+    function resolveStatus(status) {
+        return String(status ?? '').trim();
+    }
+
+    function extractRetryAfterSeconds(error) {
+        const message = error?.responseJSON?.error?.message
+            || error?.responseJSON?.message
+            || error?.responseText
+            || '';
+
+        const match = String(message).match(/try again in\s+(\d+)\s+second/i);
+        return match ? Number(match[1]) : 0;
+    }
+
     function restoreButton($button, html) {
         global.AIGenerationButtonState.restore($button);
         $button.html(html).prop('disabled', false);
@@ -14,7 +40,7 @@
     }
 
     function applyRateLimitState(generationStatus, options = {}) {
-        const request = generationStatus?.generationRequest;
+        const request = getRequest(generationStatus);
         global.applyAIRateLimitState?.(
             {
                 isGenerating: generationStatus?.isGenerating === true || request?.isActive === true,
@@ -25,20 +51,6 @@
     }
 
     global.AIGenerationButtonState = {
-        resolveStatus(status) {
-            switch (Number(status)) {
-                case 0:
-                    return 'Queued';
-                case 1:
-                    return 'Running';
-                case 2:
-                    return 'Completed';
-                case 3:
-                    return 'Failed';
-                default:
-                    return '';
-            }
-        },
         setGenerating($button) {
             global.setAIGenerationButtonsGenerating?.({ poll: false });
         },
@@ -50,6 +62,18 @@
         },
         applyStatusState(generationStatus) {
             applyRateLimitState(generationStatus, { pollWhenGenerating: true });
+        },
+        handleQueueFailure(error) {
+            const retryAfterSeconds = extractRetryAfterSeconds(error);
+            if (retryAfterSeconds <= 0) {
+                return false;
+            }
+
+            global.setAIGenerationButtonsCooldown?.(retryAfterSeconds);
+            return true;
+        },
+        resolveStatus(status) {
+            return resolveStatus(status);
         },
         monitor(options) {
             const intervalMs = options.intervalMs || 5000;
@@ -80,17 +104,17 @@
                 options.getStatus()
                     .done((generationStatus) => {
                         failures = 0;
-                        const request = generationStatus?.generationRequest;
-                        const status = this.resolveStatus(request?.status);
+                        const request = getRequest(generationStatus);
+                        const status = resolveStatus(request?.status);
 
                         if (status === 'Failed') {
                             stop();
                             restoreButton(options.$button, options.originalHtml);
                             applyRateLimitState(generationStatus, { pollWhenGenerating: true });
+                            options.onPollFailed?.(new Error(generationStatus?.failureReason || 'AI generation failed.'));
                             options.onFailed?.(request);
                             return;
                         }
-
                         if (!request) {
                             stop();
                             restoreButton(options.$button, options.originalHtml);
@@ -99,15 +123,15 @@
                             return;
                         }
 
-                        if (request.isActive === false || status === 'Completed') {
+                        if (request.isActive !== true) {
                             stop();
                             restoreButtonForCooldownCheck(options.$button, options.originalHtml);
-                            applyRateLimitState(generationStatus, { pollWhenGenerating: true });
+                            global.refreshAIRateLimitState?.();
                             options.onComplete?.(request);
                             return;
                         }
 
-                        applyRateLimitState(generationStatus);
+                        global.setAIGenerationButtonsGenerating?.({ poll: false });
                         scheduleNextPoll();
                     })
                     .fail((error) => {
@@ -128,4 +152,5 @@
             return { stop };
         },
     };
+
 })(globalThis);
