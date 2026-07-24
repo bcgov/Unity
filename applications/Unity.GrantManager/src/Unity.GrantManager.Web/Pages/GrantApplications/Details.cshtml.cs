@@ -74,7 +74,7 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
 
         [BindProperty(SupportsGet = true)]
         public string? CurrentUserName { get; set; }
-        public string Extensions { get; set; }
+        public string AllowedFileTypes { get; set; }
         public string MaxFileSize { get; set; }
         public string EmailAttachmentMaxFileSize { get; set; }
         public string TotalEmailAttachmentMaxFileSize { get; set; }
@@ -107,7 +107,7 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
 
             CurrentUserId = currentUser.Id;
             CurrentUserName = currentUser.SurName + ", " + currentUser.Name;
-            Extensions = configuration["S3:DisallowedFileTypes"] ?? "";
+            AllowedFileTypes = configuration["S3:AllowedFileTypes"] ?? "";
             MaxFileSize = configuration["S3:MaxFileSize"] ?? "";
             EmailAttachmentMaxFileSize = configuration["S3:EmailAttachmentMaxFileSize"] ?? "20";
             TotalEmailAttachmentMaxFileSize = configuration["S3:EmailAttachmentsTotalMaxFileSize"] ?? "25";

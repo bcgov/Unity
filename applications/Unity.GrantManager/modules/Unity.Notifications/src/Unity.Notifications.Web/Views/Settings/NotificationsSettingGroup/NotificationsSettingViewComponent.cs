@@ -31,7 +31,7 @@ public class NotificationsSettingViewComponent(ISettingProvider settingProvider,
             EnableEmailDelay = string.Equals(
                 await settingProvider.GetOrNullAsync(Notifications.Settings.NotificationsSettings.Mailing.EnableEmailDelay),
                 "true", System.StringComparison.OrdinalIgnoreCase),
-                Extensions = configuration["S3:DisallowedFileTypes"] ?? "",
+                AllowedFileTypes = configuration["S3:AllowedFileTypes"] ?? "",
                 MaxFileSize = configuration["S3:MaxFileSize"] ?? "",
                 EmailAttachmentMaxFileSize = configuration["S3:EmailAttachmentMaxFileSize"] ?? "",
                 TotalEmailAttachmentMaxFileSize = configuration["S3:EmailAttachmentsTotalMaxFileSize"] ?? "25"

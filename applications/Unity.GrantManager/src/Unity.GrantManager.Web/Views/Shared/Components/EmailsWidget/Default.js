@@ -2379,7 +2379,7 @@
         const input = document.getElementById(inputId);
         if (!input?.files?.length) return;
 
-        const disallowedTypes = JSON.parse(decodeURIComponent($('#Extensions').val()));
+        const allowedTypes = JSON.parse(decodeURIComponent($('#AllowedFileTypes').val()));
         const maxFileSize = decodeURIComponent($('#EmailAttachmentMaxFileSize').val());
 
         let isAllowedTypeError = false;
@@ -2388,7 +2388,7 @@
 
         for (let file of input.files) {
             const ext = file.name.slice(file.name.lastIndexOf('.') + 1).toLowerCase();
-            if (disallowedTypes.includes(ext)) {
+            if (!allowedTypes.includes(ext)) {
                 isAllowedTypeError = true;
             }
             if (file.size * 0.000001 > maxFileSize) {
