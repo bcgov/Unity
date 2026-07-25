@@ -114,9 +114,15 @@ public class GenerateFormWorksheetJob(
                     var worksheet = BuildWorksheet(suggestions, worksheetName);
                     worksheet.SetPublished(false);
                     await worksheetRepository.InsertAsync(worksheet);
+
+                    await AIGenerationRequestJobHelper.StampCooldownBestEffortAsync(
+                        aiCooldownService,
+                        logger,
+                        args.RequestedByUserId,
+                        args.ApplicationId,
+                        AIGenerationRequestKeyHelper.FormWorksheetOperationType);
                 }
 
-                await AIGenerationRequestJobHelper.StampCooldownBestEffortAsync(aiCooldownService, logger, args.RequestedByUserId, args.ApplicationId, AIGenerationRequestKeyHelper.FormWorksheetOperationType);
                 await AIGenerationRequestJobHelper.MarkCompletedInNewUowAsync(
                     unitOfWorkManager,
                     generationRequestRepository,
