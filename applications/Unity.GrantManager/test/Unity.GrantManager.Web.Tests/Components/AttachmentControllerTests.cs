@@ -489,18 +489,17 @@ namespace Unity.GrantManager.Components
         }
 
         [Fact]
-        public async Task UploadApplicationAttachments_ConfigAddsDangerousExtension_StillRejectedAsInvalidFileType()
+        public async Task UploadApplicationAttachments_ConfigAddsExtensionOutsideDefaultSet_IsAccepted()
         {
-            // Arrange - S3:AllowedFileTypes is misconfigured (accidentally or otherwise) to
-            // include "jsp" and "exe" alongside a legitimate "pdf". Neither dangerous extension
-            // is in the validated safe superset (DefaultAllowedFileTypes), so both must be
-            // filtered out rather than trusted outright - otherwise they'd pass the extension
-            // check and then skip content validation entirely (they're not in
-            // StrictlyValidatedExtensions either), reintroducing CWE-434 via config alone.
+            // Arrange - S3:AllowedFileTypes deliberately includes "jsp", which is outside
+            // DefaultAllowedFileTypes. Config is an operational trust boundary (set by whoever
+            // controls the deployment environment, not a remote caller), so once present it is
+            // the effective allowlist outright - DefaultAllowedFileTypes is only a fallback for
+            // when config is missing/malformed, not a ceiling on what config can specify.
             var configuration = new ConfigurationBuilder()
                 .AddInMemoryCollection(new Dictionary<string, string?>
                 {
-                    ["S3:AllowedFileTypes"] = "[\"pdf\",\"jsp\",\"exe\"]"
+                    ["S3:AllowedFileTypes"] = "[\"pdf\",\"jsp\"]"
                 })
                 .Build();
             var fileAppService = Substitute.For<IFileAppService>();
@@ -525,13 +524,12 @@ namespace Unity.GrantManager.Components
             var files = new List<IFormFile> { jspFile };
 
             // Act
-            async Task<IActionResult> Action() => await attachmentController.UploadApplicationAttachments(applicationId, files, userId, userName);
+            var result = await attachmentController.UploadApplicationAttachments(applicationId, files, userId, userName);
 
             // Assert
-            var result = await Assert.ThrowsAsync<AbpValidationException>(Action);
-            var badRequestResult = result.ValidationErrors[0].ErrorMessage;
-            Assert.Contains("Invalid file type", badRequestResult);
-            await fileAppService.DidNotReceive().SaveBlobAsync(Arg.Any<SaveBlobInputDto>());
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            Assert.Equal("All Files Are Successfully Uploaded!", okResult.Value);
+            await fileAppService.Received(1).SaveBlobAsync(Arg.Is<SaveBlobInputDto>(dto => dto.Name == "shell.jsp"));
         }
 
         [Fact]

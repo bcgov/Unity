@@ -64,7 +64,13 @@ namespace Unity.GrantManager.Controllers
         private readonly ICurrentTenant _currentTenant;
         private readonly ILibreOfficeConversionService _libreOfficeConversionService;
         private readonly IAttachmentPreviewAppService _attachmentPreviewAppService;
-        private ILogger Logger => LazyServiceProvider.LazyGetService<ILogger>(provider => LoggerFactory?.CreateLogger(GetType().FullName!) ?? NullLogger.Instance);
+        // LazyServiceProvider is populated via property injection when ASP.NET Core activates this
+        // controller through DI/routing. Unit tests that construct AttachmentController directly
+        // (new AttachmentController(...)) bypass that activation, leaving it null - guard against
+        // that so Logger.LogWarning/LogError calls don't crash tests with no interest in logging.
+        protected new ILogger Logger => LazyServiceProvider == null
+            ? NullLogger.Instance
+            : LazyServiceProvider.LazyGetService<ILogger>(provider => LoggerFactory?.CreateLogger(GetType().FullName!) ?? NullLogger.Instance);
         private const string badRequestFileMsg = "File name must be provided.";
         private const string NotFoundFileMsg = "File not found.";
         private const string errorFileMsg = "An error occurred while downloading the file.";
@@ -666,11 +672,14 @@ namespace Unity.GrantManager.Controllers
             }
         }
 
-        // S3:AllowedFileTypes can only ever narrow this controller's effective allowlist, never
-        // broaden it. DefaultAllowedFileTypes is exactly the reviewed, known-safe (non-executable)
-        // set of extensions this controller accepts. Without this ceiling, an operator accidentally
-        // (or maliciously) adding e.g. "exe" to config would let it pass the extension check
-        // outright - reintroducing CWE-434 via config alone, with no code change required.
+        // DefaultAllowedFileTypes is only a fallback for when S3:AllowedFileTypes is missing or
+        // fails to parse - deliberately NOT a ceiling. When config is present, it is the effective
+        // allowlist outright, including any extension not in the default set (e.g. "exe"/"jsp").
+        // This is an intentional operational trust decision: config is set by whoever controls the
+        // deployment environment (devops), not by a remote/anonymous caller, so an operator adding
+        // a type here is a deliberate choice they own, not something this controller should second-
+        // guess. A config typo introducing a dangerous extension is a real risk under this design -
+        // accepted in exchange for devops being able to extend the allowlist without a code change.
         private string[] GetAllowedFileTypes()
         {
             var configuredFileTypes = GetConfiguredFileTypesOrNull();
@@ -679,21 +688,7 @@ namespace Unity.GrantManager.Controllers
                 return DefaultAllowedFileTypes;
             }
 
-            var normalizedConfiguredTypes = configuredFileTypes.Select(t => t.ToLowerInvariant()).ToArray();
-            var effectiveFileTypes = normalizedConfiguredTypes
-                .Where(t => DefaultAllowedFileTypes.Contains(t))
-                .Distinct()
-                .ToArray();
-
-            var rejectedFileTypes = normalizedConfiguredTypes.Except(effectiveFileTypes).ToList();
-            if (rejectedFileTypes.Count > 0)
-            {
-                Logger.LogWarning(
-                    "AttachmentController: S3:AllowedFileTypes configured extension(s) [{RejectedFileTypes}] are outside the validated safe set and were ignored.",
-                    string.Join(", ", rejectedFileTypes));
-            }
-
-            return effectiveFileTypes.Length > 0 ? effectiveFileTypes : DefaultAllowedFileTypes;
+            return configuredFileTypes.Select(t => t.ToLowerInvariant()).Distinct().ToArray();
         }
 
         // Per-file checks that require no stream I/O (extension allowlist, browser-supplied
