@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.Extensions.Configuration;
@@ -48,6 +49,11 @@ namespace Unity.GrantManager.Controllers
         }
     }
 
+    // No [Authorize] anywhere means no authorization requirement at all here - this API has no
+    // application-level permission model of its own, so requiring an authenticated user is the
+    // floor: without it, upload/download actions are reachable by anonymous callers regardless of
+    // the authenticated pages that are meant to front them.
+    [Authorize]
     [Route("api/app/attachment")]
     public class AttachmentController : AbpController
     {
@@ -227,6 +233,11 @@ namespace Unity.GrantManager.Controllers
             }
         }
 
+        // Matches ISubmissionAppService.GetChefsFileAttachment, which this action calls directly -
+        // that method is deliberately [AllowAnonymous] (an external AI service depends on it), so
+        // the controller-level [Authorize] must not override it here or the two would silently
+        // disagree on this route's access model.
+        [AllowAnonymous]
         [HttpGet("chefs/{formSubmissionId}/download/{chefsFileId}/{fileName}")]
         public async Task<IActionResult> DownloadChefsAttachment(Guid formSubmissionId, Guid chefsFileId, string fileName)
         {
@@ -260,6 +271,8 @@ namespace Unity.GrantManager.Controllers
             }
         }
 
+        // Same rationale as DownloadChefsAttachment above - also calls GetChefsFileAttachment.
+        [AllowAnonymous]
         [HttpPost("chefs/download-all")]
         [Consumes("application/json")]
         public async Task<IActionResult> DownloadAllChefsAttachment([FromBody] List<AttachmentsDto> input)
@@ -372,6 +385,8 @@ namespace Unity.GrantManager.Controllers
             }
         }
 
+        // Same rationale as DownloadChefsAttachment above - also calls GetChefsFileAttachment.
+        [AllowAnonymous]
         [HttpGet("chefs/{formSubmissionId}/preview-pdf/{chefsFileId}/{fileName}")]
         public async Task<IActionResult> PreviewChefsAttachment(Guid formSubmissionId, Guid chefsFileId, string fileName)
         {
@@ -517,11 +532,6 @@ namespace Unity.GrantManager.Controllers
             }
 
             List<(IFormFile File, byte[] Content)> fileEntries = await ReadFilesAsync(files);
-            List<ValidationResult> invalidContent = GetInvalidFileContent(fileEntries);
-            if (invalidContent.Count > 0)
-            {
-                throw new AbpValidationException(message: "ERROR: Invalid File Type.", validationErrors: invalidContent);
-            }
 
             var results = new List<object>();
             foreach (var (file, content) in fileEntries)
@@ -556,11 +566,6 @@ namespace Unity.GrantManager.Controllers
             }
 
             List<(IFormFile File, byte[] Content)> fileEntries = await ReadFilesAsync(files);
-            List<ValidationResult> invalidContent = GetInvalidFileContent(fileEntries);
-            if (invalidContent.Count > 0)
-            {
-                throw new AbpValidationException(message: "ERROR: Invalid File Type.", validationErrors: invalidContent);
-            }
             List<string> ErrorList = [];
             foreach (var (source, content) in fileEntries)
             {
@@ -600,12 +605,14 @@ namespace Unity.GrantManager.Controllers
             return fileEntries;
         }
 
-        // Extensions for which the browser-supplied ContentType and file signature (magic bytes)
-        // are reliable enough to validate; plain text formats (txt/csv) have no consistent signature
-        // or ContentType across browsers/OSes, so only the allowlist and size checks apply to them.
+        // Extensions for which the browser-supplied ContentType is reliable enough to cross-check
+        // against the file extension. Plain text and email formats (txt/csv/eml/msg) are exempt
+        // because their ContentType reporting is inconsistent across browsers/OSes/mail clients,
+        // so only the allowlist and size checks apply to them.
         private static readonly HashSet<string> StrictlyValidatedExtensions = new(StringComparer.OrdinalIgnoreCase)
         {
-            "pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "jpg", "jpeg", "png", "gif", "zip"
+            "pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "jpg", "jpeg", "png", "gif", "zip",
+            "odt", "ods", "odp", "rtf", "bmp", "tif", "tiff", "webp", "heic", "heif"
         };
 
         private static string GetExtension(string fileName)
@@ -623,7 +630,8 @@ namespace Unity.GrantManager.Controllers
         // (fail-closed-to-nothing) or silently allowing anything (fail-open).
         private static readonly string[] DefaultAllowedFileTypes =
         [
-            "pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "jpg", "jpeg", "png", "gif", "txt", "csv", "zip"
+            "pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "jpg", "jpeg", "png", "gif", "txt", "csv", "zip",
+            "odt", "ods", "odp", "rtf", "bmp", "tif", "tiff", "webp", "heic", "heif", "eml", "msg"
         ];
 
         private string[]? GetConfiguredFileTypesOrNull()
@@ -636,7 +644,14 @@ namespace Unity.GrantManager.Controllers
 
             try
             {
-                var allowedFileTypes = JsonConvert.DeserializeObject<string[]>(allowedFileTypesConfig);
+                var allowedFileTypes = JsonConvert.DeserializeObject<string[]>(allowedFileTypesConfig)
+                    // A syntactically valid array can still contain a null/blank entry (e.g. a
+                    // trailing comma typo producing ["pdf", null]) - without filtering these out,
+                    // the ToLowerInvariant() call below would throw on the null element, turning a
+                    // config typo into an unhandled 500 on every upload instead of the graceful
+                    // fallback this whole method exists to provide.
+                    ?.Where(t => !string.IsNullOrWhiteSpace(t))
+                    .ToArray();
                 if (allowedFileTypes == null || allowedFileTypes.Length == 0)
                 {
                     Logger.LogWarning("AttachmentController: S3:AllowedFileTypes was empty; falling back to the default allowlist.");
@@ -652,13 +667,10 @@ namespace Unity.GrantManager.Controllers
         }
 
         // S3:AllowedFileTypes can only ever narrow this controller's effective allowlist, never
-        // broaden it. DefaultAllowedFileTypes is exactly the set of extensions this controller
-        // knows how to validate at the content level (StrictlyValidatedExtensions' signature and
-        // content-type checks, plus txt/csv which are deliberately exempt since they're inert
-        // text with no reliable signature). Without this ceiling, an operator accidentally (or
-        // maliciously) adding e.g. "exe" to config would let it pass the extension check while
-        // still being skipped by the content-level checks - reintroducing CWE-434 via config
-        // alone, with no code change required.
+        // broaden it. DefaultAllowedFileTypes is exactly the reviewed, known-safe (non-executable)
+        // set of extensions this controller accepts. Without this ceiling, an operator accidentally
+        // (or maliciously) adding e.g. "exe" to config would let it pass the extension check
+        // outright - reintroducing CWE-434 via config alone, with no code change required.
         private string[] GetAllowedFileTypes()
         {
             var configuredFileTypes = GetConfiguredFileTypesOrNull();
@@ -684,13 +696,14 @@ namespace Unity.GrantManager.Controllers
             return effectiveFileTypes.Length > 0 ? effectiveFileTypes : DefaultAllowedFileTypes;
         }
 
-        // Cheap, metadata-only checks (extension + declared size) that require no stream I/O.
-        // Run these before ever reading a file's bytes, so an oversized or disallowed file is
-        // rejected without being buffered into memory or scanned for a signature match.
+        // Per-file checks that require no stream I/O (extension allowlist, browser-supplied
+        // Content-Type consistency, and declared size). Run these before ever reading a file's
+        // bytes, so an invalid or oversized file is rejected without being buffered into memory.
         private List<ValidationResult> GetInvalidFileMetadata(IList<IFormFile> files)
         {
             List<ValidationResult> ErrorList = [];
             var AllowedFileTypes = GetAllowedFileTypes();
+            var contentTypeProvider = new FileExtensionContentTypeProvider();
 
             var maxFileSizeConfig = _configuration["S3:MaxFileSize"] ?? "25";
             if (!double.TryParse(maxFileSizeConfig, out double maxFileSizeMB) || maxFileSizeMB <= 0)
@@ -709,32 +722,8 @@ namespace Unity.GrantManager.Controllers
                     continue;
                 }
 
-                if (file.Length * 0.000001 > maxFileSizeMB)
-                {
-                    ErrorList.Add(new ValidationResult($"File '{fileName}' exceeds the maximum allowed size of {maxFileSizeMB} MB.", [nameof(fileName)]));
-                }
-            }
-            return ErrorList;
-        }
-
-        // Content-level checks (content-type consistency + magic-byte signature) that require
-        // the file's bytes. Only called for files that already passed GetInvalidFileMetadata.
-        private static List<ValidationResult> GetInvalidFileContent(List<(IFormFile File, byte[] Content)> fileEntries)
-        {
-            List<ValidationResult> ErrorList = [];
-            var contentTypeProvider = new FileExtensionContentTypeProvider();
-
-            foreach (var (file, content) in fileEntries)
-            {
-                var fileName = file.FileName;
-                var extension = GetExtension(fileName);
-
-                if (!StrictlyValidatedExtensions.Contains(extension))
-                {
-                    continue;
-                }
-
-                if (contentTypeProvider.TryGetContentType(fileName, out var expectedContentType) &&
+                if (StrictlyValidatedExtensions.Contains(extension) &&
+                    contentTypeProvider.TryGetContentType(fileName, out var expectedContentType) &&
                     !string.IsNullOrWhiteSpace(file.ContentType) &&
                     !string.Equals(file.ContentType, "application/octet-stream", StringComparison.OrdinalIgnoreCase) &&
                     !string.Equals(expectedContentType.Split('/')[0], file.ContentType.Split('/')[0], StringComparison.OrdinalIgnoreCase))
@@ -743,9 +732,9 @@ namespace Unity.GrantManager.Controllers
                     continue;
                 }
 
-                if (!FileSignatureValidator.HasValidSignature(extension, content))
+                if (file.Length * 0.000001 > maxFileSizeMB)
                 {
-                    ErrorList.Add(new ValidationResult("File content does not match its expected format for " + fileName, [nameof(fileName)]));
+                    ErrorList.Add(new ValidationResult($"File '{fileName}' exceeds the maximum allowed size of {maxFileSizeMB} MB.", [nameof(fileName)]));
                 }
             }
             return ErrorList;

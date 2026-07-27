@@ -122,6 +122,12 @@ public class EmailLogAttachmentAppService(
         return await emailAttachmentService.GetTotalFileSizeAsync(emailLogId, templateId);
     }
 
+    // Not exposed over HTTP: this method takes raw fileName/content/contentType with none of the
+    // allowlist/size/content-type validation AttachmentController enforces before calling it. It
+    // must only ever be reached in-process, via IEmailLogAttachmentUploadService, from a caller
+    // (AttachmentController) that has already run those checks - never directly by an HTTP client,
+    // which would bypass validation entirely despite still needing the Email.Send permission.
+    [RemoteService(false)]
     public async Task<EmailLogAttachmentDto> UploadAsync(Guid? emailLogId, Guid? templateId, Guid? tenantId, string fileName, byte[] content, string contentType)
     {
         var attachment = await emailAttachmentService.UploadUserAttachmentAsync(emailLogId, templateId, tenantId, fileName, content, contentType);

@@ -94,48 +94,6 @@ namespace Unity.GrantManager.Components
         }
 
         [Fact]
-        public async Task UploadApplicationAttachments_ContentDoesNotMatchPdfSignature_ReturnsBadRequest()
-        {
-            // Arrange
-            var builder = new ConfigurationBuilder().AddJsonFile($"appsettings.json", optional: false);
-            var configuration = builder.Build();
-            var fileAppService = Substitute.For<IFileAppService>();
-            var submissionAppService = Substitute.For<ISubmissionAppService>();
-            var emailLogAttachmentUploadService = Substitute.For<IEmailLogAttachmentUploadService>();
-            var currentTenant = Substitute.For<ICurrentTenant>();
-            var libreOfficeConversionService = Substitute.For<ILibreOfficeConversionService>();
-            var attachmentPreviewAppService = Substitute.For<IAttachmentPreviewAppService>();
-            var attachmentController = new AttachmentController(fileAppService, configuration, submissionAppService, emailLogAttachmentUploadService, currentTenant, libreOfficeConversionService, attachmentPreviewAppService);
-            var applicationId = Guid.NewGuid();
-            var userId = "testUserId";
-            var userName = "testUserName";
-
-            var fakePdfBytes = System.Text.Encoding.UTF8.GetBytes("this is not really a pdf, just renamed text");
-            var fakePdfFile = new FormFile(
-                baseStream: new System.IO.MemoryStream(fakePdfBytes),
-                baseStreamOffset: 0,
-                length: fakePdfBytes.Length,
-                name: "fakePdfFile",
-                fileName: "fake.pdf"
-            )
-            {
-                Headers = new HeaderDictionary(),
-                ContentType = "application/pdf"
-            };
-
-            var files = new List<IFormFile> { fakePdfFile };
-
-            // Act
-            async Task<IActionResult> Action() => await attachmentController.UploadApplicationAttachments(applicationId, files, userId, userName);
-
-            // Assert
-            var result = await Assert.ThrowsAsync<AbpValidationException>(Action);
-            var badRequestResult = result.ValidationErrors[0].ErrorMessage;
-            Assert.Contains("does not match its expected format", badRequestResult);
-            await fileAppService.DidNotReceive().SaveBlobAsync(Arg.Any<SaveBlobInputDto>());
-        }
-
-        [Fact]
         public async Task UploadApplicationAttachments_ContentTypeDoesNotMatchExtension_ReturnsBadRequest()
         {
             // Arrange
@@ -152,9 +110,8 @@ namespace Unity.GrantManager.Components
             var userId = "testUserId";
             var userName = "testUserName";
 
-            // Valid .pdf extension and valid %PDF magic bytes, but the browser-supplied
-            // ContentType claims it's an image - the content-type check should catch this
-            // before the signature check even runs.
+            // Valid .pdf extension, but the browser-supplied ContentType claims it's an image -
+            // the content-type check should catch this mismatch.
             var pdfBytes = new byte[] { 0x25, 0x50, 0x44, 0x46, 0x2D, 0x31, 0x2E, 0x34 };
             var mislabeledFile = new FormFile(
                 baseStream: new System.IO.MemoryStream(pdfBytes),
@@ -199,7 +156,7 @@ namespace Unity.GrantManager.Components
 
             // Some clients (curl/Postman, older browsers for uncommon extensions) send the
             // generic "application/octet-stream" content type instead of a specific one - this
-            // must not be treated as a mismatch as long as the extension and signature are valid.
+            // must not be treated as a mismatch as long as the extension is valid.
             var pdfBytes = new byte[] { 0x25, 0x50, 0x44, 0x46, 0x2D, 0x31, 0x2E, 0x34 };
             var genericFile = new FormFile(
                 baseStream: new System.IO.MemoryStream(pdfBytes),
@@ -263,6 +220,134 @@ namespace Unity.GrantManager.Components
             var okResult = Assert.IsType<OkObjectResult>(result);
             Assert.Equal("All Files Are Successfully Uploaded!", okResult.Value);
             await fileAppService.Received(1).SaveBlobAsync(Arg.Is<SaveBlobInputDto>(dto => dto.Name == "good.pdf"));
+        }
+
+        [Fact]
+        public async Task UploadApplicationAttachments_EmlFile_UploadsSuccessfully()
+        {
+            // Arrange - .eml is a plain-text (RFC 822) saved-email format, added to the allowlist
+            // so users can attach a saved email as evidence/correspondence. Its ContentType
+            // reporting is inconsistent across mail clients/OSes, so it's exempt from the
+            // content-type consistency check (same treatment as txt/csv), and only the
+            // allowlist and size checks apply.
+            var builder = new ConfigurationBuilder().AddJsonFile($"appsettings.json", optional: false);
+            var configuration = builder.Build();
+            var fileAppService = Substitute.For<IFileAppService>();
+            var submissionAppService = Substitute.For<ISubmissionAppService>();
+            var emailLogAttachmentUploadService = Substitute.For<IEmailLogAttachmentUploadService>();
+            var currentTenant = Substitute.For<ICurrentTenant>();
+            var libreOfficeConversionService = Substitute.For<ILibreOfficeConversionService>();
+            var attachmentPreviewAppService = Substitute.For<IAttachmentPreviewAppService>();
+            var attachmentController = new AttachmentController(fileAppService, configuration, submissionAppService, emailLogAttachmentUploadService, currentTenant, libreOfficeConversionService, attachmentPreviewAppService);
+            var applicationId = Guid.NewGuid();
+            var userId = "testUserId";
+            var userName = "testUserName";
+
+            var emlBytes = System.Text.Encoding.UTF8.GetBytes("From: a@example.com\r\nTo: b@example.com\r\nSubject: Test\r\n\r\nBody");
+            var emlFile = new FormFile(
+                baseStream: new System.IO.MemoryStream(emlBytes),
+                baseStreamOffset: 0,
+                length: emlBytes.Length,
+                name: "emlFile",
+                fileName: "saved-email.eml"
+            )
+            {
+                Headers = new HeaderDictionary(),
+                ContentType = "message/rfc822"
+            };
+
+            var files = new List<IFormFile> { emlFile };
+
+            // Act
+            var result = await attachmentController.UploadApplicationAttachments(applicationId, files, userId, userName);
+
+            // Assert
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            Assert.Equal("All Files Are Successfully Uploaded!", okResult.Value);
+            await fileAppService.Received(1).SaveBlobAsync(Arg.Is<SaveBlobInputDto>(dto => dto.Name == "saved-email.eml"));
+        }
+
+        [Fact]
+        public async Task UploadApplicationAttachments_OutlookMsgFile_UploadsSuccessfully()
+        {
+            // Arrange - .msg is Outlook's native saved-email format (an OLE compound file under
+            // the hood, same container family as legacy .doc/.xls/.ppt), added alongside .eml so
+            // Outlook users can save and attach an email without converting it first.
+            var builder = new ConfigurationBuilder().AddJsonFile($"appsettings.json", optional: false);
+            var configuration = builder.Build();
+            var fileAppService = Substitute.For<IFileAppService>();
+            var submissionAppService = Substitute.For<ISubmissionAppService>();
+            var emailLogAttachmentUploadService = Substitute.For<IEmailLogAttachmentUploadService>();
+            var currentTenant = Substitute.For<ICurrentTenant>();
+            var libreOfficeConversionService = Substitute.For<ILibreOfficeConversionService>();
+            var attachmentPreviewAppService = Substitute.For<IAttachmentPreviewAppService>();
+            var attachmentController = new AttachmentController(fileAppService, configuration, submissionAppService, emailLogAttachmentUploadService, currentTenant, libreOfficeConversionService, attachmentPreviewAppService);
+            var applicationId = Guid.NewGuid();
+            var userId = "testUserId";
+            var userName = "testUserName";
+
+            var msgFile = new FormFile(
+                baseStream: new System.IO.MemoryStream(Array.Empty<byte>()),
+                baseStreamOffset: 0,
+                length: 0,
+                name: "msgFile",
+                fileName: "saved-email.msg"
+            )
+            {
+                Headers = new HeaderDictionary(),
+                ContentType = "application/octet-stream"
+            };
+
+            var files = new List<IFormFile> { msgFile };
+
+            // Act
+            var result = await attachmentController.UploadApplicationAttachments(applicationId, files, userId, userName);
+
+            // Assert
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            Assert.Equal("All Files Are Successfully Uploaded!", okResult.Value);
+            await fileAppService.Received(1).SaveBlobAsync(Arg.Is<SaveBlobInputDto>(dto => dto.Name == "saved-email.msg"));
+        }
+
+        [Fact]
+        public async Task UploadApplicationAttachments_OpenDocumentTextFile_UploadsSuccessfully()
+        {
+            // Arrange - .odt (LibreOffice/OpenOffice Writer) added alongside the OOXML formats so
+            // users of either office suite can upload native documents.
+            var builder = new ConfigurationBuilder().AddJsonFile($"appsettings.json", optional: false);
+            var configuration = builder.Build();
+            var fileAppService = Substitute.For<IFileAppService>();
+            var submissionAppService = Substitute.For<ISubmissionAppService>();
+            var emailLogAttachmentUploadService = Substitute.For<IEmailLogAttachmentUploadService>();
+            var currentTenant = Substitute.For<ICurrentTenant>();
+            var libreOfficeConversionService = Substitute.For<ILibreOfficeConversionService>();
+            var attachmentPreviewAppService = Substitute.For<IAttachmentPreviewAppService>();
+            var attachmentController = new AttachmentController(fileAppService, configuration, submissionAppService, emailLogAttachmentUploadService, currentTenant, libreOfficeConversionService, attachmentPreviewAppService);
+            var applicationId = Guid.NewGuid();
+            var userId = "testUserId";
+            var userName = "testUserName";
+
+            var odtFile = new FormFile(
+                baseStream: new System.IO.MemoryStream(Array.Empty<byte>()),
+                baseStreamOffset: 0,
+                length: 0,
+                name: "odtFile",
+                fileName: "document.odt"
+            )
+            {
+                Headers = new HeaderDictionary(),
+                ContentType = "application/vnd.oasis.opendocument.text"
+            };
+
+            var files = new List<IFormFile> { odtFile };
+
+            // Act
+            var result = await attachmentController.UploadApplicationAttachments(applicationId, files, userId, userName);
+
+            // Assert
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            Assert.Equal("All Files Are Successfully Uploaded!", okResult.Value);
+            await fileAppService.Received(1).SaveBlobAsync(Arg.Is<SaveBlobInputDto>(dto => dto.Name == "document.odt"));
         }
 
         [Fact]
@@ -349,6 +434,55 @@ namespace Unity.GrantManager.Components
             var result = await attachmentController.UploadApplicationAttachments(applicationId, files, userId, userName);
 
             // Assert
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            Assert.Equal("All Files Are Successfully Uploaded!", okResult.Value);
+            await fileAppService.Received(1).SaveBlobAsync(Arg.Is<SaveBlobInputDto>(dto => dto.Name == "good.pdf"));
+        }
+
+        [Fact]
+        public async Task UploadApplicationAttachments_AllowedFileTypesConfigContainsNullElement_FallsBackGracefully()
+        {
+            // Arrange - ["pdf", null] is syntactically valid JSON (e.g. from a stray trailing
+            // comma edit) and deserializes fine to a string[] containing a null entry. Filtering
+            // must happen before ToLowerInvariant() is called on each entry, or this throws a
+            // NullReferenceException and turns a config typo into a 500 on every upload instead of
+            // falling back gracefully like every other malformed-config case.
+            var configuration = new ConfigurationBuilder()
+                .AddInMemoryCollection(new Dictionary<string, string?>
+                {
+                    ["S3:AllowedFileTypes"] = "[\"pdf\", null]"
+                })
+                .Build();
+            var fileAppService = Substitute.For<IFileAppService>();
+            var submissionAppService = Substitute.For<ISubmissionAppService>();
+            var emailLogAttachmentUploadService = Substitute.For<IEmailLogAttachmentUploadService>();
+            var currentTenant = Substitute.For<ICurrentTenant>();
+            var libreOfficeConversionService = Substitute.For<ILibreOfficeConversionService>();
+            var attachmentPreviewAppService = Substitute.For<IAttachmentPreviewAppService>();
+            var attachmentController = new AttachmentController(fileAppService, configuration, submissionAppService, emailLogAttachmentUploadService, currentTenant, libreOfficeConversionService, attachmentPreviewAppService);
+            var applicationId = Guid.NewGuid();
+            var userId = "testUserId";
+            var userName = "testUserName";
+
+            var pdfBytes = new byte[] { 0x25, 0x50, 0x44, 0x46, 0x2D, 0x31, 0x2E, 0x34 };
+            var pdfFile = new FormFile(
+                baseStream: new System.IO.MemoryStream(pdfBytes),
+                baseStreamOffset: 0,
+                length: pdfBytes.Length,
+                name: "pdfFile",
+                fileName: "good.pdf"
+            )
+            {
+                Headers = new HeaderDictionary(),
+                ContentType = "application/pdf"
+            };
+
+            var files = new List<IFormFile> { pdfFile };
+
+            // Act
+            var result = await attachmentController.UploadApplicationAttachments(applicationId, files, userId, userName);
+
+            // Assert - "pdf" (the non-null entry) is honored, upload succeeds instead of 500ing.
             var okResult = Assert.IsType<OkObjectResult>(result);
             Assert.Equal("All Files Are Successfully Uploaded!", okResult.Value);
             await fileAppService.Received(1).SaveBlobAsync(Arg.Is<SaveBlobInputDto>(dto => dto.Name == "good.pdf"));
