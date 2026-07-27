@@ -5,7 +5,7 @@ spreadsheet templates. Pure offline transform, no network calls, no deps.
 The one hard rule: `collapse_sql(format_sql(s)) == s` for any canonical `s`.
 Formatting only ever *replaces an existing space with a newline + indent* — it
 never inserts, drops, reorders, re-cases or rewrites a single character of SQL.
-That is what lets jsonl_to_csv.py pretty-print gold_sql for review while
+That is what lets a spreadsheet/CSV pretty-print gold_sql for review while
 csv_to_jsonl.py collapses it straight back to the stored one-liner, so a CSV
 round-trip with no SME edits leaves questions.jsonl byte-identical (and never
 falsely trips the "gold_sql changed -> re-capture" path in csv_to_jsonl.py).

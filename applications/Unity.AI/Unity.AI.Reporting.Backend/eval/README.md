@@ -344,10 +344,11 @@ Aggregates are reported overall and by difficulty, schema_type,
 difficulty×schema_type, and tag. Results go to a timestamped JSON artifact
 under `eval/results/` (git-ignored — runs are frequent and may embed
 generated SQL over tenant data; copy a run out deliberately to keep it) with
-reproducibility metadata: `eval_schema_version` (now `"2"` — purely additive
-over `"1"`: new per-question fields `row_match_canonical` /
-`canonical_match_reason` / `table_scoring` / `attempt`, new aggregate rates,
-and top-level `runs` / `consistency` / `sqlglot_version`), git commit,
+reproducibility metadata: `eval_schema_version` (now `"3"` — v2 added
+per-question `row_match_canonical` / `canonical_match_reason` /
+`table_scoring` / `attempt`, new aggregate rates, and top-level `runs` /
+`consistency` / `sqlglot_version`; v3 adds combined multi-tenant runs and
+dataset-set provenance), git commit,
 dataset fingerprint, tenant list, and an AI-config snapshot (deployment,
 k_samples, max iterations). A console summary table prints at the end.
 

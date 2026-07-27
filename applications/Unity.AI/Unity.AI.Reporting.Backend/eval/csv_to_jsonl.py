@@ -20,14 +20,14 @@ CSV columns (header row required):
     tags, notes, schema_version, frozen, question_type
 
 - id may be blank (new question) or an existing id (update)
-- gold_sql may be written across multiple lines inside its cell (jsonl_to_csv.py
-  exports it that way for review); it is collapsed back to a single line before
-  storing, so line breaks alone never count as an edit. SQL comments (-- or /*)
-  aren't allowed, since collapsing would comment out the rest of the query.
+- gold_sql may be written across multiple lines inside its CSV cell for readability;
+  it is collapsed back to a single line before storing, so line breaks alone never
+  count as an edit. SQL comments (-- or /*) aren't allowed, since collapsing would
+  comment out the rest of the query.
 - tags is a semicolon-separated list (e.g. "join;date")
 - frozen is "true"/"false" (default "false" if blank)
 - question_type is "standard"/"negative"/"ambiguous" (default "standard" if blank)
-- any extra columns (e.g. row_count, captured_at from jsonl_to_csv.py) are ignored
+- any extra columns (e.g. row_count, captured_at from exports) are ignored
 
 Deleting a question isn't supported via CSV — remove its line from
 questions.jsonl directly.

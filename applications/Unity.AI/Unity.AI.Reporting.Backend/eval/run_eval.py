@@ -101,9 +101,10 @@ PERMUTATION_CAP = 5000
 SHA256_PREFIX = "sha256:"
 
 # ---------------------------------------------------------------------------
-# Pure, import-safe functions (offline unit-tested by test_run_eval.py).
-# Heavy imports (config / metabase / sql_generator, which need live Postgres)
-# are deferred into _load_deps() so importing this module needs no infra.
+# Pure, import-safe functions (no unit tests committed — cover locally if you
+# add any). Heavy imports (config / metabase / sql_generator, which need live
+# Postgres) are deferred into _load_deps() so importing this module needs no
+# infra.
 # ---------------------------------------------------------------------------
 
 # Line comments, block comments, string literals ('' escapes), and quoted
@@ -119,7 +120,7 @@ _SQL_NOISE_RE = re.compile(
 
 _FORBIDDEN_KEYWORD_RE = re.compile(
     r"\b(INSERT|UPDATE|DELETE|DROP|ALTER|TRUNCATE|CREATE|GRANT|REVOKE"
-    r"|MERGE|COPY|CALL|DO|VACUUM|REINDEX|LOCK|SET|RESET|COMMENT)\b",
+    r"|MERGE|COPY|CALL|DO|VACUUM|REINDEX|LOCK|SET|RESET|COMMENT|INTO)\b",
     re.IGNORECASE,
 )
 
@@ -509,10 +510,12 @@ def validate_prod_file(path: Path, entries: List[dict], default_tenant: str) -> 
     if not entries:
         problems.append(f"{path.name}: file is empty")
         return problems
-    tenant_ids = sorted({e.get("tenant_id") for e in entries})
-    if len(tenant_ids) != 1:
-        problems.append(f"{path.name}: expected exactly one tenant, found {tenant_ids}")
-    tenant_id = tenant_ids[0]
+    tenant_ids_raw = {e.get("tenant_id") for e in entries}
+    tenant_ids = sorted(t for t in tenant_ids_raw if t is not None)
+    if len(tenant_ids_raw) != 1 or not tenant_ids:
+        problems.append(
+            f"{path.name}: expected exactly one tenant, found {sorted(str(t) for t in tenant_ids_raw)}")
+    tenant_id = tenant_ids[0] if len(tenant_ids) == 1 else None
     if tenant_id == default_tenant:
         problems.append(
             f"{path.name}: contains Default tenant '{default_tenant}' entries — "

@@ -1,10 +1,11 @@
 """
-Fill in `expected_result` for questions.jsonl entries by executing their
-`gold_sql` via Metabase and recording a content signature (columns,
-column_types, row_count, content_hash) — never raw rows, to keep applicant
-data (worksheet/scoresheet PII) out of a version-controlled file.
+Fill in the expected-result fields for questions.jsonl entries by executing
+their `gold_sql` via Metabase and recording a content signature
+(expected_columns, expected_column_types, expected_row_count, content_hash)
+— never raw rows, to keep applicant data (worksheet/scoresheet PII) out of a
+version-controlled file.
 
-Only processes entries missing `expected_result.content_hash`, unless
+Only processes entries missing `content_hash`, unless
 --refresh/--refresh-all is passed. Requires live Metabase network access and
 a tenant_config.local.json api_key for the entry's tenant — run by whoever has
 that access (see eval/README.md).
