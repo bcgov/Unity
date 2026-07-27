@@ -44,13 +44,26 @@ Exit codes:
         valid; an unsafe generation is a model-behavior finding)
     If both occur, 1 wins.
 
+There are two pipelines. The Default (synthetic) tenant keeps its single-file
+run over questions.jsonl, unchanged. The production tenants run combined via
+--prod-tenants, which loads the files named in dataset/prod_tenants.json and
+routes each entry to its own db_id. Because the same id (e.g. PUB-EASY-001)
+exists under multiple tenants, records are keyed by (tenant_id, id) throughout;
+consistency.per_question is an array of {tenant_id, id, ...} objects.
+
 Usage:
-    python eval/run_eval.py                        # all captured entries
+    # Default single-tenant pipeline (unchanged):
+    python eval/run_eval.py                        # all captured Default entries
     python eval/run_eval.py --ids PUB-EASY-001,WKS-HARD-004
     python eval/run_eval.py --limit 5
-    python eval/run_eval.py --tenant "Default Grants Program"
     python eval/run_eval.py --output path.json
     python eval/run_eval.py --ids PUB-EASY-001 --runs 3   # consistency mode
+
+    # Production multi-tenant pipeline (combined run over the manifest):
+    python eval/run_eval.py --prod-tenants
+    python eval/run_eval.py --prod-tenants --limit-per-tenant 2   # smoke: N per tenant
+    python eval/run_eval.py --prod-tenants --ids AF-PSB:PUB-EASY-001,REDIP:PUB-EASY-001
+    python eval/run_eval.py --prod-tenants --tenant REDIP
 """
 import argparse
 import asyncio
@@ -77,9 +90,15 @@ RESULTS_DIR = Path(__file__).parent / "results"
 # canonical_match_reason / table_scoring / attempt; aggregate
 # canonical_row_match_rate / table_selection_rate / table_parse_failures;
 # top-level runs / consistency / sqlglot_version.
-EVAL_SCHEMA_VERSION = "2"
+# v3 = multi-tenant combined runs: aggregates.by_tenant; consistency.per_question
+# is now an ARRAY of {tenant_id, id, ...} objects (was an id-keyed map — tuple
+# keys aren't JSON-serializable); singular dataset_path / dataset_fingerprint
+# replaced by datasets[] (one descriptor per source file) + dataset_set_sha256.
+EVAL_SCHEMA_VERSION = "3"
 
 PERMUTATION_CAP = 5000
+
+SHA256_PREFIX = "sha256:"
 
 # ---------------------------------------------------------------------------
 # Pure, import-safe functions (offline unit-tested by test_run_eval.py).
@@ -381,6 +400,7 @@ def build_aggregates(records: List[dict]) -> dict:
 
     return {
         "overall": _aggregate(records),
+        "by_tenant": strata(lambda r: [r["tenant_id"]]),
         "by_difficulty": strata(lambda r: [r["difficulty"]]),
         "by_schema_type": strata(lambda r: [r["schema_type"]]),
         "by_difficulty_schema": strata(lambda r: [f"{r['difficulty']}/{r['schema_type']}"]),
@@ -397,15 +417,20 @@ def build_consistency(records: List[dict], runs: int) -> Optional[dict]:
     if runs == 1:
         return None
 
-    by_id: Dict[str, List[dict]] = {}
+    # Key by (tenant_id, id): in a combined prod run the same id (e.g.
+    # PUB-EASY-001) exists under multiple tenants, so keying on bare id would
+    # merge unrelated questions. Tuples are dict keys internally only —
+    # per_question is emitted as an ARRAY of objects (tuple keys aren't
+    # JSON-serializable; see EVAL_SCHEMA_VERSION v3).
+    by_key: Dict[Tuple[str, str], List[dict]] = {}
     for r in records:
-        by_id.setdefault(r["id"], []).append(r)
+        by_key.setdefault((r["tenant_id"], r["id"]), []).append(r)
 
-    per_question = {}
+    per_question = []
     eligible = 0
-    flaky = []
+    flaky = []  # list of {tenant_id, id}
     distinct_counts = []
-    for qid, attempts in sorted(by_id.items()):
+    for (tenant_id, qid), attempts in sorted(by_key.items()):
         attempts = sorted(attempts, key=lambda r: r.get("attempt", 1))
         measured = [r for r in attempts if r.get("measured")]
         outcomes = [bool(r.get("row_match")) for r in measured]
@@ -415,9 +440,11 @@ def build_consistency(records: List[dict], runs: int) -> Optional[dict]:
         if consistent is not None:
             eligible += 1
             if not consistent:
-                flaky.append(qid)
+                flaky.append({"tenant_id": tenant_id, "id": qid})
         distinct_counts.append(len(sqls))
-        per_question[qid] = {
+        per_question.append({
+            "tenant_id": tenant_id,
+            "id": qid,
             "attempts": len(attempts),
             "measured_attempts": len(measured),
             "row_match_outcomes": outcomes,
@@ -426,7 +453,7 @@ def build_consistency(records: List[dict], runs: int) -> Optional[dict]:
             "generation_failures": sum(
                 1 for r in attempts if r.get("generated_sql") is None),
             "row_match_rate": _rate(sum(outcomes), len(outcomes)),
-        }
+        })
 
     return {
         "runs": runs,
@@ -442,8 +469,207 @@ def build_consistency(records: List[dict], runs: int) -> Optional[dict]:
 
 
 # ---------------------------------------------------------------------------
+# Multi-tenant dataset discovery / validation / selection / provenance.
+# Pure and infra-free (they take already-parsed data), so test_run_eval.py can
+# unit-test them without the live stack — these are the load-bearing additions
+# for combined prod runs, not just build_aggregates().
+# ---------------------------------------------------------------------------
+
+# Prod-tenant suite manifest (checked-in), read by --prod-tenants. An explicit
+# list, deliberately NOT an auto-glob of questions_*.jsonl: a stray/WIP file
+# must never silently join an expensive multi-tenant run.
+MANIFEST_PATH = Path(__file__).parent / "dataset" / "prod_tenants.json"
+
+
+def resolve_manifest_paths(manifest_data: dict, base_dir: Path) -> List[Path]:
+    """Turn a parsed manifest ({"datasets": [names...]}) into sorted absolute
+    paths, resolved relative to the manifest's own directory. Sorted so the
+    load order — and therefore dataset_set_sha256 — is deterministic."""
+    names = manifest_data.get("datasets")
+    if not isinstance(names, list) or not names:
+        raise ValueError("manifest has no non-empty 'datasets' list")
+    return sorted((base_dir / str(n)).resolve() for n in names)
+
+
+def normalize_tenant_token(tenant_id: str) -> str:
+    """Filename token for a tenant_id: 'AF-PSB' -> 'af-psb'. The per-tenant
+    file for tenant T is expected to be named questions_<token>.jsonl."""
+    return tenant_id.lower()
+
+
+def validate_prod_file(path: Path, entries: List[dict], default_tenant: str) -> List[str]:
+    """Structural invariants a per-tenant prod file must satisfy. Returns a
+    list of human-readable problems (empty == clean):
+      - non-empty
+      - every entry shares one tenant_id (a file is one tenant)
+      - that tenant is not the Default (synthetic) tenant
+      - filename matches questions_<normalized-tenant>.jsonl
+    """
+    problems = []
+    if not entries:
+        problems.append(f"{path.name}: file is empty")
+        return problems
+    tenant_ids = sorted({e.get("tenant_id") for e in entries})
+    if len(tenant_ids) != 1:
+        problems.append(f"{path.name}: expected exactly one tenant, found {tenant_ids}")
+    tenant_id = tenant_ids[0]
+    if tenant_id == default_tenant:
+        problems.append(
+            f"{path.name}: contains Default tenant '{default_tenant}' entries — "
+            "the Default tenant uses its own single-tenant run, not --prod-tenants")
+    if tenant_id is not None:
+        expected = f"questions_{normalize_tenant_token(tenant_id)}.jsonl"
+        if path.name != expected:
+            problems.append(
+                f"{path.name}: filename does not match tenant '{tenant_id}' "
+                f"(expected {expected})")
+    return problems
+
+
+def check_global_id_uniqueness(entries: List[dict]) -> List[str]:
+    """Every (tenant_id, id) across the combined set must be unique. Returns a
+    list of duplicate '(tenant, id)' descriptions (empty == clean)."""
+    seen = Counter((e.get("tenant_id"), e.get("id")) for e in entries)
+    return [f"({t}, {i})" for (t, i), n in sorted(seen.items()) if n > 1]
+
+
+def parse_selectors(ids_arg: str) -> List[Tuple[Optional[str], str]]:
+    """Parse --ids into (tenant_id_or_None, id) selectors. Each comma-separated
+    token is either 'tenant:id' (qualified) or 'id' (bare). Whitespace tolerated."""
+    selectors = []
+    for tok in ids_arg.split(","):
+        tok = tok.strip()
+        if not tok:
+            continue
+        if ":" in tok:
+            tenant, _, qid = tok.partition(":")
+            selectors.append((tenant.strip(), qid.strip()))
+        else:
+            selectors.append((None, tok))
+    return selectors
+
+
+def _match_one_selector(entries: List[dict], tenant: Optional[str], qid: str
+                        ) -> Tuple[List[dict], Optional[str]]:
+    """Resolve a single selector to matching entries, or an error string.
+    Bare id is ambiguous (errors) when it hits more than one tenant."""
+    if tenant is not None:
+        matches = [e for e in entries
+                   if e["tenant_id"] == tenant and e["id"] == qid]
+        label = f"{tenant}:{qid}"
+    else:
+        matches = [e for e in entries if e["id"] == qid]
+        tenants_hit = {e["tenant_id"] for e in matches}
+        if len(tenants_hit) > 1:
+            return [], (f"id '{qid}' is ambiguous across tenants "
+                        f"{sorted(tenants_hit)} — qualify it as tenant:id")
+        label = qid
+    if not matches:
+        return [], f"selector {label}: no match"
+    return matches, None
+
+
+def apply_selectors(entries: List[dict],
+                    selectors: List[Tuple[Optional[str], str]]
+                    ) -> Tuple[List[dict], List[str]]:
+    """Filter entries by --ids selectors. Returns (selected, errors).
+
+    A qualified selector 'tenant:id' matches exactly that entry. A bare 'id'
+    matches only when unique across the current pool — if it hits >1 tenant it
+    is ambiguous and errors, telling the user to qualify it. Unmatched
+    selectors also error, so a typo never silently drops a question."""
+    errors = []
+    selected = []
+    taken = set()  # (tenant_id, id) already chosen — keeps output dedup'd
+    for tenant, qid in selectors:
+        matches, error = _match_one_selector(entries, tenant, qid)
+        if error:
+            errors.append(error)
+            continue
+        for e in matches:
+            key = (e["tenant_id"], e["id"])
+            if key not in taken:
+                taken.add(key)
+                selected.append(e)
+    return selected, errors
+
+
+def limit_per_tenant(entries: List[dict], n: int) -> List[dict]:
+    """First n entries of each tenant, preserving input order. Unlike a global
+    slice, this guarantees every tenant is represented in a combined run."""
+    counts: Dict[str, int] = {}
+    out = []
+    for e in entries:
+        t = e["tenant_id"]
+        if counts.get(t, 0) < n:
+            counts[t] = counts.get(t, 0) + 1
+            out.append(e)
+    return out
+
+
+def file_sha256(path: Path) -> str:
+    return SHA256_PREFIX + hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def dataset_descriptor(path: Path, entries: List[dict]) -> dict:
+    """Per-file provenance for the artifact's datasets[] list."""
+    return {
+        "path": str(path),
+        "sha256": file_sha256(path),
+        "entry_count": len(entries),
+        "tenant_ids": sorted({e.get("tenant_id") for e in entries}),
+        "schema_versions": sorted({e.get("schema_version", "") for e in entries}),
+    }
+
+
+def dataset_set_sha256(descriptors: List[dict]) -> str:
+    """Single hash proving which files (by content) produced a combined run —
+    the sha256 of the sorted per-file sha256s."""
+    joined = "\n".join(sorted(d["sha256"] for d in descriptors))
+    return SHA256_PREFIX + hashlib.sha256(joined.encode("utf-8")).hexdigest()
+
+
+# ---------------------------------------------------------------------------
 # Runtime — everything below needs the live stack.
 # ---------------------------------------------------------------------------
+
+def _light_imports() -> SimpleNamespace:
+    """Import only the infra-free pieces needed for dataset discovery,
+    validation, and selection — config (reads tenant_config.json, no DB) and
+    capture_dataset.load_entries. Deliberately does NOT import sql_generator
+    (which connects pgvector at import) or chdir, so all of main()'s argument
+    validation and fail-fast checks run before the heavy stack is touched."""
+    src_dir = Path(__file__).parent.parent / "src"
+    sys.path.insert(0, str(src_dir))
+    sys.path.insert(0, str(Path(__file__).parent))
+    from config import config, DEFAULT_TENANT  # noqa: E402
+    from capture_dataset import load_entries  # noqa: E402
+    return SimpleNamespace(
+        config=config,
+        default_tenant=DEFAULT_TENANT,
+        load_entries=load_entries,
+    )
+
+
+def preflight_embeddings(sql_generator, db_ids: List[int]) -> List[Tuple[int, str]]:
+    """Confirm pgvector actually has schema rows for every selected db_id.
+
+    Needed because generate_sql returns four Nones with no error detail when
+    retrieval finds nothing (sql_generator.py:428), so the runner otherwise
+    can't distinguish 'embeddings never generated' from a real generation
+    failure. Returns (db_id, reason) for each db_id that is not ready."""
+    missing = []
+    for db_id in sorted(set(db_ids)):
+        try:
+            hits = sql_generator.embeddings.vector_store.similarity_search(
+                "table", k=1, filter={"db_id": db_id, "schema_type": "public"})
+        except Exception as e:
+            missing.append((db_id, f"vector-store query failed: {e!r}"))
+            continue
+        if not hits:
+            missing.append((db_id, "no public schema rows — run `python app.py embed-all`"))
+    return missing
+
 
 def _load_deps() -> SimpleNamespace:
     """Import the live-stack modules. Importing sql_generator pulls in
@@ -489,13 +715,6 @@ def _git_commit() -> Optional[str]:
         return out.stdout.strip() if out.returncode == 0 else None
     except Exception:
         return None
-
-
-def _dataset_fingerprint(dataset_path: Path, entries: List[dict]) -> dict:
-    return {
-        "sha256": "sha256:" + hashlib.sha256(dataset_path.read_bytes()).hexdigest(),
-        "schema_versions": sorted({e.get("schema_version", "") for e in entries}),
-    }
 
 
 def run_one(entry: dict, deps: SimpleNamespace) -> dict:
@@ -623,8 +842,8 @@ def run_one(entry: dict, deps: SimpleNamespace) -> dict:
         "matches_stored_hash": matches_stored,
     }
     if matches_stored is False:
-        print(f"  [DRIFT-FROZEN] {entry['id']}: frozen entry's live gold result "
-              f"differs from stored content_hash — run verify_dataset.py")
+        print(f"  [DRIFT-FROZEN] {entry['tenant_id']}:{entry['id']}: frozen entry's "
+              f"live gold result differs from stored content_hash — run verify_dataset.py")
     record["measured"] = True
 
     # 5. Compare.
@@ -659,6 +878,7 @@ def _print_summary(aggregates: dict):
         return str(v) if v is not None else "-"
 
     rows = [("overall", aggregates["overall"])]
+    rows += [(f"tenant:{k}", v) for k, v in aggregates["by_tenant"].items()]
     rows += [(k, v) for k, v in aggregates["by_difficulty"].items()]
     rows += [(k, v) for k, v in aggregates["by_schema_type"].items()]
 
@@ -689,89 +909,163 @@ def _print_consistency(consistency: dict):
           f"flake_rate={fmt_rate(consistency['flake_rate'])} "
           f"consistent_rate={fmt_rate(consistency['consistent_rate'])} "
           f"distinct_sql_mean={consistency['distinct_sql_mean']}")
-    for qid in consistency["flaky_questions"]:
-        q = consistency["per_question"][qid]
+    flaky_keys = {(f["tenant_id"], f["id"]) for f in consistency["flaky_questions"]}
+    for q in consistency["per_question"]:
+        if (q["tenant_id"], q["id"]) not in flaky_keys:
+            continue
         vector = ",".join("T" if o else "F" for o in q["row_match_outcomes"])
-        print(f"  [FLAKY] {qid} row_match=[{vector}] "
+        print(f"  [FLAKY] {q['tenant_id']}:{q['id']} row_match=[{vector}] "
               f"distinct_sql={q['distinct_generated_sql']}")
-    nondeterministic = [
-        (qid, q) for qid, q in consistency["per_question"].items()
-        if q["distinct_generated_sql"] > 1 and qid not in consistency["flaky_questions"]
-    ]
-    for qid, q in nondeterministic:
-        print(f"  [SQL-VARIES] {qid} distinct_sql={q['distinct_generated_sql']} "
-              f"(row_match outcome consistent)")
+    for q in consistency["per_question"]:
+        if q["distinct_generated_sql"] > 1 and (q["tenant_id"], q["id"]) not in flaky_keys:
+            print(f"  [SQL-VARIES] {q['tenant_id']}:{q['id']} "
+                  f"distinct_sql={q['distinct_generated_sql']} "
+                  f"(row_match outcome consistent)")
 
 
-def main():
+def _parse_args():
     parser = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
     )
-    parser.add_argument("--ids", help="Comma-separated entry ids to run (default: all captured)")
-    parser.add_argument("--limit", type=int, help="Run only the first N entries after filtering")
+    parser.add_argument("--ids", help="Comma-separated selectors to run: 'tenant:id' "
+                        "(qualified) or bare 'id' (allowed only when unique after filtering)")
+    parser.add_argument("--limit", type=int, help="Run only the first N entries after "
+                        "filtering (GLOBAL slice — in a combined run this may exclude whole "
+                        "tenants; prefer --limit-per-tenant)")
+    parser.add_argument("--limit-per-tenant", type=int, dest="limit_per_tenant",
+                        help="Run only the first N entries of EACH tenant — keeps every "
+                             "tenant represented in a combined run")
     parser.add_argument("--tenant", help="Run only entries for this tenant_id")
     parser.add_argument("--output", help="Artifact path (default: eval/results/eval_<timestamp>.json)")
     parser.add_argument("--runs", type=int, default=1,
                         help="Attempts per question, run consecutively; N>1 measures "
                              "run-to-run consistency. Multiplies Azure token cost and "
                              "wall time by N.")
-    parser.add_argument("--dataset", help=f"Dataset JSONL path (default: {DATASET_PATH})")
+    parser.add_argument("--dataset", help=f"Single dataset JSONL path (default: {DATASET_PATH}). "
+                        "Mutually exclusive with --prod-tenants.")
+    parser.add_argument("--prod-tenants", action="store_true", dest="prod_tenants",
+                        help="Combined multi-tenant run over the files listed in the prod-tenant "
+                             f"manifest ({MANIFEST_PATH.name}). Mutually exclusive with --dataset.")
+    parser.add_argument("--manifest", help=f"Prod-tenant manifest path (default: {MANIFEST_PATH})")
     args = parser.parse_args()
     if args.runs < 1:
         parser.error("--runs must be >= 1")
+    if args.dataset and args.prod_tenants:
+        parser.error("--dataset and --prod-tenants are mutually exclusive")
+    if args.limit and args.limit_per_tenant:
+        parser.error("--limit and --limit-per-tenant are mutually exclusive")
+    return args
 
-    # Resolve before _load_deps() chdirs into src/ — relative --output and
-    # --dataset should be relative to where the user launched the script.
-    dataset_path = Path(args.dataset).resolve() if args.dataset else DATASET_PATH
 
-    if not dataset_path.exists():
-        print(f"ERROR: dataset not found at {dataset_path}", file=sys.stderr)
-        sys.exit(1)
+def _fatal(header: str, problems: List[str]):
+    print(f"ERROR: {header}", file=sys.stderr)
+    for p in problems:
+        print(f"  - {p}", file=sys.stderr)
+    sys.exit(1)
 
-    output_override = Path(args.output).resolve() if args.output else None
 
-    print("Loading live stack (Azure OpenAI + Metabase + Postgres/pgvector)...")
-    deps = _load_deps()
-    entries = deps.load_entries(dataset_path)
+def discover_dataset_paths(args) -> List[Path]:
+    """Resolve which dataset files a run covers. Default: the single Default
+    master. --dataset: one explicit file. --prod-tenants: the manifest's files.
+    Paths are resolved before _load_deps() chdirs into src/."""
+    if args.prod_tenants:
+        manifest = Path(args.manifest).resolve() if args.manifest else MANIFEST_PATH
+        if not manifest.exists():
+            _fatal(f"prod-tenant manifest not found at {manifest}",
+                   ["the prod dataset files are local-only; create the manifest "
+                    "listing them to run --prod-tenants"])
+        try:
+            data = json.loads(manifest.read_text(encoding="utf-8"))
+            paths = resolve_manifest_paths(data, manifest.parent)
+        except Exception as e:
+            _fatal(f"bad manifest {manifest}", [repr(e)])
+        absent = [str(p) for p in paths if not p.exists()]
+        if absent:
+            _fatal("manifest references missing files", absent)
+        return paths
+    single = Path(args.dataset).resolve() if args.dataset else DATASET_PATH
+    if not single.exists():
+        _fatal(f"dataset not found at {single}", [])
+    return [single]
 
-    selected = []
-    wanted_ids = {i.strip() for i in args.ids.split(",")} if args.ids else None
-    for entry in entries:
-        if wanted_ids is not None and entry["id"] not in wanted_ids:
+
+def load_and_validate(paths: List[Path], light: SimpleNamespace,
+                      prod_mode: bool) -> Tuple[List[dict], List[dict]]:
+    """Load every file, validate structure, return (combined_entries, descriptors).
+    Prod files must each be one non-Default tenant with a matching filename;
+    (tenant_id, id) must be globally unique. Exits on any problem."""
+    problems, descriptors, combined = [], [], []
+    for path in paths:
+        entries = light.load_entries(path)
+        if prod_mode:
+            problems += validate_prod_file(path, entries, light.default_tenant)
+        descriptors.append(dataset_descriptor(path, entries))
+        combined += entries
+    problems += check_global_id_uniqueness(combined)
+    if problems:
+        _fatal("dataset validation failed", problems)
+    return combined, descriptors
+
+
+def select_entries(entries: List[dict], args, known_tenants: set) -> List[dict]:
+    """Apply --tenant, --ids selectors, the capture filter, and limits, then
+    strict-check that every selected tenant is configured (an unknown tenant
+    would silently route to Default at config.py:191). Exits on error."""
+    pool = entries
+    if args.tenant:
+        if args.tenant not in known_tenants:
+            _fatal(f"--tenant '{args.tenant}' is not a configured tenant",
+                   [f"known: {sorted(known_tenants)}"])
+        pool = [e for e in pool if e["tenant_id"] == args.tenant]
+    if args.ids:
+        pool, errors = apply_selectors(pool, parse_selectors(args.ids))
+        if errors:
+            _fatal("--ids selection failed", errors)
+
+    captured = []
+    for e in pool:
+        if not e.get("content_hash"):
+            print(f"  [SKIP] {e['tenant_id']}:{e['id']}: not yet captured "
+                  f"(run capture_dataset.py first)")
             continue
-        if args.tenant and entry["tenant_id"] != args.tenant:
-            continue
-        if not entry.get("content_hash"):
-            print(f"  [SKIP] {entry['id']}: not yet captured (run capture_dataset.py first)")
-            continue
-        selected.append(entry)
-    if wanted_ids:
-        missing = wanted_ids - {e["id"] for e in selected}
-        if missing:
-            print(f"ERROR: ids not found or not captured: {sorted(missing)}", file=sys.stderr)
-            sys.exit(1)
-    if args.limit:
-        selected = selected[: args.limit]
-    if not selected:
+        captured.append(e)
+
+    if args.limit_per_tenant:
+        captured = limit_per_tenant(captured, args.limit_per_tenant)
+    elif args.limit:
+        captured = captured[: args.limit]
+    if not captured:
         print("No entries selected.", file=sys.stderr)
         sys.exit(1)
 
-    if extract_tables("SELECT 1")[1] == "sqlglot_not_installed":
-        print("WARNING: sqlglot not installed — table-selection scoring disabled "
-              "(pip install -r eval/requirements.txt)")
+    unknown = sorted({e["tenant_id"] for e in captured} - known_tenants)
+    if unknown:
+        _fatal(f"selected entries reference unconfigured tenants {unknown}",
+               [f"known: {sorted(known_tenants)}"])
+    return captured
 
-    started_at = datetime.now(timezone.utc)
-    run_id = started_at.strftime("%Y%m%dT%H%M%SZ")
-    print(f"Running eval on {len(selected)} entr{'y' if len(selected) == 1 else 'ies'}"
-          + (f" x {args.runs} attempts" if args.runs > 1 else "")
-          + f" (run_id={run_id})...\n")
 
+def _print_done(record: dict):
+    print(f"[Eval] done {record['tenant_id']}:{record['id']} measured={record.get('measured')} "
+          f"valid={record.get('valid_execution')} row_match={record.get('row_match')} "
+          f"canonical={record.get('row_match_canonical')} "
+          f"hash_match={record.get('content_hash_match')} "
+          f"tables={(record.get('table_scoring') or {}).get('match')} "
+          f"iters={record.get('self_correction_iterations')} "
+          f"latency_ms={record.get('latency_ms')} "
+          f"tokens={(record.get('tokens') or {}).get('total_tokens')}"
+          + (f" guard_violation={record['guard_violation']!r}" if record.get("guard_violation") else "")
+          + (f" error={record.get('generation_error') or record.get('execution_error') or record.get('runner_error')!r}"
+             if not record.get("row_match") else ""))
+
+
+def _run_all(selected: List[dict], runs: int, deps: SimpleNamespace) -> List[dict]:
     records = []
     for i, entry in enumerate(selected, 1):
-        for attempt in range(1, args.runs + 1):
+        for attempt in range(1, runs + 1):
             print(f"[Eval] start {i}/{len(selected)}"
-                  + (f" attempt {attempt}/{args.runs}" if args.runs > 1 else "")
-                  + f" id={entry['id']} "
+                  + (f" attempt {attempt}/{runs}" if runs > 1 else "")
+                  + f" {entry['tenant_id']}:{entry['id']} "
                   f"difficulty={entry['difficulty']} schema_type={entry['schema_type']}")
             try:
                 record = run_one(entry, deps)
@@ -786,17 +1080,46 @@ def main():
                 }
             record["attempt"] = attempt
             records.append(record)
-            print(f"[Eval] done id={record['id']} measured={record.get('measured')} "
-                  f"valid={record.get('valid_execution')} row_match={record.get('row_match')} "
-                  f"canonical={record.get('row_match_canonical')} "
-                  f"hash_match={record.get('content_hash_match')} "
-                  f"tables={(record.get('table_scoring') or {}).get('match')} "
-                  f"iters={record.get('self_correction_iterations')} "
-                  f"latency_ms={record.get('latency_ms')} "
-                  f"tokens={(record.get('tokens') or {}).get('total_tokens')}"
-                  + (f" guard_violation={record['guard_violation']!r}" if record.get("guard_violation") else "")
-                  + (f" error={record.get('generation_error') or record.get('execution_error') or record.get('runner_error')!r}"
-                     if not record.get("row_match") else ""))
+            _print_done(record)
+    return records
+
+
+def main():
+    args = _parse_args()
+    output_override = Path(args.output).resolve() if args.output else None
+    paths = discover_dataset_paths(args)
+
+    # Light imports (config + load_entries, no pgvector) so all dataset
+    # validation and selection fail fast before the heavy stack is loaded.
+    light = _light_imports()
+    combined, descriptors = load_and_validate(paths, light, bool(args.prod_tenants))
+    known_tenants = set(light.config.tenant_mappings.keys())
+    selected = select_entries(combined, args, known_tenants)
+
+    if extract_tables("SELECT 1")[1] == "sqlglot_not_installed":
+        print("WARNING: sqlglot not installed — table-selection scoring disabled "
+              "(pip install -r eval/requirements.txt)")
+
+    print("Loading live stack (Azure OpenAI + Metabase + Postgres/pgvector)...")
+    deps = _load_deps()
+
+    # Preflight: pgvector must have schema rows for every selected db_id, or
+    # generate_sql silently returns Nones with no distinguishable cause.
+    selected_tenants = {e["tenant_id"] for e in selected}
+    db_ids = [deps.config.get_tenant_config(t)["db_id"] for t in selected_tenants]
+    missing = preflight_embeddings(deps.sql_generator, db_ids)
+    if missing:
+        _fatal("embeddings preflight failed",
+               [f"db_id {db_id}: {reason}" for db_id, reason in missing])
+
+    started_at = datetime.now(timezone.utc)
+    run_id = started_at.strftime("%Y%m%dT%H%M%SZ")
+    print(f"Running eval on {len(selected)} entr{'y' if len(selected) == 1 else 'ies'}"
+          + (f" x {args.runs} attempts" if args.runs > 1 else "")
+          + f" across {len(selected_tenants)} tenant(s) {sorted(selected_tenants)}"
+          + f" (run_id={run_id})...\n")
+
+    records = _run_all(selected, args.runs, deps)
 
     finished_at = datetime.now(timezone.utc)
     aggregates = build_aggregates(records)
@@ -808,12 +1131,14 @@ def main():
         "finished_at": finished_at.isoformat(timespec="seconds"),
         "git_commit": _git_commit(),
         "sqlglot_version": _sqlglot_version(),
-        "dataset_path": str(dataset_path),
-        "dataset_fingerprint": _dataset_fingerprint(dataset_path, entries),
-        "tenants": sorted({e["tenant_id"] for e in selected}),
+        "datasets": descriptors,
+        "dataset_set_sha256": dataset_set_sha256(descriptors),
+        "tenants": sorted(selected_tenants),
         "entries_selected": len(selected),
         "runs": args.runs,
-        "filters": {"ids": args.ids, "limit": args.limit, "tenant": args.tenant},
+        "filters": {"ids": args.ids, "limit": args.limit,
+                    "limit_per_tenant": args.limit_per_tenant,
+                    "tenant": args.tenant, "prod_tenants": bool(args.prod_tenants)},
         "config_snapshot": {
             "deployment": deps.config.ai.azure_deployment,
             "k_samples": deps.config.ai.k_samples,

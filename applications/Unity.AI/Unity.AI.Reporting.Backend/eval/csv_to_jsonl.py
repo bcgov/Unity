@@ -20,6 +20,10 @@ CSV columns (header row required):
     tags, notes, schema_version, frozen, question_type
 
 - id may be blank (new question) or an existing id (update)
+- gold_sql may be written across multiple lines inside its cell (jsonl_to_csv.py
+  exports it that way for review); it is collapsed back to a single line before
+  storing, so line breaks alone never count as an edit. SQL comments (-- or /*)
+  aren't allowed, since collapsing would comment out the rest of the query.
 - tags is a semicolon-separated list (e.g. "join;date")
 - frozen is "true"/"false" (default "false" if blank)
 - question_type is "standard"/"negative"/"ambiguous" (default "standard" if blank)
@@ -40,6 +44,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 from config import config  # noqa: E402
+from sql_format import collapse_sql, has_comment  # noqa: E402
 
 TIER_BY_SCHEMA_TYPE = {
     "public": "PUB",
@@ -82,6 +87,19 @@ def parse_list_field(value: str) -> list:
     return [v.strip() for v in value.split(";") if v.strip()]
 
 
+def gold_sql_from_row(row: dict) -> str:
+    """Collapses the (possibly pretty-printed) cell back to the canonical
+    one-line form stored in questions.jsonl."""
+    gold_sql = row["gold_sql"]
+    if has_comment(gold_sql):
+        raise ValueError(
+            f"gold_sql for '{(row.get('id') or row['question']).strip()}' contains an SQL "
+            "comment (-- or /*). gold_sql is stored on a single line, which would comment "
+            "out the rest of the query — put the explanation in the notes column instead."
+        )
+    return collapse_sql(gold_sql)
+
+
 def shared_fields_from_row(row: dict) -> dict:
     schema_type = row["schema_type"].strip().lower()
     tenant_id = row["tenant_id"].strip()
@@ -92,7 +110,7 @@ def shared_fields_from_row(row: dict) -> dict:
         "schema_type": schema_type,
         "difficulty": row["difficulty"].strip().lower(),
         "question_type": (row.get("question_type") or "standard").strip() or "standard",
-        "gold_sql": row["gold_sql"].strip(),
+        "gold_sql": gold_sql_from_row(row),
         "frozen": (row.get("frozen") or "false").strip().lower() == "true",
         "tags": parse_list_field(row["tags"]),
         "schema_version": row["schema_version"].strip(),

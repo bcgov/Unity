@@ -173,36 +173,25 @@ rows to hit a count:
 ## Tooling
 
 All scripts live under `eval/` and do real network I/O against live Metabase
-**except `csv_to_jsonl.py`**, which is a pure offline transform — this means
+**except `csv_to_jsonl.py`/`sql_format.py`**, which are pure
+offline transforms — this means
 `python -m unittest discover` from the Backend root won't accidentally try to
 hit the network, since none of these are named `test_*.py` except
 `test_eval_dataset.py` (Backend root), which is itself offline-only.
 
-### `dump_schema.py` — fetch the live schema (no row data)
+### `sql_format.py` — whitespace-only `gold_sql` helper
 
-```
-python eval/dump_schema.py --tenant "Default Grants Program"
-```
+Not a script — a helper used by `csv_to_jsonl.py` (`collapse_sql`,
+`has_comment`). No dependencies, no network.
 
-Calls Metabase's `/api/database/{id}/metadata` plus `Reporting.ReportColumnsMaps`
-directly (deliberately **not** via `embeddings.py`, which instantiates a
-PGVector store at import time and therefore requires a local Postgres/pgvector
-connection this doesn't need for a structure-only dump). Writes table/view/column
-structure to `eval/schema_reference/<tenant>_schema_<date>.md` — the reference
-an author uses to write `gold_sql` without hallucinating names, and the source
-of the `schema_version` value.
-
-### `jsonl_to_csv.py` — export the dataset to CSV for spreadsheet editing
-
-```
-python eval/jsonl_to_csv.py eval/dataset/questions.jsonl eval/dataset/questions_template.csv
-```
-
-Pure offline transform. `questions_template.csv` is kept as a full mirror of
-`questions.jsonl` (currently all 42 entries), including an `id` column, so it
-can be opened and edited in Excel/Sheets. `row_count`/`captured_at` are
-trailing read-only context columns (last-captured info) — edit them all you
-want, they're ignored on import.
+`collapse_sql` reduces a `gold_sql` cell to the canonical one-liner stored in
+`questions.jsonl`, collapsing every whitespace run outside quoted strings to a
+single space. It only ever rewrites whitespace — never inserts, drops, re-cases
+or rewrites a character of SQL — so a `gold_sql` written across multiple lines
+in the CSV for readability collapses back exactly, and re-wrapping a query is
+never counted as an edit. `has_comment` rejects a cell containing a `--` or
+`/* */` comment, which collapsing to one line would turn into a query-ending
+comment.
 
 ### `csv_to_jsonl.py` — sync CSV rows back into JSONL (two-way, by `id`)
 
@@ -225,6 +214,12 @@ Pure offline transform, no network calls. For each CSV row:
   the expected-result fields.
 - **`id` filled in but not found** — hard error (typo, or a row for an entry
   someone already deleted from `questions.jsonl`).
+
+`gold_sql` is collapsed back to one line before it's stored and compared, so
+re-indenting or re-wrapping a query in the spreadsheet is **not** an edit and
+won't trigger a re-capture. The flip side: SQL comments (`--`, `/* */`) in a
+`gold_sql` cell are a hard error, since collapsing would comment out the rest
+of the query — put the explanation in `notes`.
 
 Deleting a question isn't supported via CSV — remove its line from
 `questions.jsonl` directly (there's no "delete" marker column).
@@ -406,17 +401,12 @@ that's been captured.
 
 ## Extending the dataset toward 30-50+ entries
 
-1. Re-run `dump_schema.py` if the schema may have changed (or if authoring
-   against a different tenant/db_id) — check the new file's structure against
-   `schema_reference/default_grants_program_schema_2026-07-08.md` for drift.
-2. `questions_template.csv` is already a full mirror of `questions.jsonl` — if
-   it's gone stale (someone edited `questions.jsonl` directly), re-run
-   `jsonl_to_csv.py` first. Then add new rows (leave `id` blank) and/or edit
-   existing rows in place in the CSV.
-3. `python eval/csv_to_jsonl.py eval/dataset/questions_template.csv eval/dataset/questions.jsonl` to sync the CSV back — new rows get new ids, edited rows update in place.
-4. `python eval/capture_dataset.py` to fill in expected-result fields for anything new or changed.
-5. `python eval/verify_dataset.py` to confirm they're stable.
-6. `python -m unittest test_eval_dataset -v` before committing.
+1. `questions_template.csv` is a full mirror of `questions.jsonl` — add new
+   rows (leave `id` blank) and/or edit existing rows in place in the CSV.
+2. `python eval/csv_to_jsonl.py eval/dataset/questions_template.csv eval/dataset/questions.jsonl` to sync the CSV back — new rows get new ids, edited rows update in place.
+3. `python eval/capture_dataset.py` to fill in expected-result fields for anything new or changed.
+4. `python eval/verify_dataset.py` to confirm they're stable.
+5. `python -m unittest test_eval_dataset -v` before committing.
 
 ## Deferred to a follow-up ticket
 
