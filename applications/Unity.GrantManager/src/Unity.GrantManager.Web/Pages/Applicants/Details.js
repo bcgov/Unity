@@ -400,7 +400,7 @@ function uploadFiles(inputId, urlStr, channel) {
     try {
         allowedTypes = JSON.parse(decodeURIComponent($('#AllowedFileTypes').val()));
         if (!Array.isArray(allowedTypes)) {
-            throw new Error('AllowedFileTypes did not parse to an array');
+            throw new TypeError('AllowedFileTypes did not parse to an array');
         }
     } catch (e) {
         console.warn('Unable to parse allowed file types configuration:', e);
