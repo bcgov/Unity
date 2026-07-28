@@ -1,12 +1,15 @@
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.WebUtilities;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using System;
+using System.IO;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Reflection;
 using System.Threading.Tasks;
 using Unity.GrantManager.Notifications;
 using Unity.Notifications.Emails;
@@ -29,7 +32,8 @@ public class EmailNotificationService(
         IExternalUserLookupServiceProvider externalUserLookupServiceProvider,
         ISettingManager settingManager,
         IFeatureChecker featureChecker,
-        IHttpContextAccessor httpContextAccessor) : ApplicationService, IEmailNotificationService
+        IConfiguration configuration,
+        IWebHostEnvironment webHostEnvironment) : ApplicationService, IEmailNotificationService
 {
 
     public async Task<Guid> InitializeDraftAsync(Guid applicationId)
@@ -80,22 +84,16 @@ public class EmailNotificationService(
 
     public Task<string> GetBaseUrlAsync()
     {
-        var httpContext = httpContextAccessor.HttpContext
-            ?? throw new InvalidOperationException("No active HTTP context available to resolve base URL.");
-
-        var request = httpContext.Request;
-
-        var host = request.Headers["X-Forwarded-Host"].FirstOrDefault()
-                   ?? request.Host.Value;
-
-        var scheme = request.Headers["X-Forwarded-Proto"].FirstOrDefault()
-                     ?? request.Scheme;
-
-        var pathBase = request.Headers["X-Forwarded-Prefix"].FirstOrDefault()
-                       ?? request.PathBase.Value
-                       ?? string.Empty;
-
-        return Task.FromResult($"{scheme}://{host}{pathBase}".TrimEnd('/'));
+        var selfUrl = configuration["App:SelfUrl"];
+        
+        if (string.IsNullOrWhiteSpace(selfUrl))
+        {
+            throw new InvalidOperationException(
+                "App:SelfUrl configuration is not set. Cannot resolve base URL for email notifications. " +
+                "Ensure the configuration is properly set in appsettings or environment variables.");
+        }
+        
+        return Task.FromResult(selfUrl.TrimEnd('/'));
     }
 
     public async Task<HttpResponseMessage> SendCommentNotification(EmailCommentDto input)
@@ -129,32 +127,7 @@ public class EmailNotificationService(
                     _ => CurrentUser.UserName ?? "Unknown User"
                 };
 
-                string htmlBody = $@"
-                <html lang='en' xmlns='http://www.w3.org/1999/xhtml' xmlns:v='urn:schemas-microsoft-com:vml' xmlns:o='urn:schemas-microsoft-com:office:office'>
-                <body style='font-family: Arial, sans-serif;'>
-                    <h3 style='color: #0a58ca;'>{currentUserText} mentioned you in a comment.</h3>
-                    <table style='width: 100%; background-color: #f9f9f9; border-left: 3px solid #ccc;'>
-                        <tr>
-                            <td style='padding: 15px;'>
-                                <p>{input.Body}</p>
-                            </td>
-                        </tr>
-                    </table>
-                    <br />
-                    <table style='background-color: #255a90;'>
-                        <tr>
-                            <td style='padding: 5px 10px; color: #fff; border: 1px solid #2d63c8'>
-                                <a href='{commentLink}' target='_blank'
-                                    style='display: inline-block;
-                                    font-size: 14px;
-                                    color: #fff;
-                                    text-decoration: none;'>View Comment</a>
-                            </td>
-                        </tr>
-                    </table>
-                    <p style='font-size: 12px; color: #999;'>*Note - Please do not reply to this email as it is an automated notification.</p>
-                </body>
-                </html>";
+                string htmlBody = await RenderCommentNotificationTemplateAsync(currentUserText, input.Body, commentLink);
 
                 foreach (var email in input.MentionNamesEmail)
                 {
@@ -272,6 +245,70 @@ public class EmailNotificationService(
         if (!valueString.IsNullOrWhiteSpace())
         {
             await settingManager.SetForCurrentTenantAsync(settingKey, valueString);
+        }
+    }
+
+    /// <summary>
+    /// Renders the comment notification email template with the provided parameters.
+    /// </summary>
+    /// <param name="currentUserText">Display name of the user who mentioned</param>
+    /// <param name="commentBody">The comment body text (may contain HTML)</param>
+    /// <param name="commentLink">The URL link to view the comment</param>
+    /// <returns>Rendered HTML email body</returns>
+    private async Task<string> RenderCommentNotificationTemplateAsync(string currentUserText, string commentBody, string commentLink)
+    {
+        // Load template from embedded resources or file system
+        string templateContent = await LoadEmailTemplateAsync("CommentNotification");
+
+        // Replace placeholders with actual values
+        var renderedTemplate = templateContent
+            .Replace("@Model.CurrentUserText", currentUserText)
+            .Replace("@Html.Raw(Model.CommentBody)", commentBody)
+            .Replace("@Model.CommentLink", commentLink);
+
+        return renderedTemplate;
+    }
+
+    /// <summary>
+    /// Loads an email template from the Views/EmailTemplates directory.
+    /// </summary>
+    /// <param name="templateName">Template name without extension (e.g., "CommentNotification")</param>
+    /// <returns>Template content as a string</returns>
+    private async Task<string> LoadEmailTemplateAsync(string templateName)
+    {
+        try
+        {
+            // Content root is at: .../Unity.GrantManager/src/Unity.GrantManager.Web
+            // We need to go up 2 levels to reach Unity.GrantManager, then into modules
+            var contentRoot = webHostEnvironment.ContentRootPath;
+            
+            var templatePath = Path.Combine(
+                contentRoot,
+                "..",
+                "..",
+                "modules",
+                "Unity.Notifications",
+                "src",
+                "Unity.Notifications.Web",
+                "Views",
+                "EmailTemplates",
+                $"{templateName}.cshtml");
+
+            // Normalize the path to remove .. references
+            templatePath = Path.GetFullPath(templatePath);
+
+            if (!File.Exists(templatePath))
+            {
+                throw new FileNotFoundException($"Email template not found at: {templatePath}");
+            }
+
+            var content = await File.ReadAllTextAsync(templatePath);
+            return content;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, $"Failed to load email template '{templateName}'");
+            throw;
         }
     }
 }
