@@ -2379,7 +2379,17 @@
         const input = document.getElementById(inputId);
         if (!input?.files?.length) return;
 
-        const disallowedTypes = JSON.parse(decodeURIComponent($('#Extensions').val()));
+        let allowedTypes;
+        try {
+            allowedTypes = JSON.parse(decodeURIComponent($('#AllowedFileTypes').val()));
+            if (!Array.isArray(allowedTypes)) {
+                throw new TypeError('AllowedFileTypes did not parse to an array');
+            }
+        } catch (e) {
+            console.warn('Unable to parse allowed file types configuration:', e);
+            abp.notify.error('Unable to determine allowed file types. Please contact support.');
+            return;
+        }
         const maxFileSize = decodeURIComponent($('#EmailAttachmentMaxFileSize').val());
 
         let isAllowedTypeError = false;
@@ -2388,7 +2398,7 @@
 
         for (let file of input.files) {
             const ext = file.name.slice(file.name.lastIndexOf('.') + 1).toLowerCase();
-            if (disallowedTypes.includes(ext)) {
+            if (!allowedTypes.includes(ext)) {
                 isAllowedTypeError = true;
             }
             if (file.size * 0.000001 > maxFileSize) {
