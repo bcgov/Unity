@@ -6,7 +6,6 @@ using Microsoft.Extensions.Logging;
 using Unity.AI.Domain;
 using Unity.AI.Cooldown;
 using Unity.GrantManager.Applications;
-using Unity.GrantManager.GrantApplications;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Uow;
 
