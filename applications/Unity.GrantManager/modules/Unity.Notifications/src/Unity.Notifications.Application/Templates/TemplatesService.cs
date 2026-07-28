@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Volo.Abp.Application.Services;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.MultiTenancy;
@@ -11,6 +12,7 @@ namespace Unity.Notifications.Templates;
 
 [Dependency(ReplaceServices = false)]
 [ExposeServices(typeof(TemplateService), typeof(ITemplateService))]
+[Authorize]
 public class TemplateService : ApplicationService, ITemplateService
 {
 

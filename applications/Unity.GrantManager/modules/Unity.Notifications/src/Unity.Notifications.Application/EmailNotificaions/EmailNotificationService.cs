@@ -23,6 +23,7 @@ namespace Unity.Notifications.EmailNotifications;
 
 [Dependency(ReplaceServices = false)]
 [ExposeServices(typeof(EmailNotificationService), typeof(IEmailNotificationService))]
+[Authorize]
 public class EmailNotificationService(
         INotificationsAppService notificationAppService,
         EmailNotificationManager emailNotificationManager,
