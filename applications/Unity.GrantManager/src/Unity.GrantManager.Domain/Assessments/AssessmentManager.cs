@@ -71,7 +71,7 @@ public class AssessmentManager : DomainService
                 assessorUser.Id),
             autoSave: true);
 
-        var isTransitionToAssessmentAllowed = _applicationManager.IsActionAllowed(application, GrantApplicationAction.Internal_StartAssessment);
+        var isTransitionToAssessmentAllowed = await _applicationManager.IsActionAllowed(application, GrantApplicationAction.Internal_StartAssessment);
         if (!hasOtherAssessments && isTransitionToAssessmentAllowed)
         {
             await _applicationManager.TriggerAction(application.Id, GrantApplicationAction.Internal_StartAssessment);

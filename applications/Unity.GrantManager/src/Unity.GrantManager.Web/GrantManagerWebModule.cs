@@ -199,7 +199,7 @@ public class GrantManagerWebModule : AbpModule
 
         Configure<AbpAntiForgeryOptions>(options =>
         {
-            options.TokenCookie.Expiration = TimeSpan.FromDays(365);
+            options.TokenCookie.Expiration = TimeSpan.FromHours(8);
             options.TokenCookie.SecurePolicy = CookieSecurePolicy.Always;
             options.TokenCookie.SameSite = SameSiteMode.Lax;
             options.TokenCookie.HttpOnly = false;

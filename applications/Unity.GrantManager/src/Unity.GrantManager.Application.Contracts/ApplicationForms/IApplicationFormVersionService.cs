@@ -24,5 +24,8 @@ namespace Unity.GrantManager.ApplicationForms
         Task<int> GetFormVersionByApplicationIdAsync(Guid applicationId);
         Task DeleteWorkSheetMappingByFormName(string formName, Guid formVersionId);
         Task<ApplicationFormMappingDto> GenerateMappingAsync(Guid id);
+        Task<AiWorksheetReviewDto?> GetPendingAiWorksheetAsync(Guid formVersionId);
+        Task CreateAiWorksheetDraftAsync(Guid formVersionId, CreateAiWorksheetDraftDto input);
+        Task DiscardAiWorksheetSuggestionsAsync(Guid formVersionId);
     }
 }
