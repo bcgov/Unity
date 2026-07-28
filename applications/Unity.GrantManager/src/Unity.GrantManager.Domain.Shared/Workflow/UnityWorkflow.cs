@@ -1,5 +1,6 @@
 ﻿using Stateless;
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp;
 
@@ -40,7 +41,7 @@ public class UnityWorkflow<TStates, TTriggers>
 
     public virtual async Task ExecuteActionAsync(TTriggers action)
     {
-        if (_stateMachine.CanFire(action))
+        if ((await _stateMachine.GetPermittedTriggersAsync()).Contains(action))
         {
             await _stateMachine.FireAsync(action);
         }
