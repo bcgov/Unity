@@ -129,7 +129,7 @@
 
             if (typeof value === 'string') {
                 if ($input.hasClass('unity-currency-input') || $input.hasClass('numeric-mask')) {
-                    value = value.replaceAll(/,/g, '');
+                    value = value.replaceAll(',', '');
                 }
 
                 const trimmed = value.trim();

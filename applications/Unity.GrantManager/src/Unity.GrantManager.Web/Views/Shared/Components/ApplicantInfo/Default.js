@@ -203,7 +203,7 @@ abp.widgets.ApplicantInfo = function ($wrapper) {
             let fieldValue = input.value;
 
             if (inputElement.hasClass('unity-currency-input') || inputElement.hasClass('numeric-mask')) {
-                fieldValue = fieldValue.replaceAll(/,/g, '');
+                fieldValue = fieldValue.replaceAll(',', '');
             }
 
             if (fieldName.startsWith('ApplicantInfo.')) {

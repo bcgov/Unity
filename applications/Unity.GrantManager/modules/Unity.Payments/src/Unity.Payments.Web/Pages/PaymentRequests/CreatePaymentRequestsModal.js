@@ -57,7 +57,7 @@ function checkMaxValueRequest(applicationId, input, amountRemaining) {
         validateParentChildAmounts(applicationId);
     } else {
         // Use existing remaining amount validation
-        let enteredValue = Number.parseFloat(input.value.replaceAll(/,/g, ''));
+        let enteredValue = Number.parseFloat(input.value.replaceAll(',', ''));
         let remainingErrorId = '#error_column_' + applicationId;
         if (amountRemaining < enteredValue) {
             $(remainingErrorId).css('display', 'block');
@@ -94,7 +94,7 @@ function validateAllPaymentAmounts() {
                 ).val()
             );
             let enteredValue =
-                Number.parseFloat(amountInput.val().replaceAll(/,/g, '')) || 0;
+                Number.parseFloat(amountInput.val().replaceAll(',', '')) || 0;
             let remainingErrorId = `#error_column_${correlationId}`;
 
             if (enteredValue > remainingAmount) {
@@ -127,7 +127,7 @@ function submitPayments() {
 function calculateTotalAmount() {
     let total = 0;
     $('.amount').each(function () {
-        let value = Number.parseFloat($(this).val().replaceAll(/,/g, '')) || 0;
+        let value = Number.parseFloat($(this).val().replaceAll(',', '')) || 0;
         total += value;
     });
 
@@ -170,7 +170,7 @@ function formatCurrency(value) {
     const numericValue =
         typeof value === 'number'
             ? value
-            : Number.parseFloat(String(value ?? '').replaceAll(/,/g, ''));
+            : Number.parseFloat(String(value ?? '').replaceAll(',', ''));
     return cadFormatter.format(
         Number.isFinite(numericValue) ? numericValue : 0
     );
@@ -231,7 +231,7 @@ function validateParentChildAmounts(correlationId) {
             let amountInput = $(
                 `input[name="ApplicationPaymentRequestForm[${itemIndex}].Amount"]`
             );
-            let amount = Number.parseFloat(amountInput.val().replaceAll(/,/g, '')) || 0;
+            let amount = Number.parseFloat(amountInput.val().replaceAll(',', '')) || 0;
             groupTotal += amount;
         }
     });

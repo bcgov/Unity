@@ -48,7 +48,7 @@ function closePaymentModal() {
 }
 
 function checkMaxValue(applicationId, input, amountRemaining) {
-    let enteredValue = Number.parseFloat(input.value.replaceAll(/,/g, ""));
+    let enteredValue = Number.parseFloat(input.value.replaceAll(',', ""));
     let remainingErrorId = "#column_" + applicationId + "_remaining_error";
     if (amountRemaining < enteredValue) {
         $(remainingErrorId).css("display", "block");

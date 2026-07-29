@@ -222,7 +222,7 @@ abp.widgets.ProjectInfo = function ($wrapper) {
                 const propertyName = fieldName.split('.')[1];
                 
                 if (inputElement.hasClass('unity-currency-input') || inputElement.hasClass('numeric-mask')) {
-                    fieldValue = fieldValue.replaceAll(/,/g, '');
+                    fieldValue = fieldValue.replaceAll(',', '');
                 }
 
                 if (this.isNumberField(input)) {
@@ -298,8 +298,8 @@ $(function () {
 });
 
 function calculatePercentage() {
-    const requestedAmount = Number.parseFloat(document.getElementById("RequestedAmountInputPI")?.value.replaceAll(/,/g, ''));
-    const totalProjectBudget = Number.parseFloat(document.getElementById("TotalBudgetInputPI")?.value.replaceAll(/,/g, ''));
+    const requestedAmount = Number.parseFloat(document.getElementById("RequestedAmountInputPI")?.value.replaceAll(',', ''));
+    const totalProjectBudget = Number.parseFloat(document.getElementById("TotalBudgetInputPI")?.value.replaceAll(',', ''));
     if (Number.isNaN(requestedAmount) || Number.isNaN(totalProjectBudget) || totalProjectBudget == 0) {
         document.getElementById("ProjectInfo_PercentageTotalProjectBudget").value = 0;
         return;

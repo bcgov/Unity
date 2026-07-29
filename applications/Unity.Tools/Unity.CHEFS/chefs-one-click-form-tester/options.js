@@ -340,7 +340,7 @@ async function selectExportFolder() {
 }
 
 function generateBatchToken() {
-  const token = crypto.randomUUID().replaceAll(/-/g, '') + crypto.randomUUID().replaceAll(/-/g, '');
+  const token = crypto.randomUUID().replaceAll('-', '') + crypto.randomUUID().replaceAll('-', '');
   document.getElementById('batchLauncherToken').value = token;
   setBatchSettingsMessage('Token generated. Copy it into LAUNCHER_TOKEN in the batch file, then save Settings.', 'success');
 }
