@@ -1,3 +1,7 @@
+function inputAction(requestData, dataTableSettings) {
+    return false;
+}
+
 $(function () {
 
     const l = abp.localization.getResource('GrantManager');
@@ -21,11 +25,6 @@ $(function () {
         }
         onSubmissionSummaryFilterChanged();
     });
-
-    let inputAction = function (requestData, dataTableSettings) {
-        return false;
-    };
-
 
     $('#search').on('input', function () {
         let table = $('#ReconciliationTable').DataTable();
@@ -146,7 +145,7 @@ $(function () {
     setExternalSearchFilter(iDt);
 
     if ($('#btn-toggle-filter').length) {
-        if ($.fn.dataTable !== 'undefined' && typeof $.fn.dataTable.FilterRow !== 'undefined') {
+        if ($.fn.dataTable !== 'undefined' && $.fn.dataTable.FilterRow !== undefined) {
             const filterRow = new $.fn.dataTable.FilterRow(iDt.settings()[0], {
                 buttonId: 'btn-toggle-filter',
                 buttonText: FilterDesc.Default,

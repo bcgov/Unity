@@ -1,4 +1,22 @@
-﻿$(function () {
+﻿function responseCallback(result) {
+    return {
+        recordsTotal: result.totalCount,
+        recordsFiltered: result.items.length,
+        data: result.items
+    };
+}
+
+function getApiTokenBtn(e) {
+    e.preventDefault();
+    let link = document.createElement("a");
+    link.setAttribute('download', '');
+    link.href = '/api/app/configurationFile/applicationforms';
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+}
+
+$(function () {
     const l = abp.localization.getResource('GrantManager');
     let createModal = new abp.ModalManager(abp.appPath + 'ApplicationForms/CreateModal');
     let updateModal = new abp.ModalManager(abp.appPath + 'ApplicationForms/UpdateModal');
@@ -71,14 +89,6 @@
         'chefsApplicationFormGuid'
     ];
 
-    let responseCallback = function (result) {
-        return {
-            recordsTotal: result.totalCount,
-            recordsFiltered: result.items.length,
-            data: result.items
-        };
-    };
-
     $.fn.dataTable.Buttons.defaults.dom.button.className = 'btn flex-none';
     let actionButtons = [
         {
@@ -149,16 +159,6 @@
     function setApiTokenBtn(e) {
         e.preventDefault();
         tokenModal.open();
-    };
-
-    function getApiTokenBtn(e) {
-        e.preventDefault();
-        let link = document.createElement("a");
-        link.setAttribute('download', '');
-        link.href = '/api/app/configurationFile/applicationforms';
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
     };
 });
 

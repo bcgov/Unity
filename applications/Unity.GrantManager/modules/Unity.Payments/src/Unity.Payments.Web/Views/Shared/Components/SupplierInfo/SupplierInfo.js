@@ -272,21 +272,6 @@ $(function () {
             return String(supplierId);
         };
 
-        let responseCallback = function (result) {
-            if (!result || result.length === 0) {
-                return {
-                    recordsTotal: 0,
-                    recordsFiltered: 0,
-                    data: [],
-                };
-            }
-            return {
-                recordsTotal: result.length,
-                recordsFiltered: result.length,
-                data: result,
-            };
-        };
-
         const listColumns = getColumns();
         const defaultVisibleColumns = [
             'number',
@@ -334,25 +319,24 @@ $(function () {
         });
 
         initializeFilterRowPlugin(dataTable, 'btn-supplier-toggle-filter');
+    }
 
+    function getColumns() {
+        let columnIndex = 0;
 
-        function getColumns() {
-            let columnIndex = 0;
-
-            return [
-                getSiteNumber(columnIndex++),
-                getPayGroup(columnIndex++),
-                getMailingAddress(columnIndex++),
-                getBankAccount(columnIndex++),
-                getStatus(columnIndex++),
-                getSiteDefaultRadio(columnIndex++),
-                getEditButtonColumn(columnIndex++),
-            ].map((column) => ({
-                ...column,
-                targets: [column.index],
-                orderData: [column.index, 0],
-            }));
-        }
+        return [
+            getSiteNumber(columnIndex++),
+            getPayGroup(columnIndex++),
+            getMailingAddress(columnIndex++),
+            getBankAccount(columnIndex++),
+            getStatus(columnIndex++),
+            getSiteDefaultRadio(columnIndex++),
+            getEditButtonColumn(columnIndex++),
+        ].map((column) => ({
+            ...column,
+            targets: [column.index],
+            orderData: [column.index, 0],
+        }));
     }
 
     function getSiteNumber(columnIndex) {
@@ -405,26 +389,6 @@ $(function () {
                     nullToEmpty(full.postalCode)
                 );
             },
-            index: columnIndex,
-        };
-    }
-
-    function getBankAccount(columnIndex) {
-        return {
-            title: 'Bank Account',
-            name: 'bankAccount',
-            data: 'bankAccount',
-            className: 'data-table-header',
-            index: columnIndex,
-        };
-    }
-
-    function getStatus(columnIndex) {
-        return {
-            title: 'Status',
-            name: 'status',
-            data: 'status',
-            className: 'data-table-header',
             index: columnIndex,
         };
     }
@@ -496,11 +460,46 @@ $(function () {
         loadSiteInfoTable();
         validateMatchingSupplierToOrgInfo();
     });
-
-    function nullToEmpty(value) {
-        return value == null ? '' : value;
-    }
 });
+
+function nullToEmpty(value) {
+    return value == null ? '' : value;
+}
+
+function getBankAccount(columnIndex) {
+    return {
+        title: 'Bank Account',
+        name: 'bankAccount',
+        data: 'bankAccount',
+        className: 'data-table-header',
+        index: columnIndex,
+    };
+}
+
+function getStatus(columnIndex) {
+    return {
+        title: 'Status',
+        name: 'status',
+        data: 'status',
+        className: 'data-table-header',
+        index: columnIndex,
+    };
+}
+
+function responseCallback(result) {
+    if (!result || result.length === 0) {
+        return {
+            recordsTotal: 0,
+            recordsFiltered: 0,
+            data: [],
+        };
+    }
+    return {
+        recordsTotal: result.length,
+        recordsFiltered: result.length,
+        data: result,
+    };
+}
 
 function saveSiteDefault(siteId) {
     let applicationId = $('#SupplierInfo_ApplicationId').val();

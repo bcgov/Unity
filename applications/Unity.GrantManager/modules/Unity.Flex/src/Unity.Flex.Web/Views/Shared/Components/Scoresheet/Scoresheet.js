@@ -58,6 +58,120 @@ function escapeHtml(text) {
         .replaceAll('"', '&quot;');
 }
 
+function updateScoresheetOrder() {
+    let order = [];
+    $("#scoresheet-accordion .accordion-item").each(function (index, element) {
+        let scoresheetId = $(element).find(".accordion-header").attr("id").replace("heading-", "");
+        order.push(scoresheetId);
+    });
+    unity.flex.scoresheets.scoresheet.saveScoresheetOrder(order)
+        .then(response => {
+            abp.notify.success(
+                'Scoresheet ordering is successfully saved.',
+                'Scoresheet'
+            );
+        });
+}
+
+function buildFieldPreview(builder, item) {
+    return builder ? builder(item) : null;
+}
+
+function buildTextAreaFieldPreview(item) {
+    let req = item.dataset.required ? "required" : null;
+    return `
+                <p>${sanitizeHtml(item.dataset.questiondesc)}</p>
+                <div class="mb-3">
+                    <label for="answer-text-${item.dataset.id}" class="form-label unt-form-label">Answer</label>
+                    <textarea rows="${item.dataset.rows}" type="text" ${req} class="form-control answer-text-input" minlength="${item.dataset.minlength}" maxlength="${item.dataset.maxlength}"
+                        id="answer-textarea-${item.dataset.id}" name="Answer-Textarea-${item.dataset.id}" value="" data-original-value=""
+                        oninput="handleInputChange('${item.dataset.id}','answer-textarea-')"></textarea>
+                    <span id="error-message-${item.dataset.id}" class="text-danger field-validation-error"></span>
+                </div>`;
+}
+
+function buildSelectListFieldPreview(item) {
+    const options = JSON.parse(item.dataset.definition).options || [];
+    let optionsHTML = `<option data-numeric-value="0" value="">Please choose...</option>`;
+    optionsHTML += options.map(option => {
+        const truncatedValue = option.value.length > 100 ? option.value.substring(0, 100) + " ..." : option.value;
+        return `<option data-numeric-value="${option.numeric_value}" value="${option.value}" title="${option.value}">${truncatedValue}</option>`;
+    }).join('');
+
+    return `
+                <p>${sanitizeHtml(item.dataset.questiondesc)}</p>
+                <div class="mb-3">
+                    <label for="answer-selectlist-${item.dataset.id}" class="form-label unt-form-label">Answer</label>
+                    <select id="answer-selectlist-${item.dataset.id}"
+                            class="form-select form-control answer-selectlist-input"
+                            name="Answer-SelectList-${item.dataset.id}"
+                            data-original-value=""
+                            onchange="handleInputChange('${item.dataset.id}','answer-selectlist-')">
+                        ${optionsHTML}
+                    </select>
+                </div>`;
+}
+
+function buildNumberFieldPreview(item) {
+    let req = item.dataset.required ? "required" : null;
+    return `
+                <p>${sanitizeHtml(item.dataset.questiondesc)}</p>
+                <div class="mb-3">
+                    <label for="answer-number-${item.dataset.id}" class="form-label unt-form-label">Answer</label>
+                    <input type="number" ${req} class="form-control answer-number-input" min="${item.dataset.min}" max="${item.dataset.max}"
+                        id="answer-number-${item.dataset.id}" name="Answer-Number-${item.dataset.id}" data-original-value=""
+                        oninput="handleInputChange('${item.dataset.id}','answer-number-')" />
+                    <span id="error-message-${item.dataset.id}" class="text-danger field-validation-error" ></span>
+                </div>`;
+}
+
+function buildYesNoFieldPreview(item) {
+    return `
+                <p>${sanitizeHtml(item.dataset.questiondesc)}</p>
+                <div class="mb-3">
+                    <label for="answer-yesno-${item.dataset.id}" class="form-label unt-form-label">Answer</label>
+                    <select id="answer-yesno-${item.dataset.id}"
+                            class="form-select form-control answer-yesno-input"
+                            name="Answer-YesNo-${item.dataset.id}"
+                            data-original-value=""
+                            data-yes-numeric-value="${item.dataset.yesvalue}"
+                            data-no-numeric-value="${item.dataset.novalue}"
+                            onchange="handleInputChange('${item.dataset.id}','answer-yesno-')">
+                        <option value="">Please choose...</option>
+                        <option value="Yes">Yes</option>
+                        <option value="No">No</option>
+                    </select>
+                </div>`;
+}
+
+function buildTextFieldPreview(item) {
+    let req = item.dataset.required ? "required" : null;
+
+    return `
+                <p>${sanitizeHtml(item.dataset.questiondesc)}</p>
+                <div class="mb-3">
+                    <label for="answer-text-${item.dataset.id}" class="form-label unt-form-label">Answer</label>
+                    <input type="text" ${req} class="form-control answer-text-input" minlength="${item.dataset.minlength}" maxlength="${item.dataset.maxlength}"
+                        id="answer-text-${item.dataset.id}"
+                        name="Answer-Text-${item.dataset.id}" value="" data-original-value=""
+                        oninput="handleInputChange('${item.dataset.id}','answer-text-')" />
+                    <span id="error-message-${item.dataset.id}" class="text-danger field-validation-error"></span>
+                </div>`;
+}
+
+function hashCode(str) {
+    let hash = 0;
+    if (str.length === 0) {
+        return hash;
+    }
+    for (let i = 0; i < str.length; i++) {
+        const char = str.charCodeAt(i);
+        hash = ((hash << 5) - hash) + char;
+        hash |= 0;
+    }
+    return hash;
+}
+
 $(function () {
 
     function makeScoresheetsSortable() {
@@ -118,21 +232,6 @@ $(function () {
             }
         });
 
-    }
-
-    function updateScoresheetOrder() {
-        let order = [];
-        $("#scoresheet-accordion .accordion-item").each(function (index, element) {
-            let scoresheetId = $(element).find(".accordion-header").attr("id").replace("heading-", "");
-            order.push(scoresheetId);
-        });
-        unity.flex.scoresheets.scoresheet.saveScoresheetOrder(order)
-            .then(response => {
-                abp.notify.success(
-                    'Scoresheet ordering is successfully saved.',
-                    'Scoresheet'
-                );
-            });
     }
 
     function updatePreview(event) {
@@ -271,106 +370,6 @@ $(function () {
 
         updateSubtotal();
     }
-
-    function buildFieldPreview(builder, item) {
-        return builder ? builder(item) : null;
-    }
-
-    function buildTextAreaFieldPreview(item) {
-        let req = item.dataset.required ? "required" : null;
-        return `
-                    <p>${sanitizeHtml(item.dataset.questiondesc)}</p>
-                    <div class="mb-3">
-                        <label for="answer-text-${item.dataset.id}" class="form-label unt-form-label">Answer</label>
-                        <textarea rows="${item.dataset.rows}" type="text" ${req} class="form-control answer-text-input" minlength="${item.dataset.minlength}" maxlength="${item.dataset.maxlength}" 
-                            id="answer-textarea-${item.dataset.id}" name="Answer-Textarea-${item.dataset.id}" value="" data-original-value="" 
-                            oninput="handleInputChange('${item.dataset.id}','answer-textarea-')"></textarea>
-                        <span id="error-message-${item.dataset.id}" class="text-danger field-validation-error"></span>
-                    </div>`;
-    }
-
-    function buildSelectListFieldPreview(item) {
-        const options = JSON.parse(item.dataset.definition).options || [];
-        let optionsHTML = `<option data-numeric-value="0" value="">Please choose...</option>`;
-        optionsHTML += options.map(option => {
-            const truncatedValue = option.value.length > 100 ? option.value.substring(0, 100) + " ..." : option.value;
-            return `<option data-numeric-value="${option.numeric_value}" value="${option.value}" title="${option.value}">${truncatedValue}</option>`;
-        }).join('');
-
-        return `
-                    <p>${sanitizeHtml(item.dataset.questiondesc)}</p>
-                    <div class="mb-3">
-                        <label for="answer-selectlist-${item.dataset.id}" class="form-label unt-form-label">Answer</label>
-                        <select id="answer-selectlist-${item.dataset.id}"
-                                class="form-select form-control answer-selectlist-input"
-                                name="Answer-SelectList-${item.dataset.id}"
-                                data-original-value=""
-                                onchange="handleInputChange('${item.dataset.id}','answer-selectlist-')">
-                            ${optionsHTML}
-                        </select>
-                    </div>`;
-    }
-
-    function buildNumberFieldPreview(item) {
-        let req = item.dataset.required ? "required" : null;
-        return `
-                    <p>${sanitizeHtml(item.dataset.questiondesc)}</p>
-                    <div class="mb-3">
-                        <label for="answer-number-${item.dataset.id}" class="form-label unt-form-label">Answer</label>
-                        <input type="number" ${req} class="form-control answer-number-input" min="${item.dataset.min}" max="${item.dataset.max}" 
-                            id="answer-number-${item.dataset.id}" name="Answer-Number-${item.dataset.id}" data-original-value="" 
-                            oninput="handleInputChange('${item.dataset.id}','answer-number-')" />
-                        <span id="error-message-${item.dataset.id}" class="text-danger field-validation-error" ></span>
-                    </div>`;
-    }
-
-    function buildYesNoFieldPreview(item) {
-        return `
-                    <p>${sanitizeHtml(item.dataset.questiondesc)}</p>
-                    <div class="mb-3">
-                        <label for="answer-yesno-${item.dataset.id}" class="form-label unt-form-label">Answer</label>
-                        <select id="answer-yesno-${item.dataset.id}"
-                                class="form-select form-control answer-yesno-input"
-                                name="Answer-YesNo-${item.dataset.id}"
-                                data-original-value=""
-                                data-yes-numeric-value="${item.dataset.yesvalue}"
-                                data-no-numeric-value="${item.dataset.novalue}"
-                                onchange="handleInputChange('${item.dataset.id}','answer-yesno-')">
-                            <option value="">Please choose...</option>
-                            <option value="Yes">Yes</option>
-                            <option value="No">No</option>
-                        </select>
-                    </div>`;
-    }
-
-    function buildTextFieldPreview(item) {
-        let req = item.dataset.required ? "required" : null;
-
-        return `
-                    <p>${sanitizeHtml(item.dataset.questiondesc)}</p>
-                    <div class="mb-3">
-                        <label for="answer-text-${item.dataset.id}" class="form-label unt-form-label">Answer</label>
-                        <input type="text" ${req} class="form-control answer-text-input" minlength="${item.dataset.minlength}" maxlength="${item.dataset.maxlength}" 
-                            id="answer-text-${item.dataset.id}" 
-                            name="Answer-Text-${item.dataset.id}" value="" data-original-value="" 
-                            oninput="handleInputChange('${item.dataset.id}','answer-text-')" />
-                        <span id="error-message-${item.dataset.id}" class="text-danger field-validation-error"></span>
-                    </div>`;
-    }
-
-    function hashCode(str) {
-        let hash = 0;
-        if (str.length === 0) {
-            return hash;
-        }
-        for (let i = 0; i < str.length; i++) {
-            const char = str.charCodeAt(i);
-            hash = ((hash << 5) - hash) + char;
-            hash |= 0;
-        }
-        return hash;
-    }
-
 
     makeScoresheetsSortable();
     attachAccordionToggleListeners();

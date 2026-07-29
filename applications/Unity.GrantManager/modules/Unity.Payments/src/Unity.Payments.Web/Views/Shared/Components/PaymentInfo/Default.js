@@ -183,16 +183,6 @@
         };
     };
 
-    let formatItems = function (items) {
-        const newData = items.map((item, index) => {
-            return {
-                ...item,
-                rowCount: index,
-            };
-        });
-        return newData;
-    };
-
     dataTable = initializeDataTable({
         dt,
         defaultVisibleColumns,
@@ -625,6 +615,16 @@ function refreshSupplierInfoWidget() {
 function nullToEmpty(value) {
     return value == null ? '' : value;
 }
+
+let formatItems = function (items) {
+    const newData = items.map((item, index) => {
+        return {
+            ...item,
+            rowCount: index,
+        };
+    });
+    return newData;
+};
 
 function getPaymentStatusTextColor(status) {
     switch (status) {

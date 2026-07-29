@@ -67,13 +67,6 @@
         }
     });
 
-    function beingDragged(ev) {
-        let draggedEl = ev.target;
-        if (draggedEl.classList + "" != "undefined") {
-            draggedEl.classList.add('dragging');
-        }
-    }
-
     function dragEnd(ev) {
         let draggedEl = ev.target;
         if (draggedEl.classList + "" != "undefined") {
@@ -86,15 +79,6 @@
             storePaymentInfoIdChange();
             storeFundingAgreementInfoIdChange();
         }
-    }
-
-    function getMultiTargetIds(cssSelector) {
-        let ids = [];
-        let items = Array.from($(cssSelector).children());
-        items.forEach((item) => {
-            ids.push(item.dataset.worksheetId);
-        });
-        return ids;
     }
 
     function dropToMultiTarget(event, addClass, removeClass, storeFunction) {
@@ -178,16 +162,6 @@
         parent.append(items);
     }
 
-    function compareSort(vA, vB) {
-        if (vA < vB) {
-            return -1;
-        } else if (vA > vB) {
-            return 1;
-        } else {
-            return 0;
-        }
-    }
-
     function dropToSingleTarget(event, addClass, removeClass) {
         let dragOver = event.target;
         let beingDragged = document.querySelector('.dragging');
@@ -204,5 +178,31 @@
         }
     }
 });
+
+function beingDragged(ev) {
+    let draggedEl = ev.target;
+    if (draggedEl.classList + "" != "undefined") {
+        draggedEl.classList.add('dragging');
+    }
+}
+
+function getMultiTargetIds(cssSelector) {
+    let ids = [];
+    let items = Array.from($(cssSelector).children());
+    items.forEach((item) => {
+        ids.push(item.dataset.worksheetId);
+    });
+    return ids;
+}
+
+function compareSort(vA, vB) {
+    if (vA < vB) {
+        return -1;
+    } else if (vA > vB) {
+        return 1;
+    } else {
+        return 0;
+    }
+}
 
 

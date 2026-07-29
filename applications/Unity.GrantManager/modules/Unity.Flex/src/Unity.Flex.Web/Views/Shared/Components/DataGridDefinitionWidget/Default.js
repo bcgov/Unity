@@ -1,3 +1,37 @@
+function bindNewColumnOption(newItemTable, option, keyStart) {
+    let newRowTable = $('#' + newItemTable);
+
+    if (option) {
+        option.on('click', function (event) {
+            if (newRowTable) {
+                newRowTable.toggleClass('hidden');
+                $('#new-row-key').val(keyStart + ($('.key-input')?.toArray()?.length + 1));
+                $('#new-row-label').focus();
+                option.toggleClass('hidden');
+            }
+        });
+    }
+}
+
+function getNewColumnRow(controlName) {
+    let newRow = $('#' + controlName);
+    let columnName = newRow.find('input');
+    let columnType = newRow.find('select');
+    let row = {};
+
+    row.key = columnName[0].value;
+    row.label = columnType[0].value;
+
+    return row;
+}
+
+function generateOptions(type) {
+    let options = ($('#SupportedFieldsList').val()).split(',');
+    let selectOptions = '';
+    options.forEach((element) => selectOptions += `<option ${element == type ? 'selected' : ''}>${element}</option>`);
+    return selectOptions;
+}
+
 $(function () {
     let addcolumnOption;
     let columnOptionsTable;
@@ -13,21 +47,6 @@ $(function () {
         bindSaveOption();
         bindCancelOption();
         bindNewRowKeyCheck(newRowControl);
-    }
-
-    function bindNewColumnOption(newItemTable, option, keyStart) {
-        let newRowTable = $('#' + newItemTable);
-
-        if (option) {
-            option.on('click', function (event) {
-                if (newRowTable) {
-                    newRowTable.toggleClass('hidden');
-                    $('#new-row-key').val(keyStart + ($('.key-input')?.toArray()?.length + 1));
-                    $('#new-row-label').focus();
-                    option.toggleClass('hidden');
-                }
-            });
-        }
     }
 
     function bindNewRowKeyCheck(newRowControl) {
@@ -63,18 +82,6 @@ $(function () {
         }
     }
 
-    function getNewColumnRow(controlName) {
-        let newRow = $('#' + controlName);
-        let columnName = newRow.find('input');
-        let columnType = newRow.find('select');
-        let row = {};
-
-        row.key = columnName[0].value;
-        row.label = columnType[0].value;
-
-        return row;
-    }
-
     function validateColumnName(controlName) {
         let row = getNewColumnRow(controlName);
 
@@ -100,13 +107,6 @@ $(function () {
         </td><td><select class="form-control form-select" name="ColumnTypes" required id="new-column-type-${name}">${generateOptions(type)}</select></td>
         <td><button id="data-btn-${name}" class="delete-column-option btn btn-danger" type="button" data-busy-text="Processing..." data-bs-toggle="tooltip" data-bs-placement="top" aria-label="Delete" data-bs-original-title="Delete">
         <i class="fl fl-delete"></i></button></td></tr>`
-    }
-
-    function generateOptions(type) {        
-        let options = ($('#SupportedFieldsList').val()).split(',');
-        let selectOptions = '';
-        options.forEach((element) => selectOptions += `<option ${element == type ? 'selected' : ''}>${element}</option>`);
-        return selectOptions;
     }
 
     function bindCancelOption() {

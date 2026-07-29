@@ -444,16 +444,6 @@ $(function () {
         };
     };
 
-    let formatItems = function (items) {
-        const newData = items.map((item, index) => {
-            return {
-                ...item,
-                rowCount: index
-            };
-        });
-        return newData;
-    }
-
     dataTable = initializeDataTable({
         dt,
         defaultVisibleColumns,
@@ -828,17 +818,6 @@ $(function () {
         };
     }
 
-    function getSupplierNameColumn(columnIndex) {
-        return {
-            title: 'Supplier Name',
-            name: 'supplierName',
-            data: 'supplierName',
-            visible: false,
-            className: 'data-table-header',
-            index: columnIndex,
-        };
-    }
-
     function getSiteNumberColumn(columnIndex) {
         return {
             title: l('ApplicationPaymentListTable:SiteNumber'),
@@ -1032,10 +1011,6 @@ $(function () {
         };
     }
 
-    function formatName(userData) {
-        return typeof userData !== 'undefined' && userData !== null ? `${userData?.name} ${userData?.surname}` : "";
-    }
-
     function getApprovalDateColumn(columnIndex, level) {
         return {
             title: l(`ApplicationPaymentListTable:L${level}ApprovalDate`),
@@ -1114,23 +1089,6 @@ $(function () {
         };
     }
 
-    function getTagsColumn(columnIndex) {
-        return {
-            title: 'Tags',
-            name: 'paymentTags',
-            data: 'paymentTags',
-            className: '',
-            refreshData: true,
-            index: columnIndex,
-            render: function (data) {
-                let tagNames = (data ?? [])
-                    .filter(x => x?.tag?.name)
-                    .map(x => x.tag.name);
-                return tagNames.join(', ') ?? '';
-            }
-        }
-    }
-
     function getNoteColumn(columnIndex) {
         return {
             title: l('ApplicationPaymentListTable:Note'),
@@ -1139,24 +1097,6 @@ $(function () {
             className: 'data-table-header',
             index: columnIndex
 
-        };
-    }
-
-    function getAccountDistributionColumn(columnIndex) {
-        return {
-            title: 'Account Code',
-            name: 'accountCodingDisplay',
-            data: 'accountCodingDisplay',
-            className: 'data-table-header',
-            refreshData: true,
-            index: columnIndex,
-            render: function (data) {
-                if (data + "" !== "undefined" && data?.length > 0) {
-                    return data;
-                } else {
-                    return "";
-                }
-            }
         };
     }
 
@@ -1191,10 +1131,6 @@ $(function () {
         };
     }
 
-    function getExpenseApprovalsDetails(expenseApprovals, type) {
-        return (expenseApprovals ?? []).find(x => x.type == type);
-    }
-
     $('#search').on('input', function () {
         if (isRestoringState) {
             return;
@@ -1218,44 +1154,6 @@ $(function () {
         selectedPaymentIds = [];
         PubSub.publish("deselect_batchpayment_application", "reset_data");
     });
-
-    function getStatusTextColor(status) {
-        switch (status) {
-            case "L1Pending":
-                return "#053662";
-
-            case "L1Declined":
-                return "#CE3E39";
-
-            case "L2Pending":
-                return "#053662";
-
-            case "L2Declined":
-                return "#CE3E39";
-
-            case "L3Pending":
-                return "#053662";
-
-            case "L3Declined":
-                return "#CE3E39";
-
-            case "Submitted":
-                return "#5595D9";
-
-            case "HistoricalPayment":
-            case "Paid":
-                return "#42814A";
-
-            case "Failed":
-                return "#CE3E39";
-
-            case "Cancelled":
-                return "#6c757d";
-
-            default:
-                return "#053662";
-        }
-    }
 
     $('.select-all-payments').on('click', function () {
         if ($(this).is(':checked')) {
@@ -1375,6 +1273,62 @@ function setActionButtonState(buttonApi, enabled) {
     buttonApi.nodes().toggleClass('action-bar-btn-unavailable', !enabled);
 }
 
+function formatItems(items) {
+    const newData = items.map((item, index) => {
+        return {
+            ...item,
+            rowCount: index
+        };
+    });
+    return newData;
+}
+
+function formatName(userData) {
+    return userData !== undefined && userData !== null ? `${userData?.name} ${userData?.surname}` : "";
+}
+
+function getExpenseApprovalsDetails(expenseApprovals, type) {
+    return (expenseApprovals ?? []).find(x => x.type == type);
+}
+
+function getStatusTextColor(status) {
+    switch (status) {
+        case "L1Pending":
+            return "#053662";
+
+        case "L1Declined":
+            return "#CE3E39";
+
+        case "L2Pending":
+            return "#053662";
+
+        case "L2Declined":
+            return "#CE3E39";
+
+        case "L3Pending":
+            return "#053662";
+
+        case "L3Declined":
+            return "#CE3E39";
+
+        case "Submitted":
+            return "#5595D9";
+
+        case "HistoricalPayment":
+        case "Paid":
+            return "#42814A";
+
+        case "Failed":
+            return "#CE3E39";
+
+        case "Cancelled":
+            return "#6c757d";
+
+        default:
+            return "#053662";
+    }
+}
+
 function getCancelledColumn(columnIndex) {
     return {
         title: 'Cancelled',
@@ -1412,6 +1366,52 @@ function getCancelledOnColumn(columnIndex) {
             return DateUtils.formatUtcDateToLocal(data, type);
         }
     };
+}
+
+function getSupplierNameColumn(columnIndex) {
+    return {
+        title: 'Supplier Name',
+        name: 'supplierName',
+        data: 'supplierName',
+        visible: false,
+        className: 'data-table-header',
+        index: columnIndex,
+    };
+}
+
+function getAccountDistributionColumn(columnIndex) {
+    return {
+        title: 'Account Code',
+        name: 'accountCodingDisplay',
+        data: 'accountCodingDisplay',
+        className: 'data-table-header',
+        refreshData: true,
+        index: columnIndex,
+        render: function (data) {
+            if (data + "" !== "undefined" && data?.length > 0) {
+                return data;
+            } else {
+                return "";
+            }
+        }
+    };
+}
+
+function getTagsColumn(columnIndex) {
+    return {
+        title: 'Tags',
+        name: 'paymentTags',
+        data: 'paymentTags',
+        className: '',
+        refreshData: true,
+        index: columnIndex,
+        render: function (data) {
+            let tagNames = (data ?? [])
+                .filter(x => x?.tag?.name)
+                .map(x => x.tag.name);
+            return tagNames.join(', ') ?? '';
+        }
+    }
 }
 
 let casPaymentResponseModal = new abp.ModalManager({

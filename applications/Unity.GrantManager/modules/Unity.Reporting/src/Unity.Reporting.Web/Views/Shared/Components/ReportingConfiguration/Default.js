@@ -332,26 +332,6 @@ $(function () {
         handleProviderChange(newProvider);
     });
 
-    // Function to check if a path has duplicate key prefix (DKx)
-    function hasDuplicateKeyPrefix(path) {
-        if (!path || typeof path !== 'string') return false;
-        
-        // Limit input length to prevent potential ReDoS attacks
-        if (path.length > 1000) {
-            console.warn('Path length exceeds safety limit for regex check');
-            return false;
-        }
-        
-        try {
-            // Use a more specific pattern that's less prone to backtracking
-            // This pattern is more explicit and should execute efficiently
-            return /^\(DK\d{1,10}\)/.test(path);
-        } catch (error) {
-            console.warn('Error in duplicate key prefix check:', error);
-            return false;
-        }
-    }
-
     // Function to check for duplicate keys in current table data.
     // Covers two cases:
     //   1. Auto-generated (DKx) prefix markers added by the server when CHEFS fields share a key.
@@ -456,19 +436,6 @@ $(function () {
             });
             widgetManager.refresh();
         }
-    }
-
-    // Function to display detected changes alert
-    function displayDetectedChangesAlert(detectedChanges) {
-        if (!detectedChanges || detectedChanges.trim() === '') {
-            return;
-        }
-
-        // Create a more informative alert message
-        const alertMessage = `Schema changes have been detected:\n\n${detectedChanges}\n\nThese changes may affect your report configuration. Please review your column mappings and save the configuration if needed.`;
-
-        // Use ABP's message service for a better user experience
-        abp.message.warn(alertMessage, 'Schema Changes Detected');
     }
 
     // Handle version selector change (only for per-version providers)
@@ -751,16 +718,6 @@ $(function () {
                 recordsFiltered: result.totalCount || result.length || 0,
                 data: formatItems(result.items || result)
             };
-        };
-
-        const formatItems = function (items) {
-            const newData = items.map((item, index) => {
-                return {
-                    ...item,
-                    rowCount: index
-                };
-            });
-            return newData;
         };
 
         // Create data endpoint function that handles the exists check and fallback logic
@@ -1077,39 +1034,6 @@ $(function () {
             isValid: errors.length === 0,
             errors: errors
         };
-    }
-
-    function sanitizeSqlNames(name) {
-        if (!name || typeof name !== 'string') return '';
-
-        // Trim whitespace
-        let sanitized = name.trim();
-
-        // Replace multiple spaces/hyphens with single underscore
-        sanitized = sanitized.replaceAll(/[\s-]+/g, '_');
-
-        // Remove all non-alphanumeric characters except underscores
-        sanitized = sanitized.replaceAll(/\W/g, '');
-
-        // Remove leading/trailing underscores safely without vulnerable regex
-        while (sanitized.startsWith('_')) {
-            sanitized = sanitized.slice(1);
-        }
-        while (sanitized.endsWith('_')) {
-            sanitized = sanitized.slice(0, -1);
-        }
-
-        // If starts with number, prefix with 'view_'
-        if (sanitized && /^\d/.test(sanitized)) {
-            sanitized = 'view_' + sanitized;
-        }
-
-        // If empty after sanitization, return empty string
-        if (!sanitized) {
-            return '';
-        }
-
-        return sanitized;
     }
 
     // View name sanitization function
@@ -1437,18 +1361,6 @@ $(function () {
             // Re-enable all control buttons after save completes (success or error)
             setControlButtonsLoadingState(false);
         });
-    }
-
-    // Helper function to update view name validation UI (module-level to reduce nesting)
-    function updateViewNameValidationUI(isValid, errors, $viewNameInput, $confirmButton, $feedback) {
-        if (isValid) {
-            $viewNameInput.addClass('is-valid');
-            $confirmButton.prop('disabled', false);
-        } else {
-            $viewNameInput.addClass('is-invalid');
-            $feedback.text(errors.join(', '));
-            $confirmButton.prop('disabled', true);
-        }
     }
 
     // Helper function to handle view name availability check (module-level to reduce nesting)
@@ -2229,6 +2141,97 @@ $(function () {
         }
     });
 });
+
+// Function to check if a path has duplicate key prefix (DKx)
+function hasDuplicateKeyPrefix(path) {
+    if (!path || typeof path !== 'string') return false;
+
+    // Limit input length to prevent potential ReDoS attacks
+    if (path.length > 1000) {
+        console.warn('Path length exceeds safety limit for regex check');
+        return false;
+    }
+
+    try {
+        // Use a more specific pattern that's less prone to backtracking
+        // This pattern is more explicit and should execute efficiently
+        return /^\(DK\d{1,10}\)/.test(path);
+    } catch (error) {
+        console.warn('Error in duplicate key prefix check:', error);
+        return false;
+    }
+}
+
+// Function to display detected changes alert
+function displayDetectedChangesAlert(detectedChanges) {
+    if (!detectedChanges || detectedChanges.trim() === '') {
+        return;
+    }
+
+    // Create a more informative alert message
+    const alertMessage = `Schema changes have been detected:\n\n${detectedChanges}\n\nThese changes may affect your report configuration. Please review your column mappings and save the configuration if needed.`;
+
+    // Use ABP's message service for a better user experience
+    abp.message.warn(alertMessage, 'Schema Changes Detected');
+}
+
+// Function to add a rowCount index to each item for DataTable rendering
+function formatItems(items) {
+    const newData = items.map((item, index) => {
+        return {
+            ...item,
+            rowCount: index
+        };
+    });
+    return newData;
+}
+
+// Sanitizes a raw string into a safe SQL identifier fragment (used as the basis
+// for both column name and view name sanitization)
+function sanitizeSqlNames(name) {
+    if (!name || typeof name !== 'string') return '';
+
+    // Trim whitespace
+    let sanitized = name.trim();
+
+    // Replace multiple spaces/hyphens with single underscore
+    sanitized = sanitized.replaceAll(/[\s-]+/g, '_');
+
+    // Remove all non-alphanumeric characters except underscores
+    sanitized = sanitized.replaceAll(/\W/g, '');
+
+    // Remove leading/trailing underscores safely without vulnerable regex
+    while (sanitized.startsWith('_')) {
+        sanitized = sanitized.slice(1);
+    }
+    while (sanitized.endsWith('_')) {
+        sanitized = sanitized.slice(0, -1);
+    }
+
+    // If starts with number, prefix with 'view_'
+    if (sanitized && /^\d/.test(sanitized)) {
+        sanitized = 'view_' + sanitized;
+    }
+
+    // If empty after sanitization, return empty string
+    if (!sanitized) {
+        return '';
+    }
+
+    return sanitized;
+}
+
+// Helper function to update view name validation UI (module-level to reduce nesting)
+function updateViewNameValidationUI(isValid, errors, $viewNameInput, $confirmButton, $feedback) {
+    if (isValid) {
+        $viewNameInput.addClass('is-valid');
+        $confirmButton.prop('disabled', false);
+    } else {
+        $viewNameInput.addClass('is-invalid');
+        $feedback.text(errors.join(', '));
+        $confirmButton.prop('disabled', true);
+    }
+}
 
 function getTopLevelProviderValue(provider) {
     if (provider === 'worksheet_consolidated') return 'worksheet';

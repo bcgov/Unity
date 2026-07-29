@@ -13,14 +13,6 @@ $(function () {
         };
     };
 
-    let responseCallback = function (result) {
-        return {
-            recordsTotal: result.length,
-            recordsFiltered: result.length,
-            data: result
-        };
-    };
-
     let _filterDataTable = null;
 
     let setupImportModal = function () {
@@ -91,16 +83,18 @@ $(function () {
         });
     }
 
+    let initImportUserModal = function (publicApi, args) {
+        setupImportModal();
+    };
+
+    let initEditUserModal = function (publicApi, args) { /* Intentionally left empty */ };
+
     abp.modals.importUser = function () {
-        let initModal = function (publicApi, args) {
-            setupImportModal();
-        };
-        return { initModal: initModal };
+        return { initModal: initImportUserModal };
     }
 
     abp.modals.editUser = function () {
-        let initModal = function (publicApi, args) { /* Intentionally left empty */ };
-        return { initModal: initModal };
+        return { initModal: initEditUserModal };
     }
 
     let _editModal = new abp.ModalManager({
@@ -245,14 +239,6 @@ $(function () {
         ...commonTableActionButtons(l('Users'))
     ];
 
-    let tableResponseCallback = function (result) {
-        return {
-            recordsTotal: result.totalCount,
-            recordsFiltered: result.items.length,
-            data: result.items
-        };
-    };
-
     let dt = $('#UsersTable');
     let listColumns = abp.ui.extensions.tableColumns.get('identity.user').columns.toArray();
     let defaultVisibleColumns = listColumns.map((item) => { return item['data']; });
@@ -282,3 +268,19 @@ $(function () {
         dataTable.ajax.reload();
     });
 });
+
+function responseCallback(result) {
+    return {
+        recordsTotal: result.length,
+        recordsFiltered: result.length,
+        data: result
+    };
+}
+
+function tableResponseCallback(result) {
+    return {
+        recordsTotal: result.totalCount,
+        recordsFiltered: result.items.length,
+        data: result.items
+    };
+}

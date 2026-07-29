@@ -1,4 +1,209 @@
-$(function () {    
+// Format items with rowCount for selection
+function formatItems(items) {
+    items.forEach((item, index) => {
+        item.rowCount = index;
+    });
+    return items;
+}
+
+function getOrgNameColumn(columnIndex) {
+    return {
+        title: 'Organization Name',
+        data: 'orgName',
+        name: 'orgName',
+        className: 'data-table-header',
+        render: function (data) {
+            return data ?? '';
+        },
+        index: columnIndex
+    }
+}
+
+function getOrgNumberColumn(columnIndex) {
+    return {
+        title: 'Organization Number',
+        data: 'orgNumber',
+        name: 'orgNumber',
+        className: 'data-table-header',
+        render: function (data) {
+            return data ?? '';
+        },
+        index: columnIndex
+    }
+}
+
+function getOrgStatusColumn(columnIndex) {
+    return {
+        title: 'Organization Status',
+        data: 'orgStatus',
+        name: 'orgStatus',
+        className: 'data-table-header',
+        render: function (data) {
+            if (data === 'ACTIVE') return 'Active';
+            if (data === 'HISTORICAL') return 'Historical';
+            return data ?? '';
+        },
+        index: columnIndex
+    }
+}
+
+function getStatusColumn(columnIndex) {
+    return {
+        title: 'Status',
+        data: 'status',
+        name: 'status',
+        className: 'data-table-header',
+        index: columnIndex
+    }
+}
+
+function getNonRegisteredBusinessNameColumn(columnIndex) {
+    return {
+        title: 'Non-Registered Business Name',
+        data: 'nonRegisteredBusinessName',
+        name: 'nonRegisteredBusinessName',
+        className: 'data-table-header',
+        visible: false,
+        render: function (data) {
+            return data ?? '';
+        },
+        index: columnIndex
+    }
+}
+
+function getNonRegOrgNameColumn(columnIndex) {
+    return {
+        title: 'Non-Registered Organization Name',
+        data: 'nonRegOrgName',
+        name: 'nonRegOrgName',
+        className: 'data-table-header',
+        visible: false,
+        render: function (data) {
+            return data ?? '';
+        },
+        index: columnIndex
+    }
+}
+
+function getSectorColumn(columnIndex) {
+    return {
+        title: 'Sector',
+        data: 'sector',
+        name: 'sector',
+        className: 'data-table-header',
+        visible: false,
+        render: function (data) {
+            return data ?? '';
+        },
+        index: columnIndex
+    }
+}
+
+function getSubSectorColumn(columnIndex) {
+    return {
+        title: 'SubSector',
+        data: 'subSector',
+        name: 'subSector',
+        className: 'data-table-header',
+        visible: false,
+        render: function (data) {
+            return data ?? '';
+        },
+        index: columnIndex
+    }
+}
+
+function getApproxNumberOfEmployeesColumn(columnIndex) {
+    return {
+        title: 'Approx. Number of Employees',
+        data: 'approxNumberOfEmployees',
+        name: 'approxNumberOfEmployees',
+        className: 'data-table-header',
+        visible: false,
+        render: function (data) {
+            return data ?? '';
+        },
+        index: columnIndex
+    }
+}
+
+function getIndigenousOrgIndColumn(columnIndex) {
+    return {
+        title: 'Indigenous',
+        data: 'indigenousOrgInd',
+        name: 'indigenousOrgInd',
+        className: 'data-table-header',
+        visible: false,
+        render: function (data) {
+            return data ?? '';
+        },
+        index: columnIndex
+    }
+}
+
+function getSectorSubSectorIndustryDescColumn(columnIndex) {
+    return {
+        title: 'Other Sector/Sub/Industry Description',
+        data: 'sectorSubSectorIndustryDesc',
+        name: 'sectorSubSectorIndustryDesc',
+        className: 'data-table-header',
+        visible: false,
+        render: function (data) {
+            return data ?? '';
+        },
+        index: columnIndex
+    }
+}
+
+function getBusinessNumberColumn(columnIndex) {
+    return {
+        title: 'Business Number',
+        data: 'businessNumber',
+        name: 'businessNumber',
+        className: 'data-table-header',
+        visible: false,
+        render: function (data) {
+            return data ?? '';
+        },
+        index: columnIndex
+    }
+}
+
+function getFiscalDayColumn(columnIndex) {
+    return {
+        title: 'FYE Day',
+        data: 'fiscalDay',
+        name: 'fiscalDay',
+        className: 'data-table-header',
+        visible: false,
+        render: function (data) {
+            return data ?? '';
+        },
+        index: columnIndex
+    }
+}
+
+// Helper functions for column rendering
+function titleCase(str) {
+    str = str.toLowerCase().split(' ');
+    for (let i = 0; i < str.length; i++) {
+        str[i] = str[i].charAt(0).toUpperCase() + str[i].slice(1);
+    }
+    return str.join(' ');
+}
+
+function convertToYesNo(str) {
+    switch (str) {
+        case true:
+            return "Yes";
+        case false:
+            return "No";
+        default:
+            return '';
+    }
+}
+
+$(function () {
     let dt = $('#ApplicantsTable');
     let dataTable;
     const guidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -27,14 +232,6 @@ $(function () {
 
     // Get column definitions
     const listColumns = getColumns();
-
-    // Format items with rowCount for selection
-    let formatItems = function (items) {
-        items.forEach((item, index) => {
-            item.rowCount = index;
-        });
-        return items;
-    };
 
     // Complete column definitions following GrantApplications pattern
     function getColumns() {
@@ -125,47 +322,6 @@ $(function () {
         }
     }
 
-    function getOrgNameColumn(columnIndex) {
-        return {
-            title: 'Organization Name',
-            data: 'orgName',
-            name: 'orgName',
-            className: 'data-table-header',
-            render: function (data) {
-                return data ?? '';
-            },
-            index: columnIndex
-        }
-    }
-
-    function getOrgNumberColumn(columnIndex) {
-        return {
-            title: 'Organization Number',
-            data: 'orgNumber',
-            name: 'orgNumber',
-            className: 'data-table-header',
-            render: function (data) {
-                return data ?? '';
-            },
-            index: columnIndex
-        }
-    }
-
-    function getOrgStatusColumn(columnIndex) {
-        return {
-            title: 'Organization Status',
-            data: 'orgStatus',
-            name: 'orgStatus',
-            className: 'data-table-header',
-            render: function (data) {
-                if (data === 'ACTIVE') return 'Active';
-                if (data === 'HISTORICAL') return 'Historical';
-                return data ?? '';
-            },
-            index: columnIndex
-        }
-    }
-
     function getOrganizationTypeColumn(columnIndex) {
         return {
             title: 'Organization Type',
@@ -179,16 +335,6 @@ $(function () {
         }
     }
 
-    function getStatusColumn(columnIndex) {
-        return {
-            title: 'Status',
-            data: 'status',
-            name: 'status',
-            className: 'data-table-header',
-            index: columnIndex
-        }
-    }
-
     function getRedStopColumn(columnIndex) {
         return {
             title: 'Red-Stop',
@@ -197,104 +343,6 @@ $(function () {
             className: 'data-table-header',
             render: function (data) {
                 return convertToYesNo(data);
-            },
-            index: columnIndex
-        }
-    }
-
-    function getNonRegisteredBusinessNameColumn(columnIndex) {
-        return {
-            title: 'Non-Registered Business Name',
-            data: 'nonRegisteredBusinessName',
-            name: 'nonRegisteredBusinessName',
-            className: 'data-table-header',
-            visible: false,
-            render: function (data) {
-                return data ?? '';
-            },
-            index: columnIndex
-        }
-    }
-
-    function getNonRegOrgNameColumn(columnIndex) {
-        return {
-            title: 'Non-Registered Organization Name',
-            data: 'nonRegOrgName',
-            name: 'nonRegOrgName',
-            className: 'data-table-header',
-            visible: false,
-            render: function (data) {
-                return data ?? '';
-            },
-            index: columnIndex
-        }
-    }
-
-    function getSectorColumn(columnIndex) {
-        return {
-            title: 'Sector',
-            data: 'sector',
-            name: 'sector',
-            className: 'data-table-header',
-            visible: false,
-            render: function (data) {
-                return data ?? '';
-            },
-            index: columnIndex
-        }
-    }
-
-    function getSubSectorColumn(columnIndex) {
-        return {
-            title: 'SubSector',
-            data: 'subSector',
-            name: 'subSector',
-            className: 'data-table-header',
-            visible: false,
-            render: function (data) {
-                return data ?? '';
-            },
-            index: columnIndex
-        }
-    }
-
-    function getApproxNumberOfEmployeesColumn(columnIndex) {
-        return {
-            title: 'Approx. Number of Employees',
-            data: 'approxNumberOfEmployees',
-            name: 'approxNumberOfEmployees',
-            className: 'data-table-header',
-            visible: false,
-            render: function (data) {
-                return data ?? '';
-            },
-            index: columnIndex
-        }
-    }
-
-    function getIndigenousOrgIndColumn(columnIndex) {
-        return {
-            title: 'Indigenous',
-            data: 'indigenousOrgInd',
-            name: 'indigenousOrgInd',
-            className: 'data-table-header',
-            visible: false,
-            render: function (data) {
-                return data ?? '';
-            },
-            index: columnIndex
-        }
-    }
-
-    function getSectorSubSectorIndustryDescColumn(columnIndex) {
-        return {
-            title: 'Other Sector/Sub/Industry Description',
-            data: 'sectorSubSectorIndustryDesc',
-            name: 'sectorSubSectorIndustryDesc',
-            className: 'data-table-header',
-            visible: false,
-            render: function (data) {
-                return data ?? '';
             },
             index: columnIndex
         }
@@ -313,34 +361,6 @@ $(function () {
                 } else {
                     return '';
                 }
-            },
-            index: columnIndex
-        }
-    }
-
-    function getBusinessNumberColumn(columnIndex) {
-        return {
-            title: 'Business Number',
-            data: 'businessNumber',
-            name: 'businessNumber',
-            className: 'data-table-header',
-            visible: false,
-            render: function (data) {
-                return data ?? '';
-            },
-            index: columnIndex
-        }
-    }
-
-    function getFiscalDayColumn(columnIndex) {
-        return {
-            title: 'FYE Day',
-            data: 'fiscalDay',
-            name: 'fiscalDay',
-            className: 'data-table-header',
-            visible: false,
-            render: function (data) {
-                return data ?? '';
             },
             index: columnIndex
         }
@@ -670,26 +690,6 @@ $(function () {
     });
 
 
-
-    // Helper functions for column rendering
-    function titleCase(str) {
-        str = str.toLowerCase().split(' ');
-        for (let i = 0; i < str.length; i++) {
-            str[i] = str[i].charAt(0).toUpperCase() + str[i].slice(1);
-        }
-        return str.join(' ');
-    }
-
-    function convertToYesNo(str) {
-        switch (str) {
-            case true:
-                return "Yes";
-            case false:
-                return "No";
-            default:
-                return '';
-        }
-    }
 
     const COMPANY_TYPE_MAP = new Map([
         ["BC", "BC Company"],

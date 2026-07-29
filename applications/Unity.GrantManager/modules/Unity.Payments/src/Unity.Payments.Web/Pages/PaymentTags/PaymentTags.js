@@ -2,6 +2,18 @@ $(function () {
 
     let suggestionsArray = [];
 
+    function removeSuggestions(tags) {
+        const suggestionContainer = tags.wrapper.querySelector('.tags-suggestion-container');
+        if (suggestionContainer) {
+            suggestionContainer.remove();
+        }
+    }
+
+    function updateSelectedTagsInput(tagsArray) {
+        let jsonValue = JSON.stringify(tagsArray);
+        $('#SelectedTagsJson').val(jsonValue);
+    }
+
     let TagsInput = function (opts) {
         this.options = Object.assign(TagsInput.defaults, opts);
         this.init();
@@ -243,13 +255,6 @@ $(function () {
         tags.wrapper.appendChild(suggestionContainer);
     }
 
-    function removeSuggestions(tags) {
-        const suggestionContainer = tags.wrapper.querySelector('.tags-suggestion-container');
-        if (suggestionContainer) {
-            suggestionContainer.remove();
-        }
-    }
-
     function initEvents(tags) {
         // Capture keystrokes anywhere in the wrapper and focus input
         let tagPaymentsModalElem = $("#tagPaymentsModal")[0];
@@ -330,11 +335,6 @@ $(function () {
         }
 
         tags.input.value = "";
-    }
-
-    function updateSelectedTagsInput(tagsArray) {
-        let jsonValue = JSON.stringify(tagsArray);
-        $('#SelectedTagsJson').val(jsonValue);
     }
 
     TagsInput.prototype.getTags = function () {

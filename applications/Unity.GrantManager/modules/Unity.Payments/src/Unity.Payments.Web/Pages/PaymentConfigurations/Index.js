@@ -75,25 +75,6 @@ $(function () {
         UIElements.inputPaymentThreshold.on('keyup', preventDecimalKeyUp);
         UIElements.inputPaymentThreshold.on('keypress', preventNonCurrencyKeyPress);
 
-        function preventNonCurrencyKeyPress(e) {
-            // Prevent alphabetic characters and -
-            if (/[a-zA-Z]/.test(e.key) || e.key === ' ' || e.key === '-' || e.keyCode === 45) {
-                e.preventDefault();
-            }
-        }
-
-        function preventDecimalKeyUp(e) {
-            const input = e.target;
-            const cursorPosition = input.selectionStart;
-            const decimalMatch = input.value.match(/\.(\d+)/);
-        
-            // Limit to two decimal places
-            if (decimalMatch && decimalMatch[1].length > 2) {
-                input.value = input.value.replace(/\.(\d{2}).*/, '.$1');
-                input.setSelectionRange(cursorPosition, cursorPosition); // Restore cursor position
-            }
-        }
-
         function setAccountCodingDisplay() {
             let currentAccount = $(UIElements.inputMinistryClient).val() + "." +
                 $(UIElements.inputResponsibility).val() + "." +
@@ -117,14 +98,6 @@ $(function () {
             'description'      
         ];
 
-        let responseCallback = function (result) {
-            return {
-                recordsTotal: result.length,
-                recordsFiltered: result.length,
-                data: result
-            };
-        };
-       
         let dt = UIElements.paymentSettingsDT;
         return initializeDataTable({
             dt,
@@ -137,7 +110,7 @@ $(function () {
             },
             dataEndpoint: unity.grantManager.payments.paymentSettings.getL2ApproversThresholds,
             data: {},
-            responseCallback,
+            responseCallback: arrayResponseCallback,
             actionButtons,
             pagingEnabled: true,
             reorderEnabled: false,
@@ -148,71 +121,71 @@ $(function () {
             disableColumnSelect: true,
             externalSearchId: 'search-data-table'
         });
+    }
 
-        function getPaymenSettingsColumns() {
-            let index = 0;
-            return [ 
-                {
-                    title: 'Id',
-                    name: "id",
-                    data: "id",
-                    visible: false,
-                    index: index++
-                },
-                {
-                    title: 'User Id',
-                    name: "userId",
-                    data: "userId",
-                    visible: false,
-                    index: index++
-                },
-                {
-                    title: 'Expense Authority',
-                    name: "userName",
-                    data: "userName",
-                    visible: true,
-                    index: index++
-                },
-                {
-                    title: 'Approval Threshold',
-                    name: "paymentThreshold",
-                    className: 'dt-body-right', 
-                    data: "threshold",
-                    visible: true,
-                    index: index++,
-                    render: function (data, type, row) {
-                        if (data == null || data === '') return '';
-                        return formatter.format(data);
-                    }                    
-                },
-                {
-                    title: 'Description',
-                    name: "description", 
-                    data: "description",
-                    visible: true,
-                    index: index++
-                },
-                {
-                    title: 'Action',
-                    orderable: false,
-                    sortable: false,
-                    data: 'id',
-                    className: 'notexport text-center',
-                    name: 'rowActions',
-                    visible: true,
-                    index: index++,
-                    rowAction: {
-                        items:
-                            [
-                                {
-                                    text: 'Edit',
-                                    action: (data) => editThresholdBtn(data.record.id, data.record.userName)                                    
-                                }
-                            ]
-                    }
-                }        
-            ];
-        }
+    function getPaymenSettingsColumns() {
+        let index = 0;
+        return [
+            {
+                title: 'Id',
+                name: "id",
+                data: "id",
+                visible: false,
+                index: index++
+            },
+            {
+                title: 'User Id',
+                name: "userId",
+                data: "userId",
+                visible: false,
+                index: index++
+            },
+            {
+                title: 'Expense Authority',
+                name: "userName",
+                data: "userName",
+                visible: true,
+                index: index++
+            },
+            {
+                title: 'Approval Threshold',
+                name: "paymentThreshold",
+                className: 'dt-body-right',
+                data: "threshold",
+                visible: true,
+                index: index++,
+                render: function (data, type, row) {
+                    if (data == null || data === '') return '';
+                    return formatter.format(data);
+                }
+            },
+            {
+                title: 'Description',
+                name: "description",
+                data: "description",
+                visible: true,
+                index: index++
+            },
+            {
+                title: 'Action',
+                orderable: false,
+                sortable: false,
+                data: 'id',
+                className: 'notexport text-center',
+                name: 'rowActions',
+                visible: true,
+                index: index++,
+                rowAction: {
+                    items:
+                        [
+                            {
+                                text: 'Edit',
+                                action: (data) => editThresholdBtn(data.record.id, data.record.userName)
+                            }
+                        ]
+                }
+            }
+        ];
     }
 
     function initializeAccountCodesDataTable() {
@@ -240,14 +213,6 @@ $(function () {
             'rowActions',        
         ];
 
-        let responseCallback = function (result) {
-            return {
-                recordsTotal: result.totalCount,
-                recordsFiltered: result.items.length,
-                data: result.items
-            };
-        };
-       
         let dt = UIElements.accountCodingDT;
         return initializeDataTable({
             dt,
@@ -260,7 +225,7 @@ $(function () {
             },
             dataEndpoint: unity.grantManager.payments.accountCoding.getList,
             data: {},
-            responseCallback,
+            responseCallback: pagedResponseCallback,
             actionButtons,
             pagingEnabled: true,
             reorderEnabled: false,
@@ -417,6 +382,41 @@ $(function () {
     };
 
 });
+
+function preventNonCurrencyKeyPress(e) {
+    // Prevent alphabetic characters and -
+    if (/[a-zA-Z]/.test(e.key) || e.key === ' ' || e.key === '-' || e.keyCode === 45) {
+        e.preventDefault();
+    }
+}
+
+function preventDecimalKeyUp(e) {
+    const input = e.target;
+    const cursorPosition = input.selectionStart;
+    const decimalMatch = input.value.match(/\.(\d+)/);
+
+    // Limit to two decimal places
+    if (decimalMatch && decimalMatch[1].length > 2) {
+        input.value = input.value.replace(/\.(\d{2}).*/, '.$1');
+        input.setSelectionRange(cursorPosition, cursorPosition); // Restore cursor position
+    }
+}
+
+function arrayResponseCallback(result) {
+    return {
+        recordsTotal: result.length,
+        recordsFiltered: result.length,
+        data: result
+    };
+}
+
+function pagedResponseCallback(result) {
+    return {
+        recordsTotal: result.totalCount,
+        recordsFiltered: result.items.length,
+        data: result.items
+    };
+}
 
 function clearFilter() {
     // Clear the search input (assuming external search input has id 'search-data-table')

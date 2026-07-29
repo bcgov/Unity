@@ -1,3 +1,7 @@
+function isTextOverflowing(element) {
+    return element.scrollWidth > element.clientWidth;
+}
+
 $(function () {
     $('.dropdown-menu a.dropdown-toggle').on('click', function (e) {
         if (!$(this).next().hasClass('show')) {
@@ -13,10 +17,6 @@ $(function () {
 
         return false;
     });
-
-    function isTextOverflowing(element) {
-        return element.scrollWidth > element.clientWidth;
-    }
 
     function createTooltipOnOverflow(inputElement, tooltipTarget) {
         if (inputElement.tagName !== 'INPUT') {
