@@ -386,7 +386,7 @@ async function openDashboard() {
 }
 
 async function clearDashboardHistory() {
-  if (!window.confirm('Clear all retained PID-free aggregate dashboard history?')) {
+  if (!globalThis.confirm('Clear all retained PID-free aggregate dashboard history?')) {
     return;
   }
   try {

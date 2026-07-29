@@ -100,7 +100,7 @@
 
         document.getElementById('btn-open-create')?.addEventListener('click', () => {
             document.getElementById('cf_template').focus();
-            window.scrollTo({ top: document.getElementById('cf_template').offsetTop - 100, behavior: 'smooth' });
+            globalThis.scrollTo({ top: document.getElementById('cf_template').offsetTop - 100, behavior: 'smooth' });
         });
 
         document.getElementById('btn-save')?.addEventListener('click', onSave);

@@ -255,7 +255,7 @@ elements.stopBatchButton.addEventListener('click', stopBatch);
   pollTimer = setInterval(refreshStatus, 700);
 })();
 
-window.addEventListener('unload', () => {
+globalThis.addEventListener('unload', () => {
   if (pollTimer) {
     clearInterval(pollTimer);
   }

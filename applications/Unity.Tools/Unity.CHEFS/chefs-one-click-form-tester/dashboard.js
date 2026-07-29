@@ -749,7 +749,7 @@ async function refresh() {
 }
 
 async function clearHistory() {
-  if (!window.confirm('Clear all retained PID-free aggregate dashboard history?')) return;
+  if (!globalThis.confirm('Clear all retained PID-free aggregate dashboard history?')) return;
   const response = await chrome.runtime.sendMessage({ type: 'CLEAR_DASHBOARD_HISTORY' });
   if (!response || !response.ok) {
     throw new Error(response && response.error ? response.error : 'Dashboard history could not be cleared.');

@@ -1,11 +1,11 @@
 'use strict';
 
 (function installChefsTesterBridge() {
-  if (window.__CHEFS_TESTER_PAGE_BRIDGE__) {
-    window.postMessage({ channel: 'CHEFS_TESTER_BRIDGE', type: 'BRIDGE_READY' }, '*');
+  if (globalThis.__CHEFS_TESTER_PAGE_BRIDGE__) {
+    globalThis.postMessage({ channel: 'CHEFS_TESTER_BRIDGE', type: 'BRIDGE_READY' }, '*');
     return;
   }
-  window.__CHEFS_TESTER_PAGE_BRIDGE__ = true;
+  globalThis.__CHEFS_TESTER_PAGE_BRIDGE__ = true;
 
   let cachedForm = null;
 
@@ -87,8 +87,8 @@
     ];
     for (const key of knownWindowKeys) {
       try {
-        if (window[key]) {
-          roots.push(window[key]);
+        if (globalThis[key]) {
+          roots.push(globalThis[key]);
         }
       } catch (error) {
         // Ignore inaccessible globals.
@@ -493,8 +493,8 @@
     if (!key) {
       return null;
     }
-    const escapedKey = window.CSS && typeof window.CSS.escape === 'function'
-      ? window.CSS.escape(key)
+    const escapedKey = globalThis.CSS && typeof globalThis.CSS.escape === 'function'
+      ? globalThis.CSS.escape(key)
       : String(key).replaceAll(/[^A-Za-z0-9_-]/g, '\\$&');
     const wrappers = Array.from(document.querySelectorAll(`.formio-component-${escapedKey}`));
     return wrappers.find((item) => renderedWrapperIsVisible(item)) ||
@@ -685,15 +685,15 @@
     }
   }
 
-  window.addEventListener('message', (event) => {
-    if (event.source !== window || !event.data || event.data.channel !== 'CHEFS_TESTER_BRIDGE_REQUEST') {
+  globalThis.addEventListener('message', (event) => {
+    if (event.source !== globalThis || !event.data || event.data.channel !== 'CHEFS_TESTER_BRIDGE_REQUEST') {
       return;
     }
     const requestId = event.data.requestId;
     Promise.resolve()
       .then(() => executeCommand(event.data.command, event.data.payload))
       .then((result) => {
-        window.postMessage({
+        globalThis.postMessage({
           channel: 'CHEFS_TESTER_BRIDGE_RESPONSE',
           requestId,
           ok: true,
@@ -701,7 +701,7 @@
         }, '*');
       })
       .catch((error) => {
-        window.postMessage({
+        globalThis.postMessage({
           channel: 'CHEFS_TESTER_BRIDGE_RESPONSE',
           requestId,
           ok: false,
@@ -713,5 +713,5 @@
       });
   });
 
-  window.postMessage({ channel: 'CHEFS_TESTER_BRIDGE', type: 'BRIDGE_READY' }, '*');
+  globalThis.postMessage({ channel: 'CHEFS_TESTER_BRIDGE', type: 'BRIDGE_READY' }, '*');
 })();

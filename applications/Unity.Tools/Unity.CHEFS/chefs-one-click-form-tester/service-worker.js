@@ -720,13 +720,13 @@ async function scrubBatchMarker(tabId) {
   await chrome.scripting.executeScript({
     target: { tabId },
     func: (markerName) => {
-      const url = new URL(window.location.href);
+      const url = new URL(globalThis.location.href);
       const parameters = new URLSearchParams(url.hash.replace(/^#/, ''));
       parameters.delete(markerName);
       parameters.delete('suite');
       parameters.delete('index');
       url.hash = parameters.toString() ? `#${parameters.toString()}` : '';
-      window.history.replaceState(window.history.state, document.title, url.href);
+      globalThis.history.replaceState(globalThis.history.state, document.title, url.href);
     },
     args: [BATCH_MARKER_PARAM]
   });

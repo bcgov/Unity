@@ -1,7 +1,7 @@
 'use strict';
 
 (function installChefsTesterContentScript() {
-  if (window.__CHEFS_TESTER_CONTENT_CONTROLLER__) {
+  if (globalThis.__CHEFS_TESTER_CONTENT_CONTROLLER__) {
     return;
   }
 
@@ -197,7 +197,7 @@
         maskValuesRejected: 0
       };
       this.boundBridgeMessage = this.handleBridgeMessage.bind(this);
-      window.addEventListener('message', this.boundBridgeMessage);
+      globalThis.addEventListener('message', this.boundBridgeMessage);
     }
 
     async runtimeMessage(message) {
@@ -241,8 +241,8 @@
         pass: this.currentPass,
         currentAction: this.currentAction,
         lastSuccessfulAction: this.lastSuccessfulAction,
-        scrollX: window.scrollX,
-        scrollY: window.scrollY,
+        scrollX: globalThis.scrollX,
+        scrollY: globalThis.scrollY,
         progress: Object.assign({}, this.progress)
       }, extra || {});
       await this.runtimeMessage({
@@ -285,7 +285,7 @@
         return;
       }
       this.errorHandlersInstalled = true;
-      window.addEventListener('error', (event) => {
+      globalThis.addEventListener('error', (event) => {
         if (!this.running) {
           return;
         }
@@ -297,7 +297,7 @@
           stack: event.error && event.error.stack ? event.error.stack : ''
         });
       });
-      window.addEventListener('unhandledrejection', (event) => {
+      globalThis.addEventListener('unhandledrejection', (event) => {
         if (!this.running) {
           return;
         }
@@ -358,7 +358,7 @@
     }
 
     handleBridgeMessage(event) {
-      if (event.source !== window || !event.data) {
+      if (event.source !== globalThis || !event.data) {
         return;
       }
       if (event.data.channel === 'CHEFS_TESTER_BRIDGE' && event.data.type === 'BRIDGE_READY') {
@@ -391,7 +391,7 @@
       const requestId = `${this.runId}-${Date.now()}-${Math.random().toString(16).slice(2)}`;
       const promise = new Promise((resolve, reject) => {
         this.bridgeRequests.set(requestId, { resolve, reject });
-        window.postMessage({
+        globalThis.postMessage({
           channel: 'CHEFS_TESTER_BRIDGE_REQUEST',
           requestId,
           command,
@@ -639,8 +639,8 @@
     }
 
     cssEscape(value) {
-      if (window.CSS && typeof window.CSS.escape === 'function') {
-        return window.CSS.escape(String(value || ''));
+      if (globalThis.CSS && typeof globalThis.CSS.escape === 'function') {
+        return globalThis.CSS.escape(String(value || ''));
       }
       return String(value || '').replaceAll(/[^A-Za-z0-9_-]/g, '\\$&');
     }
@@ -3694,8 +3694,8 @@
         currentAction: this.currentAction,
         lastSuccessfulAction: this.lastSuccessfulAction,
         pass: this.currentPass,
-        scrollX: window.scrollX,
-        scrollY: window.scrollY,
+        scrollX: globalThis.scrollX,
+        scrollY: globalThis.scrollY,
         url: location.href,
         visibleValidationErrors: validationErrors,
         unresolvedFields: (scan.fillable || [])
@@ -3767,7 +3767,7 @@
   }
 
   const controller = new ChefsTesterController();
-  window.__CHEFS_TESTER_CONTENT_CONTROLLER__ = controller;
+  globalThis.__CHEFS_TESTER_CONTENT_CONTROLLER__ = controller;
 
   chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.type === 'CHEFS_TESTER_START') {
