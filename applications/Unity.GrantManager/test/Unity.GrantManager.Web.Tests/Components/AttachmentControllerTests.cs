@@ -5,6 +5,8 @@ using NSubstitute;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Unity.GrantManager.Applications;
+using Unity.GrantManager.Assessments;
 using Unity.GrantManager.Attachments;
 using Unity.GrantManager.Controllers;
 using Unity.GrantManager.Intakes;
@@ -30,7 +32,7 @@ namespace Unity.GrantManager.Components
             var currentTenant = Substitute.For<ICurrentTenant>();
             var libreOfficeConversionService = Substitute.For<ILibreOfficeConversionService>();
             var attachmentPreviewAppService = Substitute.For<IAttachmentPreviewAppService>();
-            var attachmentController = new AttachmentController(fileAppService, configuration, submissionAppService, emailLogAttachmentUploadService, currentTenant, libreOfficeConversionService, attachmentPreviewAppService);
+            var attachmentController = new AttachmentController(fileAppService, configuration, submissionAppService, emailLogAttachmentUploadService, currentTenant, libreOfficeConversionService, attachmentPreviewAppService, Substitute.For<IApplicantRepository>(), Substitute.For<IApplicationRepository>(), Substitute.For<IAssessmentRepository>());
             var applicationId = Guid.NewGuid();
             var userId = "testUserId";
             var userName = "testUserName";
@@ -66,7 +68,7 @@ namespace Unity.GrantManager.Components
             var currentTenant = Substitute.For<ICurrentTenant>();
             var libreOfficeConversionService = Substitute.For<ILibreOfficeConversionService>();
             var attachmentPreviewAppService = Substitute.For<IAttachmentPreviewAppService>();
-            var attachmentController = new AttachmentController(fileAppService, configuration, submissionAppService, emailLogAttachmentUploadService, currentTenant, libreOfficeConversionService, attachmentPreviewAppService);
+            var attachmentController = new AttachmentController(fileAppService, configuration, submissionAppService, emailLogAttachmentUploadService, currentTenant, libreOfficeConversionService, attachmentPreviewAppService, Substitute.For<IApplicantRepository>(), Substitute.For<IApplicationRepository>(), Substitute.For<IAssessmentRepository>());
             var applicationId = Guid.NewGuid();
             var userId = "testUserId";
             var userName = "testUserName";
@@ -105,7 +107,7 @@ namespace Unity.GrantManager.Components
             var currentTenant = Substitute.For<ICurrentTenant>();
             var libreOfficeConversionService = Substitute.For<ILibreOfficeConversionService>();
             var attachmentPreviewAppService = Substitute.For<IAttachmentPreviewAppService>();
-            var attachmentController = new AttachmentController(fileAppService, configuration, submissionAppService, emailLogAttachmentUploadService, currentTenant, libreOfficeConversionService, attachmentPreviewAppService);
+            var attachmentController = new AttachmentController(fileAppService, configuration, submissionAppService, emailLogAttachmentUploadService, currentTenant, libreOfficeConversionService, attachmentPreviewAppService, Substitute.For<IApplicantRepository>(), Substitute.For<IApplicationRepository>(), Substitute.For<IAssessmentRepository>());
             var applicationId = Guid.NewGuid();
             var userId = "testUserId";
             var userName = "testUserName";
@@ -149,7 +151,7 @@ namespace Unity.GrantManager.Components
             var currentTenant = Substitute.For<ICurrentTenant>();
             var libreOfficeConversionService = Substitute.For<ILibreOfficeConversionService>();
             var attachmentPreviewAppService = Substitute.For<IAttachmentPreviewAppService>();
-            var attachmentController = new AttachmentController(fileAppService, configuration, submissionAppService, emailLogAttachmentUploadService, currentTenant, libreOfficeConversionService, attachmentPreviewAppService);
+            var attachmentController = new AttachmentController(fileAppService, configuration, submissionAppService, emailLogAttachmentUploadService, currentTenant, libreOfficeConversionService, attachmentPreviewAppService, Substitute.For<IApplicantRepository>(), Substitute.For<IApplicationRepository>(), Substitute.For<IAssessmentRepository>());
             var applicationId = Guid.NewGuid();
             var userId = "testUserId";
             var userName = "testUserName";
@@ -193,7 +195,7 @@ namespace Unity.GrantManager.Components
             var currentTenant = Substitute.For<ICurrentTenant>();
             var libreOfficeConversionService = Substitute.For<ILibreOfficeConversionService>();
             var attachmentPreviewAppService = Substitute.For<IAttachmentPreviewAppService>();
-            var attachmentController = new AttachmentController(fileAppService, configuration, submissionAppService, emailLogAttachmentUploadService, currentTenant, libreOfficeConversionService, attachmentPreviewAppService);
+            var attachmentController = new AttachmentController(fileAppService, configuration, submissionAppService, emailLogAttachmentUploadService, currentTenant, libreOfficeConversionService, attachmentPreviewAppService, Substitute.For<IApplicantRepository>(), Substitute.For<IApplicationRepository>(), Substitute.For<IAssessmentRepository>());
             var applicationId = Guid.NewGuid();
             var userId = "testUserId";
             var userName = "testUserName";
@@ -238,7 +240,7 @@ namespace Unity.GrantManager.Components
             var currentTenant = Substitute.For<ICurrentTenant>();
             var libreOfficeConversionService = Substitute.For<ILibreOfficeConversionService>();
             var attachmentPreviewAppService = Substitute.For<IAttachmentPreviewAppService>();
-            var attachmentController = new AttachmentController(fileAppService, configuration, submissionAppService, emailLogAttachmentUploadService, currentTenant, libreOfficeConversionService, attachmentPreviewAppService);
+            var attachmentController = new AttachmentController(fileAppService, configuration, submissionAppService, emailLogAttachmentUploadService, currentTenant, libreOfficeConversionService, attachmentPreviewAppService, Substitute.For<IApplicantRepository>(), Substitute.For<IApplicationRepository>(), Substitute.For<IAssessmentRepository>());
             var applicationId = Guid.NewGuid();
             var userId = "testUserId";
             var userName = "testUserName";
@@ -281,7 +283,7 @@ namespace Unity.GrantManager.Components
             var currentTenant = Substitute.For<ICurrentTenant>();
             var libreOfficeConversionService = Substitute.For<ILibreOfficeConversionService>();
             var attachmentPreviewAppService = Substitute.For<IAttachmentPreviewAppService>();
-            var attachmentController = new AttachmentController(fileAppService, configuration, submissionAppService, emailLogAttachmentUploadService, currentTenant, libreOfficeConversionService, attachmentPreviewAppService);
+            var attachmentController = new AttachmentController(fileAppService, configuration, submissionAppService, emailLogAttachmentUploadService, currentTenant, libreOfficeConversionService, attachmentPreviewAppService, Substitute.For<IApplicantRepository>(), Substitute.For<IApplicationRepository>(), Substitute.For<IAssessmentRepository>());
             var applicationId = Guid.NewGuid();
             var userId = "testUserId";
             var userName = "testUserName";
@@ -322,7 +324,7 @@ namespace Unity.GrantManager.Components
             var currentTenant = Substitute.For<ICurrentTenant>();
             var libreOfficeConversionService = Substitute.For<ILibreOfficeConversionService>();
             var attachmentPreviewAppService = Substitute.For<IAttachmentPreviewAppService>();
-            var attachmentController = new AttachmentController(fileAppService, configuration, submissionAppService, emailLogAttachmentUploadService, currentTenant, libreOfficeConversionService, attachmentPreviewAppService);
+            var attachmentController = new AttachmentController(fileAppService, configuration, submissionAppService, emailLogAttachmentUploadService, currentTenant, libreOfficeConversionService, attachmentPreviewAppService, Substitute.For<IApplicantRepository>(), Substitute.For<IApplicationRepository>(), Substitute.For<IAssessmentRepository>());
             var applicationId = Guid.NewGuid();
             var userId = "testUserId";
             var userName = "testUserName";
@@ -362,7 +364,7 @@ namespace Unity.GrantManager.Components
             var currentTenant = Substitute.For<ICurrentTenant>();
             var libreOfficeConversionService = Substitute.For<ILibreOfficeConversionService>();
             var attachmentPreviewAppService = Substitute.For<IAttachmentPreviewAppService>();
-            var attachmentController = new AttachmentController(fileAppService, configuration, submissionAppService, emailLogAttachmentUploadService, currentTenant, libreOfficeConversionService, attachmentPreviewAppService);
+            var attachmentController = new AttachmentController(fileAppService, configuration, submissionAppService, emailLogAttachmentUploadService, currentTenant, libreOfficeConversionService, attachmentPreviewAppService, Substitute.For<IApplicantRepository>(), Substitute.For<IApplicationRepository>(), Substitute.For<IAssessmentRepository>());
             var applicationId = Guid.NewGuid();
             var userId = "testUserId";
             var userName = "testUserName";
@@ -410,7 +412,7 @@ namespace Unity.GrantManager.Components
             var currentTenant = Substitute.For<ICurrentTenant>();
             var libreOfficeConversionService = Substitute.For<ILibreOfficeConversionService>();
             var attachmentPreviewAppService = Substitute.For<IAttachmentPreviewAppService>();
-            var attachmentController = new AttachmentController(fileAppService, configuration, submissionAppService, emailLogAttachmentUploadService, currentTenant, libreOfficeConversionService, attachmentPreviewAppService);
+            var attachmentController = new AttachmentController(fileAppService, configuration, submissionAppService, emailLogAttachmentUploadService, currentTenant, libreOfficeConversionService, attachmentPreviewAppService, Substitute.For<IApplicantRepository>(), Substitute.For<IApplicationRepository>(), Substitute.For<IAssessmentRepository>());
             var applicationId = Guid.NewGuid();
             var userId = "testUserId";
             var userName = "testUserName";
@@ -459,7 +461,7 @@ namespace Unity.GrantManager.Components
             var currentTenant = Substitute.For<ICurrentTenant>();
             var libreOfficeConversionService = Substitute.For<ILibreOfficeConversionService>();
             var attachmentPreviewAppService = Substitute.For<IAttachmentPreviewAppService>();
-            var attachmentController = new AttachmentController(fileAppService, configuration, submissionAppService, emailLogAttachmentUploadService, currentTenant, libreOfficeConversionService, attachmentPreviewAppService);
+            var attachmentController = new AttachmentController(fileAppService, configuration, submissionAppService, emailLogAttachmentUploadService, currentTenant, libreOfficeConversionService, attachmentPreviewAppService, Substitute.For<IApplicantRepository>(), Substitute.For<IApplicationRepository>(), Substitute.For<IAssessmentRepository>());
             var applicationId = Guid.NewGuid();
             var userId = "testUserId";
             var userName = "testUserName";
@@ -508,7 +510,7 @@ namespace Unity.GrantManager.Components
             var currentTenant = Substitute.For<ICurrentTenant>();
             var libreOfficeConversionService = Substitute.For<ILibreOfficeConversionService>();
             var attachmentPreviewAppService = Substitute.For<IAttachmentPreviewAppService>();
-            var attachmentController = new AttachmentController(fileAppService, configuration, submissionAppService, emailLogAttachmentUploadService, currentTenant, libreOfficeConversionService, attachmentPreviewAppService);
+            var attachmentController = new AttachmentController(fileAppService, configuration, submissionAppService, emailLogAttachmentUploadService, currentTenant, libreOfficeConversionService, attachmentPreviewAppService, Substitute.For<IApplicantRepository>(), Substitute.For<IApplicationRepository>(), Substitute.For<IAssessmentRepository>());
             var applicationId = Guid.NewGuid();
             var userId = "testUserId";
             var userName = "testUserName";
@@ -544,7 +546,7 @@ namespace Unity.GrantManager.Components
             var currentTenant = Substitute.For<ICurrentTenant>();
             var libreOfficeConversionService = Substitute.For<ILibreOfficeConversionService>();
             var attachmentPreviewAppService = Substitute.For<IAttachmentPreviewAppService>();
-            var attachmentController = new AttachmentController(fileAppService, configuration, submissionAppService, emailLogAttachmentUploadService, currentTenant, libreOfficeConversionService, attachmentPreviewAppService);
+            var attachmentController = new AttachmentController(fileAppService, configuration, submissionAppService, emailLogAttachmentUploadService, currentTenant, libreOfficeConversionService, attachmentPreviewAppService, Substitute.For<IApplicantRepository>(), Substitute.For<IApplicationRepository>(), Substitute.For<IAssessmentRepository>());
             var applicationId = Guid.NewGuid();
             var userId = "testUserId";
             var userName = "testUserName";
@@ -586,7 +588,7 @@ namespace Unity.GrantManager.Components
             var currentTenant = Substitute.For<ICurrentTenant>();
             var libreOfficeConversionService = Substitute.For<ILibreOfficeConversionService>();
             var attachmentPreviewAppService = Substitute.For<IAttachmentPreviewAppService>();
-            var attachmentController = new AttachmentController(fileAppService, configuration, submissionAppService, emailLogAttachmentUploadService, currentTenant, libreOfficeConversionService, attachmentPreviewAppService);
+            var attachmentController = new AttachmentController(fileAppService, configuration, submissionAppService, emailLogAttachmentUploadService, currentTenant, libreOfficeConversionService, attachmentPreviewAppService, Substitute.For<IApplicantRepository>(), Substitute.For<IApplicationRepository>(), Substitute.For<IAssessmentRepository>());
             var emailLogId = Guid.NewGuid();
 
             // S3:EmailAttachmentMaxFileSize is 20 MB - stricter than the general S3:MaxFileSize
@@ -637,7 +639,7 @@ namespace Unity.GrantManager.Components
             var currentTenant = Substitute.For<ICurrentTenant>();
             var libreOfficeConversionService = Substitute.For<ILibreOfficeConversionService>();
             var attachmentPreviewAppService = Substitute.For<IAttachmentPreviewAppService>();
-            var attachmentController = new AttachmentController(fileAppService, configuration, submissionAppService, emailLogAttachmentUploadService, currentTenant, libreOfficeConversionService, attachmentPreviewAppService);
+            var attachmentController = new AttachmentController(fileAppService, configuration, submissionAppService, emailLogAttachmentUploadService, currentTenant, libreOfficeConversionService, attachmentPreviewAppService, Substitute.For<IApplicantRepository>(), Substitute.For<IApplicationRepository>(), Substitute.For<IAssessmentRepository>());
             var emailLogId = Guid.NewGuid();
 
             // 22 MB - under the general 25 MB cap, but over the 20 MB default email per-file cap.
@@ -686,7 +688,7 @@ namespace Unity.GrantManager.Components
             var currentTenant = Substitute.For<ICurrentTenant>();
             var libreOfficeConversionService = Substitute.For<ILibreOfficeConversionService>();
             var attachmentPreviewAppService = Substitute.For<IAttachmentPreviewAppService>();
-            var attachmentController = new AttachmentController(fileAppService, configuration, submissionAppService, emailLogAttachmentUploadService, currentTenant, libreOfficeConversionService, attachmentPreviewAppService);
+            var attachmentController = new AttachmentController(fileAppService, configuration, submissionAppService, emailLogAttachmentUploadService, currentTenant, libreOfficeConversionService, attachmentPreviewAppService, Substitute.For<IApplicantRepository>(), Substitute.For<IApplicationRepository>(), Substitute.For<IAssessmentRepository>());
             var emailLogId = Guid.NewGuid();
 
             // Each file is 15 MB - under the 20 MB per-file cap - but 30 MB combined exceeds the
@@ -734,7 +736,7 @@ namespace Unity.GrantManager.Components
             var currentTenant = Substitute.For<ICurrentTenant>();
             var libreOfficeConversionService = Substitute.For<ILibreOfficeConversionService>();
             var attachmentPreviewAppService = Substitute.For<IAttachmentPreviewAppService>();
-            var attachmentController = new AttachmentController(fileAppService, configuration, submissionAppService, emailLogAttachmentUploadService, currentTenant, libreOfficeConversionService, attachmentPreviewAppService);
+            var attachmentController = new AttachmentController(fileAppService, configuration, submissionAppService, emailLogAttachmentUploadService, currentTenant, libreOfficeConversionService, attachmentPreviewAppService, Substitute.For<IApplicantRepository>(), Substitute.For<IApplicationRepository>(), Substitute.For<IAssessmentRepository>());
             var emailLogId = Guid.NewGuid();
 
             // Each file is 15 MB - under both the general S3:MaxFileSize (25 MB) and the
@@ -793,7 +795,7 @@ namespace Unity.GrantManager.Components
             var currentTenant = Substitute.For<ICurrentTenant>();
             var libreOfficeConversionService = Substitute.For<ILibreOfficeConversionService>();
             var attachmentPreviewAppService = Substitute.For<IAttachmentPreviewAppService>();
-            var attachmentController = new AttachmentController(fileAppService, configuration, submissionAppService, emailLogAttachmentUploadService, currentTenant, libreOfficeConversionService, attachmentPreviewAppService);
+            var attachmentController = new AttachmentController(fileAppService, configuration, submissionAppService, emailLogAttachmentUploadService, currentTenant, libreOfficeConversionService, attachmentPreviewAppService, Substitute.For<IApplicantRepository>(), Substitute.For<IApplicationRepository>(), Substitute.For<IAssessmentRepository>());
 
             // Act
             Task<IActionResult> download = attachmentController.DownloadChefsAttachment(formSubmissionId, chefsFileAttachmentId, fileName);
@@ -803,6 +805,129 @@ namespace Unity.GrantManager.Components
             Assert.NotNull(downloadedFile);
             Assert.Equal(fileName, downloadedFile.FileDownloadName);
             Assert.Equal(contentType,downloadedFile.ContentType);
+        }
+
+        // Security regression tests (CWE-639 / IDOR): the controller must confirm the id in the
+        // route belongs to a real, tenant-scoped entity before ever touching S3. FindAsync returning
+        // null stands in for both "no such id" and "id belongs to another tenant" - ABP's automatic
+        // IMultiTenant query filter makes those indistinguishable at the repository level, which is
+        // exactly the property this fix relies on.
+
+        [Fact]
+        public async Task DownloadApplicantAttachment_ApplicantNotFoundOrWrongTenant_ReturnsNotFound()
+        {
+            // Arrange
+            var builder = new ConfigurationBuilder().AddJsonFile($"appsettings.json", optional: false);
+            var configuration = builder.Build();
+            var fileAppService = Substitute.For<IFileAppService>();
+            var submissionAppService = Substitute.For<ISubmissionAppService>();
+            var emailLogAttachmentUploadService = Substitute.For<IEmailLogAttachmentUploadService>();
+            var currentTenant = Substitute.For<ICurrentTenant>();
+            var libreOfficeConversionService = Substitute.For<ILibreOfficeConversionService>();
+            var attachmentPreviewAppService = Substitute.For<IAttachmentPreviewAppService>();
+            var applicantRepository = Substitute.For<IApplicantRepository>();
+            applicantRepository.FindAsync(Arg.Any<Guid>(), Arg.Any<bool>(), Arg.Any<System.Threading.CancellationToken>())
+                .Returns((Applicant?)null);
+            var attachmentController = new AttachmentController(fileAppService, configuration, submissionAppService, emailLogAttachmentUploadService, currentTenant, libreOfficeConversionService, attachmentPreviewAppService, applicantRepository, Substitute.For<IApplicationRepository>(), Substitute.For<IAssessmentRepository>());
+
+            var fileName = "secret.pdf";
+            fileAppService.GetBlobAsync(Arg.Any<GetBlobRequestDto>())
+                .Returns(new BlobDto { Name = fileName, Content = [1, 2, 3], ContentType = "application/pdf" });
+
+            // Act
+            var result = await attachmentController.DownloadApplicantAttachment(Guid.NewGuid().ToString(), fileName);
+
+            // Assert
+            Assert.IsType<NotFoundObjectResult>(result);
+            await fileAppService.DidNotReceive().GetBlobAsync(Arg.Any<GetBlobRequestDto>());
+        }
+
+        [Fact]
+        public async Task DownloadApplicationAttachment_ApplicationNotFoundOrWrongTenant_ReturnsNotFound()
+        {
+            // Arrange
+            var builder = new ConfigurationBuilder().AddJsonFile($"appsettings.json", optional: false);
+            var configuration = builder.Build();
+            var fileAppService = Substitute.For<IFileAppService>();
+            var submissionAppService = Substitute.For<ISubmissionAppService>();
+            var emailLogAttachmentUploadService = Substitute.For<IEmailLogAttachmentUploadService>();
+            var currentTenant = Substitute.For<ICurrentTenant>();
+            var libreOfficeConversionService = Substitute.For<ILibreOfficeConversionService>();
+            var attachmentPreviewAppService = Substitute.For<IAttachmentPreviewAppService>();
+            var applicationRepository = Substitute.For<IApplicationRepository>();
+            applicationRepository.FindAsync(Arg.Any<Guid>(), Arg.Any<bool>(), Arg.Any<System.Threading.CancellationToken>())
+                .Returns((Application?)null);
+            var attachmentController = new AttachmentController(fileAppService, configuration, submissionAppService, emailLogAttachmentUploadService, currentTenant, libreOfficeConversionService, attachmentPreviewAppService, Substitute.For<IApplicantRepository>(), applicationRepository, Substitute.For<IAssessmentRepository>());
+
+            var fileName = "secret.pdf";
+            fileAppService.GetBlobAsync(Arg.Any<GetBlobRequestDto>())
+                .Returns(new BlobDto { Name = fileName, Content = [1, 2, 3], ContentType = "application/pdf" });
+
+            // Act
+            var result = await attachmentController.DownloadApplicationAttachment(Guid.NewGuid().ToString(), fileName);
+
+            // Assert
+            Assert.IsType<NotFoundObjectResult>(result);
+            await fileAppService.DidNotReceive().GetBlobAsync(Arg.Any<GetBlobRequestDto>());
+        }
+
+        [Fact]
+        public async Task DownloadAssessmentAttachment_AssessmentNotFoundOrWrongTenant_ReturnsNotFound()
+        {
+            // Arrange
+            var builder = new ConfigurationBuilder().AddJsonFile($"appsettings.json", optional: false);
+            var configuration = builder.Build();
+            var fileAppService = Substitute.For<IFileAppService>();
+            var submissionAppService = Substitute.For<ISubmissionAppService>();
+            var emailLogAttachmentUploadService = Substitute.For<IEmailLogAttachmentUploadService>();
+            var currentTenant = Substitute.For<ICurrentTenant>();
+            var libreOfficeConversionService = Substitute.For<ILibreOfficeConversionService>();
+            var attachmentPreviewAppService = Substitute.For<IAttachmentPreviewAppService>();
+            var assessmentRepository = Substitute.For<IAssessmentRepository>();
+            assessmentRepository.FindAsync(Arg.Any<Guid>(), Arg.Any<bool>(), Arg.Any<System.Threading.CancellationToken>())
+                .Returns((Assessment?)null);
+            var attachmentController = new AttachmentController(fileAppService, configuration, submissionAppService, emailLogAttachmentUploadService, currentTenant, libreOfficeConversionService, attachmentPreviewAppService, Substitute.For<IApplicantRepository>(), Substitute.For<IApplicationRepository>(), assessmentRepository);
+
+            var fileName = "secret.pdf";
+            fileAppService.GetBlobAsync(Arg.Any<GetBlobRequestDto>())
+                .Returns(new BlobDto { Name = fileName, Content = [1, 2, 3], ContentType = "application/pdf" });
+
+            // Act
+            var result = await attachmentController.DownloadAssessmentAttachment(Guid.NewGuid().ToString(), fileName);
+
+            // Assert
+            Assert.IsType<NotFoundObjectResult>(result);
+            await fileAppService.DidNotReceive().GetBlobAsync(Arg.Any<GetBlobRequestDto>());
+        }
+
+        [Fact]
+        public async Task PreviewApplicantAttachment_ApplicantNotFoundOrWrongTenant_ReturnsNotFound()
+        {
+            // Arrange
+            var builder = new ConfigurationBuilder().AddJsonFile($"appsettings.json", optional: false);
+            var configuration = builder.Build();
+            var fileAppService = Substitute.For<IFileAppService>();
+            var submissionAppService = Substitute.For<ISubmissionAppService>();
+            var emailLogAttachmentUploadService = Substitute.For<IEmailLogAttachmentUploadService>();
+            var currentTenant = Substitute.For<ICurrentTenant>();
+            var libreOfficeConversionService = Substitute.For<ILibreOfficeConversionService>();
+            libreOfficeConversionService.IsInstalled().Returns(true);
+            var attachmentPreviewAppService = Substitute.For<IAttachmentPreviewAppService>();
+            var applicantRepository = Substitute.For<IApplicantRepository>();
+            applicantRepository.FindAsync(Arg.Any<Guid>(), Arg.Any<bool>(), Arg.Any<System.Threading.CancellationToken>())
+                .Returns((Applicant?)null);
+            var attachmentController = new AttachmentController(fileAppService, configuration, submissionAppService, emailLogAttachmentUploadService, currentTenant, libreOfficeConversionService, attachmentPreviewAppService, applicantRepository, Substitute.For<IApplicationRepository>(), Substitute.For<IAssessmentRepository>());
+
+            var fileName = "secret.pdf";
+            attachmentPreviewAppService.GetOrCreatePreviewPdfAsync(AttachmentType.APPLICANT, Arg.Any<Guid>(), fileName)
+                .Returns(new BlobDto { Name = fileName, Content = [1, 2, 3], ContentType = "application/pdf" });
+
+            // Act
+            var result = await attachmentController.PreviewApplicantAttachment(Guid.NewGuid().ToString(), fileName);
+
+            // Assert
+            Assert.IsType<NotFoundObjectResult>(result);
+            await attachmentPreviewAppService.DidNotReceive().GetOrCreatePreviewPdfAsync(Arg.Any<AttachmentType>(), Arg.Any<Guid>(), Arg.Any<string>());
         }
     }
 }
