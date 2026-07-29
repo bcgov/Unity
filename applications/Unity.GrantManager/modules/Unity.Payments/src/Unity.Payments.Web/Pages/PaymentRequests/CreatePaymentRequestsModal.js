@@ -88,13 +88,13 @@ function validateAllPaymentAmounts() {
             let amountInput = $(
                 `input[name="ApplicationPaymentRequestForm[${index}].Amount"]`
             );
-            let remainingAmount = parseFloat(
+            let remainingAmount = Number.parseFloat(
                 $(
                     `input[name="ApplicationPaymentRequestForm[${index}].RemainingAmount"]`
                 ).val()
             );
             let enteredValue =
-                parseFloat(amountInput.val().replace(/,/g, '')) || 0;
+                Number.parseFloat(amountInput.val().replace(/,/g, '')) || 0;
             let remainingErrorId = `#error_column_${correlationId}`;
 
             if (enteredValue > remainingAmount) {
@@ -127,7 +127,7 @@ function submitPayments() {
 function calculateTotalAmount() {
     let total = 0;
     $('.amount').each(function () {
-        let value = parseFloat($(this).val().replace(/,/g, '')) || 0;
+        let value = Number.parseFloat($(this).val().replace(/,/g, '')) || 0;
         total += value;
     });
 
@@ -146,7 +146,7 @@ function getIndexByCorrelationId(correlationId) {
                 .attr('name')
                 .match(/\[(\d+)\]/);
             if (match) {
-                index = parseInt(match[1], 10);
+                index = Number.parseInt(match[1], 10);
             }
             return false; // break
         }
@@ -170,7 +170,7 @@ function formatCurrency(value) {
     const numericValue =
         typeof value === 'number'
             ? value
-            : parseFloat(String(value ?? '').replace(/,/g, ''));
+            : Number.parseFloat(String(value ?? '').replace(/,/g, ''));
     return cadFormatter.format(
         Number.isFinite(numericValue) ? numericValue : 0
     );
@@ -193,10 +193,10 @@ function validateParentChildAmounts(correlationId) {
         `input[name="ApplicationPaymentRequestForm[${index}].ParentApprovedAmount"]`
     ).val();
     let maximumAllowed = maximumAllowedInput
-        ? parseFloat(maximumAllowedInput)
+        ? Number.parseFloat(maximumAllowedInput)
         : 0;
     let approvedAmount = parentApprovedAmount
-        ? parseFloat(parentApprovedAmount)
+        ? Number.parseFloat(parentApprovedAmount)
         : 0;
 
     // Determine if this is a parent or child

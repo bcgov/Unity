@@ -81,7 +81,7 @@ export class TestDataHelper {
    * Parse currency string to number
    */
   static parseCurrency(currencyString: string): number {
-    return parseFloat(currencyString.replace(/[$,]/g, ""));
+    return Number.parseFloat(currencyString.replace(/[$,]/g, ""));
   }
 
   /**

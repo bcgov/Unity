@@ -413,10 +413,10 @@ function updateSum() {
     let cleanGrowth = $('#cleanGrowth').val() || 0;
     let economicImpact = $('#economicImpact').val() || 0;
     let sum =
-        parseInt(financialAnalysis) +
-        parseInt(inclusiveGrowth) +
-        parseInt(cleanGrowth) +
-        parseInt(economicImpact);
+        Number.parseInt(financialAnalysis) +
+        Number.parseInt(inclusiveGrowth) +
+        Number.parseInt(cleanGrowth) +
+        Number.parseInt(economicImpact);
     $('#subTotal').val(sum);
 }
 
@@ -575,7 +575,7 @@ function updateSubtotal() {
         // Handle number inputs
         const numberInputs = document.querySelectorAll('.answer-number-input');
         numberInputs.forEach((input) => {
-            subtotal += parseFloat(input.value) || 0;
+            subtotal += Number.parseFloat(input.value) || 0;
         });
 
         // Handle Yes/No inputs
@@ -584,11 +584,11 @@ function updateSubtotal() {
             let value = 0;
             if (input.value === 'Yes') {
                 value =
-                    parseFloat(input.dataset.yesNumericValue) ||
+                    Number.parseFloat(input.dataset.yesNumericValue) ||
                     0;
             } else if (input.value === 'No') {
                 value =
-                    parseFloat(input.dataset.noNumericValue) ||
+                    Number.parseFloat(input.dataset.noNumericValue) ||
                     0;
             }
             subtotal += value;
@@ -601,7 +601,7 @@ function updateSubtotal() {
         selectListInputs.forEach((select) => {
             const selectedOption = select.options[select.selectedIndex];
             const numericValue =
-                parseFloat(selectedOption.dataset.numericValue) ||
+                Number.parseFloat(selectedOption.dataset.numericValue) ||
                 0;
             subtotal += numericValue;
         });
