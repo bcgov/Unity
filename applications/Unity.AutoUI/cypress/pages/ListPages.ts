@@ -543,7 +543,7 @@ export class ApplicationsPage extends ListPage {
           .find(`td:nth-child(${this.columns.requestedAmount + 1})`)
           .text()
           .trim();
-        const amount = parseFloat(amountText.replace(/[$,]/g, ""));
+        const amount = Number.parseFloat(amountText.replace(/[$,]/g, ""));
         if (!isNaN(amount)) {
           total += amount;
         }
