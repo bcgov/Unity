@@ -639,7 +639,7 @@ const APPLICATIONS_PATH = "GrantApplications";
     // Skip gracefully if the supplier has no site data in this environment
     cy.get("body").then(($body) => {
       const rows = $body.find("#SiteInfoTable tbody tr");
-      const firstRowText = rows.first().text().replace(/\s+/g, " ").trim();
+      const firstRowText = rows.first().text().replaceAll(/\s+/g, " ").trim();
       const hasTokenError =
         $body.text().includes("GetAuthTokenAsync") ||
         $body.text().includes("Error retrieving Token");

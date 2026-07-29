@@ -56,7 +56,7 @@ function stripHtml(html) {
     
     // Server-side or DOM unavailable: remove HTML tag delimiters directly.
     // Character-level replacement avoids incomplete multi-character sanitization bypasses.
-    return String(html).replace(/[<>]/g, '');
+    return String(html).replaceAll(/[<>]/g, '');
 }
 
 /**
