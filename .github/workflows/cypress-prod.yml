@@ -16,5 +16,4 @@ jobs:
     with:
       env_name: prod
       cypress_config_key: CYPRESS_CONFIG_PROD
-      gh_environment: main
     secrets: inherit
