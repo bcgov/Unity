@@ -7,7 +7,7 @@
 
 function approvedAmountUpdated(event) {
     const input = event.target;
-    const value = parseFloat(input.value.replace(/,/g, ''));
+    const value = Number.parseFloat(input.value.replace(/,/g, ''));
 
     setNote(event.target, '_APPROVED_AMOUNT_DEFAULTED', false);
 
@@ -45,7 +45,7 @@ function runValidations() {
     $('#bulkApprovalForm input[name="BulkApplicationApprovals.Index"]').each(function () {
         itemCount++;
         let index = $(this).val();
-        let approvedAmount = parseFloat($('#bulkApprovalForm input[name="BulkApplicationApprovals[' + index + '].ApprovedAmount"]').val().replace(/,/g, ''));
+        let approvedAmount = Number.parseFloat($('#bulkApprovalForm input[name="BulkApplicationApprovals[' + index + '].ApprovedAmount"]').val().replace(/,/g, ''));
         let decisionDate = new Date($('#bulkApprovalForm input[name="BulkApplicationApprovals[' + index + '].DecisionDate"]').val());
         let isValidField = $('#bulkApprovalForm input[name="BulkApplicationApprovals[' + index + '].IsValid"]').val();
 

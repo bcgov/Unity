@@ -50,8 +50,12 @@ public class GenerateApplicationAnalysisJob(
                 var promptData = objectMapper.Map<Application, AIApplicationPromptDataDto>(application);
                 var analysisInput = await aiApplicationInputBuilder.BuildApplicationAnalysisInputAsync(promptData, args.PromptVersion);
                 var analysisJson = await applicationAnalysisService.RegenerateAsync(analysisInput);
-                application.AIAnalysis = analysisJson;
-                await applicationRepository.UpdateAsync(application);
+
+                await AIGenerationRequestJobHelper.SaveApplicationResultInNewUowAsync(
+                    unitOfWorkManager,
+                    applicationRepository,
+                    args.ApplicationId,
+                    app => app.AIAnalysis = analysisJson);
                 await AIGenerationRequestJobHelper.StampCooldownBestEffortAsync(aiCooldownService, logger, args.RequestedByUserId, args.ApplicationId, AIGenerationRequestKeyHelper.ApplicationAnalysisOperationType);
                 await AIGenerationRequestJobHelper.MarkCompletedInNewUowAsync(
                     unitOfWorkManager,
