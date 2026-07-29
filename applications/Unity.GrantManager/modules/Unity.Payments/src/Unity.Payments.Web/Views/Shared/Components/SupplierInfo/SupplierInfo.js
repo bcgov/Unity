@@ -530,4 +530,4 @@ function reinitializeSupplierInfo() {
     }, 100);
 }
 
-window.reinitializeSupplierInfo = reinitializeSupplierInfo;
+globalThis.reinitializeSupplierInfo = reinitializeSupplierInfo;

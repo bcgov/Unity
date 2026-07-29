@@ -57,7 +57,7 @@ $(function () {
     // Handle OPEN button click
     $('#openApplicant').click(function () {
         if (selectedApplicantIds.length === 1) {
-            window.location.href = `/GrantApplicants/Details?ApplicantId=${selectedApplicantIds[0]}`;
+            globalThis.location.href = `/GrantApplicants/Details?ApplicantId=${selectedApplicantIds[0]}`;
         }
     });
 

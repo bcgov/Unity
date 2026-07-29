@@ -8,7 +8,7 @@
 
   (function(){
 
-     abp.utils.createNamespace(window, 'unity.reporting.tenantViewRole');
+     abp.utils.createNamespace(globalThis, 'unity.reporting.tenantViewRole');
 
     unity.reporting.tenantViewRole.getAll = function(ajaxParams) {
       return abp.ajax($.extend(true, {

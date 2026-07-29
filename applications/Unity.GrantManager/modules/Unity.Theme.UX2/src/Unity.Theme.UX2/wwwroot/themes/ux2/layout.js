@@ -83,8 +83,8 @@ $(function () {
     }
 });
 
-window.addEventListener('DOMContentLoaded', (event) => {
-    const currentUrl = window.location.pathname;
+globalThis.addEventListener('DOMContentLoaded', (event) => {
+    const currentUrl = globalThis.location.pathname;
 
     // Exact match first
     let currentNav = document.querySelector(`.unity-navbar-nav a[href="${currentUrl}"]`);
@@ -137,7 +137,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // Close the dropdown when clicking outside of it
-    window.addEventListener('click', function (event) {
+    globalThis.addEventListener('click', function (event) {
         if (userInitials) {
             if (!userInitials.contains(event.target) && !userDropdown.contains(event.target)) {
                 userDropdown.classList.remove('show');

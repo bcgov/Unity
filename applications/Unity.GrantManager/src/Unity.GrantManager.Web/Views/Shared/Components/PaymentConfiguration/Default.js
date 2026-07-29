@@ -34,7 +34,7 @@
         toggleParentFormSection();
         toggleDefaultPaymentGroupRow(UIElements.payable.is(':checked'));
 
-        if (window.toastr) { toastr.options.positionClass = 'toast-top-center'; }
+        if (globalThis.toastr) { toastr.options.positionClass = 'toast-top-center'; }
         UIElements.btnSave.prop('disabled', true);
     }
 

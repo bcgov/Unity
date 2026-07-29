@@ -259,10 +259,10 @@ $(function () {
                 if (!$collection.length) return;
                 const btnRect = $btn[0].getBoundingClientRect();
                 const collHeight = $collection.outerHeight();
-                const rightOffset = window.innerWidth - btnRect.right;
-                if (btnRect.bottom + collHeight > window.innerHeight) {
+                const rightOffset = globalThis.innerWidth - btnRect.right;
+                if (btnRect.bottom + collHeight > globalThis.innerHeight) {
                     $collection[0].style.setProperty('position', 'fixed', 'important');
-                    $collection[0].style.setProperty('bottom', (window.innerHeight - btnRect.top) + 'px', 'important');
+                    $collection[0].style.setProperty('bottom', (globalThis.innerHeight - btnRect.top) + 'px', 'important');
                     $collection[0].style.setProperty('top', '', 'important');
                 } else {
                     $collection[0].style.setProperty('position', 'fixed', 'important');

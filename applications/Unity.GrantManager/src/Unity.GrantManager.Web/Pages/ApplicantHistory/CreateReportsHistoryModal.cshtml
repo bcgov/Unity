@@ -74,7 +74,7 @@
 
 <script defer>
     (function () {
-        if (window.jQuery) {
+        if (globalThis.jQuery) {
             var $fiscalYear = $('#ReportsHistoryForm_FiscalYear');
 
             $fiscalYear.on('input', function () { $(this).removeClass('is-invalid'); });

@@ -36,10 +36,10 @@ $(function () {
 
         setTimeout(function () {
 
-            let scrolledY = window.scrollY;
+            let scrolledY = globalThis.scrollY;
 
             if (scrolledY) {
-                window.scroll(0, scrolledY - navBarHeight);
+                globalThis.scroll(0, scrolledY - navBarHeight);
             }
         }, 800);
     }));

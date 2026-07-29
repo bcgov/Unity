@@ -4,7 +4,7 @@ $(function () {
     const nullPlaceholder = '—';
 
     let inputAction = function (requestData, dataTableSettings) {
-        const urlParams = new URL(window.location.toLocaleString()).searchParams;
+        const urlParams = new URL(globalThis.location.toLocaleString()).searchParams;
         const applicationId = urlParams.get('ApplicationId');
         return {
             attachmentType: 'APPLICATION',

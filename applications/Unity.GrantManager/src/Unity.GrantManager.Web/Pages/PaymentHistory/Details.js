@@ -169,7 +169,7 @@
         return newData;
     };
 
-    window.addEventListener('resize', () => {});
+    globalThis.addEventListener('resize', () => {});
 
     PubSub.subscribe('refresh_application_list', (msg, data) => {
         dataTable.ajax.reload(null, false);

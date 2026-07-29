@@ -1,7 +1,7 @@
 ﻿$(function () {
 
     let inputAction = function () {
-        const urlParams = new URL(window.location.toLocaleString()).searchParams;
+        const urlParams = new URL(globalThis.location.toLocaleString()).searchParams;
         const applicationId = urlParams.get('ApplicationId');
         return applicationId;
     }

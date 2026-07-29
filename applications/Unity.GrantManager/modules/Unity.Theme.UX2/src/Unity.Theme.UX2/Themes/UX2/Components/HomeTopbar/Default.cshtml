@@ -13,16 +13,16 @@
     <div class="unity-container-fluid col-4">
         <div class="col-12 d-flex justify-content-end">
             <div class="d-flex justify-content-start div-btn-form">
-                <button type="button" class="btn btn-secondary" onclick="window.location.href = 'https://submit.digital.gov.bc.ca/app/';">DESIGN YOUR FORM</button>
+                <button type="button" class="btn btn-secondary" onclick="globalThis.location.href = 'https://submit.digital.gov.bc.ca/app/';">DESIGN YOUR FORM</button>
             </div>
             <div class="d-flex justify-content-end div-btn-form">
                 @if (!CurrentUser.IsAuthenticated)
                 {
-                    <button type="button" class="btn btn-primary" onclick="window.location.href = '/Account/Login';">LOGIN</button>
+                    <button type="button" class="btn btn-primary" onclick="globalThis.location.href = '/Account/Login';">LOGIN</button>
                 }
                 else
                 {
-                    <button type="button" class="btn btn-primary" onclick="window.location.href = '/GrantApplications';">VIEW APPLICATIONS</button>
+                    <button type="button" class="btn btn-primary" onclick="globalThis.location.href = '/GrantApplications';">VIEW APPLICATIONS</button>
                 }
             </div>
         </div>

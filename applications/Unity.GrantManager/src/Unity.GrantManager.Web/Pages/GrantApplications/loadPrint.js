@@ -14,7 +14,7 @@ function executeOperations(data) {
                     disableLinks();
 
                     setTimeout(function () {
-                        window.print();
+                        globalThis.print();
                     }, 1000);
 
                 });
@@ -29,7 +29,7 @@ function printScoreSheet() {
     disableLinks();
 
     setTimeout(function () {
-        window.print();
+        globalThis.print();
     }, 1000);
 }
 

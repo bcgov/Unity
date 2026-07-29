@@ -177,7 +177,7 @@ function initializeChart(config, labelsArray, dataArray) {
         myChart.setOption(option);
     }
 
-    window.addEventListener('resize', myChart.resize);
+    globalThis.addEventListener('resize', myChart.resize);
 }
 
 function initializePieChart(config, dataArray, labelsArray) {

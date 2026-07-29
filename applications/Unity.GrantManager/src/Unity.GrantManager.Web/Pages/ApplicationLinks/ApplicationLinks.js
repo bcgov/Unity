@@ -214,7 +214,7 @@ $(function () {
         duplicate: false
     }
 
-    window.LinksInput = LinksInput;
+    globalThis.LinksInput = LinksInput;
 
 
 });

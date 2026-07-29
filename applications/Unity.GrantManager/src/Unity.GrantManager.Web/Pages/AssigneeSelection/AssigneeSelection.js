@@ -263,7 +263,7 @@ $(function () {
         duplicate: false
     }
 
-    window.UserTagsInput = UserTagsInput;
+    globalThis.UserTagsInput = UserTagsInput;
 
 
 });

@@ -1072,7 +1072,7 @@
                     localStorage.setItem('notifications-active-tab', 'nav-template-tab');
                     localStorage.setItem('notifications-template-to-select', templateId || activeTemplateId || '');
                     await new Promise(resolve => setTimeout(resolve, 50));
-                    window.location.href = '/ConfigurationManagement';
+                    globalThis.location.href = '/ConfigurationManagement';
                 });
         }
 

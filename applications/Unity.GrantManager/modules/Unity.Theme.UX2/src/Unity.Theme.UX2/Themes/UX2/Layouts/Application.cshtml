@@ -123,11 +123,11 @@
         string matomoUrl = await AnalyticsUrlProvider.GetMatomoUrlAsync();
     }
     <script>
-        window.MATOMO_URL = '@matomoUrl';
+        globalThis.MATOMO_URL = '@matomoUrl';
         // [Analytics] Matomo URL exposed to JS: '@(string.IsNullOrEmpty(matomoUrl) ? "(empty — feature disabled or URL not seeded)" : matomoUrl)'
         (function() {
-            if (window.MATOMO_URL && window.MATOMO_URL.length > 0) {
-                AnalyticsUtils.initMatomo(window.MATOMO_URL, 1);
+            if (globalThis.MATOMO_URL && globalThis.MATOMO_URL.length > 0) {
+                AnalyticsUtils.initMatomo(globalThis.MATOMO_URL, 1);
             }
         })();
 

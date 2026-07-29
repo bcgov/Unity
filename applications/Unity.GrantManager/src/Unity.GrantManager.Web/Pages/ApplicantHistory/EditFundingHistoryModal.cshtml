@@ -99,7 +99,7 @@
 
 <script defer>
     (function () {
-        if (window.jQuery) {
+        if (globalThis.jQuery) {
             var $currencyInputs = $('#EditFundingHistoryForm .unity-currency-input');
             $currencyInputs.maskMoney({ thousands: ',', decimal: '.' });
             $currencyInputs.each(function () {

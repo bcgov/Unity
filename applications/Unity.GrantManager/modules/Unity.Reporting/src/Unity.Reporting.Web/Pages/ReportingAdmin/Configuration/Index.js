@@ -174,7 +174,7 @@ $(function () {
     }
 
     // Add refresh functionality
-    window.refreshTenantTable = function() {
-        window.location.reload();
+    globalThis.refreshTenantTable = function() {
+        globalThis.location.reload();
     };
 });

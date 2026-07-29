@@ -121,8 +121,8 @@ $(document).on('mouseenter', '.attachments-table .dropdown', function () {
     $content.css({ visibility: 'hidden', display: 'block', top: '', bottom: '' });
     const dropdownHeight = $content.outerHeight();
     $content.css({ visibility: '', display: '' });
-    if (rect.bottom + dropdownHeight > window.innerHeight) {
-        $content.css({ bottom: (window.innerHeight - rect.top) + 'px', top: '' });
+    if (rect.bottom + dropdownHeight > globalThis.innerHeight) {
+        $content.css({ bottom: (globalThis.innerHeight - rect.top) + 'px', top: '' });
     } else {
         $content.css({ top: rect.bottom + 'px', bottom: '' });
     }

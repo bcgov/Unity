@@ -1,5 +1,5 @@
 (function ($) {
-    window.UnityCharacterCounter = {
+    globalThis.UnityCharacterCounter = {
         init: function (containerSelector) {
             const $container = $(containerSelector || document);
 

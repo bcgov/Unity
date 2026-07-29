@@ -50,7 +50,7 @@ $(function () {
         $('#UnitySubmissionCount').html(totalSubmissions - chefOnlySubmissions);
         $('#MissingCount').html(chefOnlySubmissions);
     }
-    window.onSubmissionSummaryFilterChanged = onSubmissionSummaryFilterChanged;
+    globalThis.onSubmissionSummaryFilterChanged = onSubmissionSummaryFilterChanged;
 
 
     let filterData = {"Status": "Missing"};

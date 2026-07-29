@@ -113,7 +113,7 @@
             let footerHeight = this._getFooterHeight();
 
             // 3. Available height = viewport – top – footer – buffer
-            let available = window.innerHeight - topOffset - footerHeight - this.s.buffer;
+            let available = globalThis.innerHeight - topOffset - footerHeight - this.s.buffer;
             let newHeight = Math.max(Math.round(available), this.s.minHeight);
 
             // 4. Apply – only touch the DOM when the value actually changed
@@ -170,7 +170,7 @@
 
             // --- Window resize (throttled) ---
             let resizeTimer;
-            $(window).on('resize' + ns, function () {
+            $(globalThis).on('resize' + ns, function () {
                 clearTimeout(resizeTimer);
                 resizeTimer = setTimeout(function () { that._size(); }, that.s.throttleDelay);
             });
@@ -209,7 +209,7 @@
         _destroy() {
             let ns = this.s.namespace;
 
-            $(window).off(ns);
+            $(globalThis).off(ns);
             this.s.dt.off(ns);
 
             if (this._resizeObserver) {

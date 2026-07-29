@@ -9,7 +9,7 @@
 
   (function(){
 
-     abp.utils.createNamespace(window, 'unity.tenantManagement.tenant');
+     abp.utils.createNamespace(globalThis, 'unity.tenantManagement.tenant');
 
     unity.tenantManagement.tenant.get = function(id, ajaxParams) {
       return abp.ajax($.extend(true, {

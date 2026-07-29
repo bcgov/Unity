@@ -9,7 +9,7 @@
 
   (function(){
 
-    abp.utils.createNamespace(window, 'volo.abp.identity.identityRole');
+    abp.utils.createNamespace(globalThis, 'volo.abp.identity.identityRole');
 
     volo.abp.identity.identityRole.getAllList = function(ajaxParams) {
       return abp.ajax($.extend(true, {
@@ -62,7 +62,7 @@
 
   (function(){
 
-    abp.utils.createNamespace(window, 'volo.abp.identity.identityUser');
+    abp.utils.createNamespace(globalThis, 'volo.abp.identity.identityUser');
 
     volo.abp.identity.identityUser.get = function(id, ajaxParams) {
       return abp.ajax($.extend(true, {
@@ -145,7 +145,7 @@
 
   (function(){
 
-    abp.utils.createNamespace(window, 'volo.abp.identity.identityUserLookup');
+    abp.utils.createNamespace(globalThis, 'volo.abp.identity.identityUserLookup');
 
     volo.abp.identity.identityUserLookup.findById = function(id, ajaxParams) {
       return abp.ajax($.extend(true, {

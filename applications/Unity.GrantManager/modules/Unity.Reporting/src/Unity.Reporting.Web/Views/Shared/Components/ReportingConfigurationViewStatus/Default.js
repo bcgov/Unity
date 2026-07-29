@@ -227,7 +227,7 @@ $(function () {
     }
 
     // Monitor for changes in the widget content using MutationObserver
-    if (window.MutationObserver) {
+    if (globalThis.MutationObserver) {
         const observer = new MutationObserver(function(mutations) {
             mutations.forEach(function(mutation) {
                 if (mutation.type === 'childList' || mutation.type === 'characterData') {
@@ -268,7 +268,7 @@ $(function () {
     }
 
     // Cleanup on page unload
-    $(window).on('beforeunload', function() {
+    $(globalThis).on('beforeunload', function() {
         stopGeneratingPoll();
     });
 
