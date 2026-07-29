@@ -338,7 +338,7 @@ export class ApplicationsListPage extends ApplicationsPage {
         const titles: string[] = Cypress.$($els)
           .toArray()
           .map((el: HTMLElement) =>
-            (el.textContent || "").replace(/\s+/g, " ").trim(),
+            (el.textContent || "").replaceAll(/\s+/g, " ").trim(),
           )
           .filter((t: string) => t.length > 0);
         return titles;

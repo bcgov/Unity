@@ -706,8 +706,8 @@ function parseBatchMarker(urlText) {
     url.hash = parameters.toString() ? `#${parameters.toString()}` : '';
     return {
       token,
-      suiteId: rawSuiteId.replace(/[^A-Za-z0-9_-]/g, '').slice(0, 64) || 'regression',
-      index: rawIndex.replace(/[^A-Za-z0-9_-]/g, '').slice(0, 32) || '0',
+      suiteId: rawSuiteId.replaceAll(/[^A-Za-z0-9_-]/g, '').slice(0, 64) || 'regression',
+      index: rawIndex.replaceAll(/[^A-Za-z0-9_-]/g, '').slice(0, 32) || '0',
       url: url.href,
       origin: url.origin
     };
@@ -1346,8 +1346,8 @@ function createRunBundle(run) {
     files.push({ name: 'failure-screenshot.png', data: dataUrlToBytes(run.failureScreenshotDataUrl) });
   }
   const zip = createZip(files);
-  const safeRun = String(run.runId).replace(/[^A-Za-z0-9_-]/g, '');
-  const stamp = new Date(run.startedAt || Date.now()).toISOString().replace(/[-:]/g, '').replace(/\..+/, '').replace('T', '-');
+  const safeRun = String(run.runId).replaceAll(/[^A-Za-z0-9_-]/g, '');
+  const stamp = new Date(run.startedAt || Date.now()).toISOString().replaceAll(/[-:]/g, '').replace(/\..+/, '').replace('T', '-');
   const filename = `chefs-one-click-tester-v${run.extensionVersion}-build-${run.buildNumber}-run-${safeRun}-${stamp}.zip`;
   const url = `data:application/zip;base64,${bytesToBase64(zip)}`;
   return { filename, url };

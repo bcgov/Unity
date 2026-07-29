@@ -69,6 +69,6 @@
         let src = $('#scoresheetTitle');
         let dest = $('#scoresheetName');
         let name = src.val().toLowerCase().trim() + '-v1';
-        dest.val(name.replace(/\s+/g, ""));
+        dest.val(name.replaceAll(/\s+/g, ""));
     }
 </script>

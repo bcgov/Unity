@@ -38,8 +38,8 @@ $(function () {
 
         let filtered_submissions = submissions.filter(x =>
             x.tenant.toLowerCase().includes($('#ReconciliationTenantFilter').val().toLowerCase()) &&
-            (isNaN(dateTo.getTime()) || new Date(x.createdAt) <= dateTo) &&
-            (isNaN(dateFrom.getTime()) || new Date(x.createdAt) >= dateFrom) &&
+            (Number.isNaN(dateTo.getTime()) || new Date(x.createdAt) <= dateTo) &&
+            (Number.isNaN(dateFrom.getTime()) || new Date(x.createdAt) >= dateFrom) &&
             (x.category == $("#ReconciliationCategoryFilter").val() || $("#ReconciliationCategoryFilter").val() == "all")
         );
 
