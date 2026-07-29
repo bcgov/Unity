@@ -18,7 +18,7 @@ public class NotificationsSettingViewModel
     [Display(Name = "Enable Schedule Email for Individual Application")]
     public bool EnableEmailDelay { get; set; }
 
-    public string Extensions { get; set; } = string.Empty;
+    public string AllowedFileTypes { get; set; } = string.Empty;
     public string MaxFileSize { get; set; } = string.Empty;
     public string EmailAttachmentMaxFileSize { get; set; } = string.Empty;
     public string TotalEmailAttachmentMaxFileSize { get; set; } = string.Empty;      

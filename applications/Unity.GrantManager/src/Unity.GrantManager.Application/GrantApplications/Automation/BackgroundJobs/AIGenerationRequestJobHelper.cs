@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Unity.AI.Domain;
 using Unity.AI.Cooldown;
-using Unity.GrantManager.GrantApplications;
+using Unity.GrantManager.Applications;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Uow;
 
@@ -13,6 +13,26 @@ namespace Unity.GrantManager.GrantApplications.Automation.BackgroundJobs;
 
 public static class AIGenerationRequestJobHelper
 {
+    /// <summary>
+    /// Reloads the application in a fresh, short-lived unit of work and persists only the
+    /// result mutated by <paramref name="applyResult"/>. Keeping this load-to-save window
+    /// short (rather than holding the aggregate loaded across a slow AI call) avoids
+    /// AbpDbConcurrencyException when unrelated parts of the aggregate (e.g. ApplicationForm)
+    /// are modified concurrently.
+    /// </summary>
+    public static async Task SaveApplicationResultInNewUowAsync(
+        IUnitOfWorkManager unitOfWorkManager,
+        IApplicationRepository applicationRepository,
+        Guid applicationId,
+        Action<Application> applyResult)
+    {
+        using var uow = unitOfWorkManager.Begin(requiresNew: true, isTransactional: false);
+        var application = await applicationRepository.GetAsync(applicationId);
+        applyResult(application);
+        await applicationRepository.UpdateAsync(application);
+        await uow.CompleteAsync();
+    }
+
     public static async Task MarkRunningAsync(
         IRepository<AIGenerationRequest, Guid> generationRequestRepository,
         AIGenerationRequest? request)

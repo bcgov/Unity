@@ -316,7 +316,7 @@ namespace Unity.Reporting.EntityFrameworkCore.Repositories
                 // SECURITY: Use pre-validated identifier in quoted format
                 // The identifier has been validated above, and we use quoted format to prevent injection
                 var sql = $"DROP VIEW IF EXISTS \"Reporting\".\"{normalizedViewName}\"";
-                await dbContext.Database.ExecuteSqlRawAsync(SafeguardSql(sql));
+                await dbContext.Database.ExecuteSqlRawAsync(sql);
             }
             finally
             {
@@ -352,7 +352,7 @@ namespace Unity.Reporting.EntityFrameworkCore.Repositories
             {
                 // Use ExecuteSqlRaw with properly quoted identifiers - safer than string concatenation
                 var sql = $"GRANT SELECT ON \"Reporting\".\"{normalizedViewName}\" TO \"{role}\"";
-                await dbContext.Database.ExecuteSqlRawAsync(SafeguardSql(sql));
+                await dbContext.Database.ExecuteSqlRawAsync(sql);
             }
             finally
             {
@@ -400,7 +400,7 @@ namespace Unity.Reporting.EntityFrameworkCore.Repositories
                 foreach (var viewName in viewNames)
                 {
                     var sql = $"GRANT SELECT ON \"Reporting\".\"{viewName}\" TO \"{role}\"";
-                    await dbContext.Database.ExecuteSqlRawAsync(SafeguardSql(sql));
+                    await dbContext.Database.ExecuteSqlRawAsync(sql);
                 }
             }
             finally
@@ -544,51 +544,6 @@ namespace Unity.Reporting.EntityFrameworkCore.Repositories
             {
                 await dbContext.Database.CloseConnectionAsync();
             }
-        }
-
-        /// <summary>
-        /// Safeguards SQL strings by validating they only contain safe, pre-validated identifiers
-        /// and preventing SQL injection through strict identifier validation.
-        /// </summary>
-        /// <param name="sql">The SQL string to validate - should only contain pre-validated PostgreSQL identifiers</param>
-        /// <returns>The validated SQL string if safe</returns>
-        /// <exception cref="ArgumentException">Thrown if the SQL contains potentially unsafe content</exception>
-        private static string SafeguardSql(string sql)
-        {
-            if (string.IsNullOrWhiteSpace(sql))
-            {
-                throw new ArgumentException("SQL cannot be null or empty", nameof(sql));
-            }
-
-            // This method is specifically for our controlled scenarios where:
-            // 1. All identifiers have been pre-validated using IsValidPostgreSqlIdentifier()
-            // 2. The SQL structure is fixed and known (DROP VIEW, GRANT SELECT)
-            // 3. Only the identifier names are dynamic (view name, role name)
-            
-            // Additional safety check: ensure the SQL only contains expected patterns
-            // for our specific use cases (DROP VIEW and GRANT SELECT statements)
-            if (!IsKnownSafeSqlPattern(sql))
-            {
-                throw new ArgumentException("SQL does not match expected safe patterns", nameof(sql));
-            }
-
-            return sql;
-        }
-
-        /// <summary>
-        /// Validates that the SQL string matches one of our known safe patterns
-        /// </summary>
-        /// <param name="sql">The SQL string to validate</param>
-        /// <returns>True if the SQL matches a known safe pattern</returns>
-        private static bool IsKnownSafeSqlPattern(string sql)
-        {
-            if (string.IsNullOrWhiteSpace(sql))
-                return false;
-
-            // For our specific use cases, we expect either a DROP VIEW or GRANT SELECT statement
-            // The view name and roles have been pre-validated, so we just check the overall structure here
-
-            return true;
         }
 
         /// <summary>

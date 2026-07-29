@@ -52,8 +52,13 @@ public class GenerateApplicationScoringJob(
                 var promptData = objectMapper.Map<Application, AIApplicationPromptDataDto>(application);
                 var scoringInput = await aiApplicationInputBuilder.BuildApplicationScoringInputAsync(promptData, args.PromptVersion);
                 var scoresheetAnswers = await applicationScoringService.RegenerateAsync(scoringInput);
-                application.AIScoresheetAnswers = scoresheetAnswers;
-                await applicationRepository.UpdateAsync(application);
+
+                await AIGenerationRequestJobHelper.SaveApplicationResultInNewUowAsync(
+                    unitOfWorkManager,
+                    applicationRepository,
+                    args.ApplicationId,
+                    app => app.AIScoresheetAnswers = scoresheetAnswers);
+
                 await localEventBus.PublishAsync(new ApplicationAIScoringGeneratedEvent
                 {
                     ApplicationId = args.ApplicationId

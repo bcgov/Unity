@@ -848,8 +848,8 @@ public class AIPromptDataSeeder(
 
     // ── v2/form-worksheet.system.txt ───────────────────────────────────────
     private const string FormWorksheetSystemV2 = """
-        You are a worksheet definition generator for Unity Grant Manager.
-        Generate a recommended worksheet definition JSON that can be used to create a Flex worksheet.
+        You are a custom-field suggestion generator for Unity Grant Manager.
+        Recommend only the additional fields needed for a Flex worksheet.
         Return only valid JSON.
         """;
 
@@ -860,47 +860,30 @@ public class AIPromptDataSeeder(
 
         OUTPUT
         {
-          "Name": "<string>",
-          "Title": "<string>",
-          "Version": <number>,
-          "Published": true,
-          "Sections": [
-            {
-              "Name": "<string>",
-              "Order": 1,
-              "Fields": [
-                {
-                  "Name": "<string>",
-                  "Key": "<string>",
-                  "Label": "<string>",
-                  "Type": <number>,
-                  "Definition": "<string>"
-                }
-              ]
-            }
-          ],
-          "ReportColumns": "<string>",
-          "ReportKeys": "<string>",
-          "ReportViewName": "<string>"
+          "fields": [
+            { "key": "<string>", "label": "<string>", "type": "Text" }
+          ]
         }
 
         Rules:
-        - Return one worksheet definition JSON object only.
+        - Return one field-suggestion JSON object only.
         - chefsFields contains the available CHEFS source fields.
         - unityCoreFields contains existing Unity core fields. Do not create a custom field when one of these already fits.
-        - existingMapping contains any current confirmed Unity-to-CHEFS mappings. Do not duplicate those mappings with a custom field.
-        - existingWorksheets contains the previous AI worksheet definition, if one exists. Refine it rather than duplicating its custom fields.
+        - existingMapping contains the current saved Unity-to-CHEFS mappings. Do not duplicate those mappings with a custom field.
+        - existingCustomFields is a flattened list of fields from worksheets currently linked to this form version. Each entry includes its worksheet name, field name, label, and type. Do not create duplicate custom fields.
         - formSchema contains detailed CHEFS control configuration when labels and types need more context.
         - Use the provided form context to decide which custom fields are genuinely needed.
         - Prefer existing Unity core fields when they already satisfy the need.
         - Only create additional worksheet custom fields when the form genuinely needs them.
-        - Keep the worksheet structure valid for Flex.
+        - Do not include a worksheet title, sections, order, publish state, reporting fields, enabled flag, or field definition.
+        - Each key and label must be non-empty. Do not repeat a key.
+        - type must be one of: Text, TextArea, Numeric, Currency, Date, DateTime, Email, Phone, YesNo, Checkbox. Use the type name, never a number.
         - Return valid plain JSON only.
         """;
 
     private const string FormWorksheetMetadataV2 = """
         {
-          "DATA": "Serialized JSON payload containing form metadata, CHEFS fields, Unity core fields, the current mapping, form schema, and the existing AI worksheet."
+          "DATA": "Serialized JSON payload containing form metadata, CHEFS fields, Unity core fields, the current mapping, form schema, and custom fields from worksheets currently linked to the form version."
         }
         """;
 

@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Volo.Abp.AspNetCore.Mvc.UI.Bundling;
 using Unity.GrantManager.ApplicationForms;
+using Unity.GrantManager.ApplicationForms.Mapping;
 using Unity.Flex.Worksheets;
 using Unity.Flex.WorksheetLinks;
 using Unity.GrantManager.Flex;
@@ -43,7 +44,14 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.CustomFields
             model.ChefsFormPublished = formVersion?.Published;
             model.WorksheetLinks = await worksheetLinkAppService.GetListByCorrelationAsync(formVersion?.Id ?? Guid.Empty, CorrelationConsts.FormVersion);
 
-            model.PublishedWorksheets = [.. (await worksheetListAppService.GetListAsync())
+            var aiSuggestionWorksheetName = formVersion == null
+                ? string.Empty
+                : AiWorksheetSuggestionName.Build(formVersion.ApplicationFormId, formVersion.Id);
+            var worksheets = await worksheetListAppService.GetListAsync();
+            model.HasPendingAiWorksheet = worksheets
+                .Any(worksheet => !worksheet.Published && worksheet.Name == aiSuggestionWorksheetName);
+
+            model.PublishedWorksheets = [.. worksheets
                 .Where(s => s.Published && !model.WorksheetLinks.Select(s => s.WorksheetId).Contains(s.Id))
                 .OrderBy(s => s.Title)];
 

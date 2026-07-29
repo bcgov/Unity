@@ -8,6 +8,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Unity.Notifications.Emails;
+using Volo.Abp.Authorization;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Users;
 
@@ -77,13 +78,19 @@ public class EmailAttachmentService : ITransientDependency
             ContentType = contentType,
             FileSize = fileContent.Length,
             Time = DateTime.UtcNow,
+            // Unlike UploadUserAttachmentAsync below, this path is reached from
+            // EmailNotificationHandler - a local event handler that can run for
+            // system/schedule-triggered emails with no interactive user in context, so a missing
+            // ICurrentUser.Id here isn't necessarily an error condition. The caller already wraps
+            // this in a try/catch that logs and sends the email without the attachment on any
+            // failure, so Guid.Empty (rather than throwing) is the intentional "no user" marker.
             UserId = _currentUser.Id ?? Guid.Empty,
             TenantId = tenantId
         };
 
         await _emailLogAttachmentRepository.InsertAsync(attachment);
         return attachment;
-    }    
+    }
 
     public async Task<byte[]?> DownloadFromS3Async(string s3ObjectKey)
     {
@@ -143,7 +150,10 @@ public class EmailAttachmentService : ITransientDependency
             ContentType = contentType,
             FileSize = fileContent.Length,
             Time = DateTime.UtcNow,
-            UserId = _currentUser.Id ?? Guid.Empty,
+            // A missing ICurrentUser.Id means this was reached without an authenticated user -
+            // fail loudly rather than silently attributing the attachment to Guid.Empty, which
+            // would look like a valid, specific user rather than an error state.
+            UserId = _currentUser.Id ?? throw new AbpAuthorizationException("Cannot save an email attachment without an authenticated user."),
             TenantId = tenantId
         };
 

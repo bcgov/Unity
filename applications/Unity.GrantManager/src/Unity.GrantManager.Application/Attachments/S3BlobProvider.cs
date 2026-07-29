@@ -3,15 +3,16 @@ using Amazon.S3.Model;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.AspNetCore.StaticFiles;
-using Microsoft.Extensions.Primitives;
 using System;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
+using Volo.Abp.Authorization;
 using Volo.Abp.BlobStoring;
 using Volo.Abp.DependencyInjection;
+using Volo.Abp.Users;
 using Volo.Abp.Validation;
 
 namespace Unity.GrantManager.Attachments;
@@ -23,15 +24,17 @@ public partial class S3BlobProvider : BlobProviderBase, ITransientDependency
     private readonly IAssessmentAttachmentRepository _assessmentAttachmentRepository;
     private readonly IApplicantAttachmentRepository _applicantAttachmentRepository;
     private readonly IAmazonS3 _amazonS3Client;
+    private readonly ICurrentUser _currentUser;
 
-    public S3BlobProvider(IHttpContextAccessor httpContextAccessor, IApplicationAttachmentRepository attachmentRepository, IAssessmentAttachmentRepository assessmentAttachmentRepository, IApplicantAttachmentRepository applicantAttachmentRepository, IAmazonS3 amazonS3Client)
+    public S3BlobProvider(IHttpContextAccessor httpContextAccessor, IApplicationAttachmentRepository attachmentRepository, IAssessmentAttachmentRepository assessmentAttachmentRepository, IApplicantAttachmentRepository applicantAttachmentRepository, IAmazonS3 amazonS3Client, ICurrentUser currentUser)
     {
         _httpContextAccessor = httpContextAccessor;
         _applicationAttachmentRepository = attachmentRepository;
         _assessmentAttachmentRepository = assessmentAttachmentRepository;
         _applicantAttachmentRepository = applicantAttachmentRepository;
         _amazonS3Client = amazonS3Client;
-    }    
+        _currentUser = currentUser;
+    }
 
     public override async Task<bool> DeleteAsync(BlobProviderDeleteArgs args)
     {
@@ -156,39 +159,39 @@ public partial class S3BlobProvider : BlobProviderBase, ITransientDependency
     public override async Task SaveAsync(BlobProviderSaveArgs args)
     {
         var httpContext = _httpContextAccessor.HttpContext ?? throw new InvalidOperationException("No active HttpContext.");
-        var queryParams = httpContext.Request?.Query ?? throw new InvalidOperationException("No query parameters in the current request.");
-        var routeData = _httpContextAccessor.HttpContext.GetRouteData();
-        
+        var routeData = httpContext.GetRouteData();
+
         var assessmentId = routeData.Values["assessmentId"];
         var applicationId = routeData.Values["applicationId"];
         var applicantId = routeData.Values["applicantId"];
-        queryParams.TryGetValue("userId", out StringValues currentUserId);
+
+        // The uploader must be the authenticated caller, not a client-supplied value - a userId
+        // taken from the request (query string, form field, etc.) can be set to any GUID by the
+        // caller, letting one user attribute an upload to another user's identity. A missing
+        // ICurrentUser.Id means this was reached without authentication (AttachmentController
+        // requires [Authorize], so this should never happen) - fail loudly rather than silently
+        // attributing the upload to Guid.Empty, which would look like a valid, specific user.
+        var currentUserId = _currentUser.Id ?? throw new AbpAuthorizationException("Cannot save an attachment without an authenticated user.");
+
         if (assessmentId != null)
-        {            
-                        
-            #pragma warning disable CS8604 // Possible null reference argument.
-            await UploadAssessmentAttachment(args, assessmentId.ToString(), currentUserId.ToString());
-            #pragma warning restore CS8604 // Possible null reference argument.
+        {
+            await UploadAssessmentAttachment(args, assessmentId.ToString()!, currentUserId);
         }
         else if(applicationId != null)
-        {             
-            #pragma warning disable CS8604 // Possible null reference argument.
-            await UploadApplicationAttachment(args, applicationId.ToString(), currentUserId.ToString());
-            #pragma warning restore CS8604 // Possible null reference argument.
+        {
+            await UploadApplicationAttachment(args, applicationId.ToString()!, currentUserId);
         }
         else if (applicantId != null)
         {
-            #pragma warning disable CS8604 // Possible null reference argument.
-            await UploadApplicantAttachment(args, applicantId.ToString(), currentUserId.ToString());
-            #pragma warning restore CS8604 // Possible null reference argument.
+            await UploadApplicantAttachment(args, applicantId.ToString()!, currentUserId);
         }
         else
         {
             throw new AbpValidationException("Missing parameter: applicationId/assessmentId/applicantId");
-        }     
-    }    
-    
-    private async Task UploadAssessmentAttachment(BlobProviderSaveArgs args, string assessmentId, string currentUserId)
+        }
+    }
+
+    private async Task UploadAssessmentAttachment(BlobProviderSaveArgs args, string assessmentId, Guid currentUserId)
     {
         var config = args.Configuration.GetS3BlobProviderConfiguration();
         var bucket = config.Bucket;
@@ -211,21 +214,21 @@ public partial class S3BlobProvider : BlobProviderBase, ITransientDependency
                {
                    AssessmentId = new Guid(assessmentId),
                    S3ObjectKey = key,
-                   UserId = new Guid(currentUserId),
+                   UserId = currentUserId,
                    FileName = args.BlobName,
                    Time = DateTime.UtcNow,
                });
         }
         else
         {
-            attachment.UserId = new Guid(currentUserId);
+            attachment.UserId = currentUserId;
             attachment.FileName = args.BlobName;
             attachment.Time = DateTime.UtcNow;
             await _assessmentAttachmentRepository.UpdateAsync(attachment);
         }
     }
 
-    private async Task UploadApplicationAttachment(BlobProviderSaveArgs args, string applicationId, string currentUserId)
+    private async Task UploadApplicationAttachment(BlobProviderSaveArgs args, string applicationId, Guid currentUserId)
     {
         var config = args.Configuration.GetS3BlobProviderConfiguration();
         var bucket = config.Bucket;
@@ -248,21 +251,21 @@ public partial class S3BlobProvider : BlobProviderBase, ITransientDependency
                 {
                     ApplicationId = new Guid(applicationId),
                     S3ObjectKey = key,
-                    UserId = new Guid(currentUserId),
-                    FileName = args.BlobName,                    
+                    UserId = currentUserId,
+                    FileName = args.BlobName,
                     Time = DateTime.UtcNow,
                 });
         }
         else
         {
-            attachment.UserId = new Guid(currentUserId);
-            attachment.FileName = args.BlobName;            
+            attachment.UserId = currentUserId;
+            attachment.FileName = args.BlobName;
             attachment.Time = DateTime.UtcNow;
             await _applicationAttachmentRepository.UpdateAsync(attachment);
         }
     }
 
-    private async Task UploadApplicantAttachment(BlobProviderSaveArgs args, string applicantId, string currentUserId)
+    private async Task UploadApplicantAttachment(BlobProviderSaveArgs args, string applicantId, Guid currentUserId)
     {
         var config = args.Configuration.GetS3BlobProviderConfiguration();
         var bucket = config.Bucket;
@@ -285,14 +288,14 @@ public partial class S3BlobProvider : BlobProviderBase, ITransientDependency
                 {
                     ApplicantId = new Guid(applicantId),
                     S3ObjectKey = key,
-                    UserId = new Guid(currentUserId),
+                    UserId = currentUserId,
                     FileName = args.BlobName,
                     Time = DateTime.UtcNow,
                 });
         }
         else
         {
-            attachment.UserId = new Guid(currentUserId);
+            attachment.UserId = currentUserId;
             attachment.FileName = args.BlobName;
             attachment.Time = DateTime.UtcNow;
             await _applicantAttachmentRepository.UpdateAsync(attachment);
