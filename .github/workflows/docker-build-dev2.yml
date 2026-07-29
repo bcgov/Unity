@@ -1,8 +1,8 @@
-name: Dev - Build & Push docker images
+name: Dev2 - Build & Push docker images
 
 on:
   push:
-    branches: [ "dev" ]
+    branches: [ "dev2" ]
     paths-ignore:
       - '.github/**'
       - '.gitignore'
@@ -18,30 +18,23 @@ on:
       - 'SECURITY.md'
   # Allow manual workflow triggering
   workflow_dispatch:
-# Workflow dependencies
+
 env:
-  TARGET_ENV: dev
+  TARGET_ENV: dev2
   GH_TOKEN: ${{secrets.GH_API_TOKEN}}
   OC_CLUSTER: ${{ vars.OPENSHIFT_CLUSTER }}
   OC_REGISTRY: ${{ vars.OPENSHIFT_REGISTRY }}
-  OC_TOOLS_TOKEN: ${{ secrets.TOOLS_OPENSHIFT_TOKEN }}
-  OC_TOOLS_PROJECT: ${{ vars.TOOLS_OPENSHIFT_NAMESPACE }}
   OC_TARGET_TOKEN: ${{ secrets.OPENSHIFT_TOKEN }}
   OC_TARGET_PROJECT: ${{ vars.OPENSHIFT_NAMESPACE }}
   JFROG_USERNAME: ${{ secrets.ARTIFACTORY_USERNAME }}
   JFROG_PASSWORD: ${{ secrets.ARTIFACTORY_PASSWORD }}
   JFROG_REPO_PATH: ${{ vars.ARTIFACTORY_REPO }}
   JFROG_SERVICE:  ${{ vars.ARTIFACTORY_SERVICE }}
-  UGM_BUILD_VERSION: ${{vars.UGM_BUILD_VERSION}}
-  UGM_BUILD_REVISION: ${{vars.UGM_BUILD_REVISION}}
-
-  UGM_RELEASE_PREFIX: Unity_Grant_Manager_v
-  UGM_RELEASE_MESSAGE: "Development deployment"
 
 jobs:
   Setup:
     runs-on: ubuntu-latest
-    environment: dev
+    environment: dev2
     permissions:
       contents: read
     steps:
@@ -49,20 +42,14 @@ jobs:
       run: |
         echo "Target: $TARGET_ENV"
         echo "BaseRef: $GITHUB_REF_NAME"
-        echo "Environment: $TARGET_ENV OC_TOOLS_PROJECT=$OC_TOOLS_PROJECT OC_TARGET_PROJECT=$OC_TARGET_PROJECT"
+        echo "Environment: $TARGET_ENV OC_TARGET_PROJECT=$OC_TARGET_PROJECT"
         echo "Environment: $TARGET_ENV JFROG_REPO_PATH=$JFROG_REPO_PATH"
         echo "..."
         env | sort
-    - name: Get current date
-      id: date_selector
-      run: |
-        echo "DATE=$(date +'%B %e, %Y')" >> $GITHUB_OUTPUT
-    outputs:
-      DATE: ${{steps.date_selector.outputs.DATE}}
   Branch:
     needs: [Setup]
     runs-on: ubuntu-latest
-    environment: dev
+    environment: dev2
     permissions:
       contents: read
     steps:
@@ -74,47 +61,12 @@ jobs:
       id: get_commit
       run: |
         echo "SHA_SHORT=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
-    - name: List merged branch
-      id: get_branch
-      run: |
-        git log -1
-        MERGED_BRANCH=$(git log -1 | grep -oE 'from bcgov/[^ ]+' | sed 's/from bcgov\///')
-        if [ -z "$MERGED_BRANCH" ]; then
-          echo "Direct push into --env ${{env.TARGET_ENV}}"
-          echo "MERGED_BRANCH=push" >> $GITHUB_OUTPUT
-        else
-          echo "Merged branch: $MERGED_BRANCH"
-          echo "MERGED_BRANCH=$MERGED_BRANCH" >> $GITHUB_OUTPUT
-        fi
     outputs:
       SHA_SHORT: ${{steps.get_commit.outputs.SHA_SHORT}}
-      MERGED_BRANCH: ${{steps.get_branch.outputs.MERGED_BRANCH}}
-  PushVariables:
+  Build:
     needs: [Setup,Branch]
     runs-on: ubuntu-latest
-    environment: dev
-    permissions:
-      actions: write
-    steps:
-    - name: Checkout repository
-      uses: actions/checkout@v6
-      with:
-          fetch-depth: '1'
-    - name: Set repository version variables
-      id: set_version
-      run: |
-        gh variable set UGM_BUILD_REVISION --env ${{env.TARGET_ENV}} --body "${{needs.Branch.outputs.SHA_SHORT}}"
-        echo "UGM_BUILD_REVISION=${{needs.Branch.outputs.SHA_SHORT}}" >> $GITHUB_ENV
-    - name: Get repository version variables
-      id: get_version
-      run: |
-        gh variable list --env ${{env.TARGET_ENV}}
-        echo "..."
-        echo "buildArgs --env ${{env.TARGET_ENV}} UNITY_BUILD_VERSION: ${{env.UGM_BUILD_VERSION}}, UNITY_BUILD_REVISION: ${{env.UGM_BUILD_REVISION}}, Merged Branch: ${{needs.Branch.outputs.MERGED_BRANCH}}"
-  Build:
-    needs: [Setup,Branch,PushVariables]
-    runs-on: ubuntu-latest
-    environment: dev
+    environment: dev2
     permissions:
       contents: read
     steps:
@@ -122,8 +74,7 @@ jobs:
     - name: Build Docker images
       run: |
         rm -f ./docker-compose.override.yml
-        echo "buildArgs UNITY_BUILD_VERSION: ${{env.UGM_BUILD_VERSION}}, UNITY_BUILD_REVISION: ${{env.UGM_BUILD_REVISION}}"
-        docker build --build-arg UNITY_BUILD_VERSION=${{env.UGM_BUILD_VERSION}} --build-arg UNITY_BUILD_REVISION=${{env.UGM_BUILD_REVISION}} -t unity-grantmanager-web -f src/Unity.GrantManager.Web/Dockerfile .
+        docker build --build-arg UNITY_BUILD_VERSION=dev2 --build-arg UNITY_BUILD_REVISION=${{needs.Branch.outputs.SHA_SHORT}} -t unity-grantmanager-web -f src/Unity.GrantManager.Web/Dockerfile .
         docker build -t unity-grantmanager-dbmigrator -f src/Unity.GrantManager.DbMigrator/Dockerfile .
       working-directory: ./applications/Unity.GrantManager
     - name: Push application images to Artifactory container registry
@@ -142,20 +93,18 @@ jobs:
           sudo mv oc /usr/local/bin
     - name: Verify OpenShift CLI installation
       run: oc version
-    - name: Push application images into ce395f-tools
-      run: |
-        oc login --token=$OC_TOOLS_TOKEN --server=$OC_CLUSTER
-        oc registry login
-        docker login -u unused -p $(oc whoami -t) $OC_REGISTRY
-        docker tag unity-grantmanager-dbmigrator $OC_REGISTRY/$OC_TOOLS_PROJECT/$TARGET_ENV-unity-dbmigrator-build:latest
-        docker push $OC_REGISTRY/$OC_TOOLS_PROJECT/$TARGET_ENV-unity-dbmigrator-build:latest
-        docker tag unity-grantmanager-web $OC_REGISTRY/$OC_TOOLS_PROJECT/$TARGET_ENV-unity-grantmanager-build:latest
-        docker push $OC_REGISTRY/$OC_TOOLS_PROJECT/$TARGET_ENV-unity-grantmanager-build:latest
-        docker logout $OC_REGISTRY
-    - name: Promote dbMigrator into ce395f-dev and run migrations
+    - name: Push application images into ce395f-dev (no ce395f-tools hop for dev2)
       run: |
         oc login --token=$OC_TARGET_TOKEN --server=$OC_CLUSTER
-        oc tag $OC_TOOLS_PROJECT/$TARGET_ENV-unity-dbmigrator-build:latest $OC_TARGET_PROJECT/$TARGET_ENV-unity-dbmigrator:latest
+        oc registry login
+        docker login -u unused -p $(oc whoami -t) $OC_REGISTRY
+        docker tag unity-grantmanager-dbmigrator $OC_REGISTRY/$OC_TARGET_PROJECT/$TARGET_ENV-unity-dbmigrator:latest
+        docker push $OC_REGISTRY/$OC_TARGET_PROJECT/$TARGET_ENV-unity-dbmigrator:latest
+        docker tag unity-grantmanager-web $OC_REGISTRY/$OC_TARGET_PROJECT/$TARGET_ENV-unity-grantmanager:latest
+        docker push $OC_REGISTRY/$OC_TARGET_PROJECT/$TARGET_ENV-unity-grantmanager:latest
+        docker logout $OC_REGISTRY
+    - name: Run dbMigrator Job
+      run: |
         oc -n $OC_TARGET_PROJECT delete jobs $TARGET_ENV-unity-dbmigrator --ignore-not-found=true
         oc -n $OC_TARGET_PROJECT process unity-grantmanager-dbmigrator-job \
           -p APPLICATION_GROUP=$TARGET_ENV-unity-grantmanager \
@@ -165,7 +114,7 @@ jobs:
           -p IMAGESTREAM_NAME=$TARGET_ENV-unity-dbmigrator \
           -p IMAGESTREAM_TAG=latest | oc -n $OC_TARGET_PROJECT create -f -
         oc -n $OC_TARGET_PROJECT wait jobs/$TARGET_ENV-unity-dbmigrator --for condition=complete --timeout=300s
-    - name: Promote grantmanager-web into ce395f-dev and wait
+    - name: Roll out grantmanager-web and wait
       run: |
-        oc tag $OC_TOOLS_PROJECT/$TARGET_ENV-unity-grantmanager-build:latest $OC_TARGET_PROJECT/$TARGET_ENV-unity-grantmanager:latest
+        oc -n $OC_TARGET_PROJECT rollout restart deployment/$TARGET_ENV-unity-grantmanager-web
         oc -n $OC_TARGET_PROJECT rollout status deployment/$TARGET_ENV-unity-grantmanager-web --timeout=180s
