@@ -157,16 +157,21 @@ namespace Unity.Payments.Integrations.Cas
                     return string.Empty;
                 }
 
+                var fullName = $"{user.Name} {user.Surname}".Trim();
+
+                if(!string.IsNullOrWhiteSpace(fullName))
+                {
+                    return fullName;
+                }
+
                 if (!string.IsNullOrWhiteSpace(user.UserName))
                 {
                     return user.UserName;
                 }
 
-                var fullName = $"{user.Name} {user.Surname}".Trim();
+                return string.Empty;
 
-                return string.IsNullOrWhiteSpace(fullName)
-                    ? string.Empty
-                    : fullName;
+
             }
             catch (Exception ex)
             {
