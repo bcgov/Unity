@@ -63,6 +63,78 @@ namespace Unity.Reporting.Application.Tests.EntityFrameworkCore.Repositories
         }
 
         [Fact]
+        public void ValidateFilterExpression_Should_Reject_Block_Comment_Injection()
+        {
+            const string maliciousFilter = "status = 'Active' /* comment */ OR 1=1";
+
+            Should.Throw<ArgumentException>(() =>
+                ReportColumnsMapRepository.ValidateFilterExpression(maliciousFilter, ValidColumns));
+        }
+
+        [Fact]
+        public void ValidateFilterExpression_Should_Reject_Trailing_Comment_Injection()
+        {
+            const string maliciousFilter = "status = 'Active' --comment";
+
+            Should.Throw<ArgumentException>(() =>
+                ReportColumnsMapRepository.ValidateFilterExpression(maliciousFilter, ValidColumns));
+        }
+
+        [Fact]
+        public void ValidateFilterExpression_Should_Reject_Unterminated_String_Literal()
+        {
+            const string maliciousFilter = "applicant_name = 'unterminated";
+
+            Should.Throw<ArgumentException>(() =>
+                ReportColumnsMapRepository.ValidateFilterExpression(maliciousFilter, ValidColumns));
+        }
+
+        [Fact]
+        public void ValidateFilterExpression_Should_Reject_Backslash_Quote_Breakout_Attempt()
+        {
+            // Postgres defaults to standard_conforming_strings=on, so a backslash does not escape
+            // the following quote. If our tokenizer treated it as an escape (MySQL-style), the
+            // string literal would swallow the rest of the payload instead of ending at the first
+            // unescaped quote, and "OR 1=1--" would slip through unnoticed.
+            const string maliciousFilter = "applicant_name = 'test\\' OR 1=1--'";
+
+            Should.Throw<ArgumentException>(() =>
+                ReportColumnsMapRepository.ValidateFilterExpression(maliciousFilter, ValidColumns));
+        }
+
+        [Fact]
+        public void ValidateFilterExpression_Should_Reject_Function_Call_With_Whitespace_Before_Paren()
+        {
+            // A space between the identifier and "(" is a classic bypass for naive "identifier("
+            // checks - our tokenizer must not reset the "previous token was a column" state on
+            // whitespace.
+            string[] columnsIncludingDangerousName = ["id", "status", "pg_sleep"];
+            const string maliciousFilter = "pg_sleep (10) IS NOT NULL";
+
+            Should.Throw<ArgumentException>(() =>
+                ReportColumnsMapRepository.ValidateFilterExpression(maliciousFilter, columnsIncludingDangerousName));
+        }
+
+        [Fact]
+        public void ValidateFilterExpression_Should_Reject_Function_Call_Via_Quoted_Identifier()
+        {
+            string[] columnsIncludingDangerousName = ["id", "status", "pg_sleep"];
+            const string maliciousFilter = "\"pg_sleep\"(10) IS NOT NULL";
+
+            Should.Throw<ArgumentException>(() =>
+                ReportColumnsMapRepository.ValidateFilterExpression(maliciousFilter, columnsIncludingDangerousName));
+        }
+
+        [Fact]
+        public void ValidateFilterExpression_Should_Reject_Union_Injection_Regardless_Of_Keyword_Casing()
+        {
+            const string maliciousFilter = "id = 1 uNioN Select 1";
+
+            Should.Throw<ArgumentException>(() =>
+                ReportColumnsMapRepository.ValidateFilterExpression(maliciousFilter, ValidColumns));
+        }
+
+        [Fact]
         public void ValidateFilterExpression_Should_Accept_In_Clause_Without_Treating_It_As_A_Function_Call()
         {
             const string filter = "status IN ('Active', 'Pending')";
@@ -73,9 +145,111 @@ namespace Unity.Reporting.Application.Tests.EntityFrameworkCore.Repositories
         }
 
         [Fact]
+        public void ValidateFilterExpression_Should_Accept_In_Clause_With_Numbers_And_No_Spacing()
+        {
+            const string filter = "id IN (1,2,3)";
+
+            var result = ReportColumnsMapRepository.ValidateFilterExpression(filter, ValidColumns);
+
+            result.ShouldBe(filter);
+        }
+
+        [Fact]
         public void ValidateFilterExpression_Should_Accept_Legitimate_Filter()
         {
             const string filter = "status = 'Active' AND amount > 1000";
+
+            var result = ReportColumnsMapRepository.ValidateFilterExpression(filter, ValidColumns);
+
+            result.ShouldBe(filter);
+        }
+
+        [Fact]
+        public void ValidateFilterExpression_Should_Accept_String_Value_That_Contains_Comment_Like_Substring()
+        {
+            // The value itself is attacker-adjacent-looking text, but it is safely contained inside
+            // a quoted string literal, so it must be treated as ordinary data, not SQL syntax.
+            const string filter = "status = 'Active; not-a-comment --'";
+
+            var result = ReportColumnsMapRepository.ValidateFilterExpression(filter, ValidColumns);
+
+            result.ShouldBe(filter);
+        }
+
+        [Fact]
+        public void ValidateFilterExpression_Should_Accept_Escaped_Quote_In_String_Literal()
+        {
+            const string filter = "applicant_name = 'O''Brien'";
+
+            var result = ReportColumnsMapRepository.ValidateFilterExpression(filter, ValidColumns);
+
+            result.ShouldBe(filter);
+        }
+
+        [Fact]
+        public void ValidateFilterExpression_Should_Accept_Grouped_Expression_With_Nested_Parens()
+        {
+            const string filter = "(status = 'Active' OR status = 'Pending') AND amount > 100";
+
+            var result = ReportColumnsMapRepository.ValidateFilterExpression(filter, ValidColumns);
+
+            result.ShouldBe(filter);
+        }
+
+        [Fact]
+        public void ValidateFilterExpression_Should_Accept_Between_Operator()
+        {
+            const string filter = "amount BETWEEN 100 AND 1000";
+
+            var result = ReportColumnsMapRepository.ValidateFilterExpression(filter, ValidColumns);
+
+            result.ShouldBe(filter);
+        }
+
+        [Fact]
+        public void ValidateFilterExpression_Should_Accept_Is_Not_Null()
+        {
+            const string filter = "created_date IS NOT NULL";
+
+            var result = ReportColumnsMapRepository.ValidateFilterExpression(filter, ValidColumns);
+
+            result.ShouldBe(filter);
+        }
+
+        [Fact]
+        public void ValidateFilterExpression_Should_Accept_Like_Operator()
+        {
+            const string filter = "applicant_name LIKE 'Smith%'";
+
+            var result = ReportColumnsMapRepository.ValidateFilterExpression(filter, ValidColumns);
+
+            result.ShouldBe(filter);
+        }
+
+        [Fact]
+        public void ValidateFilterExpression_Should_Accept_Lowercase_Keywords()
+        {
+            const string filter = "status = 'Active' and amount > 100";
+
+            var result = ReportColumnsMapRepository.ValidateFilterExpression(filter, ValidColumns);
+
+            result.ShouldBe(filter);
+        }
+
+        [Fact]
+        public void ValidateFilterExpression_Should_Accept_Not_With_Grouped_Expression()
+        {
+            const string filter = "NOT (status = 'Active')";
+
+            var result = ReportColumnsMapRepository.ValidateFilterExpression(filter, ValidColumns);
+
+            result.ShouldBe(filter);
+        }
+
+        [Fact]
+        public void ValidateFilterExpression_Should_Accept_Decimal_Number_Literal()
+        {
+            const string filter = "amount >= 100.50";
 
             var result = ReportColumnsMapRepository.ValidateFilterExpression(filter, ValidColumns);
 
