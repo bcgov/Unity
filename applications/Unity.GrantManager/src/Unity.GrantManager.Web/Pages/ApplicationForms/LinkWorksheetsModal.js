@@ -81,15 +81,6 @@
         }
     }
 
-    function dropToMultiTarget(event, addClass, removeClass, storeFunction) {
-        event.preventDefault();
-        let dragOver = event.target;
-        let beingDragged = document.querySelector('.dragging');
-        updateDraggedClasses(beingDragged, addClass, removeClass);
-        dragOver.appendChild(beingDragged);
-        storeFunction();
-    }
-
     function dropToCustomTabs(event, addClass, removeClass) {
         dropToMultiTarget(event, addClass, removeClass, storeCustomTabsIdChange);
     }
@@ -144,30 +135,6 @@
         $('#FundingAgreementInfoSlotIds').val(fundingAgreementInfoIds.join(';'));
     }
 
-    function dropToAvailableWorksheets(event, addClass, removeClass) {
-        dropToSingleTarget(event, addClass, removeClass);
-        sortAvailableWorksheets();
-    }
-
-    function sortAvailableWorksheets() {
-        sortUsingNestedText($('.available-worksheets'), "span.published-form-title");
-    }
-
-    function dropToSingleTarget(event, addClass, removeClass) {
-        let dragOver = event.target;
-        let beingDragged = document.querySelector('.dragging');
-        updateDraggedClasses(beingDragged, addClass, removeClass);
-        dragOver.appendChild(beingDragged);
-    }
-
-    function updateDraggedClasses(beingDragged, addClass, removeClass) {
-        if (addClass) {
-            beingDragged.classList.add('published-form');
-        }
-        if (removeClass) {
-            beingDragged.classList.remove('published-form');
-        }
-    }
 });
 
 function beingDragged(ev) {
@@ -203,6 +170,40 @@ function sortUsingNestedText(parent, keySelector) {
         return compareSort(vA, vB);
     });
     parent.append(items);
+}
+
+function sortAvailableWorksheets() {
+    sortUsingNestedText($('.available-worksheets'), "span.published-form-title");
+}
+
+function updateDraggedClasses(beingDragged, addClass, removeClass) {
+    if (addClass) {
+        beingDragged.classList.add('published-form');
+    }
+    if (removeClass) {
+        beingDragged.classList.remove('published-form');
+    }
+}
+
+function dropToSingleTarget(event, addClass, removeClass) {
+    let dragOver = event.target;
+    let beingDragged = document.querySelector('.dragging');
+    updateDraggedClasses(beingDragged, addClass, removeClass);
+    dragOver.appendChild(beingDragged);
+}
+
+function dropToMultiTarget(event, addClass, removeClass, storeFunction) {
+    event.preventDefault();
+    let dragOver = event.target;
+    let beingDragged = document.querySelector('.dragging');
+    updateDraggedClasses(beingDragged, addClass, removeClass);
+    dragOver.appendChild(beingDragged);
+    storeFunction();
+}
+
+function dropToAvailableWorksheets(event, addClass, removeClass) {
+    dropToSingleTarget(event, addClass, removeClass);
+    sortAvailableWorksheets();
 }
 
 

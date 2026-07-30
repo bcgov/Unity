@@ -59,6 +59,17 @@ function getRowTemplate(name, type) {
     <i class="fl fl-delete"></i></button></td></tr>`
 }
 
+function bindNewRowKeyCheck(newRowControl) {
+    let newKey = $('#new-row-key');
+
+    newKey.on('change', function (event) {
+        let valid = validateColumnName(newRowControl);
+        if (valid === true) {
+            clearSummaryError();
+        }
+    });
+}
+
 $(function () {
     let addcolumnOption;
     let columnOptionsTable;
@@ -74,17 +85,6 @@ $(function () {
         bindSaveOption();
         bindCancelOption();
         bindNewRowKeyCheck(newRowControl);
-    }
-
-    function bindNewRowKeyCheck(newRowControl) {
-        let newKey = $('#new-row-key');
-
-        newKey.on('change', function (event) {
-            let valid = validateColumnName(newRowControl);
-            if (valid === true) {
-                clearSummaryError();
-            }
-        });
     }
 
     function bindSaveOption() {

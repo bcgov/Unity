@@ -282,95 +282,94 @@ function updatePreviewAccordion(sortedItems) {
     updateSubtotal();
 }
 
-$(function () {
+function updatePreview(event) {
+    const sortedItems = Array.from(event.target.children);
+    updatePreviewAccordion(sortedItems);
+}
 
-    function makeScoresheetsSortable() {
-        document.querySelectorAll('[id^="sections-questions"]').forEach(function (div) {
-            const accordionItem = div.closest('.accordion-item');
-            const isArchived = accordionItem?.dataset.isArchived === 'true';
-
-            _ = new Sortable(div, {
-                disabled: isArchived,
-                animation: 150,
-                onEnd: function (evt) {
-                    const sortedScoresheetId = evt.target.dataset.scoresheetid;
-                    saveOrder(sortedScoresheetId);
-                    updatePreview(evt);
-                },
-                ghostClass: 'blue-background',
-                onMove: function (evt) {
-                    const draggedItem = evt.dragged;
-                    const targetItem = evt.related;
-                    const topItem = evt.from.children[0];
-                    const secondItem = evt.from.children[1];
-
-                    const isDraggedSection = draggedItem.classList.contains('section-item');
-                    const isTopItem = draggedItem === topItem;
-                    const isSecondItemSection = secondItem?.classList.contains('section-item');
-
-                    if (isTopItem && !isSecondItemSection) {
-                        return false;
-                    }
-
-                    if (isDraggedSection) {
-                        return true;
-                    }
-
-                    const isTargetTop = targetItem === evt.from.children[0];
-
-                    return !(!isDraggedSection && isTargetTop && !evt.willInsertAfter);
-                }
-            });
+function updateUnsortedPreview() {
+    const expandedAccordionBodies = document.querySelectorAll('#scoresheet-accordion .accordion-collapse.show');
+    const sortedItems = [];
+    expandedAccordionBodies.forEach(body => {
+        const items = body.querySelectorAll('.list-group-item');
+        items.forEach(item => {
+            sortedItems.push(item);
         });
+    });
 
+    updatePreviewAccordion(sortedItems);
+}
 
-        _ = new Sortable(document.getElementById('scoresheet-accordion'), {
-            handle: '.draggable-header',
+function makeScoresheetsSortable() {
+    document.querySelectorAll('[id^="sections-questions"]').forEach(function (div) {
+        const accordionItem = div.closest('.accordion-item');
+        const isArchived = accordionItem?.dataset.isArchived === 'true';
+
+        _ = new Sortable(div, {
+            disabled: isArchived,
             animation: 150,
-            ghostClass: 'blue-background',
             onEnd: function (evt) {
-                let itemEl = evt.item;
-                itemEl.style.border = "";
-                updateScoresheetOrder();
+                const sortedScoresheetId = evt.target.dataset.scoresheetid;
+                saveOrder(sortedScoresheetId);
+                updatePreview(evt);
             },
-            onStart: function (evt) {
-                let itemEl = evt.item;
-                itemEl.style.border = "2px solid lightblue";
-            },
+            ghostClass: 'blue-background',
             onMove: function (evt) {
-                return evt.dragged.dataset.isArchived !== 'true';
+                const draggedItem = evt.dragged;
+                const targetItem = evt.related;
+                const topItem = evt.from.children[0];
+                const secondItem = evt.from.children[1];
+
+                const isDraggedSection = draggedItem.classList.contains('section-item');
+                const isTopItem = draggedItem === topItem;
+                const isSecondItemSection = secondItem?.classList.contains('section-item');
+
+                if (isTopItem && !isSecondItemSection) {
+                    return false;
+                }
+
+                if (isDraggedSection) {
+                    return true;
+                }
+
+                const isTargetTop = targetItem === evt.from.children[0];
+
+                return !(!isDraggedSection && isTargetTop && !evt.willInsertAfter);
             }
         });
+    });
 
-    }
 
-    function updatePreview(event) {
-        const sortedItems = Array.from(event.target.children);
-        updatePreviewAccordion(sortedItems);
-    }
+    _ = new Sortable(document.getElementById('scoresheet-accordion'), {
+        handle: '.draggable-header',
+        animation: 150,
+        ghostClass: 'blue-background',
+        onEnd: function (evt) {
+            let itemEl = evt.item;
+            itemEl.style.border = "";
+            updateScoresheetOrder();
+        },
+        onStart: function (evt) {
+            let itemEl = evt.item;
+            itemEl.style.border = "2px solid lightblue";
+        },
+        onMove: function (evt) {
+            return evt.dragged.dataset.isArchived !== 'true';
+        }
+    });
 
-    function updateUnsortedPreview() {
-        const expandedAccordionBodies = document.querySelectorAll('#scoresheet-accordion .accordion-collapse.show');
-        const sortedItems = [];
-        expandedAccordionBodies.forEach(body => {
-            const items = body.querySelectorAll('.list-group-item');
-            items.forEach(item => {
-                sortedItems.push(item);
-            });
+}
+
+function attachAccordionToggleListeners() {
+    const accordionItems = document.querySelectorAll('#scoresheet-accordion .accordion-button');
+    accordionItems.forEach(button => {
+        button.addEventListener('click', function () {
+            setTimeout(updateUnsortedPreview, 500);
         });
+    });
+}
 
-        updatePreviewAccordion(sortedItems);
-    }
-
-    function attachAccordionToggleListeners() {
-        const accordionItems = document.querySelectorAll('#scoresheet-accordion .accordion-button');
-        accordionItems.forEach(button => {
-            button.addEventListener('click', function () {
-                setTimeout(updateUnsortedPreview, 500);
-            });
-        });
-    }
-
+$(function () {
     makeScoresheetsSortable();
     attachAccordionToggleListeners();
     updateUnsortedPreview();
