@@ -29,7 +29,7 @@ public class TenantCreatedEventHandlerTests
         var result = TenantCreatedEventHandler.BuildFeatureUpdates("Unity.Payments, Unity.Reporting ,Unity.Notifications");
 
         result.Count.ShouldBe(3);
-        result.ShouldAllBe(f => f.Value == "true");
+        result.ShouldAllBe(f => f.Value == "True");
         result.ShouldContain(f => f.Name == "Unity.Payments");
         result.ShouldContain(f => f.Name == "Unity.Reporting");
         result.ShouldContain(f => f.Name == "Unity.Notifications");
