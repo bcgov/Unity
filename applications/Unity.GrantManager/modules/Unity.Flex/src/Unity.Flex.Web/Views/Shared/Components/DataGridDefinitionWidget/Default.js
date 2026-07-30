@@ -96,9 +96,12 @@ $(function () {
                 if (!validateColumnName(newRowControl))
                     return;
 
+                let sanitizedKey = sanitizeInput(row.key);
+                let sanitizedLabel = sanitizeInput(row.label);
+
                 // Add valid row to table
                 $('#column-options-table').find('tbody')
-                    .append(getDataGridRowTemplate(row.key, row.label));
+                    .append(getDataGridRowTemplate(sanitizedKey, sanitizedLabel));
 
                 cancelAddColumn();
 
