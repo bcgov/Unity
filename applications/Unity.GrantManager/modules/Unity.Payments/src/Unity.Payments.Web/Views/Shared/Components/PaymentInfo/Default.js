@@ -616,7 +616,7 @@ function nullToEmpty(value) {
     return value == null ? '' : value;
 }
 
-let formatItems = function (items) {
+function formatItems(items) {
     const newData = items.map((item, index) => {
         return {
             ...item,
@@ -624,7 +624,7 @@ let formatItems = function (items) {
         };
     });
     return newData;
-};
+}
 
 function getPaymentStatusTextColor(status) {
     switch (status) {
