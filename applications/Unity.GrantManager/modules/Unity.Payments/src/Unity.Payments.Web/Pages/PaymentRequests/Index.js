@@ -436,14 +436,6 @@ $(function () {
         }
     ];
 
-    let responseCallback = function (result) {
-        return {
-            recordsTotal: result.totalCount,
-            recordsFiltered: result.items.length,
-            data: formatItems(result.items)
-        };
-    };
-
     dataTable = initializeDataTable({
         dt,
         defaultVisibleColumns,
@@ -1281,6 +1273,14 @@ function formatItems(items) {
         };
     });
     return newData;
+}
+
+function responseCallback(result) {
+    return {
+        recordsTotal: result.totalCount,
+        recordsFiltered: result.items.length,
+        data: formatItems(result.items)
+    };
 }
 
 function formatName(userData) {

@@ -153,15 +153,6 @@
         sortUsingNestedText($('.available-worksheets'), "span.published-form-title");
     }
 
-    function sortUsingNestedText(parent, keySelector) {
-        let items = parent.children().sort(function (a, b) {
-            let vA = $(keySelector, a).text();
-            let vB = $(keySelector, b).text();
-            return compareSort(vA, vB);
-        });
-        parent.append(items);
-    }
-
     function dropToSingleTarget(event, addClass, removeClass) {
         let dragOver = event.target;
         let beingDragged = document.querySelector('.dragging');
@@ -203,6 +194,15 @@ function compareSort(vA, vB) {
     } else {
         return 0;
     }
+}
+
+function sortUsingNestedText(parent, keySelector) {
+    let items = parent.children().sort(function (a, b) {
+        let vA = $(keySelector, a).text();
+        let vB = $(keySelector, b).text();
+        return compareSort(vA, vB);
+    });
+    parent.append(items);
 }
 
 

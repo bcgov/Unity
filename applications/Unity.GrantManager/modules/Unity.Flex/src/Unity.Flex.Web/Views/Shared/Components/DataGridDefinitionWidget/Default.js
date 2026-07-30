@@ -32,6 +32,33 @@ function generateOptions(type) {
     return selectOptions;
 }
 
+function validateColumnName(controlName) {
+    let row = getNewColumnRow(controlName);
+
+    // check against existing rows
+    let existingRows = $('.key-input').toArray();
+    let existing = existingRows.find(o => o.value.toLowerCase() == row.key.toLowerCase());
+
+    if (existing) {
+        addSummaryError('Duplicate Column names are not allowed');
+        return false;
+    }
+
+    if (isEmptyOrSpaces(row.key)) {
+        addSummaryError('You must provide a Column name');
+        return false;
+    }
+
+    return true;
+}
+
+function getRowTemplate(name, type) {
+    return `<tr><td><input type="text" class="form-control key-input" name="ColumnKeys" value="${name}" minlength="1" maxlength="25" required id="new-column-${name}" />
+    </td><td><select class="form-control form-select" name="ColumnTypes" required id="new-column-type-${name}">${generateOptions(type)}</select></td>
+    <td><button id="data-btn-${name}" class="delete-column-option btn btn-danger" type="button" data-busy-text="Processing..." data-bs-toggle="tooltip" data-bs-placement="top" aria-label="Delete" data-bs-original-title="Delete">
+    <i class="fl fl-delete"></i></button></td></tr>`
+}
+
 $(function () {
     let addcolumnOption;
     let columnOptionsTable;
@@ -80,33 +107,6 @@ $(function () {
                 bindNewRowInputChanges();
             });
         }
-    }
-
-    function validateColumnName(controlName) {
-        let row = getNewColumnRow(controlName);
-
-        // check against existing rows
-        let existingRows = $('.key-input').toArray();
-        let existing = existingRows.find(o => o.value.toLowerCase() == row.key.toLowerCase());
-
-        if (existing) {
-            addSummaryError('Duplicate Column names are not allowed');
-            return false;
-        }
-
-        if (isEmptyOrSpaces(row.key)) {
-            addSummaryError('You must provide a Column name');
-            return false;
-        }
-
-        return true;
-    }
-
-    function getRowTemplate(name, type) {
-        return `<tr><td><input type="text" class="form-control key-input" name="ColumnKeys" value="${name}" minlength="1" maxlength="25" required id="new-column-${name}" />
-        </td><td><select class="form-control form-select" name="ColumnTypes" required id="new-column-type-${name}">${generateOptions(type)}</select></td>
-        <td><button id="data-btn-${name}" class="delete-column-option btn btn-danger" type="button" data-busy-text="Processing..." data-bs-toggle="tooltip" data-bs-placement="top" aria-label="Delete" data-bs-original-title="Delete">
-        <i class="fl fl-delete"></i></button></td></tr>`
     }
 
     function bindCancelOption() {

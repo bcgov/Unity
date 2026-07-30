@@ -203,6 +203,60 @@ function convertToYesNo(str) {
     }
 }
 
+function getRedStopColumn(columnIndex) {
+    return {
+        title: 'Red-Stop',
+        data: 'redStop',
+        name: 'redStop',
+        className: 'data-table-header',
+        render: function (data) {
+            return convertToYesNo(data);
+        },
+        index: columnIndex
+    }
+}
+
+function getFiscalMonthColumn(columnIndex) {
+    return {
+        title: 'FYE Month',
+        data: 'fiscalMonth',
+        name: 'fiscalMonth',
+        className: 'data-table-header',
+        visible: false,
+        render: function (data) {
+            if (data) {
+                return titleCase(data);
+            } else {
+                return '';
+            }
+        },
+        index: columnIndex
+    }
+}
+
+function getIsDuplicatedColumn(columnIndex) {
+    return {
+        title: 'Is Duplicated',
+        data: 'isDuplicated',
+        name: 'isDuplicated',
+        className: 'data-table-header',
+        visible: false,
+        render: function (data) {
+            return convertToYesNo(data);
+        },
+        index: columnIndex
+    }
+}
+
+function responseCallback(result) {
+    // Map the result to match DataTables expected format
+    return {
+        recordsTotal: result.totalCount,
+        recordsFiltered: result.totalCount,
+        data: formatItems(result.items)
+    };
+}
+
 $(function () {
     let dt = $('#ApplicantsTable');
     let dataTable;
@@ -335,37 +389,6 @@ $(function () {
         }
     }
 
-    function getRedStopColumn(columnIndex) {
-        return {
-            title: 'Red-Stop',
-            data: 'redStop',
-            name: 'redStop',
-            className: 'data-table-header',
-            render: function (data) {
-                return convertToYesNo(data);
-            },
-            index: columnIndex
-        }
-    }
-
-    function getFiscalMonthColumn(columnIndex) {
-        return {
-            title: 'FYE Month',
-            data: 'fiscalMonth',
-            name: 'fiscalMonth',
-            className: 'data-table-header',
-            visible: false,
-            render: function (data) {
-                if (data) {
-                    return titleCase(data);
-                } else {
-                    return '';
-                }
-            },
-            index: columnIndex
-        }
-    }
-
     function getStartedOperatingDateColumn(columnIndex) {
         return {
             title: 'Started Operating Date',
@@ -377,20 +400,6 @@ $(function () {
                 return data != null ? luxon.DateTime.fromISO(data, {
                     locale: currentCultureName,
                 }).toUTC().toLocaleString() : '';
-            },
-            index: columnIndex
-        }
-    }
-
-    function getIsDuplicatedColumn(columnIndex) {
-        return {
-            title: 'Is Duplicated',
-            data: 'isDuplicated',
-            name: 'isDuplicated',
-            className: 'data-table-header',
-            visible: false,
-            render: function (data) {
-                return convertToYesNo(data);
             },
             index: columnIndex
         }
@@ -525,15 +534,6 @@ $(function () {
             ]
         }
     ];
-
-    let responseCallback = function (result) {
-        // Map the result to match DataTables expected format
-        return {
-            recordsTotal: result.totalCount,
-            recordsFiltered: result.totalCount,
-            data: formatItems(result.items)
-        };
-    };    
 
     function getRequestedFields() {
         let requestedFields;

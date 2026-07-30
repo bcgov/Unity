@@ -1,3 +1,5 @@
+function initEditUserModal(publicApi, args) { /* Intentionally left empty */ }
+
 $(function () {
     const l = abp.localization.getResource('AbpIdentity');
     const lg = abp.localization.getResource('GrantManager');
@@ -86,8 +88,6 @@ $(function () {
     let initImportUserModal = function (publicApi, args) {
         setupImportModal();
     };
-
-    let initEditUserModal = function (publicApi, args) { /* Intentionally left empty */ };
 
     abp.modals.importUser = function () {
         return { initModal: initImportUserModal };

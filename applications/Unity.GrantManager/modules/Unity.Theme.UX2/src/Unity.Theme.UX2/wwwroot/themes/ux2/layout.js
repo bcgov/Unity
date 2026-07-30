@@ -2,6 +2,24 @@ function isTextOverflowing(element) {
     return element.scrollWidth > element.clientWidth;
 }
 
+function createTooltipOnOverflow(inputElement, tooltipTarget) {
+    if (inputElement.tagName !== 'INPUT') {
+        console.warn('createTooltipOnOverflow: The provided inputElement is not an input element');
+        return;
+    }
+
+    const elementTitle = inputElement.value;
+    if (elementTitle && isTextOverflowing(inputElement)) {
+        bootstrap.Tooltip.getOrCreateInstance(tooltipTarget, {
+            title: elementTitle,
+            trigger: 'hover',
+            placement: 'right',
+            fallbackPlacements: ['right', 'bottom', 'left', 'top'],
+            delay: { show: 500, hide: 100 }
+        });
+    }
+}
+
 $(function () {
     $('.dropdown-menu a.dropdown-toggle').on('click', function (e) {
         if (!$(this).next().hasClass('show')) {
@@ -17,24 +35,6 @@ $(function () {
 
         return false;
     });
-
-    function createTooltipOnOverflow(inputElement, tooltipTarget) {
-        if (inputElement.tagName !== 'INPUT') {
-            console.warn('createTooltipOnOverflow: The provided inputElement is not an input element');
-            return;
-        }
-
-        const elementTitle = inputElement.value;
-        if (elementTitle && isTextOverflowing(inputElement)) {
-            bootstrap.Tooltip.getOrCreateInstance(tooltipTarget, {
-                title: elementTitle,
-                trigger: 'hover',
-                placement: 'right',
-                fallbackPlacements: ['right', 'bottom', 'left', 'top'],
-                delay: { show: 500, hide: 100 }
-            });
-        }
-    }
 
     $('.overflow-tooltip, input.form-control[type="text"]:not(.exclude-tooltip)').each(function () {
         const $input = $(this);

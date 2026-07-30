@@ -712,14 +712,6 @@ $(function () {
             ...commonTableActionButtons('Report Configuration')
         ];
 
-        const responseCallback = function (result) {
-            return {
-                recordsTotal: result.totalCount || result.length || 0,
-                recordsFiltered: result.totalCount || result.length || 0,
-                data: formatItems(result.items || result)
-            };
-        };
-
         // Create data endpoint function that handles the exists check and fallback logic
         const dataEndpoint = function (requestData) {
             const correlationId = getCurrentCorrelationId();
@@ -2184,6 +2176,14 @@ function formatItems(items) {
         };
     });
     return newData;
+}
+
+function responseCallback(result) {
+    return {
+        recordsTotal: result.totalCount || result.length || 0,
+        recordsFiltered: result.totalCount || result.length || 0,
+        data: formatItems(result.items || result)
+    };
 }
 
 // Sanitizes a raw string into a safe SQL identifier fragment (used as the basis

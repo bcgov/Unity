@@ -172,6 +172,116 @@ function hashCode(str) {
     return hash;
 }
 
+function updatePreviewAccordion(sortedItems) {
+    const previewDiv = document.getElementById('scoresheet-preview') || document.getElementById('preview');
+
+    if (sortedItems.length === 0) {
+        previewDiv.innerHTML = '<p>No sections to display.</p>';
+        return;
+    }
+
+    const previewBuilders = {
+        "Text": buildTextFieldPreview,
+        "YesNo": buildYesNoFieldPreview,
+        "Number": buildNumberFieldPreview,
+        "SelectList": buildSelectListFieldPreview,
+        "TextArea": buildTextAreaFieldPreview
+    };
+
+    let accordionHTML = '';
+    let currentSectionItem = null;
+    let sectionNumber = 1;
+    let questionNumber = 1;
+    let parentAccordionId = `accordion-preview`;
+
+    sortedItems.forEach(item => {
+        if (item.classList.contains('section-item')) {
+            if (currentSectionItem) {
+                accordionHTML += `</div></div>
+                                    <div class="btn-group mx-3 py-2">
+                                        <button type="button" class="btn unt-btn-primary btn-primary mx-1 mb-2" disabled
+                                            form="section-form-${hashCode(item.innerText) - 1}"
+                                            id="scoresheet-section-save-${hashCode(item.innerText) - 1}"
+                                            onclick="savePreviewSectionChanges('section-form-${hashCode(item.innerText) - 1}', '${hashCode(item.innerText) - 1}')">Save Changes</button>
+                                        <button type="button" class="btn unt-btn-link btn-link mx-2 mb-2" disabled
+                                            form="section-form-${hashCode(item.innerText) - 1}"
+                                            id="scoresheet-section-discard-${hashCode(item.innerText) - 1}"
+                                            onclick="discardChangesScoresSection('section-form-${hashCode(item.innerText) - 1}', '${hashCode(item.innerText) - 1}')">Discard Changes</button>
+                                    </div>
+                                </div>
+                                </form>
+                            </div>`;
+                sectionNumber++;
+            }
+            parentAccordionId = `nested-accordion-${hashCode(item.innerText)}`;
+            accordionHTML += `
+        <div class="accordion-item unit-accordion-item my-2">
+            <form method="post" id="section-form-${hashCode(item.innerText)}" onSubmit="return false;">
+            <h2 class="accordion-header" id="panel-${hashCode(item.innerText)}">
+                <button class="accordion-button preview-btn unt-accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-${hashCode(item.innerText)}" aria-expanded="true" aria-controls="collapse-${hashCode(item.innerText)}">
+                    ${sectionNumber}.  ${escapeHtml(item.dataset.label)}
+                </button>
+            </h2>
+            <div id="collapse-${hashCode(item.innerText)}" class="accordion-collapse collapse show" aria-labelledby="panel-${hashCode(item.innerText)}">
+                <div class="accordion-body">
+                    <div class="accordion" id="${parentAccordionId}">`; // Start a new nested accordion
+
+            currentSectionItem = item;
+            questionNumber = 1;
+        } else {
+            accordionHTML += `
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="nested-panel${hashCode(item.innerText)}">
+                        <button class="accordion-button question-btn collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#nested-collapse${hashCode(item.innerText)}" aria-expanded="true" aria-controls="nested-collapse${hashCode(item.innerText)}">
+                            ${sectionNumber}.${questionNumber}  ${sanitizeHtml(item.dataset.questionlabel)} ${item.dataset.required == 'True' ? '*' : ''}
+                        </button>
+                    </h2>
+                    <div id="nested-collapse${hashCode(item.innerText)}" class="accordion-collapse collapse" aria-labelledby="nested-panel${hashCode(item.innerText)}">
+                        <div class="accordion-body">
+                            ${buildFieldPreview(previewBuilders[item.dataset.questiontype], item)}
+                        </div>
+                    </div>
+                </div>`;
+            questionNumber++;
+        }
+    });
+
+    if (currentSectionItem) {
+        accordionHTML += `</div></div>
+                                 <div class="btn-group mx-3 py-2">
+                                    <button type="button" class="btn unt-btn-primary btn-primary mx-1 mb-2" disabled
+                                        form="section-form-${hashCode(currentSectionItem.innerText)}"
+                                        id="scoresheet-section-save-${hashCode(currentSectionItem.innerText)}"
+                                        onclick="savePreviewSectionChanges('section-form-${hashCode(currentSectionItem.innerText)}', '${hashCode(currentSectionItem.innerText)}')">Save Changes</button>
+                                    <button type="button" class="btn unt-btn-link btn-link mx-2 mb-2" disabled
+                                        form="section-form-${hashCode(currentSectionItem.innerText)}"
+                                        id="scoresheet-section-discard-${hashCode(currentSectionItem.innerText)}"
+                                        onclick="discardChangesScoresSection('section-form-${hashCode(currentSectionItem.innerText)}', '${hashCode(currentSectionItem.innerText)}')">Discard Changes</button>
+                                </div>
+                            </div>
+                            </form>
+                        </div>`;
+    }
+
+    previewDiv.innerHTML = `
+        <div class="accordion unt-accordion" id="accordion-preview">
+            <div class="d-flex justify-content-end m-3">
+                <button type="button" class="btn unt-btn-outline-primary btn-outline-primary me-2" onclick="expandAllAccordions('accordion-preview')"><i class="unt-icon-sm fa-solid fa-angles-down"></i>Expand All</button>
+                <button type="button" class="btn unt-btn-outline-primary btn-outline-primary" onclick="collapseAllAccordions('accordion-preview')"><i class="unt-icon-sm fa-solid fa-angles-up"></i>Collapse All</button>
+            </div>
+            <div>
+            ${accordionHTML}
+            </div>
+        </div>
+        <div class="p-4" style="margin-top:2px">
+            <label class="form-label" for="scoresheetSubtotal">Subtotal</label>
+            <input type="number" size="18" value="0" class="form-control" disabled="disabled" name="ScoresheetSubtotal" id="scoresheetSubtotal" min="0" max="2147483647" />
+        </div>
+    `;
+
+    updateSubtotal();
+}
+
 $(function () {
 
     function makeScoresheetsSortable() {
@@ -259,116 +369,6 @@ $(function () {
                 setTimeout(updateUnsortedPreview, 500);
             });
         });
-    }
-
-    function updatePreviewAccordion(sortedItems) {
-        const previewDiv = document.getElementById('scoresheet-preview') || document.getElementById('preview');
-
-        if (sortedItems.length === 0) {
-            previewDiv.innerHTML = '<p>No sections to display.</p>';
-            return;
-        }
-
-        const previewBuilders = {
-            "Text": buildTextFieldPreview,
-            "YesNo": buildYesNoFieldPreview,
-            "Number": buildNumberFieldPreview,
-            "SelectList": buildSelectListFieldPreview,
-            "TextArea": buildTextAreaFieldPreview
-        };
-
-        let accordionHTML = '';
-        let currentSectionItem = null;
-        let sectionNumber = 1;
-        let questionNumber = 1;
-        let parentAccordionId = `accordion-preview`;
-
-        sortedItems.forEach(item => {
-            if (item.classList.contains('section-item')) {
-                if (currentSectionItem) {
-                    accordionHTML += `</div></div>
-                                        <div class="btn-group mx-3 py-2">
-                                            <button type="button" class="btn unt-btn-primary btn-primary mx-1 mb-2" disabled
-                                                form="section-form-${hashCode(item.innerText) - 1}" 
-                                                id="scoresheet-section-save-${hashCode(item.innerText) - 1}" 
-                                                onclick="savePreviewSectionChanges('section-form-${hashCode(item.innerText) - 1}', '${hashCode(item.innerText) - 1}')">Save Changes</button>
-                                            <button type="button" class="btn unt-btn-link btn-link mx-2 mb-2" disabled
-                                                form="section-form-${hashCode(item.innerText) - 1}" 
-                                                id="scoresheet-section-discard-${hashCode(item.innerText) - 1}" 
-                                                onclick="discardChangesScoresSection('section-form-${hashCode(item.innerText) - 1}', '${hashCode(item.innerText) - 1}')">Discard Changes</button>
-                                        </div>
-                                    </div>
-                                    </form>
-                                </div>`;
-                    sectionNumber++;
-                }
-                parentAccordionId = `nested-accordion-${hashCode(item.innerText)}`;
-                accordionHTML += `
-            <div class="accordion-item unit-accordion-item my-2">
-                <form method="post" id="section-form-${hashCode(item.innerText)}" onSubmit="return false;">
-                <h2 class="accordion-header" id="panel-${hashCode(item.innerText)}">
-                    <button class="accordion-button preview-btn unt-accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-${hashCode(item.innerText)}" aria-expanded="true" aria-controls="collapse-${hashCode(item.innerText)}">
-                        ${sectionNumber}.  ${escapeHtml(item.dataset.label)}
-                    </button>
-                </h2>
-                <div id="collapse-${hashCode(item.innerText)}" class="accordion-collapse collapse show" aria-labelledby="panel-${hashCode(item.innerText)}">
-                    <div class="accordion-body">
-                        <div class="accordion" id="${parentAccordionId}">`; // Start a new nested accordion
-
-                currentSectionItem = item;
-                questionNumber = 1;
-            } else {
-                accordionHTML += `
-                    <div class="accordion-item">
-                        <h2 class="accordion-header" id="nested-panel${hashCode(item.innerText)}">
-                            <button class="accordion-button question-btn collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#nested-collapse${hashCode(item.innerText)}" aria-expanded="true" aria-controls="nested-collapse${hashCode(item.innerText)}">
-                                ${sectionNumber}.${questionNumber}  ${sanitizeHtml(item.dataset.questionlabel)} ${item.dataset.required == 'True' ? '*' : ''}
-                            </button>
-                        </h2>
-                        <div id="nested-collapse${hashCode(item.innerText)}" class="accordion-collapse collapse" aria-labelledby="nested-panel${hashCode(item.innerText)}">
-                            <div class="accordion-body">
-                                ${buildFieldPreview(previewBuilders[item.dataset.questiontype], item)}
-                            </div>
-                        </div>
-                    </div>`;
-                questionNumber++;
-            }
-        });
-
-        if (currentSectionItem) {
-            accordionHTML += `</div></div>
-                                     <div class="btn-group mx-3 py-2">
-                                        <button type="button" class="btn unt-btn-primary btn-primary mx-1 mb-2" disabled
-                                            form="section-form-${hashCode(currentSectionItem.innerText)}" 
-                                            id="scoresheet-section-save-${hashCode(currentSectionItem.innerText)}" 
-                                            onclick="savePreviewSectionChanges('section-form-${hashCode(currentSectionItem.innerText)}', '${hashCode(currentSectionItem.innerText)}')">Save Changes</button>
-                                        <button type="button" class="btn unt-btn-link btn-link mx-2 mb-2" disabled
-                                            form="section-form-${hashCode(currentSectionItem.innerText)}" 
-                                            id="scoresheet-section-discard-${hashCode(currentSectionItem.innerText)}"
-                                            onclick="discardChangesScoresSection('section-form-${hashCode(currentSectionItem.innerText)}', '${hashCode(currentSectionItem.innerText)}')">Discard Changes</button>
-                                    </div>
-                                </div>
-                                </form>
-                            </div>`;
-        }
-
-        previewDiv.innerHTML = `
-            <div class="accordion unt-accordion" id="accordion-preview">
-                <div class="d-flex justify-content-end m-3">
-                    <button type="button" class="btn unt-btn-outline-primary btn-outline-primary me-2" onclick="expandAllAccordions('accordion-preview')"><i class="unt-icon-sm fa-solid fa-angles-down"></i>Expand All</button>
-                    <button type="button" class="btn unt-btn-outline-primary btn-outline-primary" onclick="collapseAllAccordions('accordion-preview')"><i class="unt-icon-sm fa-solid fa-angles-up"></i>Collapse All</button>
-                </div>
-                <div>
-                ${accordionHTML}
-                </div>
-            </div>
-            <div class="p-4" style="margin-top:2px">
-                <label class="form-label" for="scoresheetSubtotal">Subtotal</label>
-                <input type="number" size="18" value="0" class="form-control" disabled="disabled" name="ScoresheetSubtotal" id="scoresheetSubtotal" min="0" max="2147483647" />
-            </div>
-        `;
-
-        updateSubtotal();
     }
 
     makeScoresheetsSortable();
