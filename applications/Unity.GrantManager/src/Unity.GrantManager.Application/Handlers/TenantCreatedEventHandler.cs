@@ -72,7 +72,7 @@ namespace Unity.GrantManager.Handlers
 
             return featureKeysRaw
                 .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-                .Select(key => new UpdateFeatureDto { Name = key, Value = "true" })
+                .Select(key => new UpdateFeatureDto { Name = key, Value = "True" })
                 .ToList();
         }
     }
