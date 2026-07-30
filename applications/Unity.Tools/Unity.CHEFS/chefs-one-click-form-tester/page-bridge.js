@@ -495,7 +495,7 @@
     }
     const escapedKey = window.CSS && typeof window.CSS.escape === 'function'
       ? window.CSS.escape(key)
-      : String(key).replace(/[^A-Za-z0-9_-]/g, '\\$&');
+      : String(key).replaceAll(/[^A-Za-z0-9_-]/g, '\\$&');
     const wrappers = Array.from(document.querySelectorAll(`.formio-component-${escapedKey}`));
     return wrappers.find((item) => renderedWrapperIsVisible(item)) ||
       wrappers.find((item) => item.isConnected) ||
@@ -512,7 +512,7 @@
       '[ref="fileLink"], [ref="fileName"], .file-name, .file-list a, a[download]'
     ));
     const matches = candidates.filter((element) => {
-      const text = String(element.textContent || '').replace(/\s+/g, ' ').trim();
+      const text = String(element.textContent || '').replaceAll(/\s+/g, ' ').trim();
       const hasRemoveControl = Boolean(element.querySelector && element.querySelector(
         'button[ref*="remove"], button[aria-label*="remove" i], .fa-times, .fa-times-circle-o'
       ));

@@ -645,7 +645,7 @@
         try {
             let jsonText = $('#jsonText').val();
             $.parseJSON(jsonText);
-            let mappingJsonStr = jsonText.replace(/\s+/g, ' ').replace(/(\r\n|\n|\r)/gm, "");
+            let mappingJsonStr = jsonText.replaceAll(/\s+/g, ' ').replaceAll(/(\r\n|\n|\r)/gm, "");
             UIElements.btnSaveMapping.prop('disabled', true);
             handleSaveMapping($.parseJSON(mappingJsonStr));
             handleCancelMapping();

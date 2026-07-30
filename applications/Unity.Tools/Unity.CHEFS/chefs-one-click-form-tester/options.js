@@ -30,9 +30,9 @@ function newRuleId() {
 
 function normalizePhrase(value) {
   return String(value || '')
-    .replace(/<[^>]*>/g, ' ')
-    .replace(/[\u00a0\s]+/g, ' ')
-    .replace(/^[*:\-\s]+|[*:\-\s]+$/g, '')
+    .replaceAll(/<[^>]*>/g, ' ')
+    .replaceAll(/[\u00a0\s]+/g, ' ')
+    .replaceAll(/^[*:\-\s]+|[*:\-\s]+$/g, '')
     .trim();
 }
 
@@ -340,7 +340,7 @@ async function selectExportFolder() {
 }
 
 function generateBatchToken() {
-  const token = crypto.randomUUID().replace(/-/g, '') + crypto.randomUUID().replace(/-/g, '');
+  const token = crypto.randomUUID().replaceAll('-', '') + crypto.randomUUID().replaceAll('-', '');
   document.getElementById('batchLauncherToken').value = token;
   setBatchSettingsMessage('Token generated. Copy it into LAUNCHER_TOKEN in the batch file, then save Settings.', 'success');
 }
@@ -413,7 +413,7 @@ function exportRules() {
       rules: validation.rules
     };
     const data = `data:application/json;charset=utf-8,${encodeURIComponent(JSON.stringify(payload, null, 2))}`;
-    const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\..+/, '').replace('T', '-');
+    const stamp = new Date().toISOString().replaceAll(/[-:]/g, '').replace(/\..+/, '').replace('T', '-');
     chrome.downloads.download({
       url: data,
       filename: `chefs-custom-format-rules-v${RULE_SCHEMA_VERSION}-${stamp}.json`,

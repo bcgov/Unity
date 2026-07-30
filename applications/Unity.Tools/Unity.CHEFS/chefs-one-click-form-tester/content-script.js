@@ -45,15 +45,15 @@
   }
 
   function cleanText(value) {
-    return String(value || '').replace(/\s+/g, ' ').trim();
+    return String(value || '').replaceAll(/\s+/g, ' ').trim();
   }
 
   function normalizeRulePhrase(value, caseSensitive) {
     let normalized = cleanText(String(value || '')
-      .replace(/<[^>]*>/g, ' ')
-      .replace(/^[*:\-\s]+|[*:\-\s]+$/g, ' '))
-      .replace(/[^A-Za-z0-9]+/g, ' ')
-      .replace(/\s+/g, ' ')
+      .replaceAll(/<[^>]*>/g, ' ')
+      .replaceAll(/^[*:\-\s]+|[*:\-\s]+$/g, ' '))
+      .replaceAll(/[^A-Za-z0-9]+/g, ' ')
+      .replaceAll(/\s+/g, ' ')
       .trim();
     if (!caseSensitive) {
       normalized = normalized.toLowerCase();
@@ -642,7 +642,7 @@
       if (window.CSS && typeof window.CSS.escape === 'function') {
         return window.CSS.escape(String(value || ''));
       }
-      return String(value || '').replace(/[^A-Za-z0-9_-]/g, '\\$&');
+      return String(value || '').replaceAll(/[^A-Za-z0-9_-]/g, '\\$&');
     }
 
     liveWrapper(descriptor) {
@@ -1904,9 +1904,9 @@
     }
 
     maskTokenCharacters(descriptor, attempt) {
-      const seed = `${this.runId}${descriptor.key}${attempt || 1}`.toUpperCase().replace(/[^A-Z0-9]/g, '');
-      const digits = (seed.replace(/[^0-9]/g, '') + '12345678901234567890');
-      const letters = (seed.replace(/[^A-Z]/g, '').replace(/[IOQ]/g, '') + 'ABCDEFGHJKLMNPRSTUVWXYZ');
+      const seed = `${this.runId}${descriptor.key}${attempt || 1}`.toUpperCase().replaceAll(/[^A-Z0-9]/g, '');
+      const digits = (seed.replaceAll(/[^0-9]/g, '') + '12345678901234567890');
+      const letters = (seed.replaceAll(/[^A-Z]/g, '').replaceAll(/[IOQ]/g, '') + 'ABCDEFGHJKLMNPRSTUVWXYZ');
       const alphaNumeric = `${letters}${digits}`;
       return { digits, letters, alphaNumeric };
     }
@@ -1961,7 +1961,7 @@
       let escaped = false;
       for (const character of String(mask || '')) {
         if (escaped) {
-          pattern += character.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+          pattern += character.replaceAll(/[.*+?^${}()|[\]\\]/g, '\\$&');
           escaped = false;
         } else if (character === '\\') {
           escaped = true;
@@ -1972,7 +1972,7 @@
         } else if (character === '*') {
           pattern += '[A-Za-z0-9]';
         } else {
-          pattern += character.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+          pattern += character.replaceAll(/[.*+?^${}()|[\]\\]/g, '\\$&');
         }
       }
       pattern += '$';
@@ -2168,9 +2168,9 @@
         role = 'contact4';
       } else {
         const keySlug = String(descriptor.key || 'contact')
-          .replace(/([a-z0-9])([A-Z])/g, '$1-$2')
-          .replace(/[^a-z0-9]+/gi, '-')
-          .replace(/^-+|-+$/g, '')
+          .replaceAll(/([a-z0-9])([A-Z])/g, '$1-$2')
+          .replaceAll(/[^a-z0-9]+/gi, '-')
+          .replaceAll(/^-+|-+$/g, '')
           .toLowerCase();
         role = keySlug.slice(-32) || 'contact';
       }
@@ -2363,12 +2363,12 @@
       }
       try {
         if (input.inputmask && typeof input.inputmask.unmaskedvalue === 'function') {
-          return String(input.inputmask.unmaskedvalue() || '').replace(/\D/g, '').length;
+          return String(input.inputmask.unmaskedvalue() || '').replaceAll(/\D/g, '').length;
         }
       } catch (error) {
         // Fall back to the rendered value.
       }
-      return String(input.value || '').replace(/\D/g, '').length;
+      return String(input.value || '').replaceAll(/\D/g, '').length;
     }
 
     async fillPhone(descriptor, attempt) {
