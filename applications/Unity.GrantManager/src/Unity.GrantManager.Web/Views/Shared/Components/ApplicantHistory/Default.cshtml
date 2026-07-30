@@ -30,7 +30,7 @@
                 <span class="history-section__subtitle">Previous Funding History</span>
             </div>
             <div class="history-section__toolbar">
-                <input type="search" id="funding-history-search" class="tbl-search" placeholder="Search" />
+                <input type="search" id="funding-history-search" class="tbl-search" placeholder="Search" aria-label="Search" />
                 <div id="fundingHistoryDynamicButtons" class="dynamic-buttons-div button-gap-1"></div>
             </div>
             <abp-table id="FundingHistoryTable" hoverable-rows="true" class="w-100"></abp-table>
@@ -38,7 +38,7 @@
             <div class="mt-3">
                 <label class="form-label fw-bold">Previous Funding Notes</label>
                 <br/>
-                <label class="form-label">Additional Comments</label>
+                <label class="form-label" for="FundingHistoryComments">Additional Comments</label>
                 <textarea id="FundingHistoryComments"
                           name="FundingHistoryComments"
                           class="form-control"
@@ -55,7 +55,7 @@
                 <span class="history-section__subtitle">Previous Issues</span>
             </div>
             <div class="history-section__toolbar">
-                <input type="search" id="issue-tracking-search" class="tbl-search" placeholder="Search" />
+                <input type="search" id="issue-tracking-search" class="tbl-search" placeholder="Search" aria-label="Search" />
                 <div id="issueTrackingDynamicButtons" class="dynamic-buttons-div button-gap-1"></div>
             </div>
             <abp-table id="IssueTrackingTable" hoverable-rows="true" class="w-100"></abp-table>
@@ -63,7 +63,7 @@
             <div class="mt-3">
                 <label class="form-label fw-bold">Issue Notes</label>
                 <br/>
-                <label class="form-label">Additional Comments</label>
+                <label class="form-label" for="IssueTrackingComments">Additional Comments</label>
                 <textarea id="IssueTrackingComments"
                           name="IssueTrackingComments"
                           class="form-control"
@@ -77,7 +77,7 @@
                 <h6 class="fw-bold mb-0">Audit History</h6>
             </div>
             <div class="history-section__toolbar">
-                <input type="search" id="audit-history-search" class="tbl-search" placeholder="Search" />
+                <input type="search" id="audit-history-search" class="tbl-search" placeholder="Search" aria-label="Search" />
                 <div id="auditHistoryDynamicButtons" class="dynamic-buttons-div button-gap-1"></div>
             </div>
             <abp-table id="AuditHistoryTable" hoverable-rows="true" class="w-100"></abp-table>
@@ -85,7 +85,7 @@
             <div class="mt-3">
                 <label class="form-label fw-bold">Audit History Notes</label>
                 <br/>
-                <label class="form-label">Additional Comments</label>
+                <label class="form-label" for="AuditComments">Additional Comments</label>
                 <textarea id="AuditComments"
                           name="AuditComments"
                           class="form-control"
@@ -102,7 +102,7 @@
                 <span class="history-section__subtitle">Reports Notes</span>
             </div>
             <div class="history-section__toolbar">
-                <input type="search" id="reports-history-search" class="tbl-search" placeholder="Search" />
+                <input type="search" id="reports-history-search" class="tbl-search" placeholder="Search" aria-label="Search" />
                 <div id="reportsHistoryDynamicButtons" class="dynamic-buttons-div button-gap-1"></div>
             </div>
             <abp-table id="ReportsHistoryTable" hoverable-rows="true" class="w-100"></abp-table>

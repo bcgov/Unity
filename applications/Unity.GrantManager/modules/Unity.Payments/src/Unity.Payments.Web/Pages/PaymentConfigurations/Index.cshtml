@@ -37,7 +37,7 @@
                 <h4>Account Codes</h4>
             </div>
             <div class="filter-search-action-bar_search-wrapper">
-                <input type="search" id="search-data-table" placeholder="Search" class="tbl-search">
+                <input type="search" id="search-data-table" placeholder="Search" aria-label="Search" class="tbl-search">
             </div>
 
             <div class="btn-group" id="app_custom_buttons"></div>
@@ -59,7 +59,7 @@
         </abp-row>
         <abp-row>
             <abp-column size="_12" class="p-3">
-                <span class="form-label">Payment ID Prefix</span>
+                <label for="payment-id-prefix" class="form-label">Payment ID Prefix</label>
                 <input id="payment-id-prefix-original" type="hidden" value="@Model.PaymentIdPrefix">
                 <input id="payment-id-prefix" maxlength="5" type="text" value="@Model.PaymentIdPrefix" class="valid form-control">
             </abp-column>
