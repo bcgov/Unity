@@ -200,13 +200,13 @@ function updatePreviewAccordion(sortedItems) {
                 accordionHTML += `</div></div>
                                     <div class="btn-group mx-3 py-2">
                                         <button type="button" class="btn unt-btn-primary btn-primary mx-1 mb-2" disabled
-                                            form="section-form-${hashCode(item.innerText) - 1}"
-                                            id="scoresheet-section-save-${hashCode(item.innerText) - 1}"
-                                            onclick="savePreviewSectionChanges('section-form-${hashCode(item.innerText) - 1}', '${hashCode(item.innerText) - 1}')">Save Changes</button>
+                                            form="section-form-${hashCode(currentSectionItem.innerText)}"
+                                            id="scoresheet-section-save-${hashCode(currentSectionItem.innerText)}"
+                                            onclick="savePreviewSectionChanges('section-form-${hashCode(currentSectionItem.innerText)}', '${hashCode(currentSectionItem.innerText)}')">Save Changes</button>
                                         <button type="button" class="btn unt-btn-link btn-link mx-2 mb-2" disabled
-                                            form="section-form-${hashCode(item.innerText) - 1}"
-                                            id="scoresheet-section-discard-${hashCode(item.innerText) - 1}"
-                                            onclick="discardChangesScoresSection('section-form-${hashCode(item.innerText) - 1}', '${hashCode(item.innerText) - 1}')">Discard Changes</button>
+                                            form="section-form-${hashCode(currentSectionItem.innerText)}"
+                                            id="scoresheet-section-discard-${hashCode(currentSectionItem.innerText)}"
+                                            onclick="discardChangesScoresSection('section-form-${hashCode(currentSectionItem.innerText)}', '${hashCode(currentSectionItem.innerText)}')">Discard Changes</button>
                                     </div>
                                 </div>
                                 </form>

@@ -52,14 +52,14 @@ function validateColumnName(controlName) {
     return true;
 }
 
-function getRowTemplate(name, type) {
+function getDataGridRowTemplate(name, type) {
     return `<tr><td><input type="text" class="form-control key-input" name="ColumnKeys" value="${name}" minlength="1" maxlength="25" required id="new-column-${name}" />
     </td><td><select class="form-control form-select" name="ColumnTypes" required id="new-column-type-${name}">${generateOptions(type)}</select></td>
     <td><button id="data-btn-${name}" class="delete-column-option btn btn-danger" type="button" data-busy-text="Processing..." data-bs-toggle="tooltip" data-bs-placement="top" aria-label="Delete" data-bs-original-title="Delete">
     <i class="fl fl-delete"></i></button></td></tr>`
 }
 
-function bindNewRowKeyCheck(newRowControl) {
+function bindDataGridNewRowKeyCheck(newRowControl) {
     let newKey = $('#new-row-key');
 
     newKey.on('change', function (event) {
@@ -84,7 +84,7 @@ $(function () {
         bindNewColumnOption(newColumnTable, addcolumnOption, 'column');
         bindSaveOption();
         bindCancelOption();
-        bindNewRowKeyCheck(newRowControl);
+        bindDataGridNewRowKeyCheck(newRowControl);
     }
 
     function bindSaveOption() {
@@ -98,7 +98,7 @@ $(function () {
 
                 // Add valid row to table
                 $('#column-options-table').find('tbody')
-                    .append(getRowTemplate(row.key, row.label));
+                    .append(getDataGridRowTemplate(row.key, row.label));
 
                 cancelAddColumn();
 
