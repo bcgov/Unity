@@ -13,12 +13,12 @@
         <form id="ApplicationTabsSettingsForm">
             <abp-row>
                 <abp-column size-md="_12" class="mx-2 fw-bold">
-                    <abp-input asp-for="@Model.Submission" role="switch" disabled="true" />
-                    <abp-input asp-for="@Model.Assessment" role="switch" />
-                    <abp-input asp-for="@Model.Project" role="switch" />
-                    <abp-input asp-for="@Model.Applicant" role="switch" />
-                    <abp-input asp-for="@Model.Payments" role="switch" />
-                    <abp-input asp-for="@Model.FundingAgreement" role="switch" />
+                    <abp-input asp-for="@Model.Submission" role="switch" aria-checked="@Model.Submission.ToString().ToLowerInvariant()" disabled="true" />
+                    <abp-input asp-for="@Model.Assessment" role="switch" aria-checked="@Model.Assessment.ToString().ToLowerInvariant()" />
+                    <abp-input asp-for="@Model.Project" role="switch" aria-checked="@Model.Project.ToString().ToLowerInvariant()" />
+                    <abp-input asp-for="@Model.Applicant" role="switch" aria-checked="@Model.Applicant.ToString().ToLowerInvariant()" />
+                    <abp-input asp-for="@Model.Payments" role="switch" aria-checked="@Model.Payments.ToString().ToLowerInvariant()" />
+                    <abp-input asp-for="@Model.FundingAgreement" role="switch" aria-checked="@Model.FundingAgreement.ToString().ToLowerInvariant()" />
                 </abp-column>
             </abp-row>
             <abp-row>

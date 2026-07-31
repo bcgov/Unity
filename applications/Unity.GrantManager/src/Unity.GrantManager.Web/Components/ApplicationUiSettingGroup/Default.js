@@ -2,6 +2,10 @@
     $(function () {
         $('.form-check').addClass('form-switch');
 
+        $('input[role="switch"]').on('change', function () {
+            $(this).attr('aria-checked', this.checked ? 'true' : 'false');
+        });
+
         const TabsUiElements = {
             settingForm: $("#ApplicationTabsSettingsForm"),
             saveButton: $("#ApplicationTabsSaveButton"),
