@@ -161,7 +161,7 @@ namespace Unity.Payments.Integrations.Cas
 
                 if(!string.IsNullOrWhiteSpace(fullName))
                 {
-                    return fullName;
+                    return fullName.Length > 150 ? fullName[..150] : fullName;
                 }
 
                 if (!string.IsNullOrWhiteSpace(user.UserName))
