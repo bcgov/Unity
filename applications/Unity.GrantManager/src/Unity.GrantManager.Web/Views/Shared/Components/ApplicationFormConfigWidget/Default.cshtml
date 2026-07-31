@@ -61,7 +61,7 @@
             <select class="form-select form-control"
                     id="electoralDistrictAddressType"
                     name="electoralDistrictAddressType"
-                    aria-label="Electoral District Address Type">
+                    aria-label="Electoral District Configuration">
                 @foreach (var option in Model?.ElectoralDistrictAddressTypes ?? Enumerable.Empty<SelectListItem>())
                 {
                     var selected = option.Value == ((int)(Model?.ElectoralDistrictAddressType ?? 0)).ToString();
