@@ -58,10 +58,10 @@
     <div class="row">
         <div class="col-12 p-3">
             <h6 class="mb-3"><b>Electoral District Configuration</b></h6>
+            <label class="form-label" for="electoralDistrictAddressType">Electoral District Address Type</label>
             <select class="form-select form-control"
                     id="electoralDistrictAddressType"
-                    name="electoralDistrictAddressType"
-                    aria-label="Electoral District Configuration">
+                    name="electoralDistrictAddressType">
                 @foreach (var option in Model?.ElectoralDistrictAddressTypes ?? Enumerable.Empty<SelectListItem>())
                 {
                     var selected = option.Value == ((int)(Model?.ElectoralDistrictAddressType ?? 0)).ToString();
