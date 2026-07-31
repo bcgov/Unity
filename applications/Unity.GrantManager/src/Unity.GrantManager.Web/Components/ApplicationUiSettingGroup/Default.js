@@ -29,11 +29,11 @@
         TabsUiElements.settingForm.on('submit', function (event) {
             event.preventDefault();
 
-            if (!$(this).valid()) {
+            if (!TabsUiElements.settingForm.valid()) {
                 return;
             }
 
-            let form = $(this).serializeFormToObject();
+            let form = TabsUiElements.settingForm.serializeFormToObject();
             unity.grantManager.settingManagement.applicationUiSettings.update(form).then(function (result) {
                 $(document).trigger("AbpSettingSaved");
                 initialFormState = TabsUiElements.settingForm.serialize();
