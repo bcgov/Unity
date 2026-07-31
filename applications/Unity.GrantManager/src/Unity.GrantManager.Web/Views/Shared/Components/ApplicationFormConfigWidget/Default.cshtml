@@ -49,9 +49,9 @@
                     <label class="form-check-label direct-approval" for="directApproval">Direct Approval</label>
                 </div>
             </div>
-            <label class="form-label note mt-1">
+            <span class="form-label note mt-1">
                 <b>NOTE:</b> @L["ApplicationForms.Configuration.Notes:BypassAssessmentWorkflow"].Value
-            </label>
+            </span>
         </div>
     </div>
     <hr />
@@ -68,12 +68,12 @@
                     <option value="@option.Value" selected="@(selected ? "selected" : null)">@option.Text</option>
                 }
             </select>
-            <label class="form-label note mt-1" style="display:block"><b>NOTE:</b>
+            <span class="form-label note mt-1" style="display:block"><b>NOTE:</b>
                 @L["ApplicationForms.Configuration.Notes:SelectedApplicantElectoralAddress"].Value
-            </label>
-            <label class="note mt-1 configuration-warning" style="display:none" id="change-electoral-address-warning"><b>WARNING:</b> 
+            </span>
+            <span class="note mt-1 configuration-warning" style="display:none" id="change-electoral-address-warning"><b>WARNING:</b>
                 @L["ApplicationForms.Configuration.Warnings:ApplicantElectoralAddressTypeChange"].Value
-            </label>
+            </span>
         </div>
     </div>
     <hr />
@@ -115,16 +115,16 @@
                         </div>
                     </div>
                 </div>
-            <label class="form-label note mt-1" style="display:block">
+            <span class="form-label note mt-1" style="display:block">
                 <b>NOTE:</b>
-                The system will automatically generate a unique ID for each new submission by combining your chosen prefix with either a sequential number 
+                The system will automatically generate a unique ID for each new submission by combining your chosen prefix with either a sequential number
                 or a submission number, depending on the suffix type.
-                <br /> 
-                <br /> 
+                <br />
+                <br />
                 <b>NOTE:</b>
                 If multiple forms are assigned the same prefix, they will share a single, continuous sequence of numbers.
                 @* @L["ApplicationForms.Configuration.Notes:SelectedApplicantElectoralAddress"].Value *@
-            </label>
+            </span>
         </div>
     </div>
 </form>
