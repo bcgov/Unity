@@ -2,7 +2,6 @@
 using System;
 using System.Collections.Generic;
 using System.Dynamic;
-using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Unity.Reporting.Configuration;
@@ -142,20 +141,6 @@ namespace Unity.Reporting.EntityFrameworkCore.Repositories
                         LIMIT 1
                     )";
 
-                // Add filtering if provided
-                var previewFilterExpression = ValidateFilterExpression(request.Filter, result.ColumnNames);
-                if (!string.IsNullOrEmpty(previewFilterExpression))
-                {
-                    previewQuery += $" AND ({previewFilterExpression})";
-                }
-
-                // Add ordering if provided
-                var previewOrderByExpression = ValidateOrderByExpression(request.OrderBy, result.ColumnNames);
-                if (!string.IsNullOrEmpty(previewOrderByExpression))
-                {
-                    previewQuery += $" ORDER BY {previewOrderByExpression}";
-                }
-
                 // Execute the preview query
                 using var dataCommand = connection.CreateCommand();
                 dataCommand.CommandText = previewQuery;
@@ -217,28 +202,12 @@ namespace Unity.Reporting.EntityFrameworkCore.Repositories
                 var baseQuery = $@"SELECT * FROM ""Reporting"".""{normalizedViewName}""";
                 var countQuery = $@"SELECT COUNT(*) FROM ""Reporting"".""{normalizedViewName}""";
 
-                // Add filtering if provided
-                var filterExpression = ValidateFilterExpression(request.Filter, result.ColumnNames);
-                if (!string.IsNullOrEmpty(filterExpression))
-                {
-                    var whereClause = $" WHERE {filterExpression}";
-                    baseQuery += whereClause;
-                    countQuery += whereClause;
-                }
-
                 // Get total count
                 using (var countCommand = connection.CreateCommand())
                 {
                     countCommand.CommandText = countQuery;
                     var countResult = await countCommand.ExecuteScalarAsync();
                     result.TotalCount = Convert.ToInt32(countResult);
-                }
-
-                // Add ordering if provided
-                var orderByExpression = ValidateOrderByExpression(request.OrderBy, result.ColumnNames);
-                if (!string.IsNullOrEmpty(orderByExpression))
-                {
-                    baseQuery += $" ORDER BY {orderByExpression}";
                 }
 
                 // Add pagination
@@ -575,168 +544,6 @@ namespace Unity.Reporting.EntityFrameworkCore.Repositories
             {
                 await dbContext.Database.CloseConnectionAsync();
             }
-        }
-
-        // Tokens allowed inside a Filter expression: whitespace, string/number literals,
-        // quoted or bare identifiers, comparison operators, and parentheses/commas.
-        private static readonly Regex FilterTokenRegex = new(
-            @"\G(\s+|'(?:[^']|'')*'|\d+(?:\.\d+)?|""[a-zA-Z_][a-zA-Z0-9_]*""|[a-zA-Z_][a-zA-Z0-9_]*|<>|!=|<=|>=|=|<|>|[(),])",
-            RegexOptions.Compiled);
-
-        private static readonly HashSet<string> AllowedFilterKeywords = new(StringComparer.OrdinalIgnoreCase)
-        {
-            "AND", "OR", "NOT", "IS", "NULL", "TRUE", "FALSE", "LIKE", "ILIKE", "IN", "BETWEEN"
-        };
-
-        // Tokens allowed inside an OrderBy expression: whitespace, quoted or bare identifiers, and commas.
-        private static readonly Regex OrderByTokenRegex = new(
-            @"\G(\s+|""[a-zA-Z_][a-zA-Z0-9_]*""|[a-zA-Z_][a-zA-Z0-9_]*|,)",
-            RegexOptions.Compiled);
-
-        private static readonly HashSet<string> AllowedOrderByKeywords = new(StringComparer.OrdinalIgnoreCase) { "ASC", "DESC" };
-
-        /// <summary>
-        /// Validates a caller-supplied SQL filter (WHERE) expression against an allow-list of
-        /// real view column names. Throws <see cref="ArgumentException"/> if the expression is
-        /// not safe to concatenate into a SQL statement.
-        /// </summary>
-        /// <param name="filter">The raw filter expression, without the "WHERE" keyword.</param>
-        /// <param name="validColumns">The set of real column names for the target view.</param>
-        /// <returns>The validated filter expression, or an empty string if none was provided.</returns>
-        internal static string ValidateFilterExpression(string? filter, IReadOnlyCollection<string> validColumns)
-        {
-            if (string.IsNullOrWhiteSpace(filter))
-            {
-                return string.Empty;
-            }
-
-            var trimmed = filter.Trim();
-            var pos = 0;
-
-            // Tracks whether the most recent non-whitespace token was a column reference, so we
-            // can reject "column(" - a bare column name immediately followed by an open paren is
-            // function-call syntax in SQL, not a valid column reference, regardless of whether the
-            // column happens to share a name with a dangerous PostgreSQL function (pg_sleep, etc).
-            var previousTokenWasColumn = false;
-
-            while (pos < trimmed.Length)
-            {
-                var match = FilterTokenRegex.Match(trimmed, pos);
-                if (!match.Success || match.Index != pos || match.Length == 0)
-                {
-                    throw new ArgumentException($"Filter expression contains an unsupported character at position {pos}.", nameof(filter));
-                }
-
-                var token = match.Value;
-
-                if (char.IsWhiteSpace(token[0]))
-                {
-                    pos += match.Length;
-                    continue;
-                }
-
-                if (token == "(")
-                {
-                    if (previousTokenWasColumn)
-                    {
-                        throw new ArgumentException("Filter expression does not permit function calls.", nameof(filter));
-                    }
-                }
-                else if (token[0] == '"')
-                {
-                    var identifier = token[1..^1];
-                    if (!validColumns.Contains(identifier, StringComparer.OrdinalIgnoreCase))
-                    {
-                        throw new ArgumentException($"Filter expression references an unknown column '{identifier}'.", nameof(filter));
-                    }
-                }
-                else if (char.IsLetter(token[0]) || token[0] == '_')
-                {
-                    if (!AllowedFilterKeywords.Contains(token) && !validColumns.Contains(token, StringComparer.OrdinalIgnoreCase))
-                    {
-                        throw new ArgumentException($"Filter expression references an unknown column or keyword '{token}'.", nameof(filter));
-                    }
-                }
-
-                previousTokenWasColumn = token[0] == '"' || ((char.IsLetter(token[0]) || token[0] == '_') && !AllowedFilterKeywords.Contains(token));
-
-                pos += match.Length;
-            }
-
-            return trimmed;
-        }
-
-        /// <summary>
-        /// Validates a caller-supplied SQL ORDER BY expression against an allow-list of real
-        /// view column names. Throws <see cref="ArgumentException"/> if the expression is not
-        /// safe to concatenate into a SQL statement.
-        /// </summary>
-        /// <param name="orderBy">The raw order-by expression, without the "ORDER BY" keywords.</param>
-        /// <param name="validColumns">The set of real column names for the target view.</param>
-        /// <returns>The validated order-by expression, or an empty string if none was provided.</returns>
-        internal static string ValidateOrderByExpression(string? orderBy, IReadOnlyCollection<string> validColumns)
-        {
-            if (string.IsNullOrWhiteSpace(orderBy))
-            {
-                return string.Empty;
-            }
-
-            var trimmed = orderBy.Trim();
-            var pos = 0;
-            var expectColumn = true;
-
-            while (pos < trimmed.Length)
-            {
-                var match = OrderByTokenRegex.Match(trimmed, pos);
-                if (!match.Success || match.Index != pos || match.Length == 0)
-                {
-                    throw new ArgumentException($"Order-by expression contains an unsupported character at position {pos}.", nameof(orderBy));
-                }
-
-                var token = match.Value;
-
-                if (!char.IsWhiteSpace(token[0]))
-                {
-                    if (token == ",")
-                    {
-                        if (expectColumn)
-                        {
-                            throw new ArgumentException("Order-by expression is missing a column name.", nameof(orderBy));
-                        }
-                        expectColumn = true;
-                    }
-                    else if (token[0] == '"')
-                    {
-                        var identifier = token[1..^1];
-                        if (!validColumns.Contains(identifier, StringComparer.OrdinalIgnoreCase))
-                        {
-                            throw new ArgumentException($"Order-by expression references an unknown column '{identifier}'.", nameof(orderBy));
-                        }
-                        expectColumn = false;
-                    }
-                    else if (!expectColumn && AllowedOrderByKeywords.Contains(token))
-                    {
-                        // ASC/DESC following a column - no state change needed.
-                    }
-                    else if (validColumns.Contains(token, StringComparer.OrdinalIgnoreCase))
-                    {
-                        expectColumn = false;
-                    }
-                    else
-                    {
-                        throw new ArgumentException($"Order-by expression references an unknown column '{token}'.", nameof(orderBy));
-                    }
-                }
-
-                pos += match.Length;
-            }
-
-            if (expectColumn)
-            {
-                throw new ArgumentException("Order-by expression is missing a column name.", nameof(orderBy));
-            }
-
-            return trimmed;
         }
 
         /// <summary>
