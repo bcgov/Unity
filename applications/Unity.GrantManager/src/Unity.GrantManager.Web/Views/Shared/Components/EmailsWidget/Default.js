@@ -1349,9 +1349,10 @@
         // Then initialize TinyMCE
         tinymce.init({
             license_key: 'gpl',
-            selector: '#EmailBody',
+            selector: '#EmailBody',            
             plugins: getPlugins(),
             menubar: 'file edit view insert format tools',
+            toolbar: getToolbarOptions(),
             resize: true,
             statusbar: true,
             elementpath: false,
