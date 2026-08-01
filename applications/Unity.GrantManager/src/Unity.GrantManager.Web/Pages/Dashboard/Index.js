@@ -407,18 +407,266 @@ $('#dashboardIntakeId').change(function () {
     reloadDashboard();
 });
 
-function highlightSelected(dropdownId,title) {
+// These dropdowns always show a fixed label (e.g. "STATUS") rather than the
+// current selection, so the filter bar keeps a constant width.
+function setDropdownLabel(dropdownId, title) {
+    $('#' + dropdownId)
+        .next('.select2-container')
+        .find('.select2-selection__rendered')
+        .attr('title', title)
+        .text(title);
+}
+
+function highlightSelected(dropdownId, title) {
     $('#' + dropdownId + ' option:selected').addClass('dt-button-active');
     $('#' + dropdownId + ' option:not(:selected)').removeClass('dt-button-active');
-    $('#' + dropdownId).selectpicker('refresh');
-    $('#' + dropdownId).closest('.bootstrap-select').find('.btn .filter-option-inner-inner').html(title);
-    $('#' + dropdownId).closest('.bootstrap-select').find('.btn').removeClass('bs-placeholder');
+    setDropdownLabel(dropdownId, title);
+}
+
+// Select2 has no equivalent of bootstrap-select's actionsBox, so build one.
+function addSelectAllControls($select) {
+    const $dropdown = $('.select2-container--open .select2-dropdown');
+    if ($dropdown.find('.dashboard-actionsbox').length) {
+        return;
+    }
+
+    const $box = $('<div class="dashboard-actionsbox btn-group" role="group"></div>');
+    const $selectAll = $('<button type="button" class="btn btn-sm btn-light">Select All</button>');
+    const $deselectAll = $('<button type="button" class="btn btn-sm btn-light">Deselect All</button>');
+
+    const setAll = (selected) => (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        $select.find('option').prop('selected', selected);
+        // Fires the inline onchange (reloadDashboard) plus our own change handlers.
+        $select.trigger('change');
+        syncResultRows($select);
+    };
+
+    $selectAll.on('click', setAll(true));
+    $deselectAll.on('click', setAll(false));
+
+    $box.append($selectAll, $deselectAll);
+    $dropdown.prepend($box);
+
+    // Select2 leaves --highlighted on the last option the mouse passed over,
+    // because it doubles as the keyboard position. Left alone it looks like a
+    // hover that never cleared, so drop it once the pointer leaves the list.
+    // Select2 reapplies it on the next mousemove or arrow key.
+    $dropdown.find('.select2-results')
+        .off('mouseleave.dashboardFilters')
+        .on('mouseleave.dashboardFilters', function () {
+            $(this).find('.select2-results__option--highlighted')
+                .removeClass('select2-results__option--highlighted');
+        });
+}
+
+// Result rows are matched to their <option> by label. Select2 does not expose
+// the row's data here (jQuery .data('data') is undefined), and its DOM id
+// embeds the value in a way that is ambiguous once a value contains a dash.
+function findOptionByLabel($select, label) {
+    return $select.find('option').filter(function () {
+        return $(this).text().trim() === label;
+    }).first();
+}
+
+// Toggle one option through Select2's documented route: change the value on the
+// underlying <select> and let it know. Deliberately not by faking a click on the
+// result row, which would depend on Select2's internal event wiring.
+function toggleOptionByLabel($select, label) {
+    const $option = findOptionByLabel($select, label);
+    if (!$option.length) {
+        return;
+    }
+
+    const value = String($option.val());
+    const selected = ($select.val() || []).map(String);
+    const next = selected.indexOf(value) === -1
+        ? selected.concat(value)
+        : selected.filter(function (item) { return item !== value; });
+
+    $select.val(next).trigger('change');
+    syncResultRows($select);
+
+    // Select2 sends the highlight back to the first result whenever the value
+    // changes, which would make Enter unusable for stepping down the list.
+    keepHighlightOn(label);
+    focusSearch($select);
+}
+
+// Presentational only: Select2 exposes no API for the keyboard position, and it
+// recalculates the highlight itself on the next arrow key.
+function keepHighlightOn(label) {
+    const $options = $('.select2-container--open .select2-results__option');
+
+    $options.removeClass('select2-results__option--highlighted');
+    $options.filter(function () {
+        return $(this).text().trim() === label;
+    }).first().addClass('select2-results__option--highlighted');
+}
+
+// Select2 re-renders the results a few tens of milliseconds after the value
+// changes and highlights the first row again. The exact delay is not ours to
+// rely on, so rather than guess at a timeout, watch the list and put the
+// highlight back if it moves off the row the user is on. Re-applying only when
+// it is actually wrong keeps this from looping on its own mutations.
+function holdHighlight($select, label) {
+    const results = document.querySelector('.select2-container--open .select2-results');
+    if (!results || !window.MutationObserver) {
+        return;
+    }
+
+    const observer = new MutationObserver(function () {
+        const current = document.querySelector('.select2-container--open .select2-results__option--highlighted');
+        if (!current || current.textContent.trim() !== label) {
+            keepHighlightOn(label);
+        }
+    });
+
+    observer.observe(results, { subtree: true, attributes: true, attributeFilter: ['class'] });
+
+    // Long enough to outlast Select2's re-render, short enough that it is gone
+    // well before the next keypress.
+    setTimeout(function () {
+        observer.disconnect();
+    }, 300);
+}
+
+// Select2 renders the results list when the panel opens and does not redraw it
+// on a programmatic change, so the ticks would otherwise show stale state.
+// Repaint the rows in place rather than reopening the panel: closing and
+// reopening rebuilds the list, which resets its scroll position and the
+// keyboard highlight, and reads as the list jumping on every keypress.
+function syncResultRows($select) {
+    const selected = ($select.val() || []).map(String);
+
+    $('.select2-container--open .select2-results__option').each(function () {
+        const $row = $(this);
+        const $option = findOptionByLabel($select, $row.text().trim());
+        if (!$option.length) {
+            return;
+        }
+
+        const isSelected = selected.indexOf(String($option.val())) !== -1;
+        $row.toggleClass('select2-results__option--selected', isSelected);
+        $row.attr('aria-selected', isSelected ? 'true' : 'false');
+    });
+}
+
+const SEARCH_PLACEHOLDER = 'Filter';
+
+function searchFieldOf($select) {
+    return $select.next('.select2-container').find('.select2-search__field')[0];
+}
+
+// Select2 drops focus out of the search field whenever an option is picked, so
+// typing stops working until the field is clicked again. Clicking it toggles
+// the panel shut, which makes filtering after a selection awkward. Put focus
+// back instead, so the user can keep typing without touching the mouse.
+function focusSearch($select) {
+    const field = searchFieldOf($select);
+    if (field) {
+        field.focus();
+    }
+}
+
+// The search field stands in for the label while the panel is open, so without
+// a placeholder the control just looks empty. Select2 clears the attribute
+// whenever the selection changes, by mouse or by keyboard, so put it back each
+// time. A native placeholder already hides itself once the user types, which is
+// exactly the behaviour wanted here.
+function keepSearchPlaceholder(field) {
+    if (!field) {
+        return;
+    }
+
+    field.setAttribute('placeholder', SEARCH_PLACEHOLDER);
+
+    if (!window.MutationObserver || field.dashboardPlaceholderWatched) {
+        return;
+    }
+    field.dashboardPlaceholderWatched = true;
+
+    new MutationObserver(function () {
+        // Only writing when it differs, so this cannot react to its own change.
+        if (field.getAttribute('placeholder') !== SEARCH_PLACEHOLDER) {
+            field.setAttribute('placeholder', SEARCH_PLACEHOLDER);
+        }
+    }).observe(field, { attributes: true, attributeFilter: ['placeholder'] });
+}
+
+// Select2 closes the panel on Enter instead of ticking the highlighted option,
+// even with closeOnSelect:false. WAI-ARIA's listbox pattern says Enter should
+// toggle the focused option, so take Enter over.
+//
+// Registered on the capture phase deliberately. Select2 binds its own keydown
+// through jQuery at init, so a normal handler runs *after* it: by then Select2
+// has already reset the keyboard position to the first row and stopPropagation
+// cannot undo that. Capture runs first, and stopImmediatePropagation keeps
+// Select2 from seeing the key at all.
+function bindEnterToToggle($select, searchField) {
+    if (!searchField || searchField.dashboardEnterBound) {
+        return;
+    }
+    searchField.dashboardEnterBound = true;
+
+    searchField.addEventListener('keydown', function (event) {
+        if (event.key !== 'Enter') {
+            return;
+        }
+
+        const $highlighted = $('.select2-container--open .select2-results__option--highlighted');
+        if (!$highlighted.length) {
+            return;
+        }
+
+        const label = $highlighted.text().trim();
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        toggleOptionByLabel($select, label);
+        holdHighlight($select, label);
+    }, true);
 }
 
 function initDropdown(dropdownId, title) {
-    $('#' + dropdownId).selectpicker({ actionsBox: true });
-    $('#' + dropdownId).closest('.bootstrap-select').find('.btn .filter-option-inner-inner').html(title);
-    $('#' + dropdownId).closest('.bootstrap-select').find('.btn .filter-option').addClass('button-align-center');
+    const $select = $('#' + dropdownId);
+
+    $select.select2({
+        theme: 'bootstrap-5',
+        width: '100%',
+        closeOnSelect: false,
+        allowClear: false,
+        // Select2 appends dropdowns to <body>, so this class is what keeps the
+        // dashboard styling off the other Select2 controls in the app.
+        dropdownCssClass: 'dashboard-filter-dropdown'
+    });
+
+    // Fires for mouse selections; the keyboard path restores focus itself.
+    // Deferred so it runs after Select2 has finished moving focus away.
+    $select.on('select2:select select2:unselect', function () {
+        setTimeout(function () {
+            focusSearch($select);
+        }, 0);
+    });
+
+    $select.on('select2:open', function () {
+        addSelectAllControls($select);
+
+        const $search = $select.next('.select2-container').find('.select2-search__field');
+        keepSearchPlaceholder($search[0]);
+
+        // Focus is deferred a tick on purpose: at select2:open the container
+        // has not yet gained .select2-container--open, so the field is still
+        // display:none per our CSS and silently refuses focus. Without focus,
+        // arrow keys and Enter never reach Select2 and typing goes nowhere.
+        setTimeout(function () {
+            $search.trigger('focus');
+        }, 0);
+
+        bindEnterToToggle($select, $search[0]);
+    });
+
+    setDropdownLabel(dropdownId, title);
 }
 
 $(function () {

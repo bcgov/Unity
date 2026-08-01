@@ -24,10 +24,6 @@
     justify-content: center;
 }
 
-.application-dashboard-dropdown select {
-    display: none !important;
-}
-
 .application-dashboard-date {
     min-width: 250px;
     margin-top: 10px;
@@ -35,16 +31,136 @@
     font-weight: bold;
 }
 
-.bs-actionsbox {
-    margin-top: 4px;
-}
-
-.bs-actionsbox .btn-group {
+/* Select All / Deselect All controls injected into the Select2 dropdown,
+   replacing bootstrap-select's actionsBox. */
+.dashboard-actionsbox {
     display: flex;
     justify-content: space-between;
-    gap: 8px;
+    gap: var(--bc-layout-margin-small);
+    padding: var(--bc-layout-margin-xsmall);
 }
 
-.bs-actionsbox .btn-group button {
+.dashboard-actionsbox button {
+    flex: 1 1 auto;
     width: auto;
+}
+
+/* The filter dropdowns always show a fixed label, so style them as the
+   toolbar buttons they replace (see .custom-table-btn in unity-styles.css)
+   rather than as multi-select inputs. */
+.application-dashboard-dropdown .select2-container--bootstrap-5 .select2-selection {
+    position: relative;
+    /* Fixed rather than content-driven so all six stay level: "SUB-STATUS" is
+       long enough to wrap and would otherwise make its box taller. Not
+       --bc-input-field-height (34px), which nothing in this toolbar uses. */
+    height: 38px;
+    min-height: 38px;
+    display: flex;
+    align-items: center;
+    padding: 0 1.75rem 0 0.75rem;
+    /* Matches the literal in .custom-table-btn; the theme has no radius token. */
+    border-radius: 5px;
+    background-color: var(--bc-colors-white-primary-500);
+}
+
+.application-dashboard-dropdown .select2-container--bootstrap-5 .select2-selection:hover {
+    border-color: var(--bc-colors-blue-primary);
+}
+
+/* The label is written straight into the <ul>, so strip its list styling and
+   keep it on one line: "SUB-STATUS" wrapping made that box taller than the
+   other five and broke the row alignment. */
+.application-dashboard-dropdown .select2-container--bootstrap-5 .select2-selection__rendered {
+    display: block;
+    /* Grow to fill the button: overflow:hidden below zeroes a flex item's
+       automatic minimum size, so without this the label collapses and
+       ellipsises even though there is room for it. */
+    flex: 1 1 auto;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    color: var(--bc-colors-blue-primary);
+    /* These filters replaced buttons styled with .btn/.dt-buttons, so use the
+       theme's button size rather than the base body size. layout.css feeds the
+       same variable into --bs-btn-font-size. */
+    font-size: var(--bc-font-size-btn);
+    font-weight: 700;
+    text-transform: uppercase;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Select2 only draws an arrow for single selects, so supply one. */
+.application-dashboard-dropdown .select2-container--bootstrap-5 .select2-selection::after {
+    content: "";
+    position: absolute;
+    right: 0.75rem;
+    top: 50%;
+    transform: translateY(-25%);
+    border-left: 4px solid transparent;
+    border-right: 4px solid transparent;
+    border-top: 5px solid var(--bc-colors-blue-primary);
+    pointer-events: none;
+}
+
+/* For multiple selects Select2 renders the search field inline in the control,
+   as a sibling of the label, and the two compete for width. Rather than move
+   the field (which detaches it from Select2's filtering), swap which one is
+   visible: label while closed, search while open. */
+.application-dashboard-dropdown .select2-container:not(.select2-container--open) .select2-search--inline {
+    display: none;
+}
+
+.application-dashboard-dropdown .select2-container--open .select2-selection__rendered {
+    display: none;
+}
+
+/* Select2 sizes the inline search field to its content, which clips the
+   placeholder to a character or two. The label is hidden while open, so give
+   the field the whole control. */
+.application-dashboard-dropdown .select2-container--open .select2-search--inline,
+.application-dashboard-dropdown .select2-container--open .select2-search--inline .select2-search__field {
+    width: 100% !important;
+    margin: 0;
+}
+
+/* Everything below is scoped to dashboard-filter-dropdown (set via
+   dropdownCssClass) because Select2 renders panels at the end of <body>,
+   outside .application-dashboard-dropdown. */
+
+/* Selected entries get a light tint and a checkmark rather than the theme's
+   solid fill, which turned the whole list blue given these filters default to
+   everything selected.
+   These selectors deliberately mirror the shape of the ones in
+   select2-bootstrap-5-theme.css and add .dashboard-filter-dropdown on top:
+   the theme's are five classes deep, so anything shorter loses to them. */
+.select2-container--bootstrap-5 .select2-dropdown.dashboard-filter-dropdown .select2-results__options .select2-results__option.select2-results__option--selected {
+    /* Same tint the theme uses for pressed state and DataTables selected rows
+       (--dt-row-selected is the same colour), so selection reads consistently. */
+    background-color: var(--bc-colors-grey-pressed);
+    color: var(--bc-type-color-primary);
+}
+
+.select2-container--bootstrap-5 .select2-dropdown.dashboard-filter-dropdown .select2-results__options .select2-results__option.select2-results__option--selected::after {
+    content: "\2713";
+    float: right;
+    color: var(--bc-type-color-primary);
+}
+
+/* Keyboard position: subtle, so it does not look like a hover left behind.
+   Declared before :hover so that hovering the keyboard-highlighted option
+   still shows the hover colour, since both carry the same specificity. */
+.select2-container--bootstrap-5 .select2-dropdown.dashboard-filter-dropdown .select2-results__options .select2-results__option.select2-results__option--highlighted {
+    background-color: var(--bc-colors-grey-hover);
+    color: var(--bc-type-color-primary);
+}
+
+/* Mouse feedback comes from :hover, not Select2's --highlighted class, which
+   marks the keyboard position and lingers once the pointer leaves the list.
+   --bc-colors-blue-hover is the theme's hover tint and is light enough to keep
+   the text and checkmark readable in their normal colour. */
+.select2-container--bootstrap-5 .select2-dropdown.dashboard-filter-dropdown .select2-results__options .select2-results__option:hover {
+    background-color: var(--bc-colors-blue-hover);
+    color: var(--bc-type-color-primary);
 }

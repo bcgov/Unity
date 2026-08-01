@@ -398,7 +398,7 @@ $(function () {
 
         const bootstrapCSS = doc.createElement('link');
         bootstrapCSS.rel = 'stylesheet';
-        bootstrapCSS.href = '/libs/bootstrap-4/dist/css/bootstrap.min.css';
+        bootstrapCSS.href = '/libs/bootstrap/css/bootstrap.min.css';
 
         const formioCSS = doc.createElement('link');
         formioCSS.rel = 'stylesheet';
@@ -415,6 +415,19 @@ $(function () {
             }
             button {
                 display: none !important;
+            }
+            /* Print only. Bootstrap 5 sizes headings with calc(... + vw), so
+               printed output would otherwise vary with the width of the window
+               it was opened from. Pin them to the fixed sizes Bootstrap 4 used
+               so the printed result is the same whatever the screen, while the
+               on-screen preview keeps Bootstrap 5's responsive sizing. */
+            @media print {
+                h1, .h1 { font-size: 2.5rem !important; }
+                h2, .h2 { font-size: 2rem !important; }
+                h3, .h3 { font-size: 1.75rem !important; }
+                h4, .h4 { font-size: 1.5rem !important; }
+                h5, .h5 { font-size: 1.25rem !important; }
+                h6, .h6 { font-size: 1rem !important; }
             }
         `;
 
@@ -462,7 +475,7 @@ $(function () {
 
         // Create and append stylesheets
         const stylesheets = [
-            { href: '/libs/bootstrap-4/dist/css/bootstrap.min.css' },
+            { href: '/libs/bootstrap/css/bootstrap.min.css' },
             { href: '/Pages/GrantApplications/ScoresheetPrint.css' }
         ];
 
