@@ -481,7 +481,7 @@ function toggleOptionByLabel($select, label) {
 
     const value = String($option.val());
     const selected = ($select.val() || []).map(String);
-    const next = selected.indexOf(value) === -1
+    const next = !selected.includes(value)
         ? selected.concat(value)
         : selected.filter(function (item) { return item !== value; });
 
@@ -538,7 +538,7 @@ function holdHighlight($select, label) {
 // reopening rebuilds the list, which resets its scroll position and the
 // keyboard highlight, and reads as the list jumping on every keypress.
 function syncResultRows($select) {
-    const selected = ($select.val() || []).map(String);
+    const selected = new Set(($select.val() || []).map(String));
 
     $('.select2-container--open .select2-results__option').each(function () {
         const $row = $(this);
@@ -547,7 +547,7 @@ function syncResultRows($select) {
             return;
         }
 
-        const isSelected = selected.indexOf(String($option.val())) !== -1;
+        const isSelected = selected.has(String($option.val()));
         $row.toggleClass('select2-results__option--selected', isSelected);
         $row.attr('aria-selected', isSelected ? 'true' : 'false');
     });
