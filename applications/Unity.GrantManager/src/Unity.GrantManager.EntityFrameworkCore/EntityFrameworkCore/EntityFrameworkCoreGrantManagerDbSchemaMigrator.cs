@@ -150,6 +150,12 @@ public class EntityFrameworkCoreGrantManagerDbSchemaMigrator(
                 EnsureSafeIdentifier(hostDatabaseName, "host database name");
 
                 hostCsb.Database = "postgres";
+                if (!CanCreateDatabaseLocally())
+                {
+                    throw new InvalidOperationException(
+                        $"Host database '{hostDatabaseName}' does not exist and automatic database creation is disabled outside local execution.");
+                }
+
                 await CreateDatabaseIfNotExistsAsync(hostCsb.ToString(), hostDatabaseName);
             }
 
@@ -160,6 +166,12 @@ public class EntityFrameworkCoreGrantManagerDbSchemaMigrator(
 
             await MigrateAndLogAsync(hostDb, "host");
         }
+    }
+
+    private static bool CanCreateDatabaseLocally()
+    {
+        return string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("KUBERNETES_SERVICE_HOST"))
+            && string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("OPENSHIFT_BUILD_NAME"));
     }
 
     private async Task MigrateAndLogAsync(DatabaseFacade database, string contextName)
