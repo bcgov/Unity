@@ -84,8 +84,8 @@ public class EntityFrameworkCoreGrantManagerDbSchemaMigrator(
                 // Create the PostgreSQL role (idempotent via DO block)
                 await CreateRoleIfNotExistsAsync(adminConnectionString, roleName, rolePassword);
 
-                // Create the database if it does not exist; use the admin connection so
-                // MigrateAsync connects cleanly and avoids logging a ConnectionError.
+                // LOCAL-ONLY database bootstrap. All existing tenant migration and
+                // privilege logic remains below this isolated fallback.
                 var tenantDb = _serviceProvider
                     .GetRequiredService<GrantTenantDbContext>()
                     .Database;
@@ -94,13 +94,7 @@ public class EntityFrameworkCoreGrantManagerDbSchemaMigrator(
 
                 if (!await tenantDb.CanConnectAsync())
                 {
-                    if (!CanCreateDatabaseLocally())
-                    {
-                        throw new InvalidOperationException(
-                            $"Tenant database '{dbName}' does not exist and automatic database creation is disabled in OpenShift.");
-                    }
-
-                    await CreateDatabaseIfNotExistsAsync(adminConnectionString, dbName);
+                    await EnsureLocalDatabaseExistsAsync(adminConnectionString, dbName, "tenant");
                 }
 
                 // Grant database and schema privileges to the role (idempotent)
@@ -146,18 +140,10 @@ public class EntityFrameworkCoreGrantManagerDbSchemaMigrator(
                 .GetRequiredService<GrantManagerDbContext>()
                 .Database;
 
-            // The database itself may not exist yet on a brand new Postgres instance.
-            // MigrateAsync() would normally create it as its first step, but
-            // ReconcileMigrationHistoryAsync needs to connect before that, so ensure
-            // it exists here first (mirrors the tenant path further up).
+            // LOCAL-ONLY database bootstrap. The pre-existing host migration flow
+            // starts immediately after this isolated fallback.
             if (!await hostDb.CanConnectAsync())
             {
-                if (!CanCreateDatabaseLocally())
-                {
-                    throw new InvalidOperationException(
-                        "Host database does not exist and automatic database creation is disabled in OpenShift.");
-                }
-
                 var configuration = _serviceProvider.GetRequiredService<IConfiguration>();
                 var hostConnectionString = configuration.GetConnectionString(GrantManagerConsts.DefaultConnectionStringName)
                     ?? throw new InvalidOperationException($"Connection string '{GrantManagerConsts.DefaultConnectionStringName}' is not configured.");
@@ -167,7 +153,7 @@ public class EntityFrameworkCoreGrantManagerDbSchemaMigrator(
                 EnsureSafeIdentifier(hostDatabaseName, "host database name");
 
                 hostCsb.Database = "postgres";
-                await CreateDatabaseIfNotExistsAsync(hostCsb.ToString(), hostDatabaseName);
+                await EnsureLocalDatabaseExistsAsync(hostCsb.ToString(), hostDatabaseName, "host");
             }
 
             await hostDb.ExecuteSqlRawAsync(
@@ -193,6 +179,22 @@ public class EntityFrameworkCoreGrantManagerDbSchemaMigrator(
         }
 
         return true;
+    }
+
+    // LOCAL-ONLY FALLBACK: automatic database creation is intentionally isolated
+    // from the normal migration flow and is disabled inside OpenShift/Kubernetes.
+    private async Task EnsureLocalDatabaseExistsAsync(
+        string adminConnectionString,
+        string databaseName,
+        string databaseContext)
+    {
+        if (!CanCreateDatabaseLocally())
+        {
+            throw new InvalidOperationException(
+                $"{databaseContext} database '{databaseName}' does not exist and automatic database creation is disabled in OpenShift.");
+        }
+
+        await CreateLocalDatabaseIfNotExistsAsync(adminConnectionString, databaseName);
     }
 
     private async Task MigrateAndLogAsync(DatabaseFacade database, string contextName)
@@ -236,7 +238,7 @@ public class EntityFrameworkCoreGrantManagerDbSchemaMigrator(
 #pragma warning restore EF1002
     }
 
-    private static async Task CreateDatabaseIfNotExistsAsync(string adminConnectionString, string databaseName)
+    private static async Task CreateLocalDatabaseIfNotExistsAsync(string adminConnectionString, string databaseName)
     {
         await using var connection = new NpgsqlConnection(adminConnectionString);
         await connection.OpenAsync();
