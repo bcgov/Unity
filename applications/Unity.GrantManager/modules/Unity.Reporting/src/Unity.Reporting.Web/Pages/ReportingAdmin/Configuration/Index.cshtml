@@ -44,7 +44,8 @@
                                                value="@tenantRole.ViewRole" 
                                                data-tenant-id="@tenantRole.TenantId"
                                                data-is-default="@tenantRole.IsDefaultInferred"
-                                               placeholder="@($"{tenantRole.TenantName.ToLowerInvariant()}_readonly")" />
+                                               placeholder="@($"{tenantRole.TenantName.ToLowerInvariant()}_readonly")"
+                                               aria-label="@($"View role for {tenantRole.TenantName}")" />
                                         @if (tenantRole.IsDefaultInferred)
                                         {
                                             <i class="fa fa-exclamation-triangle text-warning ms-2 default-role-indicator" 
