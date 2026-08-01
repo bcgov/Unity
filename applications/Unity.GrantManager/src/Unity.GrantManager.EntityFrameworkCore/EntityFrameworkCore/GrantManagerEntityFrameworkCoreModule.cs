@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using System;
 using Volo.Abp.AuditLogging.EntityFrameworkCore;
 using Volo.Abp.BackgroundJobs.EntityFrameworkCore;
@@ -56,7 +57,11 @@ public class GrantManagerEntityFrameworkCoreModule : AbpModule
         {
             /* The main point to change your DBMS.
              * See also GrantManagerMigrationsDbContextFactory for EF Core tooling. */
-            options.UseNpgsql();
+            options.Configure(dbContextConfiguration =>
+            {
+                dbContextConfiguration.UseNpgsql();
+                dbContextConfiguration.DbContextOptions.LogTo(Console.WriteLine, LogLevel.Information);
+            });
         });
     }
 }
