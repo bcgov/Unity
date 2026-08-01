@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
+using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -84,8 +85,6 @@ public class EntityFrameworkCoreGrantManagerDbSchemaMigrator(
                 // Create the PostgreSQL role (idempotent via DO block)
                 await CreateRoleIfNotExistsAsync(adminConnectionString, roleName, rolePassword);
 
-                // LOCAL-ONLY database bootstrap. All existing tenant migration and
-                // privilege logic remains below this isolated fallback.
                 var tenantDb = _serviceProvider
                     .GetRequiredService<GrantTenantDbContext>()
                     .Database;
@@ -94,7 +93,7 @@ public class EntityFrameworkCoreGrantManagerDbSchemaMigrator(
 
                 if (!await tenantDb.CanConnectAsync())
                 {
-                    await EnsureLocalDatabaseExistsAsync(adminConnectionString, dbName, "tenant");
+                    await tenantDb.GetService<IRelationalDatabaseCreator>().CreateAsync();
                 }
 
                 // Grant database and schema privileges to the role (idempotent)
@@ -140,8 +139,6 @@ public class EntityFrameworkCoreGrantManagerDbSchemaMigrator(
                 .GetRequiredService<GrantManagerDbContext>()
                 .Database;
 
-            // LOCAL-ONLY database bootstrap. The pre-existing host migration flow
-            // starts immediately after this isolated fallback.
             if (!await hostDb.CanConnectAsync())
             {
                 var configuration = _serviceProvider.GetRequiredService<IConfiguration>();
@@ -153,7 +150,7 @@ public class EntityFrameworkCoreGrantManagerDbSchemaMigrator(
                 EnsureSafeIdentifier(hostDatabaseName, "host database name");
 
                 hostCsb.Database = "postgres";
-                await EnsureLocalDatabaseExistsAsync(hostCsb.ToString(), hostDatabaseName, "host");
+                await CreateDatabaseIfNotExistsAsync(hostCsb.ToString(), hostDatabaseName);
             }
 
             await hostDb.ExecuteSqlRawAsync(
@@ -163,38 +160,6 @@ public class EntityFrameworkCoreGrantManagerDbSchemaMigrator(
 
             await MigrateAndLogAsync(hostDb, "host");
         }
-    }
-
-    private bool CanCreateDatabaseLocally()
-    {
-        var runningInOpenShift = !string.IsNullOrWhiteSpace(
-            Environment.GetEnvironmentVariable("KUBERNETES_SERVICE_HOST"))
-            || !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("OPENSHIFT_BUILD_NAME"));
-
-        if (runningInOpenShift)
-        {
-            _logger.LogWarning(
-                "Database creation is disabled when running in OpenShift. The configured database must already exist.");
-            return false;
-        }
-
-        return true;
-    }
-
-    // LOCAL-ONLY FALLBACK: automatic database creation is intentionally isolated
-    // from the normal migration flow and is disabled inside OpenShift/Kubernetes.
-    private async Task EnsureLocalDatabaseExistsAsync(
-        string adminConnectionString,
-        string databaseName,
-        string databaseContext)
-    {
-        if (!CanCreateDatabaseLocally())
-        {
-            throw new InvalidOperationException(
-                $"{databaseContext} database '{databaseName}' does not exist and automatic database creation is disabled in OpenShift.");
-        }
-
-        await CreateLocalDatabaseIfNotExistsAsync(adminConnectionString, databaseName);
     }
 
     private async Task MigrateAndLogAsync(DatabaseFacade database, string contextName)
@@ -238,7 +203,7 @@ public class EntityFrameworkCoreGrantManagerDbSchemaMigrator(
 #pragma warning restore EF1002
     }
 
-    private static async Task CreateLocalDatabaseIfNotExistsAsync(string adminConnectionString, string databaseName)
+    private static async Task CreateDatabaseIfNotExistsAsync(string adminConnectionString, string databaseName)
     {
         await using var connection = new NpgsqlConnection(adminConnectionString);
         await connection.OpenAsync();
