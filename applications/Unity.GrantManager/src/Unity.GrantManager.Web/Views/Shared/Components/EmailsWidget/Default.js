@@ -1349,9 +1349,10 @@
         // Then initialize TinyMCE
         tinymce.init({
             license_key: 'gpl',
-            selector: '#EmailBody',
+            selector: '#EmailBody',            
             plugins: getPlugins(),
             menubar: 'file edit view insert format tools',
+            toolbar: getToolbarOptions(),
             resize: true,
             statusbar: true,
             elementpath: false,
@@ -2117,6 +2118,7 @@
             selector: '#EmailBody',
             plugins: getPlugins(),
             menubar: 'file edit view insert format tools',
+            toolbar: getToolbarOptions(),
             resize: true,
             statusbar: true,
             elementpath: false,
@@ -2807,7 +2809,7 @@ function isValidDate(month, day, year) {
  * @returns {string} Title-cased string
  */
 function toTitleCase(str) {
-    return str.toLowerCase().replace(/\b\w/g, function (char) {
+    return str.toLowerCase().replaceAll(/\b\w/g, function (char) {
         return char.toUpperCase();
     });
 }

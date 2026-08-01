@@ -30,7 +30,7 @@
                     }
                     else
                     {
-                    <label class="empty-user-role">{Owner}</label>
+                    <span class="empty-user-role">{Owner}</span>
                     }
                     
                 </div>
@@ -47,15 +47,15 @@
                     @foreach (var assignee in Model.Assignees)
                     {
                             <div class="user-tag tags-common tag-wrap">
-                                <label class="full-length-tag">@assignee.FullName</label>
+                                <span class="full-length-tag">@assignee.FullName</span>
                                 <br>
                                 @if(!assignee.Duty.IsNullOrEmpty() )
                                 {
-                                    <label>@assignee.Duty</label>
+                                    <span>@assignee.Duty</span>
                                 }
                                 else
                                 {
-                                    <label class="empty-user-role">Duties</label>
+                                    <span class="empty-user-role">Duties</span>
                                 }
 
                             </div>

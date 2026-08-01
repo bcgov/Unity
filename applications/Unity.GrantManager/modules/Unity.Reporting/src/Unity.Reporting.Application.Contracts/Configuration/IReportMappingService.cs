@@ -101,18 +101,18 @@ namespace Unity.Reporting.Configuration
         public Task<ViewGenerationResult> GenerateViewAsync(Guid correlationId, string correlationProvider, string viewName);
         
         /// <summary>
-        /// Retrieves paginated and filtered data from a generated database view with support for sorting and custom filtering.
+        /// Retrieves paginated data from a generated database view.
         /// </summary>
         /// <param name="viewName">The name of the database view to query for data.</param>
-        /// <param name="request">The request parameters containing pagination settings, filtering criteria, and sort ordering.</param>
+        /// <param name="request">The request parameters containing pagination settings.</param>
         /// <returns>A ViewDataResult containing the queried data rows, total record count, and column information for the requested page.</returns>
         public Task<ViewDataResult> GetViewDataAsync(string viewName, ViewDataRequest request);
-        
+
         /// <summary>
         /// Retrieves preview data from a generated database view showing only the top record for preview purposes.
         /// </summary>
         /// <param name="viewName">The name of the database view to query for preview data.</param>
-        /// <param name="request">The request parameters for filtering (pagination settings are ignored as only top 1 record is returned).</param>
+        /// <param name="request">The request parameters (pagination settings are ignored as only top 1 record is returned).</param>
         /// <returns>A ViewDataResult containing the preview data (single top record), count of 1, and column information.</returns>
         public Task<ViewDataResult> GetViewPreviewDataAsync(string viewName, ViewDataRequest request);
         
@@ -132,8 +132,8 @@ namespace Unity.Reporting.Configuration
     }
     
     /// <summary>
-    /// Represents a request for view data with pagination, filtering, and sorting options.
-    /// Provides flexible data retrieval parameters for querying generated reporting views.
+    /// Represents a request for view data with pagination options.
+    /// Provides data retrieval parameters for querying generated reporting views.
     /// </summary>
     public class ViewDataRequest
     {
@@ -148,18 +148,6 @@ namespace Unity.Reporting.Configuration
         /// Defaults to 100 to prevent excessive data transfer while allowing reasonable page sizes.
         /// </summary>
         public int Take { get; set; } = 100;
-        
-        /// <summary>
-        /// Gets or sets the SQL WHERE clause filter to apply to the view query.
-        /// Should be a valid PostgreSQL WHERE clause condition without the "WHERE" keyword.
-        /// </summary>
-        public string? Filter { get; set; }
-        
-        /// <summary>
-        /// Gets or sets the SQL ORDER BY clause to apply for result sorting.
-        /// Should be a valid PostgreSQL ORDER BY clause without the "ORDER BY" keywords.
-        /// </summary>
-        public string? OrderBy { get; set; }
     }
     
     /// <summary>

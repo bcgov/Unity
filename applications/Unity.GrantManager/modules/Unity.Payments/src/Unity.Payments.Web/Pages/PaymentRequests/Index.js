@@ -529,7 +529,8 @@ $(function () {
             }
         },
         onStateLoaded: function (dtApi, data) {
-            if (!initialLoad) {
+            if (!initialLoad && data) {
+                // A saved state was restored
                 isRestoringState = false;
                 dtApi.ajax.reload(null, false);
             }
@@ -539,8 +540,21 @@ $(function () {
         contextMenuActionsSelector: '[data-selector="batch-payment-table-actions"]'
     });
 
-    $('.grp-savedStates').text('Save View');
+    // Initialize savedStates button styling
     $('.grp-savedStates').closest('.btn-group').addClass('cstm-save-view');
+
+    // Update button text based on whether any named saved views exist.
+    // Driven by the StateRestore extension's own 'stateRestore-change' event (the same
+    // event it uses internally to update its default label) rather than a localStorage
+    // key guess or a one-shot draw handler - those raced against the extension's own
+    // loading of previously-saved states from storage on page refresh.
+    function updateSavedStatesButtonText() {
+        const savedStatesExist = dataTable.stateRestore.states().length > 0;
+        $('.grp-savedStates').text(savedStatesExist ? 'Saved States' : 'Save View');
+    }
+
+    dataTable.on('stateRestore-change', updateSavedStatesButtonText);
+    updateSavedStatesButtonText();
 
     dataTable.on('column-visibility.dt', function (e, settings, columnIdx) {
         try {

@@ -222,11 +222,11 @@ abp.widgets.ProjectInfo = function ($wrapper) {
                 const propertyName = fieldName.split('.')[1];
                 
                 if (inputElement.hasClass('unity-currency-input') || inputElement.hasClass('numeric-mask')) {
-                    fieldValue = fieldValue.replace(/,/g, '');
+                    fieldValue = fieldValue.replaceAll(',', '');
                 }
-                
+
                 if (this.isNumberField(input)) {
-                    fieldValue = fieldValue === '' ? 0 : Math.min(parseFloat(fieldValue), this.getMaxNumberField(input));
+                    fieldValue = fieldValue === '' ? 0 : Math.min(Number.parseFloat(fieldValue), this.getMaxNumberField(input));
                 } else if (fieldValue === '') {
                     fieldValue = null;
                 }
@@ -298,12 +298,12 @@ $(function () {
 });
 
 function calculatePercentage() {
-    const requestedAmount = parseFloat(document.getElementById("RequestedAmountInputPI")?.value.replace(/,/g, ''));
-    const totalProjectBudget = parseFloat(document.getElementById("TotalBudgetInputPI")?.value.replace(/,/g, ''));
-    if (isNaN(requestedAmount) || isNaN(totalProjectBudget) || totalProjectBudget == 0) {
+    const requestedAmount = Number.parseFloat(document.getElementById("RequestedAmountInputPI")?.value.replaceAll(',', ''));
+    const totalProjectBudget = Number.parseFloat(document.getElementById("TotalBudgetInputPI")?.value.replaceAll(',', ''));
+    if (Number.isNaN(requestedAmount) || Number.isNaN(totalProjectBudget) || totalProjectBudget == 0) {
         document.getElementById("ProjectInfo_PercentageTotalProjectBudget").value = 0;
         return;
     }
     const percentage = ((requestedAmount / totalProjectBudget) * 100.00).toFixed(2);
-    $("#ProjectInfo_PercentageTotalProjectBudget").maskMoney('mask', parseFloat(percentage));
+    $("#ProjectInfo_PercentageTotalProjectBudget").maskMoney('mask', Number.parseFloat(percentage));
 }

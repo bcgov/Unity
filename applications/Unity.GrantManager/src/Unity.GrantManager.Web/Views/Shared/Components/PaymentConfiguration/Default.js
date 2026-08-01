@@ -200,7 +200,7 @@
         UIElements.btnSave.prop('disabled', true);
 
         const hierarchyValue = UIElements.formHierarchy.val();
-        const formHierarchy = hierarchyValue ? parseInt(hierarchyValue, 10) : null;
+        const formHierarchy = hierarchyValue ? Number.parseInt(hierarchyValue, 10) : null;
         const parentFormId = UIElements.parentFormSelect.val();
         const defaultPaymentGroupValue = UIElements.payable.is(':checked')
             ? (UIElements.defaultPaymentGroup.val() || '1')
