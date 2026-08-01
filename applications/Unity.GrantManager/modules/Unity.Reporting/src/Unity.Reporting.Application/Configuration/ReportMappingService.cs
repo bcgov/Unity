@@ -375,12 +375,12 @@ namespace Unity.Reporting.Configuration
         }
 
         /// <summary>
-        /// Retrieves paginated and filtered data from a generated database view with support for sorting and custom filtering.
+        /// Retrieves paginated data from a generated database view.
         /// Validates view existence, normalizes the view name, and delegates to the repository for secure data access
         /// with proper pagination controls to handle large datasets efficiently.
         /// </summary>
         /// <param name="viewName">The name of the database view to query for data.</param>
-        /// <param name="request">The request parameters containing pagination settings (skip/take), filtering criteria, and sort ordering.</param>
+        /// <param name="request">The request parameters containing pagination settings (skip/take).</param>
         /// <returns>A ViewDataResult containing the queried data rows, total record count, and column information for the requested page.</returns>
         /// <exception cref="ArgumentException">
         /// Thrown when:
@@ -411,7 +411,7 @@ namespace Unity.Reporting.Configuration
         /// Validates view existence and normalizes the view name before querying.
         /// </summary>
         /// <param name="viewName">The name of the database view to query for preview data.</param>
-        /// <param name="request">The request parameters for filtering (pagination settings are ignored as only top 1 record is returned).</param>
+        /// <param name="request">The request parameters (pagination settings are ignored as only top 1 record is returned).</param>
         /// <returns>A ViewDataResult containing the preview data (single top record), count of 1, and column information.</returns>
         /// <exception cref="ArgumentException">
         /// Thrown when:
