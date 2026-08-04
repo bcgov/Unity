@@ -12,6 +12,7 @@ using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Identity;
 using Volo.Abp.MultiTenancy;
+using Volo.Abp.Uow;
 
 namespace Unity.GrantManager;
 
@@ -19,7 +20,8 @@ public class GrantManagerDataSeederContributor(
     IApplicationStatusRepository applicationStatusRepository,
     IPersonRepository personRepository,
     IIdentityUserRepository userRepository,
-    ICurrentTenant currentTenant) : IDataSeedContributor, ITransientDependency
+    ICurrentTenant currentTenant,
+    IUnitOfWorkManager unitOfWorkManager) : IDataSeedContributor, ITransientDependency
 {
     public static class GrantApplicationStates
     {
@@ -79,7 +81,9 @@ public class GrantManagerDataSeederContributor(
         {
             try
             {
+                using var unitOfWork = unitOfWorkManager.Begin(requiresNew: true, isTransactional: true);
                 await applicationStatusRepository.InsertAsync(status, autoSave: true);
+                await unitOfWork.CompleteAsync();
             }
             catch (Exception ex) when (IsDuplicateStatusCodeException(ex))
             {
@@ -100,15 +104,24 @@ public class GrantManagerDataSeederContributor(
         var existing = await personRepository.FirstOrDefaultAsync(p => p.Id == AIScoringConstants.AiPersonId);
         if (existing == null)
         {
-            await personRepository.InsertAsync(new Person
+            try
             {
-                Id = AIScoringConstants.AiPersonId,
-                OidcSub = AIScoringConstants.AiOidcSub,
-                OidcDisplayName = AIScoringConstants.AiDisplayName,
-                FullName = AIScoringConstants.AiDisplayName,
-                Badge = AIScoringConstants.AiBadge,
-                TenantId = tenantId
-            });
+                using var unitOfWork = unitOfWorkManager.Begin(requiresNew: true, isTransactional: true);
+                await personRepository.InsertAsync(new Person
+                {
+                    Id = AIScoringConstants.AiPersonId,
+                    OidcSub = AIScoringConstants.AiOidcSub,
+                    OidcDisplayName = AIScoringConstants.AiDisplayName,
+                    FullName = AIScoringConstants.AiDisplayName,
+                    Badge = AIScoringConstants.AiBadge,
+                    TenantId = tenantId
+                }, autoSave: true);
+                await unitOfWork.CompleteAsync();
+            }
+            catch (Exception ex) when (ex.ToString().Contains("PK_Persons"))
+            {
+                // Another concurrent seeder instance inserted the person first; safe to ignore.
+            }
         }
     }
 

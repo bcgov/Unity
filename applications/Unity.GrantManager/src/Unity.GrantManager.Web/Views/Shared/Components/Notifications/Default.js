@@ -484,7 +484,7 @@
             document.getElementById(id).value = '';
         });
 
-        // Clear selectpicker
+        // Clear the recipient select
         clearSelectedRecipients();
 
         // Hide all option sections using classes
@@ -523,7 +523,7 @@
             
             let isEmpty = false;
             if (el.id === 'recipientSelect') {
-                // For selectpicker, check if any recipients are selected
+                // Recipients come from a Select2 control, so check the selection
                 isEmpty = getSelectedRecipients().length === 0;
             } else {
                 isEmpty = !el.value;
