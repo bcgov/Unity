@@ -1,5 +1,4 @@
 ﻿using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -31,7 +30,8 @@ public class GrantManagerDbMigrationService : ITransientDependency
         IEnumerable<IGrantManagerDbSchemaMigrator> dbSchemaMigrators,
         ITenantRepository tenantRepository,
         ICurrentTenant currentTenant,
-        TenantConnectionStringEncryptionMigrator connectionStringEncryptionMigrator)
+        TenantConnectionStringEncryptionMigrator connectionStringEncryptionMigrator,
+        ILogger<GrantManagerDbMigrationService> logger)
     {
         _dataSeeder = dataSeeder;
         _dbSchemaMigrators = dbSchemaMigrators;
@@ -39,7 +39,7 @@ public class GrantManagerDbMigrationService : ITransientDependency
         _currentTenant = currentTenant;
         _connectionStringEncryptionMigrator = connectionStringEncryptionMigrator;
 
-        Logger = NullLogger<GrantManagerDbMigrationService>.Instance;
+        Logger = logger;
     }
 
     public async Task MigrateAsync()
@@ -59,6 +59,7 @@ public class GrantManagerDbMigrationService : ITransientDependency
         await _connectionStringEncryptionMigrator.MigrateAsync();
 
         var tenants = await _tenantRepository.GetListAsync(includeDetails: true);
+        Logger.LogInformation("Found {TenantCount} tenants to process.", tenants.Count);
 
         var migratedDatabaseSchemas = new HashSet<string>();
 
@@ -75,6 +76,11 @@ public class GrantManagerDbMigrationService : ITransientDependency
     public async Task MigrateAndSeedTenantAsync(HashSet<string> migratedDatabaseSchemas, Tenant? tenant)
     {
         if (tenant == null) { return; }
+
+        Logger.LogInformation(
+            "Processing tenant {TenantName} with {ConnectionStringCount} configured connection strings.",
+            tenant.Name,
+            tenant.ConnectionStrings.Count);
 
         using (_currentTenant.Change(tenant.Id))
         {
@@ -93,6 +99,11 @@ public class GrantManagerDbMigrationService : ITransientDependency
             }
 
             await SeedDataAsync(tenant);
+        }
+
+        if (tenant.ConnectionStrings.Count == 0)
+        {
+            Logger.LogWarning("Skipping schema migration for tenant {TenantName}: no connection string is configured.", tenant.Name);
         }
     }
 
@@ -121,6 +132,7 @@ public class GrantManagerDbMigrationService : ITransientDependency
         catch (Exception ex)
         {
             Logger.LogError(ex, "An error occurred while seeding {Database} database data.", tenant == null ? "host" : tenant.Name + TenantSuffix);
+            throw;
         }
     }
 
