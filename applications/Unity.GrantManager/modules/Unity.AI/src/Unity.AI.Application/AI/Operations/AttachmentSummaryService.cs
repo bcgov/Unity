@@ -7,9 +7,9 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Unity.AI.Extraction;
+using Unity.AI.Attachments;
 using Unity.AI.Localization;
 using Unity.AI.Requests;
-using Unity.GrantManager.Intakes;
 using Volo.Abp;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Uow;
@@ -18,7 +18,7 @@ namespace Unity.AI.Operations;
 
 public class AttachmentSummaryService(
     IAttachmentSummaryDataProvider attachmentSummaryDataProvider,
-    IChefsFileAttachmentStreamProvider chefsFileAttachmentStreamProvider,
+    IAttachmentContentProvider attachmentContentProvider,
     ITextExtractionService textExtractionService,
     IAIService aiService,
     IAIGenerationPrerequisiteValidator aiGenerationPrerequisiteValidator,
@@ -149,7 +149,7 @@ public class AttachmentSummaryService(
         await uow.CompleteAsync();
     }
 
-    private async Task<ChefsFileAttachmentStream> OpenAttachmentStreamAsync(
+    private async Task<AttachmentContentStream> OpenAttachmentStreamAsync(
         AttachmentSummarySource attachment,
         string fileName,
         CancellationToken cancellationToken)
@@ -160,14 +160,13 @@ public class AttachmentSummaryService(
             logger.LogWarning(
                 "Attachment {AttachmentId} has invalid CHEFS IDs. Falling back to metadata-only summary generation.",
                 attachment.Id);
-            return ChefsFileAttachmentStream.Empty;
+            return AttachmentContentStream.Empty;
         }
 
         try
         {
             cancellationToken.ThrowIfCancellationRequested();
-            var stream = await chefsFileAttachmentStreamProvider.OpenAsync(submissionId, fileId, fileName);
-            return stream ?? ChefsFileAttachmentStream.Empty;
+            return await attachmentContentProvider.OpenAttachmentAsync(submissionId, fileId, fileName);
         }
         catch (OperationCanceledException)
         {
@@ -179,7 +178,7 @@ public class AttachmentSummaryService(
                 ex,
                 "Failed retrieving CHEFS content for attachment {AttachmentId}. Falling back to metadata-only summary generation.",
                 attachment.Id);
-            return ChefsFileAttachmentStream.Empty;
+            return AttachmentContentStream.Empty;
         }
     }
 
@@ -197,7 +196,7 @@ public class AttachmentSummaryService(
     private void LogEmptyExtraction(
         Guid attachmentId,
         string fileName,
-        ChefsFileAttachmentStream attachmentStream)
+        AttachmentContentStream attachmentStream)
     {
         logger.LogWarning(
             "No text extracted for supported attachment {AttachmentId} ({FileName}). Skipping AI summary generation. ContentType: {ContentType}; StreamCanSeek: {StreamCanSeek}; StreamLength: {StreamLength}.",

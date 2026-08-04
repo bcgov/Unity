@@ -1,4 +1,4 @@
-namespace Unity.GrantManager.GrantApplications;
+namespace Unity.AI.GrantApplications;
 
 public class ApplicationAnalysisResultDto
 {
