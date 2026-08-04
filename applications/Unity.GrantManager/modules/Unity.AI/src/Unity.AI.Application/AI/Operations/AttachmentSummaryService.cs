@@ -166,8 +166,7 @@ public class AttachmentSummaryService(
         try
         {
             cancellationToken.ThrowIfCancellationRequested();
-            var stream = await attachmentContentProvider.OpenAttachmentAsync(submissionId, fileId, fileName);
-            return stream ?? AttachmentContentStream.Empty;
+            return await attachmentContentProvider.OpenAttachmentAsync(submissionId, fileId, fileName);
         }
         catch (OperationCanceledException)
         {
