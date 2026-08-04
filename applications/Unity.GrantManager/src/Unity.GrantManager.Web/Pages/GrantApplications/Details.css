@@ -255,12 +255,12 @@ textarea::placeholder {
     resize: vertical;
 }
 
-.fa,
-.fas {
+.fa-solid,
+.fa-regular {
     padding: 5px;
 }
 
-i.fas:hover {
+i.fa-solid:hover {
     cursor: pointer;
 }
 

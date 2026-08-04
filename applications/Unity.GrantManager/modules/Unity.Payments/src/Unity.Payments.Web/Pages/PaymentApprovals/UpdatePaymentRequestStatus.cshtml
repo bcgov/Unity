@@ -39,7 +39,7 @@
             @if (ViewData["Error"] != null)
             {
                 <div class="alert alert-warning" role="alert">
-                    <i class="fa fa-triangle-exclamation"></i> @ViewData["Error"]
+                    <i class="fa-solid fa-triangle-exclamation"></i> @ViewData["Error"]
                 </div>
             }
             else
@@ -105,7 +105,7 @@
                                                 </div>
                                                 <div class="flex-shrink-1">
                                                     <abp-button onclick='removeApplicationPaymentApproval("@Model.PaymentGroupings[k].Items[i].Id" + "_container", @Model.PaymentGroupings[k].GroupId)'
-                                                                size="Small" icon-type="Other" class="m-0 p-0 remove-single-payment" icon="fa fa-xmark"
+                                                                size="Small" icon-type="Other" class="m-0 p-0 remove-single-payment" icon="fa-solid fa-xmark"
                                                                 data-parameter="@Model.PaymentGroupings[k].Items[i].CorrelationId" />
                                                 </div>
                                             </abp-column>
@@ -142,13 +142,13 @@
                                         <div class="flex-fill">
                                             @if (Model.PaymentGroupings[k].Items.Any(x => !x.IsValid))
                                             {
-                                                <span class="fa fa-ban fa-solid payment-status-transition-ban"></span>
+                                                <span class="fa-solid fa-ban payment-status-transition-ban"></span>
                                             }
                                             else
                                             {
-                                                <span class="fa fa-chevron-right fa-solid payment-status-transition-arrow"></span>
-                                                <span class="fa fa-chevron-right fa-solid payment-status-transition-arrow"></span>
-                                                <span class="fa fa-chevron-right fa-solid payment-status-transition-arrow"></span>
+                                                <span class="fa-solid fa-chevron-right payment-status-transition-arrow"></span>
+                                                <span class="fa-solid fa-chevron-right payment-status-transition-arrow"></span>
+                                                <span class="fa-solid fa-chevron-right payment-status-transition-arrow"></span>
                                             }
                                         </div>
                                         <div class="flex-fill">

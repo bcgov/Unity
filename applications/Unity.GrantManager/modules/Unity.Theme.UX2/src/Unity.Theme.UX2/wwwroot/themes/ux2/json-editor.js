@@ -293,7 +293,7 @@ const UnityJsonEditor = (function ($) {
                 '          <textarea class="form-control uje-textarea" rows="' + opts.rows + '" spellcheck="false"' +
                 (opts.readOnly ? ' readonly' : '') + '></textarea>' +
                 '          <button type="button" class="uje-scroll-top" aria-label="Scroll to top" style="display:none;">' +
-                '            <i class="fa fa-arrow-up"></i>' +
+                '            <i class="fa-solid fa-arrow-up"></i>' +
                 '          </button>' +
                 '        </div>' +
                 '        <div class="uje-status-bar">' +
@@ -521,7 +521,7 @@ const UnityJsonEditor = (function ($) {
             const icon = iconMap[type] || iconMap.warning;
             const colorClass = colorMap[type] || colorMap.warning;
 
-            let html = '<i class="fa ' + icon + ' me-1"></i>' + _escapeHtml(message);
+            let html = '<i class="fa-solid ' + icon + ' me-1"></i>' + _escapeHtml(message);
             if (secondLine) {
                 html += '<br>' + _escapeHtml(secondLine);
             }

@@ -15,7 +15,7 @@
         @if (ViewData["Error"] != null)
         {
             <div class="alert alert-warning" role="alert">
-                <i class="fa fa-triangle-exclamation"></i> @ViewData["Error"]
+                <i class="fa-solid fa-triangle-exclamation"></i> @ViewData["Error"]
             </div>
         }
         else
@@ -45,7 +45,7 @@
                                                 onkeydown='if(event.key === "Enter" || event.key === " ") { removeApplicationRow("@Model.BulkApplications[i].ApplicationId" + "_container"); event.preventDefault(); }'
                                                 size="Small"
                                                 icon-type="Other"
-                                                icon="fa fa-xmark"
+                                                icon="fa-solid fa-xmark"
                                                 class="removeRow m-0 p-0"
                                                 data-parameter="@Model.BulkApplications[i].ApplicationId" />
                                 </abp-column>

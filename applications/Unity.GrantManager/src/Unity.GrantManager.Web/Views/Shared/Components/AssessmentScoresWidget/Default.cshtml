@@ -85,7 +85,7 @@
                                                                     @if (question.AIConfidence.HasValue && question.AIConfidence.Value < 85)
                                                                     {
                                                                         <span class="low-confidence-badge ms-2" title="AI confidence is @question.AIConfidence.Value.ToString("F0")%.">
-                                                                           <i class="fa-solid fa-wand-magic-sparkles"></i> <i class="fas fa-triangle-exclamation"></i> @question.AIConfidence.Value.ToString("F0")%
+                                                                           <i class="fa-solid fa-wand-magic-sparkles"></i> <i class="fa-solid fa-triangle-exclamation"></i> @question.AIConfidence.Value.ToString("F0")%
                                                                         </span>
                                                                     }
                                                                 </button>

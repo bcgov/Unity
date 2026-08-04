@@ -16,7 +16,7 @@
             @if (ViewData["Error"] != null)
             {
                 <div class="alert alert-warning" role="alert">
-                    <i class="fa fa-triangle-exclamation"></i> @ViewData["Error"]
+                    <i class="fa-solid fa-triangle-exclamation"></i> @ViewData["Error"]
                 </div>
             }
             else
@@ -50,7 +50,7 @@
                                         <abp-button onclick='removeApplicationApproval("@Model.BulkApplicationApprovals[i].ApplicationId" + "_container")'
                                                     size="Small"
                                                     icon-type="Other"
-                                                    icon="fa fa-xmark"
+                                                    icon="fa-solid fa-xmark"
                                                     class="m-0 p-0"
                                                     data-parameter="@Model.BulkApplicationApprovals[i].ApplicationId" />
                                     </abp-column>

@@ -37,7 +37,7 @@ const emailGroupsManager = {
                         const buttonClass = row.isNew ? 'remove-selected-user' : 'remove-user-btn';
                         const dataAttr = row.isNew ? `data-user-id="${row.userId}"` : `data-group-user-id="${row.id}"`;
                         return `<button class="btn btn-sm btn-link text-primary p-0 ${buttonClass}" style="text-decoration: none;" ${dataAttr} title="${title}">
-                            <i class="fa fa-xmark"></i>
+                            <i class="fa-solid fa-xmark"></i>
                         </button>`;
                     }
                 }
@@ -372,7 +372,7 @@ const emailGroupsManager = {
                                         </ul>
                                     </div>
                                     <button type="button" class="btn btn-add-user mt-2 float-end mx-5" id="createAddUserBtn" disabled>
-                                        <i class="fa fa-check me-1"></i>ADD USER
+                                        <i class="fa-solid fa-check me-1"></i>ADD USER
                                     </button>
                                 </div>
                                 <hr style="margin-top: 60px;">
@@ -589,7 +589,7 @@ const emailGroupsManager = {
                                     </ul>
                                 </div>
                                 <button type="button" class="btn btn-add-user mt-2 float-end mx-5" id="manageAddUserBtn" disabled>
-                                    <i class="fa fa-check me-1"></i>ADD USER
+                                    <i class="fa-solid fa-check me-1"></i>ADD USER
                                 </button>
                             </div>
                             <hr style="margin-top: 60px;">

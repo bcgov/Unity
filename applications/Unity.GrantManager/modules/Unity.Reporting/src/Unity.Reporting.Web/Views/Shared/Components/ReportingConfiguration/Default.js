@@ -882,7 +882,7 @@ $(function () {
 
         // Show loading state
         const originalHtml = $button.html();
-        $button.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Generating...');
+        $button.prop('disabled', true).html('<i class="fa-solid fa-spinner fa-spin"></i> Generating...');
 
         // Call the GenerateColumnNames endpoint
         abp.ajax({
@@ -1190,7 +1190,7 @@ $(function () {
             const $renameAlert = $(`
                 <div class="alert alert-warning mb-3" role="alert">
                     <div class="d-flex align-items-start">
-                        <i class="fa fa-triangle-exclamation me-2 mt-1"></i>
+                        <i class="fa-solid fa-triangle-exclamation me-2 mt-1"></i>
                         <div>
                             <strong>View Rename Detected:</strong>
                             <p class="mb-1">You are changing the view name from "<strong>${originalViewName}</strong>" to "<strong>${rawValue.trim()}</strong>".</p>
@@ -1591,7 +1591,7 @@ $(function () {
             const $renameAlert = $(`
                 <div class="alert alert-warning mb-3" role="alert">
                     <div class="d-flex align-items-start">
-                        <i class="fa fa-triangle-exclamation me-2 mt-1"></i>
+                        <i class="fa-solid fa-triangle-exclamation me-2 mt-1"></i>
                         <div>
                             <strong>View Rename Detected:</strong>
                             <p class="mb-1">You are changing the view name from "<strong>${originalViewName}</strong>" to "<strong>${rawValue.trim()}</strong>".</p>

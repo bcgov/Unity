@@ -75,7 +75,7 @@ $(function () {
 
     const actionButtons = [
         {
-            text: '<i class="fa fa-plus"></i> New Prompt',
+            text: '<i class="fa-solid fa-plus"></i> New Prompt',
             titleAttr: 'New Prompt',
             id: 'CreatePromptButton',
             className: 'btn btn-light rounded-1',
