@@ -129,7 +129,7 @@ $(function () {
                 complete: function() {
                     // Reset button state
                     button.prop('disabled', false);
-                    button.html('<i class="fa fa-eye"></i> Preview');
+                    button.html('<i class="fa-regular fa-eye"></i> Preview');
                 }
             });
         });

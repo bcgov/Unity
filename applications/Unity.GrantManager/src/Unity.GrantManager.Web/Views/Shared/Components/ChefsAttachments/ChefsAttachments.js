@@ -462,7 +462,7 @@ function getChefsFileDownloadColumn() {
                 ' chefs-file-name="' + escapeHtmlAttribute(fileName) + '"' +
                 ' chefs-display-name="' + escapeHtmlAttribute(displayName) + '"' +
                 ' onclick="previewChefsFile(event)">' +
-                '<i class="fa fa-eye p-0"></i><span>Preview Attachment</span>' +
+                '<i class="fa-regular fa-eye p-0"></i><span>Preview Attachment</span>' +
                 '</button>' +
                 '<button class="btn fullWidth" style="margin:10px" type="button"' +
                 ' chefs-submission-id="' + escapeHtmlAttribute(submissionId) + '"' +

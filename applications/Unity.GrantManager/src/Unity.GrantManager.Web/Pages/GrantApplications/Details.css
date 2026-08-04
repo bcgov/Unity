@@ -385,7 +385,7 @@ form label.error {
     font-size: 0.8em;
 }
 
-.input-group-text:has(i.fa-calendar) {
+.input-group-text:has(i.fa-calendar-days) {
     display: none !important;
 }
 

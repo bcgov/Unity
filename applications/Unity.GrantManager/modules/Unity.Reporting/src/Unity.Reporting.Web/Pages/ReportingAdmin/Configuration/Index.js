@@ -83,7 +83,7 @@ $(function () {
                 abp.notify.error('Failed to save view role.');
             })
             .always(function () {
-                button.prop('disabled', false).html('<i class="fa fa-save"></i> Save');
+                button.prop('disabled', false).html('<i class="fa-regular fa-floppy-disk"></i> Save');
             });
     });
 
