@@ -29,7 +29,7 @@
                     {
                         <button type="button" class="btn unt-btn-outline-primary btn-outline-primary ai-generate-btn" id="regenerateAiScoresheetBtn" onclick="queueApplicationScoring()" data-ai-cooldown-checking="1" data-ai-rate-limit-disabled="1" disabled>
                             <span class="ai-button-content">
-                                <i class="unt-icon-sm fa-solid fa-wand-sparkles"></i>
+                                <i class="unt-icon-sm fa-solid fa-wand-magic-sparkles"></i>
                                 <span>Generate</span>
                             </span>
                         </button>
@@ -85,7 +85,7 @@
                                                                     @if (question.AIConfidence.HasValue && question.AIConfidence.Value < 85)
                                                                     {
                                                                         <span class="low-confidence-badge ms-2" title="AI confidence is @question.AIConfidence.Value.ToString("F0")%.">
-                                                                           <i class="fa-solid fa-wand-sparkles"></i> <i class="fas fa-exclamation-triangle"></i> @question.AIConfidence.Value.ToString("F0")%
+                                                                           <i class="fa-solid fa-wand-magic-sparkles"></i> <i class="fas fa-triangle-exclamation"></i> @question.AIConfidence.Value.ToString("F0")%
                                                                         </span>
                                                                     }
                                                                 </button>

@@ -39,7 +39,7 @@
             @if (ViewData["Error"] != null)
             {
                 <div class="alert alert-warning" role="alert">
-                    <i class="fa fa-exclamation-triangle"></i> @ViewData["Error"]
+                    <i class="fa fa-triangle-exclamation"></i> @ViewData["Error"]
                 </div>
             }
             else
@@ -105,7 +105,7 @@
                                                 </div>
                                                 <div class="flex-shrink-1">
                                                     <abp-button onclick='removeApplicationPaymentApproval("@Model.PaymentGroupings[k].Items[i].Id" + "_container", @Model.PaymentGroupings[k].GroupId)'
-                                                                size="Small" icon-type="Other" class="m-0 p-0 remove-single-payment" icon="fa fa-times"
+                                                                size="Small" icon-type="Other" class="m-0 p-0 remove-single-payment" icon="fa fa-xmark"
                                                                 data-parameter="@Model.PaymentGroupings[k].Items[i].CorrelationId" />
                                                 </div>
                                             </abp-column>

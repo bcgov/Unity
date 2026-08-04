@@ -306,7 +306,7 @@ $(function () {
         return (
             '<div class="ai-summary-row">' +
             '<div class="ai-summary-content">' +
-            '<strong><i class="unt-icon-sm fa-solid fa-wand-sparkles"></i> Summary:</strong> ' +
+            '<strong><i class="unt-icon-sm fa-solid fa-wand-magic-sparkles"></i> Summary:</strong> ' +
             '<p class="mt-2">' +
             safeSummary +
             '</p>' +

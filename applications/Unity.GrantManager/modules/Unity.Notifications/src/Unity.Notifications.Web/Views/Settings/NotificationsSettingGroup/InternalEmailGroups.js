@@ -37,7 +37,7 @@ const emailGroupsManager = {
                         const buttonClass = row.isNew ? 'remove-selected-user' : 'remove-user-btn';
                         const dataAttr = row.isNew ? `data-user-id="${row.userId}"` : `data-group-user-id="${row.id}"`;
                         return `<button class="btn btn-sm btn-link text-primary p-0 ${buttonClass}" style="text-decoration: none;" ${dataAttr} title="${title}">
-                            <i class="fa fa-times"></i>
+                            <i class="fa fa-xmark"></i>
                         </button>`;
                     }
                 }

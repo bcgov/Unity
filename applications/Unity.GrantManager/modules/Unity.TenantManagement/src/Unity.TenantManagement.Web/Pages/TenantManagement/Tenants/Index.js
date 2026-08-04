@@ -32,7 +32,7 @@
         if (!items.length) return '';
         return '<div class="text-center"><div class="dropdown d-inline-block">' +
             '<a href="javascript:;" class="btn btn-primary btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">' +
-            '<i class="fa fa-cog"></i> ' + lGm('TenantList:ActionsButton') + '</a>' +
+            '<i class="fa fa-gear"></i> ' + lGm('TenantList:ActionsButton') + '</a>' +
             '<div class="dropdown-menu">' + items.join('') + '</div>' +
             '</div></div>';
     }

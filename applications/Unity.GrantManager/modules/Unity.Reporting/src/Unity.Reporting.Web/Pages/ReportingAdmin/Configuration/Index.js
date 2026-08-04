@@ -153,7 +153,7 @@ $(function () {
             })
             .fail(function () {
                 abp.notify.error('Failed to save view role.');
-                button.prop('disabled', false).html('<i class="fa fa-cogs"></i> Assign to Views');
+                button.prop('disabled', false).html('<i class="fa fa-gears"></i> Assign to Views');
             });
     }
 
@@ -169,7 +169,7 @@ $(function () {
                 abp.notify.error('Failed to queue role assignment jobs.');
             })
             .always(function () {
-                button.prop('disabled', false).html('<i class="fa fa-cogs"></i> Assign to Views');
+                button.prop('disabled', false).html('<i class="fa fa-gears"></i> Assign to Views');
             });
     }
 

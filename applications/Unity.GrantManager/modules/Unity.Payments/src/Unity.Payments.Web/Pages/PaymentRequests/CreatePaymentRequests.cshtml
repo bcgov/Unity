@@ -58,7 +58,7 @@
             @if (ViewData["Error"] != null)
             {
                 <div class="alert alert-warning" role="alert">
-                    <i class="fa fa-exclamation-triangle"></i> @ViewData["Error"]
+                    <i class="fa fa-triangle-exclamation"></i> @ViewData["Error"]
                 </div>
             }
             else
@@ -157,7 +157,7 @@
                                                 size="Small"
                                                 icon-type="Other"
                                                 class="m-0 p-0 remove-single-payment"
-                                                icon="fa fa-times"
+                                                icon="fa fa-xmark"
                                                 data-parameter="@item.CorrelationId" />
                                 </abp-column>
                             </abp-row>

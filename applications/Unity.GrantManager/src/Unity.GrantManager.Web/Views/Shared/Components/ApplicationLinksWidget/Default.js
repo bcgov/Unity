@@ -111,7 +111,7 @@ $(function () {
                     width: '6%',
                     className: 'text-center',
                     render: function (data, type, full, meta) {
-                        return '<button class="btn btn-link p-0 delete-link-btn" data-link-id="' + data + '" title="Delete Link" style="color: #0066cc; text-decoration: none;"><i class="fa fa-times"></i></button>';
+                        return '<button class="btn btn-link p-0 delete-link-btn" data-link-id="' + data + '" title="Delete Link" style="color: #0066cc; text-decoration: none;"><i class="fa fa-xmark"></i></button>';
                     },
                     orderable: false
                 }
@@ -405,7 +405,7 @@ $(function () {
                 } else {
                     const summaryHtml = `
                         <div id="validationSummaryContainer" class="validation-summary alert alert-danger" role="alert">
-                            <i class="fa fa-exclamation-triangle validation-summary-icon"></i>
+                            <i class="fa fa-triangle-exclamation validation-summary-icon"></i>
                             <strong>Validation Error:</strong> <span id="validationErrorCount">${errorCount}</span> link(s) cannot be saved. 
                             Please remove the highlighted links.
                         </div>
@@ -471,7 +471,7 @@ $(function () {
                     </div>
                     <span class="link-type-badge ${linkTypeClass}">${displayData.linkType}</span>
                     <button type="button" class="link-delete-btn" data-index="${index}" title="Delete Link">
-                        <i class="fa fa-times"></i>
+                        <i class="fa fa-xmark"></i>
                     </button>
                     ${validationErrorHtml}
                 </div>
@@ -479,7 +479,7 @@ $(function () {
         },
 
         buildErrorIcon: function() {
-            return '<span class="link-error-icon ms-2" title="Failed to load complete details. The link will still be created with available information."><i class="fa fa-exclamation-triangle"></i></span>';
+            return '<span class="link-error-icon ms-2" title="Failed to load complete details. The link will still be created with available information."><i class="fa fa-triangle-exclamation"></i></span>';
         },
 
         prepareDisplayData: function(link) {
@@ -511,7 +511,7 @@ $(function () {
             
             return `
                 <div class="validation-error-message">
-                    <i class="fa fa-exclamation-circle validation-error-icon"></i>
+                    <i class="fa fa-circle-exclamation validation-error-icon"></i>
                     ${escapeHtml(link.validationErrorMessage)}
                 </div>
             `;

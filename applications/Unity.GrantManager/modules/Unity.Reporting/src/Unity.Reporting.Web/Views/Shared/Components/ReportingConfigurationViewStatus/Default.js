@@ -150,7 +150,7 @@ $(function () {
             tableHtml += `
                 <div class="mb-3">
                     <div class="alert alert-info">
-                        <strong><i class="fa fa-info-circle"></i> Preview Mode:</strong> 
+                        <strong><i class="fa fa-circle-info"></i> Preview Mode:</strong> 
                         Showing sample data from the first application ID found in the view (${response.totalCount} record${response.totalCount !== 1 ? 's' : ''} from this application).
                     </div>
                 </div>
@@ -185,7 +185,7 @@ $(function () {
             
             tableHtml += '</tbody></table>';
         } else {
-            tableHtml += '<div class="alert alert-warning"><i class="fa fa-exclamation-triangle"></i> No preview data available. The view may be empty or the first application may not have data.</div>';
+            tableHtml += '<div class="alert alert-warning"><i class="fa fa-triangle-exclamation"></i> No preview data available. The view may be empty or the first application may not have data.</div>';
         }
         
         tableHtml += '</div>';

@@ -516,7 +516,7 @@ const UnityJsonEditor = (function ($) {
          * @param {string} message
          */
         _showStatus: function (type, message, secondLine) {
-            const iconMap = { success: 'fa-check-circle', error: 'fa-times-circle', warning: 'fa-exclamation-circle' };
+            const iconMap = { success: 'fa-circle-check', error: 'fa-circle-xmark', warning: 'fa-circle-exclamation' };
             const colorMap = { success: 'text-success', error: 'text-danger', warning: 'text-warning' };
             const icon = iconMap[type] || iconMap.warning;
             const colorClass = colorMap[type] || colorMap.warning;
