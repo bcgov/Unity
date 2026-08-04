@@ -41,6 +41,10 @@ Because the file is optional, its absence is not an error — omit it entirely i
 
 ## Running the Migrator
 
+The DbMigrator enables EF Core command logging by default so the migration plan,
+SQL command execution, and final migration state are visible in container logs.
+Sensitive data logging is not supported by the DbMigrator.
+
 Once you've configured your connection strings via `appsettings.secrets.json` (or environment variables), you can run the migrator:
 
 ```bash

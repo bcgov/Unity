@@ -4,6 +4,7 @@ WORKDIR /app
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 COPY ["NuGet.Config", "."]
+COPY ["common.props", "."]
 COPY ["src/Unity.GrantManager.DbMigrator/Unity.GrantManager.DbMigrator.csproj", "src/Unity.GrantManager.DbMigrator/"]
 COPY ["src/Unity.GrantManager.Application.Contracts/Unity.GrantManager.Application.Contracts.csproj", "src/Unity.GrantManager.Application.Contracts/"]
 COPY ["src/Unity.GrantManager.Domain.Shared/Unity.GrantManager.Domain.Shared.csproj", "src/Unity.GrantManager.Domain.Shared/"]
