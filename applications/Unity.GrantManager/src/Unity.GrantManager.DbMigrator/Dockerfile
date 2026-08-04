@@ -6,7 +6,7 @@ WORKDIR /src
 COPY . .
 RUN dotnet restore "src/Unity.GrantManager.DbMigrator/Unity.GrantManager.DbMigrator.csproj"
 WORKDIR "/src/src/Unity.GrantManager.DbMigrator"
-RUN dotnet build "Unity.GrantManager.DbMigrator.csproj" -c Release -o /app/build
+RUN dotnet build "Unity.GrantManager.DbMigrator.csproj" -c Release -o /app/build --no-restore
 
 FROM build AS publish
 RUN dotnet publish "Unity.GrantManager.DbMigrator.csproj" -c Release -o /app/publish /p:UseAppHost=false
