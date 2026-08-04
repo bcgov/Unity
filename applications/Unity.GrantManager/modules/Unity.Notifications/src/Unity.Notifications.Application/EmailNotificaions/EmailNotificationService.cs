@@ -259,11 +259,16 @@ public class EmailNotificationService(
         // Load template from embedded resources or file system
         string templateContent = await LoadEmailTemplateAsync("CommentNotification");
 
+        // HTML-encode user-controlled values to prevent HTML/script injection in the rendered email
+        var encodedCurrentUserText = WebUtility.HtmlEncode(currentUserText);
+        var encodedCommentBody = WebUtility.HtmlEncode(commentBody);
+        var encodedCommentLink = WebUtility.HtmlEncode(commentLink);
+
         // Replace placeholders with actual values
         var renderedTemplate = templateContent
-            .Replace("@Model.CurrentUserText", currentUserText)
-            .Replace("@Html.Raw(Model.CommentBody)", commentBody)
-            .Replace("@Model.CommentLink", commentLink);
+            .Replace("@Model.CurrentUserText", encodedCurrentUserText)
+            .Replace("@Html.Raw(Model.CommentBody)", encodedCommentBody)
+            .Replace("@Model.CommentLink", encodedCommentLink);
 
         return renderedTemplate;
     }
