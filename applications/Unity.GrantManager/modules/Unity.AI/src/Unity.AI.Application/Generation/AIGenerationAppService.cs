@@ -7,9 +7,6 @@ using Unity.AI.Localization;
 using Unity.AI.Operations;
 using Unity.AI.Permissions;
 using Unity.AI.Settings;
-using Unity.GrantManager.Attachments;
-using Unity.GrantManager.GrantApplications;
-using Unity.GrantManager.GrantApplications.Automation;
 using Volo.Abp.MultiTenancy;
 using Volo.Abp;
 using Volo.Abp.Features;
@@ -19,7 +16,7 @@ namespace Unity.AI.Generation;
 [Route("api/app/ai/generation")]
 public class AIGenerationAppService(
     IApplicationGenerationQueue aiGenerationQueue,
-    IAIGenerationStatusAppService aiGenerationStatusAppService,
+    IAIGenerationStatusReader aiGenerationStatusReader,
     AIFeatureGuard featureGuard,
     ICurrentTenant currentTenant)
     : AIAppService, IAIGenerationAppService
@@ -105,7 +102,7 @@ public class AIGenerationAppService(
     {
         await EnsureStatusAccessAsync(operationType);
 
-        var request = await aiGenerationStatusAppService.GetLatestAsync(applicationId, operationType, currentTenant.Id);
+        var request = await aiGenerationStatusReader.GetLatestAsync(applicationId, operationType, currentTenant.Id);
         if (request == null)
         {
             return new AIGenerationStatusDto();
@@ -141,12 +138,12 @@ public class AIGenerationAppService(
     {
         var permission = operationType switch
         {
-            AIGenerationRequestKeyHelper.ApplicationAnalysisOperationType => AIPermissions.Analysis.ViewApplicationAnalysis,
-            AIGenerationRequestKeyHelper.AttachmentSummaryOperationType => AIPermissions.Analysis.ViewAttachmentSummary,
-            AIGenerationRequestKeyHelper.ApplicationScoringOperationType => AIPermissions.Analysis.ViewScoringResult,
-            AIGenerationRequestKeyHelper.FormMappingOperationType => AIPermissions.Analysis.ViewFormMapping,
-            AIGenerationRequestKeyHelper.FormWorksheetOperationType => AIPermissions.Analysis.ViewFormWorksheet,
-            AIGenerationRequestKeyHelper.FormScoresheetOperationType => AIPermissions.Analysis.ViewFormScoresheet,
+            AIGenerationOperationKeyHelper.ApplicationAnalysisOperationType => AIPermissions.Analysis.ViewApplicationAnalysis,
+            AIGenerationOperationKeyHelper.AttachmentSummaryOperationType => AIPermissions.Analysis.ViewAttachmentSummary,
+            AIGenerationOperationKeyHelper.ApplicationScoringOperationType => AIPermissions.Analysis.ViewScoringResult,
+            AIGenerationOperationKeyHelper.FormMappingOperationType => AIPermissions.Analysis.ViewFormMapping,
+            AIGenerationOperationKeyHelper.FormWorksheetOperationType => AIPermissions.Analysis.ViewFormWorksheet,
+            AIGenerationOperationKeyHelper.FormScoresheetOperationType => AIPermissions.Analysis.ViewFormScoresheet,
             _ => throw new UserFriendlyException($"Unsupported AI generation operation type: {operationType}")
         };
 
