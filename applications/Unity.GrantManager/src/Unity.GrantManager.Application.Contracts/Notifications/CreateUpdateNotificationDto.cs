@@ -14,6 +14,8 @@ namespace Unity.GrantManager.Notifications
         [Required]
         public string TriggerType { get; set; } = "Event";
 
+        public string? Module { get; set; }
+
         public string? TriggerDetail { get; set; }
         public bool IsActive { get; set; } = true;
 

@@ -85,6 +85,15 @@
                                 </div>
                                 <div id="eventOptions" class="hidden-section">
                                     <div class="mb-3">
+                                        <label for="moduleSelect" class="form-label">Module</label>
+                                        <select id="moduleSelect" class="form-select" required>
+                                            <option value=""></option>
+                                            <option value="Application">Application</option>
+                                            <option value="Payment">Payment</option>
+                                        </select>
+                                        <div class="invalid-feedback">Please select a module.</div>
+                                    </div>
+                                    <div class="mb-3">
                                         <label for="statusSelect" class="form-label">Application Status Trigger</label>
                                         <select id="statusSelect" class="form-select" required></select>
                                         <div class="invalid-feedback">Please select an application status.</div>

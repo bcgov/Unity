@@ -8,8 +8,18 @@
 .notifications-widget .card { border: 0; }
 .notifications-widget .card .card-body { background: #fff; }
 
-/* Select2 Bootstrap 5 Theme - Use default styling */
-/* Let Select2's Bootstrap 5 theme handle the layout naturally */
+/* Keep every notification form control aligned to the left column. */
+#notificationForm .left-col .form-select,
+#notificationForm .left-col .form-control,
+#notificationForm .left-col .select2,
+#notificationForm .left-col .select2-container {
+    display: block;
+    width: 100% !important;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+/* Select2 Bootstrap 5 theme */
 .select2-container--bootstrap-5 .select2-selection--multiple {
     min-height: 38px;
     height: auto;
@@ -54,11 +64,13 @@
     display: flex;
     flex: 1 1 auto;
     min-height: 0;
+    min-width: 0;
 }
 
 .left-col { 
-    flex: 0 0 33%; 
+    flex: 0 1 33%;
     min-width: 320px;
+    max-width: 100%;
     overflow-y: auto;
 }
 
@@ -80,7 +92,8 @@
 .notification-modal-content {
     display: flex;
     flex-direction: column;
-    min-width: 900px;
+    width: min(100%, 1200px);
+    min-width: min(900px, 100%);
     min-height: 480px;
     max-height: 85vh;
 }
@@ -94,6 +107,27 @@
 
 .notification-modal-footer {
     flex-shrink: 0;
+}
+
+@media (max-width: 991.98px) {
+    #modalColumns {
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+
+    .left-col {
+        flex: 0 1 auto;
+        min-width: 0;
+    }
+
+    .right-col {
+        min-height: 220px;
+    }
+
+    .notification-modal-content {
+        min-width: 0;
+        width: 100%;
+    }
 }
 
 /* Notification info note styling */

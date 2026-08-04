@@ -19,6 +19,7 @@ namespace Unity.GrantManager.Notifications
                 FormId = input.FormId,
                 EmailTemplateId = input.EmailTemplateId,
                 TriggerType = input.TriggerType,
+                Module = input.Module,
                 TriggerDetail = input.TriggerDetail,
                 IsActive = input.IsActive,
                 EventType = input.EventType,
@@ -38,6 +39,7 @@ namespace Unity.GrantManager.Notifications
                 EmailTemplateId = entity.EmailTemplateId,
                 TemplateName = null,
                 TriggerType = entity.TriggerType,
+                Module = entity.Module,
                 TriggerDetail = entity.TriggerDetail,
                 IsActive = entity.IsActive,
                 EventType = entity.EventType,
@@ -69,6 +71,7 @@ namespace Unity.GrantManager.Notifications
                 EmailTemplateId = e.EmailTemplateId,
                 TemplateName = null,
                 TriggerType = e.TriggerType,
+                Module = e.Module,
                 TriggerDetail = e.TriggerDetail,
                 IsActive = e.IsActive,
                 EventType = e.EventType,
@@ -104,6 +107,7 @@ namespace Unity.GrantManager.Notifications
                 EmailTemplateId = e.EmailTemplateId,
                 TemplateName = null,
                 TriggerType = e.TriggerType,
+                Module = e.Module,
                 TriggerDetail = e.TriggerDetail,
                 IsActive = e.IsActive,
                 EventType = e.EventType,
@@ -122,6 +126,7 @@ namespace Unity.GrantManager.Notifications
             var e = await _repository.GetAsync(id);
             e.EmailTemplateId = input.EmailTemplateId;
             e.TriggerType = input.TriggerType;
+            e.Module = input.Module;
             e.TriggerDetail = input.TriggerDetail;
             e.IsActive = input.IsActive;
             e.EventType = input.EventType;
@@ -140,6 +145,7 @@ namespace Unity.GrantManager.Notifications
                 EmailTemplateId = e.EmailTemplateId,
                 TemplateName = null,
                 TriggerType = e.TriggerType,
+                Module = e.Module,
                 TriggerDetail = e.TriggerDetail,
                 IsActive = e.IsActive,
                 EventType = e.EventType,
