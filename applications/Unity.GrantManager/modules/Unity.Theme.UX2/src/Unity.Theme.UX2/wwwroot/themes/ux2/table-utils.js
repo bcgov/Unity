@@ -353,9 +353,24 @@ function initializeDataTable(options) {
             }
         },
         stateLoadParams: function (settings, data) {
-            // Discard stale state when column count has changed so defaultVisibleColumns applies cleanly
+            // Remap saved column state onto the live column list by name, rather than
+            // discarding the whole saved state, so that state (including named "Saved
+            // Views") saved before columns were added/removed/reordered can still be
+            // loaded. Columns that didn't exist when the state was saved fall back to
+            // the table's configured default visibility (defaultVisibleColumns).
             if (data?.columns && data.columns.length !== settings.aoColumns.length) {
-                return false;
+                const savedColumnsByName = new Map(
+                    data.columns.map(function (col) { return [col.name, col]; })
+                );
+                data.columns = settings.aoColumns.map(function (col) {
+                    const saved = savedColumnsByName.get(col.sName);
+                    if (saved) return saved;
+                    return {
+                        name: col.sName,
+                        visible: col.bVisible,
+                        search: { search: '', smart: true, regex: false, caseInsensitive: true, return: false }
+                    };
+                });
             }
 
             if (data?.externalSearch) {
