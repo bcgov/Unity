@@ -33,6 +33,9 @@ public partial class RebuildAIModelsAndRemovePromptLink : Migration
             ALTER TABLE "AI"."AIModels"
                 RENAME TO "AIModels_Legacy";
 
+            ALTER TABLE "AI"."AIModels_Legacy"
+                RENAME CONSTRAINT "PK_AIModels" TO "PK_AIModels_Legacy";
+
             CREATE TABLE "AI"."AIModels"
             (
                 "Id" uuid NOT NULL,
@@ -110,6 +113,9 @@ public partial class RebuildAIModelsAndRemovePromptLink : Migration
 
             ALTER TABLE "AI"."AIModels"
                 RENAME TO "AIModels_Current";
+
+            ALTER TABLE "AI"."AIModels_Current"
+                RENAME CONSTRAINT "PK_AIModels" TO "PK_AIModels_Current";
 
             CREATE TABLE "AI"."AIModels"
             (
