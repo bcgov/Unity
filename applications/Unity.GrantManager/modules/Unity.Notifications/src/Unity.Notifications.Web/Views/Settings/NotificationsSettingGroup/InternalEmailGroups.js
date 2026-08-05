@@ -63,9 +63,14 @@ const emailGroupsManager = {
             };
         },
 
-        // Escape untrusted values before injecting into HTML strings/attributes
+        // Escape untrusted values for safe insertion into HTML text and attribute contexts
         escapeHtml: function(value) {
-            return $('<div>').text(value ?? '').html();
+            return String(value ?? '')
+                .replaceAll('&', '&amp;')
+                .replaceAll('<', '&lt;')
+                .replaceAll('>', '&gt;')
+                .replaceAll("\"", '&quot;')
+                .replaceAll('\'', '&#39;');
         },
 
         // Generate dropdown item HTML for users
