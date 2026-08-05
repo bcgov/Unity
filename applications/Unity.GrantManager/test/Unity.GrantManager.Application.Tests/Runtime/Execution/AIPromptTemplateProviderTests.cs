@@ -1,6 +1,7 @@
 using NSubstitute;
 using Shouldly;
 using System;
+using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
 using Unity.AI.Domain;
@@ -76,15 +77,20 @@ public class AIPromptTemplateProviderTests
         var multiTenantDataFilter = Substitute.For<IDataFilter<IMultiTenant>>();
         multiTenantDataFilter.Disable().Returns(Substitute.For<IDisposable>());
 
-        promptRepository.FindAsync(Arg.Any<Expression<Func<AIPrompt, bool>>>())
+        promptRepository.GetListAsync(Arg.Any<Expression<Func<AIPrompt, bool>>>())
             .Returns(callInfo =>
             {
                 var predicate = callInfo.Arg<Expression<Func<AIPrompt, bool>>>();
                 ArgumentNullException.ThrowIfNull(predicate);
-                return Task.FromResult(prompt != null && predicate.Compile()(prompt) ? prompt : null);
+                return Task.FromResult(prompt != null && predicate.Compile()(prompt)
+                    ? new List<AIPrompt> { prompt }
+                    : new List<AIPrompt>());
             });
 
-        var store = new AIPromptTemplateStore(promptRepository, multiTenantDataFilter);
+        var store = new AIPromptTemplateStore(
+            promptRepository,
+            multiTenantDataFilter,
+            Substitute.For<ICurrentTenant>());
         return new AIPromptTemplateProvider(store);
     }
 }

@@ -45,13 +45,15 @@ public class OpenAIRuntimeServiceTests
         var configuration = new Microsoft.Extensions.Configuration.ConfigurationBuilder().Build();
         var multiTenantDataFilter = Substitute.For<IDataFilter<IMultiTenant>>();
         multiTenantDataFilter.Disable().Returns(Substitute.For<IDisposable>());
+        var currentTenant = Substitute.For<ICurrentTenant>();
         return new OpenAIConfigurationResolver(
             modelRepository,
             operationRepository,
             promptRepository,
             Substitute.For<Microsoft.Extensions.Caching.Memory.IMemoryCache>(),
             configuration,
-            multiTenantDataFilter);
+            multiTenantDataFilter,
+            currentTenant);
     }
 
 }

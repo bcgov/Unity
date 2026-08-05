@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Unity.AI.Domain;
@@ -11,7 +12,8 @@ namespace Unity.AI.Runtime.Execution;
 
 public class AIPromptTemplateStore(
     IRepository<AIPrompt, Guid> promptRepository,
-    IDataFilter<IMultiTenant> multiTenantDataFilter) : IAIPromptTemplateStore, ITransientDependency
+    IDataFilter<IMultiTenant> multiTenantDataFilter,
+    ICurrentTenant currentTenant) : IAIPromptTemplateStore, ITransientDependency
 {
     public async Task<AIPromptTemplateSnapshot> GetRequiredPromptAsync(
         string promptType,
@@ -23,9 +25,13 @@ public class AIPromptTemplateStore(
 
         using (multiTenantDataFilter.Disable())
         {
-            var prompt = await promptRepository.FindAsync(p =>
-                p.TenantId == null && p.Name == promptType && p.VersionNumber == versionNumber,
+            var prompts = await promptRepository.GetListAsync(
+                p => p.Name == promptType && p.VersionNumber == versionNumber && p.IsActive,
                 cancellationToken: cancellationToken);
+            var prompt = currentTenant.Id is Guid tenantId
+                ? prompts.FirstOrDefault(p => p.TenantId == tenantId)
+                : null;
+            prompt ??= prompts.FirstOrDefault(p => p.TenantId == null);
             if (prompt == null || !prompt.IsActive)
             {
                 throw new InvalidOperationException(

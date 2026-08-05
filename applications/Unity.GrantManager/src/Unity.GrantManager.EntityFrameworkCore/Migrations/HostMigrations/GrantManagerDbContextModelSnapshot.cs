@@ -528,9 +528,6 @@ namespace Unity.GrantManager.Migrations.HostMigrations
                     b.Property<Guid>("AIModelId")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid>("AIPromptId")
-                        .HasColumnType("uuid");
-
                     b.Property<int>("CompletionTokens")
                         .HasColumnType("integer");
 
@@ -578,8 +575,6 @@ namespace Unity.GrantManager.Migrations.HostMigrations
                     b.HasKey("Id");
 
                     b.HasIndex("AIModelId");
-
-                    b.HasIndex("AIPromptId");
 
                     b.HasIndex("Name")
                         .IsUnique();
@@ -3232,15 +3227,7 @@ namespace Unity.GrantManager.Migrations.HostMigrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("Unity.AI.Domain.AIPrompt", "AIPrompt")
-                        .WithMany()
-                        .HasForeignKey("AIPromptId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
                     b.Navigation("AIModel");
-
-                    b.Navigation("AIPrompt");
                 });
 
             modelBuilder.Entity("Unity.GrantManager.GrantApplications.AIGenerationRequest", b =>

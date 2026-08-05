@@ -94,10 +94,6 @@ public static class AIDbContextModelCreatingExtensions
                 .HasForeignKey(x => x.AIModelId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            b.HasOne(x => x.AIPrompt)
-                .WithMany()
-                .HasForeignKey(x => x.AIPromptId)
-                .OnDelete(DeleteBehavior.Restrict);
         });
     }
 }
