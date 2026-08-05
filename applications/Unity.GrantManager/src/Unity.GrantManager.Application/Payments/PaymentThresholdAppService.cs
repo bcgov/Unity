@@ -23,6 +23,9 @@ public class PaymentThresholdAppService :
     public PaymentThresholdAppService(IRepository<PaymentThreshold, Guid> repository)
         : base(repository)
     {
+        CreatePolicyName = UnitySettingManagementPermissions.ConfigurePayments;
+        UpdatePolicyName = UnitySettingManagementPermissions.ConfigurePayments;
+        DeletePolicyName = UnitySettingManagementPermissions.ConfigurePayments;
     }
 
     // Listing goes through PaymentSettingsAppService.GetL2ApproversThresholds

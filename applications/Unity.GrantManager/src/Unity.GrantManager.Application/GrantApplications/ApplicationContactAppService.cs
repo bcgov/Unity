@@ -36,6 +36,7 @@ public class ApplicationContactAppService : CrudAppService<
     [RemoteService(false)]
     public override Task<PagedResultDto<ApplicationContactDto>> GetListAsync(PagedAndSortedResultRequestDto input) => base.GetListAsync(input);
 
+    [Authorize(GrantApplicationPermissions.ApplicantInfo.Read)]
     public async Task<List<ApplicationContactDto>> GetListByApplicationAsync(Guid applicationId)
     {
         var contacts = await _applicationContactRepository.GetListAsync(c => c.ApplicationId == applicationId);
