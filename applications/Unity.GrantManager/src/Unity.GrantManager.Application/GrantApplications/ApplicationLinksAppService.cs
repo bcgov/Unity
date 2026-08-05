@@ -7,6 +7,9 @@ using System.Linq;
 using System.Threading.Tasks;
 using Unity.GrantManager.ApplicationForms;
 using Unity.GrantManager.Applications;
+using Unity.GrantManager.Permissions;
+using Volo.Abp;
+using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Repositories;
@@ -15,10 +18,10 @@ namespace Unity.GrantManager.GrantApplications;
 
 [Authorize]
 [ExposeServices(typeof(ApplicationLinksAppService), typeof(IApplicationLinksService))]
-public class ApplicationLinksAppService(IRepository<ApplicationLink, Guid> repository) : CrudAppService<
+public class ApplicationLinksAppService : CrudAppService<
         ApplicationLink,
         ApplicationLinksDto,
-        Guid>(repository), IApplicationLinksService
+        Guid>, IApplicationLinksService
 {
     // Validation Error Messages
     private const string ERROR_MULTIPLE_PARENTS = "Error: A submission can not have two parents. Please revise the link type.";
@@ -33,6 +36,23 @@ public class ApplicationLinksAppService(IRepository<ApplicationLink, Guid> repos
     public IApplicantRepository ApplicantRepository { get; set; } = null!;
     public IApplicationFormAppService ApplicationFormAppService { get; set; } = null!;
     public IRepository<ApplicationStatus, Guid> ApplicationStatusRepository { get; set; } = null!;
+
+    public ApplicationLinksAppService(IRepository<ApplicationLink, Guid> repository)
+        : base(repository)
+    {
+        CreatePolicyName = GrantApplicationPermissions.Applications.Default;
+        DeletePolicyName = GrantApplicationPermissions.Applications.Default;
+    }
+
+    // Custom GetListByApplicationAsync/UpdateLinkTypeAsync are used instead
+    [RemoteService(false)]
+    public override Task<ApplicationLinksDto> GetAsync(Guid id) => base.GetAsync(id);
+
+    [RemoteService(false)]
+    public override Task<PagedResultDto<ApplicationLinksDto>> GetListAsync(PagedAndSortedResultRequestDto input) => base.GetListAsync(input);
+
+    [RemoteService(false)]
+    public override Task<ApplicationLinksDto> UpdateAsync(Guid id, ApplicationLinksDto input) => base.UpdateAsync(id, input);
 
     public async Task<List<ApplicationLinksInfoDto>> GetListByApplicationAsync(Guid applicationId)
     {

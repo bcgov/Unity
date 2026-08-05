@@ -132,6 +132,8 @@ public class AIPromptAppService :
         }
     }
 
+    // Not used by any client; keep the entity soft-managed via IsActive rather than exposing hard delete.
+    [RemoteService(false)]
     [HttpDelete("{id}")]
     public override async Task DeleteAsync(Guid id)
     {

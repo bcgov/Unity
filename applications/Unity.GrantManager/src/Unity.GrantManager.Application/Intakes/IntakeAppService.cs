@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using System;
+using System.Threading.Tasks;
 using Unity.GrantManager.Permissions;
+using Volo.Abp;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
 using Volo.Abp.Domain.Repositories;
@@ -21,5 +23,8 @@ namespace Unity.GrantManager.Intakes
             : base(repository)
         {
         }
+
+        [RemoteService(false)]
+        public override Task DeleteAsync(Guid id) => base.DeleteAsync(id);
     }
 }

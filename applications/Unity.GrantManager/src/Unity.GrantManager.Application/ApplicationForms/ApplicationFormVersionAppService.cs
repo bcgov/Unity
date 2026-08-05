@@ -1,35 +1,34 @@
-﻿using Microsoft.Extensions.Logging;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
 using System;
-using System.Linq;
-using System.Text.RegularExpressions;
-using System.Text.Json;
 using System.Collections.Generic;
+using System.Linq;
+using System.Text.Json;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using Unity.GrantManager.Applications;
 using Unity.AI.Cooldown;
 using Unity.AI.Features;
-using Unity.AI.Permissions;
 using Unity.AI.Operations;
+using Unity.AI.Permissions;
 using Unity.AI.Requests;
-using Unity.AI.Responses;
-using Unity.AI.Runtime;
+using Unity.Flex.Domain.Worksheets;
+using Unity.GrantManager.ApplicationForms.Mapping;
+using Unity.GrantManager.Applications;
 using Unity.GrantManager.Forms;
 using Unity.GrantManager.Intakes;
+using Unity.GrantManager.Intakes.Mapping;
 using Unity.GrantManager.Integrations.Chefs;
-using Unity.GrantManager.ApplicationForms.Mapping;
+using Unity.GrantManager.Permissions;
 using Unity.GrantManager.Reporting.FieldGenerators;
 using Unity.Modules.Shared.Features;
+using Volo.Abp;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
 using Volo.Abp.Domain.Entities;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Features;
-using Volo.Abp;
 using Volo.Abp.Uow;
-using Unity.GrantManager.Intakes.Mapping;
-using Unity.Flex.Domain.Worksheets;
 
 namespace Unity.GrantManager.ApplicationForms
 {
@@ -62,11 +61,27 @@ namespace Unity.GrantManager.ApplicationForms
         public override async Task<ApplicationFormVersionDto> CreateAsync(CreateUpdateApplicationFormVersionDto input) =>
             await base.CreateAsync(input);
 
+        // No caller uses this endpoint; disable it to reduce surface area.
+        [RemoteService(false)]
         public override async Task<ApplicationFormVersionDto> UpdateAsync(Guid id, CreateUpdateApplicationFormVersionDto input) =>
             await base.UpdateAsync(id, input);
 
         public override async Task<ApplicationFormVersionDto> GetAsync(Guid id) =>
             await base.GetAsync(id);
+
+        // No caller uses these endpoints; disable them to reduce surface area.
+        [RemoteService(false)]
+        public override Task<PagedResultDto<ApplicationFormVersionDto>> GetListAsync(PagedAndSortedResultRequestDto input) =>
+            base.GetListAsync(input);
+
+        [RemoteService(false)]
+        public override Task DeleteAsync(Guid id) => base.DeleteAsync(id);
+
+        protected override Task CheckGetPolicyAsync()
+            => CheckPolicyAsync(GrantManagerPermissions.ApplicationForms.Default);
+
+        protected override Task CheckCreatePolicyAsync()
+            => CheckPolicyAsync(GrantManagerPermissions.ApplicationForms.Default);
 
         public async Task<bool> InitializePublishedFormVersion(dynamic chefsForm, Guid applicationFormId, bool initializePublishedOnly)
         {

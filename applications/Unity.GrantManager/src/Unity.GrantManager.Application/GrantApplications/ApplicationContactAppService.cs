@@ -4,6 +4,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
+using Unity.GrantManager.Permissions;
+using Volo.Abp;
+using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Repositories;
@@ -23,8 +26,16 @@ public class ApplicationContactAppService : CrudAppService<
         IApplicationContactRepository applicationContactRepository) : base(repository)
     {
         _applicationContactRepository = applicationContactRepository;
+        GetPolicyName = GrantApplicationPermissions.ApplicantInfo.Read;
+        CreatePolicyName = GrantApplicationPermissions.ApplicantInfo.AddAdditionalContact;
+        UpdatePolicyName = GrantApplicationPermissions.ApplicantInfo.UpdateAdditionalContact;
+        DeletePolicyName = GrantApplicationPermissions.ApplicantInfo.DeleteAdditionalContact;
     }
-    
+
+    // The widget lists contacts via GetListByApplicationAsync
+    [RemoteService(false)]
+    public override Task<PagedResultDto<ApplicationContactDto>> GetListAsync(PagedAndSortedResultRequestDto input) => base.GetListAsync(input);
+
     public async Task<List<ApplicationContactDto>> GetListByApplicationAsync(Guid applicationId)
     {
         var contacts = await _applicationContactRepository.GetListAsync(c => c.ApplicationId == applicationId);

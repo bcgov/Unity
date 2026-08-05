@@ -9,8 +9,8 @@ using Unity.GrantManager.Forms;
 using Unity.GrantManager.GrantApplications;
 using Unity.GrantManager.Integrations.Chefs;
 using Unity.GrantManager.Permissions;
-using Unity.Payments.Permissions;
 using Unity.Payments.Enums;
+using Unity.Payments.Permissions;
 using Volo.Abp;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
@@ -52,7 +52,12 @@ public class ApplicationFormAppService
         _applicationService = applicationService;
         _applicationFormSubmissionRepository = applicationFormSubmissionRepository;
         _formsApiService = formsApiService;
+        GetListPolicyName = GrantManagerPermissions.ApplicationForms.Default;
     }
+
+    // No caller uses this endpoint; disable it to reduce surface area.
+    [RemoteService(false)]
+    public override Task DeleteAsync(Guid id) => base.DeleteAsync(id);
 
     [Authorize(GrantManagerPermissions.ApplicationForms.Default)]
     public override async Task<ApplicationFormDto> CreateAsync(CreateUpdateApplicationFormDto input)

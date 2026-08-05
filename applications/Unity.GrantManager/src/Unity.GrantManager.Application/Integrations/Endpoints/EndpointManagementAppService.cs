@@ -1,9 +1,10 @@
-﻿using System;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.Extensions.Caching.Distributed;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.Extensions.Caching.Distributed;
+using Unity.GrantManager.Permissions;
 using Volo.Abp;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
@@ -12,19 +13,31 @@ using Volo.Abp.Uow;
 
 namespace Unity.GrantManager.Integrations.Endpoints
 {
-    public class EndpointManagementAppService(
-        IRepository<DynamicUrl, Guid> repository,
-        IDistributedCache cache) :
+    public class EndpointManagementAppService :
         CrudAppService<
             DynamicUrl,
             DynamicUrlDto,
             Guid,
             PagedAndSortedResultRequestDto,
-            CreateUpdateDynamicUrlDto>(repository),
+            CreateUpdateDynamicUrlDto>,
         IEndpointManagementAppService
     {
-        private readonly IDistributedCache _cache = cache;
+        private readonly IDistributedCache _cache;
         private const string CACHE_KEY_SET_PREFIX = "DynamicUrl:KeySet";
+
+        public EndpointManagementAppService(IRepository<DynamicUrl, Guid> repository, IDistributedCache cache)
+            : base(repository)
+        {
+            _cache = cache;
+            GetPolicyName = GrantManagerPermissions.Endpoints.Default;
+            GetListPolicyName = GrantManagerPermissions.Endpoints.Default;
+            CreatePolicyName = GrantManagerPermissions.Endpoints.ManageEndpoints;
+            UpdatePolicyName = GrantManagerPermissions.Endpoints.ManageEndpoints;
+        }
+
+        // No caller uses this endpoint; disable it to reduce surface area.
+        [RemoteService(false)]
+        public override Task DeleteAsync(Guid id) => base.DeleteAsync(id);
 
         private static string BuildCacheKey(string keyName, bool tenantSpecific, Guid? tenantId)
             => $"DynamicUrl:{tenantSpecific}:{tenantId ?? Guid.Empty}:{keyName}";
