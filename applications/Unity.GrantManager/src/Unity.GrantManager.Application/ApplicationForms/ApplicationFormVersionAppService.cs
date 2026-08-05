@@ -9,9 +9,11 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Unity.AI.Cooldown;
 using Unity.AI.Features;
+using Unity.AI.Generation;
 using Unity.AI.Operations;
 using Unity.AI.Permissions;
 using Unity.AI.Requests;
+using Unity.AI.Runtime.Execution;
 using Unity.Flex.Domain.Worksheets;
 using Unity.GrantManager.ApplicationForms.Mapping;
 using Unity.GrantManager.Applications;
@@ -40,9 +42,7 @@ namespace Unity.GrantManager.ApplicationForms
         IApplicationFormSubmissionRepository formSubmissionRepository,
         IReportingFieldsGeneratorService reportingFieldsGeneratorService,
         IFeatureChecker featureChecker,
-        IApplicationFormVersionMappingReadService mappingReadService,
-        IAICooldownService aiCooldownService,
-        IFormMappingService aiService,
+        IAIGenerationAppService aiGenerationAppService,
         IWorksheetRepository worksheetRepository,
         IRepository<CustomField, Guid> customFieldRepository) :
         CrudAppService<
@@ -53,9 +53,7 @@ namespace Unity.GrantManager.ApplicationForms
             CreateUpdateApplicationFormVersionDto>(repository),
         IApplicationFormVersionAppService
     {
-        private readonly IApplicationFormVersionMappingReadService _mappingReadService = mappingReadService;
-        private readonly IAICooldownService _aiCooldownService = aiCooldownService;
-        private readonly IFormMappingService _aiService = aiService;
+        private readonly IAIGenerationAppService _aiGenerationAppService = aiGenerationAppService;
 
         public override async Task<ApplicationFormVersionDto> CreateAsync(CreateUpdateApplicationFormVersionDto input) =>
             await base.CreateAsync(input);
@@ -335,25 +333,19 @@ namespace Unity.GrantManager.ApplicationForms
             await formVersionRepository.UpdateAsync(applicationFormVersion);
         }
 
+        /// <summary>
+        /// Queues form mapping generation and returns before the mapping is persisted.
+        /// </summary>
         public virtual async Task<ApplicationFormMappingDto> GenerateMappingAsync(Guid id)
         {
-            if (!await featureChecker.IsEnabledAsync(AIFeatures.FormMapping))
+            var applicationFormVersion = await repository.GetAsync(id);
+            await _aiGenerationAppService.SubmitAsync(
+                AIGenerationOperations.FormMapping,
+                new AIGenerationSubmissionDto
             {
-                throw new UserFriendlyException("AI form mapping is disabled.");
-            }
-
-            await CheckPolicyAsync(AIPermissions.Analysis.GenerateFormMapping);
-            await _aiCooldownService.EnsureAsync(CurrentUser.Id);
-
-            var readModel = await _mappingReadService.GetAsync(id);
-            var response = await _aiService.GenerateFormMappingAsync(new FormMappingRequest
-            {
-                Data = FormMappingPromptDataBuilder.Build(readModel)
+                ApplicationId = applicationFormVersion.ApplicationFormId,
+                ApplicationFormVersionId = id
             });
-            var submissionHeaderMapping = FormMappingResponseMapper.BuildSubmissionHeaderMapping(response);
-            var applicationFormVersion = await Repository.GetAsync(id);
-            applicationFormVersion.SubmissionHeaderMapping = submissionHeaderMapping;
-            await Repository.UpdateAsync(applicationFormVersion, true);
 
             return new ApplicationFormMappingDto
             {

@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Localization;
+using Unity.AI.Generation;
 using Unity.AI.Localization;
 using Unity.AI.Operations;
 using Unity.Flex.Domain.Scoresheets;
@@ -22,6 +23,20 @@ public class AIGenerationPrerequisiteValidator(
     IAsyncQueryableExecuter asyncExecuter,
     IStringLocalizer<AIResource> localizer) : IAIGenerationPrerequisiteValidator, ITransientDependency
 {
+    public Task EnsureAvailableAsync(string operationType, AIGenerationSubmissionDto request)
+    {
+        return operationType switch
+        {
+            AIGenerationOperations.AttachmentSummary => EnsureAttachmentSummaryAvailableAsync(request.ApplicationId),
+            AIGenerationOperations.ApplicationAnalysis => EnsureApplicationAnalysisAvailableAsync(request.ApplicationId),
+            AIGenerationOperations.ApplicationScoring => EnsureApplicationScoringAvailableAsync(request.ApplicationId),
+            AIGenerationOperations.FormMapping => EnsureFormMappingAvailableAsync(request.ApplicationFormVersionId.GetValueOrDefault()),
+            AIGenerationOperations.FormWorksheet => EnsureFormWorksheetAvailableAsync(request.ApplicationFormVersionId.GetValueOrDefault()),
+            AIGenerationOperations.FormScoresheet => EnsureFormScoresheetAvailableAsync(request.ApplicationFormVersionId.GetValueOrDefault()),
+            _ => throw new UserFriendlyException($"Unsupported AI generation operation type: {operationType}")
+        };
+    }
+
     public async Task EnsureAttachmentSummaryAvailableAsync(Guid applicationId)
     {
         var attachmentQuery = await applicationChefsFileAttachmentRepository.GetQueryableAsync();

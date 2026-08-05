@@ -21,79 +21,94 @@ public class AIGenerationAppService(
     ICurrentTenant currentTenant)
     : AIAppService, IAIGenerationAppService
 {
+    [Authorize]
+    [HttpPost("submit")]
+    public virtual async Task SubmitAsync(string operationType, AIGenerationSubmissionDto request)
+    {
+        var operation = AIGenerationOperations.Get(operationType);
+        await featureGuard.EnsureEnabledAsync(operation.FeatureName, operation.DisabledLocalizationKey);
+
+        if (operation.RequiresFormVersion && request.ApplicationFormVersionId is null)
+        {
+            throw new UserFriendlyException($"AI operation '{operationType}' requires an application form version.");
+        }
+
+        await CheckPolicyAsync(operation.GeneratePermission);
+        await aiGenerationQueue.QueueAsync(operationType, request, currentTenant.Id);
+    }
+
     [Authorize(AIPermissions.Analysis.GenerateAttachmentSummaries)]
     [HttpPost("attachment-summary")]
     public virtual async Task GenerateApplicationAttachmentSummariesAsync(AttachmentSummaryGenerationRequestDto request)
     {
-        await featureGuard.EnsureEnabledAsync(
-            AIFeatures.AttachmentSummaries,
-            AILocalizationKeys.AttachmentSummariesDisabled);
-
-        if (request.AttachmentIds.Count == 0)
-        {
-            return;
-        }
-
-        await aiGenerationQueue.QueueApplicationAttachmentSummaryAsync(
-            request.ApplicationId,
-            currentTenant.Id,
-            request.AttachmentIds,
-            request.PromptVersion);
+        await SubmitAsync(
+            AIGenerationOperations.AttachmentSummary,
+            new AIGenerationSubmissionDto
+            {
+                ApplicationId = request.ApplicationId,
+                AttachmentIds = request.AttachmentIds,
+                PromptVersion = request.PromptVersion
+            });
     }
 
     [Authorize(AIPermissions.Analysis.GenerateApplicationAnalysis)]
     [HttpPost("application-analysis")]
     public virtual async Task GenerateApplicationAnalysisAsync(Guid applicationId, string? promptVersion = null)
     {
-        await featureGuard.EnsureEnabledAsync(
-            AIFeatures.ApplicationAnalysis,
-            AILocalizationKeys.ApplicationAnalysisDisabled);
-
-        await aiGenerationQueue.QueueApplicationAnalysisAsync(applicationId, currentTenant.Id, promptVersion);
+        await SubmitAsync(
+            AIGenerationOperations.ApplicationAnalysis,
+            new AIGenerationSubmissionDto { ApplicationId = applicationId, PromptVersion = promptVersion });
     }
 
     [Authorize(AIPermissions.Analysis.GenerateScoring)]
     [HttpPost("application-scoring")]
     public virtual async Task GenerateApplicationScoringAsync(Guid applicationId, string? promptVersion = null)
     {
-        await featureGuard.EnsureEnabledAsync(
-            AIFeatures.Scoring,
-            AILocalizationKeys.ScoringDisabled);
-
-        await aiGenerationQueue.QueueApplicationScoringAsync(applicationId, currentTenant.Id, promptVersion);
+        await SubmitAsync(
+            AIGenerationOperations.ApplicationScoring,
+            new AIGenerationSubmissionDto { ApplicationId = applicationId, PromptVersion = promptVersion });
     }
 
     [Authorize(AIPermissions.Analysis.GenerateFormMapping)]
     [HttpPost("form-mapping")]
     public virtual async Task GenerateFormMappingAsync(Guid applicationId, Guid applicationFormVersionId, string? promptVersion = null)
     {
-        await featureGuard.EnsureEnabledAsync(
-            AIFeatures.FormMapping,
-            AILocalizationKeys.FormMappingDisabled);
-
-        await aiGenerationQueue.QueueFormMappingAsync(applicationId, currentTenant.Id, applicationFormVersionId, promptVersion);
+        await SubmitAsync(
+            AIGenerationOperations.FormMapping,
+            new AIGenerationSubmissionDto
+            {
+                ApplicationId = applicationId,
+                ApplicationFormVersionId = applicationFormVersionId,
+                PromptVersion = promptVersion
+            });
     }
 
     [Authorize(AIPermissions.Analysis.GenerateFormWorksheet)]
     [HttpPost("form-worksheet")]
     public virtual async Task GenerateFormWorksheetAsync(Guid applicationId, Guid applicationFormVersionId, string? promptVersion = null)
     {
-        await featureGuard.EnsureEnabledAsync(
-            AIFeatures.FormWorksheet,
-            AILocalizationKeys.FormWorksheetDisabled);
-
-        await aiGenerationQueue.QueueFormWorksheetAsync(applicationId, currentTenant.Id, applicationFormVersionId, promptVersion);
+        await SubmitAsync(
+            AIGenerationOperations.FormWorksheet,
+            new AIGenerationSubmissionDto
+            {
+                ApplicationId = applicationId,
+                ApplicationFormVersionId = applicationFormVersionId,
+                PromptVersion = promptVersion
+            });
     }
 
     [Authorize(AIPermissions.Analysis.GenerateFormScoresheet)]
     [HttpPost("form-scoresheet")]
     public virtual async Task GenerateFormScoresheetAsync(Guid applicationId, Guid applicationFormVersionId, string? promptVersion = null)
     {
-        await featureGuard.EnsureEnabledAsync(
-            AIFeatures.FormScoresheet,
-            AILocalizationKeys.FormScoresheetDisabled);
-
-        await aiGenerationQueue.QueueFormScoresheetAsync(applicationId, currentTenant.Id, applicationFormVersionId, promptVersion);
+        await SubmitAsync(
+            AIGenerationOperations.FormScoresheet,
+            new AIGenerationSubmissionDto
+            {
+                ApplicationId = applicationId,
+                ApplicationFormVersionId = applicationFormVersionId,
+                PromptVersion = promptVersion
+            });
     }
 
     [Authorize]
@@ -136,17 +151,11 @@ public class AIGenerationAppService(
 
     private async Task EnsureStatusAccessAsync(string operationType)
     {
-        var permission = operationType switch
+        if (!AIGenerationOperations.TryGet(operationType, out var operation))
         {
-            AIGenerationOperationKeyHelper.ApplicationAnalysisOperationType => AIPermissions.Analysis.ViewApplicationAnalysis,
-            AIGenerationOperationKeyHelper.AttachmentSummaryOperationType => AIPermissions.Analysis.ViewAttachmentSummary,
-            AIGenerationOperationKeyHelper.ApplicationScoringOperationType => AIPermissions.Analysis.ViewScoringResult,
-            AIGenerationOperationKeyHelper.FormMappingOperationType => AIPermissions.Analysis.ViewFormMapping,
-            AIGenerationOperationKeyHelper.FormWorksheetOperationType => AIPermissions.Analysis.ViewFormWorksheet,
-            AIGenerationOperationKeyHelper.FormScoresheetOperationType => AIPermissions.Analysis.ViewFormScoresheet,
-            _ => throw new UserFriendlyException($"Unsupported AI generation operation type: {operationType}")
-        };
+            throw new UserFriendlyException($"Unsupported AI generation operation type: {operationType}");
+        }
 
-        await CheckPolicyAsync(permission);
+        await CheckPolicyAsync(operation!.ViewPermission);
     }
 }
