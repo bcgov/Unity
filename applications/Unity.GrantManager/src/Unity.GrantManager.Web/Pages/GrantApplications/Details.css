@@ -255,15 +255,6 @@ textarea::placeholder {
     resize: vertical;
 }
 
-.fa-solid,
-.fa-regular {
-    padding: 5px;
-}
-
-i.fa-solid:hover {
-    cursor: pointer;
-}
-
 select.selected {
     border: 1px solid rgba(0, 51, 102, 38%) !important;
     background-color: #fff !important;
