@@ -101,9 +101,34 @@
         loadMappingReview(false);
     }
 
+    function handleMappingAction(event) {
+        const formVersion = String(document.getElementById('formVersionId')?.value ?? '').trim();
+        abp.ajax({
+            url: `/api/app/application-form-version/mapping-review?formVersionId=${encodeURIComponent(formVersion)}`,
+            type: 'GET'
+        }).done(function (review) {
+            if (review?.phase === 'PublishAndAssignWorksheets' || review?.canGenerateFinalMapping) {
+                finalizeMappingReview();
+                return;
+            }
+
+            queueFormMapping(event);
+        });
+    }
+
     function setupTooltips() {
         $('[data-toggle="tooltip"]').tooltip({
             placement: 'top'
+        });
+    }
+
+    function startWorksheetPhase(callback) {
+        const formVersion = String(document.getElementById('formVersionId')?.value ?? '').trim();
+        abp.ajax({
+            url: `/api/app/application-form-version/mapping-review-phase?formVersionId=${encodeURIComponent(formVersion)}&phase=WorksheetReview`,
+            type: 'POST'
+        }).done(callback).fail(function () {
+            abp.notify.error('', 'Unable to start worksheet generation.');
         });
     }
 
@@ -113,7 +138,7 @@
         UIElements.btnSaveMapping.on('click', handleSaveEditMapping);
         UIElements.btnSync.on('click', handleSync);
         UIElements.btnEdit.on('click', handleEdit);
-        UIElements.btnGenerate.on('click', queueFormMapping);
+        UIElements.btnGenerate.on('click', handleMappingAction);
         UIElements.btnGenerateWorksheet.on('click', queueFormWorksheet);
         UIElements.btnGenerateScoresheet.on('click', queueFormScoresheet);
         UIElements.btnReviewWorksheet.on('click', loadAiWorksheetReview);
@@ -254,6 +279,15 @@
             loadAiWorksheetReview();
             return;
         }
+
+        startWorksheetPhase(function () {
+            queueFormWorksheetCore(triggerButton);
+        });
+    }
+
+    function queueFormWorksheetCore(triggerButton = null) {
+        const formVersion = String(document.getElementById('formVersionId')?.value ?? '').trim();
+        const applicationId = String(document.getElementById('applicationFormId')?.value ?? '').trim();
 
         const existingHtml = $button.html();
 
@@ -570,23 +604,23 @@
     }
 
     function offerFinalMappingGeneration() {
-        abp.message.confirm('Worksheet review is complete. Proceed to final mapping generation?', 'Continue')
-            .then(function (confirmed) {
-                if (!confirmed) {
-                    return;
-                }
+        UIElements.mappingReviewModal.modal('hide');
+        abp.notify.success('', 'Publish and assign the worksheet drafts, then return here to generate mapping.');
+        loadMappingReview(false);
+    }
 
-                const formVersion = String(document.getElementById('formVersionId')?.value ?? '').trim();
-                const applicationId = String(document.getElementById('applicationFormId')?.value ?? '').trim();
-                abp.ajax({
-                    url: `/api/app/application-form-version/finalize-mapping-review?formVersionId=${encodeURIComponent(formVersion)}`,
-                    type: 'POST'
-                }).done(function () {
-                    monitorFormMappingGeneration(applicationId, UIElements.btnGenerate, UIElements.btnGenerate.html());
-                }).fail(function () {
-                    abp.notify.error('', 'Unable to start final mapping generation.');
-                });
-            });
+    function finalizeMappingReview() {
+        const formVersion = String(document.getElementById('formVersionId')?.value ?? '').trim();
+        const applicationId = String(document.getElementById('applicationFormId')?.value ?? '').trim();
+        abp.ajax({
+            url: `/api/app/application-form-version/finalize-mapping-review?formVersionId=${encodeURIComponent(formVersion)}`,
+            type: 'POST'
+        }).done(function () {
+            monitorFormMappingGeneration(applicationId, UIElements.btnGenerate, UIElements.btnGenerate.html());
+        }).fail(function (error) {
+            abp.notify.error('', error?.responseJSON?.error?.message || 'Publish and assign all AI worksheet drafts before generating mapping.');
+            loadMappingReview(false);
+        });
     }
 
     function checkMappingReviewComplete() {
@@ -659,10 +693,19 @@
             type: 'GET'
         })
             .done(function (review) {
+                updateWorkflowActions(review);
                 if (!review || !review.pendingSuggestions || review.pendingSuggestions.length === 0) {
                     UIElements.btnGenerate
                         .attr('data-ai-pending', 'false')
                         .find('span').last().text('Generate Mapping');
+                    UIElements.btnGenerateWorksheet.removeClass('d-none');
+                    UIElements.btnReviewWorksheet.toggleClass('d-none', !isAiWorksheetPending());
+                    if (review?.phase === 'PublishAndAssignWorksheets') {
+                        UIElements.btnGenerate
+                            .find('span').last()
+                            .text(review.canGenerateFinalMapping ? 'Generate Mapping' : 'Publish & Assign Worksheets');
+                        UIElements.btnGenerate.prop('disabled', !review.canGenerateFinalMapping);
+                    }
                     return;
                 }
 
@@ -674,6 +717,25 @@
                     UIElements.mappingReviewModal.modal('show');
                 }
             });
+    }
+
+    function updateWorkflowActions(review) {
+        const phase = review?.phase;
+        const hasReview = !!review;
+        const mappingReview = phase === 'MappingReview' || phase === 0 || phase === '0';
+        const worksheetReview = phase === 'WorksheetReview' || phase === 1 || phase === '1';
+        const publishAssign = phase === 'PublishAndAssignWorksheets' || phase === 2 || phase === '2';
+        const idle = !hasReview || phase === 'Completed' || phase === 4 || phase === '4';
+
+        UIElements.btnGenerate.toggleClass('d-none', worksheetReview);
+        UIElements.btnGenerateWorksheet.toggleClass('d-none', !idle && !worksheetReview);
+        UIElements.btnReviewWorksheet.toggleClass('d-none', !worksheetReview || !isAiWorksheetPending());
+        UIElements.btnGenerate.prop('disabled', publishAssign && !review.canGenerateFinalMapping);
+
+        if (mappingReview) {
+            UIElements.btnGenerate.removeClass('d-none');
+            UIElements.btnGenerateWorksheet.addClass('d-none');
+        }
     }
 
     function renderMappingReview(review) {

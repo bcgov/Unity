@@ -8,10 +8,11 @@
 - `FormWorksheet` - worksheet generation
 - `FormScoresheet` - scoresheet generation
 
-`FormMapping` and `FormWorksheet` can run as a finite staged flow for form
-configuration: mapping review, optional worksheet review, then final mapping
-review. Review suggestions are persisted until accepted or discarded; existing
-non-empty mappings are never replaced.
+`FormMapping` and `FormWorksheet` are independent operations with complete
+context inputs. The Mapping tab can guide them through mapping review, worksheet
+review, publish and assignment, and another mapping run. Review suggestions are
+persisted until accepted or discarded; existing non-empty mappings are never
+replaced.
 
 ## Versions
 - Built-in prompt rows are defined and seeded by `AIPromptDataSeeder`.

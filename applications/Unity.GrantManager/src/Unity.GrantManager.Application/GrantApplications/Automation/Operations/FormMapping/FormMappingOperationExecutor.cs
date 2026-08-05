@@ -36,12 +36,9 @@ public sealed class FormMappingOperationExecutor(
             ?? throw new InvalidOperationException("Form mapping generation requires an application form version.");
         var readModel = await mappingReadService.GetAsync(applicationFormVersionId);
         var review = await mappingReviewRepository.FindByFormVersionAsync(applicationFormVersionId);
-        var acceptedWorksheetFields = review == null
-            ? []
-            : JsonSerializer.Deserialize<List<string>>(review.AcceptedWorksheetFieldsJson) ?? [];
         var response = await aiService.GenerateFormMappingAsync(new FormMappingRequest
         {
-            Data = FormMappingPromptDataBuilder.Build(readModel, acceptedWorksheetFields),
+            Data = FormMappingPromptDataBuilder.Build(readModel),
             PromptVersion = args.PromptVersion
         });
 

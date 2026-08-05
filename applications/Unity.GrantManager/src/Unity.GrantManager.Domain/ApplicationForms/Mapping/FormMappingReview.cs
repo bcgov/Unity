@@ -11,6 +11,7 @@ public class FormMappingReview : AuditedAggregateRoot<Guid>, IMultiTenant
     {
         PendingMappingSuggestionsJson = "[]";
         AcceptedWorksheetFieldsJson = "[]";
+        DraftWorksheetIdsJson = "[]";
     }
 
     public FormMappingReview(Guid id, Guid formVersionId)
@@ -19,6 +20,7 @@ public class FormMappingReview : AuditedAggregateRoot<Guid>, IMultiTenant
         FormVersionId = formVersionId;
         PendingMappingSuggestionsJson = "[]";
         AcceptedWorksheetFieldsJson = "[]";
+        DraftWorksheetIdsJson = "[]";
         Phase = FormMappingReviewPhase.MappingReview;
     }
 
@@ -31,6 +33,9 @@ public class FormMappingReview : AuditedAggregateRoot<Guid>, IMultiTenant
     [Column(TypeName = "jsonb")]
     public string AcceptedWorksheetFieldsJson { get; private set; }
 
+    [Column(TypeName = "jsonb")]
+    public string DraftWorksheetIdsJson { get; private set; }
+
     public Guid? TenantId { get; set; }
 
     public void SetPendingMappingSuggestions(string suggestionsJson)
@@ -41,6 +46,11 @@ public class FormMappingReview : AuditedAggregateRoot<Guid>, IMultiTenant
     public void SetAcceptedWorksheetFields(string fieldsJson)
     {
         AcceptedWorksheetFieldsJson = fieldsJson;
+    }
+
+    public void SetDraftWorksheetIds(string worksheetIdsJson)
+    {
+        DraftWorksheetIdsJson = worksheetIdsJson;
     }
 
     public void SetPhase(FormMappingReviewPhase phase)

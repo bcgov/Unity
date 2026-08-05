@@ -4,6 +4,7 @@ public enum FormMappingReviewPhase
 {
     MappingReview = 0,
     WorksheetReview = 1,
-    FinalMappingReview = 2,
-    Completed = 3
+    PublishAndAssignWorksheets = 2,
+    FinalMappingReview = 3,
+    Completed = 4
 }

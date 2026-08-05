@@ -153,6 +153,7 @@ namespace Unity.GrantManager.EntityFrameworkCore
                 b.Property(x => x.Phase).HasConversion<string>().IsRequired();
                 b.Property(x => x.PendingMappingSuggestionsJson).HasColumnType("jsonb").IsRequired();
                 b.Property(x => x.AcceptedWorksheetFieldsJson).HasColumnType("jsonb").IsRequired();
+                b.Property(x => x.DraftWorksheetIdsJson).HasColumnType("jsonb").IsRequired();
                 b.HasIndex(x => x.FormVersionId).IsUnique();
             });
 

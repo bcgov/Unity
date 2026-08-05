@@ -26,6 +26,9 @@ using Volo.Abp.Domain.Entities;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Features;
 using Volo.Abp.Uow;
+using Unity.Flex.Domain.Worksheets;
+using Unity.Flex.Domain.WorksheetLinks;
+using Unity.Modules.Shared.Correlation;
 
 namespace Unity.GrantManager.ApplicationForms
 {
@@ -41,7 +44,8 @@ namespace Unity.GrantManager.ApplicationForms
         IAIGenerationAppService aiGenerationAppService,
         IWorksheetRepository worksheetRepository,
         IRepository<CustomField, Guid> customFieldRepository,
-        IFormMappingReviewRepository mappingReviewRepository) :
+        IFormMappingReviewRepository mappingReviewRepository,
+        IWorksheetLinkRepository worksheetLinkRepository) :
         CrudAppService<
             ApplicationFormVersion,
             ApplicationFormVersionDto,
@@ -344,6 +348,7 @@ namespace Unity.GrantManager.ApplicationForms
             }
 
             review.SetPhase(FormMappingReviewPhase.MappingReview);
+            review.SetDraftWorksheetIds("[]");
             await mappingReviewRepository.UpdateAsync(review);
             await _aiGenerationAppService.SubmitAsync(
                 AIGenerationOperations.FormMapping,
@@ -364,7 +369,7 @@ namespace Unity.GrantManager.ApplicationForms
         {
             await CheckPolicyAsync(AIPermissions.Analysis.ViewFormMapping);
             var review = await mappingReviewRepository.FindByFormVersionAsync(formVersionId);
-            return review == null ? null : MapMappingReview(review);
+            return review == null ? null : await MapMappingReviewAsync(review);
         }
 
         [HttpPost("api/app/application-form-version/accept-mapping-suggestion")]
@@ -408,11 +413,35 @@ namespace Unity.GrantManager.ApplicationForms
         public virtual async Task SetMappingReviewPhaseAsync(Guid formVersionId, FormMappingReviewPhase phase)
         {
             await CheckPolicyAsync(AIPermissions.Analysis.GenerateFormMapping);
-            var review = await mappingReviewRepository.FindByFormVersionAsync(formVersionId)
-                ?? throw new UserFriendlyException("No mapping review is pending.");
+            var review = await mappingReviewRepository.FindByFormVersionAsync(formVersionId);
+            if (review == null)
+            {
+                if (phase != FormMappingReviewPhase.WorksheetReview)
+                {
+                    throw new UserFriendlyException("No mapping review is pending.");
+                }
+
+                review = new FormMappingReview(GuidGenerator.Create(), formVersionId);
+                await mappingReviewRepository.InsertAsync(review);
+            }
+            else if (!IsValidReviewTransition(review.Phase, phase))
+            {
+                throw new UserFriendlyException("That AI mapping workflow transition is not valid.");
+            }
+            else if (phase == FormMappingReviewPhase.WorksheetReview &&
+                     DeserializeSuggestions(review.PendingMappingSuggestionsJson).Count > 0)
+            {
+                throw new UserFriendlyException("Review or discard the pending mapping suggestions first.");
+            }
+
             review.SetPhase(phase);
             await mappingReviewRepository.UpdateAsync(review, true);
         }
+
+        private static bool IsValidReviewTransition(FormMappingReviewPhase current, FormMappingReviewPhase next) =>
+            (current == FormMappingReviewPhase.MappingReview && next == FormMappingReviewPhase.WorksheetReview) ||
+            (current == FormMappingReviewPhase.Completed && next == FormMappingReviewPhase.WorksheetReview) ||
+            (current == FormMappingReviewPhase.FinalMappingReview && next == FormMappingReviewPhase.Completed);
 
         [HttpPost("api/app/application-form-version/finalize-mapping-review")]
         public virtual async Task FinalizeMappingReviewAsync(Guid formVersionId)
@@ -421,6 +450,11 @@ namespace Unity.GrantManager.ApplicationForms
             var formVersion = await Repository.GetAsync(formVersionId);
             var review = await mappingReviewRepository.FindByFormVersionAsync(formVersionId)
                 ?? throw new UserFriendlyException("No mapping review is pending.");
+            if (review.Phase != FormMappingReviewPhase.PublishAndAssignWorksheets ||
+                !await AreDraftWorksheetsPublishedAndAssignedAsync(review))
+            {
+                throw new UserFriendlyException("Publish and assign the AI worksheet drafts before generating mapping.");
+            }
             review.SetPhase(FormMappingReviewPhase.FinalMappingReview);
             await mappingReviewRepository.UpdateAsync(review, true);
             await _aiGenerationAppService.SubmitAsync(
@@ -507,6 +541,10 @@ namespace Unity.GrantManager.ApplicationForms
 
             await worksheetRepository.InsertAsync(draft, true);
 
+            var draftWorksheetIds = DeserializeGuidList(activeMappingReview?.DraftWorksheetIdsJson);
+            draftWorksheetIds.Add(draft.Id);
+            activeMappingReview?.SetDraftWorksheetIds(JsonSerializer.Serialize(draftWorksheetIds));
+
             foreach (var field in fields.Where(field => selectedFieldIds.Contains(field.Id)))
             {
                 var mappingReview = await mappingReviewRepository.FindByFormVersionAsync(formVersionId);
@@ -531,7 +569,7 @@ namespace Unity.GrantManager.ApplicationForms
                 var completedReview = await mappingReviewRepository.FindByFormVersionAsync(formVersionId);
                 if (completedReview != null)
                 {
-                    completedReview.SetPhase(FormMappingReviewPhase.FinalMappingReview);
+                    completedReview.SetPhase(FormMappingReviewPhase.PublishAndAssignWorksheets);
                     await mappingReviewRepository.UpdateAsync(completedReview, true);
                 }
                 return;
@@ -552,7 +590,7 @@ namespace Unity.GrantManager.ApplicationForms
                 var review = await mappingReviewRepository.FindByFormVersionAsync(formVersionId);
                 if (review != null)
                 {
-                    review.SetPhase(FormMappingReviewPhase.FinalMappingReview);
+                    review.SetPhase(FormMappingReviewPhase.PublishAndAssignWorksheets);
                     await mappingReviewRepository.UpdateAsync(review, true);
                 }
             }
@@ -589,15 +627,44 @@ namespace Unity.GrantManager.ApplicationForms
                 .ToList()
         };
 
-        private static FormMappingReviewDto MapMappingReview(FormMappingReview review)
+        private async Task<FormMappingReviewDto> MapMappingReviewAsync(FormMappingReview review)
         {
             return new FormMappingReviewDto
             {
                 FormVersionId = review.FormVersionId,
                 Phase = review.Phase,
                 PendingSuggestions = DeserializeSuggestions(review.PendingMappingSuggestionsJson),
-                AcceptedWorksheetFields = DeserializeWorksheetFields(review.AcceptedWorksheetFieldsJson)
+                AcceptedWorksheetFields = DeserializeWorksheetFields(review.AcceptedWorksheetFieldsJson),
+                DraftWorksheetIds = DeserializeGuidList(review.DraftWorksheetIdsJson),
+                CanGenerateFinalMapping = review.Phase == FormMappingReviewPhase.PublishAndAssignWorksheets &&
+                    await AreDraftWorksheetsPublishedAndAssignedAsync(review)
             };
+        }
+
+        private async Task<bool> AreDraftWorksheetsPublishedAndAssignedAsync(FormMappingReview review)
+        {
+            var draftWorksheetIds = DeserializeGuidList(review.DraftWorksheetIdsJson);
+            if (draftWorksheetIds.Count == 0)
+            {
+                return true;
+            }
+
+            var linkedWorksheetIds = (await worksheetLinkRepository.GetListByCorrelationAsync(
+                review.FormVersionId,
+                CorrelationConsts.FormVersion))
+                .Select(link => link.WorksheetId)
+                .ToHashSet();
+
+            foreach (var worksheetId in draftWorksheetIds)
+            {
+                var worksheet = await worksheetRepository.FindAsync(worksheetId);
+                if (worksheet == null || !worksheet.Published || !linkedWorksheetIds.Contains(worksheetId))
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         private static List<FormMappingSuggestionDto> DeserializeSuggestions(string json)
@@ -617,6 +684,18 @@ namespace Unity.GrantManager.ApplicationForms
             try
             {
                 return JsonSerializer.Deserialize<List<string>>(json) ?? [];
+            }
+            catch (JsonException)
+            {
+                return [];
+            }
+        }
+
+        private static List<Guid> DeserializeGuidList(string? json)
+        {
+            try
+            {
+                return JsonSerializer.Deserialize<List<Guid>>(json ?? "[]") ?? [];
             }
             catch (JsonException)
             {
