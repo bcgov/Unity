@@ -21,7 +21,9 @@ namespace Unity.AI.Operations
         public async Task<string> RegenerateAsync(ApplicationScoringOperationInputDto input, CancellationToken cancellationToken = default)
         {
             var sections = input.Sections;
-            var mode = executionModeResolver.ResolveMode(AIExecutionModeResolver.ApplicationScoringOperation);
+            var mode = await executionModeResolver.ResolveModeAsync(
+                AIExecutionModeResolver.ApplicationScoringOperation,
+                cancellationToken);
 
             var perSectionResults = await AIExecutionStrategy.RunAsync(
                 sections,

@@ -19,7 +19,7 @@ public class AIOperationDataSeeder(
     ICurrentTenant currentTenant,
     ILogger<AIOperationDataSeeder> logger) : ITransientDependency
 {
-    private const string DefaultModelName = "Gpt5Mini";
+    private const string DefaultModelName = "gpt-5-mini";
 
     private static readonly BuiltInOperationDefinition[] BuiltInOperations =
     [

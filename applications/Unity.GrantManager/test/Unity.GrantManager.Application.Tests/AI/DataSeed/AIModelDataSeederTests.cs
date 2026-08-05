@@ -16,7 +16,7 @@ namespace Unity.GrantManager.AI.DataSeed;
 public class AIModelDataSeederTests
 {
     [Fact]
-    public async Task Should_Seed_All_Configured_Profiles()
+    public async Task Should_Seed_All_Configured_Models()
     {
         var modelRepository = Substitute.For<IRepository<AIModel, Guid>>();
         var insertedModels = new List<AIModel>();
@@ -37,13 +37,13 @@ public class AIModelDataSeederTests
         await seeder.SeedAsync(new DataSeedContext());
 
         insertedModels.Count.ShouldBe(3);
-        insertedModels.ShouldContain(model => model.Name == "Gpt4oMini" && model.IsActive);
-        insertedModels.ShouldContain(model => model.Name == "Gpt5Mini" && model.IsActive);
-        insertedModels.ShouldContain(model => model.Name == "Gpt5Nano" && model.IsActive);
+        insertedModels.ShouldContain(model => model.Name == "gpt-4o-mini" && model.Provider == "OpenAI" && model.IsActive);
+        insertedModels.ShouldContain(model => model.Name == "gpt-5-mini" && model.Provider == "OpenAI" && model.IsActive);
+        insertedModels.ShouldContain(model => model.Name == "gpt-5-nano" && model.Provider == "OpenAI" && model.IsActive);
 
-        var gpt4oMini = insertedModels.Single(model => model.Name == "Gpt4oMini");
-        var gpt5Mini = insertedModels.Single(model => model.Name == "Gpt5Mini");
-        var gpt5Nano = insertedModels.Single(model => model.Name == "Gpt5Nano");
+        var gpt4oMini = insertedModels.Single(model => model.Name == "gpt-4o-mini");
+        var gpt5Mini = insertedModels.Single(model => model.Name == "gpt-5-mini");
+        var gpt5Nano = insertedModels.Single(model => model.Name == "gpt-5-nano");
 
         DeserializeSettings(gpt4oMini.SettingsJson).MaxOutputTokenCountSupported.ShouldBeTrue();
         DeserializeSettings(gpt4oMini.SettingsJson).Temperature.ShouldBe(0.3);

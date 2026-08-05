@@ -43,7 +43,7 @@ public class OpenAIConfigurationResolverTests
 
         modelRepository
             .GetAsync(modelId, cancellationToken: Arg.Any<CancellationToken>())
-            .Returns(new AIModel(modelId, "Gpt5Mini")
+            .Returns(new AIModel(modelId, "gpt-5-mini", "OpenAI")
             {
                 IsActive = true,
                 SettingsJson = JsonSerializer.Serialize(new AIModelSettings
@@ -92,7 +92,6 @@ public class OpenAIConfigurationResolverTests
             new Dictionary<string, string?>
             {
                 ["Azure:OpenAI:ApiKey"] = "secret",
-                ["Azure:OpenAI:Profiles:Gpt5Mini:DeploymentName"] = "gpt-5-mini"
             },
             modelRepository,
             operationRepository,
@@ -101,7 +100,7 @@ public class OpenAIConfigurationResolverTests
         var settings = await resolver.ResolveOperationSettingsAsync(AIPromptTypes.ApplicationAnalysis);
 
         settings.ProviderName.ShouldBe("OpenAI");
-        settings.ProfileName.ShouldBe("Gpt5Mini");
+        settings.ProfileName.ShouldBe("gpt-5-mini");
         settings.Endpoint.ShouldBe(new Uri("https://example.test"));
         settings.DeploymentName.ShouldBe("gpt-5-mini");
         settings.Temperature.ShouldBe(0.25);
@@ -121,7 +120,7 @@ public class OpenAIConfigurationResolverTests
 
         modelRepository
             .GetAsync(modelId, cancellationToken: Arg.Any<CancellationToken>())
-            .Returns(new AIModel(modelId, "Gpt5Mini")
+            .Returns(new AIModel(modelId, "gpt-5-mini", "OpenAI")
             {
                 IsActive = true,
                 SettingsJson = JsonSerializer.Serialize(new AIModelSettings
@@ -169,7 +168,6 @@ public class OpenAIConfigurationResolverTests
             new Dictionary<string, string?>
             {
                 ["Azure:OpenAI:ApiKey"] = "secret",
-                ["Azure:OpenAI:Profiles:Gpt5Mini:DeploymentName"] = "gpt-5-mini"
             },
             modelRepository,
             operationRepository,
@@ -193,7 +191,7 @@ public class OpenAIConfigurationResolverTests
                 ArgumentNullException.ThrowIfNull(predicate);
                 return Task.FromResult(new List<AIModel>
                 {
-                    new(Guid.NewGuid(), "Gpt5Mini")
+                    new(Guid.NewGuid(), "gpt-5-mini", "OpenAI")
                     {
                         IsActive = true,
                         SettingsJson = JsonSerializer.Serialize(new AIModelSettings
@@ -208,10 +206,10 @@ public class OpenAIConfigurationResolverTests
         var resolver = CreateResolver(modelRepository: modelRepository);
 
         resolver.ResolveProviderName().ShouldBe("OpenAI");
-        (await resolver.ResolveDeploymentNameAsync()).ShouldBe("gpt-5-mini");
-        (await resolver.ResolveEndpointAsync()).ShouldBe(new Uri("https://example.test"));
-        (await resolver.ResolveConfiguredTemperatureAsync()).ShouldBe(0.35);
-        (await resolver.ResolveMaxOutputTokenCountSupportedAsync()).ShouldBeTrue();
+        (await resolver.ResolveDeploymentNameAsync("gpt-5-mini")).ShouldBe("gpt-5-mini");
+        (await resolver.ResolveEndpointAsync("gpt-5-mini")).ShouldBe(new Uri("https://example.test"));
+        (await resolver.ResolveConfiguredTemperatureAsync("gpt-5-mini")).ShouldBe(0.35);
+        (await resolver.ResolveMaxOutputTokenCountSupportedAsync("gpt-5-mini")).ShouldBeTrue();
     }
 
     [Fact]
@@ -226,7 +224,7 @@ public class OpenAIConfigurationResolverTests
                 ArgumentNullException.ThrowIfNull(predicate);
                 return Task.FromResult(new List<AIModel>
                 {
-                    new(Guid.NewGuid(), "Default")
+                    new(Guid.NewGuid(), "Default", "OpenAI")
                     {
                         IsActive = true,
                         SettingsJson = JsonSerializer.Serialize(new AIModelSettings
@@ -261,7 +259,7 @@ public class OpenAIConfigurationResolverTests
 
         modelRepository
             .GetAsync(modelId, cancellationToken: Arg.Any<CancellationToken>())
-            .Returns(new AIModel(modelId, "Gpt5Mini")
+            .Returns(new AIModel(modelId, "gpt-5-mini", "OpenAI")
             {
                 IsActive = true,
                 SettingsJson = JsonSerializer.Serialize(new AIModelSettings
@@ -340,7 +338,7 @@ public class OpenAIConfigurationResolverTests
 
         var modelRepository = Substitute.For<IRepository<AIModel, Guid>>();
         modelRepository.GetAsync(modelId, cancellationToken: Arg.Any<CancellationToken>())
-            .Returns(new AIModel(modelId, "Gpt5Mini")
+            .Returns(new AIModel(modelId, "gpt-5-mini", "OpenAI")
             {
                 IsActive = true,
                 SettingsJson = JsonSerializer.Serialize(new AIModelSettings())
@@ -400,12 +398,8 @@ public class OpenAIConfigurationResolverTests
     {
         var configurationValues = new Dictionary<string, string?>
         {
-            ["Azure:Operations:Defaults:Provider"] = "OpenAI",
-            ["Azure:Operations:Defaults:Profile"] = "Gpt5Mini",
             ["Azure:OpenAI:Endpoint"] = "https://example.test",
-            ["Azure:OpenAI:ApiKey"] = "secret",
-            ["Azure:OpenAI:Profiles:Gpt5Mini:DeploymentName"] = "gpt-5-mini",
-            ["Azure:OpenAI:Profiles:Gpt5Mini:MaxOutputTokenCountSupported"] = "true"
+            ["Azure:OpenAI:ApiKey"] = "secret"
         };
 
         if (values != null)

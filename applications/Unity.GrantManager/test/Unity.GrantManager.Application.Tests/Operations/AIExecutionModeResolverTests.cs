@@ -1,9 +1,14 @@
-using Microsoft.Extensions.Configuration;
+using NSubstitute;
 using Shouldly;
 using System;
-using System.Collections.Generic;
+using System.Linq;
+using System.Linq.Expressions;
+using System.Threading;
+using System.Threading.Tasks;
+using Unity.AI.Domain;
 using Unity.AI.Operations;
 using Unity.AI.Runtime.Prompts;
+using Volo.Abp.Domain.Repositories;
 using Xunit;
 
 namespace Unity.GrantManager.AI.Operations;
@@ -11,48 +16,43 @@ namespace Unity.GrantManager.AI.Operations;
 public class AIExecutionModeResolverTests
 {
     [Fact]
-    public void ResolveMode_Uses_Operation_Override_Before_Default()
+    public async Task ResolveMode_Uses_Persisted_Operation_Mode()
     {
-        var configuration = new ConfigurationBuilder()
-            .AddInMemoryCollection(new Dictionary<string, string?>
+        var repository = Substitute.For<IRepository<AIOperation, Guid>>();
+        repository.GetListAsync(
+                Arg.Any<Expression<Func<AIOperation, bool>>>(),
+                cancellationToken: Arg.Any<CancellationToken>())
+            .Returns(callInfo =>
             {
-                ["Azure:Operations:Defaults:ExecutionMode"] = "Parallel",
-                [$"Azure:Operations:{AIPromptTypes.ApplicationScoring}:ExecutionMode"] = "Batch"
-            })
-            .Build();
+                var predicate = callInfo.Arg<Expression<Func<AIOperation, bool>>>();
+                return Task.FromResult(new[]
+                {
+                    new AIOperation(Guid.NewGuid(), AIPromptTypes.ApplicationScoring, Guid.NewGuid())
+                    {
+                        ExecutionMode = AIExecutionMode.Batch,
+                        IsActive = true
+                    }
+                }.Where(predicate.Compile()).ToList());
+            });
 
-        var resolver = new AIExecutionModeResolver(configuration);
+        var resolver = new AIExecutionModeResolver(repository);
 
-        resolver.ResolveMode(AIPromptTypes.ApplicationScoring).ShouldBe(AIExecutionMode.Batch);
-        resolver.ResolveMode(AIPromptTypes.AttachmentSummary).ShouldBe(AIExecutionMode.Parallel);
+        (await resolver.ResolveModeAsync(AIPromptTypes.ApplicationScoring)).ShouldBe(AIExecutionMode.Batch);
     }
 
     [Fact]
-    public void ResolveMode_Should_Throw_When_Default_Is_Missing()
+    public async Task ResolveMode_Throws_When_Operation_Is_Missing()
     {
-        var configuration = new ConfigurationBuilder()
-            .AddInMemoryCollection(new Dictionary<string, string?>())
-            .Build();
+        var repository = Substitute.For<IRepository<AIOperation, Guid>>();
+        repository.GetListAsync(
+                Arg.Any<Expression<Func<AIOperation, bool>>>(),
+                cancellationToken: Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(new System.Collections.Generic.List<AIOperation>()));
 
-        var resolver = new AIExecutionModeResolver(configuration);
+        var resolver = new AIExecutionModeResolver(repository);
 
-        var ex = Should.Throw<InvalidOperationException>(() => resolver.ResolveMode(AIPromptTypes.AttachmentSummary));
-        ex.Message.ShouldContain(AIPromptTypes.AttachmentSummary);
-    }
-
-    [Fact]
-    public void ResolveMode_Should_Throw_When_Configured_Value_Is_Invalid()
-    {
-        var configuration = new ConfigurationBuilder()
-            .AddInMemoryCollection(new Dictionary<string, string?>
-            {
-                ["Azure:Operations:Defaults:ExecutionMode"] = "Fast"
-            })
-            .Build();
-
-        var resolver = new AIExecutionModeResolver(configuration);
-
-        var ex = Should.Throw<InvalidOperationException>(() => resolver.ResolveMode(AIPromptTypes.AttachmentSummary));
-        ex.Message.ShouldContain(AIPromptTypes.AttachmentSummary);
+        var exception = await Should.ThrowAsync<InvalidOperationException>(
+            () => resolver.ResolveModeAsync(AIPromptTypes.AttachmentSummary));
+        exception.Message.ShouldContain(AIPromptTypes.AttachmentSummary);
     }
 }
