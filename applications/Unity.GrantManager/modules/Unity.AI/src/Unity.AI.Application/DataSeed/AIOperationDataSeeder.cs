@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using Unity.AI.Operations;
 using Unity.AI.Domain;
 using Unity.AI.Prompts;
-using Unity.GrantManager.GrantApplications;
 using Volo.Abp.Data;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Repositories;

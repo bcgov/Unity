@@ -12,6 +12,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Unity.AI;
+using Unity.AI.Attachments;
 using Unity.AI.Domain;
 using Unity.AI.Extraction;
 using Unity.AI.Localization;
@@ -20,7 +21,6 @@ using Unity.AI.Operations;
 using Unity.AI.Requests;
 using Unity.AI.Responses;
 using Unity.GrantManager.Applications;
-using Unity.GrantManager.Intakes;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp;
 using Volo.Abp.Uow;
@@ -42,9 +42,9 @@ public class AttachmentSummaryServiceTests
 
         var persistence = CreatePersistence(attachmentId, "test.txt", submissionId, fileId, savedSummary: summary => savedSummary = summary);
 
-        var streamProvider = Substitute.For<IChefsFileAttachmentStreamProvider>();
-        streamProvider.OpenAsync(submissionId, fileId, "test.txt")
-            .Returns(new ChefsFileAttachmentStream(stream, "text/plain"));
+        var streamProvider = Substitute.For<IAttachmentContentProvider>();
+        streamProvider.OpenAttachmentAsync(submissionId, fileId, "test.txt")
+            .Returns(new AttachmentContentStream(stream, "text/plain"));
 
         var textExtractionService = Substitute.For<ITextExtractionService>();
         textExtractionService.ExtractTextAsync("test.txt", stream, "text/plain")
@@ -84,9 +84,9 @@ public class AttachmentSummaryServiceTests
 
         var persistence = CreatePersistence(attachmentId, "test.txt", submissionId, fileId);
 
-        var streamProvider = Substitute.For<IChefsFileAttachmentStreamProvider>();
-        streamProvider.OpenAsync(submissionId, fileId, "test.txt")
-            .Returns(new ChefsFileAttachmentStream(stream, "text/plain"));
+        var streamProvider = Substitute.For<IAttachmentContentProvider>();
+        streamProvider.OpenAttachmentAsync(submissionId, fileId, "test.txt")
+            .Returns(new AttachmentContentStream(stream, "text/plain"));
 
         var service = CreateService(
             persistence,
@@ -104,7 +104,7 @@ public class AttachmentSummaryServiceTests
         var persistence = Substitute.For<IAttachmentSummaryDataProvider>();
         var service = CreateService(
             persistence,
-            Substitute.For<IChefsFileAttachmentStreamProvider>(),
+            Substitute.For<IAttachmentContentProvider>(),
             Substitute.For<ITextExtractionService>(),
             Substitute.For<IAIService>());
 
@@ -124,9 +124,9 @@ public class AttachmentSummaryServiceTests
 
         var persistence = CreatePersistence(attachmentId, "test.docx", submissionId, fileId, summary => savedSummary = summary);
 
-        var streamProvider = Substitute.For<IChefsFileAttachmentStreamProvider>();
-        streamProvider.OpenAsync(submissionId, fileId, "test.docx")
-            .Returns(new ChefsFileAttachmentStream(stream, "application/vnd.openxmlformats-officedocument.wordprocessingml.document"));
+        var streamProvider = Substitute.For<IAttachmentContentProvider>();
+        streamProvider.OpenAttachmentAsync(submissionId, fileId, "test.docx")
+            .Returns(new AttachmentContentStream(stream, "application/vnd.openxmlformats-officedocument.wordprocessingml.document"));
 
         var textExtractionService = Substitute.For<ITextExtractionService>();
         textExtractionService.ExtractTextAsync("test.docx", stream, "application/vnd.openxmlformats-officedocument.wordprocessingml.document")
@@ -157,9 +157,9 @@ public class AttachmentSummaryServiceTests
 
         var persistence = CreatePersistence(attachmentId, "riverside-profile.docx", submissionId, fileId);
 
-        var streamProvider = Substitute.For<IChefsFileAttachmentStreamProvider>();
-        streamProvider.OpenAsync(submissionId, fileId, "riverside-profile.docx")
-            .Returns(new ChefsFileAttachmentStream(stream, "application/vnd.openxmlformats-officedocument.wordprocessingml.document"));
+        var streamProvider = Substitute.For<IAttachmentContentProvider>();
+        streamProvider.OpenAttachmentAsync(submissionId, fileId, "riverside-profile.docx")
+            .Returns(new AttachmentContentStream(stream, "application/vnd.openxmlformats-officedocument.wordprocessingml.document"));
 
         var aiService = Substitute.For<IAIService>();
         aiService.GenerateAttachmentSummaryAsync(Arg.Do<AttachmentSummaryRequest>(request => capturedRequest = request))
@@ -192,9 +192,9 @@ public class AttachmentSummaryServiceTests
 
         var persistence = CreatePersistence(attachmentId, "mock-attachment.txt", submissionId, fileId);
 
-        var streamProvider = Substitute.For<IChefsFileAttachmentStreamProvider>();
-        streamProvider.OpenAsync(submissionId, fileId, "mock-attachment.txt")
-            .Returns(new ChefsFileAttachmentStream(stream, "text/plain"));
+        var streamProvider = Substitute.For<IAttachmentContentProvider>();
+        streamProvider.OpenAttachmentAsync(submissionId, fileId, "mock-attachment.txt")
+            .Returns(new AttachmentContentStream(stream, "text/plain"));
 
         var aiService = Substitute.For<IAIService>();
         aiService.GenerateAttachmentSummaryAsync(Arg.Do<AttachmentSummaryRequest>(request => capturedRequest = request))
@@ -226,9 +226,9 @@ public class AttachmentSummaryServiceTests
 
         var persistence = CreatePersistence(attachmentId, "mock-attachment.pdf", submissionId, fileId);
 
-        var streamProvider = Substitute.For<IChefsFileAttachmentStreamProvider>();
-        streamProvider.OpenAsync(submissionId, fileId, "mock-attachment.pdf")
-            .Returns(new ChefsFileAttachmentStream(stream, "application/pdf"));
+        var streamProvider = Substitute.For<IAttachmentContentProvider>();
+        streamProvider.OpenAttachmentAsync(submissionId, fileId, "mock-attachment.pdf")
+            .Returns(new AttachmentContentStream(stream, "application/pdf"));
 
         var aiService = Substitute.For<IAIService>();
         aiService.GenerateAttachmentSummaryAsync(Arg.Do<AttachmentSummaryRequest>(request => capturedRequest = request))
@@ -250,7 +250,7 @@ public class AttachmentSummaryServiceTests
 
     private static AttachmentSummaryService CreateService(
         IAttachmentSummaryDataProvider persistence,
-        IChefsFileAttachmentStreamProvider streamProvider,
+        IAttachmentContentProvider streamProvider,
         ITextExtractionService textExtractionService,
         IAIService aiService)
     {

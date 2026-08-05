@@ -2,6 +2,7 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.IO;
 using System.Threading.Tasks;
+using Unity.AI.Attachments;
 using Volo.Abp.DependencyInjection;
 
 namespace Unity.GrantManager.Intakes;
@@ -9,15 +10,15 @@ namespace Unity.GrantManager.Intakes;
 public class ChefsFileAttachmentStreamProvider(
     IChefsAttachmentDownloadService chefsAttachmentDownloadService,
     ILogger<ChefsFileAttachmentStreamProvider> logger)
-    : IChefsFileAttachmentStreamProvider, ITransientDependency
+    : IAttachmentContentProvider, ITransientDependency
 {
-    public async Task<ChefsFileAttachmentStream> OpenAsync(Guid formSubmissionId, Guid chefsFileAttachmentId, string name)
+
+    public async Task<AttachmentContentStream> OpenAttachmentAsync(Guid formSubmissionId, Guid chefsFileAttachmentId, string name)
     {
         try
         {
             var file = await chefsAttachmentDownloadService.DownloadAsync(formSubmissionId, chefsFileAttachmentId, name);
             var content = file.Content ?? [];
-            var stream = new MemoryStream(content, writable: false);
 
             logger.LogInformation(
                 "Opened CHEFS attachment {ChefsFileAttachmentId} for submission {FormSubmissionId}. ContentType: {ContentType}; DownloadedLength: {DownloadedLength}.",
@@ -26,7 +27,9 @@ public class ChefsFileAttachmentStreamProvider(
                 file.ContentType,
                 content.Length);
 
-            return new ChefsFileAttachmentStream(stream, file.ContentType);
+            return new AttachmentContentStream(
+                new MemoryStream(content, writable: false),
+                file.ContentType);
         }
         catch (Exception ex)
         {

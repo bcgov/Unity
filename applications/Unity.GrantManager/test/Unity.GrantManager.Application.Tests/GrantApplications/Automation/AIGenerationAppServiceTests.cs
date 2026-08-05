@@ -36,7 +36,7 @@ public class AIGenerationAppServiceTests(ITestOutputHelper outputHelper) : Grant
 
         var service = new AIGenerationAppService(
             Substitute.For<IApplicationGenerationQueue>(),
-            Substitute.For<IAIGenerationStatusAppService>(),
+            Substitute.For<IAIGenerationStatusReader>(),
             featureGuard,
             Substitute.For<ICurrentTenant>());
         service.LazyServiceProvider = GetRequiredService<IAbpLazyServiceProvider>();
@@ -60,14 +60,14 @@ public class AIGenerationAppServiceTests(ITestOutputHelper outputHelper) : Grant
         var operationId = Guid.NewGuid();
         var requestId = Guid.NewGuid();
 
-        var statusService = Substitute.For<IAIGenerationStatusAppService>();
-        statusService.GetLatestAsync(applicationId, operationType, tenantId).Returns(new AIGenerationRequestDto
+        var statusService = Substitute.For<IAIGenerationStatusReader>();
+        statusService.GetLatestAsync(applicationId, operationType, tenantId).Returns(new Unity.AI.Generation.AIGenerationRequestDto
         {
             Id = requestId,
             ApplicationId = applicationId,
             OperationId = operationId,
             OperationType = operationType,
-            Status = AIGenerationRequestStatus.Running,
+            Status = AIGenerationRequestStatus.Running.ToString(),
             StartedAt = new DateTime(2026, 7, 1, 12, 0, 0),
             FailureReason = "not used",
             IsActive = true
@@ -109,7 +109,7 @@ public class AIGenerationAppServiceTests(ITestOutputHelper outputHelper) : Grant
     {
         var service = new AIGenerationAppService(
             Substitute.For<IApplicationGenerationQueue>(),
-            Substitute.For<IAIGenerationStatusAppService>(),
+            Substitute.For<IAIGenerationStatusReader>(),
             CreateFeatureGuard(),
             Substitute.For<ICurrentTenant>());
         service.LazyServiceProvider = GetRequiredService<IAbpLazyServiceProvider>();
